@@ -1649,3 +1649,48 @@ only the handler's dereference and the size-field agreement separate them -- `--
 `--context` also reports which enclosing token a re-patterning would close the script with, so the next refusal
 starts from the enclosing chain instead of from the byte where the walk stopped.
 
+
+## Where a jump goes: the operand is not a file offset
+
+`tools/jump-census.py` tests the walk from the other side. A `Goto('Label')` in the source is a `Jump` in the
+bytecode and the label's name is not in the payload at all -- the corpus carries **no** `LabelTable` (`0x0c`) and
+**no** `GotoLabel` (`0x0d`) token in any of the 11,687 scripts that walk -- so a jump's 2-byte operand is the only
+thing left, and it has to point at the start of an instruction.
+
+    python3 tools/jump-census.py --system DUMP/System -o inventory/jump_census.csv
+
+<!-- generated:jump-census -->
+**23,778** `Jump`/`JumpIfNot` tokens over **6127** scripts, each 2-byte operand tested against that script's own token starts under the three readings an offset can have: **absolute** 5495 (23.11%), **unsigned relative** 3255 (13.69%), **signed relative** 3255 (13.69%). The base rate is **45.6%** -- 484,332 of the 1,062,761 byte positions in the same scripts are a token start -- and **none of the three is the encoding**: every reading lands at or below chance, which is what an operand expressed in a layout the file does not have looks like.
+
+The corpus carries **0** `LabelTable` (`0x0c`) and **0** `GotoLabel` (`0x0d`) tokens, so a source `Goto('Label')` keeps no name in the build: the compiler resolved the label to an offset and the runtime never looks one up. **16,539** jumps land on no token start under any reading; the first 50 are rows below, the count is the census row.
+
+| package | class | function | offset | op | target |
+| --- | --- | --- | ---: | --- | ---: |
+| AmbientCreatures | `FishBase` | `PhysicsVolumeChange` | 0000 | JumpIfNot | 32 |
+| AmbientCreatures | `FishBase` | `PhysicsVolumeChange` | 0016 | Jump | 53 |
+| AmbientCreatures | `FishBase` | `PhysicsVolumeChange` | 0019 | JumpIfNot | 53 |
+| AmbientCreatures | `HerdAnimal` | `BeginState` | 0004 | JumpIfNot | 39 |
+| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 0045 | JumpIfNot | 140 |
+| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 0090 | JumpIfNot | 226 |
+| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 00a1 | JumpIfNot | 280 |
+| AmbientCreatures | `HerdAnimal` | `FindMomFor` | 00ba | Jump | 237 |
+| AmbientCreatures | `HerdAnimal` | `FollowParent` | 001a | Jump | 56 |
+| AmbientCreatures | `HerdAnimal` | `FollowParent` | 0024 | JumpIfNot | 82 |
+| AmbientCreatures | `HerdAnimal` | `HearNoise` | 0000 | JumpIfNot | 67 |
+| AmbientCreatures | `HerdAnimal` | `HerdLeader` | 0005 | JumpIfNot | 50 |
+
+<!-- /generated:jump-census -->
+
+The two exec handlers settle what that operand is, and it is not the file's layout:
+
+* `Jump`, slot 6, body `0x000476e0`, ends `mov edx,[esi+0x4]` / `mov eax,[edx+0x48]` / `add eax,ecx` /
+  `mov [esi+0xc],eax` (`0x00047788..0x00047796`): `FFrame::Code = Node->Script + operand`.
+* `JumpIfNot`, slot 7, body `0x000477a0`, reads the word first (`movzx edi,[eax]`, `add eax,2`), evaluates the
+  condition, then takes the same route (`0x00047837..0x0004783f`).
+
+`+0x48` is the object's script pointer, i.e. the buffer the loader has **already widened**, and the loader does not
+adjust the operand when it widens -- which is why every file-space reading lands at or below chance. Reconstructing
+that base is the missing piece: which index operand widens is a per-slot property (the same rule the `--sizefield`
+residue rows are about), so a script's jump graph cannot be rebuilt from the file yet. The next instrument is a
+guest copy -- `Script + operand` can be read directly in an existing `pmemsave` image, and
+`tools/xemu/script-ram.py` already places those copies.

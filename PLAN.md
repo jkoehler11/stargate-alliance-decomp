@@ -12323,3 +12323,44 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   call, and the text census counts 169 of them, so the read is the `LabelTable` token (`0x0c`, pattern `labeltable`)
   and the jumps that consume it: whether the corpus's label tables enumerate the same labels the text jumps to, and
   which `Jump` operands index them.
+
+### Execution notes (2026-11-17, a jump operand is not a file offset — and the build never emits a label)
+
+- **Task.** The previous note's next measurement: the label jumps. A source `Goto('Begin')` is neither a
+  `GotoState` token nor a by-name call, so the read was the `LabelTable` token and the jumps that consume it.
+- **There is nothing to read: the build never emits a label.** Over the 11,687 scripts that walk, the corpus carries
+  **no** `LabelTable` (`0x0c`) and **no** `GotoLabel` (`0x0d`) token. `0x0c`'s handler exists (`0x00039d4e`,
+  pattern `labeltable`), so the runtime can look a label up and this build's compiler never asks it to: every
+  `Goto('Label')` is resolved to a code offset at compile time and the name is gone.
+- **That leaves the 2-byte operand, and no file-space reading of it works.** `tools/jump-census.py` tests all three
+  readings an offset can have -- **absolute** 5,495 of 23,778 (23.1%), **unsigned relative** 3,255 (13.7%),
+  **signed relative** 3,255 (13.7%) -- against a base rate of **45.6%** (484,332 token starts over 1,062,761
+  bytes in the same scripts). Every reading lands at or below chance, which is what an operand expressed in a
+  layout the file does not have looks like.
+- **The exec handlers say which layout, and it is the guest's.** `Jump` (slot 6, body `0x000476e0`) ends
+  `mov edx,[esi+0x4]` / `mov eax,[edx+0x48]` / `add eax,ecx` / `mov [esi+0xc],eax`
+  (`0x00047788..0x00047796`); `JumpIfNot` (slot 7, `0x000477a0`) reads the word (`movzx edi,[eax]`, `add eax,2`),
+  evaluates the condition and then takes the same route (`0x00047837..0x0004783f`). Both compute
+  `FFrame::Code = Node->Script + operand`, and `+0x48` is the buffer the loader has **already widened** -- while
+  the loader leaves the operand unchanged, which is exactly why a file offset matches nothing.
+- **So the jump graph is one unknown away, and the unknown is the widening.** Which index operand widens is a
+  per-slot property, not the opcode's (the same rule the `--sizefield` residue rows are about: one `LocalVariable`
+  operand is four bytes in a copy and one byte in the same script), so reconstructing `Script` from the file is not
+  possible yet. The instrument that can: a guest copy, where `Script + operand` can be read at the address the
+  handler computes, and `tools/xemu/script-ram.py` already places those copies in existing `pmemsave` images with
+  no boot.
+- **Two traps, both caught by the self-test rather than the corpus.** The relative base is the byte after the
+  operand -- `n["offset"] + 1 + len(operands)`, because a token's offset counts its opcode -- and reading it as
+  `n["offset"] + len(operands)` moved every relative target by one byte and made the signed reading look identical
+  to the unsigned one. And a two-byte operand with bit 15 set is never present in this corpus: unsigned and signed
+  agree on all 23,778 sites, so a "signed vs unsigned" distinction this build does not exercise cannot be the
+  explanation of the miss rate.
+- Tool (`measure`, `payloads`, the three-reading census, per-script rows, 50 capped miss rows) +
+  `inventory/jump_census.csv` (6,127 script rows + 13 census rows) + `docs/BYTECODE.md` (a new section with the
+  generated block and the two handler excerpts) + a `make jump-census` target and its `--check-doc` line in
+  `make ci` + this note. One 1-second read of the 18 packages; no boot, no Ghidra.
+- **Next measurement:** take one of the 6,127 scripts that carry a jump, find its guest copy in an existing
+  `pmemsave` image (`tools/xemu/script-ram.py --find`), and read `Script + operand` at the address the handler
+  computes: if that lands on a token start in the guest, the widening model is confirmed and the operand becomes a
+  usable jump graph; if it does not, the handler's `+0x48` is a different field than the script base and that is
+  the next read.
