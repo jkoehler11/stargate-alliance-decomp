@@ -12637,3 +12637,44 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   computes: if that lands on a token start in the guest, the widening model is confirmed and the operand becomes a
   usable jump graph; if it does not, the handler's `+0x48` is a different field than the script base and that is
   the next read.
+
+### Execution notes (2026-11-17, the outside bucket is the bots' state code, and "118 outside every block" was stale)
+
+- **Task.** The previous note's next measurement: `docs/BYTECODE.md`'s 118 keywords outside every function and every
+  block, typed by enclosing shape. The read moved the question before answering it: the case-folded state read had
+  already taken the outside-every-block count to **1**, so that half was closed, and the population the note did not
+  name -- the **253** `else` keywords outside every *function* -- was the one still untyped.
+- **The bucket is two shapes, not one.** **118** sit at a `state` body's own statement level, the label code
+  (`Begin:`, `Turn:`, `DoMove:`) a state's main loop is written in, and **134** inside a nested block of that code,
+  across **34** classes -- the game's bots and turret guns (`BotEnemy` 68, `BotSG` 31, `ReetouBot` 15,
+  `AlkeshBomberBot` 14, `GoauldDroneBot` 12 ...). `fn_state_label` / `fn_state_nested` carry the split, the
+  state-split identity now reads `label + nested + top == outside`, and `--check` drives all three shapes on a
+  synthetic state (label code, nested code, and a class-level prose keyword).
+- **What is left outside every block is prose in a buffer that begins inside a comment.** The one keyword is
+  `GUI.MenuItemOverlay`, whose `ScriptText` opens with the tail of a doc comment: **22** of the 2,319 texts carry more
+  `/* ... */` closes than opens, and a front-truncated buffer reads its leading prose as declarations and code. That
+  is the mirror of the tail truncation `UWindowURLTextArea` already carries, and it means the bucket is not a reader
+  gap -- no `else` in this corpus sits at class level. `front_truncated()` and the new `kind=top` rows name the class
+  from the artifact, where the page used to type `GUI.MenuItemOverlay` into its own prose.
+- **Two page sentences were the renderer's arithmetic, and one of them asserted the opposite of the measurement.**
+  "spells `State` in 36 classes -- **0** of the corpus's **513** declarations" was two defects: the case-folded count
+  was accumulated and never written (a census key missing from the emission list reads as a literal 0), and the count
+  itself was a difference of two regexes, which counts identifiers (`stateTime = 0.0;`) as declarations and answered
+  **67**. The strict capital-`State` shape is **55 declarations across 35 classes**. `CENSUS_KEYS` is now the single
+  list, and the walk fails when it accumulates a key it does not write -- which caught `agree_equal`/`agree_more`,
+  now emitted and quoted as the class-set control's other two buckets. The hand-typed "(800 agree, 45 more, 122 less,
+  1,352 with no branch)" and the parenthetical "(against 462)" are read from the artifact now.
+- **The control is the artifact.** All **2,382** pre-existing rows reproduce **byte-identically** on every column they
+  already had (compared by `(kind, package, class, function)`: 0 cells moved), so the two new columns and the
+  appended rows are the whole change; `--check-doc` reproduces the block from the CSV.
+- Tool (`state_split` split by brace depth, `front_truncated`, `STATE_CAPITAL`, `kind=top` rows, `top_table`,
+  `CENSUS_KEYS` + the emission guard, nine census rows, one generated paragraph and one table) +
+  `inventory/text_branches.csv` (2,395 rows) + `docs/BYTECODE.md` (the block) + `docs/PACKAGE_SCRIPT_TEXT.md` (a
+  fourth cause of the function-count drift) + this note. One 3-second read of the 18 packages; no bytecode walk, no
+  boot, no Ghidra.
+- **Next measurement:** the in-state keywords against the arms their state bodies compile, **per state** rather than
+  per class. `inventory/jump_branches.csv` names a function for every arm and the text declares every one (`fn_absent`
+  0 in all three populations), but a state's label block spells tens of keywords while its compiled overrides carry
+  few (`Suspicious.BeginState` 2 arms, `EndState` 1, `Timer` 3, against 68 in `BotEnemy`'s label code) -- so the read
+  is whether one state's label keywords equal the arms its own overrides carry, which decides whether the bots'
+  label code is a revision the package did not compile or a compile shape this census attributes elsewhere.
