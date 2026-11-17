@@ -3643,12 +3643,20 @@ def calls_report(path, table, out=None, lists=0):
     ]
     if out:
         os.makedirs(out, exist_ok=True)
-        with open(os.path.join(out, "script_call_census.csv"), "w", newline="") as fh:
+        # A control run is not a census: the shuffle writes its own artifact so the two cannot overwrite each
+        # other, and the page quotes both.
+        dest = "script_call_shuffle.csv" if _SHUFFLE else "script_call_census.csv"
+        with open(os.path.join(out, dest), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["key", "value"])
             for key, value in census:
                 w.writerow((key, value))
-        print("wrote %s/script_call_census.csv (%d row(s))" % (out, len(census)))
+        print("wrote %s/%s (%d row(s))" % (out, dest, len(census)))
+        if _SHUFFLE:
+            # The control writes no call table: a shuffled placement is not a census row, and overwriting the
+            # census with one would make the page quote a reading nobody measured.
+            print("the control writes no call table (a shuffled placement is not a census row)")
+            return 0
         with open(os.path.join(out, "script_calls.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["package", "class", "function", "token", "dispatch", "target", "target_class",
@@ -3986,6 +3994,7 @@ DOC_MARK = ("<!-- generated:matching-baseline -->", "<!-- /generated:matching-ba
 # walk itself needs one, and `make ci` deliberately has none.
 CALLS_DOC_MARK = ("<!-- generated:calls-census -->", "<!-- /generated:calls-census -->")
 CALLS_CENSUS = os.path.join(ROOT, "inventory", "script_call_census.csv")
+CALLS_SHUFFLE = os.path.join(ROOT, "inventory", "script_call_shuffle.csv")
 BASELINE_CSV = os.path.join(ROOT, "inventory", "matching_baseline.csv")
 COLUMNS = ("package", "functions", "scripted", "scriptless", "refused", "operator", "unaligned", "other",
            "l3", "l2", "control_l3", "control_l2", "control_site")
@@ -4984,8 +4993,13 @@ CALLS_ROWS = (
 )
 
 
-def calls_doc_block(census):
-    """The page's census block, from the artifact's own rows -- the same read `--calls` printed."""
+def calls_doc_block(census, shuffle=None):
+    """The page's census block, from the artifact's own rows -- the same read `--calls` printed.
+
+    `shuffle` is the control artifact (`--calls --shuffle`), which rotates each class's declared types onto a
+    neighbouring name: the difference between the two columns is what the declarations decided, so the block
+    quotes both rather than the shipped figure alone.
+    """
     got = dict(census)
 
     def n(key):
@@ -5002,6 +5016,30 @@ def calls_doc_block(census):
     for key, value in census:
         if key not in known:
             lines.append("| `%s` | %s |" % (key, value))
+    if shuffle:
+        ctl = dict(shuffle)
+
+        def s(key):
+            return int(ctl.get(key, 0) or 0)
+
+        lines += ["",
+                  "| control (`--calls --shuffle`) | shipped | shuffled |",
+                  "|---|---:|---:|"]
+        for key, label in (("by_name_naming_class", "by-name sites naming a declaring class"),
+                           ("chain_own", "on the caller's own class"),
+                           ("chain_ancestor", "on an ancestor"),
+                           ("receiver_chain", "on the receiver's chain"),
+                           ("decided_by_receiver", "decided by the receiver"),
+                           ("untyped_object", "an object expression with no recorded type")):
+            lines.append("| %s | %s | %s |" % (label, format(n(key), ",d"), format(s(key), ",d")))
+        lines += ["",
+                  "**The declarations decide %s of the %s placements the shuffle keeps**: rotating every declared"
+                  " type onto a neighbouring name takes the by-name reading from %s to %s, and no group the"
+                  " rotation cannot reach (a property import, an array element, a class literal) moves, because"
+                  " the shuffle never rewrites those."
+                  % (format(n("by_name_naming_class") - s("by_name_naming_class"), ",d"),
+                     format(s("by_name_naming_class"), ",d"),
+                     format(n("by_name_naming_class"), ",d"), format(s("by_name_naming_class"), ",d"))]
     lines += ["",
               "**%s of the %s by-name sites (%0.1f%%) name a declaring class**: %s on the caller's chain -- %s in its"
               " own class, %s an ancestor -- %s by the corpus alone, %s on the receiver's chain, and %s a dispatch the"
@@ -5022,10 +5060,22 @@ def calls_doc_block(census):
     return "\n".join(lines)
 
 
-def calls_emit_doc(census, write_doc=None, check_doc=None):
-    """Write or check the calls-census block. `--check-doc` reads the artifact only, so the gate is dump-free."""
+def calls_emit_doc(census, write_doc=None, check_doc=None, shuffle=None):
+    """Write or check the calls-census block. `--check-doc` reads the artifact only, so the gate is dump-free.
+
+    The control artifact is optional -- a checkout without it renders the block without the control table --
+    but when it is present its claim is gated: a shuffle that placed as much as the shipped reading would mean
+    the declarations decided nothing, which is exactly what `make ci` should refuse.
+    """
     path = write_doc or check_doc
-    block = calls_doc_block(census)
+    block = calls_doc_block(census, shuffle)
+    if shuffle:
+        shipped = int(dict(census).get("by_name_naming_class", 0) or 0)
+        rotated = int(dict(shuffle).get("by_name_naming_class", 0) or 0)
+        if rotated >= shipped:
+            print("FAIL calls-census: the shuffle places %d of %d, no fewer than the shipped reading (%d)"
+                  % (rotated, shipped, shipped))
+            return 1
     with open(path, encoding="utf-8") as fh:
         current = fh.read()
     fresh = replace_block(current, block, CALLS_DOC_MARK)
@@ -5567,7 +5617,7 @@ def main():
                          "(inventory/opcode_pairs.csv)")
     ap.add_argument("--calls-doc", action="store_true",
                     help="with --write-doc/--check-doc: re-render docs/BYTECODE.md's call census block from "
-                         "inventory/script_call_census.csv, no dump")
+                         "inventory/script_call_census.csv and its `--shuffle` control, no dump")
     ap.add_argument("--pairs-doc", action="store_true",
                     help="with --write-doc/--check-doc: re-render the opcode-pairs block from its artifact, no dump")
     ap.add_argument("--write-doc", metavar="PATH", help="regenerate docs/MATCHING.md's block from the artifact")
@@ -5640,7 +5690,7 @@ def main():
     if args.native_calls:
         return native_calls_report(args.native_calls, Table(), args.out)
     if args.calls:
-        global _SHUFFLE
+        global _SHUFFLE  # noqa: PLW0603 - the control is a mode of the one walk
         _SHUFFLE = args.shuffle
         if _SHUFFLE:
             print("CONTROL RUN: each class's declared local and return types are rotated onto a neighbouring "
@@ -5659,7 +5709,8 @@ def main():
     if args.opcode_pairs:
         return opcode_pairs_report(args.opcode_pairs, Table(), args.out, args.write_doc, args.check_doc)
     if args.calls_doc:
-        return calls_emit_doc(read_calls_census(), args.write_doc, args.check_doc)
+        return calls_emit_doc(read_calls_census(), args.write_doc, args.check_doc,
+                              read_calls_census(CALLS_SHUFFLE) if os.path.exists(CALLS_SHUFFLE) else None)
     if args.pairs_doc:
         rows = [r for r in read_pairs() if r[0] != "census"]
         return pairs_emit_doc(rows, pair_census(rows), args.write_doc, args.check_doc)

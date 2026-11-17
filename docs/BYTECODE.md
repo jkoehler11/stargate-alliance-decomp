@@ -956,6 +956,17 @@ The run's own numbers are the table below, rendered from `inventory/script_call_
 | residue rows `--lists` names | 3 |
 | typed residue rows `--lists` names | 38 |
 
+| control (`--calls --shuffle`) | shipped | shuffled |
+|---|---:|---:|
+| by-name sites naming a declaring class | 13,740 | 13,171 |
+| on the caller's own class | 5,904 | 5,904 |
+| on an ancestor | 2,720 | 2,720 |
+| on the receiver's chain | 2,863 | 2,290 |
+| decided by the receiver | 48 | 617 |
+| an object expression with no recorded type | 3 | 306 |
+
+**The declarations decide 569 of the 13,171 placements the shuffle keeps**: rotating every declared type onto a neighbouring name takes the by-name reading from 13,740 to 13,171, and no group the rotation cannot reach (a property import, an array element, a class literal) moves, because the shuffle never rewrites those.
+
 **13,740 of the 13,788 by-name sites (99.7%) name a declaring class**: 8,624 on the caller's chain -- 5,904 in its own class, 2,720 an ancestor -- 2,253 by the corpus alone, 2,863 on the receiver's chain, and 48 a dispatch the receiver's static type cannot decide. The rest of the reading is in the table: 3 object expressions with no recorded type (0 of them a local), 7 a completed value in front, and 38 receivers whose own chain declares no such name.
 
 The numbers are `inventory/script_call_census.csv` (`tools/uscript-dis.py --calls`), the artifact this block is rendered from; `make script-calls` re-runs the walk against the dump and `--calls-doc --write-doc docs/BYTECODE.md` re-renders the block from the artifact alone, so `make ci` needs no dump to prove the page still matches its census.
@@ -971,8 +982,10 @@ dispatch a static receiver cannot decide. The paragraphs below are left as the r
 they are the history of the reading, not a second census. The block above is the census, and `make ci`'s `calls-doc`
 check fails when the page and `inventory/script_call_census.csv` disagree.
 
-`--shuffle` runs the same walk with each class's declared types rotated onto a neighbouring name; it writes no CSV
-and exists only to measure how much of the reading the declarations decided (see "The check is a shuffle" below).
+`--shuffle` runs the same walk with each class's declared types rotated onto a neighbouring name. It writes no call
+table -- a shuffled placement is not a census row -- but it does write its own census artifact,
+`inventory/script_call_shuffle.csv`, because the block above quotes the control beside the shipped reading (see
+"The check is a shuffle" below).
 
 **The residue is named, not just counted, and two of its reasons were the tool's.** `--lists N` prints every site of
 the residue -- package, class, function, call name, the token in front of it, that token's own operand name and the
@@ -1112,9 +1125,12 @@ from **628 to 81** and places **504 of the 628**, 80% of them.
 **The check is a shuffle, and it is a flag: `--calls --shuffle`.** Before the walk, each class's declared types --
 its `local <Type> <Name>;` lines and its declared return types, one pool -- are rotated onto the next name in
 sorted order (`shuffled_source`), so the source keeps the same functions and the same set of type spellings and
-loses only the binding that placed a site. The same walk then reports what survives: **13,258 of 13,507 by-name
-sites name a declaring class as shipped, 12,753 (94.4%) do so shuffled** -- and the part that moves is the part
-the declarations placed. `Engine.u` alone: the receiver group **357 -> 264** and the sites whose receiver is a
+loses only the binding that placed a site. The same walk then reports what survives, and it keeps its own artifact
+now (`inventory/script_call_shuffle.csv`, so a control cannot overwrite the census): **13,740 of 13,788 by-name
+sites name a declaring class as shipped, 13,171 (95.5%) do so shuffled**, and the receiver group **2,863 ->
+2,290** -- the part that moves is the part the declarations placed. At the 18,931-site census this pair read
+13,258 of 13,507 (98.2%) against 12,753 (94.4%); the figures in the rest of this section are that run's, and the
+control table in the block above is the current pair. `Engine.u` alone: the receiver group **357 -> 264** and the sites whose receiver is a
 typed local **117 -> 25** (-79%); the whole corpus **2,641 -> 2,123** and its typed-local front **582 -> 80**
 (-86%), with the case-folded placements **33 -> 10** and the call-result placements **72 -> 18** (the 54 lost are
 the ones the callee's declared return type decided). **So a local placement is the declaration doing work about

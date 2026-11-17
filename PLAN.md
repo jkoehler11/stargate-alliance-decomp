@@ -11989,3 +11989,28 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `calls_emit_doc`, the marker argument on `replace_block`, `--calls-doc`) + `inventory/script_call_census.csv` (new,
   37 rows) + `inventory/script_calls.csv` regenerated (19,349 rows) + `tools/ci.py`'s `calls-doc` + `docs/BYTECODE.md`
   (the block and the drift paragraph) + this note. One 16-second walk; no boot, no Ghidra.
+
+### Execution notes (2026-11-17, the shuffle control is an artifact, and the declarations decide 569 placements)
+
+- **The control the page quotes had drifted the same way the census did.** `--shuffle` was measured against the
+  18,931-site census (12,753 of 13,507, 94.4%) and the page presented that pair beside a census that now holds 19,349
+  sites. Re-run against the same dump: **13,171 of 13,788 by-name sites (95.5%) still name a declaring class with
+  every declared type rotated onto a neighbouring name**, against **13,740 (99.7%)** as shipped -- so the declarations
+  decide **569 placements**, and the receiver group falls **2,863 -> 2,290** (531 names against 653).
+- **A control run used to write the census.** `--calls --shuffle -o inventory` re-emitted `inventory/script_calls.csv`
+  with the shuffled placements, i.e. the artifact the page quotes would have been overwritten by a reading nobody
+  measured. The control now writes `inventory/script_call_shuffle.csv` (the same 37 `key,value` rows) and no call
+  table, so the two artifacts cannot collide -- and the plain run afterwards reproduces `script_calls.csv` and
+  `script_call_census.csv` **byte for byte**, which is the control on the control.
+- **The block carries both columns and the gate covers both.** `docs/BYTECODE.md`'s census block gains a
+  shipped/shuffled table, and `--calls-doc --check-doc` refuses a control that places as much as the shipped reading
+  (`the shuffle places N of M, no fewer than the shipped reading`) as well as a stale block -- so a future change that
+  quietly destroys the evidence the declarations add fails `make ci` rather than shipping a nicer number.
+- **What the pair says about the reading**: the groups the rotation cannot reach do not move by construction
+  (own-class 5,904 and ancestor 2,720 are identical in both columns, and the corpus-alone group is 2,253 in both,
+  because an import, an array element and a class literal are not declarations), and the two that do move are the two
+  the declarations place (receiver chain 2,863 -> 2,290, "decided by the receiver" 48 -> 617 -- a permuted type's
+  chain usually lacks the name, so more sites fall to the descendants and the dispatch).
+- Tool (`--shuffle` writing `script_call_shuffle.csv` and no call table, `CALLS_SHUFFLE`, the control table in
+  `calls_doc_block`, the monotonicity gate in `calls_emit_doc`) + `inventory/script_call_shuffle.csv` (new, 37 rows) +
+  `docs/BYTECODE.md` (the block and two paragraphs) + this note. One 17-second control run; no boot, no Ghidra.
