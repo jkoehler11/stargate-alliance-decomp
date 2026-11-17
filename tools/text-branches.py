@@ -46,7 +46,7 @@ DOC_MARK = ("<!-- generated:text-branches -->", "<!-- /generated:text-branches -
 FIELDS = ["kind", "package", "class", "function", "live_else", "comment_else", "and", "or", "if", "while", "for",
           "terms", "pp_else", "text_functions", "record_functions", "byte_else", "byte_if", "byte_empty",
           "byte_expression", "fn_arms", "fn_absent", "fn_short", "fn_long", "fn_outside", "fn_state",
-          "fn_top", "fn_unpaired",
+          "fn_state_label", "fn_state_nested", "fn_top", "fn_unpaired",
           "verdict", "count", "note"]
 
 CENSUS_NOTE = {
@@ -85,17 +85,38 @@ CENSUS_NOTE = {
     "less_equal": "`less` classes that declare exactly as many",
     "less_more": "`less` classes that declare more",
     "agree_fewer": "`agree` classes that declare fewer functions than their record has -- the control for the above",
+    "agree_equal": "`agree` classes that declare exactly as many",
+    "agree_more": "`agree` classes that declare more",
     "fn_absent_names": "distinct function names behind the `less` classes' absent arms",
     "decl_legacy": "declarations the previous rule counted (`simulated`/`static`/`final`/`latent` only)",
     "decl_wide": "declarations the grammar has, any modifier",
     "decl_no_function": "declarations introduced by `event`/`delegate`/`operator` rather than the word `function`",
     "decl_grammar": "declarations read with the parameter list required on the same line -- `#635`'s rule",
     "decl_trailing": "declarations with a modifier after the keyword (`function static`)",
-    "states_case_folded": "`state` declarations spelled `State`, lost to a case-sensitive read",
+    "states_case_folded": "`state` declarations spelled `State` with a capital (strict shape, not a regex diff)",
+    "state_capital_classes": "classes carrying one -- lost to a case-sensitive read",
     "fn_state": "`else` keywords inside a `state { }` block and outside every function in it",
+    "fn_state_label": "of those, at the state body's own statement level (label code)",
+    "fn_state_nested": "of those, inside a nested brace of that statement level",
+    "state_classes": "classes carrying at least one such keyword",
     "fn_top": "`else` keywords outside every function and every block",
+    "top_classes": "classes carrying one, named in the table below",
+    "texts_front_truncated": "class texts whose buffer begins inside a `/* ... */` comment",
+    "front_truncated_else": "`else` keywords outside every function in those texts -- their leading prose",
     "state_blocks": "`state` declarations with a braced body",
 }
+
+CENSUS_KEYS = ("classes", "packages", "joined", "agree", "more", "less", "no_branch", "arms_no_text",
+               "text_else", "comment_else", "and", "or", "if", "while", "for", "terms", "pp_else",
+               "text_functions", "no_branch_functions", "no_branch_terms", "max_gap", "byte_else", "byte_if",
+               "byte_empty", "byte_expression", "jumpifnot", "terms_exact", "no_and_or", "no_and_or_exact",
+               "with_and_or", "with_and_or_exact", "less_fewer", "less_equal", "less_more", "agree_fewer",
+               "agree_equal", "agree_more",
+               "fn_absent_names", "decl_legacy", "decl_wide", "decl_no_function", "decl_grammar",
+               "decl_trailing", "states_case_folded", "state_capital_classes", "fn_state", "fn_state_label",
+               "fn_state_nested",
+               "state_classes", "fn_top", "top_classes", "state_blocks", "texts_front_truncated",
+               "front_truncated_else")
 
 WORD = re.compile(r"(?<![#\w$])(if|else|while|for)(?![\w$])")
 # The grammar's declaration modifiers. The previous rule carried `simulated`/`static`/`final`/`latent` only, so
@@ -113,9 +134,12 @@ FUNC_NO_KEYWORD = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*(?:event|delegate|operato
                              % "|".join(MODIFIERS), re.M)
 FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
                          r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
-# UnrealScript folds keyword case, and 36 classes ship `State` with a capital: a case-sensitive read loses 56
-# state declarations and reports their bodies as code outside every block.
+# UnrealScript folds keyword case, and the shipped text spells `State` with a capital in 55 declarations across
+# 35 classes: a case-sensitive read loses all of them and reports their bodies as code outside every block.
 STATE = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M | re.I)
+# The capitalised spelling, strictly: differencing the case-folded and case-sensitive reads counted identifiers
+# (`stateTime = 0.0;`) as declarations and answered 67 where the capital-`State` shape is 55 in 35 classes.
+STATE_CAPITAL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?State[ \t]+\w+")
 PP_ELSE = re.compile(r"#[ \t]*else\b")
 
 
@@ -236,15 +260,22 @@ def function_else(live):
     return bodies, names, spans
 
 
-def state_split(live, fn_spans, total_else):
-    """`(else inside a state block but outside its functions, else outside every block, blocks with a body)`.
+def state_split(live, fn_spans, total_else, depth=None):
+    """`(label-level else, nested else, else outside every block, blocks with a body)`.
 
     The 3.5 notes call the state code a gap in its own right; a class-level count cannot tell it from a
     function's arms, so the keywords that no function body holds get their own split here, and `fn_top` is the
     residual a reader bug shows up in.
+
+    The in-state half is split by **brace depth**, because the two shapes are different facts: a keyword at the
+    state body's own statement level is label code (`Begin:` and friends, which is where a state's main loop
+    lives), while one deeper is inside a block of that code. The 253 keywords this bucket held came back 118
+    label-level / 134 nested / 1 outside every block, so quoting the bucket as one number hid the shape.
     """
     ctb = ctb_tool()
-    in_state, blocks = 0, 0
+    if depth is None:
+        depth = ctb.depth_map(live)
+    label, nested, blocks = 0, 0, 0
     ms = list(STATE.finditer(live))
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
@@ -252,12 +283,29 @@ def state_split(live, fn_spans, total_else):
         if span is None:
             continue
         blocks += 1
-        here = else_in(live[span[0]:span[1]])
-        inside = sum(else_in(live[max(a, span[0]):min(b, span[1])])
-                     for a, b in fn_spans if a < span[1] and b > span[0])
-        in_state += here - inside
+        floor = depth[span[0]] + 1  # the state body's own statement level: `depth` is the depth *inside* a brace
+        for mm in WORD.finditer(live[span[0]:span[1]]):
+            if mm.group(1) != "else":
+                continue
+            pos = span[0] + mm.start()
+            if any(a <= pos < b for a, b in fn_spans):
+                continue
+            if depth[pos] == floor:
+                label += 1
+            else:
+                nested += 1
     outside = total_else - sum(else_in(live[a:b]) for a, b in fn_spans)
-    return in_state, outside - in_state, blocks
+    return label, nested, outside - label - nested, blocks
+
+
+def front_truncated(text):
+    """True when the buffer begins inside a `/* ... */` comment, i.e. carries more closes than opens.
+
+    `GUI.MenuItemOverlay` is one: its `ScriptText` opens with the tail of a doc comment, so the prose reads as
+    live code -- the mirror of the tail truncation `UWindowURLTextArea` shows, and the reason its one `else` is
+    a word in a sentence rather than a branch.
+    """
+    return text.count("*/") > text.count("/*")
 
 
 # --- the dump side ---------------------------------------------------------------------------------
@@ -278,8 +326,9 @@ def walk(system_dir):
             if not text:
                 continue
             live, comments = mask(text)
+            depth = ctb.depth_map(live)
             fn_else, fn_names, fn_spans = function_else(live)
-            fn_state, fn_top, state_blocks = state_split(live, fn_spans, counts(live)["else"])
+            fn_label, fn_nested, fn_top, state_blocks = state_split(live, fn_spans, counts(live)["else"], depth)
             rows[(package, pkg.name(exp["name"]).lower())] = {
                 "class": pkg.name(exp["name"]),
                 "live": counts(live),
@@ -287,9 +336,10 @@ def walk(system_dir):
                 "functions": len(ctb.FUNC.findall(live)),
                 "decl_grammar": len(ctb.FUNC_GRAMMAR.findall(live)),
                 "decl_trailing": len(ctb.FUNC_TRAIL.findall(live)),
-                "state_blocks_capital": len(ctb.STATE_DECL.findall(live)) - len(ctb.STATE_DECL_LEGACY.findall(live)),
+                "state_blocks_capital": len(STATE_CAPITAL.findall(live)),
                 "fn_else": fn_else, "fn_names": fn_names,
-                "fn_state": fn_state, "fn_top": fn_top, "state_blocks": state_blocks,
+                "fn_state": fn_label + fn_nested, "fn_state_label": fn_label, "fn_state_nested": fn_nested,
+                "fn_top": fn_top, "state_blocks": state_blocks, "front_truncated": front_truncated(text),
                 "decl_legacy": len(ctb.FUNC_LEGACY.findall(live)),
                 "decl_no_function": len(FUNC_NO_KEYWORD.findall(live)),
             }
@@ -337,7 +387,8 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                "terms": "", "pp_else": "", "text_functions": "", "record_functions": records.get(key, ""),
                "byte_else": a["else"], "byte_if": a["if"],
                "byte_empty": a["empty"], "byte_expression": a["expression"], "fn_arms": "", "fn_absent": "",
-               "fn_short": "", "fn_long": "", "fn_outside": "", "fn_unpaired": "",
+               "fn_short": "", "fn_long": "", "fn_outside": "", "fn_state_label": "", "fn_state_nested": "",
+               "fn_unpaired": "",
                "verdict": "", "count": "", "note": ""}
         census["byte_else"] += a["else"]
         census["byte_if"] += a["if"]
@@ -359,10 +410,16 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         census["decl_grammar"] += t["decl_grammar"]
         census["decl_trailing"] += t["decl_trailing"]
         census["states_case_folded"] += t["state_blocks_capital"]
+        census["state_capital_classes"] += 1 if t["state_blocks_capital"] else 0
         census["decl_no_function"] += t["decl_no_function"]
         census["state_blocks"] += t["state_blocks"]
         census["fn_state"] += t["fn_state"]
+        census["fn_state_label"] += t["fn_state_label"]
+        census["fn_state_nested"] += t["fn_state_nested"]
+        census["state_classes"] += 1 if t["fn_state"] else 0
         census["fn_top"] += t["fn_top"]
+        census["texts_front_truncated"] += 1 if t["front_truncated"] else 0
+        census["front_truncated_else"] += t["fn_top"] if t["front_truncated"] else 0
         census["classes"] += 1
         for k in ("else", "and", "or", "if", "while", "for", "pp_else"):
             census["text_" + k if k == "else" else k] += c[k]
@@ -371,7 +428,7 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         if key not in arms:
             row["verdict"] = "no-branch"
             row.update({"fn_arms": 0, "fn_absent": 0, "fn_short": 0, "fn_long": 0, "fn_outside": 0,
-                        "fn_unpaired": 0})
+                        "fn_state_label": 0, "fn_state_nested": 0, "fn_unpaired": 0})
             census["no_branch"] += 1
             census["no_branch_functions"] += t["functions"]
             census["no_branch_terms"] += terms
@@ -400,13 +457,14 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
             print("FAIL text-branches: the function split does not reconcile for %s.%s (%d/%d, %d/%d)"
                   % (key[0], key[1], fn_total, a["else"], paired + surplus + unpaired + outside, c["else"]))
             raise SystemExit(1)
-        if t["fn_state"] + t["fn_top"] != outside:
-            print("FAIL text-branches: the state split does not reconcile for %s.%s (%d+%d vs %d)"
-                  % (key[0], key[1], t["fn_state"], t["fn_top"], outside))
+        if t["fn_state_label"] + t["fn_state_nested"] + t["fn_top"] != outside:
+            print("FAIL text-branches: the state split does not reconcile for %s.%s (%d+%d+%d vs %d)"
+                  % (key[0], key[1], t["fn_state_label"], t["fn_state_nested"], t["fn_top"], outside))
             raise SystemExit(1)
         row.update({"fn_arms": fn_total, "fn_absent": absent, "fn_short": short, "fn_long": surplus,
-                    "fn_outside": outside, "fn_state": t["fn_state"], "fn_top": t["fn_top"],
-                    "fn_unpaired": unpaired})
+                    "fn_outside": outside, "fn_state": t["fn_state"],
+                    "fn_state_label": t["fn_state_label"], "fn_state_nested": t["fn_state_nested"],
+                    "fn_top": t["fn_top"], "fn_unpaired": unpaired})
         vc = verdicts[verdict(c["else"], a["else"])]
         vc["classes"] += 1
         vc["arms"] += fn_total
@@ -465,6 +523,16 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                          "byte_else": c["byte_else"], "terms": c["terms"], "count": c["classes"],
                          "note": "agree %d, more %d, less %d, no-branch %d"
                                  % (c["agree"], c["more"], c["less"], c["no-branch"])})
+    # The keywords outside *every* block are named, not counted: the page used to type one of them by hand
+    # (`GUI.MenuItemOverlay`) and a reader had no way to tell that from a stale sentence.
+    top_rows = []
+    for row in rows:
+        if row.get("kind") == "class" and row.get("fn_top") not in ("", None) and int(row["fn_top"] or 0) > 0:
+            top_rows.append({"kind": "top", "package": row["package"], "class": row["class"],
+                             "count": int(row["fn_top"]),
+                             "note": "`else` outside every function and every block"})
+    top_rows.sort(key=lambda r: (-r["count"], r["package"], r["class"]))
+    census["top_classes"] = len(top_rows)
     census["packages"] = len(pkg_rows)
     census["fn_absent_names"] = len(absent_names)
     for name in ("less", "agree", "more"):
@@ -477,16 +545,19 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                      "fn_top": c["top"], "fn_unpaired": c["unpaired"],
                      "count": c["classes"], "note": "the `%s` population" % name})
     rows.extend(sorted(absent_rows, key=lambda r: (-r["count"], r["package"], r["class"], r["function"])))
+    rows.extend(top_rows)
     out = rows + pkg_rows
-    for k in ("classes", "packages", "joined", "agree", "more", "less", "no_branch", "arms_no_text", "text_else",
-              "comment_else", "and", "or", "if", "while", "for", "terms", "pp_else", "text_functions",
-              "no_branch_functions", "no_branch_terms", "max_gap", "byte_else", "byte_if",
-              "byte_empty", "byte_expression", "jumpifnot", "terms_exact", "no_and_or", "no_and_or_exact",
-              "with_and_or", "with_and_or_exact", "less_fewer", "less_equal", "less_more", "agree_fewer",
-              "fn_absent_names", "decl_legacy", "decl_wide", "decl_no_function", "fn_state", "fn_top",
-              "state_blocks"):
+    for k in CENSUS_KEYS:
         value = jumpifnot if k == "jumpifnot" else census[k]
         out.append({"kind": "census", "count": value, "note": CENSUS_NOTE[k]})
+    # A key a reading accumulates but this list does not write reads as a literal 0 in the page -- the
+    # case-folded state count did exactly that (`spells State ... in **0** of the 513 declarations`), which is
+    # a sentence asserting the opposite of the measurement. The two lists are one list now, and the guard is
+    # for the next key somebody adds to the walk only.
+    missing = sorted(k for k, v in census.items() if k not in CENSUS_KEYS and v)
+    if missing:
+        print("FAIL text-branches: census keys accumulated but never written: %s" % ", ".join(missing))
+        raise SystemExit(1)
     return out
 
 
@@ -555,7 +626,8 @@ def doc_block(rows):
                comma(count(rows, "and")), comma(count(rows, "or")),
                comma(count(rows, "terms") - count(rows, "jumpifnot")),
                comma(count(rows, "joined") - count(rows, "terms_exact")))
-    return body + verdict_paragraph(rows) + verdict_table(rows) + absent_table(rows) + package_table(rows)
+    return (body + verdict_paragraph(rows) + verdict_table(rows) + absent_table(rows) + top_table(rows)
+            + package_table(rows))
 
 
 def verdict_rows(rows):
@@ -634,23 +706,33 @@ def verdict_paragraph(rows):
             "`LongClientAdjustPosition`, `CallServerMove`, `ReplicateMove` and `MoveAutonomous` are all "
             "declared in `PlayerController`'s text and their bodies were outside every function. The "
             "four-modifier rule read **{decl_legacy}** of the corpus's **{decl_wide}** declarations and "
-            "`#635`'s same-line rule **{decl_grammar}**. **No arm is left without a declaring body, and one "
-            "`else` keyword in the whole corpus is left outside every block** (`GUI.MenuItemOverlay`), against "
-            "the previous reading's 65 absent arms behind 8 names and 107 outside keywords ({alltop} corpus "
-            "wide).\n"
+            "`#635`'s same-line rule **{decl_grammar}**. **No arm is left without a declaring body, and "
+            "{alltop} `else` keyword(s) in the whole corpus sit outside every block** (named in the table "
+            "below), against the previous reading's 65 absent arms behind 8 names and 107 outside keywords.\n"
             "\n**The in-state count fell for a second reason: the state read was case-sensitive.** "
-            "UnrealScript folds keyword case and the shipped text spells `State` in 36 classes -- "
-            "**{case_states}** of the corpus's **{blocks}** `state` declarations -- so every body in those "
+            "UnrealScript folds keyword case and the shipped text spells `State` with a capital in "
+            "**{case_states}** declarations across **{case_classes}** classes, so every body in those "
             "blocks read as code outside one. Among them are the five states "
             "(`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) the tree "
             "once recorded as states no class's text declares: the text declares them, in a capitalised "
-            "block, and `{state}` keywords now sit in state code (against 462).\n"
+            "block, and **{state_all}** `else` keywords now sit in state code.\n"
+            "\n**The keywords outside every function are state code, and the ones outside every block are "
+            "prose.** The {alloutside} `else` keywords the text spells outside a function body split **{label}** "
+            "at a `state` body's own statement level -- the label code a state's main loop is written in -- "
+            "and **{nested}** inside a nested block of that code, across **{sclasses}** classes: the game's "
+            "bots and turret guns, `BotEnemy` and `BotSG` first among them. What is left outside every block "
+            "is **{alltop}** keyword(s) in {topclasses} class text(s), named in the table below, and {ftop} of "
+            "them sit in the **{front}** of the {classes2} texts that begin inside a `/* ... */` comment: a "
+            "front-truncated `ScriptText` reads its leading prose as code, the mirror of the tail "
+            "truncation `UWindowURLTextArea` shows. So the bucket is not a reader gap -- no `else` in this "
+            "corpus sits at class level.\n"
             "\n**The class-set test moves with the rule and still does not decide the arm count.** "
             "{l_fewer} of the {nc} `less` classes declare fewer functions than their record has, {l_equal} the "
             "same number and {l_more} more, against {a_fewer} of {ac} agreeing classes that also declare "
-            "fewer -- so a function count is not what an arm count is missing. The class-level verdicts "
-            "(800 agree, 45 more, 122 less, 1,352 with no branch) do not move at all: the correction moved "
-            "the per-function split, which is what it was supposed to move.\n"
+            "fewer ({a_equal} the same number, {a_more} more) -- so a function count is not what an arm "
+            "count is missing. The class-level verdicts "
+            "({agree_c} agree, {more_c} more, {less_c} less, {nob_c} with no branch) do not move at all: the "
+            "correction moved the per-function split, which is what it was supposed to move.\n"
             .format(ln=comma(less_net), nc=comma(less["count"]), arms=comma(less["fn_arms"]),
                     absent=comma(less["fn_absent"]), short=comma(less["fn_short"]),
                     text=comma(less["live_else"]), outside=comma(less["fn_outside"]),
@@ -664,9 +746,33 @@ def verdict_paragraph(rows):
                     names=comma(count(rows, "fn_absent_names")), top=named,
                     l_fewer=comma(count(rows, "less_fewer")), l_equal=comma(count(rows, "less_equal")),
                     l_more=comma(count(rows, "less_more")), a_fewer=comma(count(rows, "agree_fewer")),
+                    a_equal=comma(count(rows, "agree_equal")), a_more=comma(count(rows, "agree_more")),
+                    agree_c=comma(count(rows, "agree")), more_c=comma(count(rows, "more")),
+                    less_c=comma(count(rows, "less")), nob_c=comma(count(rows, "no_branch")),
                     case_states=comma(count(rows, "states_case_folded")),
+                    case_classes=comma(count(rows, "state_capital_classes")),
                     blocks=comma(count(rows, "state_blocks")),
+                    label=comma(count(rows, "fn_state_label")),
+                    nested=comma(count(rows, "fn_state_nested")),
+                    sclasses=comma(count(rows, "state_classes")),
+                    topclasses=comma(count(rows, "top_classes")),
+                    ftop=comma(count(rows, "front_truncated_else")),
+                    front=comma(count(rows, "texts_front_truncated")),
+                    classes2=comma(count(rows, "classes")),
+                    alloutside=comma(count(rows, "fn_state") + count(rows, "fn_top")),
+                    state_all=comma(count(rows, "fn_state")),
                     decl_grammar=comma(count(rows, "decl_grammar"))))
+
+def top_table(rows):
+    """The class texts whose `else` sits outside every function and every block, named."""
+    tops = [r for r in rows if r.get("kind") == "top"]
+    if not tops:
+        return ""
+    lines = ["\n| class text | `else` outside every block |", "| --- | ---: |"]
+    for r in tops:
+        lines.append("| `%s.%s` | %s |" % (r["package"], r["class"], comma(r["count"])))
+    return "\n".join(lines) + "\n"
+
 
 def package_table(rows):
     """A markdown table of the joined classes per package, so the disagreement has an owner."""
@@ -755,12 +861,37 @@ def selftest():
             "}\n")
     live2 = mask(text)[0]
     fns, names, spans = function_else(live2)
-    st, tp, blocks = state_split(live2, spans, counts(live2)["else"])
+    st, tp, top2, blocks = state_split(live2, spans, counts(live2)["else"])
     if fns != {"exec": 1, "prot": 0, "inner": 0}:
         print("FAIL text-branches: a modified declaration read %r / %r" % (fns, names))
         return 1
-    if (st, tp, blocks) != (1, 0, 1):
+    if (st, tp, top2, blocks) != (1, 0, 0, 1):
         print("FAIL text-branches: the state split read %r" % ((st, tp, blocks),))
+        return 1
+    # the three shapes of an outside keyword: label code, code nested inside a block of it, and prose at class
+    # level. One count cannot tell them apart, which is why the bucket is quoted split.
+    shape = ("state S\n"
+             "{\n"
+             "Begin:\n"
+             "  if (x) y(); else z();\n"
+             "  if (p)\n"
+             "  {\n"
+             "    if (q) r(); else s();\n"
+             "  }\n"
+             "}\n"
+             "prose else at class level\n")
+    live3 = mask(shape)[0]
+    fns3, names3, spans3 = function_else(live3)
+    if state_split(live3, spans3, counts(live3)["else"]) != (1, 1, 1, 1):
+        print("FAIL text-branches: the outside shapes read %r"
+              % (state_split(live3, spans3, counts(live3)["else"]),))
+        return 1
+    # a buffer cut inside a doc comment carries more closes than opens, and one cut before it does not
+    if front_truncated("prose else here\r\n*/\nclass X extends Y;\n") is not True:
+        print("FAIL text-branches: a front-truncated text read as live")
+        return 1
+    if front_truncated("/* a */\nclass X extends Y;\n"):
+        print("FAIL text-branches: a whole comment read as truncated")
         return 1
     fns, names = function_else(mask("function Exact() { if (a) b(); else c(); }\n"
                                     "function Short() { if (a) b(); }\n"

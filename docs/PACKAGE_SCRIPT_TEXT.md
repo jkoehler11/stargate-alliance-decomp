@@ -340,13 +340,17 @@ Three consequences, each measured rather than argued:
 ### Where the function count drifts
 
 1,789 of 2,319 classes match the inventory's function count exactly; the rest differ by one or two in either
-direction. Three causes are visible in the data, and one is not yet explained:
+direction. Four causes are visible in the data, and one is not yet explained:
 
 * **state-scoped functions** are declared inside `state` blocks and are counted by the source reader but not
   always by the inventory's per-class count (the inventory counts states separately: 553 in total);
 * **`event` declarations** parse as functions in some classes;
 * truncated tails (`GameInfo.uc` and `WarpZoneMarker.uc` do not balance their braces — the extraction stops
   where the text does).
+* front-truncated buffers: **22** of the 2,319 `ScriptText`s carry more `/* ... */` closes than opens, i.e. the
+  export begins inside a doc comment, so the leading prose parses as declarations and code. `GUI.MenuItemOverlay`
+  is one, and it is where the corpus's only keyword outside every function and every block sits
+  (`inventory/text_branches.csv`, `tools/text-branches.py` counts the population).
 
 The unexplained residue is small but real: 530 classes' counts disagree and this file does not claim to know
 which side is right. Both numbers are recorded; the disagreement is the finding.
