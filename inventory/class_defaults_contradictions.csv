@@ -1,0 +1,7 @@
+kind,class_kind,tag_type,tags,classes,sizes,single_pair,example,classes_withheld,classes_with_start,tags_read,declared_tags,contradictions,recovered,blocks_one_tag,blocks_two_plus
+census,,,,,,,,319,319,330,319,5,5,313,6
+pair,UBoolProperty,Byte,1,1,1 1,1,SP_Timer.bBlockPlayers,,,,,,,,
+pair,UBoolProperty,Class,1,1,1 1,1,ClientBeaconReceiver.bAlwaysTick,,,,,,,,
+pair,UBoolProperty,Invalid,1,1,1 1,1,ArmorPickup.bDirectional,,,,,,,,
+pair,UClassProperty,Vector,1,1,1 1,1,MasterServerClient.Class,,,,,,,,
+pair,UFloatProperty,String,1,1,1 1,1,MultiplayerMapFileList.WinLeft,,,,,,,,

@@ -188,10 +188,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/defaults_residue.csv`): the tool now re-renders every value of every clean block and writes one
       `census` row beside its table -- **0 refused of 15,521 values over 1,664 blocks in 2,319 classes**. The three
       `__OnXControllerEvent__Delegate` rows it was built for were a locator offset, not a value the renderer could not
-      read (U18's closing entries; `docs/CLASS_DEFAULTS.md`). Remaining here: the 545 withheld blocks — and the type-first ranking that was going to promote 535 of
-      them promotes **none** (`make class-defaults-promoted`: 1,664 clean blocks and 15,521 properties under either
-      ordering, so the 535 was never this rule; `docs/CLASS_DEFAULTS.md`) — then `replication` blocks, state code
-      and labels, latent calls, operator precedence.
+      read (U18's closing entries; `docs/CLASS_DEFAULTS.md`). Remaining here: the withheld classes, now measured from both sides — the type-first ranking
+      promotes **none** of them (`make class-defaults-promoted`: 1,664 clean blocks and 15,521 properties under
+      either ordering, so the 535 was never this rule) and their published starts are one-tag blocks whose type
+      refusals are five singleton pairs (`make class-defaults-contradictions`: 313 of 319 starts hold one tag, 5
+      tags of 330 contradict their kind) — so what is left there is the two-property floor and the 336 classes with
+      no start at all, not a map correction; then `replication` blocks, state code and labels, latent calls,
+      operator precedence.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
@@ -11700,3 +11703,24 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   withdrawn from `docs/CLASS_DEFAULTS.md` rather than carried forward.
 - **Next:** 3.5's remaining `replication` blocks, state code and labels, latent calls, operator precedence. The 545
   withheld classes stay withheld on the record's own evidence (`inventory/class_defaults_misses.csv`).
+
+### Execution notes (2026-11-16, the withheld starts are one-tag blocks, and the type map refuses five tags out of 330)
+
+- **The locator's withheld starts carry no block for a type correction to recover.**
+  `tools/class-defaults-contradictions.py` (`make class-defaults-contradictions`,
+  `inventory/class_defaults_contradictions.csv`) reads the block at every start `class_defaults_per_class.csv`
+  publishes and withholds the verdict on -- **319 of the 655 withheld classes**; the other 336 have no start at all
+  -- and joins each tag's name to the class's declared kind (`class_properties.csv`, closed over the ancestors):
+  **330 tags, 319 declared, 313 starts holding exactly one tag**, six holding two or more. The population is what the
+  `MIN_PROPERTIES` floor withholds (`single-declared`), not a set of blocks the locator refuses on its types.
+- **Five tags are refused, and they are five different pairs, one tag each**: `UBoolProperty` as `Byte`
+  (`SP_Timer.bBlockPlayers`), as `Class` (`ClientBeaconReceiver.bAlwaysTick`) and as `Invalid`
+  (`ArmorPickup.bDirectional`), `UClassProperty` as `Vector` (`MasterServerClient.Class`), `UFloatProperty` as
+  `String` (`MultiplayerMapFileList.WinLeft`). A pair `TYPE_AGREEMENT` has wrong clusters -- `UClassProperty`/
+  `Object` was found that way, 734 tags in clean blocks -- and five singletons do not, so the five are reads of
+  something that is not a tag stream, the same conclusion the previous note reached from the type-first ordering.
+- **The other side of the same answer**: correcting all five would move **five** classes to clean and no more, so
+  the withheld population is not hiding behind the map. What stays open is the floor (313 one-tag starts) and the
+  336 classes with no start.
+- **Next:** `replication` blocks, state code and labels, latent calls, operator precedence, and the 336 withheld
+  classes that have no start at all (`inventory/class_defaults_misses.csv` explains each one).
