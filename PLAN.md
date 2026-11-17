@@ -11924,3 +11924,40 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   336 classes with no start.
 - **Next:** `replication` blocks, state code and labels, latent calls, operator precedence, and the 336 withheld
   classes that have no start at all (`inventory/class_defaults_misses.csv` explains each one).
+
+### Execution notes (2026-11-17, the operator deficit is 778 banner tokens and 853 dead-branch tokens, not code)
+
+- **The last open item in 3.5's list, and it was a comparison of two texts rather than of two programs.** The
+  census above reports the reconstruction 386 operator tokens short of the source (`40,762` against `40,376`), with
+  `==` short by 854 and `-` long by 839. `tools/decompiler-operator-regions.py` (`make
+  decompiler-operator-regions`, `inventory/decompiler_operator_regions.csv`: 2,319 class rows + one per operator +
+  a census) cuts each class's two texts into `head`, `defaults`, `dead` and `code` and counts the operators in each.
+- **`head` is 778 source tokens and 0 reconstruction tokens, and it is an extractor artifact.** `script_text`
+  locates the text by its first `class ` or `//` token, the banner is a `/* ... */` block whose middle lines begin
+  with `//`, and on **22 of the 2,319 classes** the text therefore starts inside the comment: the closing `====...`
+  run is outside it and `clean()` reads **724 `==`** (plus 29 `*`, 22 `/`, 3 `-`). The reconstruction, written
+  whole, has no such class -- which is the control that the fragment is the extractor's.
+- **`dead` is 853 source tokens: both sides of every preprocessor conditional.** Collapsed to the branch the Xbox
+  build compiles (`#ifdefXBOX` live, `#ifndefXBOX`/`#ifdefPC`/`#ifdefPS2`/`#ifndefPS2`/`#ifdefDEBUG` dead; an unknown
+  directive would keep both, and the census reports none in the corpus) it removes **177 `==`, 147 `!=`, 113 `+`, 106 `<`**,
+  75 `>`, 71 `&&` and 164 more.
+- **`defaults` is 883 reconstruction tokens and 0 source tokens.** 277 classes carry a defaults block in the
+  reconstruction, which re-renders it from the class record; the shipped `ScriptText` mentions the word in 15
+  classes and holds no operator inside those blocks. That is the whole of the `-` surplus (4,208 -> 5,047), not
+  unary minus.
+- **On `code` alone the reconstruction is 362 tokens *long***: `==` 5,532 against 5,579, `!=` 6,870 against 6,952,
+  `&&` 3,608 against 3,643 -- more on 14 of the 20 operators, fewer on none. So the census's "deficit" is
+  `+778 +853 -883 -362`, and the 74 classes whose code columns disagree (named in the page) all lean the same way
+  but one.
+- **The split reconciles to the census to the unit**, per operator and on both trees: `head + defaults + dead +
+  code` equals `decompiler_operators.csv`'s `source_operators` and `decompiled_operators` on all 20 operator rows.
+  `--check` asserts that against both committed CSVs (no dump), plus the six region claims on synthetic texts --
+  and it caught two of this run's own bugs before the artifact shipped: a mask applied literal-first blanked code
+  after an apostrophe in a comment, and a defaults block inside a comment was counted twice.
+- **What this does not measure.** Which statement a differing token belongs to: the code columns are populations,
+  not alignments, so a class where the reconstruction writes one expression the source wrote as two is counted
+  once, not paired. `replication` blocks, state code and latent calls remain the item's other gaps.
+- Tool (`tools/decompiler-operator-regions.py`: `regions`, `defaults_span`, `xbox_code`, `mask`, `split`, the
+  four-region `run`, the reconciliation `--check`) + `inventory/decompiler_operator_regions.csv` + `make
+  decompiler-operator-regions` + `docs/DECOMPILER.md` (new section, and the closing paragraph corrected) + this
+  note. Reads the packages and one tree; no boot, no Ghidra round.

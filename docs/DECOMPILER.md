@@ -150,9 +150,56 @@ one), so the correction pass is now a fixpoint check rather than a step, and `in
 `inventory/decompiler_notfix.csv` are regenerated from the patched tree. The `-` column is a text scan for
 `[A-Za-z0-9_)]-` followed by `)`, `,`, `;` or a space: 145 sites in the pinned tree, 1 in the patched one.
 
+## The operator deficit is two text artifacts, not a renderer gap
+
+The census above compares two texts whole, and it reports the reconstruction 386 tokens short of the source in all
+(`40,762` against `40,376`), `==` short by 854 and `-` long by 839. `tools/decompiler-operator-regions.py`
+(`make decompiler-operator-regions`, `inventory/decompiler_operator_regions.csv`) cuts every class's two texts into
+four regions and counts the operators in each, so the difference is attributed instead of described:
+
+| region | what it is | source | reconstruction |
+|---|---|---:|---:|
+| `head` | the fragment before the first `*/` when the extracted `ScriptText` starts **inside** the banner comment | 778 | 0 |
+| `defaults` | the `defaultproperties { ... }` block | 0 | 883 |
+| `dead` | the `#ifdef` branches this build does not compile | 853 | 0 |
+| `code` | everything else | 39,131 | 39,493 |
+
+**The source column counts 724 `==` that are not comparisons.** `pkg-script-text.script_text` locates a class's text
+by its first `class ` or `//` token, and the class banner is a `/* ... */` block whose middle lines often begin with
+`//` -- so on **22 of the 2,319 classes** the extracted text starts *inside* that comment and the banner's closing
+`====...` run is left outside any comment, where `clean()` reads every `=` pair as `==`. Those 22 classes carry
+**724 of the source's 6,433 `==`**, plus 29 `*`, 22 `/` and 3 `-`. The reconstruction has **0** such class: the
+reconstruction is written whole, so the fragment is the extractor's, not a property of the shipped text.
+
+**Another 177 `==` are branches this build never compiles.** The shipped text carries `#ifdefXBOX` /
+`#ifndefXBOX` / `#ifdefPC` / `#ifdefPS2` / `#ifndefPS2` / `#ifdefDEBUG` conditionals and the census counts both
+sides of each; collapsing them to the branch the Xbox build compiles removes **177 `==`, 147 `!=`, 113 `+`,
+106 `<`, 75 `>`, 71 `&&`** and 164 more -- 853 tokens in all.
+
+**The reconstruction's 839 extra `-` are defaults values.** 883 of its 5,047 `-` sit inside a `defaultproperties`
+block, which the reconstruction re-renders from the class *record*: 277 classes carry one, and the shipped
+`ScriptText` carries the word in **15** classes and not one operator inside those blocks (0 `-` in the corpus). So
+the surplus is not unary minus; it is the defaults block the source text does not ship.
+
+**On code alone there is no deficit, and the reconstruction is slightly long.** `==` 5,532 source against 5,579,
+`!=` 6,870 against 6,952, `&&` 3,608 against 3,643, `<` 3,615 against 3,663: the reconstruction carries **more**
+operator tokens on **14 of the 20** operators and fewer on none (`**` and five others are equal). The 386-token gap
+is then exactly `+778 head + 853 dead - 883 defaults - 362 code`, and per operator the four regions sum to
+`inventory/decompiler_operators.csv`'s own rows to the unit, on both trees -- the independent claim that the split
+covers the text the census counted and not a subset of it.
+
+The split also names the 74 classes whose code columns disagree (`code_delta`), largest first: `StargatePawn`
+(`!=` -17, `*` -11, `+` -10), `StoryModeGame` (`!=` -16, `==` -14, `&&` -8) and `Engine.Weapon` (`+` -10, `*` -9).
+Every one of those is the reconstruction carrying *more* than the source, which is what a renderer that spells an
+expression out rather than reusing a macro would do; the one class where the source is ahead is
+`UPreview.UPreviewMapListClient` (`/` +7, `-` +6, `+` +4).
+
 ## What this does not measure
 
 Statement shapes. This counts three constructs, not statements: no `if`/`while` nesting, call arity or statement
 order is compared. The operator census above is the one text-level property the packed source settles without a tree
 builder; the 3.3 oracle diff (bucket *matches leak*, *drifted*, *absent*) is the full text-level measure, and it needs
 the privately held 2006 source, which this repository does not carry.
+
+The operator census above counts both trees whole; `inventory/decompiler_operator_regions.csv` splits
+that same count by text region, and the source column of the section above is not code-only.
