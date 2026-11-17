@@ -12045,3 +12045,27 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   function *bodies* against 11,687 live ones, so the next question is a body's shape, not a name's: whether a
   commented body's operator or statement counts differ from the live function of the same name, which is the
   decompiler-operator instrument applied per function.
+
+### Execution notes (2026-11-17, the typed residue is one C++ member, and its count carries a shape count)
+
+- **Task.** The census's own residue line: 38 sites "typed to a class whose chain declares no such name", 27 of
+  them `ClientMessage`.
+- **The residue is one declaration, not 38 gaps.** Grouping those sites by the receiver's shape -- the expression
+  kind, the operand it names, and the class its declaration gives -- returns **1 shape over 38 sites**:
+  `InstanceVariable Outer Object`. Every one is `Outer.<call>`, in `Engine.CheatManager` 25, `Engine.AdminBase` 11
+  and `Engine.PlaylistParserBase` 2, and `Outer` is one row of `inventory/class_properties.csv`:
+  `Core.Object.Outer`, a `UObjectProperty` carrying `Native;Const` with the friendly type `Object`. It is the
+  engine's own member on the root class, so every object carries it and its runtime class is whatever contains
+  that object -- the declaration says `Object` and the call name belongs to a class it does not name. That is a
+  negative, and the same C++-declared-property limit the 474 untyped-property imports hit.
+- **Shipped as a counted shape**, because a residue counted by site overstates it: `--calls` prints the grouping,
+  `inventory/script_call_census.csv` gains `typed_gap_shapes` (1), and the page's census table renders the row --
+  a later census cannot grow the residue without growing the shapes.
+- **A stale sentence corrected in place**: the same page still called the 25 struct members "the next instrument";
+  the struct-block read shipped 2026-11-13 places 24 of the 25 (the twenty-fifth types to `BotBase`, where
+  `Possess` stays a dispatch), and the paragraph now says that.
+- Tool (the shape grouping in `calls_report`, the census row, `CALLS_ROWS`) +
+  `inventory/script_call_census.csv` + `docs/BYTECODE.md` + this note. One 16-second walk;
+  `inventory/script_calls.csv` regenerated **byte-identically**, which is the control that no placement rule moved.
+- **Next measurement:** the residue is closed as a corpus question -- placing these 38 needs the runtime class of
+  one `Outer`, i.e. a guest read, not a better walk.

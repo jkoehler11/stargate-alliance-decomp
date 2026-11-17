@@ -3535,6 +3535,13 @@ def calls_report(path, table, out=None, lists=0):
     print("        those %d receivers by class: %s"
           % (len(typed_gap) + len(below_rows),
              ", ".join("%s %d" % kv for kv in gap_classes.most_common(6))))
+    if gap_rows:
+        # A residue counted by site overstates it: these rows are one *declaration* asked 38 times, and the
+        # grouping is what separates a typing gap from 38 of them.
+        shapes = collections.Counter((r[6], r[5], r[4]) for r in gap_rows)
+        print("        the residue's receiver shapes (%d over %d site(s), by kind, operand and declared type): %s"
+              % (len(shapes), len(gap_rows),
+                 ", ".join("%s %s %s %d" % (k[0], k[1], k[2], c) for k, c in shapes.most_common(6))))
     print("        names only outside the subtree declare: %s"
           % ", ".join("%s %d" % kv for kv in below_outside.most_common(6)))
     print("        names no class declares: %s"
@@ -3631,6 +3638,7 @@ def calls_report(path, table, out=None, lists=0):
         ("local_case_sites", sum(local_case.values())),
         ("ancestor_local_sites", sum(ancestor_local.values())),
         ("typed_gap", len(typed_gap)),
+        ("typed_gap_shapes", len({(r[6], r[5], r[4]) for r in gap_rows})),
         ("descendant_placed", len(below_rows)),
         ("below_several", sum(below_multi.values())),
         ("below_outside", sum(below_outside.values())),
@@ -4981,6 +4989,7 @@ CALLS_ROWS = (
     ("local_case_sites", "a local the source declares in another case"),
     ("ancestor_local_sites", "a local typed from an ancestor's declaration"),
     ("typed_gap", "a receiver typed to a class whose chain declares no such name"),
+    ("typed_gap_shapes", "distinct receiver shapes in that residue (kind, operand, type)"),
     ("descendant_placed", "of those, placed on one declaring descendant"),
     ("below_several", "of those, a dispatch across several descendants"),
     ("below_outside", "of those, a name only classes outside the subtree declare"),
