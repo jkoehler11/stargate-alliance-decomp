@@ -383,16 +383,23 @@ declares no such function (nine of them the AI override API `StargateGame.TeamAI
 Those twelve are then read against the build's *other* vocabularies, because a name missing from the export
 table is not a name missing from the build: the `state` blocks the class texts declare, the labels at a state
 body's own statement level, and each package's own name table, which the compiler fills with every name any of
-its objects referenced. **The AI override API is a dropped one, not a renamed one.** Eight of the nine names
+its objects referenced. **The AI override API's names are not this build's.** Eight of the nine names
 `StargateGame.TeamAI.setorders` calls on a `BotEnemy` -- `ActivateStateOveride`, `ActivateFearOveride`,
 `ActivateForceMelee` and their three `DeActivate` counterparts, `DoRangedAttack`, `DoRetreat` -- appear in no
 name table of the eighteen packages, so nothing in this build ever referenced them. The ninth, `DoCharge`, is
 the **entry label of a state**: `StargateContent.JaffaBotHeavy` jumps into its `MelleeCharge` state with
 `GotoState('MelleeCharge', 'DoCharge')`, which is a jump target and not something a call site can reach. What
 the bots present instead is a state vocabulary -- `Mellee`, `MelleeCharge`, `Ranged`, `Flee`, `CoveredAttack`
-(`inventory/ai_states.csv`, and `docs/systems/AI.md` for the machine) -- entered with `GotoState`, so a
-commented revision that calls `DoRangedAttack()` on a `BotEnemy` was written against an API this build does not
-carry in any form.
+(`inventory/ai_states.csv`, and `docs/systems/AI.md` for the machine) -- entered with `GotoState`.
+
+That is a statement about the *names*, not about the feature: the same bodies call the behaviours under the
+family's own spellings, and the word table the generator renders below puts a live declaration beside each
+commented name (`DoRangedAttack` beside `DoRanged`, `DoRetreat` beside `PickRetreatDestination`, the
+`Activate`/`DeActivate` pairs beside `ShouldSquadOverideAI` and `ShouldRunAwayFromFearSpot`). So the commented
+`setorders` revision is an older or parallel naming of functions this build has, not a feature it removed --
+and the two names it leaves unmatched (`ActivateForceMelee`, `DeActivateForceMelee`) carry only words
+(`force`, `melee`) the corpus uses too widely for a word match to be evidence either way, which is a gap the
+bodies would have to close, not the names.
 
 The two base rates are what make that a finding rather than a reader artefact: **13 of the 266** state names
 and **7 of the 54** state labels the corpus declares are also `Function` exports, so a name this build ships is
@@ -466,7 +473,37 @@ Every pair, `ops` being the operator multiset and `stmts` the statements at the 
 
 **Those names are missing from the build, not only from its export table.** Each of the 25 is read against three further vocabularies -- the `state` blocks the class texts declare, the labels at a state body's own statement level, and every package's own name table, which the compiler fills with every name it saw: **0** is a state, **1** is a state label (`docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy`), **2** only a name in a package's table and **22** in none of the three. The base rates are what make the last column a finding rather than a reader artefact: **13 of the 266** state names and **7 of the 54** state labels the corpus declares are also `Function` exports, so a name this build ships is normally visible in the table, and an API that had merely been renamed would leave its names there.
 
-That is the whole answer for the AI override API: `StargateGame.TeamAI.setorders` calls **9** names on a `BotEnemy` receiver and the build carries **1** of them -- `docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy` -- while the remaining **8** sit in no name table of the eighteen packages. A call site cannot reach a label, and nothing in the build references the other names at all, so the commented revision is a dropped API rather than one this build presents under another name.
+That is the whole answer for the AI override API's **names**: `StargateGame.TeamAI.setorders` calls **9** names on a `BotEnemy` receiver and the build carries **1** of them -- `docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy` -- while the remaining **8** sit in no name table of the eighteen packages, so no object of any package ever referenced them. A call site cannot reach a label, and the other eight were never compiled: the revision is written against a spelling this build does not use.
+
+**A name is not a behaviour, and most of the behaviours are still here.** Each commented name's own words -- `DoRangedAttack` carries `ranged`, `DeActivateStateOveride` carries `overide`; the verb prefixes and the generic `state` are not words a declaration is distinctive by -- are matched, as words, against every `Function` the eighteen packages export: **21 of the 25** residue names and **7 of the 9** `BotEnemy` ones share one with a declaration the build carries. A word more than 25 declarations carry is not counted as evidence, so a name whose words are all that common reads 0 (`activateforcemelee`, `deactivateforcemelee`, words the corpus uses everywhere). The matches are the build's own spellings of the same vocabulary (`shouldsquadoverideai` beside the commented `activatestateoveride`; `shouldsquadoverideai` beside the commented `deactivatestateoveride`; `pickretreatdestination` beside the commented `doretreat`; `fearthisspot` beside the commented `activatefearoveride`) -- a naming correspondence, not an identity: a low count says where to look, and only the bodies can say the two do the same thing.
+
+| commented name | its words | declarations of this build that share one |
+|---|---|---:|
+| `attachdrivertoseat` | attach driver seat | `adjustdriverdamage`, `animnotify_driveralighted`, `animnotify_driverignition`, `attach` (31) |
+| `staticview` | static view | `addprecachestaticmesh`, `fillprecachestaticmeshesarray`, `getstaticbigfont`, `getstatichugefont` (21) |
+| `setfreelancescriptfor` | freelance script for | `abortscript`, `clearscript`, `continueformationscript`, `docombatscript` (20) |
+| `getpriorityattackobjective` | priority attack objective | `addobjective`, `addvisibleobjective`, `armorpriority`, `assessenemypriority` (17) |
+| `getpriorityfreelanceobjective` | priority freelance objective | `addobjective`, `addvisibleobjective`, `armorpriority`, `assessenemypriority` (17) |
+| `mergewith` | merge with | `addsquadwithleader`, `buildobjectwithproperties`, `comparewithuser`, `connectwithpassword` (15) |
+| `docharge` | charge | `animnotify_melleecharge_hold`, `cancharge`, `canmellecharge`, `charge` (14) |
+| `getleastdefendedobjective` | least defended objective | `addobjective`, `addvisibleobjective`, `botnearobjective`, `disablenextobjective` (10) |
+| `setobjective` | objective | `addobjective`, `addvisibleobjective`, `botnearobjective`, `disablenextobjective` (10) |
+| `viewport` | viewport | `addchildviewport`, `findviewportindex`, `getviewport`, `getviewportcount` (10) |
+| `dorangedattack` | ranged attack | `doranged`, `dovehicleranged`, `rangedattacktime`, `recommendlongrangedattack` (5) |
+| `putondefense` | put defense | `adddefensepoint`, `ownsdefensescript`, `putbotonsquadledby`, `putdown` (5) |
+| `activatefearoveride` | fear overide | `fearthisspot`, `shouldrunawayfromfearspot`, `shouldsquadoverideai`, `updatefearspotstatus` (4) |
+| `deactivatefearoveride` | fear overide | `fearthisspot`, `shouldrunawayfromfearspot`, `shouldsquadoverideai`, `updatefearspotstatus` (4) |
+| `format` | format | `formatquat`, `formattime`, `formattimedisplay` (3) |
+| `datetimetomap` | date time map | `fulltimedate`, `getprettydate` (2) |
+| `putonfreelance` | put freelance | `putbotonsquadledby`, `putdown` (2) |
+| `putonoffense` | put offense | `putbotonsquadledby`, `putdown` (2) |
+| `activatestateoveride` | overide | `shouldsquadoverideai` (1) |
+| `deactivatestateoveride` | overide | `shouldsquadoverideai` (1) |
+| `doretreat` | retreat | `pickretreatdestination` (1) |
+| `activateforcemelee` | force melee | - (0) |
+| `deactivateforcemelee` | force melee | - (0) |
+| `screenprint` | screenprint | - (0) |
+| `setupkeybindings` | setup key bindings | - (0) |
 
 | unresolved call name | sites | kind | called from | in the build | where | evidence |
 |---|---:|---|---|---|---|---|

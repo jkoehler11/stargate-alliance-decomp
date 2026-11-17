@@ -12232,3 +12232,42 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   names' stems (Charge, Ranged, Retreat, Fear, Melee, Override): if the behaviour ships under the build's own
   spelling, the cut-content statement becomes "the override API was replaced by per-subclass charge functions",
   and if no stem matches, the feature was removed outright.
+
+### Execution notes (2026-11-17, the AI override names are a revision — the behaviours ship under the family's own spellings)
+
+- **Task.** The previous note's next measurement: the nine `BotEnemy` override names' *stems* against the
+  family's live function vocabulary -- whether the commented `setorders` revision names functions this build
+  has under other spellings, or a feature it removed.
+- **The previous note's headline is withdrawn in place, and it was mine.** `dropped, not renamed` is true of
+  the **names** and false of the **feature**: eight of the nine appear in no name table of the eighteen
+  packages, and the ninth (`DoCharge`) is a state's entry label -- but a commented name's own words match a
+  live declaration in **21 of the 25** residue rows and in **7 of the 9** `BotEnemy` ones. `DoRangedAttack`
+  matches `DoRanged`, `DoRetreat` matches `PickRetreatDestination`, `DoCharge` matches `CanMelleCharge` /
+  `DoMelleeCharge` / `ShouldStartMelleeCharge`, and both `Activate`/`DeActivate` pairs match
+  `ShouldSquadOverideAI` and `ShouldRunAwayFromFearSpot`. So `setorders` is written against an older or
+  parallel *naming* of functions these bots still declare, which is a weaker statement than "cut content".
+- **Two passes were needed and both are worth recording.** Matching a word as a **substring** credited
+  `putonoffense` with 11 declarations because `put` sits inside `canacceptinput`; matching without a
+  commonness rule credited `getpriorityattackobjective` with 837 because `objective` and `attack` are in
+  hundreds of names. The rule that survived is a **word** match (the name split into its own words on camel
+  case, verb prefixes and the generic `state` dropped) with a ceiling: a word more than **25** declarations
+  carry is not counted as evidence. The `--check` drives both cases -- `put` against a token set containing
+  `input`, and 30 declarations of one word -- because either alone passes on the real corpus.
+- **A zero row is a result, not a miss.** `ActivateForceMelee`/`DeActivateForceMelee` carry only `force` and
+  `melee`, which the corpus uses too widely for a word to separate them, so the read leaves them open rather
+  than guessing; `screenprint` and `setupkeybindings` have no live declaration with their words at all. The
+  table carries every residue name -- 25 rows with a count -- so a later run can see the zero without
+  re-deriving it.
+- **The match is a correspondence, not an identity, and the page says so.** A low count says where to look;
+  whether `DoRanged` is what `DoRangedAttack` used to be is a body read, and the note above leaves the two
+  `ForceMelee` ones open for exactly that reason.
+- Tool (`stem_words`, `stem_matches`, `function_tokens`, the `STEM_COMMON` ceiling, `raw_of` for the original
+  spelling of a lowercased residue name, the `stem` rows and three census rows) +
+  `inventory/class_text_bodies.csv` regenerated (286 rows: 22 pairs, 158 disabled bodies, 25 residue,
+  25 stem, 56 census) + `docs/PACKAGE_SCRIPT_TEXT.md` (its block, one corrected paragraph and one prose
+  paragraph) + this note. One 2.5-second read of the 18 packages; no boot, no Ghidra.
+- **Next measurement:** the two `ForceMelee` names are the residue a word match cannot settle, so the read is
+  the bodies: `StargateGame.BotEnemy.DoMellee` and `StargateContent.JaffaBotLight.DoMeleeAttack` walk from
+  their payloads with `tools/uscript-dis.py --script` -- whether either takes a force flag or is reached
+  directly with `GotoState('Mellee', ...)` says whether an "activate forced melee" call had a live
+  counterpart at all.
