@@ -50,7 +50,8 @@ DOC_MARK = ("<!-- generated:text-stubs -->", "<!-- /generated:text-stubs -->")
 
 FIELDS = ["kind", "package", "class", "scope", "name", "line", "shape", "owner", "redeclared",
           "redeclared_back", "payload", "script", "script_sha", "native", "comment", "comment_bytes",
-          "declarations", "bodies", "stubs", "stubs_empty", "stubs_bodied", "stub_state", "count", "note"]
+          "declarations", "bodies", "stubs", "stubs_empty", "stubs_bodied", "stub_state", "count", "note",
+          "depth", "directive"]
 
 CENSUS_NOTE = {
     "classes": "class exports whose `ScriptText` parses",
@@ -93,7 +94,15 @@ CENSUS_NOTE = {
     "body_empty_braces_bodied": "of those, carry a longer payload than the empty script",
     "body_empty_braces_empty": "of the empty-script bodies, an empty `{}`",
     "body_empty_other": "of the empty-script bodies, a body carrying no statements -- locals, comments or structure",
+    "state_blocks": "`state` blocks the class texts declare, every header spelling",
+    "state_blocks_plain": "of those, what the plain `state Name {` header finds -- the reader this module carried",
     "body_no_export": "declarations with a body naming no `Function` export of their class",
+    "body_no_export_guarded": "of those, written inside a preprocessor block this build does not compile",
+    "body_no_export_plain": "of those, in a live region at the class's own level",
+    "body_no_export_state": "of those, inside a `state` block whose `Function`s do not carry the name",
+    "body_scope_state": "bodied declarations written inside a `state` block",
+    "body_scope_class": "bodied declarations at the class's own level",
+    "body_guarded": "bodied declarations inside a preprocessor block",
     "distinct_stub_names": "distinct names behind the stubs",
     "all_stub_classes": "classes whose every declaration is a stub",
     "half_stub_classes": "classes with four or more declarations and at least half of them stubs",
@@ -162,13 +171,26 @@ def window_shape(masked_window):
     return "unbalanced", brace
 
 
-STATE_HDR = re.compile(r"^[ \t]*state[ \t]+(\w+)[ \t\r\n]*\{", re.M | re.I)
-
-
 def state_spans(masked):
-    """[(start, end, name)] for every `state Name { ... }` block, brace-matched on a masked text."""
+    """[(start, end, name)] for every `state` block, from `class-text-bodies.state_blocks`.
+
+    This module used to carry its own header pattern -- the plain `state Name {` shape -- and read 424 of the
+    corpus's 554 blocks, so the declarations of 130 blocks were keyed to the class's own level: 292 bodied
+    declarations named no export of their class when 233 of them belong to a state that exports them
+    (UNKNOWNS U24). One rule for the text's state blocks, one reader for its scopes.
+    """
+    return [(a, b, n) for a, b, n, _parent in ctb_tool().state_blocks(masked)]
+
+
+# The header this module carried before UNKNOWNS U24, kept as a control: it is what 424 of the corpus's 554
+# blocks reads, so the difference is a number the artifact publishes rather than a claim in prose.
+PLAIN_HDR = re.compile(r"(?m)^[ \t]*state[ \t]+(\w+)[ \t\r\n]*\{", re.I)
+
+
+def plain_state_spans(masked):
+    """[(start, end, name)] for the plain `state Name {` header only -- the reader this module used to carry."""
     out = []
-    for m in STATE_HDR.finditer(masked):
+    for m in PLAIN_HDR.finditer(masked):
         brace = masked.find("{", m.start())
         depth, k = 0, brace
         while 0 <= brace and k < len(masked):
@@ -182,6 +204,37 @@ def state_spans(masked):
                     break
             k += 1
     return out
+
+
+DIRECTIVE = re.compile(r"(?m)^[ \t]*#[ \t]*(\w+)[ \t]*([^\n]*)$")
+
+
+def directive_stack(masked, pos):
+    """The conditional preprocessor directives open at `pos`: [(word, argument)].
+
+    A declaration inside an `#ifdef` this build does not compile has no export because the compiler never saw
+    it, not because a scope resolver missed it: the shipped text guards whole functions with `#ifdef pc` and
+    `#ifdefPS2`, so the two causes are counted apart rather than as one population.
+    """
+    stack = []
+    for m in DIRECTIVE.finditer(masked):
+        if m.start() >= pos:
+            break
+        word = (m.group(1) or "").lower()
+        arg = (m.group(2) or "").strip()
+        if word.startswith("ifdef") and word != "ifdef":      # `#ifdefPS2` -- the shipped text has no space
+            word, arg = "ifdef", (word[5:] + arg).strip()
+        elif word.startswith("ifndef") and word != "ifndef":
+            word, arg = "ifndef", (word[6:] + arg).strip()
+        if word in ("ifdef", "ifndef", "if"):
+            stack.append((word, arg.split()[0] if arg else ""))
+        elif word in ("else", "elseif"):
+            if stack:
+                stack[-1] = ("else", stack[-1][1])
+        elif word == "endif":
+            if stack:
+                stack.pop()
+    return stack
 
 
 def scope_of(pos, spans):
@@ -204,6 +257,7 @@ def classify(text, resolve=None):
     """
     ctb = ctb_tool()
     masked = ctb.mask(text)
+    depth = ctb.depth_map(masked)
     blocks = state_spans(masked)
     ms = list(ctb.FUNC.finditer(masked))
     spans = {}
@@ -219,14 +273,16 @@ def classify(text, resolve=None):
         body = span is not None
         name = ctb.declared_name(masked, m).lower()  # an operator resolves as its composed record (UNKNOWNS U23)
         scope = scope_of(m.start(), blocks)
+        stack = directive_stack(masked, m.start())
         row = {"name": name, "line": masked.count("\n", 0, m.start()) + 1, "body": body, "scope": scope or "",
+               "depth": depth[m.start()],
+               "directive": " ".join("%s %s" % (w, a) for w, a in stack).strip(),
                "shape": "", "commented": False, "owner": "", "redeclared": False, "redeclared_back": False,
                "payload": "", "script": "", "script_sha": "", "native": "", "comment": "",
                "comment_bytes": "", "empty_body": ""}
         hit = resolve(name, scope) if resolve else None
         if hit is None:
-            if not body:
-                row["owner"] = "none"
+            row["owner"] = "none"
         else:
             owner, payload, flags = hit
             row["owner"] = "state" if owner else "class"
@@ -319,7 +375,7 @@ def measure(system_dir):
     """The whole corpus: class rows, stub rows and the census."""
     t = collections.Counter()
     per_pkg = collections.Counter()
-    class_rows, stub_rows = [], []
+    class_rows, stub_rows, body_rows = [], [], []
     com_bodies = commented_bodies()
     com_classes = commented_classes()
     com_names = {key[2] for key in com_bodies}
@@ -339,6 +395,8 @@ def measure(system_dir):
             text = text.replace("\r\n", "\n")
             cls = pkg.name(exp["name"]).lower()
             t["classes"] += 1
+            t["state_blocks"] += len(state_spans(ctb_tool().mask(text)))
+            t["state_blocks_plain"] += len(plain_state_spans(ctb_tool().mask(text)))
             rows = classify(text, export_resolver(pkg, cls))
             if not rows:
                 continue
@@ -389,8 +447,18 @@ def measure(system_dir):
                     state += 1
                 stub_rows.append(dict(r, kind="stub", package=package, **{"class": cls}))
             for r in bodies:
+                t["body_scope_state" if r["scope"] else "body_scope_class"] += 1
+                if r["directive"]:
+                    t["body_guarded"] += 1
                 if r["owner"] == "none":
                     t["body_no_export"] += 1
+                    t["body_no_export_guarded" if r["directive"] else "body_no_export_plain"] += 1
+                    if r["scope"]:
+                        t["body_no_export_state"] += 1
+                    # published, not just counted: a population a reviewer cannot open is a number, not a finding
+                    body_rows.append(dict(r, kind="body", package=package, **{"class": cls},
+                                          note=("inside `%s`" % r["directive"]) if r["directive"]
+                                          else "at the class's own level"))
                 if r["empty_body"]:
                     t["body_empty_braces"] += 1
                 if r["script"] == "empty":
@@ -418,7 +486,7 @@ def measure(system_dir):
     t["bodied_shared_payload"] = sum(v for v in shas.values() if v > 1)
     census = [{"kind": "census", "name": k, "count": v, "note": CENSUS_NOTE[k]}
               for k, v in t.items() if k in CENSUS_NOTE]
-    return class_rows + stub_rows + census
+    return class_rows + stub_rows + body_rows + census
 
 
 # --- the page --------------------------------------------------------------------------------------
@@ -512,15 +580,21 @@ def doc_block(rows):
     lines.append("| a `State` of the class | %s | %s |"
                  % (comma(count(rows, "stub_empty_state")), comma(count(rows, "stub_bodied_state"))))
     lines.append("")
-    lines.append("A stub's name is almost always one the package exports: **%s name a `Function` the class itself "
-                 "exports**, **%s one a `State` of the class exports**, and **%s name no export at all** -- a "
-                 "class-level declaration whose name only a state binds, which a class-over-state index cannot "
-                 "see. "
-                 "**%s** are declared a second time in the same text with a body, **%s** sit in a window that "
-                 "holds a block comment and **%s** carry `FUNC_Native` -- so the population is a language shape "
-                 "and not a reader's miss. %s distinct names are behind the %s stubs."
-                 % (comma(class_owned), comma(state_owned), comma(noexport), comma(redeclared), comma(commented),
-                    comma(native), comma(count(rows, "distinct_stub_names")), comma(stubs)))
+    if noexport:
+        head = ("A stub's name is almost always one the package exports: **%s name a `Function` the class itself "
+                "exports**, **%s one a `State` of the class exports**, and **%s name no export at all** -- a "
+                "class-level declaration whose name only a state binds, which a class-over-state index cannot "
+                "see. " % (comma(class_owned), comma(state_owned), comma(noexport)))
+    else:
+        head = ("**Every stub's name is a record the class binds**: **%s name a `Function` the class itself "
+                "exports** and **%s one a `State` of the class exports** -- the names a class-over-state reading "
+                "left unowned were state members whose block a plain-header reader missed, which is the "
+                "state-scope paragraph below. " % (comma(class_owned), comma(state_owned)))
+    lines.append(head + "**%s** are declared a second time in the same text with a body, **%s** sit in a window "
+                 "that holds a block comment and **%s** carry `FUNC_Native` -- so the population is a language "
+                 "shape and not a reader's miss. %s distinct names are behind the %s stubs."
+                 % (comma(redeclared), comma(commented), comma(native),
+                    comma(count(rows, "distinct_stub_names")), comma(stubs)))
     lines.append("")
     lines.append("| package | stubs |")
     lines.append("|---|---:|")
@@ -554,6 +628,36 @@ def doc_block(rows):
                  % (comma(count(rows, "stub_scope_state")), comma(stubs),
                     comma(count(rows, "stub_empty_state")), comma(count(rows, "stub_bodied_state")),
                     comma(count(rows, "stub_empty_class")), comma(count(rows, "stub_bodied_class"))))
+    if count(rows, "body_no_export"):
+        bodies_rows = sorted((r for r in rows if r.get("kind") == "body"),
+                             key=lambda r: (r["package"], r["class"], r["name"], int(r["line"] or 0)))
+        lines.append("")
+        lines.append("**A bodied declaration that names no export is a scope question, and the header's spelling "
+                     "answers most of it.** %s of the %s bodied declarations resolve to nothing against their "
+                     "class, and **%s** of them are written inside a `state` block: a state's `Function` record "
+                     "is outered to the `UState`, not to the class, so a class-keyed walk cannot answer the "
+                     "name, and the header pattern this module carried (`state Name {`) missed four of the five "
+                     "spellings the shipped text uses -- `state() Name` (every state in `Engine.Mover`), "
+                     "`state(0) Name`, `simulated state X extends Y` and a capitalised `State X`: over the whole corpus "
+                     "the plain header finds **%s** of the **%s** blocks the class texts declare. Read through "
+                     "`class-text-bodies.state_blocks` instead, **%s** bodied declarations are placed in a state "
+                     "and **%s** are not; of the residue, **%s** are written inside a preprocessor block this "
+                     "build does not compile (`pc` and `ps2` guard whole functions, **%s** of those inside a "
+                     "state) and **%s** sit in a live region. Those rows are named below -- the count is the "
+                     "artifact's, not a reader's claim."
+                     % (comma(count(rows, "body_no_export")), comma(bodies),
+                        comma(count(rows, "body_scope_state")),
+                        comma(count(rows, "state_blocks_plain")), comma(count(rows, "state_blocks")),
+                        comma(count(rows, "body_scope_state")), comma(count(rows, "body_scope_class")),
+                        comma(count(rows, "body_no_export_guarded")), comma(count(rows, "body_no_export_state")),
+                        comma(count(rows, "body_no_export_plain"))))
+        lines.append("")
+        lines.append("| declaration | line | scope | why no export |")
+        lines.append("|---|---:|---|---|")
+        for r in bodies_rows:
+            lines.append("| `%s.%s` | %s | %s | %s |"
+                         % (r["package"], r["name"], comma(r["line"]),
+                            ("`%s`" % r["scope"]) if r["scope"] else "class", r.get("note") or ""))
     lines.append("")
     lines.append("**The residue is not in the class's comment.** `inventory/class_text_bodies.csv` already "
                  "measures the bodies a block comment disables, and joining that artifact by "
@@ -771,6 +875,29 @@ def selftest():
     net = full[:-7] + b"\x00\x00" + full[-7:]
     if empty_script(net):
         problems.append("a Net trailer made a bodied script read as empty")
+    # a state header is one of five spellings in this corpus, and a declaration inside one belongs to that state
+    spelled = ctb_tool().mask("class C;\n"
+                              "state() Lead\n{\nfunction A();\n}\n"
+                              "state(0) Numbered\n{\nfunction B();\n}\n"
+                              "simulated state ZoomingIn extends Zooming\n{\nfunction C();\n}\n"
+                              "State FadeOut\n{\nfunction D();\n}\n"
+                              "function Outside();\n")
+    got = sorted(n for _a, _b, n in state_spans(spelled))
+    if got != ["fadeout", "lead", "numbered", "zoomingin"]:
+        problems.append("a state header spelling read as %r" % (got,))
+    if scope_of(spelled.index("function D"), state_spans(spelled)) != "fadeout":
+        problems.append("a declaration inside a capitalised state block was read at the class's own level")
+    # a bodied declaration inside an `#ifdef` this build does not compile has no export for a different reason
+    guarded = ("class C;\n#ifdefPS2\nsimulated function P(int X)\n{\n  return;\n}\n#endif\n"
+               "function Q(int Y)\n{\n  return;\n}\n")
+    rows_g = classify(guarded, None)
+    by_name = {r["name"]: r for r in rows_g}
+    if by_name.get("p", {}).get("directive") != "ifdef ps2" or by_name["p"]["owner"] != "none":
+        problems.append("a guarded bodied declaration read as %r"
+                        % [(r["name"], r["directive"], r["owner"]) for r in rows_g])
+    if by_name.get("q", {}).get("directive") != "" or by_name["q"]["owner"] != "none":
+        problems.append("a live bodied declaration read as %r"
+                        % [(r["name"], r["directive"], r["owner"]) for r in rows_g])
     if problems:
         for p in problems:
             print("FAIL text-stubs: %s" % p)
@@ -801,7 +928,8 @@ def selftest():
             return 1
         os.unlink(page)
     print("ok   text-stubs: a bodyless declaration, an #endif split, a truncated text, a state export and a"
-          " forward declaration each read as themselves, and the block reproduces from its CSV")
+          " forward declaration each read as themselves, every state header spelling places its declarations,"
+          " a guarded body is counted apart from a live one, and the block reproduces from its CSV")
     return 0
 
 

@@ -201,9 +201,19 @@ def body_span(text, start, limit):
 # UnrealScript keywords are case-insensitive and the shipped text spells `State` in 36 classes, so a
 # case-sensitive read loses 56 state declarations -- among them the five (`GetInFormation`, `MoveInFormation`,
 # `TakePoint`, `WaitingForFormation`, `Broken`) the tree once recorded as states no text declares.
-STATE_DECL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?state[ \t]*(?:\([ \t]*\d+[ \t]*\))?[ \t]*(\w+)", re.I)
+#
+# A header has more spellings than `state Name`, and every reader in the tree carried its own subset of them:
+# `state() LeadInOutLooper` (empty parentheses -- every state in `Engine.Mover`), `state(0) Name` (a state
+# number), `auto state Idle`, `simulated state ZoomingIn extends Zooming` (any modifier word), `State FadeOut`
+# (folded) and `state X extends Pawn.Waiting` (a qualified parent). `tools/text-stubs.py`'s copy read the plain
+# shape only, 424 blocks against this corpus's 554, so 292 bodied declarations written inside a state named no
+# export of their class (UNKNOWNS U24). This is the one rule; `state_blocks` is the one reader.
+STATE_MODIFIERS = r"(?:[A-Za-z_]\w*[ \t]+)*"
+STATE_HEADER = (r"(?m)^[ \t]*" + STATE_MODIFIERS + r"state(?=[ \t(])[ \t]*(?:\([^)]*\))?[ \t]*([A-Za-z_]\w*)"
+                r"(?:[ \t]*extends[ \t]+[\w.]+)?")
+STATE_DECL = re.compile(STATE_HEADER, re.I)
 # The case-sensitive shape, so the states the fold recovers are a number rather than a claim.
-STATE_DECL_LEGACY = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?state[ \t]*(?:\([ \t]*\d+[ \t]*\))?[ \t]*(\w+)")
+STATE_DECL_LEGACY = re.compile(STATE_HEADER)
 LABEL_LINE = re.compile(r"(?m)^[ \t]*(\w+)[ \t]*:")
 LITERAL_ANY = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
 
@@ -244,6 +254,31 @@ def depth_map(text):
     return out
 
 
+EXTENDS = re.compile(r"extends[ \t]+([\w.]+)", re.I)
+
+
+def state_blocks(text):
+    """[(start, end, name, parent)] for every `state` block, brace-matched on one text.
+
+    `start`/`end` bound the block's braces and `parent` is its `extends` target as written (lower-case, possibly
+    qualified) or ''. Every spelling the corpus uses is one alternative in `STATE_DECL`, so the readers that key
+    something to a state -- this module's vocabulary and `tools/text-stubs.py`'s declaration scopes -- read the
+    same blocks instead of each carrying a pattern of its own (UNKNOWNS U24).
+    """
+    d = depth_map(text)
+    out = []
+    for m in STATE_DECL.finditer(text):
+        i = text.find("{", m.end())
+        if i < 0:
+            continue
+        j = i + 1
+        while j < len(text) and d[j] > d[i]:
+            j += 1
+        pm = EXTENDS.search(text[m.start():i])
+        out.append((i, j, m.group(1).lower(), pm.group(1).lower() if pm else ""))
+    return out
+
+
 def state_vocabulary(text):
     """(state names, `label -> state`) for one class text, read from the comment-masked text.
 
@@ -252,15 +287,7 @@ def state_vocabulary(text):
     `tools/ai-states.py` counts a state's labels by.
     """
     d = depth_map(text)
-    spans = []
-    for m in STATE_DECL.finditer(text):
-        i = text.find("{", m.end())
-        if i < 0:
-            continue
-        j = i + 1
-        while j < len(text) and d[j] > d[i]:
-            j += 1
-        spans.append((m.group(1).lower(), i, j, d[i] + 1))
+    spans = [(name, a, b, d[a] + 1) for a, b, name, _parent in state_blocks(text)]
     labels = {}
     for name, a, b, level in spans:
         for m in LABEL_LINE.finditer(text, a, b):
@@ -1297,6 +1324,22 @@ def self_check():
     cap_states, cap_labels = state_vocabulary(mask("State Alert\n{\nBegin:\n\tGoto('Again');\nAgain:\n\tSleep(1);\n}\n"))
     if cap_states != ["alert"] or set(cap_labels) != {"begin", "again"}:
         bad.append("a capitalised state block was not read: %r / %r" % (cap_states, sorted(cap_labels)))
+    # every spelling a state header has in this corpus, read by the one rule text-stubs keys a scope on
+    spell = mask("state() Lead\n{\n\tfunction A();\n}\n"
+                 "state(1) Numbered\n{\n\tfunction B();\n}\n"
+                 "simulated state ZoomingIn extends Pawn.Zooming\n{\n\tfunction C();\n}\n"
+                 "auto state Idle extends Idling\n{\n\tfunction D();\n}\n"
+                 "State FadeOut\n{\n\tfunction E();\n}\n")
+    spell_got = [(n, p) for _a, _b, n, p in state_blocks(spell)]
+    spell_want = [("lead", ""), ("numbered", ""), ("zoomingin", "pawn.zooming"), ("idle", "idling"),
+                  ("fadeout", "")]
+    if spell_got != spell_want:
+        bad.append("a state header spelling read as %r, expected %r" % (spell_got, spell_want))
+    if len(STATE_DECL.findall(spell)) != 5 or len(STATE_DECL_LEGACY.findall(spell)) != 4:
+        bad.append("the folded/legacy state read found %d / %d of 5 / 4"
+                   % (len(STATE_DECL.findall(spell)), len(STATE_DECL_LEGACY.findall(spell))))
+    if len(state_blocks(mask("function int Foo( int A )\n{\n\treturn A;\n}\n"))) != 0:
+        bad.append("a function declaration matched the state header rule")
     # `;` before the brace means no body, whatever follows
     native = "function int Quux( int A );\nfunction int Zed()\n" + body + "\n"
     nbodies, nbare, ndeclared, _nbt, _nr = functions(native)
