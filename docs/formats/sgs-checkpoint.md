@@ -161,19 +161,24 @@ The nine `.sgs` files on the disc are still authoring output rather than somethi
 
 ## The console path, measured (2026-11-09)
 
-**The three console commands are UnrealScript, and none of them is a native.** `CheckpointSave`, `QuickSave` and
-`NewSaveGame` are `exec function`s on `PlayerController` (`inventory/console_commands.csv`; `function_flags.csv` lists
-them `Defined;Exec;Public`), so there is no registration-table record to look up — "one `native_targets.csv` lookup
-each" was the wrong instrument. Their extracted bodies (`tools/pkg-script-text.py` on `Engine.u`,
-`$WORK/save2/PlayerController.uc`) are the dispatch, and every one of them ends in a `ConsoleCommand` string:
+**The console save commands are UnrealScript, and none of them is a native.** `CheckpointSave` and `QuickSave` are
+live `exec function`s on `PlayerController` (`inventory/console_commands.csv`; `function_flags.csv` lists them
+`Defined;Exec;Public`), so there is no registration-table record to look up — "one `native_targets.csv` lookup
+each" was the wrong instrument. Their bodies, read from `Engine.u`'s `ScriptText` with
+`tools/pkg-script-text.py`, are the dispatch, and every live one ends in a `ConsoleCommand` string:
 
-    NewSaveGame            ConsoleCommand("SaveGame Manual Save")
     QuickSave              ConsoleCommand("SaveGame Q Quicksave")   after a Pawn / Health / NetMode guard
     CheckpointSave(desc)   ConsoleCommand("SaveGame C" @ desc)      same guard, and skips a repeated desc
     MapChangeAutoSave      ConsoleCommand("SaveGame A")
     MatineeAutoSave        ConsoleCommand("SaveGame M")
 
-The kind of save is therefore the **second token, one letter**, and `NewSaveGame` sends none at all.
+The kind of save is therefore the **second token, one letter**. `NewSaveGame`, which this table listed here with
+`ConsoleCommand("SaveGame Manual Save")` and no kind, **is not a command in this build** (corrected 2026-11-18): it has
+no `Function` record in `inventory/function_flags.csv` at all, and its only occurrence in `PlayerController`'s text is
+inside a 3,700-byte commented-out revision of "Normal gameplay execs" that the package read now masks. The extracted
+tree this table was first written from had it un-commented, and `docs/XEMU.md` carries the same correction for the
+whole command surface. So the build has no argument-less save path: a save that names no kind is one this disc cannot
+make.
 
 **The handler is `FUN_00139d50` (4,829 bytes).** It walks a fixed command list with `FUN_00056dd0`, which takes a wide
 literal and an `FString` by pointer, answers nonzero on a match and strips the token (an `FParse::Command`). The
