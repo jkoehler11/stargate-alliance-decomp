@@ -13447,3 +13447,46 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `Goto('label')` count per state (`ai_states.csv`'s `gotos_label`), so attributing the label sites per label and
   running the same per-class comparison one token over says whether a label jump survives in the text at the rate a
   state entry does.
+
+### Execution notes (2026-11-18, the label jumps join the text to the site, and a state's entry point is a name)
+
+- **Task.** The previous note's next measurement: the labels' own join -- **196** state-code `GotoLabel` sites against
+  the text's `Goto('label')` calls -- one token over from the state-entry join the last note closed.
+- **The join needed names, not counts.** `ai_states.csv` published `labels` and `gotos_label` as counts, so no row
+  could be joined to a token's operand. It now carries **`label_names`** (the labels a state's body declares at
+  statement level) and **`gotos_label_names`** (the distinct labels its `Goto('name')` calls name), space separated
+  and sorted like `targets`, so the comparison is a read off the artifact instead of a second pass over the text.
+- **The text and the build agree to the label.** Of the **165** states `ai_states.csv` measures, **101** spell a label
+  jump and the build carries **183** `GotoLabel` sites in exactly those states -- **183** calls against **183** sites
+  -- and **101 of 101** name the same labels as often as the text does, per state. The **13** sites in the **13**
+  other states are outside that census, not residues: **7** are the `NormalFire` jump every gun and turret class makes
+  (`WaitForRefire`, `Begin` in two), and the rest are an engine `Mover` state, a `Pickup`, a `ReetouDevice` loop,
+  `WillowWhisp` and the two ambient pawns -- states outside the `AIController` subtree the text census walks.
+- **Every jump names a label its own table holds.** **196 of 196** operands land on an entry of their own state's
+  `LabelTable` and **0** name a label no table of that state carries. The check costs one decode because the walk
+  already ends on that table -- `state-entry.py` reads the names there and never re-anchors a payload.
+- **The entry point is a name, not `Begin`.** The last table entry sits at the code's first byte, so it is where a
+  state entered without an entry label starts: `Begin` in **143** of the **166** tables and something else in **23**
+  (`Open`/`Close` in `Mover`'s timed states, `Refire` in a gun state). `state_code.csv` gains `labels_names` (the
+  entries in table order) and `labels_entry` (that name) so the fact is in the artifact, not only the prose.
+- **The entry label belongs to the target state.** `GotoState('X','Label')` has **111** literal-label sites; **105**
+  name their state with a `NameConst` too, and resolved through the class chain (`inventory/classes.csv`) **99** name
+  an entry of that state's table. The exceptions are three mechanisms: **1** call spelled on another object
+  (`TransientAmbientPawn.Wandering`'s `Controller.GotoState('Wandering','KeepGoing')`, so the label belongs to the
+  controller's state), **4** targets whose payload is a record with no table (`Mover`'s timed states, which no class's
+  text declares and no payload carries code for), and **1** of the same shape (`GameInfo.Dead`, entry `MPStart`).
+- **Record-only is not "no code".** Of the **287** record-only states no ancestor class declares, **1** spells
+  `extends` at a sibling state of its own class that carries the table (`BotSG.InvisibleRest` extends
+  `RestFormation`) -- state-level inheritance the class tree alone cannot show. `state_code.csv`'s census names the
+  split so the page's "100 / 25 / 287" no longer reads as if the last bucket had no code.
+- **Files.** `tools/ai-states.py` (the two name columns), `tools/state-entry.py` (the table decode inside the state
+  walk, `label_join`, per-state `label` verdict rows, thirteen census keys), `tools/state-code.py` (`labels_names`,
+  `labels_entry`, the entry-point and state-extends census keys, `text_parents`), `inventory/ai_states.csv`,
+  `inventory/state_entry.csv`, `inventory/state_code.csv`, `docs/systems/AI.md` (the two generated blocks and the
+  label-join section), `docs/UNKNOWNS.md` U25, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The **13** label sites outside the text census are the last unjoined label jumps: they sit in
+  `Mover`, `Pickup`, `ReetouDevice`, `WillowWhisp`, the ambient pawns and the seven gun classes, so running
+  `ai-states.py --root` over `Pawn`/`Weapon` roots would join them the same way. The **5** record-only entry labels
+  need the runtime's rule rather than a payload read -- `UState`'s label map for a state whose code is inherited at
+  the class or state level -- and `Object.GotoState` is `native(113)` slot `0x71`, so the body that reads the map is
+  one slot lookup from the token the entries above carry.

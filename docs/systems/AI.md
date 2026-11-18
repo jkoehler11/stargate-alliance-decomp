@@ -324,6 +324,8 @@ it beside the size dword at `name_end + 12`.
 <!-- generated:state-code -->
 **All 553 `State` payloads end with `UState`'s 22-byte record, 166 of them carry code, and the record is what anchors it at both ends.** The 387 payloads with no script are a header and the record whose `LabelTableOffset` is `0xffff` -- no table, no code pointer at all -- and 100 of them are a state an ancestor class declares by the same name (25 of those ancestors carry the table, so the code is inherited), while 287 name a state no ancestor declares. Where there is a table the field is that table's first entry in the **loader's** code (every compact index operand widened back to four bytes), exact in **166 of 166** payloads (0 fit none at all and keep the most-tokens fallback). Because the widened offset depends on where the walk starts, the field names the start too: it chose **166** of the 166 walks, and they begin **1,694 bytes** past the first offset of the payload that tiles -- the 543 `LocalVariable` tokens the most-tokens start kept are the header's tail, and **no** state's code keeps one. The code's own jump operands live in the same space, so with that start **863 of 863** land on a token start in the widened code. The walks carry 29,859 bytes and 11,885 tokens of the state's own label block, `JumpIfNot` 610. The table those walks end on is the state's **label map**, and it is readable: **326** entries over 166 tables, every one of them a token start in the widened code (**326**), every name index resolving (**326**), and the last entry at the code's first byte in **166** tables -- so a `Goto('Label')` in a `State` does keep its name, and the runtime can look it up (the `Function` half has no table at all). Against the state's own text, **159** entries besides `Begin` are labels that state spells and **8** are not, while **0** labels the text spells have no entry -- so the table is a superset of the text, and all 166 joined states are covered: the extra entries are the labels whose code lives in a state override.
 
+The entry point is a name, not a convention: the last table entry sits at the code's first byte, so it is where the runtime starts a state entered without an entry label, and the source calls it `Begin` in **143** of the 166 tables and something else in **23** (a `Mover`'s `Open`/`Close`, a gun state's `Refire`, the state's own name) -- which is why `tools/state-entry.py` resolves an entry label by name instead of assuming `Begin`. The 387 record-only states split three ways: **100** a state an ancestor class declares by the same name, **1** a state no ancestor declares whose own text `extends` a sibling state that carries the table (code inherited one state over, which the class tree cannot show), and **286** neither.
+
 **The `else` keywords a state body spells are the arms its payload compiles.** The branch census's category rule (`tools/jump-branches.py`'s `classify`, which is what reads a `Function` script) run over each state's own statements splits its **610** `JumpIfNot` into **252** `else` arms, **358** conditional jumps over a straight arm, **0** empty then-arms, **0** that leave their own loop or `switch`, and **0** condition sub-jumps. Against the text: **125** states carry both a readable label block and a walk, and **125 of those 125** spell exactly the `else` arms their payload carries -- no state disagrees. That is the same **252** keywords `docs/BYTECODE.md` counts *outside every function body*, which is what the class-level `more` verdict compared against `Function`-only arms: `tools/jump-census.py` walks `Function` exports and never a `State`, so the class count was missing this half. Read here, the population is the state code, arm for arm.
 
 | measure | value |
@@ -333,12 +335,14 @@ it beside the size dword at `name_end + 12`.
 | payloads that walk to the container's end / a header and the record only | 166 / 387 |
 | records whose `LabelTableOffset` is `0xffff` (no table, no code) | 387 |
 | ... a state an ancestor declares / that ancestor carries the table / no ancestor state | 100 / 25 / 287 |
+| ... of the last, code inherited from a sibling state its text `extends` | 1 |
 | code bytes / tokens | 29,859 / 11,885 |
 | `JumpIfNot` / `Jump` | 610 / 253 |
 | ... `else` arms they compile / states whose text spells exactly them | 252 / 125 |
 | `LabelTable` tokens, in states / in `Function` payloads | 166 / 0 |
 | label-table entries / on a widened token start / named | 326 / 326 / 326 |
 | ... tables whose last entry is the code's first byte | 166 |
+| ... entry point named `Begin` / named something else | 143 / 23 |
 | ... entries the state's text spells / does not (besides `Begin`) / text labels with no entry | 159 / 8 / 0 |
 | `StringConst` tokens | 147 |
 | decodable 22-byte records / scripts ending on the `0x47` marker | 553 / 166 |
@@ -482,6 +486,27 @@ Where the call sits is a second split: over the whole corpus **432** sites are i
 
 **196** of the corpus's sites are `GotoLabel` (`0x0d`), and every one of them is in state code: **0** sits in any `Function` payload, which is why the branch census could report the token as one the build never emits. They name **36** distinct labels.
 
+The labels those jumps name are the text's own, and the two reads agree to the site: of the **165** states `inventory/ai_states.csv` measures, **101** spell a `Goto('label')` and **183** label jumps sit in exactly those states -- the text's **183** calls against the build's **183** sites -- with **101** of the **101** naming the same labels as often as the text does. The **13** sites in the **13** other states sit outside that census (a `Mover`, the guns' `NormalFire`), so they are counted here and not joined.
+
+| label | jumps | states | classes |
+| --- | ---: | --- | --- |
+| `Begin` | 109 | `ActivateAlarm`, `Ascending`, `Attacking` … | `AlkeshBomberBot`, `BotBase` |
+| `DoMove` | 19 | `Attacking`, `Combat`, `Escape` … | `BotEnemy`, `BotSG` |
+| `NoCover` | 6 | `CoveredAttack` | `BotEnemy`, `BotSG` |
+| `KeepMoving` | 5 | `GetInFormation`, `Scripting`, `TakePoint` | `BotEnemy`, `BotRep` |
+| `WaitForRefire` | 5 | `NormalFire` | `APCM60Gun`, `DeathGliderGun` |
+| `DecideNext` | 4 | `Buried`, `Waiting` | `BotEnemy`, `BotRep` |
+| `FaceSquad` | 4 | `GetInFormation` | `BotEnemy` |
+| `Stay` | 4 | `Nesting`, `Protected` | `PteroBossBot` |
+| `EndMove` | 3 | `Searching` | `AlkeshBomberBot`, `GoauldDroneBot` |
+| `KeepWaiting` | 3 | `Waiting` | `AlkeshBomberBot`, `DeathGliderBot` |
+| `Ascend` | 2 | `Ascending` | `AlkeshBomberBot`, `TeltakBot` |
+| `Descend` | 2 | `DescendToTransportHeight` | `AlkeshBomberBot`, `TeltakBot` |
+
+Every label jump names a label its own state's table carries: **196 of 196** operands land on an entry of that `LabelTable` and **0** names a label no table of the state carries. The walk already ends on that table, so its entries are one decode beside it rather than a second read.
+
+**111** `GotoState` sites also pass an entry label, and it is the *target's* label: **105** of them name a literal state too, and resolved through the class chain **99** of those name an entry of the target state's table, **1** name a label that table does not carry, and **5** name a state whose payload is a record with no table at all (inherited code, entry point elsewhere).
+
 The states the `GotoState` sites enter:
 
 | target | sites | classes |
@@ -527,6 +552,44 @@ code) against the text's **107**, and **120** class-level against the text's **1
 computed). The direction is the one the plan assumed -- the bytecode is the floor, and here it is four calls above
 the text inside states and one above it at class level -- but the sizes are the corrected ones, and the text-ahead
 reading that stood here was the census's own blind spot.
+
+### The label join: every jump names a label its own table holds
+
+The `GotoLabel` census and the text turn out to be the same population, and they agree to the label.
+`inventory/ai_states.csv` now spells the labels a state's `Goto('name')` calls name (`gotos_label_names`) beside the
+labels its body declares (`label_names`), so the join is a read off two artifacts rather than a second pass over
+the text: over the **165** states that census measures, **101** spell a label jump and the build carries **183**
+`GotoLabel` sites in exactly those states -- **183** calls against **183** sites -- and all **101** name the same
+labels as often as the text does. The **13** sites in the **13** other states are outside that census rather than
+residues: seven are the `NormalFire` jump every gun and turret class makes (`WaitForRefire`, or `Begin` in
+`HoverCraftTurretGun` and `SemektetMortarGun`), and the rest are one engine `Mover` state, a `Pickup`, a
+`ReetouDevice` summoning loop, `WillowWhisp` and the two ambient pawns -- states outside the `AIController` subtree
+the text census walks, so they are counted and never compared.
+
+A jump's operand is not a dangling name: all **196** land on an entry of their own state's `LabelTable` -- the same
+decode the walk above already ends on, so the check costs one table read -- and **0** name a label no table of that
+state holds. The entry point is a name too: `Begin` in **143** of the **166** tables, and in the other **23**
+whatever the source called the statement it starts at (`Open`/`Close` in a `Mover`, `Refire` in a gun state), which
+is why the entry-label join below resolves by name instead of assuming `Begin`.
+
+`GotoState` also takes an entry label -- `GotoState('Mellee', 'ContinueCharge')` -- and it belongs to the *target*
+state, not the caller's. **111** sites pass one, **105** of those name their state with a `NameConst` too, and
+resolved through the class chain (`inventory/classes.csv`) **99** name an entry of that state's table. The
+exceptions are three mechanisms rather than one residue:
+
+* **1** names a label the target's table does not have: `TransientAmbientPawn.Wandering`'s
+  `Controller.GotoState('Wandering','KeepGoing')` is spelled on *another object*, so the `Wandering` whose label it
+  needs is the controller's, and the class's own state of that name carries `Begin` alone.
+* **4** name a state whose payload is a record with no table: `Mover`'s timed states (`StandOpenTimed`,
+  `BumpOpenTimed`, `TriggerOpenTimed`, entered from themselves and from `OpenTimedMover`) are states no class's text
+  declares and no payload carries code for, so their `Open` entry is not in any state code this census reads.
+* **1** is the same shape one class over: `GameInfo`'s `Dead` carries no table, so its `MPStart` entry has nothing
+  to resolve against.
+
+That leaves the state-level inheritance the class tree cannot see: of the **287** record-only states no ancestor
+declares, **1** spells `extends` at a sibling state of its own class that carries the code (`BotSG.InvisibleRest`
+extends `RestFormation`), which is why a record-only payload is not proof that a state has no code -- it can be one
+state over.
 
 ### Two melee bodies, and what "activate forced melee" would have been
 
