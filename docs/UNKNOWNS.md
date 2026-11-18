@@ -4404,7 +4404,7 @@ source says -- `break` to `break;`, `return` to `return`, a loop's back edge to 
 not a disagreement but a limit: the **466** positional pairings rest on an inferred label order, and the **55**
 unmatched arms have no exit comparison at all. `--check` on both tools is dump-free, and the page's block is rendered
 from the artifact by `--check-doc`.
-## U22. The `else` census agrees with 92.7% of classes -- and with 99.0% of the functions that carry an `else` -- answered: the class figure is a size effect, and the one-sided population is the build guards plus four empty blocks
+## U22. The `else` census agrees with 99.0% of the functions that carry an `else` -- answered: the guards, the empty blocks and the landing rules close the text-ahead side, and the 26 arms left are block-bodied `continue`s, placed per function
 
 **Observed.** `tools/text-branches.py` counts a class's live `else` keywords and pairs them with
 `inventory/jump_branches.csv`'s arms per class: **881** of the **967** joined classes agree on the count
@@ -4511,6 +4511,23 @@ shortfall **84 arms in 55 functions -> 26 in 21** with **0** functions beyond th
 agreement **915 of 967** (**94.6%**), function agreement **5,715 of 5,736** (**99.6%**, and **99.0%** of the
 2,041 that carry an `else` at all).
 
+**The 26 arms are placed on the statements they belong to (measured 2026-11-18, and the entry is answered).**
+`if (X) { …; continue; }` is the shape the landing rules cannot read, because their test is that the then-arm *is*
+the single `Jump`; a block-bodied continue writes that `Jump` at the end of a longer arm, so the arm reads as an
+`else` the text does not spell. `tools/text-branches.py` now splits every compiled `continue` in a body by its
+then-block -- **bare** (the whole then-block, 63 of the corpus's 95), **block** (statements in front of it, 29) or
+**other** (not a then-block's last statement, 3) -- and pairs the block count with the shortfall per body in
+`inventory/text_branch_functions.csv`'s `continue_place` column: **18** of the **21** short bodies carry exactly
+one block-bodied continue per arm (`BotBase.setnextenemy` 3/3, `TransportRings.ringsmove` 2/2), **2** carry one
+site more than arms (`B4SParser.parselines` 2/3, `StargateVoicePack.getsquadnumspeeches` 2/3 -- that site's own
+arm reads as an `if`, its `Jump` landing on the jump's own target), and **1** carries none
+(`CoopPlayerPanel.timer`, an `else if` chain whose header arm the text spells with one `else` keyword). So the
+residue is placed rather than bounded: the 26 arms are 26 `continue` statements, and no function spells an `else`
+the record has no arm for. What is left is a spelling question the stream cannot answer -- where the skipped region
+is the loop body's tail, `if (X) { …; continue; } B;` and `if (X) { …; } else { B; }` are the same program -- which
+is why the text is the only oracle and why the join is quoted per function.
+
 **Reproduce.** `make text-branches` (needs the dump) writes both artifacts and both generated blocks;
-`python3 tools/text-branches.py --check-functions` re-derives the five per-class identities and the two corpus
-counts from the committed files with no dump, and runs in `make ci`.
+`python3 tools/text-branches.py --check-functions` re-derives the five per-class identities, the two corpus counts
+and the `continue` split (four counts of one regex, and the `continue_place` verdict recomputed from two of them)
+from the committed files with no dump, and runs in `make ci`.

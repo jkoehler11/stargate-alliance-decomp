@@ -2181,6 +2181,8 @@ rather than a second measurement.
 
 **Two codegen rules close the text-ahead population, and what is left is the record's.** Every function whose raw `else` count was ahead of the record, or that spelled one in a body with no arm at all -- **22** of them -- is exact once only compiled text counts: **0** still spell more than the record has arms (**0** keywords) and **0** spell one with no arm at all (**0**). Both rules are text facts, not stream readings: an `else` in a `#ifdef`/`#ifndef` part this build never compiles (**62** keywords in these bodies) never reached the compiler, and an `else` whose block is empty (**4** in these bodies) has nothing to skip, so `if (X) y; else { }` is the straight-if shape the record carries. The other direction does not move: **21** functions carry more arms than their text spells, **21** of them with a gap no larger than the body's `continue` count -- the `if (X) continue;` shape -- and **0** beyond it, listed below. The model's own falsifier is **0**: functions that agreed on the raw count and are short once only compiled text counts -- zero under this macro set, and the alternatives break 1 to 27 of them (`docs/BYTECODE.md`'s guard section).
 
+**The shortfall is placed, one `continue` statement per arm.** Over the bodies the join shares there are **63** `if (X) continue;` (the whole then-block is the continue), **29** `if (X) { …; continue; }` (the then-block holds statements in front of it) and **3** `continue` that is not a then-block's last statement at all. The landing rules read the first form, because its then-arm is the single `Jump` they test; the second writes the same three tokens with a longer arm, so it is what the record's extra arms are. Of the **21** short bodies **18** carry exactly one block-bodied `continue` per arm, **2** carry one site more than arms -- that site's own arm reads as an `if`, its `Jump` landing on the jump's own target, so it is not an arm at all -- and **1** carry none, an `else if` chain's header arm, which the text spells with one `else` keyword. `continue_place` in `inventory/text_branch_functions.csv` holds the verdict per row.
+
 **A class whose totals agree is not a class whose functions agree.** The 4,737 functions inside the classes whose own `else` count agrees split **4,737** exact / 0 short / 0 ahead / 0 with no arm; inside the `less` classes the 426 functions split 405 / 21 / 0 / 0, and inside the `more` classes the 573 functions split 573 / 0 / 0 / 0. So a class-level agreement is a function-level cancellation on **0** of its functions, and a class-level disagreement is one the text spells away on **21** of the `less` functions and **0** of the `more` ones -- the opposite of the same number, in the opposite population.
 
 **The operator rule is per function, where the operators are.** Of the 5,736 functions both sides have a branch in, **2,057** carry `&&` or `||` in their text and are exact on the term count **2,019** times (**98.2%**); the **3,679** that carry neither are exact **3,655** times (**99.3%**). A class-level version of this test cannot say that, because a class with one `&&` anywhere is lumped with every function in it that has none.
@@ -2249,8 +2251,24 @@ reclassifies, and **0** of the 22 the guards explain does. The `else` arms go **
 count. The other direction reads **0**: no function in the corpus spells an `else` the record has no arm for,
 once the guards (**62** keywords in a part this build never compiled) and the **4** empty `else { }` blocks are
 out of the count. That is what a rebuild grades against: function by function, **99.0%** of the bodies that carry
-an `else` at all agree exactly, and the arms that remain are a `continue`-versus-empty-then ambiguity the join
-bounds per body rather than places.
+an `else` at all agree exactly.
+
+**The 26 arms that remain are placed, and they are the block-bodied `continue`.** The landing rules read
+`if (X) continue;` because its then-arm is the single `Jump` they test; `if (X) { …; continue; }` writes the same
+three tokens with a longer arm, so it reads as an `else` the text does not spell -- and that is what every one of
+the 26 is. `tools/text-branches.py` now splits the **95** `continue` statements in these bodies into **63** bare
+(the whole then-block is the continue), **29** block-bodied (statements in front of it) and **3** that are not a
+then-block's last statement at all, and `inventory/text_branch_functions.csv`'s `continue_place` column pairs the
+two counts per short body: **18** of the **21** carry exactly one block-bodied `continue` per arm (`BotBase.
+setnextenemy` 3/3, `TransportRings.ringsmove` 2/2), so the arm names the statement it belongs to;
+**2** (`B4SParser.parselines` 2/3, `StargateVoicePack.getsquadnumspeeches` 2/3) carry one site more than arms --
+that site's own arm is read as an `if`, its `Jump` landing on the jump's own target (`B4SParser`'s `<entry` block,
+`00d0`); and **1** (`CoopPlayerPanel.timer`) carries none, because its arm is an `else if` chain's header and the
+text spells the chain with one `else` keyword. The two spellings are not merely similar: where the skipped region
+is the loop body's tail, `if (X) { …; continue; } B;` and `if (X) { …; } else { B; }` are the same program, so no
+stream reading can separate them and the text is the only oracle for which one the source wrote. That is why the
+residue is placed rather than closed: **0** of the corpus's functions spell an `else` the record has no arm for,
+and the 26 arms are 26 `continue` statements.
 
 ## The build guards: the macro set, and how it was chosen (measured 2026-11-17)
 
