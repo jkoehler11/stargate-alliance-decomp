@@ -506,12 +506,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       **AI is done too** — `docs/systems/AI.md` *What the states do*: the state bodies are not only in an
       extracted tree, they are in each class's shipped `ScriptText`, and `tools/ai-states.py` reduces every
       `state` block to a row (`inventory/ai_states.csv`): parent, `auto`, statement-level labels, function
-      overrides, literal and dynamic `GotoState`, `Goto` jumps, latent sleeps. The controller tree is **151 states
-      over 32 classes** (216 labels, 189 sleeps), ten of them `auto` -- eight called `Waiting` -- and the dispatch
-      layer is **127 `GotoState` calls outside every state body**, so the machine parks and is pushed rather than
-      chained. The text is a floor: five classes carry more `UState` exports than any class's text declares
-      (`BotEnemy` 36/41) and four of those names are dispatched to while declared nowhere. Checkpoint saves were
-      already covered by `docs/systems/CHECKPOINTS.md`. **The per-state read of the bodies is done too** --
+      overrides, literal and dynamic `GotoState`, `Goto` jumps, latent sleeps. The controller tree is **165 states
+      over 36 classes** (237 labels, 203 sleeps), fourteen of them `auto` -- eight called `Waiting` -- and the
+      dispatch layer is **115 `GotoState` calls outside every state body**, so the machine parks and is pushed
+      rather than chained. The text and the export table agree (165 `State` exports, every one declared); the
+      states the older, case-sensitive read called "declared nowhere" are the capital `State` spelling.
+      Checkpoint saves were already covered by `docs/systems/CHECKPOINTS.md`. **The per-state read of the bodies is done too** --
       `tools/ai-state-body.py` reduces every body to its statement tree (`inventory/ai_state_bodies.csv`):
       1,426 own statements against 2,350 inside 570 overrides, 29 states with no own statement, 38 that never
       dispatch, 55 that complete in one tick, three loops and no `switch` in the whole tree -- and
@@ -1676,6 +1676,37 @@ are limited to expected fields (checksum/timestamp) and documented.
 - Tool (`tools/state-exports.py`, `--write-doc`/`--check-doc`, `--check` with no dump) +
   `inventory/state_exports.csv` + `docs/systems/AI.md` (*The states the text never declares are compiled*) +
   `make state-exports` + `make ci` holding the page to the artifact + this note.
+
+### Execution notes (2026-11-18, the AI census reads the one state-header rule)
+
+- **One rule, one reader: the AI state census now reads `class-text-bodies`.** `tools/ai-states.py` carried its own
+  header pattern -- an `auto` prefix, an optional numeric `state(n)`, a case-sensitive `state` whose brace had to be
+  on the header's own line -- and read 151 of the controller tree's 165 blocks. That is where two claims this file
+  carried came from and both are retracted here: the "five classes carry more `UState` exports than their text"
+  surplus (`BotEnemy` 36/41, `BotRep` 2/4, `BotBase` 4/5, `BotLite` 4/5, `ScriptedController` 1/2) and "four names
+  declared by no class's text" (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`). The five
+  classes spell the states `State TakePoint`; with `class-text-bodies.state_declarations` as the one rule (name,
+  parent as written, `auto`, the brace span) they read 41/41, 4/4, 5/5, 5/5 and 2/2, and the text declares exactly
+  the states the class record counts, class for class. The four creature classes the census never saw (`Birds`,
+  `CirclingBirds`, `MigratingBirds`, `TransientAmbientCreature`) were the same spelling.
+- **The numbers that moved.** 151 -> **165** states over 32 -> **36** classes, 216 -> **237** labels, 189 -> **203**
+  sleeps, class-level `GotoState` 127 -> **115** (fourteen of those sites are inside a state body after all),
+  `auto` 10 -> **14**; `inventory/ai_state_bodies.csv` 151 -> **165** rows, 1,426 -> **1,533** own statements,
+  2,350 -> **2,619** inside 570 -> **628** overrides, 55 -> **60** one-tick bodies, three -> **four** loops and
+  still zero `switch`; `inventory/state_entry.csv`'s text-side census follows (165 states, 107 in-state sites
+  against the bytecode's 86, 115 class-level against 120).
+- **The export diff flips direction, and the old "symmetric residue" was a mislabel.** `inventory/state_exports.csv`
+  now reads **0** states declared by no class text (was 14) and **7** exports carrying no function child
+  (`ReetouBot`'s `Ambush`/`Berserk`/`Ranged`, `BotSG`'s `CoveredAttack`/`Waiting`, `HoverTankPilotBot`'s
+  `TroopDrop`, `TransientAmbientCreature`'s `Wandering`). The six names the previous note called "a text declares
+  and no export carries" were those childless exports under a label that could not tell the two apart, so the
+  artifact gains an `exported` column and `docs/systems/AI.md` counts both directions separately.
+- Tool (`tools/class-text-bodies.py`'s `state_declarations`, `ai-states.py`, `ai-state-body.py`,
+  `state-exports.py`) + `inventory/ai_states.csv`, `ai_state_bodies.csv`, `state_exports.csv`, `state_entry.csv` +
+  `docs/systems/AI.md` + `docs/PACKAGE_SCRIPT_TEXT.md`'s reader table + `docs/UNKNOWNS.md` U24 + this note.
+- **Not in this PR:** `tools/text-branches.py`'s own `STATE` (513 blocks on its comment-masked input) and
+  `tools/uscript-dis.py`'s (518) still carry copies; the first moves `docs/BYTECODE.md`'s `fn_state`/`fn_state_label`
+  census and `state-code`'s per-state join, the second the payload anchoring -- one bundle each.
 
 ### Execution notes (2026-11-12, the state bodies are thin and the overrides hold the behavior)
 
@@ -12927,85 +12958,6 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement:** the switch's case *values* are one arm each; what a decompiler still cannot read from the
   stream is which arm a `Case`'s body ends at (the arm bodies are delimited only by the next `Case`), so an
   arm-body extent census is the next instrument on this page.
-
-### Execution notes (2026-11-18, an operator's declared name is a symbol, and five artifacts move with the rule)
-
-- **Task.** The break census's open item (the note below), taken as the text thread's bundle: whether the
-  `outside_body` column's one `operator` body is a residue or a declaration kind, and every census that shares the
-  declaration rule with it.
-- **The shape is two parts, and both defeated the rule.** An operator writes its priority in parentheses where a
-  parameter list would start (`operator(24)`) and its name as a symbol (`==`), so `class-text-bodies.py`'s `FUNC` --
-  which wanted an identifier and then `(` -- matched none of them: not a body it could not reach, a *declaration* it
-  could not see. The vocabulary is `native-operators.py`'s `DECL`, which already read both, so the rule gained
-  `OPERATOR_PRIORITY` and `DECL_NAME` from it rather than a second spelling. `native` stays out of the modifier list,
-  so the 97 `native` operators remain the natives census's population and never bodies.
-- **Measured over every class text: 114 lines spell an operator, 99 are declarations, 2 carry bodies.** Both bodies
-  are `Engine.MaplistRecord`'s `==` overloads (49 and 347 bytes, 3/10 operators, 1/6 statements); the 97 `native` ones
-  (`Core.Object` 91, `Engine.Actor` 4, `Engine.StreamBase` 2) are declaration-only; the other 15 lines are inside
-  block comments (14 in `Core.Object`'s banner, 1 prose in `StargateGame.GoauldConsoleTrigger`), which the mask
-  removes.
-- **One rule, five artifacts, each delta a number.** `class_text_bodies` live declarations **5925 -> 5927** and
-  with-body **5316 -> 5318** (rate 89.7% unchanged); `class_text_comments` live_functions **5925 -> 5927**;
-  `text_stubs` declarations **11411 -> 11413**, bodies **10505 -> 10507**, stubs unchanged at **906**;
-  `text_branches` text_functions **11523 -> 11525** with the `agree` class split **50/732 -> 49/733**; `break_sites`
-  outside-every-declaration **4 -> 3** and in-body **985 -> 986**.
-- **The `agree` split is the finding, not a side effect.** `Engine.MaplistRecord` was one of the 50 classes that
-  "declare fewer functions than their record has" (`docs/BYTECODE.md`); it declares exactly as many now. A count
-  disagreement the page has carried since the census was written was the reader.
-- **The one row that still cannot join the stream, and why.** `Engine.u` exports the two bodies as
-  `EqualEqual_KeyValuePairKeyValuePair` (69-byte payload) and `EqualEqual_MapItemMapItem` (182) -- `compose()`'s own
-  names, which `inventory/native_operators.csv` carries for the native half. The join keys a function by name, so
-  `text_branch_functions` holds one text-only row (6 terms, 0 `JumpIfNot`) and `terms_outside` reads **773**. Recorded
-  as U23 with both routes (compose the text name from its operand types, or key on the payload), because guessing a
-  join is what U20 cost a session.
-- **`--check` holds the shape.** The self-check's synthetic text now carries a symbol-named operator and a `native`
-  operator beside it, and asserts the first resolves to a body, the second does not count, and the same-line rule
-  reads the same name -- so a regression is a `FAIL` in `make ci`, not a quiet zero.
-- **Files.** `tools/class-text-bodies.py` (the two grammar parts, `OP_KEYWORD`, the corpus-wide operator pass, five
-  census keys, the operator table in the rendered block, the self-check case) + `inventory/class_text_bodies.csv`,
-  `inventory/class_text_comments.csv`, `inventory/text_stubs.csv`, `inventory/text_branches.csv`,
-  `inventory/text_branch_functions.csv`, `inventory/break_sites.csv` + `docs/PACKAGE_SCRIPT_TEXT.md` (the new section
-  and three regenerated blocks) + `docs/BYTECODE.md` (the residue paragraph, the join note) + `docs/UNKNOWNS.md` U23 +
-  this note.
-- **Next measurement.** U23's first route: capture an operator declaration's operand types and compose the record
-  name, then check the branch census's own `EqualEqual_MapItemMapItem` rows against the text's six condition terms --
-  one read of the 18 packages and the committed graph, no boot.
-
-### Execution notes (2026-11-18, every `break` in the text, and the arm that carries one)
-
-- **Task.** The previous note's next instrument, as the flow thread's bundle: the interior-break census the arm rows
-  could not see, the text's 990 `break;` statements decomposed by the construct each one leaves, and the join that
-  says both readers name the same interior breaks.
-- **The stream side is two columns.** `inventory/switch_arms.csv` gains `interior_break` (a `Jump` to the list's own
-  end *before* the arm's last token) and `interior_other` (any other `Jump` there). Measured: **2** arms hold **2**
-  interior breaks, and the control is **74** arms holding **146** other interior jumps, none of them on the list's
-  end. The `lists_interior_end` census was added for the 29 lists with no break tail and answers **0**: no such list
-  names its end from an interior jump.
-- **The text side is a site census.** `tools/text-branches.py --break-sites` (`make break-sites`;
-  `inventory/break_sites.csv`, 990 rows) names every `break;` by the loop or `switch` it leaves, and the arm rows of
-  `inventory/text_switches.csv` gain `text_break_inner`. Measured: **664** switch (630 in a case arm, **34** in a
-  `default:` body), **323** loop (164 for / 134 foreach / 23 while / 2 do), **3** in no construct; **2** arm sites are
-  interior and they are the same two arms the bytes name (`GUIComponent.MenuStateChange` arm 2,
-  `CommandInterface.GetPawn` arm 4). The text's **630** arm breaks are the stream's **628** break arms plus those two.
-- **Three residue sentences, each named.** **4** sites sit outside every `function` declaration -- three in
-  `TeamVoicePack`'s commented-out body (a nested `/* */` closes the outer comment early, the C rule) and one in
-  `MaplistRecord`'s `operator(24) bool ==` body, which the declaration walk does not name; **1** is inside an
-  `#ifdef` part this build never compiles; and the census folds keyword case, worth **2** of the 990 (`Break;` twice
-  in `Engine.PlayerController`, so a case-sensitive read answers 988).
-- **A paren-less `switch` was invisible to the body census.** `switch TriggerWhen` is legal and this corpus writes it
-  **112** times: `tools/text-switches.py`'s pattern required `switch (`, so the block census reached **71** break
-  statements where the real population is **664**, and 5 more arms became matchable once the label groups formed
-  (789 -> 794 matched, all still agreeing). The page's `200 switch` is corrected to **312** in place.
-- **Files.** `tools/switch-arms.py` (two columns, five census keys, a selftest stream, the doc sentence),
-  `tools/text-branches.py` (`break_binding`/`break_place`/`_stmt_end`, `break_site_rows`, `--break-sites`,
-  `--check-break-sites`, four selftest cases), `tools/text-switches.py` (`SWITCH` pattern, `switch_break_census`,
-  `text_break_inner`, six census keys, the doc sentence), `inventory/switch_arms.csv`, `inventory/text_switches.csv`,
-  `inventory/break_sites.csv` (new), `docs/BYTECODE.md` (the new section, four corrected figures),
-  `Makefile` (`break-sites`, one `.PHONY` token, one help line, one `make ci` line) + the index/hashes loop.
-- **Next measurement.** The `outside_body` column's one `operator` body is a declaration kind `tools/class-text-bodies.py`
-  does not name; whether the 136 class texts carry other `operator`/`preoperator` bodies with code is one read, and it
-  would settle whether that residue is one site or a population.
-
 ### Execution notes (2026-11-17, the arm is the chain's next case, and a break is not the only way out)
 
 - **Task.** The previous note's next instrument, taken as the flow thread's bundle: where a `Case`'s arm body ends,
@@ -13401,148 +13353,3 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   then-block's last statement (a loop body's own, a `switch` arm's) never opens an arm, so the population is a
   lower bound on switches and loops a renderer must know about -- the same join `switch_join.csv` made for arm
   counts, one statement over.
-
-### Execution notes (2026-11-18, the `continue` census names every site, and the switch arms carry none)
-
-- **Task.** The previous bundle's two open items: the 3 `other` `continue` sites, and the per-arm `continue` column
-  that would join `inventory/switch_arms.csv` the way `switch_join.csv` joined its arm counts.
-- **Every `continue` has a name now, and the 3 `other` are an `else` arm's whole body.** `tools/text-branches.py
-  --continue-sites` (`make continue-sites`) writes `inventory/continue_sites.csv`: one row per site -- package,
-  class, function, declaration, offset, line, then-block form, construct, enclosing loop -- over the same masked text
-  the census counts, so the 95 rows are the 63 bare + 29 block + 3 other the per-body artifact holds, and
-  `--check-continue-sites` holds the two files to each other with no dump (kind/construct consistency, every site
-  inside a loop, offsets strictly increasing). The three: `else continue;` at `AccessControl.checkippolicy` lines 413
-  and 452, `else { continue; }` at `VoiceSelector.searchvoices` line 113, all inside a `for`. The construct column is
-  therefore 92 `then-block` + 3 `else-body` + **0** `switch-arm`: the docstring's guess ("a loop body's own, a
-  `switch` arm's") is corrected in place, and the reason no arm opens is that `if (X) y; else continue;` compiles
-  exactly as `if (X) y; else z;` does -- the arm is the else's.
-- **The loop each site sits in is measured too, because the landing rules differ by loop kind.** 89 `for`, 4
-  `foreach`, 1 `while`, 1 `do`; the `foreach` four are the shape whose leave rule is the `IteratorPop` landing, and
-  finding them needed a header reader that walks back past a dotted iterator call (`foreach P.TouchingActors(
-  class'Volume', V )` ends in `)` but the keyword is `foreach`, not `TouchingActors`).
-- **The per-arm join is one statement over, and its answer is zero.** `inventory/text_switches.csv`'s arm rows gain
-  `text_continue` (the `continue` statements the arm's own source case body holds, by form) and the census gains
-  `arm_continue`, `switch_continue`, `arm_continue_all` and `default_continue`. Measured: **0** of the **789** matched
-  arms carry one, and the block census -- every `switch` span in all 136 classes with text, nested blocks and
-  `default:` bodies included -- finds **0** `continue` statements inside a `switch` at all. The two functions whose
-  `continue`s neighbour a switch (`GUIMultiComponent.mapcontrols`, `CommandInterface.executescriptcommand`) have them
-  outside every block, so the lower-bound question U21/U22 left open is answered at zero: no arm in this corpus
-  leaves by, or carries, a `continue`.
-- **Two independent readers say the same zero.** The text column is one; the other is the arm census's `elsewhere`
-  row (an arm leaving by a jump landing off its list's end -- the only way a `continue` can show in the stream),
-  which is **0** of 844. `--check-doc` now reconciles the artifact's continue columns (arm rows against the census,
-  the block total against its arm + `default:` halves) before it compares the page, and the doc block states the
-  result from the committed file.
-- **Files.** `tools/text-branches.py` (`continue_sites_detail`, `enclosing_construct`/`enclosing_loop`/`_header_keyword`,
-  `continue_site_rows`, `--continue-sites`/`--check-continue-sites`, four self-test cases) +
-  `inventory/continue_sites.csv` (new, 105 rows) + `tools/text-switches.py` (`text_continue`, `switch_continue_census`,
-  the four census keys, the `--check-doc` identities, a self-test case) + `inventory/text_switches.csv` (3306 rows) +
-  `docs/BYTECODE.md` (the `other` sentence, the arm-carry paragraph, a new switch-section paragraph, the generated
-  block) + `docs/UNKNOWNS.md` U22 + `Makefile` (`continue-sites`, one `.PHONY` token, one help line, one `make ci`
-  line) + `docs/ARTIFACTS.md` + `inventory/artifact_hashes.csv` + this note. Two dump reads (7 s and 3 s); no boot,
-  no Ghidra.
-- **Next measurement.** The arm rows' `text_end` column reads only an arm's *last* statement, so an arm that
-  `break`s inside a nested `if` (`if (x) break;` then more statements) is invisible to it: the same column one
-  statement over is an **interior** break census -- arms whose body holds a `Jump` landing on the list's end before
-  the final statement -- which would also explain part of the text's 990 `break;` against the 628 break arms.
-### Execution notes (2026-11-18, the operator body joins the stream under the name the build composes)
-
-- **Task.** U23, the item the last two bundles left open: the operator family's two bodies are declarations the
-  text rule can now read (`[~] 3.5`), but every name-keyed join spelled them `==` while the record side keys
-  `EqualEqual_MapItemMapItem`. Three items: compose the record name on the text side, make the joins read it, and
-  teach the graph that an operator's *code header* stores the symbol rather than the export name.
-- **Composition, and the defect the second body found.** `tools/class-text-bodies.py` gains `declared_name()`: an
-  `operator`/`preoperator`/`postoperator` declaration now has its parameter list read and is named through
-  `tools/native-operators.py`'s `compose()` — one rule for the 97 `native` records and the two bodies — with the
-  declared spelling as the fallback, so a body is never dropped for want of a name. The shared rule needed a
-  correction: a **qualified** operand type arrives as `GameInfo.KeyValuePair`, and `title()` spells that
-  `Gameinfo.Keyvaluepair`, so the keyed overload composed to a name `Engine.u` does not export. `suffix()` takes the
-  last dotted segment and then the table's suffix; over the 97 `native` declarations no composed name moves, which
-  is the control that this is a correction rather than a change of rule. Both bodies compose to an export of their
-  own class (`operator_composed` **2 of 2**), and `inventory/class_text_bodies.csv` keeps the declared symbol in the
-  row's `keys` column while the page prints both the record name and the symbol.
-- **The join, and the corpus totals.** `inventory/text_branch_functions.csv`: the text-only row is gone — the
-  `EqualEqual_MapItemMapItem` body is **6** condition terms against **6** `JumpIfNot` and `term_verdict` **agree** —
-  so `both` **5,736 → 5,737**, text-only **35 → 34** and the record side **5,737 → 5,738**. `terms_outside` stays
-  **773**: the six terms were already inside a body, and the composition buys the *record* side of the row, not a
-  term moving between buckets. `inventory/jump_branches.csv`: `JumpIfNot` **17,463 → 17,469**, `if` arms **13,405 →
-  13,410**, `leave` **289 → 290**, `else` **3,758** and empty arms **11** unchanged, `Jump` **6,173 → 6,176**.
-  `inventory/text_branches.csv`: classes term-exact **835 → 836** of 967 (**86.3% → 86.5%**), the `&&`/`||` ones
-  exact **422 → 423**, class-level surplus **715 → 709**; `inventory/break_sites.csv`'s operator row becomes
-  `Engine.MaplistRecord.equalequal_mapitemmapitem` and stays one `break` in a `for`.
-- **The graph's own rule, and the two counts that keep it honest.** A `Function` payload's code header names the
-  declaration as the source wrote it (`==`) — the compiler composes only the *export* name — so `tools/jump-graph.py`
-  refused the body on `last == exp["name"]`. The exception is the tail's own `FunctionFlags` word (`Operator`
-  `0x1000`) plus a symbol for a header name, so a function whose header merely disagrees with its export is still
-  refused. **27** operator records pass it (both compiled `Engine.MaplistRecord` bodies and 25 `native` operator
-  records) and only **1** of the 27 carries a jump, so the census carries `operator_headers` **27** beside
-  `operator_jumps` **1** and no record count reads as a population of branches. `inventory/jump_graph.csv`: edges
-  **23,778 → 23,787**, scripts with a jump **6,127 → 6,128**, statements **96,193 → 96,283**, reachable **91,977 →
-  92,065** (95.62% either way). The walked body is the 150-byte `EqualEqual_MapItemMapItem` — **19** nodes, **9**
-  jumps (**6** `JumpIfNot` + **3** `Jump`) over **18** statements; the keyed overload walks with **3** nodes and
-  **0** jumps and the 25 `native` stubs carry none, so neither adds an edge or a branch row.
-- **A second reader had to agree, and the gate said so.** `tools/jump-census.py` identifies payloads independently
-  and `jump-census --cross-check` compares its artifact against `jump_graph.csv`: left alone it answered 23,778
-  against the graph's 23,787 and `make ci` failed on eight keys. It now reads the same flag-and-symbol exception, so
-  the cross-check keeps measuring the corpus instead of the gap between two rules. `class-text-bodies --check` also
-  *crashed* on the new key (`KeyError: operator_composed`) because its fixture census did not carry it — the fixture
-  now does, and it carries a synthetic symbol-named operator whose table row is a `want`
-  (the literal table row `P.Op.EqualEqual_FooFoo` with its `==`), so a page that loses the declared symbol fails the
-  gate.
-- **Files.** `tools/class-text-bodies.py` (`declared_name`, `PARAMS`, the `keys` column, `operator_composed`, the
-  table's `declared` column, the fixture row and its `want`), `tools/native-operators.py` (`suffix()`),
-  `tools/jump-graph.py` (the header exception, two counts), `tools/jump-branches.py` (two census rows),
-  `tools/jump-census.py` (the same exception), `tools/text-branches.py` / `text-stubs.py` / `text-switches.py`
-  (`declared_name` in five joins), `inventory/{class_text_bodies,break_sites,text_branches,text_branch_functions,
-  jump_branches,jump_graph,jump_census,artifact_hashes}.csv`, `docs/BYTECODE.md` (both generated blocks and the
-  graph's script counts), `docs/PACKAGE_SCRIPT_TEXT.md` (the operator paragraph and table),
-  `docs/UNKNOWNS.md` U23 (rewritten to the answer), `docs/ARTIFACTS.md` and this note. Three dump reads
-  (class-text-bodies, jump-graph + jump-branches, jump-census); no boot, no Ghidra.
-- **Not in this PR.** The stub census's body-side counterpart was drafted and dropped: with the operator rows named,
-  **292** bodied declarations name no `Function` export of their class, and a sample is state-scope members
-  (`AmbientCreatures.HerdAnimal.trigger`, `beginstate`, `notifylanded`) that the scope rule reads as class-level —
-  a resolver question, not an operator one, and a key that publishes 292 without rows behind it would be a number a
-  reviewer cannot check. It stays a `body_no_export` key that reads 0, as it did before.
-- **Next measurement.** Those 292: read the `state`-block scope off the class texts against the exports'
-  `State`-outer chain for the bodied declarations the resolver misses (`Engine.Mover` 24, `StargateGame.BotEnemy`
-  20, `Engine.PlayerController` 14 are the concentration), and decide whether the scope detector or the export walk
-  is the half that is wrong — one dump read, no boot.
-
-### Execution notes (2026-11-18, one state-header rule for the declaration scopes, and the 292 bodies that named no export become 38)
-
-- **Task.** The previous note's next measurement: the 292 bodied declarations that name no `Function` export of
-  their class (`Engine.Mover` 24, `StargateGame.BotEnemy` 20, `Engine.PlayerController` 14), read against the
-  text's `state` blocks and the exports' `State`-outer chain, to decide which half of the resolver was wrong.
-- **The scope detector was the wrong half, and it was not one bug but four readers.** Over the same 2,319 class
-  texts, `tools/text-stubs.py`'s own header pattern read **424** `state` blocks, `tools/ai-states.py` **457**,
-  `tools/uscript-dis.py` **518**, and one rule accepting every spelling the corpus uses -- `simulated state
-  ZoomingIn extends Zooming`, `state() LeadInOutLooper` (every state in `Engine.Mover`), `state(0) Name`,
-  `State FadeOut`, `extends Pawn.Waiting` -- reads **554**, all of them brace-matched with the `{` on the header's
-  line or the next. The export walk was already right: a `Function` outered to a `UState` was resolved correctly
-  the moment the declaration was handed the right scope name. The first cut of the rule was **589** blocks
-  because a prefix-only `state` also matches `stateTime += DeltaTime` and then swallows the next brace; the
-  newline-gap control (0 or 1 newline before `{`, measured over all 589) is what caught it.
-- **What it moved.** `body_no_export` **292 -> 38**, every one of the 38 inside a preprocessor block this build
-  does not compile (`#ifdef pc` 21, `#ifdefPS2` 17, five of them in a state), so the corpus has no live text
-  declaring a body with no record. The stub side moved the same way and settles the class-over-state preference:
-  stubs naming no export **11 -> 0**, state-owned **227 -> 254**, class-owned **668 -> 652**, bodied stubs
-  **15 -> 3** (the 12 mirror-case rows read a state declaration with the class's body). `class_text_bodies.csv`:
-  `state_declarations` **251 -> 278**, distinct state names **290 -> 317**, labels **61 -> 63**. New artifact rows:
-  the 38 misresolved declarations are published (`kind=body`) with their line, scope, brace depth, the open
-  directive and a word for why no export exists, and the census carries `state_blocks` **554** beside
-  `state_blocks_plain` **424** as the control.
-- **Files.** `tools/class-text-bodies.py` (`STATE_MODIFIERS`/`STATE_HEADER`, `state_blocks()`, `state_vocabulary`
-  on it, two self-test cases: the five spellings and a function line that must not match) + `tools/text-stubs.py`
-  (`state_spans` delegates, `plain_state_spans` as the control, `directive_stack`, `depth`/`directive` columns,
-  `kind=body` rows, seven census keys, the count-aware stub sentence, the new body paragraph and table, two
-  self-test cases) + `inventory/text_stubs.csv` + `inventory/class_text_bodies.csv` +
-  `docs/PACKAGE_SCRIPT_TEXT.md` (both generated blocks, a new "One state header, five spellings" section) +
-  `docs/UNKNOWNS.md` U24 + `docs/ARTIFACTS.md` + `inventory/artifact_hashes.csv` + this note. Two dump reads
-  (4 s and 12 s); no boot, no Ghidra.
-- **Not in this PR.** `ai-states` / `ai-state-body` / `state-exports` (457) and `uscript-dis` (518) still read
-  their own header copies; moving them changes `ai_states`, `state_code`, `state_exports` and `docs/systems/AI.md`'s
-  151 states together, so it is its own bundle.
-- **Next measurement.** That substitution: point `ai-states.STATE_DECL` at `class-text-bodies.state_blocks`,
-  regenerate `inventory/ai_states.csv`, `inventory/state_code.csv` and `inventory/state_exports.csv`, and report
-  how many of the 97 blocks the narrow rule missed carry `GotoState` edges or labels — the AI page's 151 states,
-  189 sleeps and 268 dispatch calls are floors until that is done.

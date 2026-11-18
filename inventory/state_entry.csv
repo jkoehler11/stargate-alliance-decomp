@@ -830,10 +830,10 @@ census,,,,,,,,,,,targets,263,distinct literal targets over the whole corpus
 census,,,,,,,,,,,one_arg,705,sites passing one argument
 census,,,,,,,,,,,two_arg,106,sites passing two
 census,,,,,,,,,,,three_arg,0,sites passing more than two
-census,,,,,,,,,,,text_states,151,`ai_states.csv` rows
-census,,,,,,,,,,,text_gotos_in_states,95,"`GotoState` in a state body, from the text"
-census,,,,,,,,,,,text_gotos_in_classes,127,"`GotoState` in a class's own functions, from the text (per class, not per state)"
-census,,,,,,,,,,,ai_classes,32,classes both reads cover
+census,,,,,,,,,,,text_states,165,`ai_states.csv` rows
+census,,,,,,,,,,,text_gotos_in_states,107,"`GotoState` in a state body, from the text"
+census,,,,,,,,,,,text_gotos_in_classes,115,"`GotoState` in a class's own functions, from the text (per class, not per state)"
+census,,,,,,,,,,,ai_classes,36,classes both reads cover
 census,,,,,,,,,,,ai_sites,206,bytecode sites in those classes
 census,,,,,,,,,,,ai_in_state,86,"of those, inside a state body"
 census,,,,,,,,,,,ai_in_class,120,"of those, in a class-level function"

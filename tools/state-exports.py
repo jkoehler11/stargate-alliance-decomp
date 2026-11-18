@@ -16,10 +16,14 @@ function children, and diffs the names against the text.
     python3 tools/state-exports.py --system DUMP/System --write-doc docs/systems/AI.md
     python3 tools/state-exports.py --check          # synthetic, no dump
 
-Columns: `package,class,state,in_text,children,functions,other_children,bytes,funcs`.
+Columns: `package,class,state,in_text,exported,children,functions,other_children,bytes,funcs`.
 
 * `in_text` is `yes` when the class's own `ScriptText` declares a state of that name -- case-insensitively,
   because UnrealScript folds it and `HerdAnimal` declares `grazing` while dispatching `Grazing`.
+* `exported` is `yes` for a row read from a `State` export and `no` for one added because a text declares the
+  state and the export table has no object for it. The two directions are different findings and the page counts
+  them apart: a name with no export is a name the compiler never made an object, a childless export is an object
+  with no code.
 * `children` is every export whose `Outer` is the state; `functions` the ones whose class resolves to
   `Function` and `other_children` the rest (a nested state, a text buffer). `funcs` names the functions.
 * `bytes` sums the function exports' **serial size** -- the payload each one occupies in the package, not the
@@ -38,7 +42,8 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-COLUMNS = ["package", "class", "state", "in_text", "children", "functions", "other_children", "bytes", "funcs"]
+COLUMNS = ["package", "class", "state", "in_text", "exported", "children", "functions", "other_children", "bytes",
+           "funcs"]
 DOC_MARK = ("<!-- generated:state-exports -->", "<!-- /generated:state-exports -->")
 
 
@@ -69,15 +74,15 @@ def rows_for(package, cls, exports, text_states, class_outer):
         funcs = sorted(c["name"] for c in children if c["class"] == "Function")
         others = [c for c in children if c["class"] != "Function"]
         rows.append({"package": package, "class": cls, "state": export["name"],
-                     "in_text": "yes" if export["name"].lower() in folded else "no",
+                     "in_text": "yes" if export["name"].lower() in folded else "no", "exported": "yes",
                      "children": len(children), "functions": len(funcs), "other_children": len(others),
                      "bytes": sum(c["size"] for c in children if c["class"] == "Function"),
                      "funcs": " ".join(funcs)})
         seen.add(export["name"].lower())
     for name in sorted(text_states):
         if name.lower() not in seen:
-            rows.append({"package": package, "class": cls, "state": name, "in_text": "yes", "children": 0,
-                         "functions": 0, "other_children": 0, "bytes": 0, "funcs": ""})
+            rows.append({"package": package, "class": cls, "state": name, "in_text": "yes", "exported": "no",
+                         "children": 0, "functions": 0, "other_children": 0, "bytes": 0, "funcs": ""})
     return rows
 
 
@@ -147,15 +152,22 @@ def read_csv(path):
 
 
 def doc_block(rows):
-    """The states the text does not declare: the page's floor negative, answered by the export table."""
+    """The two directions of the text/export disagreement, answered by the export table.
+
+    `absent` is the export side outrunning the text; `unexported` and `childless` are the text side outrunning
+    the export table -- a state a class's text declares with no `State` export behind it, and one whose export
+    carries no child at all. They are separate counts because they are different defects: the first is a name
+    the compiler never made an object, the second an object with no code.
+    """
     absent = [r for r in rows if r["in_text"] == "no"]
-    unknown = [r for r in rows if r["in_text"] == "yes" and r["children"] == 0]
+    unexported = [r for r in rows if r["in_text"] == "yes" and r["exported"] == "no"]
+    childless = [r for r in rows if r["in_text"] == "yes" and r["exported"] == "yes" and r["children"] == 0]
     classes = sorted({r["class"] for r in absent})
     lines = ["",
-             "**%d state exports over %d classes; %d are declared by no class text, and %d are declared by a "
-             "text and not exported.**"
+             "**%d state exports over %d classes; %d are declared by no class text, %d are declared by a text "
+             "with no export behind them, and %d exports carry no child.**"
              % (len([r for r in rows if r["children"] or r["in_text"] == "no"]),
-                len({r["class"] for r in rows}), len(absent), len(unknown)),
+                len({r["class"] for r in rows}), len(absent), len(unexported), len(childless)),
              "",
              "| class | state | functions | other children | bytes | callees the text cannot show |",
              "|---|---|---:|---:|---:|---|"]
@@ -167,9 +179,12 @@ def doc_block(rows):
         lines += ["",
                   "The %d class(es) whose export table outran their text: %s."
                   % (len(classes), ", ".join("`%s`" % c for c in classes))]
-    if unknown:
-        lines += ["", "Declared but not exported: %s."
-                  % ", ".join("`%s.%s`" % (r["class"], r["state"]) for r in unknown)]
+    if unexported:
+        lines += ["", "Declared by a text, carried by no export: %s."
+                  % ", ".join("`%s.%s`" % (r["class"], r["state"]) for r in unexported)]
+    if childless:
+        lines += ["", "Exported with no function child: %s."
+                  % ", ".join("`%s.%s`" % (r["class"], r["state"]) for r in childless)]
     return "\n".join(lines)
 
 
@@ -221,18 +236,18 @@ def check():
         {"index": 8, "class": "Function", "outer": 8, "name": "BeginState", "size": 55},
     ]
     rows = rows_for("StargateGame", "DemoBot", exports, ["Hunt", "grazing", "DeclaredOnly"], 1)
-    got = [(r["state"], r["in_text"], r["children"], r["functions"], r["other_children"], r["bytes"], r["funcs"])
-           for r in rows]
-    want = [("GetInFormation", "no", 2, 1, 1, 61, "WaitForManInFront"),
-            ("Grazing", "yes", 1, 1, 0, 55, "BeginState"),
-            ("Hunt", "yes", 2, 2, 0, 100, "BeginState Timer"),
-            ("DeclaredOnly", "yes", 0, 0, 0, 0, "")]
+    got = [(r["state"], r["in_text"], r["exported"], r["children"], r["functions"], r["other_children"], r["bytes"],
+            r["funcs"]) for r in rows]
+    want = [("GetInFormation", "no", "yes", 2, 1, 1, 61, "WaitForManInFront"),
+            ("Grazing", "yes", "yes", 1, 1, 0, 55, "BeginState"),
+            ("Hunt", "yes", "yes", 2, 2, 0, 100, "BeginState Timer"),
+            ("DeclaredOnly", "yes", "no", 0, 0, 0, 0, "")]
     if got != want:
         print("FAIL rows_for:\n got  %r\n want %r" % (got, want))
         return 1
     block = doc_block(rows)
     for needle in ("| `DemoBot` | `GetInFormation` | 1 | 1 | 61 | `WaitForManInFront` |",
-                   "Declared but not exported: `DemoBot.DeclaredOnly`.",
+                   "Declared by a text, carried by no export: `DemoBot.DeclaredOnly`.",
                    "The 1 class(es) whose export table outran their text"):
         if needle not in block:
             print("FAIL doc_block is missing %r:\n%s" % (needle, block))

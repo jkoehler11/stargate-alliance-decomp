@@ -13,9 +13,11 @@ StargateVehicles,AlkeshBomberBot,Scripting,33,0,6,3,0,2,0,0,0,0,0,0.0,0,0,10,6,0
 StargateVehicles,AlkeshBomberBot,Searching,134,12,26,2,3,9,5,0,0,0,1,1.0,1,2,21,16,0,2,0,25,2,1,ActorReachable:2 FRand:2 Goto:2 MoveToward:2 log:2 FindPathToward:1 FlyingPathNode:1 GotoState:1
 StargateVehicles,AlkeshBomberBot,StabiliseForTransport,34,2,10,3,0,1,0,0,0,0,0,0.0,1,0,7,6,0,0,0,5,1,0,SetTimer:2 FreezeBomber:1 GotoState:1 HearNoise:1 SeePlayer:1 VSize:1
 StargateVehicles,AlkeshBomberBot,Waiting,21,8,1,1,2,1,0,0,0,0,2,0.0,0,1,9,6,0,0,0,0,0,0,enable:3 Sleep:2 FreezeBomber:1 Goto:1 UnfreezeBomber:1 WhatToDoNext:1
+AmbientCreatures,Birds,Wandering,45,0,16,3,0,1,0,0,0,0,0,0.0,0,0,16,14,0,0,0,9,2,0,FRand:2 VSize:2 AddSlaves:1 Bird:1 Destroy:1 FMax:1 GlideOrFly:1 Normal:1
 StargateGame,BotBase,Dead,66,6,12,8,2,1,1,0,0,0,2,0.2,1,1,20,12,0,0,0,1,1,0,log:6 Destroy:2 Sleep:2 UnrealMPGameInfo:2 Goto:1 GotoState:1 ReStartPlayer:1 SetNewGuardFocus:1
 StargateGame,BotBase,ReactionDelay,43,3,9,3,0,2,0,0,0,0,0,0.0,2,0,9,7,0,0,0,4,0,0,GotoState:2 vect:2 ShouldCrouch:1 ShouldRunAwayFromFearSpot:1 StopFiring:1 WeaponFireAgain:1 WhatToDoNext:1
 StargateGame,BotBase,RunAwayFromFearSpot,87,7,20,5,1,3,1,0,0,0,0,0.0,1,1,21,18,0,1,0,10,2,0,StargatePawn:3 UpdateRunAwayTarget:2 AllowUnCrouch:1 CheckifNeedToMove:1 Goto:1 GotoState:1 Log:1 MoveTo:1
+StargateGame,BotBase,Scripting,107,0,30,6,0,6,1,0,0,0,0,0.0,2,0,24,21,1,0,0,7,2,0,CompleteAction:2 GotoState:2 WhatToDoNext:2 CheckIfPlayerInVehicle:1 ClearAnimation:1 DoWait:1 EndState:1 FireWeaponAt:1
 StargateGame,BotBase,Waiting,15,1,3,2,0,0,0,0,0,0,0,0.0,0,0,4,4,0,0,0,0,0,0,Enable:1 EndState:1 SetCombatTimer:1 WhatToDoNext:1
 StargateGame,BotEnemy,ActivateAlarm,93,23,9,3,1,6,4,0,0,0,3,1.5,0,3,35,19,1,2,0,8,0,0,GetUserPosition:5 WhatToDoNext:5 Goto:3 Sleep:3 ActivateAlarm:2 MoveTo:2 StargatePawn:2 log:2
 StargateGame,BotEnemy,AlertSquad,60,3,16,6,1,2,0,0,0,0,0,0.0,0,0,25,16,2,0,0,2,1,0,StargatePawn:4 log:3 Pawn:2 PlayAlertAnim:2 SetEnemy:2 WhatToDoNext:2 DoActivateAlarm:1 FindAlarmTarget:1
@@ -41,27 +43,35 @@ StargateGame,BotEnemy,FallbackMove,200,14,46,4,4,9,1,0,0,0,1,0.0,0,2,42,27,0,2,0
 StargateGame,BotEnemy,FindAir,54,4,12,7,2,0,0,0,0,0,0,0.0,0,0,10,9,0,2,0,6,2,0,MoveTo:2 ChooseAttackMode:1 FireWeaponAt:1 Normal:1 NotifyHeadVolumeChange:1 PickDestination:1 ShouldCrouch:1 VRand:1
 StargateGame,BotEnemy,Flee,39,9,7,3,1,0,0,0,0,0,1,0.25,0,1,16,10,0,1,0,4,0,0,StargatePawn:4 ShouldCrouch:3 EndFleeingMovement:2 Goto:1 MoveTo:1 Sleep:1 StartFastRun:1 StopFastRun:1
 StargateGame,BotEnemy,FormationCombat,86,17,12,4,4,4,2,0,0,0,1,0.0,1,0,23,20,1,1,0,15,0,0,CheckIfShouldCrouch:2 PointReachable:2 sleep:2 FRand:1 FindPathToward:1 FinishRotation:1 FireWeaponAt:1 GetFormationLocation:1
+StargateGame,BotEnemy,GetInFormation,119,24,14,5,4,7,4,0,0,0,3,1.2,1,6,35,22,2,2,0,12,1,0,Goto:6 Sleep:3 FaceSquadRotation:2 PointReachable:2 ReachedDestinationLocation:2 SetTimer:2 ShouldCrouch:2 vector:2
 StargateGame,BotEnemy,Hunt,175,13,37,6,3,10,4,0,0,0,1,0.0,1,1,35,26,1,3,0,27,2,2,VSize:4 log:3 Enable:2 FastTrace:2 FireWeaponAt:2 MoveToward:2 ActorReachable:1 CancelIfActorUnreachable:1
 StargateGame,BotEnemy,InteractUseObject,60,23,2,1,1,4,3,0,0,0,2,1.5,0,4,25,13,1,2,0,3,0,1,Goto:4 WhatToDoNext:4 Log:3 sleep:3 MoveToward:2 Sleep:2 ActorReachable:1 FindBestPathToward:1
 StargateGame,BotEnemy,Mellee,227,18,62,6,3,9,4,0,0,0,3,0.6,3,1,76,28,1,4,0,28,4,2,Log:16 PickDestination:11 FRand:5 EngageDirection:4 MoveTo:4 DoMeleeAttack:3 GotoState:3 Sleep:3
+StargateGame,BotEnemy,MoveInFormation,177,12,37,7,2,8,5,0,0,0,0,0.0,3,0,44,27,0,3,0,25,2,4,GetSGFormation:6 GotoState:3 VSize:3 FireWeaponAt:2 GetLocationFor:2 MoveToward:2 calculateGroundSpeed:2 isFormationWalking:2
 StargateGame,BotEnemy,MoveToHackingPos,77,7,13,6,1,2,1,0,0,0,1,0.5,2,1,15,13,0,2,0,6,3,2,GotoState:2 MoveToward:2 Abs:1 ActorReachable:1 AllowUnCrouch:1 ArePawnsTouching:1 FindBestPathToward:1 Goto:1
 StargateGame,BotEnemy,Ranged,103,15,14,5,4,5,0,0,0,0,1,0.0,0,2,24,19,1,2,0,12,0,0,Enable:2 FRand:2 FireWeaponAt:2 Goto:2 MoveTo:2 CheckIfShouldCrouch:1 ChooseAttackMode:1 Disable:1
 StargateGame,BotEnemy,RunToTurret,71,19,4,3,3,4,1,0,0,0,3,0.2,0,6,23,14,1,2,0,4,1,1,Goto:6 Sleep:3 MoveToward:2 ShouldCrouch:2 ActorReachable:1 FRand:1 FindBestPathToward:1 Occupied:1
 StargateGame,BotEnemy,RunToVehicle,66,18,3,2,3,4,1,0,0,0,3,0.2,0,6,23,14,1,2,0,2,1,1,Goto:6 Sleep:3 MoveToward:2 ShouldCrouch:2 ActorReachable:1 FRand:1 FindBestPathToward:1 ReachedDestination:1
+StargateGame,BotEnemy,Scripting,25,1,3,2,0,0,0,0,0,0,0,0.0,0,0,4,4,0,0,0,0,0,0,DisplayDebug:1 DoAlertSquad:1 Enable:1 Timer:1
 StargateGame,BotEnemy,ShootFromCover,475,16,93,19,1,24,7,0,0,0,3,0.6,0,1,87,54,1,1,0,36,17,0,IsHealthLow:4 vect:4 CanDamage:3 CanFire:3 DoCoveredAttack:3 DoCoveredMove:3 FireWeaponAt:3 MustHoldFire:3
 StargateGame,BotEnemy,StaggeredAssist,47,13,0,2,2,0,1,0,0,0,2,0.0,0,1,12,8,0,2,0,2,0,0,FireWeaponAt:3 MoveTo:2 Sleep:2 Enable:1 Goto:1 ShouldCrouch:1 WhatToDoNext:1 vect:1
 StargateGame,BotEnemy,StaggeredMove,145,15,28,5,2,10,2,0,0,0,2,1.0,0,2,42,24,2,2,0,24,3,0,TacticalTarget:7 vect:4 GetBotTarget:3 FindBestPathToward:2 FinishedMove:2 Goto:2 MoveToward:2 Normal:2
 StargateGame,BotEnemy,Suspicious,260,32,42,6,3,22,5,0,0,0,6,4.2,0,6,56,31,1,2,0,34,1,2,Goto:6 Sleep:6 ShouldCrouch:5 StargatePawn:4 enable:3 FindBestPathTo:2 NavigationPoint:2 PointReachable:2
+StargateGame,BotEnemy,TakePoint,117,15,17,7,3,6,3,0,0,0,3,1.0,1,1,23,19,0,1,0,12,2,1,Sleep:3 BotEnemy:2 ScriptingOverridesAI:2 DoAlertSquad:1 Enable:1 FireWeaponAt:1 Goto:1 GotoState:1
 StargateGame,BotEnemy,Waiting,51,6,12,2,2,2,1,0,0,0,2,0.1,0,1,15,10,0,0,0,7,0,0,enable:4 Sleep:2 vector:2 FRand:1 Goto:1 SetPeripheralVision:1 ShouldCrouch:1 SoakStop:1
+StargateGame,BotEnemy,WaitingForFormation,26,6,3,2,2,1,0,0,0,0,1,1.0,0,1,9,7,0,0,0,1,0,0,NotifyAllInPosition:2 WhatToDoNext:2 DoAlertSquad:1 Goto:1 SetTimer:1 Sleep:1 areAllInPosition:1
 StargateContent,BotGoauld,FocusedAttack,58,0,19,5,0,1,0,0,0,0,0,0.0,0,0,10,7,0,0,0,7,2,0,WhatToDoNext:3 SetForcedEnemy:2 BeginState:1 EndState:1 SetNextEnemy:1 SetTimer:1 WeaponFireAgain:1
 StargateGame,BotGuide,Follow,96,13,12,5,2,4,2,0,0,0,2,0.35,0,2,30,20,1,4,0,6,0,0,MoveToward:4 ShouldStrafeTo:4 DesiredFocusOffset:2 Goto:2 Sleep:2 WhatToDoNext:2 ActorReachable:1 FindBestPathToward:1
 StargateGame,BotGuide,ReturnToPlayer,74,22,2,1,1,9,3,0,0,0,4,2.0,0,3,46,15,0,2,0,4,0,0,ACTION_SGWaitForPlayer:9 GetMyPlayer:6 Sleep:4 WhatToDoNext:4 GetResetAction:3 Goto:3 PlayImpatience:3 ReachedDestination:3
 StargateGame,BotGuide,Scripting,7,0,2,1,0,0,0,0,0,0,0,0.0,0,0,2,2,0,0,0,0,0,0,BeginState:1 ShouldCrouch:1
 StargateGame,BotLite,Dead,21,1,4,2,1,0,0,0,0,0,1,0.2,0,0,5,5,0,0,0,1,0,0,Destroy:1 FreeScript:1 HoldSpot:1 Sleep:1 StopFiring:1
 StargateGame,BotLite,Hunting,66,11,6,2,2,4,1,0,0,0,0,0.0,2,1,15,11,1,1,0,5,0,0,FindBestPathToward:2 FireWeaponAt:2 GotoState:2 LineOfSightTo:2 Goto:1 MoveToward:1 SelectNextState:1 SetCombatTimer:1
+StargateGame,BotLite,Scripting,71,0,18,5,0,3,0,0,0,0,0,0.0,2,0,14,13,0,0,0,3,2,0,GotoState:2 ClearAnimation:1 EndState:1 FreeScript:1 MayShootTarget:1 ReachedDestination:1 SelectNextState:1 SendWarningMessage:1
 StargateGame,BotLite,TacticalMove,151,8,44,6,2,5,1,0,0,0,0,0.0,3,1,36,21,1,3,0,25,3,0,FRand:4 GotoState:3 Trace:3 enable:3 EngageDirection:2 FMin:2 FireWeaponAt:2 MoveTo:2
 StargateGame,BotLite,Waiting,28,1,7,2,0,1,0,0,0,0,0,0.0,0,0,8,6,0,0,0,0,0,1,enable:3 DynamicActors:1 EndState:1 SelectNextState:1 SetCombatTimer:1 SetEnemy:1
 StargateGame,BotRep,Hunt,84,10,14,4,1,5,1,0,0,0,1,0.0,1,1,20,18,1,1,0,10,0,0,FireWeaponAt:2 LineOfSightTo:2 ActorReachable:1 FRand:1 FindBestPathToward:1 FormationCenter:1 Goto:1 GotoState:1
+StargateGame,BotRep,MoveInFormation,265,14,53,8,2,13,8,0,0,0,0,0.0,3,0,51,32,0,4,0,38,4,4,GetSGFormation:6 GotoState:3 MoveToward:3 VSize:3 FireWeaponAt:2 GetLocationFor:2 SetAlertnessVariables:2 calculateGroundSpeed:2
+StargateGame,BotRep,TakePoint,91,19,10,3,3,5,3,0,0,0,3,1.0,0,2,22,16,0,1,0,13,0,0,Log:4 Sleep:3 Goto:2 Enable:1 FireWeaponAt:1 MemberSuspicious:1 MoveToward:1 NotifyTargetReached:1
 StargateGame,BotRep,Waiting,47,5,13,2,2,1,0,0,0,0,2,1.1,0,1,13,8,0,0,0,7,0,0,enable:4 Sleep:2 vect:2 Goto:1 SetPeripheralVision:1 ShouldCrouch:1 SoakStop:1 WhatToDoNext:1
 StargateGame,BotSG,BotUnconscious,99,0,18,4,0,3,0,0,0,0,0,0.0,0,0,20,16,0,0,0,6,0,2,GameHud:2 IsA:2 StargatePawn:2 StargatePlayer:2 AddWaypoint:1 BeginState:1 ClearForceFire:1 EndState:1
 StargateGame,BotSG,ConcentrateFire,189,26,33,4,1,12,5,0,0,0,4,0.1,1,1,57,39,1,2,0,31,2,3,Sleep:4 SquadAISG:4 FRand:3 log:3 CanAttack:2 FindReceivedAIMSg:2 FireWeaponAt:2 NewAIMsg:2
@@ -75,6 +85,7 @@ StargateGame,BotSG,TacticalMove,266,26,74,8,7,17,2,0,0,0,3,0.22,1,2,79,40,1,3,0,
 StargateGame,BotSG,Waiting,24,7,0,0,2,1,1,0,0,0,3,0.35,0,1,11,7,0,0,0,0,0,0,Sleep:3 StargateVehicle:3 FRand:1 Goto:1 SoakStop:1 WhatToDoNext:1 ZeroForces:1
 StargateContent,BotScarab,Buried,41,5,11,3,2,0,0,0,0,0,2,1.1,1,1,11,7,0,0,0,5,0,0,enable:4 Sleep:2 Goto:1 GotoState:1 SetPeripheralVision:1 SoakStop:1 WhatToDoNext:1
 StargateContent,BotScarab,Mellee,163,6,38,6,3,2,0,0,0,0,0,0.0,4,1,27,18,1,1,0,17,2,0,GotoState:4 EngageDirection:3 Vehicle:3 FireWeaponAt:2 VRand:2 AdjustAround:1 Disable:1 FRand:1
+AmbientCreatures,CirclingBirds,Circling,64,4,23,4,1,0,0,0,0,0,1,0.0,0,1,28,17,0,0,0,16,2,0,FRand:4 TransientAmbientPawn:4 PickDestination:3 vect:3 SetLocation:2 AddSlaves:1 Bird:1 Cos:1
 StargateVehicles,DeathGliderBot,Attacking,75,13,5,5,2,5,2,0,0,0,2,2.0,1,2,17,12,0,2,0,4,0,0,ActorReachable:2 Goto:2 MoveToward:2 Sleep:2 WhatToDoNext:2 DoSearch:1 FindPathToward:1 FireWeaponAt:1
 StargateVehicles,DeathGliderBot,PullUpAttacking,53,7,9,3,2,2,0,0,0,0,1,1.0,0,1,12,10,0,1,0,6,0,0,WhatToDoNext:3 DoSearch:1 Goto:1 MoveTo:1 PickDestination:1 PointReachable:1 SetTimer:1 Sleep:1
 StargateVehicles,DeathGliderBot,Searching,85,10,19,1,2,5,2,0,0,0,1,1.0,0,0,18,15,0,4,0,16,1,1,MoveTo:2 MoveToward:2 NavigationPoint:2 FRand:1 FlyingPathNode:1 NearestFlyingPathNode:1 Normal:1 PickDestination:1
@@ -114,6 +125,7 @@ StargateContent,JaffaBotLight,Mellee,149,16,32,2,3,9,3,0,0,0,2,0.1,2,1,61,21,1,4
 StargateContent,JaffaBotLight,Sniper,189,26,31,7,3,12,2,0,0,0,3,1.5,1,2,58,29,1,4,0,19,0,0,Enable:6 Disable:4 FireWeaponAt:4 LineOfSightTo:4 MoveTo:4 CanCharge:3 Charge:3 FRand:3
 StargateContent,JaffaBotMedium,CoveredAttack,27,0,8,1,0,2,1,0,0,0,0,0.0,0,0,5,5,0,0,0,3,2,0,CanAttack:1 DoHunting:1 DoMellee:1 SelectNextCoverState:1 VSize:1
 StargateContent,JaffaBotMedium,Mellee,149,16,32,2,3,9,3,0,0,0,2,0.1,2,1,61,21,1,4,0,20,1,3,JaffaBase:11 Log:10 PickDestination:7 FRand:5 EngageDirection:4 MoveTo:4 ActorReachable:2 GotoState:2
+AmbientCreatures,MigratingBirds,Migrating,108,3,44,5,1,0,1,1,0,0,1,0.0,0,1,43,19,0,0,1,27,3,1,FRand:8 vect:5 Bird:4 Normal:4 TransientAmbientPawn:4 PickDestination:2 PlayCall:2 Rotator:2
 StargateContent,MindControlledBot,MindControlGuard,63,6,5,2,2,2,2,0,0,0,1,0.0,0,1,13,12,0,2,0,2,0,0,MoveTo:2 AllowUnCrouch:1 FindBestPathTo:1 FireWeaponAt:1 GetAxes:1 Goto:1 PickDestination:1 PointReachable:1
 StargateContent,PteroBossBot,Attacking,95,15,10,5,2,7,3,0,0,0,2,2.0,0,2,28,20,0,2,0,6,0,0,ActorReachable:2 FRand:2 FireWeaponAt:2 Goto:2 MoveToward:2 Ptero:2 SetTimer:2 Sleep:2
 StargateContent,PteroBossBot,Guarding,120,21,5,3,2,7,2,0,0,0,2,1.5,0,3,28,15,0,2,0,6,0,1,Goto:3 WhatToDoNext:3 ActorReachable:2 CloseEnoughForSwipe:2 FireWeaponAt:2 MoveToward:2 NavigationPoint:2 PlayFiring:2
@@ -136,6 +148,7 @@ StargateContent,ReetouBot,Sneak,97,11,11,5,2,5,2,0,0,0,3,0.0,0,1,25,14,0,1,0,4,2
 StargateContent,ReetouBot,Waiting,20,4,0,1,2,0,0,0,0,0,1,0.0,0,0,6,4,0,0,0,2,0,0,GetStateName:2 Log:2 Sleep:1 WhatToDoNext:1
 StargateContent,ReetouProtectorBot,Attacking,55,15,3,3,1,2,2,0,0,0,3,0.3,0,2,19,12,1,2,0,3,0,1,Sleep:3 ActorReachable:2 FireWeaponAt:2 Goto:2 MoveToward:2 WhatToDoNext:2 FindPathToward:1 FinishRotation:1
 StargateContent,ReetouProtectorBot,Waiting,14,0,5,2,0,0,0,0,0,0,0,0.0,0,0,5,3,0,0,0,0,0,0,enable:3 SetTimer:1 WhatToDoNext:1
+GamePlay,ScriptedController,Broken,20,4,1,1,2,2,0,0,0,0,1,0.0,0,1,6,6,0,0,0,1,0,0,FRand:1 Goto:1 SendWarningMessage:1 Sleep:1 StopAnimating:1 TriggerEvent:1
 GamePlay,ScriptedController,Scripting,496,39,121,19,2,34,8,0,0,0,1,2.0,6,1,127,69,4,3,0,60,12,3,CompleteAction:8 Log:7 DrawText:6 GotoState:6 Normal:5 MayShootTarget:4 vect:4 ClearAnimation:3
 GamePlay,ScriptedTriggerController,Scripting,38,6,6,2,1,3,0,0,0,0,1,0.25,3,1,12,9,0,0,0,1,1,0,GotoState:3 SendWarningMessage:2 Goto:1 InitforNextAction:1 IsPaused:1 Sleep:1 TickedAction:1 Trigger:1
 StargateContent,SuperSoldierBot,ChasePlayer,141,7,34,6,2,6,2,0,0,0,1,1.0,2,1,28,20,0,1,0,22,3,2,VSize:5 Enable:2 FastTrace:2 FireWeaponAt:2 GotoState:2 ActorReachable:1 CanAttack:1 Disable:1
@@ -150,3 +163,4 @@ StargateVehicles,TeltakBot,RingTransport,42,4,8,3,1,2,1,0,0,0,0,0.0,1,1,13,13,0,
 StargateVehicles,TeltakBot,Searching,136,11,27,2,3,10,4,0,0,0,1,1.0,1,2,21,16,0,2,0,24,2,1,ActorReachable:2 FRand:2 Goto:2 MoveToward:2 log:2 FindPathToward:1 FlyingPathNode:1 GotoState:1
 StargateVehicles,TeltakBot,StabiliseForTransport,34,2,10,3,0,1,0,0,0,0,0,0.0,1,0,7,6,0,0,0,5,1,0,SetTimer:2 FreezeTeltak:1 GotoState:1 HearNoise:1 SeePlayer:1 VSize:1
 StargateVehicles,TeltakBot,Waiting,21,8,1,1,2,1,0,0,0,0,2,0.0,0,1,9,6,0,0,0,0,0,0,enable:3 Sleep:2 FreezeTeltak:1 Goto:1 UnfreezeTeltak:1 WhatToDoNext:1
+AmbientCreatures,TransientAmbientCreature,Wandering,9,5,0,0,1,0,0,0,0,0,1,0.0,0,1,7,6,0,1,0,2,0,0,TransientAmbientPawn:2 Goto:1 MoveTimeTo:1 PickDestination:1 SetLocation:1 Sleep:1

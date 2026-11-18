@@ -240,19 +240,21 @@ def body_row(package, cls, state, lines, nodes):
 
 
 def state_spans(text, mod):
-    """`(state, parent, auto, body_nodes, lines, masked)` for every state block a class's text declares."""
+    """`(state, parent, auto, body_nodes, lines, masked)` for every state block a class's text declares.
+
+    The header rule is `ai-states.state_spans` (and behind it `class-text-bodies.state_declarations`' one rule), so
+    this reader sees the same blocks the machine census does -- including the five capital-`State` declarations and
+    the `state() Name` / modifier spellings the module's own pattern used to miss. Only the statement walk is local.
+    """
     if not text:
         return []
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     masked = mod.mask_comments(text)
     depths = mod.depth_map(masked)
     out = []
-    for hit in mod.STATE_DECL.finditer(masked):
-        open_at = hit.end() - 1
-        close_at = mod.find_close(masked, depths, open_at)
-        nodes = walk(masked, depths, open_at + 1, close_at)
-        out.append((hit.group(2), hit.group(3) or "", "yes" if hit.group(1) else "no", nodes,
-                    masked[open_at + 1:close_at].count("\n") + 1, masked))
+    for state, parent, auto, open_at, close_at in mod.state_spans(text):
+        nodes = walk(masked, depths, open_at + 1, close_at - 1)
+        out.append((state, parent, auto, nodes, masked[open_at + 1:close_at].count("\n") + 1, masked))
     return out
 
 
@@ -442,6 +444,10 @@ def check():
     want = [("Guard", "yes", 13, 17), ("Hunt", "no", 2, 4)]
     if got != want:
         print("FAIL state_spans:\n got  %r\n want %r" % (got, want))
+        return 1
+    folded = state_spans(SAMPLE.replace("state Hunt extends Guard", "State Hunt extends Guard"), mod)
+    if [s[0] for s in folded] != ["Guard", "Hunt"]:
+        print("FAIL a capitalised State block was not walked: %r" % ([s[0] for s in folded],))
         return 1
     guard = [s for s in spans if s[0] == "Guard"][0]
     row, computed = body_row("StargateGame", "DemoBot", "Guard", guard[4], guard[3])
