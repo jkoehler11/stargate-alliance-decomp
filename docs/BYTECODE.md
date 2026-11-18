@@ -1506,6 +1506,73 @@ the chain confirms rather than extends them. The other four grow by twelve arms 
 those twelve equals the chain's total exactly -- that identity, not the per-row verdicts alone, is what says no site
 moved for any other reason.
 
+## The arm bodies: a case's code runs to the next case of its list (2026-11-17)
+
+A `switch` was the last construct on this page with a count but no **extent**: `inventory/switch_join.csv` says how
+many arms a list has, and nothing said which statements belong to one. `tools/switch-arms.py`
+(`make switch-arms`; `inventory/switch_arms.csv`, one row per arm, per `default:` body and per list) walks the same
+corpus the jump graph does and measures it.
+
+**The shape, read rather than assumed.** `Switch <width> <expression>` is followed by a chain of `Case` tokens. Each
+`Case` carries its own value expression as a *child* token, so the statement stream does not show it, and the arm's
+statements follow the token directly. There is **no compiler prefix in front of an arm**: the first statement of a
+case is the source's own first statement, which is why `PlayerProfile.SetCategoryVolume` opens its `case 'Music':`
+with the `JumpIfNot` of `if (MusicVolume != NewVolume)` and `TestInfo.TestSwitch` opens `case 0:` with an `Assert`.
+The list ends on `Case 0xffff`, and **that** case's body is the `default:` arm, so a list of `n` cases carries
+`n-1` testable arms plus a default.
+
+**The boundary is the chain, not the next `Case` token.** A forward scan for the next `Case` would end an arm at a
+nested switch's first case, and this corpus has such arms; the chain step skips them because a nested switch is a
+list of its own, and the census counts the arms whose body carries one.
+
+**`break` is not the only way out of an arm.** The last statement of an arm says how it leaves: a `Jump` that lands
+on the list's own end is a `break`, a `Jump` that lands anywhere else is a `continue` (or a jump out of a loop the
+switch sits in), a `Return` leaves the function, and an arm whose last statement is none of those runs straight into
+the next case's *test code* -- which is not its body, and is the shape a decompiler must not merge into it.
+
+**The switch's own end is measurable because the breaks agree.** Where every `break` of a list lands on one offset,
+that offset is the switch's end: it bounds the `default:` arm and it is the target an arm's trailing `Jump` exists
+for. The lists where they do not agree, and the lists with no `break` at all, are counted rather than assumed -- and
+those are the ones whose extent stops at the script's end.
+
+<!-- generated:switch-arms -->
+**Every `Case` arm's body runs from its own case token to the next case of its list.** **200** case lists hold **844** testable arms carrying **2,919** statements (**1** to **58** each, mean **3.5**), and **200** `default:` bodies carry **145** more beside the `0xffff` terminator case (**0** to **58**).
+
+| arm body | arms |
+|---|---:|
+| 0 (shared body) | 40 |
+| 1-2 | 472 |
+| 3-5 | 211 |
+| 6-10 | 74 |
+| 11+ | 47 |
+
+**40** arms carry no body at all -- the source's shared `case A: case B:` body, the same population `inventory/jump_branches.csv` counts as its `empty_arm` row, so this walk and that one read one shape to one number.
+
+**How an arm leaves is a measurement, and `break` is not the only way out.** **628** arms end in a `Jump` that lands on their list's own end (a `break`), **2** in a `Jump` that lands elsewhere (a `continue`, or out of a loop the switch sits in) and **162** in a `Return`. The rest stop with no jump at all: **4** run on into the *next* case's code and **8** are their list's last arm, so they run into the `default:` body instead. Neither is an arm the next case owns -- the statements after the next `Case` are that case's own body -- so a decompiler ends the arm where the chain does.
+
+**The switch's end is where its breaks land, and the lists agree on it.** **169** of **200** lists put every `break` of every arm on one offset, so that offset is the switch's own end and it bounds the `default:` body; **0** list(s) jump to more than one target and **29** carry no `break` at all, so their extent stops at the script's end and is counted rather than assumed.
+
+**There is no compiler prefix in front of an arm, which is why the extent is the token stream and not a shape.** **110** arms open with a `JumpIfNot` and the rest open with whatever the source's first statement compiles to -- `SetCategoryVolume`'s `if (MusicVolume != NewVolume)` at the head of a case, `TestSwitch`'s `Assert` at the head of another -- so a decompiler reads the body's first statement rather than skipping a fixed one.
+
+| longest arm | arm | statements |
+|---|---|---:|
+| `StaticMenuPane.Update` | 3 at 0x03b1 | 58 |
+
+**18** bodies carry a `Switch` of their own, which is why the extent is the `Case` chain and not the next `Case` token in the stream: a nested switch's cases are statements of the body they sit in.
+
+The rows are `inventory/switch_arms.csv` (`tools/switch-arms.py`), one per arm, per `default:` body and per list, with offsets in the widened (guest) code a jump operand is written in; `--check-doc` re-renders this block from the committed artifact, and `--check` holds its arm and empty-arm totals to `inventory/switch_join.csv` and `inventory/jump_branches.csv` without the dump.
+<!-- /generated:switch-arms -->
+
+**Two walks, one shape.** The arms counted here are the join's own total, and the arms with no body at all are the
+`empty_arm` row of `inventory/jump_branches.csv`: the shared `case A: case B:` body, seen from the token stream by
+one walk and from the `Case` chain by the other. `--check` holds both numbers dump-free, so a page can no longer
+quote a count its own artifact does not hold.
+
+**What a decompiler reads from this.** An arm begins immediately after its `Case` token and ends at the next case of
+its list; its last statement decides whether it leaves by `break`, by `continue`, by `return`, or by falling into the
+next case's code, and the list's end -- one offset per switch, measured from the breaks -- is where the construct
+finishes and the `default:` arm stops. That is the whole of a `switch`'s extent in this build.
+
 ## Not measured
 
 * **Where a script starts inside a `Function` payload (U13).** The tail is solved (above), the header's encoded part

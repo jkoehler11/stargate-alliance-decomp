@@ -493,6 +493,20 @@ def check_switch_join():
     ok(name, "the join reproduces and docs/BYTECODE.md matches it")
 
 
+def check_switch_arms():
+    """An arm's body extent: the walk's self-test, its dump-free cross-checks and the page's block (PLAN 3.7)."""
+    name = "switch-arms"
+    for argv, tail in ((["--check"], "switch-arms: "),
+                       (["--check-doc", "docs/BYTECODE.md"], "switch-arms: ")):
+        r = subprocess.run([sys.executable, repo("tools", "switch-arms.py")] + argv,
+                           capture_output=True, text=True, cwd=ROOT)
+        out = (r.stdout or r.stderr).strip().splitlines()
+        if r.returncode != 0:
+            fail(name, out[-1] if out else "exit %d" % r.returncode)
+            return
+    ok(name, "the arm census matches the join and jump_branches, and docs/BYTECODE.md matches it")
+
+
 def check_body_name_doc():
     """docs/NAMING.md's tables are generated from inventory/body_names.csv."""
     name = "body-name-doc"
@@ -642,6 +656,7 @@ def main():
     check_calls_doc()
     check_switch_doc()
     check_switch_join()
+    check_switch_arms()
     check_defaults_misses()
     check_tool_contract()
     check_savegame_paths()
