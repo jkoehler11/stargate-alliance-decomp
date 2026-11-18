@@ -13490,3 +13490,36 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   need the runtime's rule rather than a payload read -- `UState`'s label map for a state whose code is inherited at
   the class or state level -- and `Object.GotoState` is `native(113)` slot `0x71`, so the body that reads the map is
   one slot lookup from the token the entries above carry.
+### Execution notes (2026-11-18, the label jumps join outside the AI census, and a record's code is its `Super` state's)
+
+- **Task.** The previous note's two open items: the **13** `GotoLabel` sites outside `inventory/ai_states.csv` (a
+  `Mover`, a `Pickup`, a `ReetouDevice`, `WillowWhisp`, two ambient pawns, seven gun classes' `NormalFire`) and the
+  **5** `GotoState` entry labels whose target state's payload is a record with no table.
+- **The text half was a census boundary, not a missing read.** Every class ships its own `ScriptText`, so the class
+  that carries a site is now read on demand for that state (`class_text_states`) instead of the join ending at the
+  `AIController` subtree. **12** of the 13 states join to the label -- **12** text calls against **12** sites -- and
+  the thirteenth is a divergence: `Mover.TriggerPound`'s shipped text spells the `Open:` label and leaves through
+  `GotoState` with no `Goto` in the body, while its compiled code jumps back to `Open`. The join is now **113 of
+  113** joined states, **0** text jumps with no site.
+- **A record-only state is not evidence of no code.** The `State` export's own `Super` (a `UStruct` super, one level
+  below the class chain) is where UE2 records a state inheriting another state's code: the timed `Mover` states are
+  22-byte records whose `Super` is `OpenTimedMover`, which owns the `Open`/`Close` table. `resolve_table` follows it,
+  so **4** of the **5** entry labels resolve one state over -- `103 of 105` literal targets in a table now, not 99 --
+  and the population behind it is **52** of the **387** record-only states naming a `Super`, **24** reaching a table
+  through it. The one left is not the same shape: `GameInfo.StartMatch` spells `GotoState('Dead', 'MPStart')` and
+  `GameInfo`'s own text declares no states at all (the `Dead` states are `Controller`'s), so `MPStart` is a label in
+  a state this class does not carry.
+- **The entry point is an offset, not a name.** All **166** tables put an entry on the first byte of code; `Begin`
+  names it in **143**, the other **23** carry the source's statement name (`Refire` x9, `Open` x6, `DoStrafe` x2,
+  then six single cases), and **6** tables put *two* names on that byte (`Begin`/`Turn`, `Begin`/`DoMove`), so
+  entering a state and jumping to its top are the same address. **103** of the **196** jumps name their own state's
+  entry point -- a loop back to the top -- and the other 93 jump forward inside the block.
+- **Files.** `tools/state-entry.py` (`class_text_states`, `meta` with table `(name, offset)` pairs and the export's
+  `Super`, `resolve_table`, `entry_point`/`entry_names`, six census keys, the joined-state and entry rows, five
+  self-test cases), `inventory/state_entry.csv`, `docs/systems/AI.md` (the generated block and the label-join
+  section, corrected in place), `docs/UNKNOWNS.md` U25, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and
+  this note.
+- **Next measurement.** `Object.GotoState` is `native(113)` slot `0x71`: the body that reads a state's label map at
+  runtime is one slot lookup from the token these entries carry, and it is the only route left to the states whose
+  code no shipped package declares (`GameInfo.Dead`'s `MPStart`).
+
