@@ -1708,6 +1708,36 @@ are limited to expected fields (checksum/timestamp) and documented.
   `tools/uscript-dis.py`'s (518) still carry copies; the first moves `docs/BYTECODE.md`'s `fn_state`/`fn_state_label`
   census and `state-code`'s per-state join, the second the payload anchoring -- one bundle each.
 
+### Execution notes (2026-11-18, the last three state-header copies are substituted, and each moved its own number)
+
+- **The three readers the previous note named as "one bundle each" are one bundle, and the rule is now the only
+  state-header pattern in the tree that reads a package.** `tools/text-branches.py` (513 blocks of the 554),
+  `tools/state-code.py` (which called that module's pattern and `body_span` for its per-state join) and
+  `tools/uscript-dis.py` (526 runs, and a `{` had to follow the name in one run) all read
+  `class-text-bodies.state_declarations`. The local patterns survive only as control columns, so the blocks each
+  one lost is a number in an artifact: `state_blocks_local` (513), the report's "matched by the local pattern it
+  replaced" (526), and the code comments that quote them.
+- **What the substitutions changed, and what they did not.** The `else` census does **not** move: `fn_state` 252,
+  `fn_state_label` 118, `fn_state_nested` 134 over 513 -> 554 blocks, because the 41 recovered blocks carry no
+  `else` -- a shape loss, not a keyword loss. The state-code join does move: joined states with label code
+  **120 -> 125** (`Engine.Mover`'s `BumpButton`, `TriggerAdvance`, `TriggerControl`, `TriggerPound`,
+  `TriggerToggle`), keywords **843 -> 862**, `arm_join_states` **120 -> 125** with **125** exact (all five spell
+  the arms their payload compiles), label-table entries the text spells **146 -> 159**, overrides **37 -> 41**.
+  The payload anchor moves and gains a verdict: **466 -> 471** anchored, all at +16 and all walking, state-owned
+  **80 -> 83**, and "declared twice under one key" **2 -> 0** -- those two rows were the local pattern, not a
+  duplicate: `Engine.Mover.SelfTriggered` and `StargateContent.HaakenWeaponShield.IsReady` are each declared
+  class-level and again inside `state() TriggerOpenTimed extends OpenTimedMover` / `state Downed extends Idle`,
+  so the state's copy was keyed at class level and the key was dropped, which loses both payloads.
+- Tool (`text-branches.py`'s `state_split`, `state-code.py`'s `text_label_counts`, `uscript-dis.py`'s
+  `state_spans`) + `inventory/text_branches.csv` (+ `state_blocks_local`), `text_branch_functions.csv`,
+  `state_code.csv` + `docs/BYTECODE.md`'s `else` census block and *five rules* anchor paragraph +
+  `docs/systems/AI.md`'s state-code block + `docs/UNKNOWNS.md` U24 + `docs/PACKAGE_SCRIPT_TEXT.md`'s reader table.
+- **Not in this PR:** `tools/console-commands.py` still shapes a state header itself (`STATE_RE`: `auto`,
+  `simulated` or `final` only, a state closing on a column-0 `}`) when it attributes `exec function`
+  declarations to states in an extracted tree; that is the next substitution and it moves
+  `inventory/console_commands.csv`. `tools/decompiler-gaps.py`'s `states` pattern counts the reconstruction under
+  `$WORK`, not the packages, so it is a control on the decompiler and not a copy of this rule.
+
 ### Execution notes (2026-11-12, the state bodies are thin and the overrides hold the behavior)
 
 - **A body can be read as an outline, so "what the state does" is a measurement now.** `tools/ai-state-body.py`

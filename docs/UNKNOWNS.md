@@ -4626,7 +4626,7 @@ tables do not name keeps the declared spelling (measured: none of the 99 text+na
 direction — a *bodied* declaration that names no export at all — is not this entry's and is not measured here; the
 stub census's body-side counterpart is named in the PLAN note as the next read.
 
-## U24. A state header has five spellings and the four readers of it disagreed — answered: one rule reads 554 blocks, and the 292 bodied declarations that named no export become 38, every one inside a preprocessor block
+## U24. A state header has five spellings and the four readers of it disagreed — answered: one rule reads 554 blocks, and every reader in the tree now takes it
 
 **Status.** **Answered 2026-11-18**, no boot. The scope detector was the half that was wrong, not the export
 walk: the packages' `State` -> `Function` chain already carried the records, and a declaration written inside a
@@ -4639,7 +4639,8 @@ block the reader missed was keyed to the class's own level, where no `Function` 
 
 **The measurement.** Over the same **2,319** class texts the four state-header readers read **424**
 (`text-stubs`' own `state Name {` pattern), **457** (`ai-states`, also `ai-state-body`, `state-exports`; `auto`
-but no parentheses and no modifier word), **518** (`uscript-dis`; parentheses, brace required on the same line)
+but no parentheses and no modifier word), **526** (`uscript-dis`; a brace required in one run after the name -- so every `state X extends Y` header read
+as no block at all, and five of the 526 name nothing)
 and **554** blocks under one rule that accepts every spelling the corpus uses. All **554** brace-match with the
 `{` on the header's line or the next one, which is the control that separates headers from statements: a
 prefix-only pattern also matches `stateTime += DeltaTime` and then takes the next brace it finds, which is how a
@@ -4670,11 +4671,29 @@ text declares and no export carries" turned out to be those childless exports mi
 `ai_state_bodies.csv` gains the 14 bodies (**1,533** own statements against 2,619 in 628 overrides), and
 `state_entry.csv`'s text-side census rows move with it (151 -> 165 states, 107 in-state sites).
 
-**Residual.** Two readers still carry their own copies, over the same 2,319 texts: `tools/text-branches.py`
-(**513** blocks on its comment-masked input; 516 raw, three of its matches are declarations a comment disables)
-and `tools/uscript-dis.py` (**518**, its pattern also reading nine non-declarations -- a bare `else`, empty names --
-which the shared rule does not). Substituting `text-branches` moves `docs/BYTECODE.md`'s `fn_state`/`fn_state_label`
-census and `tools/state-code.py`'s per-state text join (it calls that module's pattern and `body_span`); substituting
-`uscript-dis` moves the payload anchoring that keys a state-owned `Function` export by `(class, state, name)`. Both
-are their own bundles. A declaration that sits in a live block and still names no export is now a population of
-zero, so the next question is not a scope one.
+**The last three copies are substituted, and each moved a number it owned.** `tools/text-branches.py`'s `STATE`
+read **513** blocks of the same 2,319 texts (it wanted `state` at a line's start, one optional `auto`, and the name
+on the header's own line; 516 raw, three of them declarations a comment disables) and now reads **554** through the
+rule, with that pattern kept as a control column (`state_blocks_local`). Its `else` buckets do **not** move --
+`fn_state` 252, `fn_state_label` 118, `fn_state_nested` 134 -- because the **41** recovered blocks carry no `else`,
+which is what makes the old shortfall a loss of *shape* and not of keywords. `tools/state-code.py` called the same
+pattern for its per-state text join and moves with it: joined states whose text spells label code **120 -> 125**
+(`Engine.Mover`'s `BumpButton`, `TriggerAdvance`, `TriggerControl`, `TriggerPound`, `TriggerToggle`), their
+keywords **843 -> 862**, `arm_join_states` **120 -> 125** with `arm_join_equal` still **125** (every joined state
+spells exactly the arms its payload compiles), label-table entries the text spells **146 -> 159**, and states with
+a walk and no label keyword **37 -> 41**. `tools/uscript-dis.py`'s copy read **526** runs (**518** of them
+brace-matched a block under the old `state_spans`, five naming nothing) -- and the `{`-in-one-run rule is why the two
+"declared twice" anchor keys existed at all: `Engine.Mover.SelfTriggered` and
+`StargateContent.HaakenWeaponShield.IsReady` are each declared class-level *and* again inside
+`state() TriggerOpenTimed extends OpenTimedMover` / `state Downed extends Idle`, headers that pattern could not
+read, so the state's copy was keyed at class level and the key was dropped as a duplicate. With the rule the
+anchor reads **471 anchored payloads, all at +16 and all walking, 83 state-owned, 0 doubled**, against
+**466 / 466 / 80 / 2** for the local pattern (docs/BYTECODE.md's *five rules* paragraph carries the pair).
+
+**Residual.** One reader still shapes the header itself: `tools/console-commands.py`'s `STATE_RE` is a line scanner
+(`auto`/`simulated`/`final` only, a state closing on a column-0 `}`) that attributes `exec function` declarations to
+states in an extracted tree; it is the next substitution and moves `inventory/console_commands.csv`.
+`tools/decompiler-gaps.py`'s `states` pattern is **not** a copy of this rule -- it counts the reconstruction under
+`$WORK`, a different corpus, so it is a control on the decompiler, not a reader of the packages. A declaration that
+sits in a live block and still names no export is now a population of zero, so the next question is not a scope
+one.

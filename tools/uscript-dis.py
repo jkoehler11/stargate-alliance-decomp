@@ -831,7 +831,25 @@ def scan_report(path, lo=8, hi=40):
 FUNC_DECL = re.compile(r"^[ \t]*(?:(?:simulated|static|final|latent|native|protected|private|public)\s+)*"
                        r"(?:function|event)\s+(?:([\w<>\[\]]+)\s+)?(\w+)\s*\(",
                        re.IGNORECASE | re.MULTILINE)
-STATE_DECL = re.compile(r"\bstate\s*(?:\([^)]*\))?\s*(\w*)\s*\{", re.IGNORECASE)
+# The state-block header this module carried before UNKNOWNS U24, kept as a control: it wanted `state` and a `{`
+# in one run anywhere in the text, so it read 518 blocks -- nine of them no declaration at all -- against the one
+# rule's 554, and it cannot see `state() Name` (every state in `Engine.Mover`), `state(0) Name` or a qualified
+# `extends`. `state_spans` reads `class-text-bodies.state_declarations`; this pattern only counts the delta.
+STATE_LOCAL = re.compile(r"\bstate\s*(?:\([^)]*\))?\s*(\w*)\s*\{", re.IGNORECASE)
+
+_CTB = []
+
+
+def ctb_tool():
+    """`tools/class-text-bodies.py`, loaded by path -- it owns the one state-header rule (UNKNOWNS U24)."""
+    if not _CTB:
+        import importlib.util                               # noqa: PLC0415 - loaded only when a text is read
+        spec = importlib.util.spec_from_file_location("sg1_class_text_bodies",
+                                                      os.path.join(ROOT, "tools", "class-text-bodies.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _CTB.append(module)
+    return _CTB[0]
 
 # The first statement's leading token where the source fixes it *and the emitter writes that token first*.
 # `return <literal>;` qualifies: `EX_Return` is the statement's first byte. `if (...)` and `assert (...)` do not --
@@ -932,23 +950,14 @@ def state_blocks(text):
 
 
 def state_spans(text):
-    """`(name, body_start, body_end)` for every `state <name> { ... }` block, by brace matching."""
-    out = []
-    for m in STATE_DECL.finditer(text):
-        i = text.find("{", m.start())
-        if i < 0:
-            continue
-        depth, j = 0, i
-        while j < len(text):
-            if text[j] == "{":
-                depth += 1
-            elif text[j] == "}":
-                depth -= 1
-                if depth == 0:
-                    break
-            j += 1
-        out.append((m.group(1).lower(), i + 1, j))
-    return out
+    """`(name, body_start, body_end)` for every `state ... { ... }` block, from the one header rule.
+
+    `class-text-bodies.state_declarations` reads every spelling the corpus uses -- `state Name`, `state() Name`,
+    `state(0) Name`, a modifier word (`simulated state ZoomingIn`), a qualified `extends`, the capital `State` --
+    and brace-matches on a comment- and literal-masked copy, so a `{` in a string cannot close a block early.
+    """
+    return [(d["name"].lower(), d["start"] + 1, d["end"] - 1)
+            for d in ctb_tool().state_declarations(text)]
 
 
 def strip_states(text):
@@ -1023,6 +1032,7 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     sized = collections.Counter()
     anchored = anchored_state = located = at_zero = unmatched = unmatched_state = twice = 0
     no_body = unrouted_empty = no_body_empty = 0
+    blocks_rule = blocks_local = 0
     # Named residue: a count says a population exists, a name says what to read next. Each row is one payload the
     # anchor could not place, with the bytes its own source fixed and the bytes it actually carries at +16.
     residue_rows = []
@@ -1053,6 +1063,9 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
             if not text:
                 continue
             cname = names[ci]
+            spans = state_spans(text)
+            blocks_rule += len(spans)
+            blocks_local += len(STATE_LOCAL.findall(text))
             blocks = [(cname, None, strip_states(text))] + [(cname, sname, body)
                                                            for sname, body in state_blocks(text)]
             for owner_class, sname, body in blocks:
@@ -1213,6 +1226,8 @@ def anchor_report(path, lo=8, hi=40, name_rows=0):
     print("  anchored opcodes: %s" % dict(opcodes.most_common()))
     print("  by owner: %d class function(s), %d owned by a State"
           % (anchored - anchored_state, anchored_state))
+    print("  state blocks: %d read with the one header rule, %d matched by the local pattern it replaced"
+          % (blocks_rule, blocks_local))
     print("  not anchored: %d declaration(s) made twice under one key, %d whose return type has no measured rule"
           " (%d of those payloads compile empty, so no literal was exercised; %s), %d with no body at all"
           % (twice, sum(unrouted.values()), unrouted_empty, dict(unrouted.most_common(4)), no_body))

@@ -267,8 +267,8 @@ then whether the walk from there reaches the epilogue.
 payload is: a `Function` export names its owner only through its `Outer`, so the anchor is keyed by
 (class, function) — and, when that owner is a `State`, by (class, state, function), because a state's body is its
 own and the class-level declaration is not evidence for it. That second case is reachable: the class's `ScriptText`
-carries the `state <name> { ... }` block, and reading it anchors **93** state-owned payloads of which **92** sit at
-+16 and all 92 walk. Keyed by the function name alone, by contrast, one class's `Destroyed` declaration anchored every
+carries the `state <name> { ... }` block, and reading it anchors **83** state-owned payloads, all 83 at +16 and
+all 83 walking. Keyed by the function name alone, by contrast, one class's `Destroyed` declaration anchored every
 same-named export in the package — `Engine.u` alone exports it from dozens of classes — and those payloads were then
 searched for bytes their own source never contained: that mispairing, not the header, is what an earlier pass counted
 as 422 unmatched payloads. The third rule is the declaration's **return type**, which chooses the literal: a function
@@ -282,11 +282,17 @@ declaration regex over the whole `ScriptText`, which also matches every function
 block. When the class's own declaration is not an anchor — `Engine.u`'s `Weapon.IsFiring` is `return ((Instigator !=
 None) && …)` — the *state's* `return true;` became the class-level expectation, and the class-owned export was then
 searched for bytes only the state's body contains. Blanking the state spans before that pass (same length, newlines
-kept, so every offset stays valid for `first_statement_kind`) takes the corpus from **534 anchored payloads (514 at
-+16, 13 unmatched, 31 declarations dropped as doubled)** to **540 anchored, 536 at +16 and all 536 walking, 4
-unmatched, 2 dropped**; the spurious `+21`/`+22`/`+28` matches (7 payloads) go with them, the state-owned half is
-unchanged at 93 anchored / 92 at +16, and the twice-declared population falls from 31 to the two that really are
-declared twice in one body.
+kept, so every offset stays valid for `first_statement_kind`) is what fixes it, and the spans are
+`class-text-bodies.state_declarations`' — the one header rule (UNKNOWNS U24). It reads **554** state blocks on this
+build where the pattern the tool used to carry read **526**: that pattern wanted the `{` immediately after the name,
+so every `state X extends Y` header was invisible, and a function declared inside one was read a second time at class
+level. The corpus now measures **471 anchored payloads, all 471 at +16 and all 471 walking, 83 state-owned, 0
+declarations dropped as doubled**, against **466 / 466 / 80 / 2** for the local pattern — and the two it dropped are
+named, because a key dropped as doubled loses its payload: `Engine.Mover.SelfTriggered`, declared class-level and
+again inside `state() TriggerOpenTimed extends OpenTimedMover`, and
+`StargateContent.HaakenWeaponShield.IsReady`, class-level and again inside `state Downed extends Idle`. Two of the
+five payloads the rule recovers are those two exports, which the local read never anchored at all; the other three
+are state-owned bodies in a block it could not see.
 
 The fifth rule closes the population: **a declaration with no body is not an anchor, and its payload is a prediction.**
 82 declarations are `native` or state-implemented stubs — `function bool CanMultiJump();`, whose body lives in a state
@@ -2164,7 +2170,7 @@ length-preserving mask so both counts read the same offsets) and then counts the
 
 **The declaration rule was still short of the grammar, in four shapes, and this census moved with it.** Declarations are counted with `class-text-bodies.py`'s rule now: the grammar's keywords and modifiers, a modifier after the keyword (`function static`), a qualified return type (`function Actor.eDoubleClickDir Foo(`), and a parameter list that starts on the line after the name -- which is how the engine's own movement API is written, so `ServerMove`, `LongClientAdjustPosition`, `CallServerMove`, `ReplicateMove` and `MoveAutonomous` are all declared in `PlayerController`'s text and their bodies were outside every function. The four-modifier rule read **9,860** of the corpus's **11,525** declarations and `#635`'s same-line rule **11,481**. **No arm is left without a declaring body, and 1 `else` keyword(s) in the whole corpus sit outside every block** (named in the table below), against the previous reading's 65 absent arms behind 8 names and 107 outside keywords.
 
-**The in-state count fell for a second reason: the state read was case-sensitive.** UnrealScript folds keyword case and the shipped text spells `State` with a capital in **55** declarations across **35** classes, so every body in those blocks read as code outside one. Among them are the five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) the tree once recorded as states no class's text declares: the text declares them, in a capitalised block, and **252** `else` keywords now sit in state code.
+**The state blocks are read with the one header rule, and the local pattern was short.** `class-text-bodies.state_declarations` reads every spelling the corpus uses -- `state() LeadInOutLooper` (every state in `Engine.Mover`), `state(0) Name`, a modifier word, a qualified `extends`, a capital `State` -- and brace-matches on a masked copy; it answers **554** blocks against the **513** this tool's own pattern matched, so **252** `else` keywords sit in state code. The capital spelling alone is **55** declarations across **35** classes, among them the five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) the tree once recorded as no class's text declaring.
 
 **The keywords outside every function are state code, and the ones outside every block are prose.** The 253 `else` keywords the text spells outside a function body split **118** at a `state` body's own statement level -- the label code a state's main loop is written in -- and **134** inside a nested block of that code, across **34** classes: the game's bots and turret guns, `BotEnemy` and `BotSG` first among them. What is left outside every block is **1** keyword(s) in 1 class text(s), named in the table below, and 1 of them sit in the **22** of the 2,319 texts that begin inside a `/* ... */` comment: a front-truncated `ScriptText` reads its leading prose as code, the mirror of the tail truncation `UWindowURLTextArea` shows. So the bucket is not a reader gap -- no `else` in this corpus sits at class level.
 

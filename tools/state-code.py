@@ -345,25 +345,24 @@ def label_entries(data):
 def text_label_counts(text, spans_of):
     """`(label keywords, label `else`)` for every `state` block in one class's text, outside its overrides.
 
-    Masking and the declaration rule come from `tools/text-branches.py`, so the count is the same quantity its
-    `fn_state_label` column reports -- this tool only keeps it per state instead of per class.
+    Masking comes from `tools/text-branches.py` and both the block spans and the header rule from
+    `class-text-bodies.state_declarations` -- the one rule (UNKNOWNS U24), so this count and the `fn_state*`
+    columns `docs/BYTECODE.md` publishes are one reading of the same text. The local pattern this function
+    used to take from `text-branches` matched 513 of the corpus's 554 blocks, so a state spelled `state()
+    Name`, `state(0) Name`, `simulated state X` or with a qualified `extends` had no label code here at all.
     """
     tb = text_tool()
     live, _comments = tb.mask(text)
     depth = tb.ctb_tool().depth_map(live)
     spans = spans_of(live)
     out = {}
-    ms = list(tb.STATE.finditer(live))
-    for k, m in enumerate(ms):
-        limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
-        span = tb.ctb_tool().body_span(live, m.end(), limit)
-        if span is None:
-            continue
-        floor = depth[span[0]] + 1
+    for decl in tb.ctb_tool().state_declarations(live):
+        a, b = decl["start"], decl["end"]
+        floor = depth[a] + 1
         kw = els = at_floor = 0
-        for mm in tb.WORD.finditer(live[span[0]:span[1]]):
-            pos = span[0] + mm.start()
-            if any(a <= pos < b for a, b in spans):
+        for mm in tb.WORD.finditer(live[a:b]):
+            pos = a + mm.start()
+            if any(x <= pos < y for x, y in spans):
                 continue
             kw += 1
             if mm.group(1) == "else":
@@ -374,14 +373,14 @@ def text_label_counts(text, spans_of):
         # override. `default`/`case` are keywords, not labels, and `Begin` is the state's implicit entry point --
         # the table carries it whether or not the text does, so it is left out of the comparison.
         names = []
-        for lm in tb.LABEL.finditer(live[span[0]:span[1]]):
-            pos = span[0] + lm.start()
+        for lm in tb.LABEL.finditer(live[a:b]):
+            pos = a + lm.start()
             if depth[pos] != floor or any(a <= pos < b for a, b in spans):
                 continue
             if lm.group(1).lower() in ("default", "case"):
                 continue
             names.append(lm.group(1).lower())
-        out[m.group(1).lower()] = (kw, els, at_floor, names)
+        out[decl["name"].lower()] = (kw, els, at_floor, names)
     return out
 
 
