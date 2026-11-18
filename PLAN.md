@@ -12927,3 +12927,46 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement:** the switch's case *values* are one arm each; what a decompiler still cannot read from the
   stream is which arm a `Case`'s body ends at (the arm bodies are delimited only by the next `Case`), so an
   arm-body extent census is the next instrument on this page.
+### Execution notes (2026-11-17, the arm is the chain's next case, and a break is not the only way out)
+
+- **Task.** The previous note's next instrument, taken as the flow thread's bundle: where a `Case`'s arm body ends,
+  how the arm leaves, and where the switch itself ends -- one walk, one artifact, three measurements.
+- **The extent is the chain, not a scan.** `tools/switch-arms.py` (`make switch-arms`; `inventory/switch_arms.csv`,
+  1,263 rows) reuses `jump-branches.switch_census`'s chains and `jump-graph`'s resolved jumps: an arm's body is the
+  statements after its `Case` token (whose value expression is a *child*, so invisible in the stream) up to the next
+  `Case` **of the same list**, and the terminator case's own body is the `default:` arm. **200** lists, **844** arms,
+  **2,919** arm statements and **145** `default:` statements. A list of one case (a `switch` with no case) writes no
+  arm row but is still counted: skipping scripts with no `Case` link made 200 lists read as 198.
+- **There is no compiler prefix to strip, and the probe is what says so.** The first walk assumed a compiler `JumpIfNot`
+  "guard" at the head of every arm; it read only 16 of Engine's 272 arms with one. Two payloads settle it:
+  `PlayerProfile.SetCategoryVolume` opens `case 'Music':` with `JumpIfNot { NotEqual_FloatFloat }`, and the shipped
+  `ScriptText` spells that arm as `if (MusicVolume != NewVolume) {...}` -- the guard is the *source's own* `if`, and
+  `TestInfo.TestSwitch` opens an arm with a bare `Assert`. So the body starts at the case token and the census counts
+  heads (`head_if` **110**) rather than assuming a shape.
+- **`break` is the minority exit only in the sense that `Return` is common.** **628** arms leave by a `Jump` that lands
+  on their list's end (a `break`), **2** by a `Jump` that lands elsewhere (a `continue`:
+  `StreamPlaylistManager.HandleDebugExec` arm 2 and `StreamPlaylist.HandleDebugExec` arm 3), **162** by a `Return`, and
+  the remaining **12** stop with no jump at all -- **4** in the middle of a list, so they run into the next case's
+  code, and **8** as their list's last arm, so they run into the `default:` body. Those twelve are why the extent can
+  never be "up to the next `break`".
+- **The switch's end is measurable and the lists agree on it.** Every `break` of a list lands on one offset in **169**
+  of **200** lists, which is the switch's own end and what bounds the `default:` arm; **0** lists split across two
+  offsets and **29** carry no `break` at all (every arm leaves by `return`), so their extent stops at the script's end
+  and is counted, not assumed. **18** bodies carry a `Switch` of their own -- the population a forward scan would
+  truncate an arm at.
+- **Two walks, one number, held by the gate.** The **844** arms are `inventory/switch_join.csv`'s `chain` total exactly,
+  and the **40** empty arms are `jump_branches.csv`'s `empty_arm` row exactly (the shared `case A: case B:` body). Both
+  identities are asserted by `--check`, which needs no dump, and the page's block is rendered from the artifact by
+  `--check-doc`; a deliberate corpus difference fails both (measured by running `--check` against a 12-row artifact).
+- **The page emptied once while being corrected, and the cause was one statement.** `write_doc` did
+  `open(path, "w")` and `splice(path, ...)` in the same expression, so the open truncated the page before the splice
+  read it -- the markers were then missing and `docs/BYTECODE.md` was left at 0 bytes. Splice first, then open. Any
+  in-place renderer here has to read before it truncates.
+- **Files.** `tools/switch-arms.py` (new) + `inventory/switch_arms.csv` (new, 1,263 rows) + `docs/BYTECODE.md` (the
+  arm-body section and its generated block) + `docs/UNKNOWNS.md` U21 + `Makefile` (`switch-arms`, one `.PHONY` token,
+  one help line, two `make ci` lines) + `tools/ci.py` (`check_switch_arms`) + `docs/ARTIFACTS.md` +
+  `inventory/artifact_hashes.csv` + this note. One read of the 18 packages (1.9 s); no boot, no Ghidra.
+- **Next measurement:** the arm bodies are now bounded, so the remaining flow question on this page is the one no
+  census here has asked -- the shipped `ScriptText` carries the compiler's own `// End:0x...` annotation on every
+  `case`, `break` and `if` (guest offsets: `SetCategoryVolume`'s arm reads `// End:0x3E`, its `break` `// End:0x97`),
+  so the text is an independent oracle for the extents this artifact measures and can be joined to it class by class.

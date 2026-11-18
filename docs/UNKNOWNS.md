@@ -4319,3 +4319,38 @@ the chain's **844** exactly, so no site's count moved for any other reason.
 **Reproduce.** `python3 tools/switch-join.py -o inventory/switch_join.csv --write-doc docs/BYTECODE.md` -- no dump,
 the two committed censuses are its only input; `--check` re-derives the join, byte-compares the artifact and fails on
 a `differ` or `unpaired` row or on a broken arm identity.
+## U21. Where a `Case`'s arm body ends, and where the `switch` itself ends -- answered: the chain's next case, and the offset the breaks agree on
+
+**Observed.** `inventory/switch_join.csv` settles how many arms a list has, and `inventory/jump_graph.csv` settles
+where a jump lands, but nothing in the corpus said **which statements belong to one arm**: a `Case` token carries its
+own value expression as a child and the arm's code follows it with no marker at either end, so the only rule available
+was "up to the next `Case` token" -- which a nested switch breaks, since its cases are `Case` tokens inside the arm.
+
+**Measured.** `tools/switch-arms.py` (`make switch-arms`; `inventory/switch_arms.csv`, one row per arm, per `default:`
+body and per list) walks the same 11,687 payloads the jump graph does and takes the boundary from the chain: an arm is
+the statements between its `Case` and the **next `Case` of the same list**, and the `0xffff` terminator case's own body
+is the `default:` arm. **200** lists hold **844** arms with **2,919** statements and **200** `default:` bodies with
+**145**; **18** bodies carry a `Switch` of their own, which is exactly the population a forward scan would cut short.
+
+**There is no compiler prefix in front of an arm.** The first reading assumed a `JumpIfNot` "guard" the compiler emitted
+at the head of every arm; it held for 16 of `Engine`'s 272 arms. `PlayerProfile.SetCategoryVolume` opens `case 'Music':`
+with `JumpIfNot { NotEqual_FloatFloat }` and its shipped text spells that arm as `if (MusicVolume != NewVolume) {...}`,
+while `TestInfo.TestSwitch` opens `case 0:` with a bare `Assert` -- the first statement of an arm is the source's, so
+the body starts at the case token and **110** arms happen to open with an `if`.
+
+**How an arm leaves, and where the switch ends.** **628** arms end in a `Jump` that lands on their list's end (a
+`break`), **2** in a `Jump` that lands elsewhere (a `continue`), **162** in a `Return`, **4** stop with no jump in the
+middle of a list (so they run into the next case's code) and **8** stop as their list's last arm (so they run into the
+`default:` body). Because the `break` jumps of a list all land on one offset in **169** of **200** lists, that offset
+is the switch's own end and it bounds the `default:` arm; **0** lists split across two offsets and **29** carry no
+`break` at all, so their extent stops at the script's end rather than at a measured one.
+
+**What to read.** An arm runs from just after its `Case` to the next case of its list -- never to the next `Case`
+token, and never to its `break`. Its exit kind is a column (`end`), and the switch's end is its list row's `end`
+(every `break` of the list lands there). The **844** arms are the join's own total and the **40** empty arms are
+`jump_branches.csv`'s `empty_arm` row, which `--check` asserts without the dump.
+
+**Reproduce.** `make switch-arms` (one read of the 18 packages, 1.9 s; no boot, no Ghidra), then
+`python3 tools/switch-arms.py --check --check-doc docs/BYTECODE.md` from the two committed censuses alone. The next
+instrument on this entry is the shipped text's own `// End:0x....` annotations, which carry guest offsets for exactly
+these extents (`SetCategoryVolume`'s arm reads `// End:0x3E` and its `break` `// End:0x97`).
