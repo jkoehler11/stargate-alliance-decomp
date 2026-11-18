@@ -4404,7 +4404,7 @@ source says -- `break` to `break;`, `return` to `return`, a loop's back edge to 
 not a disagreement but a limit: the **466** positional pairings rest on an inferred label order, and the **55**
 unmatched arms have no exit comparison at all. `--check` on both tools is dump-free, and the page's block is rendered
 from the artifact by `--check-doc`.
-## U22. The `else` census agrees with 91.1% of classes -- and with 96.1% of the functions that carry an `else` -- answered: the class figure is a size effect, the surplus is state code, and 226 arms were loop breaks
+## U22. The `else` census agrees with 92.7% of classes -- and with 99.0% of the functions that carry an `else` -- answered: the class figure is a size effect, and the one-sided population is the build guards plus four empty blocks
 
 **Observed.** `tools/text-branches.py` counts a class's live `else` keywords and pairs them with
 `inventory/jump_branches.csv`'s arms per class: **881** of the **967** joined classes agree on the count
@@ -4455,6 +4455,21 @@ corpus (its then-block is a comment), so the shape cannot be reclassified from t
 which is the other half of this join rather than an independent arbiter. What is left is therefore a limit of
 the stream, measured, and not a revision question: the earlier "more arms than the text spells" population was
 the arm census's own reading, not the text's.
+
+**And the text's guards are what the one-sided population was (measured 2026-11-17).** The 13 surplus functions
+(**17** keywords) were never a revision question: the text carries the source's own build guards, and
+`tools/text-branches.py` evaluates them now. With `XBox` and `DEBUG` defined and `PS2`/`PC` not -- the set the
+join *selects*, because it is the only one of eight that breaks no function that agreed on the raw count --
+**62** of the corpus's own `else` keywords sit in a part this build never compiled, and four more sit in an
+`else { }` block, which has nothing to skip and so no arm. Excluding both, the per-function agreement is **5,677
+of the 5,736** (**99.0%**), **2,000 of the 2,059** functions that carry an `else` at all (**97.1%**), **0**
+functions spell more `else` than the record has arms, **0** spell one in a body with no arm, and the **59**
+remaining are all the record's -- of which **56** have a gap no larger than the body's own `continue` count and
+**3** do not (`GameInfo.ParseLoadingHint`, `GUIComponent.MenuStateChange`, `CommandInterface.TestTraceActors`,
+named because a `continue` does not explain them). The text-only population resolves the same way: **31** of the
+**34** bodies carry no compiled branch text, and the remaining 3 are named in `docs/BYTECODE.md`. What this does
+*not* settle is unchanged and now bounded by a count rather than a shape: 59 arms of a `continue`-vs-empty-then
+ambiguity, which no stream reading separates.
 
 **Reproduce.** `make text-branches` (needs the dump) writes both artifacts and both generated blocks;
 `python3 tools/text-branches.py --check-functions` re-derives the five per-class identities and the two corpus
