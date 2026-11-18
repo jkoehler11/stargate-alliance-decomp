@@ -17,15 +17,24 @@ condition-term model: one `JumpIfNot` per term is what the codegen should emit, 
 class's text declares and its package does not compile.
 
     tools/text-branches.py --system DUMP/System -o inventory/text_branches.csv --write-doc docs/BYTECODE.md
+    tools/text-branches.py --system DUMP/System --functions -o inventory/text_branches.csv
     tools/text-branches.py --report
-    tools/text-branches.py --check-doc docs/BYTECODE.md   # from the committed artifact
+    tools/text-branches.py --check-doc docs/BYTECODE.md   # from the committed artifacts
+    tools/text-branches.py --check-functions              # the two artifacts reconcile, no dump
     tools/text-branches.py --check                        # synthetic, no dump, writes nothing
+
+`--functions` writes a second artifact, `inventory/text_branch_functions.csv`, one row per function either
+side names: the `else`/`if`/`while`/`for` the live text spells in that body against the `else` arms and
+`JumpIfNot` tokens `inventory/jump_branches.csv` has in it. The class artifact's `fn_*` columns are the same
+split summed, so `--check-functions` holds the two files to each other without the dump (five identities per
+class), which is what makes a per-function row a measurement rather than a second reading.
 
 Reads the packages plus `inventory/jump_branches.csv`; no bytecode walk, no boot, no Ghidra. Counts only:
 nothing here prints or commits source text.
 """
 import argparse
 import collections
+import contextlib
 import csv
 import importlib.util
 import io
@@ -42,6 +51,62 @@ from ue2pkg import Package  # noqa: E402
 CSV_PATH = os.path.join(ROOT, "inventory", "text_branches.csv")
 BRANCHES = os.path.join(ROOT, "inventory", "jump_branches.csv")
 DOC_MARK = ("<!-- generated:text-branches -->", "<!-- /generated:text-branches -->")
+FUNC_CSV_PATH = os.path.join(ROOT, "inventory", "text_branch_functions.csv")
+FUNC_MARK = ("<!-- generated:text-branch-functions -->", "<!-- /generated:text-branch-functions -->")
+
+FUNC_FIELDS = ["package", "class", "function", "class_verdict", "body", "record",
+               "text_else", "text_if", "text_while", "text_for", "terms", "text_and", "text_or",
+               "byte_else", "byte_if", "byte_empty", "byte_expression", "jumpifnot",
+               "else_verdict", "term_verdict", "short", "surplus", "unpaired", "pp", "note", "census"]
+
+FUNC_NOTE = {
+    "functions": "functions either side names with a branch in it",
+    "text_functions": "functions the live text declares with a body that carries a condition",
+    "record_functions": "functions the branch census has at least one `JumpIfNot` in",
+    "both": "functions both sides have",
+    "text_only": "a body with a condition and no jump in the record",
+    "record_only": "a jump in the record and no declared body",
+    "else_agree": "`both` functions whose `else` count is equal on the two sides",
+    "else_short": "the record has more `else` arms than the text spells",
+    "else_surplus": "the text spells more `else` than the record has arms",
+    "else_unpaired": "the text spells `else` in a body the record gives no arm at all",
+    "else_none": "`both` functions with no `else` on either side (counted as equal above)",
+    "else_test": "`both` functions with an `else` arm or keyword on either side",
+    "else_test_agree": "of those, equal on the count",
+    "term_agree": "`both` functions whose condition-term count equals their `JumpIfNot` count",
+    "term_short": "more `JumpIfNot` tokens than `if` + `while` + `for`",
+    "term_surplus": "more condition terms than `JumpIfNot` tokens",
+    "op_functions": "`both` functions whose text carries `&&` or `||`",
+    "op_agree": "of those, exact on the term count",
+    "nop_functions": "`both` functions whose text carries neither",
+    "nop_agree": "of those, exact on the term count",
+    "agree_both": "`both` functions inside a class whose own `else` count agrees",
+    "agree_else_agree": "of those, exact on `else` per function",
+    "agree_else_short": "of those, short of the record",
+    "agree_else_surplus": "of those, ahead of the record",
+    "more_both": "`both` functions inside a `more` class",
+    "more_else_agree": "of those, exact on `else`",
+    "more_else_short": "of those, short of the record",
+    "more_else_surplus": "of those, ahead of the record",
+    "less_both": "`both` functions inside a `less` class",
+    "less_else_agree": "of those, exact on `else`",
+    "less_else_short": "of those, short of the record",
+    "less_else_surplus": "of those, ahead of the record",
+    "agree_else_unpaired": "of those, spelled in a body with no arm at all",
+    "more_else_unpaired": "of those, spelled in a body with no arm at all",
+    "less_else_unpaired": "of those, spelled in a body with no arm at all",
+    "arms": "`else` arms the joined functions carry",
+    "terms": "condition terms those functions declare",
+    "jumpifnot": "`JumpIfNot` tokens those functions carry",
+    "terms_outside": "condition terms in the class texts that sit outside every function body",
+    "term_over": "terms above the `JumpIfNot` count, summed over the functions",
+    "term_under": "terms below it, summed likewise",
+    "jumps_unresolved": "`JumpIfNot` tokens the branch census resolves that carry no branch row",
+    "pp_functions": "functions whose declaration sits inside a `#if…#endif` guard",
+    "text_only_pp": "of the text-only functions, those inside such a guard",
+}
+
+FUNC_KEYS = tuple(FUNC_NOTE)
 
 FIELDS = ["kind", "package", "class", "function", "live_else", "comment_else", "and", "or", "if", "while", "for",
           "terms", "pp_else", "text_functions", "record_functions", "byte_else", "byte_if", "byte_empty",
@@ -141,6 +206,11 @@ STATE = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M | re.I)
 # (`stateTime = 0.0;`) as declarations and answered 67 where the capital-`State` shape is 55 in 35 classes.
 STATE_CAPITAL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?State[ \t]+\w+")
 PP_ELSE = re.compile(r"#[ \t]*else\b")
+# A build guard: the shipped text carries the PS2 branch of the engine (`#ifdefPS2` .. `#endif`, no space after the
+# directive name), which this package never compiled -- so a function declared inside one is text the build did not
+# build, not a body the join lost. `#[ \t]*if` matches `#if`, `#ifdef`, `#ifndef` and the run-together `#ifdefPS2`.
+PP_OPEN = re.compile(r"(?m)^[ \t]*#[ \t]*if")
+PP_CLOSE = re.compile(r"(?m)^[ \t]*#[ \t]*endif")
 # A label statement -- `Begin:` at the start of a line. `state-tools`' entry census reads the state's `LabelTable`
 # against these (tools/state-code.py), so the pattern is here with the other text scanners rather than there.
 LABEL = re.compile(r"^[ \t]*([A-Za-z_]\w*)[ \t]*:(?!:)", re.M)
@@ -237,8 +307,8 @@ def else_in(text):
     return sum(1 for m in WORD.finditer(text) if m.group(1) == "else")
 
 
-def function_else(live):
-    """`(name -> `else` in the body, every name declared, the body spans)` for one class text.
+def function_bodies(live):
+    """`(name -> Counter of every keyword in the body, every name declared, the body spans)` for one class text.
 
     Spans come from `tools/class-text-bodies.py` -- its `FUNC` and its brace walk bounded by the next
     declaration -- applied to the **masked** buffer, so a declaration inside a comment is not a declaration and
@@ -246,7 +316,7 @@ def function_else(live):
     map, because the two are different facts: the text knows the function but shows no arms either.
     """
     ctb = ctb_tool()
-    bodies, names, spans = {}, set(), []
+    kw, names, spans = {}, set(), []
     ms = list(ctb.FUNC.finditer(live))
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
@@ -258,9 +328,38 @@ def function_else(live):
         # a class may declare a function twice -- a `state` block that overrides it is the common case -- and the
         # arms belong to the name, so every declaration's body counts and every body is a span the outside
         # bucket is measured against. Skipping the second one read 26 keywords as code outside every function.
-        bodies[name] = bodies.get(name, 0) + else_in(live[span[0]:span[1]])
+        c = counts(live[span[0]:span[1]])
+        body = kw.setdefault(name, collections.Counter())
+        for key in ("else", "if", "while", "for", "and", "or"):
+            body[key] += c[key]
         spans.append(span)
-    return bodies, names, spans
+    return kw, names, spans
+
+
+def pp_depth(text):
+    """Per-offset `#if…` nesting depth, so a declaration can be placed inside a build guard."""
+    depth = bytearray(len(text) + 1)
+    events = sorted([(m.start(), 1) for m in PP_OPEN.finditer(text)]
+                    + [(m.start(), -1) for m in PP_CLOSE.finditer(text)])
+    pos, cur = 0, 0
+    for p, delta in events:
+        depth[pos:p] = bytes([cur]) * (p - pos)
+        cur = max(0, cur + delta)
+        pos = p
+    depth[pos:] = bytes([cur]) * (len(text) + 1 - pos)
+    return depth
+
+
+def guarded_functions(live):
+    """Names whose declaration sits inside a `#if…#endif` guard -- the PS2 branch of this build's source."""
+    depth = pp_depth(live)
+    return {m.group(1).lower() for m in ctb_tool().FUNC.finditer(live) if depth[m.start()]}
+
+
+def function_else(live):
+    """`(name -> `else` in the body, every name declared, the body spans)` for one class text."""
+    kw, names, spans = function_bodies(live)
+    return {n: c["else"] for n, c in kw.items()}, names, spans
 
 
 def state_split(live, fn_spans, total_else, depth=None):
@@ -330,7 +429,8 @@ def walk(system_dir):
                 continue
             live, comments = mask(text)
             depth = ctb.depth_map(live)
-            fn_else, fn_names, fn_spans = function_else(live)
+            fn_kw, fn_names, fn_spans = function_bodies(live)
+            fn_else = {n: c["else"] for n, c in fn_kw.items()}
             fn_label, fn_nested, fn_top, state_blocks = state_split(live, fn_spans, counts(live)["else"], depth)
             rows[(package, pkg.name(exp["name"]).lower())] = {
                 "class": pkg.name(exp["name"]),
@@ -340,7 +440,8 @@ def walk(system_dir):
                 "decl_grammar": len(ctb.FUNC_GRAMMAR.findall(live)),
                 "decl_trailing": len(ctb.FUNC_TRAIL.findall(live)),
                 "state_blocks_capital": len(STATE_CAPITAL.findall(live)),
-                "fn_else": fn_else, "fn_names": fn_names,
+                "fn_else": fn_else, "fn_names": fn_names, "fn_kw": fn_kw,
+                "fn_pp": guarded_functions(live),
                 "fn_state": fn_label + fn_nested, "fn_state_label": fn_label, "fn_state_nested": fn_nested,
                 "fn_top": fn_top, "state_blocks": state_blocks, "front_truncated": front_truncated(text),
                 "decl_legacy": len(ctb.FUNC_LEGACY.findall(live)),
@@ -350,10 +451,14 @@ def walk(system_dir):
 
 
 def arm_counts(path=BRANCHES):
-    """`(package, class)` -> Counter of branch categories, the census the branch tool printed, and the `else`
-    arms keyed by function -- the key a function-level split needs and the class total cannot give."""
+    """`(package, class)` -> Counter of branch categories, the `else` arms keyed by function, the same keyed by
+    category, and the census the branch tool printed.
+
+    The `else` map is the key a class-level split needs and a class total cannot give; the per-category map is
+    what the per-function artifact reads, so one pass over one committed census feeds both."""
     out = collections.defaultdict(collections.Counter)
     by_fn = collections.defaultdict(collections.Counter)
+    by_cat = collections.defaultdict(lambda: collections.defaultdict(collections.Counter))
     census = {}
     for r in csv.DictReader(open(path, encoding="utf-8")):
         if r.get("kind") == "census":
@@ -365,9 +470,10 @@ def arm_counts(path=BRANCHES):
             continue
         key = (r["package"], (r["class"] or "").lower())
         out[key][r["category"]] += 1
+        by_cat[key][(r["function"] or "").lower()][r["category"]] += 1
         if r["category"] == "else":
             by_fn[key][(r["function"] or "").lower()] += 1
-    return out, by_fn, census
+    return out, by_fn, by_cat, census
 
 
 def verdict(live_else, byte_else):
@@ -562,6 +668,299 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         print("FAIL text-branches: census keys accumulated but never written: %s" % ", ".join(missing))
         raise SystemExit(1)
     return out
+
+
+# --- the per-function artifact ----------------------------------------------------------------------
+def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=None):
+    """`(rows, census)` for the same join one level down: one row per function either side names.
+
+    The class-level verdict is carried onto every row, because a class whose `else` totals agree can still be a
+    cancellation -- a function with more arms than its text spells beside one with fewer -- and only the
+    per-function row can say whether that is what the 82.7% is.
+    """
+    census = collections.Counter()
+    rows = []
+    keys = set()
+    for key, t in texts.items():
+        for name, c in (t.get("fn_kw") or {}).items():
+            if c["if"] + c["while"] + c["for"] or c["else"]:
+                keys.add((key, name))
+    for key, by in fn_cat.items():
+        for name, c in by.items():
+            if sum(c.values()):
+                keys.add((key, name))
+    for key, name in sorted(keys):
+        t = texts.get(key)
+        body = ((t or {}).get("fn_kw") or {}).get(name)
+        cats = (fn_cat.get(key) or {}).get(name) or collections.Counter()
+        byte_else, byte_if = cats["else"], cats["if"]
+        jin = byte_else + byte_if + cats["empty"] + cats["expression"]
+        terms = (body["if"] + body["while"] + body["for"]) if body else 0
+        text_else = body["else"] if body else 0
+        row = {"package": key[0], "class": (t or {}).get("class") or key[1], "function": name,
+               "class_verdict": class_verdicts.get(key, ""), "body": "body" if body else "",
+               "record": "jump" if jin else "",
+               "text_else": text_else, "text_if": body["if"] if body else 0,
+               "text_while": body["while"] if body else 0, "text_for": body["for"] if body else 0,
+               "terms": terms, "text_and": body["and"] if body else 0, "text_or": body["or"] if body else 0,
+               "byte_else": byte_else, "byte_if": byte_if, "byte_empty": cats["empty"],
+               "byte_expression": cats["expression"], "jumpifnot": jin, "short": 0, "surplus": 0, "unpaired": 0,
+               "pp": "yes" if name in ((t or {}).get("fn_pp") or set()) else "", "note": ""}
+        if row["pp"]:
+            census["pp_functions"] += 1
+        census["functions"] += 1
+        if body is None:
+            row["else_verdict"] = row["term_verdict"] = "no-text"
+            row["short"] = byte_else  # every arm of it is one the text cannot account for
+            census["record_only"] += 1
+            census["record_functions"] += 1
+            census["arms"] += byte_else
+            census["jumpifnot"] += jin
+            rows.append(row)
+            continue
+        census["text_functions"] += 1
+        census["terms"] += terms
+        if not jin:
+            row["else_verdict"] = row["term_verdict"] = "no-record"
+            row["unpaired"] = text_else  # a body with no jump in the record at all: its `else` has no arm
+            census["text_only"] += 1
+            census["text_only_pp"] += 1 if row["pp"] else 0
+            rows.append(row)
+            continue
+        census["both"] += 1
+        census["record_functions"] += 1
+        census["arms"] += byte_else
+        census["jumpifnot"] += jin
+        # A body with no *arm* at all is a different fact from one with fewer arms than keywords, and the class
+        # artifact already separates them as `fn_unpaired` against `fn_long`; the row keeps the same rule or the
+        # two artifacts disagree on six classes (a function whose jumps are all `if`).
+        dv = ("agree" if text_else == byte_else else
+              ("unpaired" if byte_else == 0 else ("short" if text_else < byte_else else "surplus")))
+        tv = "agree" if terms == jin else ("short" if terms < jin else "surplus")
+        row["else_verdict"], row["term_verdict"] = dv, tv
+        row["short"] = max(0, byte_else - text_else)
+        row["surplus"] = max(0, text_else - byte_else) if byte_else else 0
+        row["unpaired"] = text_else if byte_else == 0 else 0
+        if text_else == byte_else == 0:
+            census["else_none"] += 1
+        census["else_" + dv] += 1
+        census["term_" + tv] += 1
+        if body["and"] + body["or"]:
+            census["op_functions"] += 1
+            census["op_agree"] += 1 if tv == "agree" else 0
+        else:
+            census["nop_functions"] += 1
+            census["nop_agree"] += 1 if tv == "agree" else 0
+        cv = row["class_verdict"]
+        if cv in ("agree", "more", "less"):
+            census[cv + "_both"] += 1
+            census[cv + "_else_" + dv] += 1
+        rows.append(row)
+    # The `else` test is only a test where there is an `else` to find: the 0=0 population would inflate the rate
+    # the way a class-level count does when most of its functions are branch-free.
+    census["else_test"] = census["both"] - census["else_none"]
+    census["else_test_agree"] = census["else_agree"] - census["else_none"]
+    # The class census counts a class's whole `if`/`while`/`for`; this artifact counts the ones inside a declared
+    # body, so the difference is the condition terms in state code -- the bucket `fn_state` measures for `else`
+    # only. It is what keeps a class-level term surplus from reading as a per-function one.
+    if class_terms:
+        per_class = collections.Counter()
+        for r in rows:
+            per_class[(r["package"], (r["class"] or "").lower())] += int(r["terms"] or 0)
+        for key, total in class_terms.items():
+            outside = int(total or 0) - per_class[key]
+            if outside < 0:
+                print("FAIL text-branches: %s.%s declares %d terms in functions, its class text %s"
+                      % (key[0], key[1], per_class[key], total))
+                raise SystemExit(1)
+            census["terms_outside"] += outside
+    for r in rows:
+        d = int(r["terms"] or 0) - int(r["jumpifnot"] or 0)
+        census["term_over" if d > 0 else "term_under"] += abs(d)
+    census["jumps_unresolved"] = max(0, (census_jif or 0) - census["jumpifnot"])
+    missing = sorted(k for k, v in census.items() if k not in FUNC_KEYS and v)
+    if missing:
+        print("FAIL text-branches: function census keys accumulated but never written: %s" % ", ".join(missing))
+        raise SystemExit(1)
+    out = list(rows)
+    for k in FUNC_KEYS:
+        out.append({"package": "census", "function": k, "census": census[k], "note": FUNC_NOTE[k]})
+    return out
+
+
+def func_render(rows):
+    fh = io.StringIO()
+    w = csv.DictWriter(fh, fieldnames=FUNC_FIELDS, extrasaction="ignore")
+    w.writeheader()
+    for r in rows:
+        w.writerow({k: r.get(k, "") for k in FUNC_FIELDS})
+    return fh.getvalue()
+
+
+def func_count(rows, key):
+    for r in rows:
+        if r.get("package") == "census" and r.get("function") == key:
+            return int(r.get("census") or 0)
+    return 0
+
+
+def func_rows_of(rows):
+    return [r for r in rows if r.get("package") != "census"]
+
+
+def func_doc_block(rows):
+    fns = func_rows_of(rows)
+    both = func_count(rows, "both")
+    if not both:
+        return "\n(no per-function rows)\n"
+    top = sorted(fns, key=lambda r: (-(int(r["short"] or 0) + int(r["surplus"] or 0)),
+                                     r["package"], r["class"], r["function"]))[:8]
+
+    def split(prefix):
+        return (func_count(rows, prefix + "_both"), func_count(rows, prefix + "_else_agree"),
+                func_count(rows, prefix + "_else_short"), func_count(rows, prefix + "_else_surplus"),
+                func_count(rows, prefix + "_else_unpaired"))
+
+    ga, gm, gl = split("agree"), split("more"), split("less")
+    terms, jumps = func_count(rows, "terms"), func_count(rows, "jumpifnot")
+    outside, unresolved = func_count(rows, "terms_outside"), func_count(rows, "jumps_unresolved")
+    net_inside = terms - jumps
+    v = dict(functions=comma(func_count(rows, "functions")),
+             text_fns=comma(func_count(rows, "text_functions")),
+             record_fns=comma(func_count(rows, "record_functions")), both=comma(both),
+             text_only=comma(func_count(rows, "text_only")), record_only=comma(func_count(rows, "record_only")),
+             text_only_pp=comma(func_count(rows, "text_only_pp")),
+             else_agree=comma(func_count(rows, "else_agree")),
+             else_pct="%.1f" % pct(func_count(rows, "else_agree"), both),
+             else_short=comma(func_count(rows, "else_short")),
+             else_surplus=comma(func_count(rows, "else_surplus")),
+             else_unpaired=comma(func_count(rows, "else_unpaired")),
+             else_none=comma(func_count(rows, "else_none")),
+             else_test=comma(func_count(rows, "else_test")),
+             else_test_agree=comma(func_count(rows, "else_test_agree")),
+             else_test_pct="%.1f" % pct(func_count(rows, "else_test_agree"), func_count(rows, "else_test")),
+             term_agree=comma(func_count(rows, "term_agree")),
+             term_pct="%.1f" % pct(func_count(rows, "term_agree"), both),
+             term_short=comma(func_count(rows, "term_short")),
+             term_surplus=comma(func_count(rows, "term_surplus")),
+             op_fns=comma(func_count(rows, "op_functions")), op_agree=comma(func_count(rows, "op_agree")),
+             op_pct="%.1f" % pct(func_count(rows, "op_agree"), func_count(rows, "op_functions")),
+             nop_fns=comma(func_count(rows, "nop_functions")), nop_agree=comma(func_count(rows, "nop_agree")),
+             nop_pct="%.1f" % pct(func_count(rows, "nop_agree"), func_count(rows, "nop_functions")),
+             terms=comma(terms), jumps=comma(jumps), outside=comma(outside),
+             unresolved=comma(unresolved), surplus=comma(outside + net_inside - unresolved),
+             net_inside="%+d" % net_inside if net_inside < 0 else comma(net_inside),
+             agree_fns=comma(ga[0]), agree_ok=comma(ga[1]), agree_short=comma(ga[2]),
+             agree_surplus=comma(ga[3]), agree_unpaired=comma(ga[4]), agree_cancel=comma(ga[0] - ga[1]),
+             more_fns=comma(gm[0]), more_ok=comma(gm[1]), more_short=comma(gm[2]), more_surplus=comma(gm[3]),
+             more_unpaired=comma(gm[4]), more_span=comma(gm[0] - gm[1]),
+             less_fns=comma(gl[0]), less_ok=comma(gl[1]), less_short=comma(gl[2]), less_surplus=comma(gl[3]),
+             less_unpaired=comma(gl[4]), less_span=comma(gl[0] - gl[1]))
+    out = ("\n**The same join one level down.** **{functions}** functions carry a branch on at least one side: "
+           "**{text_fns}** the live text declares with a body that holds a condition, **{record_fns}** the branch "
+           "census has a `JumpIfNot` in, **{both}** both, **{text_only}** text-only and **{record_only}** "
+           "record-only, and **{text_only_pp}** of the text-only bodies sit inside a `#ifdef` guard -- this "
+           "build's PS2 branch, which the package never compiled. On the **{both}** functions both sides have, the `else` count is equal on "
+           "**{else_agree}** (**{else_pct}%**) -- {else_none} of them because neither side spells one at all, so "
+           "on the **{else_test}** functions that have an arm or a keyword the agreement is **{else_test_agree}** "
+           "(**{else_test_pct}%**) -- short of the "
+           "record on **{else_short}**, ahead of it on **{else_surplus}**, and **{else_unpaired}** spell `else` "
+           "in a body the record gives no arm for at all; the condition-term model is exact on "
+           "**{term_agree}** (**{term_pct}%**), with **{term_surplus}** functions ahead and **{term_short}** "
+           "behind.\n"
+           "\n**A class whose totals agree is not a class whose functions agree.** The {agree_fns} functions "
+           "inside the classes whose own `else` count agrees split **{agree_ok}** exact / {agree_short} short / "
+           "{agree_surplus} ahead / {agree_unpaired} with no arm; inside the `less` classes the {less_fns} "
+           "functions split {less_ok} / {less_short} / {less_surplus} / {less_unpaired}, and inside the `more` "
+           "classes the {more_fns} functions split {more_ok} / {more_short} / {more_surplus} / "
+           "{more_unpaired}. So a class-level agreement is a function-level "
+           "cancellation on **{agree_cancel}** of its functions, and a class-level disagreement is one the text "
+           "spells away on **{less_span}** of the `less` functions and **{more_span}** of the `more` ones -- the "
+           "opposite of the same number, in the opposite population.\n"
+           "\n**The operator rule is per function, where the operators are.** Of the {both} functions both "
+           "sides have a branch in, **{op_fns}** carry `&&` or `||` in their text and are exact on the term "
+           "count **{op_agree}** times (**{op_pct}%**); the **{nop_fns}** that carry neither are exact "
+           "**{nop_agree}** times (**{nop_pct}%**). A class-level version of this test cannot say that, "
+           "because a class with one `&&` anywhere is lumped with every function in it that has none.\n"
+           "\n**The class-level term surplus is three populations, and a function's own count is none of them.** "
+           "The live text declares **{terms}** condition terms inside a function body against the **{jumps}** "
+           "`JumpIfNot` tokens the record carries there (**{net_inside}** more terms than jumps, net of the "
+           "{term_surplus} functions ahead and {term_short} behind), while **{outside}** terms sit outside every "
+           "function body -- state code, which a class-level count adds to a function's own -- and the branch "
+           "census resolves **{unresolved}** tokens that carry no branch row. So the class-level surplus of "
+           "**{surplus}** is {outside} outside a body + {net_inside} inside one - {unresolved} unresolved: a "
+           "population sum, not a per-function defect.\n"
+           "\n| class verdict | functions | `else` agree | short | ahead | no arm |\n"
+           "| --- | ---: | ---: | ---: | ---: | ---: |\n"
+           "| `agree` | {agree_fns} | {agree_ok} | {agree_short} | {agree_surplus} | {agree_unpaired} |\n"
+           "| `more` | {more_fns} | {more_ok} | {more_short} | {more_surplus} | {more_unpaired} |\n"
+           "| `less` | {less_fns} | {less_ok} | {less_short} | {less_surplus} | {less_unpaired} |\n"
+           "\n| function | text `else` | arms | terms | `JumpIfNot` |\n| --- | ---: | ---: | ---: | ---: |\n"
+           ).format(**v)
+    for r in top:
+        out += "| `%s.%s` | %s | %s | %s | %s |\n" % (r["class"], r["function"], comma(r["text_else"]),
+                                                     comma(r["byte_else"]), comma(r["terms"]),
+                                                     comma(r["jumpifnot"]))
+    return out
+
+
+def check_functions(class_path=CSV_PATH, func_path=FUNC_CSV_PATH):
+    """The two artifacts are one measurement at two levels, so five identities per class must hold.
+
+    `fn_arms` sums the function rows' `byte_else`, `fn_absent` their record-only arms, `fn_short`/`fn_long` their
+    shortfall and surplus inside a declared body, and `fn_unpaired` the `else` of a body the record has no jump
+    in. Two corpus identities follow from the same two files: the condition terms that sit outside every function
+    body (the class census minus the function rows) and the `JumpIfNot` tokens the census resolves but no branch
+    row carries. No dump is read: a disagreement is a stale artifact on one side or the other.
+    """
+    if not os.path.exists(func_path):
+        print("FAIL text-branches: %s is missing" % func_path)
+        return 1
+    allrows = read_csv(class_path)
+    frows = read_csv(func_path)
+    cls = [r for r in allrows if r.get("kind") == "class"]
+    fns = [r for r in frows if r.get("package") != "census"]
+    per = collections.defaultdict(collections.Counter)
+    for r in fns:
+        k = (r["package"], (r["class"] or "").lower())
+        per[k]["arms"] += int(r["byte_else"] or 0)
+        per[k]["terms"] += int(r["terms"] or 0)
+        per[k]["jumpifnot"] += int(r["jumpifnot"] or 0)
+        if not r.get("body"):
+            per[k]["absent"] += int(r["byte_else"] or 0)
+            continue
+        per[k]["short"] += int(r["short"] or 0)
+        per[k]["surplus"] += int(r["surplus"] or 0)
+        per[k]["unpaired"] += int(r["unpaired"] or 0)
+    bad = []
+    for r in cls:
+        if r.get("fn_arms") in ("", None):
+            continue
+        k = (r["package"], (r["class"] or "").lower())
+        c = per.get(k, collections.Counter())
+        for col, key in (("fn_arms", "arms"), ("fn_absent", "absent"), ("fn_short", "short"),
+                         ("fn_long", "surplus"), ("fn_unpaired", "unpaired")):
+            if int(r.get(col) or 0) != c[key]:
+                bad.append("%s.%s %s: class %s, functions %s" % (r["package"], r["class"], col,
+                                                                 r.get(col) or 0, c[key]))
+    joined = len([r for r in cls if r.get("fn_arms") not in ("", None)])
+    outside = sum(int(r.get("terms") or 0) for r in cls) - sum(int(r["terms"] or 0) for r in fns)
+    if outside != func_count(frows, "terms_outside"):
+        bad.append("condition terms outside a function body: class census says %d, functions artifact %d"
+                   % (outside, func_count(frows, "terms_outside")))
+    unresolved = max(0, count(allrows, "jumpifnot") - sum(int(r["jumpifnot"] or 0) for r in fns))
+    if unresolved != func_count(frows, "jumps_unresolved"):
+        bad.append("`JumpIfNot` tokens with no branch row: class census says %d, functions artifact %d"
+                   % (unresolved, func_count(frows, "jumps_unresolved")))
+    if bad:
+        for line in bad[:20]:
+            print("FAIL text-branches: %s" % line)
+        print("FAIL text-branches: %d disagreement(s) between inventory/text_branches.csv and "
+              "inventory/text_branch_functions.csv" % len(bad))
+        return 1
+    print("ok   text-branches: the per-function artifact reconciles with the class artifact on all %d classes, "
+          "%d terms outside a body and %d unresolved jumps" % (joined, outside, unresolved))
+    return 0
 
 
 # --- rendering -------------------------------------------------------------------------------------
@@ -793,33 +1192,45 @@ def package_table(rows):
     return "\n".join(lines) + "\n"
 
 
-def splice(path, block):
-    text = open(path, encoding="utf-8").read()
-    lo, hi = DOC_MARK
+def splice_text(text, block, marks):
+    lo, hi = marks
     if lo not in text or hi not in text:
-        raise SystemExit("FAIL text-branches: markers not found in %s" % path)
+        raise SystemExit("FAIL text-branches: markers %s not found" % lo)
     head, rest = text.split(lo, 1)
     _old, tail = rest.split(hi, 1)
     return head + lo + block + hi + tail
 
 
-def write_doc(path, rows):
-    new = splice(path, doc_block(rows))
+def splice(path, block, marks=DOC_MARK):
+    return splice_text(open(path, encoding="utf-8").read(), block, marks)
+
+
+def write_doc(path, rows, frows=None):
+    text = splice(path, doc_block(rows))  # splice into a string first: opening for "w" truncates
+    if frows is not None:
+        text = splice_text(text, func_doc_block(frows), FUNC_MARK)
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(new)
+        fh.write(text)
 
 
-def check_doc(path, rows):
+def check_doc(path, rows, frows=None):
     text = open(path, encoding="utf-8").read()
-    lo, hi = DOC_MARK
-    if lo not in text or hi not in text:
-        print("FAIL text-branches: markers not found in %s" % path)
-        return 1
-    if text.split(lo, 1)[1].split(hi, 1)[0] != doc_block(rows):
-        print("FAIL text-branches: %s is stale -- regenerate with `make text-branches`" % path)
-        return 1
-    print("ok   text-branches: docs block reproduces from inventory/text_branches.csv")
-    return 0
+    rc = 0
+    for marks, block, artifact in ((DOC_MARK, doc_block(rows), "inventory/text_branches.csv"),
+                                   (FUNC_MARK, func_doc_block(frows or []),
+                                    "inventory/text_branch_functions.csv")):
+        lo, hi = marks
+        if lo not in text or hi not in text:
+            print("FAIL text-branches: markers %s not found in %s" % (lo, path))
+            rc = 1
+            continue
+        if text.split(lo, 1)[1].split(hi, 1)[0] != block:
+            print("FAIL text-branches: %s is stale for %s -- regenerate with `make text-branches`"
+                  % (path, artifact))
+            rc = 1
+    if not rc:
+        print("ok   text-branches: both docs blocks reproduce from their committed artifacts")
+    return rc
 
 
 # --- self-test -------------------------------------------------------------------------------------
@@ -939,6 +1350,54 @@ def selftest():
         for name in os.listdir(tmp):
             os.unlink(os.path.join(tmp, name))
         os.rmdir(tmp)
+    # the per-function split: an exact function, one the record has more arms in, one the text has no body for
+    texts = {("P", "c"): {"class": "C", "fn_kw": {
+        "exact": collections.Counter({"else": 1, "if": 1}),
+        "short": collections.Counter({"if": 1}),
+        "op": collections.Counter({"if": 1, "and": 1})}}}
+    fn_cat = {("P", "c"): {"exact": collections.Counter({"else": 1, "if": 1}),
+                           "short": collections.Counter({"else": 2, "if": 0}),
+                           "gone": collections.Counter({"else": 1})}}
+    frows = function_rows(texts, fn_cat, {("P", "c"): "less"})
+    if (func_count(frows, "both"), func_count(frows, "record_only"), func_count(frows, "text_only")) != (2, 1, 1):
+        print("FAIL text-branches: the per-function split read %r"
+              % ([(k, func_count(frows, k)) for k in ("both", "record_only", "text_only")],))
+        return 1
+    if (func_count(frows, "else_agree"), func_count(frows, "else_short"),
+            func_count(frows, "term_short")) != (1, 1, 2):
+        print("FAIL text-branches: the per-function verdicts read %r"
+              % ([(k, func_count(frows, k)) for k in ("else_agree", "else_short", "term_short")],))
+        return 1
+    if "<tr>" in func_doc_block(frows):
+        print("FAIL text-branches: the per-function block renders a marker as text")
+        return 1
+    tmp2 = tempfile.mkdtemp()
+    try:
+        cpath, fpath = os.path.join(tmp2, "class.csv"), os.path.join(tmp2, "fn.csv")
+        with open(cpath, "w", encoding="utf-8") as fh:
+            fh.write(render([{"kind": "class", "package": "P", "class": "C", "fn_arms": 4, "fn_absent": 1,
+                              "fn_short": 2, "fn_long": 0, "fn_unpaired": 0, "terms": 3}]))
+        with open(fpath, "w", encoding="utf-8") as fh:
+            fh.write(func_render(frows))
+        if func_doc_block(read_csv(fpath)) != func_doc_block(frows):
+            print("FAIL text-branches: the per-function block does not reproduce from its own CSV")
+            return 1
+        quiet = io.StringIO()
+        with contextlib.redirect_stdout(quiet):
+            rc_ok = check_functions(cpath, fpath)
+            with open(fpath, "w", encoding="utf-8") as fh:  # one arm moved: the identity must bite
+                fh.write(func_render([dict(r, byte_else=int(r.get("byte_else") or 0) + 1) for r in frows]))
+            rc_bad = check_functions(cpath, fpath)
+        if rc_ok != 0:
+            print("FAIL text-branches: the two synthetic artifacts do not reconcile: %s" % quiet.getvalue().strip())
+            return 1
+        if rc_bad == 0:
+            print("FAIL text-branches: the reconciliation passed on a corrupted function row")
+            return 1
+    finally:
+        for name in os.listdir(tmp2):
+            os.unlink(os.path.join(tmp2, name))
+        os.rmdir(tmp2)
     print("ok   text-branches: else, #else, comments and literals each read as themselves, and the block"
           " reproduces from its CSV")
     return 0
@@ -949,33 +1408,55 @@ def main():
     ap.add_argument("--system", help="the dump's System directory")
     ap.add_argument("-o", "--out", default=CSV_PATH, help="the artifact (default inventory/text_branches.csv)")
     ap.add_argument("--branches", default=BRANCHES, help="the branch census to join (default as committed)")
-    ap.add_argument("--write-doc", metavar="PAGE", help="render the generated block into this page")
-    ap.add_argument("--check-doc", metavar="PAGE", help="fail when the page's block is stale")
+    ap.add_argument("--functions", action="store_true",
+                    help="also write the per-function artifact (needs --system)")
+    ap.add_argument("--functions-out", default=FUNC_CSV_PATH,
+                    help="the per-function artifact (default inventory/text_branch_functions.csv)")
+    ap.add_argument("--write-doc", metavar="PAGE", help="render the generated blocks into this page")
+    ap.add_argument("--check-doc", metavar="PAGE", help="fail when either block is stale")
+    ap.add_argument("--check-functions", action="store_true",
+                    help="the two artifacts reconcile; no dump, writes nothing")
     ap.add_argument("--report", action="store_true", help="print the census, no write")
     ap.add_argument("--check", action="store_true", help="synthetic self-test; needs no dump and writes nothing")
     args = ap.parse_args()
     if args.check:
         return selftest()
+    if args.check_functions:
+        return check_functions(args.out, args.functions_out)
     if args.check_doc:
-        return check_doc(args.check_doc, read_csv(args.out))
+        frows = read_csv(args.functions_out) if os.path.exists(args.functions_out) else []
+        return check_doc(args.check_doc, read_csv(args.out), frows)
     if not args.system:
-        ap.error("a measurement needs --system (or --check / --check-doc)")
-    arms, fn_arms, branch_census = arm_counts(args.branches)
+        ap.error("a measurement needs --system (or --check / --check-doc / --check-functions)")
+    arms, fn_arms, fn_cat, branch_census = arm_counts(args.branches)
     jif = branch_census.get("jumpifnot", 0)
     records = {}
     classes_csv = os.path.join(ROOT, "inventory", "classes.csv")
     if os.path.exists(classes_csv):
         for r in csv.DictReader(open(classes_csv, encoding="utf-8")):
             records[(r["package"], r["class"].lower())] = r.get("functions", "")
-    rows = join(walk(args.system), arms, fn_arms, branch_census, jif, records)
+    texts = walk(args.system)
+    rows = join(texts, arms, fn_arms, branch_census, jif, records)
+    frows = None
+    if args.functions:
+        classes = [r for r in rows if r.get("kind") == "class"]
+        class_verdicts = {(r["package"], (r["class"] or "").lower()): r.get("verdict", "") for r in classes}
+        class_terms = {(r["package"], (r["class"] or "").lower()): r.get("terms", 0) for r in classes}
+        frows = function_rows(texts, fn_cat, class_verdicts, class_terms, jif)
     if args.write_doc:
-        write_doc(args.write_doc, rows)
+        write_doc(args.write_doc, rows, frows)
     if args.report or not args.write_doc:
         print(doc_block(rows).strip())
+        if frows is not None:
+            print(func_doc_block(frows).strip())
     if not args.report:
         with open(args.out, "w", encoding="utf-8", newline="") as fh:
             fh.write(render(rows))
         print("wrote %s (%d rows)" % (args.out, len(rows)))
+        if frows is not None:
+            with open(args.functions_out, "w", encoding="utf-8", newline="") as fh:
+                fh.write(func_render(frows))
+            print("wrote %s (%d rows)" % (args.functions_out, len(frows)))
     return 0
 
 

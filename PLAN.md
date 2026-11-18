@@ -13079,3 +13079,45 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   function-level join the switch census just gained. A per-**function** `else` join (the branch census's
   `JumpIfNot` sites against each function's own `if`/`else` text) would say whether that surplus is a class-level
   cancellation or a per-function one, and it needs no new dump read.
+### Execution notes (2026-11-17, the `else` census joins per function, and the 989-term surplus is 779 terms of state code)
+
+- **Task.** The previous note's next measurement: a per-function `else` join, to say whether the class-level
+  82.7% and its 989-term surplus are a class-level cancellation or a per-function one.
+- **The join is one artifact, and the class columns are its sums.** `tools/text-branches.py --functions` writes
+  `inventory/text_branch_functions.csv`: one row per function either side names, with the text's
+  `else`/`if`/`while`/`for`/`&&`/`||` in that body on one side and `jump_branches.csv`'s `else` arms and
+  `JumpIfNot` tokens on the other, plus the class's own verdict so a disagreement has both an owner and a
+  population. The class artifact regenerates **byte-identically** (2,395 rows, `diff` empty), which is what makes
+  the two files one measurement at two levels rather than two readings.
+- **The gate is five identities per class, and it bites.** `--check-functions` (in `make ci`) sums each class's
+  rows back to `fn_arms`, `fn_absent`, `fn_short`, `fn_long` and `fn_unpaired`, and checks two corpus counts:
+  condition terms outside every function body and `JumpIfNot` tokens with no branch row. Measured on the
+  committed pair: **2,319 classes, 779 terms outside a body, 11 unresolved jumps**, all agreeing; a synthetic
+  row moved by one arm fails it in `--check`. Writing it found a real definition mismatch -- a body whose jumps
+  are all `if` has no *arm*, so the class artifact files its keywords under `fn_unpaired` and not `fn_long`; the
+  row keeps the same rule (`else_verdict` = `unpaired`) or six classes disagree.
+- **What it measured.** **5,736** functions on both sides; `else` equal on **5,485** (**95.6%**), of which
+  **3,575** are 0 = 0, so the test population is **2,161** functions and the agreement there is **1,910
+  (88.4%)** -- the 82.7% class figure is a size effect, not a second estimate. The **800** agreeing classes are
+  exact on **2,691 of 2,694** functions, so their net of zero is three near-misses in two classes
+  (`ReetouDevice.addsprayedpawn` 1 arm, `UnrealPawn.isinloadout` 2, `UnrealPawn.beginstate` 1 keyword ahead).
+  The term model is exact on **5,634 (98.2%)** functions (84.8% of classes), and the operator rule separates
+  cleanly per function: **96.8%** exact with `&&`/`||` in the function against **99.0%** without.
+- **The surplus was a population sum, and the page sentence is corrected in place.** 989 = **779** terms of state
+  code outside every function body + **221** inside the joined bodies - **11** `JumpIfNot` tokens no branch row
+  carries. So "the shape of a class whose shipped text is a different revision" is withdrawn: the class count was
+  measuring where the terms live.
+- **The text-only population is mostly the PS2 guard.** 19 of the 34 bodies the record has no jump for sit inside
+  `#ifdef...#endif` -- the engine's PS2 branch, which this package never compiled. `#ifdefPS2` has no space after
+  the directive, so a `#ifdef\b` scan finds none of them; the census has a `pp` column and a `text_only_pp` count
+  now so the bucket is named rather than called a join hole.
+- **Files.** `tools/text-branches.py` (`function_bodies`, `pp_depth`/`guarded_functions`, `function_rows`,
+  `func_doc_block`, `check_functions`, `--functions`/`--functions-out`/`--check-functions`, two-block
+  `--write-doc`/`--check-doc`, four self-test cases) + `inventory/text_branch_functions.csv` (new, 5,815 rows) +
+  `docs/BYTECODE.md` (the per-function section, the corrected surplus paragraph, a second generated block) +
+  `docs/UNKNOWNS.md` U22 + `Makefile` (the recipe's `--functions` pair and the ci line) + `docs/ARTIFACTS.md` +
+  `inventory/artifact_hashes.csv` + this note. One read of the 18 packages (4.8 s); no boot, no Ghidra.
+- **Next measurement.** The 229 short functions (315 arms) are named rows now, so the next read is the arms
+  themselves: `switch_arms.csv` gives a `Case` arm its extent and this artifact gives the function its count, so
+  the shortfall can be checked against the arms' own guards rather than against the text -- whether an arm the
+  text does not spell is a compiler-emitted guard (`if (!x) goto`) or a second revision of the body.
