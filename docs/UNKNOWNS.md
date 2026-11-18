@@ -4404,25 +4404,36 @@ source says -- `break` to `break;`, `return` to `return`, a loop's back edge to 
 not a disagreement but a limit: the **466** positional pairings rest on an inferred label order, and the **55**
 unmatched arms have no exit comparison at all. `--check` on both tools is dump-free, and the page's block is rendered
 from the artifact by `--check-doc`.
-## U22. The `else` census agrees with 82.7% of classes -- and with 88.4% of the functions that carry an `else` -- answered: the class figure is a size effect and the surplus is state code
+## U22. The `else` census agrees with 91.1% of classes -- and with 96.1% of the functions that carry an `else` -- answered: the class figure is a size effect, the surplus is state code, and 226 arms were loop breaks
 
 **Observed.** `tools/text-branches.py` counts a class's live `else` keywords and pairs them with
-`inventory/jump_branches.csv`'s arms per class: **800** of the **967** joined classes agree on the count
-(**82.7%**), 45 spell more and 122 fewer. A class agrees only when every function in it does, so the figure falls
+`inventory/jump_branches.csv`'s arms per class: **881** of the **967** joined classes agree on the count
+(**91.1%**), 49 spell more and 37 fewer. A class agrees only when every function in it does, so the figure falls
 with a class's size and says nothing about *which* function it misses -- and the page read the **989**-term
 surplus as "the shape of a class whose shipped text is a different revision", which a per-class count cannot
 establish.
 
 **Measured.** The same join one level down (`--functions`, `inventory/text_branch_functions.csv`) pairs each
 function's own body with its own arms and `JumpIfNot` tokens. **5,736** functions are on both sides: the `else`
-count is equal on **5,485** (**95.6%**), but **3,575** of those have no `else` on either side, so on the
-**2,161** that carry one at all the agreement is **1,910 (88.4%)** -- **229** functions short of the record
-(**315** arms), **13** ahead (**17** keywords) and **9** with no arm at all. The **800** agreeing classes are
-exact on **2,691 of their 2,694** functions, so their net of zero is three near-misses in two classes rather
-than a population of texts from another revision. The condition-term model is exact on **5,634 (98.2%)**
-functions against 84.8% of classes, and the operator test is clean where the operators are: **96.8%** exact with
-`&&`/`||` in the function, **99.0%** without -- a class-level version of that test lumps every function of a
-class with one `&&` anywhere.
+count is equal on **5,655** (**98.6%**), but **3,668** of those have no `else` on either side, so on the
+**2,068** that carry one at all the agreement is **1,987 (96.1%)** -- **59** functions short of the record
+(**89** arms), **13** ahead (**17** keywords) and **9** with no arm at all. The **881** agreeing classes are
+exact on **all 3,631** of their functions, so their net of zero is no near-miss at all rather than a population
+of texts from another revision. The condition-term model is exact on **5,634 (98.2%)** functions against 84.8%
+of classes, and the operator test is clean where the operators are: **96.8%** exact with `&&`/`||` in the
+function, **99.0%** without -- a class-level version of that test lumps every function of a class with one `&&`
+anywhere.
+
+**226 of the 315 shortfall arms were a loop `break`, and the `else` rule could not tell.** An `if`/`else` and an
+`if (X) { ...; break; }` both compile to `JumpIfNot <else>` + `<then>` + `Jump <end>`, so the arm census read a
+then-arm that leaves its own loop as an else the text does not spell. `tools/jump-branches.py` now asks two
+questions of the region the trailing `Jump` skips and files either as a `leave`: does it hold a backward `Jump`
+whose test begins at or before the condition (a `for`/`while` back edge, **170** arms), or does the `Jump` land
+on the `IteratorPop` statement itself (a `foreach`, which has no `Jump` back edge, **56** arms)? Both rules were
+accepted on the join rather than by eye: **0** of the 5,613 functions whose `else` count already agreed contain
+an arm either rule reclassifies, and **0** of the 13 surplus functions do, so neither rule moves a population
+that was already right. The shortfall falls from 315 arms in 229 functions to **89 arms in 59**, and the class
+count from 122 fewer to **37**.
 
 **The 989-term surplus is a population sum.** **779** of the terms sit in state code outside every function body
 (the class count adds them to the functions' own), **221** are inside the joined functions' bodies (net of 47
@@ -4436,9 +4447,14 @@ spells the directive with no space, so a `#ifdef\b` pattern finds none of them, 
 called them functions the join had lost. The other 15 are the same shape as the class-level `unpaired` bucket,
 and no text-only body carries an arm the join failed to place.
 
-**What it does not settle.** Whether a function with more arms than its text spells is a different revision of
-the text or a reader pairing the wrong arm. The count is the branch census's authority, and the row only locates
-the disagreement at the function that owns it -- which is the granularity a rebuild grades at.
+**What it does not settle: the `continue` arm, which is the same two tokens as an empty then-arm.** The 89 arms
+that remain are `if (X) continue;` -- a then-arm that is a single `Jump` onto the loop's own increment, which is
+token-for-token what `if (X) {}` over an `else` emits. `MasterServerGameStats.Logf` is that second shape in this
+corpus (its then-block is a comment), so the shape cannot be reclassified from the stream at all: **66** of the
+89 look like the `continue`, and the only reading that separates them is the shipped text's own `else` count,
+which is the other half of this join rather than an independent arbiter. What is left is therefore a limit of
+the stream, measured, and not a revision question: the earlier "more arms than the text spells" population was
+the arm census's own reading, not the text's.
 
 **Reproduce.** `make text-branches` (needs the dump) writes both artifacts and both generated blocks;
 `python3 tools/text-branches.py --check-functions` re-derives the five per-class identities and the two corpus

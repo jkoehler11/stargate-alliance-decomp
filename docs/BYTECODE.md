@@ -2035,7 +2035,7 @@ should not print these as dead code: what it can say is that a block has no entr
 that is normal. The graph is also what the earlier label question needed -- a `Goto('Label')` was resolved to one of
 these offsets at compile time, and `inventory/jump_graph.csv` holds the offset it resolved to.
 
-## What the branches are: an `else` arm, a straight arm, or an empty one
+## What the branches are: an `else` arm, a loop `break`, a straight arm, or an empty one
 
 `tools/jump-branches.py` (`make jump-branches`; `inventory/jump_branches.csv`) is the graph's first consumer: it
 reads `inventory/jump_graph.csv`'s resolution back against the statement stream, which is what a decompiler needs
@@ -2049,12 +2049,25 @@ counting that is a measurement of the build's own shape rather than a reading of
 **A switch is a chain, and its arms are counted here too.** **200** `Switch` tokens over **174** scripts hold **200** case lists covering **1,044** of the **1,044** `Case` tokens (**0** are in no list), and a list runs **1** to **22** cases -- its last is the `0xffff` terminator, so a list of `n` carries `n-1` testable arms. **40** of those arms are **empty**, i.e. their body is the next case of their list: the source's shared `case A: case B:` body, which a decompiler must render as one arm with two values rather than as an arm that does nothing. **2** list(s) carry only the terminator, i.e. a `switch` with no case at all (`CreditsPage.ButtonClick`, `ExtrasPage.ButtonClick`); **0** `Switch` tokens are followed by a statement that is not a `Case`, which is this walk's test for a list that is not there, so no switch in this build is missing one. Both counts are rows of `inventory/jump_branches.csv`, which is the population that shape needs before it can be called a compiler defect rather than a reader's.<!-- /generated:jump-branches -->
 
 **What that says about the build.** `else` is the minority shape: three conditional jumps in four guard a straight
-arm, so a reconstruction that assumes the common `if`/`else` pattern would mislabel three arms in four. Eleven empty
+arm, so a reconstruction that assumes the common `if`/`else` pattern would mislabel three arms in four, and **226**
+of the arms that look like one are a loop `break` (below). Eleven empty
 then-arms survive codegen (`if (x) ;`), nine conditional jumps point **backward** -- a loop test at the bottom of its
 body -- and no `JumpIfNot` names a non-statement, which is the useful negative: a `&&`/`||` short circuit would be the
 only source of one, so a condition's sub-jumps take exactly the shape of an `if` and the stream alone cannot separate
 them. **That is a text question, and the text answers it**: `&&` and `||` add no `JumpIfNot` at all
 (the last section), so both sides are evaluated and there is nothing to separate.
+
+**A `break` compiles to the same three tokens, and 226 of this corpus's arms were one.** A then-arm that ends by
+leaving its own loop emits `JumpIfNot <after>` + `<then>` + `Jump <loop end>` -- an `else` skip and a loop exit are
+the same three tokens, and only what the jump skips over tells them apart. The census asks two questions of the
+skipped region and takes either as a `leave`: does it hold a backward `Jump` whose test begins at or before the
+condition (a `for`/`while` back edge, 170 arms), or does the trailing `Jump` land **on** the `IteratorPop` statement
+(a `foreach`, which leaves no `Jump` back edge at all, 56 arms)? A `foreach` inside an else body ends the arm with
+its own `IteratorPop`, which is the arm's last statement and not the jump's target, so the second rule does not
+fire on it. **Both rules were validated against the text join instead of by eye**: an arm either rule calls a
+`leave` never occurs in a function whose `else` count already equals its text's (0 of 5,613) and never in one of the
+13 surplus functions -- which is exactly where a rule that read loop exits as else arms would show up. The two
+readings are one measurement at two granularities, so the join is the falsifier a `break` rule needs.
 
 **`if (x) ; else y` is not separable and is not claimed.** With no then-arm there is nothing to jump over, so its
 bytes are identical to `if (!x) y`; the first draft of this census had an `else_empty` category, and the self-test
@@ -2187,15 +2200,16 @@ rather than a second measurement.
 <!-- /generated:text-branch-functions -->
 
 **The class figure is a size effect, and the per-function row is the oracle a rebuild can use.** A class
-agrees only when every function in it does, so 82.7% of the classes against 88.4% of the functions that carry
-an `else` at all are one measurement at two granularities. The rows say which function: the 800 classes that
-agree on the count are exact on **2,691 of their 2,694** functions, and the three they miss are named rows
-(`ReetouDevice.addsprayedpawn` one arm short, `UnrealPawn.isinloadout` two, `UnrealPawn.beginstate` one `else`
-keyword more than its two arms) -- so at function level their net of zero is three near-misses in two classes,
-not a population whose text is another revision. The disagreement is one-sided and it is the
-record's: **229** functions carry more `else` arms than their text spells (**315** arms) against **13** the
-other way (**17** keywords), and the shortfall is `StargateGame` (75 functions) and `Engine` (71) first -- the
-framework's and the game's own code, where the shipped text is the side that misses arms the compiler emitted.
+agrees only when every function in it does, so 91.1% of the classes against 96.1% of the functions that carry
+an `else` at all are one measurement at two granularities. The rows say which function: the 881 classes that
+agree on the count are exact on **all 3,631** of their functions, so at function level their net of zero is no
+near-miss at all -- two of the three that used to be here (`ReetouDevice.addsprayedpawn`,
+`UnrealPawn.isinloadout`) were loop exits the arm census had counted as else arms, and `UnrealPawn.beginstate`
+is one of the 13 surplus rows whose class still nets to zero without it.
+The disagreement is now almost entirely one-sided and it is the record's: **59** functions carry more `else`
+arms than their text spells (**89** arms) against **13** the other way (**17** keywords), and the shortfall is
+`StargateGame` (23 functions) and `Engine` (20) first -- the framework's and the game's own code, where the
+shipped text is the side that misses arms the compiler emitted.
 
 **The text-only population is mostly the PS2 guard.** 19 of the 34 bodies the record has no jump for at all sit
 inside an `#ifdef...#endif` block this package never compiled (`#ifdefPS2` spells the directive with no space,
@@ -2203,8 +2217,12 @@ which is why a `#ifdef\b` pattern finds none of them and why the first reading c
 hole). The remaining 15 are the same shape as the class-level `unpaired` bucket -- text a class ships and its
 build did not compile -- and no text-only body carries an arm the join lost.
 
-**What the row cannot say.** Whether a function with more arms than its text spells is a different revision of
-the text or a reader pairing the wrong arm is still open here: the arm count is the branch census's
-(`inventory/switch_arms.csv` for the extents, `jump_branches.csv` for the arms), and the per-function row only
-locates the disagreement at the function that owns it. That is what a rebuild grades against: function by
-function, 88.4% of the bodies that carry an `else` at all agree exactly, and the 229 that do not are listed.
+**What is left is one shape the stream cannot name.** The 89 arms in 59 functions that remain are the
+`if (X) continue;` arm: the then-arm is a single `Jump` that lands on the loop's own increment, and `if (X) {}`
+over an `else` compiles to exactly the same two tokens -- `MasterServerGameStats.Logf` is that shape in this
+corpus, an empty then-block (its body is a comment) over a real `else if`. **66** of the 89 are that arm, and
+none of them can be reclassified without the text, which is what makes them a limit of the reading rather than
+a defect in it: the empty-then `else` is the token shape and the `continue` is the token shape, and the argument
+that would separate them is the shipped text's own `else` count -- which is the other half of this join, not an
+independent arbiter. That is what a rebuild grades against: function by function, 96.1% of the bodies that carry
+an `else` at all agree exactly, and the 59 that do not are listed.
