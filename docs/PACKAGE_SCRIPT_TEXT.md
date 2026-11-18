@@ -202,7 +202,7 @@ the live remainder declares.
 | ... also declared in the same class's live text | **45** |
 | ... naming a function another class of the package exports | **33** |
 | ... naming no function the package exports at all | **59** |
-| live `function` declarations in the same classes / naming an export | **5925** / **5890** |
+| live `function` declarations in the same classes / naming an export | **5927** / **5890** |
 | `var` declarations inside a block comment | **51** |
 | `native function` declarations inside a block comment | **6** |
 | `native function` declarations inside a `//` run | **20** |
@@ -213,7 +213,7 @@ the live remainder declares.
 
 **The class record agrees, and the base rate is why that alone proves nothing.** All **39** body-in-comment classes are `functions=0, properties=0` in `inventory/classes.csv`, and **0** of the 213 classes that keep a live body are -- but **953 of the corpus's 2319** classes record `0/0` anyway, so a record cannot name one. The text can, and the pair of rates is the control: inside the comment population the split is 39 of 39 against 0 of 213.
 
-**The comment is mostly a revision of the class that shipped, and a third of its declarations name a function the build does not carry.** Joined name by name against the package's own exports, **134 of 226** `function` declarations inside a block comment name a function the same class still exports, **33** name a function another class of the same package exports (the declaration moved) and **59** name nothing the package exports at all. The control says the join is not the weak part: the same matcher over the same classes' live declarations places **5890 of 5925 (99.4%)**, against **134 of 226 (59.3%)** for the commented ones. **45** of the placed ones are also declared in the live text, so those classes carry both revisions of the same function. The absent ones split by population: **46** sit in a class that keeps a live body -- classes this build compiled, where the function is simply not there -- and **13** in the 39 classes whose whole body is the comment, where the class itself exports nothing at all. **4** of the absent names still occur somewhere in the live text, but as a mention rather than a declaration, so they stay counted absent.
+**The comment is mostly a revision of the class that shipped, and a third of its declarations name a function the build does not carry.** Joined name by name against the package's own exports, **134 of 226** `function` declarations inside a block comment name a function the same class still exports, **33** name a function another class of the same package exports (the declaration moved) and **59** name nothing the package exports at all. The control says the join is not the weak part: the same matcher over the same classes' live declarations places **5890 of 5927 (99.4%)**, against **134 of 226 (59.3%)** for the commented ones. **45** of the placed ones are also declared in the live text, so those classes carry both revisions of the same function. The absent ones split by population: **46** sit in a class that keeps a live body -- classes this build compiled, where the function is simply not there -- and **13** in the 39 classes whose whole body is the comment, where the class itself exports nothing at all. **4** of the absent names still occur somewhere in the live text, but as a mention rather than a declaration, so they stay counted absent.
 
 The 22 classes that keep a live body and still carry a commented declaration the package does not export, `declared` being every `function` declaration in the comment:
 
@@ -414,7 +414,7 @@ tables if nowhere else.
 
 
 <!-- generated:class-text-bodies -->
-**198 of the 226 declarations a block comment disables also carry their body inside that comment, and 25 of them have a live twin of the same name in the same class's text.** The reader is not the weak part: over the same classes' live text it finds a body for **5316 of 5925 declarations (89.7%)**, against **87.6%** inside the comments -- so the shortfall is the comment's own residue, not the pattern's. What the 25 pairs say is that a commented revision is **not** the function the build carries: **1** are byte-identical, **6** keep the operator multiset with a different layout, **12** move at least one operator and **6** leave a live body of 32 bytes or fewer behind a substantial comment -- 10684 commented bytes against 7672 live ones over the population.
+**198 of the 226 declarations a block comment disables also carry their body inside that comment, and 25 of them have a live twin of the same name in the same class's text.** The reader is not the weak part: over the same classes' live text it finds a body for **5318 of 5927 declarations (89.7%)**, against **87.6%** inside the comments -- so the shortfall is the comment's own residue, not the pattern's. What the 25 pairs say is that a commented revision is **not** the function the build carries: **1** are byte-identical, **6** keep the operator multiset with a different layout, **12** move at least one operator and **6** leave a live body of 32 bytes or fewer behind a substantial comment -- 10684 commented bytes against 7672 live ones over the population.
 
 | measure | value |
 |---|---|
@@ -422,7 +422,7 @@ tables if nowhere else.
 | declarations inside a block comment | **226** |
 | ... with a body in the same comment | **198** |
 | ... a declaration without a body | **28** |
-| live declarations / whose body the reader finds | **5925** / **5316** |
+| live declarations / whose body the reader finds | **5927** / **5318** |
 | commented bodies with a live twin of the same name | **25** |
 | ... byte-identical | **1** |
 | ... same operator multiset, different layout | **6** |
@@ -447,7 +447,7 @@ tables if nowhere else.
 | distinct state-label names / also a `Function` export | **61** / **7** |
 
 
-**The rule needed three shapes the grammar's first form did not have, and each is its own number.** A declaration is introduced by `event`, `delegate` or the operator family as well as by `function`, carries any of the grammar's modifiers, may put a modifier after the keyword (`function static`) and may start its parameter list on the next line -- which is how the engine's own `PlayerController` and `GameProfile` write theirs. Counted with the four-modifier `function`-only rule the corpus reads **5098** declarations over the classes that carry a comment; with the grammar's modifiers and keywords but the parameter list required on the same line, **6110**; with the parameter list allowed on its own line, **6151** -- of which **6113** are same-line and **3** carry a trailing modifier. What that does to this census is the three readings side by side: commented declarations **208 -> 226 -> 226**, live declarations **4890 -> 5884 -> 5925**, pairs **22 -> 25 -> 25** and disabled bodies **158 -> 172 -> 172** (first rule, same-line rule, this rule), so every figure the page quoted before was a floor under a rule that could not see the declarations it was counting.
+**The rule needed three shapes the grammar's first form did not have, and each is its own number.** A declaration is introduced by `event`, `delegate` or the operator family as well as by `function`, carries any of the grammar's modifiers, may put a modifier after the keyword (`function static`) and may start its parameter list on the next line -- which is how the engine's own `PlayerController` and `GameProfile` write theirs. Counted with the four-modifier `function`-only rule the corpus reads **5098** declarations over the classes that carry a comment; with the grammar's modifiers and keywords but the parameter list required on the same line, **6112**; with the parameter list allowed on its own line, **6153** -- of which **6115** are same-line and **3** carry a trailing modifier. What that does to this census is the three readings side by side: commented declarations **208 -> 226 -> 226**, live declarations **4890 -> 5886 -> 5927**, pairs **22 -> 25 -> 25** and disabled bodies **158 -> 172 -> 172** (first rule, same-line rule, this rule), so every figure the page quoted before was a floor under a rule that could not see the declarations it was counting.
 
 **The state read was case-sensitive and the text is not.** UnrealScript folds keywords, and **37** of the **251** `state` declarations this read finds over the same classes are spelled `State` -- lost to the case-sensitive pattern that a previous revision counted with, which is why the tree once recorded five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) as ones no text declares: the text declares them, in a capitalised block.
 Every pair, `ops` being the operator multiset and `stmts` the statements at the body's own brace depth:
@@ -553,6 +553,13 @@ That is the whole answer for the AI override API's **names**: `StargateGame.Team
 | `utpasswordwindow` | 1 | unresolved | `GamePlay.TournamentConsole.connectfailure` | absent | - | no declaration anywhere in the corpus's text |
 
 
+**The operator family is a declaration kind the rule could not name, and it is bodies, not a residue.** An operator declares its name as a symbol (`operator(24) bool == ( .. )`) and writes its priority in parentheses where a parameter list would start, so the grammar above read none of them: **2** operator-family declarations over the eighteen packages, **2** of them carrying a body (396 bytes over the population) and **0** declaration-only, beside **97** `native` operators, which are `tools/native-operators.py`'s population and never a body. A `break` inside one of the bodies was counted outside every declaration before this rule -- `inventory/break_sites.csv`'s `outside_body` column, not a state's label code.
+
+| class.operator | bytes | ops | stmts |
+|---|---:|---:|---:|
+| `Engine.MaplistRecord.==` | 49 | 3 | 1 |
+| `Engine.MaplistRecord.==` | 347 | 10 | 6 |
+
 **The disabled bodies are the weight of the comment, not a residue of it.** 172 commented bodies have no live twin at all: 54105 bytes of source, 534 operators and 574 statements this build never compiled, 20 of them a trailer of 32 bytes or fewer (a declaration a class kept while emptying its body, the shape the pairs show from the other side). Those are the classes and functions `tools/class-text-comments.py` counts by declaration; this is the same population by size, so a cut-content read can rank it instead of counting it.
 
 The largest of the 172 disabled bodies (`ops` / `stmts` at the body's own brace depth, the artifact carrying all of them):
@@ -570,6 +577,52 @@ The largest of the 172 disabled bodies (`ops` / `stmts` at the body's own brace 
 
 Census: 2319 classes read, 252 with a block comment, 198 commented bodies.
 <!-- /generated:class-text-bodies -->
+
+## The operator family is a declaration kind, not a residue
+
+An operator declaration names its function with a **symbol** and writes its priority in parentheses where a
+parameter list would start: `static final operator(24) bool == ( MapItem A, MapItem B )`, `native(129) static final
+preoperator bool ! ( bool A )`. Both parts defeated the grammar's rule, which expects an identifier in the name's slot
+and a `(` after the return type, so the rule saw **no declaration at all** -- not a declaration whose body it could
+not reach. That is why one `break` statement inside `Engine.MaplistRecord`'s `==` body was counted outside every
+declaration (`inventory/break_sites.csv`'s `outside_body` column, `docs/BYTECODE.md`).
+
+Read over all 2,319 class texts, **114** lines spell an operator and this rule now names the ones a class *writes*:
+**2**, both `Engine.MaplistRecord`'s `==` overloads, and both carry a body (**49** and **347** bytes, **3** / **10**
+operators, **1** / **6** statements). The other **97** are `native` operators -- `Core.Object`'s 91-row table
+(`==`, `**`, `>>>`, the `+=` family, the `vector`/`rotator`/`color` specialisations), `Engine.Actor`'s four `color`
+operators and `Engine.StreamBase`'s two string ones -- which are `tools/native-operators.py`'s population and have a
+`;` instead of a body, and which this reader deliberately does not count as functions (`native` is absent from its
+modifier list, so the natives census owns them). The remaining **15** lines spell the word inside a block comment --
+**14** of them in `Core.Object`'s own banner and **1** prose line in `StargateGame.GoauldConsoleTrigger` -- and this
+reader masks comments before it looks, which is why the 114 lines answer 99 declarations and not 114.
+
+**One rule, five artifacts.** The vocabulary is `tools/native-operators.py`'s -- its `DECL` already parsed
+`operator(24)` and a symbol name, and its `--selftest` holds the hard spellings -- and every text census in the tree
+calls `class-text-bodies.py`'s `FUNC`, so the correction moves all of them together and each delta is a number rather
+than a claim:
+
+| artifact | before | after | what moved |
+|---|---:|---:|---|
+| `inventory/class_text_bodies.csv` `live_declarations` | 5925 | **5927** | the control's denominator, over the comment-carrying classes |
+| `inventory/class_text_bodies.csv` `live_with_body` | 5316 | **5318** | both operator bodies are body-resolved, so the rate is unchanged at 89.7% |
+| `inventory/class_text_comments.csv` `live_functions` | 5925 | **5927** | the comment census's control |
+| `inventory/text_stubs.csv` `declarations` / `bodies` | 11411 / 10505 | **11413 / 10507** | stubs stay **906**: neither operator declaration is a stub |
+| `inventory/text_branches.csv` `text_functions` | 11523 | **11525** | and the `agree` class split 50 fewer / 732 exact -> **49 / 733** |
+| `inventory/break_sites.csv` `outside every declaration` | 4 | **3** | the site is a `break` inside `MaplistRecord.==`, and 985 in-body -> **986** |
+| `inventory/text_branch_functions.csv` `text_only` | 34 | **35** | the operator body joins as text-only -- see below |
+
+**The class-set verdict is the one that was a reader artifact.** `Engine.MaplistRecord` was one of the **50** classes
+that "declare fewer functions than their record has" in `docs/BYTECODE.md`; it declares exactly as many now, so that
+population is **49** and the exact-match one **733**, and a count disagreement this page has carried since the census
+was written was the reader, not the corpus.
+
+**What the operator row still cannot do is join the stream, and the build says why.** `Engine` exports the same two
+functions as `EqualEqual_KeyValuePairKeyValuePair` (69-byte payload) and `EqualEqual_MapItemMapItem` (182) -- the
+composed names `tools/native-operators.py`'s `compose()` builds from the symbol and its operand types, and the names
+`inventory/native_operators.csv` already carries for the `native` half. A name-keyed join therefore reads the
+operator body as `no-record` and one more text-only function; composing the text declaration's name from its own
+operand types is the route, and it is U23's.
 
 ## A declaration without a body
 
@@ -593,7 +646,7 @@ to say whether a body the text does not spell *moved into a comment* rather than
 it and this block.
 
 <!-- generated:text-stubs -->
-**Of the 11,411 declarations the grammar's rule reads, 10,505 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **880 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **15 carry a longer script**, a body the package kept. Of those **2** are forward declarations -- the same text declares the name again, with a body, further down -- and **12** are the mirror case, a body the class spells *above* the declaration (a bodyless re-declaration of a name the class already defines), so the residue is **1 declaration** whose script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **372 of the 10,505 bodied declarations compile to the same empty script too** -- **358** an empty `{}` body and **14** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 11 of the 369 empty-`{}` bodies carry a longer payload than it.
+**Of the 11,413 declarations the grammar's rule reads, 10,507 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **880 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **15 carry a longer script**, a body the package kept. Of those **2** are forward declarations -- the same text declares the name again, with a body, further down -- and **12** are the mirror case, a body the class spells *above* the declaration (a bodyless re-declaration of a name the class already defines), so the residue is **1 declaration** whose script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **372 of the 10,507 bodied declarations compile to the same empty script too** -- **358** an empty `{}` body and **14** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 11 of the 369 empty-`{}` bodies carry a longer payload than it.
 
 | shape | stubs | what it is |
 |---|---:|---|

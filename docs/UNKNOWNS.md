@@ -4549,3 +4549,29 @@ five per-class identities, the two corpus counts and the `continue` split (four 
 `continue_place` verdict recomputed from two of them), and `--check-continue-sites` holds the site artifact to the
 per-body counts (every bare/block site inside a then-block, no `other` one, every site inside a loop, offsets
 increasing) -- both from the committed files with no dump, and both run in `make ci`.
+
+## U23. A text declaration names an operator by its symbol, and the build names the record by the composed name
+
+**Observed.** `tools/class-text-bodies.py`'s rule now reads the operator family's spellings -- a priority in
+parentheses (`operator(24)`) and a **symbol** as the declared name (`==`, `$=`, `>>>`) -- so the two `==` bodies
+`Engine.MaplistRecord` writes are declarations with bodies (**49** and **347** bytes) instead of code inside no
+declaration at all (`docs/PACKAGE_SCRIPT_TEXT.md`). What they cannot do is join the stream: the bytecode side keys a
+function by the name the package exports, and `Engine.u` exports those two bodies as
+`EqualEqual_KeyValuePairKeyValuePair` (**69**-byte payload) and `EqualEqual_MapItemMapItem` (**182**) -- the compiler's
+own composed names, which is the same transform `tools/native-operators.py`'s `compose()` already implements and which
+`inventory/native_operators.csv` carries in its `composed` column for the 97 `native` operators. The text side says
+`==`, the record side says `EqualEqual_MapItemMapItem`, and the join is name-keyed, so
+`inventory/text_branch_functions.csv` holds one text-only row with **6** condition terms and **0** `JumpIfNot` (and
+`terms_outside` reads **773** where the six terms sat outside every body before).
+
+**What would settle it.** The declaration's operand types are in the text -- `( MapItem A, MapItem B )` -- and
+`compose()` turns a symbol plus those types into the record name; the text rule's name group would have to capture the
+parameter list of an operator declaration (it captures neither the parentheses nor the types today), and every join
+that keys a function by name would then read the composed name: `text-branches`' function join,
+`text-switches`' arm keys and `text-stubs`' export lookup. The measurement that says the rule is right is that the
+composed name is an export of the same class for **both** bodies, and that the branch census's own record for
+`EqualEqual_MapItemMapItem` (a 182-byte payload, so a `JumpIfNot` population to compare) names the condition terms
+the text spells. A cheaper half-answer is to key the join on the payload -- the record's size against the text body's
+operator and statement counts -- which would place the row without composing anything, but it would not make the
+switch census's per-arm keys agree.
+

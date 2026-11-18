@@ -51,7 +51,7 @@ class,Engine,info,,,,,,,,,,,,,,5,5,0,0,0,0,,0 of 5 declaration(s) are stubs
 class,Engine,physicsvolume,,,,,,,,,,,,,,17,14,3,3,0,0,,3 of 17 declaration(s) are stubs
 class,Engine,mover,,,,,,,,,,,,,,89,85,4,4,0,0,,4 of 89 declaration(s) are stubs
 class,Engine,ammunition,,,,,,,,,,,,,,10,10,0,0,0,0,,0 of 10 declaration(s) are stubs
-class,Engine,maplistrecord,,,,,,,,,,,,,,45,45,0,0,0,0,,0 of 45 declaration(s) are stubs
+class,Engine,maplistrecord,,,,,,,,,,,,,,47,47,0,0,0,0,,0 of 47 declaration(s) are stubs
 class,Engine,voicechatroom,,,,,,,,,,,,,,23,19,4,4,0,0,,4 of 23 declaration(s) are stubs
 class,Engine,interaction,,,,,,,,,,,,,,12,5,7,7,0,0,,7 of 12 declaration(s) are stubs
 class,Engine,streamplaylist,,,,,,,,,,,,,,35,34,1,1,0,0,,1 of 35 declaration(s) are stubs
@@ -2109,8 +2109,8 @@ stub,UWindow,uwindowlookandfeel,,controlframe_draw,142,semicolon,class,False,Fal
 stub,UWindow,uwindowurltextarea,,textareacliptext,17,unbalanced,class,False,False,734,body,21bd03bbe196,,none,,,,,,,,,
 census,,,,classes,,,,,,,,,,,,,,,,,,2319,class exports whose `ScriptText` parses
 census,,,,classes_declared,,,,,,,,,,,,,,,,,,1202,"of those, carrying at least one declaration"
-census,,,,declarations,,,,,,,,,,,,,,,,,,11411,declarations the grammar's rule reads in the live text
-census,,,,bodies,,,,,,,,,,,,,,,,,,10505,"of those, a body the brace walk resolves"
+census,,,,declarations,,,,,,,,,,,,,,,,,,11413,declarations the grammar's rule reads in the live text
+census,,,,bodies,,,,,,,,,,,,,,,,,,10507,"of those, a body the brace walk resolves"
 census,,,,stubs,,,,,,,,,,,,,,,,,,906,"of those, declaration-only: no body between the declaration and the next one"
 census,,,,body_empty_braces,,,,,,,,,,,,,,,,,,369,declarations whose body is an empty `{}`
 census,,,,body_empty,,,,,,,,,,,,,,,,,,372,declarations with a body whose export is the empty script -- the control
