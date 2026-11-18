@@ -453,7 +453,7 @@ branch,Engine,AIMsgManager,RemoveReceivedMsg,0058,if,190,0088,,,AIMsgManager.Rem
 branch,Engine,AIMsgManager,FindReceivedMsg,0000,if,130,0069,,,AIMsgManager.FindReceivedMsg
 branch,Engine,AIMsgManager,FindReceivedMsg,006e,if,323,00fc,,,AIMsgManager.FindReceivedMsg
 branch,Engine,AIMsgManager,FindReceivedMsg,007a,if,313,00f4,,,AIMsgManager.FindReceivedMsg
-branch,Engine,AIMsgManager,FindReceivedMsg,00a1,else,301,00ec,,,AIMsgManager.FindReceivedMsg
+branch,Engine,AIMsgManager,FindReceivedMsg,00a1,leave,301,00ec,,,AIMsgManager.FindReceivedMsg
 branch,Engine,PlayerController,CallServerMove,0000,else,916,02a6,,,PlayerController.CallServerMove
 branch,Engine,PlayerController,CallServerMove,0008,if,37,001b,,,PlayerController.CallServerMove
 branch,Engine,PlayerController,CallServerMove,001b,if,66,0031,,,PlayerController.CallServerMove
@@ -680,8 +680,8 @@ branch,Engine,PlayerInput,PlayerInput,02cd,if,1077,0303,,,PlayerInput.PlayerInpu
 branch,Engine,PlayerInput,PlayerInput,0303,else,1163,0343,,,PlayerInput.PlayerInput
 branch,Engine,AIMsgManager,IsSubTypeOf,000c,else,38,001c,,,AIMsgManager.IsSubTypeOf
 branch,Engine,AIMsgManager,GetFreeAIMsg,0005,if,300,00e9,,,AIMsgManager.GetFreeAIMsg
-branch,Engine,AIMsgManager,GetFreeAIMsg,0011,else,62,002d,,,AIMsgManager.GetFreeAIMsg
-branch,Engine,AIMsgManager,GetFreeAIMsg,002d,else,92,0045,,,AIMsgManager.GetFreeAIMsg
+branch,Engine,AIMsgManager,GetFreeAIMsg,0011,leave,62,002d,,,AIMsgManager.GetFreeAIMsg
+branch,Engine,AIMsgManager,GetFreeAIMsg,002d,leave,92,0045,,,AIMsgManager.GetFreeAIMsg
 branch,Engine,AIMsgManager,GetFreeAIMsg,0045,else,257,00cb,,,AIMsgManager.GetFreeAIMsg
 branch,Engine,AIMsgManager,NewAIMsg,000b,else,230,00bc,,,AIMsgManager.NewAIMsg
 branch,Engine,AIMsgManager,NewAIMsg,001f,else,131,0068,,,AIMsgManager.NewAIMsg
@@ -706,7 +706,7 @@ branch,Engine,AIMsgManager,ReceiveMsg,01a6,if,690,0222,,,AIMsgManager.ReceiveMsg
 branch,Engine,AIMsgManager,FindSentMsg,0000,if,130,0069,,,AIMsgManager.FindSentMsg
 branch,Engine,AIMsgManager,FindSentMsg,006e,if,323,00fc,,,AIMsgManager.FindSentMsg
 branch,Engine,AIMsgManager,FindSentMsg,007a,if,313,00f4,,,AIMsgManager.FindSentMsg
-branch,Engine,AIMsgManager,FindSentMsg,00a1,else,301,00ec,,,AIMsgManager.FindSentMsg
+branch,Engine,AIMsgManager,FindSentMsg,00a1,leave,301,00ec,,,AIMsgManager.FindSentMsg
 branch,Engine,AIMsgManager,RemoveSentMsg,0000,else,121,0058,,,AIMsgManager.RemoveSentMsg
 branch,Engine,AIMsgManager,RemoveSentMsg,000e,if,118,0055,,,AIMsgManager.RemoveSentMsg
 branch,Engine,AIMsgManager,RemoveSentMsg,001a,if,108,004d,,,AIMsgManager.RemoveSentMsg
@@ -723,7 +723,7 @@ branch,Engine,AIMsgManager,SendMsg,020b,if,680,0216,,,AIMsgManager.SendMsg
 branch,Engine,AIMsgManager,FindPostedMsg,0000,if,130,0069,,,AIMsgManager.FindPostedMsg
 branch,Engine,AIMsgManager,FindPostedMsg,006e,if,323,00fc,,,AIMsgManager.FindPostedMsg
 branch,Engine,AIMsgManager,FindPostedMsg,007a,if,313,00f4,,,AIMsgManager.FindPostedMsg
-branch,Engine,AIMsgManager,FindPostedMsg,00a1,else,301,00ec,,,AIMsgManager.FindPostedMsg
+branch,Engine,AIMsgManager,FindPostedMsg,00a1,leave,301,00ec,,,AIMsgManager.FindPostedMsg
 branch,Engine,AIMsgManager,RemovePostedMsg,0000,else,121,0058,,,AIMsgManager.RemovePostedMsg
 branch,Engine,AIMsgManager,RemovePostedMsg,000e,if,118,0055,,,AIMsgManager.RemovePostedMsg
 branch,Engine,AIMsgManager,RemovePostedMsg,001a,if,108,004d,,,AIMsgManager.RemovePostedMsg
@@ -1019,8 +1019,8 @@ branch,Engine,KVehicle,KDriverEnter,009a,if,272,00c2,,,KVehicle.KDriverEnter
 branch,Engine,KVehicle,KDriverLeave,0000,if,26,0014,,,KVehicle.KDriverLeave
 branch,Engine,KVehicle,KDriverLeave,0014,if,305,00f0,,,KVehicle.KDriverLeave
 branch,Engine,KVehicle,KDriverLeave,003f,if,221,00a7,,,KVehicle.KDriverLeave
-branch,Engine,KVehicle,KDriverLeave,006b,else,178,0085,,,KVehicle.KDriverLeave
-branch,Engine,KVehicle,KDriverLeave,0085,else,203,0099,,,KVehicle.KDriverLeave
+branch,Engine,KVehicle,KDriverLeave,006b,leave,178,0085,,,KVehicle.KDriverLeave
+branch,Engine,KVehicle,KDriverLeave,0085,leave,203,0099,,,KVehicle.KDriverLeave
 branch,Engine,KVehicle,KDriverLeave,00a7,if,305,00f0,,,KVehicle.KDriverLeave
 branch,Engine,KVehicle,KDriverLeave,0147,if,506,017b,,,KVehicle.KDriverLeave
 branch,Engine,PlayerReplicationInfo,SetCharacterVoice,0000,if,51,0027,,,PlayerReplicationInfo.SetCharacterVoice
@@ -1363,8 +1363,8 @@ branch,Engine,Vehicle,PlaceExitingDriver,01b2,if,612,01c8,,,Vehicle.PlaceExiting
 branch,Engine,Vehicle,PlaceExitingDriver,01cb,if,637,01dc,,,Vehicle.PlaceExitingDriver
 branch,Engine,Vehicle,PlaceExitingDriver,01f3,if,901,02a2,,,Vehicle.PlaceExitingDriver
 branch,Engine,Vehicle,PlaceExitingDriver,01ff,else,738,022b,,,Vehicle.PlaceExitingDriver
-branch,Engine,Vehicle,PlaceExitingDriver,0264,else,864,0284,,,Vehicle.PlaceExitingDriver
-branch,Engine,Vehicle,PlaceExitingDriver,0284,else,889,0298,,,Vehicle.PlaceExitingDriver
+branch,Engine,Vehicle,PlaceExitingDriver,0264,leave,864,0284,,,Vehicle.PlaceExitingDriver
+branch,Engine,Vehicle,PlaceExitingDriver,0284,leave,889,0298,,,Vehicle.PlaceExitingDriver
 branch,Engine,Vehicle,DetachDriver,0000,if,39,001a,,,Vehicle.DetachDriver
 branch,Engine,Vehicle,AttachDriver,0000,if,17,000c,,,Vehicle.AttachDriver
 branch,Engine,Vehicle,AttachDriver,0018,else,147,0073,,,Vehicle.AttachDriver
@@ -1915,7 +1915,7 @@ branch,Engine,Controller,ReceiveProjectileWarning,0000,if,61,002b,,,Controller.R
 branch,Engine,Controller,ClientSwitchToBestWeapon,0000,if,22,0011,,,Controller.ClientSwitchToBestWeapon
 branch,Engine,Controller,ClientSetWeapon,000c,if,251,00ad,,,Controller.ClientSetWeapon
 branch,Engine,Controller,ClientSetWeapon,001a,if,55,0029,,,Controller.ClientSetWeapon
-branch,Engine,Controller,ClientSetWeapon,0029,else,85,0040,,,Controller.ClientSetWeapon
+branch,Engine,Controller,ClientSetWeapon,0029,leave,85,0040,,,Controller.ClientSetWeapon
 branch,Engine,Controller,ClientSetWeapon,0040,else,148,006a,,,Controller.ClientSetWeapon
 branch,Engine,Controller,ClientSetWeapon,006a,if,226,009b,,,Controller.ClientSetWeapon
 branch,Engine,Controller,ParseChatPercVar,0000,if,38,0022,,,Controller.ParseChatPercVar
@@ -2657,7 +2657,7 @@ branch,Engine,PlayerController,PlayerMove,004c,if,193,007e,,,PlayerController.Ro
 branch,Engine,PlayerController,PlayerMove,0087,if,232,009a,,,PlayerController.RoundEnded.PlayerMove
 branch,Engine,PlayerController,PlayerMove,00a8,else,312,00db,,,PlayerController.RoundEnded.PlayerMove
 branch,Engine,TestInfo,TestContinueFor,0015,if,118,0068,,,TestInfo.TestContinueFor
-branch,Engine,TestInfo,TestContinueFor,0034,else,101,0059,,,TestInfo.TestContinueFor
+branch,Engine,TestInfo,TestContinueFor,0034,leave,101,0059,,,TestInfo.TestContinueFor
 branch,Engine,PlayerController,FindGoodView,0032,if,229,009b,,,PlayerController.RoundEnded.FindGoodView
 branch,Engine,PlayerController,FindGoodView,006e,if,202,0087,,,PlayerController.RoundEnded.FindGoodView
 branch,Engine,PlayerController,LongClientAdjustPosition,0000,if,22,0010,,,PlayerController.RoundEnded.LongClientAdjustPosition
@@ -3372,14 +3372,14 @@ branch,Engine,StreamInteraction,GetStreamDuration,000f,if,78,0041,,,StreamIntera
 branch,Engine,StreamInteraction,GetStreamVolume,0000,if,75,0044,,,StreamInteraction.GetStreamVolume
 branch,Engine,HUD,DisplayProgressMessages,0018,else,62,002c,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,005c,if,185,008b,,,HUD.DisplayProgressMessages
-branch,Engine,HUD,DisplayProgressMessages,0066,else,168,007e,,,HUD.DisplayProgressMessages
+branch,Engine,HUD,DisplayProgressMessages,0066,leave,168,007e,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,008b,if,294,00e4,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,009e,if,229,00af,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,00af,if,250,00c0,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,00c0,if,272,00d2,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,00d2,if,294,00e4,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,01a8,if,781,0257,,,HUD.DisplayProgressMessages
-branch,Engine,HUD,DisplayProgressMessages,01b2,else,584,01ca,,,HUD.DisplayProgressMessages
+branch,Engine,HUD,DisplayProgressMessages,01b2,leave,584,01ca,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,0257,if,1023,0309,,,HUD.DisplayProgressMessages
 branch,Engine,HUD,DisplayProgressMessages,02ab,if,1023,0309,,,HUD.DisplayProgressMessages
 branch,Engine,StreamInteraction,PlayStream,0000,else,477,017c,,,StreamInteraction.PlayStream
@@ -3851,7 +3851,7 @@ branch,Engine,StreamPlaylistManager,InitializeParsers,0005,if,175,0079,,,StreamP
 branch,Engine,StreamPlaylistManager,InitializeParsers,0011,if,165,0071,,,StreamPlaylistManager.InitializeParsers
 branch,Engine,StreamPlaylistManager,InitializeParsers,0038,if,165,0071,,,StreamPlaylistManager.InitializeParsers
 branch,Engine,StreamPlaylistManager,InitializePlaylists,0029,if,128,0064,,,StreamPlaylistManager.InitializePlaylists
-branch,Engine,StreamPlaylistManager,InitializePlaylists,0035,else,84,0046,,,StreamPlaylistManager.InitializePlaylists
+branch,Engine,StreamPlaylistManager,InitializePlaylists,0035,leave,84,0046,,,StreamPlaylistManager.InitializePlaylists
 branch,Engine,StreamPlaylistManager,InitializePlaylists,0064,else,149,0075,,,StreamPlaylistManager.InitializePlaylists
 branch,Engine,StreamPlaylistManager,InitializePlaylists,0075,if,172,0086,,,StreamPlaylistManager.InitializePlaylists
 branch,Engine,GameStats,TimeStamp,000e,if,65,0031,,,GameStats.TimeStamp
@@ -4130,7 +4130,7 @@ branch,Engine,GameInfo,RestartPlayer,03c5,if,1354,03de,,,GameInfo.RestartPlayer
 branch,Engine,GameInfo,RestartPlayer,03ef,if,1423,0411,,,GameInfo.RestartPlayer
 branch,Engine,PLSParser,ParseLines,0004,if,20,0010,,,PLSParser.ParseLines
 branch,Engine,PLSParser,ParseLines,0015,if,244,00c0,,,PLSParser.ParseLines
-branch,Engine,PLSParser,ParseLines,0021,else,88,0046,,,PLSParser.ParseLines
+branch,Engine,PLSParser,ParseLines,0021,leave,88,0046,,,PLSParser.ParseLines
 branch,Engine,PLSParser,ParseLines,0046,else,177,008d,,,PLSParser.ParseLines
 branch,Engine,PLSParser,ParseLines,008d,if,234,00b8,,,PLSParser.ParseLines
 branch,Engine,M3UParser,MatchPath,0011,if,143,0067,,,M3UParser.MatchPath
@@ -4150,7 +4150,7 @@ branch,Engine,LevelInfo,FillPrecacheMaterialsArray,00be,if,330,00eb,,,LevelInfo.
 branch,Engine,LevelInfo,FillPrecacheMaterialsArray,00f6,if,409,0127,,,LevelInfo.FillPrecacheMaterialsArray
 branch,Engine,M3UParser,ParseLines,0004,if,20,0010,,,M3UParser.ParseLines
 branch,Engine,M3UParser,ParseLines,0015,if,172,0082,,,M3UParser.ParseLines
-branch,Engine,M3UParser,ParseLines,0021,else,88,0046,,,M3UParser.ParseLines
+branch,Engine,M3UParser,ParseLines,0021,leave,88,0046,,,M3UParser.ParseLines
 branch,Engine,M3UParser,ParseLines,0051,if,138,006a,,,M3UParser.ParseLines
 branch,Engine,LevelInfo,GetGameClass,0000,if,44,001d,,,LevelInfo.GetGameClass
 branch,Engine,LevelInfo,GetGameClass,001d,if,114,004e,,,LevelInfo.GetGameClass
@@ -4163,10 +4163,10 @@ branch,Engine,B4SParser,ParseLines,0004,if,20,0010,,,B4SParser.ParseLines
 branch,Engine,B4SParser,ParseLines,0015,if,395,013c,,,B4SParser.ParseLines
 branch,Engine,B4SParser,ParseLines,0021,leave,102,0054,,,B4SParser.ParseLines
 branch,Engine,B4SParser,ParseLines,0054,else,261,00d0,,,B4SParser.ParseLines
-branch,Engine,B4SParser,ParseLines,0078,else,164,0088,,,B4SParser.ParseLines
+branch,Engine,B4SParser,ParseLines,0078,leave,164,0088,,,B4SParser.ParseLines
 branch,Engine,B4SParser,ParseLines,009c,else,228,00b9,,,B4SParser.ParseLines
 branch,Engine,B4SParser,ParseLines,00d0,if,385,0134,,,B4SParser.ParseLines
-branch,Engine,B4SParser,ParseLines,00fb,else,354,011d,,,B4SParser.ParseLines
+branch,Engine,B4SParser,ParseLines,00fb,leave,354,011d,,,B4SParser.ParseLines
 branch,Engine,PlaylistParserBase,HtmlDecode,0005,if,78,0036,,,PlaylistParserBase.HtmlDecode
 branch,Engine,PlaylistParserBase,GetTagged,000c,if,203,009b,,,PlaylistParserBase.GetTagged
 branch,Engine,PlaylistParserBase,GetTagged,0034,if,86,0044,,,PlaylistParserBase.GetTagged
@@ -4287,7 +4287,7 @@ branch,Engine,PlayInfo,Init,00af,if,364,0128,,,PlayInfo.Init
 branch,Engine,PlayInfo,Init,00c1,if,364,0128,,,PlayInfo.Init
 branch,Engine,PlayInfo,Init,00cf,if,303,00f9,,,PlayInfo.Init
 branch,Engine,PlayInfo,Init,00db,leave,293,00f1,,,PlayInfo.Init
-branch,Engine,PlayInfo,Init,00f9,else,322,0108,,,PlayInfo.Init
+branch,Engine,PlayInfo,Init,00f9,leave,322,0108,,,PlayInfo.Init
 branch,Engine,WarpZoneInfo,PreBeginPlay,000d,if,70,0036,,,WarpZoneInfo.PreBeginPlay
 branch,Engine,WarpZoneInfo,PreBeginPlay,0017,else,59,002d,,,WarpZoneInfo.PreBeginPlay
 branch,Engine,WarpZoneInfo,PreBeginPlay,0036,if,108,0054,,,WarpZoneInfo.PreBeginPlay
@@ -4863,7 +4863,7 @@ branch,Engine,GameInfo,BeginPlay,0009,if,74,0032,,,GameInfo.BeginPlay
 branch,Engine,GameInfo,BeginPlay,0032,else,90,0040,,,GameInfo.BeginPlay
 branch,Engine,MaplistManager,InitializeActiveLists,000b,if,248,00ad,,,MaplistManager.InitializeActiveLists
 branch,Engine,MaplistManager,InitializeActiveLists,0014,else,63,002f,,,MaplistManager.InitializeActiveLists
-branch,Engine,MaplistManager,InitializeActiveLists,0041,else,109,0051,,,MaplistManager.InitializeActiveLists
+branch,Engine,MaplistManager,InitializeActiveLists,0041,leave,109,0051,,,MaplistManager.InitializeActiveLists
 branch,Engine,MaplistManager,InitializeActiveLists,0066,if,189,0088,,,MaplistManager.InitializeActiveLists
 branch,Engine,GameInfo,StartScreenplay,0000,if,13,000b,,,GameInfo.StartScreenplay
 branch,Engine,GameInfo,StartScreenplay,000b,if,41,0020,,,GameInfo.StartScreenplay
@@ -4872,7 +4872,7 @@ branch,Engine,GameInfo,StartScreenplay,0036,leave,111,0052,,,GameInfo.StartScree
 branch,Engine,MaplistManager,InitializeMaplistRecords,002c,if,138,0064,,,MaplistManager.InitializeMaplistRecords
 branch,Engine,MaplistManager,InitializeMaplistRecords,0037,if,128,005c,,,MaplistManager.InitializeMaplistRecords
 branch,Engine,MaplistManager,InitializeMaplistRecords,0069,if,284,00d2,,,MaplistManager.InitializeMaplistRecords
-branch,Engine,MaplistManager,InitializeMaplistRecords,0082,else,199,0093,,,MaplistManager.InitializeMaplistRecords
+branch,Engine,MaplistManager,InitializeMaplistRecords,0082,leave,199,0093,,,MaplistManager.InitializeMaplistRecords
 branch,Engine,MaplistManager,InitializeMaplistRecords,00a2,else,263,00c3,,,MaplistManager.InitializeMaplistRecords
 branch,Engine,AIMessage,AddRecipient,0000,else,34,001a,,,AIMessage.AddRecipient
 branch,Engine,AIMessage,AddRecipients,0005,if,57,0029,,,AIMessage.AddRecipients
@@ -5436,7 +5436,7 @@ branch,GUI,GUIComponent,Free,002e,if,97,0049,,,GUIComponent.Free
 branch,GUI,moTextOption,GetItem,0000,if,72,002d,,,moTextOption.GetItem
 branch,GUI,moTextOption,GetItem,0014,if,55,0024,,,moTextOption.GetItem
 branch,GUI,GUIMultiComponent,Free,0012,if,145,006b,,,GUIMultiComponent.Free
-branch,GUI,GUIMultiComponent,Free,0028,else,123,005b,,,GUIMultiComponent.Free
+branch,GUI,GUIMultiComponent,Free,0028,leave,123,005b,,,GUIMultiComponent.Free
 branch,GUI,GUIMultiComponent,Free,0070,if,199,0091,,,GUIMultiComponent.Free
 branch,GUI,GUIMultiComponent,Free,00c3,if,395,0119,,,GUIMultiComponent.Free
 branch,GUI,GUIMultiComponent,Free,00d9,if,356,00fe,,,GUIMultiComponent.Free
@@ -5980,12 +5980,12 @@ branch,GUI,GUIMultiComponent,MapControls,00d1,if,949,028e,,,GUIMultiComponent.Ma
 branch,GUI,GUIMultiComponent,MapControls,00e2,if,939,0287,,,GUIMultiComponent.MapControls
 branch,GUI,GUIMultiComponent,MapControls,0101,else,464,0134,,,GUIMultiComponent.MapControls
 branch,GUI,GUIMultiComponent,MapControls,0139,if,895,0268,,,GUIMultiComponent.MapControls
-branch,GUI,GUIMultiComponent,MapControls,0145,else,505,0152,,,GUIMultiComponent.MapControls
+branch,GUI,GUIMultiComponent,MapControls,0145,leave,505,0152,,,GUIMultiComponent.MapControls
 branch,GUI,GUIMultiComponent,MapControls,0162,if,570,0180,,,GUIMultiComponent.MapControls
 branch,GUI,GUIMultiComponent,MapControls,0188,if,623,01a6,,,GUIMultiComponent.MapControls
 branch,GUI,GUIMultiComponent,MapControls,01ae,if,676,01cc,,,GUIMultiComponent.MapControls
 branch,GUI,GUIMultiComponent,MapControls,01d4,if,729,01f2,,,GUIMultiComponent.MapControls
-branch,GUI,GUIMultiComponent,MapControls,01f8,else,749,0204,,,GUIMultiComponent.MapControls
+branch,GUI,GUIMultiComponent,MapControls,01f8,leave,749,0204,,,GUIMultiComponent.MapControls
 branch,GUI,GUIMultiComponent,MapControls,0238,if,885,0260,,,GUIMultiComponent.MapControls
 branch,GUI,GUIFont,LoadFontStatic,0000,if,162,007f,,,GUIFont.LoadFontStatic
 branch,GUI,GUIFont,LoadFontStatic,0032,if,162,007f,,,GUIFont.LoadFontStatic
@@ -6864,8 +6864,8 @@ branch,IpDrv,ClientBeaconReceiver,ReceivedText,0075,if,229,0097,,,ClientBeaconRe
 branch,IpDrv,ClientBeaconReceiver,ReceivedText,007e,leave,219,0090,,,ClientBeaconReceiver.ReceivedText
 branch,IpDrv,ClientBeaconReceiver,ReceivedText,0097,if,243,00a2,,,ClientBeaconReceiver.ReceivedText
 branch,IpDrv,ClientBeaconReceiver,Timer,0008,if,156,005f,,,ClientBeaconReceiver.Timer
-branch,IpDrv,ClientBeaconReceiver,Timer,0011,else,56,0023,,,ClientBeaconReceiver.Timer
-branch,IpDrv,ClientBeaconReceiver,Timer,0023,else,101,0040,,,ClientBeaconReceiver.Timer
+branch,IpDrv,ClientBeaconReceiver,Timer,0011,leave,56,0023,,,ClientBeaconReceiver.Timer
+branch,IpDrv,ClientBeaconReceiver,Timer,0023,leave,101,0040,,,ClientBeaconReceiver.Timer
 branch,IpDrv,ClientBeaconReceiver,Timer,0040,if,139,0054,,,ClientBeaconReceiver.Timer
 branch,IpDrv,ClientBeaconReceiver,Timer,005f,if,220,0085,,,ClientBeaconReceiver.Timer
 branch,IpDrv,ClientBeaconReceiver,BeginPlay,0000,else,30,0019,,,ClientBeaconReceiver.BeginPlay
@@ -7121,7 +7121,7 @@ branch,StargateContent,PteroBossBot,NotifyTakeHit,001d,if,83,003e,,,PteroBossBot
 branch,StargateContent,PteroBot,PickDestination,000a,if,126,0057,,,PteroBot.Searching.PickDestination
 branch,StargateContent,PteroBot,PickDestination,0026,else,97,0045,,,PteroBot.Searching.PickDestination
 branch,StargateContent,PteroBot,PickDestination,0065,if,375,0109,,,PteroBot.Searching.PickDestination
-branch,StargateContent,PteroBot,PickDestination,009d,else,241,00ac,,,PteroBot.Searching.PickDestination
+branch,StargateContent,PteroBot,PickDestination,009d,leave,241,00ac,,,PteroBot.Searching.PickDestination
 branch,StargateContent,PteroBot,PickDestination,00e8,if,365,0101,,,PteroBot.Searching.PickDestination
 branch,StargateContent,PteroBot,FindBestPathToward,0011,if,44,0020,,,PteroBot.FindBestPathToward
 branch,StargateContent,PteroBot,FindBestPathToward,0036,if,122,0054,,,PteroBot.FindBestPathToward
@@ -7218,7 +7218,7 @@ branch,StargateContent,ReetouBot,FireWeaponAt,000b,if,161,0077,,,ReetouBot.FireW
 branch,StargateContent,JaffaBotMedium,SelectNextCoverState,0018,else,158,007f,,,JaffaBotMedium.CoveredAttack.SelectNextCoverState
 branch,StargateContent,JaffaBotMedium,SelectNextCoverState,0027,else,129,0066,,,JaffaBotMedium.CoveredAttack.SelectNextCoverState
 branch,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,0008,if,324,00d6,,,ReetouBot.PickDestinationToDodgePhaseTorch
-branch,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,0034,else,100,0044,,,ReetouBot.PickDestinationToDodgePhaseTorch
+branch,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,0034,leave,100,0044,,,ReetouBot.PickDestinationToDodgePhaseTorch
 branch,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,01e6,if,882,024d,,,ReetouBot.PickDestinationToDodgePhaseTorch
 branch,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,01f0,if,872,0246,,,ReetouBot.PickDestinationToDodgePhaseTorch
 branch,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,0251,if,1050,02be,,,ReetouBot.PickDestinationToDodgePhaseTorch
@@ -7455,7 +7455,7 @@ branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,0053,else,164,00
 branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,007f,if,193,0089,,,HaakenLeaderBot.SelectEnemyToMindControl
 branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,0093,if,223,009e,,,HaakenLeaderBot.SelectEnemyToMindControl
 branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,00b5,if,402,011e,,,HaakenLeaderBot.SelectEnemyToMindControl
-branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,00be,else,286,00cf,,,HaakenLeaderBot.SelectEnemyToMindControl
+branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,00be,leave,286,00cf,,,HaakenLeaderBot.SelectEnemyToMindControl
 branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,00ee,if,379,010d,,,HaakenLeaderBot.SelectEnemyToMindControl
 branch,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,011e,if,418,012a,,,HaakenLeaderBot.SelectEnemyToMindControl
 branch,StargateContent,HaakenLeaderBot,IsMindControllableEnemyAvailable,0000,if,13,000a,,,HaakenLeaderBot.IsMindControllableEnemyAvailable
@@ -7497,7 +7497,7 @@ branch,StargateContent,HaakenBot,Timer,005a,if,170,0072,,,HaakenBot.ShieldCover.
 branch,StargateContent,ReetouDeviceAmmo,ReetouAttack,0017,if,127,0059,,,ReetouDeviceAmmo.ReetouAttack
 branch,StargateContent,ReetouDeviceAmmo,ReetouAttack,005e,if,228,00a0,,,ReetouDeviceAmmo.ReetouAttack
 branch,StargateContent,ReetouDeviceAmmo,ReetouAttack,00a4,if,514,0166,,,ReetouDeviceAmmo.ReetouAttack
-branch,StargateContent,ReetouDeviceAmmo,ReetouAttack,00ad,else,267,00bc,,,ReetouDeviceAmmo.ReetouAttack
+branch,StargateContent,ReetouDeviceAmmo,ReetouAttack,00ad,leave,267,00bc,,,ReetouDeviceAmmo.ReetouAttack
 branch,StargateContent,ReetouDeviceAmmo,ReetouAttack,0101,if,442,0134,,,ReetouDeviceAmmo.ReetouAttack
 branch,StargateContent,ReetouDeviceAmmo,ReetouAttack,0134,if,483,0151,,,ReetouDeviceAmmo.ReetouAttack
 branch,StargateContent,HaakenBot,EndState,000c,if,103,0040,,,HaakenBot.ShieldCover.EndState
@@ -9267,7 +9267,7 @@ branch,StargateGame,SquadAIBasic,Timer,0000,if,129,0072,,,SquadAIBasic.Timer
 branch,StargateGame,SquadAIBasic,Timer,0076,if,613,01e1,,,SquadAIBasic.Timer
 branch,StargateGame,SquadAIBasic,Timer,00a7,if,613,01e1,,,SquadAIBasic.Timer
 branch,StargateGame,SquadAIBasic,Timer,00c2,if,613,01e1,,,SquadAIBasic.Timer
-branch,StargateGame,SquadAIBasic,Timer,00cb,else,275,00dc,,,SquadAIBasic.Timer
+branch,StargateGame,SquadAIBasic,Timer,00cb,leave,275,00dc,,,SquadAIBasic.Timer
 branch,StargateGame,SquadAIBasic,Timer,00dc,if,590,01d1,,,SquadAIBasic.Timer
 branch,StargateGame,StargateVoicePack,PlaySpeech,0007,if,25,0012,,,StargateVoicePack.PlaySpeech
 branch,StargateGame,StargateVoicePack,PlaySpeech,0012,if,152,007f,,,StargateVoicePack.PlaySpeech
@@ -9944,9 +9944,9 @@ branch,StargateGame,BotBase,TeleportToPawn,0000,if,11,0009,,,BotBase.TeleportToP
 branch,StargateGame,BotBase,TeleportToPawn,0009,if,24,0014,,,BotBase.TeleportToPawn
 branch,StargateGame,BotBase,TeleportToPawn,0096,if,259,00f4,,,BotBase.TeleportToPawn
 branch,StargateGame,BotBase,TeleportToPawn,01be,if,797,0298,,,BotBase.TeleportToPawn
-branch,StargateGame,BotBase,TeleportToPawn,01f1,else,612,0211,,,BotBase.TeleportToPawn
-branch,StargateGame,BotBase,TeleportToPawn,0211,else,631,0220,,,BotBase.TeleportToPawn
-branch,StargateGame,BotBase,TeleportToPawn,0220,else,687,024b,,,BotBase.TeleportToPawn
+branch,StargateGame,BotBase,TeleportToPawn,01f1,leave,612,0211,,,BotBase.TeleportToPawn
+branch,StargateGame,BotBase,TeleportToPawn,0211,leave,631,0220,,,BotBase.TeleportToPawn
+branch,StargateGame,BotBase,TeleportToPawn,0220,leave,687,024b,,,BotBase.TeleportToPawn
 branch,StargateGame,BotBase,TeleportToPawn,0277,if,787,0290,,,BotBase.TeleportToPawn
 branch,StargateGame,BotBase,TeleportToPawn,0298,if,828,02af,,,BotBase.TeleportToPawn
 branch,StargateGame,BotBase,TeleportToPawn,033b,if,1151,03cb,,,BotBase.TeleportToPawn
@@ -10225,7 +10225,7 @@ branch,StargateGame,UnrealTeamInfo,NextLoadOut,002a,if,96,0048,,,UnrealTeamInfo.
 branch,StargateGame,UnrealTeamInfo,NextLoadOut,004e,leave,122,005e,,,UnrealTeamInfo.NextLoadOut
 branch,StargateGame,SquadAIBasic,RequestCoverFire,0000,if,22,0011,,,SquadAIBasic.RequestCoverFire
 branch,StargateGame,SquadAIBasic,RequestCoverFire,001d,if,270,00c7,,,SquadAIBasic.RequestCoverFire
-branch,StargateGame,SquadAIBasic,RequestCoverFire,002f,else,102,004b,,,SquadAIBasic.RequestCoverFire
+branch,StargateGame,SquadAIBasic,RequestCoverFire,002f,leave,102,004b,,,SquadAIBasic.RequestCoverFire
 branch,StargateGame,SquadAIBasic,RequestCoverFire,004b,if,247,00b7,,,SquadAIBasic.RequestCoverFire
 branch,StargateGame,SquadAIBasic,RequestCoverFire,00a3,if,247,00b7,,,SquadAIBasic.RequestCoverFire
 branch,StargateGame,SquadAIBasic,RequestTargetedCoverFire,0000,if,13,000b,,,SquadAIBasic.RequestTargetedCoverFire
@@ -10513,7 +10513,7 @@ branch,StargateGame,StargatePlayer,UseInteractiveObject,005c,if,212,009b,,,Starg
 branch,StargateGame,StargatePlayer,UseInteractiveObject,0065,leave,189,008b,,,StargatePlayer.UseInteractiveObject
 branch,StargateGame,StargatePlayer,UseInteractiveObject,00a7,if,271,00c4,,,StargatePlayer.UseInteractiveObject
 branch,StargateGame,StargatePlayer,UseInteractiveObject,012e,if,577,01a0,,,StargatePlayer.UseInteractiveObject
-branch,StargateGame,StargatePlayer,UseInteractiveObject,0141,else,488,0160,,,StargatePlayer.UseInteractiveObject
+branch,StargateGame,StargatePlayer,UseInteractiveObject,0141,leave,488,0160,,,StargatePlayer.UseInteractiveObject
 branch,StargateGame,StargatePlayer,UseInteractiveObject,0160,if,567,0198,,,StargatePlayer.UseInteractiveObject
 branch,StargateGame,StargatePlayer,ServerUse,0000,if,18,0010,,,StargatePlayer.ServerUse
 branch,StargateGame,StargatePlayer,ServerUse,0010,if,51,0027,,,StargatePlayer.ServerUse
@@ -10531,7 +10531,7 @@ branch,StargateGame,BotEnemy,SeePlayer,0004,else,206,0085,,,BotEnemy.Hunt.SeePla
 branch,StargateGame,BotEnemy,SeePlayer,001f,if,203,0082,,,BotEnemy.Hunt.SeePlayer
 branch,StargateGame,BotEnemy,SeePlayer,0046,if,203,0082,,,BotEnemy.Hunt.SeePlayer
 branch,StargateGame,StargatePlayer,AssembleMembers,0012,if,245,00ac,,,StargatePlayer.AssembleMembers
-branch,StargateGame,StargatePlayer,AssembleMembers,001b,else,60,002c,,,StargatePlayer.AssembleMembers
+branch,StargateGame,StargatePlayer,AssembleMembers,001b,leave,60,002c,,,StargatePlayer.AssembleMembers
 branch,StargateGame,StargatePlayer,AssembleMembers,002c,if,222,009c,,,StargatePlayer.AssembleMembers
 branch,StargateGame,StargatePlayer,AssembleMembers,004d,if,169,0079,,,StargatePlayer.AssembleMembers
 branch,StargateGame,BotEnemy,EnemyNotVisible,0000,if,22,000e,,,BotEnemy.Hunt.EnemyNotVisible
@@ -10563,9 +10563,9 @@ branch,StargateGame,BotEnemy,PickFallbackDestination,000a,if,37,001b,,,BotEnemy.
 branch,StargateGame,BotEnemy,PickFallbackDestination,0029,if,82,003e,,,BotEnemy.FallbackMove.PickFallbackDestination
 branch,StargateGame,BotEnemy,PickFallbackDestination,003e,else,134,0063,,,BotEnemy.FallbackMove.PickFallbackDestination
 branch,StargateGame,BotEnemy,PickFallbackDestination,007d,if,447,0143,,,BotEnemy.FallbackMove.PickFallbackDestination
-branch,StargateGame,BotEnemy,PickFallbackDestination,00ae,else,280,00ce,,,BotEnemy.FallbackMove.PickFallbackDestination
-branch,StargateGame,BotEnemy,PickFallbackDestination,00ce,else,299,00dd,,,BotEnemy.FallbackMove.PickFallbackDestination
-branch,StargateGame,BotEnemy,PickFallbackDestination,00dd,else,344,00fd,,,BotEnemy.FallbackMove.PickFallbackDestination
+branch,StargateGame,BotEnemy,PickFallbackDestination,00ae,leave,280,00ce,,,BotEnemy.FallbackMove.PickFallbackDestination
+branch,StargateGame,BotEnemy,PickFallbackDestination,00ce,leave,299,00dd,,,BotEnemy.FallbackMove.PickFallbackDestination
+branch,StargateGame,BotEnemy,PickFallbackDestination,00dd,leave,344,00fd,,,BotEnemy.FallbackMove.PickFallbackDestination
 branch,StargateGame,BotEnemy,PickFallbackDestination,0122,if,437,013b,,,BotEnemy.FallbackMove.PickFallbackDestination
 branch,StargateGame,BotEnemy,PickFallbackDestination,0143,if,471,0154,,,BotEnemy.FallbackMove.PickFallbackDestination
 branch,StargateGame,UnrealScriptedSequence,HigherPriorityThan,0009,if,30,0018,,,UnrealScriptedSequence.HigherPriorityThan
@@ -10670,14 +10670,14 @@ branch,StargateGame,SGOrderFollow,issueOrder,0013,if,193,00a1,,,SGOrderFollow.is
 branch,StargateGame,SGOrderFollow,issueOrder,00a1,else,358,0112,,,SGOrderFollow.issueOrder
 branch,StargateGame,SGOrderFollow,issueOrder,00d1,if,326,00fd,,,SGOrderFollow.issueOrder
 branch,StargateGame,SGOrderFollow,issueOrder,0127,if,518,0182,,,SGOrderFollow.issueOrder
-branch,StargateGame,SGOrderFollow,issueOrder,0130,else,422,013e,,,SGOrderFollow.issueOrder
+branch,StargateGame,SGOrderFollow,issueOrder,0130,leave,422,013e,,,SGOrderFollow.issueOrder
 branch,StargateGame,SGOrderFollow,issueOrder,014c,if,480,0168,,,SGOrderFollow.issueOrder
 branch,StargateGame,SGOrderAttack,issueOrder,0000,else,25,0013,,,SGOrderAttack.issueOrder
 branch,StargateGame,SGOrderAttack,issueOrder,0013,if,277,00da,,,SGOrderAttack.issueOrder
 branch,StargateGame,SGOrderAttack,issueOrder,0148,else,661,01df,,,SGOrderAttack.issueOrder
 branch,StargateGame,SGOrderAttack,issueOrder,018c,else,598,01b5,,,SGOrderAttack.issueOrder
 branch,StargateGame,SGOrderAttack,issueOrder,01f4,if,877,0275,,,SGOrderAttack.issueOrder
-branch,StargateGame,SGOrderAttack,issueOrder,01fd,else,725,020b,,,SGOrderAttack.issueOrder
+branch,StargateGame,SGOrderAttack,issueOrder,01fd,leave,725,020b,,,SGOrderAttack.issueOrder
 branch,StargateGame,SGOrderAttack,issueOrder,022d,else,822,024e,,,SGOrderAttack.issueOrder
 branch,StargateGame,BotEnemy,NearWall,0000,else,43,001f,,,BotEnemy.NearWall
 branch,StargateGame,BotEnemy,NearWall,0083,if,200,008e,,,BotEnemy.NearWall
@@ -12436,7 +12436,7 @@ branch,StargateGame,StargatePawn,_GetKnockedBack,0074,if,207,008b,,,StargatePawn
 branch,StargateGame,StargatePawn,_SustainImpact,0000,if,46,001e,,,StargatePawn._SustainImpact
 branch,StargateGame,StargatePawn,_SustainImpact,001e,if,81,0035,,,StargatePawn._SustainImpact
 branch,StargateGame,SquadMenu,PostRender,000b,if,615,0174,,,SquadMenu.PostRender
-branch,StargateGame,SquadMenu,PostRender,0014,else,55,0025,,,SquadMenu.PostRender
+branch,StargateGame,SquadMenu,PostRender,0014,leave,55,0025,,,SquadMenu.PostRender
 branch,StargateGame,SquadMenu,PostRender,0025,if,605,016d,,,SquadMenu.PostRender
 branch,StargateGame,SquadMenu,PostRender,0109,if,605,016d,,,SquadMenu.PostRender
 branch,StargateGame,SquadMenu,PostRender,0174,if,668,019b,,,SquadMenu.PostRender
@@ -13660,7 +13660,7 @@ branch,StargateGame,StoryModeGame,Timer,0018,if,167,007a,,,StoryModeGame.MatchIn
 branch,StargateGame,StoryModeGame,Timer,0021,if,144,0069,,,StoryModeGame.MatchInProgress.Timer
 branch,StargateGame,StoryModeGame,Timer,007a,if,182,0085,,,StoryModeGame.MatchInProgress.Timer
 branch,StargateGame,CommandInterface,executeScriptCommand,00a2,if,650,0205,,,CommandInterface.executeScriptCommand
-branch,StargateGame,CommandInterface,executeScriptCommand,00ac,else,279,00ce,,,CommandInterface.executeScriptCommand
+branch,StargateGame,CommandInterface,executeScriptCommand,00ac,leave,279,00ce,,,CommandInterface.executeScriptCommand
 branch,StargateGame,CommandInterface,executeScriptCommand,00fd,if,407,0140,,,CommandInterface.executeScriptCommand
 branch,StargateGame,CommandInterface,executeScriptCommand,0152,else,511,019a,,,CommandInterface.executeScriptCommand
 branch,StargateGame,StargateWeaponEmplacement,Tick,0007,if,169,0077,,,StargateWeaponEmplacement.Tick
@@ -13778,9 +13778,9 @@ branch,StargateGame,CommandInterface,TestTraceActors,010c,if,457,013a,,,CommandI
 branch,StargateGame,CommandInterface,TestTraceActors,0122,if,457,013a,,,CommandInterface.TestTraceActors
 branch,StargateGame,CommandInterface,TestTraceActors,018f,else,667,01ce,,,CommandInterface.TestTraceActors
 branch,StargateGame,CommandInterface,TestTraceActors,01e1,if,1033,02db,,,CommandInterface.TestTraceActors
-branch,StargateGame,CommandInterface,TestTraceActors,01f4,else,760,0213,,,CommandInterface.TestTraceActors
-branch,StargateGame,CommandInterface,TestTraceActors,0213,else,932,0294,,,CommandInterface.TestTraceActors
-branch,StargateGame,CommandInterface,TestTraceActors,0288,else,932,0294,,,CommandInterface.TestTraceActors
+branch,StargateGame,CommandInterface,TestTraceActors,01f4,leave,760,0213,,,CommandInterface.TestTraceActors
+branch,StargateGame,CommandInterface,TestTraceActors,0213,leave,932,0294,,,CommandInterface.TestTraceActors
+branch,StargateGame,CommandInterface,TestTraceActors,0288,leave,932,0294,,,CommandInterface.TestTraceActors
 branch,StargateGame,CommandInterface,TestTraceActors,0294,if,1023,02d3,,,CommandInterface.TestTraceActors
 branch,StargateGame,CommandInterface,TestTraceActors,02db,leave,1047,02e7,,,CommandInterface.TestTraceActors
 branch,StargateGame,CommandInterface,TestTraceActors,02e7,leave,1086,0306,,,CommandInterface.TestTraceActors
@@ -14106,7 +14106,7 @@ branch,StargateGame,TransportRings,PostBeginPlay,002a,if,73,003a,,,TransportRing
 branch,StargateGame,TransportRings,PostBeginPlay,003f,if,225,00ac,,,TransportRings.PostBeginPlay
 branch,StargateGame,PickupMessagePlus,GetString,0000,if,19,000f,,,PickupMessagePlus.GetString
 branch,StargateGame,TransportRings,Destroyed,0005,if,80,003e,,,TransportRings.Destroyed
-branch,StargateGame,TransportRings,Destroyed,000f,else,39,001f,,,TransportRings.Destroyed
+branch,StargateGame,TransportRings,Destroyed,000f,leave,39,001f,,,TransportRings.Destroyed
 branch,StargateGame,StargateVehicle,CalculateCameraAimRot,0000,if,18,000c,,,StargateVehicle.CalculateCameraAimRot
 branch,StargateGame,StargateVehicle,CalculateCameraAimRot,0031,else,148,006f,,,StargateVehicle.CalculateCameraAimRot
 branch,StargateGame,StargateVehicle,CalculateCameraAimRot,0081,if,264,00bf,,,StargateVehicle.CalculateCameraAimRot
@@ -14236,11 +14236,11 @@ branch,StargateGame,UIWidget,SetDrawIcon,0020,if,70,0033,,,UIWidget.SetDrawIcon
 branch,StargateGame,UIWidget,SetDrawIcon,0033,else,125,0059,,,UIWidget.SetDrawIcon
 branch,StargateGame,UIWidget,Fade,0000,if,27,0014,,,UIWidget.Fade
 branch,StargateGame,UIWidget,Fade,0019,if,659,01d6,,,UIWidget.Fade
-branch,StargateGame,UIWidget,Fade,0024,else,70,0033,,,UIWidget.Fade
+branch,StargateGame,UIWidget,Fade,0024,leave,70,0033,,,UIWidget.Fade
 branch,StargateGame,UIWidget,Fade,0043,else,357,00fe,,,UIWidget.Fade
 branch,StargateGame,UIWidget,Fade,00fe,if,623,01bb,,,UIWidget.Fade
 branch,StargateGame,UIWidget,ChangeColour,0005,if,479,014f,,,UIWidget.ChangeColour
-branch,StargateGame,UIWidget,ChangeColour,0010,else,43,001f,,,UIWidget.ChangeColour
+branch,StargateGame,UIWidget,ChangeColour,0010,leave,43,001f,,,UIWidget.ChangeColour
 branch,StargateGame,UIWidget,ChangeColour,00d8,else,420,0124,,,UIWidget.ChangeColour
 branch,StargateGame,UIWidget,ChangeColour,00ef,else,391,010e,,,UIWidget.ChangeColour
 branch,StargateGame,StargateDeathMessage,GetString,0000,if,19,000f,,,StargateDeathMessage.GetString
@@ -14491,7 +14491,7 @@ branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,0000,if,14,000c,,,AIMS
 branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,000c,else,249,00c7,,,AIMSG_Stargate.AutoBuildBroadcastList
 branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,001a,if,154,0081,,,AIMSG_Stargate.AutoBuildBroadcastList
 branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,0095,if,246,00c4,,,AIMSG_Stargate.AutoBuildBroadcastList
-branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,009e,else,212,00ac,,,AIMSG_Stargate.AutoBuildBroadcastList
+branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,009e,leave,212,00ac,,,AIMSG_Stargate.AutoBuildBroadcastList
 branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,00c7,else,708,0235,,,AIMSG_Stargate.AutoBuildBroadcastList
 branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,00e0,if,431,0160,,,AIMSG_Stargate.AutoBuildBroadcastList
 branch,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,0160,if,559,01cb,,,AIMSG_Stargate.AutoBuildBroadcastList
@@ -15061,11 +15061,11 @@ branch,StargateGame,VoiceSelector,SearchVoices,0029,else,210,0098,,,VoiceSelecto
 branch,StargateGame,VoiceSelector,SearchVoices,0044,else,204,0092,,,VoiceSelector.SearchVoices
 branch,StargateGame,VoiceSelector,SearchVoices,0098,if,271,00c4,,,VoiceSelector.SearchVoices
 branch,StargateGame,VoiceSelector,SearchVoices,00c4,if,381,0112,,,VoiceSelector.SearchVoices
-branch,StargateGame,VoiceSelector,SearchVoices,00df,else,373,010c,,,VoiceSelector.SearchVoices
+branch,StargateGame,VoiceSelector,SearchVoices,00df,leave,373,010c,,,VoiceSelector.SearchVoices
 branch,StargateGame,VoiceSelector,SearchVoices,0112,if,491,0160,,,VoiceSelector.SearchVoices
-branch,StargateGame,VoiceSelector,SearchVoices,012d,else,483,015a,,,VoiceSelector.SearchVoices
+branch,StargateGame,VoiceSelector,SearchVoices,012d,leave,483,015a,,,VoiceSelector.SearchVoices
 branch,StargateGame,VoiceSelector,SearchVoices,0160,if,613,01b8,,,VoiceSelector.SearchVoices
-branch,StargateGame,VoiceSelector,SearchVoices,017f,else,597,01ac,,,VoiceSelector.SearchVoices
+branch,StargateGame,VoiceSelector,SearchVoices,017f,leave,597,01ac,,,VoiceSelector.SearchVoices
 branch,StargateGame,VoiceSelector,SearchVoices,01cc,else,686,01eb,,,VoiceSelector.SearchVoices
 branch,StargateGame,VoiceSelector,SearchVoices,01eb,else,740,0215,,,VoiceSelector.SearchVoices
 branch,StargateGame,VoiceSelector,SearchVoices,0215,else,796,0241,,,VoiceSelector.SearchVoices
@@ -15077,15 +15077,15 @@ branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,001a,if,555,0197,,,V
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,002b,if,161,0075,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0037,leave,151,006d,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0058,if,148,006a,,,VoiceSelector.DiscardRecentlyUsedVoices
-branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0075,else,180,0084,,,VoiceSelector.DiscardRecentlyUsedVoices
+branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0075,leave,180,0084,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0089,if,289,00d3,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0095,leave,279,00cb,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,00b6,if,276,00c8,,,VoiceSelector.DiscardRecentlyUsedVoices
-branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,00d3,else,308,00e2,,,VoiceSelector.DiscardRecentlyUsedVoices
+branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,00d3,leave,308,00e2,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,00e7,if,417,0131,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,00f3,leave,407,0129,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0114,if,404,0126,,,VoiceSelector.DiscardRecentlyUsedVoices
-branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0131,else,436,0140,,,VoiceSelector.DiscardRecentlyUsedVoices
+branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0131,leave,436,0140,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0145,if,545,018f,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0151,leave,535,0187,,,VoiceSelector.DiscardRecentlyUsedVoices
 branch,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,0172,if,532,0184,,,VoiceSelector.DiscardRecentlyUsedVoices
@@ -15662,7 +15662,7 @@ branch,StargateVehicles,DeathGliderBot,FindBestPathToward,0038,if,122,0055,,,Dea
 branch,StargateVehicles,DeathGliderBot,PickDestination,000a,if,220,00b3,,,DeathGliderBot.Searching.PickDestination
 branch,StargateVehicles,DeathGliderBot,PickDestination,0084,else,191,00a2,,,DeathGliderBot.Searching.PickDestination
 branch,StargateVehicles,DeathGliderBot,PickDestination,00c1,if,469,0165,,,DeathGliderBot.Searching.PickDestination
-branch,StargateVehicles,DeathGliderBot,PickDestination,00f9,else,335,0108,,,DeathGliderBot.Searching.PickDestination
+branch,StargateVehicles,DeathGliderBot,PickDestination,00f9,leave,335,0108,,,DeathGliderBot.Searching.PickDestination
 branch,StargateVehicles,DeathGliderBot,PickDestination,0144,if,459,015d,,,DeathGliderBot.Searching.PickDestination
 branch,StargateVehicles,HoverCraftTurretGunPawn,LimitRotation,0055,else,175,0075,,,HoverCraftTurretGunPawn.LimitRotation
 branch,StargateVehicles,HoverCraftTurretGunPawn,LimitRotation,0075,else,257,00b5,,,HoverCraftTurretGunPawn.LimitRotation
@@ -17780,7 +17780,7 @@ script,Engine,Pickup,StartSleeping,,,,,1,"else 1, leave 0, empty 0, if 0, expres
 script,Engine,Pickup,BotDesireability,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 12 statement(s)",Pickup.BotDesireability
 script,Engine,Pickup,Reset,,,,,2,"else 2, leave 0, empty 0, if 0, expression 0, 9 statement(s)",Pickup.Reset
 script,Engine,AIMsgManager,RemoveReceivedMsg,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 17 statement(s)",AIMsgManager.RemoveReceivedMsg
-script,Engine,AIMsgManager,FindReceivedMsg,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 13 statement(s)",AIMsgManager.FindReceivedMsg
+script,Engine,AIMsgManager,FindReceivedMsg,,,,,4,"else 0, leave 1, empty 0, if 3, expression 0, 13 statement(s)",AIMsgManager.FindReceivedMsg
 script,Engine,PlayerController,CallServerMove,,,,,16,"else 6, leave 0, empty 0, if 10, expression 0, 52 statement(s)",PlayerController.CallServerMove
 script,Engine,AIMsgManager,UnFreeze,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 8 statement(s)",AIMsgManager.UnFreeze
 script,Engine,Trigger,Touch,,,,,9,"else 1, leave 1, empty 0, if 7, expression 0, 24 statement(s)",Trigger.Touch
@@ -17841,16 +17841,16 @@ script,Engine,AIMessage,DecRefCount,,,,,3,"else 1, leave 0, empty 0, if 2, expre
 script,Engine,AIMessage,IncRefCount,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 6 statement(s)",AIMessage.IncRefCount
 script,Engine,PlayerInput,PlayerInput,,,,,8,"else 6, leave 0, empty 0, if 2, expression 0, 65 statement(s)",PlayerInput.PlayerInput
 script,Engine,AIMsgManager,IsSubTypeOf,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 6 statement(s)",AIMsgManager.IsSubTypeOf
-script,Engine,AIMsgManager,GetFreeAIMsg,,,,,4,"else 3, leave 0, empty 0, if 1, expression 0, 15 statement(s)",AIMsgManager.GetFreeAIMsg
+script,Engine,AIMsgManager,GetFreeAIMsg,,,,,4,"else 1, leave 2, empty 0, if 1, expression 0, 15 statement(s)",AIMsgManager.GetFreeAIMsg
 script,Engine,AIMsgManager,NewAIMsg,,,,,6,"else 2, leave 0, empty 0, if 4, expression 0, 26 statement(s)",AIMsgManager.NewAIMsg
 script,Engine,AIMsgManager,Freeze,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",AIMsgManager.Freeze
 script,Engine,AIMsgManager,CheckForPossibleCancellation,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 9 statement(s)",AIMsgManager.CheckForPossibleCancellation
 script,Engine,AIMsgManager,CheckForPossibleReply,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 9 statement(s)",AIMsgManager.CheckForPossibleReply
 script,Engine,AIMsgManager,ReceiveMsg,,,,,8,"else 0, leave 0, empty 0, if 8, expression 0, 22 statement(s)",AIMsgManager.ReceiveMsg
-script,Engine,AIMsgManager,FindSentMsg,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 13 statement(s)",AIMsgManager.FindSentMsg
+script,Engine,AIMsgManager,FindSentMsg,,,,,4,"else 0, leave 1, empty 0, if 3, expression 0, 13 statement(s)",AIMsgManager.FindSentMsg
 script,Engine,AIMsgManager,RemoveSentMsg,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 17 statement(s)",AIMsgManager.RemoveSentMsg
 script,Engine,AIMsgManager,SendMsg,,,,,9,"else 0, leave 0, empty 0, if 9, expression 0, 25 statement(s)",AIMsgManager.SendMsg
-script,Engine,AIMsgManager,FindPostedMsg,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 13 statement(s)",AIMsgManager.FindPostedMsg
+script,Engine,AIMsgManager,FindPostedMsg,,,,,4,"else 0, leave 1, empty 0, if 3, expression 0, 13 statement(s)",AIMsgManager.FindPostedMsg
 script,Engine,AIMsgManager,RemovePostedMsg,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 17 statement(s)",AIMsgManager.RemovePostedMsg
 script,Engine,AIMsgManager,PostMsg,,,,,8,"else 0, leave 0, empty 0, if 8, expression 0, 23 statement(s)",AIMsgManager.PostMsg
 script,Engine,PlayerProfile,Initialize,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 14 statement(s)",PlayerProfile.Initialize
@@ -17950,7 +17950,7 @@ script,Engine,Vehicle,AdjustedStrength,,,,,1,"else 0, leave 0, empty 0, if 1, ex
 script,Engine,KVehicle,TryToDrive,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",KVehicle.TryToDrive
 script,Engine,PlayerReplicationInfo,GetHumanReadableName,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 6 statement(s)",PlayerReplicationInfo.GetHumanReadableName
 script,Engine,KVehicle,KDriverEnter,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 20 statement(s)",KVehicle.KDriverEnter
-script,Engine,KVehicle,KDriverLeave,,,,,7,"else 2, leave 0, empty 0, if 5, expression 0, 48 statement(s)",KVehicle.KDriverLeave
+script,Engine,KVehicle,KDriverLeave,,,,,7,"else 0, leave 2, empty 0, if 5, expression 0, 48 statement(s)",KVehicle.KDriverLeave
 script,Engine,PlayerReplicationInfo,SetCharacterVoice,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 11 statement(s)",PlayerReplicationInfo.SetCharacterVoice
 script,Engine,PlayerReplicationInfo,Destroyed,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 18 statement(s)",PlayerReplicationInfo.Destroyed
 script,Engine,PlayerReplicationInfo,PostNetReceive,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 20 statement(s)",PlayerReplicationInfo.PostNetReceive
@@ -18088,7 +18088,7 @@ script,Engine,WarpZoneMarker,FindTriggerActor,,,,,1,"else 0, leave 0, empty 0, i
 script,Engine,WarpZoneMarker,SpecialHandling,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",WarpZoneMarker.SpecialHandling
 script,Engine,InventorySpot,GetMoveTargetFor,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",InventorySpot.GetMoveTargetFor
 script,Engine,InventorySpot,DetourWeight,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",InventorySpot.DetourWeight
-script,Engine,Vehicle,PlaceExitingDriver,,,,,15,"else 5, leave 0, empty 0, if 10, expression 0, 49 statement(s)",Vehicle.PlaceExitingDriver
+script,Engine,Vehicle,PlaceExitingDriver,,,,,15,"else 3, leave 2, empty 0, if 10, expression 0, 49 statement(s)",Vehicle.PlaceExitingDriver
 script,Engine,Vehicle,DetachDriver,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",Vehicle.DetachDriver
 script,Engine,Vehicle,AttachDriver,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 17 statement(s)",Vehicle.AttachDriver
 script,Engine,Teleporter,PostBeginPlay,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",Teleporter.PostBeginPlay
@@ -18267,7 +18267,7 @@ script,Engine,Controller,InstantWarnTarget,,,,,2,"else 0, leave 0, empty 0, if 2
 script,Engine,Controller,WarnTarget,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 4 statement(s)",Controller.WarnTarget
 script,Engine,Controller,ReceiveProjectileWarning,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",Controller.ReceiveProjectileWarning
 script,Engine,Controller,ClientSwitchToBestWeapon,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",Controller.ClientSwitchToBestWeapon
-script,Engine,Controller,ClientSetWeapon,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 18 statement(s)",Controller.ClientSetWeapon
+script,Engine,Controller,ClientSetWeapon,,,,,5,"else 1, leave 1, empty 0, if 3, expression 0, 18 statement(s)",Controller.ClientSetWeapon
 script,Engine,Controller,ParseChatPercVar,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",Controller.ParseChatPercVar
 script,Engine,Pawn,CheckWaterJump,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 19 statement(s)",Pawn.CheckWaterJump
 script,Engine,Controller,PawnDied,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",Controller.Dead.PawnDied
@@ -18551,7 +18551,7 @@ script,Engine,PlayerController,EndState,,,,,1,"else 0, leave 0, empty 0, if 1, e
 script,Engine,PlayerController,Possess,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",PlayerController.RoundEnded.Possess
 script,Engine,TestInfo,TestContinueWhile,,,,,2,"else 0, leave 1, empty 0, if 1, expression 0, 9 statement(s)",TestInfo.TestContinueWhile
 script,Engine,PlayerController,PlayerMove,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 21 statement(s)",PlayerController.RoundEnded.PlayerMove
-script,Engine,TestInfo,TestContinueFor,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 11 statement(s)",TestInfo.TestContinueFor
+script,Engine,TestInfo,TestContinueFor,,,,,2,"else 0, leave 1, empty 0, if 1, expression 0, 11 statement(s)",TestInfo.TestContinueFor
 script,Engine,PlayerController,FindGoodView,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 21 statement(s)",PlayerController.RoundEnded.FindGoodView
 script,Engine,PlayerController,LongClientAdjustPosition,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",PlayerController.RoundEnded.LongClientAdjustPosition
 script,Engine,PlayerController,BeginState,,,,,5,"else 0, leave 0, empty 0, if 5, expression 0, 30 statement(s)",PlayerController.RoundEnded.BeginState
@@ -18805,7 +18805,7 @@ script,Engine,HUD,CanvasDrawActors,,,,,3,"else 0, leave 0, empty 0, if 3, expres
 script,Engine,HUD,DrawRoute,,,,,12,"else 3, leave 1, empty 0, if 8, expression 0, 42 statement(s)",HUD.DrawRoute
 script,Engine,StreamInteraction,GetStreamDuration,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",StreamInteraction.GetStreamDuration
 script,Engine,StreamInteraction,GetStreamVolume,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",StreamInteraction.GetStreamVolume
-script,Engine,HUD,DisplayProgressMessages,,,,,12,"else 3, leave 0, empty 0, if 9, expression 0, 54 statement(s)",HUD.DisplayProgressMessages
+script,Engine,HUD,DisplayProgressMessages,,,,,12,"else 1, leave 2, empty 0, if 9, expression 0, 54 statement(s)",HUD.DisplayProgressMessages
 script,Engine,StreamInteraction,PlayStream,,,,,8,"else 4, leave 0, empty 0, if 4, expression 0, 32 statement(s)",StreamInteraction.PlayStream
 script,Engine,StreamInteraction,Seek,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",StreamInteraction.Seek
 script,Engine,StreamInteraction,SetMusicVolume,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",StreamInteraction.SetMusicVolume
@@ -18968,7 +18968,7 @@ script,Engine,StreamPlaylistManager,ActivatePlaylist,,,,,7,"else 2, leave 0, emp
 script,Engine,MissionObjective,Trigger,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 28 statement(s)",MissionObjective.Trigger
 script,Engine,StreamPlaylistManager,CreateDefaultPlaylist,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 6 statement(s)",StreamPlaylistManager.CreateDefaultPlaylist
 script,Engine,StreamPlaylistManager,InitializeParsers,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 11 statement(s)",StreamPlaylistManager.InitializeParsers
-script,Engine,StreamPlaylistManager,InitializePlaylists,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 15 statement(s)",StreamPlaylistManager.InitializePlaylists
+script,Engine,StreamPlaylistManager,InitializePlaylists,,,,,4,"else 1, leave 1, empty 0, if 2, expression 0, 15 statement(s)",StreamPlaylistManager.InitializePlaylists
 script,Engine,GameStats,TimeStamp,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",GameStats.TimeStamp
 script,Engine,StreamPlaylist,Save,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 13 statement(s)",StreamPlaylist.Save
 script,Engine,StreamPlaylist,HandleDebugExec,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 30 statement(s)",StreamPlaylist.HandleDebugExec
@@ -19050,14 +19050,14 @@ script,Engine,LevelInfo,AddPrecacheMaterial,,,,,2,"else 0, leave 0, empty 0, if 
 script,Engine,StreamPlaylist,InitializePlaylist,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 6 statement(s)",StreamPlaylist.InitializePlaylist
 script,Engine,LevelInfo,FillPrecacheStaticMeshesArray,,,,,7,"else 0, leave 0, empty 0, if 7, expression 0, 19 statement(s)",LevelInfo.FillPrecacheStaticMeshesArray
 script,Engine,GameInfo,RestartPlayer,,,,,15,"else 1, leave 0, empty 0, if 14, expression 0, 54 statement(s)",GameInfo.RestartPlayer
-script,Engine,PLSParser,ParseLines,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 15 statement(s)",PLSParser.ParseLines
+script,Engine,PLSParser,ParseLines,,,,,5,"else 1, leave 1, empty 0, if 3, expression 0, 15 statement(s)",PLSParser.ParseLines
 script,Engine,M3UParser,MatchPath,,,,,6,"else 0, leave 1, empty 0, if 5, expression 0, 21 statement(s)",M3UParser.MatchPath
 script,Engine,LevelInfo,FillPrecacheMaterialsArray,,,,,9,"else 1, leave 0, empty 0, if 8, expression 0, 34 statement(s)",LevelInfo.FillPrecacheMaterialsArray
-script,Engine,M3UParser,ParseLines,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 14 statement(s)",M3UParser.ParseLines
+script,Engine,M3UParser,ParseLines,,,,,4,"else 0, leave 1, empty 0, if 3, expression 0, 14 statement(s)",M3UParser.ParseLines
 script,Engine,LevelInfo,GetGameClass,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 13 statement(s)",LevelInfo.GetGameClass
 script,Engine,LevelInfo,Destroyed,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",LevelInfo.Destroyed
 script,Engine,M3UParser,Import,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",M3UParser.Import
-script,Engine,B4SParser,ParseLines,,,,,8,"else 4, leave 1, empty 0, if 3, expression 0, 26 statement(s)",B4SParser.ParseLines
+script,Engine,B4SParser,ParseLines,,,,,8,"else 2, leave 3, empty 0, if 3, expression 0, 26 statement(s)",B4SParser.ParseLines
 script,Engine,PlaylistParserBase,HtmlDecode,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 7 statement(s)",PlaylistParserBase.HtmlDecode
 script,Engine,PlaylistParserBase,GetTagged,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 15 statement(s)",PlaylistParserBase.GetTagged
 script,Engine,PlaylistParserBase,GetValue,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 15 statement(s)",PlaylistParserBase.GetValue
@@ -19092,7 +19092,7 @@ script,Engine,WarpZoneInfo,ForceGenerate,,,,,2,"else 1, leave 1, empty 0, if 0, 
 script,Engine,WarpZoneInfo,Generate,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",WarpZoneInfo.Generate
 script,Engine,PlayInfo,Dump,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 38 statement(s)",PlayInfo.Dump
 script,Engine,WarpZoneInfo,Trigger,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 12 statement(s)",WarpZoneInfo.Trigger
-script,Engine,PlayInfo,Init,,,,,8,"else 2, leave 1, empty 0, if 5, expression 0, 34 statement(s)",PlayInfo.Init
+script,Engine,PlayInfo,Init,,,,,8,"else 1, leave 2, empty 0, if 5, expression 0, 34 statement(s)",PlayInfo.Init
 script,Engine,WarpZoneInfo,PreBeginPlay,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 12 statement(s)",WarpZoneInfo.PreBeginPlay
 script,Engine,PlayInfo,GetGameInfo,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 8 statement(s)",PlayInfo.GetGameInfo
 script,Engine,GameInfo,BroadcastDeathMessage,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 7 statement(s)",GameInfo.BroadcastDeathMessage
@@ -19331,9 +19331,9 @@ script,Engine,LogEntry,Count,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0
 script,Engine,MaplistManager,AddGroup,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 11 statement(s)",MaplistManager.AddGroup
 script,Engine,MaplistManager,AddMaplistRecord,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 8 statement(s)",MaplistManager.AddMaplistRecord
 script,Engine,GameInfo,BeginPlay,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 9 statement(s)",GameInfo.BeginPlay
-script,Engine,MaplistManager,InitializeActiveLists,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 16 statement(s)",MaplistManager.InitializeActiveLists
+script,Engine,MaplistManager,InitializeActiveLists,,,,,4,"else 1, leave 1, empty 0, if 2, expression 0, 16 statement(s)",MaplistManager.InitializeActiveLists
 script,Engine,GameInfo,StartScreenplay,,,,,5,"else 0, leave 1, empty 1, if 3, expression 0, 15 statement(s)",GameInfo.StartScreenplay
-script,Engine,MaplistManager,InitializeMaplistRecords,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 20 statement(s)",MaplistManager.InitializeMaplistRecords
+script,Engine,MaplistManager,InitializeMaplistRecords,,,,,5,"else 1, leave 1, empty 0, if 3, expression 0, 20 statement(s)",MaplistManager.InitializeMaplistRecords
 script,Engine,AIMessage,AddRecipient,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 6 statement(s)",AIMessage.AddRecipient
 script,Engine,AIMessage,AddRecipients,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 7 statement(s)",AIMessage.AddRecipients
 script,Engine,AIMessage,CompareRecipients,,,,,10,"else 0, leave 2, empty 0, if 8, expression 0, 33 statement(s)",AIMessage.CompareRecipients
@@ -19560,7 +19560,7 @@ script,GUI,GUIScrollText,SkipChar,,,,,3,"else 1, leave 0, empty 0, if 2, express
 script,GUI,GUIListBoxBase,InitBaseList,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 23 statement(s)",GUIListBoxBase.InitBaseList
 script,GUI,GUIComponent,Free,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 18 statement(s)",GUIComponent.Free
 script,GUI,moTextOption,GetItem,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",moTextOption.GetItem
-script,GUI,GUIMultiComponent,Free,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 30 statement(s)",GUIMultiComponent.Free
+script,GUI,GUIMultiComponent,Free,,,,,5,"else 0, leave 1, empty 0, if 4, expression 0, 30 statement(s)",GUIMultiComponent.Free
 script,GUI,GameStartInfo,setURLKeyValue,,,,,4,"else 1, leave 1, empty 0, if 2, expression 0, 16 statement(s)",GameStartInfo.setURLKeyValue
 script,GUI,GUIMultiComponent,SetVisibility,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 9 statement(s)",GUIMultiComponent.SetVisibility
 script,GUI,GUIMultiComponent,PrevControl,,,,,6,"else 3, leave 1, empty 0, if 2, expression 0, 30 statement(s)",GUIMultiComponent.PrevControl
@@ -19787,7 +19787,7 @@ script,GUI,GUIMultiComponent,Opened,,,,,1,"else 0, leave 0, empty 0, if 1, expre
 script,GUI,GUISlider,DrawSlider,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 36 statement(s)",GUISlider.DrawSlider
 script,GUI,GUIMultiComponent,IsFocused,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 5 statement(s)",GUIMultiComponent.IsFocused
 script,GUI,GUIMultiComponent,getExtendedHint,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",GUIMultiComponent.getExtendedHint
-script,GUI,GUIMultiComponent,MapControls,,,,,13,"else 3, leave 0, empty 0, if 10, expression 0, 65 statement(s)",GUIMultiComponent.MapControls
+script,GUI,GUIMultiComponent,MapControls,,,,,13,"else 1, leave 2, empty 0, if 10, expression 0, 65 statement(s)",GUIMultiComponent.MapControls
 script,GUI,GUIFont,LoadFontStatic,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",GUIFont.LoadFontStatic
 script,GUI,GUIFont,LoadFont,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",GUIFont.LoadFont
 script,GUI,GUIHorzList,Down,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 11 statement(s)",GUIHorzList.Down
@@ -20096,7 +20096,7 @@ script,IpDrv,UdpGamespyQuery,GetFullName,,,,,4,"else 0, leave 0, empty 0, if 4, 
 script,IpDrv,UdpGamespyQuery,DebugPortSwap,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 44 statement(s)",UdpGamespyQuery.DebugPortSwap
 script,IpDrv,UdpGamespyQuery,PreBeginPlay,,,,,5,"else 0, leave 0, empty 0, if 5, expression 0, 19 statement(s)",UdpGamespyQuery.PreBeginPlay
 script,IpDrv,ClientBeaconReceiver,ReceivedText,,,,,7,"else 0, leave 2, empty 0, if 5, expression 0, 25 statement(s)",ClientBeaconReceiver.ReceivedText
-script,IpDrv,ClientBeaconReceiver,Timer,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 19 statement(s)",ClientBeaconReceiver.Timer
+script,IpDrv,ClientBeaconReceiver,Timer,,,,,5,"else 0, leave 2, empty 0, if 3, expression 0, 19 statement(s)",ClientBeaconReceiver.Timer
 script,IpDrv,ClientBeaconReceiver,BeginPlay,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 5 statement(s)",ClientBeaconReceiver.BeginPlay
 script,IpDrv,MasterServerUplink,BeginPlay,,,,,7,"else 1, leave 0, empty 0, if 6, expression 0, 24 statement(s)",MasterServerUplink.BeginPlay
 script,IpDrv,MasterServerUplink,Refresh,,,,,2,"else 2, leave 0, empty 0, if 0, expression 0, 18 statement(s)",MasterServerUplink.Refresh
@@ -20184,7 +20184,7 @@ script,StargateContent,PteroBot,PickDestination,,,,,1,"else 1, leave 0, empty 0,
 script,StargateContent,PteroBot,BeginState,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",PteroBot.Searching.BeginState
 script,StargateContent,PteroBossBot,BeginState,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 7 statement(s)",PteroBossBot.Protected.BeginState
 script,StargateContent,PteroBossBot,NotifyTakeHit,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",PteroBossBot.Swiping.NotifyTakeHit
-script,StargateContent,PteroBot,PickDestination,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 26 statement(s)",PteroBot.Searching.PickDestination
+script,StargateContent,PteroBot,PickDestination,,,,,5,"else 1, leave 1, empty 0, if 3, expression 0, 26 statement(s)",PteroBot.Searching.PickDestination
 script,StargateContent,PteroBot,FindBestPathToward,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 11 statement(s)",PteroBot.FindBestPathToward
 script,StargateContent,PteroBossBot,BeginState,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",PteroBossBot.Nesting.BeginState
 script,StargateContent,PteroBot,FireWeaponAt,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 11 statement(s)",PteroBot.FireWeaponAt
@@ -20230,7 +20230,7 @@ script,StargateContent,ReetouBot,GetLastTimeOutOfPhaseDelay,,,,,1,"else 1, leave
 script,StargateContent,ReetouBot,FeelHidden,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 5 statement(s)",ReetouBot.FeelHidden
 script,StargateContent,ReetouBot,FireWeaponAt,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",ReetouBot.FireWeaponAt
 script,StargateContent,JaffaBotMedium,SelectNextCoverState,,,,,2,"else 2, leave 0, empty 0, if 0, expression 0, 13 statement(s)",JaffaBotMedium.CoveredAttack.SelectNextCoverState
-script,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,,,,,9,"else 2, leave 1, empty 0, if 6, expression 0, 68 statement(s)",ReetouBot.PickDestinationToDodgePhaseTorch
+script,StargateContent,ReetouBot,PickDestinationToDodgePhaseTorch,,,,,9,"else 1, leave 2, empty 0, if 6, expression 0, 68 statement(s)",ReetouBot.PickDestinationToDodgePhaseTorch
 script,StargateContent,JaffaBotMedium,GetAdvancedMoveDist,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 5 statement(s)",JaffaBotMedium.GetAdvancedMoveDist
 script,StargateContent,JaffaBotMedium,SelectAdvancedMoveIdx,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",JaffaBotMedium.SelectAdvancedMoveIdx
 script,StargateContent,JaffaBotMedium,PickDestination,,,,,14,"else 8, leave 0, empty 0, if 6, expression 0, 57 statement(s)",JaffaBotMedium.Mellee.PickDestination
@@ -20325,7 +20325,7 @@ script,StargateContent,HaakenLeaderBot,DoSeizeMindControl,,,,,1,"else 0, leave 0
 script,StargateContent,HaakenLeaderBot,AssignRole,,,,,9,"else 4, leave 0, empty 0, if 5, expression 0, 33 statement(s)",HaakenLeaderBot.AssignRole
 script,StargateContent,HaakenLeaderBot,GetPawnMindControlledSlot,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",HaakenLeaderBot.GetPawnMindControlledSlot
 script,StargateContent,HaakenLeaderBot,IsPawnControlled,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 8 statement(s)",HaakenLeaderBot.IsPawnControlled
-script,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,,,,,10,"else 3, leave 1, empty 0, if 6, expression 0, 36 statement(s)",HaakenLeaderBot.SelectEnemyToMindControl
+script,StargateContent,HaakenLeaderBot,SelectEnemyToMindControl,,,,,10,"else 2, leave 2, empty 0, if 6, expression 0, 36 statement(s)",HaakenLeaderBot.SelectEnemyToMindControl
 script,StargateContent,HaakenLeaderBot,IsMindControllableEnemyAvailable,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 11 statement(s)",HaakenLeaderBot.IsMindControllableEnemyAvailable
 script,StargateContent,HaakenLeaderBot,GetEnemySquad,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 7 statement(s)",HaakenLeaderBot.GetEnemySquad
 script,StargateContent,CaptainStaffWeaponMeleeAmmo,ProcessTraceHit_Melee,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",CaptainStaffWeaponMeleeAmmo.ProcessTraceHit_Melee
@@ -20344,7 +20344,7 @@ script,StargateContent,PistolAmmo,RateSelf,,,,,1,"else 0, leave 0, empty 0, if 1
 script,StargateContent,PteroClawsAmmo,RateSelf,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",PteroClawsAmmo.RateSelf
 script,StargateContent,HaakenBot,PickDestination,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 9 statement(s)",HaakenBot.ShieldCover.PickDestination
 script,StargateContent,HaakenBot,Timer,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 10 statement(s)",HaakenBot.ShieldCover.Timer
-script,StargateContent,ReetouDeviceAmmo,ReetouAttack,,,,,6,"else 1, leave 0, empty 0, if 5, expression 0, 26 statement(s)",ReetouDeviceAmmo.ReetouAttack
+script,StargateContent,ReetouDeviceAmmo,ReetouAttack,,,,,6,"else 0, leave 1, empty 0, if 5, expression 0, 26 statement(s)",ReetouDeviceAmmo.ReetouAttack
 script,StargateContent,HaakenBot,EndState,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 8 statement(s)",HaakenBot.ShieldCover.EndState
 script,StargateContent,HaakenBot,DoShieldCover,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",HaakenBot.DoShieldCover
 script,StargateContent,ReetouMeleeAmmo,ProcessTraceHit,,,,,7,"else 4, leave 0, empty 0, if 3, expression 0, 21 statement(s)",ReetouMeleeAmmo.ProcessTraceHit
@@ -21065,7 +21065,7 @@ script,StargateGame,BotBase,RemoveLocalEnemy,,,,,4,"else 0, leave 0, empty 0, if
 script,StargateGame,SquadAIBasic,RemoveEnemy,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 14 statement(s)",SquadAIBasic.RemoveEnemy
 script,StargateGame,SquadAIBasic,NotifyKilled,,,,,7,"else 1, leave 1, empty 0, if 5, expression 0, 22 statement(s)",SquadAIBasic.NotifyKilled
 script,StargateGame,StargateVoicePack,StoreSpeech,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 9 statement(s)",StargateVoicePack.StoreSpeech
-script,StargateGame,SquadAIBasic,Timer,,,,,6,"else 1, leave 0, empty 0, if 5, expression 0, 19 statement(s)",SquadAIBasic.Timer
+script,StargateGame,SquadAIBasic,Timer,,,,,6,"else 0, leave 1, empty 0, if 5, expression 0, 19 statement(s)",SquadAIBasic.Timer
 script,StargateGame,StargateVoicePack,PlaySpeech,,,,,6,"else 1, leave 0, empty 0, if 5, expression 0, 24 statement(s)",StargateVoicePack.PlaySpeech
 script,StargateGame,BotEnemy,FireWeaponAt,,,,,7,"else 0, leave 0, empty 0, if 7, expression 0, 17 statement(s)",BotEnemy.FireWeaponAt
 script,StargateGame,BotEnemy,CanDamage,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 6 statement(s)",BotEnemy.CanDamage
@@ -21248,7 +21248,7 @@ script,StargateGame,BotBase,StartFastRun,,,,,1,"else 0, leave 0, empty 0, if 1, 
 script,StargateGame,SquadAIBasic,WarnFriendlyTargets,,,,,6,"else 1, leave 0, empty 0, if 5, expression 0, 25 statement(s)",SquadAIBasic.WarnFriendlyTargets
 script,StargateGame,SquadAIBasic,RemoveSafeEnemy,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 10 statement(s)",SquadAIBasic.RemoveSafeEnemy
 script,StargateGame,SquadAIBasic,ClearSafeEnemies,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 7 statement(s)",SquadAIBasic.ClearSafeEnemies
-script,StargateGame,BotBase,TeleportToPawn,,,,,11,"else 3, leave 0, empty 0, if 8, expression 0, 40 statement(s)",BotBase.TeleportToPawn
+script,StargateGame,BotBase,TeleportToPawn,,,,,11,"else 0, leave 3, empty 0, if 8, expression 0, 40 statement(s)",BotBase.TeleportToPawn
 script,StargateGame,SquadAIBasic,teamKnockedOut,,,,,4,"else 1, leave 2, empty 0, if 1, expression 0, 20 statement(s)",SquadAIBasic.teamKnockedOut
 script,StargateGame,SquadAIBasic,Destroyed,,,,,5,"else 0, leave 0, empty 0, if 5, expression 0, 13 statement(s)",SquadAIBasic.Destroyed
 script,StargateGame,BotBase,SetEnemyInfo,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 11 statement(s)",BotBase.SetEnemyInfo
@@ -21342,7 +21342,7 @@ script,StargateGame,BotEnemy,NotifyPhysicsVolumeChange,,,,,6,"else 3, leave 0, e
 script,StargateGame,SquadAIBasic,PickNewLeader,,,,,7,"else 1, leave 1, empty 0, if 5, expression 0, 21 statement(s)",SquadAIBasic.PickNewLeader
 script,StargateGame,SquadAIBasic,ReleaseFromCoverFire,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",SquadAIBasic.ReleaseFromCoverFire
 script,StargateGame,UnrealTeamInfo,NextLoadOut,,,,,4,"else 1, leave 1, empty 0, if 2, expression 0, 14 statement(s)",UnrealTeamInfo.NextLoadOut
-script,StargateGame,SquadAIBasic,RequestCoverFire,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 18 statement(s)",SquadAIBasic.RequestCoverFire
+script,StargateGame,SquadAIBasic,RequestCoverFire,,,,,5,"else 0, leave 1, empty 0, if 4, expression 0, 18 statement(s)",SquadAIBasic.RequestCoverFire
 script,StargateGame,SquadAIBasic,RequestTargetedCoverFire,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 10 statement(s)",SquadAIBasic.RequestTargetedCoverFire
 script,StargateGame,SquadAIBasic,TellBotToFollow,,,,,9,"else 3, leave 0, empty 1, if 5, expression 0, 27 statement(s)",SquadAIBasic.TellBotToFollow
 script,StargateGame,UnrealTeamInfo,SetAggroMode,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 12 statement(s)",UnrealTeamInfo.SetAggroMode
@@ -21452,12 +21452,12 @@ script,StargateGame,StargatePlayer,GetInteractAnimType,,,,,1,"else 0, leave 0, e
 script,StargateGame,SquadAIBasic,isInPatrollingStatus,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",SquadAIBasic.isInPatrollingStatus
 script,StargateGame,SquadAIBasic,isInInvestigateStatus,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",SquadAIBasic.isInInvestigateStatus
 script,StargateGame,BotEnemy,CompleteAction,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 10 statement(s)",BotEnemy.CompleteAction
-script,StargateGame,StargatePlayer,UseInteractiveObject,,,,,10,"else 3, leave 1, empty 0, if 6, expression 0, 35 statement(s)",StargatePlayer.UseInteractiveObject
+script,StargateGame,StargatePlayer,UseInteractiveObject,,,,,10,"else 2, leave 2, empty 0, if 6, expression 0, 35 statement(s)",StargatePlayer.UseInteractiveObject
 script,StargateGame,StargatePlayer,ServerUse,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 13 statement(s)",StargatePlayer.ServerUse
 script,StargateGame,SquadAIBasic,tellFollowingBotsToFollowNode,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 11 statement(s)",SquadAIBasic.tellFollowingBotsToFollowNode
 script,StargateGame,TeamScriptedSequence,GetString,,,,,4,"else 4, leave 0, empty 0, if 0, expression 0, 16 statement(s)",TeamScriptedSequence.GetString
 script,StargateGame,BotEnemy,SeePlayer,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 12 statement(s)",BotEnemy.Hunt.SeePlayer
-script,StargateGame,StargatePlayer,AssembleMembers,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 16 statement(s)",StargatePlayer.AssembleMembers
+script,StargateGame,StargatePlayer,AssembleMembers,,,,,4,"else 0, leave 1, empty 0, if 3, expression 0, 16 statement(s)",StargatePlayer.AssembleMembers
 script,StargateGame,BotEnemy,EnemyNotVisible,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",BotEnemy.Hunt.EnemyNotVisible
 script,StargateGame,BotEnemy,BeginState,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 6 statement(s)",BotEnemy.Flee.BeginState
 script,StargateGame,BotEnemy,EndFleeingMovement,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",BotEnemy.Flee.EndFleeingMovement
@@ -21469,7 +21469,7 @@ script,StargateGame,BotEnemy,PickDestination,,,,,11,"else 6, leave 0, empty 0, i
 script,StargateGame,BotEnemy,BeginState,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 12 statement(s)",BotEnemy.Mellee.BeginState
 script,StargateGame,BotEnemy,EndState,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 13 statement(s)",BotEnemy.Mellee.EndState
 script,StargateGame,BotEnemy,EnemyNotVisible,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",BotEnemy.Ranged.EnemyNotVisible
-script,StargateGame,BotEnemy,PickFallbackDestination,,,,,9,"else 4, leave 0, empty 0, if 5, expression 0, 32 statement(s)",BotEnemy.FallbackMove.PickFallbackDestination
+script,StargateGame,BotEnemy,PickFallbackDestination,,,,,9,"else 1, leave 3, empty 0, if 5, expression 0, 32 statement(s)",BotEnemy.FallbackMove.PickFallbackDestination
 script,StargateGame,UnrealScriptedSequence,HigherPriorityThan,,,,,5,"else 0, leave 0, empty 0, if 5, expression 0, 17 statement(s)",UnrealScriptedSequence.HigherPriorityThan
 script,StargateGame,UnrealScriptedSequence,BeginPlay,,,,,4,"else 0, leave 1, empty 0, if 3, expression 0, 22 statement(s)",UnrealScriptedSequence.BeginPlay
 script,StargateGame,BotEnemy,PickDestination,,,,,8,"else 0, leave 0, empty 0, if 8, expression 0, 28 statement(s)",BotEnemy.FallbackMove.PickDestination
@@ -21494,8 +21494,8 @@ script,StargateGame,BotEnemy,EvaluateHidePositions,,,,,1,"else 1, leave 0, empty
 script,StargateGame,BotEnemy,ReachedCoverLocation,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",BotEnemy.ReachedCoverLocation
 script,StargateGame,BotEnemy,CanCrouchForCover,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 13 statement(s)",BotEnemy.CanCrouchForCover
 script,StargateGame,BotEnemy,UpdateCrouchToShoot,,,,,9,"else 4, leave 0, empty 0, if 5, expression 0, 35 statement(s)",BotEnemy.UpdateCrouchToShoot
-script,StargateGame,SGOrderFollow,issueOrder,,,,,7,"else 3, leave 0, empty 0, if 4, expression 0, 23 statement(s)",SGOrderFollow.issueOrder
-script,StargateGame,SGOrderAttack,issueOrder,,,,,7,"else 5, leave 0, empty 0, if 2, expression 0, 30 statement(s)",SGOrderAttack.issueOrder
+script,StargateGame,SGOrderFollow,issueOrder,,,,,7,"else 2, leave 1, empty 0, if 4, expression 0, 23 statement(s)",SGOrderFollow.issueOrder
+script,StargateGame,SGOrderAttack,issueOrder,,,,,7,"else 4, leave 1, empty 0, if 2, expression 0, 30 statement(s)",SGOrderAttack.issueOrder
 script,StargateGame,BotEnemy,NearWall,,,,,6,"else 1, leave 0, empty 0, if 5, expression 0, 24 statement(s)",BotEnemy.NearWall
 script,StargateGame,BotEnemy,SetViewFocus,,,,,8,"else 6, leave 0, empty 0, if 2, expression 0, 36 statement(s)",BotEnemy.SetViewFocus
 script,StargateGame,StargatePlayer,PlayerMove,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",StargatePlayer.PlayerUnconscious.PlayerMove
@@ -22116,7 +22116,7 @@ script,StargateGame,StargatePawn,EndKnockedBack,,,,,2,"else 0, leave 0, empty 0,
 script,StargateGame,StargatePawn,StartKnockedBack,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 29 statement(s)",StargatePawn.StartKnockedBack
 script,StargateGame,StargatePawn,_GetKnockedBack,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 16 statement(s)",StargatePawn._GetKnockedBack
 script,StargateGame,StargatePawn,_SustainImpact,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 5 statement(s)",StargatePawn._SustainImpact
-script,StargateGame,SquadMenu,PostRender,,,,,20,"else 6, leave 0, empty 0, if 14, expression 0, 83 statement(s)",SquadMenu.PostRender
+script,StargateGame,SquadMenu,PostRender,,,,,20,"else 5, leave 1, empty 0, if 14, expression 0, 83 statement(s)",SquadMenu.PostRender
 script,StargateGame,SquadMenu,KeyEvent_MoveDown,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",SquadMenu.KeyEvent_MoveDown
 script,StargateGame,StargatePawn,CanSustainImpact,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",StargatePawn.CanSustainImpact
 script,StargateGame,StargatePawn,_UpdateMeleeDash,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 6 statement(s)",StargatePawn._UpdateMeleeDash
@@ -22495,7 +22495,7 @@ script,StargateGame,AlarmPanel,Timer,,,,,1,"else 1, leave 0, empty 0, if 0, expr
 script,StargateGame,AlarmPanel,Timer,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 8 statement(s)",AlarmPanel.FlashOff.Timer
 script,StargateGame,AlarmPanel,Trigger,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",AlarmPanel.Trigger
 script,StargateGame,StoryModeGame,Timer,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 14 statement(s)",StoryModeGame.MatchInProgress.Timer
-script,StargateGame,CommandInterface,executeScriptCommand,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 46 statement(s)",CommandInterface.executeScriptCommand
+script,StargateGame,CommandInterface,executeScriptCommand,,,,,4,"else 1, leave 1, empty 0, if 2, expression 0, 46 statement(s)",CommandInterface.executeScriptCommand
 script,StargateGame,StargateWeaponEmplacement,Tick,,,,,3,"else 2, leave 0, empty 0, if 1, expression 0, 10 statement(s)",StargateWeaponEmplacement.Tick
 script,StargateGame,GoauldConsoleVessel,Tick,,,,,4,"else 3, leave 0, empty 0, if 1, expression 0, 15 statement(s)",GoauldConsoleVessel.Tick
 script,StargateGame,StargateWeaponEmplacement,VehicleFire,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 8 statement(s)",StargateWeaponEmplacement.VehicleFire
@@ -22522,7 +22522,7 @@ script,StargateGame,CommandInterface,PostRender,,,,,27,"else 10, leave 0, empty 
 script,StargateGame,StargateWeaponEmplacement,SpecialCalcView,,,,,8,"else 5, leave 0, empty 0, if 3, expression 0, 66 statement(s)",StargateWeaponEmplacement.SpecialCalcView
 script,StargateGame,StargateWeaponEmplacement,CalculateCameraAimRot,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 11 statement(s)",StargateWeaponEmplacement.CalculateCameraAimRot
 script,StargateGame,StargateWeaponEmplacement,UnPossessed,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",StargateWeaponEmplacement.UnPossessed
-script,StargateGame,CommandInterface,TestTraceActors,,,,,34,"else 10, leave 2, empty 0, if 22, expression 0, 102 statement(s)",CommandInterface.TestTraceActors
+script,StargateGame,CommandInterface,TestTraceActors,,,,,34,"else 7, leave 5, empty 0, if 22, expression 0, 102 statement(s)",CommandInterface.TestTraceActors
 script,StargateGame,StargateWeaponEmplacement,Destroyed,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 8 statement(s)",StargateWeaponEmplacement.Destroyed
 script,StargateGame,StargateWeaponEmplacement,Died,,,,,11,"else 4, leave 0, empty 0, if 7, expression 0, 39 statement(s)",StargateWeaponEmplacement.Died
 script,StargateGame,StargateWeaponEmplacement,PostNetBeginPlay,,,,,4,"else 0, leave 1, empty 0, if 3, expression 0, 18 statement(s)",StargateWeaponEmplacement.PostNetBeginPlay
@@ -22615,7 +22615,7 @@ script,StargateGame,StargateVehicle,TakeDamage,,,,,2,"else 0, leave 0, empty 0, 
 script,StargateGame,StargateVehicle,EncroachingOn,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",StargateVehicle.EncroachingOn
 script,StargateGame,TransportRings,PostBeginPlay,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 17 statement(s)",TransportRings.PostBeginPlay
 script,StargateGame,PickupMessagePlus,GetString,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",PickupMessagePlus.GetString
-script,StargateGame,TransportRings,Destroyed,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 10 statement(s)",TransportRings.Destroyed
+script,StargateGame,TransportRings,Destroyed,,,,,2,"else 0, leave 1, empty 0, if 1, expression 0, 10 statement(s)",TransportRings.Destroyed
 script,StargateGame,StargateVehicle,CalculateCameraAimRot,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 19 statement(s)",StargateVehicle.CalculateCameraAimRot
 script,StargateGame,TransportRings,InterpolateSin,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 13 statement(s)",TransportRings.InterpolateSin
 script,StargateGame,StargateVehicle,DisplayDebug,,,,,6,"else 3, leave 0, empty 0, if 3, expression 0, 136 statement(s)",StargateVehicle.DisplayDebug
@@ -22654,8 +22654,8 @@ script,StargateGame,TeamAI,SetBotOrders,,,,,4,"else 2, leave 0, empty 0, if 2, e
 script,StargateGame,UIWidget,SetupColourModifier,,,,,4,"else 1, leave 0, empty 0, if 3, expression 0, 16 statement(s)",UIWidget.SetupColourModifier
 script,StargateGame,UIWidget,SetSkin,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 17 statement(s)",UIWidget.SetSkin
 script,StargateGame,UIWidget,SetDrawIcon,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 12 statement(s)",UIWidget.SetDrawIcon
-script,StargateGame,UIWidget,Fade,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 35 statement(s)",UIWidget.Fade
-script,StargateGame,UIWidget,ChangeColour,,,,,4,"else 3, leave 0, empty 0, if 1, expression 0, 26 statement(s)",UIWidget.ChangeColour
+script,StargateGame,UIWidget,Fade,,,,,5,"else 1, leave 1, empty 0, if 3, expression 0, 35 statement(s)",UIWidget.Fade
+script,StargateGame,UIWidget,ChangeColour,,,,,4,"else 2, leave 1, empty 0, if 1, expression 0, 26 statement(s)",UIWidget.ChangeColour
 script,StargateGame,StargateDeathMessage,GetString,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 14 statement(s)",StargateDeathMessage.GetString
 script,StargateGame,TeamAI,PutBotOnSquadLedBy,,,,,4,"else 1, leave 1, empty 0, if 2, expression 0, 12 statement(s)",TeamAI.PutBotOnSquadLedBy
 script,StargateGame,StargateDeathMessage,ClientReceive,,,,,3,"else 2, leave 0, empty 0, if 1, expression 0, 12 statement(s)",StargateDeathMessage.ClientReceive
@@ -22701,7 +22701,7 @@ script,StargateGame,SGScreenDOF,CameraChange,,,,,2,"else 1, leave 0, empty 0, if
 script,StargateGame,SGInsetCamera,CalcDrawOffset,,,,,2,"else 2, leave 0, empty 0, if 0, expression 0, 13 statement(s)",SGInsetCamera.SlideOff.CalcDrawOffset
 script,StargateGame,SGScreenBlur,BlurView,,,,,1,"else 1, leave 0, empty 0, if 0, expression 0, 8 statement(s)",SGScreenBlur.BlurView
 script,StargateGame,SGInsetCamera,Timer,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 7 statement(s)",SGInsetCamera.SlideOff.Timer
-script,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,,,,,15,"else 3, leave 0, empty 0, if 12, expression 0, 43 statement(s)",AIMSG_Stargate.AutoBuildBroadcastList
+script,StargateGame,AIMSG_Stargate,AutoBuildBroadcastList,,,,,15,"else 2, leave 1, empty 0, if 12, expression 0, 43 statement(s)",AIMSG_Stargate.AutoBuildBroadcastList
 script,StargateGame,AIMSG_Stargate,AutoBuildPriority,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",AIMSG_Stargate.AutoBuildPriority
 script,StargateGame,AIMSG_Stargate,AutoBuildChannels,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 5 statement(s)",AIMSG_Stargate.AutoBuildChannels
 script,StargateGame,AIMSG_Stargate,AutoBuildTone,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 10 statement(s)",AIMSG_Stargate.AutoBuildTone
@@ -22869,8 +22869,8 @@ script,StargateGame,StargateVoicePack,TestNextVoice,,,,,2,"else 0, leave 0, empt
 script,StargateGame,StargateVoicePack,GetSoundPriority,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",StargateVoicePack.GetSoundPriority
 script,StargateGame,StargateVoicePack,GetVoiceVolume,,,,,5,"else 3, leave 0, empty 0, if 2, expression 0, 16 statement(s)",StargateVoicePack.GetVoiceVolume
 script,StargateGame,StargateVoicePack,IsSpeaking,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",StargateVoicePack.IsSpeaking
-script,StargateGame,VoiceSelector,SearchVoices,,,,,16,"else 10, leave 0, empty 0, if 6, expression 0, 64 statement(s)",VoiceSelector.SearchVoices
-script,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,,,,,17,"else 3, leave 4, empty 0, if 10, expression 0, 55 statement(s)",VoiceSelector.DiscardRecentlyUsedVoices
+script,StargateGame,VoiceSelector,SearchVoices,,,,,16,"else 7, leave 3, empty 0, if 6, expression 0, 64 statement(s)",VoiceSelector.SearchVoices
+script,StargateGame,VoiceSelector,DiscardRecentlyUsedVoices,,,,,17,"else 0, leave 7, empty 0, if 10, expression 0, 55 statement(s)",VoiceSelector.DiscardRecentlyUsedVoices
 script,StargateGame,VoiceSelector,SelectVoice,,,,,22,"else 1, leave 0, empty 0, if 21, expression 0, 51 statement(s)",VoiceSelector.SelectVoice
 script,StargateGame,VoiceSelector,IsValidTone,,,,,11,"else 3, leave 0, empty 1, if 7, expression 0, 23 statement(s)",VoiceSelector.IsValidTone
 script,StargateGame,VoiceSelector,IsValidSubject,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 10 statement(s)",VoiceSelector.IsValidSubject
@@ -23115,7 +23115,7 @@ script,StargateVehicles,DeathGliderBot,NearestFlyingPathNode,,,,,1,"else 0, leav
 script,StargateVehicles,DeathGliderBot,SeePlayer,,,,,3,"else 1, leave 0, empty 0, if 2, expression 0, 10 statement(s)",DeathGliderBot.SeePlayer
 script,StargateVehicles,VehicleRemoteTurret,KDriverEnter,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",VehicleRemoteTurret.KDriverEnter
 script,StargateVehicles,DeathGliderBot,FindBestPathToward,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 11 statement(s)",DeathGliderBot.FindBestPathToward
-script,StargateVehicles,DeathGliderBot,PickDestination,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 27 statement(s)",DeathGliderBot.Searching.PickDestination
+script,StargateVehicles,DeathGliderBot,PickDestination,,,,,5,"else 1, leave 1, empty 0, if 3, expression 0, 27 statement(s)",DeathGliderBot.Searching.PickDestination
 script,StargateVehicles,HoverCraftTurretGunPawn,LimitRotation,,,,,2,"else 2, leave 0, empty 0, if 0, expression 0, 16 statement(s)",HoverCraftTurretGunPawn.LimitRotation
 script,StargateVehicles,HoverCraftTurretGunPawn,CalculateCameraAimRot,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 7 statement(s)",HoverCraftTurretGunPawn.CalculateCameraAimRot
 script,StargateVehicles,DeathGliderBot,NotifyCloseToGround,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",DeathGliderBot.Attacking.NotifyCloseToGround
@@ -23747,8 +23747,8 @@ script,UWindow,UWindowPulldownMenu,FocusOtherWindow,,,,,5,"else 0, leave 0, empt
 script,UWindow,UWindowWin95LookAndFeel,Menu_DrawMenuBarItem,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 10 statement(s)",UWindowWin95LookAndFeel.Menu_DrawMenuBarItem
 script,UWindow,UWindowWin95LookAndFeel,Menu_DrawPulldownMenuItem,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 30 statement(s)",UWindowWin95LookAndFeel.Menu_DrawPulldownMenuItem
 census,,,,,,,,17463,`JumpIfNot` tokens the graph resolved,
-census,,,,,,,,3816,with a `Jump` at the end of the then-arm that lands past the target -- an else arm,
-census,,,,,,,,231,whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`),
+census,,,,,,,,3758,with a `Jump` at the end of the then-arm that lands past the target -- an else arm,
+census,,,,,,,,289,whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`),
 census,,,,,,,,11,whose target is the statement right after the jump -- an empty then-arm,
 census,,,,,,,,13405,a conditional forward jump over a straight arm,
 census,,,,,,,,0,"inside a condition (`&&`/`||` short-circuit), i.e. not a branch",

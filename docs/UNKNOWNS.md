@@ -4498,6 +4498,19 @@ text contain an arm any of them reclassifies, and **0** of the 22 the guards exp
 **3,821 -> 3,816**, `leave` **226 -> 231**, the shortfall **89 arms in 59 functions -> 84 in 55**, and the one
 function still beyond its `continue` count is `CommandInterface.TestTraceActors` (2 against a gap of 3).
 
+**The last arm a `continue` could not explain was two landings, and the shortfall is 26 arms in 21 functions
+(measured 2026-11-18).** `CommandInterface.TestTraceActors` was the one row whose gap (3) exceeded its `continue`
+count (2), and it was the census's reading rather than the text: the body spells 7 `else`, 2 `continue` and 2
+`break`, the census read 10 arms, and three of them are `continue` sites -- `01f4` and `0288` land on the loop's
+increment block (`02d3`, an `AddAdd_Int`) rather than on the back edge, and `0213` reads as an else only because
+the last statement before its target is the *nested* `if (!bAimedAtHitObject) continue;`'s `Jump`. Two rules close
+it, both scored on the join (0 arms moved in any of the 5,681 functions whose count already agreed, 0 in the 22
+the guards explain): a then-block never reaches past its own else (1 arm), and a single-`Jump` then-arm that lands
+on a `for`'s increment block is a `continue` (57 arms). `else` **3,816 -> 3,758**, `leave` **231 -> 289**, the
+shortfall **84 arms in 55 functions -> 26 in 21** with **0** functions beyond their `continue` count, class
+agreement **915 of 967** (**94.6%**), function agreement **5,715 of 5,736** (**99.6%**, and **99.0%** of the
+2,041 that carry an `else` at all).
+
 **Reproduce.** `make text-branches` (needs the dump) writes both artifacts and both generated blocks;
 `python3 tools/text-branches.py --check-functions` re-derives the five per-class identities and the two corpus
 counts from the committed files with no dump, and runs in `make ci`.

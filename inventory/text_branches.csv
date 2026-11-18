@@ -50,7 +50,7 @@ class,Engine,AdminBase,,12,0,0,0,7,4,36,8,9,53,0,0,0,0,23,23,12,34,0,0,7,12,0,0,
 class,Engine,AIController,,5,0,0,1,6,1,21,0,2,23,0,0,0,0,19,20,5,18,0,0,0,5,0,0,0,0,0,0,0,0,0,5,0,0,agree,agree,,
 class,Engine,AIMarker,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,AIMessage,,6,0,0,0,1,5,38,0,6,44,0,0,0,0,33,33,6,36,0,0,2,6,0,0,0,0,0,0,0,0,0,6,0,0,agree,agree,,
-class,Engine,AIMsgManager,,6,0,0,0,13,6,68,0,12,80,0,0,0,0,39,39,12,68,0,0,0,12,0,6,0,0,0,0,0,0,0,6,0,0,less,less,,
+class,Engine,AIMsgManager,,6,0,0,0,13,6,68,0,12,80,0,0,0,0,39,39,7,68,0,0,5,7,0,1,0,0,0,0,0,0,0,6,0,0,less,less,,
 class,Engine,AIScript,,2,0,0,0,0,0,4,0,0,4,0,0,0,0,3,3,2,2,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,Engine,AmbientSound,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,Ammo,,0,0,0,0,1,0,10,0,2,12,0,0,1,1,7,5,0,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
@@ -73,7 +73,7 @@ class,Engine,AutoDoor,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,
 class,Engine,AutoLadder,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,AvoidanceWaypoint,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,AvoidMarker,,0,0,0,0,2,2,2,0,0,2,0,0,0,0,3,3,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
-class,Engine,B4SParser,,0,0,0,0,0,2,7,0,1,8,0,0,0,0,1,1,4,3,0,0,1,4,0,4,0,0,0,0,0,0,0,0,0,0,less,less,,
+class,Engine,B4SParser,,0,0,0,0,0,2,7,0,1,8,0,0,0,0,1,1,2,3,0,0,3,2,0,2,0,0,0,0,0,0,0,0,0,0,less,less,,
 class,Engine,BackBufferTexture,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,BaseGUIController,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,18,18,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,BeamEmitter,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -97,7 +97,7 @@ class,Engine,Condition,,2,0,0,0,0,0,6,0,0,6,0,0,0,0,10,10,2,4,0,0,0,2,0,0,0,0,0,
 class,Engine,Console,,15,0,0,1,4,2,40,1,0,41,0,0,0,0,28,23,15,27,0,0,0,15,0,0,0,0,0,0,0,0,0,15,0,0,agree,agree,,
 class,Engine,ConstantColor,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,ConstantMaterial,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,Engine,Controller,,23,0,0,2,31,13,112,0,6,118,0,0,0,0,138,160,24,90,0,0,0,24,0,1,0,0,0,0,0,0,0,23,0,0,less,less,,
+class,Engine,Controller,,23,0,0,2,31,13,112,0,6,118,0,0,0,0,138,160,23,90,0,0,1,23,0,0,0,0,0,0,0,0,0,23,0,0,agree,agree,,
 class,Engine,CrosshairPack,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,Crushed,,0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,Cubemap,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -138,7 +138,7 @@ class,Engine,GameReplicationInfo,,1,0,0,0,6,1,21,0,8,29,0,0,3,0,12,12,1,25,0,0,0
 class,Engine,GameRules,,1,0,0,0,5,0,13,0,0,13,0,0,0,0,14,14,1,12,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,Engine,GameStats,,6,0,0,1,4,8,22,0,4,26,0,0,0,0,22,24,6,20,0,0,0,6,0,0,0,0,0,0,0,0,0,6,0,0,agree,agree,,
 class,Engine,Gibbed,,0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,Engine,HUD,,29,0,10,1,21,12,106,0,18,124,0,0,2,2,67,67,31,90,0,0,3,31,0,2,0,0,0,0,0,0,0,29,0,0,less,less,,
+class,Engine,HUD,,29,0,10,1,21,12,106,0,18,124,0,0,2,2,67,67,29,90,0,0,5,29,0,0,0,0,0,0,0,0,0,29,0,0,agree,agree,,
 class,Engine,HudOverlay,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,2,2,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,I3DL2Listener,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,IMusicActor,,9,0,0,1,8,4,33,0,7,40,0,0,2,1,17,20,9,30,0,0,0,9,0,0,0,0,0,0,0,0,0,9,0,0,agree,agree,,
@@ -168,7 +168,7 @@ class,Engine,Keypoint,,0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,
 class,Engine,KHinge,,2,0,0,0,0,0,4,0,0,4,0,0,1,1,6,0,2,2,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,Engine,KRepulsor,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,KTire,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,2,2,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
-class,Engine,KVehicle,,1,0,0,0,2,6,16,0,2,18,0,0,0,0,11,12,3,15,0,0,0,3,0,2,0,0,0,0,0,0,0,1,0,0,less,less,,
+class,Engine,KVehicle,,1,0,0,0,2,6,16,0,2,18,0,0,0,0,11,12,1,15,0,0,2,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,Engine,KVehicleFactory,,0,0,0,0,0,0,3,0,0,3,0,0,1,1,1,1,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,Ladder,,0,0,0,0,0,0,2,0,0,2,0,0,1,1,1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,LadderInfo,,3,0,0,10,5,0,14,0,0,14,0,0,0,0,6,6,3,11,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
@@ -186,10 +186,10 @@ class,Engine,Localizer,,0,0,0,0,0,0,0,0,0,0,0,0,4,2,0,0,0,0,0,0,0,0,0,0,0,0,,0,0
 class,Engine,LocalMessage,,0,0,0,0,2,0,4,0,0,4,0,0,2,1,12,12,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,LogEntry,,2,0,0,0,0,0,2,3,0,5,0,0,0,0,3,3,2,3,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,Engine,LookTarget,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,Engine,M3UParser,,0,0,0,0,1,1,8,0,3,11,0,0,0,0,3,3,1,9,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,less,less,,
+class,Engine,M3UParser,,0,0,0,0,1,1,8,0,3,11,0,0,0,0,3,3,0,9,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,Manifest,,0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,MapList,,3,0,0,0,0,4,30,1,8,39,0,0,0,0,11,11,3,29,0,0,7,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
-class,Engine,MaplistManager,,4,0,0,0,11,6,94,2,18,114,0,0,0,0,55,55,8,106,0,0,0,8,0,4,0,0,0,0,0,0,0,4,0,0,less,less,,
+class,Engine,MaplistManager,,4,0,0,0,11,6,94,2,18,114,0,0,0,0,55,55,6,106,0,0,2,6,0,2,0,0,0,0,0,0,0,4,0,0,less,less,,
 class,Engine,MaplistManagerBase,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,29,29,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,MaplistRecord,,0,0,0,0,6,6,54,1,16,71,0,0,0,0,45,47,0,63,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,MapVolume,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -239,9 +239,9 @@ class,Engine,PlayerReplicationInfo,,13,0,0,0,23,2,60,0,2,62,0,0,11,1,36,38,13,41
 class,Engine,PlayerStart,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,PlayerStatCache,,3,0,0,0,0,0,5,0,3,8,0,0,0,0,9,10,3,5,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
 class,Engine,PlayerStats,,0,0,0,0,0,0,0,0,7,7,0,0,0,0,11,29,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
-class,Engine,PlayInfo,,0,0,0,0,1,1,7,0,7,14,0,0,0,0,4,14,2,11,0,0,1,2,0,2,0,0,0,0,0,0,0,0,0,0,less,less,,
+class,Engine,PlayInfo,,0,0,0,0,1,1,7,0,7,14,0,0,0,0,4,14,1,11,0,0,2,1,0,1,0,0,0,0,0,0,0,0,0,0,less,less,,
 class,Engine,PlaylistParserBase,,0,0,0,0,1,0,11,0,2,13,0,0,0,0,8,8,0,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
-class,Engine,PLSParser,,0,0,0,0,1,1,4,0,1,5,0,0,0,0,1,1,2,3,0,0,0,2,0,2,0,0,0,0,0,0,0,0,0,0,less,less,,
+class,Engine,PLSParser,,0,0,0,0,1,1,4,0,1,5,0,0,0,0,1,1,1,3,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,less,less,,
 class,Engine,PolyMarker,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,PotentialClimbWatcher,,1,0,0,0,0,2,4,0,0,4,0,0,0,0,1,1,1,3,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,Engine,PotShotAttackPoint,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -324,7 +324,7 @@ class,Engine,StreamCommandlet,,1,0,0,0,0,1,3,0,1,4,0,0,0,0,3,3,1,4,0,0,0,1,0,0,0
 class,Engine,StreamInteraction,,7,0,0,1,7,0,40,0,0,40,0,0,0,0,31,32,7,33,0,0,0,7,0,0,0,0,0,0,0,0,0,7,0,0,agree,agree,,
 class,Engine,StreamInterface,,0,0,0,0,0,1,3,0,1,4,0,0,0,0,3,12,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,StreamPlaylist,,2,0,0,0,4,4,44,0,11,55,0,0,0,0,35,35,3,51,0,0,1,3,0,1,0,0,0,0,0,0,0,2,0,0,less,less,,
-class,Engine,StreamPlaylistManager,,7,0,0,0,12,14,69,3,11,83,0,0,0,0,42,42,8,75,0,0,0,8,0,1,0,0,0,0,0,0,0,7,0,0,less,less,,
+class,Engine,StreamPlaylistManager,,7,0,0,0,12,14,69,3,11,83,0,0,0,0,42,42,7,75,0,0,1,7,0,0,0,0,0,0,0,0,0,7,0,0,agree,agree,,
 class,Engine,StreamTag,,0,0,0,0,0,0,0,0,1,1,0,0,0,0,2,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,SubActionCameraEffect,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,SubActionCameraShake,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -348,7 +348,7 @@ class,Engine,TeamInfo,,1,1,1,0,6,0,10,1,1,12,0,0,7,2,8,8,1,9,0,0,0,1,0,0,0,0,0,0
 class,Engine,Teleporter,,5,0,2,0,12,5,44,0,1,45,0,0,7,2,8,8,5,37,0,0,2,5,0,0,0,0,0,0,0,0,0,5,0,0,agree,agree,,
 class,Engine,TerrainInfo,,0,0,0,0,0,0,0,0,0,0,0,0,13,2,0,1,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,TerrainMaterial,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,Engine,TestInfo,,0,0,0,0,0,5,4,1,1,6,0,0,0,0,26,21,1,3,0,0,3,1,0,1,0,0,0,0,0,0,0,0,0,0,less,less,,
+class,Engine,TestInfo,,0,0,0,0,0,5,4,1,1,6,0,0,0,0,26,21,0,3,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,TestObj,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,TexCoordSource,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,TexEnvMap,,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -371,7 +371,7 @@ class,Engine,UseStaticTrigger,,0,0,0,0,0,1,4,0,0,4,0,0,0,0,4,4,0,4,0,0,0,0,0,0,0
 class,Engine,UseTrigger,,0,0,0,0,0,0,3,0,0,3,0,0,0,0,3,3,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,USoundEmitter,,0,0,0,0,0,0,3,0,2,5,0,0,1,1,5,5,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,VariableTexPanner,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,Engine,Vehicle,,40,0,0,5,99,44,218,0,5,223,0,0,0,0,112,108,42,177,0,0,0,42,0,2,0,0,0,0,0,0,0,40,0,0,less,less,,
+class,Engine,Vehicle,,40,0,0,5,99,44,218,0,5,223,0,0,0,0,112,108,40,177,0,0,2,40,0,0,0,0,0,0,0,0,0,40,0,0,agree,agree,,
 class,Engine,VehiclePart,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,VehicleTriggerMarker,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,VertexColor,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -457,7 +457,7 @@ class,GUI,GUIMessageBox,,2,0,0,0,2,3,25,0,3,28,0,0,0,0,13,13,2,26,0,0,0,2,0,0,0,
 class,GUI,GUIMultiColumnList,,2,0,0,0,1,0,15,0,4,19,0,0,0,0,15,21,2,17,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,GUI,GUIMultiColumnListBox,,0,0,0,0,1,1,5,0,0,5,0,0,0,0,2,2,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,GUI,GUIMultiColumnListHeader,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,GUI,GUIMultiComponent,,10,0,0,2,11,3,71,0,30,101,0,0,0,0,41,42,14,77,0,0,10,14,0,4,0,0,0,0,0,0,0,10,0,0,less,less,,
+class,GUI,GUIMultiComponent,,10,0,0,2,11,3,71,0,30,101,0,0,0,0,41,42,11,77,0,0,13,11,0,1,0,0,0,0,0,0,0,10,0,0,less,less,,
 class,GUI,GUINumericEdit,,0,0,0,0,2,0,6,1,1,8,0,0,0,0,8,8,0,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,GUI,GUIPage,,1,0,0,1,1,0,2,0,2,4,0,0,0,0,24,26,1,3,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,GUI,GUIPanel,,0,0,0,0,0,0,3,0,1,4,0,0,0,0,5,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
@@ -825,7 +825,7 @@ class,GamePlay,VisibleTeleporter,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 class,GamePlay,WaterVolume,,0,0,0,0,5,0,5,0,0,5,0,0,2,0,1,1,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,GamePlay,WaterZone,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,IpDrv,BufferedTCPLink,,4,0,0,0,1,0,17,1,1,19,0,0,0,0,12,12,4,14,0,0,1,4,0,0,0,0,0,0,0,0,0,4,0,0,agree,agree,,
-class,IpDrv,ClientBeaconReceiver,,1,0,0,0,0,0,9,1,3,13,0,0,0,0,7,7,3,8,0,0,2,3,0,2,0,0,0,0,0,0,0,1,0,0,less,less,,
+class,IpDrv,ClientBeaconReceiver,,1,0,0,0,0,0,9,1,3,13,0,0,0,0,7,7,1,8,0,0,4,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,IpDrv,InternetLink,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,11,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,IpDrv,LANQueryClient,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,IpDrv,MasterServerClient,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,8,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -1170,7 +1170,7 @@ class,StargateContent,GrenadeSand,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0
 class,StargateContent,HaakenBot,,5,0,0,0,3,2,28,0,0,28,0,0,0,0,21,7,4,20,0,0,0,4,0,0,0,1,1,0,1,0,0,4,0,0,more,agree,,
 class,StargateContent,HaakenGrunt,,1,0,0,0,5,0,4,0,0,4,0,0,0,0,9,9,1,3,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,StargateContent,HaakenLeader,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,StargateContent,HaakenLeaderBot,,9,0,0,0,5,1,44,0,10,54,0,0,0,0,28,17,10,42,0,0,2,10,0,1,0,0,0,0,0,0,0,9,0,0,less,less,,
+class,StargateContent,HaakenLeaderBot,,9,0,0,0,5,1,44,0,10,54,0,0,0,0,28,17,9,42,0,0,3,9,0,0,0,0,0,0,0,0,0,9,0,0,agree,agree,,
 class,StargateContent,HaakenLeaderVoicePack,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateContent,HaakenMK1Weapon,,8,0,4,0,1,2,21,0,0,21,0,0,1,1,21,11,7,13,0,0,0,7,0,0,0,1,1,1,0,0,0,7,0,0,more,agree,,
 class,StargateContent,HaakenMK1Weapon_Bot,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -1300,15 +1300,15 @@ class,StargateContent,PteroBossAmmo,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 class,StargateContent,PteroBossBot,,16,0,0,2,8,1,62,0,0,62,0,0,0,0,32,11,6,31,0,0,0,6,0,0,0,10,10,6,4,0,0,6,0,0,more,agree,,
 class,StargateContent,PteroBossClaws,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateContent,PteroBossVoicePack,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,StargateContent,PteroBot,,11,0,0,2,7,4,40,0,1,41,0,0,0,0,21,13,4,21,0,0,0,4,0,1,0,8,8,3,5,0,0,3,0,0,more,less,,
+class,StargateContent,PteroBot,,11,0,0,2,7,4,40,0,1,41,0,0,0,0,21,13,3,21,0,0,1,3,0,0,0,8,8,3,5,0,0,3,0,0,more,agree,,
 class,StargateContent,PteroClaws,,4,0,0,0,0,2,8,0,0,8,0,0,0,0,8,2,4,4,0,0,0,4,0,0,0,0,0,0,0,0,0,4,0,0,agree,agree,,
 class,StargateContent,PteroClawsAmmo,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,3,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateContent,PteroLandingPoint,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateContent,PteroVoicePack,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateContent,Reetou,,1,0,0,5,0,0,9,0,3,12,0,0,3,1,9,9,1,11,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
-class,StargateContent,ReetouBot,,45,0,0,4,30,8,134,0,9,143,0,0,0,0,62,39,31,69,0,0,2,31,0,1,0,15,15,9,6,0,0,30,0,0,more,less,,
+class,StargateContent,ReetouBot,,45,0,0,4,30,8,134,0,9,143,0,0,0,0,62,39,30,69,0,0,3,30,0,0,0,15,15,9,6,0,0,30,0,0,more,agree,,
 class,StargateContent,ReetouDevice,,3,0,0,0,1,2,13,0,4,17,0,0,0,0,14,8,2,11,0,0,1,2,0,0,0,1,1,1,0,0,0,2,0,0,more,agree,,
-class,StargateContent,ReetouDeviceAmmo,,0,0,0,0,2,0,3,0,3,6,0,0,0,0,1,1,1,5,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,less,less,,
+class,StargateContent,ReetouDeviceAmmo,,0,0,0,0,2,0,3,0,3,6,0,0,0,0,1,1,0,5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateContent,ReetouDevicePickup,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateContent,ReetouDeviceSpray,,0,0,0,0,2,0,2,0,0,2,0,0,0,0,3,3,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateContent,ReetouMeleeAmmo,,4,0,0,0,1,1,7,0,0,7,0,0,0,0,1,1,4,3,0,0,0,4,0,0,0,0,0,0,0,0,0,4,0,0,agree,agree,,
@@ -1597,7 +1597,7 @@ class,StargateGame,ACTION_VehicleExit,,0,0,0,0,1,0,3,0,0,3,0,0,0,0,2,2,0,3,0,0,0
 class,StargateGame,ACTION_WaitForPlayerGettingInVehicle,,0,0,0,0,0,0,2,0,0,2,0,0,0,0,2,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,AIMSG_Cloak,,4,0,0,0,0,0,14,0,0,14,0,0,0,0,4,4,4,10,0,0,0,4,0,0,0,0,0,0,0,0,0,4,0,0,agree,agree,,
 class,StargateGame,AIMSG_ConcentrateFire,,13,0,0,0,2,2,41,0,2,43,0,0,0,0,8,8,13,30,0,0,0,13,0,0,0,0,0,0,0,0,0,13,0,0,agree,agree,,
-class,StargateGame,AIMSG_Stargate,,4,0,0,0,3,0,29,0,2,31,0,0,0,0,10,10,5,26,0,0,0,5,0,1,0,0,0,0,0,0,0,4,0,0,less,less,,
+class,StargateGame,AIMSG_Stargate,,4,0,0,0,3,0,29,0,2,31,0,0,0,0,10,10,4,26,0,0,1,4,0,0,0,0,0,0,0,0,0,4,0,0,agree,agree,,
 class,StargateGame,AIMSG_TakeCover,,6,0,0,0,0,0,18,0,0,18,0,0,0,0,4,4,6,12,0,0,0,6,0,0,0,0,0,0,0,0,0,6,0,0,agree,agree,,
 class,StargateGame,AlarmPanel,,3,0,0,1,0,0,7,0,0,7,0,0,0,0,16,8,3,4,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
 class,StargateGame,AmmoAttachment,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -1607,15 +1607,15 @@ class,StargateGame,Beacons,,0,0,0,0,0,0,3,0,0,3,0,0,0,0,7,4,0,2,0,0,0,0,0,0,0,0,
 class,StargateGame,BeamArc,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,BlueFlag,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,BlueFlagBase,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,StargateGame,BotBase,,45,0,0,4,52,10,185,0,4,189,0,0,0,0,134,104,50,135,0,0,0,50,0,6,0,1,1,1,0,0,0,44,0,0,less,less,,
-class,StargateGame,BotEnemy,,252,0,0,21,205,103,852,1,11,864,0,0,0,0,403,168,187,510,0,0,3,187,0,3,0,68,68,31,37,0,0,184,0,0,more,less,,
+class,StargateGame,BotBase,,45,0,0,4,52,10,185,0,4,189,0,0,0,0,134,104,47,135,0,0,3,47,0,3,0,1,1,1,0,0,0,44,0,0,less,less,,
+class,StargateGame,BotEnemy,,252,0,0,21,205,103,852,1,11,864,0,0,0,0,403,168,184,510,0,0,6,184,0,0,0,68,68,31,37,0,0,184,0,0,more,agree,,
 class,StargateGame,BotGuide,,20,0,0,0,8,1,50,0,0,50,0,0,0,0,15,8,13,22,0,0,0,13,0,0,0,7,7,2,5,0,0,13,0,0,more,agree,,
 class,StargateGame,BotLeader,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,BotLite,,19,0,0,3,10,3,74,0,0,74,0,0,0,0,35,17,13,50,0,0,0,13,0,0,0,6,6,3,3,0,0,13,0,0,more,agree,,
 class,StargateGame,BotRep,,40,0,0,13,6,6,76,0,0,76,0,0,0,0,26,9,32,28,0,0,0,32,0,0,0,8,8,5,3,0,0,32,0,0,more,agree,,
 class,StargateGame,BotSG,,116,0,0,24,92,51,399,0,7,406,0,0,0,0,139,93,85,255,0,0,0,85,0,0,0,31,31,8,23,0,0,85,0,0,more,agree,,
 class,StargateGame,CarpetSurface,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,StargateGame,CommandInterface,,21,0,0,4,32,10,108,0,2,110,0,0,2,1,19,19,26,82,0,0,2,26,0,5,0,0,0,0,0,0,0,21,0,0,less,less,,
+class,StargateGame,CommandInterface,,21,0,0,4,32,10,108,0,2,110,0,0,2,1,19,19,22,82,0,0,6,22,0,1,0,0,0,0,0,0,0,21,0,0,less,less,,
 class,StargateGame,ConcreteSurface,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,Constructions,,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,CoverInfo,,4,0,0,0,10,6,25,0,3,28,0,0,0,0,13,13,4,22,0,0,2,4,0,0,0,0,0,0,0,0,0,4,0,0,agree,agree,,
@@ -1752,10 +1752,10 @@ class,StargateGame,SGLevelGamePlay,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 class,StargateGame,SGLoadingPageBase,,0,0,0,0,0,0,0,0,1,1,0,0,0,0,7,7,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,SGMenuInteraction,,7,10,12,22,0,1,28,0,1,29,0,0,15,3,27,27,7,21,0,0,1,7,0,0,0,0,0,0,0,0,0,7,10,0,agree,agree,,
 class,StargateGame,SGOrder,,2,0,0,2,0,4,14,0,2,16,0,0,0,0,6,10,2,13,0,0,1,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
-class,StargateGame,SGOrderAttack,,4,0,0,0,1,3,6,0,1,7,0,0,0,0,1,1,5,2,0,0,0,5,0,1,0,0,0,0,0,0,0,4,0,0,less,less,,
+class,StargateGame,SGOrderAttack,,4,0,0,0,1,3,6,0,1,7,0,0,0,0,1,1,4,2,0,0,1,4,0,0,0,0,0,0,0,0,0,4,0,0,agree,agree,,
 class,StargateGame,SGOrderDecypher,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,SGOrderEngineer,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,StargateGame,SGOrderFollow,,2,0,0,0,1,1,6,0,1,7,0,0,0,0,1,1,3,4,0,0,0,3,0,1,0,0,0,0,0,0,0,2,0,0,less,less,,
+class,StargateGame,SGOrderFollow,,2,0,0,0,1,1,6,0,1,7,0,0,0,0,1,1,2,4,0,0,1,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,StargateGame,SGOrderGoto,,2,0,0,0,1,3,3,0,1,4,0,0,0,0,2,2,2,2,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,StargateGame,SGOrderHold,,2,0,0,0,1,1,3,0,1,4,0,0,0,0,2,2,2,2,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,StargateGame,SGOrderHoldFire,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -1789,9 +1789,9 @@ class,StargateGame,SkinSwapUseTrigger,,1,0,0,0,4,2,10,0,0,10,0,0,0,0,6,6,1,8,0,0
 class,StargateGame,SnipingVolume,,1,0,0,0,0,1,4,0,2,6,0,0,0,0,2,2,1,4,0,0,1,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,StargateGame,SnowImpact,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,SnowSurface,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,StargateGame,SquadAIBasic,,51,0,0,5,63,22,233,0,53,286,0,0,0,0,106,106,54,223,0,0,7,54,0,3,0,0,0,0,0,0,0,51,0,0,less,less,,
+class,StargateGame,SquadAIBasic,,51,0,0,5,63,22,233,0,53,286,0,0,0,0,106,106,52,223,0,0,9,52,0,1,0,0,0,0,0,0,0,51,0,0,less,less,,
 class,StargateGame,SquadAISG,,36,0,0,0,48,14,137,0,21,158,0,0,0,0,31,31,37,118,0,0,3,37,0,1,0,0,0,0,0,0,0,36,0,0,less,less,,
-class,StargateGame,SquadMenu,,5,0,0,0,5,3,26,0,5,31,0,0,9,5,11,11,6,25,0,0,0,6,0,1,0,0,0,0,0,0,0,5,0,0,less,less,,
+class,StargateGame,SquadMenu,,5,0,0,0,5,3,26,0,5,31,0,0,9,5,11,11,5,25,0,0,1,5,0,0,0,0,0,0,0,0,0,5,0,0,agree,agree,,
 class,StargateGame,SquadRoster,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,StargateAIMsgManager,,3,0,0,0,0,5,79,0,1,80,0,0,0,0,4,4,3,77,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
 class,StargateGame,StargateAmmo,,5,0,0,3,11,1,20,0,0,20,0,0,0,0,14,14,5,15,0,0,0,5,0,0,0,0,0,0,0,0,0,5,0,0,agree,agree,,
@@ -1806,7 +1806,7 @@ class,StargateGame,StargateLockedObjective,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 class,StargateGame,StargateMutator,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,StargatePassengerTrigger,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,StargatePawn,,184,6,13,18,130,41,510,0,12,522,0,0,56,24,228,218,184,335,0,0,0,184,0,0,0,0,0,0,0,0,0,184,6,0,agree,agree,,
-class,StargateGame,StargatePlayer,,48,1,6,14,63,9,271,3,10,284,0,0,10,8,214,134,50,223,0,0,6,50,0,2,0,0,0,0,0,0,0,48,1,0,less,less,,
+class,StargateGame,StargatePlayer,,48,1,6,14,63,9,271,3,10,284,0,0,10,8,214,134,48,223,0,0,8,48,0,0,0,0,0,0,0,0,0,48,1,0,agree,agree,,
 class,StargateGame,StargateProjectile,,3,0,0,0,6,3,24,0,1,25,0,0,0,0,10,10,3,22,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
 class,StargateGame,StargateRechargeWeapons,,2,0,0,0,1,2,12,0,0,12,0,0,0,0,4,4,2,9,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,agree,agree,,
 class,StargateGame,StargateScoreBoard,,8,0,0,0,2,1,16,0,1,17,0,0,0,0,9,9,8,9,0,0,0,8,0,0,0,0,0,0,0,0,0,8,0,0,agree,agree,,
@@ -1840,12 +1840,12 @@ class,StargateGame,TeamTeleporter,,0,0,0,0,1,0,3,0,0,3,0,0,0,0,4,4,0,3,0,0,0,0,0
 class,StargateGame,TextTrigger,,0,0,0,0,0,0,3,0,0,3,0,0,0,0,3,3,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,TimeMessage,,0,0,0,0,1,0,5,0,0,5,0,0,0,0,3,3,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,TransportRingMesh,,0,0,0,0,0,0,3,0,0,3,0,0,0,0,1,1,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
-class,StargateGame,TransportRings,,7,0,0,0,2,0,27,0,8,35,0,0,0,0,23,8,10,25,0,0,0,10,0,3,0,0,0,0,0,0,0,7,0,0,less,less,,
+class,StargateGame,TransportRings,,7,0,0,0,2,0,27,0,8,35,0,0,0,0,23,8,9,25,0,0,1,9,0,2,0,0,0,0,0,0,0,7,0,0,less,less,,
 class,StargateGame,TriggerablePhysicsVolume,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,TriggeredObjective,,0,0,0,0,3,0,8,0,0,8,0,0,0,0,4,4,0,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,UIProgressBar,,5,0,0,0,0,0,11,0,0,11,0,0,0,0,5,5,5,6,0,0,0,5,0,0,0,0,0,0,0,0,0,5,0,0,agree,agree,,
 class,StargateGame,UITextBox,,5,0,0,0,7,2,19,0,1,20,0,0,0,0,4,4,5,15,0,0,0,5,0,0,0,0,0,0,0,0,0,5,0,0,agree,agree,,
-class,StargateGame,UIWidget,,12,0,0,0,5,3,40,0,4,44,0,0,0,0,26,26,14,29,0,0,1,14,0,2,0,0,0,0,0,0,0,12,0,0,less,less,,
+class,StargateGame,UIWidget,,12,0,0,0,5,3,40,0,4,44,0,0,0,0,26,26,12,29,0,0,3,12,0,0,0,0,0,0,0,0,0,12,0,0,agree,agree,,
 class,StargateGame,UnrealMPGameInfo,,1,0,1,1,4,4,14,0,0,14,0,0,6,1,18,18,1,13,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,StargateGame,UnrealPawn,,14,2,4,1,10,10,62,0,5,67,0,0,11,4,37,27,14,51,0,0,2,14,0,0,0,0,0,0,0,0,0,14,2,0,agree,agree,,
 class,StargateGame,UnrealPlayer,,13,0,0,0,22,10,56,0,1,57,0,0,0,0,41,24,13,41,0,0,0,13,0,0,0,0,0,0,0,0,0,13,0,0,agree,agree,,
@@ -1856,7 +1856,7 @@ class,StargateGame,VehicleWeapon,,0,0,0,0,3,0,8,0,0,8,0,0,0,0,8,8,0,7,0,0,0,0,0,
 class,StargateGame,VehicleWeaponAttachment,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,4,4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateGame,VentSurface,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateGame,VictimMessage,,0,0,0,0,0,0,2,0,0,2,0,0,0,0,2,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
-class,StargateGame,VoiceSelector,,11,0,0,1,10,9,68,0,13,81,0,0,0,0,10,10,17,59,0,0,4,17,0,6,0,0,0,0,0,0,0,11,0,0,less,less,,
+class,StargateGame,VoiceSelector,,11,0,0,1,10,9,68,0,13,81,0,0,0,0,10,10,11,59,0,0,10,11,0,0,0,0,0,0,0,0,0,11,0,0,agree,agree,,
 class,StargateGame,VoiceSet,,9,0,5,0,9,0,54,0,2,56,0,0,1,1,14,14,9,47,0,0,0,9,0,0,0,0,0,0,0,0,0,9,0,0,agree,agree,,
 class,StargateGame,WarpPortalTrigger,,1,0,0,0,5,0,16,0,1,17,0,0,0,0,5,5,1,15,0,0,1,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
 class,StargateGame,WarpZoneInfoTimed,,1,0,0,0,1,1,4,0,0,4,0,0,0,0,2,2,1,4,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
@@ -2007,7 +2007,7 @@ class,StargateVehicles,AttachedDeathGliderTurretGun,,1,0,0,0,1,0,1,0,0,1,0,0,0,0
 class,StargateVehicles,AttachedDeathGliderTurretGunAmmo,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateVehicles,AttachedDeathGliderTurretGunProjectile,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,StargateVehicles,DeathGlider,,1,0,0,0,3,1,15,0,0,15,0,0,0,0,22,19,1,13,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,agree,agree,,
-class,StargateVehicles,DeathGliderBot,,10,0,0,2,8,3,47,0,1,48,0,0,0,0,34,20,6,27,0,0,0,6,0,1,0,5,5,2,3,0,0,5,0,0,more,less,,
+class,StargateVehicles,DeathGliderBot,,10,0,0,2,8,3,47,0,1,48,0,0,0,0,34,20,5,27,0,0,1,5,0,0,0,5,5,2,3,0,0,5,0,0,more,agree,,
 class,StargateVehicles,DeathGliderGun,,7,0,0,0,0,2,8,0,0,8,0,0,0,0,4,3,4,1,0,0,0,4,0,0,0,3,3,2,1,0,0,4,0,0,more,agree,,
 class,StargateVehicles,DeathGliderGunAmmo,,0,0,0,0,0,0,1,0,0,1,0,0,0,0,3,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,StargateVehicles,DeathGliderGunDamage,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -2318,23 +2318,23 @@ class,UnrealEd,NotifyProperties,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 class,UnrealEd,SequEditProps,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,UnrealEd,SkelPrefsEditProps,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,UnrealEd,UnrealEdEngine,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-verdict,,less,,435,,,,,,,,,,,,,,,,512,,,,,512,0,78,,1,1,,,0,0,,,,,,35,the `less` population
-verdict,,agree,,2738,,,,,,,,,,,,,,,,2738,,,,,2738,0,0,,0,0,,,0,0,,,,,,898,the `agree` population
-verdict,,more,,812,,,,,,,,,,,,,,,,566,,,,,566,0,6,,252,251,,,1,0,,,,,,34,the `more` population
+verdict,,less,,239,,,,,,,,,,,,,,,,264,,,,,264,0,26,,1,1,,,0,0,,,,,,18,the `less` population
+verdict,,agree,,2934,,,,,,,,,,,,,,,,2934,,,,,2934,0,0,,0,0,,,0,0,,,,,,915,the `agree` population
+verdict,,more,,812,,,,,,,,,,,,,,,,560,,,,,560,0,0,,252,251,,,1,0,,,,,,34,the `more` population
 top,GUI,MenuItemOverlay,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,`else` outside every function and every block
 package,AmbientCreatures,,,32,,,,,,,,,141,,,,,,,29,,,,,,,,,,,,,,,,,,,,18,"agree 9, more 1, less 0, no-branch 8"
 package,Core,,,1,,,,,,,,,9,,,,,,,1,,,,,,,,,,,,,,,,,,,,7,"agree 2, more 0, less 0, no-branch 5"
 package,Editor,,,12,,,,,,,,,85,,,,,,,12,,,,,,,,,,,,,,,,,,,,16,"agree 12, more 0, less 0, no-branch 4"
-package,Engine,,,879,,,,,,,,,5059,,,,,,,907,,,,,,,,,,,,,,,,,,,,367,"agree 145, more 1, less 13, no-branch 208"
+package,Engine,,,879,,,,,,,,,5059,,,,,,,886,,,,,,,,,,,,,,,,,,,,367,"agree 152, more 1, less 6, no-branch 208"
 package,Fire,,,0,,,,,,,,,0,,,,,,,0,,,,,,,,,,,,,,,,,,,,7,"agree 0, more 0, less 0, no-branch 7"
-package,GUI,,,215,,,,,,,,,1097,,,,,,,220,,,,,,,,,,,,,,,,,,,,148,"agree 53, more 1, less 3, no-branch 91"
+package,GUI,,,215,,,,,,,,,1097,,,,,,,217,,,,,,,,,,,,,,,,,,,,148,"agree 53, more 1, less 3, no-branch 91"
 package,GamePlay,,,91,,,,,,,,,508,,,,,,,85,,,,,,,,,,,,,,,,,,,,262,"agree 80, more 1, less 0, no-branch 181"
-package,IpDrv,,,39,,,,,,,,,121,,,,,,,41,,,,,,,,,,,,,,,,,,,,14,"agree 7, more 0, less 1, no-branch 6"
+package,IpDrv,,,39,,,,,,,,,121,,,,,,,39,,,,,,,,,,,,,,,,,,,,14,"agree 8, more 0, less 0, no-branch 6"
 package,Sharpeffects,,,11,,,,,,,,,66,,,,,,,11,,,,,,,,,,,,,,,,,,,,158,"agree 6, more 0, less 0, no-branch 152"
-package,StargateContent,,,535,,,,,,,,,2246,,,,,,,483,,,,,,,,,,,,,,,,,,,,567,"agree 181, more 12, less 2, no-branch 372"
-package,StargateGame,,,1547,,,,,,,,,6474,,,,,,,1464,,,,,,,,,,,,,,,,,,,,306,"agree 180, more 5, less 14, no-branch 107"
+package,StargateContent,,,535,,,,,,,,,2246,,,,,,,479,,,,,,,,,,,,,,,,,,,,567,"agree 183, more 12, less 0, no-branch 372"
+package,StargateGame,,,1547,,,,,,,,,6474,,,,,,,1437,,,,,,,,,,,,,,,,,,,,306,"agree 187, more 5, less 7, no-branch 107"
 package,StargateMenus,,,76,,,,,,,,,309,,,,,,,77,,,,,,,,,,,,,,,,,,,,98,"agree 66, more 0, less 1, no-branch 31"
-package,StargateVehicles,,,219,,,,,,,,,662,,,,,,,155,,,,,,,,,,,,,,,,,,,,142,"agree 54, more 13, less 0, no-branch 75"
+package,StargateVehicles,,,219,,,,,,,,,662,,,,,,,154,,,,,,,,,,,,,,,,,,,,142,"agree 54, more 13, less 0, no-branch 75"
 package,Stargateeffects,,,6,,,,,,,,,30,,,,,,,6,,,,,,,,,,,,,,,,,,,,77,"agree 11, more 0, less 0, no-branch 66"
 package,UDebugMenu,,,90,,,,,,,,,363,,,,,,,90,,,,,,,,,,,,,,,,,,,,38,"agree 32, more 0, less 0, no-branch 6"
 package,UPreview,,,5,,,,,,,,,12,,,,,,,5,,,,,,,,,,,,,,,,,,,,4,"agree 4, more 0, less 0, no-branch 0"
@@ -2344,12 +2344,12 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,2319,classes whose `ScriptText` wa
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,18,packages with at least one joined class
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,967,"of those, classes the branch census also has"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,967,classes with a readable class text and a branch in the record (the function-scope verdict)
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,898,classes whose live text spells exactly the `else` arms the bytecode has
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,915,classes whose live text spells exactly the `else` arms the bytecode has
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,34,classes whose live text spells more `else` than the bytecode has arms
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,35,classes whose live text spells fewer
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,928,"of those, the ones whose in-body `else` count equals the record's `else` arms"
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,18,classes whose live text spells fewer
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,949,"of those, the ones whose in-body `else` count equals the record's `else` arms"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,"of those, the text spells more inside its function bodies"
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,39,"of those, the record carries more arms than the in-body text spells"
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,18,"of those, the record carries more arms than the in-body text spells"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1352,classes with readable text and no branch at all in the bytecode
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,classes with branch arms but no readable `ScriptText`
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,3985,"`else` keywords in the live text, i.e. the parts this build compiles"
@@ -2375,24 +2375,24 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,"`#else` preprocessor directives
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11523,`function` declarations in the live text
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,566,function declarations in the live text of classes with no branch at all
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,13,condition terms in that population
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,65,the largest class-level difference between text `else` and bytecode arms
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,3816,`else` arms in `inventory/jump_branches.csv`
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,68,the largest class-level difference between text `else` and bytecode arms
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,3758,`else` arms in `inventory/jump_branches.csv`
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,13405,straight `if` arms there
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,empty then-arms there
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,jumps inside a condition there
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,231,then-arms that end by leaving their own loop -- a `break` there
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,289,then-arms that end by leaving their own loop -- a `break` there
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,17463,`JumpIfNot` tokens the branch census reports
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,835,joined classes whose term count equals their `JumpIfNot` count exactly
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,424,joined classes whose live text carries no `&&` or `||`
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,413,"of those, the ones whose term count is exact"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,543,joined classes whose live text carries a `&&` or `||`
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,422,"of those, the ones whose term count is exact -- an operator that added a jump would"
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,6,`less` classes whose live text declares fewer functions than their record has
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,23,`less` classes that declare exactly as many
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,6,`less` classes that declare more
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,48,`agree` classes that declare fewer functions than their record has -- the control for the above
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,721,`agree` classes that declare exactly as many
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,129,`agree` classes that declare more
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,4,`less` classes whose live text declares fewer functions than their record has
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,12,`less` classes that declare exactly as many
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,2,`less` classes that declare more
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,50,`agree` classes that declare fewer functions than their record has -- the control for the above
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,732,`agree` classes that declare exactly as many
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,133,`agree` classes that declare more
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,distinct function names behind the `less` classes' absent arms
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,9860,declarations the previous rule counted (`simulated`/`static`/`final`/`latent` only)
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11523,"declarations the grammar has, any modifier"

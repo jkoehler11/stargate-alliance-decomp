@@ -12,15 +12,17 @@ Every `JumpIfNot` is one of five things, and the split is a measurement rather t
 * **empty** -- the target is the statement right after the jump, so the arm is empty (`if (x) ;` survives codegen).
 * **leave** -- the trailing `Jump` is a `break` or a `continue`: the arm ends by leaving its own loop (or its
   `switch`) rather than by skipping an else body. This is what a loop exit looks like, and the `Jump` that
-  reaches for the loop's end is byte-identical in shape to an else skip. Four shapes are recognised, each
+  reaches for the loop's end is byte-identical in shape to an else skip. Six shapes are recognised, each
   measured on the join rather than by eye: the region the trailing `Jump` skips holds a backward
   `Jump`/`JumpIfNot` whose target begins at or before the condition (a `for`/`while` back edge, and a
   `do…until`'s bottom test, which is conditional); the arm is the trailing `Jump` alone and it lands on a
   backward jump that returns to the condition (`if (X) continue;` -- a `continue` in a `for` lands on the
   increment, not on the back edge); the trailing `Jump` is the arm's last statement and lands on the loop's
-  `IteratorPop` (a `foreach`, which has no back edge); and the arm's landing follows the case list's terminator
+  `IteratorPop` (a `foreach`, which has no back edge); the arm's landing follows the case list's terminator
   (`0xffff`) as its previous statement (`if (X) { …; break; }` inside a `switch`, whose `break` leaves the switch
-  and reaches no loop test at all).
+  and reaches no loop test at all); the then-block holds a nested `JumpIfNot` aimed at or past the target it sits
+  inside, so the trailing `Jump` is that nested arm's exit and not this one's skip; and the arm's single `Jump`
+  lands on a `for`'s increment block, where the statement after the landing is the back edge.
 * **else** -- the statement in front of the target is a `Jump` that lands past it, and no loop of the arm's own
   returns from the skipped region: the then-arm skips an else.
 * **if** -- everything else: a conditional forward jump over a straight arm.
@@ -143,6 +145,21 @@ def classify(nodes, edges):
             if not leaves and which > 0 and stmts[which - 1]["name"] == "Case" \
                     and len(stmts[which - 1]["operands"]) == 2 \
                     and (stmts[which - 1]["operands"][0] | (stmts[which - 1]["operands"][1] << 8)) == 0xFFFF:
+                leaves = True
+            # A then-arm never reaches past its own else. `if (A) { …; if (B) continue; }` writes the inner
+            # `continue` as `JumpIfNot <past this arm>` + `Jump <increment>`, so the *last* statement before the
+            # outer target is a nested arm's jump and the outer `if` reads as an `else` it does not have. The
+            # nesting invariant is what separates them: a real then-block holds no `JumpIfNot` aimed at or past
+            # the target it is inside. Measured on the join, this moves one arm and none in an agreeing function.
+            if not leaves and any(n["name"] == "JumpIfNot" and n["offset"] in by_edge
+                                  and by_edge[n["offset"]][2] >= target for n in stmts[i + 1:span]):
+                leaves = True
+            # `if (X) continue;` in a `for`: the landing is the increment block itself, not the back edge, so the
+            # test that returns to the condition is the statement *after* the landing. The then-arm being the one
+            # `Jump` is again what keeps a real `if`/`else` at the bottom of a loop body out of this.
+            if not leaves and follow == prev["offset"] and which + 1 < len(stmts) \
+                    and stmts[which]["name"] not in ("Jump", "JumpIfNot") \
+                    and stmts[which + 1]["name"] in ("Jump", "JumpIfNot") and back(stmts[which + 1]):
                 leaves = True
             out.append((offset, "leave" if leaves else "else", value, target))
         else:
@@ -464,6 +481,24 @@ def selftest():
     got, _n = classify(nodes9, [(0, "JumpIfNot", 3, 3), (2, "Jump", 10, 10)])
     if got != [(0, "else", 3, 3)]:
         print("FAIL jump-branches: a switch inside an else body read as %r" % (got,))
+        return 1
+    # A then-block whose last statement is a nested arm's jump. The inner `JumpIfNot 8` sits inside the outer
+    # arm's then-block and aims at the outer target (8), so the outer `if` has no else -- and the inner arm is
+    # the `continue` onto the increment at 16, whose next statement is the loop's back edge.
+    nodes10 = [node(0, "JumpIfNot", 4), node(4, "Let", 5), node(5, "JumpIfNot", 7), node(7, "Jump", 8),
+               node(8, "Let", 9), node(14, "Let", 15), node(16, "AddAdd", 17), node(18, "Jump", 19)]
+    edges10 = [(0, "JumpIfNot", 8, 8), (5, "JumpIfNot", 8, 8), (7, "Jump", 16, 16), (18, "Jump", 0, 0)]
+    got, _n = classify(nodes10, edges10)
+    if got != [(0, "leave", 8, 8), (5, "leave", 8, 8)]:
+        print("FAIL jump-branches: a nested continue read as %r" % (got,))
+        return 1
+    # `if (X) continue;` in a `for`: the then-arm is the one `Jump` and lands on the increment at 12, whose next
+    # statement is the back edge -- not on the back edge itself, which is the `while` shape above.
+    nodes11 = [node(0, "JumpIfNot", 2), node(2, "Jump", 3), node(5, "Let", 6), node(12, "AddAdd", 13),
+               node(14, "Jump", 15), node(20, "Return", 21)]
+    got, _n = classify(nodes11, [(0, "JumpIfNot", 5, 5), (2, "Jump", 12, 12), (14, "Jump", 0, 0)])
+    if got != [(0, "leave", 5, 5)]:
+        print("FAIL jump-branches: a for-increment continue read as %r" % (got,))
         return 1
     # A case list with a shared body, and a switch whose next statement is not a `Case`.
     stmts = [node(0, "Switch", 1), node(1, "Case", 2), node(2, "Case", 3), node(3, "Let", 4),

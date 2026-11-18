@@ -13252,3 +13252,37 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement.** `CommandInterface.TestTraceActors` is the one function whose gap exceeds its `continue`
   count (3 against 2). It is a single 35-arm body, so the next read is arm by arm against its text statements --
   whether the third is a `continue` its landing shape hides or a body the record compiled from another revision.
+
+### Execution notes (2026-11-18, the last shortfall arm was a nested `continue`, and the two landings it hid)
+
+- **Task.** The previous note's next measurement: `CommandInterface.TestTraceActors`, the one function whose gap
+  (3) exceeded its `continue` count (2), read arm by arm against its text statements.
+- **The third arm was the arm census's reading, not the text.** The body spells 7 `else`, 2 `continue` and 2
+  `break`, and the census read 10 `else` arms. One (`0213`, `if (InteractionAppliesToPlayer(…))`) is a straight
+  `if` whose then-block ends in the inner `if (!bAimedAtHitObject) continue;`: the statement before its target is
+  that *inner* arm's `Jump`, so the outer `if` read as an else it does not have. The other two (`01f4`
+  `if (…IsEnabled == false) continue;` and `0288` the inner one) land on the loop's increment block (`02d3`, an
+  `AddAdd_Int`) rather than on the back edge, one statement short of the shape the `while` rule already reads.
+- **Two landing rules, both scored on the join.** `tools/jump-branches.py` files an arm as `leave` when its
+  then-block holds a **nested** `JumpIfNot` aimed at or past the target it sits inside -- a then-arm never reaches
+  past its own else -- and when the arm's single `Jump` lands on a **`for`'s increment block**, i.e. the statement
+  after the landing is the backward test. The nested rule moves **1** arm and the increment rule **57**; **0** of
+  the 5,681 functions whose `else` count already agreed carries an arm either reclassifies, and **0** of the 22
+  the guards explain do. Two self-test cases added (`--check`), one for each landing.
+- **What it moved.** `inventory/jump_branches.csv`: `else` **3,816 -> 3,758**, `leave` **231 -> 289** and
+  `JumpIfNot` 17,463 unchanged. `inventory/text_branch_functions.csv`: shortfall **84 arms in 55 functions -> 26 in
+  21**, every one within its body's `continue` count, `short_beyond_continue` **1 -> 0**, `else_agree` **5,681 ->
+  5,715** of 5,736 (**99.6%**) and **2,020 of 2,041** (**99.0%**) on the functions that carry one; **0** surplus,
+  **0** unpaired. `inventory/text_branches.csv`: class agreement **898 -> 915** of 967 (**94.6%**), `less` **35 ->
+  18**, `verdict_fn` agreement **928 -> 949** of 967 (**98.1%**), the `more` population **34** unchanged (it is a
+  scope count). The macro table re-scores without moving the ranking (`XBox`+`DEBUG` still breaks 0 and fixes 22,
+  the others 1 to 27).
+- **Files.** `tools/jump-branches.py` (two `leave` rules, two self-test cases, the docstring's shape list),
+  `inventory/jump_branches.csv`, `inventory/text_branches.csv`, `inventory/text_branch_functions.csv`,
+  `docs/BYTECODE.md` (the break totals, the class and shortfall paragraphs, the macro table, both generated
+  blocks), `docs/UNKNOWNS.md` U22, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv` and this note. Two dump
+  reads (2.1 s and 5.4 s); no boot, no Ghidra.
+- **Next measurement.** The 26 remaining arms are `continue`-shaped but bounded per body, not placed: the next
+  read is each short function's `continue` sites against its arm offsets, so an arm names the statement it belongs
+  to instead of being bounded by a count -- `BotBase.setnextenemy` (gap 3 of 3) and `B4SParser.parselines`
+  (gap 2 of 5) are the two largest.
