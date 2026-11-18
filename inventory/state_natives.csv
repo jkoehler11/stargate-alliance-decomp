@@ -1,0 +1,80 @@
+function,slot,address,size,claim,value,evidence
+execGotoState,native 113,0x0486f0,518,body_size,518,0x0486f0 symbol map
+execGotoState,native 113,0x0486f0,518,arg_expressions,2,0x048736 ff 14 95 e8 13 63 00 call DWORD PTR [edx*4+0x6313e8]
+execGotoState,native 113,0x0486f0,518,debuginfo_skip,0x42,"0x048764 80 38 42 cmp BYTE PTR [eax],0x42"
+execGotoState,native 113,0x0486f0,518,vtable_call,0x34,0x04879f ff 52 34 call DWORD PTR [edx+0x34]
+execGotoState,native 113,0x0486f0,518,vtable_call,0x38,0x0487b9 ff 52 38 call DWORD PTR [edx+0x38]
+execGotoState,native 113,0x0486f0,518,vtable_call,0x14,0x048870 ff 50 14 call DWORD PTR [eax+0x14]
+execGotoState,native 113,0x0486f0,518,constant,0x1,"0x0487a2 83 f8 01 cmp eax,0x1"
+execGotoState,native 113,0x0486f0,518,constant,0x2b2,"0x04880d 81 fa b2 02 00 00 cmp edx,0x2b2"
+execGotoState,native 113,0x0486f0,518,constant,0x2b2,"0x0488d1 81 fa b2 02 00 00 cmp edx,0x2b2"
+execGotoState,native 113,0x0486f0,518,field,0xc,"0x0486f6 8b 47 0c mov eax,DWORD PTR [edi+0xc]"
+execGotoState,native 113,0x0486f0,518,field,0x1c,"0x0486ff 8b 40 1c mov eax,DWORD PTR [eax+0x1c]"
+execGotoState,native 113,0x0486f0,518,field,0x24,"0x048702 3b 47 24 cmp eax,DWORD PTR [edi+0x24]"
+execGotoState,native 113,0x0486f0,518,field,0x20,"0x048707 8b 40 20 mov eax,DWORD PTR [eax+0x20]"
+execGotoState,native 113,0x0486f0,518,field,0x8,"0x04872e 8b 4e 08 mov ecx,DWORD PTR [esi+0x8]"
+execGotoState,native 113,0x0486f0,518,log_line,789,0x0487f2 debugf at line 789
+execGotoState,native 113,0x0486f0,518,log_line,789,0x048859 debugf at line 789
+execGotoState,native 113,0x0486f0,518,log_line,792,0x0488c5 debugf at line 792
+execGotoState,native 113,0x0486f0,518,log_text,GotoState (%s %s): Label not found,0x0487e7 68 50 9d 4d 00 push 0x4d9d50
+execGotoState,native 113,0x0486f0,518,log_text,GotoState (%s %s): State not found in class %s!,0x04884e 68 f0 9c 4d 00 push 0x4d9cf0
+execGotoState,native 113,0x0486f0,518,log_text,Stack when GotoState failed.,0x04886b 68 b4 9c 4d 00 push 0x4d9cb4
+execGotoState,native 113,0x0486f0,518,log_text,GotoState (%s %s): State not found in class %s!\nRefer to Log for Script Stack Trace.,0x04889b 68 08 9c 4d 00 push 0x4d9c08
+execGotoState,native 113,0x0486f0,518,log_text,GotoState (%s %s): State not found in class %s!,0x0488b5 68 f0 9c 4d 00 push 0x4d9cf0
+execGotoState,native 113,0x0486f0,518,default_label,100,"0x0487af b8 64 00 00 00 mov eax,0x64"
+execIsInState,native 281,0x046830,136,body_size,136,0x046830 symbol map
+execIsInState,native 281,0x046830,136,arg_expressions,1,0x046854 ff 14 95 e8 13 63 00 call DWORD PTR [edx*4+0x6313e8]
+execIsInState,native 281,0x046830,136,debuginfo_skip,0x42,"0x046864 80 38 42 cmp BYTE PTR [eax],0x42"
+execIsInState,native 281,0x046830,136,field,0xc,"0x046836 8b 46 0c mov eax,DWORD PTR [esi+0xc]"
+execIsInState,native 281,0x046830,136,field,0x8,"0x046850 8b 4e 08 mov ecx,DWORD PTR [esi+0x8]"
+execIsInState,native 281,0x046830,136,field,0x1c,"0x046882 8b 40 1c mov eax,DWORD PTR [eax+0x1c]"
+execIsInState,native 281,0x046830,136,field,0x20,"0x046890 39 48 20 cmp DWORD PTR [eax+0x20],ecx"
+execIsInState,native 281,0x046830,136,field,0x28,"0x046895 8b 40 28 mov eax,DWORD PTR [eax+0x28]"
+execGetStateName,native 284,0x0468c0,95,body_size,95,0x0468c0 symbol map
+execGetStateName,native 284,0x0468c0,95,arg_expressions,0,0x0468c0 no expression evaluated
+execGetStateName,native 284,0x0468c0,95,debuginfo_skip,0x42,"0x0468ce 80 39 42 cmp BYTE PTR [ecx],0x42"
+execGetStateName,native 284,0x0468c0,95,field,0xc,"0x0468c7 8b 48 0c mov ecx,DWORD PTR [eax+0xc]"
+execGetStateName,native 284,0x0468c0,95,field,0x8,"0x0468d9 8b 48 08 mov ecx,DWORD PTR [eax+0x8]"
+execGetStateName,native 284,0x0468c0,95,field,0x1c,"0x0468eb 8b 40 1c mov eax,DWORD PTR [eax+0x1c]"
+execGetStateName,native 284,0x0468c0,95,field,0x20,"0x0468f2 8b 40 20 mov eax,DWORD PTR [eax+0x20]"
+execGotoLabel,gnatives[13] (0x0d),0x047850,101,body_size,101,0x047850 symbol map
+execGotoLabel,gnatives[13] (0x0d),0x047850,101,arg_expressions,1,0x047874 ff 14 95 e8 13 63 00 call DWORD PTR [edx*4+0x6313e8]
+execGotoLabel,gnatives[13] (0x0d),0x047850,101,vtable_call,0x38,0x047884 ff 52 38 call DWORD PTR [edx+0x38]
+execGotoLabel,gnatives[13] (0x0d),0x047850,101,field,0xc,"0x047856 8b 46 0c mov eax,DWORD PTR [esi+0xc]"
+execGotoLabel,gnatives[13] (0x0d),0x047850,101,field,0x8,"0x047870 8b 4e 08 mov ecx,DWORD PTR [esi+0x8]"
+execGotoLabel,gnatives[13] (0x0d),0x047850,101,log_line,789,0x0478a7 debugf at line 789
+execGotoLabel,gnatives[13] (0x0d),0x047850,101,log_text,GotoLabel (%s): Label not found,0x04789c 68 c8 9a 4d 00 push 0x4d9ac8
+state_set,class table 13 (+0x34),0x048e90,578,body_size,578,0x048e90 symbol map
+state_set,class table 13 (+0x34),0x048e90,578,arg_expressions,0,0x048e90 no expression evaluated
+state_set,class table 13 (+0x34),0x048e90,578,vtable_call,0x10,0x048faa ff 52 10 call DWORD PTR [edx+0x10]
+state_set,class table 13 (+0x34),0x048e90,578,vtable_call,0x10,0x049083 ff 52 10 call DWORD PTR [edx+0x10]
+state_set,class table 13 (+0x34),0x048e90,578,vtable_call,0x6c,0x0490b4 ff 52 6c call DWORD PTR [edx+0x6c]
+state_set,class table 13 (+0x34),0x048e90,578,constant,0x2b2,"0x048ec9 81 fd b2 02 00 00 cmp ebp,0x2b2"
+state_set,class table 13 (+0x34),0x048e90,578,constant,0x2b2,"0x048f43 81 fd b2 02 00 00 cmp ebp,0x2b2"
+state_set,class table 13 (+0x34),0x048e90,578,field,0xc,"0x048e98 8b 46 0c mov eax,DWORD PTR [esi+0xc]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x28,"0x048ea6 89 58 28 mov DWORD PTR [eax+0x28],ebx"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x1c,"0x048eac 8b 40 1c mov eax,DWORD PTR [eax+0x1c]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x24,"0x048eaf 8b 4e 24 mov ecx,DWORD PTR [esi+0x24]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x20,"0x048eb8 8b 50 20 mov edx,DWORD PTR [eax+0x20]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x3c,"0x048eef 8b 49 3c mov ecx,DWORD PTR [ecx+0x3c]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x0,"0x048f0d 8d 49 00 lea ecx,[ecx+0x0]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x90,"0x048f14 8a 88 90 00 00 00 mov cl,BYTE PTR [eax+0x90]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x2c,"0x048f1a 8b 50 2c mov edx,DWORD PTR [eax+0x2c]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x4,"0x048fd2 8b 48 04 mov ecx,DWORD PTR [eax+0x4]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x80,"0x04900d 8b 90 80 00 00 00 mov edx,DWORD PTR [eax+0x80]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x84,"0x049019 8b 80 84 00 00 00 mov eax,DWORD PTR [eax+0x84]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x88,"0x049027 23 97 88 00 00 00 and edx,DWORD PTR [edi+0x88]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x8c,"0x04902d 23 87 8c 00 00 00 and eax,DWORD PTR [edi+0x8c]"
+state_set,class table 13 (+0x34),0x048e90,578,field,0x498,"0x0490a1 f7 80 98 04 00 00 00 test DWORD PTR [eax+0x498],0x4000000"
+state_set,class table 13 (+0x34),0x048e90,578,event_id,317,"0x048f73 c7 00 3d 01 00 00 mov DWORD PTR [eax],0x13d"
+state_set,class table 13 (+0x34),0x048e90,578,event_id,317,"0x048f9a c7 00 3d 01 00 00 mov DWORD PTR [eax],0x13d"
+state_set,class table 13 (+0x34),0x048e90,578,event_id,316,"0x049073 c7 00 3c 01 00 00 mov DWORD PTR [eax],0x13c"
+label_lookup,class table 14 (+0x38),0x046f00,124,body_size,124,0x046f00 symbol map
+label_lookup,class table 14 (+0x38),0x046f00,124,arg_expressions,0,0x046f00 no expression evaluated
+label_lookup,class table 14 (+0x38),0x046f00,124,field,0xc,"0x046f00 8b 41 0c mov eax,DWORD PTR [ecx+0xc]"
+label_lookup,class table 14 (+0x38),0x046f00,124,field,0x28,"0x046f0f c7 40 28 00 00 00 00 mov DWORD PTR [eax+0x28],0x0"
+label_lookup,class table 14 (+0x38),0x046f00,124,field,0x1c,"0x046f1b 8b 70 1c mov esi,DWORD PTR [eax+0x1c]"
+label_lookup,class table 14 (+0x38),0x046f00,124,field,0x94,"0x046f22 66 8b 86 94 00 00 00 mov ax,WORD PTR [esi+0x94]"
+label_lookup,class table 14 (+0x38),0x046f00,124,field,0x48,"0x046f2f 8b 56 48 mov edx,DWORD PTR [esi+0x48]"
+label_lookup,class table 14 (+0x38),0x046f00,124,field,0x4,"0x046f61 89 72 04 mov DWORD PTR [edx+0x4],esi"
+label_lookup,class table 14 (+0x38),0x046f00,124,entry_stride,8,"0x046f41 83 c0 08 add eax,0x8"

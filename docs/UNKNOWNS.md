@@ -4289,7 +4289,20 @@ offset a widened token start, every name index resolving, and every label the st
 table (**0** text labels without an entry) -- so a `Goto('Label')` keeps its name in a state even though it keeps
 none in a `Function`.
 
-**Reproduce.** `make state-code` (one read of the 18 packages' export tables; no boot, no Ghidra).
+**The table's runtime consumer, read out of the image (2026-11-18).** `docs/systems/STATE_NATIVES.md` reads the
+six bodies that spend this table: `GotoState` (`native(113)`), `EX_GotoLabel` (`gnatives[13]`, `0x0d`), the two
+queries, and the two helpers every one of the 492 class tables carries at slots 13 and 14. One lookup serves
+both call paths -- `0x46f00` at slot `+0x38` -- and it walks the state chain, so an inherited state's label
+resolves; a hit writes the code pointer to the state's code base plus the entry's offset, a **miss clears the
+code pointer**, which is why a `GotoState('X','NoSuchLabel')` enters X and runs none of it. The entry shape
+this page measured from the payload (a compact name index then a 4-byte offset, 8 bytes per entry, ending on
+the None name) is the shape the lookup steps (`add eax,0x8`, a zero-name terminator, the `+0x94` WORD as the
+table's offset into the state's own `+0x48` code base). The call with no label jumps to FName **100**, which the
+engine fixes at build time -- whose spelling needs a GNames read at slot 100 of `0x006be0d8` in a live guest,
+the one instrument this entry still owes. `inventory/state_natives.csv` carries every claim with its
+instruction.
+
+**Reproduce.** `make state-code` (one read of the 18 packages' export tables; no boot, no Ghidra). `make state-natives SG1_DUMP=...` for the runtime half.
 
 ## U20. The two switch censuses join arm by arm -- answered: the key was the classifier, and the seven bounds fill in
 
