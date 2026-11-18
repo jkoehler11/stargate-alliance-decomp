@@ -19,9 +19,18 @@ code -- the label blocks between `Begin:` and the `LabelTable` -- is its `State`
 token the build never emits; both export kinds are walked now, and each row's `scope` column says which one it
 came from (`function` or `state-code`).
 
-The rows are `site` (one per call) and `census` (the run-level counts the page quotes, so `--write-doc`,
-`--report` and `--check-doc` are the same read). Nothing here publishes script: a row names a function and a
-state, never a body.
+The rows are `site` (one per call), `census` (the run-level counts the page quotes, so `--write-doc`,
+`--report` and `--check-doc` are the same read) and `label` (one per state whose text and build disagree about a
+label jump). Nothing here publishes script: a row names a function and a state, never a body.
+
+Two joins follow the sites. A `GotoLabel` operand is a label name the state's own `LabelTable` also carries, so
+each site is checked against that state's table -- the walk decodes the table it already ends on. A
+`GotoState('X', 'Label')` names a label in *X*'s table rather than the caller's, so the second join resolves the
+target state through the class chain (`inventory/classes.csv`) before looking the label up.
+
+The text half of the jump join is `inventory/ai_states.csv`'s `gotos_label_names` (the labels a state's
+`Goto('label')` calls name) and `label_names` (the labels its body declares); a state whose text and build name
+the same labels the same number of times is one agreement, and `label_join` counts them per state.
 """
 import argparse
 import collections
@@ -196,12 +205,14 @@ def payloads(system, table, stats):
             yield package, pkg, exp, nodes
 
 
-def state_payloads(system, stats):
+def state_payloads(system, stats, tables):
     """Yield (package name, package, state export, class export, token tree) for every state whose code walks.
 
     The class is the export's Outermost `Class`: `UState`'s payload belongs to the class that declares the state,
     and a state's functions are separate `Function` exports with the state as their outer -- the half `payloads()`
-    already walks.
+    already walks. `tables` is filled in place with the label names each walk ends on, keyed
+    `(package, class, state)` in lower case: the walk already stands on the `LabelTable`, so its entries cost one
+    decode and are what both label joins below resolve against.
     """
     from ue2pkg import Package                             # noqa: PLC0415 - only for a real package
     sc = state_tool()
@@ -231,6 +242,14 @@ def state_payloads(system, stats):
             if got is None or got["start_by"] != "field":
                 continue
             stats["state_walked"] += 1
+            toks = [nd for nd, _d in flat(got["nodes"]) if nd["name"] == "LabelTable"]
+            names = []
+            if toks:
+                t = toks[-1]
+                ents, _stop = sc.label_entries(payload[got["start"] + t["offset"] + 1:
+                                                      got["start"] + t["end"]])
+                names = [pkg.name(nm) for nm, _off in ents]
+            tables[(package.lower(), pkg.name(outer["name"]).lower(), pkg.name(exp["name"]).lower())] = names
             yield package, pkg, exp, outer, got["nodes"]
 
 
@@ -253,17 +272,18 @@ def read_dump(system):
     stats = {"seen": 0, "walked": 0, "state_payloads": 0, "state_with_code": 0, "state_walked": 0}
     rows = []
     tables = {}
+    label_tables = {}
     for package, pkg, exp, nodes in payloads(system, table, stats):
         if package not in tables:
             tables[package] = [pkg.name(i) for i in range(pkg.name_count)]
         cls, state = owner_of(pkg, exp)
         rows.extend(site_rows(package, cls, state, pkg.name(exp["name"]), "function", nodes, tables[package]))
-    for package, pkg, exp, outer, nodes in state_payloads(system, stats):
+    for package, pkg, exp, outer, nodes in state_payloads(system, stats, label_tables):
         if package not in tables:
             tables[package] = [pkg.name(i) for i in range(pkg.name_count)]
         rows.extend(site_rows(package, pkg.name(outer["name"]), pkg.name(exp["name"]), "", "state-code",
                               nodes, tables[package]))
-    return rows, stats
+    return rows, stats, label_tables
 
 
 def census(rows, stats):
@@ -414,6 +434,126 @@ def text_control(sites):
     return out + rows
 
 
+def class_supers():
+    """`(package, class)` -> `(super package, super class)`, lower case, from the committed class table."""
+    path = os.path.join(ROOT, "inventory", "classes.csv")
+    out = {}
+    if not os.path.exists(path):
+        return out
+    for r in csv.DictReader(open(path, encoding="utf-8")):
+        out[(r["package"].lower(), r["class"].lower())] = (r["package_of_super"].lower(), (r["super"] or "").lower())
+    return out
+
+
+def table_for(package, cls, state, tables, supers):
+    """The label names of `state` as the caller's class chain declares it, or `None` when no state has a table.
+
+    A `GotoState('Hunt', 'DoCharge')` names a state by name, not by owner: `Hunt` can be declared by an ancestor,
+    so the lookup walks `inventory/classes.csv`'s supers the way `tools/ai-states.py` resolves a target. `None`
+    means no state of that name on the chain carries a table -- its code is a record (inherited or absent) and the
+    entry label resolves somewhere this read does not see.
+    """
+    p, c = package.lower(), cls.lower()
+    for _ in range(40):
+        hit = tables.get((p, c, state.lower()))
+        if hit is not None:
+            return hit
+        edge = supers.get((p, c))
+        if not edge or not edge[1]:
+            break
+        p, c = edge
+    return None
+
+
+def label_join(sites, tables):
+    """The text's `Goto('label')` jumps beside the build's `GotoLabel` tokens, per state and per label.
+
+    Three things are measured here and each one is a different claim:
+
+    * **the join** -- a state whose text spells `Goto('Begin')` twice and whose `State` payload carries two
+      `GotoLabel` operands naming `Begin` is one agreement. Only the classes `inventory/ai_states.csv` covers can
+      be compared, so the build side is restricted to those states and the sites outside them are counted, not
+      dropped.
+    * **the table** -- a `GotoLabel` operand is a label the state's own `LabelTable` must carry, or the runtime has
+      nothing to jump to; the walk's own table decode is the oracle.
+    * **the entry label** -- `GotoState('X', 'Label')` names a label in `X`, resolved through the class chain, and
+      a target whose code is a record alone has no table to name.
+    """
+    rows, out = [], []
+
+    def add(key, count, note=""):
+        out.append({"kind": "census", "key": key, "count": count, "note": note})
+
+    lab = [r for r in sites if r["op"] == "GotoLabel" and r["target"]]
+    inside = outside = 0
+    for r in lab:
+        names = {x.lower() for x in tables.get((r["package"].lower(), r["class"].lower(), r["state"].lower()), [])}
+        if r["target"].lower() in names:
+            inside += 1
+        else:
+            outside += 1
+    add("labels_in_table", inside, "`GotoLabel` operands that name an entry of their own state's `LabelTable`")
+    add("labels_outside_table", outside, "of those, a label no table of that state names")
+    add("label_states", len({(r["package"], r["class"], r["state"]) for r in lab}),
+        "states whose own code jumps to a label")
+
+    entry = [r for r in sites if r["op"] == "GotoState" and r["label"] and r["label"] != "computed"]
+    literal = [r for r in entry if r["target_kind"] == "literal"]
+    supers = class_supers()
+    hit = absent = nocode = 0
+    for r in literal:
+        names = table_for(r["package"], r["class"], r["target"], tables, supers)
+        if names is None:
+            nocode += 1
+        elif r["label"].lower() in {x.lower() for x in names}:
+            hit += 1
+        else:
+            absent += 1
+    add("entry_labels", len(entry), "`GotoState('X', 'Label')` sites with a literal entry label")
+    add("entry_labels_literal_target", len(literal), "of those, whose state target is a `NameConst` too")
+    add("entry_labels_in_table", hit, "of those, the label an entry of the target state's own table")
+    add("entry_labels_absent", absent, "of those, a label the target state's table does not name")
+    add("entry_labels_no_code", nocode, "of those, whose target state carries a record and no table")
+
+    if not os.path.exists(TEXT_CSV):
+        return out
+    text, counts = {}, {}
+    for r in csv.DictReader(open(TEXT_CSV, encoding="utf-8")):
+        k = (r["package"], r["class"], r["state"])
+        counts[k] = int(r.get("gotos_label") or 0)
+        text[k] = {x.lower() for x in (r.get("gotos_label_names") or "").split()}
+    build = collections.defaultdict(collections.Counter)
+    for r in lab:
+        build[(r["package"], r["class"], r["state"])][r["target"].lower()] += 1
+    spelled = {k: v for k, v in counts.items() if v}
+    add("text_label_states", len(spelled), "states whose text spells a `Goto('label')`")
+    add("text_label_jumps", sum(spelled.values()), "`Goto('label')` calls in those states, from the text")
+    both = sorted(k for k in build if k in spelled)
+    add("ai_label_states", len(both), "states both reads cover")
+    add("ai_label_jumps", sum(sum(build[k].values()) for k in both), "`GotoLabel` sites in those states")
+    add("label_build_only_states", len([k for k in build if k not in spelled]),
+        "states the build places a label jump in that the text census does not measure")
+    add("label_build_only_jumps", sum(sum(build[k].values()) for k in build if k not in spelled),
+        "label jumps in those states")
+    agree = 0
+    for k in both:
+        want = text[k]
+        got = set(build[k])
+        if want == got and sum(build[k].values()) == counts[k]:
+            agree += 1
+            continue
+        rows.append({"kind": "label", "package": k[0], "class": k[1], "state": k[2], "function": "",
+                     "scope": "", "offset": "", "op": "GotoLabel", "target_kind": "",
+                     "target": "text-ahead" if (len(got) < len(want) or sum(build[k].values()) < counts[k])
+                     else "bytecode-ahead",
+                     "label": "", "args": "", "key": "delta",
+                     "count": counts[k] - sum(build[k].values()),
+                     "note": "text %d %s; build %d %s" % (counts[k], " ".join(sorted(want)),
+                                                          sum(build[k].values()), " ".join(sorted(got)))})
+    add("ai_label_agree", agree, "of those, the states whose text and build name the same labels as often")
+    return out + rows
+
+
 def render(rows):
     buf = []
     import io
@@ -480,6 +620,46 @@ def doc_block(rows):
                  "**0** sits in any `Function` payload, which is why the branch census could report the token as "
                  "one the build never emits. They name **%d** distinct labels."
                  % (count(rows, "sites_gotolabel"), count(rows, "label_targets")))
+    lines.append("")
+    lines.append("The labels those jumps name are the text's own, and the two reads agree to the site: of the "
+                 "**%d** states `inventory/ai_states.csv` measures, **%d** spell a `Goto('label')` and **%d** "
+                 "label jumps sit in exactly those states -- the text's **%d** calls against the build's **%d** "
+                 "sites -- with **%d** of the **%d** naming the same labels as often as the text does. The **%d** "
+                 "sites in the **%d** other states sit outside that census (a `Mover`, the guns' `NormalFire`), "
+                 "so they are counted here and not joined."
+                 % (count(rows, "text_states"), count(rows, "text_label_states"), count(rows, "ai_label_jumps"),
+                    count(rows, "text_label_jumps"), count(rows, "ai_label_jumps"),
+                    count(rows, "ai_label_agree"), count(rows, "ai_label_states"),
+                    count(rows, "label_build_only_jumps"), count(rows, "label_build_only_states")))
+    lines.append("")
+    lines.append("| label | jumps | states | classes |")
+    lines.append("| --- | ---: | --- | --- |")
+    lab = [r for r in sites if r["op"] == "GotoLabel" and r["target"]]
+    for name, n in sorted(collections.Counter(r["target"] for r in lab).items(),
+                          key=lambda kv: (-kv[1], kv[0]))[:12]:
+        states = sorted({r["state"] for r in lab if r["target"] == name})
+        lines.append("| `%s` | %d | %s | %s |"
+                     % (name, n, ", ".join("`%s`" % s for s in states[:3]) + (" …" if len(states) > 3 else ""),
+                        ", ".join("`%s`" % c for c in sorted({r["class"] for r in lab if r["target"] == name})[:2])))
+    lines.append("")
+    lines.append("Every label jump names a label its own state's table carries: **%d of %d** operands land on an "
+                 "entry of that `LabelTable` and **%d** names a label no table of the state carries. The walk "
+                 "already ends on that table, so its entries are one decode beside it rather than a second read."
+                 % (count(rows, "labels_in_table"), count(rows, "sites_gotolabel"),
+                    count(rows, "labels_outside_table")))
+    lines.append("")
+    lines.append("**%d** `GotoState` sites also pass an entry label, and it is the *target's* label: **%d** of "
+                 "them name a literal state too, and resolved through the class chain **%d** of those name an "
+                 "entry of the target state's table, **%d** name a label that table does not carry, and **%d** "
+                 "name a state whose payload is a record with no table at all (inherited code, entry point "
+                 "elsewhere)."
+                 % (count(rows, "entry_labels"), count(rows, "entry_labels_literal_target"),
+                    count(rows, "entry_labels_in_table"), count(rows, "entry_labels_absent"),
+                    count(rows, "entry_labels_no_code")))
+    offlab = [r for r in rows if r.get("kind") == "label"]
+    if offlab:
+        lines.append("The states whose label jumps the two reads count differently: %s."
+                     % "; ".join("`%s.%s` -- %s" % (r["class"], r["state"], r["note"]) for r in offlab))
     lines.append("")
     lines.append("The states the `GotoState` sites enter:")
     lines.append("")
@@ -604,6 +784,16 @@ def check():
     fake2 = Fake(exports2, ["DoMellee", "BotEnemy"])
     want(owner_of(fake2, exports2[1]), ("BotEnemy", ""), "a class-level function")
 
+    # The entry label belongs to the *target* state, so the resolution walks the class chain: `JaffaBotHeavy`
+    # inherits `Hunt` from `BotEnemy`, and a state the chain does not declare answers None (a record with no
+    # table, or no state at all -- the two the join reports apart only by the site's target kind).
+    tabs = {("stargategame", "botenemy", "hunt"): ["Begin", "DoCharge"]}
+    sups = {("stargategame", "jaffabotheavy"): ("stargategame", "botenemy")}
+    want(table_for("StargateGame", "JaffaBotHeavy", "Hunt", tabs, sups), ["Begin", "DoCharge"],
+         "an entry label resolves through the class chain")
+    want(table_for("StargateGame", "JaffaBotHeavy", "Mellee", tabs, sups), None,
+         "a state no chain class tables answers None")
+
     label = token("GotoLabel", children=[token("NameConst", b"\x01"), token("EndFunctionParms")])
     payload_rows = site_rows("P", "C", "Mellee", "", "state-code", [label, one], names)
     want(len(payload_rows), 2, "a state payload's tokens are rows too")
@@ -659,11 +849,13 @@ def main():
         return emit(rows, args)
     if not args.system:
         sys.exit("state-entry: pass --system <DUMP/System>")
-    rows, stats = read_dump(args.system)
+    rows, stats, tables = read_dump(args.system)
     if not rows:
         sys.exit("state-entry: no GotoState site under %s" % args.system)
+    sites = [r for r in rows if r["kind"] == "site"]
     rows = rows + census(rows, stats)
-    rows = rows + text_control([r for r in rows if r["kind"] == "site"])
+    rows = rows + text_control(sites)
+    rows = rows + label_join(sites, tables)
     return emit(rows, args)
 
 

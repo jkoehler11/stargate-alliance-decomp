@@ -12,17 +12,22 @@ or a compiler.
     python3 tools/ai-states.py --system DUMP/System --write-doc docs/systems/AI.md
     python3 tools/ai-states.py --check                      # synthetic, no dump
 
-Columns: `package,class,state,parent,auto,ignores,labels,functions,gotos,gotos_label,sleeps,lines,targets,record_states`.
+Columns: `package,class,state,parent,auto,ignores,labels,label_names,functions,gotos,gotos_dynamic,gotos_label,
+gotos_label_names,sleeps,lines,targets,record_states`.
 
 * `parent` is the state's `extends` clause, empty for a plain `state Foo {`.
 * `ignores` is the count of names in the state's `ignores` list (a length, not the names: the list is behaviour,
   and one state's list is 30 entries long).
-* `labels` counts the labels the state's own body declares at statement level -- the targets a `Goto` can name.
+* `labels` counts the labels the state's own body declares at statement level -- the targets a `Goto` can name --
+  and `label_names` spells them, space separated and sorted, so a label join is a read off this artifact rather
+  than a second pass over the text.
 * `functions` counts the functions the state body overrides.
 * `gotos` counts the `GotoState('name')` calls in the body and `gotos_dynamic` the ones whose target is an
   expression rather than a literal (`GotoState(Order.State)`) -- the second kind is why a state can carry no
-  literal edge and still be part of the machine. `gotos_label` counts `Goto('label')` jumps, and `sleeps`
-  counts latent `Sleep(...)` calls, which is what a state uses to wait for the world.
+  literal edge and still be part of the machine. `gotos_label` counts `Goto('label')` jumps and
+  `gotos_label_names` spells the distinct labels those jumps name (space separated, sorted, case as the text has
+  it), which is the text half of the jump join `tools/state-entry.py` measures against the build's `GotoLabel`
+  tokens. `sleeps` counts latent `Sleep(...)` calls, which is what a state uses to wait for the world.
 * `targets` is the distinct `GotoState` targets, space separated and sorted, so the whole tree's transition graph
   is a read off one column. **A target that is not a state of this class is kept as written**: a controller may
   hand control to a state it inherits, and dropping those would invent a smaller machine than the game runs.
@@ -43,9 +48,9 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-COLUMNS = ["package", "class", "state", "parent", "auto", "ignores", "labels", "functions",
-           "gotos", "gotos_dynamic", "gotos_label", "sleeps", "lines", "targets", "class_gotos",
-           "class_gotos_dynamic", "class_targets", "record_states"]
+COLUMNS = ["package", "class", "state", "parent", "auto", "ignores", "labels", "label_names", "functions",
+           "gotos", "gotos_dynamic", "gotos_label", "gotos_label_names", "sleeps", "lines", "targets",
+           "class_gotos", "class_gotos_dynamic", "class_targets", "record_states"]
 DOC_MARK = ("<!-- generated:ai-states -->", "<!-- /generated:ai-states -->")
 
 def ctb_module():
@@ -188,11 +193,17 @@ def states_in_text(text, package, cls, record_states):
         ignores = len([x for x in re.split(r"[,\s]+", ig.group(1)) if x]) if ig else 0
         gotos = GOTO_STATE.findall(body)
         targets = sorted({t[0] for t in gotos if t[0]})
+        jumps = GOTO_LABEL.findall(body)
         rows.append({
             "package": package, "class": cls, "state": name, "parent": parent, "auto": auto,
-            "ignores": ignores, "labels": len(labels), "functions": len(functions),
+            "ignores": ignores, "labels": len(labels),
+            # The names, not only the counts: `tools/state-entry.py` joins the build's `GotoLabel` sites to the
+            # labels the text spells, and a count cannot be joined to a token's operand.
+            "label_names": " ".join(sorted(set(labels), key=lambda x: (x.lower(), x))),
+            "functions": len(functions),
             "gotos": len(gotos), "gotos_dynamic": len(GOTO_ANY.findall(body)) - len(gotos),
-            "gotos_label": len(GOTO_LABEL.findall(body)),
+            "gotos_label": len(jumps),
+            "gotos_label_names": " ".join(sorted(set(jumps), key=lambda x: (x.lower(), x))),
             "sleeps": len(SLEEP.findall(body)),
             "lines": body.count("\n") + 1,
             "targets": " ".join(targets), "class_gotos": 0, "class_targets": "", "record_states": record_states,
@@ -517,10 +528,10 @@ def check():
     """Synthetic: no dump, nothing written to the tree."""
     rows = states_in_text(SAMPLE, "StargateGame", "DemoBot", 3)
     got = [(r["state"], r["parent"], r["auto"], r["ignores"], r["labels"], r["functions"], r["gotos"],
-            r["gotos_label"], r["sleeps"], r["targets"]) for r in rows]
-    want = [("AlertSquad", "", "no", 3, 1, 1, 1, 0, 0, "Hunt"),
-            ("Peace", "", "yes", 0, 1, 0, 1, 1, 1, "AlertSquad"),
-            ("Hunt", "AlertSquad", "no", 0, 0, 0, 0, 0, 1, "")]
+            r["gotos_label"], r["sleeps"], r["targets"], r["label_names"], r["gotos_label_names"]) for r in rows]
+    want = [("AlertSquad", "", "no", 3, 1, 1, 1, 0, 0, "Hunt", "Begin", ""),
+            ("Peace", "", "yes", 0, 1, 0, 1, 1, 1, "AlertSquad", "Begin", "Begin"),
+            ("Hunt", "AlertSquad", "no", 0, 0, 0, 0, 0, 1, "", "", "")]
     if got != want:
         print("FAIL states_in_text:\n got  %r\n want %r" % (got, want))
         return 1

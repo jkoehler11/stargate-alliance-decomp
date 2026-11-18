@@ -69,6 +69,7 @@ FIELDS = ["kind", "package", "class", "state", "payload", "start", "code", "trai
           "ignore_mask", "label_offset", "state_flags", "table_w", "start_by", "jump_on", "code_lv", "walk_lv",
           "override_of", "text_kw",
           "text_label", "text_else", "text_else_label", "labels", "labels_on", "labels_named", "labels_last",
+          "labels_names", "labels_entry",
           "labels_spelled", "labels_unspelled", "labels_text_only", "verdict", "count", "note"]
 
 CENSUS_NOTE = {
@@ -130,6 +131,9 @@ CENSUS_NOTE = {
     "label_spelled": "entries (besides `Begin`) the state's own text spells as a label",
     "label_unspelled": "entries (besides `Begin`) the state's own text does not spell -- code in an override",
     "label_text_only": "labels the text spells that the table has no entry for",
+    "label_entry_begin": "tables whose entry point -- the last entry, at the code's first byte -- is named `Begin`",
+    "label_entry_other": "of those, entry points the source named something else (`Open`, `Refire`, a state name)",
+    "no_code_state_extends": "record-only states no ancestor declares whose text `extends` a same-class state that carries the table",
     "label_join_equal": "joined states whose every text label has an entry (the table is a superset)",
 }
 
@@ -142,7 +146,8 @@ CENSUS_KEYS = ("states", "payload_bytes", "regions", "no_code", "no_table", "cod
                "start_shift", "override_state", "override_code", "override_none", "code_local", "walk_local",
                "jumps", "jumps_on_boundary", "label_tables", "label_entries", "label_entries_on_boundary",
                "label_entries_named", "label_ends_zero", "label_join_states", "label_spelled",
-               "label_unspelled", "label_text_only", "label_join_equal", "text_label_states", "text_label", "text_else",
+               "label_unspelled", "label_text_only", "label_join_equal", "label_entry_begin", "label_entry_other",
+               "no_code_state_extends", "text_label_states", "text_label", "text_else",
                "text_else_label", "joined", "joined_jif", "joined_label", "joined_equal", "overrides",
                "payload_arms")
 
@@ -436,6 +441,7 @@ def walk_dump(system):
                    "table_w": "", "start_by": "", "jump_on": "", "code_lv": "", "walk_lv": "", "override_of": "",
                    "text_kw": kw, "text_label": kw, "text_else": els, "text_else_label": at_floor,
                    "labels": "", "labels_on": "", "labels_named": "", "labels_last": "",
+                   "labels_names": "", "labels_entry": "",
                    "labels_spelled": "", "labels_unspelled": "", "labels_text_only": "",
                    "verdict": "record-only", "count": "", "note": ""}
             if got is not None:
@@ -474,6 +480,11 @@ def walk_dump(system):
                         row["labels_on"] = sum(1 for _nm, off in ents if off in woffs)
                     if ents:
                         row["labels_last"] = ents[-1][1]
+                        # The names, in table order, and the entry point by name: the last entry sits at the
+                        # code's first byte, so it is the label a `GotoState(Name)` with no entry label starts at
+                        # -- `Begin` in most states, `Open`/`Close` in a `Mover`'s, the state's own name in some.
+                        row["labels_names"] = " ".join(names)
+                        row["labels_entry"] = names[-1]
                     if tl_names:
                         spelled = set(tl_names) - {"begin"}
                         table_names = {nm.lower() for nm in names} - {"begin"}
@@ -522,10 +533,36 @@ def inherited(rows):
     return rows
 
 
+AI_CSV = os.path.join(ROOT, "inventory", "ai_states.csv")
+
+
+def text_parents(path=None):
+    """`(package, class, state)` -> the state the text's `extends` clause names, lower case, from `ai_states.csv`.
+
+    A state's code can be inherited at the *state* level (`state StandOpenTimed extends OpenTimedMover`), which
+    the class tree cannot show: the record is a header and no table, and the class that declares it declares the
+    code one state over. `tools/ai-states.py` already publishes the clause, so this is a read, not a second pass
+    over the text.
+    """
+    out = {}
+    path = path or AI_CSV
+    if not os.path.exists(path):
+        return out
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            parent = (r.get("parent") or "").strip()
+            if parent:
+                out[(r["package"].lower(), r["class"].lower(), r["state"].lower())] = parent.lower()
+    return out
+
+
 def census(rows, shift=None):
     # Every census key starts at zero: the emission guard below is what caught the accumulator that was never
     # written, and it fires on a key that is legitimately zero unless the key exists before the first hit.
     c = collections.Counter({key: 0 for key in CENSUS_KEYS})
+    parents = text_parents()
+    have = {(r["package"].lower(), r["class"].lower(), r["state"].lower()): r["verdict"] != "record-only"
+            for r in rows}
     for r in rows:
         c["states"] += 1
         c["payload_bytes"] += int(r["payload"])
@@ -548,6 +585,12 @@ def census(rows, shift=None):
                     c["override_code"] += 1
             else:
                 c["override_none"] += 1
+                # No ancestor class declares the name: the other way a state inherits code is the state's own
+                # `extends`, which points at a sibling state of the same class.
+                key = (r["package"].lower(), r["class"].lower(), r["state"].lower())
+                parent = parents.get(key)
+                if parent and have.get((key[0], key[1], parent)):
+                    c["no_code_state_extends"] += 1
             continue
         code = int(r["code"])
         c["regions"] += 1
@@ -583,6 +626,8 @@ def census(rows, shift=None):
             c["label_entries_on_boundary"] += int(r["labels_on"] or 0)
             if r["labels_last"] != "" and int(r["labels_last"]) == 0:
                 c["label_ends_zero"] += 1
+            if r["labels_entry"]:
+                c["label_entry_begin" if r["labels_entry"].lower() == "begin" else "label_entry_other"] += 1
         if r["labels_spelled"] != "":
             c["label_join_states"] += 1
             c["label_spelled"] += int(r["labels_spelled"])
@@ -686,6 +731,19 @@ def doc_block(rows):
                     comma(num(rows, "label_unspelled")), comma(num(rows, "label_text_only")),
                     comma(num(rows, "label_join_equal"))))
     lines.append("")
+    lines.append("The entry point is a name, not a convention: the last table entry sits at the code's first byte, "
+                 "so it is where the runtime starts a state entered without an entry label, and the source calls it "
+                 "`Begin` in **%s** of the %s tables and something else in **%s** (a `Mover`'s `Open`/`Close`, a "
+                 "gun state's `Refire`, the state's own name) -- which is why `tools/state-entry.py` resolves an "
+                 "entry label by name instead of assuming `Begin`. The %s record-only states split three ways: **%s** "
+                 "a state an ancestor class declares by the same name, **%s** a state no ancestor declares whose "
+                 "own text `extends` a sibling state that carries the table (code inherited one state over, which "
+                 "the class tree cannot show), and **%s** neither."
+                 % (comma(num(rows, "label_entry_begin")), comma(num(rows, "label_tables")),
+                    comma(num(rows, "label_entry_other")), comma(num(rows, "no_code")),
+                    comma(num(rows, "override_state")), comma(num(rows, "no_code_state_extends")),
+                    comma(num(rows, "override_none") - num(rows, "no_code_state_extends"))))
+    lines.append("")
     lines.append("**The `else` keywords a state body spells are the arms its payload compiles.** The branch census's "
                  "category rule (`tools/jump-branches.py`'s `classify`, which is what reads a `Function` script) run "
                  "over each state's own statements splits its **%s** `JumpIfNot` into **%s** `else` arms, **%s** "
@@ -713,6 +771,8 @@ def doc_block(rows):
                  "| %s / %s / %s |"
                  % (comma(num(rows, "override_state")), comma(num(rows, "override_code")),
                     comma(num(rows, "override_none"))))
+    lines.append("| ... of the last, code inherited from a sibling state its text `extends` | %s |"
+                 % comma(num(rows, "no_code_state_extends")))
     lines.append("| code bytes / tokens | %s / %s |"
                  % (comma(num(rows, "code_bytes")), comma(num(rows, "tokens"))))
     lines.append("| `JumpIfNot` / `Jump` | %s / %s |"
@@ -725,6 +785,8 @@ def doc_block(rows):
                  % (comma(num(rows, "label_entries")), comma(num(rows, "label_entries_on_boundary")),
                     comma(num(rows, "label_entries_named"))))
     lines.append("| ... tables whose last entry is the code's first byte | %s |" % comma(num(rows, "label_ends_zero")))
+    lines.append("| ... entry point named `Begin` / named something else | %s / %s |"
+                 % (comma(num(rows, "label_entry_begin")), comma(num(rows, "label_entry_other"))))
     lines.append("| ... entries the state's text spells / does not (besides `Begin`) / text labels with no entry "
                  "| %s / %s / %s |"
                  % (comma(num(rows, "label_spelled")), comma(num(rows, "label_unspelled")),

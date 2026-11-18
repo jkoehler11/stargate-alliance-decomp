@@ -4704,7 +4704,7 @@ drops declarations, and it also hides the `exec final function` spelling -- 15 c
 sits in a live block and still names no export is now a population of zero, so the next question is not a scope
 one.
 
-## U25. Where a state's own `GotoState` and `GotoLabel` calls live — answered: in the `State` payload, and the entry census was walking `Function` exports only
+## U25. Where a state's own `GotoState` and `GotoLabel` calls live — answered: in the `State` payload, the entry census was walking `Function` exports only, and the label jumps join the text to the site
 
 **Status.** **Answered 2026-11-18**, no boot. The entry census (`tools/state-entry.py`) walked `Function` payloads
 and nothing else, so a `GotoState` written in a state's label block was invisible to it and `GotoLabel` (`0x0d`) read
@@ -4738,7 +4738,17 @@ tokens, **218** literal and **226** tokens with the null-name form set aside, **
 build does not compile, and **11** qualified on another object -- so the scan that answered 219 differs from the
 census in a way its own definition, which did not survive, hid.
 
-**What is still open.** The labels' own join. **196** state-code sites name **36** labels and `ai_states.csv` counts
-the text's `Goto('label')` per state (`gotos_label`), so the same per-class comparison one token over would say
-whether a label jump survives in the text at the rate a state entry does; that needs the state-code sites attributed
-per label, which the census does not do yet.
+**The labels' own join.** Answered in the same run, once `ai_states.csv` spelled the names instead of counting them
+(`gotos_label_names` for the labels a state's `Goto('name')` calls name, `label_names` for the ones its body
+declares): of the **165** states the text census measures, **101** spell a label jump and the build carries **183**
+`GotoLabel` sites in exactly those states -- the text's **183** calls against the build's **183** sites -- and
+**101 of 101** name the same labels as often as the text does, per state and per label. The **13** other sites are
+states outside the `AIController` subtree (the guns' `NormalFire`, an engine `Mover`, a `Pickup`, `WillowWhisp`, the
+ambient pawns), counted and not compared. A jump's operand is a name the runtime can resolve: **196 of 196** land on
+an entry of their own state's `LabelTable`, and the table's entry point is `Begin` in **143** of **166** tables and
+something else in **23**. The entry-label half -- `GotoState('X','Label')`, **111** sites -- resolves through the
+class chain for **99** of the **105** that name a literal state; the exceptions are **1** call spelled on another
+object (`Controller.GotoState('Wandering','KeepGoing')`, whose label belongs to the receiver's state) and **5**
+targets whose payload is a record with no table (`Mover`'s timed states, `GameInfo.Dead`). One record-only state in
+the corpus inherits its code at the *state* level rather than the class level (`BotSG.InvisibleRest extends
+RestFormation`), which the class tree alone cannot show.

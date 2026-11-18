@@ -1159,3 +1159,18 @@ census,,,,,,,,,,,,ai_in_class,120,"of those, in a class-level function"
 census,,,,,,,,,,,,ai_literal,220,"of those, a literal target"
 census,,,,,,,,,,,,ai_computed,7,"of those, a computed target -- what the text read cannot name"
 census,,,,,,,,,,,,ai_agree,35,"of those classes, the ones whose text and build agree to the site"
+census,,,,,,,,,,,,labels_in_table,196,`GotoLabel` operands that name an entry of their own state's `LabelTable`
+census,,,,,,,,,,,,labels_outside_table,0,"of those, a label no table of that state names"
+census,,,,,,,,,,,,label_states,114,states whose own code jumps to a label
+census,,,,,,,,,,,,entry_labels,111,"`GotoState('X', 'Label')` sites with a literal entry label"
+census,,,,,,,,,,,,entry_labels_literal_target,105,"of those, whose state target is a `NameConst` too"
+census,,,,,,,,,,,,entry_labels_in_table,99,"of those, the label an entry of the target state's own table"
+census,,,,,,,,,,,,entry_labels_absent,1,"of those, a label the target state's table does not name"
+census,,,,,,,,,,,,entry_labels_no_code,5,"of those, whose target state carries a record and no table"
+census,,,,,,,,,,,,text_label_states,101,states whose text spells a `Goto('label')`
+census,,,,,,,,,,,,text_label_jumps,183,"`Goto('label')` calls in those states, from the text"
+census,,,,,,,,,,,,ai_label_states,101,states both reads cover
+census,,,,,,,,,,,,ai_label_jumps,183,`GotoLabel` sites in those states
+census,,,,,,,,,,,,label_build_only_states,13,states the build places a label jump in that the text census does not measure
+census,,,,,,,,,,,,label_build_only_jumps,13,label jumps in those states
+census,,,,,,,,,,,,ai_label_agree,101,"of those, the states whose text and build name the same labels as often"
