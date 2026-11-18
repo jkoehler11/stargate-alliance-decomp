@@ -65,7 +65,7 @@ help:
 	@echo "  ai-states     read every AI controller state out of the shipped text into inventory/ai_states.csv"
 	@echo "  ai-state-body walk each AI state body as a statement tree into inventory/ai_state_bodies.csv"
 	@echo "  state-exports every AI state export and the states no class text declares"
-	@echo "  state-entry read every GotoState out of the bytecode into inventory/state_entry.csv"
+	@echo "  state-entry read every GotoState/GotoLabel out of the function and state payloads"
 	@echo "  jump-census measure what a Jump operand is against the token starts"
 	@echo "  jump-graph  read the operands in the widened layout and emit the graph"
 	@echo "  jump-branches read the graph back: else arms, straight arms, empty arms"
@@ -1419,8 +1419,9 @@ ai-state-body:
 # The text is a floor on the source, not on the machine: a state whose body the text never declares is still a
 # `UState` export, and its body is the `Function` exports its `Outer` names (PLAN 3.10, docs/systems/AI.md).
 # A `GotoState` call is a byte in a payload: the target is a name-table index and the label a second one. This
-# reads every site out of the bytecode, so the text census above and the build's own calls can be quoted side by
-# side -- including the calls a `ScriptText` cannot name because their argument is an expression (PLAN 3.10).
+# reads every site out of both export kinds -- a `Function` payload and a `State` payload, the latter anchored on
+# its 22-byte record by tools/state-code.py -- so the text census above and the build's own calls can be quoted
+# side by side, including the calls a `ScriptText` cannot name because their argument is an expression (PLAN 3.10).
 state-entry:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
 	$(PYTHON) tools/state-entry.py \

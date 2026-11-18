@@ -12,6 +12,13 @@ disassembles end to end, with the target and the label resolved through the pack
 is a compact index into it, not an object reference). A site whose first argument is a `NameConst` is a literal
 target; any other expression is `computed`, which is the population the text read cannot see.
 
+A `Function` export is only half of the call sites, and the smaller half of the in-state ones. A state's own
+code -- the label blocks between `Begin:` and the `LabelTable` -- is its `State` export's payload, and
+`tools/state-code.py` had to anchor a walk of it on the payload's own 22-byte record. This census used to walk
+`Function` payloads alone, so a `GotoState` in a label block was invisible and `GotoLabel` (`0x0d`) read as a
+token the build never emits; both export kinds are walked now, and each row's `scope` column says which one it
+came from (`function` or `state-code`).
+
 The rows are `site` (one per call) and `census` (the run-level counts the page quotes, so `--write-doc`,
 `--report` and `--check-doc` are the same read). Nothing here publishes script: a row names a function and a
 state, never a body.
@@ -28,7 +35,7 @@ CSV_PATH = os.path.join(ROOT, "inventory", "state_entry.csv")
 TEXT_CSV = os.path.join(ROOT, "inventory", "ai_states.csv")
 DOC_MARK = ("<!-- generated:state-entry -->", "<!-- /generated:state-entry -->")
 KINDS = ("GotoState", "GotoLabel", "Goto")
-FIELDS = ["kind", "package", "class", "state", "function", "offset", "op", "target_kind", "target",
+FIELDS = ["kind", "package", "class", "state", "function", "scope", "offset", "op", "target_kind", "target",
           "label", "args", "key", "count", "note"]
 
 
@@ -37,6 +44,21 @@ def load_tool(name, filename):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+def state_tool():
+    """`tools/state-code.py` loaded once: its `record` and `region` anchor a `State` payload's walk.
+
+    A state payload is `<header><script><LabelTable><0x47><22-byte record>`, and only the walk whose start the
+    record's own `LabelTableOffset` fits runs from the state's first byte to the container's end. That is the same
+    rule the state-code census uses, so the two artifacts agree on which payloads carry code at all: a record
+    whose offset is `0xffff` has no table and no code.
+    """
+    global SC
+    if SC is None:
+        SC = load_tool("state_code", "state-code.py")
+        SC.DIS = DIS
+    return SC
 
 
 def flat(nodes, out=None, depth=0):
@@ -174,26 +196,73 @@ def payloads(system, table, stats):
             yield package, pkg, exp, nodes
 
 
+def state_payloads(system, stats):
+    """Yield (package name, package, state export, class export, token tree) for every state whose code walks.
+
+    The class is the export's Outermost `Class`: `UState`'s payload belongs to the class that declares the state,
+    and a state's functions are separate `Function` exports with the state as their outer -- the half `payloads()`
+    already walks.
+    """
+    from ue2pkg import Package                             # noqa: PLC0415 - only for a real package
+    sc = state_tool()
+    table = DIS.Table()
+    files = ([os.path.join(system, f) for f in sorted(os.listdir(system)) if f.lower().endswith(".u")]
+             if os.path.isdir(system) else [system])
+    for one in files:
+        pkg = Package(one)
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        package = os.path.splitext(os.path.basename(one))[0]
+        count = len(pkg.exports)
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "State":
+                continue
+            outer = pkg.exports[exp["outer"] - 1] if 0 < exp["outer"] <= count else None
+            if outer is None or pkg.class_name_of(outer) != "Class":
+                continue
+            stats["state_payloads"] += 1
+            payload = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            rec = sc.record(payload)
+            if rec is None or rec["label_offset"] == sc.NO_TABLE:
+                continue
+            stats["state_with_code"] += 1
+            got = sc.region(payload, table, rec["label_offset"])
+            if got is None or got["start_by"] != "field":
+                continue
+            stats["state_walked"] += 1
+            yield package, pkg, exp, outer, got["nodes"]
+
+
+def site_rows(package, cls, state, func, scope, nodes, names):
+    """One row per `GotoState`-family token under `nodes`, tagged with the export kind that carried it."""
+    out = []
+    for nd, _depth in flat(nodes):
+        if nd.get("name") not in KINDS:
+            continue
+        kind, target, label, argc = site_of(nd, names)
+        out.append({"kind": "site", "package": package, "class": cls, "state": state,
+                    "function": func, "scope": scope, "offset": "%04x" % nd["offset"], "op": nd["name"],
+                    "target_kind": kind, "target": target, "label": label, "args": argc,
+                    "key": "", "count": "", "note": ""})
+    return out
+
+
 def read_dump(system):
     table = DIS.Table()
-    stats = {"seen": 0, "walked": 0}
+    stats = {"seen": 0, "walked": 0, "state_payloads": 0, "state_with_code": 0, "state_walked": 0}
     rows = []
     tables = {}
     for package, pkg, exp, nodes in payloads(system, table, stats):
         if package not in tables:
             tables[package] = [pkg.name(i) for i in range(pkg.name_count)]
-        names = tables[package]
-        hits = [nd for nd, _depth in flat(nodes) if nd.get("name") in KINDS]
-        if not hits:
-            continue
         cls, state = owner_of(pkg, exp)
-        func = pkg.name(exp["name"])
-        for nd in hits:
-            kind, target, label, argc = site_of(nd, names)
-            rows.append({"kind": "site", "package": package, "class": cls, "state": state,
-                         "function": func, "offset": "%04x" % nd["offset"], "op": nd["name"],
-                         "target_kind": kind, "target": target, "label": label, "args": argc,
-                         "key": "", "count": "", "note": ""})
+        rows.extend(site_rows(package, cls, state, pkg.name(exp["name"]), "function", nodes, tables[package]))
+    for package, pkg, exp, outer, nodes in state_payloads(system, stats):
+        if package not in tables:
+            tables[package] = [pkg.name(i) for i in range(pkg.name_count)]
+        rows.extend(site_rows(package, pkg.name(outer["name"]), pkg.name(exp["name"]), "", "state-code",
+                              nodes, tables[package]))
     return rows, stats
 
 
@@ -207,9 +276,17 @@ def census(rows, stats):
     add("payloads_seen", stats["seen"], "`Function` payloads whose header ends on `FriendlyName`")
     add("payloads_walked", stats["walked"], "of those, whose script walks end to end")
     add("sites", len(sites), "`GotoState`/`GotoLabel`/`Goto` tokens in those scripts")
+    add("sites_function", len([r for r in sites if r["scope"] == "function"]),
+        "of those, in a `Function` payload")
+    add("sites_state_code", len([r for r in sites if r["scope"] == "state-code"]),
+        "of those, in a `State` payload -- the state's own label blocks")
+    add("state_payloads", stats.get("state_payloads", 0), "`State` exports of a class")
+    add("state_with_code", stats.get("state_with_code", 0),
+        "of those, whose record carries a label table (`LabelTableOffset` != `0xffff`)")
+    add("state_walked", stats.get("state_walked", 0), "of those, whose walk the record's offset anchors")
     for kind in KINDS:
         add("sites_" + kind.lower(), len([r for r in sites if r["op"] == kind]), "`%s` sites" % kind)
-    add("functions", len({(r["package"], r["class"], r["function"]) for r in sites}),
+    add("functions", len({(r["package"], r["class"], r["function"]) for r in sites if r["scope"] == "function"}),
         "functions holding one")
     add("classes", len({(r["package"], r["class"]) for r in sites}), "classes holding one")
     add("literal", len([r for r in sites if r["target_kind"] == "literal"]), "targets named by a `NameConst`")
@@ -220,10 +297,42 @@ def census(rows, stats):
     add("no_arg", len([r for r in sites if r["target_kind"] == "none"]), "sites with no argument at all")
     add("labelled", len([r for r in sites if r["label"]]), "sites that also pass an entry label")
     add("labelled_computed", len([r for r in sites if r["label"] == "computed"]), "of those, a computed label")
-    add("in_state", len([r for r in sites if r.get("state")]), "sites inside a state body")
+    add("in_state", len([r for r in sites if r.get("state")]), "sites inside a state")
+    add("in_state_function", len([r for r in sites if r.get("state") and r["scope"] == "function"]),
+        "of those, in a function the state declares")
+    add("in_state_code", len([r for r in sites if r.get("state") and r["scope"] == "state-code"]),
+        "of those, in the state's own code")
     add("in_class", len([r for r in sites if not r.get("state")]), "sites in a class-level function")
-    add("targets", len({r["target"] for r in sites if r["target"]}),
-        "distinct literal targets over the whole corpus")
+    add("targets", len({r["target"] for r in sites if r["target"] and r["op"] == "GotoState"}),
+        "distinct literal state targets over the whole corpus")
+    # The counts a comparison against the text needs are the `GotoState` population on its own: a `GotoLabel`
+    # target is a label inside the state, not a state, and mixing the two made "sites in a state" read as if a
+    # label jump were an entry.
+    gs = [r for r in sites if r["op"] == "GotoState"]
+    for key, rows_, note in (
+            ("gs_literal", [r for r in gs if r["target_kind"] == "literal"],
+             "of the `GotoState` sites, a `NameConst` target"),
+            ("gs_null", [r for r in gs if r["target_kind"] == "null"],
+             "of those, the null name -- `GotoState('')`, which leaves the current state"),
+            ("gs_computed", [r for r in gs if r["target_kind"] == "computed"],
+             "of those, an expression the text read cannot name"),
+            ("gs_none", [r for r in gs if r["target_kind"] == "none"], "of those, no argument"),
+            ("gs_labelled", [r for r in gs if r["label"]], "of those, an entry label"),
+            ("gs_labelled_computed", [r for r in gs if r["label"] == "computed"],
+             "of those, a computed label"),
+            ("gs_in_state", [r for r in gs if r.get("state")], "of those, inside a state"),
+            ("gs_in_state_function", [r for r in gs if r.get("state") and r["scope"] == "function"],
+             "of those, in a function the state declares"),
+            ("gs_in_state_code", [r for r in gs if r["scope"] == "state-code"],
+             "of those, in the state's own code"),
+            ("gs_in_class", [r for r in gs if not r.get("state")], "of those, in a class-level function")):
+        add(key, len(rows_), note)
+    add("gs_targets", len({r["target"] for r in gs if r["target"]}), "distinct literal state targets")
+    add("gs_functions", len({(r["package"], r["class"], r["function"]) for r in gs if r["scope"] == "function"}),
+        "functions holding a `GotoState`")
+    add("gs_classes", len({(r["package"], r["class"]) for r in gs}), "classes holding one")
+    add("label_targets", len({r["target"] for r in sites if r["target"] and r["op"] == "GotoLabel"}),
+        "distinct literal label targets (`GotoLabel`, in state code only)")
     add("one_arg", len([r for r in sites if r["args"] == 1]), "sites passing one argument")
     add("two_arg", len([r for r in sites if r["args"] == 2]), "sites passing two")
     add("three_arg", len([r for r in sites if r["args"] > 2]), "sites passing more than two")
@@ -235,34 +344,74 @@ def text_control(sites):
 
     A comparison of two populations is not a control, so the bytecode side is restricted to the classes
     `inventory/ai_states.csv` measured -- the AI controllers -- and both splits are then the same classes read
-    twice. `class_gotos` repeats the class's dispatcher count on every one of its state rows, so the text total
-    is the sum over distinct classes, not a column sum.
+    twice. `class_gotos` and `class_gotos_dynamic` repeat the class's dispatcher counts on every one of its state
+    rows, so both are read once per class and never summed down a column: summing them over the 41 `BotEnemy` rows
+    turns 40 class-level calls into 1,640 and every per-class delta into noise.
     """
     if not os.path.exists(TEXT_CSV):
         return []
     per = {}
+    dyn = {}
+    t_in = collections.Counter()
+    t_dyn = collections.Counter()
     states = gotos = 0
     for r in csv.DictReader(open(TEXT_CSV, encoding="utf-8")):
         states += 1
         gotos += int(r.get("gotos") or 0)
-        per[(r["package"], r["class"])] = int(r.get("class_gotos") or 0)
-    mine = [s for s in sites if (s["package"], s["class"]) in per]
+        k = (r["package"], r["class"])
+        per[k] = int(r.get("class_gotos") or 0)
+        dyn[k] = int(r.get("class_gotos_dynamic") or 0)
+        t_in[k] += int(r.get("gotos") or 0)
+        t_dyn[k] += int(r.get("gotos_dynamic") or 0)
+    mine = [s for s in sites if (s["package"], s["class"]) in per and s["op"] == "GotoState"]
+    labels = [s for s in sites if (s["package"], s["class"]) in per and s["op"] != "GotoState"]
     out = [{"kind": "census", "key": "text_states", "count": states, "note": "`ai_states.csv` rows"},
            {"kind": "census", "key": "text_gotos_in_states", "count": gotos,
             "note": "`GotoState` in a state body, from the text"},
            {"kind": "census", "key": "text_gotos_in_classes", "count": sum(per.values()),
             "note": "`GotoState` in a class's own functions, from the text (per class, not per state)"},
            {"kind": "census", "key": "ai_classes", "count": len(per), "note": "classes both reads cover"},
+           {"kind": "census", "key": "text_class_dynamic", "count": sum(dyn.values()),
+            "note": "`GotoState` with a computed target in a class-level function, from the text"},
            {"kind": "census", "key": "ai_sites", "count": len(mine), "note": "bytecode sites in those classes"},
+           {"kind": "census", "key": "ai_function", "count": len([s for s in mine if s["scope"] == "function"]),
+            "note": "of those, in a `Function` payload"},
+           {"kind": "census", "key": "ai_state_code", "count": len([s for s in mine if s["scope"] == "state-code"]),
+            "note": "of those, in a `State` payload"},
            {"kind": "census", "key": "ai_in_state", "count": len([s for s in mine if s.get("state")]),
-            "note": "of those, inside a state body"},
+            "note": "of those, inside a state"},
+           {"kind": "census", "key": "ai_function_in_state",
+            "count": len([s for s in mine if s.get("state") and s["scope"] == "function"]),
+            "note": "of those, in a function the state declares"},
+           {"kind": "census", "key": "ai_state_code_entries",
+            "count": len([s for s in mine if s["scope"] == "state-code"]),
+            "note": "of those, in the state's own code"},
+           {"kind": "census", "key": "ai_labels", "count": len(labels),
+            "note": "`GotoLabel` sites in those classes -- label jumps, not state entries"},
            {"kind": "census", "key": "ai_in_class", "count": len([s for s in mine if not s.get("state")]),
             "note": "of those, in a class-level function"},
            {"kind": "census", "key": "ai_literal", "count": len([s for s in mine if s["target_kind"] == "literal"]),
             "note": "of those, a literal target"},
            {"kind": "census", "key": "ai_computed", "count": len([s for s in mine if s["target_kind"] == "computed"]),
             "note": "of those, a computed target -- what the text read cannot name"}]
-    return out
+    # Per class, because a total that agrees can hide two classes that do not: the row's `count` is the text's
+    # deficit (negative) or surplus (positive) over the build at both places, and `target` is its verdict.
+    rows = []
+    for k in sorted(per):
+        b_in = len([s for s in mine if (s["package"], s["class"]) == k and s.get("state")])
+        b_cls = len([s for s in mine if (s["package"], s["class"]) == k and not s.get("state")])
+        text_in = t_in[k] + t_dyn[k]
+        text_cls = per[k] + dyn[k]
+        delta = (text_in - b_in) + (text_cls - b_cls)
+        rows.append({"kind": "class", "package": k[0], "class": k[1], "state": "", "function": "", "scope": "",
+                     "offset": "", "op": "", "target_kind": "",
+                     "target": "agree" if not delta else ("text-ahead" if delta > 0 else "bytecode-ahead"),
+                     "label": "", "args": "", "key": "delta", "count": delta,
+                     "note": "text %d in-state (+%d computed), %d class-level (+%d computed); build %d / %d"
+                             % (t_in[k], t_dyn[k], per[k], dyn[k], b_in, b_cls)})
+    out.append({"kind": "census", "key": "ai_agree", "count": len([r for r in rows if not r["count"]]),
+                "note": "of those classes, the ones whose text and build agree to the site"})
+    return out + rows
 
 
 def render(rows):
@@ -292,27 +441,47 @@ def count(rows, key):
 
 def doc_block(rows):
     sites = [r for r in rows if r.get("kind") == "site"]
-    per = collections.Counter((r["target"], r.get("class", "")) for r in sites if r["target"])
-    targets = collections.Counter(r["target"] for r in sites if r["target"])
+    per = collections.Counter((r["target"], r.get("class", "")) for r in sites
+                              if r["target"] and r["op"] == "GotoState")
+    targets = collections.Counter(r["target"] for r in sites if r["target"] and r["op"] == "GotoState")
     lines = []
     lines.append("")
     lines.append("%s `GotoState` sites over %d functions in %d classes of the %s scripts that walk end to end: "
                  "**%d** name their target with a `NameConst`, **%d** name the null name (`GotoState('')`, which "
                  "leaves the current state), **%d** build it from an expression, **%d** pass no argument at all, "
                  "and **%d** also pass an entry label (**%d** of those computed)."
-                 % ("{:,}".format(count(rows, "sites")), count(rows, "functions"), count(rows, "classes"),
-                    "{:,}".format(count(rows, "payloads_walked")), count(rows, "literal"),
-                    count(rows, "null"), count(rows, "computed"), count(rows, "no_arg"),
-                    count(rows, "labelled"), count(rows, "labelled_computed")))
+                 % ("{:,}".format(count(rows, "sites_gotostate")), count(rows, "gs_functions"),
+                    count(rows, "gs_classes"), "{:,}".format(count(rows, "payloads_walked")),
+                    count(rows, "gs_literal"), count(rows, "gs_null"), count(rows, "gs_computed"),
+                    count(rows, "gs_none"), count(rows, "gs_labelled"), count(rows, "gs_labelled_computed")))
     lines.append("")
     lines.append("Where the call sits is a second split: over the whole corpus **%d** sites are inside a state "
-                 "body and **%d** are in a class-level function. Restricted to the **%d** classes "
-                 "`inventory/ai_states.csv` measured -- the same classes read twice, so the two counts are a "
-                 "control and not two populations -- the bytecode has **%d** in-state and **%d** class-level "
-                 "sites where the text has **%d** and **%d**."
-                 % (count(rows, "in_state"), count(rows, "in_class"), count(rows, "ai_classes"),
-                    count(rows, "ai_in_state"), count(rows, "ai_in_class"),
-                    count(rows, "text_gotos_in_states"), count(rows, "text_gotos_in_classes")))
+                 "and **%d** are in a class-level function -- and the in-state half comes from two export kinds, "
+                 "**%d** in a `Function` the state declares and **%d** in the state's own code (its `State` "
+                 "payload), which this census did not walk before. Restricted to the **%d** classes "
+                 "`inventory/ai_states.csv` measured -- the same classes read twice, so the counts are a "
+                 "control and not two populations -- the bytecode has **%d** in-state sites (**%d** in a "
+                 "function, **%d** in state code) where the text spells **%d**, and **%d** class-level sites "
+                 "where the text spells **%d** literal and **%d** computed."
+                 % (count(rows, "gs_in_state"), count(rows, "gs_in_class"), count(rows, "gs_in_state_function"),
+                    count(rows, "gs_in_state_code"), count(rows, "ai_classes"),
+                    count(rows, "ai_in_state"), count(rows, "ai_function_in_state"),
+                    count(rows, "ai_state_code_entries"),
+                    count(rows, "text_gotos_in_states"), count(rows, "ai_in_class"),
+                    count(rows, "text_gotos_in_classes"), count(rows, "text_class_dynamic")))
+    lines.append("")
+    off = [r for r in rows if r.get("kind") == "class" and int(r.get("count") or 0)]
+    lines.append("**%d** of those **%d** classes agree to the site; the ones that do not are %s."
+                 % (count(rows, "ai_agree"), count(rows, "ai_classes"),
+                    ", ".join("`%s` (%+d)" % (r["class"], int(r["count"]))
+                              for r in sorted(off, key=lambda r: int(r["count"]))) or "none"))
+    lines.append("")
+    lines.append("**%d** of the corpus's sites are `GotoLabel` (`0x0d`), and every one of them is in state code: "
+                 "**0** sits in any `Function` payload, which is why the branch census could report the token as "
+                 "one the build never emits. They name **%d** distinct labels."
+                 % (count(rows, "sites_gotolabel"), count(rows, "label_targets")))
+    lines.append("")
+    lines.append("The states the `GotoState` sites enter:")
     lines.append("")
     lines.append("| target | sites | classes |")
     lines.append("| --- | ---: | --- |")
@@ -355,10 +524,11 @@ def emit(rows, args):
                 fh.write(fresh)
             print("ok   state-entry-doc: wrote %s" % path)
     print("ok   state-entry: %d site(s) over %d function(s) in %d class(es); %d literal, %d computed, "
-          "%d labelled; %d in a state body, %d class-level"
+          "%d labelled; %d in a state (%d in a function, %d in state code), %d class-level"
           % (count(rows, "sites"), count(rows, "functions"), count(rows, "classes"),
              count(rows, "literal"), count(rows, "computed"), count(rows, "labelled"),
-             count(rows, "in_state"), count(rows, "in_class")))
+             count(rows, "in_state"), count(rows, "in_state_function"), count(rows, "in_state_code"),
+             count(rows, "in_class")))
     return 0
 
 
@@ -434,12 +604,22 @@ def check():
     fake2 = Fake(exports2, ["DoMellee", "BotEnemy"])
     want(owner_of(fake2, exports2[1]), ("BotEnemy", ""), "a class-level function")
 
-    rows = [{"kind": "site", "package": "P", "class": "C", "function": "F", "offset": "0000",
+    label = token("GotoLabel", children=[token("NameConst", b"\x01"), token("EndFunctionParms")])
+    payload_rows = site_rows("P", "C", "Mellee", "", "state-code", [label, one], names)
+    want(len(payload_rows), 2, "a state payload's tokens are rows too")
+    want((payload_rows[1]["scope"], payload_rows[1]["state"], payload_rows[1]["function"]),
+         ("state-code", "Mellee", ""), "a state-code row names its state and no function")
+    want(payload_rows[0]["op"], "GotoLabel", "the label token keeps its own opcode")
+
+    rows = [{"kind": "site", "package": "P", "class": "C", "state": "Mellee", "function": "F",
+             "scope": "function", "offset": "0000",
              "op": "GotoState", "target_kind": "literal", "target": "Mellee", "label": "", "args": "1"},
-            {"kind": "site", "package": "P", "class": "C", "function": "G", "offset": "0004",
-             "op": "GotoState", "target_kind": "computed", "target": "", "label": "", "args": "1"},
+            {"kind": "site", "package": "P", "class": "C", "state": "", "function": "G", "scope": "function",
+             "offset": "0004", "op": "GotoState", "target_kind": "computed", "target": "", "label": "",
+             "args": "1"},
             {"kind": "census", "key": "sites", "count": "2", "note": ""}]
     want(render(rows).splitlines()[0].split(",")[0], "kind", "the CSV header")
+    want(render(rows).splitlines()[0].split(",")[5], "scope", "the header carries the scope column")
     want(render(rows).count("\n"), 4, "one header and three rows")
     want("computed" in doc_block(rows), True, "the block quotes the computed count")
     for line in bad:
@@ -488,6 +668,8 @@ def main():
 
 
 DIS = None
+SC = None
+
 
 if __name__ == "__main__":
     sys.exit(main())

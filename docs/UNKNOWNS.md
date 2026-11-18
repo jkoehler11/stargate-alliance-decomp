@@ -4703,3 +4703,42 @@ drops declarations, and it also hides the `exec final function` spelling -- 15 c
 `$WORK`, a different corpus, so it is a control on the decompiler, not a reader of the packages. A declaration that
 sits in a live block and still names no export is now a population of zero, so the next question is not a scope
 one.
+
+## U25. Where a state's own `GotoState` and `GotoLabel` calls live — answered: in the `State` payload, and the entry census was walking `Function` exports only
+
+**Status.** **Answered 2026-11-18**, no boot. The entry census (`tools/state-entry.py`) walked `Function` payloads
+and nothing else, so a `GotoState` written in a state's label block was invisible to it and `GotoLabel` (`0x0d`) read
+as a token the build never emits. Both are in the state's own `State` export payload, whose walk
+`tools/state-code.py` anchors on the payload's 22-byte record; the census reads both export kinds now and tags every
+row with its `scope`.
+
+**Observed (as the entry stood).** Over the 36 classes `inventory/ai_states.csv` measures, the text spelled **107**
+in-state and **115** class-level `GotoState` calls against the bytecode's **86** and **120**, so the text read 6-16%
+ahead and "the bytecode is the floor" was a claim about direction only. A previous run's uncommitted scan of the same
+texts answered **219** where the census answered **222**, and the per-class diffs had both signs.
+
+**The measurement.** A `State` payload is `<header><script><LabelTable><0x47><22-byte record>`; of the corpus's
+**553** `State` exports **166** carry a label table and walk (`LabelTableOffset` != `0xffff`), and they hold **256**
+`GotoState`-family tokens: **60** `GotoState` and **196** `GotoLabel`. So the corpus carries **1,067** sites rather
+than 811 (**811** in `Function` payloads, **256** in state code), and the `GotoLabel` population is real --
+**0** in any `Function` payload, **196** in state code, naming **36** distinct labels. The label token the branch
+census had to count as a zero (`tools/jump-census.py`, which also walks `Function` exports) is the state code's.
+
+The gap closes per place rather than per class. In the 36 AI classes the build carries **111** in-state entries
+(**86** in a function the state declares, **25** in the state's own code) against the text's **107**, and **120**
+class-level against the text's **119** (**115** literal, **4** computed). The text-ahead reading was the unwalked
+half, not dead text: 86 against 107 reads as a surplus, 111 against 107 is a deficit of four.
+
+**What it settles, and the residue.** **35 of 36** classes agree to the site; the one that does not is `BotScarab`
+(**-1**), whose bytecode carries `DoBury` -> `GotoState('Buried')` in a function the shipped text does not declare.
+The previous run's per-class diffs of both signs were `class_gotos` summed down the state rows (`BotEnemy`'s 40
+class-level calls repeat on each of its 41 state rows and total 1,640); read once per class the deltas are one. The
+**219** is withdrawn rather than carried: the same 36 masked texts measure **222** literal calls, **230** `GotoState`
+tokens, **218** literal and **226** tokens with the null-name form set aside, **0** inside a preprocessor block this
+build does not compile, and **11** qualified on another object -- so the scan that answered 219 differs from the
+census in a way its own definition, which did not survive, hid.
+
+**What is still open.** The labels' own join. **196** state-code sites name **36** labels and `ai_states.csv` counts
+the text's `Goto('label')` per state (`gotos_label`), so the same per-class comparison one token over would say
+whether a label jump survives in the text at the rate a state entry does; that needs the state-code sites attributed
+per label, which the census does not do yet.
