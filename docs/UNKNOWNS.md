@@ -2714,8 +2714,10 @@ the interpreter's dispatch rather than a data watchpoint.
 
 **The command list is settled, so "the console did not run it" is no longer a guess (measured 2026-11-06).**
 `tools/console-commands.py` joins the `exec function` declarations in the shipped text to the binary's `Exec`
-FunctionFlag: **336 declarations over 37 class/state scopes, 292 names, and all 336 also carry the flag** -- plus 125
-`Exec` functions with no declaration, 122 of them state-scoped (the binary names the *state* in its `class` column).
+FunctionFlag: **363 declarations over 47 class/state scopes, 305 names, 350 of them also carrying the flag** -- plus
+131 `Exec` records with no declaration of their own, 121 of which name a command the text declares elsewhere (a
+state's function table carries what it inherits). **Re-read from the packages 2026-11-18**; the figures this
+paragraph carried (336 / 37 / 292 / 125) were measured on the extracted tree, which is a reconstruction.
 `stat`, `open` and `cheats` appear in neither source, so they are engine handlers: `stat fps` drawing and `stat game`
 not drawing is the handler's business, not delivery. What remains for output is the route this entry's own table left
 out -- `PlayerController.ClientMessage` and `Say`/`TeamSay` reach `HUD.Message`, which draws, and `CheatManager`'s
@@ -4690,9 +4692,13 @@ read, so the state's copy was keyed at class level and the key was dropped as a 
 anchor reads **471 anchored payloads, all at +16 and all walking, 83 state-owned, 0 doubled**, against
 **466 / 466 / 80 / 2** for the local pattern (docs/BYTECODE.md's *five rules* paragraph carries the pair).
 
-**Residual.** One reader still shapes the header itself: `tools/console-commands.py`'s `STATE_RE` is a line scanner
-(`auto`/`simulated`/`final` only, a state closing on a column-0 `}`) that attributes `exec function` declarations to
-states in an extracted tree; it is the next substitution and moves `inventory/console_commands.csv`.
+**No reader shapes the header itself now.** The last copy was `tools/console-commands.py`'s `STATE_RE` (a line
+scanner: `auto`/`simulated`/`final` only, a state closing on a column-0 `}`) attributing `exec function`
+declarations in the extracted tree; it reads `state_declarations` on the **packages** and its state halves moved
+from 37 declarations over 16 scopes to **58 over 26** (`inventory/console_commands.csv`: 363 declarations, 47
+scopes, 494 rows). The substitution's larger finding was the corpus: the tree is a reconstruction that reflows and
+drops declarations, and it also hides the `exec final function` spelling -- 15 commands the artifact used to file as
+"`Exec` with no declaration".
 `tools/decompiler-gaps.py`'s `states` pattern is **not** a copy of this rule -- it counts the reconstruction under
 `$WORK`, a different corpus, so it is a control on the decompiler, not a reader of the packages. A declaration that
 sits in a live block and still names no export is now a population of zero, so the next question is not a scope

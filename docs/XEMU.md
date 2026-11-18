@@ -2192,30 +2192,68 @@ and the `--state` phrase from the previous revision called that "submitted". `bT
 console holding a line in `History` is a submit, an open one is typing whatever its history contains -- and
 `--selftest` asserts both readings on the same synthetic object.
 
-## The console's command surface, and what a zero means (measured 2026-11-06)
+## The console's command surface, and what a zero means (measured 2026-11-06, re-read from the packages 2026-11-18)
 
 Every probe above read its answer off the frame, and a frame cannot tell "the console ran it and it drew nothing" from
 "there is no such command". `tools/console-commands.py` (`make console-commands`,
 `inventory/console_commands.csv`) measures the second half from two independent sources: the `exec function`
-declarations in the `ScriptText` every class exports, and the `Exec` FunctionFlag in `inventory/function_flags.csv`.
+declarations in the `ScriptText` every class exports -- read **from the packages**, with
+`class-text-bodies.state_declarations` doing the state scoping -- and the `Exec` FunctionFlag in
+`inventory/function_flags.csv`. The two tables below are rendered from the artifact (`--write-doc`, held by
+`--check-doc` in `make ci`), so a re-read cannot leave the page behind.
 
+<!-- generated:console-commands -->
 | measure | value |
 |---|---|
-| `exec function` declarations in the shipped text | **336** |
-| class or state scopes that declare one | **37** |
-| distinct command names | **292** |
-| declarations that also carry the binary's `Exec` flag | **336 of 336** (0 disagreements) |
-| `Exec`-flagged functions with no declaration in the text | **125** |
-| artifact rows | **461** |
+| `exec function` declarations in the shipped text | **363** |
+| of those, inside a state body | **58** over **26** states |
+| class or state scopes that declare one | **47** |
+| distinct command names in the artifact | **305** |
+| declarations the binary also flags `Exec` | **350 of 363** |
+| declarations with no function record at all (`sources=text`) | **13** |
+| `Exec`-flagged records with no declaration of their own | **131** |
+| of those, naming a command the text declares elsewhere | **121** |
+| of those, naming a command the text declares nowhere | **10** |
+| artifact rows | **494** |
+<!-- /generated:console-commands -->
 
-The 125 undeclared `Exec` functions are not a gap in the text: **a binary row's `class` column names a *state* when the
-function is state-scoped** — `PlayerBeingElectrocuted` 9, `PlayerGrabbed` 9, `PlayerKnockedback` 9,
-`PlayerMeleeDash` 9, `PlayerPrepareGrabbed` 9, `PlayerStaggered` 9, `PlayerUnconscious` 9, `Dead` 8, `GameEnded` 7,
-`PlayerWaiting` 7, `Hacking` 7, `UsingProgressTrigger` 7, `RoundEnded` 6, `Spectating` 4, `PlayerEnterVehicle` 3,
-`PlayerWalking` 3, `WaitingForPawn` 3, `Scripting` 2 — and the declaration sits inside that state in its class's file.
-**122 of the 125 are state-scoped**; the three that are not are `PlayerController.SetProgressMessage`,
-`PlayerController.SetProgressTime` and `StreamInteraction.GetCurrentStream`, stock natives declared `native function`
-with no `exec` keyword, which is why a text parse cannot see them.
+**Most of the surplus is inheritance, and the rest was a spelling.** A state's function table carries the commands it
+inherits -- `PlayerGrabbed` holds nine `Exec` records while its own body declares `AltFire` and `Fire` -- so the
+artifact's `declared_in` column names the class and state where the shipped text declares that command, and only the 10
+rows where it is empty are undeclared: three stock natives (`SetProgressMessage`, `SetProgressTime`,
+`GetCurrentStream`), six `PlayerController` commands a 3,700-byte block comment disables (`LoadGame`, `NewSaveGame`,
+`ListSavedGames`, `LocalTravel`, `RestartLevel`, `Speech`) and `Spectating`'s own copy of `RestartLevel`, the one
+state-scoped record of a commented command. Fifteen names that read as undeclared were never undeclared: this corpus
+spells them `exec final function Foo(...)`, and both the tool and the extracted tree's read wanted `exec function`
+adjacent. The tree showed six of them only because its reconstruction reorders the modifiers, which is one of the
+reasons this read no longer walks it.
+
+**Thirteen declarations the build does not compile, and every one is a platform branch.** `sources=text` marks an
+`exec function` with no `Function` record behind it at all (checked case-insensitively against
+`inventory/function_flags.csv`): `PlayerController`'s `PauseM`/`PlayM`/`StopM` and `StargatePlayer`'s eight
+DOF/movie commands sit inside `#ifdef PC`, and `PlayerInput`'s `SetViewSensitivityIndex`/`SetControlStyleIndex`
+inside `#ifdef PS2`. Those names are not commands on this disc, and the build's flags never disagree with a
+declaration it compiled.
+
+**Where a command lives decides whether it can be typed at all.**
+
+<!-- generated:console-commands-owners -->
+| owner | declarations | of those in a state |
+|---|---|---|
+| `Engine.PlayerController` | 105 | 29 |
+| `StargateGame.StargatePlayer` | 87 | 19 |
+| `Engine.CheatManager` | 72 | 0 |
+| `StargateGame.UnrealPlayer` | 13 | 5 |
+| `StargateGame.StargateWeapon` | 11 | 0 |
+| `Engine.Console` | 9 | 1 |
+| `Engine.AdminBase` | 8 | 0 |
+| `Engine.HUD` | 8 | 0 |
+| `Engine.StreamInteraction` | 8 | 0 |
+| `GUI.GUIController` | 8 | 0 |
+| the other 12 classes | 34 | 4 |
+
+11 command names are declared by more than one owner, so "which object answers" is a class-chain question and not a name-to-handler table.
+<!-- /generated:console-commands-owners -->
 
 **Where a command lives decides whether it can be typed at all.**
 
@@ -3616,7 +3654,7 @@ and a four-byte colour at `+0x60`. **The colour is chosen from the counter's own
 **Script never touches it, and that is the answer 7.3 wanted.** All 2,319 classes' `ScriptText` were searched
 (`~/sg1/work/source-tree`): `cur FPS` and `avg FPS` appear in **none**, and the only case-insensitive `fps` matches are
 129 files containing `#ifdefPS2` (the `fPS` of `ifdefPS2`), i.e. false positives. `stat` is declared in neither script
-source (`inventory/console_commands.csv`: 336 `exec` declarations over 37 scopes, `stat` not among them). So `stat fps`
+source (`inventory/console_commands.csv`: 363 `exec` declarations over 47 scopes, `stat` not among them). So `stat fps`
 is native end to end -- command, counter and draw -- and no script-side hook can turn it into a console output channel.
 Script can draw arbitrary text (`Canvas.DrawText` is used by `Engine/AIController.uc`), so a second readable output has
 to be named in script or measured in the guest, not derived from this one.
