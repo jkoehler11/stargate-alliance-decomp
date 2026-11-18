@@ -344,7 +344,7 @@ def function_spans(live):
         span = ctb.body_span(live, m.end(), limit)
         if span is None:
             continue
-        out.append((m.group(1).lower(), span))
+        out.append((ctb.declared_name(live, m).lower(), span))
     return out
 
 

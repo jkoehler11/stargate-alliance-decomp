@@ -553,12 +553,12 @@ That is the whole answer for the AI override API's **names**: `StargateGame.Team
 | `utpasswordwindow` | 1 | unresolved | `GamePlay.TournamentConsole.connectfailure` | absent | - | no declaration anywhere in the corpus's text |
 
 
-**The operator family is a declaration kind the rule could not name, and it is bodies, not a residue.** An operator declares its name as a symbol (`operator(24) bool == ( .. )`) and writes its priority in parentheses where a parameter list would start, so the grammar above read none of them: **2** operator-family declarations over the eighteen packages, **2** of them carrying a body (396 bytes over the population) and **0** declaration-only, beside **97** `native` operators, which are `tools/native-operators.py`'s population and never a body. A `break` inside one of the bodies was counted outside every declaration before this rule -- `inventory/break_sites.csv`'s `outside_body` column, not a state's label code.
+**The operator family is a declaration kind the rule could not name, and it is bodies, not a residue.** An operator declares its name as a symbol (`operator(24) bool == ( .. )`) and writes its priority in parentheses where a parameter list would start, so the grammar above read none of them: **2** operator-family declarations over the eighteen packages, **2** of them carrying a body (396 bytes over the population) and **0** declaration-only, beside **97** `native` operators, which are `tools/native-operators.py`'s population and never a body. A `break` inside one of the bodies was counted outside every declaration before this rule -- `inventory/break_sites.csv`'s `outside_body` column, not a state's label code. A body's row is keyed by the name the build gives it, the composed record name (`==` over two `MapItem` operands is `EqualEqual_MapItemMapItem`), which **2** of them need, because every other census keys a function by its export name and the symbol is not one.
 
-| class.operator | bytes | ops | stmts |
-|---|---:|---:|---:|
-| `Engine.MaplistRecord.==` | 49 | 3 | 1 |
-| `Engine.MaplistRecord.==` | 347 | 10 | 6 |
+| class.operator | declared | bytes | ops | stmts |
+|---|---|---|---:|---:|---:|
+| `Engine.MaplistRecord.EqualEqual_KeyValuePairKeyValuePair` | `==` | 49 | 3 | 1 |
+| `Engine.MaplistRecord.EqualEqual_MapItemMapItem` | `==` | 347 | 10 | 6 |
 
 **The disabled bodies are the weight of the comment, not a residue of it.** 172 commented bodies have no live twin at all: 54105 bytes of source, 534 operators and 574 statements this build never compiled, 20 of them a trailer of 32 bytes or fewer (a declaration a class kept while emptying its body, the shape the pairs show from the other side). Those are the classes and functions `tools/class-text-comments.py` counts by declaration; this is the same population by size, so a cut-content read can rank it instead of counting it.
 

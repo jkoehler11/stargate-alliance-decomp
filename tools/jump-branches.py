@@ -54,6 +54,8 @@ CENSUS_NOTE = {
     "expression": "inside a condition (`&&`/`||` short-circuit), i.e. not a branch",
     "backward": "whose target is behind the jump -- a loop test at the bottom of its body",
     "scripts": "scripts with at least one branch",
+    "operator_headers": "operator records whose header names the symbol, not the export name -- the name test the graph applies",
+    "operator_jumps": "of those, the scripts carrying at least one jump -- the rest are stub bodies (25 are `native` records)",
     "jump": "`Jump` tokens the graph resolved, for scale",
     "arm_min": "the shortest then-arm, in statements",
     "arm_max": "the longest",
@@ -285,9 +287,11 @@ def read_dump(system):
                              "target": "%04x" % target, "count": "", "note": "", "path": path})
     out = ([r for r in rows if r["kind"] == "branch"] + [r for r in rows if r["kind"] == "switch"]
            + [r for r in rows if r["kind"] == "script"])
+    census["operator_headers"] = stats.get("operator_headers", 0)
+    census["operator_jumps"] = stats.get("operator_jumps", 0)
     for key in ("jumpifnot", "else", "leave", "empty", "if", "expression", "backward", "scripts", "jump",
                 "switch", "switch_scripts", "switch_list", "switch_no_list", "switch_cases", "case_outside",
-                "empty_arm", "switch_arm_min", "switch_arm_max"):
+                "empty_arm", "switch_arm_min", "switch_arm_max", "operator_headers", "operator_jumps"):
         out.append({"kind": "census", "package": "", "class": "", "function": "", "offset": "",
                     "category": "", "operand": "", "target": "", "count": census[key],
                     "note": CENSUS_NOTE.get(key, "")})

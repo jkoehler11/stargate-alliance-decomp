@@ -85,14 +85,27 @@ def param_types(params):
     return out
 
 
+def suffix(type_name):
+    """One operand's part of the record name: the table's suffix, else the declared spelling.
+
+    A **qualified** type contributes its own name, not the package path: `Engine.MaplistRecord`'s keyed overload
+    declares `( GameInfo.KeyValuePair A, GameInfo.KeyValuePair B )` and the record is
+    `EqualEqual_KeyValuePairKeyValuePair`. A type the table does not name keeps the spelling the declaration used
+    rather than a title-cased one (`MapItem` -> `MapItem`), which `title()` would lose. Measured over the 97
+    `native` declarations: every operand type is in the table, so no composed name of theirs moves with either part.
+    """
+    t = type_name.split(".")[-1]
+    return TYPES.get(t, t)
+
+
 def compose(symbol, types):
     """The record name the compiler builds: stem, then one suffix per operand; a unary operator says `Pre`."""
     stem = SYMBOLS.get(symbol) or (symbol if symbol in NAMED else None)
     if stem is None:
         return None
     if len(types) == 1:
-        return "%s_Pre%s" % (stem, TYPES.get(types[0], types[0].title()))
-    return stem + "_" + "".join(TYPES.get(t, t.title()) for t in types)
+        return "%s_Pre%s" % (stem, suffix(types[0]))
+    return stem + "_" + "".join(suffix(t) for t in types)
 
 
 def statements(text):

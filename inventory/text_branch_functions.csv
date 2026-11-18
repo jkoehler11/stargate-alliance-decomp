@@ -708,7 +708,6 @@ Engine,MaplistManager,setactivemap,less,body,jump,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,
 Engine,MaplistManager,shiftmap,less,body,jump,1,6,0,0,6,0,0,0,0,0,0,0,0,0,0,,1,5,0,0,0,6,agree,agree,0,0,0,,,
 Engine,MaplistManager,validgametype,less,body,jump,0,1,0,1,2,0,0,0,0,0,0,0,0,0,0,,0,2,0,0,0,2,agree,agree,0,0,0,,,
 Engine,MaplistManager,validname,less,body,jump,0,2,0,2,4,1,0,0,0,0,0,0,0,0,0,,0,4,0,0,0,4,agree,agree,0,0,0,,,
-Engine,MaplistRecord,==,agree,body,,0,4,0,2,6,1,0,0,0,0,0,0,0,0,0,,0,0,0,0,0,0,no-record,no-record,0,0,0,,,
 Engine,MaplistRecord,addmap,agree,body,jump,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,,0,3,0,0,0,3,agree,agree,0,0,0,,,
 Engine,MaplistRecord,addoptionitem,agree,body,jump,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,,0,2,0,0,0,2,agree,agree,0,0,0,,,
 Engine,MaplistRecord,addoptionstring,agree,body,jump,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,,0,1,0,0,0,1,agree,agree,0,0,0,,,
@@ -716,6 +715,7 @@ Engine,MaplistRecord,clear,agree,body,jump,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,,0,1,0,
 Engine,MaplistRecord,compareitemsslow,agree,body,jump,0,7,0,4,11,2,1,0,0,0,0,0,0,0,0,,0,9,0,0,2,11,agree,agree,0,0,0,,,
 Engine,MaplistRecord,createmapitem,agree,body,jump,0,2,1,0,3,0,0,0,0,0,0,0,0,0,0,,0,3,0,0,0,3,agree,agree,0,0,0,,,
 Engine,MaplistRecord,createmapitemlist,agree,body,jump,0,1,0,1,2,0,0,0,0,0,0,0,0,0,0,,0,2,0,0,0,2,agree,agree,0,0,0,,,
+Engine,MaplistRecord,equalequal_mapitemmapitem,agree,body,jump,0,4,0,2,6,0,0,0,0,0,0,0,0,0,0,,0,5,0,0,1,6,agree,agree,0,0,0,,,
 Engine,MaplistRecord,getallmapurl,agree,body,jump,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,,0,1,0,0,0,1,agree,agree,0,0,0,,,
 Engine,MaplistRecord,getbasemapname,agree,body,jump,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,,0,2,0,0,0,2,agree,agree,0,0,0,,,
 Engine,MaplistRecord,getcacheindex,agree,body,jump,0,1,0,1,2,0,0,0,0,0,0,0,0,0,0,,0,2,0,0,0,2,agree,agree,0,0,0,,,
@@ -5773,26 +5773,26 @@ UWindow,WindowConsole,showconsole,agree,body,jump,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,
 UWindow,WindowConsole,tick,agree,body,jump,0,3,0,0,3,2,0,0,0,0,0,0,0,0,0,,0,3,0,0,0,3,agree,agree,0,0,0,,,
 census,,functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions either side names with a branch in it,5772
 census,,text_functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions the live text declares with a body that carries a condition,5771
-census,,record_functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions the branch census has at least one `JumpIfNot` in,5737
-census,,both,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions both sides have,5736
-census,,text_only,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,a body with a condition and no jump in the record,35
+census,,record_functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions the branch census has at least one `JumpIfNot` in,5738
+census,,both,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions both sides have,5737
+census,,text_only,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,a body with a condition and no jump in the record,34
 census,,record_only,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,a jump in the record and no declared body,1
-census,,else_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions whose `else` count is equal on the two sides,5715
+census,,else_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions whose `else` count is equal on the two sides,5716
 census,,else_short,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,the record has more `else` arms than the text spells,21
 census,,else_surplus,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,the text spells more `else` than the record has arms,0
 census,,else_unpaired,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,the text spells `else` in a body the record gives no arm at all,0
-census,,else_none,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions with no `else` on either side (counted as equal above),3695
+census,,else_none,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions with no `else` on either side (counted as equal above),3696
 census,,else_test,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions with an `else` arm or keyword on either side,2041
 census,,else_test_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, equal on the count",2020
-census,,term_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions whose condition-term count equals their `JumpIfNot` count,5674
+census,,term_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions whose condition-term count equals their `JumpIfNot` count,5675
 census,,term_short,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,more `JumpIfNot` tokens than `if` + `while` + `for`,55
 census,,term_surplus,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,more condition terms than `JumpIfNot` tokens,7
 census,,op_functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions whose text carries `&&` or `||`,2057
 census,,op_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, exact on the term count",2019
-census,,nop_functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions whose text carries neither,3679
-census,,nop_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, exact on the term count",3655
-census,,agree_both,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions inside a class whose own `else` count agrees,4737
-census,,agree_else_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, exact on `else` per function",4737
+census,,nop_functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions whose text carries neither,3680
+census,,nop_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, exact on the term count",3656
+census,,agree_both,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions inside a class whose own `else` count agrees,4738
+census,,agree_else_agree,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, exact on `else` per function",4738
 census,,agree_else_short,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, short of the record",0
 census,,agree_else_surplus,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, ahead of the record",0
 census,,more_both,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`both` functions inside a `more` class,573
@@ -5808,9 +5808,9 @@ census,,more_else_unpaired,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, spelled in 
 census,,less_else_unpaired,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"of those, spelled in a body with no arm at all",0
 census,,arms,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`else` arms the joined functions carry,3758
 census,,terms,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,condition terms those functions declare,17405
-census,,jumpifnot,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`JumpIfNot` tokens those functions carry,17452
+census,,jumpifnot,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`JumpIfNot` tokens those functions carry,17458
 census,,terms_outside,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,condition terms in the class texts that sit outside every function body,773
-census,,term_over,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"terms above the `JumpIfNot` count, summed over the functions",16
+census,,term_over,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"terms above the `JumpIfNot` count, summed over the functions",10
 census,,term_under,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"terms below it, summed likewise",63
 census,,jumps_unresolved,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`JumpIfNot` tokens the branch census resolves that carry no branch row,11
 census,,pp_functions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions whose declaration sits inside a `#if…#endif` guard,70
@@ -5827,7 +5827,7 @@ census,,continue_place_exact,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,short functions whos
 census,,continue_place_text_ahead,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,short functions with more block-bodied `continue` sites than arms (one site's arm reads as an `if`: its `Jump` lands on the jump's own target),2
 census,,continue_place_record_ahead,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"short functions with an arm and no block-bodied `continue` (an `else if` chain's header arm, spelled with one `else`)",1
 census,,text_only_dead,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,text-only bodies whose branch text is entirely in a part this build does not compile,31
-census,,text_only_live,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,text-only bodies whose compiled text carries a condition the record has no jump for,4
+census,,text_only_live,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,text-only bodies whose compiled text carries a condition the record has no jump for,3
 census,,continue_short,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,short functions whose gap is within the body's `continue` count,21
 census,,short_beyond_continue,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,short functions whose gap exceeds it -- the shape `continue` does not explain,0
 census,,raw_surplus_fixed,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,functions whose raw `else` count was ahead of the record and whose compiled count is exact,22

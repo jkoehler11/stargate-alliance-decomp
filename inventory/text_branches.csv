@@ -191,7 +191,7 @@ class,Engine,Manifest,,0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,
 class,Engine,MapList,,3,0,0,0,0,4,30,1,8,39,0,0,0,0,11,11,3,29,0,0,7,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
 class,Engine,MaplistManager,,4,0,0,0,11,6,94,2,18,114,0,0,0,0,55,55,6,106,0,0,2,6,0,2,0,0,0,0,0,0,0,4,0,0,less,less,,
 class,Engine,MaplistManagerBase,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,29,29,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,Engine,MaplistRecord,,0,0,0,0,6,6,54,1,16,71,0,0,0,0,47,47,0,63,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
+class,Engine,MaplistRecord,,0,0,0,0,6,6,54,1,16,71,0,0,0,0,47,47,0,68,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,MapVolume,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,MapVolumeViewPoint,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,MatAction,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -2377,16 +2377,16 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,566,function declarations in the l
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,13,condition terms in that population
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,68,the largest class-level difference between text `else` and bytecode arms
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,3758,`else` arms in `inventory/jump_branches.csv`
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,13405,straight `if` arms there
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,13410,straight `if` arms there
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,empty then-arms there
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,jumps inside a condition there
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,289,then-arms that end by leaving their own loop -- a `break` there
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,17463,`JumpIfNot` tokens the branch census reports
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,835,joined classes whose term count equals their `JumpIfNot` count exactly
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,290,then-arms that end by leaving their own loop -- a `break` there
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,17469,`JumpIfNot` tokens the branch census reports
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,836,joined classes whose term count equals their `JumpIfNot` count exactly
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,424,joined classes whose live text carries no `&&` or `||`
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,413,"of those, the ones whose term count is exact"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,543,joined classes whose live text carries a `&&` or `||`
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,422,"of those, the ones whose term count is exact -- an operator that added a jump would"
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,423,"of those, the ones whose term count is exact -- an operator that added a jump would"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,4,`less` classes whose live text declares fewer functions than their record has
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,12,`less` classes that declare exactly as many
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,2,`less` classes that declare more

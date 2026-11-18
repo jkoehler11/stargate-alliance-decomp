@@ -210,14 +210,14 @@ def classify(text, resolve=None):
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(masked)
         scope = scope_of(m.start(), blocks)
-        spans.setdefault((scope, m.group(1).lower()), []).append(
+        spans.setdefault((scope, ctb.declared_name(masked, m).lower()), []).append(
             (m.start(), ctb.body_span(masked, m.end(), limit) is not None))
     rows = []
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(masked)
         span = ctb.body_span(masked, m.end(), limit)
         body = span is not None
-        name = m.group(1).lower()
+        name = ctb.declared_name(masked, m).lower()  # an operator resolves as its composed record (UNKNOWNS U23)
         scope = scope_of(m.start(), blocks)
         row = {"name": name, "line": masked.count("\n", 0, m.start()) + 1, "body": body, "scope": scope or "",
                "shape": "", "commented": False, "owner": "", "redeclared": False, "redeclared_back": False,

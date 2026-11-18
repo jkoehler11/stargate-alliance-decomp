@@ -741,6 +741,15 @@ edge,Engine,PlayerController,PlayerTick,0149,Jump,545,0184,,,forward
 edge,Engine,PlayerController,PlayerTick,014c,JumpIfNot,545,0184,,,forward
 edge,Engine,PlayerController,PlayerTick,016e,JumpIfNot,545,0184,,,forward
 edge,Engine,Canvas,MakeColor,001b,JumpIfNot,71,002e,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0000,JumpIfNot,29,0015,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0015,JumpIfNot,58,002a,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,002f,JumpIfNot,201,0091,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0043,JumpIfNot,168,0078,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0052,JumpIfNot,158,0070,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,006d,Jump,168,0078,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0075,Jump,93,0043,,,backward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0078,JumpIfNot,191,0089,,,forward
+edge,Engine,MaplistRecord,EqualEqual_MapItemMapItem,008e,Jump,65,002f,,,backward
 edge,Engine,Inventory,HandlePickupQuery,0000,JumpIfNot,26,0013,,,forward
 edge,Engine,Inventory,HandlePickupQuery,0013,JumpIfNot,39,001d,,,forward
 edge,Engine,Vehicle,Tick,0000,JumpIfNot,261,00c0,,,forward
@@ -24731,7 +24740,7 @@ deadrun,UWindow,UWindowTabControlTabArea,SizeTabsMultiLine,0111,Jump,311,0114,,,
 package,AmbientCreatures,,,,,,,package,185,"54 script(s), 586 token(s), 17 unreachable"
 package,Core,,,,,,,package,15,"4 script(s), 41 token(s), 3 unreachable"
 package,Editor,,,,,,,package,155,"20 script(s), 579 token(s), 13 unreachable"
-package,Engine,,,,,,,package,6558,"1753 script(s), 21311 token(s), 803 unreachable"
+package,Engine,,,,,,,package,6567,"1754 script(s), 21329 token(s), 804 unreachable"
 package,GUI,,,,,,,package,1529,"405 script(s), 5070 token(s), 230 unreachable"
 package,GamePlay,,,,,,,package,654,"192 script(s), 2153 token(s), 133 unreachable"
 package,IpDrv,,,,,,,package,182,"36 script(s), 596 token(s), 32 unreachable"
@@ -24744,10 +24753,10 @@ package,Stargateeffects,,,,,,,package,39,"18 script(s), 163 token(s), 0 unreacha
 package,UDebugMenu,,,,,,,package,601,"111 script(s), 2866 token(s), 9 unreachable"
 package,UPreview,,,,,,,package,21,"9 script(s), 117 token(s), 1 unreachable"
 package,UWindow,,,,,,,package,1547,"338 script(s), 5519 token(s), 84 unreachable"
-census,,,,,,,,jumps,23778,`Jump`/`JumpIfNot` tokens whose operand is readable
-census,,,,,,,,scripts_with_a_jump,6127,scripts carrying at least one
-census,,,,,,,,guest_hits,23778,operands that equal the guest-space offset of a token start (the widening model)
-census,,,,,,,,file_absolute_hits,5495,the same operands read as a file-space absolute offset (the control)
+census,,,,,,,,jumps,23787,`Jump`/`JumpIfNot` tokens whose operand is readable
+census,,,,,,,,scripts_with_a_jump,6128,scripts carrying at least one
+census,,,,,,,,guest_hits,23787,operands that equal the guest-space offset of a token start (the widening model)
+census,,,,,,,,file_absolute_hits,5497,the same operands read as a file-space absolute offset (the control)
 census,,,,,,,,at_end,0,operands equal to the script's guest length -- a jump to the epilogue
 census,,,,,,,,past_end,0,operands past the script's guest length -- a dangling edge
 census,,,,,,,,misses,0,operands that are no token start's guest offset
@@ -24761,37 +24770,37 @@ census,,,,,,,,dead_run_iterator_exit,89,runs behind a `Jump` that lands on the s
 census,,,,,,,,dead_run_else_skip,17,runs behind a `Jump` whose statement is the else arm a `JumpIfNot` lands on -- the compiler's skip-the-else jump after a then-arm that jumped away
 census,,,,,,,,dead_run_duplicate,1,runs behind a `Jump` that targets its predecessor's own target
 census,,,,,,,,dead_run_other,0,runs behind a `Jump` in neither shape -- the tail a fourth one would land in
-census,,,,,,,,guest_token_starts,412610,"token starts over the same scripts, in the widened layout"
-census,,,,,,,,guest_bytes,1231947,"bytes of those scripts in the widened layout, the guest base rate's denominator"
-census,,,,,,,,file_token_starts,412610,"token starts over the same scripts, in the file"
-census,,,,,,,,file_bytes,912388,"bytes of those scripts in the file, the file base rate's denominator"
-census,,,,,,,,forward,22270,edges whose target is past the jump
-census,,,,,,,,backward,1508,edges whose target is at or before the jump -- loop backedges
-census,,,,,,,,tokens,96193,statement tokens in the scripts that carry a jump (an expression is not a flow node)
-census,,,,,,,,terminators,11687,"`EndOfScript`/`EndFunction` tokens, left out of the flow nodes because nothing jumps to them"
-census,,,,,,,,reachable,91977,"of those, tokens a walk from the first token reaches over fallthrough and jump edges"
-census,,,,,,,,dead,4216,tokens no walk reaches (code behind a return or a jump with no incoming edge)
-census,,,,,,,,dead_runs,4045,maximal runs of unreachable statements
-census,,,,,,,,dead_after_return,4109,unreachable statements whose run starts directly behind a `Return`
+census,,,,,,,,guest_token_starts,412686,"token starts over the same scripts, in the widened layout"
+census,,,,,,,,guest_bytes,1232153,"bytes of those scripts in the widened layout, the guest base rate's denominator"
+census,,,,,,,,file_token_starts,412686,"token starts over the same scripts, in the file"
+census,,,,,,,,file_bytes,912538,"bytes of those scripts in the file, the file base rate's denominator"
+census,,,,,,,,forward,22277,edges whose target is past the jump
+census,,,,,,,,backward,1510,edges whose target is at or before the jump -- loop backedges
+census,,,,,,,,tokens,96283,statement tokens in the scripts that carry a jump (an expression is not a flow node)
+census,,,,,,,,terminators,11714,"`EndOfScript`/`EndFunction` tokens, left out of the flow nodes because nothing jumps to them"
+census,,,,,,,,reachable,92065,"of those, tokens a walk from the first token reaches over fallthrough and jump edges"
+census,,,,,,,,dead,4218,tokens no walk reaches (code behind a return or a jump with no incoming edge)
+census,,,,,,,,dead_runs,4047,maximal runs of unreachable statements
+census,,,,,,,,dead_after_return,4111,unreachable statements whose run starts directly behind a `Return`
 census,,,,,,,,dead_after_stop,0,the same behind a `Stop`
 census,,,,,,,,dead_after_jump,107,the same behind an unconditional `Jump`
 census,,,,,,,,dead_after_other,0,the same behind any other statement
-census,,,,,,,,dead_runs_after_return,3938,runs behind a `Return`
+census,,,,,,,,dead_runs_after_return,3940,runs behind a `Return`
 census,,,,,,,,dead_runs_after_stop,0,runs behind a `Stop`
 census,,,,,,,,dead_runs_after_jump,107,runs behind an unconditional `Jump`
 census,,,,,,,,dead_runs_after_other,0,runs behind any other statement
-census,,,,,,,,dead_singletons,3903,runs that are one statement long
-census,,,,,,,,dead_final,3342,unreachable statements that are their script's own last statement
-census,,,,,,,,dead_return,3352,unreachable `Return` tokens
+census,,,,,,,,dead_singletons,3905,runs that are one statement long
+census,,,,,,,,dead_final,3344,unreachable statements that are their script's own last statement
+census,,,,,,,,dead_return,3354,unreachable `Return` tokens
 census,,,,,,,,dead_jump,603,unreachable `Jump` tokens
 census,,,,,,,,dead_iteratornext,92,unreachable `IteratorNext` tokens
-census,,,,,,,,dead_return_after_return,3226,unreachable `Return`s whose own predecessor is another `Return`
+census,,,,,,,,dead_return_after_return,3228,unreachable `Return`s whose own predecessor is another `Return`
 census,,,,,,,,dead_iteratornext_after_jump,89,unreachable `IteratorNext` tokens whose predecessor is a `Jump`
-census,,,,,,,,dead_scripts,3453,scripts with at least one unreachable statement
-census,,,,,,,,jump_sites,6315,`Jump` tokens
-census,,,,,,,,jumpifnot_sites,17463,`JumpIfNot` tokens
-census,,,,,,,,jump_hits,6315,`Jump` tokens whose operand lands on a token start's guest offset
-census,,,,,,,,jumpifnot_hits,17463,`JumpIfNot` tokens whose operand lands on a token start's guest offset
+census,,,,,,,,dead_scripts,3455,scripts with at least one unreachable statement
+census,,,,,,,,jump_sites,6318,`Jump` tokens
+census,,,,,,,,jumpifnot_sites,17469,`JumpIfNot` tokens
+census,,,,,,,,jump_hits,6318,`Jump` tokens whose operand lands on a token start's guest offset
+census,,,,,,,,jumpifnot_hits,17469,`JumpIfNot` tokens whose operand lands on a token start's guest offset
 census,,,,,,,,packages,18,packages walked
-census,,,,,,,,payloads_seen,11687,Function exports with a located epilogue
-census,,,,,,,,payloads_walked,11687,"of those, scripts the table walks end to end"
+census,,,,,,,,payloads_seen,11714,Function exports with a located epilogue
+census,,,,,,,,payloads_walked,11714,"of those, scripts the table walks end to end"

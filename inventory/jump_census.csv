@@ -723,6 +723,7 @@ script,Engine,MaplistRecord,Clear,,,,0,0,0,1,,1,"21 token start(s) of 41 byte(s)
 script,Engine,MaplistRecord,CompareItemsSlow,,,,7,5,5,17,,17,"159 token start(s) of 317 byte(s) in the file, 159 of 435 widened"
 script,Engine,MaplistRecord,CreateMapItem,,,,1,0,0,4,,4,"69 token start(s) of 151 byte(s) in the file, 69 of 216 widened"
 script,Engine,MaplistRecord,CreateMapItemList,,,,0,0,0,3,,3,"34 token start(s) of 66 byte(s) in the file, 34 of 92 widened"
+script,Engine,MaplistRecord,EqualEqual_MapItemMapItem,,,,2,2,2,9,,9,"76 token start(s) of 150 byte(s) in the file, 76 of 206 widened"
 script,Engine,MaplistRecord,GetAllMapURL,,,,0,0,0,2,,2,"26 token start(s) of 50 byte(s) in the file, 26 of 70 widened"
 script,Engine,MaplistRecord,GetBaseMapName,,,,0,0,0,2,,2,"53 token start(s) of 105 byte(s) in the file, 53 of 139 widened"
 script,Engine,MaplistRecord,GetCacheIndex,,,,1,0,0,3,,3,"33 token start(s) of 67 byte(s) in the file, 33 of 91 widened"
@@ -6126,18 +6127,18 @@ script,UWindow,WindowConsole,ResetUWindow,,,,1,0,0,1,,1,"28 token start(s) of 45
 script,UWindow,WindowConsole,ShowConsole,,,,0,0,0,1,,1,"14 token start(s) of 26 byte(s) in the file, 14 of 35 widened"
 script,UWindow,WindowConsole,Tick,,,,0,0,0,2,,2,"58 token start(s) of 128 byte(s) in the file, 58 of 179 widened"
 script,UWindow,WindowConsole,Tick,,,,0,0,0,1,,1,"16 token start(s) of 30 byte(s) in the file, 16 of 45 widened"
-census,,,,,,,,,,,jumps,23778,`Jump`/`JumpIfNot` tokens in the scripts that walk
-census,,,,,,,,,,,scripts_with_a_jump,6127,scripts carrying at least one
-census,,,,,,,,,,,guest_hits,23778,operands that equal a token start's offset in the widened script (the layout the handler uses)
-census,,,,,,,,,,,absolute_hits,5495,operands that land on a file-space token start read as an absolute code offset (control)
-census,,,,,,,,,,,unsigned_hits,3255,read as an unsigned offset from the end of the token (control)
-census,,,,,,,,,,,signed_hits,3255,read as a signed offset from the end of the token (control)
+census,,,,,,,,,,,jumps,23787,`Jump`/`JumpIfNot` tokens in the scripts that walk
+census,,,,,,,,,,,scripts_with_a_jump,6128,scripts carrying at least one
+census,,,,,,,,,,,guest_hits,23787,operands that equal a token start's offset in the widened script (the layout the handler uses)
+census,,,,,,,,,,,absolute_hits,5497,operands that land on a file-space token start read as an absolute code offset (control)
+census,,,,,,,,,,,unsigned_hits,3257,read as an unsigned offset from the end of the token (control)
+census,,,,,,,,,,,signed_hits,3257,read as a signed offset from the end of the token (control)
 census,,,,,,,,,,,at_end,0,operands equal to the widened length -- a jump to the epilogue
 census,,,,,,,,,,,past_end,0,operands past the widened length -- a dangling edge
-census,,,,,,,,,,,token_starts,412610,"file-space token starts over the scripts that carry a jump, the file base rate's numerator"
-census,,,,,,,,,,,bytes,912388,"file bytes of those scripts, its denominator"
-census,,,,,,,,,,,guest_token_starts,412610,"the same token starts in the widened layout, the guest base rate's numerator"
-census,,,,,,,,,,,guest_bytes,1231947,"widened bytes of those scripts, its denominator"
+census,,,,,,,,,,,token_starts,412686,"file-space token starts over the scripts that carry a jump, the file base rate's numerator"
+census,,,,,,,,,,,bytes,912538,"file bytes of those scripts, its denominator"
+census,,,,,,,,,,,guest_token_starts,412686,"the same token starts in the widened layout, the guest base rate's numerator"
+census,,,,,,,,,,,guest_bytes,1232153,"widened bytes of those scripts, its denominator"
 census,,,,,,,,,,,misses,0,jumps whose operand is no token start under any of the four readings
 census,,,,,,,,,,,tokens_labeltable,0,`LabelTable` (`0x0c`) tokens -- a label a computed jump could name
 census,,,,,,,,,,,tokens_gotolabel,0,`GotoLabel` (`0x0d`) tokens -- a jump by name
@@ -6145,5 +6146,5 @@ census,,,,,,,,,,,cases,1044,"`Case` tokens, the switch's case list entries inclu
 census,,,,,,,,,,,case_terminator,200,`Case` tokens whose operand is `0xffff` -- the end of their list
 census,,,,,,,,,,,case_linked,844,`Case` operands that resolve to the guest offset of a `Case` token -- the next case of the list
 census,,,,,,,,,,,case_off_list,18,links whose target is not the next `Case` in the stream -- a switch inside a case body
-census,,,,,,,,,,,payloads_seen,11687,
-census,,,,,,,,,,,payloads_walked,11687,
+census,,,,,,,,,,,payloads_seen,11714,
+census,,,,,,,,,,,payloads_walked,11714,
