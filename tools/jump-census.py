@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Where a jump goes: every `Jump`/`JumpIfNot` operand tested against the script's token starts in both layouts (PLAN 3.7).
 
-A `Goto('Label')` in the source is a **`Jump`** in the bytecode and the label's *name* is not in the payload: the
-corpus carries no `LabelTable` (`0x0c`) token and no `GotoLabel` (`0x0d`) token in any script that walks, so the
-compiler resolved every label to a code offset. That makes the jump operands the one place the walk can be tested
+A `Goto('Label')` in the source is a **`Jump`** in the bytecode and the label's *name* is not in the payload: no
+**`Function`** script that walks carries a `LabelTable` (`0x0c`) token or a `GotoLabel` (`0x0d`) token, so in that
+half the compiler resolved every label to a code offset. The state half is the other way round -- **196** `GotoLabel`
+sites in `State` payloads, **0** in a `Function` (`tools/state-entry.py`) -- which is why the two tokens are counted
+here rather than assumed absent. That makes the jump operands the one place the walk can be tested
 against something other than itself: a jump's target must be the start of an instruction, and a token stream that
 was desynchronised anywhere upstream would send jumps into the middle of tokens.
 

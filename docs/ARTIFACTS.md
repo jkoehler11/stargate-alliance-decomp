@@ -248,7 +248,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/squad_scripts.csv` | 614 | 3 | `make ci` |
 | `inventory/stat_fps_render.csv` | 1 | 5 | `make stat-fps` |
 | `inventory/state_code.csv` | 612 | 44 | `make state-code` |
-| `inventory/state_entry.csv` | 1160 | 15 | `make help` |
+| `inventory/state_entry.csv` | 1160 | 15 | `make state-entry` |
 | `inventory/state_exports.csv` | 165 | 10 | `make state-exports` |
 | `inventory/switch_arms.csv` | 1275 | 18 | `make switch-arms` |
 | `inventory/switch_join.csv` | 200 | 9 | `make switch-join` |
