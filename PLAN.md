@@ -13522,4 +13522,33 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement.** `Object.GotoState` is `native(113)` slot `0x71`: the body that reads a state's label map at
   runtime is one slot lookup from the token these entries carry, and it is the only route left to the states whose
   code no shipped package declares (`GameInfo.Dead`'s `MPStart`).
+### Execution notes (2026-11-18, the label residue is a spelling, a receiver and six aliases)
 
+- **Task.** The previous note's next measurement was `Object.GotoState`'s native body (`native(113)`, slot `0x71`),
+  the only route it saw to `GameInfo.Dead`'s `MPStart`. Re-reading the three residues against the class texts and
+  the export table answered all three, so this note is the thread's text half; the native body stays open as a
+  semantics question rather than a label one.
+- **A label jump has two spellings.** `Mover.TriggerPound`'s "divergence" was a reader gap: the text says
+  `goto 'Open';` without parentheses and the build's single `GotoLabel` jumps to `Open`. Over the 2,319 class texts
+  the bare form occurs **1** time against **201** parenthesised `Goto('x')` calls, so `tools/ai-states.py` counts
+  both (`GOTO_LABEL`/`GOTO_BARE`) and the join is **114 of 114** joined states, **196 of 196** jumps, **0** build
+  sites with no text half -- it was 113/195 with one row reading "text-none".
+- **An entry label resolves on the receiver, not on the caller.** `GameInfo.StartMatch`'s
+  `P.GotoState('Dead','MPStart')` is in its `NetMode != NM_Standalone` branch, and `Engine.Controller.Dead` is
+  exported: a 50-byte `State` payload whose record reads `LabelTableOffset = 0xffff`, with a text block that is
+  `ignores` plus two functions. `MPStart` therefore appears in the corpus only as this operand (an entry of
+  `Engine`'s name table, nothing else), so the label was never compiled and no native read is needed to explain it.
+  The other unresolved site is the same rule (`TransientAmbientPawn.Wandering`'s
+  `Controller.GotoState('Wandering','KeepGoing')`).
+- **The six two-name tables are named.** The compiler emits every label a block spells at its top, so
+  `Begin`/`Turn` (`HaakenBot.ShieldCover`), `Begin`/`DoMove` (four bot states) and `Begin`/`Firing`
+  (`AlkeshBomberBot.CarpetBombing`) all land on byte 0; the page no longer says "and four more".
+- **The rows are the evidence.** `inventory/state_entry.csv` gained `alias` (6), `nocode` (1) and `absent` (1) rows
+  plus the `text_label_bare` census key, so each of the three counts is carried by a row that names its state.
+- **Files.** `tools/ai-states.py` (both spellings, documented in its column notes), `tools/state-entry.py`
+  (`class_text_states` returns the bare count, the three row kinds, `text_label_bare`), `inventory/state_entry.csv`,
+  `docs/systems/AI.md` (the generated block and the label-join section, corrected in place),
+  `docs/UNKNOWNS.md` U25, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** What `UState`'s runtime label map does behind `Object.GotoState` when the state is found
+  and the label is not -- warn and start at the entry point, or refuse the transition. It changes no number in this
+  thread; it is the one claim the text cannot make.

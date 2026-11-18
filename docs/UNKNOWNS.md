@@ -4760,3 +4760,21 @@ not are mechanisms, not residue: **1** call is spelled on another object (`Contr
 State-level inheritance is a population, not a case: of the **387** record-only `State` exports **52** name a
 `Super` state and **24** reach a table through it, which the class tree alone cannot show -- the text spells one of
 them (`BotSG.InvisibleRest extends RestFormation`).
+
+**The residue is named, and none of it needed a boot (same run).** Both entry labels that did not resolve are naming
+problems rather than missing code. `GameInfo.StartMatch`'s `P.GotoState('Dead','MPStart')` sits in its
+`NetMode != NM_Standalone` branch, so the state it enters is the receiver's: `Engine.Controller.Dead` **is**
+exported -- a 50-byte `State` payload whose record reads `LabelTableOffset = 0xffff`, no table -- and its shipped
+text is a bare block (`ignores` plus `PawnDied` and `ServerReStartPlayer`), so `MPStart` appears nowhere among the
+**2,319** class texts except as this operand, while being an entry of `Engine`'s own name table. The compiler had no
+label to emit, so the label never reached a table and the runtime lookup has a state and no entry name. The other
+site is the same rule applied to a receiver parameter
+(`TransientAmbientPawn.Wandering`'s `Controller.GotoState('Wandering','KeepGoing')`; the controller's `Wandering`
+carries `Begin` alone). The one *text* divergence this entry recorded -- `Mover.TriggerPound` -- was a reader gap:
+its text spells `goto 'Open';`, the parenless form of the same `GotoLabel` (`0x0d`), which is **1** of the corpus's
+**2,319** class texts against **201** parenthesised `Goto('x')` calls; counting both spellings makes the join
+**114 of 114** joined states and **196 of 196** jumps. `inventory/state_entry.csv` now names the six tables whose
+first byte carries two label names (`alias` rows), the two unresolved entry labels (`nocode`/`absent` rows) and the
+bare spelling (`text_label_bare`). **What is still open:** what the native `Object.GotoState` (`native(113)`, slot
+`0x71`) does when the state is found and the label is not -- warn and land on the entry point, or refuse the
+transition. That is a runtime-semantics question and it changes no number here.

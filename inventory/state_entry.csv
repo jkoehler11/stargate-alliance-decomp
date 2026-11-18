@@ -1102,6 +1102,12 @@ class,StargateVehicles,GoauldDroneBot,,,,,,,agree,,,delta,0,"text 3 in-state (+0
 class,StargateVehicles,GoauldKillerDroidBot,,,,,,,agree,,,delta,0,"text 1 in-state (+0 computed), 0 class-level (+0 computed); build 1 / 0"
 class,StargateVehicles,HoverTankPilotBot,,,,,,,agree,,,delta,0,"text 0 in-state (+0 computed), 1 class-level (+0 computed); build 0 / 1"
 class,StargateVehicles,TeltakBot,,,,,,,agree,,,delta,0,"text 5 in-state (+0 computed), 1 class-level (+1 computed); build 5 / 2"
+alias,StargateContent,HaakenBot,ShieldCover,,,0000,LabelTable,,Turn Begin,,,entry,2,2 names on the first byte of code
+alias,StargateContent,HaakenLeaderBot,SeizeMindControl,,,0000,LabelTable,,DoMove Begin,,,entry,2,2 names on the first byte of code
+alias,StargateContent,MindControlledBot,MindControlGuard,,,0000,LabelTable,,DoMove Begin,,,entry,2,2 names on the first byte of code
+alias,StargateContent,PteroBot,Landing,,,0000,LabelTable,,DoMove Begin,,,entry,2,2 names on the first byte of code
+alias,StargateVehicles,AlkeshBomberBot,CarpetBombing,,,0000,LabelTable,,Firing Begin,,,entry,2,2 names on the first byte of code
+alias,StargateVehicles,DeathGliderBot,Searching,,,0000,LabelTable,,DoMove Begin,,,entry,2,2 names on the first byte of code
 entry,AmbientCreatures,CirclingBirds,Circling,,,0000,LabelTable,,Begin,,,,0,
 entry,AmbientCreatures,HerdAnimal,grazing,,,0000,LabelTable,,Begin,,,,0,
 entry,AmbientCreatures,HerdAnimal,stampeding,,,0000,LabelTable,,Begin,,,,0,
@@ -1268,7 +1274,8 @@ entry,StargateVehicles,TeltakBot,Searching,,,0000,LabelTable,,Begin,,,,0,
 entry,StargateVehicles,TeltakBot,Waiting,,,0000,LabelTable,,Begin,,,,0,
 entry,StargateVehicles,TempleTurretGun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
 entry,UWindow,WindowConsole,UWindow,,,0000,LabelTable,,Begin,,,,0,
-label,Engine,Mover,TriggerPound,,,,GotoLabel,,text-none,,,delta,1,"build 1 `Open`, and the state's own text spells no `Goto`"
+nocode,Engine,GameInfo,,StartMatch,function,00f7,GotoState,literal,Dead,MPStart,2,entry-label,1,no state of that name in the caller's chain
+absent,AmbientCreatures,TransientAmbientPawn,Wandering,,state-code,003a,GotoState,literal,Wandering,KeepGoing,2,entry-label,1,the label is not an entry of the target's table
 census,,,,,,,,,,,,payloads_seen,11687,`Function` payloads whose header ends on `FriendlyName`
 census,,,,,,,,,,,,payloads_walked,11687,"of those, whose script walks end to end"
 census,,,,,,,,,,,,sites,1067,`GotoState`/`GotoLabel`/`Goto` tokens in those scripts
@@ -1345,14 +1352,15 @@ census,,,,,,,,,,,,entry_points_alias,6,"of those, whose first byte carries two l
 census,,,,,,,,,,,,label_jumps_to_entry,103,`GotoLabel` sites whose operand is their own state's entry point -- a jump back to the top of the block
 census,,,,,,,,,,,,text_label_states,101,states whose text spells a `Goto('label')`
 census,,,,,,,,,,,,text_label_jumps,183,"`Goto('label')` calls in those states, from the text"
+census,,,,,,,,,,,,text_label_bare,1,"of those, spelled `goto 'label'` without parentheses -- the same `GotoLabel` op"
 census,,,,,,,,,,,,ai_label_states,101,states both reads cover
 census,,,,,,,,,,,,ai_label_jumps,183,`GotoLabel` sites in those states
 census,,,,,,,,,,,,ai_label_agree,101,"of those, the states whose text and build name the same labels as often"
-census,,,,,,,,,,,,extra_label_states,12,states outside `ai_states.csv` whose own class text is read here for the join
-census,,,,,,,,,,,,extra_label_jumps,12,"`Goto('label')` calls in those states, from the text"
-census,,,,,,,,,,,,label_join_states,113,states with a `GotoLabel` site and a text half
-census,,,,,,,,,,,,label_join_agree,113,"of those, the states whose text and build name the same labels as often"
-census,,,,,,,,,,,,label_join_jumps,195,`GotoLabel` sites the join covers
-census,,,,,,,,,,,,label_build_only_states,1,states the build places a label jump in with no text half at all
-census,,,,,,,,,,,,label_build_only_jumps,1,label jumps in those states
+census,,,,,,,,,,,,extra_label_states,13,states outside `ai_states.csv` whose own class text is read here for the join
+census,,,,,,,,,,,,extra_label_jumps,13,"`Goto('label')` calls in those states, from the text"
+census,,,,,,,,,,,,label_join_states,114,states with a `GotoLabel` site and a text half
+census,,,,,,,,,,,,label_join_agree,114,"of those, the states whose text and build name the same labels as often"
+census,,,,,,,,,,,,label_join_jumps,196,`GotoLabel` sites the join covers
+census,,,,,,,,,,,,label_build_only_states,0,states the build places a label jump in with no text half at all
+census,,,,,,,,,,,,label_build_only_jumps,0,label jumps in those states
 census,,,,,,,,,,,,label_text_only_states,0,states whose text spells a jump the build carries no `GotoLabel` for
