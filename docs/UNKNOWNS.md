@@ -4404,7 +4404,7 @@ source says -- `break` to `break;`, `return` to `return`, a loop's back edge to 
 not a disagreement but a limit: the **466** positional pairings rest on an inferred label order, and the **55**
 unmatched arms have no exit comparison at all. `--check` on both tools is dump-free, and the page's block is rendered
 from the artifact by `--check-doc`.
-## U22. The `else` census agrees with 99.0% of the functions that carry an `else` -- answered: the guards, the empty blocks and the landing rules close the text-ahead side, and the 26 arms left are block-bodied `continue`s, placed per function
+## U22. The `else` census agrees with 99.0% of the functions that carry an `else` -- answered: the guards, the empty blocks and the landing rules close the text-ahead side, the 26 arms left are block-bodied `continue`s placed per function, and the 3 `other` sites are an `else`'s own body
 
 **Observed.** `tools/text-branches.py` counts a class's live `else` keywords and pairs them with
 `inventory/jump_branches.csv`'s arms per class: **881** of the **967** joined classes agree on the count
@@ -4527,7 +4527,25 @@ the record has no arm for. What is left is a spelling question the stream cannot
 is the loop body's tail, `if (X) { …; continue; } B;` and `if (X) { …; } else { B; }` are the same program -- which
 is why the text is the only oracle and why the join is quoted per function.
 
+**The three `other` sites are an `else` arm's whole body, and no `switch` arm carries a `continue` (measured
+2026-11-18).** The bucket with no name was not "a loop body's own or a `switch` arm's": `tools/text-branches.py
+--continue-sites` (`inventory/continue_sites.csv`, one row per site: package, class, function, declaration, offset,
+line, then-block form, construct, enclosing loop) names all **95** `continue` statements, and the three `other` are
+`else continue;` twice in `AccessControl.checkippolicy` (lines 413 and 452) and `else { continue; }` once in
+`VoiceSelector.searchvoices` (line 113) -- each the whole body of an `else` arm inside a `for`. `if (X) y; else
+continue;` compiles exactly as `if (X) y; else z;` does, so the arm is the else's and no then-arm opens: that is why
+the count never moved the shortfall. The construct column has no `switch-arm` row at all, and the join is confirmed
+from the bytes and from the text: `inventory/text_switches.csv`'s new `text_continue` column is empty on all **789**
+matched arms, the block census (`switch_continue`) finds **0** `continue` statements inside any `switch` block in the
+shipped text -- `default:` bodies included -- and the arm census's `elsewhere` row (an arm leaving by a jump landing
+off its list's end, i.e. a `continue`) is **0** of 844. The two functions whose `continue`s sit next to a `switch`
+(`GUIMultiComponent.mapcontrols`, `CommandInterface.executescriptcommand`) have them outside every block. So a
+`switch` is opaque to `continue` in this build, and the lower-bound question the previous session left open is
+answered at zero rather than argued.
+
 **Reproduce.** `make text-branches` (needs the dump) writes both artifacts and both generated blocks;
-`python3 tools/text-branches.py --check-functions` re-derives the five per-class identities, the two corpus counts
-and the `continue` split (four counts of one regex, and the `continue_place` verdict recomputed from two of them)
-from the committed files with no dump, and runs in `make ci`.
+`make continue-sites` writes the site artifact; `python3 tools/text-branches.py --check-functions` re-derives the
+five per-class identities, the two corpus counts and the `continue` split (four counts of one regex, and the
+`continue_place` verdict recomputed from two of them), and `--check-continue-sites` holds the site artifact to the
+per-body counts (every bare/block site inside a then-block, no `other` one, every site inside a loop, offsets
+increasing) -- both from the committed files with no dump, and both run in `make ci`.

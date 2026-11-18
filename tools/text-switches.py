@@ -52,7 +52,8 @@ DOC_MARK = ("<!-- generated:text-switches -->", "<!-- /generated:text-switches -
 
 FIELDS = ["kind", "package", "class", "function", "arm", "label_kind", "label", "text_switch", "text_case",
           "text_default", "text_break", "byte_lists", "byte_arms", "byte_defaults", "byte_break", "labels_found",
-          "labels_missing", "text_end", "byte_end", "end_agree", "end_checked", "verdict", "count", "note"]
+          "labels_missing", "text_end", "text_continue", "byte_end", "end_agree", "end_checked", "verdict", "count",
+          "note"]
 
 CENSUS_NOTE = {
     "text_switch": "`switch` keywords in the live text",
@@ -81,12 +82,17 @@ CENSUS_NOTE = {
     "loop_text_other": "of the arms whose last `Jump` is a loop's own back edge, the ones whose source case also ends "
                        "on a control construct rather than leaving",
     "functions_joined": "functions carrying a switch on both sides",
+    "arm_continue": "arms whose source case body carries a `continue` statement",
+    "switch_continue": "`continue` statements inside a `switch` block -- case arms and `default:` bodies together",
+    "arm_continue_all": "of those, the ones inside a case arm's body (every label group, matched or not)",
+    "default_continue": "of those, the ones inside a `default:` body",
 }
 
 CENSUS_ORDER = ("text_switch", "text_case", "text_default", "text_break", "byte_lists", "byte_arms",
                 "byte_defaults", "byte_break", "classes_joined", "label_agree", "label_more", "label_less",
                 "text_only", "bytes_only", "labels_found", "labels_missing", "labels_by_position", "end_agree",
-                "end_checked", "empty_agree", "fallthrough_text_other", "loop_text_other", "functions_joined")
+                "end_checked", "empty_agree", "fallthrough_text_other", "loop_text_other", "functions_joined",
+                "arm_continue", "switch_continue", "arm_continue_all", "default_continue")
 
 # A `case` label's expression: everything up to the `:` that is not a `::`, on one line, no statement separator.
 # UnrealScript folds keyword case -- `Switch(Role)` and `State` are the build's own spelling -- so every pattern here
@@ -402,7 +408,7 @@ def compare_function(arms, spans, clive, live=None):
     constant (`case MB_OK:`) that only the compiler folds to the integer. A positional match is reported as such,
     never as a value match.
     """
-    out = {"found": 0, "positional": 0, "checked": 0, "agree": 0, "detail": [], "blocks": 0}
+    out = {"found": 0, "positional": 0, "checked": 0, "agree": 0, "detail": [], "blocks": 0, "arm_continue": 0}
     best = None
     for span in spans:
         groups = label_groups(clive, live if live is not None else clive, span)
@@ -463,16 +469,22 @@ def compare_function(arms, spans, clive, live=None):
                         pick_i = i
                         break
             if pick_i is None:
-                out["detail"].append((r, None, ""))
+                out["detail"].append((r, None, "", []))
                 continue
             used[pick_i] = True
             out["found"] += 1
             seg_end = labels[pick_i + 1][1] if pick_i + 1 < len(labels) else close
             seg_end = min(seg_end, close)
+            # The `continue` statements an arm's own source body carries: the column that joins this census to
+            # `tools/text-branches.py`'s continue split, one statement over from `switch-join.csv`'s arm counts.
+            cs = text_tool().continue_sites(live if live is not None else clive, None,
+                                            labels[pick_i][2], seg_end)
+            if cs:
+                out["arm_continue"] += 1
             text_end = last_statement(clive[labels[pick_i][2]:seg_end],
                                       (live if live is not None else clive)[labels[pick_i][2]:seg_end])
             byte_end = r.get("end") or ""
-            out["detail"].append((r, text_end, byte_end))
+            out["detail"].append((r, text_end, byte_end, [k for _o, k in cs]))
             if byte_end == "empty" or byte_end == "loop":
                 out["checked"] += 1
                 out["agree"] += int(text_end == ("empty" if byte_end == "empty" else "other"))
@@ -487,6 +499,39 @@ def compare_function(arms, spans, clive, live=None):
             out["checked"] += 1
             out["agree"] += int(text_end == want or (want == "continue" and text_end == "goto"))
     return out
+
+
+def switch_continue_census(texts):
+    """`Counter` of the `continue` statements inside every `switch` block, split by case arm and `default:` body.
+
+    The block census is the population, not the matched arms: an arm whose value the text could not be read for is
+    still inside its block, and a `continue` in a `default:` body opens no arm either. A site inside a nested
+    `switch` sits inside two spans, so each offset is counted once, in the innermost block that holds it.
+    """
+    census = collections.Counter()
+    seen = {}
+    for key, t in texts.items():
+        for _fn, spans in t["functions"].items():
+            for span in spans:
+                groups = label_groups(t["clive"], t["live"], span)
+                for ob, cb, marks in groups:
+                    for off, _kind in text_tool().continue_sites(t["live"], None, ob, cb):
+                        holder = [(o, c) for o, c, _m in groups if o <= off < c]
+                        if not holder:
+                            continue
+                        ident = (key, off)
+                        if ident in seen:
+                            continue
+                        bucket = "default"
+                        for i, (lab, start, _end) in enumerate(marks):
+                            if lab is not None and start <= off:
+                                nxt = marks[i + 1][1] if i + 1 < len(marks) else cb
+                                if off < min(nxt, cb):
+                                    bucket = "arm"
+                        seen[ident] = bucket
+                        census["switch_continue"] += 1
+                        census["arm_continue_all" if bucket == "arm" else "default_continue"] += 1
+    return census
 
 
 def join(texts, arms_c, arms_f, meta):
@@ -536,12 +581,13 @@ def join(texts, arms_c, arms_f, meta):
             census["labels_by_position"] += got["positional"]
             census["end_checked"] += checked
             census["end_agree"] += agree
+            census["arm_continue"] += got["arm_continue"]
             rows.append({"kind": "function", "package": package, "class": cls_name, "function": fn_lower,
                          "byte_arms": len(fn_arms), "labels_found": found,
                          "labels_missing": len(fn_arms) - found, "end_agree": agree, "end_checked": checked,
                          "verdict": "agree" if agree == checked else "differs", "label_kind": match_kind,
                          "count": "", "note": ""})
-            for r, text_end, byte_end in detail:
+            for r, text_end, byte_end, conts in detail:
                 if text_end is None:
                     continue
                 same = ("yes" if ((byte_end == "empty" and text_end == "empty")
@@ -558,8 +604,11 @@ def join(texts, arms_c, arms_f, meta):
                     census["fallthrough_text_other"] += 1
                 rows.append({"kind": "arm", "package": package, "class": cls_name, "function": fn_lower,
                              "arm": r.get("arm"), "label_kind": r.get("label_kind"), "label": r.get("label"),
-                             "text_end": text_end, "byte_end": byte_end, "end_agree": same, "count": "",
+                             "text_end": text_end, "text_continue": "+".join(sorted(set(conts))),
+                             "byte_end": byte_end, "end_agree": same, "count": "",
                              "note": "site %s" % (r.get("site") or "")})
+    for key, value in switch_continue_census(texts).items():
+        census[key] += value
     for key in CENSUS_ORDER:
         rows.append({"kind": "census", "note": CENSUS_NOTE[key], "count": census[key]})
     return rows, census
@@ -591,6 +640,17 @@ def census_value(rows, key):
 
 def comma(n):
     return "{:,}".format(int(n))
+
+
+def _elsewhere(path=ARMS_CSV):
+    """The arms census's `elsewhere` row: an arm that left by a jump landing off its list's end -- a `continue`."""
+    if not os.path.exists(path):
+        return 0
+    with open(path, encoding="utf-8", newline="") as fh:
+        for r in csv.DictReader(fh):
+            if r.get("kind") == "census" and "landing somewhere else" in (r.get("note") or ""):
+                return int(r.get("count") or 0)
+    return 0
 
 
 def pct(a, b):
@@ -637,6 +697,20 @@ def doc_block(rows):
               % (comma(census_value(rows, "end_checked")), comma(census_value(rows, "end_agree")),
                  comma(census_value(rows, "empty_agree")), comma(census_value(rows, "fallthrough_text_other")),
                  comma(census_value(rows, "loop_text_other")))]
+    lines += ["",
+              "**No arm's source body carries a `continue`, and none crosses a case boundary in this build.** The "
+              "`text_continue` column of the arm rows reads each matched arm's own case body: **%s** of the **%s** "
+              "matched arms hold one, and the block census finds **%s** `continue` statement(s) inside a `switch` "
+              "block at all -- **%s** in a case arm, **%s** in a `default:` body -- so the two functions whose "
+              "`continue`s neighbour a `switch` (`GUIMultiComponent.mapcontrols`, "
+              "`CommandInterface.executescriptcommand`) have theirs outside every block. The byte side says the "
+              "same thing from the other direction: an arm that left by a `continue` jump would land off its "
+              "list's end, and the `elsewhere` row of `inventory/switch_arms.csv` is **%s**. A renderer can treat "
+              "a `switch` as opaque to `continue` in this corpus."
+              % (comma(census_value(rows, "arm_continue")), comma(census_value(rows, "end_checked")),
+                 comma(census_value(rows, "switch_continue")), comma(census_value(rows, "arm_continue_all")),
+                 comma(census_value(rows, "default_continue")),
+                 _elsewhere())]
     wild = [r for r in rows if r.get("kind") == "arm" and r.get("end_agree") == "no"]
     if wild:
         lines += ["", "**%s** arm(s) leave differently in the two readings; the first are listed here so the next "
@@ -672,6 +746,25 @@ def write_doc(path, rows):
 
 
 def check_doc(path, rows):
+    bad = []
+    arms = [r for r in rows if r.get("kind") == "arm"]
+    n = len([r for r in arms if r.get("text_continue")])
+    if n != census_value(rows, "arm_continue"):
+        bad.append("the `arm_continue` census row says %d, the arm rows hold %d"
+                   % (census_value(rows, "arm_continue"), n))
+    if census_value(rows, "switch_continue") != (census_value(rows, "arm_continue_all")
+                                                 + census_value(rows, "default_continue")):
+        bad.append("the block census (%d) does not split into its arm (%d) and `default:` (%d) halves"
+                   % (census_value(rows, "switch_continue"), census_value(rows, "arm_continue_all"),
+                      census_value(rows, "default_continue")))
+    if n > census_value(rows, "arm_continue_all"):
+        bad.append("%d matched arms carry a `continue`, the whole block population has only %d"
+                   % (n, census_value(rows, "arm_continue_all")))
+    if bad:
+        for line in bad[:20]:
+            print("FAIL text-switches: %s" % line)
+        print("FAIL text-switches: inventory/text_switches.csv does not reconcile its continue columns")
+        return 1
     with open(path, encoding="utf-8") as fh:
         text = fh.read()
     lo, hi = DOC_MARK
@@ -770,6 +863,20 @@ def selftest():
     if (got3["found"], got3["positional"], got3["checked"], got3["agree"]) != (3, 1, 3, 3):
         fails.append("a nested switch joined as found=%d positional=%d checked=%d agree=%d"
                      % (got3["found"], got3["positional"], got3["checked"], got3["agree"]))
+    # The `continue` column: an arm whose body holds `if (x) continue;` carries one, and an arm next to it that
+    # does not carries none -- the join `switch-join.csv` made for arm counts, one statement over.
+    cont = ("function f(int n)\n{\n    for (i = 0; i < 3; i++)\n    {\n        switch (n)\n        {\n"
+            "            case 1:\n                if (n > 2) continue;\n                break;\n"
+            "            case 2:\n                DoThing();\n                break;\n"
+            "            default:\n                break;\n        }\n    }\n}\n")
+    cont_spans = [(cont.find("{\n        switch"), len(cont))]
+    got4 = compare_function([{"arm": "1", "label_kind": "byte", "label": "1", "end": "break"},
+                             {"arm": "2", "label_kind": "byte", "label": "2", "end": "break"}],
+                            cont_spans, cont)
+    if got4["arm_continue"] != 1:
+        fails.append("an arm carrying `if (x) continue;` read arm_continue=%d" % got4["arm_continue"])
+    if [c for _r, _t, _b, c in got4["detail"]][1] != []:
+        fails.append("an arm with no `continue` read %r" % (got4["detail"][1][3],))
     if fails:
         for f in fails:
             print("FAIL text-switches: %s" % f)

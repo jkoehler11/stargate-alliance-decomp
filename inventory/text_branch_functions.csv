@@ -5820,7 +5820,7 @@ census,,text_terms_dead,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`if` + `while` + `for` in
 census,,text_continue,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`continue` statements in the body,95
 census,,text_continue_bare,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"`continue` that is the whole then-block -- `if (X) continue;`, the arm the landing rules read",63
 census,,text_continue_block,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"`if` then-block holding statements before its `continue` -- same tokens, but the arm is longer than the single `Jump` the rules test",29
-census,,text_continue_other,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"`continue` that is not a then-block's last statement at all (a loop body's own, a `switch` arm's)",3
+census,,text_continue_other,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`continue` that is not a then-block's last statement at all (measured: an `else` arm's own body -- `inventory/continue_sites.csv` names the construct of every site),3
 census,,text_continue_dead,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,`continue` inside a part this build never compiles,0
 census,,continue_place_exact,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,short functions whose shortfall equals their block-bodied `continue` count -- one arm per site,18
 census,,continue_place_text_ahead,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,short functions with more block-bodied `continue` sites than arms (one site's arm reads as an `if`: its `Jump` lands on the jump's own target),2

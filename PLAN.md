@@ -13322,3 +13322,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   then-block's last statement (a loop body's own, a `switch` arm's) never opens an arm, so the population is a
   lower bound on switches and loops a renderer must know about -- the same join `switch_join.csv` made for arm
   counts, one statement over.
+
+### Execution notes (2026-11-18, the `continue` census names every site, and the switch arms carry none)
+
+- **Task.** The previous bundle's two open items: the 3 `other` `continue` sites, and the per-arm `continue` column
+  that would join `inventory/switch_arms.csv` the way `switch_join.csv` joined its arm counts.
+- **Every `continue` has a name now, and the 3 `other` are an `else` arm's whole body.** `tools/text-branches.py
+  --continue-sites` (`make continue-sites`) writes `inventory/continue_sites.csv`: one row per site -- package,
+  class, function, declaration, offset, line, then-block form, construct, enclosing loop -- over the same masked text
+  the census counts, so the 95 rows are the 63 bare + 29 block + 3 other the per-body artifact holds, and
+  `--check-continue-sites` holds the two files to each other with no dump (kind/construct consistency, every site
+  inside a loop, offsets strictly increasing). The three: `else continue;` at `AccessControl.checkippolicy` lines 413
+  and 452, `else { continue; }` at `VoiceSelector.searchvoices` line 113, all inside a `for`. The construct column is
+  therefore 92 `then-block` + 3 `else-body` + **0** `switch-arm`: the docstring's guess ("a loop body's own, a
+  `switch` arm's") is corrected in place, and the reason no arm opens is that `if (X) y; else continue;` compiles
+  exactly as `if (X) y; else z;` does -- the arm is the else's.
+- **The loop each site sits in is measured too, because the landing rules differ by loop kind.** 89 `for`, 4
+  `foreach`, 1 `while`, 1 `do`; the `foreach` four are the shape whose leave rule is the `IteratorPop` landing, and
+  finding them needed a header reader that walks back past a dotted iterator call (`foreach P.TouchingActors(
+  class'Volume', V )` ends in `)` but the keyword is `foreach`, not `TouchingActors`).
+- **The per-arm join is one statement over, and its answer is zero.** `inventory/text_switches.csv`'s arm rows gain
+  `text_continue` (the `continue` statements the arm's own source case body holds, by form) and the census gains
+  `arm_continue`, `switch_continue`, `arm_continue_all` and `default_continue`. Measured: **0** of the **789** matched
+  arms carry one, and the block census -- every `switch` span in all 136 classes with text, nested blocks and
+  `default:` bodies included -- finds **0** `continue` statements inside a `switch` at all. The two functions whose
+  `continue`s neighbour a switch (`GUIMultiComponent.mapcontrols`, `CommandInterface.executescriptcommand`) have them
+  outside every block, so the lower-bound question U21/U22 left open is answered at zero: no arm in this corpus
+  leaves by, or carries, a `continue`.
+- **Two independent readers say the same zero.** The text column is one; the other is the arm census's `elsewhere`
+  row (an arm leaving by a jump landing off its list's end -- the only way a `continue` can show in the stream),
+  which is **0** of 844. `--check-doc` now reconciles the artifact's continue columns (arm rows against the census,
+  the block total against its arm + `default:` halves) before it compares the page, and the doc block states the
+  result from the committed file.
+- **Files.** `tools/text-branches.py` (`continue_sites_detail`, `enclosing_construct`/`enclosing_loop`/`_header_keyword`,
+  `continue_site_rows`, `--continue-sites`/`--check-continue-sites`, four self-test cases) +
+  `inventory/continue_sites.csv` (new, 105 rows) + `tools/text-switches.py` (`text_continue`, `switch_continue_census`,
+  the four census keys, the `--check-doc` identities, a self-test case) + `inventory/text_switches.csv` (3306 rows) +
+  `docs/BYTECODE.md` (the `other` sentence, the arm-carry paragraph, a new switch-section paragraph, the generated
+  block) + `docs/UNKNOWNS.md` U22 + `Makefile` (`continue-sites`, one `.PHONY` token, one help line, one `make ci`
+  line) + `docs/ARTIFACTS.md` + `inventory/artifact_hashes.csv` + this note. Two dump reads (7 s and 3 s); no boot,
+  no Ghidra.
+- **Next measurement.** The arm rows' `text_end` column reads only an arm's *last* statement, so an arm that
+  `break`s inside a nested `if` (`if (x) break;` then more statements) is invisible to it: the same column one
+  statement over is an **interior** break census -- arms whose body holds a `Jump` landing on the list's end before
+  the final statement -- which would also explain part of the text's 990 `break;` against the 628 break arms.

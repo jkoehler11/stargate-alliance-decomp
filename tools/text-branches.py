@@ -59,6 +59,31 @@ BRANCHES = os.path.join(ROOT, "inventory", "jump_branches.csv")
 DOC_MARK = ("<!-- generated:text-branches -->", "<!-- /generated:text-branches -->")
 FUNC_CSV_PATH = os.path.join(ROOT, "inventory", "text_branch_functions.csv")
 FUNC_MARK = ("<!-- generated:text-branch-functions -->", "<!-- /generated:text-branch-functions -->")
+CONT_CSV_PATH = os.path.join(ROOT, "inventory", "continue_sites.csv")
+
+CONT_FIELDS = ["package", "class", "function", "decl", "offset", "line", "kind", "enclosing", "loop", "note",
+               "count"]
+
+CONT_NOTE = {
+    "sites": "`continue` statements in the shipped text",
+    "bare": "sites whose whole then-block is the `continue`",
+    "block": "sites whose then-block holds statements in front of the `continue`",
+    "other": "sites that are not a then-block's last statement at all",
+    "then-block": "sites inside a then-block, i.e. the `bare` and `block` kinds",
+    "else-body": "sites that are an `else` arm's whole body -- the arm the branch census reads as an `else`",
+    "loop-body": "sites that are a loop body's own statement, outside every `if`",
+    "switch-arm": "sites that are a `switch` case arm's statement",
+    "loop_for": "sites inside a `for`",
+    "loop_while": "sites inside a `while`",
+    "loop_foreach": "sites inside a `foreach`",
+    "loop_do": "sites inside a `do…until`",
+    "loop_none": "sites no loop encloses -- a `continue` there does not compile",
+}
+
+CONT_ORDER = ("sites", "bare", "block", "other", "then-block", "else-body", "loop-body", "switch-arm",
+              "loop_for", "loop_while", "loop_foreach", "loop_do", "loop_none")
+
+LOOP_WORDS = ("for", "while", "foreach", "do")
 
 FUNC_FIELDS = ["package", "class", "function", "class_verdict", "body", "record",
                "text_else", "text_if", "text_while", "text_for", "terms", "text_and", "text_or",
@@ -119,7 +144,8 @@ FUNC_NOTE = {
     "text_continue": "`continue` statements in the body",
     "text_continue_bare": "`continue` that is the whole then-block -- `if (X) continue;`, the arm the landing rules read",
     "text_continue_block": "`if` then-block holding statements before its `continue` -- same tokens, but the arm is longer than the single `Jump` the rules test",
-    "text_continue_other": "`continue` that is not a then-block's last statement at all (a loop body's own, a `switch` arm's)",
+    "text_continue_other": "`continue` that is not a then-block's last statement at all (measured: an `else` arm's own "
+                           "body -- `inventory/continue_sites.csv` names the construct of every site)",
     "text_continue_dead": "`continue` inside a part this build never compiles",
     "continue_place_exact": "short functions whose shortfall equals their block-bodied `continue` count -- one arm per site",
     "continue_place_text_ahead": "short functions with more block-bodied `continue` sites than arms (one site's arm reads as an `if`: its `Jump` lands on the jump's own target)",
@@ -481,8 +507,11 @@ def continue_sites(text, dead, a=0, b=None):
     arms than the text spells `else`. The split is what says which sites the landing rules can read: **bare** is
     the whole then-block (the arm is the single `Jump`, which the rules test), **block** a then-block that holds
     statements in front of its `continue` (the arm is longer, so the rules cannot see it), **other** a `continue`
-    that is not a then-block's last statement at all (a loop body's own, a `switch` arm's). A `continue` inside a
-    part this build never compiles is `dead`, the same split `text_else_dead` makes on the `else` side.
+    that is not a then-block's last statement at all -- an `else` arm's own body (`else continue;`), a loop body's
+    own statement, or a `switch` case arm's. `continue_site_rows` names the construct of every site
+    (`inventory/continue_sites.csv`); measured, all three `other` sites are an `else` arm's whole body. A
+    `continue` inside a part this build never compiles is `dead`, the same split `text_else_dead` makes on the
+    `else` side.
     """
     b = len(text) if b is None else b
     out = []
@@ -540,6 +569,199 @@ def function_continue_sites(text, dead):
         for _off, kind in continue_sites(text, dead, span[0], span[1]):
             out[m.group(1).lower()][kind] += 1
     return out
+
+
+def _word_before(text, a, j):
+    """The identifier ending at `j` inclusive, lowercased -- "" when there is none."""
+    k = j
+    while k >= a and (text[k].isalnum() or text[k] == "_"):
+        k -= 1
+    return text[k + 1:j + 1].lower()
+
+
+def _paren_keyword(text, a, j):
+    """The keyword owning the `(` matching `text[j] == ')'` -- `if`, `for`, `switch`, ... or ""."""
+    depth, i = 0, j
+    while i >= a:
+        if text[i] == ")":
+            depth += 1
+        elif text[i] == "(":
+            depth -= 1
+            if depth == 0:
+                break
+        i -= 1
+    if i <= a:
+        return ""
+    k = i - 1
+    while k >= a and text[k] in " \t\r\n":
+        k -= 1
+    return _word_before(text, a, k)
+
+
+def _header_keyword(text, a, j):
+    """The statement keyword of the header ending at `j` -- `foreach` in front of `foreach P.Foo(... )`, or "".
+
+    A loop header is not always `keyword (...)`: a `foreach` names the iterator call (`foreach P.TouchingActors(
+    class'Volume', V )`), so the word directly in front of the `(` is the call, not the loop. This walks back over
+    dotted names and nested parentheses to the statement's first keyword, which is what the site needs.
+    """
+    i, depth = j, 0
+    while i >= a:
+        c = text[i]
+        if c == ")":
+            depth += 1
+        elif c == "(":
+            depth -= 1
+            if depth < 0:
+                return ""
+        elif depth == 0 and c in ";{}":
+            return ""
+        elif depth == 0 and (c.isalnum() or c == "_"):
+            k = i
+            while k >= a and (text[k].isalnum() or text[k] == "_"):
+                k -= 1
+            word = text[k + 1:i + 1].lower()
+            if word in ("for", "while", "foreach", "if", "switch", "else", "do"):
+                return word
+            i = k
+            continue
+        i -= 1
+    return ""
+
+
+def _block_keyword(text, a, ob):
+    """The keyword that opens the block whose `{` is at `ob`: `if`, `else`, `for`, `switch`, ... or ""."""
+    j = ob - 1
+    while j >= a and text[j] in " \t\r\n":
+        j -= 1
+    if j < a:
+        return ""
+    if text[j] == ")":
+        return _header_keyword(text, a, j)
+    return _word_before(text, a, j)
+
+
+def _block_stack(text, a, b, off):
+    """The open-brace offsets that enclose `off`, innermost last -- a brace walk over the masked buffer."""
+    stack = []
+    i = a
+    limit = min(off, b)
+    while i < limit:
+        c = text[i]
+        if c == "{":
+            stack.append(i)
+        elif c == "}" and stack:
+            stack.pop()
+        i += 1
+    return stack
+
+
+def enclosing_construct(text, a, off, b=None):
+    """How a `continue` that is no then-arm's last statement is reached: `else-body`, `loop-body`, `switch-arm`.
+
+    A `continue` is classified `other` when its then-block test fails, and the three possible spellings are an
+    `else` arm's whole body (`else continue;`, `else { continue; }`), a loop body's own statement, and a `switch`
+    case arm's statement. Two readings settle it: the word in front of the statement (`else`, or a loop header whose
+    unbraced body it is), and the innermost brace block that holds it -- an `else` block, a loop body or a `switch`
+    body. The innermost block wins over an outer one, so a `continue` at the tail of a `for` body inside an
+    `if` chain is the loop's own.
+    """
+    b = len(text) if b is None else b
+    j = off - 1
+    while j >= a and text[j] in " \t\r\n":
+        j -= 1
+    if j >= a:
+        word = _header_keyword(text, a, j) if text[j] == ")" else _word_before(text, a, j)
+        if word == "else":
+            return "else-body"
+        if word in LOOP_WORDS:
+            return "loop-body"
+    for ob in reversed(_block_stack(text, a, b, off)):
+        kw = _block_keyword(text, a, ob)
+        if kw == "else":
+            return "else-body"
+        if kw in LOOP_WORDS:
+            return "loop-body"
+        if kw == "switch":
+            return "switch-arm"
+        if kw == "if":
+            break          # a then-block that holds it and did not read as one is no construct of its own
+    return "other"
+
+
+def enclosing_loop(text, a, off, b=None):
+    """The innermost loop keyword enclosing `off` -- `for`, `while`, `foreach`, `do`, or "" when none does."""
+    b = len(text) if b is None else b
+    j = off - 1
+    while j >= a and text[j] in " \t\r\n":
+        j -= 1
+    if j >= a and text[j] == ")":
+        kw = _header_keyword(text, a, j)      # an unbraced single-statement body: `for (...) continue;`
+        if kw in ("for", "while", "foreach"):
+            return kw
+    for ob in reversed(_block_stack(text, a, b, off)):
+        kw = _block_keyword(text, a, ob)
+        if kw in LOOP_WORDS:
+            return kw
+    return ""
+
+
+def continue_sites_detail(text, dead, a=0, b=None):
+    """`[(offset, kind, enclosing, loop)]` -- `continue_sites` with each site's construct and enclosing loop."""
+    b = len(text) if b is None else b
+    out = []
+    for off, kind in continue_sites(text, dead, a, b):
+        base = kind[:-5] if kind.endswith("_dead") else kind
+        enc = "then-block" if base in ("bare", "block") else enclosing_construct(text, a, off, b)
+        out.append((off, kind, enc, enclosing_loop(text, a, off, b)))
+    return out
+
+
+def continue_site_rows(system_dir):
+    """`(rows, census)` -- every `continue` statement in the shipped text, named by function, offset and construct.
+
+    This is the artifact `inventory/text_branch_functions.csv` cannot be: that file counts a body's `continue`
+    kinds, so the three sites that are no then-block's last statement had no name. One row per site is what says
+    *which* statement each arm the landing rules read belongs to.
+    """
+    pst = load_tool("pkg_script_text", "pkg-script-text.py")
+    ctb = ctb_tool()
+    rows = []
+    census = collections.Counter()
+    for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
+        pkg = Package(os.path.join(system_dir, fname))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        package = fname[:-2]
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            text = pst.script_text(pkg, exp)
+            if not text:
+                continue
+            live, _comments = mask(text)
+            dead, _parts = guard_map(live)
+            cls = pkg.name(exp["name"])
+            ms = list(ctb.FUNC.finditer(live))
+            seen = collections.Counter()
+            for k, m in enumerate(ms):
+                limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
+                span = ctb.body_span(live, m.end(), limit)
+                if span is None:
+                    continue
+                name = m.group(1).lower()
+                decl = seen[name]
+                seen[name] += 1
+                for off, kind, enc, loop in continue_sites_detail(live, dead, span[0], span[1]):
+                    base = kind[:-5] if kind.endswith("_dead") else kind
+                    for key in ("sites", base, enc, "loop_" + (loop or "none")):
+                        census[key] += 1
+                    rows.append({"package": package, "class": cls, "function": name, "decl": decl,
+                                 "offset": "0x%05x" % off, "line": live.count("\n", 0, off) + 1,
+                                 "kind": kind, "enclosing": enc, "loop": loop,
+                                 "note": "" if base != "other" else "no then-arm"})
+    return rows, census
 
 
 def function_bodies(live, dead=None):
@@ -1253,7 +1475,13 @@ def func_doc_block(rows):
            "\n**The shortfall is placed, one `continue` statement per arm.** Over the bodies the join shares there are "
            "**{cont_bare}** `if (X) continue;` (the whole then-block is the continue), **{cont_block}** "
            "`if (X) {{ …; continue; }}` (the then-block holds statements in front of it) and **{cont_other}** "
-           "`continue` that is not a then-block's last statement at all. The landing rules read the first form, "
+           "`continue` that is not a then-block's last statement at all -- and those three are an **`else` arm's "
+           "whole body**, not a switch arm's: `else continue;` twice in `AccessControl.checkippolicy` and "
+           "`else {{ continue; }}` once in `VoiceSelector.searchvoices`, each inside a `for` "
+           "(`inventory/continue_sites.csv`, `tools/text-branches.py --continue-sites`). `if (X) y; else continue;` "
+           "compiles exactly as `if (X) y; else z;` does, so the else is the arm and the `continue` is the statement "
+           "it holds -- the mirror of a bare then-arm, which is why no arm opens here. The landing rules read the "
+           "first form, "
            "because its then-arm is the single `Jump` they test; the second writes the same three tokens with a "
            "longer arm, so it is what the record's extra arms are. Of the **{else_short}** short bodies "
            "**{place_exact}** carry exactly one block-bodied `continue` per arm, **{place_text_ahead}** carry one "
@@ -1412,6 +1640,88 @@ def check_functions(class_path=CSV_PATH, func_path=FUNC_CSV_PATH):
     print("ok   text-branches: the per-function artifact reconciles with the class artifact on all %d classes, "
           "%d terms outside a body and %d unresolved jumps" % (joined, outside, unresolved))
     return 0
+
+
+def cont_census(rows, key):
+    for r in rows:
+        if r.get("kind") == "census" and r.get("note") == CONT_NOTE.get(key):
+            return int(r.get("count") or 0)
+    return 0
+
+
+def check_continue_sites(path=CONT_CSV_PATH, func_path=FUNC_CSV_PATH):
+    """The site artifact and the per-body counts are one census at two depths, so both must agree.
+
+    Four identities, none needing the dump: every `bare`/`block` site is inside a then-block and no `other` site
+    is; every site sits inside a loop (a `continue` outside one does not compile); the rows' offsets are strictly
+    increasing inside a function declaration, so a re-walk cannot shuffle them; and the site census sums to the
+    `text_continue_bare`/`_block`/`_other` columns of `inventory/text_branch_functions.csv`.
+    """
+    if not os.path.exists(path):
+        print("FAIL text-branches: %s is missing" % path)
+        return 1
+    rows = read_csv(path)
+    sites = [r for r in rows if r.get("kind") != "census"]
+    bad = []
+    per = collections.Counter()
+    last = {}
+    for r in sites:
+        kind = r.get("kind") or ""
+        base = kind[:-5] if kind.endswith("_dead") else kind
+        enc = r.get("enclosing") or ""
+        if base not in ("bare", "block", "other"):
+            bad.append("%s.%s kind %r" % (r.get("class"), r.get("function"), kind))
+            continue
+        per[base] += 1
+        per[enc] += 1
+        if (base in ("bare", "block")) != (enc == "then-block"):
+            bad.append("%s.%s line %s: kind %s has enclosing %r" % (r.get("class"), r.get("function"),
+                                                                   r.get("line"), base, enc))
+        if not (r.get("loop") or ""):
+            bad.append("%s.%s line %s: no enclosing loop" % (r.get("class"), r.get("function"), r.get("line")))
+        key = (r.get("package"), r.get("class"), r.get("function"), r.get("decl"))
+        off = int(r.get("offset") or "0", 16) if (r.get("offset") or "").startswith("0x") else -1
+        if off < 0:
+            bad.append("%s.%s: offset %r is not a hex address" % (r.get("class"), r.get("function"), r.get("offset")))
+        elif key in last and off <= last[key]:
+            bad.append("%s.%s: offsets are not increasing (%s after 0x%05x)"
+                       % (r.get("class"), r.get("function"), r.get("offset"), last[key]))
+        last[key] = max(last.get(key, -1), off)
+    for key in ("bare", "block", "other"):
+        if cont_census(rows, key) != per[key]:
+            bad.append("the %s census row says %d, the site rows %d" % (key, cont_census(rows, key), per[key]))
+    if cont_census(rows, "then-block") != per["bare"] + per["block"]:
+        bad.append("the then-block census row does not sum the bare and block sites")
+    if cont_census(rows, "sites") != len(sites):
+        bad.append("the sites census row says %d, the artifact holds %d" % (cont_census(rows, "sites"), len(sites)))
+    fns = read_csv(func_path) if os.path.exists(func_path) else []
+    for key in ("bare", "block", "other"):
+        col = sum(int(r.get("text_continue_" + key) or 0) for r in fns if r.get("package") != "census")
+        if col != per[key]:
+            bad.append("`%s`: the site artifact has %d, the per-function rows %d" % (key, per[key], col))
+    if sum(int(r.get("text_continue_dead") or 0) for r in fns if r.get("package") != "census") != \
+            sum(1 for r in sites if (r.get("kind") or "").endswith("_dead")):
+        bad.append("the dead `continue` counts disagree between the two artifacts")
+    if bad:
+        for line in bad[:20]:
+            print("FAIL text-branches: %s" % line)
+        print("FAIL text-branches: %d disagreement(s) in inventory/continue_sites.csv" % len(bad))
+        return 1
+    print("ok   text-branches: %d `continue` sites named, %d bare + %d block + %d other, all inside a loop"
+          % (len(sites), per["bare"], per["block"], per["other"]))
+    return 0
+
+
+def render_continue(rows, census):
+    fh = io.StringIO()
+    w = csv.DictWriter(fh, fieldnames=CONT_FIELDS, lineterminator="\n", extrasaction="ignore")
+    w.writeheader()
+    for r in rows:
+        w.writerow({k: r.get(k, "") for k in CONT_FIELDS})
+    for key in CONT_ORDER:
+        if census[key]:
+            w.writerow({"kind": "census", "note": CONT_NOTE[key], "count": census[key]})
+    return fh.getvalue()
 
 
 # --- rendering -------------------------------------------------------------------------------------
@@ -1830,6 +2140,23 @@ def selftest():
     if continue_sites(mask("function G() { if (x) /* y */ continue; }")[0], None)[0][1] != "bare":
         print("FAIL text-branches: a comment in front of a `continue` read as a statement")
         return 1
+    # The construct column: the loop body's own `continue` is named, and every site is inside the `for`.
+    cdet = continue_sites_detail(clive, cdead)
+    enc = collections.Counter(e for _o, k, e, _l in cdet if not k.endswith("_dead"))
+    if (enc["then-block"], enc["loop-body"], enc["else-body"], enc["switch-arm"]) != (3, 1, 0, 0):
+        print("FAIL text-branches: the construct column read %r" % dict(enc))
+        return 1
+    if collections.Counter(l for _o, _k, _e, l in cdet) != collections.Counter({u"for": 4}):
+        print("FAIL text-branches: the enclosing loop read %r" % dict(collections.Counter(
+            l for _o, _k, _e, l in cdet)))
+        return 1
+    # An `else` arm's own body and a `switch` case arm's statement are named as themselves, not as the loop's.
+    esrc = mask("function H(int n) { for (i = 0; i < 2; i++) { if (a) b(); else continue;"
+                " switch (n) { case 1: continue; default: break; } continue; } }")[0]
+    eenc = collections.Counter(e for _o, k, e, _l in continue_sites_detail(esrc, None) if k == "other")
+    if (eenc["else-body"], eenc["switch-arm"], eenc["loop-body"]) != (1, 1, 1):
+        print("FAIL text-branches: the `other` constructs read %r" % dict(eenc))
+        return 1
     fns, names = function_else(mask("function Exact() { if (a) b(); else c(); }\n"
                                     "function Short() { if (a) b(); }\n"
                                     "function Bare();\n")[0])[:2]
@@ -1941,6 +2268,12 @@ def main():
     ap.add_argument("--check-doc", metavar="PAGE", help="fail when either block is stale")
     ap.add_argument("--check-functions", action="store_true",
                     help="the two artifacts reconcile; no dump, writes nothing")
+    ap.add_argument("--continue-sites", action="store_true",
+                    help="also name every `continue` site (needs --system)")
+    ap.add_argument("--continue-out", default=CONT_CSV_PATH,
+                    help="the site artifact (default inventory/continue_sites.csv)")
+    ap.add_argument("--check-continue-sites", action="store_true",
+                    help="the site artifact reconciles with the per-function counts; no dump, writes nothing")
     ap.add_argument("--report", action="store_true", help="print the census, no write")
     ap.add_argument("--check", action="store_true", help="synthetic self-test; needs no dump and writes nothing")
     args = ap.parse_args()
@@ -1948,6 +2281,16 @@ def main():
         return selftest()
     if args.check_functions:
         return check_functions(args.out, args.functions_out)
+    if args.check_continue_sites:
+        return check_continue_sites(args.continue_out, args.functions_out)
+    if args.continue_sites:
+        if not args.system:
+            ap.error("--continue-sites needs --system")
+        cont_rows, cont_census_got = continue_site_rows(args.system)
+        with open(args.continue_out, "w", encoding="utf-8", newline="") as fh:
+            fh.write(render_continue(cont_rows, cont_census_got))
+        print("wrote %s (%d rows)" % (args.continue_out, len(cont_rows)))
+        return 0
     if args.check_doc:
         frows = read_csv(args.functions_out) if os.path.exists(args.functions_out) else []
         return check_doc(args.check_doc, read_csv(args.out), frows)
