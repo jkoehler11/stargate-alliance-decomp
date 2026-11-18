@@ -1102,6 +1102,173 @@ class,StargateVehicles,GoauldDroneBot,,,,,,,agree,,,delta,0,"text 3 in-state (+0
 class,StargateVehicles,GoauldKillerDroidBot,,,,,,,agree,,,delta,0,"text 1 in-state (+0 computed), 0 class-level (+0 computed); build 1 / 0"
 class,StargateVehicles,HoverTankPilotBot,,,,,,,agree,,,delta,0,"text 0 in-state (+0 computed), 1 class-level (+0 computed); build 0 / 1"
 class,StargateVehicles,TeltakBot,,,,,,,agree,,,delta,0,"text 5 in-state (+0 computed), 1 class-level (+1 computed); build 5 / 2"
+entry,AmbientCreatures,CirclingBirds,Circling,,,0000,LabelTable,,Begin,,,,0,
+entry,AmbientCreatures,HerdAnimal,grazing,,,0000,LabelTable,,Begin,,,,0,
+entry,AmbientCreatures,HerdAnimal,stampeding,,,0000,LabelTable,,Begin,,,,0,
+entry,AmbientCreatures,MigratingBirds,Migrating,,,0000,LabelTable,,Begin,,,,0,
+entry,AmbientCreatures,TransientAmbientCreature,Wandering,,,0000,LabelTable,,Begin,,,,0,
+entry,AmbientCreatures,TransientAmbientPawn,Dying,,,0000,LabelTable,,Dead,,,,0,
+entry,AmbientCreatures,TransientAmbientPawn,Wandering,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,KHinge,ControlMotor,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,KHinge,ToggleMotor,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,Mover,BumpButton,,,0000,LabelTable,,Open,,,,0,
+entry,Engine,Mover,ConstantLoop,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,Mover,LoopMove,,,0000,LabelTable,,Running,,,,0,
+entry,Engine,Mover,OpenTimedMover,,,0000,LabelTable,,Open,,,,0,
+entry,Engine,Mover,TriggerAdvance,,,0000,LabelTable,,Open,,,,0,
+entry,Engine,Mover,TriggerControl,,,0000,LabelTable,,Open,,,,0,
+entry,Engine,Mover,TriggerPound,,,0000,LabelTable,,Open,,,,0,
+entry,Engine,Mover,TriggerToggle,,,0000,LabelTable,,Open,,,,0,
+entry,Engine,Pawn,Dying,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,Pickup,Pickup,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,Pickup,Sleeping,,,0000,LabelTable,,DelayedSpawn,,,,0,
+entry,Engine,PlayerController,Dead,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,PlayerController,GameEnded,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,PlayerController,PlayerTurreting,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,PlayerController,PlayerWalking,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,PlayerController,RoundEnded,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,Screenplay,RunScreenplay,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,Weapon,Idle,,,0000,LabelTable,,Begin,,,,0,
+entry,Engine,Weapon,NormalFire,,,0000,LabelTable,,Begin,,,,0,
+entry,GamePlay,Dispatcher,Dispatch,,,0000,LabelTable,,Begin,,,,0,
+entry,GamePlay,ScriptedController,Broken,,,0000,LabelTable,,Begin,,,,0,
+entry,GamePlay,ScriptedController,Scripting,,,0000,LabelTable,,Begin,,,,0,
+entry,GamePlay,ScriptedTriggerController,Scripting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,Binoculars,Idle,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,BotScarab,Buried,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,BotScarab,Mellee,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,C4Weapon,Idle,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,CrystalTunnelLayer,Closing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,CrystalTunnelLayer,Opening,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,GoaAutoTurretMK2Controller,Deactivated,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,HaakenBot,ShieldCover,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,HaakenLeaderBot,SeizeMindControl,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,HaakenMK1Weapon,Clubbing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,InteractionHands,Idle,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,JaffaBotHeavy,Mellee,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,JaffaBotHeavy,MelleeCharge,,,0000,LabelTable,,DoCharge,,,,0,
+entry,StargateContent,JaffaBotLight,Mellee,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,JaffaBotLight,Sniper,,,0000,LabelTable,,NeedToDodge,,,,0,
+entry,StargateContent,JaffaBotMedium,Mellee,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,MindControlledBot,MindControlGuard,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBossBot,Attacking,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBossBot,Guarding,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBossBot,Nesting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBossBot,Protected,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBossBot,Swiping,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBot,Attacking,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBot,Landing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroBot,Searching,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroClaws,Active,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroClaws,ClientFinishing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,PteroClaws,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateContent,ReetouBot,Combat,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouBot,Escape,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouBot,Hunt,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouBot,Melee,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouBot,Sneak,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouBot,Waiting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouDevice,Reloading,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouDevice,SummoningReetou,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouMeleeAttack,Active,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouMeleeAttack,ClientFinishing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouMeleeAttack,NormalFire,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,ReetouProtectorBot,Attacking,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateContent,SuperSoldierBot,ChasePlayer,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotBase,Dead,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotBase,RunAwayFromFearSpot,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,ActivateAlarm,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,AlertSquad,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,BotBurning,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,BotGunning,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,CoveredAttack,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,CoveredHide,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,CoveredMove,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,Dead,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,DriveHunting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,DriveRamming,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,DriveRanged,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,EnemySpotted,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,FallbackMove,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,FindAir,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,Flee,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,FormationCombat,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,GetInFormation,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,Hunt,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,InteractUseObject,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,Mellee,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,MoveInFormation,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,MoveToHackingPos,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,Ranged,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,RunToTurret,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,RunToVehicle,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,ShootFromCover,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,StaggeredAssist,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,StaggeredMove,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,Suspicious,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,TakePoint,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,Waiting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotEnemy,WaitingForFormation,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotGuide,Follow,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotGuide,ReturnToPlayer,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotLite,Dead,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotLite,Hunting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotLite,TacticalMove,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotRep,Hunt,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotRep,MoveInFormation,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotRep,TakePoint,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotRep,Waiting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotSG,ConcentrateFire,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotSG,CoveredAttack,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotSG,RestFormation,,,0000,LabelTable,,DoStrafe,,,,0,
+entry,StargateGame,BotSG,Roaming,,,0000,LabelTable,,DoStrafe,,,,0,
+entry,StargateGame,BotSG,Stakeout,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,BotSG,TacticalMove,,,0000,LabelTable,,TacticalTick,,,,0,
+entry,StargateGame,BotSG,Waiting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,GameObject,home,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,KeyPickup,Sleeping,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateGame,WillowWhisp,Pathing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,Ascending,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,BombingRun,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,CarpetBombing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,Chasing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,DescendToTransportHeight,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,GroundAttack,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,Landing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,OrderedLanding,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,RingTransport,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,Searching,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,AlkeshBomberBot,Waiting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,APCM60Gun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateVehicles,DeathGliderBot,Attacking,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,DeathGliderBot,PullUpAttacking,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,DeathGliderBot,Searching,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,DeathGliderBot,StallTurn,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,DeathGliderBot,Waiting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,DeathGliderGun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateVehicles,GatlingGun,WaitingForBarrel,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,GoauldDrone,Exploding,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,GoauldDroneBot,Attacking,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,GoauldDroneBot,Pursuit,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,GoauldDroneBot,Searching,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,GoauldKillerDroid,Exploding,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,HoverCraftFixedGun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateVehicles,HoverCraftTurretGun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateVehicles,HoverTankCannon,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateVehicles,HoverTankPilotBot,TroopDrop,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,M60TurretGun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateVehicles,SemektetMortarGun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,StargateVehicles,StargateCar,Correcting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TeltakBot,Ascending,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TeltakBot,DescendToTransportHeight,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TeltakBot,Landing,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TeltakBot,OrderedLanding,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TeltakBot,RingTransport,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TeltakBot,Searching,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TeltakBot,Waiting,,,0000,LabelTable,,Begin,,,,0,
+entry,StargateVehicles,TempleTurretGun,NormalFire,,,0000,LabelTable,,Refire,,,,0,
+entry,UWindow,WindowConsole,UWindow,,,0000,LabelTable,,Begin,,,,0,
+label,Engine,Mover,TriggerPound,,,,GotoLabel,,text-none,,,delta,1,"build 1 `Open`, and the state's own text spells no `Goto`"
 census,,,,,,,,,,,,payloads_seen,11687,`Function` payloads whose header ends on `FriendlyName`
 census,,,,,,,,,,,,payloads_walked,11687,"of those, whose script walks end to end"
 census,,,,,,,,,,,,sites,1067,`GotoState`/`GotoLabel`/`Goto` tokens in those scripts
@@ -1164,13 +1331,28 @@ census,,,,,,,,,,,,labels_outside_table,0,"of those, a label no table of that sta
 census,,,,,,,,,,,,label_states,114,states whose own code jumps to a label
 census,,,,,,,,,,,,entry_labels,111,"`GotoState('X', 'Label')` sites with a literal entry label"
 census,,,,,,,,,,,,entry_labels_literal_target,105,"of those, whose state target is a `NameConst` too"
-census,,,,,,,,,,,,entry_labels_in_table,99,"of those, the label an entry of the target state's own table"
+census,,,,,,,,,,,,entry_labels_in_table,103,"of those, the label an entry of the target state's own table"
+census,,,,,,,,,,,,entry_labels_via_state_super,4,"of those, resolved through the target state's own `Super` -- its code is the state it inherits from"
 census,,,,,,,,,,,,entry_labels_absent,1,"of those, a label the target state's table does not name"
-census,,,,,,,,,,,,entry_labels_no_code,5,"of those, whose target state carries a record and no table"
+census,,,,,,,,,,,,entry_labels_no_code,1,"of those, whose target state carries a record and no table"
+census,,,,,,,,,,,,record_states,387,`State` exports whose own payload is a record with no label table
+census,,,,,,,,,,,,record_states_super,52,"of those, that name a `Super` state"
+census,,,,,,,,,,,,record_states_inherited_code,24,"of those, whose `Super` chain reaches a state with a table -- the code they run"
+census,,,,,,,,,,,,entry_points,166,states whose table names an entry point
+census,,,,,,,,,,,,entry_points_at_zero,166,"of those, whose entry point is the first byte of code (offset 0)"
+census,,,,,,,,,,,,entry_points_begin,143,"of those, called `Begin`"
+census,,,,,,,,,,,,entry_points_alias,6,"of those, whose first byte carries two label names -- the entry point is a set there"
+census,,,,,,,,,,,,label_jumps_to_entry,103,`GotoLabel` sites whose operand is their own state's entry point -- a jump back to the top of the block
 census,,,,,,,,,,,,text_label_states,101,states whose text spells a `Goto('label')`
 census,,,,,,,,,,,,text_label_jumps,183,"`Goto('label')` calls in those states, from the text"
 census,,,,,,,,,,,,ai_label_states,101,states both reads cover
 census,,,,,,,,,,,,ai_label_jumps,183,`GotoLabel` sites in those states
-census,,,,,,,,,,,,label_build_only_states,13,states the build places a label jump in that the text census does not measure
-census,,,,,,,,,,,,label_build_only_jumps,13,label jumps in those states
 census,,,,,,,,,,,,ai_label_agree,101,"of those, the states whose text and build name the same labels as often"
+census,,,,,,,,,,,,extra_label_states,12,states outside `ai_states.csv` whose own class text is read here for the join
+census,,,,,,,,,,,,extra_label_jumps,12,"`Goto('label')` calls in those states, from the text"
+census,,,,,,,,,,,,label_join_states,113,states with a `GotoLabel` site and a text half
+census,,,,,,,,,,,,label_join_agree,113,"of those, the states whose text and build name the same labels as often"
+census,,,,,,,,,,,,label_join_jumps,195,`GotoLabel` sites the join covers
+census,,,,,,,,,,,,label_build_only_states,1,states the build places a label jump in with no text half at all
+census,,,,,,,,,,,,label_build_only_jumps,1,label jumps in those states
+census,,,,,,,,,,,,label_text_only_states,0,states whose text spells a jump the build carries no `GotoLabel` for

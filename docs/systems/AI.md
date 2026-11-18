@@ -486,7 +486,7 @@ Where the call sits is a second split: over the whole corpus **432** sites are i
 
 **196** of the corpus's sites are `GotoLabel` (`0x0d`), and every one of them is in state code: **0** sits in any `Function` payload, which is why the branch census could report the token as one the build never emits. They name **36** distinct labels.
 
-The labels those jumps name are the text's own, and the two reads agree to the site: of the **165** states `inventory/ai_states.csv` measures, **101** spell a `Goto('label')` and **183** label jumps sit in exactly those states -- the text's **183** calls against the build's **183** sites -- with **101** of the **101** naming the same labels as often as the text does. The **13** sites in the **13** other states sit outside that census (a `Mover`, the guns' `NormalFire`), so they are counted here and not joined.
+The labels those jumps name are the text's own, and the join now covers the whole corpus: of the **114** states that carry a `GotoLabel` site, **101** are `ai_states.csv`'s (**183** text calls against **183** sites, **101** naming the same labels as often) and **12** sit outside that census -- the guns' `NormalFire`, a `Mover`, a pickup, a summoning loop and two ambient pawns -- where the class's own text is read for this join (**12** calls against **12** sites). **All **113** joined states** name the same labels as often as the text does; **1** state carries a jump its text does not spell, and **0** text `Goto` has no site.
 
 | label | jumps | states | classes |
 | --- | ---: | --- | --- |
@@ -505,7 +505,13 @@ The labels those jumps name are the text's own, and the two reads agree to the s
 
 Every label jump names a label its own state's table carries: **196 of 196** operands land on an entry of that `LabelTable` and **0** names a label no table of the state carries. The walk already ends on that table, so its entries are one decode beside it rather than a second read.
 
-**111** `GotoState` sites also pass an entry label, and it is the *target's* label: **105** of them name a literal state too, and resolved through the class chain **99** of those name an entry of the target state's table, **1** name a label that table does not carry, and **5** name a state whose payload is a record with no table at all (inherited code, entry point elsewhere).
+**111** `GotoState` sites also pass an entry label, and it is the *target's* label: **105** of them name a literal state too, and resolved through the class chain and then through the target state's own `Super` **103** of those name an entry of that state's table (**4** of them through `Super` -- the timed `Mover` states, whose payload is a record and whose code is `OpenTimedMover`'s), **1** names a label the table does not carry, and **1** names a state no chain reaches a table for.
+
+A record-only payload is not proof of no code. Of the **387** `State` exports whose payload is a record with no table, **52** name a `Super` state and **24** reach a table through it: the code they run is the state they inherit from, which is the mechanism `BotSG.InvisibleRest extends RestFormation` shows in the text and the export table shows for every one of them.
+
+The entry point is a name the table carries, not a convention: **166** of the **166** tables put their entry at the first byte of code, **143** call it `Begin` and the other **23** the statement the block starts at (`Refire` ×9, `Open` ×6, `DoStrafe` ×2, `Dead` ×1, `DelayedSpawn` ×1, `DoCharge` ×1, `NeedToDodge` ×1, `Running` ×1, `TacticalTick` ×1). In **6** of them the first byte carries two names, so entering the state and jumping to its top are the same address. **103** of the **196** label jumps name their own state's entry point that way -- a jump back to the top of the block -- and the rest jump forward inside it.
+
+The states whose label jumps the two reads count differently: `Mover.TriggerPound` -- build 1 `Open`, and the state's own text spells no `Goto`.
 
 The states the `GotoState` sites enter:
 
@@ -556,40 +562,55 @@ reading that stood here was the census's own blind spot.
 ### The label join: every jump names a label its own table holds
 
 The `GotoLabel` census and the text turn out to be the same population, and they agree to the label.
-`inventory/ai_states.csv` now spells the labels a state's `Goto('name')` calls name (`gotos_label_names`) beside the
-labels its body declares (`label_names`), so the join is a read off two artifacts rather than a second pass over
-the text: over the **165** states that census measures, **101** spell a label jump and the build carries **183**
+`inventory/ai_states.csv` spells the labels a state's `Goto('name')` calls name (`gotos_label_names`) beside the
+labels its body declares (`label_names`), so the join is a read off two artifacts rather than a second pass over the
+text: over the **165** states that census measures, **101** spell a label jump and the build carries **183**
 `GotoLabel` sites in exactly those states -- **183** calls against **183** sites -- and all **101** name the same
-labels as often as the text does. The **13** sites in the **13** other states are outside that census rather than
-residues: seven are the `NormalFire` jump every gun and turret class makes (`WaitForRefire`, or `Begin` in
-`HoverCraftTurretGun` and `SemektetMortarGun`), and the rest are one engine `Mover` state, a `Pickup`, a
-`ReetouDevice` summoning loop, `WillowWhisp` and the two ambient pawns -- states outside the `AIController` subtree
-the text census walks, so they are counted and never compared.
+labels as often as the text does.
+
+The other **13** sites are in **13** states outside that census, and they are joined now, not only counted: the
+class that carries a site has its own `ScriptText` read for that state, so the same comparison runs on it. Twelve
+join to the label -- seven are the `NormalFire` jump every gun and turret class makes (`WaitForRefire`, or `Begin`
+in `HoverCraftTurretGun` and `SemektetMortarGun`), and the rest are one engine `Mover` state, a `Pickup`'s
+`Respawn`, a `ReetouDevice` summoning loop, `WillowWhisp.Pathing` and the two ambient pawns -- **12** text calls
+against **12** sites. The thirteenth is a divergence rather than a gap: `Mover.TriggerPound`'s shipped text spells
+the `Open:` label and leaves the state through `GotoState`, with no `Goto` in the body at all, while its compiled
+code jumps back to `Open`. So the join is **113 of 113** joined states to the site, and no state's text spells a
+jump the build does not carry.
 
 A jump's operand is not a dangling name: all **196** land on an entry of their own state's `LabelTable` -- the same
 decode the walk above already ends on, so the check costs one table read -- and **0** name a label no table of that
-state holds. The entry point is a name too: `Begin` in **143** of the **166** tables, and in the other **23**
-whatever the source called the statement it starts at (`Open`/`Close` in a `Mover`, `Refire` in a gun state), which
-is why the entry-label join below resolves by name instead of assuming `Begin`.
+state holds.
+
+The entry point is a name too, and it is the table's *first byte of code* in all **166** tables, not a convention:
+`Begin` in **143** of them, and in the other **23** whatever the source called the statement it starts at
+(`Refire` ×9, `Open` ×6, `DoStrafe` ×2, then `Dead`, `DelayedSpawn`, `DoCharge`, `NeedToDodge`, `Running` and
+`TacticalTick` once each), which is why the entry-label join below resolves by name instead of assuming `Begin`.
+**6** tables put *two* names on that first byte (`Begin` and `Turn` in `HaakenBot.ShieldCover`, `Begin` and
+`DoMove` in four more), so entering a state and jumping back to its top can be the same address -- and **103** of
+the **196** jumps do exactly that: they name their own state's entry point, a loop back to the top of the block,
+while the other 93 jump forward inside it.
 
 `GotoState` also takes an entry label -- `GotoState('Mellee', 'ContinueCharge')` -- and it belongs to the *target*
 state, not the caller's. **111** sites pass one, **105** of those name their state with a `NameConst` too, and
-resolved through the class chain (`inventory/classes.csv`) **99** name an entry of that state's table. The
-exceptions are three mechanisms rather than one residue:
+resolved through the class chain (`inventory/classes.csv`) and then through the target state's own `Super`, **103**
+of those name an entry of that state's table. The exceptions are two mechanisms rather than one residue:
 
+* **4** are the timed `Mover` states, and they are not a residue at all. Their payloads are 22-byte records, but the
+  `State` export's `Super` field names `OpenTimedMover` -- the sibling state that owns the `Open`/`Close` table --
+  so the `Open` entry resolves one state over, which is UE2's state-level inheritance and is in the export table
+  rather than in any text.
 * **1** names a label the target's table does not have: `TransientAmbientPawn.Wandering`'s
   `Controller.GotoState('Wandering','KeepGoing')` is spelled on *another object*, so the `Wandering` whose label it
   needs is the controller's, and the class's own state of that name carries `Begin` alone.
-* **4** name a state whose payload is a record with no table: `Mover`'s timed states (`StandOpenTimed`,
-  `BumpOpenTimed`, `TriggerOpenTimed`, entered from themselves and from `OpenTimedMover`) are states no class's text
-  declares and no payload carries code for, so their `Open` entry is not in any state code this census reads.
-* **1** is the same shape one class over: `GameInfo`'s `Dead` carries no table, so its `MPStart` entry has nothing
-  to resolve against.
+* **1** names a state no chain reaches a table for: `GameInfo.StartMatch` spells `GotoState('Dead', 'MPStart')`,
+  and `GameInfo`'s own text declares no states at all -- the `Dead` states belong to `Controller` and its
+  subclasses -- so `MPStart` is a label in a state this class does not carry.
 
-That leaves the state-level inheritance the class tree cannot see: of the **287** record-only states no ancestor
-declares, **1** spells `extends` at a sibling state of its own class that carries the code (`BotSG.InvisibleRest`
-extends `RestFormation`), which is why a record-only payload is not proof that a state has no code -- it can be one
-state over.
+That state-level link is the population, not the exception: of the **387** `State` exports whose payload is a record
+with no table, **52** name a `Super` state and **24** reach a table through it. So a record-only payload is not
+proof that a state has no code -- it can be one state over, which the text shows once (`BotSG.InvisibleRest`
+extends `RestFormation`) and the export table shows for twenty-four.
 
 ### Two melee bodies, and what "activate forced melee" would have been
 

@@ -4742,13 +4742,21 @@ census in a way its own definition, which did not survive, hid.
 (`gotos_label_names` for the labels a state's `Goto('name')` calls name, `label_names` for the ones its body
 declares): of the **165** states the text census measures, **101** spell a label jump and the build carries **183**
 `GotoLabel` sites in exactly those states -- the text's **183** calls against the build's **183** sites -- and
-**101 of 101** name the same labels as often as the text does, per state and per label. The **13** other sites are
+**101 of 101** name the same labels as often as the text does, per state and per label. The **13** other sites were
 states outside the `AIController` subtree (the guns' `NormalFire`, an engine `Mover`, a `Pickup`, `WillowWhisp`, the
-ambient pawns), counted and not compared. A jump's operand is a name the runtime can resolve: **196 of 196** land on
-an entry of their own state's `LabelTable`, and the table's entry point is `Begin` in **143** of **166** tables and
-something else in **23**. The entry-label half -- `GotoState('X','Label')`, **111** sites -- resolves through the
-class chain for **99** of the **105** that name a literal state; the exceptions are **1** call spelled on another
-object (`Controller.GotoState('Wandering','KeepGoing')`, whose label belongs to the receiver's state) and **5**
-targets whose payload is a record with no table (`Mover`'s timed states, `GameInfo.Dead`). One record-only state in
-the corpus inherits its code at the *state* level rather than the class level (`BotSG.InvisibleRest extends
-RestFormation`), which the class tree alone cannot show.
+ambient pawns) and they are joined now: the class carrying a site has its own `ScriptText` read for that state, so
+**12** of them join (**12** calls against **12** sites) and the thirteenth, `Mover.TriggerPound`, is a divergence --
+its text spells the `Open:` label and leaves through `GotoState` with no `Goto`, while its code jumps back to
+`Open`. A jump's operand is a name the runtime can resolve: **196 of 196** land on an entry of their own state's
+`LabelTable`; the table's entry point is the first byte of code in all **166** tables, `Begin` in **143** and the
+source's statement name in the other **23**, with **6** tables carrying two names on that byte -- and **103** of the
+**196** jumps name their own state's entry point, a loop back to the top. The entry-label half --
+`GotoState('X','Label')`, **111** sites -- resolves through the class chain and then through the target state's own
+`Super` for **103** of the **105** that name a literal state: the **4** timed `Mover` states are records whose
+`Super` is `OpenTimedMover`, which owns the table, so their `Open` entry resolves one state over. The two that do
+not are mechanisms, not residue: **1** call is spelled on another object (`Controller.GotoState('Wandering',
+'KeepGoing')`, whose label belongs to the receiver's state) and **1** names a state no chain carries (`GameInfo`'s
+`Dead`, whose `MPStart` label belongs to a state `GameInfo`'s own text never declares and no package exports).
+State-level inheritance is a population, not a case: of the **387** record-only `State` exports **52** name a
+`Super` state and **24** reach a table through it, which the class tree alone cannot show -- the text spells one of
+them (`BotSG.InvisibleRest extends RestFormation`).
