@@ -122,7 +122,7 @@ Two findings change how the rest of this page should be read.
   is what the tool does before it counts an edge.
 
 <!-- generated:ai-states -->
-**165 states over 36 classes: 22 declare a literal `GotoState`, 4 a dynamic one, 237 labels, 203 latent sleeps; the classes' own functions add 115 `GotoState` calls outside every state.**
+**165 states over 36 classes: 22 declare a literal `GotoState`, 4 a dynamic one, 237 labels, 203 latent sleeps; the classes' own functions add 115 `GotoState` calls outside every state, 4 of them computed.**
 | class | states in text | states in record | labels | `GotoState` |
 |---|---:|---:|---:|---:|
 | `AirborneTurretController` | 1 | 1 | 0 | 0 |
@@ -465,50 +465,68 @@ native frames -- so what a rebuild loses when it drops a handler is the behaviou
 argument is an expression has no name to read, and a class whose text is missing or disabled shows nothing at all.
 `tools/state-entry.py` asks the same question of the payloads -- every `GotoState` token in every script that
 disassembles end to end, with its target and its entry label resolved through the package's own **name table** (a
-compact index into it, not an object reference) -- so the two censuses can be quoted side by side.
+compact index into it, not an object reference) -- so the two censuses can be quoted side by side. A site lives in
+one of two export kinds: a **`Function`** payload, which is a method the class or a state declares, or a **`State`**
+payload, which is the state's own label-block code and needs `tools/state-code.py`'s record anchor before it can be
+walked at all (**166** of the **553** states carry a label table; the other **387** have no code). Both halves are
+read now, and every row's `scope` column says which one it came from.
 
     python3 tools/state-entry.py --system DUMP/System -o inventory/state_entry.csv
 
 <!-- generated:state-entry -->
-811 `GotoState` sites over 537 functions in 162 classes of the 11,687 scripts that walk end to end: **667** name their target with a `NameConst`, **109** name the null name (`GotoState('')`, which leaves the current state), **35** build it from an expression, **0** pass no argument at all, and **104** also pass an entry label (**1** of those computed).
+871 `GotoState` sites over 537 functions in 163 classes of the 11,687 scripts that walk end to end: **723** name their target with a `NameConst`, **110** name the null name (`GotoState('')`, which leaves the current state), **38** build it from an expression, **0** pass no argument at all, and **112** also pass an entry label (**1** of those computed).
 
-Where the call sits is a second split: over the whole corpus **372** sites are inside a state body and **439** are in a class-level function. Restricted to the **36** classes `inventory/ai_states.csv` measured -- the same classes read twice, so the two counts are a control and not two populations -- the bytecode has **86** in-state and **120** class-level sites where the text has **107** and **115**.
+Where the call sits is a second split: over the whole corpus **432** sites are inside a state and **439** are in a class-level function -- and the in-state half comes from two export kinds, **372** in a `Function` the state declares and **60** in the state's own code (its `State` payload), which this census did not walk before. Restricted to the **36** classes `inventory/ai_states.csv` measured -- the same classes read twice, so the counts are a control and not two populations -- the bytecode has **111** in-state sites (**86** in a function, **25** in state code) where the text spells **107**, and **120** class-level sites where the text spells **115** literal and **4** computed.
+
+**35** of those **36** classes agree to the site; the ones that do not are `BotScarab` (-1).
+
+**196** of the corpus's sites are `GotoLabel` (`0x0d`), and every one of them is in state code: **0** sits in any `Function` payload, which is why the branch census could report the token as one the build never emits. They name **36** distinct labels.
+
+The states the `GotoState` sites enter:
 
 | target | sites | classes |
 | --- | ---: | --- |
+| `ClientFinishing` | 56 | `APCM60Gun`, `DeathGliderGun`, `ExtreniteWeapon` |
 | `Idle` | 48 | `APCM60Gun`, `Binoculars`, `C4Weapon` |
-| `ClientFinishing` | 38 | `APCM60Gun`, `DeathGliderGun`, `ExtreniteWeapon` |
 | `DownWeapon` | 20 | `Binoculars`, `C4Weapon`, `ExtreniteWeapon` |
 | `NormalFire` | 20 | `APCM60Gun`, `DeathGliderGun`, `HoverCraftFixedGun` |
-| `Scripting` | 18 | `BotBase`, `BotEnemy`, `BotLite` |
+| `Scripting` | 19 | `BotBase`, `BotEnemy`, `BotLite` |
 | `Dead` | 16 | `Controller`, `GameInfo`, `PlayerController` |
 | `PlayerWalking` | 13 | `PlayerController`, `ProgressTrigger`, `StargatePawn` |
+| `Broken` | 12 | `BotBase`, `BotEnemy`, `BotLite` |
 | `Active` | 11 | `HoverCraft`, `Semektet`, `StargateWeapon` |
 | `Charging` | 11 | `ExtreniteWeapon`, `HANDOFLIGHT`, `HaakenMK1Weapon` |
 | `Dying` | 11 | `Controller`, `FishBase`, `Fragment` |
-| `Broken` | 9 | `BotBase`, `BotEnemy`, `BotLite` |
-| `Reloading` | 9 | `GRENADE`, `StargateWeapon`, `Weapon` |
-| `Spectating` | 8 | `GameInfo`, `PlayerController`, `SpecialEventTrigger` |
-| `Waiting` | 8 | `BotBase`, `BotEnemy`, `JaffaBase` |
+| `Waiting` | 11 | `BotBase`, `BotEnemy`, `JaffaBase` |
+| `Reloading` | 10 | `GRENADE`, `StargateWeapon`, `Weapon` |
+| `Hunt` | 9 | `BotEnemy`, `BotRep`, `JaffaBotHeavy` |
 
-The 35 computed-target sites are the population behind the page's "a state a native body or a `GotoState` with a computed argument enters": each one is a state this build can enter and the text cannot name.
+The 38 computed-target sites are the population behind the page's "a state a native body or a `GotoState` with a computed argument enters": each one is a state this build can enter and the text cannot name.
 
 <!-- /generated:state-entry -->
 
-The tool records `GotoState` and nothing else, on purpose. Opcode `0x0d` `GotoLabel` is in the operand table and
-**no walking script carries one**; a source `Goto('Begin')` is a call in no census here either -- `Object.GotoState`
-is `native(113)`, which is slot `0x71`, which is the token all the sites below carry, while
-`inventory/script_calls.csv` has no by-name call to `Goto` or `GotoState` at all. So a label jump is compiled into
-something this read does not see, and that is the next measurement rather than a negative.
+The `GotoLabel` count corrects what the `Function`-only walk could say. Opcode `0x0d` is in the operand table and
+this census used to report that **no** walking script carried one -- a fact about its export filter, not about the
+build: **196** sites carry it, every one of them in state code and **none** in a `Function` payload, and they name
+**36** distinct labels. So a source `Goto('Begin')` does compile to a token, and it is the one
+`tools/jump-census.py` -- which also walks `Function` exports only -- cannot see. What is still a negative is the
+by-name half: `Object.GotoState` is `native(113)`, slot `0x71`, the token the entries above carry, and
+`inventory/script_calls.csv` has no by-name call to `Goto` or `GotoState` at all, because both compile to opcodes
+rather than to a script call.
 
 The null name is the clearest case, and it is why the table has no `None` row. **109** sites name the name table's
 entry 0, which every one of the eighteen packages spells `None` and which the source writes `GotoState('')` -- a call
 that *leaves* the current state rather than entering one. The compiled `Actor.StartInterpolation` is exactly that
 pair: `NameConst 00` in its payload, `GotoState('')` in the class's own text. The shipped text spells that form
-**126** times, and the AI classes show the same direction: **95** in-state and **127** class-level `GotoState` calls
-in the text against **86** and **120** in the bytecode. Both differences put the text 6-16% ahead of the compiled
-build, the width the earlier notes found on commented and guarded code -- so the bytecode is the floor: a call it
-does not carry is not a call the build makes, whatever the shipped text still spells.
+**126** times.
+
+The 36 AI classes used to read as a text 6-16% ahead of the build (**95** in-state and **127** class-level calls
+against **86** and **120**), and that was the unwalked half rather than dead text: with the state payloads read the
+build carries **111** in-state `GotoState` sites (**86** in a function the state declares, **25** in the state's own
+code) against the text's **107**, and **120** class-level against the text's **119** (**115** literal, **4**
+computed). The direction is the one the plan assumed -- the bytecode is the floor, and here it is four calls above
+the text inside states and one above it at class level -- but the sizes are the corrected ones, and the text-ahead
+reading that stood here was the census's own blind spot.
 
 ### Two melee bodies, and what "activate forced melee" would have been
 

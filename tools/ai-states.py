@@ -45,7 +45,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COLUMNS = ["package", "class", "state", "parent", "auto", "ignores", "labels", "functions",
            "gotos", "gotos_dynamic", "gotos_label", "sleeps", "lines", "targets", "class_gotos",
-           "class_targets", "record_states"]
+           "class_gotos_dynamic", "class_targets", "record_states"]
 DOC_MARK = ("<!-- generated:ai-states -->", "<!-- /generated:ai-states -->")
 
 def ctb_module():
@@ -210,6 +210,11 @@ def states_in_text(text, package, cls, record_states):
     class_targets = sorted({t[0] for t in GOTO_STATE.findall(outside) if t[0]})
     for row in rows:
         row["class_gotos"] = len(GOTO_STATE.findall(outside))
+        # The state bodies' `gotos_dynamic` has no class-level sibling: `GotoState(Target)` in a class-level
+        # function was counted by neither `gotos` (a literal pattern) nor `class_gotos` (the same pattern), so the
+        # text's computed population read as four when it is eight. The bytecode census compares per place, so
+        # this column has to exist for the class-level half to be quotable.
+        row["class_gotos_dynamic"] = len(GOTO_ANY.findall(outside)) - len(GOTO_STATE.findall(outside))
         row["class_targets"] = " ".join(class_targets)
     return rows
 
@@ -305,7 +310,7 @@ def read_csv(path):
     with open(path, newline="", encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
             for key in ("ignores", "labels", "functions", "gotos", "gotos_dynamic", "gotos_label", "sleeps", "lines",
-                        "class_gotos", "record_states"):
+                        "class_gotos", "class_gotos_dynamic", "record_states"):
                 row[key] = int(row[key] or 0)
             out.append(row)
     return out
@@ -388,9 +393,11 @@ def doc_block(rows, table):
     for row in rows:
         per_class_gotos[row["class"]] = row["class_gotos"]
     lines = ["", "**%d states over %d classes: %d declare a literal `GotoState`, %d a dynamic one, %d labels, "
-                  "%d latent sleeps; the classes' own functions add %d `GotoState` calls outside every state.**"
+                  "%d latent sleeps; the classes' own functions add %d `GotoState` calls outside every state, "
+                  "%d of them computed.**"
              % (len(rows), len(order), len({r["class"] for r in rows if r["gotos"]}), dynamic,
-                sum(r["labels"] for r in rows), sum(r["sleeps"] for r in rows), sum(per_class_gotos.values())),
+                sum(r["labels"] for r in rows), sum(r["sleeps"] for r in rows), sum(per_class_gotos.values()),
+                sum({r["class"]: r["class_gotos_dynamic"] for r in rows}.values())),
              "| class | states in text | states in record | labels | `GotoState` |",
              "|---|---:|---:|---:|---:|"]
     for cls in order:
