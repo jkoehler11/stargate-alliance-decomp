@@ -15,10 +15,14 @@ This walks the same scripts and measures that extent:
   measured from where the arms' `break` jumps land, not assumed.
 
 An arm's last statement says how it leaves: a `Jump` is a `break` when it lands on that end, `elsewhere` when it
-does not (a `continue`, or a jump out of a loop the switch sits in), a `Return` leaves the function, and anything
+does not (a `continue`, or a jump out of a loop the switch sits in), and `loop` when the target is *behind* it --
+a `for`/`while` loop's own back edge, so the arm runs on into the next case's code once the loop ends. A `Return`
+leaves the function, and anything
 else **falls into the next case's test code**. An arm with no body at all is the source's shared `case A: case B:`
 body -- the same population `inventory/jump_branches.csv` counts as its `empty_arm` row, read from the other end and
-held to it by `--check`.
+held to it by `--check`. A `Return`'s operand is a token of its own, so where that operand is a bare variable the
+statement stream hands it over as the arm's last statement: the operand is dropped before the exit is read, and the
+arm ends on its `Return`.
 
 There is **no compiler prefix to strip**: an arm's first statement is the source's own, which is why
 `SetCategoryVolume` opens one with a `JumpIfNot` (`if (MusicVolume != NewVolume) {...}`) and `TestSwitch` opens one
@@ -63,6 +67,10 @@ CENSUS_NOTE = {
     "end_break": "arms that leave through a `Jump` landing on their list's end",
     "end_elsewhere": "arms that leave through a `Jump` landing somewhere else (`continue`, or out of a loop)",
     "end_return": "arms that leave through a `Return`",
+    "end_loop": "arms whose last `Jump` is a loop's own back edge (its target is behind it), so the arm runs on into "
+                "the next case's code once the loop ends",
+    "return_operand": "arms whose last statement read as a token because a `Return`'s operand is a token of its own "
+                      "in the statement stream",
     "end_fallthrough": "arms that stop with no jump and a case still after them, i.e. they run into the next case's code",
     "end_into_default": "arms that stop with no jump as their list's last arm, i.e. they run into the `default:` body",
     "lists_unanimous": "lists whose `break` jumps all land on one offset -- the switch's end",
@@ -82,7 +90,8 @@ CENSUS_NOTE = {
 }
 
 CENSUS_ORDER = ("lists", "arms", "defaults", "arm_statements", "arm_min", "arm_max", "arm_mean_x10", "empty",
-                "head_if", "end_break", "end_elsewhere", "end_return", "end_fallthrough", "end_into_default",
+                "head_if", "end_break", "end_elsewhere", "end_return", "end_loop", "return_operand",
+                "end_fallthrough", "end_into_default",
                 "lists_unanimous",
                 "lists_split", "lists_no_break", "default_statements", "default_min", "default_max",
                 "default_open", "nested", "one_arm",
@@ -94,6 +103,14 @@ def load_tool(name, filename):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+# A leaf token a `Return` can be handed as its whole operand. Only a token in this set, starting exactly where the
+# `Return` ends, is read as that operand rather than as a statement of the arm.
+RETURN_OPERAND_LEAVES = frozenset((
+    "LocalVariable", "BoolVariable", "InstanceVariable", "IntConst", "IntConstByte", "FloatConst", "ByteConst",
+    "True", "False", "Nothing", "ObjectConst", "NameConst", "StringConst", "VectorConst", "RotationConst",
+))
 
 
 def label_of(node, resolve=None):
@@ -167,6 +184,20 @@ def measure_script(stmts, links, edges):
         arms = []
         for i in range(len(pos) - 1):
             body = stmts[pos[i] + 1:pos[i + 1]]
+            # A `Return`'s operand is a token of its own: `dis_parse` leaves a simple leaf operand (a bare
+            # `LocalVariable`) as a sibling of the `Return` rather than as its child, so an arm's last "statement"
+            # can be that expression. The arm ends where its last *statement* does, so a trailing **leaf** token that
+            # starts exactly where the `Return` ends is dropped before the exit is read -- two arms in the corpus take
+            # that shape (`StreamPlaylistManager.InsertInPlaylist` arms 1 and 2). A trailing `Jump` or `Return` after
+            # a `Return` is *not* dropped: that is dead code the arm's own stream carries.
+            operands = 0
+            while (len(body) >= 2 and body[-2]["name"] == "Return"
+                   and body[-1]["name"] in RETURN_OPERAND_LEAVES
+                   and body[-1]["offset"] == body[-2]["end"]):
+                body = body[:-1]
+                operands += 1
+            if operands:
+                census["return_operand"] += 1
             last = body[-1] if body else None
             if last is None:
                 end = "empty"
@@ -212,6 +243,13 @@ def measure_script(stmts, links, edges):
             if r["end"] == "jump":
                 r["end"] = ("break" if end_at is not None and jump_to[r["body"][-1]["offset"]] == end_at
                             else "elsewhere")
+                if r["end"] == "elsewhere":
+                    # Direction decides what an `elsewhere` jump is: a target *behind* the jump is a loop's own back
+                    # edge inside the arm, so the arm does not leave by it -- the loop ends and the arm runs on into
+                    # the next case's code, which is what the source's `for (...)` body says too.
+                    tail = r["body"][-1]
+                    if jump_to[tail["offset"]] < tail["offset"]:
+                        r["end"] = "loop"
             if r["end"] != "empty":
                 census["end_" + r["end"].replace("-", "_")] += 1
         # The terminator case opens the `default:` body, whose extent is the end the breaks name.
@@ -383,13 +421,23 @@ def doc_block(rows):
     lines += ["",
               "**How an arm leaves is a measurement, and `break` is not the only way out.** **%s** arms end in a "
               "`Jump` that lands on their list's own end (a `break`), **%s** in a `Jump` that lands elsewhere (a "
-              "`continue`, or out of a loop the switch sits in) and **%s** in a `Return`. The rest stop with no jump "
+              "`continue`, or out of a loop the switch sits in), **%s** whose last `Jump` is a loop's own back edge "
+              "-- its target is behind it, so the arm runs on into the next case's code once the loop ends -- and "
+              "**%s** in a `Return`. The rest stop with no jump "
               "at all: **%s** run on into the *next* case's code and **%s** are their list's last arm, so they run "
               "into the `default:` body instead. Neither is an arm the next case owns -- the statements after the "
               "next `Case` are that case's own body -- so a decompiler ends the arm where the chain does."
               % (comma(census_value(rows, "end_break")), comma(census_value(rows, "end_elsewhere")),
-                 comma(census_value(rows, "end_return")), comma(census_value(rows, "end_fallthrough")),
+                 comma(census_value(rows, "end_loop")), comma(census_value(rows, "end_return")),
+                 comma(census_value(rows, "end_fallthrough")),
                  comma(census_value(rows, "end_into_default")))]
+    if census_value(rows, "return_operand"):
+        lines += ["",
+                  "**%s** arm(s) needed the return's operand put back: a `Return`'s expression is a token of its own, "
+                  "and where that token is a bare variable the statement stream hands it over as the arm's last "
+                  "*statement*. The arm ends on the `Return` -- `StreamPlaylistManager.InsertInPlaylist`'s first two "
+                  "arms, whose source returns `bResult`, are the whole population."
+                  % comma(census_value(rows, "return_operand"))]
     lines += ["",
               "**The switch's end is where its breaks land, and the lists agree on it.** **%s** of **%s** lists put "
               "every `break` of every arm on one offset, so that offset is the switch's own end and it bounds the "
@@ -500,9 +548,9 @@ def cross_check(rows):
         print("FAIL switch-arms: the label kinds cover %d of %d arms (%r) -- every arm carries a case value"
               % (sum(kinds.values()), len(arms), dict(kinds)))
         return 1
-    print("ok   switch-arms: %d arms, %d empty, %d break, %d elsewhere, %d return, %d fallthrough, %d into the "
-          "default arm -- matches the join and jump_branches; labels %s"
-          % (len(arms), mine, ends["break"], ends["elsewhere"], ends["return"], ends["fallthrough"],
+    print("ok   switch-arms: %d arms, %d empty, %d break, %d elsewhere, %d loop, %d return, %d fallthrough, %d into "
+          "the default arm -- matches the join and jump_branches; labels %s"
+          % (len(arms), mine, ends["break"], ends["elsewhere"], ends["loop"], ends["return"], ends["fallthrough"],
              ends["into-default"],
              ", ".join("%s %d" % (k, kinds[k]) for k in ("byte", "int", "string", "name", "expr") if kinds[k])))
     return 0
@@ -534,12 +582,33 @@ def selftest():
             census["lists_unanimous"], census["end_into_default"]) != (1, 3, 1, 2, 0, 1, 0):
         print("FAIL switch-arms: census %r" % (dict(census),))
         return 1
-    # A `continue` out of an arm: a `Jump` that does not land on the list's end is not a `break`.
+    # A `continue` out of an arm: a `Jump` that does not land on the list's end is not a `break`, and a *forward* one
+    # is not a loop's back edge either.
     stmts2 = [node(0, "Switch", 1), node(1, "Case", 3), node(3, "Jump", 5), node(5, "Case", 8),
-              node(8, "Jump", 10), node(10, "Return", 11)]
-    heads2, census2 = measure_script(stmts2, [(1, 5, 5)], [(3, "Jump", 1, 0), (8, "Jump", 2, 10)])
-    if [r["end"] for r in heads2[0]["arms"]] != ["elsewhere"] or census2["end_elsewhere"] != 1:
+              node(8, "Jump", 10), node(10, "Case", 11), node(11, "Return", 12)]
+    heads2, census2 = measure_script(stmts2, [(1, 5, 5), (5, 10, 10)],
+                                     [(3, "Jump", 1, 6), (8, "Jump", 2, 10)])
+    if ([r["end"] for r in heads2[0]["arms"]] != ["elsewhere", "elsewhere"]
+            or census2["end_elsewhere"] != 2 or census2["end_loop"]):
         print("FAIL switch-arms: a continue out of an arm read %r" % ([r["end"] for r in heads2[0]["arms"]],))
+        return 1
+    # A `for (...)` at the end of an arm: its last token is the loop's back edge, whose target is behind it, so the
+    # arm does not leave by that jump -- it runs on into the next case's code once the loop ends.
+    stmts5 = [node(0, "Switch", 1), node(1, "Case", 3), node(3, "Let", 4), node(4, "Jump", 9),
+              node(9, "Case", 10), node(10, "Jump", 12), node(14, "Case", 15), node(16, "Return", 17)]
+    heads5, census5 = measure_script(stmts5, [(1, 9, 9), (9, 14, 14)],
+                                     [(4, "Jump", 1, 3), (10, "Jump", 2, 16)])
+    if [r["end"] for r in heads5[0]["arms"]] != ["loop", "break"] or census5["end_loop"] != 1:
+        print("FAIL switch-arms: a loop's back edge at the end of an arm read %r"
+              % ([r["end"] for r in heads5[0]["arms"]],))
+        return 1
+    # A `Return` whose operand is a bare variable: `dis_parse` hands that operand over as the arm's last statement.
+    stmts6 = [node(0, "Switch", 1), node(1, "Case", 5), node(5, "Return", 6), node(6, "LocalVariable", 8),
+              node(8, "Case", 10), node(10, "Return", 11)]
+    heads6, census6 = measure_script(stmts6, [(1, 8, 8)], [])
+    if [r["end"] for r in heads6[0]["arms"]] != ["return"] or census6["return_operand"] != 1:
+        print("FAIL switch-arms: a return whose operand is a trailing token read %r"
+              % ([r["end"] for r in heads6[0]["arms"]],))
         return 1
     # A body that stops with no jump: a middle arm runs into the next case's code, the last one into the default body.
     stmts4 = [node(0, "Switch", 1), node(1, "Case", 3), node(3, "Let", 4), node(4, "Case", 7),
@@ -596,7 +665,8 @@ def selftest():
             os.unlink(os.path.join(tmp, name))
         os.rmdir(tmp)
     print("ok   switch-arms: an arm's body ends at its list's next case, a shared body and a nested switch are each "
-          "named, a `continue` out of an arm is not a `break`, the list's end is its breaks' target and the block "
+          "named, a `continue` out of an arm is not a `break`, a loop's back edge is not an exit, a `Return`'s "
+          "trailing operand is not a statement, the list's end is its breaks' target and the block "
           "reproduces from its CSV")
     return 0
 

@@ -68,7 +68,7 @@ arm,Engine,AccessControl,getdescriptiontext,3,string,AdminPassword,,,,,,,,,,,ret
 arm,Engine,AccessControl,getdescriptiontext,4,string,LoginDelaySeconds,,,,,,,,,,,return,return,yes,,,,site 1
 class,Engine,ActionMoveCamera,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,ActionPause,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
-class,Engine,Actor,,,,,0,38,0,39,5,38,5,38,,,,,,,agree,,
+class,Engine,Actor,,,,,5,38,0,39,5,38,5,38,,,,,,,agree,,
 function,Engine,Actor,displaydebug,,position,,,,,,,38,,,38,0,,,38,38,agree,,
 arm,Engine,Actor,displaydebug,1,byte,0,,,,,,,,,,,break,break,yes,,,,site 1
 arm,Engine,Actor,displaydebug,2,byte,1,,,,,,,,,,,break,break,yes,,,,site 1
@@ -109,7 +109,7 @@ arm,Engine,Actor,displaydebug,7,byte,6,,,,,,,,,,,break,break,yes,,,,site 5
 arm,Engine,Actor,displaydebug,8,byte,7,,,,,,,,,,,break,break,yes,,,,site 5
 arm,Engine,Actor,displaydebug,9,byte,8,,,,,,,,,,,break,break,yes,,,,site 5
 class,Engine,Admin,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
-class,Engine,AdminBase,,,,,1,5,0,11,1,5,1,4,,,,,,,agree,,
+class,Engine,AdminBase,,,,,2,5,0,11,1,5,1,4,,,,,,,agree,,
 function,Engine,AdminBase,maplistcommand,,value,,,,,,,5,,,5,0,,,5,5,agree,,
 arm,Engine,AdminBase,maplistcommand,1,string,LIST,,,,,,,,,,,break,break,yes,,,,site 1
 arm,Engine,AdminBase,maplistcommand,2,string,USED,,,,,,,,,,,break,break,yes,,,,site 1
@@ -322,7 +322,7 @@ class,Engine,KCarWheelJoint,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,KConeLimit,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,KConstraint,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,Keypoint,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
-class,Engine,KHinge,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
+class,Engine,KHinge,,,,,0,0,1,0,0,0,0,0,,,,,,,,,
 class,Engine,KRepulsor,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,KTire,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,KVehicle,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
@@ -443,7 +443,7 @@ class,Engine,Pickup,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,PixelShaderMaterial,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,Player,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,PlayerChatManager,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
-class,Engine,PlayerController,,,,,5,19,3,26,5,19,5,18,,,,,,,agree,,
+class,Engine,PlayerController,,,,,5,19,3,28,5,19,5,18,,,,,,,agree,,
 function,Engine,PlayerController,servermove,,value,,,,,,,5,,,5,0,,,5,5,agree,,
 arm,Engine,PlayerController,servermove,1,int,0,,,,,,,,,,,break,break,yes,,,,site 1
 arm,Engine,PlayerController,servermove,2,int,1,,,,,,,,,,,break,break,yes,,,,site 1
@@ -583,21 +583,21 @@ arm,Engine,StreamBase,converttofiletype,16,string,htm,,,,,,,,,,,return,return,ye
 arm,Engine,StreamBase,converttofiletype,17,string,m3u,,,,,,,,,,,empty,empty,yes,,,,site 1
 arm,Engine,StreamBase,converttofiletype,18,string,b4s,,,,,,,,,,,empty,empty,yes,,,,site 1
 arm,Engine,StreamBase,converttofiletype,19,string,pls,,,,,,,,,,,return,return,yes,,,,site 1
-function,Engine,StreamBase,converttofileextension,,position,,,,,,,14,,,14,0,,,11,14,differs,,
+function,Engine,StreamBase,converttofileextension,,position,,,,,,,14,,,14,0,,,14,14,agree,,
 arm,Engine,StreamBase,converttofileextension,1,byte,2,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,2,byte,3,,,,,,,,,,,return,return,yes,,,,site 1
-arm,Engine,StreamBase,converttofileextension,3,byte,5,,,,,,,,,,,other,return,no,,,,site 1
+arm,Engine,StreamBase,converttofileextension,3,byte,5,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,4,byte,6,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,5,byte,7,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,6,byte,8,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,7,byte,9,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,8,byte,10,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,9,byte,11,,,,,,,,,,,return,return,yes,,,,site 1
-arm,Engine,StreamBase,converttofileextension,10,byte,12,,,,,,,,,,,other,return,no,,,,site 1
+arm,Engine,StreamBase,converttofileextension,10,byte,12,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,11,byte,13,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,12,byte,14,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,13,byte,15,,,,,,,,,,,return,return,yes,,,,site 1
-arm,Engine,StreamBase,converttofileextension,14,byte,4,,,,,,,,,,,other,return,no,,,,site 1
+arm,Engine,StreamBase,converttofileextension,14,byte,4,,,,,,,,,,,return,return,yes,,,,site 1
 class,Engine,StreamCommandlet,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,StreamInteraction,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,StreamInterface,,,,,1,5,0,0,1,5,1,0,,,,,,,agree,,
@@ -608,22 +608,22 @@ arm,Engine,StreamInterface,handledebugexec,3,string,validfilename,,,,,,,,,,,retu
 arm,Engine,StreamInterface,handledebugexec,4,string,dir,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamInterface,handledebugexec,5,string,chdir,,,,,,,,,,,return,return,yes,,,,site 1
 class,Engine,StreamPlaylist,,,,,1,4,0,1,1,4,1,0,,,,,,,agree,,
-function,Engine,StreamPlaylist,handledebugexec,,value,,,,,,,4,,,4,0,,,3,4,differs,,
+function,Engine,StreamPlaylist,handledebugexec,,value,,,,,,,4,,,4,0,,,4,4,agree,,
 arm,Engine,StreamPlaylist,handledebugexec,1,string,addsong,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamPlaylist,handledebugexec,2,string,dumptags,,,,,,,,,,,return,return,yes,,,,site 1
-arm,Engine,StreamPlaylist,handledebugexec,3,string,scripttags,,,,,,,,,,,other,elsewhere,no,,,,site 1
+arm,Engine,StreamPlaylist,handledebugexec,3,string,scripttags,,,,,,,,,,,other,loop,yes,,,,site 1
 arm,Engine,StreamPlaylist,handledebugexec,4,string,showsongs,,,,,,,,,,,return,return,yes,,,,site 1
 class,Engine,StreamPlaylistManager,,,,,3,8,0,1,3,8,3,1,,,,,,,agree,,
-function,Engine,StreamPlaylistManager,handledebugexec,,value,,,,,,,2,,,2,0,,,1,2,differs,,
+function,Engine,StreamPlaylistManager,handledebugexec,,value,,,,,,,2,,,2,0,,,2,2,agree,,
 arm,Engine,StreamPlaylistManager,handledebugexec,1,string,activate,,,,,,,,,,,break,break,yes,,,,site 1
-arm,Engine,StreamPlaylistManager,handledebugexec,2,string,lists,,,,,,,,,,,other,elsewhere,no,,,,site 1
+arm,Engine,StreamPlaylistManager,handledebugexec,2,string,lists,,,,,,,,,,,other,loop,yes,,,,site 1
 function,Engine,StreamPlaylistManager,getplaylisttype,,value,,,,,,,3,,,3,0,,,3,3,agree,,
 arm,Engine,StreamPlaylistManager,getplaylisttype,1,string,m3u,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamPlaylistManager,getplaylisttype,2,string,b4s,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamPlaylistManager,getplaylisttype,3,string,pls,,,,,,,,,,,return,return,yes,,,,site 1
-function,Engine,StreamPlaylistManager,insertinplaylist,,position,,,,,,,3,,,3,0,,,1,3,differs,,
-arm,Engine,StreamPlaylistManager,insertinplaylist,1,byte,0,,,,,,,,,,,return,fallthrough,no,,,,site 1
-arm,Engine,StreamPlaylistManager,insertinplaylist,2,byte,5,,,,,,,,,,,return,fallthrough,no,,,,site 1
+function,Engine,StreamPlaylistManager,insertinplaylist,,position,,,,,,,3,,,3,0,,,3,3,agree,,
+arm,Engine,StreamPlaylistManager,insertinplaylist,1,byte,0,,,,,,,,,,,return,return,yes,,,,site 1
+arm,Engine,StreamPlaylistManager,insertinplaylist,2,byte,5,,,,,,,,,,,return,return,yes,,,,site 1
 arm,Engine,StreamPlaylistManager,insertinplaylist,3,byte,4,,,,,,,,,,,return,return,yes,,,,site 1
 class,Engine,StreamTag,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,Engine,SubActionCameraEffect,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
@@ -1006,7 +1006,7 @@ class,GamePlay,ACTION_PlayLocalSound,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,GamePlay,ACTION_PlayMusic,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,GamePlay,ACTION_PlaySound,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,GamePlay,ACTION_Run,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
-class,GamePlay,ACTION_SetAlertness,,,,,0,4,0,4,1,4,1,4,,,,,,,agree,,
+class,GamePlay,ACTION_SetAlertness,,,,,1,4,0,4,1,4,1,4,,,,,,,agree,,
 function,GamePlay,ACTION_SetAlertness,getactionstring,,position,,,,,,,4,,,4,0,,,4,4,agree,,
 arm,GamePlay,ACTION_SetAlertness,getactionstring,1,byte,0,,,,,,,,,,,break,break,yes,,,,site 1
 arm,GamePlay,ACTION_SetAlertness,getactionstring,2,byte,1,,,,,,,,,,,break,break,yes,,,,site 1
@@ -1062,12 +1062,7 @@ arm,GamePlay,counter,trigger,4,byte,4,,,,,,,,,,,break,break,yes,,,,site 1
 arm,GamePlay,counter,trigger,5,byte,5,,,,,,,,,,,break,break,yes,,,,site 1
 arm,GamePlay,counter,trigger,6,byte,6,,,,,,,,,,,break,break,yes,,,,site 1
 class,GamePlay,CountTrigger,,,,,0,5,1,6,1,5,1,5,,,,,,,agree,,
-function,GamePlay,CountTrigger,changecount,,position,,,,,,,5,,,5,0,,,5,5,agree,,
-arm,GamePlay,CountTrigger,changecount,1,byte,0,,,,,,,,,,,break,break,yes,,,,site 1
-arm,GamePlay,CountTrigger,changecount,2,byte,1,,,,,,,,,,,break,break,yes,,,,site 1
-arm,GamePlay,CountTrigger,changecount,3,byte,2,,,,,,,,,,,break,break,yes,,,,site 1
-arm,GamePlay,CountTrigger,changecount,4,byte,3,,,,,,,,,,,break,break,yes,,,,site 1
-arm,GamePlay,CountTrigger,changecount,5,byte,4,,,,,,,,,,,break,break,yes,,,,site 1
+function,GamePlay,CountTrigger,changecount,,none,,,,,,,5,,,0,5,,,0,0,agree,,
 class,GamePlay,CriticalEventLowPlus,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,GamePlay,CriticalEventPlus,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,GamePlay,CriticalStringPlus,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
@@ -2369,7 +2364,7 @@ class,StargateGame,StargateStationaryWeapon,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateGame,StargateTeamHUD,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateGame,StargateTextTrigger,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateGame,StargateTriggeredObjective,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
-class,StargateGame,StargateVehicle,,,,,0,13,0,14,1,13,1,13,,,,,,,agree,,
+class,StargateGame,StargateVehicle,,,,,1,13,0,14,1,13,1,13,,,,,,,agree,,
 function,StargateGame,StargateVehicle,displaydebug,,position,,,,,,,13,,,13,0,,,13,13,agree,,
 arm,StargateGame,StargateVehicle,displaydebug,1,byte,0,,,,,,,,,,,break,break,yes,,,,site 1
 arm,StargateGame,StargateVehicle,displaydebug,2,byte,1,,,,,,,,,,,break,break,yes,,,,site 1
@@ -2387,7 +2382,7 @@ arm,StargateGame,StargateVehicle,displaydebug,13,byte,13,,,,,,,,,,,break,break,y
 class,StargateGame,StargateVehiclePassenger,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateGame,StargateVehicleSound,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateGame,StargateVoicePack,,,,,0,0,0,1,0,0,0,0,,,,,,,,,
-class,StargateGame,StargateWeapon,,,,,0,3,1,3,1,3,1,2,,,,,,,agree,,
+class,StargateGame,StargateWeapon,,,,,1,3,1,3,1,3,1,2,,,,,,,agree,,
 function,StargateGame,StargateWeapon,playfiring,,position,,,,,,,3,,,3,0,,,3,3,agree,,
 arm,StargateGame,StargateWeapon,playfiring,1,byte,0,,,,,,,,,,,break,break,yes,,,,site 1
 arm,StargateGame,StargateWeapon,playfiring,2,byte,1,,,,,,,,,,,empty,empty,yes,,,,site 1
@@ -2539,10 +2534,10 @@ class,StargateMenus,ReturnToMainPage,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateMenus,RightLockingMenuPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateMenus,RightLockingPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateMenus,SavedGameInfo,,,,,1,3,1,0,1,3,1,0,,,,,,,agree,,
-function,StargateMenus,SavedGameInfo,gettypestring,,position,,,,,,,3,,,3,0,,,0,3,differs,,
-arm,StargateMenus,SavedGameInfo,gettypestring,1,byte,3,,,,,,,,,,,other,return,no,,,,site 1
-arm,StargateMenus,SavedGameInfo,gettypestring,2,byte,2,,,,,,,,,,,other,return,no,,,,site 1
-arm,StargateMenus,SavedGameInfo,gettypestring,3,byte,1,,,,,,,,,,,other,return,no,,,,site 1
+function,StargateMenus,SavedGameInfo,gettypestring,,position,,,,,,,3,,,3,0,,,3,3,agree,,
+arm,StargateMenus,SavedGameInfo,gettypestring,1,byte,3,,,,,,,,,,,return,return,yes,,,,site 1
+arm,StargateMenus,SavedGameInfo,gettypestring,2,byte,2,,,,,,,,,,,return,return,yes,,,,site 1
+arm,StargateMenus,SavedGameInfo,gettypestring,3,byte,1,,,,,,,,,,,return,return,yes,,,,site 1
 class,StargateMenus,SavedGameList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,StargateMenus,SaveGameMenu,,,,,1,2,0,2,1,2,1,2,,,,,,,agree,,
 function,StargateMenus,SaveGameMenu,internalonxcontrollerevent,,position,,,,,,,2,,,2,0,,,2,2,agree,,
@@ -2876,12 +2871,19 @@ class,UDebugMenu,UDebugGraphWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UDebugMenu,UDebugMapList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UDebugMenu,UDebugMapListBox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UDebugMenu,UDebugMapListCW,,,,,2,2,0,2,2,2,2,2,,,,,,,agree,,
-function,UDebugMenu,UDebugMapListCW,notify,,position,,,,,,,2,,,2,0,,,1,2,differs,,
-arm,UDebugMenu,UDebugMapListCW,notify,1,byte,1,,,,,,,,,,,other,break,no,,,,site 1
+function,UDebugMenu,UDebugMapListCW,notify,,position,,,,,,,2,,,2,0,,,2,2,agree,,
+arm,UDebugMenu,UDebugMapListCW,notify,1,byte,1,,,,,,,,,,,break,break,yes,,,,site 1
 arm,UDebugMenu,UDebugMapListCW,notify,1,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 2
 class,UDebugMenu,UDebugMapListWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UDebugMenu,UDebugMenuBar,,,,,8,49,0,49,8,49,8,49,,,,,,,agree,,
-function,UDebugMenu,UDebugMenuBar,menuitemselected,,value,,,,,,,48,,,41,7,,,41,41,agree,,
+function,UDebugMenu,UDebugMenuBar,menuitemselected,,position,,,,,,,48,,,48,0,,,48,48,agree,,
+arm,UDebugMenu,UDebugMenuBar,menuitemselected,1,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 1
+arm,UDebugMenu,UDebugMenuBar,menuitemselected,2,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 1
+arm,UDebugMenu,UDebugMenuBar,menuitemselected,3,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 1
+arm,UDebugMenu,UDebugMenuBar,menuitemselected,4,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 1
+arm,UDebugMenu,UDebugMenuBar,menuitemselected,5,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 1
+arm,UDebugMenu,UDebugMenuBar,menuitemselected,6,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 1
+arm,UDebugMenu,UDebugMenuBar,menuitemselected,7,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 1
 arm,UDebugMenu,UDebugMenuBar,menuitemselected,1,int,1,,,,,,,,,,,break,break,yes,,,,site 2
 arm,UDebugMenu,UDebugMenuBar,menuitemselected,2,int,3,,,,,,,,,,,break,break,yes,,,,site 2
 arm,UDebugMenu,UDebugMenuBar,menuitemselected,3,int,5,,,,,,,,,,,break,break,yes,,,,site 2
@@ -2930,8 +2932,8 @@ class,UDebugMenu,UDebugOpenWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UDebugMenu,UDebugRootWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UDebugMenu,UDebugSmallLoadMapButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UDebugMenu,UDebugVideoClient,,,,,2,3,0,3,2,3,2,3,,,,,,,agree,,
-function,UDebugMenu,UDebugVideoClient,notify,,position,,,,,,,3,,,3,0,,,2,3,differs,,
-arm,UDebugMenu,UDebugVideoClient,notify,1,byte,1,,,,,,,,,,,other,break,no,,,,site 1
+function,UDebugMenu,UDebugVideoClient,notify,,position,,,,,,,3,,,3,0,,,3,3,agree,,
+arm,UDebugMenu,UDebugVideoClient,notify,1,byte,1,,,,,,,,,,,break,break,yes,,,,site 1
 arm,UDebugMenu,UDebugVideoClient,notify,1,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 2
 arm,UDebugMenu,UDebugVideoClient,notify,2,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 2
 class,UDebugMenu,UDebugVideoWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
@@ -3027,12 +3029,12 @@ class,UWindow,UWindowComboList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UWindow,UWindowComboListItem,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UWindow,UWindowComboRightButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UWindow,UWindowConsoleClientWindow,,,,,4,6,0,6,4,6,4,6,,,,,,,agree,,
-function,UWindow,UWindowConsoleClientWindow,notify,,position,,,,,,,6,,,6,0,,,3,6,differs,,
-arm,UWindow,UWindowConsoleClientWindow,notify,1,byte,7,,,,,,,,,,,other,break,no,,,,site 1
+function,UWindow,UWindowConsoleClientWindow,notify,,position,,,,,,,6,,,6,0,,,6,6,agree,,
+arm,UWindow,UWindowConsoleClientWindow,notify,1,byte,7,,,,,,,,,,,break,break,yes,,,,site 1
 arm,UWindow,UWindowConsoleClientWindow,notify,2,byte,14,,,,,,,,,,,break,break,yes,,,,site 1
-arm,UWindow,UWindowConsoleClientWindow,notify,3,byte,15,,,,,,,,,,,other,break,no,,,,site 1
+arm,UWindow,UWindowConsoleClientWindow,notify,3,byte,15,,,,,,,,,,,break,break,yes,,,,site 1
 arm,UWindow,UWindowConsoleClientWindow,notify,1,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 2
-arm,UWindow,UWindowConsoleClientWindow,notify,1,expr,InstanceVariable,,,,,,,,,,,other,break,no,,,,site 3
+arm,UWindow,UWindowConsoleClientWindow,notify,1,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 3
 arm,UWindow,UWindowConsoleClientWindow,notify,1,expr,InstanceVariable,,,,,,,,,,,break,break,yes,,,,site 4
 class,UWindow,UWindowConsoleTextAreaControl,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UWindow,UWindowConsoleWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
@@ -3276,10 +3278,10 @@ class,UnrealEd,NotifyProperties,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UnrealEd,SequEditProps,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UnrealEd,SkelPrefsEditProps,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
 class,UnrealEd,UnrealEdEngine,,,,,0,0,0,0,0,0,0,0,,,,,,,,,
-census,,,,,,,,,,,,,,,,,,,,,,191,`switch` keywords in the live text
+census,,,,,,,,,,,,,,,,,,,,,,200,`switch` keywords in the live text
 census,,,,,,,,,,,,,,,,,,,,,,848,`case` labels in the live text
-census,,,,,,,,,,,,,,,,,,,,,,41,`default:` labels in the live text (`default.`/`defaultproperties` excluded)
-census,,,,,,,,,,,,,,,,,,,,,,988,`break;` statements in the live text
+census,,,,,,,,,,,,,,,,,,,,,,42,`default:` labels in the live text (`default.`/`defaultproperties` excluded)
+census,,,,,,,,,,,,,,,,,,,,,,990,`break;` statements in the live text
 census,,,,,,,,,,,,,,,,,,,,,,198,case lists in `inventory/switch_arms.csv`
 census,,,,,,,,,,,,,,,,,,,,,,844,testable arms there
 census,,,,,,,,,,,,,,,,,,,,,,198,"terminator cases there, each a `default:` label in the source"
@@ -3290,11 +3292,12 @@ census,,,,,,,,,,,,,,,,,,,,,,3,classes whose live text spells more `case` labels
 census,,,,,,,,,,,,,,,,,,,,,,0,classes whose live text spells fewer
 census,,,,,,,,,,,,,,,,,,,,,,0,classes whose live text has a `case` and whose bytecode has no arm
 census,,,,,,,,,,,,,,,,,,,,,,0,classes with arms whose text spells no `case`
-census,,,,,,,,,,,,,,,,,,,,,,787,arms whose case value was found as a `case` label in their function's text
-census,,,,,,,,,,,,,,,,,,,,,,57,"arms whose case value names no label in that text (an expression, or text not that revision)"
-census,,,,,,,,,,,,,,,,,,,,,,464,"of those, the ones matched by position because the source spells a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer"
-census,,,,,,,,,,,,,,,,,,,,,,772,arms whose text body leaves the way the token stream does
-census,,,,,,,,,,,,,,,,,,,,,,787,"arms whose case value matched a text label, so their exit could be compared"
+census,,,,,,,,,,,,,,,,,,,,,,789,arms whose case value was found as a `case` label in their function's text
+census,,,,,,,,,,,,,,,,,,,,,,55,"arms whose case value names no label in that text (an expression, or text not that revision)"
+census,,,,,,,,,,,,,,,,,,,,,,466,"of those, the ones matched by position because the source spells a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer"
+census,,,,,,,,,,,,,,,,,,,,,,789,arms whose text body leaves the way the token stream does
+census,,,,,,,,,,,,,,,,,,,,,,789,"arms whose case value matched a text label, so their exit could be compared"
 census,,,,,,,,,,,,,,,,,,,,,,38,"of the shared `case A: case B:` bodies, the ones the source spells with no body too"
 census,,,,,,,,,,,,,,,,,,,,,,8,"of the arms that stop with no jump, the ones whose text case also ends in no `break`/`return`"
+census,,,,,,,,,,,,,,,,,,,,,,2,"of the arms whose last `Jump` is a loop's own back edge, the ones whose source case also ends on a control construct rather than leaving"
 census,,,,,,,,,,,,,,,,,,,,,,171,functions carrying a switch on both sides
