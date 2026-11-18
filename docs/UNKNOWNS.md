@@ -4339,11 +4339,15 @@ while `TestInfo.TestSwitch` opens `case 0:` with a bare `Assert` -- the first st
 the body starts at the case token and **110** arms happen to open with an `if`.
 
 **How an arm leaves, and where the switch ends.** **628** arms end in a `Jump` that lands on their list's end (a
-`break`), **2** in a `Jump` that lands elsewhere (a `continue`), **162** in a `Return`, **4** stop with no jump in the
-middle of a list (so they run into the next case's code) and **8** stop as their list's last arm (so they run into the
-`default:` body). Because the `break` jumps of a list all land on one offset in **169** of **200** lists, that offset
-is the switch's own end and it bounds the `default:` arm; **0** lists split across two offsets and **29** carry no
-`break` at all, so their extent stops at the script's end rather than at a measured one.
+`break`), **0** in a `Jump` that lands elsewhere (a `continue`), **2** in a `Jump` whose target is *behind* it -- a
+loop's own back edge, so the arm runs on into the next case's code once the loop ends -- **164** in a `Return`, **2**
+stop with no jump in the middle of a list (so they run into the next case's code) and **8** stop as their list's last
+arm (so they run into the `default:` body). Because the `break` jumps of a list all land on one offset in **169** of
+**200** lists, that offset is the switch's own end and it bounds the `default:` arm; **0** lists split across two
+offsets and **29** carry no `break` at all, so their extent stops at the script's end rather than at a measured one.
+One `Return` operand arrives as a trailing token of its own (`Return` then `LocalVariable bResult`), so the arm's
+last *statement* is the `Return` and the operand is put back before the exit is read -- the two
+`InsertInPlaylist` arms.
 
 **What to read.** An arm runs from just after its `Case` to the next case of its list -- never to the next `Case`
 token, and never to its `break`. Its exit kind is a column (`end`), and the switch's end is its list row's `end`
@@ -4368,7 +4372,35 @@ exact, **323** arms matched by value and **464** by position (symbolic constants
 spelled with no body. The **12** arms that stop with no jump are the question this entry left open and they split:
 **eight** end their source case with no `break`/`return` too -- the fallthrough is the source's, so a decompiler must
 render it as running into the next case's statements -- and **two** (`StreamPlaylistManager.InsertInPlaylist` arms 1
-and 2) are a text/bytes divergence where the source **returns**. What is left of U21 is that tail: the **15** arms
-whose two readings disagree sit in eight functions, and separating a nested switch's inner label from a text the
-package did not compile needs a per-function source/bytes diff (`tools/uscript-dis.py --compare`), not another count.
-`--check` on both tools is dump-free, and the page's block is rendered from the artifact by `--check-doc`.
+and 2) the note read as a text/bytes divergence where the source **returns** (both readings are corrected below).
+
+**Answered: the last fifteen were four reader defects, and no arm disagrees (2026-11-17, second read).** The
+per-function diff the previous note asked for was run, and it settled every one of them without a single case of
+"text the package did not compile". The two readers each had two defects:
+
+* **the text side's last statement** was cut on a `;` or a `:` *inside a string literal* -- `return ".m3u;.pls;.b4s";`
+  and `return "Quicksave: Current";` -- which is six arms (`StreamBase.ConvertToFileType` three,
+  `SavedGameInfo.GetTypeString` three). The cut is searched in the literal-blanked buffer now;
+* **the text side's label list was flat**, so an arm whose body opens a nested `switch` ended at that switch's first
+  inner case and its own `break` read as a fallthrough: five arms (`UWindowConsoleClientWindow.Notify` three, and
+  `UDebugMenuBar`/`UDebugMapListCW`/`UDebugVideoClient`'s `Notify` one each). A label belongs to its innermost
+  `switch`, and the join is per **site** -- twelve functions carry more than one `switch`;
+* **the text census was case-sensitive** on `switch`, while UnrealScript folds keyword case and this build spells
+  `Switch(Role)` in `Actor.DisplayDebug`: nine `switch` keywords and five functions' label groups were invisible, so
+  `text_switch` was 191 and is 200;
+* **the arm census read a loop's back edge as a `continue`** (`elsewhere`): `StreamPlaylist.HandleDebugExec`'s
+  `scripttags` arm jumps 150 -> 118 and `StreamPlaylistManager.HandleDebugExec`'s `lists` arm 250 -> 188, both
+  *inside their own body*, so those arms run a `for` loop and do not leave by that jump. The census has a `loop`
+  kind now;
+* and **the `InsertInPlaylist` pair is not a text/bytes divergence**: those arms' last two tokens are `Return` then
+  `LocalVariable bResult` -- the return's operand, which `dis_parse` hands over as a sibling -- so the arm ends on
+  its `Return` exactly as the source says. The previous note's "two arms are a divergence" is withdrawn.
+
+**Measured after the corrections:** **789** of the **844** arms find a `case` label in their function's text (**323**
+by value, **466** by position inside an all-symbolic block, **55** by neither), and **789 of 789** leave the way the
+source says -- `break` to `break;`, `return` to `return`, a loop's back edge to a `for (...)` body, the shared
+`case A: case B:` body to an empty case (**38** of 40). The break-less arms are **10** (2 into the next case's code,
+8 into the `default:` body) and **8** of them end their source case with no `break`/`return` as well. What is left is
+not a disagreement but a limit: the **466** positional pairings rest on an inferred label order, and the **55**
+unmatched arms have no exit comparison at all. `--check` on both tools is dump-free, and the page's block is rendered
+from the artifact by `--check-doc`.

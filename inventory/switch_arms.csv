@@ -176,16 +176,16 @@ arm,Engine,AccessControl.GetDescriptionText,1,2,0x0020,0x002f,0x0037,1,return,Re
 arm,Engine,AccessControl.GetDescriptionText,1,3,0x0037,0x0049,0x0052,1,return,Return,Return,string,AdminPassword,,
 arm,Engine,AccessControl.GetDescriptionText,1,4,0x0052,0x0068,0x0071,1,return,Return,Return,string,LoginDelaySeconds,,
 arm,Engine,StreamPlaylistManager.HandleDebugExec,1,1,0x001e,0x002b,0x00a5,6,break,JumpIfNot,Jump,string,activate,,
-arm,Engine,StreamPlaylistManager.HandleDebugExec,1,2,0x00a5,0x00af,0x0131,6,elsewhere,Log,Jump,string,lists,,
+arm,Engine,StreamPlaylistManager.HandleDebugExec,1,2,0x00a5,0x00af,0x0131,6,loop,Log,Jump,string,lists,,
 arm,Engine,StreamPlaylistManager.GetPlaylistType,1,1,0x001a,0x0022,0x0025,1,return,Return,Return,string,m3u,,
 arm,Engine,StreamPlaylistManager.GetPlaylistType,1,2,0x0025,0x002d,0x0030,1,return,Return,Return,string,b4s,,
 arm,Engine,StreamPlaylistManager.GetPlaylistType,1,3,0x0030,0x0038,0x003b,1,return,Return,Return,string,pls,,
-arm,Engine,StreamPlaylistManager.InsertInPlaylist,1,1,0x0044,0x0049,0x00ac,10,fallthrough,LetBool,LocalVariable,byte,0,,
-arm,Engine,StreamPlaylistManager.InsertInPlaylist,1,2,0x00ac,0x00b1,0x0113,10,fallthrough,LetBool,LocalVariable,byte,5,,
+arm,Engine,StreamPlaylistManager.InsertInPlaylist,1,1,0x0044,0x0049,0x00a7,9,return,LetBool,Return,byte,0,,
+arm,Engine,StreamPlaylistManager.InsertInPlaylist,1,2,0x00ac,0x00b1,0x010e,9,return,LetBool,Return,byte,5,,
 arm,Engine,StreamPlaylistManager.InsertInPlaylist,1,3,0x0113,0x0118,0x0150,1,return,Return,Return,byte,4,,
 arm,Engine,StreamPlaylist.HandleDebugExec,1,1,0x001e,0x002a,0x0037,2,return,VirtualFunction,Return,string,addsong,,
 arm,Engine,StreamPlaylist.HandleDebugExec,1,2,0x0037,0x0044,0x007c,6,return,Let,Return,string,dumptags,,
-arm,Engine,StreamPlaylist.HandleDebugExec,1,3,0x007c,0x008b,0x00c1,5,elsewhere,Let,Jump,string,scripttags,,
+arm,Engine,StreamPlaylist.HandleDebugExec,1,3,0x007c,0x008b,0x00c1,5,loop,Let,Jump,string,scripttags,,
 arm,Engine,StreamPlaylist.HandleDebugExec,1,4,0x00c1,0x00cf,0x0155,7,return,Log,Return,string,showsongs,,
 arm,Engine,xMaterialController.ShaderAction,1,1,0x0007,0x000c,0x0023,2,break,Let,Jump,byte,2,,
 arm,Engine,xMaterialController.Trigger,1,1,0x018a,,,0,empty,,,byte,1,,
@@ -1069,7 +1069,7 @@ list,Engine,BroadcastHandler.GetDescriptionText,1,,0x0007,,,2,open,,,,,,"2 arm(s
 list,Engine,AccessControl.GetDescriptionText,1,,0x0007,,,4,open,,,,,,"4 arm(s), end not named"
 list,Engine,StreamPlaylistManager.HandleDebugExec,1,,0x001e,,,12,end,,,,,,"2 arm(s), end 0x0134"
 list,Engine,StreamPlaylistManager.GetPlaylistType,1,,0x001a,,,3,open,,,,,,"3 arm(s), end not named"
-list,Engine,StreamPlaylistManager.InsertInPlaylist,1,,0x0044,,,21,open,,,,,,"3 arm(s), end not named"
+list,Engine,StreamPlaylistManager.InsertInPlaylist,1,,0x0044,,,19,open,,,,,,"3 arm(s), end not named"
 list,Engine,StreamPlaylist.HandleDebugExec,1,,0x001e,,,20,open,,,,,,"4 arm(s), end not named"
 list,Engine,xMaterialController.ShaderAction,1,,0x0007,,,2,end,,,,,,"1 arm(s), end 0x0026"
 list,Engine,xMaterialController.Trigger,1,,0x018a,,,2,end,,,,,,"2 arm(s), end 0x01a1"
@@ -1242,16 +1242,18 @@ list,UWindow,UWindowPulldownMenu.KeyDown,1,,0x0012,,,59,end,,,,,,"6 arm(s), end 
 census,,,,,,,,,,,,,,200,case lists (a chain of `Case` tokens ending on the `0xffff` terminator)
 census,,,,,,,,,,,,,,844,"testable arms, i.e. every case of every list but the terminator"
 census,,,,,,,,,,,,,,200,"terminator cases, each opening a `default:` body"
-census,,,,,,,,,,,,,,2919,statements inside arm bodies
+census,,,,,,,,,,,,,,2917,statements inside arm bodies
 census,,,,,,,,,,,,,,1,"the shortest arm body, in statements"
 census,,,,,,,,,,,,,,58,the longest
 census,,,,,,,,,,,,,,35,"mean arm length, in tenths of a statement"
 census,,,,,,,,,,,,,,40,arms with no body at all -- the shared `case A: case B:` shape
 census,,,,,,,,,,,,,,110,"arms whose first statement is a `JumpIfNot`, i.e. the source's own `if` at the head of the arm"
 census,,,,,,,,,,,,,,628,arms that leave through a `Jump` landing on their list's end
-census,,,,,,,,,,,,,,2,"arms that leave through a `Jump` landing somewhere else (`continue`, or out of a loop)"
-census,,,,,,,,,,,,,,162,arms that leave through a `Return`
-census,,,,,,,,,,,,,,4,"arms that stop with no jump and a case still after them, i.e. they run into the next case's code"
+census,,,,,,,,,,,,,,0,"arms that leave through a `Jump` landing somewhere else (`continue`, or out of a loop)"
+census,,,,,,,,,,,,,,164,arms that leave through a `Return`
+census,,,,,,,,,,,,,,2,"arms whose last `Jump` is a loop's own back edge (its target is behind it), so the arm runs on into the next case's code once the loop ends"
+census,,,,,,,,,,,,,,2,arms whose last statement read as a token because a `Return`'s operand is a token of its own in the statement stream
+census,,,,,,,,,,,,,,2,"arms that stop with no jump and a case still after them, i.e. they run into the next case's code"
 census,,,,,,,,,,,,,,8,"arms that stop with no jump as their list's last arm, i.e. they run into the `default:` body"
 census,,,,,,,,,,,,,,169,lists whose `break` jumps all land on one offset -- the switch's end
 census,,,,,,,,,,,,,,0,"lists whose arm jumps disagree, so the end is not one offset"

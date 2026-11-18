@@ -14,9 +14,12 @@ This reads the source and joins it to the arms:
 * **the labels** are matched one arm at a time: an arm's `(kind, label)` canonicalises to an integer or a
   case-folded string, the text's own `case` expressions canonicalise the same way, and the match is consumed in
   arm order, so a repeated label takes the next occurrence;
-* **the exits** are compared: the text's `case` body runs to the next `case`/`default` at its own depth, and its
-  *last statement* is classified (`break`, `return`, `continue`, `empty`, or anything else, which falls through).
-  That is the bytecode's `end` column's own vocabulary, read from the source instead of the token stream.
+* **the exits** are compared: the text's `case` body runs to the next `case`/`default` **of its own `switch`** (a
+  nested block's labels belong to that block, not to the arm that opens it) and no further than the switch's own
+  closing brace, and its *last statement* is classified (`break`, `return`, `continue`, `empty`, or anything else,
+  which falls through). That is the bytecode's `end` column's own vocabulary, read from the source instead of the
+  token stream. The separators that find that last statement are searched in the buffer whose **literals are
+  blanked**, because a `;` or a `:` inside a string is not a statement boundary.
 
 Two readings are controls. `default.Health` and `defaultproperties` are not `default:` labels, so the pattern
 requires a word boundary and excludes a following `.`; and a function whose text has no `case` at all is counted
@@ -75,23 +78,27 @@ CENSUS_NOTE = {
     "empty_agree": "of the shared `case A: case B:` bodies, the ones the source spells with no body too",
     "fallthrough_text_other": "of the arms that stop with no jump, the ones whose text case also ends in no "
                               "`break`/`return`",
+    "loop_text_other": "of the arms whose last `Jump` is a loop's own back edge, the ones whose source case also ends "
+                       "on a control construct rather than leaving",
     "functions_joined": "functions carrying a switch on both sides",
 }
 
 CENSUS_ORDER = ("text_switch", "text_case", "text_default", "text_break", "byte_lists", "byte_arms",
                 "byte_defaults", "byte_break", "classes_joined", "label_agree", "label_more", "label_less",
                 "text_only", "bytes_only", "labels_found", "labels_missing", "labels_by_position", "end_agree",
-                "end_checked", "empty_agree", "fallthrough_text_other", "functions_joined")
+                "end_checked", "empty_agree", "fallthrough_text_other", "loop_text_other", "functions_joined")
 
 # A `case` label's expression: everything up to the `:` that is not a `::`, on one line, no statement separator.
-CASE = re.compile(r"(?<![#\w$.])case\b[ \t]+([^:;{}\n]+?)[ \t]*:(?!:)")
-SWITCH = re.compile(r"(?<![#\w$.])switch[ \t]*\(")
+# UnrealScript folds keyword case -- `Switch(Role)` and `State` are the build's own spelling -- so every pattern here
+# is case-insensitive (`tools/text-branches.py` had already found 55 capitalised `State` declarations).
+CASE = re.compile(r"(?<![#\w$.])case\b[ \t]+([^:;{}\n]+?)[ \t]*:(?!:)", re.I)
+SWITCH = re.compile(r"(?<![#\w$.])switch[ \t]*\(", re.I)
 # `default:` is a label; `default.Health` and `defaultproperties` are not.
-DEFAULT = re.compile(r"(?<![#\w$.])default\b(?!\s*[.\w])")
-BREAK = re.compile(r"(?<![#\w$.])break\b")
-RETURN = re.compile(r"(?<![#\w$.])return\b")
-CONTINUE = re.compile(r"(?<![#\w$.])continue\b")
-GOTO = re.compile(r"(?<![#\w$.])goto\b")
+DEFAULT = re.compile(r"(?<![#\w$.])default\b(?!\s*[.\w])", re.I)
+BREAK = re.compile(r"(?<![#\w$.])break\b", re.I)
+RETURN = re.compile(r"(?<![#\w$.])return\b", re.I)
+CONTINUE = re.compile(r"(?<![#\w$.])continue\b", re.I)
+GOTO = re.compile(r"(?<![#\w$.])goto\b", re.I)
 INT = re.compile(r"[-+]?\d+")
 
 
@@ -156,7 +163,7 @@ def counts(text):
     return c
 
 
-def last_statement(seg):
+def last_statement(seg, clean=None):
     """What a case body's own last statement is: `break`, `return`, `continue`, `goto`, `other` or `empty`.
 
     The reading is deliberately *the last statement of the body*, not the last thing executed inside it: a body
@@ -164,13 +171,26 @@ def last_statement(seg):
     the token stream ends it with the `JumpIfNot` that construct compiles to, so both sides call it the same
     thing -- the arm does not leave unconditionally, and the source falls through. That is the distinction the
     `end` column makes between a `Jump` to the list's end and no jump at all.
+
+    Two corrections are measured into this reading. The separators are searched in `clean`, the same span with
+    literals blanked, because a `;` or a `:` **inside a string** is not a statement boundary: `return ".m3u;.pls;.b4s";`
+    read its last statement as `.b4s"` and `return "Quicksave: Current";` as `Current"` until this buffer was passed.
+    A trailing `break;` after a `return` is left as it is: `GameMessage.GetString` spells every one of its 17 arms
+    `return ...; break;`, and the compiler carries that dead `break` as a real `Jump` after the `Return`, so the
+    stream ends those arms on the break too -- "last statement" is the same statement on both sides.
     """
     s = seg.rstrip()
     if not s:
         return "empty"
     if s.endswith(";"):
-        cut = max(s.rfind(";", 0, len(s) - 1), s.rfind("{", 0, len(s) - 1), s.rfind("}", 0, len(s) - 1),
-                  s.rfind(":", 0, len(s) - 1))
+        n = len(s)
+        src = clean[:n] if clean is not None else s
+
+        def cut_of(buf):
+            return max(buf.rfind(";", 0, len(buf) - 1), buf.rfind("{", 0, len(buf) - 1),
+                       buf.rfind("}", 0, len(buf) - 1), buf.rfind(":", 0, len(buf) - 1))
+
+        cut = cut_of(src)
         stmt = s[cut + 1:].strip()
         low = stmt.lower()
         if re.match(r"break\b", low):
@@ -249,6 +269,43 @@ def closing_brace(clive, start, limit):
                 return i
             depth -= 1
     return limit
+
+
+def switch_spans(live, start, end):
+    """`[(open_brace, close_brace)]` for every `switch (...) {...}` block in one function body, in source order.
+
+    Found on `live`, the buffer whose literals are blanked: a `{` inside a string is not a block. A nested switch's
+    span sits inside its parent's, so the two are distinguishable by position alone.
+    """
+    out = []
+    for m in SWITCH.finditer(live, start, end):
+        ob = live.find("{", m.end(), end)
+        if ob < 0:
+            continue
+        out.append((ob, closing_brace(live, ob + 1, end)))
+    return out
+
+
+def label_groups(clive, live, span):
+    """`[(open, close, [(label, start, end), ...])]` -- one group per `switch` block, a nested block's labels out.
+
+    The list a `case` belongs to is its **innermost enclosing `switch`**, not every `case` token in the function:
+    in `UWindowConsoleClientWindow.Notify` each outer arm opens a `switch (C)` of its own, so a flat label list ends
+    the outer arm's body at the *inner* case and reports an arm that leaves on a `break` as falling through (five
+    of the fifteen arms the two readings disagreed on).
+    """
+    spans = switch_spans(live, span[0], span[1])
+    groups = []
+    for ob, cb in spans:
+        marks = []
+        for mark in labels_in(clive, ob, cb):
+            if any(o > ob and c <= cb and o <= mark[1] <= c for o, c in spans):
+                continue                      # a nested switch's own label, not this list's
+            marks.append(mark)
+        if marks:
+            groups.append((ob, cb, marks))
+    groups.sort(key=lambda g: g[0])
+    return groups
 
 
 def labels_in(live, start, end):
@@ -332,72 +389,103 @@ def arms_by_class(path=ARMS_CSV):
 
 
 # --- the join ----------------------------------------------------------------------------------------
-def compare_function(arms, spans, clive):
-    """Match every arm to a `case` label in its function's text and compare how each leaves.
+def compare_function(arms, spans, clive, live=None):
+    """Match every arm to a `case` label of **its own switch** and compare how each leaves.
 
-    Two matches are tried, and they are counted apart because they are different evidence: **by value**, where the
-    arm's own literal canonicalises to the label the source spells (`case 'Music':`, `case 3:`, `case "mp3":`), and
-    **by position**, where the label count equals the arm count but the source spells a symbolic constant
-    (`case MB_OK:`) that only the compiler folds to the integer. A positional match is reported as such, never as a
-    value match.
+    A function's arms carry their `site` (which `Switch` token they belong to) and its text carries one label group
+    per `switch` block, so the join is block by block, not function by function: matching all of a function's arms
+    against all of its labels paired an outer arm with the first case of the `switch` in its own body.
+
+    Two matches are tried inside a block, and they are counted apart because they are different evidence: **by
+    value**, where the arm's own literal canonicalises to the label the source spells (`case 'Music':`, `case 3:`,
+    `case "mp3":`), and **by position**, where the label count equals the arm count but the source spells a symbolic
+    constant (`case MB_OK:`) that only the compiler folds to the integer. A positional match is reported as such,
+    never as a value match.
     """
+    out = {"found": 0, "positional": 0, "checked": 0, "agree": 0, "detail": [], "blocks": 0}
     best = None
     for span in spans:
-        labels = labels_in(clive, span[0], span[1])
-        have = collections.Counter(c for c, _a, _b in labels if c is not None)
+        groups = label_groups(clive, live if live is not None else clive, span)
         hit = 0
         for r in arms:
             c = canon_arm(r.get("label_kind"), r.get("label"))
-            if c[0] != "expr" and have.get(c, 0):
+            if c[0] != "expr" and any(lab == c for _o, _c, marks in groups for lab, _s, _e in marks):
                 hit += 1
         if best is None or hit > best[0]:
-            best = (hit, labels, span)
-    out = {"found": 0, "positional": 0, "checked": 0, "agree": 0, "detail": []}
+            best = (hit, groups, span)
     if best is None:
         return out
-    hit, labels, span = best
-    cases = [i for i, (c, _s, _e) in enumerate(labels) if c is not None]
-    # Positional matching is only honest when the source's labels are *symbolic*: `case MB_OK:` is a name the
-    # compiler folds to the arm's integer, so the values cannot be compared. A literal label that failed to match
-    # is a disagreement about the value, and it is left unmatched rather than paired up by position.
-    symbolic = cases and all(labels[i][0][0] == "expr" for i in cases)
-    positional = hit == 0 and len(cases) == len(arms) and symbolic
-    if positional:
-        out["positional"] = len(cases)
-    used = [False] * len(labels)
-    for arm_index, r in enumerate(arms):
-        c = canon_arm(r.get("label_kind"), r.get("label"))
-        pick = None
+    _hit, groups, span = best
+    out["blocks"] = len(groups)
+    pool = list(groups)
+    sites = []
+    for r in arms:
+        if r.get("site", "1") not in sites:
+            sites.append(r.get("site", "1"))
+    for site in sites:
+        mine = [r for r in arms if r.get("site", "1") == site]
+        pick, best_hits = None, 0
+        for g in pool:
+            hits = sum(1 for r in mine
+                       if canon_arm(r.get("label_kind"), r.get("label"))[0] != "expr"
+                       and any(lab == canon_arm(r.get("label_kind"), r.get("label")) for lab, _s, _e in g[2]))
+            if hits > best_hits:
+                pick, best_hits = g, hits
+        if pick is None and pool:
+            pick = pool[0]
+        if pick is not None:
+            pool.remove(pick)
+        labels = pick[2] if pick else []
+        close = pick[1] if pick else span[1]
+        cases = [i for i, (c, _s, _e) in enumerate(labels) if c is not None]
+        symbolic = cases and all(labels[i][0][0] == "expr" for i in cases)
+        hit = 0
+        have = collections.Counter(c for c, _a, _b in labels if c is not None)
+        for r in mine:
+            c = canon_arm(r.get("label_kind"), r.get("label"))
+            if c[0] != "expr" and have.get(c, 0):
+                hit += 1
+        # Positional matching is only honest when the source's labels are *symbolic*: `case MB_OK:` is a name the
+        # compiler folds to the arm's integer, so the values cannot be compared. A literal label that failed to match
+        # is a disagreement about the value, and it is left unmatched rather than paired up by position.
+        positional = hit == 0 and len(cases) == len(mine) and bool(symbolic)
         if positional:
-            pick = cases[arm_index]
-        elif c[0] != "expr":
-            for i, (lab, _s, _e) in enumerate(labels):
-                if not used[i] and lab == c:
-                    pick = i
-                    break
-        if pick is None:
-            out["detail"].append((r, None, ""))
-            continue
-        used[pick] = True
-        out["found"] += 1
-        seg_end = min(closing_brace(clive, labels[pick][2], span[1]),
-                      labels[pick + 1][1] if pick + 1 < len(labels) else span[1])
-        text_end = last_statement(clive[labels[pick][2]:seg_end])
-        byte_end = r.get("end") or ""
-        out["detail"].append((r, text_end, byte_end))
-        if byte_end == "empty":
+            out["positional"] += len(cases)
+        used = [False] * len(labels)
+        for arm_index, r in enumerate(mine):
+            c = canon_arm(r.get("label_kind"), r.get("label"))
+            pick_i = None
+            if positional:
+                pick_i = cases[arm_index]
+            elif c[0] != "expr":
+                for i, (lab, _s, _e) in enumerate(labels):
+                    if not used[i] and lab == c:
+                        pick_i = i
+                        break
+            if pick_i is None:
+                out["detail"].append((r, None, ""))
+                continue
+            used[pick_i] = True
+            out["found"] += 1
+            seg_end = labels[pick_i + 1][1] if pick_i + 1 < len(labels) else close
+            seg_end = min(seg_end, close)
+            text_end = last_statement(clive[labels[pick_i][2]:seg_end],
+                                      (live if live is not None else clive)[labels[pick_i][2]:seg_end])
+            byte_end = r.get("end") or ""
+            out["detail"].append((r, text_end, byte_end))
+            if byte_end == "empty" or byte_end == "loop":
+                out["checked"] += 1
+                out["agree"] += int(text_end == ("empty" if byte_end == "empty" else "other"))
+                continue
+            if byte_end in ("fallthrough", "into-default"):
+                out["checked"] += 1
+                out["agree"] += int(text_end in ("other", "empty", ""))
+                continue
+            want = {"break": "break", "return": "return", "elsewhere": "continue"}.get(byte_end)
+            if want is None:
+                continue
             out["checked"] += 1
-            out["agree"] += int(text_end == "empty")
-            continue
-        if byte_end in ("fallthrough", "into-default"):
-            out["checked"] += 1
-            out["agree"] += int(text_end in ("other", "empty", ""))
-            continue
-        want = {"break": "break", "return": "return", "elsewhere": "continue"}.get(byte_end)
-        if want is None:
-            continue
-        out["checked"] += 1
-        out["agree"] += int(text_end == want or (want == "continue" and text_end == "goto"))
+            out["agree"] += int(text_end == want or (want == "continue" and text_end == "goto"))
     return out
 
 
@@ -439,7 +527,7 @@ def join(texts, arms_c, arms_f, meta):
         for (package, cls_lower, fn_lower) in [k for k in arms_f if k[0] == key[0] and k[1] == key[1]]:
             fn_arms = arms_f[(package, cls_lower, fn_lower)]
             spans = t["functions"].get(fn_lower) or []
-            got = compare_function(fn_arms, spans, t["clive"])
+            got = compare_function(fn_arms, spans, t["clive"], t["live"])
             found, checked, agree, detail = got["found"], got["checked"], got["agree"], got["detail"]
             match_kind = "value" if got["positional"] == 0 and found else ("position" if got["positional"] else "none")
             census["functions_joined"] += 1
@@ -458,11 +546,14 @@ def join(texts, arms_c, arms_f, meta):
                     continue
                 same = ("yes" if ((byte_end == "empty" and text_end == "empty")
                                   or (byte_end in ("fallthrough", "into-default") and text_end in ("other", "empty"))
+                                  or (byte_end == "loop" and text_end == "other")
                                   or (byte_end == "break" and text_end == "break")
                                   or (byte_end == "return" and text_end == "return")
                                   or (byte_end == "elsewhere" and text_end in ("continue", "goto"))) else "no")
                 if byte_end == "empty" and text_end == "empty":
                     census["empty_agree"] += 1
+                if byte_end == "loop" and text_end == "other":
+                    census["loop_text_other"] += 1
                 if byte_end in ("fallthrough", "into-default") and text_end in ("other", "empty"):
                     census["fallthrough_text_other"] += 1
                 rows.append({"kind": "arm", "package": package, "class": cls_name, "function": fn_lower,
@@ -539,11 +630,13 @@ def doc_block(rows):
     lines += ["",
               "**How an arm leaves agrees with the source, on the arms the text could be read for.** Of **%s** "
               "matched arms, **%s** leave the way the token stream says (`break` to a `break;`, `return` to a "
-              "`return`, `continue` to a `continue`/`goto`); the shared `case A: case B:` body is spelled with no "
+              "`return`, `continue` to a `continue`/`goto`, a loop's back edge to a `for`/`while` body that ends the "
+              "case); the shared `case A: case B:` body is spelled with no "
               "body in **%s** of them, and **%s** of the arms that stop with no jump at all also end their source "
-              "case with no `break`/`return`."
+              "`case` with no `break`/`return`, **%s** of the loop-back arms on a control construct."
               % (comma(census_value(rows, "end_checked")), comma(census_value(rows, "end_agree")),
-                 comma(census_value(rows, "empty_agree")), comma(census_value(rows, "fallthrough_text_other")))]
+                 comma(census_value(rows, "empty_agree")), comma(census_value(rows, "fallthrough_text_other")),
+                 comma(census_value(rows, "loop_text_other")))]
     wild = [r for r in rows if r.get("kind") == "arm" and r.get("end_agree") == "no"]
     if wild:
         lines += ["", "**%s** arm(s) leave differently in the two readings; the first are listed here so the next "
@@ -652,6 +745,31 @@ def selftest():
     if (got2["found"], got2["positional"], got2["agree"]) != (2, 2, 2):
         fails.append("a symbolic label joined by position read found=%d positional=%d agree=%d"
                      % (got2["found"], got2["positional"], got2["agree"]))
+    # A `;` or a `:` inside a quoted string is not a statement boundary: the cut is searched in the literal-blanked
+    # buffer and the statement is read from the buffer that keeps the string.
+    def litmask(t):
+        return re.sub(r'"[^"]*"', lambda m: " " * len(m.group(0)), t)
+
+    for seg in ('return ".m3u;.pls;.b4s";', 'return "Quicksave: Current";', 'return "Checkpoint:"@Name;'):
+        if last_statement(seg, litmask(seg)) != "return":
+            fails.append("a `;`/`:` inside a string broke the last statement of %r (read %r)"
+                         % (seg, last_statement(seg, litmask(seg))))
+    # The list a `case` belongs to is its innermost `switch`: an outer arm that opens a nested `switch` still ends on
+    # its own `break`, and the nested arm is joined to the nested block rather than to the outer list's next case.
+    nest = ("function f(int n)\n{\n    switch (n)\n    {\n"
+            "        case 1:\n            switch (m)\n            {\n"
+            "                case EditControl:\n                    DoThing();\n                    break;\n"
+            "            }\n            break;\n"
+            "        case 2:\n            return 3;\n"
+            "    }\n    return 0;\n}\n")
+    nest_spans = [(nest.find("{\n    switch"), len(nest))]
+    nest_arms = [{"site": "1", "arm": "1", "label_kind": "byte", "label": "1", "end": "break"},
+                 {"site": "1", "arm": "2", "label_kind": "byte", "label": "2", "end": "return"},
+                 {"site": "2", "arm": "1", "label_kind": "expr", "label": "", "end": "break"}]
+    got3 = compare_function(nest_arms, nest_spans, nest, nest)
+    if (got3["found"], got3["positional"], got3["checked"], got3["agree"]) != (3, 1, 3, 3):
+        fails.append("a nested switch joined as found=%d positional=%d checked=%d agree=%d"
+                     % (got3["found"], got3["positional"], got3["checked"], got3["agree"]))
     if fails:
         for f in fails:
             print("FAIL text-switches: %s" % f)

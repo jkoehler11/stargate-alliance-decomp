@@ -1526,9 +1526,13 @@ nested switch's first case, and this corpus has such arms; the chain step skips 
 list of its own, and the census counts the arms whose body carries one.
 
 **`break` is not the only way out of an arm.** The last statement of an arm says how it leaves: a `Jump` that lands
-on the list's own end is a `break`, a `Jump` that lands anywhere else is a `continue` (or a jump out of a loop the
-switch sits in), a `Return` leaves the function, and an arm whose last statement is none of those runs straight into
-the next case's *test code* -- which is not its body, and is the shape a decompiler must not merge into it.
+on the list's own end is a `break`, a `Jump` that lands **behind itself** is a loop's own back edge (the arm runs on
+into the next case's code once the loop ends, exactly as the source's `for (...)` body does), a `Jump` that lands
+anywhere else is a `continue` (or a jump out of a loop the switch sits in), a `Return` leaves the function, and an arm
+whose last statement is none of those runs straight into the next case's *test code* -- which is not its body, and is
+the shape a decompiler must not merge into it. A `Return`'s operand is a token of its own, so where the operand is a
+bare variable the statement stream hands it over as the arm's last *statement*; the operand is put back before the
+exit is read, and this corpus has exactly two such arms.
 
 **The switch's own end is measurable because the breaks agree.** Where every `break` of a list lands on one offset,
 that offset is the switch's end: it bounds the `default:` arm and it is the target an arm's trailing `Jump` exists
@@ -1536,7 +1540,7 @@ for. The lists where they do not agree, and the lists with no `break` at all, ar
 those are the ones whose extent stops at the script's end.
 
 <!-- generated:switch-arms -->
-**Every `Case` arm's body runs from its own case token to the next case of its list.** **200** case lists hold **844** testable arms carrying **2,919** statements (**1** to **58** each, mean **3.5**), and **200** `default:` bodies carry **145** more beside the `0xffff` terminator case (**0** to **58**).
+**Every `Case` arm's body runs from its own case token to the next case of its list.** **200** case lists hold **844** testable arms carrying **2,917** statements (**1** to **58** each, mean **3.5**), and **200** `default:` bodies carry **145** more beside the `0xffff` terminator case (**0** to **58**).
 
 | arm body | arms |
 |---|---:|
@@ -1548,7 +1552,9 @@ those are the ones whose extent stops at the script's end.
 
 **40** arms carry no body at all -- the source's shared `case A: case B:` body, the same population `inventory/jump_branches.csv` counts as its `empty_arm` row, so this walk and that one read one shape to one number.
 
-**How an arm leaves is a measurement, and `break` is not the only way out.** **628** arms end in a `Jump` that lands on their list's own end (a `break`), **2** in a `Jump` that lands elsewhere (a `continue`, or out of a loop the switch sits in) and **162** in a `Return`. The rest stop with no jump at all: **4** run on into the *next* case's code and **8** are their list's last arm, so they run into the `default:` body instead. Neither is an arm the next case owns -- the statements after the next `Case` are that case's own body -- so a decompiler ends the arm where the chain does.
+**How an arm leaves is a measurement, and `break` is not the only way out.** **628** arms end in a `Jump` that lands on their list's own end (a `break`), **0** in a `Jump` that lands elsewhere (a `continue`, or out of a loop the switch sits in), **2** whose last `Jump` is a loop's own back edge -- its target is behind it, so the arm runs on into the next case's code once the loop ends -- and **164** in a `Return`. The rest stop with no jump at all: **2** run on into the *next* case's code and **8** are their list's last arm, so they run into the `default:` body instead. Neither is an arm the next case owns -- the statements after the next `Case` are that case's own body -- so a decompiler ends the arm where the chain does.
+
+**2** arm(s) needed the return's operand put back: a `Return`'s expression is a token of its own, and where that token is a bare variable the statement stream hands it over as the arm's last *statement*. The arm ends on the `Return` -- `StreamPlaylistManager.InsertInPlaylist`'s first two arms, whose source returns `bResult`, are the whole population.
 
 **The switch's end is where its breaks land, and the lists agree on it.** **169** of **200** lists put every `break` of every arm on one offset, so that offset is the switch's own end and it bounds the `default:` body; **0** list(s) jump to more than one target and **29** carry no `break` at all, so their extent stops at the script's end and is counted rather than assumed.
 
@@ -1592,14 +1598,20 @@ carries it now (`label_kind`/`label`: a `ByteConst`, a compact int token, a `Str
 through the name table, or an expression the compiler emitted), and `tools/text-switches.py`
 (`make text-switches`, `inventory/text_switches.csv`) reads the source against it -- one arm to one `case` label.
 
-**The label counts agree to four in 844.** The live text spells **191** `switch` and **848** `case`; the packages
+**The label counts agree to four in 844.** The live text spells **200** `switch` and **848** `case`; the packages
 carry **198** list rows plus the two lists that a `switch` with no case writes as a `default:` row, and **844**
 testable arms. **133** of the **136** classes that carry both readings spell exactly as many `case` labels as their
 class has `Case` tokens, and the three that do not are each *one or two* more, never fewer: `TeamVoicePack` 8
 against 6, `SGMenuInteraction` 13 against 12, `WeaponZoomInteraction` 5 against 4. That is text a class ships and
 its package does not compile -- the shape the `else` census found too, at three classes rather than 45.
 
-**A `default:` label is optional, and the corpus is the control.** Only **41** of the **198** lists spell one,
+**The text census folds keyword case, and two of the four corrections came from that.** UnrealScript folds
+`Switch`/`switch` and `State`/`state`, and this build's own text spells `Switch(Role)` in `Actor.DisplayDebug`:
+the pattern was case-sensitive, so **nine** `switch` keywords were invisible, five functions' label groups were
+never found, and a census that already knew the rule from the `State` blocks (`tools/text-branches.py`'s 55
+capitalised declarations) had it unapplied here. **191** `switch` became **200** once the pattern folded case.
+
+**A `default:` label is optional, and the corpus is the control.** Only **42** of the **198** lists spell one,
 because the grammar does not require it; the `0xffff` terminator case exists in the token stream whether or not the
 source writes a body for it. So `text_default` is not a count that should equal the switch count, and the census is
 written to make that visible rather than to subtract it silently.
@@ -1607,54 +1619,59 @@ written to make that visible rather than to subtract it silently.
 <!-- generated:text-switches -->
 **The shipped source spells the switches, and on most classes it spells the same number of labels the token stream does.** **136** classes carry a readable `ScriptText` and at least one arm: **133** spell exactly as many `case` labels as their package has `Case` tokens, **3** spell more and **0** fewer, with **0** text-only and **0** bytes-only population(s) beside them.
 
-**Corpus totals:** **191** `switch` and **848** `case` in the live text against **844** arm(s) and **198** terminator case(s) in `inventory/switch_arms.csv`, so the source spells a `default:` label for **41** of the **198** lists and a `case` label for **848** of the **844** arms.
+**Corpus totals:** **200** `switch` and **848** `case` in the live text against **844** arm(s) and **198** terminator case(s) in `inventory/switch_arms.csv`, so the source spells a `default:` label for **42** of the **198** lists and a `case` label for **848** of the **844** arms.
 
-**An arm is matched by its own value, and that is what the label column in the arms census bought.** **323** of **844** arms find a `case` label with the same canonical value in their function's text; **464** more are paired **by position**, and only where every label in that function is a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer, which is a different reading and is counted apart; **57** are matched by neither -- an expression-valued case, or a text that is not the revision the package compiled.
+**An arm is matched by its own value, and that is what the label column in the arms census bought.** **323** of **844** arms find a `case` label with the same canonical value in their function's text; **466** more are paired **by position**, and only where every label in that function is a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer, which is a different reading and is counted apart; **55** are matched by neither -- an expression-valued case, or a text that is not the revision the package compiled.
 
-**How an arm leaves agrees with the source, on the arms the text could be read for.** Of **787** matched arms, **772** leave the way the token stream says (`break` to a `break;`, `return` to a `return`, `continue` to a `continue`/`goto`); the shared `case A: case B:` body is spelled with no body in **38** of them, and **8** of the arms that stop with no jump at all also end their source case with no `break`/`return`.
-
-**15** arm(s) leave differently in the two readings; the first are listed here so the next reader starts from a name rather than a count.
-
-| arm | case value | text | bytes |
-|---|---|---|---|
-| `StreamBase.converttofileextension` arm 3 | 5 | other | return |
-| `StreamBase.converttofileextension` arm 10 | 12 | other | return |
-| `StreamBase.converttofileextension` arm 14 | 4 | other | return |
-| `StreamPlaylist.handledebugexec` arm 3 | scripttags | other | elsewhere |
-| `StreamPlaylistManager.handledebugexec` arm 2 | lists | other | elsewhere |
-| `StreamPlaylistManager.insertinplaylist` arm 1 | 0 | return | fallthrough |
-| `StreamPlaylistManager.insertinplaylist` arm 2 | 5 | return | fallthrough |
-| `SavedGameInfo.gettypestring` arm 1 | 3 | other | return |
+**How an arm leaves agrees with the source, on the arms the text could be read for.** Of **789** matched arms, **789** leave the way the token stream says (`break` to a `break;`, `return` to a `return`, `continue` to a `continue`/`goto`, a loop's back edge to a `for`/`while` body that ends the case); the shared `case A: case B:` body is spelled with no body in **38** of them, and **8** of the arms that stop with no jump at all also end their source `case` with no `break`/`return`, **2** of the loop-back arms on a control construct.
 
 The rows are `inventory/text_switches.csv` (`tools/text-switches.py`), one per class, per function and per matched arm; `make text-switches` re-runs the read, `--check-doc` re-renders this block from the committed artifact and `--check` holds the classifier to a synthetic stream, all without the dump.
 <!-- /generated:text-switches -->
 
 **How the arms were matched, and what the match is worth.** **323** arms find a label by **value** -- the source's
 `case 'Music':` against the arm's `NameConst`, `case "mp3":` against a `StringConst`, `case 3:` against a byte or a
-compact int. **464** more are paired **by position**, and only in a function whose every label is a *symbolic*
+compact int. **466** more are paired **by position**, and only in a block whose every label is a *symbolic*
 constant (`case ROLE_Authority:`, `case MB_OK:`) that the compiler folds to the arm's integer: those values cannot
 be compared, so their order is the only evidence, and they are counted apart rather than folded into the value
-match. **57** are matched by neither, which is the population of expression-valued cases plus the texts that are
-not the revision the package compiled.
+match. **55** are matched by neither, which is the population of expression-valued cases plus the texts that are
+not the revision the package compiled. **Twelve** functions carry more than one `Switch` (`Actor.DisplayDebug` five,
+`UDebugMenuBar.MenuItemSelected` seven), so the join is done **block by block**: a function's arms are grouped by the
+`site` the arm census gives them, its text is grouped into one label list per `switch` block, and each site is
+matched to its own block. Matching all of a function's arms against all of its labels -- the first reading -- paired
+an outer arm with the first case of the `switch` inside its own body.
 
-**The exits agree on 772 of the 787 arms the source could be read for**, and the shared body is one of them: the
-`case A: case B:` shape the bytecode counts as an empty arm (**40** of them) is spelled with no body in **38** (the
-other two are among the arms no text label was found for). The **15** that disagree are named in the block above
-and sit in eight functions: most are a text whose case body ends in a construct while the arm ends on an
-unconditional `Jump`, and two are the inverse -- `StreamPlaylistManager.InsertInPlaylist` arms that the source
-**returns** from while the compiled arm falls through into the next case's code.
+**The exits agree on all 789 arms the source could be read for, and the fifteen that disagreed were four reader
+defects rather than four kinds of text.** The join said 772 of 787 before; every one of the fifteen was named and
+re-read, and none of them was the source disagreeing with the compiler:
 
-**The break-less arms are confirmed, mostly, and that is the answer the arm census's last note asked for.** Twelve
-arms stop with no jump at all (4 running into the next case's code, 8 into the `default:` body) and ten of them
-carry a label the source spells: **eight** end their source case with no `break`/`return` as well, so the fallthrough
-is the source's and not the reader's; the two that do not are the `InsertInPlaylist` pair above, where the text
-returns. A decompiler therefore renders these arms as falling into the next case's statements, and the `// End:0x`
-comments in `~/sg1/work/UnrealScript` remain Sg1Tool's output rather than an oracle for it.
+* **six** ended their source case on a `return` whose *string* carried a `;` or a `:` -- `StreamBase.ConvertToFileType`'s
+  three `return ".m3u;.pls;.b4s";`-shaped arms and all three of `SavedGameInfo.GetTypeString` -- because the
+  "last statement" cut was searched in the buffer that keeps literals. It is searched in the literal-blanked buffer
+  now and the statement is still read from the one that keeps them;
+* **five** open a **nested `switch`** as the first statement of their arm (`UWindowConsoleClientWindow.Notify` three,
+  `UDebugMenuBar`/`UDebugMapListCW`/`UDebugVideoClient`'s `Notify` one each), so a flat label list ended the outer arm
+  at the *inner* case: the arm's own `break` read as a fallthrough. A label now belongs to its innermost `switch`;
+* **two** are the loop back edges (`StreamPlaylist.HandleDebugExec`'s `scripttags` and
+  `StreamPlaylistManager.HandleDebugExec`'s `lists`): the arm's last `Jump` targets 118 from 150 and 188 from 250,
+  both *inside* their own body, so the arm is running a `for` loop and does not leave by that jump. The census said
+  `elsewhere` -- a `continue` -- and it says `loop` now, and the source's `for (...)` is the same reading;
+* **two** are the `InsertInPlaylist` pair the previous note read as a text/bytes divergence, where the source
+  **returns** and the arm looked like a fallthrough. It does not: the arm's last two tokens are `Return` then
+  `LocalVariable bResult`, the operand of that return, which the parser hands over as a sibling (`Return` takes its
+  expression as a following token). The arm ends on its `Return`, and there is **no** text/bytes divergence in this
+  population -- the earlier claim is withdrawn.
 
-**What it does not settle.** The text is one reading per class, not per revision: where a function's labels match by
-position rather than by value, a nested `switch` inside an arm can put an inner label where the outer arm's label
-belongs, which is the shape of most of the 15. Telling that apart from a text the package did not compile needs a
-per-function source/bytes diff -- the L2/L3 comparator's job, not a count's.
+**The break-less arms are confirmed.** **Ten** arms stop with no jump at all (**2** running into the next case's
+code, **8** into the `default:` body), and **eight** of them carry a label the source spells and end their source
+`case` with no `break`/`return` too, so the fallthrough is the source's and not the reader's. A decompiler therefore
+renders these arms as falling into the next case's statements, and the `// End:0x` comments in
+`~/sg1/work/UnrealScript` remain Sg1Tool's output rather than an oracle for it.
+
+**What it does not settle.** The **466** positional pairings rest on an inferred label order, so their agreeing exits
+corroborate the order rather than prove it; the **55** arms whose case value names no label in their function's text
+have no exit comparison at all; and the **38** of **40** shared `case A: case B:` bodies are spelled with no body in
+the source, the other two being among those 55. What is settled is the reading: on every arm the source could be
+matched to, the text says how the arm leaves.
 
 ## Not measured
 

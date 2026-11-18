@@ -13025,3 +13025,57 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   open question is whether the shipped text's `switch` bodies can be compiled into the same shape the arm census
   reads -- or whether those eight functions are simply text the package did not compile, which the `less`/`more`
   class populations of the `else` census would then name.
+
+### Execution notes (2026-11-17, the last fifteen arms were reader defects, and the census's exit vocabulary gains a loop)
+
+- **The 15 disagreements were four defects in the two readers, not four kinds of text.** The previous note left the
+  tail of U21 as "nested-switch inner label versus text the package did not compile, needs a per-function diff". The
+  per-function read was done function by function and every one of the fifteen is now named with its cause; none of
+  them is the source disagreeing with the compiler. **789 of 789** arms the source can be matched to leave the way
+  the text says (was 772 of 787).
+- **Six were a `;` or a `:` inside a string.** `last_statement()` cut the body on a separator found in the buffer
+  that keeps literals, so `return ".m3u;.pls;.b4s";` (`StreamBase.ConvertToFileType` arms 3, 10, 14) read `.b4s"`
+  and `return "Quicksave: Current";` (`SavedGameInfo.GetTypeString`'s three arms) read `Current"`. The cut is
+  searched in `live` (literals blanked, same length) and the statement is still read from `clive` (literals kept).
+- **Five were a nested `switch`.** A flat label list ended the outer arm at the *inner* case, so
+  `UWindowConsoleClientWindow.Notify`'s three arms and `UDebugMapListCW`/`UDebugVideoClient`'s `Notify` read as
+  fallthroughs while their own `break` was there. `switch_spans()`/`label_groups()` give one label list per
+  `switch` block (a nested block's labels are its own), and `compare_function()` joins **site by site**: twelve
+  functions carry more than one `Switch` and `UDebugMenuBar.MenuItemSelected` carries seven, so the flat join was
+  pairing an outer arm with the first case of the switch inside its own body.
+- **Two were the arm census reading a loop's back edge as a `continue`.** `StreamPlaylist.HandleDebugExec`'s
+  `scripttags` arm's last `Jump` targets 118 from 150 and `StreamPlaylistManager.HandleDebugExec`'s `lists` arm's
+  188 from 250 -- both inside their own body, so the arm is running a `for` loop and does not leave by that jump.
+  `end` gains `loop` (2 arms) and `elsewhere` is **0**, which is the right number: no arm in this corpus leaves by a
+  `continue`.
+- **Two were the `InsertInPlaylist` pair, and they are not a divergence.** The previous note (and the page) read
+  arms 1 and 2 as the source returning while the compiled arm falls through. Their last two tokens are `Return` then
+  `LocalVariable bResult` -- the return's **operand**, which `dis_parse` hands over as a sibling -- so the arm ends on
+  its `Return` and there is no text/bytes divergence in this population. `switch_arms.csv` drops a trailing **leaf**
+  token that starts exactly where a `Return` ends (2 arms, `return_operand`), and only that: an earlier attempt that
+  dropped whatever followed a `Return` moved 81 arms off `break` and was reverted before it shipped.
+- **The text census was case-sensitive on `switch`, and its own page already knew the rule.** This build spells
+  `Switch(Role)` in `Actor.DisplayDebug`; UnrealScript folds keyword case, and `tools/text-branches.py` had already
+  found 55 capitalised `State` declarations. Folding case on `switch`/`case`/`default`/`break`/`return` makes
+  `text_switch` **200** (was 191) and `text_default` **42** (was 41), and gives the five functions that spell
+  `Switch(` their label groups back -- which is what made the site-by-site join possible at all.
+- **Matched: 323 by value, 466 by position (all-symbolic blocks), 55 by neither.** The value matches are unchanged;
+  the positional count is 2 higher because the two recovered functions match positionally. The **55** unmatched are
+  expression-valued cases and the three classes that spell more labels than they compile. Break-less arms are **10**
+  (2 into the next case's code, 8 into the `default:` body) and **8** of them end their source case with no
+  `break`/`return` too.
+- **What is left is a limit, not a disagreement.** The 466 positional pairings rest on an inferred label order (their
+  agreeing exits corroborate the order rather than prove it) and the 55 unmatched arms have no exit comparison. The
+  exit column is now a total on everything the text can be read for, and that is the most a count can say.
+- **Files.** `tools/switch-arms.py` (`loop` and `return_operand`, `RETURN_OPERAND_LEAVES`, census keys, three
+  self-test cases) + `inventory/switch_arms.csv` (regenerated, 1,270 rows) + `tools/text-switches.py`
+  (`last_statement`'s literal-blanked cut, `switch_spans`/`label_groups`, the per-site join, case-folding, two
+  self-test cases) + `inventory/text_switches.csv` (regenerated, 3,302 rows) + `docs/BYTECODE.md` (the exit
+  paragraph, the case-folding paragraph, the four-defect list, the break-less paragraph, two generated blocks) +
+  `docs/UNKNOWNS.md` U21 (the `loop`/`return_operand` counts and the answered tail) + `docs/ARTIFACTS.md` +
+  `inventory/artifact_hashes.csv` + this note. Two dump reads (1.9 s, 2.8 s); no boot, no Ghidra.
+- **Next measurement.** The `else` census has the same shape one level up: `tools/text-branches.py` counts `else`
+  per **class** and reports an 82.7% agreement with a 989-term surplus in 147 classes, which is exactly the
+  function-level join the switch census just gained. A per-**function** `else` join (the branch census's
+  `JumpIfNot` sites against each function's own `if`/`else` text) would say whether that surplus is a class-level
+  cancellation or a per-function one, and it needs no new dump read.
