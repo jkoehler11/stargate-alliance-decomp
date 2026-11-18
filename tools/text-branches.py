@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """What the shipped source spells, against what the bytecode compiled: `else`, `&&` and `||` (PLAN 3.7).
 
-`inventory/jump_branches.csv` reads the jump graph back over the statement stream and finds **4,047** `else`
-arms. Each class also ships its `ScriptText`, so the same question can be asked of the source: how many `else`
+`inventory/jump_branches.csv` reads the jump graph back over the statement stream and finds **3,877** `else`
+arms (and **170** arms that end by leaving their own loop, which is a `break`). Each class also ships its `ScriptText`, so the same question can be asked of the source: how many `else`
 keywords does the live text spell? The two counts are independent measurements -- one is compiled bytes, the
 other a text buffer the build shipped -- so a class where they disagree is a class whose text is not the
 revision the package compiled (`tools/class-text-comments.py` finds 39 whose whole body sits inside a comment).
@@ -56,7 +56,7 @@ FUNC_MARK = ("<!-- generated:text-branch-functions -->", "<!-- /generated:text-b
 
 FUNC_FIELDS = ["package", "class", "function", "class_verdict", "body", "record",
                "text_else", "text_if", "text_while", "text_for", "terms", "text_and", "text_or",
-               "byte_else", "byte_if", "byte_empty", "byte_expression", "jumpifnot",
+               "byte_else", "byte_if", "byte_empty", "byte_expression", "byte_leave", "jumpifnot",
                "else_verdict", "term_verdict", "short", "surplus", "unpaired", "pp", "note", "census"]
 
 FUNC_NOTE = {
@@ -110,7 +110,7 @@ FUNC_KEYS = tuple(FUNC_NOTE)
 
 FIELDS = ["kind", "package", "class", "function", "live_else", "comment_else", "and", "or", "if", "while", "for",
           "terms", "pp_else", "text_functions", "record_functions", "byte_else", "byte_if", "byte_empty",
-          "byte_expression", "fn_arms", "fn_absent", "fn_short", "fn_long", "fn_outside", "fn_state",
+          "byte_expression", "byte_leave", "fn_arms", "fn_absent", "fn_short", "fn_long", "fn_outside", "fn_state",
           "fn_state_label", "fn_state_nested", "fn_top", "fn_unpaired",
           "verdict", "count", "note"]
 
@@ -140,6 +140,7 @@ CENSUS_NOTE = {
     "byte_if": "straight `if` arms there",
     "byte_empty": "empty then-arms there",
     "byte_expression": "jumps inside a condition there",
+    "byte_leave": "then-arms that end by leaving their own loop -- a `break` there",
     "jumpifnot": "`JumpIfNot` tokens the branch census reports",
     "terms_exact": "joined classes whose term count equals their `JumpIfNot` count exactly",
     "no_and_or": "joined classes whose live text carries no `&&` or `||`",
@@ -174,7 +175,7 @@ CENSUS_NOTE = {
 CENSUS_KEYS = ("classes", "packages", "joined", "agree", "more", "less", "no_branch", "arms_no_text",
                "text_else", "comment_else", "and", "or", "if", "while", "for", "terms", "pp_else",
                "text_functions", "no_branch_functions", "no_branch_terms", "max_gap", "byte_else", "byte_if",
-               "byte_empty", "byte_expression", "jumpifnot", "terms_exact", "no_and_or", "no_and_or_exact",
+               "byte_empty", "byte_expression", "byte_leave", "jumpifnot", "terms_exact", "no_and_or", "no_and_or_exact",
                "with_and_or", "with_and_or_exact", "less_fewer", "less_equal", "less_more", "agree_fewer",
                "agree_equal", "agree_more",
                "fn_absent_names", "decl_legacy", "decl_wide", "decl_no_function", "decl_grammar",
@@ -495,7 +496,8 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                "live_else": "", "comment_else": "", "and": "", "or": "", "if": "", "while": "", "for": "",
                "terms": "", "pp_else": "", "text_functions": "", "record_functions": records.get(key, ""),
                "byte_else": a["else"], "byte_if": a["if"],
-               "byte_empty": a["empty"], "byte_expression": a["expression"], "fn_arms": "", "fn_absent": "",
+               "byte_empty": a["empty"], "byte_expression": a["expression"], "byte_leave": a["leave"],
+               "fn_arms": "", "fn_absent": "",
                "fn_short": "", "fn_long": "", "fn_outside": "", "fn_state_label": "", "fn_state_nested": "",
                "fn_unpaired": "",
                "verdict": "", "count": "", "note": ""}
@@ -503,6 +505,7 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         census["byte_if"] += a["if"]
         census["byte_empty"] += a["empty"]
         census["byte_expression"] += a["expression"]
+        census["byte_leave"] += a["leave"]
         if t is None:
             row["verdict"] = "no-text"
             census["arms_no_text"] += 1
@@ -603,7 +606,7 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                 census["less_" + bucket] += 1
             elif row["verdict"] == "agree":
                 census["agree_" + bucket] += 1
-        jin = a["else"] + a["if"] + a["empty"] + a["expression"]
+        jin = a["else"] + a["leave"] + a["if"] + a["empty"] + a["expression"]
         exact = terms == jin
         census["terms_exact"] += 1 if exact else 0
         if c["and"] + c["or"] == 0:
@@ -694,7 +697,7 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
         body = ((t or {}).get("fn_kw") or {}).get(name)
         cats = (fn_cat.get(key) or {}).get(name) or collections.Counter()
         byte_else, byte_if = cats["else"], cats["if"]
-        jin = byte_else + byte_if + cats["empty"] + cats["expression"]
+        jin = byte_else + byte_if + cats["empty"] + cats["expression"] + cats["leave"]
         terms = (body["if"] + body["while"] + body["for"]) if body else 0
         text_else = body["else"] if body else 0
         row = {"package": key[0], "class": (t or {}).get("class") or key[1], "function": name,
@@ -704,7 +707,8 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
                "text_while": body["while"] if body else 0, "text_for": body["for"] if body else 0,
                "terms": terms, "text_and": body["and"] if body else 0, "text_or": body["or"] if body else 0,
                "byte_else": byte_else, "byte_if": byte_if, "byte_empty": cats["empty"],
-               "byte_expression": cats["expression"], "jumpifnot": jin, "short": 0, "surplus": 0, "unpaired": 0,
+               "byte_expression": cats["expression"], "byte_leave": cats["leave"], "jumpifnot": jin,
+               "short": 0, "surplus": 0, "unpaired": 0,
                "pp": "yes" if name in ((t or {}).get("fn_pp") or set()) else "", "note": ""}
         if row["pp"]:
             census["pp_functions"] += 1
@@ -1319,7 +1323,7 @@ def selftest():
              ("arms_no_text", 0), ("text_else", 4), ("comment_else", 1), ("and", 5), ("or", 1), ("if", 6),
              ("while", 2), ("for", 1), ("terms", 9), ("pp_else", 1), ("text_functions", 5),
              ("no_branch_functions", 1), ("no_branch_terms", 0), ("max_gap", 2), ("byte_else", 3), ("byte_if", 4),
-             ("byte_empty", 0), ("byte_expression", 0), ("jumpifnot", 7), ("terms_exact", 2),
+             ("byte_empty", 0), ("byte_expression", 0), ("byte_leave", 0), ("jumpifnot", 7), ("terms_exact", 2),
              ("no_and_or", 1), ("no_and_or_exact", 1), ("with_and_or", 2), ("with_and_or_exact", 1),
              ("packages", 1), ("less_fewer", 1), ("less_equal", 0), ("less_more", 0), ("agree_fewer", 1),
              ("fn_absent_names", 1))]
