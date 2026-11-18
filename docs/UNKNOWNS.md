@@ -4351,6 +4351,9 @@ token, and never to its `break`. Its exit kind is a column (`end`), and the swit
 `jump_branches.csv`'s `empty_arm` row, which `--check` asserts without the dump.
 
 **Reproduce.** `make switch-arms` (one read of the 18 packages, 1.9 s; no boot, no Ghidra), then
-`python3 tools/switch-arms.py --check --check-doc docs/BYTECODE.md` from the two committed censuses alone. The next
-instrument on this entry is the shipped text's own `// End:0x....` annotations, which carry guest offsets for exactly
-these extents (`SetCategoryVolume`'s arm reads `// End:0x3E` and its `break` `// End:0x97`).
+`python3 tools/switch-arms.py --check --check-doc docs/BYTECODE.md` from the two committed censuses alone.
+
+**One negative, so the next session does not spend a run on it.** The `// End:0x3E` / `// End:0x97` comments that sit
+in `~/sg1/work/UnrealScript` next to a `case` and a `break` read like the compiler's own offsets for exactly these
+extents, but they are not the build's: the shipped `ScriptText` of `PlayerProfile` carries **0** of them, so they are
+Sg1Tool's decompiler output. An offset oracle has to come from the text's own `case` bodies, not from that tree.

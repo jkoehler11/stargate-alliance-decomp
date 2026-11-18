@@ -12966,7 +12966,11 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   arm-body section and its generated block) + `docs/UNKNOWNS.md` U21 + `Makefile` (`switch-arms`, one `.PHONY` token,
   one help line, two `make ci` lines) + `tools/ci.py` (`check_switch_arms`) + `docs/ARTIFACTS.md` +
   `inventory/artifact_hashes.csv` + this note. One read of the 18 packages (1.9 s); no boot, no Ghidra.
-- **Next measurement:** the arm bodies are now bounded, so the remaining flow question on this page is the one no
-  census here has asked -- the shipped `ScriptText` carries the compiler's own `// End:0x...` annotation on every
-  `case`, `break` and `if` (guest offsets: `SetCategoryVolume`'s arm reads `// End:0x3E`, its `break` `// End:0x97`),
-  so the text is an independent oracle for the extents this artifact measures and can be joined to it class by class.
+- **Next measurement, and a negative that saves the next session a trip.** The obvious oracle for an extent is the
+  compiler's own offsets, and `~/sg1/work/UnrealScript` looks like one: it spells `// End:0x3E` before a `case` and
+  `// End:0x97` before a `break`. It is **not the build's text** -- the shipped `ScriptText` of `PlayerProfile`
+  (26,873 bytes) carries **0** `End:0x` annotations -- so those comments are Sg1Tool's decompiler output, and grading
+  this census against them would grade one reader with another's guess. The next instrument on this page is the other
+  half of the same shape instead: whether the **12** arms that stop with no jump (`4` mid-list, `8` into the
+  `default:` arm) spell no `break` in the shipped text, which needs `class-text-bodies`' case-body reader and not an
+  offset join.
