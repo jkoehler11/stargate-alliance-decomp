@@ -13286,3 +13286,39 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   read is each short function's `continue` sites against its arm offsets, so an arm names the statement it belongs
   to instead of being bounded by a count -- `BotBase.setnextenemy` (gap 3 of 3) and `B4SParser.parselines`
   (gap 2 of 5) are the two largest.
+
+### Execution notes (2026-11-18, the 26 shortfall arms are placed on `continue` statements, and the two spellings are one program)
+
+- **Task.** The previous note's next measurement: each short function's `continue` sites against its arm offsets,
+  so an arm names the statement it belongs to instead of being bounded by a count.
+- **The shape is the block-bodied `continue`, and that is all of them.** The landing rules test whether the
+  then-arm *is* the single `Jump`; `if (X) { …; continue; }` writes that jump at the end of a longer arm, so the
+  arm reads as an `else` the text does not spell. `tools/text-branches.py` now splits every compiled `continue` by
+  its then-block: **bare** (the whole then-block -- the form the rules read), **block** (statements in front of it)
+  and **other** (not a then-block's last statement at all), with a `_dead` half for a `continue` in a part this
+  build never compiles, the same split `text_else_dead` makes on the `else` side. Corpus: **95** `continue`
+  statements in the joined bodies = **63** bare + **29** block + **3** other + **0** dead.
+- **The placement, per body.** `inventory/text_branch_functions.csv` gains `text_continue_bare`,
+  `text_continue_block`, `text_continue_other`, `text_continue_dead` and `continue_place`: **18** of the **21**
+  short bodies carry exactly one block-bodied `continue` per arm (`BotBase.setnextenemy` 3/3,
+  `TransportRings.ringsmove` 2/2, `AIMsgManager.getfreeaimsg` 1/1), **2** carry one site more than arms
+  (`B4SParser.parselines` 2/3, `StargateVoicePack.getsquadnumspeeches` 2/3 -- that site's own arm reads as an `if`
+  because its `Jump` lands on the jump's own target, `B4SParser` `00d0`), and **1** carries none
+  (`CoopPlayerPanel.timer`, an `else if` chain whose header arm the text spells with one `else` keyword; its
+  continue is bare and already read). So all 26 arms are placed on statements: no arm is left bounded rather than
+  named, and the two spellings are one program where the skipped region is the loop body's tail
+  (`if (X) { …; continue; } B;` == `if (X) { …; } else { B; }`), which is why no stream reading separates them.
+- **The gate.** `--check-functions` re-derives the split (four counts of one `continue` regex over the same bodies)
+  and recomputes `continue_place` from `short` against `text_continue_block`, so a stale verdict in the file fails
+  `make ci`; `--check` gains a synthetic case for all three kinds plus a comment in front of a `continue` (masked,
+  so it is bare).
+- **Files.** `tools/text-branches.py` (the split, three columns, five census totals, the generated paragraph, the
+  gate, the self-test), `inventory/text_branch_functions.csv`, `docs/BYTECODE.md` (the shortfall paragraph
+  corrected in place -- the arms are placed, not "bounded per body" -- plus its generated block),
+  `docs/UNKNOWNS.md` U22 (rewritten to the answer: guards + empty blocks + landing rules close the text-ahead side,
+  and the residue is the block-bodied continue), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv` and this note.
+  One dump read (7 s); no boot, no Ghidra.
+- **Next measurement.** Name the 3 `other` sites and give them the same treatment: a `continue` that is not a
+  then-block's last statement (a loop body's own, a `switch` arm's) never opens an arm, so the population is a
+  lower bound on switches and loops a renderer must know about -- the same join `switch_join.csv` made for arm
+  counts, one statement over.

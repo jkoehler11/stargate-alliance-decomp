@@ -63,6 +63,8 @@ FUNC_MARK = ("<!-- generated:text-branch-functions -->", "<!-- /generated:text-b
 FUNC_FIELDS = ["package", "class", "function", "class_verdict", "body", "record",
                "text_else", "text_if", "text_while", "text_for", "terms", "text_and", "text_or",
                "text_else_dead", "text_else_empty", "text_terms_dead", "text_continue",
+               "text_continue_bare", "text_continue_block", "text_continue_other", "text_continue_dead",
+               "continue_place",
                "byte_else", "byte_if", "byte_empty", "byte_expression", "byte_leave", "jumpifnot",
                "else_verdict", "term_verdict", "short", "surplus", "unpaired", "pp", "note", "census"]
 
@@ -115,6 +117,13 @@ FUNC_NOTE = {
     "text_else_empty": "`else` keywords in these bodies whose block is empty -- no arm to skip",
     "text_terms_dead": "`if` + `while` + `for` in the body inside such a part",
     "text_continue": "`continue` statements in the body",
+    "text_continue_bare": "`continue` that is the whole then-block -- `if (X) continue;`, the arm the landing rules read",
+    "text_continue_block": "`if` then-block holding statements before its `continue` -- same tokens, but the arm is longer than the single `Jump` the rules test",
+    "text_continue_other": "`continue` that is not a then-block's last statement at all (a loop body's own, a `switch` arm's)",
+    "text_continue_dead": "`continue` inside a part this build never compiles",
+    "continue_place_exact": "short functions whose shortfall equals their block-bodied `continue` count -- one arm per site",
+    "continue_place_text_ahead": "short functions with more block-bodied `continue` sites than arms (one site's arm reads as an `if`: its `Jump` lands on the jump's own target)",
+    "continue_place_record_ahead": "short functions with an arm and no block-bodied `continue` (an `else if` chain's header arm, spelled with one `else`)",
     "text_only_dead": "text-only bodies whose branch text is entirely in a part this build does not compile",
     "text_only_live": "text-only bodies whose compiled text carries a condition the record has no jump for",
     "continue_short": "short functions whose gap is within the body's `continue` count",
@@ -428,6 +437,111 @@ def empty_else(text, dead, a=0, b=None):
     return sum(1 for m in ELSE_EMPTY.finditer(text, a, b) if dead is None or not dead[m.start()])
 
 
+def _block_open(text, a, close):
+    """The `{` matching `text[close] == '}'` inside `text[a:]`, or -1."""
+    depth, i = 0, close
+    while i >= a:
+        if text[i] == "}":
+            depth += 1
+        elif text[i] == "{":
+            depth -= 1
+            if depth == 0:
+                return i
+        i -= 1
+    return -1
+
+
+def _header_is_if(text, a, close):
+    """Whether the `(` matching `text[close] == ')'` opens an `if`'s condition, inside `text[a:]`."""
+    depth, i = 0, close
+    while i >= a:
+        if text[i] == ")":
+            depth += 1
+        elif text[i] == "(":
+            depth -= 1
+            if depth == 0:
+                break
+        i -= 1
+    if i < a:
+        return False
+    j = i - 1
+    while j >= a and text[j] in " \t\r\n":
+        j -= 1
+    k = j
+    while k >= a and (text[k].isalnum() or text[k] == "_"):
+        k -= 1
+    return text[k + 1:j + 1].lower() == "if"
+
+
+def continue_sites(text, dead, a=0, b=None):
+    """`[(offset, kind)]` for every `continue` statement in `text[a:b]`, classified by its then-block.
+
+    `if (X) continue;` and `if (X) { …; continue; }` compile to the same three tokens an `if`/`else` does
+    (`JumpIfNot` over a then-arm that ends in a `Jump` past the target), which is why the record has more `else`
+    arms than the text spells `else`. The split is what says which sites the landing rules can read: **bare** is
+    the whole then-block (the arm is the single `Jump`, which the rules test), **block** a then-block that holds
+    statements in front of its `continue` (the arm is longer, so the rules cannot see it), **other** a `continue`
+    that is not a then-block's last statement at all (a loop body's own, a `switch` arm's). A `continue` inside a
+    part this build never compiles is `dead`, the same split `text_else_dead` makes on the `else` side.
+    """
+    b = len(text) if b is None else b
+    out = []
+    for m in CONTINUE.finditer(text, a, b):
+        q = m.end()
+        while q < b and text[q] in " \t\r\n":
+            q += 1
+        if q >= b or text[q] != ";":
+            continue                       # an identifier that merely starts with the word
+        kind = "other"
+        r = q + 1
+        while r < b and text[r] in " \t\r\n":
+            r += 1
+        if r < b and text[r] == "}":
+            ob = _block_open(text, a, r)
+            if ob >= 0:
+                j = ob - 1
+                while j >= a and text[j] in " \t\r\n":
+                    j -= 1
+                if j >= a and text[j] == ")" and _header_is_if(text, a, j):
+                    # a comment (masked to spaces) in front of the `continue` is not a statement: the block
+                    # then holds nothing but the continue, which is the bare shape one brace over.
+                    kind = "bare" if not text[ob + 1:m.start()].strip(" \t\r\n;") else "block"
+        else:
+            j = m.start() - 1
+            while j >= a and text[j] in " \t\r\n":
+                j -= 1
+            if j >= a and text[j] == ")" and _header_is_if(text, a, j):
+                kind = "bare"
+        if kind == "other":
+            # The brace walk only speaks for a then-block it can name: a then-arm that is the last statement of
+            # a function body closes a block whose opener is no `if`, and the header in front of the continue is
+            # still the one that owns it.
+            j = m.start() - 1
+            while j >= a and text[j] in " \t\r\n":
+                j -= 1
+            if j >= a and text[j] == ")" and _header_is_if(text, a, j):
+                kind = "bare"
+        if dead is not None and dead[m.start()]:
+            kind += "_dead"
+        out.append((m.start(), kind))
+    return out
+
+
+def function_continue_sites(text, dead):
+    """`name -> Counter of bare/block/other` (+ their `_dead` halves) over one class text's function bodies."""
+    ctb = ctb_tool()
+    out = collections.defaultdict(collections.Counter)
+    ms = list(ctb.FUNC.finditer(text))
+    for k, m in enumerate(ms):
+        limit = ms[k + 1].start() if k + 1 < len(ms) else len(text)
+        span = ctb.body_span(text, m.end(), limit)
+        if span is None:
+            continue
+        for _off, kind in continue_sites(text, dead, span[0], span[1]):
+            out[m.group(1).lower()][kind] += 1
+    return out
+
+
 def function_bodies(live, dead=None):
     """`(name -> Counter of the keyword in the body, name -> the dead part of it, names, spans)` for one text.
 
@@ -592,6 +706,7 @@ def walk(system_dir):
                 "state_blocks_capital": len(STATE_CAPITAL.findall(live)),
                 "fn_else": fn_else, "fn_names": fn_names, "fn_kw": fn_kw, "fn_dead": fn_dead,
                 "fn_pp": guarded_functions(live),
+                "fn_continue": function_continue_sites(live, dead),
                 "fn_state": fn_label + fn_nested, "fn_state_label": fn_label, "fn_state_nested": fn_nested,
                 "fn_top": fn_top, "state_blocks": state_blocks, "front_truncated": front_truncated(text),
                 "decl_legacy": len(ctb.FUNC_LEGACY.findall(live)),
@@ -889,6 +1004,7 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
         t = texts.get(key)
         body = ((t or {}).get("fn_kw") or {}).get(name)
         gone = ((t or {}).get("fn_dead") or {}).get(name) or collections.Counter()
+        cc = ((t or {}).get("fn_continue") or {}).get(name) or collections.Counter()
         term_dead = gone["if"] + gone["while"] + gone["for"]
         cats = (fn_cat.get(key) or {}).get(name) or collections.Counter()
         byte_else, byte_if = cats["else"], cats["if"]
@@ -904,6 +1020,9 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
                "text_else_dead": gone["else"], "text_else_empty": body["else_empty"] if body else 0,
                "text_terms_dead": term_dead,
                "text_continue": body["continue"] if body else 0,
+               "text_continue_bare": cc["bare"], "text_continue_block": cc["block"],
+               "text_continue_other": cc["other"], "text_continue_dead": cc["bare_dead"] + cc["block_dead"]
+               + cc["other_dead"], "continue_place": "",
                "byte_else": byte_else, "byte_if": byte_if, "byte_empty": cats["empty"],
                "byte_expression": cats["expression"], "byte_leave": cats["leave"], "jumpifnot": jin,
                "short": 0, "surplus": 0, "unpaired": 0,
@@ -915,6 +1034,8 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
         census["text_else_empty"] += row["text_else_empty"]
         census["text_terms_dead"] += term_dead
         census["text_continue"] += row["text_continue"]
+        for one in ("bare", "block", "other", "dead"):
+            census["text_continue_" + one] += row["text_continue_" + one]
         if body is None:
             row["else_verdict"] = row["term_verdict"] = "no-text"
             row["short"] = byte_else  # every arm of it is one the text cannot account for
@@ -964,6 +1085,12 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
                 census["short_beyond_continue"] += 1
             else:
                 census["continue_short"] += 1
+            # Place the arm on the statement it belongs to. A block-bodied `continue` compiles to the same three
+            # tokens an `if`/`else` does and the text spells no `else` at either, so the arm is the `continue`,
+            # one site per arm; where the counts differ the two shapes that explain it are body facts.
+            row["continue_place"] = ("exact" if row["short"] == row["text_continue_block"] else
+                                     ("text_ahead" if row["text_continue_block"] > row["short"] else "record_ahead"))
+            census["continue_place_" + row["continue_place"]] += 1
         if text_else == byte_else == 0:
             census["else_none"] += 1
         census["else_" + dv] += 1
@@ -1083,6 +1210,12 @@ def func_doc_block(rows):
              raw_agree_only=comma(func_count(rows, "raw_agree_only")),
              continue_short=comma(func_count(rows, "continue_short")),
              short_beyond_continue=comma(func_count(rows, "short_beyond_continue")),
+             cont_bare=comma(func_count(rows, "text_continue_bare")),
+             cont_block=comma(func_count(rows, "text_continue_block")),
+             cont_other=comma(func_count(rows, "text_continue_other")),
+             place_exact=comma(func_count(rows, "continue_place_exact")),
+             place_text_ahead=comma(func_count(rows, "continue_place_text_ahead")),
+             place_record_ahead=comma(func_count(rows, "continue_place_record_ahead")),
              kw_surplus=comma(sum(int(r["surplus"] or 0) for r in fns)),
              kw_unpaired=comma(sum(int(r["unpaired"] or 0) for r in fns)),
              more_fns=comma(gm[0]), more_ok=comma(gm[1]), more_short=comma(gm[2]), more_surplus=comma(gm[3]),
@@ -1117,6 +1250,17 @@ def func_doc_block(rows):
            "falsifier is **{raw_agree_only}**: functions that agreed on the raw count and are short once only "
            "compiled text counts -- zero under this macro set, and the alternatives break 1 to 27 of them "
            "(`docs/BYTECODE.md`'s guard section).\n"
+           "\n**The shortfall is placed, one `continue` statement per arm.** Over the bodies the join shares there are "
+           "**{cont_bare}** `if (X) continue;` (the whole then-block is the continue), **{cont_block}** "
+           "`if (X) {{ …; continue; }}` (the then-block holds statements in front of it) and **{cont_other}** "
+           "`continue` that is not a then-block's last statement at all. The landing rules read the first form, "
+           "because its then-arm is the single `Jump` they test; the second writes the same three tokens with a "
+           "longer arm, so it is what the record's extra arms are. Of the **{else_short}** short bodies "
+           "**{place_exact}** carry exactly one block-bodied `continue` per arm, **{place_text_ahead}** carry one "
+           "site more than arms -- that site's own arm reads as an `if`, its `Jump` landing on the jump's own "
+           "target, so it is not an arm at all -- and **{place_record_ahead}** carry none, an `else if` chain's "
+           "header arm, which the text spells with one `else` keyword. `continue_place` in "
+           "`inventory/text_branch_functions.csv` holds the verdict per row.\n"
            "\n**A class whose totals agree is not a class whose functions agree.** The {agree_fns} functions "
            "inside the classes whose own `else` count agrees split **{agree_ok}** exact / {agree_short} short / "
            "{agree_surplus} ahead / {agree_unpaired} with no arm; inside the `less` classes the {less_fns} "
@@ -1240,6 +1384,25 @@ def check_functions(class_path=CSV_PATH, func_path=FUNC_CSV_PATH):
     if unresolved != func_count(frows, "jumps_unresolved"):
         bad.append("`JumpIfNot` tokens with no branch row: class census says %d, functions artifact %d"
                    % (unresolved, func_count(frows, "jumps_unresolved")))
+    # The `continue` split is four counts of one regex over the same bodies, and the placement verdict is a
+    # subtraction of two of its columns: both are recomputed here so the file cannot hold a stale one.
+    split = sum(int(r["text_continue_" + one] or 0) for r in fns for one in ("bare", "block", "other", "dead"))
+    if split != func_count(frows, "text_continue"):
+        bad.append("the `continue` split covers %d of the %d statements the rows count"
+                   % (split, func_count(frows, "text_continue")))
+    for r in fns:
+        if r.get("text_continue_block") in (None, "") or not r.get("body"):
+            continue                      # no text to place against: a fixture, or a body the text does not declare
+        n = int(r.get("short") or 0)
+        if not n:
+            if r.get("continue_place"):
+                bad.append("%s.%s carries a `continue_place` and no shortfall" % (r["package"], r["function"]))
+            continue
+        block = int(r.get("text_continue_block") or 0)
+        want = ("exact" if block == n else ("text_ahead" if block > n else "record_ahead"))
+        if (r.get("continue_place") or "") != want:
+            bad.append("%s.%s continue_place: row says %r, %d arm(s) against %d block-bodied `continue`"
+                       % (r["package"], r["function"], r.get("continue_place"), n, block))
     if bad:
         for line in bad[:20]:
             print("FAIL text-branches: %s" % line)
@@ -1645,6 +1808,27 @@ def selftest():
         return 1
     if front_truncated("/* a */\nclass X extends Y;\n"):
         print("FAIL text-branches: a whole comment read as truncated")
+        return 1
+    # The `continue` split: the bare form is the whole then-block, the block form holds statements before it, a
+    # `continue` in a loop body's own tail is neither, and a comment in front of one is not a statement.
+    csrc = ("function F()\n{\n"
+            "  for (i = 0; i < n; i++)\n  {\n"
+            "    if (a) continue;\n"
+            "    if (b) { Log(); continue; }\n"
+            "    if (c)\n    {\n      // disabled\n      continue;\n    }\n"
+            "    if (d) { y(); }\n"
+            "    continue;\n"
+            "  }\n"
+            "}\n")
+    clive = mask(csrc)[0]
+    cdead = guard_map(clive)[0]
+    ck = collections.Counter(kind for _o, kind in continue_sites(clive, cdead))
+    if (ck["bare"], ck["block"], ck["other"]) != (2, 1, 1):
+        print("FAIL text-branches: the `continue` split read %r" % dict(ck))
+        return 1
+    # the `else` of a `switch` arm's `continue` is not a then-block, and a masked comment must not make one
+    if continue_sites(mask("function G() { if (x) /* y */ continue; }")[0], None)[0][1] != "bare":
+        print("FAIL text-branches: a comment in front of a `continue` read as a statement")
         return 1
     fns, names = function_else(mask("function Exact() { if (a) b(); else c(); }\n"
                                     "function Short() { if (a) b(); }\n"
