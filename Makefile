@@ -426,6 +426,7 @@ ci:
 	@$(PYTHON) tools/lipsinc-globs.py --check-doc docs/formats/lipsinc-lad.md
 	@$(PYTHON) tools/xemu/map-loads.py --check-doc docs/MAP_LOADS.md
 	@$(PYTHON) tools/xemu/map-frame.py --check-doc docs/MAP_FRAMES.md
+	@$(PYTHON) tools/console-commands.py --check-doc docs/XEMU.md
 	@$(PYTHON) tools/xemu/checkpoint-load.py --check-doc docs/systems/CHECKPOINTS.md
 	@$(PYTHON) tools/save-path-compose.py --check-doc docs/systems/CHECKPOINTS.md
 	@$(PYTHON) tools/path-literals.py --check-doc docs/systems/CHECKPOINTS.md
@@ -1136,8 +1137,10 @@ savegame-paths:
 # 7.3/U15: what the console can run at all -- the exec declarations in the shipped scripts, joined to the binary's
 # Exec flag. `stat` is in neither, which is why a zero on it is a fact about the engine's handler and not delivery.
 console-commands:
-	@test -d "$(WORK)/UnrealScript" || { echo "console-commands: run the extraction first (tools/pkg-script-text.py --all)" >&2; exit 2; }
-	@$(PYTHON) tools/console-commands.py --src "$(WORK)/UnrealScript" -o inventory
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@$(PYTHON) tools/console-commands.py \
+		--system "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory --write-doc docs/XEMU.md
+	@echo "wrote inventory/console_commands.csv"
 
 # U15/7.3: what installs a GameHud on the player. `GameHudPtr` is written by `SetupInteractionsFor`, and the same
 # routine writes four more fields, so the field walk's one `none` is five. Reads the extracted scripts, no boot.
@@ -1145,7 +1148,6 @@ interaction-setup:
 	@test -d "$(WORK)/UnrealScript" || { echo "interaction-setup: run the extraction first (tools/pkg-script-text.py --all)" >&2; exit 2; }
 	@$(PYTHON) tools/interaction-setup.py --src "$(WORK)/UnrealScript" -o inventory
 	@echo "wrote inventory/interaction_setup.csv"
-	@echo "wrote inventory/console_commands.csv"
 
 # The third topic of the same scanner: Karma's runtime, which is what the .ka ragdolls are loaded by.
 karma-runtime:
