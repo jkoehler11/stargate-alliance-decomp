@@ -24,6 +24,11 @@ There is **no compiler prefix to strip**: an arm's first statement is the source
 `SetCategoryVolume` opens one with a `JumpIfNot` (`if (MusicVolume != NewVolume) {...}`) and `TestSwitch` opens one
 with an `Assert`. The census counts those heads rather than assuming one.
 
+An arm's **case value** is the `Case` token's own *child* expression -- invisible in the statement stream -- and it
+is read here as well: `label_kind` is the operand census's vocabulary (`byte`, `int`, `string`, `name`, `expr`) and
+`label` is the value itself, names resolved through the package's name table. That is what lets an arm be named
+(`case 'Music':`) and compared with the shipped source's own `case` labels one arm at a time.
+
     python3 tools/switch-arms.py --system DUMP/System -o inventory/switch_arms.csv --write-doc docs/BYTECODE.md
 
 `--check` needs no dump: it runs a synthetic stream through the same reader and holds the committed artifact's arm
@@ -43,7 +48,7 @@ JUMP_CSV = os.path.join(ROOT, "inventory", "jump_branches.csv")
 JOIN_CSV = os.path.join(ROOT, "inventory", "switch_join.csv")
 DOC_MARK = ("<!-- generated:switch-arms -->", "<!-- /generated:switch-arms -->")
 FIELDS = ["kind", "package", "path", "site", "arm", "case", "body_start", "body_end", "statements", "end",
-          "first", "last", "count", "note"]
+          "first", "last", "label_kind", "label", "count", "note"]
 
 CENSUS_NOTE = {
     "lists": "case lists (a chain of `Case` tokens ending on the `0xffff` terminator)",
@@ -69,13 +74,19 @@ CENSUS_NOTE = {
     "default_open": "`default:` bodies whose end no `break` names, so the extent stops at the script's end",
     "nested": "bodies (an arm or a `default:`) carrying a `Switch` of their own",
     "one_arm": "lists with a single arm, where the body's end is the terminator itself",
+    "label_byte": "arms whose case value is a `ByteConst`",
+    "label_int": "arms whose case value is a compact integer token (`IntConstByte`, `IntZero`, `IntOne`, `IntConst`)",
+    "label_string": "arms whose case value is a `StringConst`",
+    "label_name": "arms whose case value is a `NameConst`",
+    "label_expr": "arms whose case value is an expression the compiler emitted (`InstanceVariable`, `PrimitiveCast`, ...)",
 }
 
 CENSUS_ORDER = ("lists", "arms", "defaults", "arm_statements", "arm_min", "arm_max", "arm_mean_x10", "empty",
                 "head_if", "end_break", "end_elsewhere", "end_return", "end_fallthrough", "end_into_default",
                 "lists_unanimous",
                 "lists_split", "lists_no_break", "default_statements", "default_min", "default_max",
-                "default_open", "nested", "one_arm")
+                "default_open", "nested", "one_arm",
+                "label_byte", "label_int", "label_string", "label_name", "label_expr")
 
 
 def load_tool(name, filename):
@@ -83,6 +94,49 @@ def load_tool(name, filename):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+def label_of(node, resolve=None):
+    """`(kind, text)` for one `Case` token's own value expression.
+
+    The value is the token's first child, so it is invisible in the statement stream but readable here: a
+    `ByteConst`, a compact int token, a `StringConst`, a `NameConst` (resolved to its name when a package is in
+    hand) or -- on 35 of the 200 shipped sites -- an expression the compiler emitted instead of a literal
+    (`InstanceVariable`, `PrimitiveCast`). Kinds are the vocabulary `tools/uscript-dis.py --switches` already
+    counts, so an arm's value and the operand census's case-value column cannot disagree about what a token is.
+    """
+    kids = node.get("children") or []
+    if not kids:
+        return "none", ""
+    k = kids[0]
+    name = k.get("name") or ""
+    raw = k.get("operands") or b""
+    if name == "ByteConst":
+        return "byte", str(raw[0] if raw else 0)
+    if name == "IntConstByte":
+        return "int", str(raw[0] if raw else 0)
+    if name == "IntZero":
+        return "int", "0"
+    if name == "IntOne":
+        return "int", "1"
+    if name == "IntConst":
+        return "int", str(int.from_bytes(raw[:4], "little", signed=True)) if len(raw) >= 4 else ""
+    if name == "StringConst":
+        return "string", raw.split(b"\x00", 1)[0].decode("latin-1")
+    if name == "NameConst":
+        # The operand is the archive's *compact* index (bit 7 sign, bit 6 "more bytes", six bits then seven),
+        # not a fixed-width integer: `74 06` is 0x1b4 = `Music`, and reading it as a word answers the name 1,216
+        # entries away (`read_index`, the reader every other index operand in this tree uses).
+        if resolve is not None and raw:
+            try:
+                index, _end = DIS.read_index(raw, 0)
+            except IndexError:
+                return "name", ""
+            got = resolve(index)
+            if got:
+                return "name", got
+        return "name", ""
+    return "expr", name
 
 
 def measure_script(stmts, links, edges):
@@ -135,7 +189,7 @@ def measure_script(stmts, links, edges):
                     census["head_if"] += 1
             if any(n["name"] == "Switch" for n in body):
                 census["nested"] += 1
-            arms.append({"arm": i + 1, "case": chain[i], "body": body, "end": end})
+            arms.append({"arm": i + 1, "case": chain[i], "node": stmts[pos[i]], "body": body, "end": end})
             census["arms"] += 1
         if len(arms) == 1:
             census["one_arm"] += 1
@@ -171,12 +225,14 @@ def measure_script(stmts, links, edges):
         census["default_min"] = min(census.get("default_min", 10 ** 9), len(tail))
         census["default_max"] = max(census.get("default_max", 0), len(tail))
         heads.append({"case": chain[0], "arms": arms,
-                      "default": {"case": chain[-1], "body": tail, "end_at": end_at}, "end": end_at})
+                      "default": {"case": chain[-1], "node": stmts[term], "body": tail, "end_at": end_at},
+                      "end": end_at})
     return heads, census
 
 
-def script_rows(package, path, stmts, links, edges, f2g, census):
-    """Every row one script contributes -- its arms, its `default:` body and a list row per switch."""
+def script_rows(package, path, stmts, links, edges, f2g, census, resolve=None):
+    """Every row one script contributes -- its arms (with their case values), its `default:` body and a list row
+    per switch."""
     heads, local = measure_script(stmts, links, edges)
     # The census is merged before the early return: a list of one case (a `switch` with no case) writes no row of its
     # own but is still a list, and dropping it here made 200 lists read as 198.
@@ -197,6 +253,8 @@ def script_rows(package, path, stmts, links, edges, f2g, census):
     for site, head in enumerate(heads, start=1):
         for r in head["arms"]:
             body = r["body"]
+            kind, label = label_of(r["node"], resolve)
+            census["label_" + ("expr" if kind == "none" else kind)] += 1
             rows.append({
                 "kind": "arm", "package": package, "path": path, "site": site, "arm": r["arm"],
                 "case": g(r["case"]),
@@ -204,6 +262,7 @@ def script_rows(package, path, stmts, links, edges, f2g, census):
                 "body_end": g(body[-1]["end"]) if body else "",
                 "statements": len(body), "end": r["end"],
                 "first": body[0]["name"] if body else "", "last": body[-1]["name"] if body else "",
+                "label_kind": kind, "label": label,
                 "note": "",
             })
         tail = head["default"]["body"]
@@ -225,6 +284,18 @@ def script_rows(package, path, stmts, links, edges, f2g, census):
     return rows
 
 
+def namer(pkg):
+    """A bounds-safe `index -> name` for one package's name table: a `NameConst` operand is a table index."""
+    def resolve(i):
+        try:
+            if i < 0 or i >= len(pkg.names):
+                return ""
+            return pkg.name(i)
+        except Exception:  # noqa: BLE001 -- a name table read must never sink a census
+            return ""
+    return resolve
+
+
 def read_dump(system):
     table = DIS.Table()
     stats = {"seen": 0, "walked": 0, "packages": 0}
@@ -239,7 +310,8 @@ def read_dump(system):
         path = DIS.export_path(pkg, exp)
         starts, _glen = JG.guest_map(spans)
         f2g = {a: at for at, a in starts.items()}
-        rows.extend(script_rows(package, path, stmts, links, edges, f2g, census))
+        rows.extend(script_rows(package, path, stmts, links, edges, f2g, census,
+                                resolve=namer(pkg)))
     if census["arms"]:
         # One tenth of a statement, so the block quotes an integer rather than a rounded float.
         census["arm_mean_x10"] = int(round(10.0 * census["arm_statements"] / census["arms"]))
@@ -331,8 +403,30 @@ def doc_block(rows):
               "statement compiles to -- `SetCategoryVolume`'s `if (MusicVolume != NewVolume)` at the head of a case, "
               "`TestSwitch`'s `Assert` at the head of another -- so a decompiler reads the body's first statement "
               "rather than skipping a fixed one." % comma(census_value(rows, "head_if"))]
+    kinds = collections.Counter(r["label_kind"] for r in arms)
+    lines += ["",
+              "**An arm's test value is readable, and it is a literal on %s of %s arms.** The `Case` token's own "
+              "value expression is a *child* of the token, so it never appears in the statement stream, but it is "
+              "there: **%s** arms carry a `ByteConst`, **%s** a compact integer token, **%s** a `StringConst` and "
+              "**%s** a `NameConst`, resolved here through the package's name table (`case 'Music':`); **%s** carry "
+              "an expression the compiler emitted instead of a folded value (`InstanceVariable`, `PrimitiveCast`). "
+              "That split is `inventory/switch_operands.csv`'s per-switch census read one level down, and it is "
+              "what makes the shipped source comparable with a single arm rather than with a class's total."
+              % (comma(census_value(rows, "arms") - kinds["expr"]), comma(census_value(rows, "arms")),
+                 comma(kinds["byte"]), comma(kinds["int"]), comma(kinds["string"]), comma(kinds["name"]),
+                 comma(kinds["expr"]))]
+    examples = []
+    for kind in ("byte", "int", "string", "name", "expr"):
+        got = [r for r in arms if r["label_kind"] == kind]
+        if got:
+            examples.append((kind, got[0]))
+    if examples:
+        lines += ["", "| label kind | arms | one arm | case value |", "|---|---:|---|---|"]
+        for kind, r in examples:
+            shown = r["label"] if kind != "expr" else "`%s`" % r["label"]
+            lines.append("| %s | %s | `%s` arm %s | %s |" % (kind, comma(kinds[kind]), r["path"], r["arm"], shown))
     if longest_rows:
-        lines += ["", "| longest arm | arm | statements |", "|---|---|---:|"]
+        lines += ["", "| longest arm | arm | statements |", "|---|---|---:"]
         for r in longest_rows:
             lines.append("| `%s` | %s at %s | %d |" % (r["path"], r["arm"], r["case"], int(r["statements"])))
     lines += ["",
@@ -401,10 +495,16 @@ def cross_check(rows):
               "shape read twice and must be one number" % (mine, empty))
         return 1
     ends = collections.Counter(r["end"] for r in arms)
+    kinds = collections.Counter(r.get("label_kind", "") for r in arms)
+    if sum(kinds.values()) != len(arms) or kinds["none"]:
+        print("FAIL switch-arms: the label kinds cover %d of %d arms (%r) -- every arm carries a case value"
+              % (sum(kinds.values()), len(arms), dict(kinds)))
+        return 1
     print("ok   switch-arms: %d arms, %d empty, %d break, %d elsewhere, %d return, %d fallthrough, %d into the "
-          "default arm -- matches the join and jump_branches"
+          "default arm -- matches the join and jump_branches; labels %s"
           % (len(arms), mine, ends["break"], ends["elsewhere"], ends["return"], ends["fallthrough"],
-             ends["into-default"]))
+             ends["into-default"],
+             ", ".join("%s %d" % (k, kinds[k]) for k in ("byte", "int", "string", "name", "expr") if kinds[k])))
     return 0
 
 
@@ -456,9 +556,30 @@ def selftest():
     if len(heads3) != 2 or [len(r["body"]) for r in heads3[0]["arms"]] != [5] or census3["nested"] != 1:
         print("FAIL switch-arms: a nested switch read %r" % ([len(r["body"]) for r in heads3[0]["arms"]],))
         return 1
+    # An arm's case value is the token's own child, and its kind is the operand census's vocabulary.
+    def with_label(name, operands):
+        return {"offset": 0, "name": "Case", "operands": b"", "end": 1, "opcode": 0,
+                "children": [{"name": name, "operands": operands, "children": [], "end": 1, "opcode": 0}]}
+    if label_of(with_label("ByteConst", b"\x07")) != ("byte", "7"):
+        print("FAIL switch-arms: a byte case value read %r" % (label_of(with_label("ByteConst", b"\x07")),))
+        return 1
+    if label_of(with_label("IntConstByte", b"\x02")) != ("int", "2"):
+        print("FAIL switch-arms: a compact int case value read %r" % (label_of(with_label("IntConstByte", b"\x02")),))
+        return 1
+    if label_of(with_label("StringConst", b"mp3\x00")) != ("string", "mp3"):
+        print("FAIL switch-arms: a string case value read %r" % (label_of(with_label("StringConst", b"mp3\x00")),))
+        return 1
+    if label_of(with_label("NameConst", b"\x02\x00"), resolve=lambda i: {2: "Music"}.get(i, "")) != ("name", "Music"):
+        print("FAIL switch-arms: a name case value read %r" % (label_of(with_label("NameConst", b"\x02\x00")),))
+        return 1
+    if label_of({"children": []}) != ("none", ""):
+        print("FAIL switch-arms: a case token with no value expression is not `none`")
+        return 1
     import tempfile
-    rows = [{"kind": "arm", "path": "P.C.F", "arm": "1", "case": "0x0001", "statements": "2", "end": "break"},
-            {"kind": "arm", "path": "P.C.F", "arm": "2", "case": "0x0005", "statements": "0", "end": "empty"}]
+    rows = [{"kind": "arm", "path": "P.C.F", "arm": "1", "case": "0x0001", "statements": "2", "end": "break",
+             "label_kind": "byte", "label": "3"},
+            {"kind": "arm", "path": "P.C.F", "arm": "2", "case": "0x0005", "statements": "0", "end": "empty",
+             "label_kind": "int", "label": "0"}]
     for key in CENSUS_ORDER:
         rows.append({"kind": "census", "note": CENSUS_NOTE[key],
                      "count": 2 if key in ("lists", "arms", "arm_max", "end_break") else 1})

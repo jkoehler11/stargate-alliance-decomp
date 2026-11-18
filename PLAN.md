@@ -12974,3 +12974,54 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   half of the same shape instead: whether the **12** arms that stop with no jump (`4` mid-list, `8` into the
   `default:` arm) spell no `break` in the shipped text, which needs `class-text-bodies`' case-body reader and not an
   offset join.
+
+### Execution notes (2026-11-17, the source's own `case` labels against the arms, one arm at a time)
+
+- **Task.** The previous note's next instrument -- whether the twelve arms that stop with no jump spell no `break` in
+  the shipped text -- and the piece of census that instrument needed: an arm had no *name*, so a `case` label could
+  not be matched to it. Both land here as one bundle: the arm census carries the case value, a text census reads the
+  source's own switches, and the two are joined arm by arm.
+- **An arm's value is the `Case` token's child, and it is a literal on 785 of 844.** `switch-arms.py` reads it into
+  `label_kind`/`label`: **417** `ByteConst`, **189** a compact integer token, **143** `StringConst`, **36**
+  `NameConst` and **59** an expression the compiler emitted (`InstanceVariable`, `PrimitiveCast`). The name is stored
+  as the archive's **compact index**, not a fixed-width word: `74 06` read as a word answers the name 1,216 entries
+  away (`ServerDrive` for `Music`), and `read_index` is the decoder the rest of the tree already uses. The label
+  table on the page is rendered from the artifact, so the split cannot drift from `switch_operands.csv`'s own.
+- **The source is an independent reading, and it agrees to four labels in 844.** `tools/text-switches.py`
+  (`make text-switches`; `inventory/text_switches.csv`, 3,299 rows) masks **comments only** and keeps literals --
+  `text-branches.py`'s mask blanks both, which turns `case '0':` into `case    :` and is why the first join read 144
+  of 844 -- then counts `switch`/`case`/`default`/`break` per class and per function. The live text spells **191**
+  `switch` and **848** `case` against **198** list rows (plus the two a `switch` with no case writes as a `default:`
+  row) and **844** arms; **133** of the **136** classes that carry both readings are exact and the three that are
+  not are each one or two **more** (`TeamVoicePack` 8/6, `SGMenuInteraction` 13/12, `WeaponZoomInteraction` 5/4).
+- **`default:` is optional in the grammar, so 41 of 198 is the answer and not a shortfall.** The census reports the
+  text's `default:` labels beside the terminator-case count rather than subtracting one from the other; two of the
+  corpora's 200 lists are a `switch` with no case at all, and the terminator exists in the token stream either way.
+- **A case body's extent needs two bounds, and the second one is the switch's brace.** The first join bounded each
+  arm by the next `case`/`default` only; a list's **last** arm then read across the switch's `}` into whatever
+  followed it -- in `Actor.DisplayDebug` the next `switch`, so its last arm looked like one that never leaves.
+  `closing_brace()` adds the missing bound, and `last_statement()` reads the body's own last statement (ending in a
+  block counts as falling through, which is what the token stream's `JumpIfNot` says too).
+- **Matched two ways, counted apart.** **323** arms find a label by **value**; **464** are paired **by position** and
+  only where every label in the function is a *symbolic* constant (`case ROLE_Authority:`) the compiler folds to the
+  arm's integer -- a weaker reading, so it is a column of its own; **57** are matched by neither (expression-valued
+  cases, or text that is not the compiled revision). **772 of the 787** arms the source could be read for leave the
+  way the token stream says, including **38 of the 40** shared `case A: case B:` bodies.
+- **The twelve break-less arms are answered: eight are the source's, two are not, two are unreadable.** Ten of the
+  twelve carry a label the text spells; **eight** end their source case with no `break`/`return`, so the fallthrough
+  is the author's and a decompiler must render it as running into the next case's statements; the two exceptions are
+  `StreamPlaylistManager.InsertInPlaylist` arms 1 and 2, where the source **returns** and the compiled arm falls
+  through -- a text/bytes divergence named in the page's table rather than averaged away. The other fifteen
+  disagreements sit in eight functions and are the nested-switch shape the per-function match cannot separate from a
+  revision difference; that separation needs the L2/L3 comparator, not a count.
+- **Files.** `tools/switch-arms.py` (the label columns, `label_of`/`namer`, census keys, `--check` invariant, self-test)
+  + `inventory/switch_arms.csv` (regenerated, 1,268 rows) + `tools/text-switches.py` (new) +
+  `inventory/text_switches.csv` (new, 3,299 rows) + `docs/BYTECODE.md` (the label paragraph, the source section and
+  its generated block) + `docs/UNKNOWNS.md` U21 + `Makefile` (`text-switches`, one `.PHONY` token, one help line, two
+  `make ci` lines) + `docs/ARTIFACTS.md` + `inventory/artifact_hashes.csv` + this note. Two dump reads (1.9 s and
+  2.8 s); no boot, no Ghidra.
+- **Next measurement.** The remaining tail is the **15** arms whose source and bytes disagree, and the way in is a
+  per-function source/bytes diff: `tools/uscript-dis.py --compare` already grades bytecode against bytecode, so the
+  open question is whether the shipped text's `switch` bodies can be compiled into the same shape the arm census
+  reads -- or whether those eight functions are simply text the package did not compile, which the `less`/`more`
+  class populations of the `else` census would then name.
