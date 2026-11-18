@@ -13507,3 +13507,42 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `State`-outer chain for the bodied declarations the resolver misses (`Engine.Mover` 24, `StargateGame.BotEnemy`
   20, `Engine.PlayerController` 14 are the concentration), and decide whether the scope detector or the export walk
   is the half that is wrong — one dump read, no boot.
+
+### Execution notes (2026-11-18, one state-header rule for the declaration scopes, and the 292 bodies that named no export become 38)
+
+- **Task.** The previous note's next measurement: the 292 bodied declarations that name no `Function` export of
+  their class (`Engine.Mover` 24, `StargateGame.BotEnemy` 20, `Engine.PlayerController` 14), read against the
+  text's `state` blocks and the exports' `State`-outer chain, to decide which half of the resolver was wrong.
+- **The scope detector was the wrong half, and it was not one bug but four readers.** Over the same 2,319 class
+  texts, `tools/text-stubs.py`'s own header pattern read **424** `state` blocks, `tools/ai-states.py` **457**,
+  `tools/uscript-dis.py` **518**, and one rule accepting every spelling the corpus uses -- `simulated state
+  ZoomingIn extends Zooming`, `state() LeadInOutLooper` (every state in `Engine.Mover`), `state(0) Name`,
+  `State FadeOut`, `extends Pawn.Waiting` -- reads **554**, all of them brace-matched with the `{` on the header's
+  line or the next. The export walk was already right: a `Function` outered to a `UState` was resolved correctly
+  the moment the declaration was handed the right scope name. The first cut of the rule was **589** blocks
+  because a prefix-only `state` also matches `stateTime += DeltaTime` and then swallows the next brace; the
+  newline-gap control (0 or 1 newline before `{`, measured over all 589) is what caught it.
+- **What it moved.** `body_no_export` **292 -> 38**, every one of the 38 inside a preprocessor block this build
+  does not compile (`#ifdef pc` 21, `#ifdefPS2` 17, five of them in a state), so the corpus has no live text
+  declaring a body with no record. The stub side moved the same way and settles the class-over-state preference:
+  stubs naming no export **11 -> 0**, state-owned **227 -> 254**, class-owned **668 -> 652**, bodied stubs
+  **15 -> 3** (the 12 mirror-case rows read a state declaration with the class's body). `class_text_bodies.csv`:
+  `state_declarations` **251 -> 278**, distinct state names **290 -> 317**, labels **61 -> 63**. New artifact rows:
+  the 38 misresolved declarations are published (`kind=body`) with their line, scope, brace depth, the open
+  directive and a word for why no export exists, and the census carries `state_blocks` **554** beside
+  `state_blocks_plain` **424** as the control.
+- **Files.** `tools/class-text-bodies.py` (`STATE_MODIFIERS`/`STATE_HEADER`, `state_blocks()`, `state_vocabulary`
+  on it, two self-test cases: the five spellings and a function line that must not match) + `tools/text-stubs.py`
+  (`state_spans` delegates, `plain_state_spans` as the control, `directive_stack`, `depth`/`directive` columns,
+  `kind=body` rows, seven census keys, the count-aware stub sentence, the new body paragraph and table, two
+  self-test cases) + `inventory/text_stubs.csv` + `inventory/class_text_bodies.csv` +
+  `docs/PACKAGE_SCRIPT_TEXT.md` (both generated blocks, a new "One state header, five spellings" section) +
+  `docs/UNKNOWNS.md` U24 + `docs/ARTIFACTS.md` + `inventory/artifact_hashes.csv` + this note. Two dump reads
+  (4 s and 12 s); no boot, no Ghidra.
+- **Not in this PR.** `ai-states` / `ai-state-body` / `state-exports` (457) and `uscript-dis` (518) still read
+  their own header copies; moving them changes `ai_states`, `state_code`, `state_exports` and `docs/systems/AI.md`'s
+  151 states together, so it is its own bundle.
+- **Next measurement.** That substitution: point `ai-states.STATE_DECL` at `class-text-bodies.state_blocks`,
+  regenerate `inventory/ai_states.csv`, `inventory/state_code.csv` and `inventory/state_exports.csv`, and report
+  how many of the 97 blocks the narrow rule missed carry `GotoState` edges or labels — the AI page's 151 states,
+  189 sleeps and 268 dispatch calls are floors until that is done.

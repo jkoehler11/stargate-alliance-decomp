@@ -4625,3 +4625,38 @@ the row keeps the declared symbol in its `keys` column and the page prints both)
 tables do not name keeps the declared spelling (measured: none of the 99 text+native declarations). The other
 direction — a *bodied* declaration that names no export at all — is not this entry's and is not measured here; the
 stub census's body-side counterpart is named in the PLAN note as the next read.
+
+## U24. A state header has five spellings and the four readers of it disagreed — answered: one rule reads 554 blocks, and the 292 bodied declarations that named no export become 38, every one inside a preprocessor block
+
+**Status.** **Answered 2026-11-18**, no boot. The scope detector was the half that was wrong, not the export
+walk: the packages' `State` -> `Function` chain already carried the records, and a declaration written inside a
+block the reader missed was keyed to the class's own level, where no `Function` of that name exists.
+
+**Observed (as the entry stood).** `inventory/text_stubs.csv` counted **292** bodied declarations its
+`export_resolver` answered nothing for (`body_no_export`), concentrated in `Engine.Mover` (**24**),
+`StargateGame.BotEnemy` (**20**) and `Engine.PlayerController` (**14**), and a sample read as state members
+(`AmbientCreatures.HerdAnimal.Trigger`, `BeginState`, `NotifyLanded`) that the rule placed at class level.
+
+**The measurement.** Over the same **2,319** class texts the four state-header readers read **424**
+(`text-stubs`' own `state Name {` pattern), **457** (`ai-states`, also `ai-state-body`, `state-exports`; `auto`
+but no parentheses and no modifier word), **518** (`uscript-dis`; parentheses, brace required on the same line)
+and **554** blocks under one rule that accepts every spelling the corpus uses. All **554** brace-match with the
+`{` on the header's line or the next one, which is the control that separates headers from statements: a
+prefix-only pattern also matches `stateTime += DeltaTime` and then takes the next brace it finds, which is how a
+first cut of this rule read 589.
+
+**What it moved.** `inventory/text_stubs.csv`: `body_no_export` **292 -> 38**, and every one of the 38 is written
+inside a preprocessor block this build does not compile (`#ifdef pc` **21**, `#ifdefPS2` **17**; **5** of them in
+a state block, the rest at class level), so no live text declares a body with no record behind it. The same rule
+settles the class-over-state preference the page documented: stubs naming no export **11 -> 0**, state-owned stubs
+**227 -> 254**, class-owned **668 -> 652**, and the **12** mirror-case rows that read a state's declaration with
+the class's body are gone (bodied stubs **15 -> 3**), because a state's bodyless declaration now takes the
+state's own empty script. `inventory/class_text_bodies.csv`: `state_declarations` **251 -> 278** (over the classes
+that ship a comment), distinct state names **290 -> 317**, state labels **61 -> 63**.
+
+**Residual.** `tools/ai-states.py` (and `ai-state-body.py`, `state-exports.py` through it) and
+`tools/uscript-dis.py` still carry their own copies, 457 and 518 of the 554 blocks, so `docs/systems/AI.md`'s
+151 states over 32 controller classes is a floor under a narrower rule. Substituting the one rule there moves
+`ai_states`, `state_code`, `state_exports` and the AI page together — its own bundle, named in the PLAN note.
+A declaration that sits in a live block and still names no export is now a population of zero, so the next
+question is not a scope one.

@@ -659,7 +659,7 @@ it and this block.
 | the class itself | 649 | 3 |
 | a `State` of the class | 254 | 0 |
 
-A stub's name is almost always one the package exports: **652 name a `Function` the class itself exports**, **254 one a `State` of the class exports**, and **0 name no export at all** -- a class-level declaration whose name only a state binds, which a class-over-state index cannot see. **2** are declared a second time in the same text with a body, **37** sit in a window that holds a block comment and **0** carry `FUNC_Native` -- so the population is a language shape and not a reader's miss. 647 distinct names are behind the 906 stubs.
+**Every stub's name is a record the class binds**: **652 name a `Function` the class itself exports** and **254 one a `State` of the class exports** -- the names a class-over-state reading left unowned were state members whose block a plain-header reader missed, which is the state-scope paragraph below. **2** are declared a second time in the same text with a body, **37** sit in a window that holds a block comment and **0** carry `FUNC_Native` -- so the population is a language shape and not a reader's miss. 647 distinct names are behind the 906 stubs.
 
 | package | stubs |
 |---|---:|
@@ -749,6 +749,21 @@ The stubs whose payload carries code are the ones where the text and the build d
 | `Engine.interactionmaster.addinteraction` | 314 | class |
 
 <!-- /generated:text-stubs -->
+
+## One state header, five spellings
+
+A class's `ScriptText` writes its states as `state Idle { ... }`, and the corpus does not stop there: `auto state
+Idle`, `state(0) Idle`, `state() LeadInOutLooper` (every state in `Engine.Mover`), `simulated state ZoomingIn
+extends Zooming`, a capitalised `State FadeOut` and a parent named through another class (`extends Pawn.Waiting`).
+Four readers of that header live in `tools/`, and over the same 2,319 class texts they read **424** (`text-stubs`'
+own old pattern), **457** (`ai-states`, and with it `ai-state-body` and `state-exports`), **518** (`uscript-dis`)
+and **554** blocks. The last is `class-text-bodies.state_blocks`, the one rule the declaration scopes are keyed
+on: a declaration written inside a block a reader misses is keyed to the class's own level, where no `Function`
+export of that name exists -- a state's record is outered to the `UState` -- so the miss reads as a body with no
+export anywhere (UNKNOWNS U24). The test that this rule reads headers rather than statements is the gap: all 554
+blocks have their `{` on the header's own line or the next one, while a prefix-only pattern also matched
+`stateTime += DeltaTime` and then swallowed the next brace it found.
+
 
 ## Handling: measured here, extracted elsewhere
 

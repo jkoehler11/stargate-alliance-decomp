@@ -580,15 +580,21 @@ def doc_block(rows):
     lines.append("| a `State` of the class | %s | %s |"
                  % (comma(count(rows, "stub_empty_state")), comma(count(rows, "stub_bodied_state"))))
     lines.append("")
-    lines.append("A stub's name is almost always one the package exports: **%s name a `Function` the class itself "
-                 "exports**, **%s one a `State` of the class exports**, and **%s name no export at all** -- a "
-                 "class-level declaration whose name only a state binds, which a class-over-state index cannot "
-                 "see. "
-                 "**%s** are declared a second time in the same text with a body, **%s** sit in a window that "
-                 "holds a block comment and **%s** carry `FUNC_Native` -- so the population is a language shape "
-                 "and not a reader's miss. %s distinct names are behind the %s stubs."
-                 % (comma(class_owned), comma(state_owned), comma(noexport), comma(redeclared), comma(commented),
-                    comma(native), comma(count(rows, "distinct_stub_names")), comma(stubs)))
+    if noexport:
+        head = ("A stub's name is almost always one the package exports: **%s name a `Function` the class itself "
+                "exports**, **%s one a `State` of the class exports**, and **%s name no export at all** -- a "
+                "class-level declaration whose name only a state binds, which a class-over-state index cannot "
+                "see. " % (comma(class_owned), comma(state_owned), comma(noexport)))
+    else:
+        head = ("**Every stub's name is a record the class binds**: **%s name a `Function` the class itself "
+                "exports** and **%s one a `State` of the class exports** -- the names a class-over-state reading "
+                "left unowned were state members whose block a plain-header reader missed, which is the "
+                "state-scope paragraph below. " % (comma(class_owned), comma(state_owned)))
+    lines.append(head + "**%s** are declared a second time in the same text with a body, **%s** sit in a window "
+                 "that holds a block comment and **%s** carry `FUNC_Native` -- so the population is a language "
+                 "shape and not a reader's miss. %s distinct names are behind the %s stubs."
+                 % (comma(redeclared), comma(commented), comma(native),
+                    comma(count(rows, "distinct_stub_names")), comma(stubs)))
     lines.append("")
     lines.append("| package | stubs |")
     lines.append("|---|---:|")
