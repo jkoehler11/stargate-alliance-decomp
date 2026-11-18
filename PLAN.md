@@ -13552,3 +13552,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement.** What `UState`'s runtime label map does behind `Object.GotoState` when the state is found
   and the label is not -- warn and start at the entry point, or refuse the transition. It changes no number in this
   thread; it is the one claim the text cannot make.
+
+### Execution notes (2026-11-18, the state natives are read and the label map has one consumer)
+
+- **The question the note above left is answered, and the answer is "neither".** `GotoState` (`native(113)`,
+  518 bytes at `0x486f0`) changes state through the class table's slot 13 (`0x48e90`) and then jumps to a label
+  through slot 14 (`0x46f00`); `EX_GotoLabel` (`gnatives[13]`, `0x0d`, `0x47850` -- a slot the dispatch census had
+  as `slot-only`) evaluates one name and calls the **same** slot 14 and nothing else. So `Goto('L')` and
+  `GotoState('S','L')` share one lookup, which is why the AI page's 196 `GotoLabel` operands and the states' label
+  tables are one population. A `GotoState` whose state is found and whose label is not does not "warn and start at
+  the entry point": the lookup **clears the frame's code pointer**, so the state is entered and runs none of it.
+- **The lookup reads the table U19 measured, field for field.** It walks the state chain (so a label a state
+  inherits from the state it extends resolves), skips any state whose `LabelTableOffset` is `0xffff`, and scans
+  **8-byte** entries of `(name index, code offset)` terminated by a **zero name**, at the state's own code base
+  (`+0x48`) plus the **WORD** at `+0x94`. A hit writes the code pointer to `base + offset` and stores the state it
+  matched.
+- **The failure paths are asymmetric, and that is the load-bearing detail.** An explicit label that misses logs
+  `GotoState (%s %s): Label not found` (source line 789); a `GotoState` with **no** label jumps to FName **100**,
+  and a miss on that default is silent. A state that cannot be resolved logs `GotoState (%s %s): State not found in
+  class %s!` (789) and, when the log object is up, a second message at **792** ("Refer to Log for Script Stack
+  Trace.") plus a `Stack when GotoState failed.` line. The name `0x2b2` (`BadToken`) never reaches the resolver: the
+  setter walks for the state whose flag byte has bit 2 set, which is the `auto` state, so `GotoState` with no
+  evaluable argument is the mechanism behind the fourteen `auto` states the AI page counts.
+- **The two queries, and the DebugInfo token.** `IsInState` evaluates **one** name (its second declared parameter is
+  never read) and walks the chain comparing the `+0x20` name, so a state the current one extends answers true;
+  `GetStateName` evaluates **none** and reads the name out of the class-side state record. Every one of these
+  natives eats a trailing `0x42` `DebugInfo` token itself, which is why the 13-byte opcode sits inside a call's
+  operand stream rather than before it.
+- **The corpus side, joined to the runtime.** Of the **111** label-carrying `GotoState` sites, **105** name their
+  state literally: **103** name an entry of the target's table (**4** through the state's own `Super`), **1** names
+  a state no chain reaches a table for, and **1** -- `AmbientCreatures.TransientAmbientPawn.Wandering`'s function
+  entering `Wandering` with `KeepGoing` -- names a label its table does not carry. That single site is the only one
+  in the corpus that can reach the `Label not found` line, and on this reading it enters the state and stops. All
+  **196** `GotoLabel` operands land on their own state's table, so the `GotoLabel` line is unreachable in this
+  build.
+- Tool (`tools/state-natives.py`, `--selftest`/`--check` in `make ci`, `--verify` against the image) +
+  `inventory/state_natives.csv` (79 claims over 6 bodies, each with its instruction) + `docs/systems/STATE_NATIVES.md`
+  (new page, generated block) + `docs/systems/AI.md`'s by-name negative answered in place + `docs/UNKNOWNS.md`
+  U19's runtime half + `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv` and this note.
+- **Not in this PR.** (1) Which name FName **100** is: the packages' name tables are per-package, so the answer is a
+  GNames read at slot 100 of `0x006be0d8` in a lingering boot -- and it decides whether the 23 tables whose entry
+  label is not `Begin` lose their first label on a bare `GotoState`. (2) The engine's member names for
+  `+0xc`/`+0x1c`/`+0x20`/`+0x24`/`+0x48`/`+0x94`; the page records the shapes and the constants that match them, not
+  the headers. (3) The names of the two event indices 316/317 the setter fires before and after the switch -- order
+  says end/begin, measurement has not been made.

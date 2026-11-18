@@ -541,7 +541,8 @@ build: **196** sites carry it, every one of them in state code and **none** in a
 `tools/jump-census.py` -- which also walks `Function` exports only -- cannot see. What is still a negative is the
 by-name half: `Object.GotoState` is `native(113)`, slot `0x71`, the token the entries above carry, and
 `inventory/script_calls.csv` has no by-name call to `Goto` or `GotoState` at all, because both compile to opcodes
-rather than to a script call.
+rather than to a script call. (The native side of both is read now: `docs/systems/STATE_NATIVES.md` -- the two
+opcodes share one label lookup, and a label neither of them finds leaves the state with no code to run.)
 
 The null name is the clearest case, and it is why the table has no `None` row. **109** sites name the name table's
 entry 0, which every one of the eighteen packages spells `None` and which the source writes `GotoState('')` -- a call
