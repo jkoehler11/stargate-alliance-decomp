@@ -60,6 +60,33 @@ DOC_MARK = ("<!-- generated:text-branches -->", "<!-- /generated:text-branches -
 FUNC_CSV_PATH = os.path.join(ROOT, "inventory", "text_branch_functions.csv")
 FUNC_MARK = ("<!-- generated:text-branch-functions -->", "<!-- /generated:text-branch-functions -->")
 CONT_CSV_PATH = os.path.join(ROOT, "inventory", "continue_sites.csv")
+BRK_CSV_PATH = os.path.join(ROOT, "inventory", "break_sites.csv")
+SWC_CSV_PATH = os.path.join(ROOT, "inventory", "text_switches.csv")
+
+BREAK = re.compile(r"(?<![\w$])break(?![\w$])", re.I)
+
+BREAK_FIELDS = ["package", "class", "function", "decl", "offset", "line", "binds", "construct", "place", "dead",
+                "note", "count"]
+
+BREAK_NOTE = {
+    "sites": "`break` statements in the shipped text, the same population `inventory/text_switches.csv` counts as "
+             "its `break;` total",
+    "switch": "sites that leave a `switch` -- the innermost loop or `switch` enclosing them is a `switch`",
+    "switch_tail": "of those, the ones that are their arm's last statement",
+    "switch_interior": "of those, the ones an arm carries statements after (`if (x) break;` and more code)",
+    "loop": "sites that leave a loop, outside every `switch`",
+    "loop_for": "sites leaving a `for`",
+    "loop_while": "sites leaving a `while`",
+    "loop_foreach": "sites leaving a `foreach`",
+    "loop_do": "sites leaving a `do…until`",
+    "none": "sites no loop and no `switch` encloses -- a `break` there does not compile",
+    "in_body": "sites inside a declared function's body",
+    "outside_body": "sites outside every declaration -- a `state`'s own label code, which no function row counts",
+    "dead": "sites inside a build guard this build never compiles",
+}
+
+BREAK_ORDER = ("sites", "switch", "switch_tail", "switch_interior", "loop", "loop_for", "loop_while", "loop_foreach",
+               "loop_do", "none", "in_body", "outside_body", "dead")
 
 CONT_FIELDS = ["package", "class", "function", "decl", "offset", "line", "kind", "enclosing", "loop", "note",
                "count"]
@@ -762,6 +789,367 @@ def continue_site_rows(system_dir):
                                  "kind": kind, "enclosing": enc, "loop": loop,
                                  "note": "" if base != "other" else "no then-arm"})
     return rows, census
+
+
+def _block_close(text, ob, limit):
+    """The `}` matching the `{` at `ob`, or `limit` when the buffer ends first."""
+    depth = 0
+    i = ob
+    while i < limit:
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return limit
+
+
+def break_place(text, semicolon, ob, cb):
+    """`tail` when nothing of the arm follows a `break` inside its switch body, `interior` when a statement does.
+
+    The reading is at the **arm's** level, not the block's: a `break` that closes an `if` block
+    (`if (x) { break; }`) is followed by a `}`, but that brace closes the `if`, not the arm -- the arm's own
+    statements come after it. So the walk skips every nested block and asks what the next token at the switch
+    body's own depth is: a `case`/`default` label, the switch's closing brace, or a statement.
+    """
+    i, depth = semicolon, 0
+    for k in range(ob + 1, min(semicolon, cb)):
+        if text[k] == "{":
+            depth += 1
+        elif text[k] == "}":
+            depth -= 1
+    while i < cb:
+        c = text[i]
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            if depth == 0:
+                return "tail"
+            depth -= 1
+        elif depth == 0 and (c.isalpha() or c == "_"):
+            k = i
+            while k < cb and (text[k].isalnum() or text[k] == "_"):
+                k += 1
+            return "tail" if text[i:k].lower() in ("case", "default") else "interior"
+        elif depth == 0 and c not in " \t\r\n;":
+            return "interior"
+        i += 1
+    return "tail"
+
+
+def _match_paren(text, i, limit):
+    """The `)` matching the `(` at `i`, or `limit`."""
+    depth = 0
+    while i < limit:
+        if text[i] == "(":
+            depth += 1
+        elif text[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return limit
+
+
+def _plain_end(text, i, limit):
+    """Just past the `;` that ends the statement starting at `i` (an unbraced body's own extent)."""
+    depth = 0
+    while i < limit:
+        c = text[i]
+        if c in "({":
+            depth += 1
+        elif c in ")}":
+            if depth == 0:
+                return i
+            depth -= 1
+        elif c == ";" and depth == 0:
+            return i + 1
+        i += 1
+    return limit
+
+
+def _body_start(text, start, limit):
+    """The `{` that opens the body of the control header at `start`, or -1 when the body is unbraced.
+
+    The header is not always `keyword (...)`: `switch TriggerWhen` writes no parentheses, so the scan tracks the
+    paren depth and reports the first `{` at depth 0, stopping at a `;` (an unbraced body) instead of running into
+    the next construct.
+    """
+    depth = 0
+    i = start
+    while i < limit:
+        c = text[i]
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+        elif c == "{" and depth <= 0:
+            return i
+        elif c == ";" and depth <= 0:
+            return -1
+        i += 1
+    return -1
+
+
+def _stmt_end(text, pos, limit, depth=0):
+    """Where the statement starting at `pos` ends -- a block, a chain of unbraced control bodies, or a plain `;`."""
+    i = pos
+    while i < limit and text[i] in " \t\r\n":
+        i += 1
+    if i >= limit or depth > 32:
+        return limit
+    if text[i] == "{":
+        return _block_close(text, i, limit) + 1
+    m = re.match(r"[A-Za-z_]\w*", text[i:limit])
+    word = m.group(0).lower() if m else ""
+    if word in ("for", "while", "foreach", "switch"):
+        ob = _body_start(text, i + len(word), limit)
+        if ob >= 0:
+            return _block_close(text, ob, limit) + 1
+        j = text.find("(", i, limit)
+        if j < 0:
+            return limit
+        return _stmt_end(text, _match_paren(text, j, limit) + 1, limit, depth + 1)
+    if word == "if":
+        j = text.find("(", i, limit)
+        if j < 0:
+            return limit
+        end = _stmt_end(text, _match_paren(text, j, limit) + 1, limit, depth + 1)
+        k = end
+        while k < limit and text[k] in " \t\r\n":
+            k += 1
+        if text[k:k + 4].lower() == "else":
+            end = _stmt_end(text, k + 4, limit, depth + 1)
+        return end
+    if word == "do":
+        end = _stmt_end(text, i + 2, limit, depth + 1)
+        k = end
+        while k < limit and text[k] in " \t\r\n":
+            k += 1
+        if text[k:k + 5].lower() == "until":
+            j = text.find("(", k, limit)
+            if j >= 0:
+                end = _match_paren(text, j, limit) + 1
+        return end
+    return _plain_end(text, i, limit)
+
+
+CONSTRUCT = re.compile(r"(?<![\w$])(for|while|foreach|switch|do)(?![\w$])", re.I)
+
+
+def break_binding(text, a, off, b=None):
+    """`(binds, construct, open)` for the `break` at `off`: the innermost enclosing `switch` or loop.
+
+    A `break` leaves the innermost **loop or switch**, whichever is nearer, and an `if`/`else` between them changes
+    nothing: `for (...) { switch (x) { case 1: if (y) break; } }` breaks the switch. The reading is a forward one --
+    every loop/`switch` header in front of the site has its **body extent** measured (`_stmt_end` follows a braced
+    block or a chain of unbraced single-statement bodies, which is where most of the earlier unmatched breaks were:
+    `for (...) if (x) { ...; break; }` writes no brace for the loop at all) -- and the site belongs to the last
+    header whose body holds it. `open` is that body's `{`, or -1 for an unbraced one.
+    """
+    b = len(text) if b is None else b
+    best = None
+    for m in CONSTRUCT.finditer(text, a, off):
+        start = m.end()
+        kw = m.group(1).lower()
+        if kw == "do":
+            k = start
+            while k < b and text[k] in " \t\r\n":
+                k += 1
+        else:
+            j = start
+            while j < b and text[j] in " \t\r\n":
+                j += 1
+            if j < b and text[j] == "(":
+                k = _match_paren(text, j, b) + 1
+                while k < b and text[k] in " \t\r\n":
+                    k += 1
+            else:
+                # `switch Expr {` and `foreach C.AllActors(class'X', A, UseTag)` write no parentheses of their own:
+                # the header is the expression, so its end is the `{` at depth 0 or, when the body is unbraced, the
+                # first `)` that closes to depth 0 with no `.`/`(` continuing the expression.
+                i2, depth, k = j, 0, -1
+                while i2 < b:
+                    c = text[i2]
+                    if c == "(":
+                        depth += 1
+                    elif c == ")":
+                        depth -= 1
+                        if depth == 0:
+                            nxt = i2 + 1
+                            while nxt < b and text[nxt] in " \t\r\n":
+                                nxt += 1
+                            if nxt >= b or text[nxt] not in "(.":
+                                k = nxt
+                                break
+                    elif c == "{" and depth == 0:
+                        k = i2
+                        break
+                    elif c == ";" and depth == 0:
+                        break
+                    i2 += 1
+                if k < 0:
+                    continue
+        if k >= b:
+            continue
+        end = _stmt_end(text, k, b)
+        if k <= off < end and (best is None or k > best[0]):
+            best = (k, end, text[k] == "{", kw)
+    if best is None:
+        return "", "", -1
+    k, _end, braced, kw = best
+    if kw == "switch":
+        return ("switch", "switch", k if braced else -1)
+    return "loop", kw, k if braced else -1
+
+
+def break_sites_detail(text, dead, a=0, b=None):
+    """`[(offset, binds, construct, place, dead_flag)]` for every `break;` in `text[a:b]`.
+
+    `binds` is the construct the statement leaves (`switch` or `loop`, empty when neither encloses it -- a `break`
+    there does not compile), `construct` its keyword, and `place` the arm-level reading for a switch (`tail` when it
+    is its arm's last statement, `interior` when the arm carries statements after it).
+    """
+    b = len(text) if b is None else b
+    out = []
+    for m in BREAK.finditer(text, a, b):
+        q = m.end()
+        while q < b and text[q] in " \t\r\n":
+            q += 1
+        if q >= b or text[q] != ";":
+            continue                       # an identifier that merely starts with the word
+        binds, construct, ob = break_binding(text, a, m.start(), b)
+        place = ""
+        if binds == "switch" and ob >= 0:
+            place = break_place(text, q + 1, ob, _block_close(text, ob, b))
+        out.append((m.start(), binds, construct, place, bool(dead is not None and dead[m.start()])))
+    return out
+
+
+def break_site_rows(system_dir):
+    """`(rows, census)` -- every `break` statement in the shipped text, named by function and construct.
+
+    The population is the whole live buffer, not the function bodies: a `break` in a `state`'s own code (the labels
+    outside every declaration) is text too, and a census of the bodies alone cannot reconcile the class artifact's
+    `text_break` total. `in_body` and `outside_body` split on the declaration spans, and a site inside a build guard
+    this build never compiles is counted `dead` beside them.
+    """
+    pst = load_tool("pkg_script_text", "pkg-script-text.py")
+    ctb = ctb_tool()
+    rows = []
+    census = collections.Counter()
+    for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
+        pkg = Package(os.path.join(system_dir, fname))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        package = fname[:-2]
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            text = pst.script_text(pkg, exp)
+            if not text:
+                continue
+            live, _comments = mask(text)
+            dead, _parts = guard_map(live)
+            cls = pkg.name(exp["name"])
+            spans, seen = [], collections.Counter()
+            ms = list(ctb.FUNC.finditer(live))
+            for k, m in enumerate(ms):
+                limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
+                span = ctb.body_span(live, m.end(), limit)
+                if span is None:
+                    continue
+                name = m.group(1).lower()
+                spans.append((name, seen[name], span))
+                seen[name] += 1
+            for off, binds, construct, place, is_dead in break_sites_detail(live, dead):
+                holder = next(((n, d) for n, d, (s, e) in spans if s <= off < e), ("", ""))
+                census["sites"] += 1
+                if is_dead:
+                    census["dead"] += 1
+                else:
+                    census["in_body" if holder[0] else "outside_body"] += 1
+                census[binds or "none"] += 1
+                if binds == "switch":
+                    census["switch_" + place] += 1
+                elif binds == "loop":
+                    census["loop_" + construct] += 1
+                rows.append({"package": package, "class": cls, "function": holder[0], "decl": holder[1],
+                             "offset": "0x%05x" % off, "line": live.count("\n", 0, off) + 1,
+                             "binds": binds, "construct": construct, "place": place,
+                             "dead": "yes" if is_dead else "",
+                             "note": "" if binds else "no loop or switch encloses it"})
+    return rows, census
+
+
+def render_break(rows, census):
+    fh = io.StringIO()
+    w = csv.DictWriter(fh, fieldnames=BREAK_FIELDS, lineterminator="\n", extrasaction="ignore")
+    w.writeheader()
+    for r in rows:
+        w.writerow({k: r.get(k, "") for k in BREAK_FIELDS})
+    for key in BREAK_ORDER:
+        w.writerow({"note": BREAK_NOTE[key], "count": census[key]})
+    return fh.getvalue()
+
+
+def check_break_sites(path=BRK_CSV_PATH):
+    """The site artifact's own identities, plus the block census `inventory/text_switches.csv` reads -- no dump.
+
+    A gate compares two claims, so each identity here joins this file to another artifact's count of the same
+    population: the switch-binding sites against `text_switches.csv`'s block census (a different walk, one that
+    finds its `switch` blocks through the label machinery), and the row count against the artifact's own `sites`.
+    """
+    rows = read_csv(path)
+    if not rows:
+        print("FAIL break-sites: %s has no rows" % path)
+        return 1
+    sites = [r for r in rows if r.get("kind", "") != "census" and r.get("offset")]
+
+    def value(key):
+        note = BREAK_NOTE[key]
+        for r in rows:
+            if r.get("note") == note and r.get("count", "") != "":
+                return int(r["count"])
+        return 0
+
+    total = value("sites")
+    if len(sites) != total:
+        print("FAIL break-sites: %d site rows against the artifact's own total of %d" % (len(sites), total))
+        return 1
+    if value("switch") + value("loop") + value("none") != total:
+        print("FAIL break-sites: switch %d + loop %d + none %d is not the %d sites"
+              % (value("switch"), value("loop"), value("none"), total))
+        return 1
+    if value("switch_tail") + value("switch_interior") != value("switch"):
+        print("FAIL break-sites: tail %d + interior %d is not the %d switch sites"
+              % (value("switch_tail"), value("switch_interior"), value("switch")))
+        return 1
+    if value("in_body") + value("outside_body") + value("dead") != total:
+        print("FAIL break-sites: in-body %d + outside-body %d + dead %d is not the %d sites"
+              % (value("in_body"), value("outside_body"), value("dead"), total))
+        return 1
+    loops = sum(value("loop_" + kw) for kw in ("for", "while", "foreach", "do"))
+    if loops != value("loop"):
+        print("FAIL break-sites: the loop kinds sum to %d against %d loop sites" % (loops, value("loop")))
+        return 1
+    other = 0
+    for r in read_csv(SWC_CSV_PATH):
+        if r.get("kind") == "census" and r.get("note") == "`break` statements inside a `switch` block -- case " \
+                "arms and `default:` bodies together":
+            other = int(r.get("count") or 0)
+    if other != value("switch"):
+        print("FAIL break-sites: %d switch sites here against text_switches.csv's %d -- one population, two walks"
+              % (value("switch"), other))
+        return 1
+    print("ok   break-sites: %d `break` statements (%d switch, %d loop, %d none), %d of them interior to an arm, "
+          "%d outside every body, %d dead -- and the switch total matches text_switches.csv"
+          % (total, value("switch"), value("loop"), value("none"), value("switch_interior"),
+             value("outside_body"), value("dead")))
+    return 0
 
 
 def function_bodies(live, dead=None):
@@ -2157,6 +2545,30 @@ def selftest():
     if (eenc["else-body"], eenc["switch-arm"], eenc["loop-body"]) != (1, 1, 1):
         print("FAIL text-branches: the `other` constructs read %r" % dict(eenc))
         return 1
+    # The `break` split: the innermost loop or `switch` wins, an `if` block between them changes nothing, an arm's
+    # interior break is told from its tail, and a `break` with neither does not compile.
+    bsrc = ("function B(int n)\n{\n"
+            "  for (i = 0; i < 3; i++)\n  {\n"
+            "    if (a) break;\n"
+            "    switch (n)\n    {\n"
+            "      case 1:\n        if (b) { break; }\n        Log();\n        break;\n"
+            "      case 2:\n        for (j = 0; j < 2; j++) { if (c) break; }\n"
+            "        for (k = 0; k < 2; k++)\n          break;\n        break;\n"
+            "      default:\n        break;\n    }\n"
+            "  }\n"
+            "  break;\n"
+            "}\n")
+    blive = mask(bsrc)[0]
+    bcat = collections.Counter((b, c, p) for _o, b, c, p, _d in break_sites_detail(blive, None))
+    if (bcat[("loop", "for", "")], bcat[("switch", "switch", "interior")],
+            bcat[("switch", "switch", "tail")], bcat[("", "", "")]) != (3, 1, 3, 1):
+        print("FAIL text-branches: the `break` split read %r" % (dict(bcat),))
+        return 1
+    # UnrealScript folds keyword case, and this build spells it both ways: `Switch(Role)` and two `Break;`
+    # statements in `Engine.PlayerController`. A case-sensitive read misses them (988 against the real 990).
+    if len(break_sites_detail(mask("function C() { for (;;) { Switch(n) { case 1: Break; } } }")[0], None)) != 1:
+        print("FAIL text-branches: a capitalised `Break;` is not a `break` statement")
+        return 1
     fns, names = function_else(mask("function Exact() { if (a) b(); else c(); }\n"
                                     "function Short() { if (a) b(); }\n"
                                     "function Bare();\n")[0])[:2]
@@ -2274,6 +2686,12 @@ def main():
                     help="the site artifact (default inventory/continue_sites.csv)")
     ap.add_argument("--check-continue-sites", action="store_true",
                     help="the site artifact reconciles with the per-function counts; no dump, writes nothing")
+    ap.add_argument("--break-sites", action="store_true",
+                    help="also name every `break` site (needs --system)")
+    ap.add_argument("--break-out", default=BRK_CSV_PATH,
+                    help="the break site artifact (default inventory/break_sites.csv)")
+    ap.add_argument("--check-break-sites", action="store_true",
+                    help="the break site artifact reconciles with text_switches.csv; no dump, writes nothing")
     ap.add_argument("--report", action="store_true", help="print the census, no write")
     ap.add_argument("--check", action="store_true", help="synthetic self-test; needs no dump and writes nothing")
     args = ap.parse_args()
@@ -2283,6 +2701,18 @@ def main():
         return check_functions(args.out, args.functions_out)
     if args.check_continue_sites:
         return check_continue_sites(args.continue_out, args.functions_out)
+    if args.check_break_sites:
+        return check_break_sites(args.break_out)
+    if args.break_sites:
+        if not args.system:
+            ap.error("--break-sites needs --system")
+        brk_rows, brk_census = break_site_rows(args.system)
+        with open(args.break_out, "w", encoding="utf-8", newline="") as fh:
+            fh.write(render_break(brk_rows, brk_census))
+        print("wrote %s (%d rows) -- %d switch (%d interior), %d loop, %d none; %d outside every body, %d dead"
+              % (args.break_out, len(brk_rows), brk_census["switch"], brk_census["switch_interior"],
+                 brk_census["loop"], brk_census["none"], brk_census["outside_body"], brk_census["dead"]))
+        return 0
     if args.continue_sites:
         if not args.system:
             ap.error("--continue-sites needs --system")
