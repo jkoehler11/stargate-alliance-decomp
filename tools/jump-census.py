@@ -28,6 +28,7 @@ import collections
 import csv
 import importlib.util
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -111,14 +112,23 @@ def payloads(system, table, stats):
                 except IndexError:
                     ok = False
                     break
-            if not ok or last != exp["name"]:
+            if not ok:
                 continue
             if n >= 10 and pay[n - 10:n - 7] == epilogue:
-                end = n - 7
+                end, at = n - 7, n - 4
             elif n >= 12 and pay[n - 12:n - 9] == epilogue:
-                end = n - 9
+                end, at = n - 9, n - 6
             else:
                 continue
+            if last != exp["name"]:
+                # An **operator** record's code header names the symbol the source wrote (`==`), while the export
+                # carries the composed name the compiler builds (`EqualEqual_MapItemMapItem`). `tools/jump-graph.py`
+                # reads that exception first and this reader has to agree with it or `--cross-check` measures the
+                # difference between the two rules rather than the corpus: the tail's own `FunctionFlags` word
+                # (0x1000 `Operator`) and a symbol for a header name, 27 records over the eighteen packages.
+                flags = int.from_bytes(pay[at:at + 4], "little")
+                if not flags & 0x1000 or not re.match(r"^[+\-*/%<>=!&|^@~$]{1,3}$", pkg.name(last)):
+                    continue
             start = off + 16
             if start >= end:
                 continue

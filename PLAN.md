@@ -13445,3 +13445,65 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `break`s inside a nested `if` (`if (x) break;` then more statements) is invisible to it: the same column one
   statement over is an **interior** break census -- arms whose body holds a `Jump` landing on the list's end before
   the final statement -- which would also explain part of the text's 990 `break;` against the 628 break arms.
+### Execution notes (2026-11-18, the operator body joins the stream under the name the build composes)
+
+- **Task.** U23, the item the last two bundles left open: the operator family's two bodies are declarations the
+  text rule can now read (`[~] 3.5`), but every name-keyed join spelled them `==` while the record side keys
+  `EqualEqual_MapItemMapItem`. Three items: compose the record name on the text side, make the joins read it, and
+  teach the graph that an operator's *code header* stores the symbol rather than the export name.
+- **Composition, and the defect the second body found.** `tools/class-text-bodies.py` gains `declared_name()`: an
+  `operator`/`preoperator`/`postoperator` declaration now has its parameter list read and is named through
+  `tools/native-operators.py`'s `compose()` — one rule for the 97 `native` records and the two bodies — with the
+  declared spelling as the fallback, so a body is never dropped for want of a name. The shared rule needed a
+  correction: a **qualified** operand type arrives as `GameInfo.KeyValuePair`, and `title()` spells that
+  `Gameinfo.Keyvaluepair`, so the keyed overload composed to a name `Engine.u` does not export. `suffix()` takes the
+  last dotted segment and then the table's suffix; over the 97 `native` declarations no composed name moves, which
+  is the control that this is a correction rather than a change of rule. Both bodies compose to an export of their
+  own class (`operator_composed` **2 of 2**), and `inventory/class_text_bodies.csv` keeps the declared symbol in the
+  row's `keys` column while the page prints both the record name and the symbol.
+- **The join, and the corpus totals.** `inventory/text_branch_functions.csv`: the text-only row is gone — the
+  `EqualEqual_MapItemMapItem` body is **6** condition terms against **6** `JumpIfNot` and `term_verdict` **agree** —
+  so `both` **5,736 → 5,737**, text-only **35 → 34** and the record side **5,737 → 5,738**. `terms_outside` stays
+  **773**: the six terms were already inside a body, and the composition buys the *record* side of the row, not a
+  term moving between buckets. `inventory/jump_branches.csv`: `JumpIfNot` **17,463 → 17,469**, `if` arms **13,405 →
+  13,410**, `leave` **289 → 290**, `else` **3,758** and empty arms **11** unchanged, `Jump` **6,173 → 6,176**.
+  `inventory/text_branches.csv`: classes term-exact **835 → 836** of 967 (**86.3% → 86.5%**), the `&&`/`||` ones
+  exact **422 → 423**, class-level surplus **715 → 709**; `inventory/break_sites.csv`'s operator row becomes
+  `Engine.MaplistRecord.equalequal_mapitemmapitem` and stays one `break` in a `for`.
+- **The graph's own rule, and the two counts that keep it honest.** A `Function` payload's code header names the
+  declaration as the source wrote it (`==`) — the compiler composes only the *export* name — so `tools/jump-graph.py`
+  refused the body on `last == exp["name"]`. The exception is the tail's own `FunctionFlags` word (`Operator`
+  `0x1000`) plus a symbol for a header name, so a function whose header merely disagrees with its export is still
+  refused. **27** operator records pass it (both compiled `Engine.MaplistRecord` bodies and 25 `native` operator
+  records) and only **1** of the 27 carries a jump, so the census carries `operator_headers` **27** beside
+  `operator_jumps` **1** and no record count reads as a population of branches. `inventory/jump_graph.csv`: edges
+  **23,778 → 23,787**, scripts with a jump **6,127 → 6,128**, statements **96,193 → 96,283**, reachable **91,977 →
+  92,065** (95.62% either way). The walked body is the 150-byte `EqualEqual_MapItemMapItem` — **19** nodes, **9**
+  jumps (**6** `JumpIfNot` + **3** `Jump`) over **18** statements; the keyed overload walks with **3** nodes and
+  **0** jumps and the 25 `native` stubs carry none, so neither adds an edge or a branch row.
+- **A second reader had to agree, and the gate said so.** `tools/jump-census.py` identifies payloads independently
+  and `jump-census --cross-check` compares its artifact against `jump_graph.csv`: left alone it answered 23,778
+  against the graph's 23,787 and `make ci` failed on eight keys. It now reads the same flag-and-symbol exception, so
+  the cross-check keeps measuring the corpus instead of the gap between two rules. `class-text-bodies --check` also
+  *crashed* on the new key (`KeyError: operator_composed`) because its fixture census did not carry it — the fixture
+  now does, and it carries a synthetic symbol-named operator whose table row is a `want`
+  (the literal table row `P.Op.EqualEqual_FooFoo` with its `==`), so a page that loses the declared symbol fails the
+  gate.
+- **Files.** `tools/class-text-bodies.py` (`declared_name`, `PARAMS`, the `keys` column, `operator_composed`, the
+  table's `declared` column, the fixture row and its `want`), `tools/native-operators.py` (`suffix()`),
+  `tools/jump-graph.py` (the header exception, two counts), `tools/jump-branches.py` (two census rows),
+  `tools/jump-census.py` (the same exception), `tools/text-branches.py` / `text-stubs.py` / `text-switches.py`
+  (`declared_name` in five joins), `inventory/{class_text_bodies,break_sites,text_branches,text_branch_functions,
+  jump_branches,jump_graph,jump_census,artifact_hashes}.csv`, `docs/BYTECODE.md` (both generated blocks and the
+  graph's script counts), `docs/PACKAGE_SCRIPT_TEXT.md` (the operator paragraph and table),
+  `docs/UNKNOWNS.md` U23 (rewritten to the answer), `docs/ARTIFACTS.md` and this note. Three dump reads
+  (class-text-bodies, jump-graph + jump-branches, jump-census); no boot, no Ghidra.
+- **Not in this PR.** The stub census's body-side counterpart was drafted and dropped: with the operator rows named,
+  **292** bodied declarations name no `Function` export of their class, and a sample is state-scope members
+  (`AmbientCreatures.HerdAnimal.trigger`, `beginstate`, `notifylanded`) that the scope rule reads as class-level —
+  a resolver question, not an operator one, and a key that publishes 292 without rows behind it would be a number a
+  reviewer cannot check. It stays a `body_no_export` key that reads 0, as it did before.
+- **Next measurement.** Those 292: read the `state`-block scope off the class texts against the exports'
+  `State`-outer chain for the bodied declarations the resolver misses (`Engine.Mover` 24, `StargateGame.BotEnemy`
+  20, `Engine.PlayerController` 14 are the concentration), and decide whether the scope detector or the export walk
+  is the half that is wrong — one dump read, no boot.

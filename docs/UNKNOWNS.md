@@ -4550,28 +4550,78 @@ five per-class identities, the two corpus counts and the `continue` split (four 
 per-body counts (every bare/block site inside a then-block, no `other` one, every site inside a loop, offsets
 increasing) -- both from the committed files with no dump, and both run in `make ci`.
 
-## U23. A text declaration names an operator by its symbol, and the build names the record by the composed name
+## U23. A text declaration names an operator by its symbol, the build names the record by the composed name — answered: the composed name is the export for 2 of 2 bodies, and five name-keyed censuses read it
 
-**Observed.** `tools/class-text-bodies.py`'s rule now reads the operator family's spellings -- a priority in
-parentheses (`operator(24)`) and a **symbol** as the declared name (`==`, `$=`, `>>>`) -- so the two `==` bodies
-`Engine.MaplistRecord` writes are declarations with bodies (**49** and **347** bytes) instead of code inside no
-declaration at all (`docs/PACKAGE_SCRIPT_TEXT.md`). What they cannot do is join the stream: the bytecode side keys a
-function by the name the package exports, and `Engine.u` exports those two bodies as
-`EqualEqual_KeyValuePairKeyValuePair` (**69**-byte payload) and `EqualEqual_MapItemMapItem` (**182**) -- the compiler's
-own composed names, which is the same transform `tools/native-operators.py`'s `compose()` already implements and which
-`inventory/native_operators.csv` carries in its `composed` column for the 97 `native` operators. The text side says
-`==`, the record side says `EqualEqual_MapItemMapItem`, and the join is name-keyed, so
-`inventory/text_branch_functions.csv` holds one text-only row with **6** condition terms and **0** `JumpIfNot` (and
-`terms_outside` reads **773** where the six terms sat outside every body before).
+**Status.** **Answered 2026-11-18**, no boot: the composed name *is* the export of the same class for **both**
+bodies, so the join was name-keyed after all — what was missing was the name, on the text side, and one spelling of
+it in the shared composition rule.
 
-**What would settle it.** The declaration's operand types are in the text -- `( MapItem A, MapItem B )` -- and
-`compose()` turns a symbol plus those types into the record name; the text rule's name group would have to capture the
-parameter list of an operator declaration (it captures neither the parentheses nor the types today), and every join
-that keys a function by name would then read the composed name: `text-branches`' function join,
-`text-switches`' arm keys and `text-stubs`' export lookup. The measurement that says the rule is right is that the
-composed name is an export of the same class for **both** bodies, and that the branch census's own record for
-`EqualEqual_MapItemMapItem` (a 182-byte payload, so a `JumpIfNot` population to compare) names the condition terms
-the text spells. A cheaper half-answer is to key the join on the payload -- the record's size against the text body's
-operator and statement counts -- which would place the row without composing anything, but it would not make the
-switch census's per-arm keys agree.
+**Observed (as the entry stood).** `tools/class-text-bodies.py`'s rule reads the operator family's spellings — a
+priority in parentheses (`operator(24)`) and a **symbol** as the declared name (`==`, `$=`, `>>>`) — so the two `==`
+bodies `Engine.MaplistRecord` writes are declarations with bodies (**49** and **347** bytes) instead of code inside
+no declaration at all (`docs/PACKAGE_SCRIPT_TEXT.md`). What they could not do is join the stream: the bytecode side
+keys a function by the name the package exports, and `Engine.u` exports those two bodies as
+`EqualEqual_KeyValuePairKeyValuePair` (**69**-byte payload) and `EqualEqual_MapItemMapItem` (**182**) — the
+compiler's own composed names, the same transform `tools/native-operators.py`'s `compose()` already implements for
+the 97 `native` operators. The text said `==`, the record said `EqualEqual_MapItemMapItem`, and the join is
+name-keyed, so `inventory/text_branch_functions.csv` held one text-only row with **6** condition terms and no
+record.
 
+**What would settle it.** Compose the record name from the declaration's operand types — they are in the text,
+`( MapItem A, MapItem B )` — and make every join that keys a function by name read it: `text-branches`' function
+join, `text-switches`' arm keys, `text-stubs`' export lookup, and the graph's own script identification. The
+measurement that says the rule is right is that the composed name is an export of the same class for **both**
+bodies, and that the branch census's own record names the condition terms the text spells.
+
+**Measured.** `declared_name()` in `tools/class-text-bodies.py` reads the parameter list of a declaration whose
+keyword is `operator`/`preoperator`/`postoperator` and calls `tools/native-operators.py`'s `compose()` — one rule
+for the 97 `native` records and the two bodies, so the two censuses cannot spell a record differently — falling
+back to the declared spelling when the symbol or a type is unmeasured. Both compose, and both composed names are
+`Function` exports of `Engine.MaplistRecord` (`inventory/class_text_bodies.csv`'s `operator_composed` = **2 of 2**;
+the row keeps the declared symbol in its `keys` column and the page prints both).
+
+* **One defect in the shared rule, found by the second body.** `compose()` title-cased a type the table does not
+  name, and a **qualified** operand reaches it as `GameInfo.KeyValuePair` — `title()` spells that
+  `Gameinfo.Keyvaluepair`, which `Engine.u` does not export. `suffix()` takes the last dotted segment and then the
+  table's suffix (or the spelling the declaration used), so the keyed overload composes
+  `EqualEqual_KeyValuePairKeyValuePair`. The control is the population that already worked: over the 97 `native`
+  declarations **no composed name moves** (every operand type of theirs is in the table), so this is a correction
+  and not a change of rule.
+* **What the joins say.** `inventory/text_branch_functions.csv`: the text-only row is gone — `Engine.MaplistRecord.
+  EqualEqual_MapItemMapItem` is **6** condition terms against **6** `JumpIfNot` (4 `if` + 2 `for` in the text, 5
+  `if` + 1 `leave` in the record) with `term_verdict` **agree**; `both` **5,736 → 5,737**, text-only **35 → 34**,
+  record-side functions **5,737 → 5,738**. `terms_outside` stays **773** — the six terms were already inside a
+  body, so what the composition buys is the record side of the row, not a term moving between buckets (the entry's
+  earlier phrasing on that point is corrected here).
+* **The corpus totals.** `inventory/jump_branches.csv`: `JumpIfNot` **17,463 → 17,469**, `if` arms **13,405 →
+  13,410**, `leave` **289 → 290**, `else` **3,758** and empty arms **11** unchanged (the operator body has no
+  `else` arm), scripts with a branch **6,095 → 6,096**, `Jump` tokens **6,173 → 6,176**. `inventory/text_branches.csv`:
+  classes whose term count is exact **835 → 836** of 967 (**86.3% → 86.5%**), the `&&`/`||` ones exact **422 → 423**,
+  and the class-level surplus **715 → 709** — the six terms the class text already spelled and the record now shows.
+* **The graph needed its own rule, because the *code header* keeps the source's spelling.** A `Function` payload's
+  header names the declaration as the source wrote it (`==`) while the export carries the composed name, so
+  `tools/jump-graph.py`'s `last == exp["name"]` guard refused the body. The exception is keyed on the tail's own
+  `FunctionFlags` word (`Operator` `0x1000`, the word `tools/function-flags.py` reads) **and** on the header being a
+  symbol, so it cannot widen to a function whose header merely disagrees with its export. **27** operator records
+  pass that test over the eighteen packages — the **2** compiled `Engine.MaplistRecord` bodies and **25** `native`
+  operator records — and only **1** of the 27 carries a jump, which the census keeps apart (`operator_headers`
+  **27**, `operator_jumps` **1**) so a record count is never quoted as a population of branches.
+* **What the graph gained.** `inventory/jump_graph.csv`: edges **23,778 → 23,787**, scripts with a jump **6,127 →
+  6,128**, statements **96,193 → 96,283**, reachable **91,977 → 92,065** (95.62% either way), unreachable **4,216 →
+  4,218**. The walked body is the 150-byte `EqualEqual_MapItemMapItem`: **19** nodes, **9** jumps (**6** `JumpIfNot`
+  + **3** `Jump`) over **18** statements. The other compiled body, `EqualEqual_KeyValuePairKeyValuePair`, walks with
+  **3** nodes and **0** jumps, and the 25 `native` stubs carry none either, so neither adds an edge or a branch row —
+  which is why the count moved by nine edges and one script-with-a-jump, not by 27 scripts.
+* **Two readers, one rule.** `tools/jump-census.py` identifies payloads independently of the graph and `make ci`
+  cross-checks the two artifacts; left alone it answered 23,778 against the graph's 23,787 and the gate failed on
+  eight keys. It now applies the same flag-and-symbol exception, so the cross-check keeps testing the corpus rather
+  than the difference between two rules.
+* **The joins with nothing to move are recorded as such.** `text-switches` keys its arms by the same composed name
+  and **no artifact row moves** (neither operator body holds a `switch`); `text-stubs` resolves the two bodies as
+  their class's export instead of naming no export; `inventory/break_sites.csv`'s row becomes
+  `Engine.MaplistRecord.equalequal_mapitemmapitem`, still the one `break` in a `for`.
+
+**Residual.** The composition is only as good as the declaration's parameter list: a symbol or an operand type the
+tables do not name keeps the declared spelling (measured: none of the 99 text+native declarations). The other
+direction — a *bodied* declaration that names no export at all — is not this entry's and is not measured here; the
+stub census's body-side counterpart is named in the PLAN note as the next read.

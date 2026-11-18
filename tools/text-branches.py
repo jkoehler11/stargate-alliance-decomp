@@ -594,7 +594,7 @@ def function_continue_sites(text, dead):
         if span is None:
             continue
         for _off, kind in continue_sites(text, dead, span[0], span[1]):
-            out[m.group(1).lower()][kind] += 1
+            out[ctb.declared_name(text, m).lower()][kind] += 1
     return out
 
 
@@ -777,7 +777,7 @@ def continue_site_rows(system_dir):
                 span = ctb.body_span(live, m.end(), limit)
                 if span is None:
                     continue
-                name = m.group(1).lower()
+                name = ctb.declared_name(live, m).lower()
                 decl = seen[name]
                 seen[name] += 1
                 for off, kind, enc, loop in continue_sites_detail(live, dead, span[0], span[1]):
@@ -1062,7 +1062,7 @@ def break_site_rows(system_dir):
                 span = ctb.body_span(live, m.end(), limit)
                 if span is None:
                     continue
-                name = m.group(1).lower()
+                name = ctb.declared_name(live, m).lower()
                 spans.append((name, seen[name], span))
                 seen[name] += 1
             for off, binds, construct, place, is_dead in break_sites_detail(live, dead):
@@ -1167,7 +1167,7 @@ def function_bodies(live, dead=None):
     ms = list(ctb.FUNC.finditer(live))
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
-        name = m.group(1).lower()
+        name = ctb.declared_name(live, m).lower()  # an operator's record name, not its symbol (UNKNOWNS U23)
         names.add(name)
         span = ctb.body_span(live, m.end(), limit)
         if span is None:
@@ -1208,7 +1208,8 @@ def pp_depth(text):
 def guarded_functions(live):
     """Names whose declaration sits inside a `#if…#endif` guard -- the PS2 branch of this build's source."""
     depth = pp_depth(live)
-    return {m.group(1).lower() for m in ctb_tool().FUNC.finditer(live) if depth[m.start()]}
+    ctb = ctb_tool()
+    return {ctb.declared_name(live, m).lower() for m in ctb.FUNC.finditer(live) if depth[m.start()]}
 
 
 def function_else(live, dead=None):

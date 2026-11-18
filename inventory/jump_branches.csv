@@ -495,6 +495,12 @@ branch,Engine,PlayerController,PlayerTick,0133,if,466,0149,,,PlayerController.Pl
 branch,Engine,PlayerController,PlayerTick,014c,if,545,0184,,,PlayerController.PlayerTick
 branch,Engine,PlayerController,PlayerTick,016e,if,545,0184,,,PlayerController.PlayerTick
 branch,Engine,Canvas,MakeColor,001b,if,71,002e,,,Canvas.MakeColor
+branch,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0000,if,29,0015,,,MaplistRecord.EqualEqual_MapItemMapItem
+branch,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0015,if,58,002a,,,MaplistRecord.EqualEqual_MapItemMapItem
+branch,Engine,MaplistRecord,EqualEqual_MapItemMapItem,002f,if,201,0091,,,MaplistRecord.EqualEqual_MapItemMapItem
+branch,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0043,if,168,0078,,,MaplistRecord.EqualEqual_MapItemMapItem
+branch,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0052,leave,158,0070,,,MaplistRecord.EqualEqual_MapItemMapItem
+branch,Engine,MaplistRecord,EqualEqual_MapItemMapItem,0078,if,191,0089,,,MaplistRecord.EqualEqual_MapItemMapItem
 branch,Engine,Inventory,HandlePickupQuery,0000,if,26,0013,,,Inventory.HandlePickupQuery
 branch,Engine,Inventory,HandlePickupQuery,0013,if,39,001d,,,Inventory.HandlePickupQuery
 branch,Engine,Vehicle,Tick,0000,if,261,00c0,,,Vehicle.Tick
@@ -17786,6 +17792,7 @@ script,Engine,AIMsgManager,UnFreeze,,,,,2,"else 0, leave 0, empty 0, if 2, expre
 script,Engine,Trigger,Touch,,,,,9,"else 1, leave 1, empty 0, if 7, expression 0, 24 statement(s)",Trigger.Touch
 script,Engine,PlayerController,PlayerTick,,,,,13,"else 2, leave 0, empty 0, if 11, expression 0, 38 statement(s)",PlayerController.PlayerTick
 script,Engine,Canvas,MakeColor,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 8 statement(s)",Canvas.MakeColor
+script,Engine,MaplistRecord,EqualEqual_MapItemMapItem,,,,,6,"else 0, leave 1, empty 0, if 5, expression 0, 18 statement(s)",MaplistRecord.EqualEqual_MapItemMapItem
 script,Engine,Inventory,HandlePickupQuery,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 6 statement(s)",Inventory.HandlePickupQuery
 script,Engine,Vehicle,Tick,,,,,4,"else 0, leave 0, empty 0, if 4, expression 0, 10 statement(s)",Vehicle.Tick
 script,Engine,Projector,PostBeginPlay,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 12 statement(s)",Projector.PostBeginPlay
@@ -23746,15 +23753,15 @@ script,UWindow,UWindowPulldownMenu,KeyDown,,,,,17,"else 8, leave 0, empty 0, if 
 script,UWindow,UWindowPulldownMenu,FocusOtherWindow,,,,,5,"else 0, leave 0, empty 0, if 5, expression 0, 11 statement(s)",UWindowPulldownMenu.FocusOtherWindow
 script,UWindow,UWindowWin95LookAndFeel,Menu_DrawMenuBarItem,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 10 statement(s)",UWindowWin95LookAndFeel.Menu_DrawMenuBarItem
 script,UWindow,UWindowWin95LookAndFeel,Menu_DrawPulldownMenuItem,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 30 statement(s)",UWindowWin95LookAndFeel.Menu_DrawPulldownMenuItem
-census,,,,,,,,17463,`JumpIfNot` tokens the graph resolved,
+census,,,,,,,,17469,`JumpIfNot` tokens the graph resolved,
 census,,,,,,,,3758,with a `Jump` at the end of the then-arm that lands past the target -- an else arm,
-census,,,,,,,,289,whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`),
+census,,,,,,,,290,whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`),
 census,,,,,,,,11,whose target is the statement right after the jump -- an empty then-arm,
-census,,,,,,,,13405,a conditional forward jump over a straight arm,
+census,,,,,,,,13410,a conditional forward jump over a straight arm,
 census,,,,,,,,0,"inside a condition (`&&`/`||` short-circuit), i.e. not a branch",
 census,,,,,,,,9,whose target is behind the jump -- a loop test at the bottom of its body,
-census,,,,,,,,6095,scripts with at least one branch,
-census,,,,,,,,6173,"`Jump` tokens the graph resolved, for scale",
+census,,,,,,,,6096,scripts with at least one branch,
+census,,,,,,,,6176,"`Jump` tokens the graph resolved, for scale",
 census,,,,,,,,200,`Switch` tokens,
 census,,,,,,,,174,scripts carrying one,
 census,,,,,,,,200,case lists (a chain of `Case` tokens ending on the `0xffff` terminator),
@@ -23764,5 +23771,7 @@ census,,,,,,,,0,`Case` tokens in no list,
 census,,,,,,,,40,arms whose body is the next case of their list -- a shared `case A: case B:` body,
 census,,,,,,,,1,"the shortest case list, in cases",
 census,,,,,,,,22,the longest,
+census,,,,,,,,27,"operator records whose header names the symbol, not the export name -- the name test the graph applies",
+census,,,,,,,,1,"of those, the scripts carrying at least one jump -- the rest are stub bodies (25 are `native` records)",
 census,,,,,,,,-15,"the shortest then-arm, in statements",
 census,,,,,,,,165,the longest,

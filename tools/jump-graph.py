@@ -41,6 +41,7 @@ import collections
 import csv
 import importlib.util
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -51,6 +52,14 @@ JUMPS = ("Jump", "JumpIfNot")
 # return ends the path. `JumpIfNot` is not here -- its fallthrough is the whole point of the instruction.
 NO_FALLTHROUGH = ("Return", "Stop", "Jump")
 EPILOGUE = bytes([0x04, 0x0B, 0x47])
+# An **operator** record's script header names the declared symbol (`==`), while the export carries the composed
+# name (`EqualEqual_MapItemMapItem`): the compiler stores the spelling the source used in the code's own header and
+# composes the export name from the operand types. So `last == exp["name"]` rejects the two bodies `Engine.MaplistRecord`
+# ships; identified by the export and the `Operator` flag (0x1000 in the tail's `FunctionFlags`), they walk like any
+# other script. Measured: the 182-byte `==( MapItem, MapItem )` body yields 19 nodes and **6** `JumpIfNot`, the six
+# condition terms its text spells (UNKNOWNS U23).
+SYMBOL = re.compile(r"^[+\-*/%<>=!&|^@~$]{1,3}$")
+FUNC_OPERATOR = 0x1000
 # The script's own terminator is a token, and nothing jumps to it: it is the epilogue's last word, not a statement a
 # path can reach, so counting it made every script look 10% dead (11,675 of the 15,891 unreachable statements).
 TERMINATORS = ("EndOfScript", "EndFunction")
@@ -184,14 +193,25 @@ def payloads(system, table, stats):
                 except IndexError:
                     ok = False
                     break
-            if not ok or last != exp["name"]:
+            if not ok:
                 continue
             if n >= 10 and pay[n - 10:n - 7] == EPILOGUE:
-                end = n - 7
+                end, at = n - 7, n - 4
             elif n >= 12 and pay[n - 12:n - 9] == EPILOGUE:
-                end = n - 9
+                end, at = n - 9, n - 6
             else:
                 continue
+            if last != exp["name"]:
+                # An operator's header names its symbol; the export carries the composed record name. The flag word
+                # is the tail's own (`function-flags.py` reads the same one), so the exception cannot widen to a
+                # function whose header simply disagrees with its export. Measured: the name test passes **27**
+                # records over the eighteen packages -- both compiled `Engine.MaplistRecord` bodies and 25 `native`
+                # operator records -- and only one of them carries a jump, so a second count (`operator_jumps`)
+                # keeps the record total from reading as a population of walked branches.
+                flags = int.from_bytes(pay[at:at + 4], "little")
+                if not flags & FUNC_OPERATOR or not SYMBOL.match(pkg.name(last)):
+                    continue
+                stats["operator_headers"] = stats.get("operator_headers", 0) + 1
             start = off + 16
             if start >= end:
                 continue
@@ -204,6 +224,8 @@ def payloads(system, table, stats):
                 continue
             if sum(x["end"] - x["offset"] for x in nodes) != len(body):
                 continue
+            if last != exp["name"] and any(x["name"] in JUMPS for x in nodes):
+                stats["operator_jumps"] = stats.get("operator_jumps", 0) + 1
             stats["walked"] += 1
             yield package, pkg, exp, body, nodes, spans
 

@@ -105,6 +105,38 @@ FUNC_TRAIL = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s%s(?:[ \t]+(?:%s))+[ \t]+%s(
 # The keyword a matched declaration was introduced by, so an operator body's rows can be told from a function's
 # without a second walk.
 OP_KEYWORD = re.compile(r"(?<![\w$])(?:preoperator|postoperator|operator)(?![\w$])", re.I)
+# The parameter list the declaration's `(` opens. The name alone is not the name the build uses for an operator:
+# `operator(24) bool ==( MapItem A, MapItem B )` is the record `EqualEqual_MapItemMapItem`, so a body this rule can
+# read but cannot *name* still cannot join the stream (UNKNOWNS U23). The stem and suffix tables are
+# `tools/native-operators.py`'s -- one rule for the `native` half and the bodies -- and its `compose` is what this
+# reads, so the two censuses cannot spell a record differently.
+PARAMS = re.compile(r"\(([^()]*)\)", re.S)
+_NOPS = None
+
+
+def _nops():
+    global _NOPS
+    if _NOPS is None:
+        _NOPS = load_tool("native_operators", "native-operators.py")
+    return _NOPS
+
+
+def declared_name(text, m):
+    """The name the build gives the declaration `m`: the identifier, or an operator's composed record name.
+
+    `text` must be the masked buffer the match came from: the operand types come from the parameter list, and a
+    commented-out declaration is not one. A symbol or parameter list the rule cannot compose falls back to the
+    declared spelling, so a body is never dropped for want of a name -- `tools/native-operators.py` answers `None`
+    for an unmeasured symbol.
+    """
+    name = m.group(1)
+    if not OP_KEYWORD.search(m.group(0)):
+        return name
+    pm = PARAMS.match(text, m.end() - 1)
+    if pm is None:
+        return name
+    nops = _nops()
+    return nops.compose(name, nops.param_types(pm.group(1))) or name
 # This census's original rule: four modifiers and the word `function`, so the whole correction is a delta.
 FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
                          r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
@@ -571,7 +603,7 @@ def sweep(system_dir):
              control_calls_all=0, control_casts=0,
              pair_c_calls=0, pair_c_calls_missing=0, pair_l_calls=0, pair_l_calls_missing=0,
              operator_declarations=0, operator_bodies=0, operator_bare=0, operator_bytes=0,
-             operator_native=0)
+             operator_native=0, operator_composed=0)
     com_decl, ifdef_decl, sites, states, labels, raw_of = {}, {}, {}, {}, {}, {}
     for package, pkg in packages:
         for exp in pkg.exports:
@@ -716,10 +748,14 @@ def sweep(system_dir):
                 s = shape(body, ops)
                 t["operator_bodies"] += 1
                 t["operator_bytes"] += s["bytes"]
+                record = declared_name(live, m)
+                if record != m.group(1):
+                    t["operator_composed"] += 1
                 row = {k2: "" for k2 in FIELDS}
-                row.update(kind="operator", package=package, class_=cls, name=m.group(1),
+                row.update(kind="operator", package=package, class_=cls, name=record, keys=m.group(1),
                            c_ops=str(s["ops"]), c_stmts=str(s["stmts"]), c_bytes=str(s["bytes"]),
-                           note="the operator family's declared name is a symbol")
+                           note=("declared as the symbol `%s`; the build names the record `%s`"
+                                 % (m.group(1), record)))
                 row["class"] = cls
                 row.pop("class_", None)
                 operator_rows.append(row)
@@ -793,6 +829,8 @@ def sweep(system_dir):
         ("operator_native", t["operator_native"],
          "`native` operator declarations -- `tools/native-operators.py`'s population, never bodies, counted here "
          "so the two censuses agree about which lines are operators"),
+        ("operator_composed", t["operator_composed"],
+         "of those bodies, declared with a symbol name -- the row is keyed by the composed record name"),
         ("comment_declarations", t["declarations"],
          "`function` declarations inside a block comment"),
         ("comment_with_body", t["with_body"], "of those, with a brace-matched body in the same comment"),
@@ -1136,16 +1174,20 @@ def render(rows):
                "(%d bytes over the population) and **%d** declaration-only, beside **%d** `native` operators, which "
                "are `tools/native-operators.py`'s population and never a body. A `break` inside one of the bodies "
                "was counted outside every declaration before this rule -- `inventory/break_sites.csv`'s "
-               "`outside_body` column, not a state's label code."
+               "`outside_body` column, not a state's label code. A body's row is keyed by the name the build gives "
+               "it, the composed record name (`==` over two `MapItem` operands is `EqualEqual_MapItemMapItem`), "
+               "which **%d** of them need, because every other census keys a function by its export name and the "
+               "symbol is not one."
                % (n("operator_declarations"), n("operator_bodies"), n("operator_bytes"), n("operator_bare"),
-                  n("operator_native")))
+                  n("operator_native"), n("operator_composed")))
     if op_rows:
         out.append("")
-        out.append("| class.operator | bytes | ops | stmts |")
-        out.append("|---|---:|---:|---:|")
+        out.append("| class.operator | declared | bytes | ops | stmts |")
+        out.append("|---|---|---|---:|---:|---:|")
         for r in op_rows:
-            out.append("| `%s.%s.%s` | %s | %s | %s |"
-                       % (r["package"], r["class"], r["name"], r["c_bytes"], r["c_ops"], r["c_stmts"]))
+            out.append("| `%s.%s.%s` | `%s` | %s | %s | %s |"
+                       % (r["package"], r["class"], r["name"], r.get("keys") or "-",
+                          r["c_bytes"], r["c_ops"], r["c_stmts"]))
         out.append("")
     out.append("**The disabled bodies are the weight of the comment, not a residue of it.** %d commented bodies "
                "have no live twin at all: %d bytes of source, %d operators and %d statements this build never "
@@ -1376,9 +1418,16 @@ def self_check():
     stem.update(kind="stem", name="qux", count="1", keys="shouldsquadoverideai", note="overide",
                 vocab="state-label", vocab_where="BotEnemy")
     rows.append(stem)
+    # an operator body's row is keyed by the composed record name and keeps the declared symbol beside it, so the
+    # page must print both -- a table that shows only `EqualEqual_FooFoo` loses the fact that the source wrote `==`
+    op = {k: "" for k in FIELDS}
+    op.update(kind="operator", package="P", name="EqualEqual_FooFoo", keys="==", c_bytes="12", c_ops="2",
+              c_stmts="1", note="declared as the symbol `==`; the build names the record `EqualEqual_FooFoo`")
+    op["class"] = "Op"
+    rows.append(op)
     cen = (("classes_with_text", 2, ""), ("classes_with_block", 2, ""), ("comment_declarations", 4, ""),
            ("operator_declarations", 1, ""), ("operator_bodies", 1, ""), ("operator_bare", 0, ""),
-           ("operator_bytes", 12, ""), ("operator_native", 0, ""),
+           ("operator_bytes", 12, ""), ("operator_native", 0, ""), ("operator_composed", 1, ""),
            ("comment_with_body", 3, ""), ("comment_no_body", 1, ""), ("live_declarations", 5, ""),
            ("live_with_body", 5, ""), ("pairs", 2, ""), ("pairs_identical", 1, ""),
            ("pairs_same_operators", 0, ""), ("pairs_differs", 1, ""), ("pairs_live_stub", 0, ""),
@@ -1418,6 +1467,7 @@ def self_check():
     block = render(rows)
     for want in ("3 of the 4", "2 of them have a live twin", "`P.C.foo`", "`P.C.bar`",
                  "A cast is not a call", "typed by evidence", "| `qux` |", "| `quux` |",
+                 "| `P.Op.EqualEqual_FooFoo` | `==` | 12 | 2 | 1 |",
                  "missing from the build, not only from its export table", "spelling this build does",
                  "| in the build | where |", "A name is not a behaviour",
                  "The operator family is a declaration kind the rule could not name",
