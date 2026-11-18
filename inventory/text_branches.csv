@@ -191,7 +191,7 @@ class,Engine,Manifest,,0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,
 class,Engine,MapList,,3,0,0,0,0,4,30,1,8,39,0,0,0,0,11,11,3,29,0,0,7,3,0,0,0,0,0,0,0,0,0,3,0,0,agree,agree,,
 class,Engine,MaplistManager,,4,0,0,0,11,6,94,2,18,114,0,0,0,0,55,55,6,106,0,0,2,6,0,2,0,0,0,0,0,0,0,4,0,0,less,less,,
 class,Engine,MaplistManagerBase,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,29,29,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
-class,Engine,MaplistRecord,,0,0,0,0,6,6,54,1,16,71,0,0,0,0,45,47,0,63,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
+class,Engine,MaplistRecord,,0,0,0,0,6,6,54,1,16,71,0,0,0,0,47,47,0,63,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,agree,agree,,
 class,Engine,MapVolume,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,MapVolumeViewPoint,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
 class,Engine,MatAction,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,0,,0,0,0,0,no-branch,,,
@@ -2372,7 +2372,7 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,172,`while`
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1295,`for`
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,18178,"`if` + `while` + `for`, the condition terms one `JumpIfNot` each should compile"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,"`#else` preprocessor directives, not branches"
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11523,`function` declarations in the live text
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11525,`function` declarations in the live text
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,566,function declarations in the live text of classes with no branch at all
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,13,condition terms in that population
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,68,the largest class-level difference between text `else` and bytecode arms
@@ -2390,14 +2390,14 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,422,"of those, the ones whose term
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,4,`less` classes whose live text declares fewer functions than their record has
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,12,`less` classes that declare exactly as many
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,2,`less` classes that declare more
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,50,`agree` classes that declare fewer functions than their record has -- the control for the above
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,732,`agree` classes that declare exactly as many
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,49,`agree` classes that declare fewer functions than their record has -- the control for the above
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,733,`agree` classes that declare exactly as many
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,133,`agree` classes that declare more
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,distinct function names behind the `less` classes' absent arms
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,9860,declarations the previous rule counted (`simulated`/`static`/`final`/`latent` only)
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11523,"declarations the grammar has, any modifier"
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11525,"declarations the grammar has, any modifier"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1162,declarations introduced by `event`/`delegate`/`operator` rather than the word `function`
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11479,declarations read with the parameter list required on the same line -- `#635`'s rule
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11481,declarations read with the parameter list required on the same line -- `#635`'s rule
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,5,declarations with a modifier after the keyword (`function static`)
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,55,"`state` declarations spelled `State` with a capital (strict shape, not a regex diff)"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,35,classes carrying one -- lost to a case-sensitive read

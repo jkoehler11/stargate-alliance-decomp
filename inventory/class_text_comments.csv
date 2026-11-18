@@ -22,7 +22,7 @@ class,Engine,HUD,2776,28028,868,25850,8,67,86,0,0,0,0,0,0,67,84,0,0,0,0,0,61,liv
 class,Engine,Mutator,621,10110,2129,6456,8,30,15,0,0,0,0,0,0,30,10,0,0,0,0,0,30,live-body,1,
 class,Engine,PhysicsVolume,713,8223,297,6537,3,17,35,0,0,0,0,0,0,17,36,0,0,0,0,0,17,live-body,1,
 class,Engine,Mover,1216,33734,130,27081,1,89,70,0,0,0,0,0,0,30,80,0,0,0,0,0,89,live-body,1,
-class,Engine,MaplistRecord,130,16680,251,10524,1,45,14,0,0,0,0,0,0,47,10,0,0,0,0,0,45,live-body,1,
+class,Engine,MaplistRecord,130,16680,251,10524,1,47,14,0,0,0,0,0,0,47,10,0,0,0,0,0,45,live-body,1,
 class,Engine,USoundEmitter,164,2353,90,1453,1,5,14,0,0,0,0,0,0,5,9,0,0,0,0,0,5,live-body,1,
 class,Engine,PlayerStats,99,7953,0,4893,0,11,7,0,0,0,0,0,4,29,7,,,,,,,line-comment,1,
 class,Engine,AIController,443,8290,1237,5457,8,19,8,0,0,0,0,0,0,20,8,0,0,0,0,0,19,live-body,1,
@@ -280,7 +280,7 @@ census,,commented_declared_live_body,,,,,,,,,,,,,,,,,,,,,,,207,commented declara
 census,,commented_absent_live_body,,,,,,,,,,,,,,,,,,,,,,,46,"of those, absent -- the functions the toolchain did not compile"
 census,,commented_declared_body_in_comment,,,,,,,,,,,,,,,,,,,,,,,19,commented declarations in the classes whose whole body is the comment
 census,,commented_absent_body_in_comment,,,,,,,,,,,,,,,,,,,,,,,13,"of those, absent -- the class exports nothing, so only a move can place one"
-census,,live_functions,,,,,,,,,,,,,,,,,,,,,,,5925,`function` declarations in the same classes' live text
+census,,live_functions,,,,,,,,,,,,,,,,,,,,,,,5927,`function` declarations in the same classes' live text
 census,,live_functions_placed,,,,,,,,,,,,,,,,,,,,,,,5890,"of those, naming an export the same class owns -- the control"
 census,,comment_vars,,,,,,,,,,,,,,,,,,,,,,,51,`var` declarations inside a block comment
 census,,comment_natives,,,,,,,,,,,,,,,,,,,,,,,6,`native function` declarations inside a block comment

@@ -12927,6 +12927,50 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement:** the switch's case *values* are one arm each; what a decompiler still cannot read from the
   stream is which arm a `Case`'s body ends at (the arm bodies are delimited only by the next `Case`), so an
   arm-body extent census is the next instrument on this page.
+
+### Execution notes (2026-11-18, an operator's declared name is a symbol, and five artifacts move with the rule)
+
+- **Task.** The break census's open item (the note below), taken as the text thread's bundle: whether the
+  `outside_body` column's one `operator` body is a residue or a declaration kind, and every census that shares the
+  declaration rule with it.
+- **The shape is two parts, and both defeated the rule.** An operator writes its priority in parentheses where a
+  parameter list would start (`operator(24)`) and its name as a symbol (`==`), so `class-text-bodies.py`'s `FUNC` --
+  which wanted an identifier and then `(` -- matched none of them: not a body it could not reach, a *declaration* it
+  could not see. The vocabulary is `native-operators.py`'s `DECL`, which already read both, so the rule gained
+  `OPERATOR_PRIORITY` and `DECL_NAME` from it rather than a second spelling. `native` stays out of the modifier list,
+  so the 97 `native` operators remain the natives census's population and never bodies.
+- **Measured over every class text: 114 lines spell an operator, 99 are declarations, 2 carry bodies.** Both bodies
+  are `Engine.MaplistRecord`'s `==` overloads (49 and 347 bytes, 3/10 operators, 1/6 statements); the 97 `native` ones
+  (`Core.Object` 91, `Engine.Actor` 4, `Engine.StreamBase` 2) are declaration-only; the other 15 lines are inside
+  block comments (14 in `Core.Object`'s banner, 1 prose in `StargateGame.GoauldConsoleTrigger`), which the mask
+  removes.
+- **One rule, five artifacts, each delta a number.** `class_text_bodies` live declarations **5925 -> 5927** and
+  with-body **5316 -> 5318** (rate 89.7% unchanged); `class_text_comments` live_functions **5925 -> 5927**;
+  `text_stubs` declarations **11411 -> 11413**, bodies **10505 -> 10507**, stubs unchanged at **906**;
+  `text_branches` text_functions **11523 -> 11525** with the `agree` class split **50/732 -> 49/733**; `break_sites`
+  outside-every-declaration **4 -> 3** and in-body **985 -> 986**.
+- **The `agree` split is the finding, not a side effect.** `Engine.MaplistRecord` was one of the 50 classes that
+  "declare fewer functions than their record has" (`docs/BYTECODE.md`); it declares exactly as many now. A count
+  disagreement the page has carried since the census was written was the reader.
+- **The one row that still cannot join the stream, and why.** `Engine.u` exports the two bodies as
+  `EqualEqual_KeyValuePairKeyValuePair` (69-byte payload) and `EqualEqual_MapItemMapItem` (182) -- `compose()`'s own
+  names, which `inventory/native_operators.csv` carries for the native half. The join keys a function by name, so
+  `text_branch_functions` holds one text-only row (6 terms, 0 `JumpIfNot`) and `terms_outside` reads **773**. Recorded
+  as U23 with both routes (compose the text name from its operand types, or key on the payload), because guessing a
+  join is what U20 cost a session.
+- **`--check` holds the shape.** The self-check's synthetic text now carries a symbol-named operator and a `native`
+  operator beside it, and asserts the first resolves to a body, the second does not count, and the same-line rule
+  reads the same name -- so a regression is a `FAIL` in `make ci`, not a quiet zero.
+- **Files.** `tools/class-text-bodies.py` (the two grammar parts, `OP_KEYWORD`, the corpus-wide operator pass, five
+  census keys, the operator table in the rendered block, the self-check case) + `inventory/class_text_bodies.csv`,
+  `inventory/class_text_comments.csv`, `inventory/text_stubs.csv`, `inventory/text_branches.csv`,
+  `inventory/text_branch_functions.csv`, `inventory/break_sites.csv` + `docs/PACKAGE_SCRIPT_TEXT.md` (the new section
+  and three regenerated blocks) + `docs/BYTECODE.md` (the residue paragraph, the join note) + `docs/UNKNOWNS.md` U23 +
+  this note.
+- **Next measurement.** U23's first route: capture an operator declaration's operand types and compose the record
+  name, then check the branch census's own `EqualEqual_MapItemMapItem` rows against the text's six condition terms --
+  one read of the 18 packages and the committed graph, no boot.
+
 ### Execution notes (2026-11-18, every `break` in the text, and the arm that carries one)
 
 - **Task.** The previous note's next instrument, as the flow thread's bundle: the interior-break census the arm rows

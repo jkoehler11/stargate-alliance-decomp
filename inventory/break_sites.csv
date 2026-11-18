@@ -153,7 +153,7 @@ Engine,HUD,displaymessages,0,0x054ca,751,loop,for,,,,
 Engine,HUD,addtextmessage,0,0x056e4,772,loop,for,,,,
 Engine,Mutator,destroyed,0,0x00f63,109,loop,for,,,,
 Engine,PhysicsVolume,touch,0,0x018d6,227,loop,foreach,,,,
-Engine,MaplistRecord,,,0x00717,61,loop,for,,,,
+Engine,MaplistRecord,==,1,0x00717,61,loop,for,,,,
 Engine,MaplistRecord,compareitemsslow,0,0x00910,91,loop,for,,,,
 Engine,MaplistRecord,compareitemsslow,0,0x009e2,104,loop,for,,,,
 Engine,StreamPlaylist,removesongat,0,0x00ed7,165,loop,for,,,,
@@ -999,6 +999,6 @@ UWindow,UWindowHSliderControl,keydown,0,0x00e25,205,switch,switch,tail,,,
 ,,,,,,,,,,sites leaving a `foreach`,134
 ,,,,,,,,,,sites leaving a `do…until`,2
 ,,,,,,,,,,sites no loop and no `switch` encloses -- a `break` there does not compile,3
-,,,,,,,,,,sites inside a declared function's body,985
-,,,,,,,,,,"sites outside every declaration -- a `state`'s own label code, which no function row counts",4
+,,,,,,,,,,sites inside a declared function's body,986
+,,,,,,,,,,"sites outside every declaration -- a `state`'s own label code, which no function row counts",3
 ,,,,,,,,,,sites inside a build guard this build never compiles,1

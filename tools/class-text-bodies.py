@@ -83,15 +83,28 @@ KEYWORD = r"(?:function|event|delegate|operator|preoperator|postoperator)"
 # A declared type may be qualified: `function Actor.eDoubleClickDir CheckForDoubleClickMove(...)` is the shape
 # `Engine.PlayerInput` writes, and a type pattern without the dot left that body outside every function.
 _TYPE = r"(?:[\w<>\[\]]+(?:\.[\w<>\[\]]+)?[ \t]+)?"
-FUNC = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s(?:[ \t]+(?:%s))*[ \t]+%s(\w+)[ \t]*(?:\r?\n[ \t]*)?\("
-                  % ("|".join(MODIFIERS), KEYWORD, "|".join(MODIFIERS), _TYPE), re.M | re.I)
+# The operator family writes its name as a **symbol**, not an identifier (`operator(24) bool == ( .. )`,
+# `preoperator bool ! ( .. )`), and puts its priority in parentheses straight after the keyword. That priority
+# fills the slot the parameter list would, so the rule above saw no declaration at all: one `break` inside
+# `Engine.MaplistRecord`'s `operator(24) bool ==` body sat outside every declaration. `tools/native-operators.py`'s
+# `DECL` already reads both parts, so the two vocabularies are the same here and its selftest is where the
+# spelling was measured; `--check`'s synthetic text holds a symbol-named operator so a regression is a FAIL.
+OPERATOR_PRIORITY = r"(?:[ \t]*\([ \t]*[\d,]+[ \t]*\))?"
+DECL_NAME = r"(?:[A-Za-z_]\w*|[+\-*/%<>=!&|^@~$]{1,3})"
+FUNC = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s%s(?:[ \t]+(?:%s))*[ \t]+%s(%s)[ \t]*(?:\r?\n[ \t]*)?\("
+                  % ("|".join(MODIFIERS), KEYWORD, OPERATOR_PRIORITY, "|".join(MODIFIERS), _TYPE,
+                     DECL_NAME), re.M | re.I)
 # The same rule with the parameter list on the declaration's own line: `#635`'s shape, kept so the correction is
 # its own number.
-FUNC_GRAMMAR = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s[ \t]+%s(\w+)[ \t]*\("
-                          % ("|".join(MODIFIERS), KEYWORD, _TYPE), re.M | re.I)
+FUNC_GRAMMAR = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s%s[ \t]+%s(%s)[ \t]*\("
+                          % ("|".join(MODIFIERS), KEYWORD, OPERATOR_PRIORITY, _TYPE, DECL_NAME), re.M | re.I)
 # A modifier after the keyword, still on one line -- the shape `Engine.GameProfile` writes its enum helper in.
-FUNC_TRAIL = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s(?:[ \t]+(?:%s))+[ \t]+%s(\w+)[ \t]*\("
-                        % ("|".join(MODIFIERS), KEYWORD, "|".join(MODIFIERS), _TYPE), re.M | re.I)
+FUNC_TRAIL = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*%s%s(?:[ \t]+(?:%s))+[ \t]+%s(%s)[ \t]*\("
+                        % ("|".join(MODIFIERS), KEYWORD, OPERATOR_PRIORITY, "|".join(MODIFIERS), _TYPE,
+                           DECL_NAME), re.M | re.I)
+# The keyword a matched declaration was introduced by, so an operator body's rows can be told from a function's
+# without a second walk.
+OP_KEYWORD = re.compile(r"(?<![\w$])(?:preoperator|postoperator|operator)(?![\w$])", re.I)
 # This census's original rule: four modifiers and the word `function`, so the whole correction is a delta.
 FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
                          r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
@@ -556,7 +569,9 @@ def sweep(system_dir):
              disabled_calls_all=0, disabled_casts=0,
              control_calls=0, control_calls_own=0, control_calls_elsewhere=0, control_calls_missing=0,
              control_calls_all=0, control_casts=0,
-             pair_c_calls=0, pair_c_calls_missing=0, pair_l_calls=0, pair_l_calls_missing=0)
+             pair_c_calls=0, pair_c_calls_missing=0, pair_l_calls=0, pair_l_calls_missing=0,
+             operator_declarations=0, operator_bodies=0, operator_bare=0, operator_bytes=0,
+             operator_native=0)
     com_decl, ifdef_decl, sites, states, labels, raw_of = {}, {}, {}, {}, {}, {}
     for package, pkg in packages:
         for exp in pkg.exports:
@@ -670,6 +685,44 @@ def sweep(system_dir):
                                         raw_of[n] = mm.group(1)
                                         break
                     rows.append(disabled_row(package, cls, name, cshape))
+    # The operator family, read over **every** class text rather than the comment-carrying classes the walk above
+    # visits: its name is a symbol, so the declaration is the one kind a rule built on identifiers misses, and a
+    # reader that misses it cannot weigh the body either. The `native` half is `tools/native-operators.py`'s
+    # population (`DECL`: 97 declarations, all declaration-only) and is counted through that tool rather than
+    # re-read here, so the two censuses cannot disagree about which lines are operators.
+    nops = load_tool("native_operators", "native-operators.py")
+    operator_rows = []
+    for package, pkg in packages:
+        for exp in pkg.exports:
+            if pkg.class_name_of(exp) != "Class":
+                continue
+            text = pst.script_text(pkg, exp)
+            if not text:
+                continue
+            text = text.replace("\r\n", "\n")
+            t["operator_native"] += len(nops.parse(text))
+            live = mask(text)
+            ms = list(FUNC.finditer(live))
+            cls = pkg.name(exp["name"])
+            for k, m in enumerate(ms):
+                if not OP_KEYWORD.search(m.group(0)):
+                    continue
+                t["operator_declarations"] += 1
+                span = body_span(live, m.end(), ms[k + 1].start() if k + 1 < len(ms) else len(live))
+                if span is None:
+                    t["operator_bare"] += 1
+                    continue
+                body = live[span[0]:span[1]]
+                s = shape(body, ops)
+                t["operator_bodies"] += 1
+                t["operator_bytes"] += s["bytes"]
+                row = {k2: "" for k2 in FIELDS}
+                row.update(kind="operator", package=package, class_=cls, name=m.group(1),
+                           c_ops=str(s["ops"]), c_stmts=str(s["stmts"]), c_bytes=str(s["bytes"]),
+                           note="the operator family's declared name is a symbol")
+                row["class"] = cls
+                row.pop("class_", None)
+                operator_rows.append(row)
     residue, receivers_of = [], {}
     for n in sorted(sites):
         recv = set().union(*[s[3] for s in sites[n]]) if sites[n] else set()
@@ -700,6 +753,7 @@ def sweep(system_dir):
         stemmed.append(row)
     rows.extend(residue)
     rows.extend(stemmed)
+    rows.extend(sorted(operator_rows, key=lambda r: (r["package"], r["class"], r["name"])))
     stem_names = {r["name"] for r in stemmed if int(r["count"])}
     census = (
         ("declarations_full", t["declarations"] + t["live_declarations"],
@@ -731,6 +785,14 @@ def sweep(system_dir):
          "of those, spelled `State` -- lost to a case-sensitive read"),
         ("classes_with_text", t["classes"], "class exports carrying a `ScriptText`"),
         ("classes_with_block", t["with_block"], "of those, carrying a `/* ... */` block"),
+        ("operator_declarations", t["operator_declarations"],
+         "operator-family declarations in **every** class text, bodies read by this rule"),
+        ("operator_bodies", t["operator_bodies"], "of those, carrying a brace-matched body"),
+        ("operator_bare", t["operator_bare"], "of those, a declaration without a body"),
+        ("operator_bytes", t["operator_bytes"], "bytes of those bodies"),
+        ("operator_native", t["operator_native"],
+         "`native` operator declarations -- `tools/native-operators.py`'s population, never bodies, counted here "
+         "so the two censuses agree about which lines are operators"),
         ("comment_declarations", t["declarations"],
          "`function` declarations inside a block comment"),
         ("comment_with_body", t["with_body"], "of those, with a brace-matched body in the same comment"),
@@ -1066,6 +1128,25 @@ def render(rows):
                           r["note"].replace("|", "/")))
         out.append("")
     out.append("")
+    op_rows = [r for r in rows if r["kind"] == "operator"]
+    out.append("**The operator family is a declaration kind the rule could not name, and it is bodies, not a "
+               "residue.** An operator declares its name as a symbol (`operator(24) bool == ( .. )`) and writes its "
+               "priority in parentheses where a parameter list would start, so the grammar above read none of them: "
+               "**%d** operator-family declarations over the eighteen packages, **%d** of them carrying a body "
+               "(%d bytes over the population) and **%d** declaration-only, beside **%d** `native` operators, which "
+               "are `tools/native-operators.py`'s population and never a body. A `break` inside one of the bodies "
+               "was counted outside every declaration before this rule -- `inventory/break_sites.csv`'s "
+               "`outside_body` column, not a state's label code."
+               % (n("operator_declarations"), n("operator_bodies"), n("operator_bytes"), n("operator_bare"),
+                  n("operator_native")))
+    if op_rows:
+        out.append("")
+        out.append("| class.operator | bytes | ops | stmts |")
+        out.append("|---|---:|---:|---:|")
+        for r in op_rows:
+            out.append("| `%s.%s.%s` | %s | %s | %s |"
+                       % (r["package"], r["class"], r["name"], r["c_bytes"], r["c_ops"], r["c_stmts"]))
+        out.append("")
     out.append("**The disabled bodies are the weight of the comment, not a residue of it.** %d commented bodies "
                "have no live twin at all: %d bytes of source, %d operators and %d statements this build never "
                "compiled, %d of them a trailer of %d bytes or fewer (a declaration a class kept while emptying "
@@ -1159,6 +1240,17 @@ def self_check():
                    % gdeclared)
     if len(FUNC_TRAIL.findall(multi)) != 1:
         bad.append("the trailing-modifier rule read %d declarations, not 1" % len(FUNC_TRAIL.findall(multi)))
+    # an operator declares its name as a symbol and writes its priority where a parameter list would start: the
+    # one declaration shape a rule built on identifiers cannot see, and the `native` operator beside it must stay
+    # out of the body census (the natives census counts it)
+    oper = ("static final operator(24) bool == ( GameInfo.KeyValuePair A, GameInfo.KeyValuePair B )\r\n" + body +
+            "\r\nnative(129) static final preoperator bool ! ( bool A );\r\n")
+    obodies, obare, odeclared, _obt, oresolved = functions(oper)
+    if odeclared != 1 or oresolved != 1 or "==" not in obodies or obare:
+        bad.append("an operator declaration read %d declared / %r / bare %r"
+                   % (odeclared, sorted(obodies), obare))
+    if FUNC_GRAMMAR.findall(oper) != ["=="]:
+        bad.append("the same-line rule read an operator as %r" % (FUNC_GRAMMAR.findall(oper),))
     # a capitalised `state` block is a state: the keyword is case-insensitive
     cap_states, cap_labels = state_vocabulary(mask("State Alert\n{\nBegin:\n\tGoto('Again');\nAgain:\n\tSleep(1);\n}\n"))
     if cap_states != ["alert"] or set(cap_labels) != {"begin", "again"}:
@@ -1285,6 +1377,8 @@ def self_check():
                 vocab="state-label", vocab_where="BotEnemy")
     rows.append(stem)
     cen = (("classes_with_text", 2, ""), ("classes_with_block", 2, ""), ("comment_declarations", 4, ""),
+           ("operator_declarations", 1, ""), ("operator_bodies", 1, ""), ("operator_bare", 0, ""),
+           ("operator_bytes", 12, ""), ("operator_native", 0, ""),
            ("comment_with_body", 3, ""), ("comment_no_body", 1, ""), ("live_declarations", 5, ""),
            ("live_with_body", 5, ""), ("pairs", 2, ""), ("pairs_identical", 1, ""),
            ("pairs_same_operators", 0, ""), ("pairs_differs", 1, ""), ("pairs_live_stub", 0, ""),
@@ -1326,6 +1420,7 @@ def self_check():
                  "A cast is not a call", "typed by evidence", "| `qux` |", "| `quux` |",
                  "missing from the build, not only from its export table", "spelling this build does",
                  "| in the build | where |", "A name is not a behaviour",
+                 "The operator family is a declaration kind the rule could not name",
                  "| commented name | its words |"):
         if want not in block:
             bad.append("render is missing %r" % want)
