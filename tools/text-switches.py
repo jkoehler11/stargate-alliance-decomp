@@ -52,8 +52,8 @@ DOC_MARK = ("<!-- generated:text-switches -->", "<!-- /generated:text-switches -
 
 FIELDS = ["kind", "package", "class", "function", "arm", "label_kind", "label", "text_switch", "text_case",
           "text_default", "text_break", "byte_lists", "byte_arms", "byte_defaults", "byte_break", "labels_found",
-          "labels_missing", "text_end", "text_continue", "byte_end", "end_agree", "end_checked", "verdict", "count",
-          "note"]
+          "labels_missing", "text_end", "text_continue", "text_break_inner", "byte_end", "end_agree", "end_checked",
+          "verdict", "count", "note"]
 
 CENSUS_NOTE = {
     "text_switch": "`switch` keywords in the live text",
@@ -82,23 +82,31 @@ CENSUS_NOTE = {
     "loop_text_other": "of the arms whose last `Jump` is a loop's own back edge, the ones whose source case also ends "
                        "on a control construct rather than leaving",
     "functions_joined": "functions carrying a switch on both sides",
-    "arm_continue": "arms whose source case body carries a `continue` statement",
+    "arm_continue": "matched arms whose own source `case` body carries a `continue` statement",
     "switch_continue": "`continue` statements inside a `switch` block -- case arms and `default:` bodies together",
     "arm_continue_all": "of those, the ones inside a case arm's body (every label group, matched or not)",
     "default_continue": "of those, the ones inside a `default:` body",
+    "arm_break": "matched arms whose own source `case` body carries a `break` statement",
+    "arm_break_inner": "of those, matched arms carrying a `break` an arm statement follows -- the interior break",
+    "switch_break": "`break` statements inside a `switch` block -- case arms and `default:` bodies together",
+    "arm_break_all": "of those, the ones inside a case arm's body (every label group, matched or not)",
+    "arm_break_interior": "of those, the ones an arm statement follows, i.e. not the arm's last statement",
+    "default_break": "of those, the ones inside a `default:` body",
 }
 
 CENSUS_ORDER = ("text_switch", "text_case", "text_default", "text_break", "byte_lists", "byte_arms",
                 "byte_defaults", "byte_break", "classes_joined", "label_agree", "label_more", "label_less",
                 "text_only", "bytes_only", "labels_found", "labels_missing", "labels_by_position", "end_agree",
                 "end_checked", "empty_agree", "fallthrough_text_other", "loop_text_other", "functions_joined",
-                "arm_continue", "switch_continue", "arm_continue_all", "default_continue")
+                "arm_continue", "switch_continue", "arm_continue_all", "default_continue",
+                "arm_break", "arm_break_inner", "switch_break", "arm_break_all", "arm_break_interior",
+                "default_break")
 
 # A `case` label's expression: everything up to the `:` that is not a `::`, on one line, no statement separator.
 # UnrealScript folds keyword case -- `Switch(Role)` and `State` are the build's own spelling -- so every pattern here
 # is case-insensitive (`tools/text-branches.py` had already found 55 capitalised `State` declarations).
 CASE = re.compile(r"(?<![#\w$.])case\b[ \t]+([^:;{}\n]+?)[ \t]*:(?!:)", re.I)
-SWITCH = re.compile(r"(?<![#\w$.])switch[ \t]*\(", re.I)
+SWITCH = re.compile(r"(?<![#\w$.])switch\b", re.I)
 # `default:` is a label; `default.Health` and `defaultproperties` are not.
 DEFAULT = re.compile(r"(?<![#\w$.])default\b(?!\s*[.\w])", re.I)
 BREAK = re.compile(r"(?<![#\w$.])break\b", re.I)
@@ -408,7 +416,8 @@ def compare_function(arms, spans, clive, live=None):
     constant (`case MB_OK:`) that only the compiler folds to the integer. A positional match is reported as such,
     never as a value match.
     """
-    out = {"found": 0, "positional": 0, "checked": 0, "agree": 0, "detail": [], "blocks": 0, "arm_continue": 0}
+    out = {"found": 0, "positional": 0, "checked": 0, "agree": 0, "detail": [], "blocks": 0, "arm_continue": 0,
+           "arm_break": 0, "arm_break_inner": 0}
     best = None
     for span in spans:
         groups = label_groups(clive, live if live is not None else clive, span)
@@ -422,6 +431,7 @@ def compare_function(arms, spans, clive, live=None):
     if best is None:
         return out
     _hit, groups, span = best
+    break_sites = text_tool().break_sites_detail(live if live is not None else clive, None, span[0], span[1])
     out["blocks"] = len(groups)
     pool = list(groups)
     sites = []
@@ -469,7 +479,7 @@ def compare_function(arms, spans, clive, live=None):
                         pick_i = i
                         break
             if pick_i is None:
-                out["detail"].append((r, None, "", []))
+                out["detail"].append((r, None, "", [], []))
                 continue
             used[pick_i] = True
             out["found"] += 1
@@ -481,10 +491,19 @@ def compare_function(arms, spans, clive, live=None):
                                             labels[pick_i][2], seg_end)
             if cs:
                 out["arm_continue"] += 1
+            # The `break` statements this arm's own source body carries, and which of them are interior: a `break`
+            # that is not the body's last statement is the shape the arm census's last-token column cannot see.
+            # The binding is read over the whole function body, because this arm's `switch` header sits in front of
+            # the window the arm covers -- a read narrowed to the arm finds only the loops inside it.
+            bs = [p for o, binds, _c, p, _d in break_sites
+                  if binds == "switch" and labels[pick_i][2] <= o < seg_end]
+            if bs:
+                out["arm_break"] += 1
+                out["arm_break_inner"] += int("interior" in bs)
             text_end = last_statement(clive[labels[pick_i][2]:seg_end],
                                       (live if live is not None else clive)[labels[pick_i][2]:seg_end])
             byte_end = r.get("end") or ""
-            out["detail"].append((r, text_end, byte_end, [k for _o, k in cs]))
+            out["detail"].append((r, text_end, byte_end, [k for _o, k in cs], bs))
             if byte_end == "empty" or byte_end == "loop":
                 out["checked"] += 1
                 out["agree"] += int(text_end == ("empty" if byte_end == "empty" else "other"))
@@ -531,6 +550,53 @@ def switch_continue_census(texts):
                         seen[ident] = bucket
                         census["switch_continue"] += 1
                         census["arm_continue_all" if bucket == "arm" else "default_continue"] += 1
+    return census
+
+
+def switch_break_census(texts):
+    """`Counter` of the `break` statements inside every `switch` block, split by case arm and `default:` body.
+
+    The block census is the population, not the matched arms: an arm whose value the text could not be read for is
+    still inside its block, and a `break` in a `default:` body opens no arm either. A site inside a nested `switch`
+    sits inside two spans, so the blocks are walked innermost first and each offset is counted once, in the block
+    that owns it -- the tail/interior reading is relative to that same arm, which is what the arms census's
+    `interior_break` column reads on the compiled side.
+    """
+    census = collections.Counter()
+    seen = set()
+    for key, t in texts.items():
+        for _fn, spans in t["functions"].items():
+            for span in spans:
+                blocks = switch_spans(t["live"], span[0], span[1])
+                if not blocks:
+                    continue
+                groups = {g[0]: g for g in label_groups(t["clive"], t["live"], span)}
+                for off, binds, _con, place, _dead in text_tool().break_sites_detail(t["live"], None,
+                                                                                    span[0], span[1]):
+                    if binds != "switch":
+                        continue
+                    ident = (key, off)
+                    if ident in seen:
+                        continue
+                    holders = [b for b in blocks if b[0] <= off < b[1]]
+                    if not holders:
+                        continue
+                    ob, cb = min(holders, key=lambda b: b[1] - b[0])     # the innermost `switch` wins
+                    marks = groups[ob][2] if ob in groups else []
+                    bucket = "default"
+                    for i, (lab, start, _end) in enumerate(marks):
+                        if lab is not None and start <= off:
+                            nxt = marks[i + 1][1] if i + 1 < len(marks) else cb
+                            if off < min(nxt, cb):
+                                bucket = "arm"
+                    seen.add(ident)
+                    census["switch_break"] += 1
+                    if bucket == "arm":
+                        census["arm_break_all"] += 1
+                        if place == "interior":
+                            census["arm_break_interior"] += 1
+                    else:
+                        census["default_break"] += 1
     return census
 
 
@@ -582,12 +648,14 @@ def join(texts, arms_c, arms_f, meta):
             census["end_checked"] += checked
             census["end_agree"] += agree
             census["arm_continue"] += got["arm_continue"]
+            census["arm_break"] += got["arm_break"]
+            census["arm_break_inner"] += got["arm_break_inner"]
             rows.append({"kind": "function", "package": package, "class": cls_name, "function": fn_lower,
                          "byte_arms": len(fn_arms), "labels_found": found,
                          "labels_missing": len(fn_arms) - found, "end_agree": agree, "end_checked": checked,
                          "verdict": "agree" if agree == checked else "differs", "label_kind": match_kind,
                          "count": "", "note": ""})
-            for r, text_end, byte_end, conts in detail:
+            for r, text_end, byte_end, conts, brks in detail:
                 if text_end is None:
                     continue
                 same = ("yes" if ((byte_end == "empty" and text_end == "empty")
@@ -605,9 +673,12 @@ def join(texts, arms_c, arms_f, meta):
                 rows.append({"kind": "arm", "package": package, "class": cls_name, "function": fn_lower,
                              "arm": r.get("arm"), "label_kind": r.get("label_kind"), "label": r.get("label"),
                              "text_end": text_end, "text_continue": "+".join(sorted(set(conts))),
+                             "text_break_inner": "+".join(sorted(set(brks))),
                              "byte_end": byte_end, "end_agree": same, "count": "",
                              "note": "site %s" % (r.get("site") or "")})
     for key, value in switch_continue_census(texts).items():
+        census[key] += value
+    for key, value in switch_break_census(texts).items():
         census[key] += value
     for key in CENSUS_ORDER:
         rows.append({"kind": "census", "note": CENSUS_NOTE[key], "count": census[key]})
@@ -875,8 +946,12 @@ def selftest():
                             cont_spans, cont)
     if got4["arm_continue"] != 1:
         fails.append("an arm carrying `if (x) continue;` read arm_continue=%d" % got4["arm_continue"])
-    if [c for _r, _t, _b, c in got4["detail"]][1] != []:
+    if [c for _r, _t, _b, c, _k in got4["detail"]][1] != []:
         fails.append("an arm with no `continue` read %r" % (got4["detail"][1][3],))
+    # The break column reads the same arm bodies: the first arm spells its `break` at the tail and its
+    # `if (x) continue;` before it, and the second carries neither an interior break nor a continue.
+    if [k for _r, _t, _b, _c, k in got4["detail"]][0] != ["tail"]:
+        fails.append("an arm whose only `break` is its tail read %r" % ([k for _r, _t, _b, _c, k in got4["detail"]][0],))
     if fails:
         for f in fails:
             print("FAIL text-switches: %s" % f)

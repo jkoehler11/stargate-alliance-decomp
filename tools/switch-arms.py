@@ -28,6 +28,12 @@ There is **no compiler prefix to strip**: an arm's first statement is the source
 `SetCategoryVolume` opens one with a `JumpIfNot` (`if (MusicVolume != NewVolume) {...}`) and `TestSwitch` opens one
 with an `Assert`. The census counts those heads rather than assuming one.
 
+An arm's **interior** is read too: a `Jump` that lands on the list's end *before* the arm's last token is a `break`
+the last-statement column cannot see (`if (x) break;` with more code after it), and one that lands anywhere else is
+a loop's own edge or a nested switch's break -- two columns that say whether the arm leaves by a `break` and whether
+it merely *carries* one. Offsets are file offsets; the rows write them in the widened (guest) space, as the operand
+census does.
+
 An arm's **case value** is the `Case` token's own *child* expression -- invisible in the statement stream -- and it
 is read here as well: `label_kind` is the operand census's vocabulary (`byte`, `int`, `string`, `name`, `expr`) and
 `label` is the value itself, names resolved through the package's name table. That is what lets an arm be named
@@ -52,7 +58,7 @@ JUMP_CSV = os.path.join(ROOT, "inventory", "jump_branches.csv")
 JOIN_CSV = os.path.join(ROOT, "inventory", "switch_join.csv")
 DOC_MARK = ("<!-- generated:switch-arms -->", "<!-- /generated:switch-arms -->")
 FIELDS = ["kind", "package", "path", "site", "arm", "case", "body_start", "body_end", "statements", "end",
-          "first", "last", "label_kind", "label", "count", "note"]
+          "interior_break", "interior_other", "first", "last", "label_kind", "label", "count", "note"]
 
 CENSUS_NOTE = {
     "lists": "case lists (a chain of `Case` tokens ending on the `0xffff` terminator)",
@@ -73,6 +79,14 @@ CENSUS_NOTE = {
                       "in the statement stream",
     "end_fallthrough": "arms that stop with no jump and a case still after them, i.e. they run into the next case's code",
     "end_into_default": "arms that stop with no jump as their list's last arm, i.e. they run into the `default:` body",
+    "arm_interior": "arms whose body holds a `Jump` to their list's end before the arm's last token -- a `break` the "
+                    "last-statement column cannot see",
+    "interior_jumps": "those `Jump`s, one per `break` site (an arm can carry several)",
+    "arm_interior_other": "arms whose body holds another `Jump` before its last token -- a loop's own edge or a nested "
+                          "switch's break",
+    "interior_other_jumps": "those `Jump`s",
+    "lists_interior_end": "lists with no `break` tail whose interior `Jump`s still agree on one offset past the "
+                          "terminator, i.e. the switch's end read from a break that is not the arm's last token",
     "lists_unanimous": "lists whose `break` jumps all land on one offset -- the switch's end",
     "lists_split": "lists whose arm jumps disagree, so the end is not one offset",
     "lists_no_break": "lists with no `break` jump at all",
@@ -92,6 +106,7 @@ CENSUS_NOTE = {
 CENSUS_ORDER = ("lists", "arms", "defaults", "arm_statements", "arm_min", "arm_max", "arm_mean_x10", "empty",
                 "head_if", "end_break", "end_elsewhere", "end_return", "end_loop", "return_operand",
                 "end_fallthrough", "end_into_default",
+                "arm_interior", "interior_jumps", "arm_interior_other", "interior_other_jumps", "lists_interior_end",
                 "lists_unanimous",
                 "lists_split", "lists_no_break", "default_statements", "default_min", "default_max",
                 "default_open", "nested", "one_arm",
@@ -233,6 +248,14 @@ def measure_script(stmts, links, edges):
         if not breaks:
             end_at = None
             census["lists_no_break"] += 1
+            # A list whose arms all leave by `return` still carries `break`s inside them; when those agree on one
+            # offset past the terminator, that offset is the switch's end and the `default:` body can be bounded.
+            inner = sorted({jump_to[n["offset"]] for r in arms for n in r["body"][:-1]
+                            if n["name"] == "Jump" and n["offset"] in jump_to
+                            and jump_to[n["offset"]] > offs[term]})
+            if len(inner) == 1:
+                end_at = inner[0]
+                census["lists_interior_end"] += 1
         elif len(breaks) == 1:
             end_at = breaks[0]
             census["lists_unanimous"] += 1
@@ -250,6 +273,23 @@ def measure_script(stmts, links, edges):
                     tail = r["body"][-1]
                     if jump_to[tail["offset"]] < tail["offset"]:
                         r["end"] = "loop"
+            # The interior: a `Jump` on the list's end *before* the arm's last token is a `break` this column cannot
+            # see, and any other `Jump` there is a loop's own edge or a nested switch's break.
+            inner_break = inner_other = 0
+            for n in r["body"][:-1]:
+                if n["name"] != "Jump" or n["offset"] not in jump_to:
+                    continue
+                if end_at is not None and jump_to[n["offset"]] == end_at:
+                    inner_break += 1
+                else:
+                    inner_other += 1
+            r["interior_break"], r["interior_other"] = inner_break, inner_other
+            if inner_break:
+                census["arm_interior"] += 1
+                census["interior_jumps"] += inner_break
+            if inner_other:
+                census["arm_interior_other"] += 1
+                census["interior_other_jumps"] += inner_other
             if r["end"] != "empty":
                 census["end_" + r["end"].replace("-", "_")] += 1
         # The terminator case opens the `default:` body, whose extent is the end the breaks name.
@@ -299,6 +339,7 @@ def script_rows(package, path, stmts, links, edges, f2g, census, resolve=None):
                 "body_start": g(body[0]["offset"]) if body else "",
                 "body_end": g(body[-1]["end"]) if body else "",
                 "statements": len(body), "end": r["end"],
+                "interior_break": r.get("interior_break", 0), "interior_other": r.get("interior_other", 0),
                 "first": body[0]["name"] if body else "", "last": body[-1]["name"] if body else "",
                 "label_kind": kind, "label": label,
                 "note": "",
@@ -441,10 +482,22 @@ def doc_block(rows):
     lines += ["",
               "**The switch's end is where its breaks land, and the lists agree on it.** **%s** of **%s** lists put "
               "every `break` of every arm on one offset, so that offset is the switch's own end and it bounds the "
-              "`default:` body; **%s** list(s) jump to more than one target and **%s** carry no `break` at all, so "
-              "their extent stops at the script's end and is counted rather than assumed."
+              "`default:` body; **%s** list(s) jump to more than one target and **%s** carry no `break` in their "
+              "arms' last token at all. **%s** of those still name an end from a `break` *inside* an arm -- one that "
+              "lands past the terminator and is the only such offset -- and the rest stop at the script's end and are "
+              "counted rather than assumed."
               % (comma(census_value(rows, "lists_unanimous")), comma(census_value(rows, "lists")),
-                 comma(census_value(rows, "lists_split")), comma(census_value(rows, "lists_no_break")))]
+                 comma(census_value(rows, "lists_split")), comma(census_value(rows, "lists_no_break")),
+                 comma(census_value(rows, "lists_interior_end")))]
+    lines += ["",
+              "**An arm can carry a `break` and not leave by it, and that is what the last-statement column cannot "
+              "see.** **%s** arms hold **%s** `Jump`s landing on their list's end *before* their last token "
+              "(`if (x) break;` followed by more code) -- the stream half of the text's own interior breaks -- and "
+              "**%s** hold **%s** other `Jump`s there, loop edges and a nested switch's own breaks, which is the "
+              "control that says the first count is not just \"every jump in a body\"."
+              % (comma(census_value(rows, "arm_interior")), comma(census_value(rows, "interior_jumps")),
+                 comma(census_value(rows, "arm_interior_other")),
+                 comma(census_value(rows, "interior_other_jumps")))]
     lines += ["",
               "**There is no compiler prefix in front of an arm, which is why the extent is the token stream and not a "
               "shape.** **%s** arms open with a `JumpIfNot` and the rest open with whatever the source's first "
@@ -549,9 +602,11 @@ def cross_check(rows):
               % (sum(kinds.values()), len(arms), dict(kinds)))
         return 1
     print("ok   switch-arms: %d arms, %d empty, %d break, %d elsewhere, %d loop, %d return, %d fallthrough, %d into "
-          "the default arm -- matches the join and jump_branches; labels %s"
+          "the default arm, %d carrying an interior break (%d sites) -- matches the join and jump_branches; labels %s"
           % (len(arms), mine, ends["break"], ends["elsewhere"], ends["loop"], ends["return"], ends["fallthrough"],
              ends["into-default"],
+             len([r for r in arms if int(r.get("interior_break") or 0)]),
+             sum(int(r.get("interior_break") or 0) for r in arms),
              ", ".join("%s %d" % (k, kinds[k]) for k in ("byte", "int", "string", "name", "expr") if kinds[k])))
     return 0
 
@@ -601,6 +656,22 @@ def selftest():
     if [r["end"] for r in heads5[0]["arms"]] != ["loop", "break"] or census5["end_loop"] != 1:
         print("FAIL switch-arms: a loop's back edge at the end of an arm read %r"
               % ([r["end"] for r in heads5[0]["arms"]],))
+        return 1
+    # A `Jump` on the list's end before the arm's last token is a `break` the exit column cannot see, and one that
+    # lands behind itself there is a loop's edge -- the interior columns' positive and negative cases in one stream.
+    stmts7 = [node(0, "Switch", 1), node(1, "Case", 3),
+              node(3, "Jump", 4), node(4, "Let", 5), node(5, "Jump", 6), node(6, "Return", 7),
+              node(7, "Case", 8), node(8, "Jump", 10),
+              node(10, "Case", 11), node(11, "Return", 12)]
+    heads7, census7 = measure_script(stmts7, [(1, 7, 7), (7, 10, 10)],
+                                     [(3, "Jump", 1, 15), (5, "Jump", 1, 4), (8, "Jump", 1, 15)])
+    interior = [(r["end"], r["interior_break"], r["interior_other"]) for r in heads7[0]["arms"]]
+    if interior != [("return", 1, 1), ("break", 0, 0)]:
+        print("FAIL switch-arms: the interior columns read %r" % (interior,))
+        return 1
+    if (census7["arm_interior"], census7["interior_jumps"], census7["arm_interior_other"],
+            census7["interior_other_jumps"]) != (1, 1, 1, 1):
+        print("FAIL switch-arms: the interior census read %r" % (dict(census7),))
         return 1
     # A `Return` whose operand is a bare variable: `dis_parse` hands that operand over as the arm's last statement.
     stmts6 = [node(0, "Switch", 1), node(1, "Case", 5), node(5, "Return", 6), node(6, "LocalVariable", 8),

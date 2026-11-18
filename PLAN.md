@@ -12927,6 +12927,41 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement:** the switch's case *values* are one arm each; what a decompiler still cannot read from the
   stream is which arm a `Case`'s body ends at (the arm bodies are delimited only by the next `Case`), so an
   arm-body extent census is the next instrument on this page.
+### Execution notes (2026-11-18, every `break` in the text, and the arm that carries one)
+
+- **Task.** The previous note's next instrument, as the flow thread's bundle: the interior-break census the arm rows
+  could not see, the text's 990 `break;` statements decomposed by the construct each one leaves, and the join that
+  says both readers name the same interior breaks.
+- **The stream side is two columns.** `inventory/switch_arms.csv` gains `interior_break` (a `Jump` to the list's own
+  end *before* the arm's last token) and `interior_other` (any other `Jump` there). Measured: **2** arms hold **2**
+  interior breaks, and the control is **74** arms holding **146** other interior jumps, none of them on the list's
+  end. The `lists_interior_end` census was added for the 29 lists with no break tail and answers **0**: no such list
+  names its end from an interior jump.
+- **The text side is a site census.** `tools/text-branches.py --break-sites` (`make break-sites`;
+  `inventory/break_sites.csv`, 990 rows) names every `break;` by the loop or `switch` it leaves, and the arm rows of
+  `inventory/text_switches.csv` gain `text_break_inner`. Measured: **664** switch (630 in a case arm, **34** in a
+  `default:` body), **323** loop (164 for / 134 foreach / 23 while / 2 do), **3** in no construct; **2** arm sites are
+  interior and they are the same two arms the bytes name (`GUIComponent.MenuStateChange` arm 2,
+  `CommandInterface.GetPawn` arm 4). The text's **630** arm breaks are the stream's **628** break arms plus those two.
+- **Three residue sentences, each named.** **4** sites sit outside every `function` declaration -- three in
+  `TeamVoicePack`'s commented-out body (a nested `/* */` closes the outer comment early, the C rule) and one in
+  `MaplistRecord`'s `operator(24) bool ==` body, which the declaration walk does not name; **1** is inside an
+  `#ifdef` part this build never compiles; and the census folds keyword case, worth **2** of the 990 (`Break;` twice
+  in `Engine.PlayerController`, so a case-sensitive read answers 988).
+- **A paren-less `switch` was invisible to the body census.** `switch TriggerWhen` is legal and this corpus writes it
+  **112** times: `tools/text-switches.py`'s pattern required `switch (`, so the block census reached **71** break
+  statements where the real population is **664**, and 5 more arms became matchable once the label groups formed
+  (789 -> 794 matched, all still agreeing). The page's `200 switch` is corrected to **312** in place.
+- **Files.** `tools/switch-arms.py` (two columns, five census keys, a selftest stream, the doc sentence),
+  `tools/text-branches.py` (`break_binding`/`break_place`/`_stmt_end`, `break_site_rows`, `--break-sites`,
+  `--check-break-sites`, four selftest cases), `tools/text-switches.py` (`SWITCH` pattern, `switch_break_census`,
+  `text_break_inner`, six census keys, the doc sentence), `inventory/switch_arms.csv`, `inventory/text_switches.csv`,
+  `inventory/break_sites.csv` (new), `docs/BYTECODE.md` (the new section, four corrected figures),
+  `Makefile` (`break-sites`, one `.PHONY` token, one help line, one `make ci` line) + the index/hashes loop.
+- **Next measurement.** The `outside_body` column's one `operator` body is a declaration kind `tools/class-text-bodies.py`
+  does not name; whether the 136 class texts carry other `operator`/`preoperator` bodies with code is one read, and it
+  would settle whether that residue is one site or a population.
+
 ### Execution notes (2026-11-17, the arm is the chain's next case, and a break is not the only way out)
 
 - **Task.** The previous note's next instrument, taken as the flow thread's bundle: where a `Case`'s arm body ends,
