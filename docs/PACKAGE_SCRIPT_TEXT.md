@@ -755,14 +755,23 @@ The stubs whose payload carries code are the ones where the text and the build d
 A class's `ScriptText` writes its states as `state Idle { ... }`, and the corpus does not stop there: `auto state
 Idle`, `state(0) Idle`, `state() LeadInOutLooper` (every state in `Engine.Mover`), `simulated state ZoomingIn
 extends Zooming`, a capitalised `State FadeOut` and a parent named through another class (`extends Pawn.Waiting`).
-Four readers of that header live in `tools/`, and over the same 2,319 class texts they read **424** (`text-stubs`'
+Four readers of that header lived in `tools/`, and over the same 2,319 class texts they read **424** (`text-stubs`'
 own old pattern), **457** (`ai-states`, and with it `ai-state-body` and `state-exports`), **518** (`uscript-dis`)
-and **554** blocks. The last is `class-text-bodies.state_blocks`, the one rule the declaration scopes are keyed
-on: a declaration written inside a block a reader misses is keyed to the class's own level, where no `Function`
-export of that name exists -- a state's record is outered to the `UState` -- so the miss reads as a body with no
-export anywhere (UNKNOWNS U24). The test that this rule reads headers rather than statements is the gap: all 554
-blocks have their `{` on the header's own line or the next one, while a prefix-only pattern also matched
-`stateTime += DeltaTime` and then swallowed the next brace it found.
+and **554** blocks. The last is `class-text-bodies.state_declarations`, the one rule, and two of the three copies
+are now keyed on it: `text-stubs`' declaration scopes (U24) and, in this change, the whole AI state census --
+`tools/ai-states.py` reads the rule, `tools/ai-state-body.py` walks the bodies it returns and
+`tools/state-exports.py` diffs its names against the export table, so `docs/systems/AI.md`'s machine reads **165**
+states over 36 classes instead of 151 over 32, and its "four names declared by no class's text" (`BotEnemy`'s
+`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`) are the capital `State` spelling the old
+pattern could not see. Two copies remain -- `text-branches` (**513** blocks on its own comment-masked input, 516 on
+the raw text) and `uscript-dis` (**518**) -- and substituting them moves `docs/BYTECODE.md`'s `else` census and the
+payload anchoring respectively, so they are named as not in this change rather than half-moved.
+
+The reason a miss matters is the scope: a declaration written inside a block a reader misses is keyed to the
+class's own level, where no `Function` export of that name exists -- a state's record is outered to the `UState` --
+so the miss reads as a body with no export anywhere (UNKNOWNS U24). The test that this rule reads headers rather
+than statements is the gap: all 554 blocks have their `{` on the header's own line or the next one, while a
+prefix-only pattern also matched `stateTime += DeltaTime` and then swallowed the next brace it found.
 
 
 ## Handling: measured here, extracted elsewhere

@@ -4654,9 +4654,27 @@ the class's body are gone (bodied stubs **15 -> 3**), because a state's bodyless
 state's own empty script. `inventory/class_text_bodies.csv`: `state_declarations` **251 -> 278** (over the classes
 that ship a comment), distinct state names **290 -> 317**, state labels **61 -> 63**.
 
-**Residual.** `tools/ai-states.py` (and `ai-state-body.py`, `state-exports.py` through it) and
-`tools/uscript-dis.py` still carry their own copies, 457 and 518 of the 554 blocks, so `docs/systems/AI.md`'s
-151 states over 32 controller classes is a floor under a narrower rule. Substituting the one rule there moves
-`ai_states`, `state_code`, `state_exports` and the AI page together — its own bundle, named in the PLAN note.
-A declaration that sits in a live block and still names no export is now a population of zero, so the next
-question is not a scope one.
+**The AI census was the second reader substituted, and it changes a published claim.** `tools/ai-states.py` carried
+the 457-block copy (an `auto` prefix, an optional numeric `state(n)`, and a case-sensitive `state` whose brace had
+to be on the header's line), and everything AI read through it: `ai-state-body.py` walked its spans and
+`state-exports.py` diffed its names. Keyed on `class-text-bodies.state_declarations` the controller tree reads
+**165 states over 36 classes**, not 151 over 32 -- `BotEnemy` **41**, `BotRep` 4, `BotBase` 5, `BotLite` 5,
+`ScriptedController` 2, exactly the class record's counts -- with **237** labels (216), **203** sleeps (189) and
+**115** class-level `GotoState` calls (127, because fourteen dispatch sites are inside a state after all).
+`docs/systems/AI.md`'s "four names declared by no class's text" (`GetInFormation`, `MoveInFormation`, `TakePoint`,
+`WaitingForFormation`) and "four whole classes only on the export side" (`Birds`, `CirclingBirds`,
+`MigratingBirds`, `TransientAmbientCreature`) were both the capital `State` spelling: they are declared.
+`inventory/state_exports.csv` flips direction -- **0** states declared by no text (was 14), **7** exports carrying
+no function child -- and a new `exported` column keeps the two directions apart, because the entry's own "6 names a
+text declares and no export carries" turned out to be those childless exports mislabelled, not missing objects.
+`ai_state_bodies.csv` gains the 14 bodies (**1,533** own statements against 2,619 in 628 overrides), and
+`state_entry.csv`'s text-side census rows move with it (151 -> 165 states, 107 in-state sites).
+
+**Residual.** Two readers still carry their own copies, over the same 2,319 texts: `tools/text-branches.py`
+(**513** blocks on its comment-masked input; 516 raw, three of its matches are declarations a comment disables)
+and `tools/uscript-dis.py` (**518**, its pattern also reading nine non-declarations -- a bare `else`, empty names --
+which the shared rule does not). Substituting `text-branches` moves `docs/BYTECODE.md`'s `fn_state`/`fn_state_label`
+census and `tools/state-code.py`'s per-state text join (it calls that module's pattern and `body_span`); substituting
+`uscript-dis` moves the payload anchoring that keys a state-owned `Function` export by `(class, state, name)`. Both
+are their own bundles. A declaration that sits in a live block and still names no export is now a population of
+zero, so the next question is not a scope one.
