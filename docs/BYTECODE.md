@@ -2134,7 +2134,77 @@ against 156 arms, 13 classes more and 1 fewer -- and that is the game's bot code
 `else` on either side at all. A rebuild that graded itself against the text would therefore be wrong exactly where
 the bots are, which is the part of this build nobody else has a reference for.
 
-**The surplus is per class, not per branch.** The 989 terms the model over-counts sit in 147 of the 967 joined
-classes rather than spread across the corpus -- one class contributes 164 of them -- which is the shape of a class
-whose shipped text is a different revision from the one the package compiled, not of a codegen rule that varies by
-branch. The widest single class is 62 `else`s apart.
+**The surplus is where the terms sit, not a class whose text did not compile (corrected 2026-11-17).** The 989
+terms the model over-counts do sit in 147 of the 967 joined classes rather than spread across the corpus, and one
+class contributes 164 of them -- but the per-function join below takes the number apart: **779** of the 989 are
+condition terms in state code, which sits outside every function body and which a class-level count adds to the
+functions' own; **221** are inside the joined functions' bodies (net of 47 functions ahead and 55 behind); and
+**11** are `JumpIfNot` tokens the census resolves that carry no branch row. So the earlier reading -- that a
+164-term class is a class whose shipped text is a different revision -- is withdrawn: the term model is exact on
+**98.2%** of the functions, and what the class count was measuring is where the terms live, not whether the text
+was the one compiled.
+
+## The same join one level down: per function (measured 2026-11-17)
+
+The class count above can only say that a class's `else` keywords and its `else` arms agree; a class of forty
+functions can agree while two of them do not, and the class rate falls with the class's size. The same two
+censuses join one level down, on the functions both name: `tools/text-branches.py --functions` reads each
+function's own body out of the shipped `ScriptText` (`class-text-bodies.py`'s declaration rule, over the masked
+buffer) and pairs it with that function's rows in `inventory/jump_branches.csv`. The output is
+`inventory/text_branch_functions.csv`, one row per function -- the text's `else`/`if`/`while`/`for`/`&&`/`||` on
+one side, the record's `else` arms and `JumpIfNot` tokens on the other, and the class's own verdict carried onto
+every row so a disagreement has a population as well as an owner. `tools/text-branches.py --check-functions`
+holds the new artifact to the class one through five identities per class and two corpus counts, and reads no
+dump: a class whose `fn_arms`, `fn_absent`, `fn_short`, `fn_long` or `fn_unpaired` is not the sum of its
+function rows fails the gate, which is what makes a per-function row a second reading of the same measurement
+rather than a second measurement.
+
+<!-- generated:text-branch-functions -->
+**The same join one level down.** **5,771** functions carry a branch on at least one side: **5,770** the live text declares with a body that holds a condition, **5,737** the branch census has a `JumpIfNot` in, **5,736** both, **34** text-only and **1** record-only, and **19** of the text-only bodies sit inside a `#ifdef` guard -- this build's PS2 branch, which the package never compiled. On the **5,736** functions both sides have, the `else` count is equal on **5,485** (**95.6%**) -- 3,575 of them because neither side spells one at all, so on the **2,161** functions that have an arm or a keyword the agreement is **1,910** (**88.4%**) -- short of the record on **229**, ahead of it on **13**, and **9** spell `else` in a body the record gives no arm for at all; the condition-term model is exact on **5,634** (**98.2%**), with **47** functions ahead and **55** behind.
+
+**A class whose totals agree is not a class whose functions agree.** The 2,694 functions inside the classes whose own `else` count agrees split **2,691** exact / 2 short / 1 ahead / 0 with no arm; inside the `less` classes the 2,101 functions split 1,882 / 216 / 1 / 2, and inside the `more` classes the 941 functions split 912 / 11 / 11 / 7. So a class-level agreement is a function-level cancellation on **3** of its functions, and a class-level disagreement is one the text spells away on **219** of the `less` functions and **29** of the `more` ones -- the opposite of the same number, in the opposite population.
+
+**The operator rule is per function, where the operators are.** Of the 5,736 functions both sides have a branch in, **2,057** carry `&&` or `||` in their text and are exact on the term count **1,992** times (**96.8%**); the **3,679** that carry neither are exact **3,642** times (**99.0%**). A class-level version of this test cannot say that, because a class with one `&&` anywhere is lumped with every function in it that has none.
+
+**The class-level term surplus is three populations, and a function's own count is none of them.** The live text declares **17,673** condition terms inside a function body against the **17,452** `JumpIfNot` tokens the record carries there (**221** more terms than jumps, net of the 47 functions ahead and 55 behind), while **779** terms sit outside every function body -- state code, which a class-level count adds to a function's own -- and the branch census resolves **11** tokens that carry no branch row. So the class-level surplus of **989** is 779 outside a body + 221 inside one - 11 unresolved: a population sum, not a per-function defect.
+
+| class verdict | functions | `else` agree | short | ahead | no arm |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `agree` | 2,694 | 2,691 | 2 | 1 | 0 |
+| `more` | 941 | 912 | 11 | 11 | 7 |
+| `less` | 2,101 | 1,882 | 216 | 1 | 2 |
+
+| function | text `else` | arms | terms | `JumpIfNot` |
+| --- | ---: | ---: | ---: | ---: |
+| `VoiceSelector.discardrecentlyusedvoices` | 0 | 7 | 17 | 17 |
+| `AdminBase.findgametype` | 0 | 5 | 7 | 7 |
+| `B4SParser.parselines` | 0 | 5 | 8 | 8 |
+| `CommandInterface.testtraceactors` | 7 | 12 | 34 | 34 |
+| `MapList.getnextmap` | 1 | 5 | 13 | 13 |
+| `AIMsgManager.getfreeaimsg` | 0 | 3 | 4 | 4 |
+| `Pawn.deleteinventory` | 0 | 3 | 7 | 7 |
+| `PlayInfo.init` | 0 | 3 | 8 | 8 |
+<!-- /generated:text-branch-functions -->
+
+**The class figure is a size effect, and the per-function row is the oracle a rebuild can use.** A class
+agrees only when every function in it does, so 82.7% of the classes against 88.4% of the functions that carry
+an `else` at all are one measurement at two granularities. The rows say which function: the 800 classes that
+agree on the count are exact on **2,691 of their 2,694** functions, and the three they miss are named rows
+(`ReetouDevice.addsprayedpawn` one arm short, `UnrealPawn.isinloadout` two, `UnrealPawn.beginstate` one `else`
+keyword more than its two arms) -- so at function level their net of zero is three near-misses in two classes,
+not a population whose text is another revision. The disagreement is one-sided and it is the
+record's: **229** functions carry more `else` arms than their text spells (**315** arms) against **13** the
+other way (**17** keywords), and the shortfall is `StargateGame` (75 functions) and `Engine` (71) first -- the
+framework's and the game's own code, where the shipped text is the side that misses arms the compiler emitted.
+
+**The text-only population is mostly the PS2 guard.** 19 of the 34 bodies the record has no jump for at all sit
+inside an `#ifdef...#endif` block this package never compiled (`#ifdefPS2` spells the directive with no space,
+which is why a `#ifdef\b` pattern finds none of them and why the first reading called these functions a join
+hole). The remaining 15 are the same shape as the class-level `unpaired` bucket -- text a class ships and its
+build did not compile -- and no text-only body carries an arm the join lost.
+
+**What the row cannot say.** Whether a function with more arms than its text spells is a different revision of
+the text or a reader pairing the wrong arm is still open here: the arm count is the branch census's
+(`inventory/switch_arms.csv` for the extents, `jump_branches.csv` for the arms), and the per-function row only
+locates the disagreement at the function that owns it. That is what a rebuild grades against: function by
+function, 88.4% of the bodies that carry an `else` at all agree exactly, and the 229 that do not are listed.

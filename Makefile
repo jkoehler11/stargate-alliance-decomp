@@ -69,7 +69,7 @@ help:
 	@echo "  jump-census measure what a Jump operand is against the token starts"
 	@echo "  jump-graph  read the operands in the widened layout and emit the graph"
 	@echo "  jump-branches read the graph back: else arms, straight arms, empty arms"
-	@echo "  text-branches the live source against the bytes: else arms, && and ||"
+	@echo "  text-branches the live source against the bytes: else arms, && and ||, per class and per function"
 	@echo "  state-code   where a state's own code lives: the State export's payload"
 	@echo "  text-stubs           a declaration without a body: its shape, owner and compiled script"
 	@echo "  package-names parse every .u header and name table (PLAN 5.2/4.7 prerequisite)"
@@ -458,6 +458,7 @@ ci:
 	@$(PYTHON) tools/text-switches.py --check
 	@$(PYTHON) tools/text-switches.py --check-doc docs/BYTECODE.md
 	@$(PYTHON) tools/text-branches.py --check-doc docs/BYTECODE.md
+	@$(PYTHON) tools/text-branches.py --check-functions
 	@$(PYTHON) tools/text-stubs.py --check-doc docs/PACKAGE_SCRIPT_TEXT.md
 	@$(PYTHON) tools/voice-packs.py --check-doc docs/systems/AUDIO.md
 	@$(PYTHON) tools/voice-sets.py --check-doc docs/systems/AUDIO.md
@@ -1453,11 +1454,15 @@ state-code:
 		--system $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System \
 		-o inventory/state_code.csv --write-doc docs/systems/AI.md
 
+# `--functions` writes the per-function artifact in the same read: the class columns are its sums, and
+# `make ci` holds the two files to each other with `--check-functions` and no dump.
 text-branches:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
 	$(PYTHON) tools/text-branches.py \
 		--system "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" \
-		-o inventory/text_branches.csv --write-doc docs/BYTECODE.md
+		--functions -o inventory/text_branches.csv \
+		--functions-out inventory/text_branch_functions.csv \
+		--write-doc docs/BYTECODE.md
 
 state-exports:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }; \
