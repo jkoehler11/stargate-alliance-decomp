@@ -64,7 +64,8 @@ MARKER = 0x47        # 'G', the end marker UStruct::Serialize appends to a scrip
 NO_TABLE = 0xFFFF    # what `LabelTableOffset` reads when the state carries no label table -- and no code
 
 FIELDS = ["kind", "package", "class", "state", "payload", "start", "code", "trailer", "tokens",
-          "jumpifnot", "jump", "labeltable", "complete", "stringconst", "record", "probe_mask",
+          "jumpifnot", "jump", "arms_else", "arms_if", "arms_empty", "arms_leave", "arms_expr",
+          "labeltable", "complete", "stringconst", "record", "probe_mask",
           "ignore_mask", "label_offset", "state_flags", "table_w", "start_by", "jump_on", "code_lv", "walk_lv",
           "override_of", "text_kw",
           "text_label", "text_else", "text_else_label", "labels", "labels_on", "labels_named", "labels_last",
@@ -80,6 +81,13 @@ CENSUS_NOTE = {
     "tokens": "tokens the walk names",
     "jumpifnot": "`JumpIfNot` tokens in them -- the label code's arms",
     "jump": "`Jump` tokens, the `Goto('Label')` and loop backs",
+    "arms_else": "`else` arms in those payloads, by `tools/jump-branches.py`'s rule -- the branch census never read a `State`",
+    "arms_if": "conditional jumps over a straight arm in them",
+    "arms_empty": "empty then-arms in them",
+    "arms_leave": "arms that end by leaving their own loop or `switch` -- a `break`/`continue`",
+    "arms_expr": "sub-jumps inside a condition",
+    "arm_join_states": "states whose text block and walk both exist, so its `else` count can be compared",
+    "arm_join_equal": "of those, the ones whose text spells exactly the `else` arms the payload carries",
     "labeltable": "`LabelTable` tokens (`0x0c`) -- 0 in every `Function` payload of the corpus",
     "labeltable_states": "states whose code ends on one",
     "stringconst": "`StringConst` tokens, the literals the label block is written with",
@@ -126,7 +134,9 @@ CENSUS_NOTE = {
 }
 
 CENSUS_KEYS = ("states", "payload_bytes", "regions", "no_code", "no_table", "code_bytes", "tokens",
-               "jumpifnot", "jump", "labeltable", "labeltable_states", "stringconst", "record", "marker",
+               "jumpifnot", "jump", "arms_else", "arms_if", "arms_empty", "arms_leave", "arms_expr",
+               "arm_join_states", "arm_join_equal",
+               "labeltable", "labeltable_states", "stringconst", "record", "marker",
                "ignore_all_ones", "probe_zero", "flags_zero", "flags_one", "flags_two", "flags_other",
                "offset_entry", "offset_other", "offset_unmeasured", "start_by_field",
                "start_shift", "override_state", "override_code", "override_none", "code_local", "walk_local",
@@ -230,6 +240,35 @@ def candidates(payload, table):
         out.append({"start": start, "end": end, "nodes": keep, "t0": t0, "spans": spans, "table_w": wid,
                     "jump_on": on, "local": lv, "ntok": len(tokens(keep))})
     return out
+
+
+def arm_split(nodes, spans):
+    """`(arms_else, arms_if, arms_empty, arms_leave, arms_expr)` for one state's code, by the branch census's rule.
+
+    The category rule is `tools/jump-branches.py`'s `classify`, applied to the state's own top-level statements
+    instead of a `Function` script's: a state's label block is not a `Function` export, so the branch census skips
+    it (`tools/jump-census.py` walks `Function` exports only) and the class-level `else` join had no arms to put
+    against the keywords a state body spells. The one difference is the offset space: a state's jump operands are
+    in the loader's **widened** code, so each is mapped back to the payload offset it lands on before the rule
+    sees it. An operand that lands in no token start is passed as `-1`, so the rule files it under `expression`
+    -- the bucket it already has for a jump that names no statement -- and the five categories still partition
+    the walk's `JumpIfNot` tokens. The corpus puts every operand on a boundary (`jumps_on_boundary`), so that
+    bucket is empty here and the identity is checked rather than assumed.
+    """
+    jb = load_tool("jump_branches", "jump-branches.py")
+    inv = {}
+    for nd in tokens(nodes):
+        w = widened_at(spans, nd["offset"])
+        if w is not None:
+            inv[w] = nd["offset"]
+    edges = []
+    for nd in tokens(nodes):
+        if nd["name"] in ("Jump", "JumpIfNot") and len(nd["operands"]) == 2:
+            val = nd["operands"][0] | (nd["operands"][1] << 8)
+            edges.append((nd["offset"], nd["name"], val, inv.get(val, -1)))
+    cats, _stmts = jb.classify(nodes, edges)
+    c = collections.Counter(cat for _o, cat, _v, _t in cats)
+    return c["else"], c["if"], c["empty"], c["leave"], c["expression"]
 
 
 def region(payload, table, want=None):
@@ -388,8 +427,9 @@ def walk_dump(system):
                 state.lower(), ("", "", "", []))
             row = {"kind": "state", "package": package, "class": cls, "state": state,
                    "payload": len(payload), "start": "", "code": "", "trailer": "", "tokens": "",
-                   "jumpifnot": "", "jump": "", "labeltable": "", "complete": "", "stringconst": "",
-                   "record": RECORD if rec else "",
+                   "jumpifnot": "", "jump": "", "arms_else": "", "arms_if": "", "arms_empty": "",
+                   "arms_leave": "", "arms_expr": "",
+                   "labeltable": "", "complete": "", "stringconst": "", "record": RECORD if rec else "",
                    "probe_mask": rec["probe_mask"] if rec else "",
                    "ignore_mask": rec["ignore_mask"] if rec else "",
                    "label_offset": rec["label_offset"] if rec else "",
@@ -408,6 +448,10 @@ def walk_dump(system):
                             "labeltable": c["LabelTable"], "stringconst": c["StringConst"],
                             "complete": 1, "table_w": got["table_w"] if got["table_w"] is not None else "",
                             "start_by": got["start_by"], "code_lv": got["local"], "walk_lv": got["walk_lv"]})
+                if got["spans"] is not None:
+                    a_else, a_if, a_empty, a_leave, a_expr = arm_split(got["nodes"], got["spans"])
+                    row.update({"arms_else": a_else, "arms_if": a_if, "arms_empty": a_empty,
+                                "arms_leave": a_leave, "arms_expr": a_expr})
                 woffs = set()
                 if got["spans"] is not None:
                     for nd in flat:
@@ -512,6 +556,8 @@ def census(rows, shift=None):
         c["tokens"] += int(r["tokens"])
         c["jumpifnot"] += int(r["jumpifnot"])
         c["jump"] += int(r["jump"])
+        for key in ("arms_else", "arms_if", "arms_empty", "arms_leave", "arms_expr"):
+            c[key] += int(r[key] or 0)
         c["payload_arms"] += int(r["jumpifnot"])
         c["labeltable"] += int(r["labeltable"])
         c["stringconst"] += int(r["stringconst"])
@@ -559,6 +605,10 @@ def census(rows, shift=None):
                 c["joined_label"] += int(r["text_kw"])
                 if int(r["jumpifnot"]) == int(r["text_kw"]):
                     c["joined_equal"] += 1
+                if r["arms_else"] != "" and r["verdict"] == "label+payload":
+                    c["arm_join_states"] += 1
+                    if int(r["arms_else"]) == int(r["text_else"] or 0):
+                        c["arm_join_equal"] += 1
         elif r["verdict"] != "record-only":
             c["overrides"] += 1
     if shift is not None:
@@ -637,6 +687,21 @@ def doc_block(rows):
                     comma(num(rows, "label_unspelled")), comma(num(rows, "label_text_only")),
                     comma(num(rows, "label_join_equal"))))
     lines.append("")
+    lines.append("**The `else` keywords a state body spells are the arms its payload compiles.** The branch census's "
+                 "category rule (`tools/jump-branches.py`'s `classify`, which is what reads a `Function` script) run "
+                 "over each state's own statements splits its **%s** `JumpIfNot` into **%s** `else` arms, **%s** "
+                 "conditional jumps over a straight arm, **%s** empty then-arms, **%s** that leave their own loop or "
+                 "`switch`, and **%s** condition sub-jumps. Against the text: **%s** states carry both a readable "
+                 "label block and a walk, and **%s of those %s** spell exactly the `else` arms their payload "
+                 "carries -- no state disagrees. That is the same **%s** keywords `docs/BYTECODE.md` counts "
+                 "*outside every function body*, which is what the class-level `more` verdict compared against "
+                 "`Function`-only arms: `tools/jump-census.py` walks `Function` exports and never a `State`, so the "
+                 "class count was missing this half. Read here, the population is the state code, arm for arm."
+                 % (comma(num(rows, "jumpifnot")), comma(num(rows, "arms_else")), comma(num(rows, "arms_if")),
+                    comma(num(rows, "arms_empty")), comma(num(rows, "arms_leave")), comma(num(rows, "arms_expr")),
+                    comma(num(rows, "arm_join_states")), comma(num(rows, "arm_join_equal")),
+                    comma(num(rows, "arm_join_states")), comma(num(rows, "text_else"))))
+    lines.append("")
     lines.append("| measure | value |")
     lines.append("|---|---|")
     lines.append("| `State` exports read | %s |" % comma(num(rows, "states")))
@@ -653,6 +718,8 @@ def doc_block(rows):
                  % (comma(num(rows, "code_bytes")), comma(num(rows, "tokens"))))
     lines.append("| `JumpIfNot` / `Jump` | %s / %s |"
                  % (comma(num(rows, "jumpifnot")), comma(num(rows, "jump"))))
+    lines.append("| ... `else` arms they compile / states whose text spells exactly them | %s / %s |"
+                 % (comma(num(rows, "arms_else")), comma(num(rows, "arm_join_equal"))))
     lines.append("| `LabelTable` tokens, in states / in `Function` payloads | %s / 0 |"
                  % comma(num(rows, "labeltable")))
     lines.append("| label-table entries / on a widened token start / named | %s / %s / %s |"
@@ -823,7 +890,11 @@ def selftest():
     ents, stop = label_entries(bytes([0x06, 0x00, 0x00, 0x00, 0x00, 0x07, 0x09, 0x00, 0x00, 0x00, 0x00]))
     assert ents == [(6, 0), (7, 9)] and stop == "none-name", (ents, stop)
     assert label_entries(bytes([0x06, 0x00, 0x00, 0x00, 0x00]))[1] == "end", "an unterminated table is named"
-    print("ok   state-code: end anchor, compact label names, record, field-chosen start and label-code count")
+    # The arm split partitions the walk's `JumpIfNot` tokens: five categories, no token silently dropped.
+    parts = arm_split(by_field["nodes"], by_field["spans"])
+    assert sum(parts) == sum(1 for n in tokens(by_field["nodes"]) if n["name"] == "JumpIfNot"), parts
+    print("ok   state-code: end anchor, compact label names, record, field-chosen start, label-code count and the"
+          " arm split")
 
 
 def main():
