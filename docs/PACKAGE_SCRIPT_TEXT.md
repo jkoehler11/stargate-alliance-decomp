@@ -443,13 +443,13 @@ tables if nowhere else.
 | ... declared inside a block comment / a member call on a type / nowhere / `#ifdef` | **9** / **12** / **7** / **0** |
 | ... a `state` name / a state label / only a name in a table / in no name table | **0** / **1** / **3** / **24** |
 | ... called on a `BotEnemy` receiver, of which the build carries | **9** / **1** |
-| distinct `state` names / also a `Function` export | **290** / **14** |
-| distinct state-label names / also a `Function` export | **61** / **7** |
+| distinct `state` names / also a `Function` export | **313** / **14** |
+| distinct state-label names / also a `Function` export | **63** / **7** |
 
 
 **The rule needed three shapes the grammar's first form did not have, and each is its own number.** A declaration is introduced by `event`, `delegate` or the operator family as well as by `function`, carries any of the grammar's modifiers, may put a modifier after the keyword (`function static`) and may start its parameter list on the next line -- which is how the engine's own `PlayerController` and `GameProfile` write theirs. Counted with the four-modifier `function`-only rule the corpus reads **5098** declarations over the classes that carry a comment; with the grammar's modifiers and keywords but the parameter list required on the same line, **6112**; with the parameter list allowed on its own line, **6153** -- of which **6115** are same-line and **3** carry a trailing modifier. What that does to this census is the three readings side by side: commented declarations **208 -> 226 -> 226**, live declarations **4890 -> 5886 -> 5927**, pairs **22 -> 25 -> 25** and disabled bodies **158 -> 172 -> 172** (first rule, same-line rule, this rule), so every figure the page quoted before was a floor under a rule that could not see the declarations it was counting.
 
-**The state read was case-sensitive and the text is not.** UnrealScript folds keywords, and **37** of the **251** `state` declarations this read finds over the same classes are spelled `State` -- lost to the case-sensitive pattern that a previous revision counted with, which is why the tree once recorded five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) as ones no text declares: the text declares them, in a capitalised block.
+**The state read was case-sensitive and the text is not.** UnrealScript folds keywords, and **35** of the **261** `state` declarations this read finds over the same classes are spelled `State` -- lost to the case-sensitive pattern that a previous revision counted with, which is why the tree once recorded five states (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) as ones no text declares: the text declares them, in a capitalised block.
 Every pair, `ops` being the operator multiset and `stmts` the statements at the body's own brace depth:
 
 | class.function | verdict | commented ops / stmts / bytes | live ops / stmts / bytes | operators that moved |
@@ -484,7 +484,7 @@ Every pair, `ops` being the operator multiset and `stmts` the statements at the 
 
 **The 28 names behind those 35 sites are typed by evidence the text carries.** 9 are declared as a `function`/`event`/`delegate` inside a block comment themselves -- the caller and the callee are both revisions the comment disabled -- 12 are member calls whose receiver's declared type declares no such function, 7 are declared nowhere in the eighteen packages. The member calls are concentrated: **9 of the 12** are called from one body, `StargateGame.TeamAI.setorders`.
 
-**Those names are missing from the build, not only from its export table.** Each of the 28 is read against three further vocabularies -- the `state` blocks the class texts declare, the labels at a state body's own statement level, and every package's own name table, which the compiler fills with every name it saw: **0** is a state, **1** is a state label (`docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy`), **3** only a name in a package's table and **24** in none of the three. The base rates are what make the last column a finding rather than a reader artefact: **14 of the 290** state names and **7 of the 61** state labels the corpus declares are also `Function` exports, so a name this build ships is normally visible in the table, and an API that had merely been renamed would leave its names there.
+**Those names are missing from the build, not only from its export table.** Each of the 28 is read against three further vocabularies -- the `state` blocks the class texts declare, the labels at a state body's own statement level, and every package's own name table, which the compiler fills with every name it saw: **0** is a state, **1** is a state label (`docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy`), **3** only a name in a package's table and **24** in none of the three. The base rates are what make the last column a finding rather than a reader artefact: **14 of the 313** state names and **7 of the 63** state labels the corpus declares are also `Function` exports, so a name this build ships is normally visible in the table, and an API that had merely been renamed would leave its names there.
 
 That is the whole answer for the AI override API's **names**: `StargateGame.TeamAI.setorders` calls **9** names on a `BotEnemy` receiver and the build carries **1** of them -- `docharge`, the entry label of `melleecharge` in `StargateContent.JaffaBotHeavy` -- while the remaining **8** sit in no name table of the eighteen packages, so no object of any package ever referenced them. A call site cannot reach a label, and the other eight were never compiled: the revision is written against a spelling this build does not use.
 
@@ -646,7 +646,7 @@ to say whether a body the text does not spell *moved into a comment* rather than
 it and this block.
 
 <!-- generated:text-stubs -->
-**Of the 11,413 declarations the grammar's rule reads, 10,507 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **880 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **15 carry a longer script**, a body the package kept. Of those **2** are forward declarations -- the same text declares the name again, with a body, further down -- and **12** are the mirror case, a body the class spells *above* the declaration (a bodyless re-declaration of a name the class already defines), so the residue is **1 declaration** whose script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **372 of the 10,507 bodied declarations compile to the same empty script too** -- **358** an empty `{}` body and **14** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 11 of the 369 empty-`{}` bodies carry a longer payload than it.
+**Of the 11,413 declarations the grammar's rule reads, 10,507 carry a body the brace walk resolves and 906 are declaration-only** (7.9%) -- and every one of them has an export, because a declaration is a `Function` object whether or not it has statements. Read against that export, a stub is one of two things: **903 carry the compiler's empty script** (`04 0b 47`, `Return` and nothing else), so the text and the build agree there is no body, and **3 carry a longer script**, a body the package kept. Of those **2** are forward declarations -- the same text declares the name again, with a body, further down -- and **0** are the mirror case, a body the class spells *above* the declaration (a bodyless re-declaration of a name the class already defines), so the residue is **1 declaration** whose script no live body in the `ScriptText` spells**. The control is what keeps that from being a stub test: **370 of the 10,507 bodied declarations compile to the same empty script too** -- **369** an empty `{}` body and **1** a body carrying only locals, comments or structure -- so the test separates *no code* from *code* and not a stub from a body. 0 of the 369 empty-`{}` bodies carry a longer payload than it.
 
 | shape | stubs | what it is |
 |---|---:|---|
@@ -656,10 +656,10 @@ it and this block.
 
 | owner | empty script | compiled body |
 |---|---:|---:|
-| the class itself | 653 | 15 |
-| a `State` of the class | 227 | 0 |
+| the class itself | 649 | 3 |
+| a `State` of the class | 254 | 0 |
 
-A stub's name is almost always one the package exports: **668 name a `Function` the class itself exports**, **227 one a `State` of the class exports**, and **11 name no export at all** -- a class-level declaration whose name only a state binds, which a class-over-state index cannot see. **8** are declared a second time in the same text with a body, **37** sit in a window that holds a block comment and **0** carry `FUNC_Native` -- so the population is a language shape and not a reader's miss. 647 distinct names are behind the 906 stubs.
+A stub's name is almost always one the package exports: **652 name a `Function` the class itself exports**, **254 one a `State` of the class exports**, and **0 name no export at all** -- a class-level declaration whose name only a state binds, which a class-over-state index cannot see. **2** are declared a second time in the same text with a body, **37** sit in a window that holds a block comment and **0** carry `FUNC_Native` -- so the population is a language shape and not a reader's miss. 647 distinct names are behind the 906 stubs.
 
 | package | stubs |
 |---|---:|
@@ -683,30 +683,70 @@ The concentration is a handful of classes, not a spread: **15 classes are all st
 | `Engine.actor` | 71 / 111 | 71 | 0 |
 | `Engine.controller` | 49 / 136 | 49 | 0 |
 | `Engine.pawn` | 46 / 212 | 46 | 0 |
-| `StargateGame.botenemy` | 38 / 403 | 37 | 1 |
+| `StargateGame.botenemy` | 38 / 403 | 38 | 0 |
 | `UWindow.uwindowlookandfeel` | 37 / 38 | 37 | 0 |
 | `GUI.guicomponent` | 30 / 104 | 30 | 0 |
-| `StargateGame.stargateplayer` | 28 / 214 | 24 | 4 |
+| `StargateGame.stargateplayer` | 28 / 214 | 28 | 0 |
 | `Engine.gameinfo` | 22 / 162 | 22 | 0 |
 
-**A `state`'s declaration belongs to the state.** **227 of the 906 stubs are written inside a `state` block**, and each one resolves to that state's own `Function` export rather than the class's: **227** of them compile to the empty script and **0** carry one, against **653** empty and **15** bodied at the class's own level. Asking the class for the name -- a class-over-state preference -- credits a state's bodyless declaration with the class's script, which is how a census can read a body the text does not spell where the text spells nothing missing at all.
+**A `state`'s declaration belongs to the state.** **254 of the 906 stubs are written inside a `state` block**, and each one resolves to that state's own `Function` export rather than the class's: **254** of them compile to the empty script and **0** carry one, against **649** empty and **3** bodied at the class's own level. Asking the class for the name -- a class-over-state preference -- credits a state's bodyless declaration with the class's script, which is how a census can read a body the text does not spell where the text spells nothing missing at all.
 
-**The residue is not in the class's comment.** `inventory/class_text_bodies.csv` already measures the bodies a block comment disables, and joining that artifact by `(package, class, function)` against them puts **0** in a class whose own comment carries a body of the same name -- a body the text moved into a comment rather than dropped -- **0** in a class that ships a block comment without this name, and **1** in a class that ships no comment at all, so **1 of the 15** bodied stubs is a body the `ScriptText` does not spell anywhere. The name-level rate is the control: **23 of the 647** distinct stub names also occur as a commented body somewhere in the corpus (3.6%), against **0 of 1** (0.0%) for the lost bodies' own names -- the join is not finding less than a plain name census would.
+**A bodied declaration that names no export is a scope question, and the header's spelling answers most of it.** 38 of the 10,507 bodied declarations resolve to nothing against their class, and **1,695** of them are written inside a `state` block: a state's `Function` record is outered to the `UState`, not to the class, so a class-keyed walk cannot answer the name, and the header pattern this module carried (`state Name {`) missed four of the five spellings the shipped text uses -- `state() Name` (every state in `Engine.Mover`), `state(0) Name`, `simulated state X extends Y` and a capitalised `State X`: over the whole corpus the plain header finds **424** of the **554** blocks the class texts declare. Read through `class-text-bodies.state_blocks` instead, **1,695** bodied declarations are placed in a state and **8,812** are not; of the residue, **38** are written inside a preprocessor block this build does not compile (`pc` and `ps2` guard whole functions, **5** of those inside a state) and **0** sit in a live region. Those rows are named below -- the count is the artifact's, not a reader's claim.
 
-**The declaration lookups stay inside their own scope.** A forward declaration is one the same text declares again *below* with a body (**2** bodied stubs) and the mirror case is a body *above* (**12**); both are counted on the same scope's declarations only, so a class-level declaration is never answered with a state's body or the reverse.
+| declaration | line | scope | why no export |
+|---|---:|---|---|
+| `Engine.ismoviepaused` | 1,060 | class | inside `ifdef pc` |
+| `Engine.ismovieplaying` | 1,047 | class | inside `ifdef pc` |
+| `Engine.pausemovie` | 1,053 | class | inside `ifdef pc` |
+| `Engine.playmoviedirect` | 1,000 | class | inside `ifdef pc` |
+| `Engine.playmoviescaled` | 1,010 | class | inside `ifdef pc` |
+| `Engine.stopmovie` | 1,072 | class | inside `ifdef pc` |
+| `Engine.gsif` | 8,748 | class | inside `ifdef pc` |
+| `Engine.initgsinterface` | 8,742 | class | inside `ifdef pc` |
+| `Engine.pausem` | 8,804 | class | inside `ifdef pc` |
+| `Engine.playm` | 8,770 | class | inside `ifdef pc` |
+| `Engine.stopm` | 8,809 | class | inside `ifdef pc` |
+| `Engine.setcontrolstyleindex` | 424 | class | inside `ifdef ps2` |
+| `Engine.setviewsensitivityindex` | 406 | class | inside `ifdef ps2` |
+| `Engine.postbeginplay` | 371 | class | inside `ifdef ps2` |
+| `Engine.sethighestswichpriority` | 463 | class | inside `ifdef ps2` |
+| `StargateContent.gettargetfov` | 56 | class | inside `ifdef pc` |
+| `StargateContent.playfiring` | 189 | class | inside `ifdef ps2` |
+| `StargateContent.altfire` | 738 | `idle` | inside `ifdef ps2` |
+| `StargateContent.fire` | 646 | `idle` | inside `ifdef ps2` |
+| `StargateContent.forcereload` | 840 | `idle` | inside `ifdef ps2` |
+| `StargateContent.getbloom` | 414 | class | inside `ifdef ps2` |
+| `StargateContent.renderoverlays` | 442 | class | inside `ifdef ps2` |
+| `StargateContent.setbloom` | 401 | class | inside `ifdef ps2` |
+| `StargateContent.setfog` | 429 | class | inside `ifdef ps2` |
+| `StargateContent.zoomin` | 847 | `idle` | inside `ifdef ps2` |
+| `StargateContent.zoomtoggle` | 614 | `idle` | inside `ifdef ps2` |
+| `StargateGame.resolvename` | 1,689 | class | inside `ifdef ps2` |
+| `StargateGame.createdofoverlay` | 598 | class | inside `ifdef pc` |
+| `StargateGame.debugdof` | 611 | class | inside `ifdef pc` |
+| `StargateGame.setdist` | 626 | class | inside `ifdef pc` |
+| `StargateGame.setfar` | 621 | class | inside `ifdef pc` |
+| `StargateGame.setnear` | 616 | class | inside `ifdef pc` |
+| `StargateGame.setradius` | 632 | class | inside `ifdef pc` |
+| `StargateGame.showmovie` | 364 | class | inside `ifdef pc` |
+| `StargateGame.toggledof` | 638 | class | inside `ifdef pc` |
+| `StargateGame.createfirstpersonhands` | 325 | class | inside `ifdef ps2` |
+| `StargateGame.setuphandanimlinks` | 342 | class | inside `ifdef ps2` |
+| `StargateGame.beginsubaction` | 47 | class | inside `ifdef pc` |
 
-**A repeated payload size is not a repeated script.** The 15 bodied stubs carry **13** distinct payloads and **4** rows share one, and those are one name declared twice in a class (`StargatePlayer.fire`, `StargateWeapon.fire`) -- equal sizes across *different* names are distinct scripts, not one lost body counted several times.
+**The residue is not in the class's comment.** `inventory/class_text_bodies.csv` already measures the bodies a block comment disables, and joining that artifact by `(package, class, function)` against them puts **0** in a class whose own comment carries a body of the same name -- a body the text moved into a comment rather than dropped -- **0** in a class that ships a block comment without this name, and **1** in a class that ships no comment at all, so **1 of the 3** bodied stubs is a body the `ScriptText` does not spell anywhere. The name-level rate is the control: **23 of the 647** distinct stub names also occur as a commented body somewhere in the corpus (3.6%), against **0 of 1** (0.0%) for the lost bodies' own names -- the join is not finding less than a plain name census would.
 
-The stubs whose payload carries code are the ones where the text and the build disagree, and almost every one of them is a *shape*: 3 sit in an `#endif` window or a truncated text, 14 re-declare a name the class's text spells a body for (2 forward, 12 backward) and the remainder is the one body the text does not spell. The largest:
+**The declaration lookups stay inside their own scope.** A forward declaration is one the same text declares again *below* with a body (**2** bodied stubs) and the mirror case is a body *above* (**0**); both are counted on the same scope's declarations only, so a class-level declaration is never answered with a state's body or the reverse.
+
+**A repeated payload size is not a repeated script.** The 3 bodied stubs carry **3** distinct payloads and **0** rows share one, and those are one name declared twice in a class (`StargatePlayer.fire`, `StargateWeapon.fire`) -- equal sizes across *different* names are distinct scripts, not one lost body counted several times.
+
+The stubs whose payload carries code are the ones where the text and the build disagree, and almost every one of them is a *shape*: 3 sit in an `#endif` window or a truncated text, 2 re-declare a name the class's text spells a body for (2 forward, 12 backward) and the remainder is the one body the text does not spell. The largest:
 
 | function | payload | owner |
 |---|---:|---|
 | `UWindow.uwindowurltextarea.textareacliptext` | 734 | class |
 | `StargateGame.stargatepawn.talk` | 498 | class |
 | `Engine.interactionmaster.addinteraction` | 314 | class |
-| `StargateGame.botsg.whattodonext` | 221 | class |
-| `StargateGame.stargateplayer.fire` | 170 | class |
-| `StargateGame.stargateweapon.fire` | 83 | class |
 
 <!-- /generated:text-stubs -->
 
