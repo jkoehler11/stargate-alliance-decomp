@@ -4319,7 +4319,7 @@ the chain's **844** exactly, so no site's count moved for any other reason.
 **Reproduce.** `python3 tools/switch-join.py -o inventory/switch_join.csv --write-doc docs/BYTECODE.md` -- no dump,
 the two committed censuses are its only input; `--check` re-derives the join, byte-compares the artifact and fails on
 a `differ` or `unpaired` row or on a broken arm identity.
-## U21. Where a `Case`'s arm body ends, and where the `switch` itself ends -- answered: the chain's next case, and the offset the breaks agree on
+## U21. Where a `Case`'s arm body ends, and where the `switch` itself ends -- answered: the chain's next case, the offset the breaks agree on, and the source's own labels
 
 **Observed.** `inventory/switch_join.csv` settles how many arms a list has, and `inventory/jump_graph.csv` settles
 where a jump lands, but nothing in the corpus said **which statements belong to one arm**: a `Case` token carries its
@@ -4357,3 +4357,18 @@ token, and never to its `break`. Its exit kind is a column (`end`), and the swit
 in `~/sg1/work/UnrealScript` next to a `case` and a `break` read like the compiler's own offsets for exactly these
 extents, but they are not the build's: the shipped `ScriptText` of `PlayerProfile` carries **0** of them, so they are
 Sg1Tool's decompiler output. An offset oracle has to come from the text's own `case` bodies, not from that tree.
+
+**Answered from the source, arm by arm (2026-11-17).** The "offset oracle has to come from the text's own `case`
+bodies" line is now measured rather than named. The arm census carries each `Case` token's own value expression
+(`label_kind`/`label`: **417** `ByteConst`, **189** compact int, **143** `StringConst`, **36** `NameConst`, **59** an
+expression), and `tools/text-switches.py` (`make text-switches`, `inventory/text_switches.csv`) reads the shipped
+source's switches against it: **848** `case` labels in the text against **844** arms, **133** of **136** classes
+exact, **323** arms matched by value and **464** by position (symbolic constants only, counted apart), **772** of
+**787** matched arms leaving the way the token stream says, and **38** of the **40** shared `case A: case B:` bodies
+spelled with no body. The **12** arms that stop with no jump are the question this entry left open and they split:
+**eight** end their source case with no `break`/`return` too -- the fallthrough is the source's, so a decompiler must
+render it as running into the next case's statements -- and **two** (`StreamPlaylistManager.InsertInPlaylist` arms 1
+and 2) are a text/bytes divergence where the source **returns**. What is left of U21 is that tail: the **15** arms
+whose two readings disagree sit in eight functions, and separating a nested switch's inner label from a text the
+package did not compile needs a per-function source/bytes diff (`tools/uscript-dis.py --compare`), not another count.
+`--check` on both tools is dump-free, and the page's block is rendered from the artifact by `--check-doc`.
