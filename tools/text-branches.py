@@ -12,6 +12,12 @@ counts are over the same buffer (`tools/decompiler-operators.py`'s order -- doin
 match from an apostrophe in prose to the next one thousands of lines later and blanks the code between).
 `#else` is a preprocessor directive, not a branch, and gets its own column instead of being subtracted silently.
 
+The **build guards are evaluated**, not counted: this corpus ships the Xbox image, so `XBox`/`XBOX` and `DEBUG` are
+defined and `PS2` and `PC` are not, and a keyword inside a part the build does not compile is counted in a `dead_*`
+column rather than in the text's own. The macro set is *chosen by the join*, and the falsifier for it (the
+functions an inverted reading breaks) is recorded in `docs/BYTECODE.md`'s guard section. `#ifdefPS2` spells the
+directive with no space after its name, so the macro is the rest of the word.
+
 The same pass counts `&&` and `||`, which the bytecode cannot name directly, and `if`/`while`/`for` as the
 condition-term model: one `JumpIfNot` per term is what the codegen should emit, and the leftover is what the
 class's text declares and its package does not compile.
@@ -56,6 +62,7 @@ FUNC_MARK = ("<!-- generated:text-branch-functions -->", "<!-- /generated:text-b
 
 FUNC_FIELDS = ["package", "class", "function", "class_verdict", "body", "record",
                "text_else", "text_if", "text_while", "text_for", "terms", "text_and", "text_or",
+               "text_else_dead", "text_else_empty", "text_terms_dead", "text_continue",
                "byte_else", "byte_if", "byte_empty", "byte_expression", "byte_leave", "jumpifnot",
                "else_verdict", "term_verdict", "short", "surplus", "unpaired", "pp", "note", "census"]
 
@@ -104,14 +111,27 @@ FUNC_NOTE = {
     "jumps_unresolved": "`JumpIfNot` tokens the branch census resolves that carry no branch row",
     "pp_functions": "functions whose declaration sits inside a `#if…#endif` guard",
     "text_only_pp": "of the text-only functions, those inside such a guard",
+    "text_else_dead": "`else` keywords in these bodies inside a part this build does not compile",
+    "text_else_empty": "`else` keywords in these bodies whose block is empty -- no arm to skip",
+    "text_terms_dead": "`if` + `while` + `for` in the body inside such a part",
+    "text_continue": "`continue` statements in the body",
+    "text_only_dead": "text-only bodies whose branch text is entirely in a part this build does not compile",
+    "text_only_live": "text-only bodies whose compiled text carries a condition the record has no jump for",
+    "continue_short": "short functions whose gap is within the body's `continue` count",
+    "short_beyond_continue": "short functions whose gap exceeds it -- the shape `continue` does not explain",
+    "raw_surplus_fixed": "functions whose raw `else` count was ahead of the record and whose compiled count is exact",
+    "raw_agree_only": "functions whose raw count was exact and whose compiled count is not -- the model's falsifier",
 }
 
 FUNC_KEYS = tuple(FUNC_NOTE)
 
-FIELDS = ["kind", "package", "class", "function", "live_else", "comment_else", "and", "or", "if", "while", "for",
-          "terms", "pp_else", "text_functions", "record_functions", "byte_else", "byte_if", "byte_empty",
+FIELDS = ["kind", "package", "class", "function", "live_else", "dead_else", "dead_terms", "comment_else",
+          "and", "or", "if", "while", "for",
+          "terms", "pp_else", "else_empty", "guards", "guard_dead", "text_functions", "record_functions",
+          "byte_else", "byte_if",
+          "byte_empty",
           "byte_expression", "byte_leave", "fn_arms", "fn_absent", "fn_short", "fn_long", "fn_outside", "fn_state",
-          "fn_state_label", "fn_state_nested", "fn_top", "fn_unpaired",
+          "fn_state_label", "fn_state_nested", "fn_top", "fn_unpaired", "fn_else", "fn_dead_else", "fn_lost",
           "verdict", "count", "note"]
 
 CENSUS_NOTE = {
@@ -123,7 +143,18 @@ CENSUS_NOTE = {
     "less": "classes whose live text spells fewer",
     "no_branch": "classes with readable text and no branch at all in the bytecode",
     "arms_no_text": "classes with branch arms but no readable `ScriptText`",
-    "text_else": "`else` keywords in the live text",
+    "text_else": "`else` keywords in the live text, i.e. the parts this build compiles",
+    "dead_else": "`else` keywords inside a build guard this build does not compile",
+    "else_empty": "`else` keywords whose block is empty (`else { }`), which has no arm to skip",
+    "dead_if": "`if` keywords in those parts",
+    "dead_while": "`while` keywords in those parts",
+    "dead_for": "`for` keywords in those parts",
+    "dead_terms": "`if` + `while` + `for` in those parts",
+    "guards": "`#if…#endif` parts (a then-segment or an `#else` segment)",
+    "guard_dead": "of those, the parts no enclosing branch of this build compiles",
+    "classes_guarded": "class texts carrying at least one guard part",
+    "fn_dead_else": "dead `else` keywords inside a function body",
+    "fn_lost": "dead `else` keywords outside every function body",
     "comment_else": "`else` keywords inside comments (the disabled-body signature)",
     "and": "`&&` in the live text",
     "or": "`||`",
@@ -173,7 +204,9 @@ CENSUS_NOTE = {
 }
 
 CENSUS_KEYS = ("classes", "packages", "joined", "agree", "more", "less", "no_branch", "arms_no_text",
-               "text_else", "comment_else", "and", "or", "if", "while", "for", "terms", "pp_else",
+               "text_else", "dead_else", "else_empty", "dead_if", "dead_while", "dead_for", "dead_terms", "guards",
+               "guard_dead", "classes_guarded", "fn_dead_else", "fn_lost",
+               "comment_else", "and", "or", "if", "while", "for", "terms", "pp_else",
                "text_functions", "no_branch_functions", "no_branch_terms", "max_gap", "byte_else", "byte_if",
                "byte_empty", "byte_expression", "byte_leave", "jumpifnot", "terms_exact", "no_and_or", "no_and_or_exact",
                "with_and_or", "with_and_or_exact", "less_fewer", "less_equal", "less_more", "agree_fewer",
@@ -215,6 +248,20 @@ PP_CLOSE = re.compile(r"(?m)^[ \t]*#[ \t]*endif")
 # A label statement -- `Begin:` at the start of a line. `state-tools`' entry census reads the state's `LabelTable`
 # against these (tools/state-code.py), so the pattern is here with the other text scanners rather than there.
 LABEL = re.compile(r"^[ \t]*([A-Za-z_]\w*)[ \t]*:(?!:)", re.M)
+# The build guard: `#ifdefPS2`, `#ifndefPS2`, `#ifdefPC`, `#ifdefXBox`, `#ifdefDEBUG` .. `#endif`, with the macro as
+# the rest of the word (there is no space after the directive name). This corpus is the Xbox image -- `default.xbe`,
+# `symbols/xbox_functions.csv` -- and `DEBUG` is defined in it too, which the join *selects*: with `XBox`+`DEBUG`
+# defined no function that agreed on the raw count breaks (the four other macro sets break 1, 8, 20 and 27), so the
+# PS2 and PC branches are the ones this build never compiled. Macro names are case-folded, and that is measured as
+# well: `#ifdefXBOX` read case-sensitively breaks 8 functions, so the preprocessor folds it.
+GUARD_OPEN = re.compile(r"(?m)^[ \t]*#[ \t]*(ifdef|ifndef)(\w*)")
+BUILD_DEFINED = frozenset({"xbox", "debug"})
+# `continue` is not a branch keyword, but the shortfall population is `if (X) continue;`, so its body count is what
+# bounds the arms the record has and the text does not spell.
+CONTINUE = re.compile(r"(?<![\w$])continue(?![\w$])")
+# An `else` whose block is empty has nothing to skip, so the compiler emits no arm for it: `if (X) y; else { }` is
+# the straight-if shape. That is a text fact, not a stream reading, and it is what the last one-sided rows are.
+ELSE_EMPTY = re.compile(r"(?<![\w$])else(?![\w$])[ \t\r\n]*(?:\{[ \t\r\n]*\}|;)")
 
 
 def load_tool(name, filename):
@@ -300,6 +347,7 @@ def counts(text):
     c["and"] = text.count("&&")
     c["or"] = text.count("||")
     c["pp_else"] = len(PP_ELSE.findall(text))
+    c["continue"] = len(CONTINUE.findall(text))
     return c
 
 
@@ -308,8 +356,75 @@ def else_in(text):
     return sum(1 for m in WORD.finditer(text) if m.group(1) == "else")
 
 
-def function_bodies(live):
-    """`(name -> Counter of every keyword in the body, every name declared, the body spans)` for one class text.
+def guard_map(text):
+    """`(dead, parts)`: `dead[i]` is 1 where `text` sits in a part this build does not compile.
+
+    A part is a `#ifdef`/`#ifndef` then-segment or an `#else` segment; nesting is a stack, and a keyword is dead
+    when *any* enclosing part is inactive. Activity is the preprocessor's own rule -- `#ifdefX` is active when `X`
+    is defined, `#ifndefX` when it is not, and `#else` flips -- evaluated against `BUILD_DEFINED`. No directive in
+    this corpus carries an expression, so there is no condition to parse; an unbalanced `#endif` is ignored (the
+    2,319 texts all end at depth 0).
+    """
+    dead = bytearray(len(text))
+    events = []
+    for m in GUARD_OPEN.finditer(text):
+        events.append((m.start(), "open", m.group(1).lower(), m.group(2)))
+    for m in PP_ELSE.finditer(text):
+        events.append((m.start(), "else", "", ""))
+    for m in PP_CLOSE.finditer(text):
+        events.append((m.start(), "close", "", ""))
+    events.sort()
+    stack, parts = [], []
+
+    def active():
+        for f in stack:
+            if not f["parent"] or f["cond"] == f["other"]:
+                return False
+        return True
+
+    pos = 0
+    for at, kind, directive, macro in events:
+        on = 1 if not active() else 0
+        dead[pos:at] = bytes([on]) * (at - pos)
+        pos = at
+        if kind == "open":
+            name = macro.lower()
+            cond = (name in BUILD_DEFINED) if directive == "ifdef" else (name not in BUILD_DEFINED)
+            stack.append({"parent": active(), "cond": cond, "other": False, "kind": directive,
+                          "spell": "#" + directive + macro})
+            parts.append({"spell": "#" + directive + macro, "kind": directive, "part": "then",
+                          "open": at, "dead": 0 if active() else 1})
+        elif kind == "else":
+            if not stack:
+                continue
+            stack[-1]["other"] = not stack[-1]["other"]
+            parts.append({"spell": stack[-1]["spell"], "kind": stack[-1]["kind"], "part": "else",
+                          "open": at, "dead": 0 if active() else 1})
+        elif kind == "close":
+            if stack:
+                stack.pop()
+    on = 1 if not active() else 0
+    dead[pos:] = bytes([on]) * (len(text) - pos)
+    return dead, parts
+
+
+def keyword_split(text, dead, a=0, b=None):
+    """`(live, dead)`: Counters of `else`/`if`/`while`/`for` in `text[a:b]`, split by the guard map."""
+    b = len(text) if b is None else b
+    live, gone = collections.Counter(), collections.Counter()
+    for m in WORD.finditer(text[a:b]):
+        (gone if dead[a + m.start()] else live)[m.group(1)] += 1
+    return live, gone
+
+
+def empty_else(text, dead, a=0, b=None):
+    """`else` keywords in `text[a:b]` whose block is empty -- no code to skip, so no arm in the record."""
+    b = len(text) if b is None else b
+    return sum(1 for m in ELSE_EMPTY.finditer(text, a, b) if dead is None or not dead[m.start()])
+
+
+def function_bodies(live, dead=None):
+    """`(name -> Counter of the keyword in the body, name -> the dead part of it, names, spans)` for one text.
 
     Spans come from `tools/class-text-bodies.py` -- its `FUNC` and its brace walk bounded by the next
     declaration -- applied to the **masked** buffer, so a declaration inside a comment is not a declaration and
@@ -317,7 +432,9 @@ def function_bodies(live):
     map, because the two are different facts: the text knows the function but shows no arms either.
     """
     ctb = ctb_tool()
-    kw, names, spans = {}, set(), []
+    if dead is None:
+        dead = guard_map(live)[0]
+    kw, kwdead, names, spans = {}, {}, set(), []
     ms = list(ctb.FUNC.finditer(live))
     for k, m in enumerate(ms):
         limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
@@ -330,11 +447,19 @@ def function_bodies(live):
         # arms belong to the name, so every declaration's body counts and every body is a span the outside
         # bucket is measured against. Skipping the second one read 26 keywords as code outside every function.
         c = counts(live[span[0]:span[1]])
+        c_live, c_dead = keyword_split(live, dead, span[0], span[1])
+        e_empty = empty_else(live, dead, span[0], span[1])
         body = kw.setdefault(name, collections.Counter())
-        for key in ("else", "if", "while", "for", "and", "or"):
+        gone = kwdead.setdefault(name, collections.Counter())
+        for key in ("else", "if", "while", "for"):
+            body[key] += c_live[key]
+            gone[key] += c_dead[key]
+        body["else"] -= e_empty      # an empty block has no arm to skip
+        body["else_empty"] += e_empty
+        for key in ("and", "or", "continue"):
             body[key] += c[key]
         spans.append(span)
-    return kw, names, spans
+    return kw, kwdead, names, spans
 
 
 def pp_depth(text):
@@ -357,13 +482,13 @@ def guarded_functions(live):
     return {m.group(1).lower() for m in ctb_tool().FUNC.finditer(live) if depth[m.start()]}
 
 
-def function_else(live):
+def function_else(live, dead=None):
     """`(name -> `else` in the body, every name declared, the body spans)` for one class text."""
-    kw, names, spans = function_bodies(live)
+    kw, _dead, names, spans = function_bodies(live, dead)
     return {n: c["else"] for n, c in kw.items()}, names, spans
 
 
-def state_split(live, fn_spans, total_else, depth=None):
+def state_split(live, fn_spans, total_else, depth=None, dead=None):
     """`(label-level else, nested else, else outside every block, blocks with a body)`.
 
     The 3.5 notes call the state code a gap in its own right; a class-level count cannot tell it from a
@@ -391,13 +516,19 @@ def state_split(live, fn_spans, total_else, depth=None):
             if mm.group(1) != "else":
                 continue
             pos = span[0] + mm.start()
+            if dead is not None and dead[pos]:
+                continue
+            if ELSE_EMPTY.match(live, pos):
+                continue    # an empty block is not an arm, so it is not state code either
             if any(a <= pos < b for a, b in fn_spans):
                 continue
             if depth[pos] == floor:
                 label += 1
             else:
                 nested += 1
-    outside = total_else - sum(else_in(live[a:b]) for a, b in fn_spans)
+    outside = total_else - sum(
+        keyword_split(live, dead if dead is not None else bytearray(len(live)), a, b)[0]["else"]
+        - empty_else(live, dead, a, b) for a, b in fn_spans)
     return label, nested, outside - label - nested, blocks
 
 
@@ -430,18 +561,31 @@ def walk(system_dir):
                 continue
             live, comments = mask(text)
             depth = ctb.depth_map(live)
-            fn_kw, fn_names, fn_spans = function_bodies(live)
+            dead, parts = guard_map(live)
+            fn_kw, fn_dead, fn_names, fn_spans = function_bodies(live, dead)
             fn_else = {n: c["else"] for n, c in fn_kw.items()}
-            fn_label, fn_nested, fn_top, state_blocks = state_split(live, fn_spans, counts(live)["else"], depth)
+            c_live, c_dead = keyword_split(live, dead)
+            c = counts(live)
+            raw_else = c["else"]
+            e_empty = empty_else(live, dead)
+            for key in ("else", "if", "while", "for"):
+                c[key] = c_live[key]
+            c["else"] -= e_empty    # an empty block is no arm: it is a keyword with nothing to skip
+            fn_label, fn_nested, fn_top, state_blocks = state_split(live, fn_spans, c["else"], depth, dead)
             rows[(package, pkg.name(exp["name"]).lower())] = {
                 "class": pkg.name(exp["name"]),
-                "live": counts(live),
+                "live": c,
+                "dead": c_dead,
+                "else_empty": e_empty,
+                "raw_else": raw_else,
+                "guards": len(parts),
+                "guard_dead": sum(1 for p in parts if p["dead"]),
                 "comment_else": counts(comments)["else"],
                 "functions": len(ctb.FUNC.findall(live)),
                 "decl_grammar": len(ctb.FUNC_GRAMMAR.findall(live)),
                 "decl_trailing": len(ctb.FUNC_TRAIL.findall(live)),
                 "state_blocks_capital": len(STATE_CAPITAL.findall(live)),
-                "fn_else": fn_else, "fn_names": fn_names, "fn_kw": fn_kw,
+                "fn_else": fn_else, "fn_names": fn_names, "fn_kw": fn_kw, "fn_dead": fn_dead,
                 "fn_pp": guarded_functions(live),
                 "fn_state": fn_label + fn_nested, "fn_state_label": fn_label, "fn_state_nested": fn_nested,
                 "fn_top": fn_top, "state_blocks": state_blocks, "front_truncated": front_truncated(text),
@@ -493,13 +637,16 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         t = texts.get(key)
         a = arms.get(key, collections.Counter())
         row = {"kind": "class", "package": key[0], "class": (t or {}).get("class", key[1]),
-               "live_else": "", "comment_else": "", "and": "", "or": "", "if": "", "while": "", "for": "",
-               "terms": "", "pp_else": "", "text_functions": "", "record_functions": records.get(key, ""),
+               "live_else": "", "dead_else": "", "dead_terms": "", "comment_else": "",
+               "and": "", "or": "",
+               "if": "", "while": "", "for": "",
+               "terms": "", "pp_else": "", "guards": "", "guard_dead": "",
+               "text_functions": "", "record_functions": records.get(key, ""),
                "byte_else": a["else"], "byte_if": a["if"],
                "byte_empty": a["empty"], "byte_expression": a["expression"], "byte_leave": a["leave"],
                "fn_arms": "", "fn_absent": "",
                "fn_short": "", "fn_long": "", "fn_outside": "", "fn_state_label": "", "fn_state_nested": "",
-               "fn_unpaired": "",
+               "fn_unpaired": "", "fn_else": "", "fn_dead_else": "", "fn_lost": "",
                "verdict": "", "count": "", "note": ""}
         census["byte_else"] += a["else"]
         census["byte_if"] += a["if"]
@@ -515,7 +662,23 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         terms = c["if"] + c["while"] + c["for"]
         row.update({"live_else": c["else"], "comment_else": t["comment_else"], "and": c["and"], "or": c["or"],
                     "if": c["if"], "while": c["while"], "for": c["for"], "terms": terms, "pp_else": c["pp_else"],
+                    "dead_else": t["dead"]["else"], "else_empty": t["else_empty"],
+                    "dead_terms": t["dead"]["if"] + t["dead"]["while"]
+                    + t["dead"]["for"], "guards": t["guards"], "guard_dead": t["guard_dead"],
                     "text_functions": t["functions"]})
+        census["dead_else"] += t["dead"]["else"]
+        census["else_empty"] += t["else_empty"]
+        if c["else"] + t["dead"]["else"] + t["else_empty"] != t["raw_else"]:
+            print("FAIL text-branches: %s.%s reads %d `else`, %d dead + %d empty do not reconcile with %d"
+                  % (key[0], key[1], c["else"], t["dead"]["else"], t["else_empty"], t["raw_else"]))
+            raise SystemExit(1)
+        census["dead_if"] += t["dead"]["if"]
+        census["dead_while"] += t["dead"]["while"]
+        census["dead_for"] += t["dead"]["for"]
+        census["dead_terms"] += t["dead"]["if"] + t["dead"]["while"] + t["dead"]["for"]
+        census["guards"] += t["guards"]
+        census["guard_dead"] += t["guard_dead"]
+        census["classes_guarded"] += 1 if t["guards"] else 0
         census["text_functions"] += t["functions"]
         census["decl_legacy"] += t["decl_legacy"]
         census["decl_wide"] += t["functions"]
@@ -539,8 +702,13 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         census["terms"] += terms
         if key not in arms:
             row["verdict"] = "no-branch"
+            _dead_in = sum(x["else"] for x in t["fn_dead"].values())
             row.update({"fn_arms": 0, "fn_absent": 0, "fn_short": 0, "fn_long": 0, "fn_outside": 0,
-                        "fn_state_label": 0, "fn_state_nested": 0, "fn_unpaired": 0})
+                        "fn_state_label": 0, "fn_state_nested": 0, "fn_unpaired": 0,
+                        "fn_else": sum(t["fn_else"].values()), "fn_dead_else": _dead_in,
+                        "fn_lost": t["dead"]["else"] - _dead_in, "else_empty": t["else_empty"]})
+            census["fn_dead_else"] += _dead_in
+            census["fn_lost"] += t["dead"]["else"] - _dead_in
             census["no_branch"] += 1
             census["no_branch_functions"] += t["functions"]
             census["no_branch_terms"] += terms
@@ -564,6 +732,16 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         outside = c["else"] - in_fns
         unpaired = in_fns - paired - surplus
         fn_total = sum(arms_by_fn.values())
+        dead_in_fns = sum(x["else"] for x in t["fn_dead"].values())
+        dead_outside = t["dead"]["else"] - dead_in_fns
+        # The same split on the text the guards take out: `live + dead` is the raw keyword count, and a keyword
+        # sits either in a body or outside every body -- six identities, not a claim about either half.
+        census["fn_dead_else"] += dead_in_fns
+        census["fn_lost"] += dead_outside
+        if dead_outside < 0 or dead_in_fns + dead_outside != t["dead"]["else"]:
+            print("FAIL text-branches: the dead-keyword split does not reconcile for %s.%s (%d+%d vs %d)"
+                  % (key[0], key[1], dead_in_fns, dead_outside, t["dead"]["else"]))
+            raise SystemExit(1)
         if (fn_total != a["else"] or paired + short + absent != fn_total
                 or paired + surplus + unpaired + outside != c["else"]):
             print("FAIL text-branches: the function split does not reconcile for %s.%s (%d/%d, %d/%d)"
@@ -575,6 +753,7 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
             raise SystemExit(1)
         row.update({"fn_arms": fn_total, "fn_absent": absent, "fn_short": short, "fn_long": surplus,
                     "fn_outside": outside, "fn_state": t["fn_state"],
+                    "fn_else": in_fns, "fn_dead_else": dead_in_fns, "fn_lost": dead_outside,
                     "fn_state_label": t["fn_state_label"], "fn_state_nested": t["fn_state_nested"],
                     "fn_top": t["fn_top"], "fn_unpaired": unpaired})
         vc = verdicts[verdict(c["else"], a["else"])]
@@ -685,8 +864,11 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
     rows = []
     keys = set()
     for key, t in texts.items():
+        dead = t.get("fn_dead") or {}
         for name, c in (t.get("fn_kw") or {}).items():
-            if c["if"] + c["while"] + c["for"] or c["else"]:
+            d = dead.get(name) or collections.Counter()
+            if (c["if"] + c["while"] + c["for"] or c["else"]
+                    or d["else"] or d["if"] + d["while"] + d["for"]):
                 keys.add((key, name))
     for key, by in fn_cat.items():
         for name, c in by.items():
@@ -695,6 +877,8 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
     for key, name in sorted(keys):
         t = texts.get(key)
         body = ((t or {}).get("fn_kw") or {}).get(name)
+        gone = ((t or {}).get("fn_dead") or {}).get(name) or collections.Counter()
+        term_dead = gone["if"] + gone["while"] + gone["for"]
         cats = (fn_cat.get(key) or {}).get(name) or collections.Counter()
         byte_else, byte_if = cats["else"], cats["if"]
         jin = byte_else + byte_if + cats["empty"] + cats["expression"] + cats["leave"]
@@ -706,6 +890,9 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
                "text_else": text_else, "text_if": body["if"] if body else 0,
                "text_while": body["while"] if body else 0, "text_for": body["for"] if body else 0,
                "terms": terms, "text_and": body["and"] if body else 0, "text_or": body["or"] if body else 0,
+               "text_else_dead": gone["else"], "text_else_empty": body["else_empty"] if body else 0,
+               "text_terms_dead": term_dead,
+               "text_continue": body["continue"] if body else 0,
                "byte_else": byte_else, "byte_if": byte_if, "byte_empty": cats["empty"],
                "byte_expression": cats["expression"], "byte_leave": cats["leave"], "jumpifnot": jin,
                "short": 0, "surplus": 0, "unpaired": 0,
@@ -713,6 +900,10 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
         if row["pp"]:
             census["pp_functions"] += 1
         census["functions"] += 1
+        census["text_else_dead"] += gone["else"]
+        census["text_else_empty"] += row["text_else_empty"]
+        census["text_terms_dead"] += term_dead
+        census["text_continue"] += row["text_continue"]
         if body is None:
             row["else_verdict"] = row["term_verdict"] = "no-text"
             row["short"] = byte_else  # every arm of it is one the text cannot account for
@@ -729,6 +920,12 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
             row["unpaired"] = text_else  # a body with no jump in the record at all: its `else` has no arm
             census["text_only"] += 1
             census["text_only_pp"] += 1 if row["pp"] else 0
+            # A text-only body whose branches are all in a part this build never compiled is not a join hole:
+            # the compiled body has no condition for the record to have a jump for.
+            if (gone["else"] or term_dead) and not (terms or text_else):
+                census["text_only_dead"] += 1
+            else:
+                census["text_only_live"] += 1
             rows.append(row)
             continue
         census["both"] += 1
@@ -745,6 +942,17 @@ def function_rows(texts, fn_cat, class_verdicts, class_terms=None, census_jif=No
         row["short"] = max(0, byte_else - text_else)
         row["surplus"] = max(0, text_else - byte_else) if byte_else else 0
         row["unpaired"] = text_else if byte_else == 0 else 0
+        # The guard model's own score, from the same rows: what the raw count got wrong either way.
+        raw_else = text_else + gone["else"] + row["text_else_empty"]
+        if raw_else > byte_else and text_else == byte_else:
+            census["raw_surplus_fixed"] += 1
+        if raw_else == byte_else and text_else != byte_else:
+            census["raw_agree_only"] += 1
+        if dv == "short":
+            if row["short"] > row["text_continue"]:
+                census["short_beyond_continue"] += 1
+            else:
+                census["continue_short"] += 1
         if text_else == byte_else == 0:
             census["else_none"] += 1
         census["else_" + dv] += 1
@@ -856,15 +1064,27 @@ def func_doc_block(rows):
              net_inside="%+d" % net_inside if net_inside < 0 else comma(net_inside),
              agree_fns=comma(ga[0]), agree_ok=comma(ga[1]), agree_short=comma(ga[2]),
              agree_surplus=comma(ga[3]), agree_unpaired=comma(ga[4]), agree_cancel=comma(ga[0] - ga[1]),
+             text_else_dead=comma(func_count(rows, "text_else_dead")),
+             text_else_empty=comma(func_count(rows, "text_else_empty")),
+             text_only_dead=comma(func_count(rows, "text_only_dead")),
+             text_only_live=comma(func_count(rows, "text_only_live")),
+             raw_surplus_fixed=comma(func_count(rows, "raw_surplus_fixed")),
+             raw_agree_only=comma(func_count(rows, "raw_agree_only")),
+             continue_short=comma(func_count(rows, "continue_short")),
+             short_beyond_continue=comma(func_count(rows, "short_beyond_continue")),
+             kw_surplus=comma(sum(int(r["surplus"] or 0) for r in fns)),
+             kw_unpaired=comma(sum(int(r["unpaired"] or 0) for r in fns)),
              more_fns=comma(gm[0]), more_ok=comma(gm[1]), more_short=comma(gm[2]), more_surplus=comma(gm[3]),
              more_unpaired=comma(gm[4]), more_span=comma(gm[0] - gm[1]),
              less_fns=comma(gl[0]), less_ok=comma(gl[1]), less_short=comma(gl[2]), less_surplus=comma(gl[3]),
              less_unpaired=comma(gl[4]), less_span=comma(gl[0] - gl[1]))
     out = ("\n**The same join one level down.** **{functions}** functions carry a branch on at least one side: "
-           "**{text_fns}** the live text declares with a body that holds a condition, **{record_fns}** the branch "
+           "**{text_fns}** the compiled text declares with a body that holds a condition, **{record_fns}** the branch "
            "census has a `JumpIfNot` in, **{both}** both, **{text_only}** text-only and **{record_only}** "
-           "record-only, and **{text_only_pp}** of the text-only bodies sit inside a `#ifdef` guard -- this "
-           "build's PS2 branch, which the package never compiled. On the **{both}** functions both sides have, the `else` count is equal on "
+           "record-only; **{text_only_dead}** of the text-only bodies carry no compiled branch text at all -- every "
+           "keyword they spell sits in a guard part this build never compiled -- and **{text_only_live}** are bodies "
+           "whose compiled text has a condition the record has no jump for ({text_only_pp} of the {text_only} "
+           "sit inside a guard, which is all the old `pp` flag measured). On the **{both}** functions both sides have, the `else` count is equal on "
            "**{else_agree}** (**{else_pct}%**) -- {else_none} of them because neither side spells one at all, so "
            "on the **{else_test}** functions that have an arm or a keyword the agreement is **{else_test_agree}** "
            "(**{else_test_pct}%**) -- short of the "
@@ -872,6 +1092,20 @@ def func_doc_block(rows):
            "in a body the record gives no arm for at all; the condition-term model is exact on "
            "**{term_agree}** (**{term_pct}%**), with **{term_surplus}** functions ahead and **{term_short}** "
            "behind.\n"
+           "\n**Two codegen rules close the text-ahead population, and what is left is the record's.** Every "
+           "function whose raw `else` count was ahead of the record, or that spelled one in a body with no arm at "
+           "all -- **{raw_surplus_fixed}** of them -- is exact once only compiled text counts: **{else_surplus}** "
+           "still spell more than the record has arms (**{kw_surplus}** keywords) and **{else_unpaired}** spell one "
+           "with no arm at all (**{kw_unpaired}**). Both rules are text facts, not stream readings: an `else` in a "
+           "`#ifdef`/`#ifndef` part this build never compiles (**{text_else_dead}** keywords in these bodies) never "
+           "reached the compiler, and an `else` whose block is empty (**{text_else_empty}** in these bodies) has "
+           "nothing to skip, so `if (X) y; else {{ }}` is the straight-if shape the record carries. The other "
+           "direction does not move: **{else_short}** functions carry more arms than their text spells, "
+           "**{continue_short}** of them with a gap no larger than the body's `continue` count -- the "
+           "`if (X) continue;` shape -- and **{short_beyond_continue}** beyond it, listed below. The model's own "
+           "falsifier is **{raw_agree_only}**: functions that agreed on the raw count and are short once only "
+           "compiled text counts -- zero under this macro set, and the alternatives break 1 to 27 of them "
+           "(`docs/BYTECODE.md`'s guard section).\n"
            "\n**A class whose totals agree is not a class whose functions agree.** The {agree_fns} functions "
            "inside the classes whose own `else` count agrees split **{agree_ok}** exact / {agree_short} short / "
            "{agree_surplus} ahead / {agree_unpaired} with no arm; inside the `less` classes the {less_fns} "
@@ -905,7 +1139,27 @@ def func_doc_block(rows):
         out += "| `%s.%s` | %s | %s | %s | %s |\n" % (r["class"], r["function"], comma(r["text_else"]),
                                                      comma(r["byte_else"]), comma(r["terms"]),
                                                      comma(r["jumpifnot"]))
-    return out
+    return out + residual_table(fns)
+
+
+def residual_table(fns, cap=10):
+    """The rows the compiled-text count does not explain, named -- a count with no name is what the next run reads."""
+    pick = [r for r in fns if r.get("else_verdict") in ("surplus", "unpaired")]
+    pick.sort(key=lambda r: (r["package"], r["class"], r["function"]))
+    lines = ["\n| function | text `else` | arms | dead `else` | verdict |",
+             "| --- | ---: | ---: | ---: | --- |"]
+    for r in pick[:cap]:
+        lines.append("| `%s.%s` | %s | %s | %s | `%s` |" % (r["class"], r["function"], comma(r["text_else"]),
+                                                         comma(r["byte_else"]), comma(r["text_else_dead"]),
+                                                         r["else_verdict"]))
+    over = [r for r in fns if r.get("else_verdict") == "short"
+            and int(r["short"] or 0) > int(r["text_continue"] or 0)]
+    if over:
+        lines += ["", "| function | arms - text | `continue` | dead `else` |", "| --- | ---: | ---: | ---: |"]
+        for r in sorted(over, key=lambda r: (-int(r["short"] or 0), r["class"]))[:cap]:
+            lines.append("| `%s.%s` | %s | %s | %s |" % (r["class"], r["function"], comma(r["short"]),
+                                                       comma(r["text_continue"]), comma(r["text_else_dead"])))
+    return "\n".join(lines) + "\n"
 
 
 def check_functions(class_path=CSV_PATH, func_path=FUNC_CSV_PATH):
@@ -930,6 +1184,8 @@ def check_functions(class_path=CSV_PATH, func_path=FUNC_CSV_PATH):
         per[k]["arms"] += int(r["byte_else"] or 0)
         per[k]["terms"] += int(r["terms"] or 0)
         per[k]["jumpifnot"] += int(r["jumpifnot"] or 0)
+        per[k]["else"] += int(r["text_else"] or 0)
+        per[k]["dead"] += int(r.get("text_else_dead") or 0)
         if not r.get("body"):
             per[k]["absent"] += int(r["byte_else"] or 0)
             continue
@@ -943,15 +1199,32 @@ def check_functions(class_path=CSV_PATH, func_path=FUNC_CSV_PATH):
         k = (r["package"], (r["class"] or "").lower())
         c = per.get(k, collections.Counter())
         for col, key in (("fn_arms", "arms"), ("fn_absent", "absent"), ("fn_short", "short"),
-                         ("fn_long", "surplus"), ("fn_unpaired", "unpaired")):
+                         ("fn_long", "surplus"), ("fn_unpaired", "unpaired"), ("fn_else", "else"),
+                         ("fn_dead_else", "dead")):
             if int(r.get(col) or 0) != c[key]:
                 bad.append("%s.%s %s: class %s, functions %s" % (r["package"], r["class"], col,
                                                                  r.get(col) or 0, c[key]))
+        # The text side's own two halves: what the build compiled, and what it shipped and did not build.
+        for col, key in (("fn_else", "else"), ("fn_dead_else", "dead")):
+            if int(r.get(col) or 0) != c[key]:
+                bad.append("%s.%s %s: class %s, functions %s" % (r["package"], r["class"], col,
+                                                                 r.get(col) or 0, c[key]))
+        if (int(r.get("fn_else") or 0) + int(r.get("fn_outside") or 0) != int(r.get("live_else") or 0)
+                or int(r.get("fn_dead_else") or 0) + int(r.get("fn_lost") or 0) != int(r.get("dead_else") or 0)):
+            bad.append("%s.%s the in-body and outside split does not add up (live %s/%s, dead %s/%s)"
+                       % (r["package"], r["class"], r.get("fn_else") or 0, r.get("fn_outside") or 0,
+                          r.get("fn_dead_else") or 0, r.get("fn_lost") or 0))
     joined = len([r for r in cls if r.get("fn_arms") not in ("", None)])
     outside = sum(int(r.get("terms") or 0) for r in cls) - sum(int(r["terms"] or 0) for r in fns)
     if outside != func_count(frows, "terms_outside"):
         bad.append("condition terms outside a function body: class census says %d, functions artifact %d"
                    % (outside, func_count(frows, "terms_outside")))
+    if count(allrows, "dead_else") != count(allrows, "fn_dead_else") + count(allrows, "fn_lost"):
+        bad.append("dead `else` keywords: %d in the text, %d in a body + %d outside every body"
+                   % (count(allrows, "dead_else"), count(allrows, "fn_dead_else"), count(allrows, "fn_lost")))
+    if sum(int(r.get("text_else_dead") or 0) for r in fns) != count(allrows, "fn_dead_else"):
+        bad.append("dead `else` in a body: class census says %d, function rows %d"
+                   % (count(allrows, "fn_dead_else"), sum(int(r.get("text_else_dead") or 0) for r in fns)))
     unresolved = max(0, count(allrows, "jumpifnot") - sum(int(r["jumpifnot"] or 0) for r in fns))
     if unresolved != func_count(frows, "jumps_unresolved"):
         bad.append("`JumpIfNot` tokens with no branch row: class census says %d, functions artifact %d"
@@ -1002,7 +1275,8 @@ def doc_block(rows):
     classes = count(rows, "classes")
     if not classes:
         return "\n(no text-branch census rows)\n"
-    body = ("\n**The live text spells %s `else`** over the %s classes whose `ScriptText` parses, against the "
+    body = ("\n**The text this build compiles spells %s `else`** over the %s classes whose `ScriptText` parses "
+            "(`%s` more sit in a build guard it never compiled), against the "
             "**%s** arms the bytecode carries: **%s of %s** classes the branch census also has agree exactly on "
             "the count (**%s%%**), **%s** spell more and **%s** fewer, and %s more carry text with no branch at "
             "all in the bytecode -- text that declares %s function bodies between them. Per class the source is "
@@ -1014,9 +1288,10 @@ def doc_block(rows):
             "that do carry one are exact **%s** times (**%s%%**) -- so a `&&`/`||` adds **no** jump: UnrealScript's "
             "boolean operators are strict, not short-circuit, which is why the branch census found 0 jumps naming "
             "a non-statement; the %s `&&` and %s `||` in this text are therefore **0** arms, and the model's %s "
-            "surplus terms sit in the %s joined classes that are not exact -- text a class ships and its package "
-            "does not compile.\n")
-    body = body % (comma(count(rows, "text_else")), comma(classes), comma(count(rows, "byte_else")),
+            "surplus terms sit in the %s joined classes that are not exact -- a class-level population (the state "
+            "code and the unresolved jumps below), not a per-function defect.\n")
+    body = body % (comma(count(rows, "text_else")), comma(classes), comma(count(rows, "dead_else")),
+               comma(count(rows, "byte_else")),
                comma(count(rows, "agree")), comma(count(rows, "joined")),
                "%.1f" % pct(count(rows, "agree"), count(rows, "joined")), comma(count(rows, "more")),
                comma(count(rows, "less")), comma(count(rows, "no_branch")),
@@ -1032,7 +1307,22 @@ def doc_block(rows):
                comma(count(rows, "and")), comma(count(rows, "or")),
                comma(count(rows, "terms") - count(rows, "jumpifnot")),
                comma(count(rows, "joined") - count(rows, "terms_exact")))
-    return (body + verdict_paragraph(rows) + verdict_table(rows) + absent_table(rows) + top_table(rows)
+    guards = ("\n**The build guards are evaluated, and they are what the one-sided classes were.** The %s class "
+              "texts carry **%s** `#if…#endif` parts, **%s** of them in a branch this build does not compile -- the "
+              "corpus is the Xbox image (`default.xbe`) and `XBox` and `DEBUG` are defined in it, so the `PS2` and "
+              "`PC` branches are the ones it never built -- and those parts hold **%s** `else` keywords plus **%s** "
+              "`if`, **%s** `for` and **%s** `while`. A further **%s** keywords sit in a live block that is empty "
+              "(`else { }`), which has nothing to skip and so no arm. Every count above is the compiled part: the "
+              "`else` column is %s against the record's %s arms, and `--check-functions` holds `live + dead + "
+              "empty` to each text's raw keyword count, so the split is a measurement and not a subtraction done in "
+              "prose. The macro set is not assumed either: `docs/BYTECODE.md`'s guard section scores the "
+              "alternatives on this join, and the number that decides between them is the functions a reading "
+              "*breaks*, not the agreement it buys.\n"
+              % (comma(classes), comma(count(rows, "guards")), comma(count(rows, "guard_dead")),
+                 comma(count(rows, "dead_else")), comma(count(rows, "dead_if")), comma(count(rows, "dead_for")),
+                 comma(count(rows, "dead_while")), comma(count(rows, "else_empty")),
+                 comma(count(rows, "text_else")), comma(count(rows, "byte_else"))))
+    return (body + guards + verdict_paragraph(rows) + verdict_table(rows) + absent_table(rows) + top_table(rows)
             + package_table(rows))
 
 
@@ -1136,9 +1426,10 @@ def verdict_paragraph(rows):
             "{l_fewer} of the {nc} `less` classes declare fewer functions than their record has, {l_equal} the "
             "same number and {l_more} more, against {a_fewer} of {ac} agreeing classes that also declare "
             "fewer ({a_equal} the same number, {a_more} more) -- so a function count is not what an arm "
-            "count is missing. The class-level verdicts "
-            "({agree_c} agree, {more_c} more, {less_c} less, {nob_c} with no branch) do not move at all: the "
-            "correction moved the per-function split, which is what it was supposed to move.\n"
+            "count is missing. The class-level verdicts move with the same rule -- "
+            "({agree_c} agree, {more_c} more, {less_c} less, {nob_c} with no branch over the joined classes) -- "
+            "because a class agrees only when every function in it does; the per-function row is where the size "
+            "effect that made the class figure the weaker one goes away.\n"
             .format(ln=comma(less_net), nc=comma(less["count"]), arms=comma(less["fn_arms"]),
                     absent=comma(less["fn_absent"]), short=comma(less["fn_short"]),
                     text=comma(less["live_else"]), outside=comma(less["fn_outside"]),
@@ -1304,6 +1595,25 @@ def selftest():
         print("FAIL text-branches: the outside shapes read %r"
               % (state_split(live3, spans3, counts(live3)["else"]),))
         return 1
+    # The build guard: `#ifdefPS2` is a branch this Xbox build never compiles, `#ifndefPS2` is one it does, and
+    # `#else` flips. A reader that got the polarity backwards passes every count test above and fails here.
+    gsrc = ("function F()\n{\n"
+            "#ifdefPS2\n  if (a) b(); else c();\n#else\n  if (d) e(); else f();\n#endif\n"
+            "#ifndefPS2\n  if (g) h(); else i();\n#endif\n"
+            "}\n")
+    glive = mask(gsrc)[0]
+    gdead, gparts = guard_map(glive)
+    gkl, gkd = keyword_split(glive, gdead)
+    if (gkl["else"], gkd["else"], gkl["if"], gkd["if"]) != (2, 1, 2, 1):
+        print("FAIL text-branches: the guard split read live=%r dead=%r" % (dict(gkl), dict(gkd)))
+        return 1
+    if len(gparts) != 3 or sum(1 for p in gparts if p["dead"]) != 1:
+        print("FAIL text-branches: the guard parts read %r" % (gparts,))
+        return 1
+    gkw, gkwdead, _gname, _gspan = function_bodies(glive, gdead)
+    if (gkw["f"]["else"], gkwdead["f"]["else"]) != (2, 1):
+        print("FAIL text-branches: the body guard split read %r / %r" % (dict(gkw["f"]), dict(gkwdead["f"])))
+        return 1
     # a buffer cut inside a doc comment carries more closes than opens, and one cut before it does not
     if front_truncated("prose else here\r\n*/\nclass X extends Y;\n") is not True:
         print("FAIL text-branches: a front-truncated text read as live")
@@ -1380,7 +1690,9 @@ def selftest():
         cpath, fpath = os.path.join(tmp2, "class.csv"), os.path.join(tmp2, "fn.csv")
         with open(cpath, "w", encoding="utf-8") as fh:
             fh.write(render([{"kind": "class", "package": "P", "class": "C", "fn_arms": 4, "fn_absent": 1,
-                              "fn_short": 2, "fn_long": 0, "fn_unpaired": 0, "terms": 3}]))
+                              "fn_short": 2, "fn_long": 0, "fn_unpaired": 0, "terms": 3, "live_else": 1,
+                              "fn_else": 1, "fn_outside": 0, "dead_else": 0, "fn_dead_else": 0,
+                              "fn_lost": 0}]))
         with open(fpath, "w", encoding="utf-8") as fh:
             fh.write(func_render(frows))
         if func_doc_block(read_csv(fpath)) != func_doc_block(frows):

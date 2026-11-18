@@ -13162,3 +13162,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   carry 2 arms each, so the question is whether those keywords sit in code the package never compiled (the
   `#ifdef`-guarded shape the text-only bucket already found) or in a block the arm census merged into its neighbour.
   A per-function `#ifdef` depth over the arm sites answers that with no new dump read.
+
+### Execution notes (2026-11-17, the text's build guards are evaluated, and the one-sided `else` population goes to zero)
+
+- **Task.** The previous note's next measurement: whether the 13 surplus functions' keywords sit in code the
+  package never compiled. They do -- and so do the 9 `unpaired` bodies, which is the same fact at a different
+  vertex.
+- **The text carries the source's preprocessor branches, and the build compiles one side.** Eight spellings across
+  724 parts (`#ifndefPS2` 322, `#ifdefPS2` 221, `#ifdefPC` 82, `#ifdefXBox` 58, `#ifdefXBOX` 19, `#ifndefXBOX` 18,
+  `#ifdefDEBUG` 3, `#ifndefXBox` 1), every one closed; the guard has no space after the directive name, which is
+  why a `#ifdef\b` pattern found none of them. `tools/text-branches.py` walks them as a stack and counts each
+  keyword as compiled, never compiled, or in an empty block.
+- **The macro set is chosen by the join.** Scoring eight candidate sets on the per-function `else` count and
+  ranking by the functions a set *breaks* (agreed on the raw count, not exact once only compiled text counts):
+  `XBox` + `DEBUG` breaks **0** and fixes **22**; `XBox` alone breaks 1; `XBox`+`PC` breaks 1 and leaves one
+  surplus row; `PC`, nothing, and the case-sensitive `XBox` read each break 8; `XBox`+`PS2` breaks 20; `PS2` 27.
+  So `DEBUG` **is** defined in the shipped build (one function, `Weapon.DisplayDebug`, is the whole difference),
+  and macro names are case-folded (`#ifdefXBOX` read case-sensitively breaks 8, so it is not dead code). The first
+  version of this read had the `#ifndef` polarity backwards and regressed 20 functions that agreed -- the join
+  caught it before anything shipped, which is why the model is scored rather than asserted.
+- **An empty `else` block is not an arm either.** `if (X) y; else { }` has nothing to skip, so the compiler emits
+  the straight-if shape. The corpus spells exactly **4** (`GUIImageList.setIndex`,
+  `SG1AIMsgManager.IsInCombatMode`, `C4Weapon.OutOfAmmo`, `HandOfLight.Fire`) and they are the last four one-sided
+  rows.
+- **What it moved.** `inventory/text_branches.csv`: `else` **3,985** compiled against 3,821 arms (from 4,051 raw),
+  `dead_else` 62, `dead_terms` 281, `else_empty` 4, `guards` 724 / `guard_dead` 322; class agreement **896 of 967**
+  (**92.7%**, from 91.1%), `more` classes 49 -> **34**, `less` 37. `inventory/text_branch_functions.csv`: `else`
+  agreement **5,677 of 5,736** (**99.0%**) and **2,000 of 2,059** (**97.1%**) on the functions that carry one,
+  surplus **13 -> 0**, unpaired **9 -> 0**, short 59 unchanged (89 arms), of which **56** are within the body's
+  `continue` count and **3** are not. Text-only bodies: 34 = **31** with no compiled branch text + **3** named
+  join questions (`C4Mission._drawScorch`, `C4Prop._drawScorch` jump past their last statement;
+  `Ammo.UsedBy` is not exported by the record's `Ammo`).
+- **One more population measured on the way.** `continue` is now a column (`text_continue`, 95 statements in the
+  joined bodies), so the shortfall is bounded by the text instead of typified: 56 <= their own `continue` count,
+  3 above it.
+- **Files.** `tools/text-branches.py` (`guard_map`, `keyword_split`, `empty_else`, `BUILD_DEFINED`, new columns and
+  census keys in both artifacts, the derived verdicts, `--check-functions` identities, three self-test cases) +
+  `inventory/text_branches.csv` + `inventory/text_branch_functions.csv` + `docs/BYTECODE.md` (the guard section,
+  the corrected per-function paragraphs, both generated blocks) + `docs/UNKNOWNS.md` U22 + `docs/ARTIFACTS.md` +
+  `inventory/artifact_hashes.csv` + this note. Two dump reads (5.9 s each); no boot, no Ghidra.
+- **Next measurement.** The 3 shortfall rows a `continue` does not explain are now the only unnamed shape on this
+  page; and the class-level `more` population (34 classes, 252 keywords outside every function) is state code the
+  per-function artifacts never see -- `tools/state-code.py` already reads state bodies, so the next read is
+  whether those 252 keywords are the states' own label loops (a `switch`-free `if` chain in the state's main
+  loop) rather than a text revision.
