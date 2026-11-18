@@ -2407,6 +2407,7 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,134,"of those, inside a nested bra
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,34,classes carrying at least one such keyword
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,`else` keywords outside every function and every block
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,"classes carrying one, named in the table below"
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,513,`state` declarations with a braced body
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,554,"`state` declarations with a braced body, read with the one header rule"
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,513,"of those, the blocks the local pattern this census replaced could see"
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,22,class texts whose buffer begins inside a `/* ... */` comment
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,`else` keywords outside every function in those texts -- their leading prose

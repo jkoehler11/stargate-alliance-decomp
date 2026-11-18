@@ -266,7 +266,8 @@ CENSUS_NOTE = {
     "top_classes": "classes carrying one, named in the table below",
     "texts_front_truncated": "class texts whose buffer begins inside a `/* ... */` comment",
     "front_truncated_else": "`else` keywords outside every function in those texts -- their leading prose",
-    "state_blocks": "`state` declarations with a braced body",
+    "state_blocks": "`state` declarations with a braced body, read with the one header rule",
+    "state_blocks_local": "of those, the blocks the local pattern this census replaced could see",
 }
 
 CENSUS_KEYS = ("classes", "packages", "joined", "joined_fn", "agree", "more", "less", "agree_fn",
@@ -281,7 +282,8 @@ CENSUS_KEYS = ("classes", "packages", "joined", "joined_fn", "agree", "more", "l
                "fn_absent_names", "decl_legacy", "decl_wide", "decl_no_function", "decl_grammar",
                "decl_trailing", "states_case_folded", "state_capital_classes", "fn_state", "fn_state_label",
                "fn_state_nested",
-               "state_classes", "fn_top", "top_classes", "state_blocks", "texts_front_truncated",
+               "state_classes", "fn_top", "top_classes", "state_blocks", "state_blocks_local",
+               "texts_front_truncated",
                "front_truncated_else")
 
 WORD = re.compile(r"(?<![#\w$])(if|else|while|for)(?![\w$])")
@@ -300,9 +302,13 @@ FUNC_NO_KEYWORD = re.compile(r"^[ \t]*(?:(?:%s)[ \t]+)*(?:event|delegate|operato
                              % "|".join(MODIFIERS), re.M)
 FUNC_LEGACY = re.compile(r"^[ \t]*(?:simulated[ \t]+|static[ \t]+|final[ \t]+|latent[ \t]+)*function[ \t]+"
                          r"(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(", re.M)
-# UnrealScript folds keyword case, and the shipped text spells `State` with a capital in 55 declarations across
-# 35 classes: a case-sensitive read loses all of them and reports their bodies as code outside every block.
-STATE = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M | re.I)
+# The state blocks are `class-text-bodies.state_declarations`' -- the one header rule (UNKNOWNS U24), which
+# reads every spelling the corpus uses (`state() Name`, a modifier word, a qualified `extends`, a capital
+# `State`) and brace-matches on a masked copy. This pattern is that reader's predecessor and stays only so the
+# blocks it lost are a number: it wants `state` at a line's start, one optional `auto`, and the name on the
+# header's own line, so `state() LeadInOutLooper` (every state in `Engine.Mover`), `state(0) Name`, `simulated
+# state ZoomingIn` and a qualified `extends` all read as code outside any block.
+STATE_LOCAL = re.compile(r"^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)", re.M | re.I)
 # The capitalised spelling, strictly: differencing the case-folded and case-sensitive reads counted identifiers
 # (`stateTime = 0.0;`) as declarations and answered 67 where the capital-`State` shape is 55 in 35 classes.
 STATE_CAPITAL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?State[ \t]+\w+")
@@ -1219,7 +1225,7 @@ def function_else(live, dead=None):
 
 
 def state_split(live, fn_spans, total_else, depth=None, dead=None):
-    """`(label-level else, nested else, else outside every block, blocks with a body)`.
+    """`(label-level else, nested else, else outside every block, blocks, blocks the local pattern read)`.
 
     The 3.5 notes call the state code a gap in its own right; a class-level count cannot tell it from a
     function's arms, so the keywords that no function body holds get their own split here, and `fn_top` is the
@@ -1229,37 +1235,43 @@ def state_split(live, fn_spans, total_else, depth=None, dead=None):
     state body's own statement level is label code (`Begin:` and friends, which is where a state's main loop
     lives), while one deeper is inside a block of that code. The 253 keywords this bucket held came back 118
     label-level / 134 nested / 1 outside every block, so quoting the bucket as one number hid the shape.
+
+    The blocks come from `class-text-bodies.state_declarations`, the one header rule (UNKNOWNS U24) -- the
+    pattern this function used to carry wanted the name on the header's own line and only an `auto` modifier,
+    so it read 513 of the corpus's 554 blocks. The fifth number is that pattern's count, in the same pass.
     """
     ctb = ctb_tool()
     if depth is None:
         depth = ctb.depth_map(live)
     label, nested, blocks = 0, 0, 0
-    ms = list(STATE.finditer(live))
-    for k, m in enumerate(ms):
-        limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
-        span = ctb.body_span(live, m.end(), limit)
-        if span is None:
-            continue
+    for decl in ctb.state_declarations(live):
         blocks += 1
-        floor = depth[span[0]] + 1  # the state body's own statement level: `depth` is the depth *inside* a brace
-        for mm in WORD.finditer(live[span[0]:span[1]]):
+        a, b = decl["start"], decl["end"]
+        floor = depth[a] + 1  # the state body's own statement level: `depth` is the depth *inside* a brace
+        for mm in WORD.finditer(live[a:b]):
             if mm.group(1) != "else":
                 continue
-            pos = span[0] + mm.start()
+            pos = a + mm.start()
             if dead is not None and dead[pos]:
                 continue
             if ELSE_EMPTY.match(live, pos):
                 continue    # an empty block is not an arm, so it is not state code either
-            if any(a <= pos < b for a, b in fn_spans):
+            if any(x <= pos < y for x, y in fn_spans):
                 continue
             if depth[pos] == floor:
                 label += 1
             else:
                 nested += 1
+    legacy = 0
+    ms = list(STATE_LOCAL.finditer(live))
+    for k, m in enumerate(ms):
+        limit = ms[k + 1].start() if k + 1 < len(ms) else len(live)
+        if ctb.body_span(live, m.end(), limit) is not None:
+            legacy += 1
     outside = total_else - sum(
         keyword_split(live, dead if dead is not None else bytearray(len(live)), a, b)[0]["else"]
         - empty_else(live, dead, a, b) for a, b in fn_spans)
-    return label, nested, outside - label - nested, blocks
+    return label, nested, outside - label - nested, blocks, legacy
 
 
 def front_truncated(text):
@@ -1301,7 +1313,8 @@ def walk(system_dir):
             for key in ("else", "if", "while", "for"):
                 c[key] = c_live[key]
             c["else"] -= e_empty    # an empty block is no arm: it is a keyword with nothing to skip
-            fn_label, fn_nested, fn_top, state_blocks = state_split(live, fn_spans, c["else"], depth, dead)
+            fn_label, fn_nested, fn_top, state_blocks, state_legacy = state_split(
+                live, fn_spans, c["else"], depth, dead)
             rows[(package, pkg.name(exp["name"]).lower())] = {
                 "class": pkg.name(exp["name"]),
                 "live": c,
@@ -1319,7 +1332,8 @@ def walk(system_dir):
                 "fn_pp": guarded_functions(live),
                 "fn_continue": function_continue_sites(live, dead),
                 "fn_state": fn_label + fn_nested, "fn_state_label": fn_label, "fn_state_nested": fn_nested,
-                "fn_top": fn_top, "state_blocks": state_blocks, "front_truncated": front_truncated(text),
+                "fn_top": fn_top, "state_blocks": state_blocks, "state_blocks_local": state_legacy,
+                "front_truncated": front_truncated(text),
                 "decl_legacy": len(ctb.FUNC_LEGACY.findall(live)),
                 "decl_no_function": len(FUNC_NO_KEYWORD.findall(live)),
             }
@@ -1419,6 +1433,7 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
         census["state_capital_classes"] += 1 if t["state_blocks_capital"] else 0
         census["decl_no_function"] += t["decl_no_function"]
         census["state_blocks"] += t["state_blocks"]
+        census["state_blocks_local"] += t["state_blocks_local"]
         census["fn_state"] += t["fn_state"]
         census["fn_state_label"] += t["fn_state_label"]
         census["fn_state_nested"] += t["fn_state_nested"]
@@ -2292,13 +2307,15 @@ def verdict_paragraph(rows):
             "`#635`'s same-line rule **{decl_grammar}**. **No arm is left without a declaring body, and "
             "{alltop} `else` keyword(s) in the whole corpus sit outside every block** (named in the table "
             "below), against the previous reading's 65 absent arms behind 8 names and 107 outside keywords.\n"
-            "\n**The in-state count fell for a second reason: the state read was case-sensitive.** "
-            "UnrealScript folds keyword case and the shipped text spells `State` with a capital in "
-            "**{case_states}** declarations across **{case_classes}** classes, so every body in those "
-            "blocks read as code outside one. Among them are the five states "
-            "(`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`, `Broken`) the tree "
-            "once recorded as states no class's text declares: the text declares them, in a capitalised "
-            "block, and **{state_all}** `else` keywords now sit in state code.\n"
+            "\n**The state blocks are read with the one header rule, and the local pattern was short.** "
+            "`class-text-bodies.state_declarations` reads every spelling the corpus uses -- `state() "
+            "LeadInOutLooper` (every state in `Engine.Mover`), `state(0) Name`, a modifier word, a qualified "
+            "`extends`, a capital `State` -- and brace-matches on a masked copy; it answers **{blocks}** "
+            "blocks against the **{blocks_local}** this tool's own pattern matched, so **{state_all}** `else` "
+            "keywords sit in state code. The capital spelling alone is **{case_states}** declarations across "
+            "**{case_classes}** classes, among them the five states (`GetInFormation`, `MoveInFormation`, "
+            "`TakePoint`, `WaitingForFormation`, `Broken`) the tree once recorded as no class's text "
+            "declaring.\n"
             "\n**The keywords outside every function are state code, and the ones outside every block are "
             "prose.** The {alloutside} `else` keywords the text spells outside a function body split **{label}** "
             "at a `state` body's own statement level -- the label code a state's main loop is written in -- "
@@ -2336,6 +2353,7 @@ def verdict_paragraph(rows):
                     case_states=comma(count(rows, "states_case_folded")),
                     case_classes=comma(count(rows, "state_capital_classes")),
                     blocks=comma(count(rows, "state_blocks")),
+                    blocks_local=comma(count(rows, "state_blocks_local")),
                     label=comma(count(rows, "fn_state_label")),
                     nested=comma(count(rows, "fn_state_nested")),
                     sclasses=comma(count(rows, "state_classes")),
@@ -2457,12 +2475,12 @@ def selftest():
             "}\n")
     live2 = mask(text)[0]
     fns, names, spans = function_else(live2)
-    st, tp, top2, blocks = state_split(live2, spans, counts(live2)["else"])
+    st, tp, top2, blocks, legacy = state_split(live2, spans, counts(live2)["else"])
     if fns != {"exec": 1, "prot": 0, "inner": 0}:
         print("FAIL text-branches: a modified declaration read %r / %r" % (fns, names))
         return 1
-    if (st, tp, top2, blocks) != (1, 0, 0, 1):
-        print("FAIL text-branches: the state split read %r" % ((st, tp, blocks),))
+    if (st, tp, top2, blocks, legacy) != (1, 0, 0, 1, 1):
+        print("FAIL text-branches: the state split read %r" % ((st, tp, blocks, legacy),))
         return 1
     # the three shapes of an outside keyword: label code, code nested inside a block of it, and prose at class
     # level. One count cannot tell them apart, which is why the bucket is quoted split.
@@ -2478,7 +2496,7 @@ def selftest():
              "prose else at class level\n")
     live3 = mask(shape)[0]
     fns3, names3, spans3 = function_else(live3)
-    if state_split(live3, spans3, counts(live3)["else"]) != (1, 1, 1, 1):
+    if state_split(live3, spans3, counts(live3)["else"]) != (1, 1, 1, 1, 1):
         print("FAIL text-branches: the outside shapes read %r"
               % (state_split(live3, spans3, counts(live3)["else"]),))
         return 1
