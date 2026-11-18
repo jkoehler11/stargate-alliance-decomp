@@ -11,8 +11,8 @@ state,AmbientCreatures,TransientAmbientCreature,Wandering,115,23,69,23,34,1,0,0,
 state,AmbientCreatures,TransientAmbientPawn,Dying,127,24,80,23,35,1,1,1,0,0,0,0,1,1,0,22,17107200,18446744072635771327,84,0,83,field,2,0,2,,2,2,1,1,2,2,2,0,1,0,0,label+payload,,none-name
 state,AmbientCreatures,TransientAmbientPawn,Wandering,149,24,102,23,49,3,2,2,1,0,0,0,1,1,0,22,0,18446744072635771327,136,2,135,field,5,0,4,,5,5,2,1,1,1,1,0,0,0,0,label+payload,,none-name
 state,Engine,Ammo,Pickup,52,,,,,,,,,,,,,,,22,68719673600,18446744073709551615,65535,2,,,,,,engine.pickup,0,0,0,0,,,,,,,,record-only,,
-state,Engine,AntiPortalActor,TriggerControl,49,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,AntiPortalActor,TriggerToggle,51,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,AntiPortalActor,TriggerControl,49,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,AntiPortalActor,TriggerToggle,51,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Armor,Activated,52,,,,,,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.powerups (no table),0,0,0,0,,,,,,,,record-only,,
 state,Engine,ClientMover,ServerIdle,49,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Console,Typing,51,,,,,,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
@@ -22,26 +22,26 @@ state,Engine,Controller,RoundEnded,49,,,,,,,,,,,,,,,22,65536,1844364235140759398
 state,Engine,DemoRecSpectator,Spectating,52,,,,,,,,,,,,,,,22,137439150336,18446744073709551615,65535,2,,,,,,engine.playercontroller (no table),0,0,0,0,,,,,,,,record-only,,
 state,Engine,Fragment,Dying,51,,,,,,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Fragment,Flying,50,,,,,,,,,,,,,,,22,69888,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,Engine,KHinge,ControlDesired,51,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,KHinge,ControlMotor,79,27,29,23,11,0,0,0,0,0,0,0,1,1,0,22,192,18446744073709551615,24,1,23,field,0,0,3,,,,,,1,1,1,0,,,,payload-only,,none-name
+state,Engine,KHinge,ControlDesired,51,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,KHinge,ControlMotor,79,27,29,23,11,0,0,0,0,0,0,0,1,1,0,22,192,18446744073709551615,24,1,23,field,0,0,3,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
 state,Engine,KHinge,Default,48,,,,,,,,,,,,,,,22,0,18446744073709551423,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,Engine,KHinge,ToggleDesired,51,,,,,,,,,,,,,,,22,64,18446744073709551487,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,KHinge,ToggleMotor,79,27,29,23,11,0,0,0,0,0,0,0,1,1,0,22,64,18446744073709551487,24,1,23,field,0,0,4,,,,,,1,1,1,0,,,,payload-only,,none-name
+state,Engine,KHinge,ToggleDesired,51,,,,,,,,,,,,,,,22,64,18446744073709551487,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,KHinge,ToggleMotor,79,27,29,23,11,0,0,0,0,0,0,0,1,1,0,22,64,18446744073709551487,24,1,23,field,0,0,4,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
 state,Engine,MessagingSpectator,NotPlaying,49,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,Engine,Mover,BumpButton,166,27,116,23,56,4,0,0,4,0,0,0,1,1,0,22,32768,18446744073709551615,132,1,131,field,4,0,4,,,,,,2,2,2,0,,,,payload-only,,none-name
-state,Engine,Mover,BumpOpenTimed,52,,,,,,,,,,,,,,,22,98304,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,Mover,ConstantLoop,97,27,47,23,18,0,0,0,0,0,0,0,1,1,0,22,65536,18446744073709551615,40,1,39,field,0,0,2,,,,,,2,2,2,0,,,,payload-only,,none-name
-state,Engine,Mover,LeadInOutLooper,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Mover,BumpButton,166,27,116,23,56,4,0,0,4,0,0,0,1,1,0,22,32768,18446744073709551615,132,1,131,field,4,0,4,,4,4,0,0,2,2,2,0,2,0,0,label+payload,,none-name
+state,Engine,Mover,BumpOpenTimed,52,,,,,,,,,,,,,,,22,98304,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,ConstantLoop,97,27,47,23,18,0,0,0,0,0,0,0,1,1,0,22,65536,18446744073709551615,40,1,39,field,0,0,2,,0,0,0,0,2,2,2,0,1,0,0,payload-only,,none-name
+state,Engine,Mover,LeadInOutLooper,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Mover,LeadInOutLooping,51,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,Engine,Mover,LoopMove,152,27,102,23,50,0,0,0,0,0,0,0,1,1,0,22,65728,18446744073709551615,116,1,115,field,0,0,3,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,LoopMove,152,27,102,23,50,0,0,0,0,0,0,0,1,1,0,22,65728,18446744073709551615,116,1,115,field,0,0,3,,0,0,0,0,2,2,2,0,2,0,0,payload-only,,none-name
 state,Engine,Mover,OpenTimedMover,205,26,156,23,76,5,0,0,5,0,0,0,1,1,0,22,65536,18446744073709551615,192,0,191,field,5,0,2,,5,5,0,0,2,2,2,0,2,0,0,label+payload,,none-name
-state,Engine,Mover,RotatingMover,51,,,,,,,,,,,,,,,22,65536,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,Mover,StandOpenTimed,52,,,,,,,,,,,,,,,22,589824,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,Mover,TriggerAdvance,209,27,159,23,79,4,0,0,4,0,0,0,1,1,0,22,196800,18446744073709551615,188,1,187,field,4,0,2,,,,,,2,2,2,0,,,,payload-only,,none-name
-state,Engine,Mover,TriggerControl,175,27,125,23,59,5,0,0,5,0,0,0,1,1,0,22,65728,18446744073709551615,140,1,139,field,5,0,3,,,,,,2,2,2,0,,,,payload-only,,none-name
-state,Engine,Mover,TriggerOpenTimed,52,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,Mover,TriggerPound,169,27,119,23,58,4,0,0,4,0,0,0,1,1,0,22,65728,18446744073709551615,132,1,131,field,4,0,4,,,,,,2,2,2,0,,,,payload-only,,none-name
-state,Engine,Mover,TriggerToggle,147,27,97,23,45,2,0,0,2,0,0,0,1,1,0,22,64,18446744073709551615,104,1,103,field,2,0,3,,,,,,2,2,2,0,,,,payload-only,,none-name
+state,Engine,Mover,RotatingMover,51,,,,,,,,,,,,,,,22,65536,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,StandOpenTimed,52,,,,,,,,,,,,,,,22,589824,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,TriggerAdvance,209,27,159,23,79,4,0,0,4,0,0,0,1,1,0,22,196800,18446744073709551615,188,1,187,field,4,0,2,,4,4,0,0,2,2,2,0,2,0,0,label+payload,,none-name
+state,Engine,Mover,TriggerControl,175,27,125,23,59,5,0,0,5,0,0,0,1,1,0,22,65728,18446744073709551615,140,1,139,field,5,0,3,,5,5,0,0,2,2,2,0,2,0,0,label+payload,,none-name
+state,Engine,Mover,TriggerOpenTimed,52,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Mover,TriggerPound,169,27,119,23,58,4,0,0,4,0,0,0,1,1,0,22,65728,18446744073709551615,132,1,131,field,4,0,4,,4,4,0,0,2,2,2,0,2,0,0,label+payload,,none-name
+state,Engine,Mover,TriggerToggle,147,27,97,23,45,2,0,0,2,0,0,0,1,1,0,22,64,18446744073709551615,104,1,103,field,2,0,3,,2,2,0,0,2,2,2,0,2,0,0,label+payload,,none-name
 state,Engine,Mover,WasBumpButton,51,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Mover,WasOpenTimedMover,50,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Mover,WasTriggerAdvance,51,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
@@ -83,10 +83,10 @@ state,Engine,TestInfo,BB,50,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,
 state,Engine,TestInfo,CCAA,52,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,TestInfo,DDAA,51,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,TestInfo,EEDDAA,51,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,Engine,Trigger,NormalTrigger,49,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,Trigger,OtherTriggerToggles,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,Trigger,OtherTriggerTurnsOff,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,Engine,Trigger,OtherTriggerTurnsOn,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,Engine,Trigger,NormalTrigger,49,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Trigger,OtherTriggerToggles,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Trigger,OtherTriggerTurnsOff,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,Engine,Trigger,OtherTriggerTurnsOn,51,,,,,,,,,,,,,,,22,65600,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Vehicle,Deployed,51,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Vehicle,UnDeployed,50,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Engine,Volume,AssociatedTouch,50,,,,,,,,,,,,,,,22,90112,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
@@ -102,30 +102,30 @@ state,Engine,WeaponPickup,Pickup,52,,,,,,,,,,,,,,,22,68719673600,184467440737095
 state,GUI,ExtendedConsole,ConsoleVisible,49,,,,,,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,GamePlay,Dispatcher,Dispatch,136,24,89,23,42,2,1,0,2,0,0,0,1,1,0,22,0,18446744073709551551,112,2,111,field,3,0,3,,2,2,0,0,1,1,1,0,0,0,0,label+payload,,none-name
 state,GamePlay,FadeViewTrigger,IsTriggered,49,,,,,,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,GamePlay,PuzzleMover,TriggerControl,50,,,,,,,,,,,,,,,22,65728,18446744073709551615,65535,1,,,,,,engine.mover,,,,,,,,,,,,record-only,,
+state,GamePlay,PuzzleMover,TriggerControl,50,,,,,,,,,,,,,,,22,65728,18446744073709551615,65535,1,,,,,,engine.mover,0,0,0,0,,,,,,,,record-only,,
 state,GamePlay,ScriptedController,Broken,122,24,75,23,33,2,0,0,2,0,0,0,1,1,0,22,65536,18446744073709551615,76,0,75,field,2,0,2,,2,2,0,0,2,2,2,0,1,0,0,label+payload,,none-name
 state,GamePlay,ScriptedController,Scripting,704,25,656,23,298,20,6,6,14,0,0,0,1,1,4,22,68736450880,18446744073709551615,868,0,867,field,26,0,2,,26,26,6,0,2,2,2,0,0,1,0,label+payload,,none-name
 state,GamePlay,ScriptedTriggerController,Scripting,143,26,94,23,40,5,0,0,5,0,0,0,1,1,0,22,68736450880,18446744073709551615,116,0,115,field,5,0,7,,5,5,0,0,1,1,1,0,0,0,0,label+payload,,none-name
 state,GamePlay,TournamentConsole,Typing,50,,,,,,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.console (no table),0,0,0,0,,,,,,,,record-only,,
 state,GamePlay,TournamentConsole,UWindow,50,,,,,,,,,,,,,,,22,68719476736,18446744073709551615,65535,0,,,,,,uwindow.windowconsole,0,0,0,0,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerControl,49,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerPound,49,,,,,,,,,,,,,,,22,320,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerToggle,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerTurnsOff,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggerLight,TriggerTurnsOn,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,NormalTrigger,48,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,OtherTriggerToggles,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,OtherTriggerTurnsOff,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,GamePlay,TriggeredScript,OtherTriggerTurnsOn,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerControl,49,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerPound,49,,,,,,,,,,,,,,,22,320,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerToggle,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerTurnsOff,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggerLight,TriggerTurnsOn,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,NormalTrigger,48,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,OtherTriggerToggles,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,OtherTriggerTurnsOff,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,GamePlay,TriggeredScript,OtherTriggerTurnsOn,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Sharpeffects,SE_AdvExplosiveMeshActor,Dead,49,,,,,,,,,,,,,,,22,68719542528,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,Sharpeffects,SE_ExplosiveKActor,Dead,49,,,,,,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,AlarmLight,Disabled,48,,,,,,,,,,,,,,,22,0,18446744073709551423,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,AlarmSiren,Disabled,49,,,,,,,,,,,,,,,22,0,18446744073709551295,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,StargateContent,AlarmSiren,LoopForFixedTime,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,,,,,,,,,,,,record-only,,
-state,StargateContent,AlarmSiren,TriggerControl,49,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,3,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateContent,AlarmSiren,LoopForFixedTime,49,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,1,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateContent,AlarmSiren,TriggerControl,49,,,,,,,,,,,,,,,22,192,18446744073709551615,65535,3,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,AlarmSiren,WaitForDeactivation,49,,,,,,,,,,,,,,,22,448,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,Binoculars,Idle,87,25,39,23,18,1,0,0,1,0,0,0,1,1,0,22,16842752,18446744073709551615,36,0,35,field,1,0,3,,1,1,0,0,1,1,1,0,0,0,0,label+payload,,none-name
-state,StargateContent,Binoculars,ZoomScope,50,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),,,,,,,,,,,,record-only,,
+state,StargateContent,Binoculars,ZoomScope,50,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,BotGoauld,FocusedAttack,50,,,,,,,,,,,,,,,22,2199023452416,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,BotScarab,Buried,120,25,72,23,18,1,0,0,1,0,0,0,1,1,1,22,196864,18446744073709551615,64,0,63,field,1,0,2,,1,1,0,0,2,2,2,0,1,0,0,label+payload,,none-name
 state,StargateContent,BotScarab,Mellee,131,26,82,23,32,2,0,0,2,0,0,0,1,1,0,22,9288674231648512,18446744073709551615,84,0,83,field,2,0,2,,2,2,0,0,3,3,3,0,2,0,0,label+payload,,none-name
@@ -289,7 +289,7 @@ state,StargateContent,SNIPERRIFLE,ClientFiring,50,,,,,,,,,,,,,,,22,16974080,1844
 state,StargateContent,SNIPERRIFLE,Idle,49,,,,,,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,SNIPERRIFLE,NormalFire,50,,,,,,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,SNIPERRIFLE,SteadySway,50,,,,,,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,StargateContent,SNIPERRIFLE,ZoomScope,50,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),,,,,,,,,,,,record-only,,
+state,StargateContent,SNIPERRIFLE,ZoomScope,50,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,stargategame.scopedweapon (no table),0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,STAFFWEAPON,Charging,49,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,STAFFWEAPON,Idle,49,,,,,,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
 state,StargateContent,STAFFWEAPON,MeleeCharging,49,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
@@ -419,7 +419,7 @@ state,StargateGame,IntelligentSpawner,TriggerActivates,51,,,,,,,,,,,,,,,22,448,1
 state,StargateGame,IntelligentSpawner,TriggerDeactivates,51,,,,,,,,,,,,,,,22,64,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,KeyPickup,Sleeping,63,26,14,23,4,0,0,0,0,0,0,0,1,1,0,22,196608,18446744073709543423,4,0,3,field,0,0,8,,0,0,0,0,1,1,1,0,0,0,0,payload-only,,none-name
 state,StargateGame,MobileShield,Idle,51,,,,,,,,,,,,,,,22,65536,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
-state,StargateGame,MuzzleFlashAttachment,Visible,51,,,,,,,,,,,,,,,22,68719673344,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,MuzzleFlashAttachment,Visible,51,,,,,,,,,,,,,,,22,68719673344,18446744073709551615,65535,4,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,SGInsetCamera,OffCamera,50,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,SGInsetCamera,OnCamera,51,,,,,,,,,,,,,,,22,0,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,SGInsetCamera,SlideOff,51,,,,,,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
@@ -427,9 +427,9 @@ state,StargateGame,SGInsetCamera,SlideOn,51,,,,,,,,,,,,,,,22,65792,1844674407370
 state,StargateGame,SGInsetCameraTarget,Disabled,49,,,,,,,,,,,,,,,22,0,18446744073709551295,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,SGInsetCameraTarget,TriggerTimeOut,50,,,,,,,,,,,,,,,22,320,18446744073709551615,65535,2,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,ScopedWeapon,ClientFiring,52,,,,,,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,stargategame.stargateweapon (no table),0,0,0,0,,,,,,,,record-only,,
-state,StargateGame,ScopedWeapon,ZoomScope,52,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
-state,StargateGame,ScopedWeapon,ZoomingIn,52,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
-state,StargateGame,ScopedWeapon,ZoomingOut,52,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,ScopedWeapon,ZoomScope,52,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,ScopedWeapon,ZoomingIn,52,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,0,0,0,0,,,,,,,,record-only,,
+state,StargateGame,ScopedWeapon,ZoomingOut,52,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,ShieldBelt,Activated,52,,,,,,,,,,,,,,,22,196608,18446744073709551615,65535,0,,,,,,engine.armor (no table),0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,ShieldBelt,Cloaked,51,,,,,,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,ShieldBelt,Cloaking,51,,,,,,,,,,,,,,,22,68719673344,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
@@ -463,7 +463,7 @@ state,StargateGame,StargateWeapon,LoweredIdle,51,,,,,,,,,,,,,,,22,16842752,18446
 state,StargateGame,StargateWeapon,NormalFire,52,,,,,,,,,,,,,,,22,16974080,18446744073709551615,65535,0,,,,,,engine.weapon,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,StargateWeapon,PendingClientWeaponSet,52,,,,,,,,,,,,,,,22,196864,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,StargateWeapon,Reloading,52,,,,,,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,engine.weapon (no table),0,0,0,0,,,,,,,,record-only,,
-state,StargateGame,StargateWeapon,Zooming,49,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,,,,,,,,,,,,record-only,,
+state,StargateGame,StargateWeapon,Zooming,49,,,,,,,,,,,,,,,22,68736450560,18446744073709551615,65535,4,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,StargateWeaponEmplacement,Activate,51,,,,,,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,StargateWeaponEmplacement,DeActivate,51,,,,,,,,,,,,,,,22,16842752,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
 state,StargateGame,StoryModeGame,MatchInProgress,51,,,,,,,,,,,,,,,22,65792,18446744073709551615,65535,0,,,,,,,0,0,0,0,,,,,,,,record-only,,
@@ -566,8 +566,8 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,358,arms_if
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,arms_empty
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,arms_leave
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,arms_expr
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,arm_join_states
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,arm_join_equal
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,125,arm_join_states
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,125,arm_join_equal
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,labeltable
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,labeltable_states
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,147,stringconst
@@ -596,18 +596,18 @@ census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,326,label_entries
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,326,label_entries_on_boundary
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,326,label_entries_named
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,label_ends_zero
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,157,label_join_states
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,146,label_spelled
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,label_join_states
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,159,label_spelled
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,8,label_unspelled
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,label_text_only
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,157,label_join_equal
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,text_label_states
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,843,text_label
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,166,label_join_equal
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,125,text_label_states
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,862,text_label
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,252,text_else
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,118,text_else_label
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120,joined
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,591,joined_jif
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,843,joined_label
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,30,joined_equal
-census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37,overrides
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,125,joined
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,610,joined_jif
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,862,joined_label
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,35,joined_equal
+census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,41,overrides
 census,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,610,payload_arms
