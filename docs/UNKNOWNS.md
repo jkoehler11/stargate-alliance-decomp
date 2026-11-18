@@ -4471,6 +4471,33 @@ named because a `continue` does not explain them). The text-only population reso
 *not* settle is unchanged and now bounded by a count rather than a shape: 59 arms of a `continue`-vs-empty-then
 ambiguity, which no stream reading separates.
 
+**The class-level `more` population is the state code, and its arms are in the `State` payloads (measured
+2026-11-17).** The remaining one-sided class count (**34** classes spell more `else` than their `Function` arms)
+was never a text revision: **252** of the keywords sit outside every function body, in `state` blocks -- the
+population `tools/text-branches.py`'s `fn_state` counts and the per-function artifact cannot see. The branch
+census walks `Function` exports only (`tools/jump-census.py` skips every other class), so those keywords had no
+arms to be compared with. `tools/state-code.py` now classifies each state's own jump graph with
+`tools/jump-branches.py`'s rule, mapping the widened operands back to payload offsets: the **166** walked states
+carry **610** `JumpIfNot`, and they split into **252** `else` arms and **358** straight `if`s with **0** empty,
+**0** leave and **0** expression -- and on the **120** states whose text block and walk both exist, the text's
+`else` count equals the arm count on **all 120**. So the class figure is a scope mismatch, not a disagreement:
+read at the scope both sides are counted on (in-body keywords against `Function` arms), **928 of 967** classes
+agree (**95.97%**), **0** spell more and **39** fewer (`verdict_fn` in `inventory/text_branches.csv`); the four
+of the old 34 that stay short are the function-level `continue` gap, not state code.
+
+**Three more loop shapes moved out of the `else` population, and the join accepted all three (measured
+2026-11-17).** The 89 remaining shortfall arms were called a `continue`-versus-empty-then ambiguity; two of the
+three functions named as beyond a `continue` were instead shapes the `leave` rule could not see. A `break` out of
+a **`do…until`** (`GameInfo.ParseLoadingHint`, 2 arms) skips a body whose only back edge is the bottom test, a
+`JumpIfNot` rather than a `Jump`; a `break` out of a **`switch`** (`GUIComponent.MenuStateChange`, 1 arm) leaves
+the switch and reaches no loop test at all -- its landing is the statement right after the case list's `0xffff`
+terminator; and a `continue` onto a `for`'s increment (`Engine.TestInfo`'s two test functions) lands past the
+trailing `Jump`'s target, where the back edge begins rather than inside what the arm skips. All three are now
+`leave` rules, and each was tested as the others were: **0** functions whose `else` count already agreed with its
+text contain an arm any of them reclassifies, and **0** of the 22 the guards explain do. The `else` arms go
+**3,821 -> 3,816**, `leave` **226 -> 231**, the shortfall **89 arms in 59 functions -> 84 in 55**, and the one
+function still beyond its `continue` count is `CommandInterface.TestTraceActors` (2 against a gap of 3).
+
 **Reproduce.** `make text-branches` (needs the dump) writes both artifacts and both generated blocks;
 `python3 tools/text-branches.py --check-functions` re-derives the five per-class identities and the two corpus
 counts from the committed files with no dump, and runs in `make ci`.

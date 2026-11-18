@@ -2641,7 +2641,7 @@ branch,Engine,PlayerController,PlayerMove,00a8,else,312,00db,,,PlayerController.
 branch,Engine,TestInfo,TestContinueForEach,002c,leave,71,003c,,,TestInfo.TestContinueForEach
 branch,Engine,PlayerController,FindGoodView,0032,if,229,009b,,,PlayerController.GameEnded.FindGoodView
 branch,Engine,PlayerController,FindGoodView,006e,if,202,0087,,,PlayerController.GameEnded.FindGoodView
-branch,Engine,TestInfo,TestContinueDoUntil,002a,else,89,004f,,,TestInfo.TestContinueDoUntil
+branch,Engine,TestInfo,TestContinueDoUntil,002a,leave,89,004f,,,TestInfo.TestContinueDoUntil
 branch,Engine,TestInfo,TestContinueDoUntil,0056,if,16,0010,,,TestInfo.TestContinueDoUntil
 branch,Engine,PlayerController,BeginState,0022,if,216,0093,,,PlayerController.GameEnded.BeginState
 branch,Engine,PlayerController,BeginState,002a,if,92,003e,,,PlayerController.GameEnded.BeginState
@@ -2651,7 +2651,7 @@ branch,Engine,PlayerController,BeginState,00bf,if,316,00e0,,,PlayerController.Ga
 branch,Engine,PlayerController,EndState,0000,if,28,0014,,,PlayerController.GameEnded.EndState
 branch,Engine,PlayerController,Possess,0007,if,37,0019,,,PlayerController.RoundEnded.Possess
 branch,Engine,TestInfo,TestContinueWhile,0010,if,92,0054,,,TestInfo.TestContinueWhile
-branch,Engine,TestInfo,TestContinueWhile,0031,else,82,004a,,,TestInfo.TestContinueWhile
+branch,Engine,TestInfo,TestContinueWhile,0031,leave,82,004a,,,TestInfo.TestContinueWhile
 branch,Engine,PlayerController,PlayerMove,000d,else,204,0087,,,PlayerController.RoundEnded.PlayerMove
 branch,Engine,PlayerController,PlayerMove,004c,if,193,007e,,,PlayerController.RoundEnded.PlayerMove
 branch,Engine,PlayerController,PlayerMove,0087,if,232,009a,,,PlayerController.RoundEnded.PlayerMove
@@ -4767,8 +4767,8 @@ branch,Engine,MaplistManager,MapChange,006e,if,231,0097,,,MaplistManager.MapChan
 branch,Engine,MaplistManager,MapChange,00a8,if,318,00d1,,,MaplistManager.MapChange
 branch,Engine,MaplistManager,MapChange,00d1,if,407,010e,,,MaplistManager.MapChange
 branch,Engine,GameInfo,ParseLoadingHint,000c,if,37,001d,,,GameInfo.ParseLoadingHint
-branch,Engine,GameInfo,ParseLoadingHint,0053,else,129,0063,,,GameInfo.ParseLoadingHint
-branch,Engine,GameInfo,ParseLoadingHint,008c,else,222,00a6,,,GameInfo.ParseLoadingHint
+branch,Engine,GameInfo,ParseLoadingHint,0053,leave,129,0063,,,GameInfo.ParseLoadingHint
+branch,Engine,GameInfo,ParseLoadingHint,008c,leave,222,00a6,,,GameInfo.ParseLoadingHint
 branch,Engine,GameInfo,ParseLoadingHint,00ce,if,37,001d,,,GameInfo.ParseLoadingHint
 branch,Engine,GameInfo,ParseLoadingHint,00e7,if,349,0107,,,GameInfo.ParseLoadingHint
 branch,Engine,MaplistManager,GetRecords,0000,if,31,0014,,,MaplistManager.GetRecords
@@ -5311,7 +5311,7 @@ branch,GUI,GUISlider,adjustValue,001a,else,64,002e,,,GUISlider.adjustValue
 branch,GUI,GUIComponent,MenuStateChange,0000,if,11,0009,,,GUIComponent.MenuStateChange
 branch,GUI,GUIComponent,MenuStateChange,000f,else,52,002a,,,GUIComponent.MenuStateChange
 branch,GUI,GUIComponent,MenuStateChange,0053,if,138,0068,,,GUIComponent.MenuStateChange
-branch,GUI,GUIComponent,MenuStateChange,0076,else,184,008a,,,GUIComponent.MenuStateChange
+branch,GUI,GUIComponent,MenuStateChange,0076,leave,184,008a,,,GUIComponent.MenuStateChange
 branch,GUI,GUIComponent,MenuStateChange,009e,if,286,00d6,,,GUIComponent.MenuStateChange
 branch,GUI,GUIComponent,MenuStateChange,0116,if,444,0146,,,GUIComponent.MenuStateChange
 branch,GUI,GUIComponent,MenuStateChange,0122,if,444,0146,,,GUIComponent.MenuStateChange
@@ -18545,11 +18545,11 @@ script,Engine,PlayerController,Fire,,,,,1,"else 0, leave 0, empty 0, if 1, expre
 script,Engine,PlayerController,PlayerMove,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 21 statement(s)",PlayerController.GameEnded.PlayerMove
 script,Engine,TestInfo,TestContinueForEach,,,,,1,"else 0, leave 1, empty 0, if 0, expression 0, 11 statement(s)",TestInfo.TestContinueForEach
 script,Engine,PlayerController,FindGoodView,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 21 statement(s)",PlayerController.GameEnded.FindGoodView
-script,Engine,TestInfo,TestContinueDoUntil,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 9 statement(s)",TestInfo.TestContinueDoUntil
+script,Engine,TestInfo,TestContinueDoUntil,,,,,2,"else 0, leave 1, empty 0, if 1, expression 0, 9 statement(s)",TestInfo.TestContinueDoUntil
 script,Engine,PlayerController,BeginState,,,,,5,"else 0, leave 0, empty 0, if 5, expression 0, 30 statement(s)",PlayerController.GameEnded.BeginState
 script,Engine,PlayerController,EndState,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",PlayerController.GameEnded.EndState
 script,Engine,PlayerController,Possess,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",PlayerController.RoundEnded.Possess
-script,Engine,TestInfo,TestContinueWhile,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 9 statement(s)",TestInfo.TestContinueWhile
+script,Engine,TestInfo,TestContinueWhile,,,,,2,"else 0, leave 1, empty 0, if 1, expression 0, 9 statement(s)",TestInfo.TestContinueWhile
 script,Engine,PlayerController,PlayerMove,,,,,4,"else 2, leave 0, empty 0, if 2, expression 0, 21 statement(s)",PlayerController.RoundEnded.PlayerMove
 script,Engine,TestInfo,TestContinueFor,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 11 statement(s)",TestInfo.TestContinueFor
 script,Engine,PlayerController,FindGoodView,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 21 statement(s)",PlayerController.RoundEnded.FindGoodView
@@ -19294,7 +19294,7 @@ script,Engine,MaplistManager,RenameList,,,,,4,"else 0, leave 0, empty 0, if 4, e
 script,Engine,GameInfo,GetLoadingHint,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 7 statement(s)",GameInfo.GetLoadingHint
 script,Engine,MaplistManager,AddList,,,,,6,"else 1, leave 0, empty 0, if 5, expression 0, 24 statement(s)",MaplistManager.AddList
 script,Engine,MaplistManager,MapChange,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 16 statement(s)",MaplistManager.MapChange
-script,Engine,GameInfo,ParseLoadingHint,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0, 22 statement(s)",GameInfo.ParseLoadingHint
+script,Engine,GameInfo,ParseLoadingHint,,,,,5,"else 0, leave 2, empty 0, if 3, expression 0, 22 statement(s)",GameInfo.ParseLoadingHint
 script,Engine,MaplistManager,GetRecords,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",MaplistManager.GetRecords
 script,Engine,MaplistManager,CreateRecord,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",MaplistManager.CreateRecord
 script,Engine,Canvas,DrawIcon,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",Canvas.DrawIcon
@@ -19511,7 +19511,7 @@ script,GUI,GUIHorzList,PgUp,,,,,5,"else 2, leave 0, empty 0, if 3, expression 0,
 script,GUI,GUIMultiComponent,FindControlIndex,,,,,2,"else 0, leave 0, empty 0, if 2, expression 0, 8 statement(s)",GUIMultiComponent.FindControlIndex
 script,GUI,GUIController,GetViewportCount,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 4 statement(s)",GUIController.GetViewportCount
 script,GUI,GUISlider,adjustValue,,,,,2,"else 1, leave 0, empty 0, if 1, expression 0, 9 statement(s)",GUISlider.adjustValue
-script,GUI,GUIComponent,MenuStateChange,,,,,7,"else 2, leave 0, empty 0, if 5, expression 0, 58 statement(s)",GUIComponent.MenuStateChange
+script,GUI,GUIComponent,MenuStateChange,,,,,7,"else 1, leave 1, empty 0, if 5, expression 0, 58 statement(s)",GUIComponent.MenuStateChange
 script,GUI,GUIComponent,LoseFocus,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 6 statement(s)",GUIComponent.LoseFocus
 script,GUI,GUIController,FindMenuIndex,,,,,3,"else 0, leave 0, empty 0, if 3, expression 0, 10 statement(s)",GUIController.FindMenuIndex
 script,GUI,GUIImageList,LastImage,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 3 statement(s)",GUIImageList.LastImage
@@ -23747,8 +23747,8 @@ script,UWindow,UWindowPulldownMenu,FocusOtherWindow,,,,,5,"else 0, leave 0, empt
 script,UWindow,UWindowWin95LookAndFeel,Menu_DrawMenuBarItem,,,,,1,"else 0, leave 0, empty 0, if 1, expression 0, 10 statement(s)",UWindowWin95LookAndFeel.Menu_DrawMenuBarItem
 script,UWindow,UWindowWin95LookAndFeel,Menu_DrawPulldownMenuItem,,,,,5,"else 1, leave 0, empty 0, if 4, expression 0, 30 statement(s)",UWindowWin95LookAndFeel.Menu_DrawPulldownMenuItem
 census,,,,,,,,17463,`JumpIfNot` tokens the graph resolved,
-census,,,,,,,,3821,with a `Jump` at the end of the then-arm that lands past the target -- an else arm,
-census,,,,,,,,226,whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`),
+census,,,,,,,,3816,with a `Jump` at the end of the then-arm that lands past the target -- an else arm,
+census,,,,,,,,231,whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`),
 census,,,,,,,,11,whose target is the statement right after the jump -- an empty then-arm,
 census,,,,,,,,13405,a conditional forward jump over a straight arm,
 census,,,,,,,,0,"inside a condition (`&&`/`||` short-circuit), i.e. not a branch",

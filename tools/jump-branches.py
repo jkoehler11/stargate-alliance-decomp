@@ -10,9 +10,17 @@ whether the arm has an `else` -- an `if`/`else` compiles to `JumpIfNot <else>` +
 Every `JumpIfNot` is one of five things, and the split is a measurement rather than a reading of the source:
 
 * **empty** -- the target is the statement right after the jump, so the arm is empty (`if (x) ;` survives codegen).
-* **leave** -- the trailing `Jump` is a `break`: the region it skips holds a backward `Jump` whose test begins at or
-  before the condition, so the arm ends by leaving its own loop rather than by skipping an else body. This is what a
-  loop exit looks like, and the `Jump` that reaches for the loop's end is byte-identical in shape to an else skip.
+* **leave** -- the trailing `Jump` is a `break` or a `continue`: the arm ends by leaving its own loop (or its
+  `switch`) rather than by skipping an else body. This is what a loop exit looks like, and the `Jump` that
+  reaches for the loop's end is byte-identical in shape to an else skip. Four shapes are recognised, each
+  measured on the join rather than by eye: the region the trailing `Jump` skips holds a backward
+  `Jump`/`JumpIfNot` whose target begins at or before the condition (a `for`/`while` back edge, and a
+  `do…until`'s bottom test, which is conditional); the arm is the trailing `Jump` alone and it lands on a
+  backward jump that returns to the condition (`if (X) continue;` -- a `continue` in a `for` lands on the
+  increment, not on the back edge); the trailing `Jump` is the arm's last statement and lands on the loop's
+  `IteratorPop` (a `foreach`, which has no back edge); and the arm's landing follows the case list's terminator
+  (`0xffff`) as its previous statement (`if (X) { …; break; }` inside a `switch`, whose `break` leaves the switch
+  and reaches no loop test at all).
 * **else** -- the statement in front of the target is a `Jump` that lands past it, and no loop of the arm's own
   returns from the skipped region: the then-arm skips an else.
 * **if** -- everything else: a conditional forward jump over a straight arm.
@@ -101,15 +109,40 @@ def classify(nodes, edges):
             while which < rest and stmts[which]["offset"] < by_edge[prev["offset"]][2]:
                 which += 1
             skipped = stmts[span:which]
-            leaves = any(n["name"] == "Jump" and n["offset"] in by_edge
-                         and by_edge[n["offset"]][2] < n["offset"] and by_edge[n["offset"]][2] <= offset
-                         for n in skipped)
+
+            def back(n):
+                """A jump that returns to the condition or before it -- this loop's own back edge."""
+                return (n["offset"] in by_edge and by_edge[n["offset"]][2] < n["offset"]
+                        and by_edge[n["offset"]][2] <= offset)
+
+            # `JumpIfNot` as well as `Jump`: a `do…until` is tested at the bottom and jumps back conditionally, so
+            # a `break` out of it skips a body whose only back edge is not a `Jump`. The target test keeps a loop
+            # that merely *starts* inside the skipped region out of this (`nodes4`'s second case in `selftest`).
+            leaves = any(n["name"] in ("Jump", "JumpIfNot") and back(n) for n in skipped)
             # A `foreach` has no `Jump` back edge -- the engine's `IteratorNext` advances it and the loop leaves
             # through `IteratorPop` -- so a then-arm that ends by landing *on* the `IteratorPop` is the same
             # `break`, one loop kind over. A `foreach` inside an else body ends the arm with its own `IteratorPop`,
             # which is the arm's last statement and not the jump's target, so this does not fire on it.
             if not leaves and which < len(stmts) and stmts[which]["offset"] == by_edge[prev["offset"]][2] \
                     and stmts[which]["name"] == "IteratorPop":
+                leaves = True
+            # `if (X) continue;` -- the whole then-arm is the one `Jump`, and it lands on the loop's increment:
+            # the back edge that returns to the condition is the *next* statement, past the jump's target rather
+            # than inside the region it skips. Requiring the arm to be the `Jump` alone is what keeps a real
+            # `if`/`else` at the bottom of a loop body (whose trailing `Jump` lands right in front of the same
+            # back edge) an `else`.
+            if not leaves and follow == prev["offset"] and which < len(stmts) \
+                    and stmts[which]["name"] in ("Jump", "JumpIfNot") and back(stmts[which]):
+                leaves = True
+            # `if (X) { …; break; }` inside a `switch`: the `break` leaves the switch, so there is no loop test
+            # to find. What it does leave behind is the case list's terminator -- a `Case` whose operand is
+            # `0xffff` -- and the switch's own code begins on the statement right after it, so the terminator is
+            # the last statement before the trailing `Jump`'s landing. That adjacency is what separates this from
+            # a `switch` *inside* an else body: there the terminator is only one statement among the many the arm
+            # skips, so it is not the one the landing follows.
+            if not leaves and which > 0 and stmts[which - 1]["name"] == "Case" \
+                    and len(stmts[which - 1]["operands"]) == 2 \
+                    and (stmts[which - 1]["operands"][0] | (stmts[which - 1]["operands"][1] << 8)) == 0xFFFF:
                 leaves = True
             out.append((offset, "leave" if leaves else "else", value, target))
         else:
@@ -398,6 +431,39 @@ def selftest():
     got, _n = classify(nodes5, [(0, "JumpIfNot", 8, 8), (4, "Jump", 14, 14), (10, "JumpIfNot", 2, 2)])
     if got != [(0, "leave", 8, 8), (10, "if", 2, 2)]:
         print("FAIL jump-branches: a foreach break read as %r" % (got,))
+        return 1
+    # `if (X) continue;`: the then-arm is the one `Jump`, it lands on the loop's increment at 8, and the back edge
+    # to the condition at 0 is the *next* statement -- past the jump's target, not inside what it skips.
+    nodes6 = [node(0, "JumpIfNot", 2), node(2, "Jump", 3), node(5, "Let", 6), node(8, "Jump", 9),
+              node(10, "Return", 11)]
+    got, _n = classify(nodes6, [(0, "JumpIfNot", 5, 5), (2, "Jump", 8, 8), (8, "Jump", 0, 0)])
+    if got != [(0, "leave", 5, 5)]:
+        print("FAIL jump-branches: a `continue` read as %r" % (got,))
+        return 1
+    # A `do…until` `break`: the loop's only back edge is the bottom test, a `JumpIfNot` to 0 inside the region the
+    # trailing `Jump` skips -- a `Jump`-only rule saw an else here.
+    nodes7 = [node(0, "JumpIfNot", 2), node(2, "Jump", 3), node(3, "Let", 4), node(4, "Let", 5),
+              node(6, "JumpIfNot", 7), node(10, "Return", 11)]
+    got, _n = classify(nodes7, [(0, "JumpIfNot", 3, 3), (2, "Jump", 10, 10), (6, "JumpIfNot", 0, 0)])
+    if got != [(0, "leave", 3, 3), (6, "if", 0, 0)]:
+        print("FAIL jump-branches: a `do…until` break read as %r" % (got,))
+        return 1
+    # A `switch` arm's `break`: no loop test anywhere, but the case list's `0xffff` terminator at 6 is the last
+    # statement before the trailing `Jump 10` landing.
+    case = {"offset": 6, "name": "Case", "operands": b"\xff\xff", "end": 7, "children": [], "opcode": 0,
+            "native": None}
+    nodes8 = [node(0, "JumpIfNot", 2), node(2, "Jump", 3), node(3, "Let", 4), case, node(10, "Return", 11)]
+    got, _n = classify(nodes8, [(0, "JumpIfNot", 3, 3), (2, "Jump", 10, 10)])
+    if got != [(0, "leave", 3, 3)]:
+        print("FAIL jump-branches: a switch arm's break read as %r" % (got,))
+        return 1
+    # The same arm with the terminator past the landing is an else: that is a switch inside the else body, and the
+    # arm skips it along with everything else rather than breaking out of it.
+    case2 = dict(case, offset=12)
+    nodes9 = nodes8[:3] + [node(10, "Return", 11), case2]
+    got, _n = classify(nodes9, [(0, "JumpIfNot", 3, 3), (2, "Jump", 10, 10)])
+    if got != [(0, "else", 3, 3)]:
+        print("FAIL jump-branches: a switch inside an else body read as %r" % (got,))
         return 1
     # A case list with a shared body, and a switch whose next statement is not a `Case`.
     stmts = [node(0, "Switch", 1), node(1, "Case", 2), node(2, "Case", 3), node(3, "Let", 4),

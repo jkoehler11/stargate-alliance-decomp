@@ -13206,3 +13206,49 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   per-function artifacts never see -- `tools/state-code.py` already reads state bodies, so the next read is
   whether those 252 keywords are the states' own label loops (a `switch`-free `if` chain in the state's main
   loop) rather than a text revision.
+
+### Execution notes (2026-11-17, the class-level `more` population is the state code, and three loop shapes leave the `else` count)
+
+- **Task.** The previous note's next measurement, both halves of it: the 3 shortfall rows a `continue` does not
+  explain, and the class-level `more` population (34 classes, 252 keywords outside every function).
+- **The 252 keywords are the states' own compiled arms, arm for arm.** The branch census walks `Function` exports
+  only, so a state body's keywords had no arms on the other side of the class join; `tools/state-code.py` reads
+  those payloads now and classifies each state's jump graph with `tools/jump-branches.py`'s rule, mapping its
+  widened operands back to payload offsets (every one lands on a token start, 863 of 863). **166** walks carry
+  **610** `JumpIfNot` and they split **252** `else` arms / **358** straight `if`s / **0** empty / **0** leave /
+  **0** expression, and on the **120** states whose text block and walk both exist the text's `else` count equals
+  the arm count on **all 120**. That is the whole population (`text_else` 252 in `inventory/state_code.csv`), so
+  the class-level `more` verdict was a scope mismatch, not a second revision of the text.
+- **The class count is now stated at both scopes.** `inventory/text_branches.csv` gains `verdict_fn`: a class's
+  in-body keywords against the `Function` arms it has. **928 of 967** classes agree (**95.97%**), **0** spell more
+  and **39** fewer, where the class-level reading has 898 / 34 / 35 -- so the four `more` classes that stay short
+  are the function-level `continue` gap and everything else is state code.
+- **Three loop shapes the `leave` rule could not see, each accepted on the join.** A `break` out of a
+  **`do…until`** leaves a loop whose only back edge is the bottom test, a `JumpIfNot` rather than a `Jump` (2 arms,
+  `GameInfo.ParseLoadingHint`); a `break` out of a **`switch`** leaves the switch and reaches no loop test at all,
+  and its landing is the statement right after the case list's `0xffff` terminator (1 arm,
+  `GUIComponent.MenuStateChange`); a `continue` onto a `for`'s increment lands past the trailing `Jump`'s target,
+  where the back edge begins rather than inside what the arm skips (2 arms, `Engine.TestInfo`'s two test
+  functions). All three were scored the way the first two rules were: **0** functions whose `else` count already
+  agreed with its text carry an arm any rule reclassifies, and **0** of the 22 the guards explain do -- the first
+  reading of the switch rule failed that test in three functions and was tightened to the adjacency before it
+  shipped.
+- **What it moved.** `inventory/jump_branches.csv`: `else` **3,821 -> 3,816**, `leave` **226 -> 231**; the 10
+  moved arms are 5 `else`->`leave` plus 5 that the first switch rule misread and the tightened one keeps as
+  `else`. `inventory/text_branches.csv`: class agreement **896 -> 898**, `less` 37 -> **35**, `more` 34 unchanged
+  (it is a scope count), and the macro-set table re-scored (the ranking does not move -- `XBox`+`DEBUG` still
+  breaks 0 and fixes 22, the others 1 to 27). `inventory/text_branch_functions.csv`: shortfall **89 arms in 59
+  functions -> 84 in 55**, **54** within the body's `continue` count and **1** beyond
+  (`CommandInterface.TestTraceActors`), surplus and unpaired stay **0**, and the 22 guard-explained functions stay
+  exact.
+- **Files.** `tools/state-code.py` (`arm_split`, five arm columns, seven census keys, the doc paragraph, a
+  self-test identity) + `tools/jump-branches.py` (four `leave` rules, five self-test cases, the docstring) +
+  `tools/text-branches.py` (`verdict_fn`, `joined_fn`/`agree_fn`/`more_fn`/`less_fn`, a scope paragraph in the
+  generated block) + `inventory/state_code.csv` + `inventory/jump_branches.csv` + `inventory/text_branches.csv` +
+  `inventory/text_branch_functions.csv` + `docs/systems/AI.md` + `docs/BYTECODE.md` (the shortfall paragraph, the
+  macro table, both generated blocks) + `docs/UNKNOWNS.md` U22 + `docs/ARTIFACTS.md` +
+  `inventory/artifact_hashes.csv` + this note. Two dump reads (2.1 s and 5.4 s) and one 6 s state read; no boot,
+  no Ghidra.
+- **Next measurement.** `CommandInterface.TestTraceActors` is the one function whose gap exceeds its `continue`
+  count (3 against 2). It is a single 35-arm body, so the next read is arm by arm against its text statements --
+  whether the third is a `continue` its landing shape hides or a body the record compiled from another revision.

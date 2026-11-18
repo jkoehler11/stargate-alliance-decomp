@@ -2044,7 +2044,7 @@ immediately in front of a `JumpIfNot`'s target says whether the arm has an `else
 counting that is a measurement of the build's own shape rather than a reading of the shipped text.
 
 <!-- generated:jump-branches -->
-**17,463** `JumpIfNot` tokens resolve to **3,821** branches with an `else` arm (**21.88%**), **226** whose then-arm ends by leaving its own loop -- a `break` (**1.29%**) -- **13,405** conditional jumps over a straight arm (**76.76%**) and **11** empty then-arms (**0.06%**). **9** of them jump **backward**, i.e. a loop test at the bottom of its body, and **0** name no statement at all -- a `&&`/`||` short circuit would be the only way that happens, and this build has none, so a condition's sub-jumps take the same shape as an `if` and the stream alone cannot separate them. A then-arm is -15 to 22 statements long, counted as the distance from the jump to its target -- negative for a loop test, as expected.
+**17,463** `JumpIfNot` tokens resolve to **3,816** branches with an `else` arm (**21.85%**), **231** whose then-arm ends by leaving its own loop -- a `break` (**1.32%**) -- **13,405** conditional jumps over a straight arm (**76.76%**) and **11** empty then-arms (**0.06%**). **9** of them jump **backward**, i.e. a loop test at the bottom of its body, and **0** name no statement at all -- a `&&`/`||` short circuit would be the only way that happens, and this build has none, so a condition's sub-jumps take the same shape as an `if` and the stream alone cannot separate them. A then-arm is -15 to 22 statements long, counted as the distance from the jump to its target -- negative for a loop test, as expected.
 
 **A switch is a chain, and its arms are counted here too.** **200** `Switch` tokens over **174** scripts hold **200** case lists covering **1,044** of the **1,044** `Case` tokens (**0** are in no list), and a list runs **1** to **22** cases -- its last is the `0xffff` terminator, so a list of `n` carries `n-1` testable arms. **40** of those arms are **empty**, i.e. their body is the next case of their list: the source's shared `case A: case B:` body, which a decompiler must render as one arm with two values rather than as an arm that does nothing. **2** list(s) carry only the terminator, i.e. a `switch` with no case at all (`CreditsPage.ButtonClick`, `ExtrasPage.ButtonClick`); **0** `Switch` tokens are followed by a statement that is not a `Case`, which is this walk's test for a list that is not there, so no switch in this build is missing one. Both counts are rows of `inventory/jump_branches.csv`, which is the population that shape needs before it can be called a compiler defect rather than a reader's.<!-- /generated:jump-branches -->
 
@@ -2082,13 +2082,15 @@ by class. `tools/text-branches.py` masks each class's text first (comments, then
 length-preserving mask so both counts read the same offsets) and then counts the keywords and operators.
 
 <!-- generated:text-branches -->
-**The text this build compiles spells 3,985 `else`** over the 2,319 classes whose `ScriptText` parses (`62` more sit in a build guard it never compiled), against the **3,821** arms the bytecode carries: **896 of 967** classes the branch census also has agree exactly on the count (**92.7%**), **34** spell more and **37** fewer, and 1,352 more carry text with no branch at all in the bytecode -- text that declares 566 function bodies between them. Per class the source is therefore an **92.7%** oracle, and the corpus totals agree to 164 in 3,821 only because the two sides cancel.
+**The text this build compiles spells 3,985 `else`** over the 2,319 classes whose `ScriptText` parses (`62` more sit in a build guard it never compiled), against the **3,816** arms the bytecode carries: **898 of 967** classes the branch census also has agree exactly on the count (**92.9%**), **34** spell more and **35** fewer, and 1,352 more carry text with no branch at all in the bytecode -- text that declares 566 function bodies between them. Per class the source is therefore an **92.9%** oracle, and the corpus totals agree to 169 in 3,816 only because the two sides cancel.
 
 **One `JumpIfNot` per condition term is the codegen's rule and it holds**: `if` + `while` + `for` over those 967 joined classes is **18,178** terms for **17,463** `JumpIfNot` tokens, exact on **835** classes (**86.3%**). **424** of them carry no `&&`/`||` and are exact **413** times (**97.4%**), while the **543** that do carry one are exact **422** times (**77.7%**) -- so a `&&`/`||` adds **no** jump: UnrealScript's boolean operators are strict, not short-circuit, which is why the branch census found 0 jumps naming a non-statement; the 3,686 `&&` and 1,568 `||` in this text are therefore **0** arms, and the model's 715 surplus terms sit in the 132 joined classes that are not exact -- a class-level population (the state code and the unresolved jumps below), not a per-function defect.
 
-**The build guards are evaluated, and they are what the one-sided classes were.** The 2,319 class texts carry **724** `#if…#endif` parts, **322** of them in a branch this build does not compile -- the corpus is the Xbox image (`default.xbe`) and `XBox` and `DEBUG` are defined in it, so the `PS2` and `PC` branches are the ones it never built -- and those parts hold **62** `else` keywords plus **263** `if`, **11** `for` and **0** `while`. A further **4** keywords sit in a live block that is empty (`else { }`), which has nothing to skip and so no arm. Every count above is the compiled part: the `else` column is 3,985 against the record's 3,821 arms, and `--check-functions` holds `live + dead + empty` to each text's raw keyword count, so the split is a measurement and not a subtraction done in prose. The macro set is not assumed either: `docs/BYTECODE.md`'s guard section scores the alternatives on this join, and the number that decides between them is the functions a reading *breaks*, not the agreement it buys.
+**The build guards are evaluated, and they are what the one-sided classes were.** The 2,319 class texts carry **724** `#if…#endif` parts, **322** of them in a branch this build does not compile -- the corpus is the Xbox image (`default.xbe`) and `XBox` and `DEBUG` are defined in it, so the `PS2` and `PC` branches are the ones it never built -- and those parts hold **62** `else` keywords plus **263** `if`, **11** `for` and **0** `while`. A further **4** keywords sit in a live block that is empty (`else { }`), which has nothing to skip and so no arm. Every count above is the compiled part: the `else` column is 3,985 against the record's 3,816 arms, and `--check-functions` holds `live + dead + empty` to each text's raw keyword count, so the split is a measurement and not a subtraction done in prose. The macro set is not assumed either: `docs/BYTECODE.md`'s guard section scores the alternatives on this join, and the number that decides between them is the functions a reading *breaks*, not the agreement it buys.
 
-**The `less` population's 82-arm net is a cancellation of two larger counts, and the split is by function, not by class.** Its 37 classes carry 571 `else` arms: **0** sit in a function whose name the live text does not declare at all, **83** are the shortfall inside a function it declares, and the rest are spelled exactly. Its text in turn spells 489 `else` keywords, of which **1** sit outside any function body -- 1 inside a `state` block and 0 outside every block -- and 0 in a declared body the record gives no arm. So the net of 82 is 83 missing arms against 1 keywords outside a function, and **the 896 classes that agree on the count carry the same three populations** (0 absent, 0 short, 0 outside, net +0): a net of zero is two equal mismatches, not a class whose text is the revision compiled.
+**The class count is two scopes, and the class-level `more` population is the state code.** **253** `else` keywords of those 3,985 sit outside every function body -- **252** in a `state` block and **1** outside every block -- while `inventory/jump_branches.csv` carries `Function` arms only, so a class count mixes the two. At the scope both sides are counted on -- the text's in-body keywords against the arms the record carries for those bodies -- **928 of 967** classes agree (**95.97%**), **0** spell more and **39** fewer, and `verdict_fn` in `inventory/text_branches.csv` holds that verdict per class. So the 34 classes the class-level count calls `more` are the ones whose text spells state code, not a second revision of the class: the state payloads carry those keywords as their own `else` arms, measured in `docs/systems/AI.md`.
+
+**The `less` population's 77-arm net is a cancellation of two larger counts, and the split is by function, not by class.** Its 35 classes carry 512 `else` arms: **0** sit in a function whose name the live text does not declare at all, **78** are the shortfall inside a function it declares, and the rest are spelled exactly. Its text in turn spells 435 `else` keywords, of which **1** sit outside any function body -- 1 inside a `state` block and 0 outside every block -- and 0 in a declared body the record gives no arm. So the net of 77 is 78 missing arms against 1 keywords outside a function, and **the 898 classes that agree on the count carry the same three populations** (0 absent, 0 short, 0 outside, net +0): a net of zero is two equal mismatches, not a class whose text is the revision compiled.
 
 **The declaration rule was still short of the grammar, in four shapes, and this census moved with it.** Declarations are counted with `class-text-bodies.py`'s rule now: the grammar's keywords and modifiers, a modifier after the keyword (`function static`), a qualified return type (`function Actor.eDoubleClickDir Foo(`), and a parameter list that starts on the line after the name -- which is how the engine's own movement API is written, so `ServerMove`, `LongClientAdjustPosition`, `CallServerMove`, `ReplicateMove` and `MoveAutonomous` are all declared in `PlayerController`'s text and their bodies were outside every function. The four-modifier rule read **9,860** of the corpus's **11,523** declarations and `#635`'s same-line rule **11,479**. **No arm is left without a declaring body, and 1 `else` keyword(s) in the whole corpus sit outside every block** (named in the table below), against the previous reading's 65 absent arms behind 8 names and 107 outside keywords.
 
@@ -2096,12 +2098,12 @@ length-preserving mask so both counts read the same offsets) and then counts the
 
 **The keywords outside every function are state code, and the ones outside every block are prose.** The 253 `else` keywords the text spells outside a function body split **118** at a `state` body's own statement level -- the label code a state's main loop is written in -- and **134** inside a nested block of that code, across **34** classes: the game's bots and turret guns, `BotEnemy` and `BotSG` first among them. What is left outside every block is **1** keyword(s) in 1 class text(s), named in the table below, and 1 of them sit in the **22** of the 2,319 texts that begin inside a `/* ... */` comment: a front-truncated `ScriptText` reads its leading prose as code, the mirror of the tail truncation `UWindowURLTextArea` shows. So the bucket is not a reader gap -- no `else` in this corpus sits at class level.
 
-**The class-set test moves with the rule and still does not decide the arm count.** 8 of the 37 `less` classes declare fewer functions than their record has, 23 the same number and 6 more, against 46 of 896 agreeing classes that also declare fewer (721 the same number, 129 more) -- so a function count is not what an arm count is missing. The class-level verdicts move with the same rule -- (896 agree, 34 more, 37 less, 1,352 with no branch over the joined classes) -- because a class agrees only when every function in it does; the per-function row is where the size effect that made the class figure the weaker one goes away.
+**The class-set test moves with the rule and still does not decide the arm count.** 6 of the 35 `less` classes declare fewer functions than their record has, 23 the same number and 6 more, against 48 of 898 agreeing classes that also declare fewer (721 the same number, 129 more) -- so a function count is not what an arm count is missing. The class-level verdicts move with the same rule -- (898 agree, 34 more, 35 less, 1,352 with no branch over the joined classes) -- because a class agrees only when every function in it does; the per-function row is where the size effect that made the class figure the weaker one goes away.
 
 | population | classes | `else` arms | in a function the text does not declare | short in a declared body | text `else` outside any function | net |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `less` | 37 | 571 | 0 | 83 | 1 | +82 |
-| `agree` | 896 | 2,684 | 0 | 0 | 0 | +0 |
+| `less` | 35 | 512 | 0 | 78 | 1 | +77 |
+| `agree` | 898 | 2,738 | 0 | 0 | 0 | +0 |
 | `more` | 34 | 566 | 0 | 6 | 252 | -246 |
 
 | class text | `else` outside every block |
@@ -2113,9 +2115,9 @@ length-preserving mask so both counts read the same offsets) and then counts the
 | AmbientCreatures | 18 | 9 | 1 | 0 | 32 | 29 |
 | Core | 7 | 2 | 0 | 0 | 1 | 1 |
 | Editor | 16 | 12 | 0 | 0 | 12 | 12 |
-| Engine | 367 | 144 | 1 | 14 | 879 | 911 |
+| Engine | 367 | 145 | 1 | 13 | 879 | 907 |
 | Fire | 7 | 0 | 0 | 0 | 0 | 0 |
-| GUI | 148 | 52 | 1 | 4 | 215 | 221 |
+| GUI | 148 | 53 | 1 | 3 | 215 | 220 |
 | GamePlay | 262 | 80 | 1 | 0 | 91 | 85 |
 | IpDrv | 14 | 7 | 0 | 1 | 39 | 41 |
 | Sharpeffects | 158 | 6 | 0 | 0 | 11 | 11 |
@@ -2175,11 +2177,11 @@ function rows fails the gate, which is what makes a per-function row a second re
 rather than a second measurement.
 
 <!-- generated:text-branch-functions -->
-**The same join one level down.** **5,771** functions carry a branch on at least one side: **5,770** the compiled text declares with a body that holds a condition, **5,737** the branch census has a `JumpIfNot` in, **5,736** both, **34** text-only and **1** record-only; **31** of the text-only bodies carry no compiled branch text at all -- every keyword they spell sits in a guard part this build never compiled -- and **3** are bodies whose compiled text has a condition the record has no jump for (19 of the 34 sit inside a guard, which is all the old `pp` flag measured). On the **5,736** functions both sides have, the `else` count is equal on **5,677** (**99.0%**) -- 3,677 of them because neither side spells one at all, so on the **2,059** functions that have an arm or a keyword the agreement is **2,000** (**97.1%**) -- short of the record on **59**, ahead of it on **0**, and **0** spell `else` in a body the record gives no arm for at all; the condition-term model is exact on **5,674** (**98.9%**), with **7** functions ahead and **55** behind.
+**The same join one level down.** **5,771** functions carry a branch on at least one side: **5,770** the compiled text declares with a body that holds a condition, **5,737** the branch census has a `JumpIfNot` in, **5,736** both, **34** text-only and **1** record-only; **31** of the text-only bodies carry no compiled branch text at all -- every keyword they spell sits in a guard part this build never compiled -- and **3** are bodies whose compiled text has a condition the record has no jump for (19 of the 34 sit inside a guard, which is all the old `pp` flag measured). On the **5,736** functions both sides have, the `else` count is equal on **5,681** (**99.0%**) -- 3,680 of them because neither side spells one at all, so on the **2,056** functions that have an arm or a keyword the agreement is **2,001** (**97.3%**) -- short of the record on **55**, ahead of it on **0**, and **0** spell `else` in a body the record gives no arm for at all; the condition-term model is exact on **5,674** (**98.9%**), with **7** functions ahead and **55** behind.
 
-**Two codegen rules close the text-ahead population, and what is left is the record's.** Every function whose raw `else` count was ahead of the record, or that spelled one in a body with no arm at all -- **22** of them -- is exact once only compiled text counts: **0** still spell more than the record has arms (**0** keywords) and **0** spell one with no arm at all (**0**). Both rules are text facts, not stream readings: an `else` in a `#ifdef`/`#ifndef` part this build never compiles (**62** keywords in these bodies) never reached the compiler, and an `else` whose block is empty (**4** in these bodies) has nothing to skip, so `if (X) y; else { }` is the straight-if shape the record carries. The other direction does not move: **59** functions carry more arms than their text spells, **56** of them with a gap no larger than the body's `continue` count -- the `if (X) continue;` shape -- and **3** beyond it, listed below. The model's own falsifier is **0**: functions that agreed on the raw count and are short once only compiled text counts -- zero under this macro set, and the alternatives break 1 to 27 of them (`docs/BYTECODE.md`'s guard section).
+**Two codegen rules close the text-ahead population, and what is left is the record's.** Every function whose raw `else` count was ahead of the record, or that spelled one in a body with no arm at all -- **22** of them -- is exact once only compiled text counts: **0** still spell more than the record has arms (**0** keywords) and **0** spell one with no arm at all (**0**). Both rules are text facts, not stream readings: an `else` in a `#ifdef`/`#ifndef` part this build never compiles (**62** keywords in these bodies) never reached the compiler, and an `else` whose block is empty (**4** in these bodies) has nothing to skip, so `if (X) y; else { }` is the straight-if shape the record carries. The other direction does not move: **55** functions carry more arms than their text spells, **54** of them with a gap no larger than the body's `continue` count -- the `if (X) continue;` shape -- and **1** beyond it, listed below. The model's own falsifier is **0**: functions that agreed on the raw count and are short once only compiled text counts -- zero under this macro set, and the alternatives break 1 to 27 of them (`docs/BYTECODE.md`'s guard section).
 
-**A class whose totals agree is not a class whose functions agree.** The 4,263 functions inside the classes whose own `else` count agrees split **4,263** exact / 0 short / 0 ahead / 0 with no arm; inside the `less` classes the 900 functions split 845 / 55 / 0 / 0, and inside the `more` classes the 573 functions split 569 / 4 / 0 / 0. So a class-level agreement is a function-level cancellation on **0** of its functions, and a class-level disagreement is one the text spells away on **55** of the `less` functions and **4** of the `more` ones -- the opposite of the same number, in the opposite population.
+**A class whose totals agree is not a class whose functions agree.** The 4,388 functions inside the classes whose own `else` count agrees split **4,388** exact / 0 short / 0 ahead / 0 with no arm; inside the `less` classes the 775 functions split 724 / 51 / 0 / 0, and inside the `more` classes the 573 functions split 569 / 4 / 0 / 0. So a class-level agreement is a function-level cancellation on **0** of its functions, and a class-level disagreement is one the text spells away on **51** of the `less` functions and **4** of the `more` ones -- the opposite of the same number, in the opposite population.
 
 **The operator rule is per function, where the operators are.** Of the 5,736 functions both sides have a branch in, **2,057** carry `&&` or `||` in their text and are exact on the term count **2,019** times (**98.2%**); the **3,679** that carry neither are exact **3,655** times (**99.3%**). A class-level version of this test cannot say that, because a class with one `&&` anywhere is lumped with every function in it that has none.
 
@@ -2187,9 +2189,9 @@ rather than a second measurement.
 
 | class verdict | functions | `else` agree | short | ahead | no arm |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `agree` | 4,263 | 4,263 | 0 | 0 | 0 |
+| `agree` | 4,388 | 4,388 | 0 | 0 | 0 |
 | `more` | 573 | 569 | 4 | 0 | 0 |
-| `less` | 900 | 845 | 55 | 0 | 0 |
+| `less` | 775 | 724 | 51 | 0 | 0 |
 
 | function | text `else` | arms | terms | `JumpIfNot` |
 | --- | ---: | ---: | ---: | ---: |
@@ -2208,19 +2210,17 @@ rather than a second measurement.
 | function | arms - text | `continue` | dead `else` |
 | --- | ---: | ---: | ---: |
 | `CommandInterface.testtraceactors` | 3 | 2 | 0 |
-| `GameInfo.parseloadinghint` | 2 | 0 | 0 |
-| `GUIComponent.menustatechange` | 1 | 0 | 0 |
 <!-- /generated:text-branch-functions -->
 
 **The class figure is a size effect, and the per-function row is the oracle a rebuild can use.** A class
-agrees only when every function in it does, so **92.7%** of the classes against **99.0%** of the functions that
-carry an `else` at all are one measurement at two granularities. The rows say which function: the **896** classes
-that agree on the count are exact on **all 4,263** of their functions, so at function level their net of zero is
+agrees only when every function in it does, so **92.9%** of the classes against **99.0%** of the functions that
+carry an `else` at all are one measurement at two granularities. The rows say which function: the **898** classes
+that agree on the count are exact on **all 4,388** of their functions, so at function level their net of zero is
 no near-miss at all -- two of the three that used to be here (`ReetouDevice.addsprayedpawn`,
 `UnrealPawn.isinloadout`) were loop exits the arm census had counted as else arms.
-The disagreement is now **one-sided and it is the record's**: **59** functions carry more `else` arms than their
-text spells (**89** arms) against **0** the other way once the guards and the empty blocks are out of the count
-(below), and the shortfall is `StargateGame` (23 functions) and `Engine` (20) first, then `GUI` (6),
+The disagreement is now **one-sided and it is the record's**: **55** functions carry more `else` arms than their
+text spells (**84** arms) against **0** the other way once the guards and the empty blocks are out of the count
+(below), and the shortfall is `StargateGame` (23 functions) and `Engine` (17) first, then `GUI` (5),
 `StargateContent` (4), `UWindow` (3) and one each in `IpDrv`, `StargateMenus` and `StargateVehicles` -- the
 framework's and the game's own code, where the shipped text is the side that misses arms the compiler emitted.
 
@@ -2234,15 +2234,21 @@ part of its 11 `jumps_unresolved` tokens), and `Ammo.UsedBy` names a function `E
 `Pickup`, `Vehicle` and four trigger classes but **not** on `Ammo` -- the text's local body was not the one
 compiled.
 
-**What is left of the shortfall is the `continue` arm, bounded per body by the text's own `continue` count.**
-The **59** functions that carry more arms than their text spells are the record's side of this join, and the shape
-is `if (X) continue;`: the then-arm is a single `Jump` onto the loop's own increment, and `if (X) {}` over an
-`else` compiles to exactly the same two tokens -- `MasterServerGameStats.Logf` is that shape in this corpus, an
-empty then-block (its body is a comment) over a real `else if`. The bound is measured rather than assumed:
-**56** of the 59 have a gap no larger than the body's `continue` count, and the **3** that exceed it are named in
-the generated block above (`GameInfo.ParseLoadingHint` and `GUIComponent.MenuStateChange` have no `continue` at
-all, `CommandInterface.TestTraceActors` has 2 against a gap of 3). Those three are shapes a `continue` does not
-explain, and they are listed instead of rounded. The other direction reads **0**: no function in the corpus
+**What is left of the shortfall is the `continue` arm, bounded per body by the text's own `continue` count, and
+three more loop shapes the arm census now reads.** The **55** functions that carry more arms than their text
+spells are the record's side of this join, and the bulk of the shape is `if (X) continue;`: the then-arm is a
+single `Jump` onto the loop's own increment, and `if (X) {}` over an `else` compiles to exactly the same two
+tokens -- `MasterServerGameStats.Logf` is that shape in this corpus, an empty then-block (its body is a comment)
+over a real `else if`. The bound is measured rather than assumed: **54** of the 55 have a gap no larger than the
+body's `continue` count, and the **1** that exceeds it is `CommandInterface.TestTraceActors` (2 against a gap of
+3), named in the generated block above. Two of the three that used to be here were shapes the `leave` rule was
+missing, not `continue`s: a `break` out of a **`do…until`** (`GameInfo.ParseLoadingHint`) leaves a loop whose
+only back edge is the bottom test, a `JumpIfNot` rather than a `Jump`, and a `break` out of a **`switch`**
+(`GUIComponent.MenuStateChange`) reaches no loop test at all -- it leaves behind the case list's `0xffff`
+terminator. `tools/jump-branches.py` reads both now, and the `continue` landing on a `for`'s increment, so the
+`else` arms move **5** to `leave` and the shortfall falls from 89 arms in 59 functions to **84 in 55**. Neither
+rule reclassifies a function whose `else` count already agreed with its text (**0** reclassified in any agreeing
+function, **0** in the 22 the guards explain). The other direction reads **0**: no function in the corpus
 spells an `else` the record has no arm for, once the guards (**62** keywords in a part this build never compiled)
 and the **4** empty `else { }` blocks are out of the count. That is what a rebuild grades against: function by
 function, **99.0%** of the bodies that carry an `else` at all agree exactly.
@@ -2268,14 +2274,14 @@ fixes:
 
 | macros defined | `else` agree | short | surplus | unpaired | breaks | fixes |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `XBox` + `DEBUG` | 5,677 | 59 | 0 | 0 | **0** | 22 |
-| `XBox` | 5,676 | 60 | 0 | 0 | 1 | 22 |
-| `XBox` + `PC` | 5,675 | 60 | 1 | 0 | 1 | 21 |
-| `PC` | 5,669 | 67 | 0 | 0 | 8 | 22 |
-| nothing | 5,668 | 68 | 0 | 0 | 8 | 21 |
-| `XBox`, case-sensitive | 5,668 | 68 | 0 | 0 | 8 | 21 |
-| `XBox` + `PS2` | 5,647 | 79 | 3 | 7 | 20 | 12 |
-| `PS2` | 5,639 | 87 | 3 | 7 | 27 | 11 |
+| `XBox` + `DEBUG` | 5,681 | 55 | 0 | 0 | **0** | 22 |
+| `XBox` | 5,680 | 56 | 0 | 0 | 1 | 22 |
+| `XBox` + `PC` | 5,679 | 56 | 1 | 0 | 1 | 21 |
+| `PC` | 5,673 | 63 | 0 | 0 | 8 | 22 |
+| nothing | 5,672 | 64 | 0 | 0 | 8 | 21 |
+| `XBox`, case-sensitive | 5,672 | 64 | 0 | 0 | 8 | 21 |
+| `XBox` + `PS2` | 5,651 | 75 | 3 | 7 | 20 | 12 |
+| `PS2` | 5,643 | 83 | 3 | 7 | 27 | 11 |
 
 `XBox` + `DEBUG` is the only set that breaks nothing, and it is the one the artifact records. Two things follow
 that a reading of the image name alone would not give: **`DEBUG` is defined in the shipped build** (one function,

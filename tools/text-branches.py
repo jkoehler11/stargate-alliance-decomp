@@ -132,7 +132,7 @@ FIELDS = ["kind", "package", "class", "function", "live_else", "dead_else", "dea
           "byte_empty",
           "byte_expression", "byte_leave", "fn_arms", "fn_absent", "fn_short", "fn_long", "fn_outside", "fn_state",
           "fn_state_label", "fn_state_nested", "fn_top", "fn_unpaired", "fn_else", "fn_dead_else", "fn_lost",
-          "verdict", "count", "note"]
+          "verdict", "verdict_fn", "count", "note"]
 
 CENSUS_NOTE = {
     "classes": "classes whose `ScriptText` was readable",
@@ -192,6 +192,10 @@ CENSUS_NOTE = {
     "decl_trailing": "declarations with a modifier after the keyword (`function static`)",
     "states_case_folded": "`state` declarations spelled `State` with a capital (strict shape, not a regex diff)",
     "state_capital_classes": "classes carrying one -- lost to a case-sensitive read",
+    "joined_fn": "classes with a readable class text and a branch in the record (the function-scope verdict)",
+    "agree_fn": "of those, the ones whose in-body `else` count equals the record's `else` arms",
+    "more_fn": "of those, the text spells more inside its function bodies",
+    "less_fn": "of those, the record carries more arms than the in-body text spells",
     "fn_state": "`else` keywords inside a `state { }` block and outside every function in it",
     "fn_state_label": "of those, at the state body's own statement level (label code)",
     "fn_state_nested": "of those, inside a nested brace of that statement level",
@@ -203,7 +207,8 @@ CENSUS_NOTE = {
     "state_blocks": "`state` declarations with a braced body",
 }
 
-CENSUS_KEYS = ("classes", "packages", "joined", "agree", "more", "less", "no_branch", "arms_no_text",
+CENSUS_KEYS = ("classes", "packages", "joined", "joined_fn", "agree", "more", "less", "agree_fn",
+               "more_fn", "less_fn", "no_branch", "arms_no_text",
                "text_else", "dead_else", "else_empty", "dead_if", "dead_while", "dead_for", "dead_terms", "guards",
                "guard_dead", "classes_guarded", "fn_dead_else", "fn_lost",
                "comment_else", "and", "or", "if", "while", "for", "terms", "pp_else",
@@ -647,7 +652,7 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                "fn_arms": "", "fn_absent": "",
                "fn_short": "", "fn_long": "", "fn_outside": "", "fn_state_label": "", "fn_state_nested": "",
                "fn_unpaired": "", "fn_else": "", "fn_dead_else": "", "fn_lost": "",
-               "verdict": "", "count": "", "note": ""}
+               "verdict": "", "verdict_fn": "", "count": "", "note": ""}
         census["byte_else"] += a["else"]
         census["byte_if"] += a["if"]
         census["byte_empty"] += a["empty"]
@@ -756,6 +761,12 @@ def join(texts, arms, fn_arms, branch_census, jumpifnot, records):
                     "fn_else": in_fns, "fn_dead_else": dead_in_fns, "fn_lost": dead_outside,
                     "fn_state_label": t["fn_state_label"], "fn_state_nested": t["fn_state_nested"],
                     "fn_top": t["fn_top"], "fn_unpaired": unpaired})
+        # The same comparison at the scope both sides are counted on: the text's keywords *inside its function
+        # bodies* against the arms the record carries for those bodies. `outside` is state code and prose (see the
+        # split above), so a class's `more` verdict can be two state-body keywords against no `Function` arms.
+        row["verdict_fn"] = verdict(in_fns, a["else"])
+        census["joined_fn"] += 1
+        census[row["verdict_fn"] + "_fn"] += 1
         vc = verdicts[verdict(c["else"], a["else"])]
         vc["classes"] += 1
         vc["arms"] += fn_total
@@ -1322,8 +1333,22 @@ def doc_block(rows):
                  comma(count(rows, "dead_else")), comma(count(rows, "dead_if")), comma(count(rows, "dead_for")),
                  comma(count(rows, "dead_while")), comma(count(rows, "else_empty")),
                  comma(count(rows, "text_else")), comma(count(rows, "byte_else"))))
-    return (body + guards + verdict_paragraph(rows) + verdict_table(rows) + absent_table(rows) + top_table(rows)
-            + package_table(rows))
+    scope = ("\n**The class count is two scopes, and the class-level `more` population is the state code.** **%s** "
+             "`else` keywords of those %s sit outside every function body -- **%s** in a `state` block and **%s** "
+             "outside every block -- while `inventory/jump_branches.csv` carries `Function` arms only, so a class "
+             "count mixes the two. At the scope both sides are counted on -- the text's in-body keywords against "
+             "the arms the record carries for those bodies -- **%s of %s** classes agree (**%s%%**), **%s** spell "
+             "more and **%s** fewer, and `verdict_fn` in `inventory/text_branches.csv` holds that verdict per class. "
+             "So the %s classes the class-level count calls `more` are the ones whose text spells state code, not a "
+             "second revision of the class: the state payloads carry those keywords as their own `else` arms, "
+             "measured in `docs/systems/AI.md`.\n"
+             % (comma(count(rows, "fn_state") + count(rows, "fn_top")), comma(count(rows, "text_else")),
+                comma(count(rows, "fn_state")), comma(count(rows, "fn_top")),
+                comma(count(rows, "agree_fn")), comma(count(rows, "joined_fn")),
+                "%.2f" % pct(count(rows, "agree_fn"), count(rows, "joined_fn")),
+                comma(count(rows, "more_fn")), comma(count(rows, "less_fn")), comma(count(rows, "more"))))
+    return (body + guards + scope + verdict_paragraph(rows) + verdict_table(rows) + absent_table(rows)
+            + top_table(rows) + package_table(rows))
 
 
 def verdict_rows(rows):
