@@ -87,27 +87,34 @@ from the packages themselves, and `tools/ai-states.py` reads them with no boot, 
 
 Output: `inventory/ai_states.csv`, one row per state the tree's text declares, with its labels, the functions it
 overrides, its `GotoState`/`Goto` targets and its latent `Sleep`s; the tables below are generated from it.
-**151 states over 32 classes**, against **161 `UState` exports** for the same 32 classes.
+**165 states over 36 classes**, and the export table agrees with it name for name: **165 `UState` exports** for
+those classes, every one of them declared by a text, **158** carrying function children and **7** carrying none.
 
-The machine is a park-and-dispatch design, not a chain. Ten states are `auto` -- the state a controller is in
-when it spawns -- and eight of the ten are called `Waiting` (the turret's is `Idle`, `HerdAnimal`'s `grazing`).
-From there the decision layer is the class's own *functions*, not its states: **127 `GotoState` calls sit outside
-every state body**, in `WhatToDoNext`, `SetEnemy` and the timers, which is why the in-degree table is dominated by
-a handful of states that most of the tree can be pushed into.
+The machine is a park-and-dispatch design, not a chain. Fourteen states are `auto` -- the state a controller is in
+when it spawns -- and eight of the fourteen are called `Waiting` (the turret's is `Idle`, `HerdAnimal`'s `grazing`,
+the birds' `Wandering`/`Circling`/`Migrating`). From there the decision layer is the class's own *functions*, not its
+states: **115 `GotoState` calls sit outside every state body**, in `WhatToDoNext`, `SetEnemy` and the timers, which
+is why the in-degree table is dominated by a handful of states that most of the tree can be pushed into.
 
 Cover combat is the largest behaviour in the game's AI: `BotEnemy.ShootFromCover` is 475 lines with 19 function
-overrides, `CoveredAttack` 446 with ten latent sleeps, against a median state of 57 lines. `BotEnemy` alone holds
-36 states, 211 overrides and 60 labels. `ScriptedController.Scripting` (496 lines) is the biggest state in the
+overrides, `CoveredAttack` 446 with ten latent sleeps, against a median state of 58 lines. `BotEnemy` alone holds
+41 states, 210 overrides and 71 labels. `ScriptedController.Scripting` (496 lines) is the biggest state in the
 tree and the most-named one -- the mission-scripting state every scripted bot hands control back to.
 
 Two findings change how the rest of this page should be read.
 
-* **The shipped text is a floor on the machine, not its ceiling.** Five classes carry more `UState` exports than
-  their text declares (`BotEnemy` 36/41, `BotRep` 2/4, `BotBase` 4/5, `BotLite` 4/5, `ScriptedController` 1/2),
-  and four of the ten missing names -- `GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation` --
-  are declared by no class's text anywhere in the corpus, while `BotEnemy`'s own decision code dispatches to all
-  four. A rebuild driven by the text alone would silently drop those states -- but they are not lost: they are
-  export-side objects with compiled bodies (*The states the text never declares are compiled*, below).
+* **The text and the export table agree on the machine, and the old floor was the reader's.** This page used to
+  open on "five classes carry more `UState` exports than their text declares" (`BotEnemy` 36/41, `BotRep` 2/4,
+  `BotBase` 4/5, `BotLite` 4/5, `ScriptedController` 1/2) and "four names are declared by no class's text anywhere
+  in the corpus" (`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`). Both were the reader's:
+  those five classes spell the states `State TakePoint`, with a capital, and `tools/ai-states.py` carried a
+  case-sensitive pattern -- one of five header spellings the corpus uses (`state() Name`, `state(0) Name`, a
+  modifier word, a capital `State`, a qualified `extends`). Read through `class-text-bodies.state_blocks`
+  (UNKNOWNS U24) the text declares **165** states over **36** classes, and the five classes read **41/41**,
+  **4/4**, **5/5**, **5/5** and **2/2**. The four "declared nowhere" names are declared, and `BotEnemy`'s own
+  decision code dispatches to states its text writes out in full. Four whole classes (`Birds`, `CirclingBirds`,
+  `MigratingBirds`, `TransientAmbientCreature`) were absent from the census for the same reason, their
+  `State Wandering` / `State Circling` / `State Migrating` headers.
 * **A subclass that redeclares an inherited state name gets a second state.** `AlkeshBomberBot` declares its own
   `Scripting` and `Waiting`; every `GotoState('Scripting')` in the tree resolves to `ScriptedController`'s, so the
   bomber's two are entered by nothing this read can see. A state name is not a key until it is resolved along the
@@ -115,19 +122,21 @@ Two findings change how the rest of this page should be read.
   is what the tool does before it counts an edge.
 
 <!-- generated:ai-states -->
-**151 states over 32 classes: 22 declare a literal `GotoState`, 4 a dynamic one, 216 labels, 189 latent sleeps; the classes' own functions add 127 `GotoState` calls outside every state.**
+**165 states over 36 classes: 22 declare a literal `GotoState`, 4 a dynamic one, 237 labels, 203 latent sleeps; the classes' own functions add 115 `GotoState` calls outside every state.**
 | class | states in text | states in record | labels | `GotoState` |
 |---|---:|---:|---:|---:|
 | `AirborneTurretController` | 1 | 1 | 0 | 0 |
 | `AlkeshBomberBot` | 13 | 13 | 21 | 5 |
-| `BotBase` | 4 | 5 | 3 | 3 |
-| `BotEnemy` | 36 | 41 | 60 | 17 |
+| `Birds` | 1 | 1 | 0 | 0 |
+| `BotBase` | 5 | 5 | 3 | 5 |
+| `BotEnemy` | 41 | 41 | 71 | 22 |
 | `BotGoauld` | 1 | 1 | 0 | 0 |
 | `BotGuide` | 3 | 3 | 3 | 0 |
-| `BotLite` | 4 | 5 | 5 | 5 |
-| `BotRep` | 2 | 4 | 3 | 1 |
+| `BotLite` | 5 | 5 | 5 | 7 |
+| `BotRep` | 4 | 4 | 8 | 4 |
 | `BotSG` | 10 | 10 | 19 | 5 |
 | `BotScarab` | 2 | 2 | 5 | 5 |
+| `CirclingBirds` | 1 | 1 | 1 | 0 |
 | `DeathGliderBot` | 5 | 5 | 9 | 1 |
 | `ExtreniteAutoTurretController` | 3 | 3 | 0 | 4 |
 | `GoaAutoTurretController` | 5 | 5 | 0 | 6 |
@@ -141,21 +150,24 @@ Two findings change how the rest of this page should be read.
 | `JaffaBotHeavy` | 4 | 4 | 8 | 6 |
 | `JaffaBotLight` | 3 | 3 | 6 | 3 |
 | `JaffaBotMedium` | 2 | 2 | 3 | 2 |
+| `MigratingBirds` | 1 | 1 | 1 | 0 |
 | `MindControlledBot` | 1 | 1 | 2 | 0 |
 | `PteroBossBot` | 7 | 7 | 10 | 4 |
 | `PteroBot` | 3 | 3 | 5 | 0 |
 | `ReetouBot` | 9 | 9 | 15 | 0 |
 | `ReetouProtectorBot` | 2 | 2 | 1 | 0 |
-| `ScriptedController` | 1 | 2 | 1 | 6 |
+| `ScriptedController` | 2 | 2 | 3 | 6 |
 | `ScriptedTriggerController` | 1 | 1 | 1 | 3 |
 | `SuperSoldierBot` | 4 | 4 | 2 | 2 |
 | `TeltakBot` | 8 | 8 | 12 | 5 |
+| `TransientAmbientCreature` | 1 | 1 | 1 | 0 |
 
 States by in-degree — how many states or class dispatchers name each one with a literal `GotoState`, each counted where the state is declared (a subclass naming an inherited state counts on the ancestor):
 
 | state | declared by | in-degree | named from |
 |---|---|---:|---|
-| `Scripting` | `ScriptedController` | 11 | `BotBase`, `BotEnemy`, `BotLite`, `BotSG` … |
+| `Scripting` | `BotEnemy` | 6 | `BotEnemy`, `BotSG` |
+| `Broken` | `ScriptedController` | 5 | `BotBase`, `BotEnemy`, `BotLite`, `ScriptedController` … |
 | `Hunt` | `BotEnemy` | 5 | `BotEnemy`, `JaffaBotLight`, `JaffaBotMedium` |
 | `Waiting` | `BotEnemy` | 5 | `BotEnemy`, `JaffaBotHeavy`, `SuperSoldierBot` |
 | `StaggeredAssist` | `BotEnemy` | 4 | `BotEnemy`, `BotRep`, `BotSG`, `SuperSoldierBot` |
@@ -166,24 +178,28 @@ States by in-degree — how many states or class dispatchers name each one with 
 | `CloseIdle` | `GoaAutoTurretController` | 2 | `GoaAutoTurretController` |
 | `ConcentrateFire` | `BotSG` | 2 | `BotSG` |
 | `CoveredAttack` | `BotEnemy` | 2 | `BotEnemy` |
-| `CoveredHide` | `BotEnemy` | 2 | `BotEnemy` |
 
-`GotoState` targets that are no state of the calling class's chain — engine states and the exports whose text is missing (below): `Broken` ×5, `GameEnded` ×2, `GetInFormation` ×1, `Invulnerable` ×2, `MoveInFormation` ×2, `PlayerWalking` ×1, `Surfaced` ×1, `TakePoint` ×2, `WaitingForFormation` ×1.
+`GotoState` targets that are no state of the calling class's chain — engine states, and names a subclass hands to an ancestor's state through a different entry: `GameEnded` ×2, `Invulnerable` ×2, `PlayerWalking` ×1, `Surfaced` ×1.
 
-30 of 151 states neither name another state nor are named by a literal `GotoState` from either side (e.g. `Shoot`, `Chasing`, `GroundAttack`, `Scripting`, `Waiting`, `BotBeingElectrocuted`) — a state a native body or a `GotoState` with a computed argument enters, which is the part of the machine this read cannot see.
+34 of 165 states neither name another state nor are named by a literal `GotoState` from either side (e.g. `Shoot`, `Chasing`, `GroundAttack`, `Scripting`, `Waiting`, `Wandering`) — a state a native body or a `GotoState` with a computed argument enters, which is the part of the machine this read cannot see.
 
-5 class(es) carry more `UState` **exports** than their text declares — `BotBase` 4/5, `BotEnemy` 36/41, `BotLite` 4/5, `BotRep` 2/4, `ScriptedController` 1/2 — and every extra name is a state the class only *references* (`GotoState`, `IsInState`, `case`): the shipped text is a floor on the machine, not its ceiling.
+Every class's text declares exactly the states its class record counts.
 <!-- /generated:ai-states -->
 
-Thirty of the 151 states are neither named by a literal `GotoState` nor name one. They are entered by a computed
+34 of the 165 states are neither named by a literal `GotoState` nor name one. They are entered by a computed
 target or from a native body, and that is the residue this reading leaves -- the same shape as the rest of this
 page: a count is measurable, an entry point sometimes is not.
 
-### The states the text never declares are compiled
+### Seven state exports carry no code at all
 
-The floor above is a floor on the *source*, not on the machine. A `UState` is an export like any other, and its
-body is not in the class's text export at all -- it is the `Function` exports whose `Outer` is the state -- so
-what the text does not declare can still be read out of the package, with no boot and no decompiler.
+With the two censuses agreeing on names, the residue is a narrower question: **7 state exports carry no function
+child** -- `ReetouBot`'s `Ambush`, `Berserk` and `Ranged`, `BotSG`'s `CoveredAttack` and `Waiting`,
+`HoverTankPilotBot`'s `TroopDrop` and `TransientAmbientCreature`'s `Wandering`. A `UState`'s body is the `Function`
+exports whose `Outer` is the state, and these seven have none: either a subclass redeclares an inherited state and
+changes only an entry point, or the behaviour is native. `TransientAmbientCreature.Wandering` is the extreme case --
+a state with nothing behind it at all. What a state's *overrides* compile is the other population, and reading it
+is a per-export question `tools/state-exports.py` answers; a body that does not exist is not a miss, it is the
+answer.
 
     python3 tools/state-exports.py --system DUMP/System -o inventory/state_exports.csv
 
@@ -192,46 +208,33 @@ that no export carries, so neither side can hide a disagreement by being the onl
 function exports' serial sizes (a payload, not a script: what a body does still needs `tools/uscript-dis.py`).
 
 <!-- generated:state-exports -->
-**159 state exports over 36 classes; 14 are declared by no class text, and 6 are declared by a text and not exported.**
+**158 state exports over 36 classes; 0 are declared by no class text, 0 are declared by a text with no export behind them, and 7 exports carry no child.**
 
 | class | state | functions | other children | bytes | callees the text cannot show |
 |---|---|---:|---:|---:|---|
-| `Birds` | `Wandering` | 3 | 0 | 454 | `BeginState`, `PickDestination`, `PickSlaveDestination` |
-| `BotBase` | `Scripting` | 6 | 0 | 544 | `AbortScript`, `CompleteAction`, `EndState`, `LeaveScripting`, `Restart`, `Timer` |
-| `BotEnemy` | `GetInFormation` | 6 | 0 | 467 | `BeginState`, `DoAlertSquad`, `EndState`, `FaceSquadRotation`, `Timer`, `WaitForManInFront` |
-| `BotEnemy` | `MoveInFormation` | 8 | 0 | 1076 | `BeginState`, `DetermineFollowLocation`, `DoAlertSquad`, `EndState`, `Tick`, `Timer` |
-| `BotEnemy` | `Scripting` | 4 | 0 | 165 | `DisplayDebug`, `DoAlertSquad`, `PawnIsInPain`, `Timer` |
-| `BotEnemy` | `TakePoint` | 8 | 0 | 566 | `BeginState`, `DoAlertSquad`, `EndState`, `IsRunningScript`, `LeaderNotifySuspicious`, `MemberSuspicious` |
-| `BotEnemy` | `WaitingForFormation` | 3 | 0 | 128 | `BeginState`, `DoAlertSquad`, `Timer` |
-| `BotLite` | `Scripting` | 5 | 0 | 414 | `EndState`, `LeaveScripting`, `Restart`, `SetMoveTarget`, `Tick` |
-| `BotRep` | `MoveInFormation` | 8 | 0 | 1389 | `BeginState`, `DetermineFollowLocation`, `EndState`, `FaceSquadRotation`, `Tick`, `Timer` |
-| `BotRep` | `TakePoint` | 3 | 0 | 205 | `BeginState`, `EndState`, `Timer` |
-| `CirclingBirds` | `Circling` | 4 | 0 | 630 | `BeginState`, `MaxHiddenTime`, `PickDestination`, `PickSlaveDestination` |
-| `MigratingBirds` | `Migrating` | 5 | 0 | 1081 | `BeginState`, `InitialLocation`, `MaxHiddenTime`, `PickDestination`, `PickSlaveDestination` |
-| `ScriptedController` | `Broken` | 1 | 0 | 65 | `BeginState` |
-| `TransientAmbientCreature` | `Wandering` | 0 | 0 | 0 | — |
 
-The 9 class(es) whose export table outran their text: `Birds`, `BotBase`, `BotEnemy`, `BotLite`, `BotRep`, `CirclingBirds`, `MigratingBirds`, `ScriptedController`, `TransientAmbientCreature`.
-
-Declared but not exported: `ReetouBot.Ambush`, `ReetouBot.Berserk`, `ReetouBot.Ranged`, `BotSG.CoveredAttack`, `BotSG.Waiting`, `HoverTankPilotBot.TroopDrop`.
+Exported with no function child: `TransientAmbientCreature.Wandering`, `ReetouBot.Ambush`, `ReetouBot.Berserk`, `ReetouBot.Ranged`, `BotSG.CoveredAttack`, `BotSG.Waiting`, `HoverTankPilotBot.TroopDrop`.
 <!-- /generated:state-exports -->
 
-**14 state exports are declared by no class text, and 13 of them carry 64 function children and 7,184 bytes of
-payload** -- the states a text-driven rebuild would drop are not lost, they are export-side objects with bodies.
-`BotEnemy`'s five are the four names its own decision code dispatches to plus `Scripting` (29 children, 2,402
-bytes); `BotBase`, `BotLite` and `BotRep` each add a `Scripting` or a formation state; `ScriptedController`'s
-second export is `Broken`, a state five other classes dispatch to by name.
+**None of the 14 "declared by no class text" exports survived the corrected read, and the 7 that carry no function
+are a different population** -- a text declares every state the packages export, and 7 exports are objects with no
+code behind them. The four names the old census called "declared nowhere" (`GetInFormation`, `MoveInFormation`,
+`TakePoint`, `WaitingForFormation`) are declared by `BotEnemy`'s own text as `State ...`, alongside `BotBase`,
+`BotLite` and `BotRep`'s `Scripting` and formation states.
 
-Four whole classes appear **only** on the export side -- `Birds` (`Wandering`), `CirclingBirds` (`Circling`),
-`MigratingBirds` (`Migrating`) and `TransientAmbientCreature` (`Wandering`) -- so the 32-class text census never
-saw them at all. `TransientAmbientCreature.Wandering` carries no function: its behaviour is native, and it is the
-one export in the set with nothing to read.
+The four whole classes that appeared **only** on the export side -- `Birds` (`Wandering`), `CirclingBirds`
+(`Circling`), `MigratingBirds` (`Migrating`) and `TransientAmbientCreature` (`Wandering`) -- were never outside the
+census: their headers are the capital `State` spelling, and the text read has them now, with their labels and
+sleeps. `TransientAmbientCreature.Wandering` is still the one export in the set with nothing to read: no function
+child, no payload.
 
-The residue is symmetric, which is why the two counts never quite meet: **6 names a text declares and no export
-in the class's package carries** -- `ReetouBot`'s `Ambush`, `Berserk` and `Ranged`, `HoverTankPilotBot`'s
-`TroopDrop`, and `BotSG`'s `CoveredAttack`/`Waiting`, which repeat states `BotEnemy` already exports. So the
-class record's `states` column is a *declared* count, not an exported one: it sums to 164 over these classes
-where the packages export 159, and this page quotes the export count whenever it means objects.
+The residue is no longer symmetric, and the page's earlier sentence about it was a mislabel rather than a
+measurement: it said **6 names a text declares and no export carries** (`ReetouBot`'s `Ambush`, `Berserk` and
+`Ranged`, `HoverTankPilotBot`'s `TroopDrop`, `BotSG`'s `CoveredAttack`/`Waiting`), and those six are State exports
+with no function child -- the same seven above. The artifact's `exported` column now separates the two directions,
+so a name with no object cannot hide behind a childless one. The class record's `states` column sums to **165** over
+these 36 classes and the packages carry **165** `State` exports: the record counts declarations, and for this tree
+the two are the same number, which they were not when the text read was 151.
 
 ## What the bodies do
 
@@ -246,11 +249,11 @@ becomes a one-page outline, and only counts and callee names are written, so the
 Output: `inventory/ai_state_bodies.csv`, one row per state. Two columns carry the finding: `stmts` counts the
 state's **own** statements and `override_stmts` the ones inside a `function`/`event` it overrides -- an override
 is a handler the engine calls, not a step the state runs, and folding the two together would make a state that
-only declares `SetEnemy` read as busy. `sleep_seconds` sums literal `Sleep` arguments only: 90 of the tree's 189
+only declares `SetEnemy` read as busy. `sleep_seconds` sums literal `Sleep` arguments only: 96 of the tree's 203
 sleeps take a computed one and add nothing to it.
 
 <!-- generated:ai-state-bodies -->
-**151 bodies hold 1426 simple statements (2350 more inside overrides), 189 sleeps (62.2 s of literal wait) and 268 dispatch calls; 3 loop, and 55 run to completion in one tick with no `Sleep` and no `Finish`/`Wait` call.**
+**165 bodies hold 1533 simple statements (2619 more inside overrides), 203 sleeps (66.4 s of literal wait) and 294 dispatch calls; 4 loop, and 60 run to completion in one tick with no `Sleep` and no `Finish`/`Wait` call.**
 
 | class | state | stmts | overrides | if | loop | sleeps | sleep s | calls | `GotoState` | top callees |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -264,23 +267,23 @@ sleeps take a computed one and add nothing to it.
 | `BotSG` | `ConcentrateFire` | 26 | 4 | 17 | 0 | 4 | 0.1 | 57 | 1 | `Sleep:4`, `SquadAISG:4`, `FRand:3`, `log:3` |
 | `BotSG` | `TacticalMove` | 26 | 8 | 19 | 0 | 3 | 0.22 | 79 | 1 | `FRand:10`, `vect:6`, `FMax:4`, `StopFiring:4` |
 | `JaffaBotLight` | `Sniper` | 26 | 7 | 14 | 0 | 3 | 1.5 | 58 | 1 | `Enable:6`, `Disable:4`, `FireWeaponAt:4`, `LineOfSightTo:4` |
+| `BotEnemy` | `GetInFormation` | 24 | 5 | 11 | 0 | 3 | 1.2 | 35 | 1 | `Goto:6`, `Sleep:3`, `FaceSquadRotation:2`, `PointReachable:2` |
 | `BotEnemy` | `ActivateAlarm` | 23 | 3 | 10 | 0 | 3 | 1.5 | 35 | 0 | `GetUserPosition:5`, `WhatToDoNext:5`, `Goto:3`, `Sleep:3` |
 | `BotEnemy` | `InteractUseObject` | 23 | 1 | 7 | 0 | 2 | 1.5 | 25 | 0 | `Goto:4`, `WhatToDoNext:4`, `Log:3`, `sleep:3` |
 | `BotEnemy` | `CoveredHide` | 22 | 4 | 15 | 0 | 3 | 0.1 | 59 | 1 | `Enable:6`, `MustHoldFire:4`, `FireWeaponAt:3`, `Goto:3` |
 | `BotGuide` | `ReturnToPlayer` | 22 | 1 | 12 | 0 | 4 | 2 | 46 | 0 | `ACTION_SGWaitForPlayer:9`, `GetMyPlayer:6`, `Sleep:4`, `WhatToDoNext:4` |
-| `GoauldDroneBot` | `Pursuit` | 22 | 8 | 9 | 1 | 2 | 0 | 45 | 2 | `PointReachable:6`, `FRand:4`, `MoveTo:4`, `WhatToDoNext:3` |
 <!-- /generated:ai-state-bodies -->
 
 ### The code is in the overrides, not in the state body
 
-The 151 bodies hold **1,426 own statements against 2,350 inside 570 overrides** -- 1.6x as much handler code as
-state code. 29 states have no own statements at all (a set of overrides plus a label), and 38 neither dispatch
+The 165 bodies hold **1,533 own statements against 2,619 inside 628 overrides** -- 1.7x as much handler code as
+state code. 32 states have no own statements at all (a set of overrides plus a label), and 40 neither dispatch
 (`GotoState`) nor jump to a label, so their successor is decided entirely outside them.
 
 The idiom is a **short body that sets fields, takes one action and hands off**, not a script with a loop: the
-whole tree's state bodies contain **three `while`/`for` statements and zero `switch`**, against 1,419
-assignments and 641 conditional branches, and a state repeats by `Goto('Begin')` (169 label jumps) or by being
-re-entered, not by iterating. 55 of the 151 run to completion in one tick -- no `Sleep` and no `Finish`/`Wait`
+whole tree's state bodies contain **four `while`/`for` statements and zero `switch`**, against 1,585
+assignments and 693 `if` headers, and a state repeats by `Goto('Begin')` (183 label jumps) or by being
+re-entered, not by iterating. 60 of the 165 run to completion in one tick -- no `Sleep` and no `Finish`/`Wait`
 call -- which is what makes the dispatch layer, rather than the bodies, the thing a rebuild has to get right.
 
 ### The state's own code is a `State` export's payload
@@ -434,14 +437,16 @@ HUD (`DrawText`) -- the one place in the AI tree where a state body is also a de
 
 The three bodies say the same thing at three scales: the state is a *frame*, and the behaviour is in the
 overrides and in the class-level dispatcher that pushes the controller from outside. A port that reproduces the
-151 bodies and stops would produce controllers that mostly park. That also re-orders the missing-state negative:
-the five classes whose `UState` exports outnumber their text lose behaviour when their handlers are dropped,
-not when a state body is, which is why `WhatToDoNext` and `SetEnemy` are worth reading before the states.
+165 bodies and stops would produce controllers that mostly park. That also settles the export-side question this
+page used to leave open: the states a naive text read called missing (`GetInFormation`, `MoveInFormation`,
+`TakePoint`, `WaitingForFormation`) are declared, and the seven exports with no function child are inherited or
+native frames -- so what a rebuild loses when it drops a handler is the behaviour, not a state, which is why
+`WhatToDoNext` and `SetEnemy` are worth reading before the states.
 
 ## Not measured
 
 * What a body's expressions *resolve to*. The outline above names the callees and counts the branches, but not
-  what `CanAttack()`, `PointReachable()` or a `CoverInfo` accessor answer at runtime, and 90 of the 189 sleeps
+  what `CanAttack()`, `PointReachable()` or a `CoverInfo` accessor answer at runtime, and 96 of the 203 sleeps
   wait on a computed duration. The first needs a boot with the decision logged per tick; the second only a named
   constant per wait.
 * `AIScript` and `AIMsgManager` internals beyond their function counts (3 and 39). `AIScript` is a
@@ -467,7 +472,7 @@ compact index into it, not an object reference) -- so the two censuses can be qu
 <!-- generated:state-entry -->
 811 `GotoState` sites over 537 functions in 162 classes of the 11,687 scripts that walk end to end: **667** name their target with a `NameConst`, **109** name the null name (`GotoState('')`, which leaves the current state), **35** build it from an expression, **0** pass no argument at all, and **104** also pass an entry label (**1** of those computed).
 
-Where the call sits is a second split: over the whole corpus **372** sites are inside a state body and **439** are in a class-level function. Restricted to the **32** classes `inventory/ai_states.csv` measured -- the same classes read twice, so the two counts are a control and not two populations -- the bytecode has **86** in-state and **120** class-level sites where the text has **95** and **127**.
+Where the call sits is a second split: over the whole corpus **372** sites are inside a state body and **439** are in a class-level function. Restricted to the **36** classes `inventory/ai_states.csv` measured -- the same classes read twice, so the two counts are a control and not two populations -- the bytecode has **86** in-state and **120** class-level sites where the text has **107** and **115**.
 
 | target | sites | classes |
 | --- | ---: | --- |

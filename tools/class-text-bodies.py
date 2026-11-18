@@ -209,8 +209,12 @@ def body_span(text, start, limit):
 # shape only, 424 blocks against this corpus's 554, so 292 bodied declarations written inside a state named no
 # export of their class (UNKNOWNS U24). This is the one rule; `state_blocks` is the one reader.
 STATE_MODIFIERS = r"(?:[A-Za-z_]\w*[ \t]+)*"
-STATE_HEADER = (r"(?m)^[ \t]*" + STATE_MODIFIERS + r"state(?=[ \t(])[ \t]*(?:\([^)]*\))?[ \t]*([A-Za-z_]\w*)"
-                r"(?:[ \t]*extends[ \t]+[\w.]+)?")
+# The modifier run is captured, not only consumed: `auto state Waiting {` is the state a controller spawns in, and
+# the AI census publishes whether a state is one (`auto`), so the one rule has to answer that as well as the name
+# and the parent. Named groups, because `state_declarations` reads them by name and the counts read `STATE_DECL`
+# with `findall`, which must not see a shift in the group numbering.
+STATE_HEADER = (r"(?m)^[ \t]*(?P<mods>" + STATE_MODIFIERS + r")state(?=[ \t(])[ \t]*(?:\([^)]*\))?[ \t]*"
+                r"(?P<name>[A-Za-z_]\w*)(?:[ \t]*extends[ \t]+(?P<parent>[\w.]+))?")
 STATE_DECL = re.compile(STATE_HEADER, re.I)
 # The case-sensitive shape, so the states the fold recovers are a number rather than a claim.
 STATE_DECL_LEGACY = re.compile(STATE_HEADER)
@@ -257,26 +261,42 @@ def depth_map(text):
 EXTENDS = re.compile(r"extends[ \t]+([\w.]+)", re.I)
 
 
+def state_declarations(text):
+    """[dict] per `state` block: `name`, `parent` (as written), `auto`, `start` (the `{`), `end` (past the `}`).
+
+    This is the rule's full answer, and `state_blocks` is its four-tuple shape for callers that only need the span.
+    The header search and the brace matching both run on a *masked* copy -- block and line comments and string
+    literals blanked, every offset kept -- so a `state Foo` a comment disables is not a declaration, and a `{`
+    inside a string cannot close the block early. Masking an already-masked text is a no-op, which is why the
+    callers that mask first (the text censuses) read exactly what they read before.
+    """
+    masked = mask(text)
+    d = depth_map(masked)
+    out = []
+    for m in STATE_DECL.finditer(masked):
+        i = masked.find("{", m.end())
+        if i < 0:
+            continue
+        j = i + 1
+        while j < len(masked) and d[j] > d[i]:
+            j += 1
+        mods = (m.group("mods") or "").lower().split()
+        out.append({"name": m.group("name"), "parent": m.group("parent") or "",
+                    "auto": "auto" in mods, "start": i, "end": j})
+    return out
+
+
 def state_blocks(text):
     """[(start, end, name, parent)] for every `state` block, brace-matched on one text.
 
     `start`/`end` bound the block's braces and `parent` is its `extends` target as written (lower-case, possibly
     qualified) or ''. Every spelling the corpus uses is one alternative in `STATE_DECL`, so the readers that key
-    something to a state -- this module's vocabulary and `tools/text-stubs.py`'s declaration scopes -- read the
-    same blocks instead of each carrying a pattern of its own (UNKNOWNS U24).
+    something to a state -- this module's vocabulary, `tools/text-stubs.py`'s declaration scopes, `tools/ai-states.py`
+    and through it the AI body and export censuses -- read the same blocks instead of each carrying a pattern of its
+    own (UNKNOWNS U24).
     """
-    d = depth_map(text)
-    out = []
-    for m in STATE_DECL.finditer(text):
-        i = text.find("{", m.end())
-        if i < 0:
-            continue
-        j = i + 1
-        while j < len(text) and d[j] > d[i]:
-            j += 1
-        pm = EXTENDS.search(text[m.start():i])
-        out.append((i, j, m.group(1).lower(), pm.group(1).lower() if pm else ""))
-    return out
+    return [(b["start"], b["end"], b["name"].lower(), b["parent"].lower())
+            for b in state_declarations(text)]
 
 
 def state_vocabulary(text):
@@ -1338,6 +1358,20 @@ def self_check():
     if len(STATE_DECL.findall(spell)) != 5 or len(STATE_DECL_LEGACY.findall(spell)) != 4:
         bad.append("the folded/legacy state read found %d / %d of 5 / 4"
                    % (len(STATE_DECL.findall(spell)), len(STATE_DECL_LEGACY.findall(spell))))
+    # the answer a caller keying something else needs: the name as spelled, the parent as written and `auto`
+    decl = [(d["name"], d["parent"], d["auto"]) for d in state_declarations(spell)]
+    decl_want = [("Lead", "", False), ("Numbered", "", False), ("ZoomingIn", "Pawn.Zooming", False),
+                 ("Idle", "Idling", True), ("FadeOut", "", False)]
+    if decl != decl_want:
+        bad.append("state_declarations read %r, expected %r" % (decl, decl_want))
+    # a `{` inside a string in the body cannot close the block early, and a state a comment disables is not one
+    quoted = 'state Loud\n{\n\tLog("}{");\n\tSleep(1);\n}\nstate Quiet\n{\n\tSleep(2);\n}\n'
+    if [n for _a, _b, n, _p in state_blocks(quoted)] != ["loud", "quiet"]:
+        bad.append("a brace inside a string cut the state block: %r"
+                   % ([n for _a, _b, n, _p in state_blocks(quoted)],))
+    if state_blocks(quoted.replace("state Quiet", "// state Quiet")) != \
+            [b for b in state_blocks(quoted) if b[2] == "loud"]:
+        bad.append("a state a line comment disables was read anyway")
     if len(state_blocks(mask("function int Foo( int A )\n{\n\treturn A;\n}\n"))) != 0:
         bad.append("a function declaration matched the state header rule")
     # `;` before the brace means no body, whatever follows

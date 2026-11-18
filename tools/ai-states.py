@@ -48,8 +48,35 @@ COLUMNS = ["package", "class", "state", "parent", "auto", "ignores", "labels", "
            "class_targets", "record_states"]
 DOC_MARK = ("<!-- generated:ai-states -->", "<!-- /generated:ai-states -->")
 
-STATE_DECL = re.compile(r"(?m)^[ \t]*(auto[ \t]+)?state[ \t]*(?:\([ \t]*\d+[ \t]*\))?[ \t]*"
-                        r"(\w+)(?:[ \t]+extends[ \t]+(\w+))?\s*\{")
+def ctb_module():
+    """`class-text-bodies` loaded by path: it owns the one state-header rule (UNKNOWNS U24)."""
+    path = os.path.join(ROOT, "tools", "class-text-bodies.py")
+    spec = importlib.util.spec_from_file_location("sg1_class_text_bodies", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def state_spans(text):
+    """[(state, parent, auto, open_at, close_at)] for every state block, from the one rule.
+
+    This module used to carry its own header pattern -- `auto`, an optional numeric `state(n)`, and a
+    case-sensitive `state` with a same-line brace -- and read **457 of the corpus's 554** state blocks. What that
+    lost was not a fringe spelling: five controller classes declare states with a capital `State`, and among them
+    are the four names this page once called "declared by no class's text" (`GetInFormation`, `MoveInFormation`,
+    `TakePoint`, `WaitingForFormation`) plus `Broken`. `state() Name`, a modifier word and a qualified `extends`
+    were invisible too. They are all declarations the build compiled, so the floor was the reader's, not the
+    text's. `class-text-bodies.state_declarations` is the rule; this is the shape a body reader needs (the braces'
+    offsets, the name and parent as spelled, and whether the state is `auto`).
+    """
+    if not text:
+        return []
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    ctb = ctb_module()
+    return [(d["name"], d["parent"], "yes" if d["auto"] else "no", d["start"], d["end"])
+            for d in ctb.state_declarations(text)]
+
+
 FUNC = re.compile(r"(?m)^[ \t]*(?:(?:simulated|static|final|latent|event)[ \t]+)*"
                   r"(?:function|event)[ \t]+(?:[\w<>\[\]]+[ \t]+)?(\w+)[ \t]*\(")
 IGNORES = re.compile(r"(?m)^[ \t]*ignores[ \t]+([\w \t,]+);")
@@ -151,11 +178,7 @@ def states_in_text(text, package, cls, record_states):
     masked = mask_comments(text)
     depths = depth_map(masked)
     rows, spans = [], []
-    for hit in STATE_DECL.finditer(masked):
-        auto = "yes" if hit.group(1) else "no"
-        name, parent = hit.group(2), hit.group(3) or ""
-        open_at = hit.end() - 1
-        close_at = find_close(masked, depths, open_at)
+    for name, parent, auto, open_at, close_at in state_spans(text):
         spans.append((open_at, close_at))
         body = masked[open_at + 1:close_at]
         base, level = open_at + 1, depths[open_at] + 1
@@ -382,8 +405,8 @@ def doc_block(rows, table):
             lines.append("| `%s` | `%s` | %d | %s |" % (target, owner, n, ", ".join("`%s`" % c for c in callers[:4])
                                                          + (" …" if len(callers) > 4 else "")))
     if external:
-        lines += ["", "`GotoState` targets that are no state of the calling class's chain — engine states and the "
-                      "exports whose text is missing (below): %s."
+        lines += ["", "`GotoState` targets that are no state of the calling class's chain — engine states, and "
+                      "names a subclass hands to an ancestor's state through a different entry: %s."
                   % ", ".join("`%s` ×%d" % (k, external[k]) for k in sorted(external))]
     entry = {}
     for owner, target, n, _callers in ranked:
@@ -396,11 +419,18 @@ def doc_block(rows, table):
                       "enters, which is the part of the machine this read cannot see."
                   % (len(alone), len(rows), ", ".join("`%s`" % s for s in alone[:6]))]
     short = [(c, per[c]["states"], per[c]["record"]) for c in order if per[c]["record"] > per[c]["states"]]
+    over = [(c, per[c]["states"], per[c]["record"]) for c in order if per[c]["record"] < per[c]["states"]]
     if short:
         lines += ["", "%d class(es) carry more `UState` **exports** than their text declares — %s — and every extra "
                       "name is a state the class only *references* (`GotoState`, `IsInState`, `case`): the shipped "
                       "text is a floor on the machine, not its ceiling."
                   % (len(short), ", ".join("`%s` %d/%d" % (c, n, rec) for c, n, rec in short))]
+    if over:
+        lines += ["", "%d class(es) declare more states in their text than the class record counts — %s — which is "
+                      "the record's own count disagreeing with a text the build compiled."
+                  % (len(over), ", ".join("`%s` %d/%d" % (c, n, rec) for c, n, rec in over))]
+    if not short and not over:
+        lines += ["", "Every class's text declares exactly the states its class record counts."]
     return "\n".join(lines)
 
 
@@ -489,6 +519,14 @@ def check():
         return 1
     if any(r["state"] == "Commented" for r in rows):
         print("FAIL a GotoState inside a comment was counted")
+        return 1
+    # The header rule is `class-text-bodies`': a capital `State`, a modifier word and `state() Name` are all one
+    # declaration, and the `auto` flag is the modifier run's, not a same-line guess.
+    spell = (SAMPLE.replace("auto state Peace", "simulated State Peace")
+             .replace("state(42) Hunt extends AlertSquad", "state() Hunt extends AlertSquad"))
+    spelt = [(r["state"], r["parent"], r["auto"]) for r in states_in_text(spell, "p", "DemoBot", 3)]
+    if spelt != [("AlertSquad", "", "no"), ("Peace", "", "no"), ("Hunt", "AlertSquad", "no")]:
+        print("FAIL the one state-header rule read %r" % (spelt,))
         return 1
     disp = SAMPLE.replace("class DemoBot extends BotBase;",
                           "class DemoBot extends BotBase;\n\nfunction WhatToDoNext()\n{\n\tGotoState('Waiting');\n}\n\n"
