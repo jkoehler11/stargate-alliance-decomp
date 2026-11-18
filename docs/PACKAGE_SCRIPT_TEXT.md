@@ -756,16 +756,18 @@ A class's `ScriptText` writes its states as `state Idle { ... }`, and the corpus
 Idle`, `state(0) Idle`, `state() LeadInOutLooper` (every state in `Engine.Mover`), `simulated state ZoomingIn
 extends Zooming`, a capitalised `State FadeOut` and a parent named through another class (`extends Pawn.Waiting`).
 Four readers of that header lived in `tools/`, and over the same 2,319 class texts they read **424** (`text-stubs`'
-own old pattern), **457** (`ai-states`, and with it `ai-state-body` and `state-exports`), **518** (`uscript-dis`)
-and **554** blocks. The last is `class-text-bodies.state_declarations`, the one rule, and two of the three copies
-are now keyed on it: `text-stubs`' declaration scopes (U24) and, in this change, the whole AI state census --
-`tools/ai-states.py` reads the rule, `tools/ai-state-body.py` walks the bodies it returns and
-`tools/state-exports.py` diffs its names against the export table, so `docs/systems/AI.md`'s machine reads **165**
-states over 36 classes instead of 151 over 32, and its "four names declared by no class's text" (`BotEnemy`'s
-`GetInFormation`, `MoveInFormation`, `TakePoint`, `WaitingForFormation`) are the capital `State` spelling the old
-pattern could not see. Two copies remain -- `text-branches` (**513** blocks on its own comment-masked input, 516 on
-the raw text) and `uscript-dis` (**518**) -- and substituting them moves `docs/BYTECODE.md`'s `else` census and the
-payload anchoring respectively, so they are named as not in this change rather than half-moved.
+own old pattern), **457** (`ai-states`, and with it `ai-state-body` and `state-exports`), **526** (`uscript-dis`:
+a brace required in one run after the name, so every `state X extends Y` header read as nothing, and five of the
+526 name nothing) and **554** blocks. The last is `class-text-bodies.state_declarations`, the one rule, and every
+copy is keyed on it now: `text-stubs`' declaration scopes, the whole AI state census (`tools/ai-states.py` reads
+the rule, `tools/ai-state-body.py` walks the bodies it returns, `tools/state-exports.py` diffs its names against
+the export table), and in this change the three that were left -- `tools/text-branches.py` (**513** of the 554;
+its `else` buckets do not move, because the 41 blocks it missed carry no `else`), `tools/state-code.py` (joined
+states with label code **120 -> 125**, all five in `Engine.Mover`) and `tools/uscript-dis.py` (the payload anchor:
+**466 -> 471** anchored, **0** declarations dropped as twice instead of 2). What the AI census reads under the
+rule is `docs/systems/AI.md`'s machine: **165** states over 36 classes instead of 151 over 32, and its "four names
+declared by no class's text" (`BotEnemy`'s `GetInFormation`, `MoveInFormation`, `TakePoint`,
+`WaitingForFormation`) are the capital `State` spelling the old pattern could not see.
 
 The reason a miss matters is the scope: a declaration written inside a block a reader misses is keyed to the
 class's own level, where no `Function` export of that name exists -- a state's record is outered to the `UState` --
