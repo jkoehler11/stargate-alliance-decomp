@@ -27,7 +27,11 @@ gotos_label_names,sleeps,lines,targets,record_states`.
   literal edge and still be part of the machine. `gotos_label` counts `Goto('label')` jumps and
   `gotos_label_names` spells the distinct labels those jumps name (space separated, sorted, case as the text has
   it), which is the text half of the jump join `tools/state-entry.py` measures against the build's `GotoLabel`
-  tokens. `sleeps` counts latent `Sleep(...)` calls, which is what a state uses to wait for the world.
+  tokens. **A label jump has two spellings** -- `Goto('Open')` and `goto 'Open'` -- and the corpus carries both:
+  **201** parenthesised calls against **1** bare one, so a reader that knows only the first form reports that one
+  state's text as spelling no jump while its code jumps. The bare one is `Engine.Mover.TriggerPound`, outside this
+  census, so the population lives in `inventory/state_entry.csv` (`text_label_bare`); this reader counts both.
+  `sleeps` counts latent `Sleep(...)` calls, which is what a state uses to wait for the world.
 * `targets` is the distinct `GotoState` targets, space separated and sorted, so the whole tree's transition graph
   is a read off one column. **A target that is not a state of this class is kept as written**: a controller may
   hand control to a state it inherits, and dropping those would invent a smaller machine than the game runs.
@@ -89,6 +93,10 @@ LABEL = re.compile(r"(?m)^[ \t]*(\w+)[ \t]*:")
 GOTO_STATE = re.compile(r"GotoState[ \t]*\([ \t]*'([^']*)'[ \t]*(?:,[ \t]*'([^']*)'[ \t]*)?\)")
 GOTO_ANY = re.compile(r"GotoState[ \t]*\(")
 GOTO_LABEL = re.compile(r"(?<![\w.])Goto[ \t]*\([ \t]*'([^']*)'[ \t]*\)")
+# The same op, spelled without parentheses: `goto 'Open';`. UnrealScript is case-insensitive and both forms compile
+# to `GotoLabel` (`0x0d`), so a reader that knows only the call form undercounts a state's jumps by exactly the
+# number of bare ones -- measured: 1 in 2,319 class texts, `Engine.Mover.TriggerPound`, whose code does jump.
+GOTO_BARE = re.compile(r"(?<![\w.])[Gg]oto[ \t]+'([^']*)'")
 SLEEP = re.compile(r"(?<![\w.])Sleep[ \t]*\(([^)]*)\)")
 
 
@@ -194,6 +202,8 @@ def states_in_text(text, package, cls, record_states):
         gotos = GOTO_STATE.findall(body)
         targets = sorted({t[0] for t in gotos if t[0]})
         jumps = GOTO_LABEL.findall(body)
+        bare = GOTO_BARE.findall(body)
+        jumps += bare
         rows.append({
             "package": package, "class": cls, "state": name, "parent": parent, "auto": auto,
             "ignores": ignores, "labels": len(labels),
@@ -204,6 +214,9 @@ def states_in_text(text, package, cls, record_states):
             "gotos": len(gotos), "gotos_dynamic": len(GOTO_ANY.findall(body)) - len(gotos),
             "gotos_label": len(jumps),
             "gotos_label_names": " ".join(sorted(set(jumps), key=lambda x: (x.lower(), x))),
+            # not a CSV column (the census is AI-only and has no bare call): read by tools/state-entry.py's
+            # class-text half, which is where the corpus's one bare spelling is counted.
+            "gotos_label_bare": len(bare),
             "sleeps": len(SLEEP.findall(body)),
             "lines": body.count("\n") + 1,
             "targets": " ".join(targets), "class_gotos": 0, "class_targets": "", "record_states": record_states,

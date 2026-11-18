@@ -340,6 +340,7 @@ def class_text_states(system, wanted):
                     "labels": set(row["label_names"].split()),
                     "jumps": row["gotos_label_names"].split(),
                     "count": int(row["gotos_label"] or 0),
+                    "bare": int(row.get("gotos_label_bare") or 0),
                 }
     return out
 
@@ -605,16 +606,19 @@ def label_join(sites, tables, meta=None, text_states=None):
     literal = [r for r in entry if r["target_kind"] == "literal"]
     supers = class_supers()
     hit = absent = nocode = via_super = 0
+    unresolved = []
     for r in literal:
         names, how = resolve_table(r["package"], r["class"], r["target"], tables, supers, meta)
         if names is None:
             nocode += 1
+            unresolved.append((r, "nocode", None))
         elif r["label"].lower() in {x.lower() for x in names}:
             hit += 1
             if how:
                 via_super += 1
         else:
             absent += 1
+            unresolved.append((r, "absent", how))
     add("entry_labels", len(entry), "`GotoState('X', 'Label')` sites with a literal entry label")
     add("entry_labels_literal_target", len(literal), "of those, whose state target is a `NameConst` too")
     add("entry_labels_in_table", hit, "of those, the label an entry of the target state's own table")
@@ -635,13 +639,18 @@ def label_join(sites, tables, meta=None, text_states=None):
     # runtime starts at is the one at the first byte -- so `Begin` is the name a compiler gives it, not the rule.
     point = {}
     alias = []
-    for key, m in meta.items():
+    for key, m in sorted(meta.items()):
         if not m["entries"]:
             continue
         point[key] = entry_point(m["entries"])
         names = entry_names(m["entries"])
         if len(names) > 1:
             alias.append((key, names))
+            rows.append({"kind": "alias", "package": m["names"][0], "class": m["names"][1],
+                         "state": m["names"][2], "function": "", "scope": "", "offset": "%04x" % min(o for _n, o in m["entries"]),
+                         "op": "LabelTable", "target_kind": "", "target": " ".join(names), "label": "",
+                         "args": "", "key": "entry", "count": len(names),
+                         "note": "%d names on the first byte of code" % len(names)})
     add("entry_points", len(point), "states whose table names an entry point")
     add("entry_points_at_zero", len([1 for name, off in point.values() if off == 0]),
         "of those, whose entry point is the first byte of code (offset 0)")
@@ -661,14 +670,29 @@ def label_join(sites, tables, meta=None, text_states=None):
                      "target_kind": "", "target": name, "label": "", "args": "", "key": "",
                      "count": off, "note": ""})
 
+    for r, why, how in unresolved:
+        chain = ""
+        if meta.get((r["package"].lower(), r["class"].lower(), r["target"].lower())):
+            chain = "%s.%s has a record and no table" % (r["class"], r["target"])
+        rows.append({"kind": why, "package": r["package"], "class": r["class"], "state": r["state"],
+                     "function": r.get("function", ""), "scope": r.get("scope", ""),
+                     "offset": r.get("offset", ""), "op": "GotoState", "target_kind": r["target_kind"],
+                     "target": r["target"], "label": r["label"], "args": r.get("args", ""),
+                     "key": "entry-label", "count": 1,
+                     "note": (("the label is not an entry of the target's table" + (" (reached via %s)" % how
+                                                                                  if how else ""))
+                              if why == "absent" else chain or "no state of that name in the caller's chain")})
+
     if not os.path.exists(TEXT_CSV) and not text_states:
         return out
-    text, counts = {}, {}
+    text, counts, bare_total = {}, {}, [0]
     if os.path.exists(TEXT_CSV):
         for r in csv.DictReader(open(TEXT_CSV, encoding="utf-8")):
             k = (r["package"], r["class"], r["state"])
             counts[k] = int(r.get("gotos_label") or 0)
             text[k] = {x.lower() for x in (r.get("gotos_label_names") or "").split()}
+            bare_total[0] += int(r.get("gotos_label_bare") or 0)
+    bare_total[0] += sum(v.get("bare", 0) for v in text_states.values())
     build = collections.defaultdict(collections.Counter)
     spelled_target = {}
     for r in lab:
@@ -689,6 +713,8 @@ def label_join(sites, tables, meta=None, text_states=None):
     spelled = {k: v for k, v in counts.items() if v}
     add("text_label_states", len(spelled), "states whose text spells a `Goto('label')`")
     add("text_label_jumps", sum(spelled.values()), "`Goto('label')` calls in those states, from the text")
+    add("text_label_bare", bare_total[0],
+        "of those, spelled `goto 'label'` without parentheses -- the same `GotoLabel` op")
     both = sorted(k for k in build if k in spelled)
     add("ai_label_states", len(both), "states both reads cover")
     add("ai_label_jumps", sum(sum(build[k].values()) for k in both), "`GotoLabel` sites in those states")
@@ -821,9 +847,9 @@ def doc_block(rows):
                     count(rows, "ai_label_agree"), count(rows, "extra_label_states"),
                     count(rows, "extra_label_jumps"),
                     count(rows, "label_join_jumps") - count(rows, "ai_label_jumps"),
-                    ("All **%d** joined states" % count(rows, "label_join_agree")
+                    ("All %d joined states" % count(rows, "label_join_agree")
                      if count(rows, "label_join_agree") == count(rows, "label_join_states")
-                     else "**%d of %d** joined states" % (count(rows, "label_join_agree"),
+                     else "%d of %d joined states" % (count(rows, "label_join_agree"),
                                                           count(rows, "label_join_states"))),
                     count(rows, "label_build_only_states"), count(rows, "label_text_only_states")))
     lines.append("")
