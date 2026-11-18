@@ -13121,3 +13121,44 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   themselves: `switch_arms.csv` gives a `Case` arm its extent and this artifact gives the function its count, so
   the shortfall can be checked against the arms' own guards rather than against the text -- whether an arm the
   text does not spell is a compiler-emitted guard (`if (!x) goto`) or a second revision of the body.
+### Execution notes (2026-11-17, 226 of the `else` census's shortfall arms are loop breaks, and the 89 left are one token shape)
+
+- **Task.** The previous note's next measurement: the 229 short functions (**315** arms), and whether an arm the text
+  does not spell is a compiler-emitted guard or a second revision of the body. It is neither -- the arm census was
+  reading loop exits as `else` arms.
+- **The two shapes are the same three tokens.** `if (A) B; else C;` compiles to `JumpIfNot <else>` + `<then>` +
+  `Jump <end>`, and so does `if (A) { ...; break; }`: the then-arm's last statement is a `Jump` that leaves its loop,
+  and the census's rule ("a `Jump` in front of the target that lands past it") cannot tell the two apart. What the
+  jump *skips over* can: a `break` skips the rest of its own loop.
+- **Two rules, both accepted on the join and not by eye.** `tools/jump-branches.py`'s `classify` files an arm as
+  `leave` when the skipped region holds a backward `Jump` whose test begins at or before the condition (**170** arms,
+  a `for`/`while` back edge) or when the trailing `Jump` lands on the `IteratorPop` statement itself (**56** arms, a
+  `foreach`, which leaves no `Jump` back edge at all; a `foreach` *inside* an else body ends the arm with its own
+  `IteratorPop`, which is the arm's last statement and not the target, so that rule does not fire on it). The
+  falsifier is the text join: an arm either rule reclassifies never occurs in a function whose `else` count already
+  equals its text's (**0 of 5,613**) and never in one of the **13** surplus functions -- a rule that read real else
+  arms as breaks would light up exactly there. Self-test cases for both, and one for a loop inside an else arm.
+- **What it moved.** `inventory/jump_branches.csv` gains a `leave` category (226 arms, 3,821 else arms left),
+  `inventory/text_branches.csv` and `inventory/text_branch_functions.csv` a `byte_leave` column, and the join:
+  **96.1%** of the 2,068 functions that carry an `else` (was 88.4%), **91.1%** of the 967 classes (was 82.7%), the
+  shortfall from **315 arms in 229 functions to 89 in 59**, `less` classes from 122 to **37**. The term model does
+  not move (17,452 `JumpIfNot` in the joined bodies, unchanged), so the 989-term surplus story stands per function.
+- **The class-level agreement is now exact.** The 881 agreeing classes are exact on **all 3,631** of their
+  functions; two of the three old near-misses (`ReetouDevice.addsprayedpawn`, `UnrealPawn.isinloadout`) were `leave`
+  arms, and `UnrealPawn.beginstate` is one of the 13 surplus rows a class can still cancel.
+- **What is left is a token shape, not a revision.** The 89 remaining arms are `if (X) continue;` -- a then-arm that
+  is a single `Jump` onto the loop's own increment -- and `if (X) {}` over an `else` emits exactly the same two
+  tokens, which this corpus has (`MasterServerGameStats.Logf`, its then-block is a comment). **66** of the 89 look
+  like the `continue`, and no stream reading separates them, so the residue is a measured limit; only the text's own
+  `else` count tells them apart, and that is the other half of this join rather than an independent arbiter.
+- **Files.** `tools/jump-branches.py` (`leave` in `classify` with both rules, census key, doc-block sentence,
+  three self-test cases) + `tools/text-branches.py` (`byte_leave` in both artifacts, in `jin`, in the census) +
+  `inventory/jump_branches.csv` + `inventory/text_branches.csv` + `inventory/text_branch_functions.csv` +
+  `docs/BYTECODE.md` (the break section, the corrected per-function paragraphs) + `docs/UNKNOWNS.md` U22 +
+  `docs/ARTIFACTS.md` + `inventory/artifact_hashes.csv` + this note. Two dump reads (2.3 s, 5.4 s); no boot, no
+  Ghidra.
+- **Next measurement.** The **13** surplus functions (**17** keywords) are the last one-sided population: text that
+  spells an `else` the record has no arm for. `FontInfo`/`SGFontInfo`'s four `getstatic*font` bodies spell 3-4 and
+  carry 2 arms each, so the question is whether those keywords sit in code the package never compiled (the
+  `#ifdef`-guarded shape the text-only bucket already found) or in a block the arm census merged into its neighbour.
+  A per-function `#ifdef` depth over the arm sites answers that with no new dump read.

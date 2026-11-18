@@ -7,10 +7,14 @@ needs from it: a `JumpIfNot`'s target is the end of its `if` arm, and the token 
 whether the arm has an `else` -- an `if`/`else` compiles to `JumpIfNot <else>` + `<then>` + `Jump <end>`, so the
 `Jump` that sits at the end of the then-arm is the else test.
 
-Every `JumpIfNot` is one of four things, and the split is a measurement rather than a reading of the source:
+Every `JumpIfNot` is one of five things, and the split is a measurement rather than a reading of the source:
 
 * **empty** -- the target is the statement right after the jump, so the arm is empty (`if (x) ;` survives codegen).
-* **else** -- the statement in front of the target is a `Jump` that lands past it: the then-arm skips an else.
+* **leave** -- the trailing `Jump` is a `break`: the region it skips holds a backward `Jump` whose test begins at or
+  before the condition, so the arm ends by leaving its own loop rather than by skipping an else body. This is what a
+  loop exit looks like, and the `Jump` that reaches for the loop's end is byte-identical in shape to an else skip.
+* **else** -- the statement in front of the target is a `Jump` that lands past it, and no loop of the arm's own
+  returns from the skipped region: the then-arm skips an else.
 * **if** -- everything else: a conditional forward jump over a straight arm.
 * **expression** -- the jump (or its target) is not a statement at all, i.e. `&&`/`||` short-circuiting inside a
   condition; those are tokens, not branches, and counting them as arms is what a naive census would report.
@@ -34,6 +38,7 @@ FIELDS = ["kind", "package", "class", "function", "offset", "category", "operand
 CENSUS_NOTE = {
     "jumpifnot": "`JumpIfNot` tokens the graph resolved",
     "else": "with a `Jump` at the end of the then-arm that lands past the target -- an else arm",
+    "leave": "whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`)",
     "empty": "whose target is the statement right after the jump -- an empty then-arm",
     "if": "a conditional forward jump over a straight arm",
     "expression": "inside a condition (`&&`/`||` short-circuit), i.e. not a branch",
@@ -86,7 +91,27 @@ def classify(nodes, edges):
             continue
         prev = stmts[where[target] - 1] if where[target] > 0 else None
         if prev is not None and prev["name"] == "Jump" and prev["offset"] in by_edge and by_edge[prev["offset"]][2] > target:
-            out.append((offset, "else", value, target))
+            # An else skip and a loop `break` compile to the same three tokens (`JumpIfNot`, the then-arm, a `Jump`
+            # past the target), so the trailing `Jump` alone cannot tell them apart. What separates them is what the
+            # jump skips over: a `break` skips the rest of its own loop, whose back edge returns to a test that
+            # begins at or before the condition. A then-arm nested inside a *different* loop (one that starts inside
+            # the arm) does not qualify, because its back edge's test is after the condition.
+            span = which = where[target]
+            rest = len(stmts)
+            while which < rest and stmts[which]["offset"] < by_edge[prev["offset"]][2]:
+                which += 1
+            skipped = stmts[span:which]
+            leaves = any(n["name"] == "Jump" and n["offset"] in by_edge
+                         and by_edge[n["offset"]][2] < n["offset"] and by_edge[n["offset"]][2] <= offset
+                         for n in skipped)
+            # A `foreach` has no `Jump` back edge -- the engine's `IteratorNext` advances it and the loop leaves
+            # through `IteratorPop` -- so a then-arm that ends by landing *on* the `IteratorPop` is the same
+            # `break`, one loop kind over. A `foreach` inside an else body ends the arm with its own `IteratorPop`,
+            # which is the arm's last statement and not the jump's target, so this does not fire on it.
+            if not leaves and which < len(stmts) and stmts[which]["offset"] == by_edge[prev["offset"]][2] \
+                    and stmts[which]["name"] == "IteratorPop":
+                leaves = True
+            out.append((offset, "leave" if leaves else "else", value, target))
         else:
             out.append((offset, "if", value, target))
     return out, len(stmts)
@@ -191,7 +216,7 @@ def read_dump(system):
         census["jump"] += len([e for e in edges if e[1] == "Jump"])
         census["jumpifnot"] += len(verdicts)
         census["backward"] += len([v for v in verdicts if v[3] < v[0]])
-        for key in ("else", "empty", "if", "expression"):
+        for key in ("else", "leave", "empty", "if", "expression"):
             census[key] += counts[key]
         where = {n["offset"]: i for i, n in enumerate([n for n in nodes if n["name"] not in JG.TERMINATORS])}
         for offset, category, value, target in verdicts:
@@ -200,16 +225,17 @@ def read_dump(system):
             arms.append(where[target] - where[offset] - 1)
         rows.append({"kind": "script", "package": package, "class": cls, "function": func, "offset": "",
                      "path": path, "category": "", "operand": "", "target": "", "count": len(verdicts),
-                     "note": "else %d, empty %d, if %d, expression %d, %d statement(s)"
-                     % (counts["else"], counts["empty"], counts["if"], counts["expression"], n_stmts)})
+                     "note": "else %d, leave %d, empty %d, if %d, expression %d, %d statement(s)"
+                     % (counts["else"], counts["leave"], counts["empty"], counts["if"], counts["expression"],
+                        n_stmts)})
         for offset, category, value, target in verdicts:
-            if category in ("if", "else"):
+            if category in ("if", "else", "leave"):
                 rows.append({"kind": "branch", "package": package, "class": cls, "function": func,
                              "offset": "%04x" % offset, "category": category, "operand": value,
                              "target": "%04x" % target, "count": "", "note": "", "path": path})
     out = ([r for r in rows if r["kind"] == "branch"] + [r for r in rows if r["kind"] == "switch"]
            + [r for r in rows if r["kind"] == "script"])
-    for key in ("jumpifnot", "else", "empty", "if", "expression", "backward", "scripts", "jump",
+    for key in ("jumpifnot", "else", "leave", "empty", "if", "expression", "backward", "scripts", "jump",
                 "switch", "switch_scripts", "switch_list", "switch_no_list", "switch_cases", "case_outside",
                 "empty_arm", "switch_arm_min", "switch_arm_max"):
         out.append({"kind": "census", "package": "", "class": "", "function": "", "offset": "",
@@ -262,7 +288,8 @@ def doc_block(rows):
     bare = sorted({"%s.%s" % (r["class"], r["function"]) for r in rows
                    if r.get("kind") == "switch" and str(r.get("count")) == "1"})
     bare_text = (" (`%s`)" % "`, `".join(bare)) if bare else ""
-    return ("\n**%s** `JumpIfNot` tokens resolve to **%s** branches with an `else` arm (**%s%%**), **%s** "
+    return ("\n**%s** `JumpIfNot` tokens resolve to **%s** branches with an `else` arm (**%s%%**), **%s** whose then-arm "
+            "ends by leaving its own loop -- a `break` (**%s%%**) -- **%s** "
             "conditional jumps over a straight arm (**%s%%**) and **%s** empty then-arms (**%s%%**). **%s** of them "
             "jump **backward**, i.e. a loop test at the bottom of its body, and **%s** name no statement at all -- a "
             "`&&`/`||` short circuit would be the only way that happens, and this build has none, so a condition's "
@@ -270,6 +297,7 @@ def doc_block(rows):
             "%s statements long, counted as the distance from the jump to its target -- negative for a loop test, as "
             "expected.\n"
             % (comma(total), comma(count(rows, "else")), "%.2f" % pct(count(rows, "else"), total),
+               comma(count(rows, "leave")), "%.2f" % pct(count(rows, "leave"), total),
                comma(count(rows, "if")), "%.2f" % pct(count(rows, "if"), total),
                comma(count(rows, "empty")), "%.2f" % pct(count(rows, "empty"), total),
                comma(count(rows, "backward")), comma(count(rows, "expression")),
@@ -347,6 +375,30 @@ def selftest():
     if got != [(0, "if", 3, 4)]:
         print("FAIL jump-branches: a bare if read as %r" % (got,))
         return 1
+    # A loop `break` reads as `else` on the three tokens alone: a loop test at 0, the `if` at 2, its then-arm at 4,
+    # the trailing `Jump 16` at 6, the rest of the loop body at 8..10 and the loop's back edge at 10, which returns
+    # to the test at 0 -- *before* the condition -- so the trailing Jump leaves the loop and is a `break`.
+    nodes4 = [node(0, "JumpIfNot", 3), node(2, "JumpIfNot", 5), node(4, "Let", 6), node(6, "Jump", 8),
+              node(8, "Let", 9), node(10, "Jump", 11), node(16, "Return", 17)]
+    edges4 = [(0, "JumpIfNot", 16, 16), (2, "JumpIfNot", 8, 8), (6, "Jump", 16, 16), (10, "Jump", 0, 0)]
+    got, _n = classify(nodes4, edges4)
+    if got != [(0, "if", 16, 16), (2, "leave", 8, 8)]:
+        print("FAIL jump-branches: a loop break read as %r" % (got,))
+        return 1
+    # The same shape with the back edge returning *into* the arm (test at 9, after the condition at 2) is a loop
+    # inside the else body, so the arm is an else.
+    got, _n = classify(nodes4, edges4[:3] + [(10, "Jump", 9, 9)])
+    if got != [(0, "if", 16, 16), (2, "else", 8, 8)]:
+        print("FAIL jump-branches: a loop inside an else arm read as %r" % (got,))
+        return 1
+    # A `foreach` `break`: no `Jump` back edge at all -- the arm's trailing `Jump` lands on the loop's
+    # `IteratorPop`, which is how that loop kind leaves.
+    nodes5 = [node(0, "JumpIfNot", 3), node(2, "Let", 3), node(4, "Jump", 5), node(8, "IteratorNext", 9),
+              node(10, "JumpIfNot", 11), node(14, "IteratorPop", 15), node(16, "Return", 17)]
+    got, _n = classify(nodes5, [(0, "JumpIfNot", 8, 8), (4, "Jump", 14, 14), (10, "JumpIfNot", 2, 2)])
+    if got != [(0, "leave", 8, 8), (10, "if", 2, 2)]:
+        print("FAIL jump-branches: a foreach break read as %r" % (got,))
+        return 1
     # A case list with a shared body, and a switch whose next statement is not a `Case`.
     stmts = [node(0, "Switch", 1), node(1, "Case", 2), node(2, "Case", 3), node(3, "Let", 4),
              node(4, "Case", 5), node(5, "Return", 6), node(6, "Switch", 7), node(7, "Let", 8)]
@@ -359,7 +411,7 @@ def selftest():
     # The block reproduces from its own CSV.
     import tempfile
     rows = [{"kind": "census", "count": v, "note": CENSUS_NOTE[k]} for k, v in
-            (("jumpifnot", 4), ("else", 1), ("if", 1), ("empty", 1), ("expression", 0), ("backward", 1),
+            (("jumpifnot", 4), ("else", 1), ("leave", 1), ("if", 1), ("empty", 1), ("expression", 0), ("backward", 1),
              ("scripts", 1), ("jump", 1), ("arm_min", 1), ("arm_max", 2), ("switch", 1), ("switch_scripts", 1),
              ("switch_list", 1), ("switch_no_list", 0), ("switch_cases", 2), ("case_outside", 0), ("empty_arm", 1),
              ("switch_arm_min", 2), ("switch_arm_max", 2))]
@@ -375,8 +427,9 @@ def selftest():
         for name in os.listdir(tmp):
             os.unlink(os.path.join(tmp, name))
         os.rmdir(tmp)
-    print("ok   jump-branches: else, empty, if and expression each read as themselves, a case list counts its empty"
-          " arm and a switch with no list is named, and the block reproduces from its CSV")
+    print("ok   jump-branches: else, leave, empty, if and expression each read as themselves, a loop break is not an"
+          " else and a loop inside an else arm is, a case list counts its empty arm and a switch with no list is"
+          " named, and the block reproduces from its CSV")
     return 0
 
 
