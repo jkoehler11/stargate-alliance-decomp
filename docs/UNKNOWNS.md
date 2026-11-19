@@ -4872,8 +4872,19 @@ rectangle, while the children's numbers are one set** -- one defaults block per 
 position. The values are offsets inside the parent's box, and the screen position is their composition down
 the chain.
 
-**What is still open.** The composition itself: whether `WinLeft`/`WinTop` scale by the parent's width/height,
-whether a value above 1 is absolute, and where the owner's own offset enters. Two routes: (1) `GUIComponent`'s
+**Answered: the composition is `owner.Actual + v * owner's extent`, and 2 is where pixels begin.** The eight
+conversions are in `GUIComponent`'s own class table at slots 35-42 (`0x00536648`), not behind their exec thunks
+(each thunk tail-calls `[opcode*4 + 0x6313e8]`, an opcode-route table, so it names no slot). `tools/ui-layout-native.py`
+writes `inventory/ui_layout_native.csv`: per slot, the `Win*` field it substitutes at the `-1.0f` sentinel
+(`0x004daba0`), the `|v| < 2.0` band (`0x004d21c0`), the type byte (`BoundingType` `+0x95` for position,
+`ScalingType` `+0x96` for size), the `+0x7c` convert bit, and the owner slots it calls. Slots 35-38 are `Actual*`
+and answer pixels (`ActualLeft = owner.ActualLeft + v * owner.ActualWidth`); slots 39-42 are `Relative*` and
+divide instead (`(v - owner.ActualLeft) / owner.ActualWidth`), so the two families are inverses of one mapping.
+An axis is parent-relative only where its type is 1/3 or 2/3 (x/width, y/height) *and* the convert bit is set;
+`GUIComponent` states `SCALE_None`, so the default is the screen and a screen-space axis scales by
+`ResX`/`ResY` (`+0x218`/`+0x21c`). Above the band the value is used as it stands -- `GUIPage`'s own block places
+every page at `(38, 28)` `564x424` -- and `RelativeHeight` (`0x002f8a30`) tests the width's convert bit
+(`f7 46 7c 00 00 80 00` at `0x002f8a7c`) where `ActualHeight` tests the height's. Two routes: (1) `GUIComponent`'s
 own body -- its vtable slot is in the class table -- is the cheaper read and needs no boot; (2) the frame
 instrument 7.2 already uses: boot to one options page, capture with `tools/xemu/frame-diff.py`, rebuild that
 page's package with one `WinTop` changed by 0.05 and read whether the frame differs in that widget's rectangle
@@ -4889,9 +4900,13 @@ call is the *verdict*, not the measurement: a one-tag block is below `MIN_PROPER
 start and withholds "fully declared" — that is `docs/systems/UI.md`'s measured trade, and it is the same call
 `MIN_PROPERTIES` records.
 
-**Status.** Answered at the data level (parent-relative and unclamped, every binding placed); the twelve panel
-blocks are measured as one-tag group-end blocks with their tags, and only the *policy* of publishing them is
-open. The native composition is still open. The rows a list draws inside its own box are U28.
+**Status.** Answered, both halves: the data level (parent-relative and unclamped, every binding placed) and
+the native composition (`inventory/ui_layout_native.csv`, eight conversions; `inventory/ui_layout_values.csv`,
+1,339 blocks over 149 classes with their bands and their per-axis space, in `docs/systems/UI.md`'s
+`ui-layout` block). The twelve panel blocks are measured as one-tag group-end blocks with their tags, and only
+the *policy* of publishing them is open. What a boot could still add is the frame control -- one page rebuilt
+with a `WinTop` changed by 0.05 -- which is a check on the formula, not an unknown. The rows a list draws inside
+its own box are U28.
 
 ## U28. A list's row is a native rectangle and a script body -- answered: three placements, an empty cell table, and one list class nothing names
 
