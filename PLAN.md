@@ -13630,6 +13630,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   headers are not in the image, and matching a package-based `UState`'s field order to them is a join this read does
   not make. (2) What the 876 empty slots are for -- `GNames[690]` (`0x2b2`, the value the setter treats as
   `BadToken`) beside a slot the reserve does name, in one live boot (U26).
+### Execution notes (2026-11-18, a page's hints are four defaults flags, and its frame is inherited)
+
+- **Task.** The previous note's next measurement: `SGPageBase.InitComponent` shows a controller-button caption
+  only when the page sets `bButtonA`…`bButtonY`, so a census of those four flags over the 59 pages is the first
+  page-level property measurement the flow table cannot give. Widened to the rest of a page's own defaults, which
+  the same emitted tree holds.
+- **30 of the 59 pages show a hint, 29 show none.** 67 flag rows, 35 declared by the page and 32 inherited
+  (`OptionsEditBase`'s A+B reach three subclasses, `VirtualKeyboardPage`'s four reach the two name pages), in
+  five distinct sets: A+B on 19 pages, all four on 4, B alone on 4, A+B+Y on 2, A+B+X on 1. The four captions are
+  `Engine.Localizer`'s `sSelect`=Select, `sBack`=Back, `sDelete`=Delete and `sCreateNew`="Create New" — a class in
+  `Engine`, not in `StargateMenus`, which is why the captions are the same on every page.
+- **A flag is a drawn caption because every page that rebuilds the wiring forwards to the base.** 33 pages
+  replace `InitComponent` and all 33 call `Super.InitComponent`; 18 replace `InternalOnXControllerEvent`, and the
+  union of handler bodies over a page's chain names the `XC_` code for **65 of the 67 flags**. The two exceptions
+  are `CreateNewProfile`'s and `OptionsEditProfile`'s `bButtonA`: both print "Select" with no `XC_A` handler
+  anywhere above them, so the caption is the page's and the press is not. Back is the one hint the base itself
+  answers (`XC_B`/`XC_BACK` → `CloseMenu(true,true)`).
+- **The frame is inherited and a page states almost nothing visual.** `SGPageBase`'s block carries
+  `Background=Shader'Engine.MM_main_menu_S'`, `BackgroundStyle=ISTY_ScaledBackground` and `StyleName=MainMenu`;
+  over the 50 pages with a block of their own (255 top-level properties) only **16 rows on 9 pages** touch
+  drawing, 39 set a `TitleString`, and **4 still carry the placeholder** (`Basic SG GUI Page: Insert Title`).
+  **114 `Begin Object` blocks over 46 pages** hold the widgets and 9 pages state no defaults at all. The one
+  non-visual page default worth naming is `SinglePlayerChapterSelect`'s `URL="?Game=StargateGame.StoryModeGame"`.
+- **A child's property is not the page's, and the first read counted them as if it were.** `defaults-emit`
+  renders `Begin Object` children inline, so a pass over every `Name=value` line reported `WinTop` on 31 pages
+  where the page sets it on **two**, and read a component's own `bButtonA=False` as the page's. The reader now
+  tracks the nesting and only depth-0 properties are the page's; `--check` asserts on a synthetic tree that a
+  child's `bButtonA=False` does not shadow the page's inherited True, and that a page turning a base flag off
+  drops the row instead of inheriting it back.
+- **Files.** `tools/ui-menu-flow.py` (the nesting-aware defaults reader, `super_path`, the hint/caption/draw and
+  wiring-override readers, the handler-coverage join, 17 new self-test assertions, `--sweep` now refuses to run
+  without `--defaults`), `inventory/menu_flow.csv` (420 rows: 72 edge, 67 hint, 67 hint_handler, 59 page, 52
+  override, 39 mention, 30 config, 14 array, 10 draw, 4 hud, 4 caption, 1 hud_swap, 1 census),
+  `docs/systems/UI.md` (three new sections in the generated block; the defaults paragraph and the "what a page
+  draws" bullet rewritten with the counts; a fifth rebuild bullet), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The 114 component blocks are what a page actually shows and this census only counts
+  them: emitting one family's subobject property names (the six options pages, which share `OptionsEditBase`)
+  would turn "the layout is in the components" into a table, and say whether a component set is inherited the
+  way the hint flags are.
+
 ### Execution notes (2026-11-18, the UI page flow is a string graph, and the Replicator HUD is player-only)
 
 - **Task.** `docs/systems/UI.md`'s two unmeasured bullets: *what any page looks like or which flow leads where*
