@@ -63,11 +63,16 @@ they spawn. The doc now says that instead.
 means (a start in the first 64 bytes whose stream ends exactly at the export's end and whose names all resolve).
 That is a strict reading — it counts what can be read, not what might be there.
 
-`squad_scripts.csv` is not written by it. The same pass finds **581** `(map, script)` pairs against the committed
-file's **614**: 35 references the old enumeration had and this one does not, 2 the other way. The old script
-therefore used something broader than a located property block — a second property, or a looser block rule — and
-until that is identified the file stays as it is rather than losing references. `make map-census` prints the
-delta instead of overwriting, which is the honest version of "this number is not yet reproducible".
+`squad_scripts.csv` is not written by it, and the "not yet reproducible" reading above is superseded
+(2026-11-19): the difference is not a broader rule, it is the name-table fix. A walk of the same reader over
+all 73 maps finds **630** `(map, script)` pairs against the committed file's **614**, and the whole delta is two
+maps — `M17D` and `M21A`, the two whose name tables the length rule truncated
+(`docs/PACKAGE_READER.md`), which the committed file records as a single `?` row each (8 and 10 spawners).
+With the fix they resolve to **18 named scripts**, which is exactly `614 - 2 + 18 = 630`. What still differs is
+the spawner count behind those rows: the walk sees **719** spawner properties (`IntelligentSpawner` 706,
+`HaakenPod` 13) where the committed file totals 711, an 8-property residue left open here rather than
+overwritten — so the file stays as it is until that residue is pinned, and `make map-census` keeps printing
+the delta.
 
 ## Every map written, with references resolved (measured 2026-11-06)
 

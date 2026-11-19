@@ -14186,3 +14186,46 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Not in this PR.** The frame control (`tools/xemu/frame-diff.py` with one page's `WinTop` +0.05) and any change
   to `MIN_PROPERTIES`: the one-tag verdict still needs the compile loop reading these files back, and that is still
   the thread's open end.
+
+### Execution notes (2026-11-19, an array is its elements, and a struct's width is the instance's)
+
+- **Task.** PLAN 5.2's recorded residue: "arrays and structs are emitted by size", i.e. a T3D an editor cannot
+  load. Three items in one thread — the array value, the struct census that says what decoding a struct would
+  cost, and the coverage table the thread had let go stale.
+- **The array rule was already measured, once.** `tools/action-wiring.py` reads `Actions` as a compact count
+  followed by that many compact object indices. `tools/map-to-t3d.py` now applies it to every `Array` property,
+  with a second test the single-property read did not need: every index must land in the package's own
+  export/import tables. Without it a struct array whose first byte is a plausible count publishes invented
+  actors (`SizeScale` is 35 bytes of floats). 32,586 of 37,889 arrays decode into 117,398 element lines
+  (`PathList(0)=ReachSpec'ReachSpec2550'`); 5,303 are counted as refusals, 4,510 of them dividing exactly into
+  14,576 struct-array records of a constant width and 793 not dividing at all.
+- **The struct census is the finding, and it is a negative for the obvious next step.** `inventory/t3d_structs.csv`
+  (79 names, 312,295 properties, 203,147 decoded by the three fixed-size decoders) shows a struct's width belongs
+  to the instance: `Vector` 12 on 152,108 and 16 on 19; `PointRegion` 13 on 61,298 and **14 on 15,726**; `Scale`
+  25 on 17,550 and 28 on 8; `Orientation` 106/122/123. **109,148 of 312,295** sit at a size their name does not
+  predict, so "decode the structs" is not a decoder table, it is a per-instance layout read — and the array's own
+  element type is in the class's `ArrayProperty` declaration, which this reader does not carry.
+- **Two artifacts, arithmetic on each other.** `inventory/t3d_values.csv` (per map) and
+  `inventory/t3d_structs.csv` (per struct name) are written by `make t3d`; `--check` needs no dump and asserts
+  the two agree per map and in total, and drives `decode_obj_array`/`element_layout` on synthetic payloads
+  (a well-formed pair, one element short, an index past the export table).
+- **The coverage table was stale, and the delta is one reader fix.** Regenerating `inventory/t3d_coverage.csv`
+  moved 2 of its 73 rows: `M17D` 1840 -> 1954 actors and `M21A` 1905 -> 1960 (the two maps the name-length rule
+  had truncated), so the totals go 121,225 -> **121,394** actors and 1,178,141 -> **1,180,949** properties; the
+  T3D grows to 49,211,838 bytes because an array is now one line per element. A second run reproduces it.
+- **The `squad_scripts.csv` mystery is solved, and it is not a broader rule.** The page recorded 581 pairs
+  against the file's 614 and blamed a looser block rule. A walk of the same reader finds **630**, and the delta
+  is exactly `M17D` and `M21A` — the committed file's single `?` row each (8 and 10 spawners), which now resolve
+  to 18 named scripts: 614 - 2 + 18 = 630. The spawner totals still differ by 8 (walk 719 = `IntelligentSpawner`
+  706 + `HaakenPod` 13, file 711), so the file is still not overwritten; the residue is recorded, not fixed.
+- **Files.** `tools/map-to-t3d.py` (`decode_obj_array`, `element_layout`, `resolves`, `render_doc`,
+  `--values`/`--structs`/`--write-doc`/`--check-doc`/`--check`), `inventory/t3d_values.csv` (new, 73 rows),
+  `inventory/t3d_structs.csv` (new, 79 rows), `inventory/t3d_coverage.csv` (regenerated), `docs/T3D.md`
+  (the new section, its generated block, the squad paragraph corrected in place), `tools/ci.py`
+  (`t3d-values-doc`), `Makefile` (`make t3d` writes both censuses, new `make t3d-values-doc`, help line),
+  `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Gates.** `make ci` green; `t3d-values-doc` holds the page block on the two artifacts, and the tool contract's
+  dump-free `--check` runs the synthetic array payloads. No boot, no Ghidra; a full `make t3d` is 64 s.
+- **Next measurement.** The array's element type — the class's `ArrayProperty` declaration, which is where the
+  4,510 struct arrays and the 793 unshaped payloads stop — and after that the per-instance struct layout the
+  census says a name cannot give.
