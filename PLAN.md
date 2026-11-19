@@ -1031,6 +1031,27 @@ other 38 rows.
       the corrected "does not claim" bullet, a new next instrument, the generated block) +
       `docs/ACTOR_PROPERTIES.md` (the tie-break priced from the action side) + `make action-parameters`/
       `make action-relocation` + this note. 73 maps in ~2.5 min for the relocate pass; no boot.
+      **The five `EndType` tags are answered: a name the shipped `GamePlay.u` cannot hold, skipped by the
+      engine (2026-11-19).** `tools/tag-origin.py` walks every `System/*.u` name table with its class texts (18
+      packages, 37,094 names) and every `Maps/*.unr` table (73). `EndType` is in `Engine`'s table at index 5959,
+      declared by `Engine.IMusicActor` and spelled by 3 of `Engine`'s class texts, while `GamePlay.u` holds
+      neither the string among its 1,201 names nor one class text that spells it -- so no class the package
+      ships can declare or read it, and the action's own text never mentions an end type (the end type is set
+      on `PlayerController.ClientSetIMusicState`'s path). Exactly **2 of 73** maps hold the name in their own
+      table, and they are the two that state the tag, which is what a placement saved against a revision with
+      the property looks like. All five tags are a `Byte` of size 1 reading `IMEND_ONESHOT`
+      (`LevelInfo.EIMusicEndType`'s second member) and each block refuses no name but the tag
+      (`others_refused=0`), so the start is the shipped one. The runtime half is native: the walk
+      `0x0003bdc0` logs `Property %s of %s not found` (`0x4d4c14`, pushed at `0x3beb1`), tail-jumps to the
+      shared handler at `0x3c155`, logs `Skipping %i bytes of type %i` (`0x4d4a20`, pushed at `0x3c187`) unless
+      the name is `XLevel`, reads the tag's `Size` bytes one at a time (`0x37040` at `0x3c19a`) and re-enters
+      the tag loop at `0x3be40` -- so the object is not refused, only the tag is spent. Tool
+      (`tools/tag-origin.py`: the name-table and class-text census, the placement walk through the shipped
+      locator and its repair, the enum parsed off the declaring class's own text, 5 synthetic cases in
+      `--check`) + `inventory/tag_origin.csv` (27 rows, new) + `docs/MAP_ACTION_PARAMETERS.md` (the answered
+      paragraph, a generated block, the "not measured here" caveat retired) + `docs/NATIVE_PROPERTIES.md`
+      §4/§6 (the unknown-name path at its addresses) + `docs/UNKNOWNS.md` U29 + `make tag-origin` + this
+      note. 3.5 s; no boot.
       **The last map-side artifact with no generator now has one, and `squad_scripts.csv` is 630 rows, not 614
       (2026-11-19).** `docs/ARTIFACTS.md` kept this file in its orphan list because `make map-census` refused to
       write it: the pass found 581 `(map, script)` pairs where the file had 614, and the note here read that as
