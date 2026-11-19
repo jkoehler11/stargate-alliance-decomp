@@ -733,6 +733,32 @@ content with no route to the screen.
 | `ItemsPerPage` | `0x260` | counted up by the PreDraw's fit loop, capped at 1000 |
 | `Top` | `0x258` | row loop starts at [this+0x258] and stops at Top+ItemsPerPage |
 | `interItemGutter` | `0x26c` | the step between rows, and half of it insets the first |
+
+#### The box is not a list, and its item draw is another slot 58
+
+`GUIListBoxBase` extends `GUIMultiComponent`, not `GUIListBase`: a list box is a component that hosts a list, and its `PreDraw` draws **one** item per frame through slot 58 -- the component's slot 58 (`+0xe8`), a different body from `GUIListBase`'s slot 58 at the same offset. `2` classes override that item draw, and of the `252` slot bodies in the box tree not one loads the `OnDrawItem` index or calls its dispatcher, so a body wired onto a box would never run.
+
+| class | slot | body | what it draws |
+|---|---|---|---|
+| `GUIMultiColumnListBox` | 58 | `0x00301890` | its own item draw |
+| `GUIListBoxBase` | 30 | `0x002fab10` | draws one item per frame |
+| `GUIListBoxBase` | 58 | `0x003015b0` | the selected row |
+
+`GUIListBox` and `GUIScrollTextBox` add no draw of their own: their tables differ from `GUIListBoxBase`'s only in slot 3, so a body wired onto one of those classes would have nowhere to be dispatched from.
+
+* **delegate audit** -- 252 slot bodies: no box slot body loads the OnDrawItem index or calls its dispatcher, so a body wired onto a box would never run
+* **receiver audit** -- 6 wirings: every receiver resolves to a GUIListBase descendant (GUIMultiColumnList 1, GUIVertList 4, ServerList 1), so the box's missing dispatch is unreachable from the shipped corpus
+
+#### The styled-text routine: four clip culls and no width test
+
+The stock item draw reaches `GUIStyles.DrawText` (`0x002ff790`) twice -- once per text pass -- and that routine's whole suppression logic is four compares against the canvas clip rect: a cell's width is used only in the `X + W` sum of one of them and in the rect handed to the canvas, so a **zero-width cell is not shortcircuited** -- it is culled only when its anchor lies outside the clip rectangle.
+
+| measure | answer |
+|---|---|
+| `clip rect` | the rect is culled against this box only: right edge past the left clip, left edge past the right clip, and the same for the vertical pair |
+| `font table` | the style byte indexes the font array and the body sets the canvas's font/colour for the draw, then restores the five fields it saved |
+| `styled text` | the stock item draw calls it at two sites 0x55 apart with different rect arguments; the styled text of a row is that call |
+| `width use` | the width reaches one clip sum and the rect handed to the canvas (vtable +0xc4); no compare in the body tests it, so a zero-width cell is culled only when its anchor lies outside the clip rectangle |
 <!-- /generated:list-native -->
 
 

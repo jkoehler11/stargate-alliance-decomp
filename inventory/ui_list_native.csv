@@ -4,6 +4,14 @@ bind,stock item draw slot,GUIListBase,58,0x00301c30,added over GUIComponent,the 
 bind,OnDrawItem,default.xbe,,0x007b8144,FName index global,wide string,derived,the name the delegate is dispatched under
 bind,delegate dispatcher,default.xbe,,0x00300ee0,loads the OnDrawItem index,1 reference(s),derived,builds the delegate's parameter block and calls it; its return is the `shortcircuit` bool
 bind,name-index table,default.xbe,,0x001226a0,471 name-ctor sites,103 names cached,derived,the static initialisers that cache an FName index per event name (4 bodies)
+box,GUIListBox,GUI,,0x00539110,inherits every slot,no draw of its own,passthrough,its table differs from GUIListBoxBase's only in slot 3
+box,GUIListBoxBase,GUI,,0x00538f10,extends GUIMultiComponent,"component, not a list",tree,"the box's item draw is GUIMultiComponent slot 58, not GUIListBase's"
+box,GUIMultiColumnListBox,GUI,58,0x00301890,override,its own item draw,item-draw,replaces GUIListBoxBase's slot 58 body 0x003015b0
+box,GUIScrollTextBox,GUI,,0x00539010,inherits every slot,no draw of its own,passthrough,its table differs from GUIListBoxBase's only in slot 3
+box,delegate audit,box tree,,,252 slot bodies,0 references,absent,"no box slot body loads the OnDrawItem index or calls its dispatcher, so a body wired onto a box would never run"
+box,GUIListBoxBase,slot 30,30,0x002fab10,"one call, no loop",draws one item per frame,pre-draw,inherited from GUIMultiComponent: calls GUIComponent's slot 30 (0x002f9e20) and then slot 58 once with the canvas
+box,GUIListBoxBase,slot 58,58,0x003015b0,override of GUIMultiComponent,the selected row,item-draw,reads the List's ItemsPerPage/ItemHeight/gutter and draws one row; no OnDrawItem dispatch
+box,receiver audit,ui_list_rows.csv,,,6 wirings,6 list receivers,no box receiver,"every receiver resolves to a GUIListBase descendant (GUIMultiColumnList 1, GUIVertList 4, ServerList 1), so the box's missing dispatch is unreachable from the shipped corpus"
 class,GUIHorzList,GUI,59,0x005395b8,script,list,family,extends GUIListBase
 class,GUIListBase,GUI,59,0x005392e8,native,list,family,extends GUIComponent
 class,GUIListBox,GUI,63,0x00539110,script,box,family,extends GUIListBoxBase
@@ -13,6 +21,10 @@ class,GUIMultiColumnListBox,GUI,63,0x005397b8,script,box,family,extends GUIListB
 class,GUIScrollText,GUI,59,0x005394c8,native,list,family,extends GUIVertList
 class,GUIScrollTextBox,GUI,63,0x00539010,script,box,family,extends GUIListBoxBase
 class,GUIVertList,GUI,59,0x005393d8,script,list,family,extends GUIListBase
+drawtext,clip rect,FCanvas,,0x3c,four floats,"0x3c left, 0x40 top, 0x44 right, 0x48 bottom",measured,"the rect is culled against this box only: right edge past the left clip, left edge past the right clip, and the same for the vertical pair"
+drawtext,font table,GUIStyles,,0xb0,style byte -> font,array of fonts,measured,"the style byte indexes the font array and the body sets the canvas's font/colour for the draw, then restores the five fields it saved"
+drawtext,styled text,GUIStyles,,0x002ff790,called twice by the stock item draw,"one routine, 4 clip compares",measured,the stock item draw calls it at two sites 0x55 apart with different rect arguments; the styled text of a row is that call
+drawtext,width use,rect,,,X + W,never compared with zero,measured,"the width reaches one clip sum and the rect handed to the canvas (vtable +0xc4); no compare in the body tests it, so a zero-width cell is culled only when its anchor lies outside the clip rectangle"
 field,Index,GUIListBase,,0x25c,object offset,witnessed in 2 body/bodies,measured,"the selected row: compared per item to pass `bSelected` -- 0x00301de0, 0x00302370"
 field,ItemHeight,GUIListBase,,0x264,object offset,witnessed in 1 body/bodies,measured,"set from the style's text height, then used as the row's H -- 0x003013c0"
 field,ItemPadding,GUIListBase,,0x270,object offset,witnessed in 1 body/bodies,measured,"read into ItemHeight once, before ItemsPerPage is counted -- 0x003013c0"

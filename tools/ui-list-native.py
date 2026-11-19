@@ -98,6 +98,20 @@ RECT = {
     ],
 }
 
+# The other tree: a "list box" is a `GUIMultiComponent`, and its `PreDraw` draws exactly one item
+# through slot 58 -- the *component's* slot 58, which is a different body from `GUIListBase`'s slot
+# 58 at the same `+0xe8` offset. `GUIListBoxBase` overrides it; a page's `OnDrawItem` body is
+# dispatched only by the list tree's row loops, so the box's item draw is where a delegate would go
+# missing if anything wired one onto a box.
+BOX_ROOT = "GUIListBoxBase"
+
+# The styled-text routine's clip rectangle: `FCanvas`'s four floats, each used by one compare.
+CLIP_FIELDS = [(0x3C, "clip left"), (0x40, "clip top"), (0x44, "clip right"), (0x48, "clip bottom")]
+
+# The style's font table: `GUIStyles` indexes it by the style byte to pick the font it sets on the
+# canvas for the duration of one draw.
+FONT_ARRAY = 0xB0
+
 
 # ------------------------------------------------------------------ image
 
@@ -172,6 +186,17 @@ class Image:
             rel = struct.unpack_from("<i", blob, i + 1)[0]
             if base + i + 5 + rel == target:
                 out.append(base + i)
+        return out
+
+    def callers_in(self, va, target, hi):
+        """Direct `E8` calls to `target` inside the body starting at `va`."""
+        blob = self.bytes_at(va, max(0, (hi or extent(va)) - va))
+        out = []
+        for i in range(len(blob) - 5):
+            if blob[i] != 0xE8:
+                continue
+            if va + i + 5 + struct.unpack_from("<i", blob, i + 1)[0] == target:
+                out.append(va + i)
         return out
 
     def contains_dword(self, lo, hi, value):
@@ -339,6 +364,282 @@ def family(classes):
                     out[name] = (branch, r.get("package", ""), own, r.get("is_native", ""))
             cur, depth = sup, depth + 1
     return out
+
+
+# ------------------------------------------------------------- the box half
+
+PROPERTIES = os.path.join(ROOT, "inventory/class_properties.csv")
+WIRINGS = os.path.join(ROOT, "inventory/ui_list_rows.csv")
+
+
+def load_properties():
+    """`(class, property) -> friendly type`, the declared type of every property in the corpus."""
+    props = {}
+    with open(PROPERTIES, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            props[(r["class"], r["property"])] = r.get("friendly_type") or ""
+    return props
+
+
+def prop_type(classes, props, cls, prop):
+    """The class that declares `prop` on `cls`'s chain, and that property's type."""
+    cur, depth = cls, 0
+    while cur and depth < 32:
+        if (cur, prop) in props:
+            return cur, props[(cur, prop)]
+        cur, depth = (classes.get(cur, {}).get("super") or ""), depth + 1
+    return None, None
+
+
+def receiver_class(classes, props, body, receiver):
+    """The class of the object a wiring writes to: `self`, `List`, or `Panel.List`."""
+    if receiver == "self":
+        return body
+    parts = receiver.split(".")
+    cur = body
+    for part in parts:
+        _decl, cur = prop_type(classes, props, cur, part)
+        if not cur:
+            sys.exit("FAIL ui-list-native: %r.%r does not resolve (wiring on %r)"
+                     % (body, receiver, body))
+    return cur
+
+
+def box_half(img, classes, fam, sym_slots, sym_names, del_index, dispatcher, loops):
+    """The box tree's own item draw: one slot, one row, and no delegate."""
+    rows = []
+    if BOX_ROOT not in fam:
+        sys.exit("FAIL ui-list-native: %s is not in the family" % BOX_ROOT)
+    tva = [t for t, c in sym_names.items() if c == BOX_ROOT][0]
+    n = sym_slots[tva]
+    own = [img.u32(tva + i * 4) for i in range(n)]
+    parent = classes[BOX_ROOT]["super"]
+    ptva = [t for t, c in sym_names.items() if c == parent]
+    pslots = [img.u32(ptva[0] + i * 4) for i in range(sym_slots[ptva[0]])] if ptva else []
+    # the box must not descend from the list root: the two slot-58s are different trees
+    for branch, root in ROOTS:
+        cur, depth = BOX_ROOT, 0
+        while cur and depth < 32:
+            if cur == root and branch != "box":
+                sys.exit("FAIL ui-list-native: %s descends from %s" % (BOX_ROOT, root))
+            cur, depth = (classes.get(cur, {}).get("super") or ""), depth + 1
+    if BOX_ROOT in [c for c, v in fam.items() if v[0] == "list"]:
+        sys.exit("FAIL ui-list-native: %s is counted as a list" % BOX_ROOT)
+    rows.append(dict(kind="box", name=BOX_ROOT, owner=classes[BOX_ROOT]["package"], slot="",
+                     va="0x%08x" % tva, form="extends %s" % parent, value="component, not a list",
+                     verdict="tree", note="the box's item draw is %s slot %d, not GUIListBase's"
+                                          % (parent, 58)))
+
+    # the one slot whose body calls slot 58 through the object's vtable is the box's PreDraw
+    vcall = struct.pack("<I", 58 * 4)
+    holders = []
+    for i, fn in enumerate(own):
+        lo, hi = fn, extent(fn)
+        blob = img.bytes_at(lo, max(0, hi - lo))
+        if any(blob[k] == 0xFF and blob[k + 1] in (0x90, 0x91, 0x92, 0x93)
+               and blob[k + 2:k + 6] == vcall for k in range(len(blob) - 6)):
+            holders.append(i)
+    if len(holders) != 1:
+        sys.exit("FAIL ui-list-native: %s has %d slots calling slot %d, expected 1"
+                 % (BOX_ROOT, len(holders), 58))
+    pre = holders[0]
+    pre_body = own[pre]
+    # the body may be inherited (it is, on this build): then the parent call must reach the first
+    # ancestor whose slot `pre` is a different body -- that is what "PreDraw, then DrawItem" means
+    anc, target = parent, None
+    while anc and anc in classes and target is None:
+        at = [t for t, c in sym_names.items() if c == anc]
+        if at and pre < sym_slots[at[0]]:
+            body = img.u32(at[0] + pre * 4)
+            if body and body != pre_body:
+                target = body
+                break
+        anc = classes[anc]["super"]
+    if target is None or not img.callers_in(pre_body, target, extent(pre_body)):
+        sys.exit("FAIL ui-list-native: the box's slot %d body does not chain to an ancestor's" % pre)
+    rows.append(dict(kind="box", name=BOX_ROOT, owner="slot %d" % pre, slot=str(pre),
+                     va="0x%08x" % pre_body, form="one call, no loop",
+                     value="draws one item per frame", verdict="pre-draw",
+                     note="%s: calls %s's slot %d (0x%08x) and then slot %d once with the canvas"
+                          % ("inherited from %s" % parent if pre_body in pslots else "own",
+                             anc, pre, target, 58)))
+
+    item = own[58]
+    body = img.bytes_at(item, extent(item) - item)
+    for disp, label in ((0x260, "ItemsPerPage"), (0x264, "ItemHeight"), (0x26C, "interItemGutter")):
+        if struct.pack("<I", disp) not in body:
+            sys.exit("FAIL ui-list-native: the box's item draw never reads +0x%x (%s)" % (disp, label))
+    if struct.pack("<I", del_index) in body:
+        sys.exit("FAIL ui-list-native: the box's item draw references the %s index" % DELEGATE)
+    rows.append(dict(kind="box", name=BOX_ROOT, owner="slot 58", slot="58", va="0x%08x" % item,
+                     form="override of %s" % parent, value="the selected row",
+                     verdict="item-draw",
+                     note="reads the List's ItemsPerPage/ItemHeight/gutter and draws one row; "
+                          "no %s dispatch" % DELEGATE))
+
+    seen = set()
+    for cls in sorted(fam):
+        if fam[cls][0] != "box" or cls == BOX_ROOT:
+            continue
+        tv = [t for t, c in sym_names.items() if c == cls]
+        if not tv:
+            continue
+        tv = tv[0]
+        cn = sym_slots[tv]
+        cv = [img.u32(tv + i * 4) for i in range(cn)]
+        ptv = [t for t, c in sym_names.items() if c == classes[cls]["super"]]
+        pv = [img.u32(ptv[0] + i * 4) for i in range(sym_slots[ptv[0]])] if ptv else []
+        diff = [i for i in range(cn) if i >= len(pv) or (i != 3 and i < len(pv) and cv[i] != pv[i])]
+        if 58 in diff:
+            rows.append(dict(kind="box", name=cls, owner=fam[cls][1], slot="58", va="0x%08x" % cv[58],
+                             form="override", value="its own item draw", verdict="item-draw",
+                             note="replaces %s's slot 58 body 0x%08x" % (classes[cls]["super"], item)))
+        elif len(diff) == 0:
+            rows.append(dict(kind="box", name=cls, owner=fam[cls][1], slot="", va="0x%08x" % tv,
+                             form="inherits every slot", value="no draw of its own", verdict="passthrough",
+                             note="its table differs from %s's only in slot 3" % classes[cls]["super"]))
+        seen.add(cls)
+
+    # the delegate audit: no body anywhere in the box tree references the index or the dispatcher
+    bodies, hits = 0, []
+    for cls in sorted(fam):
+        if fam[cls][0] != "box":
+            continue
+        tv = [t for t, c in sym_names.items() if c == cls]
+        if not tv:
+            continue
+        tv = tv[0]
+        for i in range(sym_slots[tv]):
+            fn = img.u32(tv + i * 4)
+            if not fn:
+                continue
+            bodies += 1
+            lo, hi = fn, extent(fn)
+            if struct.pack("<I", del_index) in img.bytes_at(lo, max(0, hi - lo)):
+                hits.append((cls, i, fn))
+            if fn == dispatcher or img.callers_in(fn, dispatcher, hi):
+                hits.append((cls, i, fn))
+    if hits:
+        sys.exit("FAIL ui-list-native: %s reaches the delegate from %r" % (BOX_ROOT, hits[:3]))
+    rows.append(dict(kind="box", name="delegate audit", owner="box tree", slot="", va="",
+                     form="%d slot bodies" % bodies, value="0 references", verdict="absent",
+                     note="no box slot body loads the %s index or calls its dispatcher, so a body "
+                          "wired onto a box would never run" % DELEGATE))
+
+    # and no shipped wiring does: every receiver is a list-branch class
+    classes_by_name = classes
+    props = load_properties()
+    tally, resolved = collections.Counter(), []
+    if os.path.exists(WIRINGS):
+        with open(WIRINGS, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("kind") != "wiring":
+                    continue
+                recv = (r.get("note") or "").split(",")[0].strip()
+                if not recv:
+                    sys.exit("FAIL ui-list-native: wiring row %r has no receiver" % r)
+                rc = receiver_class(classes_by_name, props, r["name"], recv)
+                branch = fam.get(rc, ("?",))[0]
+                tally[branch] += 1
+                resolved.append((r["name"], recv, rc, branch, r.get("form")))
+                if r.get("form") not in ("live", "commented"):
+                    sys.exit("FAIL ui-list-native: wiring row %r has form %r" % (r, r.get("form")))
+    if tally.get("box") or not tally:
+        sys.exit("FAIL ui-list-native: a wiring targets the box tree (%r)" % (resolved,))
+    rows.append(dict(kind="box", name="receiver audit", owner="ui_list_rows.csv", slot="", va="",
+                     form="%d wirings" % sum(tally.values()), value="%d list receivers" % tally.get("list", 0),
+                     verdict="no box receiver",
+                     note="every receiver resolves to a GUIListBase descendant (%s), so the box's "
+                          "missing dispatch is unreachable from the shipped corpus"
+                          % ", ".join("%s %d" % (k, v) for k, v in
+                                      sorted(collections.Counter(x[2] for x in resolved).items()))))
+    return rows
+
+
+def clip_signature(blob):
+    """The text routine's clipping: (every `comiss`, the memory compares' disp8, the `movss` loads')."""
+    comiss, mem = 0, []
+    i = 0
+    while True:
+        i = blob.find(bytes.fromhex("0f2f"), i)
+        if i < 0 or i + 2 >= len(blob):
+            break
+        comiss += 1
+        if i + 3 < len(blob) and blob[i + 2] & 0xC0 == 0x40:
+            mem.append(blob[i + 3])
+        i += 1
+    loads = []
+    i = 0
+    while True:
+        i = blob.find(bytes.fromhex("f30f10"), i)
+        if i < 0 or i + 3 >= len(blob):
+            break
+        if blob[i + 3] & 0xC0 == 0x40:
+            loads.append(blob[i + 4])
+        i += 1
+    return comiss, mem, loads
+
+
+def is_text_routine(blob):
+    """A body is the styled-text routine when it clips against all four canvas edges."""
+    comiss, mem, loads = clip_signature(blob)
+    return (comiss == 4 and mem == [0x44, 0x48]
+            and 0x3C in loads and 0x40 in loads and struct.pack("<I", FONT_ARRAY) in blob)
+
+
+def drawtext_half(img, classes, fam, sym_slots, sym_names, loops):
+    """`GUIStyles.DrawText`: the routine the stock item draw reaches, and its clip culls."""
+    rows = []
+    root = ROOTS[0][1]
+    tv = [t for t, c in sym_names.items() if c == root][0]
+    n = sym_slots[tv]
+    item = img.u32(tv + (n - 1) * 4)          # the row loop's slot, the stock item draw
+    lo, hi = item, extent(item)
+    blob = img.bytes_at(lo, hi - lo)
+    counts = collections.Counter()
+    for i in range(len(blob) - 5):
+        if blob[i] == 0xE8:
+            rel = struct.unpack_from("<i", blob, i + 1)[0]
+            counts[lo + i + 5 + rel] += 1
+    twice = [t for t, c in counts.items() if c == 2]
+    # more than one target is called twice (the item's style material as well as the text), so the
+    # text routine is the one whose body carries the clip rectangle and the style's font table
+    texts = [t for t in twice if is_text_routine(img.bytes_at(t, extent(t) - t))]
+    if len(texts) != 1:
+        sys.exit("FAIL ui-list-native: %d targets called twice carry the clip rect, expected 1"
+                 % len(texts))
+    text = texts[0]
+    tl, th = text, extent(text)
+    tbody = img.bytes_at(tl, th - tl)
+    if not is_text_routine(tbody):
+        sys.exit("FAIL ui-list-native: 0x%08x does not clip against all four canvas edges" % text)
+    comiss, mem, loads = clip_signature(tbody)
+    if [hex(d) for d in mem] != ["0x44", "0x48"]:
+        sys.exit("FAIL ui-list-native: the clip compares are at %r, expected 0x44/0x48"
+                 % [hex(d) for d in mem])
+    rows.append(dict(kind="drawtext", name="styled text", owner="GUIStyles", slot="",
+                     va="0x%08x" % text, form="called twice by the stock item draw",
+                     value="one routine, 4 clip compares", verdict="measured",
+                     note="the stock item draw calls it at two sites 0x55 apart with different "
+                          "rect arguments; the styled text of a row is that call"))
+    rows.append(dict(kind="drawtext", name="clip rect", owner="FCanvas", slot="", va="0x3c",
+                     form="four floats", value="0x3c left, 0x40 top, 0x44 right, 0x48 bottom",
+                     verdict="measured",
+                     note="the rect is culled against this box only: right edge past the left "
+                          "clip, left edge past the right clip, and the same for the vertical pair"))
+    rows.append(dict(kind="drawtext", name="width use", owner="rect", slot="", va="",
+                     form="X + W", value="never compared with zero", verdict="measured",
+                     note="the width reaches one clip sum and the rect handed to the canvas "
+                          "(vtable +0xc4); no compare in the body tests it, so a zero-width cell "
+                          "is culled only when its anchor lies outside the clip rectangle"))
+    rows.append(dict(kind="drawtext", name="font table", owner="GUIStyles", slot="",
+                     va="0x%x" % FONT_ARRAY, form="style byte -> font", value="array of fonts",
+                     verdict="measured",
+                     note="the style byte indexes the font array and the body sets the canvas's "
+                          "font/colour for the draw, then restores the five fields it saved"))
+    if struct.pack("<I", FONT_ARRAY) not in tbody:
+        sys.exit("FAIL ui-list-native: the text routine never indexes the font array")
+    return rows
 
 
 # ------------------------------------------------------------------ measure
@@ -556,6 +857,8 @@ def measure(xbe_path):
                      note="GUIMultiColumnListBox.InitComponent calls AddControl(DefaultListClass) and "
                           "the class's own defaults state GUI.GUIMultiColumnList, so a box never hosts "
                           "the page's subclass and StargateMenus.ServerList is placed by nothing"))
+    rows.extend(box_half(img, classes, fam, sym_slots, sym_names, glob, dispatcher, loops))
+    rows.extend(drawtext_half(img, classes, fam, sym_slots, sym_names, loops))
     return rows
 
 
@@ -586,9 +889,13 @@ def summarize(rows):
     overrides = [r for r in rows if r["kind"] == "slot" and r["form"] in ("override", "added")]
     named = [r for r in rows if r["kind"] == "slot" and r["value"] not in ("-", "stock item draw")]
     pre = {r["va"] for r in rows if r["kind"] == "slot" and r["verdict"] == "predraw"}
+    box_bodies = [r for r in rows if r["kind"] == "box" and r["name"] == "delegate audit"]
     return dict(predraw=len(pre), classes=len(classes), overrides=len(overrides), loops=len(loops), stock=len(stock),
                 named=len(named), fields=sum(1 for r in rows if r["kind"] == "field"),
-                rects=sum(1 for r in rows if r["kind"] == "rect"))
+                rects=sum(1 for r in rows if r["kind"] == "rect"),
+                box=sum(1 for r in rows if r["kind"] == "box" and r["verdict"] in ("item-draw", "passthrough")),
+                box_bodies=int(box_bodies[0]["form"].split()[0]) if box_bodies else 0,
+                text=sum(1 for r in rows if r["kind"] == "drawtext"))
 
 
 def render(rows):
@@ -618,6 +925,54 @@ def render(rows):
     for r in rows:
         if r["kind"] == "field":
             out.append("| `%s` | `%s` | %s |" % (r["name"], r["va"], r["note"].split(" -- ")[0]))
+    out.append("")
+    trees = [r for r in rows if r["kind"] == "box" and r["verdict"] == "tree"]
+    box_parent = trees[0]["form"].split()[-1] if trees else "GUIMultiComponent"
+    out.append("#### The box is not a list, and its item draw is another slot 58")
+    out.append("")
+    item_rows = [r for r in rows if r["kind"] == "box" and r["verdict"] == "item-draw"]
+    out.append("`%s` extends `%s`, not `GUIListBase`: a list box is a component that hosts a list, "
+               "and its `PreDraw` draws **one** item per frame through slot %d -- the component's "
+               "slot %d (`+0x%x`), a different body from `GUIListBase`'s slot %d at the same "
+               "offset. `%d` classes override that item draw, and of the `%d` slot bodies in the "
+               "box tree not one loads the `%s` index or calls its dispatcher, so a body wired "
+               "onto a box would never run."
+               % (BOX_ROOT, box_parent, 58, 58, 58 * 4, 58, len(item_rows), s["box_bodies"], DELEGATE))
+    out.append("")
+    out.append("| class | slot | body | what it draws |")
+    out.append("|---|---|---|---|")
+    for r in rows:
+        if r["kind"] == "box" and r["verdict"] in ("item-draw", "pre-draw"):
+            out.append("| `%s` | %s | `%s` | %s |"
+                       % (r["name"], r["slot"] or "-", r["va"], r["value"]))
+    out.append("")
+    passthrough = [r["name"] for r in rows
+                   if r["kind"] == "box" and r["verdict"] == "passthrough"]
+    if passthrough:
+        out.append("`%s` add no draw of their own: their tables differ from `%s`'s only in slot 3, "
+                   "so a body wired onto one of those classes would have nowhere to be dispatched "
+                   "from." % ("` and `".join(passthrough), BOX_ROOT))
+        out.append("")
+    audits = [r for r in rows if r["kind"] == "box" and r["name"] in ("delegate audit", "receiver audit")]
+    for r in audits:
+        out.append("* **%s** -- %s: %s" % (r["name"], r["form"], r["note"]))
+    out.append("")
+    out.append("#### The styled-text routine: four clip culls and no width test")
+    out.append("")
+    texts = [r for r in rows if r["kind"] == "drawtext"]
+    if texts:
+        styled = [r for r in rows if r["kind"] == "drawtext" and r["name"] == "styled text"][0]
+        out.append("The stock item draw reaches `%s.DrawText` (`%s`) twice -- once per text pass -- "
+                   "and that routine's whole suppression logic is four compares against the canvas "
+                   "clip rect: a cell's width is used only in the `X + W` sum of one of them and in "
+                   "the rect handed to the canvas, so a "
+                   "**zero-width cell is not shortcircuited** -- it is culled only when its anchor "
+                   "lies outside the clip rectangle." % (styled["owner"], styled["va"]))
+        out.append("")
+        out.append("| measure | answer |")
+        out.append("|---|---|")
+        for r in texts:
+            out.append("| `%s` | %s |" % (r["name"], r["note"]))
     return "\n".join(out)
 
 
@@ -650,6 +1005,8 @@ def report(path=ARTIFACT):
     print("list native: %(classes)d classes, %(overrides)d overrides, %(loops)d row loops, "
           "%(stock)d stock item draws, %(named)d named dispatches" % s)
     print("row rect: %(rects)d terms; %(fields)d field offsets, each witnessed by a body" % s)
+    print("box tree: %(box)d draw rows, %(box_bodies)d slot bodies with no delegate; "
+          "%(text)d styled-text rows" % s)
 
 
 # ------------------------------------------------------------- self-test
@@ -697,6 +1054,9 @@ def selftest():
         terms = {t[0] for t in RECT[cls]}
         assert terms == {"x", "y", "w", "h", "pitch"}, terms
     assert ROW_RECT_OFFSET == 0x12C
+    # the box tree and the list tree must stay apart: their slot 58s share an offset, not a body
+    assert BOX_ROOT != ROOTS[0][1] and BOX_ROOT == "GUIListBoxBase"
+    assert [d for d, _l in CLIP_FIELDS] == [0x3C, 0x40, 0x44, 0x48]
     print("ok   list-native: synthetic name table, store parse and field witness")
 
 
