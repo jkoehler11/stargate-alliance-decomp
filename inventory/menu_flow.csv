@@ -23,6 +23,7 @@ edge,GUIController,GUI,computed,string NewMenuName,,,,1,,stock engine body compu
 edge,UIXInteraction,GUI,literal,UCMenu.LiveInteractionBox,UCMenu,absent-package,,1,,stock engine body
 edge,UIXInteraction,GUI,literal,UCMenu.LiveInteractionBox,UCMenu,absent-package,,1,,stock engine body
 hud_swap,ReplicatorPossess,StargateContent,literal,StargateGame.ReplicatorHUD,StargateGame,class,,1,,
+mention,StargateDeathMatch,StargateGame,comment,StargateMenus.RestartGame,StargateMenus,class,,1,,inside a comment
 edge,StargatePlayer,StargateGame,literal,StargateMenus.SinglePlayerInGame,StargateMenus,class,,1,,
 edge,StargatePlayer,StargateGame,literal,StargateMenus.MultiPlayerInGame,StargateMenus,class,,1,,
 edge,StargatePlayer,StargateGame,literal,StargateMenus.InGameScoreboard,StargateMenus,class,,1,,
@@ -32,10 +33,24 @@ edge,StargatePlayer,StargateGame,literal,StargateMenus.SelectTeamPage,StargateMe
 edge,StoryModeGame,StargateGame,literal,StargateMenus.RestartGame,StargateMenus,class,,1,,
 edge,StoryModeGame,StargateGame,computed,gui.GetMainMenuClass(,,,,1,ifndef PS2,computed argument
 edge,StoryModeGame,StargateGame,literal,GUI.SGWaitingForPlayers,GUI,absent,,1,ifdef PS2,branch not compiled by this build
+mention,StoryModeGame,StargateGame,comment,StargateMenus.WaitingForPlayers,StargateMenus,class,,1,,inside a comment
+mention,CreditsPage,StargateMenus,comment,StargateMenus.NotYetImplementedPage,StargateMenus,class,,1,,inside a comment
+mention,EnterFriendNamePage,StargateMenus,comment,StargateMenus.CreateNewProfile,StargateMenus,class,,1,,inside a comment
 edge,EnterProfileNamePage,StargateMenus,literal,StargateMenus.CreateNewProfile,StargateMenus,class,,1,,
+mention,ExtrasPage,StargateMenus,comment,StargateMenus.NotYetImplementedPage,StargateMenus,class,,1,,inside a comment
 edge,InGameMenu,StargateMenus,literal,StargateMenus.ReturnToMainPage,StargateMenus,class,,1,,
 edge,InGameMenu,StargateMenus,literal,StargateMenus.NotYetImplementedPage,StargateMenus,class,,1,,
+mention,InGameMenu,StargateMenus,comment,StargateMenus.QuitPage,StargateMenus,class,,1,,inside a comment
 edge,MainMenu,StargateMenus,literal,StargateMenus.QuitPage,StargateMenus,class,,1,,
+mention,MainMenu,StargateMenus,comment,StargateMenus.QuickLoadMapTempPage,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.SinglePlayerSelectProfile,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.SinglePlayerChapterSelect,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.MultiplayerSelectProfile,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.MultiplayerMenu,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.OptionsPage,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.CreditsPage,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.ExtrasPage,StargateMenus,class,,1,,inside a comment
+mention,MainMenu,StargateMenus,comment,StargateMenus.NotYetImplementedPage,StargateMenus,class,,1,,inside a comment
 edge,MultiplayerCharSelect,StargateMenus,literal,StargateMenus.MultiplayerMapSelect,StargateMenus,class,,1,,
 edge,MultiplayerGameSelect,StargateMenus,literal,StargateMenus.SelectTeamPage,StargateMenus,class,,1,,
 edge,MultiplayerGameSelect,StargateMenus,literal,StargateMenus.MultiplayerCharSelect,StargateMenus,class,,1,,
@@ -52,6 +67,9 @@ edge,SelectPawnPage,StargateMenus,literal,StargateMenus.MultiplayerMapSelect,Sta
 edge,SelectTeamPage,StargateMenus,literal,StargateMenus.SelectPawnPage,StargateMenus,class,,1,,
 edge,ServerSelectionPage,StargateMenus,literal,StargateMenus.SelectTeamPage,StargateMenus,class,,1,,
 edge,ServerSelectionPage,StargateMenus,literal,StargateMenus.MultiplayerCharSelect,StargateMenus,class,,1,,
+mention,SinglePlayerInGame,StargateMenus,comment,StargateMenus.SaveGameMenu,StargateMenus,class,,1,,inside a comment
+mention,SinglePlayerInGame,StargateMenus,comment,StargateMenus.LoadGameMenu,StargateMenus,class,,1,,inside a comment
+mention,SinglePlayerInGame,StargateMenus,comment,StargateMenus.OptionsPage,StargateMenus,class,,1,,inside a comment
 edge,SinglePlayerSelectProfile,StargateMenus,literal,StargateMenus.EnterProfileNamePage,StargateMenus,class,,1,,
 edge,SinglePlayerSelectProfile,StargateMenus,literal,StargateMenus.SinglePlayerMenu,StargateMenus,class,,1,,
 edge,SystemLinkMenu,StargateMenus,literal,StargateMenus.MultiplayerGameSelect,StargateMenus,class,,1,,
@@ -61,41 +79,89 @@ edge,VSMainMenu,StargateMenus,literal,StargateMenus.QuickLoadMapTempPage,Stargat
 edge,VSMainMenu,StargateMenus,literal,StargateMenus.SinglePlayerLoadGame,StargateMenus,class,,1,,
 edge,VSMainMenu,StargateMenus,literal,StargateMenus.QuitPage,StargateMenus,class,,1,,
 edge,VSMainMenu,StargateMenus,literal,StargateMenus.NotYetImplementedPage,StargateMenus,class,,1,,
+mention,VSMainMenu,StargateMenus,comment,StargateMenus.MainMenu,StargateMenus,class,,1,,inside a comment
 edge,XBoxLiveFindGameMenu,StargateMenus,literal,StargateMenus.XBoxLiveServerSelect,StargateMenus,class,,1,,
 edge,XBoxLiveFindGameMenu,StargateMenus,literal,StargateMenus.XBoxLiveServerSelect,StargateMenus,class,,1,,
 edge,XBoxLiveFindGameMenu,StargateMenus,literal,StargateMenus.NoMatchFoundPage,StargateMenus,class,,1,,
+mention,XBoxLiveFindGameMenu,StargateMenus,comment,StargateMenus.MultiplayerGameSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveFindGameMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveFindGameMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveFriendsMenu,StargateMenus,comment,StargateMenus.MultiplayerGameSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveFriendsMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveFriendsMenu,StargateMenus,comment,StargateMenus.XBoxLiveSignOutConfirm,StargateMenus,class,,1,,inside a comment
 edge,XBoxLiveMenu,StargateMenus,literal,StargateMenus.XBoxLivePlayMenu,StargateMenus,class,,1,,
 edge,XBoxLiveMenu,StargateMenus,literal,StargateMenus.XBoxLiveFriendsMenu,StargateMenus,class,,1,,
 edge,XBoxLiveMenu,StargateMenus,literal,StargateMenus.XBoxLiveSignOutConfirm,StargateMenus,class,,1,,
+mention,XBoxLiveMenu,StargateMenus,comment,StargateMenus.MultiplayerGameSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveMenu,StargateMenus,comment,StargateMenus.XBoxLiveServerSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLiveMenu,StargateMenus,comment,StargateMenus.NoMatchFoundPage,StargateMenus,class,,1,,inside a comment
 edge,XBoxLivePlayMenu,StargateMenus,literal,StargateMenus.MultiplayerGameSelect,StargateMenus,class,,1,,
 edge,XBoxLivePlayMenu,StargateMenus,literal,StargateMenus.XBoxLiveFindGameMenu,StargateMenus,class,,1,,
 edge,XBoxLivePlayMenu,StargateMenus,literal,StargateMenus.XBoxLiveServerSelect,StargateMenus,class,,1,,
 edge,XBoxLivePlayMenu,StargateMenus,literal,StargateMenus.NoMatchFoundPage,StargateMenus,class,,1,,
+mention,XBoxLivePlayMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLivePlayMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSelect,StargateMenus,class,,1,,inside a comment
+mention,XBoxLivePlayMenu,StargateMenus,comment,StargateMenus.XBoxLiveServerSelect,StargateMenus,class,,1,,inside a comment
 edge,UDebugMenuBar,UDebugMenu,literal,GUI.JoeTest,GUI,absent,,1,,
 hud,GameInfo,Engine,defaults,Engine.HUD,Engine,class,,1,,
+mention,STY_MainMenu,GUI,defaults,MainMenu,,unqualified,,1,,KeyName
 hud,StargateDeathMatch,StargateGame,defaults,StargateGame.StargateHUD,StargateGame,class,,1,,
 hud,StoryModeGame,StargateGame,defaults,StargateGame.StargateTeamHUD,StargateGame,class,,1,,
 hud,TeamDeathMatch,StargateGame,defaults,StargateGame.StargateTeamHUD,StargateGame,class,,1,,
+mention,DeleteProfilePage,StargateMenus,defaults,MainMenu,,unqualified,,1,,StyleName
+mention,DeleteSavedGamePage,StargateMenus,defaults,MainMenu,,unqualified,,1,,StyleName
 array,MainMenu,StargateMenus,defaults,StargateMenus.QuickLoadMapTempPage,StargateMenus,class,,1,,index 0
 array,MainMenu,StargateMenus,defaults,StargateMenus.SinglePlayerSelectProfile,StargateMenus,class,,1,,index 1
 array,MainMenu,StargateMenus,defaults,StargateMenus.MultiplayerSelectProfile,StargateMenus,class,,1,,index 2
 array,MainMenu,StargateMenus,defaults,StargateMenus.OptionsPage,StargateMenus,class,,1,,index 3
 array,MainMenu,StargateMenus,defaults,StargateMenus.ExtrasPage,StargateMenus,class,,1,,index 4
+mention,NoMatchFoundPage,StargateMenus,defaults,MainMenu,,unqualified,,1,,StyleName
 array,OptionsEditProfile,StargateMenus,defaults,StargateMenus.OptionsEditControls,StargateMenus,class,,1,,index 0
 array,OptionsEditProfile,StargateMenus,defaults,StargateMenus.OptionsEditAppearance,StargateMenus,class,,1,,index 1
 array,OptionsEditProfile,StargateMenus,defaults,StargateMenus.OptionsEditVideo,StargateMenus,class,,1,,index 2
 array,OptionsEditProfile,StargateMenus,defaults,StargateMenus.OptionsEditAudio),StargateMenus,typo,,1,,index 3
 array,OptionsEditProfile,StargateMenus,defaults,,,unqualified,,1,,index 4
+mention,SGPageBase,StargateMenus,defaults,MainMenu,,unqualified,,1,,StyleName
 array,SinglePlayerMenu,StargateMenus,defaults,StargateMenus.SinglePlayerNewGame,StargateMenus,class,,1,,index 0
 array,SinglePlayerMenu,StargateMenus,defaults,StargateMenus.SinglePlayerChapterSelect,StargateMenus,class,,1,,index 1
 array,SinglePlayerMenu,StargateMenus,defaults,StargateMenus.SinglePlayerChapterSelect,StargateMenus,class,,1,,index 2
 array,SinglePlayerMenu,StargateMenus,defaults,StargateMenus.SinglePlayerTutorial,StargateMenus,class,,1,,index 3
-root,Default.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,
-root,Default.ini,,autoload,StargateMenus.MainMenu,StargateMenus,class,0,1,,
-root,UW.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,
-root,UW.ini,,autoload,StargateMenus.MainMenu,StargateMenus,class,0,1,,
-root,UnrealEngine2.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,
-root,UnrealEngine2.ini,,autoload,StargateMenus.MainMenu,StargateMenus,class,0,1,,
+mention,VSMainMenu,StargateMenus,defaults,MainMenu,,unqualified,,1,,StyleName
+mention,XBoxLiveSignOutConfirm,StargateMenus,defaults,MainMenu,,unqualified,,1,,StyleName
+config,DefUser.ini,,midgamemenuclass,,,,,1,,empty value
+config,DefUser.ini,,demomenuclass,,,,,1,,empty value
+config,DefUser.ini,,adminmenuclass,,,,,1,,empty value
+config,DefUser.ini,,chatpasswordmenuclass,,,,,1,,empty value
+config,Default.ini,,defaultplayermenu,UDebugMenu.UDebugRootWindow,UDebugMenu,class,,1,,
+config,Default.ini,,initialmenuclass,GUI.MyMainMenu,GUI,absent,,1,,commented out
+config,Default.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,commented out
+config,Default.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,
+config,Default.ini,,connectingmenuclass,Stargategame.SGServerLoading,StargateGame,class,,1,,package name differs in case: StargateGame
+config,Default.ini,,autoload,StargateMenus.MainMenu,StargateMenus,class,0,1,,
+config,Default.ini,,autoload,StargateMenus.VSMainMenu,StargateMenus,class,,1,,commented out
+config,UW.ini,,defaultplayermenu,UDebugMenu.UDebugRootWindow,UDebugMenu,class,,1,,
+config,UW.ini,,connectingmenuclass,Stargategame.SGServerLoading,StargateGame,class,,1,,package name differs in case: StargateGame
+config,UW.ini,,disconnectmenuclass,GUI2K4.UT2K4DisconnectOptionPage,GUI2K4,absent-package,,1,,commented out; no such package on disk
+config,UW.ini,,loadingclass,GUI2K4.UT2K4SP_LadderLoading,GUI2K4,absent-package,,1,,commented out; no such package on disk
+config,UW.ini,,singleplayermenuclass,GUI2K4.UT2K4SP_Main,GUI2K4,absent-package,,1,,commented out; no such package on disk
+config,UW.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,
+config,UW.ini,,disconnectmenuclass,GUI.SGDisconnectedMenu,GUI,absent,,1,,commented out
+config,UW.ini,,autoload,StargateMenus.MainMenu,StargateMenus,class,0,1,,
+config,UnrealEngine2.ini,,defaultplayermenu,UDebugMenu.UDebugRootWindow,UDebugMenu,class,,1,,
+config,UnrealEngine2.ini,,initialmenuclass,GUI.MyMainMenu,GUI,absent,,1,,commented out
+config,UnrealEngine2.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,commented out
+config,UnrealEngine2.ini,,mainmenuclass,StargateMenus.MainMenu,StargateMenus,class,0,1,,
+config,UnrealEngine2.ini,,connectingmenuclass,Stargategame.SGServerLoading,StargateGame,class,,1,,package name differs in case: StargateGame
+config,UnrealEngine2.ini,,autoload,StargateMenus.MainMenu,StargateMenus,class,0,1,,
+config,UnrealEngine2.ini,,autoload,StargateMenus.VSMainMenu,StargateMenus,class,,1,,commented out
+config,User.ini,,midgamemenuclass,,,,,1,,empty value
+config,User.ini,,demomenuclass,,,,,1,,empty value
+config,User.ini,,adminmenuclass,,,,,1,,empty value
+config,User.ini,,chatpasswordmenuclass,,,,,1,,empty value
+page,CreditsPage,StargateMenus,page,StargateMenus.CreditsPage,StargateMenus,comment-only,,0,,named only inside a comment: StargateMenus.MainMenu
+page,SaveGameMenu,StargateMenus,page,StargateMenus.SaveGameMenu,StargateMenus,comment-only,,0,,named only inside a comment: StargateMenus.SinglePlayerInGame
+page,WaitingForPlayers,StargateMenus,page,StargateMenus.WaitingForPlayers,StargateMenus,comment-only,,0,,named only inside a comment: StargateGame.StoryModeGame
 page,DeleteSavedGamePage,StargateMenus,page,StargateMenus.DeleteSavedGamePage,StargateMenus,outside,,1,,opened from 1 site(s) no root reaches
 page,HintScreen,StargateMenus,page,StargateMenus.HintScreen,StargateMenus,outside,,1,,opened from 1 site(s) no root reaches
 page,InGameInfoScreen,StargateMenus,page,StargateMenus.InGameInfoScreen,StargateMenus,outside,,1,,opened from 1 site(s) no root reaches
@@ -142,17 +208,14 @@ page,XBoxLiveMenu,StargateMenus,page,StargateMenus.XBoxLiveMenu,StargateMenus,re
 page,XBoxLivePlayMenu,StargateMenus,page,StargateMenus.XBoxLivePlayMenu,StargateMenus,reachable,4,1,,
 page,XBoxLiveServerSelect,StargateMenus,page,StargateMenus.XBoxLiveServerSelect,StargateMenus,reachable,5,3,,
 page,XBoxLiveSignOutConfirm,StargateMenus,page,StargateMenus.XBoxLiveSignOutConfirm,StargateMenus,reachable,4,1,,
-page,CreditsPage,StargateMenus,page,StargateMenus.CreditsPage,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,EnterFriendNamePage,StargateMenus,page,StargateMenus.EnterFriendNamePage,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,ErrorPage,StargateMenus,page,StargateMenus.ErrorPage,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,InGameMenu,StargateMenus,page,StargateMenus.InGameMenu,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,OptionsEditBase,StargateMenus,page,StargateMenus.OptionsEditBase,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,QuestionPage,StargateMenus,page,StargateMenus.QuestionPage,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,SaveGameMenu,StargateMenus,page,StargateMenus.SaveGameMenu,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,ServerSelectionPage,StargateMenus,page,StargateMenus.ServerSelectionPage,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,TextGameInfo,StargateMenus,page,StargateMenus.TextGameInfo,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,VSMainMenu,StargateMenus,page,StargateMenus.VSMainMenu,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,VirtualKeyboardPage,StargateMenus,page,StargateMenus.VirtualKeyboardPage,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,WaitingForPlayers,StargateMenus,page,StargateMenus.WaitingForPlayers,StargateMenus,unopened,,0,,no menu call in the corpus names it
-page,XBoxLiveBackDrop,StargateMenus,page,StargateMenus.XBoxLiveBackDrop,StargateMenus,unopened,,0,,no menu call in the corpus names it
-census,corpus,,,,,,,1,,packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|unopened_pages=13|defaults_classes=1664|hud_assign=4|hud_swaps=1
+page,EnterFriendNamePage,StargateMenus,page,StargateMenus.EnterFriendNamePage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,ErrorPage,StargateMenus,page,StargateMenus.ErrorPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,InGameMenu,StargateMenus,page,StargateMenus.InGameMenu,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,OptionsEditBase,StargateMenus,page,StargateMenus.OptionsEditBase,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,QuestionPage,StargateMenus,page,StargateMenus.QuestionPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,ServerSelectionPage,StargateMenus,page,StargateMenus.ServerSelectionPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,TextGameInfo,StargateMenus,page,StargateMenus.TextGameInfo,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,VSMainMenu,StargateMenus,page,StargateMenus.VSMainMenu,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,VirtualKeyboardPage,StargateMenus,page,StargateMenus.VirtualKeyboardPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+page,XBoxLiveBackDrop,StargateMenus,page,StargateMenus.XBoxLiveBackDrop,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
+census,corpus,,,,,,,1,,packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10

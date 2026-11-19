@@ -13674,3 +13674,49 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   defaults properties (the largest property set in any fork class) are the obvious place a page table would be
   kept: emitting that one class's defaults and joining its `Class` properties against the 13 would say whether
   they are load-bearing or leftovers.
+
+### Execution notes (2026-11-18, nothing names the unopened pages: no class reference, no live string, no config value)
+
+- **Task.** The previous note's next measurement: are the pages the closure cannot reach opened by *class
+  reference* — a panel or an interaction holding the page class — and is `SGMenuInteraction`'s 294-property
+  defaults block the page table that would hold them?
+- **Three name sources, one answer: none of them names a page.** `tools/ui-menu-flow.py` now reads, beside the
+  call sites and the `ButtonMenus` array: a **class reference** in a defaults block (`Prop=class'Pkg.Class'`)
+  and in a body (`class'Pkg.Class'`) — **0 of 1,664 emitted defaults blocks and 0 of 2,319 class bodies name a
+  page**; every **string outside a menu call** (`kind=mention`, 39 rows, 32 of them inside a comment); and every
+  **menu-class key** in the five shipped `.ini`s (`kind=config`, 30 rows: 10 commented out, 8 present-and-empty,
+  the rest the root).
+- **The 13 split 3 + 10, which is a different claim from "nothing opens".** Three are named **only inside a
+  comment** — `CreditsPage` (MainMenu's whole body is a block comment), `SaveGameMenu`
+  (`SinglePlayerInGame`'s call is commented, which strands `OverwriteSavedGamePage` and `DeleteSavedGamePage`
+  behind it) and `WaitingForPlayers` (`StoryModeGame`'s call is commented, beside the `#ifdef PS2` site that
+  spells the class `GUI.SGWaitingForPlayers`) — and **10 are named nowhere at all**, by string, class or key:
+  `InGameMenu`, `EnterFriendNamePage`, `ErrorPage`, `QuestionPage`, `OptionsEditBase`, `ServerSelectionPage`,
+  `VirtualKeyboardPage`, `TextGameInfo`, `XBoxLiveBackDrop`, `VSMainMenu`. The page verdict set is now
+  `reachable` / `outside` / `mention` / `comment-only` / `unopened`, rendered from the artifact, so
+  `--check-doc` gates the split.
+- **The computed calls' targets are empty, by name.** The 22 variable-argument `OpenMenu` sites include the
+  four `GUIController` menus, and `MidGameMenuClass=`, `DemoMenuClass=`, `AdminMenuClass=` and
+  `ChatPasswordMenuClass=` are present with no value in `DefUser.ini` and `User.ini`. That is why `InGameMenu`
+  — the one page nothing names while its own body opens `QuitPage` and `ReturnToMainPage` — is complete and
+  unreachable. The single live non-root key, `ConnectingMenuClass=Stargategame.SGServerLoading`, resolves once
+  the package case is folded and names a `Vignette` subclass (`SGLoadingPageBase`), not a page. **A resolver fix
+  came out of that**: a package name differing only in case (`Stargategame` vs `StargateGame`) is a `class`
+  verdict with a note, not an `absent-package` — the same class of bug the typo verdict already covered.
+- **`SGMenuInteraction` is a style table, not a page table.** 294 declared properties, **256 of them strings**,
+  then 15 floats, 8 `Color`s, 4 `Font`s, 3 bools, 3 `Texture`s, 2 ints and three one-offs — **no class-typed
+  property** — and its compiled defaults block carries **18 values** (fonts, colours, cursor and arrow textures,
+  two bools, a float), none of them a page. The class the previous note named as the likeliest page table is
+  what its own drawing reads.
+- **Files.** `tools/ui-menu-flow.py` (class-reference reader in defaults and bodies, the non-call mention sweep
+  with comment/code forms, the config-key reader with `live_roots`, the `page_family`/`mentioned` restructure,
+  the case-folding resolver, the config and naming tables and the interaction composition, ten new self-test
+  assertions), `inventory/menu_flow.csv` (220 rows: 72 edge, 14 array, 39 mention, 30 config, 4 hud, 1 hud_swap,
+  59 page, 1 census), `docs/systems/UI.md` (the 3+10 split, the config and naming tables, the corrected
+  `SGMenuInteraction` paragraph, two `Not measured` bullets replaced), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The ten are cut pages, so what is left of the UI thread is a page's *contents*. A cheap
+  sibling the corpus already holds: `SGPageBase.InitComponent` shows a controller-button caption only when the
+  page sets `bButtonA`…`bButtonY`, so a census of those flags over the 59 pages (they are booleans in the same
+  defaults tree) would say which pages show which hints — the first page-level property measurement the flow
+  table cannot give.
