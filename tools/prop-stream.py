@@ -13,8 +13,15 @@ name comes first. Array indices and bool values ride in bit 7.
     python3 tools/prop-stream.py PKG.unr --class StaticMeshActor --limit 3
 
 Values are game content: this prints them for inspection, and nothing from it belongs in the repository.
+
+**The value is the locator's second opinion** (2026-11-19). `find_block` used to take the start with the most
+properties whose names all resolve, which a parse that began inside a value can satisfy: a struct's payload
+read as tags re-encodes as plausibly as a real block. Every value is decoded by its class's own rule
+(`decode_value`, the fourteen `SerializeItem` bodies of `docs/NATIVE_PROPERTIES.md` §6) and has to consume
+exactly the `Size` its header declares, and a candidate that fails is passed over for one that does not.
 """
 import argparse
+import importlib.util
 import struct
 import sys
 import os
@@ -26,6 +33,11 @@ TYPES = {0: "Invalid", 1: "Byte", 2: "Int", 3: "Bool", 4: "Float", 5: "Object", 
          7: "String", 8: "Class", 9: "Array", 10: "Struct", 11: "Vector", 12: "Rotator",
          13: "Str", 14: "Map", 15: "FixedArray"}
 SIZES = {0: 1, 1: 2, 2: 4, 3: 12, 4: 16}
+
+# The prefix the header rule looks at (unchanged since the locator was written), and the wider one the value
+# test may fall back to: a `Brush` keeps its poly data in front of the block and starts at 74 on the worst one.
+WINDOW = 64
+PREFIX_WINDOW = 96
 
 
 def read_index(buf, off):
@@ -170,16 +182,138 @@ def read_block(buf, pkg, want_values=False, limit=2000):
     return props, off, "limit"
 
 
-def find_block(data, pkg, min_props=2):
-    """Locate the property block: the earliest start whose block terminates exactly at the export's end.
+def find_block(data, pkg, min_props=2, values=True, native_width=None):
+    """Locate the property block: the start whose block terminates exactly at the export's end.
 
     UE2 objects do not all begin with their property block -- a class can serialise native data first (a
-    StaticMeshActor's 12-byte instance prefix, for example). So the start is found by requiring the block to
-    end where the export ends and to contain only resolving names, and the candidate with the most properties
-    wins: a mis-parse that starts a few bytes late loses properties rather than inventing them.
+    StaticMeshActor's 12-byte instance prefix, a Brush's 15, a Mover's 12) -- so the start is found by
+    requiring the block to end where the export ends and to contain only resolving names.  Among those
+    candidates the one with the most properties wins, because a mis-parse that starts a few bytes late
+    normally loses properties rather than inventing them.
+
+    That tie-break is not enough on its own: a parse that starts *inside* a value reads the value's own
+    bytes as names and sizes and can produce a whole block that still ends at the export's end -- a
+    `Mover`'s `PointRegion`/`Vector`/`Scale` struct payload becomes three plausible properties, and one of
+    them decodes to a value its class cannot produce.  With `values` the candidates are therefore tested in
+    the same order and the first whose every checkable value consumes exactly its declared `Size` wins;
+    a block nothing can check (`seen == 0`) is not evidence and falls through to the property count.  When
+    no candidate passes, the header's choice stands -- that residue is counted, not guessed away.
     """
-    best = None
-    for start in range(0, min(len(data), 64)):
+    found = candidates(data, pkg, min_props)
+    best = max(found, key=lambda c: c[0]) if found else None
+    if not values:
+        return best
+    for count, start, props in sorted(found, key=lambda c: (-c[0], c[1])):
+        bad, seen = block_bad(props, data, start, native_width)
+        if bad == 0 and seen:
+            return count, start, props
+    # Nothing inside the header's window decodes: look one window further before accepting a block the
+    # value test knows is wrong, and fall back to the header's choice only when nothing there does either.
+    wider = candidates(data, pkg, min_props, PREFIX_WINDOW, WINDOW)
+    for count, start, props in sorted(wider, key=lambda c: (-c[0], c[1])):
+        bad, seen = block_bad(props, data, start, native_width)
+        if bad == 0 and seen:
+            return count, start, props
+    return best
+
+
+# ---------------------------------------------------------------- the value half
+
+# What the tag's type nibble means for the value.  `CHECKABLE` are the types whose property class has a
+# `SerializeItem` body in this build (`inventory/property_serialisers.csv`); `IMPOSSIBLE` are the ones no
+# property class reports, so a tag carrying them is a parse and not a property.
+CHECKABLE = {1, 2, 3, 4, 5, 6, 8, 10, 13}
+IMPOSSIBLE = {0, 7, 11, 12}
+
+# The three structs `0x000795f0` skips the tagged walk for, with the width the corpus measures for each
+# (`inventory/value_layouts.csv`: 521 `Color`, 51,963 `Rotator`, 154,254 `Vector` values, one width each).
+# `value-layouts --sweep` re-measures it and passes its own table here, so this default is what a caller
+# with no census in hand gets.
+NATIVE_WIDTH = {"Color": 4, "Rotator": 12, "Vector": 12}
+
+_TAG = None
+
+
+def tag_walk():
+    """`tag-encode`, loaded on first use: it imports this module, so the dependency has to be deferred."""
+    global _TAG
+    if _TAG is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tag-encode.py")
+        spec = importlib.util.spec_from_file_location("tag_encode", path)
+        _TAG = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_TAG)
+    return _TAG
+
+
+def decode_value(t, v, struct_name, native_width=None):
+    """Does this value consume exactly its declared `Size`?  Returns `(verdict, detail)`.
+
+    `exact`, `inexact`, `open` for a type with no self-describing rule (`Map`, `Array`, `FixedArray`, whose
+    `Inner` the tag does not name) and `impossible` for a type no property class in this build reports.
+    """
+    size = len(v)
+    if t in IMPOSSIBLE:
+        return "impossible", "no property class"
+    if t == 1:
+        return ("exact" if size == 1 else "inexact"), "1"
+    if t in (2, 4):
+        return ("exact" if size == 4 else "inexact"), "4"
+    if t == 3:
+        return ("exact" if size == 0 else "inexact"), "0"
+    if t in (5, 6, 8):
+        try:
+            _idx, off = read_index(v, 0)
+        except IndexError:
+            return "inexact", "truncated index"
+        return ("exact" if off == size else "inexact"), "%d-byte index" % off
+    if t == 13:
+        try:
+            n, off = read_index(v, 0)
+        except IndexError:
+            return "inexact", "truncated length"
+        want = off + (2 * abs(n) if n < 0 else n)
+        return ("exact" if want == size else "inexact"), "%d chars" % abs(n)
+    if t == 10:
+        width = NATIVE_WIDTH if native_width is None else native_width
+        if struct_name in width:
+            want = width[struct_name]
+            return ("exact" if want == size else "inexact"), "native %d" % want
+        te = tag_walk()
+        tags, end, reason = te.walk(v)
+        if reason != "None" or end != len(v):
+            return "inexact", "tagged walk %s at %d" % (reason, end)
+        equal, _terms, reasons = te.compare(v, tags)
+        if reasons:
+            return "inexact", "tagged walk re-encodes %d of %d" % (equal, len(tags) - 1)
+        return "exact", "tagged block, %d tag(s)" % (len(tags) - 1)
+    return "open", ""
+
+
+def block_bad(props, data, start, native_width=None):
+    """How many of this block's checkable values fail their class's rule, and how many were checked.
+
+    `props` is `read_block`'s parse of `data[start:]`, so the value sits at `start + value_offset` and its
+    declared width is the tag's `size`; the types with no rule of their own are not counted either way.
+    A tag type no class reports is *not* counted here: it says the parse is wrong somewhere, but not which
+    start is right, and 26,257 of them sit in blocks no start fixes (the census counts those separately).
+    """
+    bad = seen = 0
+    for p in props:
+        t = p["type_byte"] & 0x0F
+        if t not in CHECKABLE:
+            continue
+        seen += 1
+        v = data[start + p["value_offset"]:start + p["value_offset"] + p["size"]]
+        verdict, _detail = decode_value(t, v, p.get("struct") or "?", native_width)
+        if verdict == "inexact":
+            bad += 1
+    return bad, seen
+
+
+def candidates(data, pkg, min_props=2, window=WINDOW, start_from=0):
+    """Every start in the prefix window whose header parse ends exactly at the export's end: `(count, start, props)`."""
+    out = []
+    for start in range(start_from, min(len(data), window)):
         try:
             props, end, reason = read_block(data[start:], pkg, False)
         except Exception:
@@ -190,9 +324,8 @@ def find_block(data, pkg, min_props=2):
             continue
         if start + end != len(data):
             continue
-        if best is None or len(props) > best[0]:
-            best = (len(props), start, props)
-    return best
+        out.append((len(props), start, props))
+    return out
 
 
 def main():

@@ -36,8 +36,10 @@ table (`inventory/gname_seed.csv`) spells them `Vector`, `Rotator`, `Color`, and
 are the three structs whose value never walks as a tag list.
 
 So the value is a second opinion on the header, and that is what this tool measures: every tag's value is
-decoded by its class's rule and required to consume exactly the `Size` the header declares.  A block whose
-headers all re-encode can still hold a value that does not, and that is the residue `--inline` names.
+decoded by its class's rule and required to consume exactly the `Size` the header declares.  The shipped
+locator (`prop-stream.find_block`) now takes that opinion too -- a candidate whose value does not decode is
+passed over for one whose values all do -- so this census reports the locator's own start, how many starts
+it moved, and the blocks where a value still does not decode because no start fixes them.
 
     python3 tools/value-layouts.py DUMP --sweep -o inventory    # writes inventory/value_layouts.csv
     python3 tools/value-layouts.py --report                     # re-render from the artifact
@@ -181,7 +183,7 @@ def native_names(path=SEED):
 
 # ---------------------------------------------------------------- the corpus half
 
-CHECKABLE = {1, 2, 3, 4, 5, 6, 8, 10, 13}
+CHECKABLE = ps.CHECKABLE
 
 # The tag type a property class reports (`vtable+0xcc`), so the corpus's type names find their body.
 TYPE_CLASS = {1: "ByteProperty", 2: "IntProperty", 3: "BoolProperty", 4: "FloatProperty",
@@ -190,48 +192,17 @@ TYPE_CLASS = {1: "ByteProperty", 2: "IntProperty", 3: "BoolProperty", 4: "FloatP
 
 # Types with no property class in this build: `Invalid`, the legacy `String`, and `Vector`/`Rotator`
 # (whose properties are `Struct`s of those names).  A tag carrying one is a parse, not a property.
-IMPOSSIBLE = {0, 7, 11, 12}
+IMPOSSIBLE = ps.IMPOSSIBLE
 
 
 def decode(t, v, struct_name, native_width):
-    """Does this value consume exactly its declared `Size`?
+    """The value rule, owned by the shipped reader: `prop-stream.decode_value`.
 
-    Returns `(verdict, detail)`: `exact`, `inexact` or `open` for a type with no self-describing rule.
+    It lives there because the locator now uses it too -- a block whose value does not decode is a start
+    inside a value, and `find_block` passes it over -- and one implementation is what makes the census and
+    the locator agree by construction rather than by inspection.
     """
-    size = len(v)
-    if t in IMPOSSIBLE:
-        return "impossible", "no property class"
-    if t == 1:
-        return ("exact" if size == 1 else "inexact"), "1"
-    if t in (2, 4):
-        return ("exact" if size == 4 else "inexact"), "4"
-    if t == 3:
-        return ("exact" if size == 0 else "inexact"), "0"
-    if t in (5, 6, 8):
-        try:
-            _idx, off = ps.read_index(v, 0)
-        except IndexError:
-            return "inexact", "truncated index"
-        return ("exact" if off == size else "inexact"), "%d-byte index" % off
-    if t == 13:
-        try:
-            n, off = ps.read_index(v, 0)
-        except IndexError:
-            return "inexact", "truncated length"
-        want = off + (2 * abs(n) if n < 0 else n)
-        return ("exact" if want == size else "inexact"), "%d chars" % abs(n)
-    if t == 10:
-        if struct_name in native_width:
-            want = native_width[struct_name]
-            return ("exact" if want == size else "inexact"), "native %d" % want
-        tags, end, reason = te.walk(v)
-        if reason != "None" or end != len(v):
-            return "inexact", "tagged walk %s at %d" % (reason, end)
-        equal, _terms, reasons = te.compare(v, tags)
-        if reasons:
-            return "inexact", "tagged walk re-encodes %d of %d" % (equal, len(tags) - 1)
-        return "exact", "tagged block, %d tag(s)" % (len(tags) - 1)
-    return "open", ""
+    return ps.decode_value(t, v, struct_name, native_width)
 
 
 def struct_census(dump, limit=None):
@@ -240,8 +211,8 @@ def struct_census(dump, limit=None):
     for path in package_paths(dump, limit):
         pkg = Package(path)
         pkg.read_names(); pkg.read_imports(); pkg.read_exports()
-        for _lead, _c, start, tags, end, data in blocks(pkg):
-            if start is None:
+        for _lead, _c, start, tags, end, data, moved in blocks(pkg):
+            if tags is None:
                 continue
             blob = data[start:]
             for t in tags:
@@ -263,45 +234,28 @@ def package_paths(dump, limit=None):
     return paths[:limit] if limit else paths
 
 
-def blocks(pkg):
-    """Every export that holds a property block: `(label, count, start, tags, end, data)`.
+def blocks(pkg, native_width=None):
+    """Every export that holds a property block: `(label, count, start, tags, end, data, moved)`.
 
-    The locator is the shipped one (`prop-stream.find_block`), unchanged, so the value test is a second
-    opinion on that start and not a new locator.
+    `start` is the locator's answer (`prop-stream.find_block`, value test on) and `moved` says the header
+    test alone would have chosen a different start -- so this census reports the locator's own decision
+    rather than a second guess at it.
     """
     for i, exp in enumerate(pkg.exports):
         if not exp["size"]:
             continue
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
-        found = ps.find_block(data, pkg, min_props=1)
+        found = ps.find_block(data, pkg, min_props=1, native_width=native_width)
         if not found:
             continue
         count, start, _props = found
+        header = ps.find_block(data, pkg, min_props=1, values=False)
+        moved = header is not None and header[1] != start
         tags, end, reason = te.walk(data[start:])
         if reason != "None" or start + end != len(data):
-            yield (i, count, None, None, None, data)
+            yield (i, count, start, None, None, data, moved)
             continue
-        yield (i, count, start, tags, end, data)
-
-
-def relocate_by_value(data, tags, start, struct_of, native_width):
-    """A later start whose whole block decodes and still ends at the export's end, or `None`."""
-    for cand in range(start + 1, min(len(data), 96)):
-        more, end, reason = te.walk(data[cand:])
-        if reason != "None" or cand + end != len(data):
-            continue
-        bad = seen = 0
-        for t in more:
-            if t.get("terminator") or t["type"] not in CHECKABLE:
-                continue
-            seen += 1
-            v = data[cand + t["header_end"]:cand + t["header_end"] + t["size"]]
-            verdict, _d = decode(t["type"], v, struct_of(t), native_width)
-            if verdict == "inexact":
-                bad += 1
-        if bad == 0 and seen:  # a block of values nothing can check is not evidence
-            return cand, more
-    return None
+        yield (i, count, start, tags, end, data, moved)
 
 
 def native_widths(sizes, names):
@@ -331,6 +285,7 @@ def sweep(dump, limit=None, native=()):
     structs = collections.defaultdict(collections.Counter)
     struct_sizes = collections.defaultdict(collections.Counter)
     file_rows = []
+    residue = []
     for path in package_paths(dump, limit):
         rel = os.path.relpath(path, dump)
         pkg = Package(path)
@@ -340,10 +295,11 @@ def sweep(dump, limit=None, native=()):
             return pkg.name(t["struct"]) if t["struct"] else "?"
 
         counts = collections.Counter()
-        for _i, _c, start, tags, end, data in blocks(pkg):
-            if start is None:
+        for _i, _c, start, tags, end, data, moved in blocks(pkg, native_width):
+            if tags is None:
                 continue
             counts["blocks"] += 1
+            counts["blocks_relocated"] += 1 if moved else 0
             blob = data[start:]
             _equal, _terms, hreasons = te.compare(blob, tags)
             if hreasons:
@@ -370,8 +326,10 @@ def sweep(dump, limit=None, native=()):
                     lone[TYPE_NAMES.get(bad[0][0]["type"], bad[0][0]["type"])] += 1
                 if not hreasons:
                     counts["blocks_value_only"] += 1
-                    if relocate_by_value(data, tags, start, struct_of, native_width):
-                        counts["blocks_moved"] += 1
+                    residue.append(dict(scope="residue", key="%s#%d" % (rel, _i + 1),
+                                        count=len(bad),
+                                        note="%s;start=%d;tags=%d" % (pkg.class_name_of(pkg.exports[_i]),
+                                                                      start, len(marks))))
             else:
                 counts["blocks_exact"] += 1
         counts["files"] += 1
@@ -384,7 +342,7 @@ def sweep(dump, limit=None, native=()):
         row = dict(scope="file", key=rel, count=counts["tags"], note="")
         row["_counts"] = counts
         file_rows.append(row)
-    return total, cls, structs, struct_sizes, file_rows, native_width, lone
+    return total, cls, structs, struct_sizes, file_rows, native_width, lone, residue
 
 
 def _type_of(name):
@@ -395,7 +353,7 @@ def _type_of(name):
     return -1
 
 
-def rows_of(total, cls, structs, struct_sizes, file_rows, native_width, rules, native, lone):
+def rows_of(total, cls, structs, struct_sizes, file_rows, native_width, rules, native, lone, residue=()):
     rows = []
     tags = total["tags"]
     exact = sum(c["exact"] for c in cls.values())
@@ -417,11 +375,11 @@ def rows_of(total, cls, structs, struct_sizes, file_rows, native_width, rules, n
     rows.append(dict(scope="census", key="blocks_header_refused", count=total["blocks_header_refused"],
                      note="the header test refuses the block (the tag-encode refusal)"))
     rows.append(dict(scope="census", key="blocks_value_only", count=total["blocks_value_only"],
-                     note="the headers all re-encode and a value still does not"))
+                     note="a value still does not decode where the locator put the start (the residue)"))
     rows.append(dict(scope="census", key="lone_inexact", count=sum(lone.values()),
                      note="inexact value(s) that sit in a block where every other value decodes"))
-    rows.append(dict(scope="census", key="blocks_moved", count=total["blocks_moved"],
-                     note="of those, ones with a later start whose whole block decodes"))
+    rows.append(dict(scope="census", key="blocks_relocated", count=total["blocks_relocated"],
+                     note="the header test's start held a value its class cannot produce and another start does not"))
     rows.append(dict(scope="census", key="native_structs", count=len(native_width),
                      note="the names the serialiser skips: %s" % ", ".join(sorted(native_width))))
     for name in sorted(native_width):
@@ -443,10 +401,12 @@ def rows_of(total, cls, structs, struct_sizes, file_rows, native_width, rules, n
         rows.append(dict(scope="struct", key=name, count=sum(structs[name].values()),
                          note="%s; exact=%d; inexact=%d; sizes %s"
                               % (where, structs[name]["exact"], structs[name]["inexact"], sizes)))
+    for row in residue:
+        rows.append(row)
     for row in file_rows:
         counts = row.pop("_counts")
-        row["note"] = "blocks=%d;inexact_values=%d;moved=%d" % (
-            counts["blocks"], counts["inexact_values"], counts["blocks_moved"])
+        row["note"] = "blocks=%d;inexact_values=%d;relocated=%d" % (
+            counts["blocks"], counts["inexact_values"], counts["blocks_relocated"])
         rows.append(row)
     return rows
 
@@ -522,14 +482,16 @@ def render(rows):
                % (format(census["lone_inexact"], ","), format(census["inexact"], ","),
                   (" (%s)" % ", ".join("%s %d" % (n, int(lone[n]["count"])) for n in loud)) if loud else ""))
     out.append("")
-    out.append("**The value is a second opinion on the block start, and it is the stricter one.** Of the "
+    out.append("**The value is the block start's second opinion, and the locator now takes it.** Of the "
                "%s block(s) that walk, the header test refuses %s outright (a tag the writer's rules cannot "
-               "produce, `tag-encode`'s refusal); of the rest, %s hold at least one value their class cannot "
-               "produce although every header re-encodes, and %s of those payloads carry a later start "
-               "whose whole block decodes and still ends where the export ends -- so a header is only "
-               "self-consistent with itself, and a value is what says a parse started inside one."
+               "produce, `tag-encode`'s refusal); %s more are blocks whose every header re-encodes and whose "
+               "start the value test moves -- the header's candidate held a value its class cannot produce "
+               "and another start's did not. What is left is %s block(s) where a value still does not decode: "
+               "no start in the prefix window fixes those, so they are counted rather than guessed away. A "
+               "header is only self-consistent with itself; the value's declared `Size` is the number a parse "
+               "inside another value cannot satisfy."
                % (format(census["blocks"], ","), format(census["blocks_header_refused"], ","),
-                  format(census["blocks_value_only"], ","), format(census["blocks_moved"], ",")))
+                  format(census["blocks_relocated"], ","), format(census["blocks_value_only"], ",")))
     out.append("")
     out.append("What stays open is what the rule cannot reach, and it is counted above rather than "
                "guessed at: an `Array`'s count decodes but its elements are the `Inner`'s rule, a "
@@ -585,6 +547,12 @@ def check_artifact(rows):
     if blocks != census["tags"]:
         sys.exit("FAIL value-layouts: the file rows hold %d tag(s), the census says %d"
                  % (blocks, census["tags"]))
+    if census["blocks_relocated"] + census["blocks_value_only"] > census["blocks"]:
+        sys.exit("FAIL value-layouts: more relocated or residue blocks than blocks")
+    held_residue = sum(1 for r in rows if r["scope"] == "residue")
+    if held_residue != census["blocks_value_only"]:
+        sys.exit("FAIL value-layouts: %d residue row(s), the census says %d"
+                 % (held_residue, census["blocks_value_only"]))
     tagged = sum(int(r["count"]) for r in rows if r["scope"] == "struct")
     held = sum(int(r["count"]) for r in rows if r["scope"] == "class" and r["key"] == "Struct")
     if tagged > held:
@@ -650,7 +618,7 @@ def check():
         dict(scope="census", key="blocks_header_refused", count=0, note=""),
         dict(scope="census", key="blocks_value_only", count=1, note=""),
         dict(scope="census", key="lone_inexact", count=0, note=""),
-        dict(scope="census", key="blocks_moved", count=1, note=""),
+        dict(scope="census", key="blocks_relocated", count=1, note=""),
         dict(scope="census", key="native_structs", count=1, note="struct names one size only: Vector"),
         dict(scope="class", key="Int", count=3, note="4 bytes (`0x00037110`); exact=3; inexact=0; open=0"),
         dict(scope="class-exact", key="Int", count=3, note=""),
@@ -675,7 +643,8 @@ def check():
         dict(scope="class-impossible", key="Struct", count=0, note=""),
         dict(scope="class-lone", key="Struct", count=0, note=""),
         dict(scope="struct", key="Vector", count=1, note="native 12; exact=1; inexact=0; sizes 12:1"),
-        dict(scope="file", key="Maps/M00.unr", count=6, note="blocks=2;inexact_values=1;moved=1"),
+        dict(scope="file", key="Maps/M00.unr", count=6, note="blocks=2;inexact_values=1;relocated=1"),
+        dict(scope="residue", key="Maps/M00.unr#7", count=1, note="Mover;start=12;tags=24"),
     ]
     check_artifact(rows)
 
@@ -760,7 +729,8 @@ def main():
 
     rules, widths = class_rules(os.path.join(args.dump, "default.xbe"))
     native = native_names()
-    total, cls, structs, struct_sizes, file_rows, native_width, lone = sweep(args.dump, args.limit, native)
+    total, cls, structs, struct_sizes, file_rows, native_width, lone, residue = sweep(
+        args.dump, args.limit, native)
     # the three names the image skips have to be the three the corpus finds at one size
     if native and native != set(native_width):
         sys.exit("FAIL value-layouts: the image skips %s, the corpus holds a width for %s"
@@ -771,7 +741,7 @@ def main():
         if seen and held.get(native_width[name], 0) < 0.99 * seen:
             sys.exit("FAIL value-layouts: %s is native %d on only %d of %d value(s), so the native body is "
                      "not fixed-width" % (name, native_width[name], held.get(native_width[name], 0), seen))
-    rows = rows_of(total, cls, structs, struct_sizes, file_rows, native_width, rules, native, lone)
+    rows = rows_of(total, cls, structs, struct_sizes, file_rows, native_width, rules, native, lone, residue)
     check_artifact(rows)
     out = args.out or os.path.join(ROOT, "inventory")
     write_artifact(os.path.join(out, "value_layouts.csv"), rows)
