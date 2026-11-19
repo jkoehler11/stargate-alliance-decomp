@@ -536,10 +536,10 @@ written now, so the residue is **0** and the gate pins that, and the T3D now car
 on load, writes the class's instance record (the `TArray<FColor>` that is the colour table, then one dword) and,
 when the package version is at least `0x6e`, a `TArray` of 20-byte records through the array serialiser at
 `0x0024e6e0` -- a compact count, then each member. So the bytes after the colours are
-`[dword][compact count][count records]`, each record ending with a dword that is 0 or 1 (read at the end of this page): **466,858 records** over the 33,509
-payloads, and the frame spends the tail exactly on all of them. The record body's own field set is not pinned:
-97.6% of payloads (**32,719**) parse as a compact value and a length-prefixed byte blob, and the rest close on the
-frame but not on that body shape, so the body grammar is counted and the frame is what the gate holds.
+`[dword][compact count][count records]`, each record ending with a dword that is 0 or 1: **466,858 records** over
+the 33,509 payloads, and the frame spends the tail exactly on all of them. The record body is pinned at the end of
+this page: `[compact export index][compact length][bytes][dword 0 or 1]`, read from the serialiser's three
+members, which closes every payload -- the 790 that did not close on the earlier reading were records ending on 0.
 
 **Files.** `tools/map-to-t3d.py` (`level_record`, `smi_tail`, the writer's `Level` branch and its header line,
 five columns on the coverage census, `LEVEL_UNWRITTEN`, the gates and six synthetic cases),
