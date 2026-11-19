@@ -2,11 +2,13 @@ element_type,declared_by,arrays,records,widths,tagged_elements,element_widths,sh
 ParticleColorScale,ParticleEmitter,2472,5746,,2472,14:5095;17:411;15:213;16:27,RelativeTime:Float+Color:Struct<Color>:5746
 ParticleTimeScale,ParticleEmitter,1330,2000,,1330,34:877;31:434;35:429;32:147;33:113,RelativeTime:Float+RelativeSize:Float+UseXYZ:Bool+RelativeSizeXYZ:Struct<Vector>:2000
 SoundEmitter,AmbientSound,486,823,,486,38:551;37:233;41:31;40:8,EmitInterval:Float+EmitVariance:Float+Volume:Struct<Range>+EmitSound:Object:823
+int,TerrainInfo,132,12480,4:132,0,,
 IMusicSegment,IMusicActor,81,8220,,81,83:1336;63:1336;61:1282;80:1277;87:908;66:906;59:506;77:448;68:113;84:56;155:21;281:12;41:8;81:3;39:2;40:2;70:2;47:1;49:1,SegmentName:Str+State:Byte+TypeStart:Bool+TypeEnd:Bool+TypeLoop:Bool+Transition:Array+TransitionFlags:Int+TestedValue:Int:8220
 ParticleSound,ParticleEmitter,58,73,,58,85:70;84:3,Sound:Object+Radius:Struct<Range>+Pitch:Struct<Range>+Weight:Int+Volume:Struct<Range>+Probability:Struct<Range>:73
 ParticleBeamEndPoint,BeamEmitter,52,93,,52,74:77;75:8;78:5;73:2;83:1,ActorTag:Name+offset:Struct<RangeVector>+Weight:Float+ActorRef:Object:93
 ParticleVelocityScale,ParticleEmitter,36,114,,36,23:63;24:51,RelativeTime:Float+RelativeVelocity:Struct<Vector>:114
 int,FluidSurfaceInfo,12,2017,4:12,0,,
+DecorationLayer,TerrainInfo,8,10,,8,653:4;657:3;659:1;655:1;684:1,ShowOnTerrain:Int+ScaleMap:Object+DensityMap:Object+ColorMap:Object+StaticMesh:Object+FadeoutRadius:Struct<Range>+BillboardFadeinRadius:Struct<Range>+BillboardHardCullDist:Float+BillboardTexture:Object+RedColorVariance:Byte+GreenColorVariance:Byte+BlueColorVariance:Byte+BillboardAlphaFadeEnabled:Bool+BillboardAlphaRef:Byte+BillboardUpdateThreshold:Float+BillboardMorphHorizontal:Float+BillboardMorphVertical:Float+ScaleMultiplier:Struct<RangeVector>+MeshExtents:Struct<Range>+swayRange:Struct<Range>+swaySpeed:Struct<Range>+DensityMultiplier:Struct<Range>+MaxPerQuad:Int+Seed:Int+AlignToTerrain:Int+DrawOrder:Byte+ShowOnInvisibleTerrain:Int+LitDirectional:Int+DisregardTerrainLighting:Int+RandomYaw:Int+EnableCollision:Bool+CollisionRadius:Float+CollisionHeight:Float+swayRotators:Struct<FTreeSwayRotation>+swayRotators:Struct<FTreeSwayRotation>+swayRotators:Struct<FTreeSwayRotation>:10
 Plane,ParticleEmitter,8,8,,8,26:7;29:1,W:Float+X:Float+Y:Float+Z:Float:8
 ParticleRevolutionScale,ParticleEmitter,4,8,,4,23:6;24:2,RelativeTime:Float+RelativeRevolution:Struct<Vector>:8
 ParticleBeamScale,BeamEmitter,3,3,,3,24:3,FrequencyScale:Struct<Vector>+RelativeLength:Float:3
