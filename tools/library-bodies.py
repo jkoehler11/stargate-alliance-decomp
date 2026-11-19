@@ -273,10 +273,12 @@ def report(rows):
                   totals["push"], totals["path"], totals["wide"], totals["calls"], totals["known"],
                   totals["out"], totals["unk"]))
     out.append("")
+    real = ("is a real C++ name" if totals["named"] == 1 else "are real C++ names")
+    named_verb = ("is" if totals["named"] == 1 else "are")
     out.append("Of the **%d** names the map carries in these sections, **%d** are `thunk_` jump stubs and "
-               "**%d** is a real C++ name, so **%d** of the %d bodies is semantically named."
-               % (totals["named"] + totals["thunk"], totals["thunk"], totals["named"], totals["named"],
-                  totals["fns"]))
+               "**%d** %s, so **%d** of the %d bodies %s semantically named."
+               % (totals["named"] + totals["thunk"], totals["thunk"], totals["named"], real,
+                  totals["named"], totals["fns"], named_verb))
     out.append("")
     out.append("**%d of %d** library bodies reference any string at all (**%d** through a `push imm32`, "
                "**%d** only through a data-table dword), **%d** reference a build-tree source path, and "
