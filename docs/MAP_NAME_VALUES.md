@@ -52,8 +52,8 @@ row is counted as a mis-split rather than resolved to the reader's `?`.
 | -- needed only by a name value | **13,329** (5.3%) |
 | -- vocabulary (neither object nor value) | **25,134** (10.1%) |
 | -- an export's or import's own name | **210,963** (84.6%) |
-| squad-script pairs in `inventory/squad_scripts.csv` | **614** |
-| -- of those named as a data-only value in their own map | **612** |
+| squad-script pairs in `inventory/squad_scripts.csv` | **630** |
+| -- of those named as a data-only value in their own map | **630** |
 
 The four arms partition the table -- **210,963** objects, **13,329** value-only strings, **25,134** vocabulary, totalling the **249,426** distinct entries the 73 maps need -- so no row is counted twice and the split is the whole table, not a sample of it. **2,248** distinct values resolve to an object (`205` an export's own name, `2,043` an import's), so a `Tag` that repeats an actor's name costs the table nothing.
 

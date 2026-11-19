@@ -648,6 +648,7 @@ compile-readiness-doc:
 
 map-census:
 	@$(PYTHON) tools/map-census.py "$(MAPS_DIR)" -o inventory
+	@echo "wrote inventory/squad_scripts.csv (map, squad_script, spawners)"
 
 # The extent locator takes the earliest parse, and a misparse's leading tag decodes as type 0 (`Invalid`), so the
 # block's start is decided by the tag's type instead. Reads the maps; no boot, no image.

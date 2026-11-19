@@ -23,7 +23,7 @@ Measured over the same 73 maps:
 | maps whose spawners reference a squad script | **61 of 73** |
 | references that do not resolve (`?`) | 820 |
 
-`inventory/squad_scripts.csv` holds (map, squad script, spawner count) — 614 rows of identifiers.
+`inventory/squad_scripts.csv` holds (map, squad script, spawner count) — 630 rows of identifiers.
 
 ## Spawners point at named AI scripts
 
@@ -63,16 +63,24 @@ they spawn. The doc now says that instead.
 means (a start in the first 64 bytes whose stream ends exactly at the export's end and whose names all resolve).
 That is a strict reading — it counts what can be read, not what might be there.
 
-`squad_scripts.csv` is not written by it, and the "not yet reproducible" reading above is superseded
-(2026-11-19): the difference is not a broader rule, it is the name-table fix. A walk of the same reader over
-all 73 maps finds **630** `(map, script)` pairs against the committed file's **614**, and the whole delta is two
-maps — `M17D` and `M21A`, the two whose name tables the length rule truncated
-(`docs/PACKAGE_READER.md`), which the committed file records as a single `?` row each (8 and 10 spawners).
-With the fix they resolve to **18 named scripts**, which is exactly `614 - 2 + 18 = 630`. What still differs is
-the spawner count behind those rows: the walk sees **719** spawner properties (`IntelligentSpawner` 706,
-`HaakenPod` 13) where the committed file totals 711, an 8-property residue left open here rather than
-overwritten — so the file stays as it is until that residue is pinned, and `make map-census` keeps printing
-the delta.
+`squad_scripts.csv` is written by it too, as of 2026-11-19, and the "not yet reproducible" reading above was
+the name-table fix rather than a broader rule: the pass finds **630** `(map, script)` pairs where the old file
+had **614**, and the whole delta is two maps — `M17D` and `M21A`, the two whose name tables the length rule
+truncated (`docs/PACKAGE_READER.md`), which the old file recorded as a single `?` row each. Those two rows are
+now the **18 scripts** behind them: `M17D`'s 8 spawners are seven scripts named once each and a `noScript`
+shared by nine, `M21A`'s 10 are ten singletons. So `614 - 2 + 18 = 630` rows, and the spawner column moves
+with them: **719** properties (`IntelligentSpawner` 706, `HaakenPod` 13) against the old file's 711, because
+the `M17D` placeholder held 8 where the map carries 16 — 8 spawners were never counted at all, which is what
+the earlier note called a "residue" and left open. Every one of the 612 rows the two enumerations share
+agrees on its spawner count (`711 - 18 + 26 = 719` the other way), so this is a replacement and not a second
+enumeration.
+
+**It reads the value from the block the T3D writer reads.** The coverage locator takes the *earliest* start
+whose block ends at the export's end; the writer takes the candidate with the most properties. On these 73
+maps the first names **591** pairs and the second **630**, so the artifact follows the writer — the page and
+the file have to be one reading, and the 39 pairs are the cost of the earlier parse. `make map-census` writes
+all four map-side artifacts and its `--check` (dump-free) validates this one's shape, positive counts and
+unique pairs; the pass is 80 s, 30 s of it the coverage walk and the rest this re-read.
 
 ## Every map written, with references resolved (measured 2026-11-06)
 
