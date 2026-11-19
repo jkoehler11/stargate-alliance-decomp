@@ -112,6 +112,12 @@ DRAW_PROPS = {"StyleName", "Background", "BackgroundStyle", "WinLeft", "WinTop",
               "BoundingType", "ScalingType"}
 BEGIN_OBJECT = re.compile(r"^\s*Begin\s+Object\b")
 END_OBJECT = re.compile(r"^\s*End\s+Object\b")
+# A component block states its class and the property the page binds it to: `Begin Object Class=GUILabel Name=cTitle`.
+BEGIN_COMP = re.compile(r"^\s*Begin\s+Object\b(?P<rest>.*)$")
+COMP_CLASS = re.compile(r"\bClass=(?P<cls>[A-Za-z0-9_]+)")
+COMP_NAME = re.compile(r"\bName=(?P<name>[A-Za-z0-9_]+)")
+# The four `GUIComponent` geometry values a widget can state for itself.
+WIN_KEYS = ("WinTop", "WinLeft", "WinWidth", "WinHeight")
 TOP_PROP = re.compile(r"^\s*(?P<prop>[A-Za-z0-9_]+)(?:\(\d+\))?\s*=\s*(?P<val>.*?)\s*$")
 FUNC_DECL = re.compile(r"^function\s+(?:[A-Za-z0-9_]+\s+)?(?P<name>[A-Za-z0-9_]+)\s*\(", re.M)
 XC_CODE = re.compile(r"\bXC_[A-Z]+\b")
@@ -554,6 +560,133 @@ def read_page_defaults(tree, family, supers, by_name):
     return rows, stats
 
 
+def read_children(tree, pkgname, cls):
+    """A class's own `Begin Object` children, one dict per block: its widget class, its `Name=` and its properties.
+
+    `defaults-emit` renders a page's subobjects inline, each as `Begin Object Class=X Name=Y` ... `End Object`,
+    so a page's layout is this list rather than its own properties: `Class=` is the widget's class and `Name=`
+    the property the page binds it to. Only a depth-1 block is a component of this class; a nested block belongs
+    to its parent component and is not counted twice.
+    """
+    path = os.path.join(tree, pkgname, cls + ".defaultproperties.uc")
+    if not os.path.isfile(path):
+        return []
+    kids, depth, cur = [], 0, None
+    with open(path, encoding="latin-1") as fh:
+        for line in fh:
+            m = BEGIN_COMP.match(line)
+            if m:
+                depth += 1
+                if depth == 1:
+                    c, n = COMP_CLASS.search(m.group("rest")), COMP_NAME.search(m.group("rest"))
+                    cur = dict(cls=c.group("cls") if c else "", name=n.group("name") if n else "", props=[])
+                    kids.append(cur)
+                continue
+            if END_OBJECT.match(line):
+                depth = max(0, depth - 1)
+                if depth == 0:
+                    cur = None
+                continue
+            if depth == 1 and cur is not None:
+                p = TOP_PROP.match(line)
+                if p and not p.group("prop").startswith("//"):
+                    cur["props"].append(p.group("prop"))
+    return kids
+
+
+def class_home(tree, cls, pkgname, by_name):
+    """The package a widget class's emitted defaults live in: the corpus's own package for the name when the
+    tree carries that class there, else the page's.
+
+    A component's class is rarely in the page's package -- `GUIButton` is in `GUI` and the Stargate pages are in
+    `StargateMenus` -- so reading its defaults from the page's directory would find no file and report "no
+    geometry anywhere" for every widget.
+    """
+    for p in (by_name.get(cls) or []):
+        if os.path.isfile(os.path.join(tree, p, cls + ".defaultproperties.uc")):
+            return p
+    return pkgname
+
+
+def class_geometry(tree, pkgname, cls, supers, by_name, _cache=None):
+    """Where a widget's `Win*` geometry comes from when the page states none: the nearest class on its chain
+    whose own defaults state one, or `""` when no emitted block does.
+
+    A component that sets no `WinLeft`/`WinTop`/`WinWidth`/`WinHeight` still draws somewhere: `GUIButton`'s and
+    `GUILabel`'s own blocks carry the values the widget falls back on, and this names the class that supplies
+    them. The cache is per tree because a self-test reads a second, synthetic one.
+    """
+    if _cache is None:
+        _cache = {}
+    key = (tree, pkgname, cls)
+    if key in _cache:
+        return _cache[key]
+    found = ""
+    for p2, c2 in super_path(pkgname, cls, supers, by_name):
+        blk, _ = read_default_block(tree, p2, c2)
+        if any(k in blk for k in WIN_KEYS):
+            found = "%s.%s" % (p2, c2)
+            break
+    _cache[key] = found
+    return found
+
+
+def read_components(tree, family, supers, by_name, per_pkg):
+    """What each page's `Begin Object` blocks declare: the widget class, whether the page states it or a
+    subclass restates an inherited one, how much of its own geometry it carries, and where that geometry
+    comes from when it carries none.
+
+    The page-level census counts these blocks (`114 over 46 pages`); this reads them. Two questions it
+    answers: a page's widget set is *not* inherited the way its hint flags are -- `SGPageBase`'s five
+    components are declared once and by no page again, so a page's own blocks are additions to a shared
+    frame -- and a page can replace an inherited widget outright by restating its `Name=` with a subclass,
+    which is how `MultiplayerMapSelect` turns `SinglePlayerChapterSelect`'s chapter panel into a
+    `MapSelectionPanel`.
+    """
+    known = {c.lower() for pkg in per_pkg for c in per_pkg[pkg]}
+    rows, stats, classes, cache = [], collections.Counter(), collections.Counter(), {}
+    for cls, pkgname in sorted(family.items()):
+        path = super_path(pkgname, cls, supers, by_name)
+        own = read_children(tree, pkgname, cls)
+        if not own:
+            continue
+        anc = {}
+        for p2, c2 in path[1:]:
+            for c in read_children(tree, p2, c2):
+                anc.setdefault(c["name"], ("%s.%s" % (p2, c2), c["cls"]))
+        stats["pages"] += 1
+        for c in own:
+            stats["components"] += 1
+            classes[c["cls"]] += 1
+            geo = [p for p in c["props"] if p in WIN_KEYS]
+            note = "props=%d geometry=%d/4" % (len(c["props"]), len(geo))
+            if len(geo) == 4:
+                stats["geom_full"] += 1
+            elif not geo:
+                stats["geom_none"] += 1
+                src = class_geometry(tree, class_home(tree, c["cls"], pkgname, by_name), c["cls"],
+                                     supers, by_name, cache)
+                if src:
+                    stats["geom_from_class"] += 1
+                    note += ", geometry from " + src
+                else:
+                    stats["geom_nowhere"] += 1
+            form = "own"
+            if c["name"] in anc:
+                where, where_cls = anc[c["name"]]
+                stats["restated"] += 1
+                form = "restated"
+                note += "; restates %s whose class is %s" % (where, where_cls)
+            else:
+                stats["own"] += 1
+            if c["cls"].lower() not in known:
+                stats["unresolved"] += 1
+            rows.append(dict(kind="component", name=cls, package=pkgname, form=form, target=c["name"],
+                             verdict=c["cls"], platform="", note=note))
+    stats["classes"] = len(classes)
+    return rows, stats
+
+
 def read_overrides(text, cls, pkgname):
     """Which of the four wiring functions a page replaces, and whether `InitComponent` forwards to `Super`.
 
@@ -719,6 +852,11 @@ def sweep(dump, defaults_tree=""):
     page_rows, page_stats = (read_page_defaults(defaults_tree, family, supers, by_name)
                              if defaults_tree else ([], collections.Counter()))
     rows.extend(page_rows)
+    # The page's *layout*: the `Begin Object` blocks a page declares. Same tree, so a `--defaults`-less run
+    # reports no components rather than zero of them.
+    comp_rows, comp_stats = (read_components(defaults_tree, family, supers, by_name, per_pkg)
+                             if defaults_tree else ([], collections.Counter()))
+    rows.extend(comp_rows)
     codes_by_class = {}
     for (pkgname, cls), text in sorted(text_of.items()):
         if family.get(cls) == pkgname:
@@ -758,7 +896,7 @@ def sweep(dump, defaults_tree=""):
             verdict, tpkg, tcls, note = resolve(r["target"], per_pkg, by_name)
             if r["kind"] == "hud_swap" and "HUD" not in tcls.upper():
                 continue
-        elif r["kind"] in ("hint", "caption", "draw", "override", "hint_handler"):
+        elif r["kind"] in ("hint", "caption", "draw", "override", "hint_handler", "component"):
             verdict, tpkg, tcls, note = (r.get("verdict") or "", "", "", "")
         else:
             verdict, tpkg, tcls, note = "", "", "", ""
@@ -852,6 +990,15 @@ def sweep(dump, defaults_tree=""):
                       "page_top_props=%d" % page_stats.get("page_top_props", 0),
                       "page_components=%d" % page_stats.get("page_components", 0),
                       "pages_with_components=%d" % page_stats.get("pages_with_components", 0),
+                      "component_pages=%d" % comp_stats.get("pages", 0),
+                      "component_own=%d" % comp_stats.get("own", 0),
+                      "component_restated=%d" % comp_stats.get("restated", 0),
+                      "component_classes=%d" % comp_stats.get("classes", 0),
+                      "component_geom_full=%d" % comp_stats.get("geom_full", 0),
+                      "component_geom_none=%d" % comp_stats.get("geom_none", 0),
+                      "component_geom_from_class=%d" % comp_stats.get("geom_from_class", 0),
+                      "component_geom_nowhere=%d" % comp_stats.get("geom_nowhere", 0),
+                      "component_unresolved=%d" % comp_stats.get("unresolved", 0),
                       "titles_own=%d" % page_stats.get("titles_own", 0),
                       "placeholder_titles=%d" % page_stats.get("placeholder_titles", 0),
                       "draw_rows=%d" % page_stats.get("draw_rows", 0),
@@ -920,6 +1067,57 @@ def interaction_composition():
         pass
     top = ", ".join("%s %d" % (k, n) for k, n in kinds.most_common(5))
     return dict(declared=declared, class_typed=class_typed, defaults=defaults, top=top)
+
+
+def components_block(s, rows):
+    """The generated half of the layout census: the count table, each page's widgets, and the restatements."""
+    comps = [r for r in rows if r["kind"] == "component"]
+    out = ["### The widgets a page declares", ""]
+    if not comps:
+        out.append("No `--defaults` tree was read, so the `Begin Object` blocks are uncounted in this run.")
+        return out
+    out.append("A page's `Begin Object` blocks are its layout: each block names a widget class and the property "
+               "the page binds it to, and the four `Win*` values a block states are that widget's place on the "
+               "page. The base's own five (`cTitle`, `cButtonA`..`cButtonY`) are declared once, so a page draws "
+               "its inherited frame plus whatever it adds — and a subclass can replace an inherited widget "
+               "outright by restating its `Name=` with a different class.")
+    out.append("")
+    out.append("| measure | answer |")
+    out.append("|---|---|")
+    out.append("| `Begin Object` component blocks | **%s** over %s pages |" %
+               (s.get("page_components", "0"), s.get("pages_with_components", "0")))
+    out.append("| ... declared once, by the page itself | **%s** |" % s.get("component_own", "0"))
+    out.append("| ... restating a widget an ancestor already declares | **%s** |" %
+               s.get("component_restated", "0"))
+    out.append("| distinct widget classes | **%s** |" % s.get("component_classes", "0"))
+    out.append("| ... classes the corpus does not carry | **%s** |" % s.get("component_unresolved", "0"))
+    out.append("| ... stating all four `Win*` values on the page | **%s** |" % s.get("component_geom_full", "0"))
+    out.append("| ... stating none | **%s**, of which **%s** take theirs from the widget class's own defaults and "
+               "**%s** state none anywhere |" % (s.get("component_geom_none", "0"),
+                                                 s.get("component_geom_from_class", "0"),
+                                                 s.get("component_geom_nowhere", "0")))
+    per = collections.OrderedDict()
+    for r in sorted(comps, key=lambda r: (r["package"], r["name"], r["target"])):
+        per.setdefault((r["package"], r["name"]), []).append(r)
+    out.append("")
+    out.append("| page | widgets | with geometry | own | restated |")
+    out.append("|---|---|---:|---:|---:|")
+    for (pkg, page), got in per.items():
+        cells = ", ".join("`%s:%s`" % (r["verdict"], r["target"]) for r in got)
+        full = sum(1 for r in got if "geometry=4/4" in r["note"])
+        own = sum(1 for r in got if r["form"] == "own")
+        out.append("| `%s.%s` | %s | %d | %d | %d |" % (pkg, page, cells, full, own, len(got) - own))
+    restated = [r for r in comps if r["form"] == "restated"]
+    if restated:
+        out.append("")
+        out.append("| page | widget | class | ancestor | its class |")
+        out.append("|---|---|---|---|---|")
+        for r in sorted(restated, key=lambda r: (r["package"], r["name"], r["target"])):
+            m = re.search(r"restates (?P<where>\S+) whose class is (?P<cls>\S+)", r["note"])
+            out.append("| `%s.%s` | `%s` | `%s` | `%s` | `%s` |" %
+                       (r["package"], r["name"], r["target"], r["verdict"],
+                        m.group("where") if m else "?", m.group("cls") if m else "?"))
+    return out
 
 
 def render(rows):
@@ -1120,9 +1318,13 @@ def render(rows):
                 out.append("| `%s.%s` | %s |" % (r["package"], r["name"],
                                                  ", ".join("`%s`" % p for p in r["target"].split(","))))
             out.append("")
+            out.extend(components_block(s, rows))
+            out.append("")
             out.append("### The wiring, and the pages that replace it")
             out.append("")
         else:
+            out.append("")
+            out.extend(components_block(s, rows))
             out.append("")
             out.append("### The wiring, and the pages that replace it")
             out.append("")
@@ -1236,6 +1438,10 @@ def report(path=ARTIFACT):
         print("pages: %(hint_pages)s show a controller hint (%(hints_on)s flags, %(hint_inherited)s inherited), "
               "%(no_hint_pages)s show none; %(init_overrides)s replace InitComponent (%(init_nosuper)s without "
               "Super), %(handler_pages)s handle the controller" % s)
+        print("layout: %(page_components)s Begin Object blocks over %(pages_with_components)s pages, "
+              "%(component_own)s own and %(component_restated)s restated, %(component_classes)s widget classes, "
+              "%(component_geom_full)s with all four Win* values and %(component_geom_none)s with none "
+              "(%(component_geom_from_class)s from the widget class)" % s)
 
 
 # ---------------------------------------------------------------- self-test
@@ -1409,8 +1615,44 @@ def selftest():
     assert cov[("KidPage", "bButtonA")] == "handled", cov
     assert cov[("KidPage", "bButtonB")] == "handled", cov           # inherited from SGPageBase's handler
     assert cov[("KidPage", "bButtonY")] == "no-handler", cov
-    print("ok   menu-flow: 43 assertions over the parsers, the resolver, the closure, the three name readers "
-          "and the page-level defaults")
+    # --- a page's widgets: the block's class and bound name, a restatement, and geometry the widget class supplies
+    with tempfile.TemporaryDirectory() as td:
+        for pkg in ("StargateMenus", "GUI"):
+            os.makedirs(os.path.join(td, pkg))
+        with open(os.path.join(td, "GUI", "GUIButton.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write("defaultproperties\n{\n\tWinTop=0.100000\n\tWinLeft=0.200000\n\tWinWidth=0.300000\n"
+                     "\tWinHeight=0.400000\n}\n")
+        with open(os.path.join(td, "StargateMenus", "MidPage.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write("defaultproperties\n{\n\tBegin Object Class=GUIButton Name=ButtonA\n\t\tWinTop=0.5\n"
+                     "\t\tWinLeft=0.5\n\t\tWinWidth=0.1\n\t\tWinHeight=0.1\n\tEnd Object\n}\n")
+        with open(os.path.join(td, "StargateMenus", "KidPage.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write("defaultproperties\n{\n\tBegin Object Class=GUIButton Name=ButtonA\n\t\tCaption=\"Go\"\n"
+                     "\tEnd Object\n\tBegin Object Class=GUIButton Name=ButtonB\n\t\tWinTop=0.9\n\tEnd Object\n"
+                     "\tBegin Object Class=GUILabel Name=cTitle\n\tEnd Object\n}\n")
+        per_pkg2 = {"StargateMenus": {"MidPage": {}, "KidPage": {}, "GUIButton": {}, "GUILabel": {}},
+                    "GUI": {"GUIButton": {}, "GUILabel": {}}}
+        by_pkg2 = {"GUIButton": ["GUI"], "GUILabel": ["GUI"], "MidPage": ["StargateMenus"],
+                   "KidPage": ["StargateMenus"], "SGPageBase": ["StargateMenus"]}
+        supers2 = {"MidPage": "SGPageBase", "KidPage": "MidPage", "SGPageBase": "None"}
+        comp_rows, comp_stats = read_components(td, {"MidPage": "StargateMenus", "KidPage": "StargateMenus"},
+                                                supers2, by_pkg2, per_pkg2)
+        kids = read_children(td, "StargateMenus", "KidPage")
+    assert [c["name"] for c in kids] == ["ButtonA", "ButtonB", "cTitle"], kids
+    assert [c["cls"] for c in kids] == ["GUIButton", "GUIButton", "GUILabel"], kids
+    assert len(comp_rows) == 4 and comp_stats["components"] == 4, (comp_rows, comp_stats)
+    assert comp_stats["restated"] == 1 and comp_stats["own"] == 3, comp_stats
+    assert comp_stats["classes"] == 2 and comp_stats["unresolved"] == 0, comp_stats
+    # MidPage's ButtonA states all four values; KidPage restates it with none, which `GUIButton` supplies;
+    # cTitle's `GUILabel` has no emitted block, so that one states nothing anywhere.
+    assert comp_stats["geom_full"] == 1 and comp_stats["geom_none"] == 2, comp_stats
+    assert comp_stats["geom_from_class"] == 1 and comp_stats["geom_nowhere"] == 1, comp_stats
+    restated = [r for r in comp_rows if r["form"] == "restated"]
+    assert restated[0]["name"] == "KidPage" and restated[0]["target"] == "ButtonA", restated
+    assert "restates StargateMenus.MidPage whose class is GUIButton" in restated[0]["note"], restated[0]
+    assert "geometry from GUI.GUIButton" in restated[0]["note"], restated[0]
+    assert "The widgets a page declares" in render(fake), "the layout section renders without rows"
+    print("ok   menu-flow: 53 assertions over the parsers, the resolver, the closure, the three name readers, "
+          "the page-level defaults and the component blocks")
 
 
 
