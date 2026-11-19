@@ -8,14 +8,18 @@ turns out to be the missing half of "placed data": an action's property block is
 
 A placement states what it overrides; **a parameter it does not state is its class's own `var(Action)` default**, so
 the package decides every parameter either way. This page is the census of that surface — one row per class and
-parameter, with how many placements state it — and the three defaults that decide a run on their own:
+parameter, with how many placements state it — and the four defaults that decide a run on their own:
 
 * `ACTION_GotoAction.ProceedToNextAction` assigns `C.ActionNum = Max(0, ActionNumber)`. A placement that states no
   `ActionNumber` therefore does not fall through: it jumps the run back to **slot 0**.
 * `ACTION_WaitForEvent.InitActionFor` resolves a `TriggeredCondition` with
   `foreach C.DynamicActors(Class'Gameplay.TriggeredCondition', t, ExternalEvent)`. A placement that states no
-  `ExternalEvent` passes the name `None`, which the iterator does not filter on, so the **first** `TriggeredCondition`
-  in the level is the one whose `bEnabled` decides whether the wait completes immediately.
+  `ExternalEvent` passes the name `None`, which the iterator does not filter on; the loop body is a bare `break`, so
+  the **first** `TriggeredCondition` in the level is the one whose `bEnabled` decides whether the wait completes
+  immediately — and this page now names that condition for every one of the 19 placements that leave the name out.
+* `ACTION_TriggerEvent.InitActionFor` hands its `Event` to `C.TriggerEvent(Event, ...)`, and `Actor.TriggerEvent`
+  returns at the top when the name is `None` — so a placement that states no `Event` fires **nothing**, where the
+  same name on the wait side filters nothing.
 * `ACTION_WaitForTimer` hands `PauseTime` straight to `C.SetTimer(PauseTime, false)`. The value is in seconds and
   the largest placed value is how long a sequence can sit still; 100,000 seconds is the corpus's way of saying "not
   in this play" without ending the run.
@@ -66,9 +70,33 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 
 **A goto with no `ActionNumber` is a jump to the first element, and none of the 415 sits at the first element already -- each one re-runs its own sequence from the top. `ProceedToNextAction` clamps the value (`Max(0, ActionNumber)`), so the default is slot 0 rather than a no-op. 385 of them sit on a slot of some sequence's array -- the population `MAP_ACTION_ORDER` counts as gotos with no target (its 377 is by slot on its own walk) -- and 30 in none. Of the 165 that state one, 111 target a slot behind themselves, 40 a slot ahead, 0 their own slot, and 14 sit in no sequence's array at all.
 
-**`PauseTime` is the sequence's clock, and the top of its range is a park.** The class hands the value straight to `SetTimer(..., false)`, so 2214 placements state a pause and 2 state none at all -- a zero-second timer that fires as soon as the action starts. The stated values run from 0.001 to 1e+05 seconds (median 2); the top is 27.8 hours, the corpus's way of holding a sequence where it is for a whole play, and 0 placements sit at or below zero.
+**`PauseTime` is the sequence's clock, and the top of its range is a park.** The class hands the value straight to `SetTimer(..., false)`, so 2214 placements state a pause and 2 state none at all -- a zero-second timer that fires as soon as the action starts, and both are named in the residue rows. The stated values run from 0.001 to 1e+05 seconds (median 2); the top is 27.8 hours, the corpus's way of holding a sequence where it is for a whole play, and 0 placements sit at or below zero.
 
-**The wait with no `ExternalEvent` is not a wait on nothing.** `InitActionFor` runs `foreach C.DynamicActors(Class'Gameplay.TriggeredCondition', t, ExternalEvent)` with the name the placement states; a placement that states none passes `None`, which the iterator does not filter on, so the first `TriggeredCondition` in the level is the one whose `bEnabled` decides the branch. 2703 of the 2722 `ACTION_WaitForEvent` placements state it and 19 do not -- the same 19 the `MAP_EVENT_WIRING` wait count was short of this placement total -- and 207 placements state `bCheckRecentEvents`, which completes a wait immediately when the event already fired.
+**The wait with no `ExternalEvent` is a resolved lookup, not a caveat.** `InitActionFor` runs `foreach C.DynamicActors(Class'Gameplay.TriggeredCondition', t, ExternalEvent)` with the name the placement states; a placement that states none passes `None`, which the iterator does not filter on, and the loop body is a bare `break`, so the **first** condition the level yields is the one kept. The test that follows is `if(t != none && t.bEnabled) return false` -- an enabled condition completes the wait at once, a disabled one lets the action block, and a map with no condition leaves `t` at `None` and blocks the same way. 2703 of the 2722 `ACTION_WaitForEvent` placements state the name and **19 do not** -- the same 19 the `MAP_EVENT_WIRING` wait count was short of this placement total. Of those 19, **4 complete at once**; the other **15 block** -- 10 behind a disabled first condition and 5 in a map that places no `TriggeredCondition` at all. The class's `bCheckRecentEvents` arm cannot rescue any of them (it is guarded by `ExternalEvent != 'None'`), and **18 of the 19 do not depend on the actor order at all**, because every condition their map carries resolves the same way. The one row that does depend on it is `M15A`'s: five conditions, one enabled and four not, and the package's own order puts the enabled one first.
+
+| map | sequence slot | `TriggeredCondition`s | the first one's `bEnabled` | what the wait does |
+|---|---:|---:|---|---|
+| `M00` | 3 | 6 | default (false) | blocks |
+| `M00` | 5 | 6 | default (false) | blocks |
+| `M00` | 5 | 6 | default (false) | blocks |
+| `M00` | 5 | 6 | default (false) | blocks |
+| `M00` | 16 | 6 | default (false) | blocks |
+| `M00` | 25 | 6 | default (false) | blocks |
+| `M14A` | 6 | 4 | default (false) | blocks |
+| `M14A` | 6 | 4 | default (false) | blocks |
+| `M15A` | 9 | 5 | stated true | completes |
+| `M16D` | 7 | 0 | none | no_condition |
+| `M16D` | 7 | 0 | none | no_condition |
+| `M16D` | 9 | 0 | none | no_condition |
+| `M16D` | 9 | 0 | none | no_condition |
+| `M16E` | 3 | 0 | none | no_condition |
+| `M16F` | 5 | 1 | stated true | completes |
+| `M16F` | 5 | 1 | stated true | completes |
+| `M16F` | 11 | 1 | stated true | completes |
+| `M17A` | 1 | 4 | default (false) | blocks |
+| `M17A` | 2 | 4 | default (false) | blocks |
+
+**The fire with no name is a no-op, not a broadcast.** `ACTION_TriggerEvent.InitActionFor` hands its `Event` to `C.TriggerEvent(Event, ...)`, and `Actor.TriggerEvent` returns at the top on `EventName == 'None'` -- before the actor iterator and before `Level.AddEventToCache`. So the **1** `ACTION_TriggerEvent` placement that states no `Event` fires nothing at all, which is the opposite of what the same name means on the wait side: there `None` is an iterator tag that filters nothing, here it is an early return. The class states its event on 2657 of its 2658 placements.
 
 **`ACTION_Talk` carries its subtitle in the package.** 717 of its 719 placements state `SubTitleText` (a localized `string`, so the text ships in the map, not only in a voice package), 256 state `DialogueFinishedEvent`, and the parameter surface is otherwise `TalkerTag`/`DialogueName`/`myDirectory`. `Action_PLAYANIM` -- the class whose name the `ACTION_` prefix cannot see -- states `BaseAnim` on 227 of its 227 placements, which is what makes it a real action rather than a marker.
 
@@ -124,7 +152,7 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 
 Only counts and ranges are written: a name-typed parameter contributes its distinct count and how often it is `None`, never the names themselves, and a string parameter only its presence. The residue rows name a map, a class and a slot -- enough to find the placement in the dump, and no content. A statement the class chain does not declare (`class_properties.csv`) is refused and counted as a residue rather than published as a parameter: the property reader locates a block by where it ends, so a mis-parsed start can invent a name, and that control is what keeps it out of the class table.
 
-Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21584;classes=83;maps=73;goto_stated=165;goto_unset=415;props_refused=26;wait_stated=2703;wait_unstated=19;timer_stated=2214;timer_sentinel=1.
+Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21584;classes=83;maps=73;goto_stated=165;goto_unset=415;props_refused=26;wait_stated=2703;wait_unstated=19;timer_stated=2214;timer_sentinel=1;trigger_stated=2657;trigger_unstated=1;conditions=212;wait_completes=4;wait_blocks=10;wait_no_condition=5;wait_order_free=18.
 <!-- /generated:action-parameters -->
 
 ## What the parameters say that the graph did not
@@ -141,10 +169,17 @@ Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21584;classes
 * **`Action_PLAYANIM` is a full action, not a name accident.** All 227 of its placements state `BaseAnim`, and 89
   state `AnimIterations` — the class the `ACTION_` prefix cannot see, and the reason `docs/MAP_ACTION_WIRING.md`
   counts the family by the `super` chain.
-* **The 19 waits that state no event are a named list.** The `MAP_EVENT_WIRING` count of 2,703 wait sites is exactly
-  the placements that state `ExternalEvent`; the residue rows name the other 19 by map, class and slot, so whether
-  each one hangs or completes depends on the level's first `TriggeredCondition` — a lookup the event pages can
-  make, not an unknown here. 207 placements also state `bCheckRecentEvents`, the class's own lost-wakeup guard.
+* **The 19 waits that state no event are a resolved list.** The `MAP_EVENT_WIRING` count of 2,703 wait sites is
+  exactly the placements that state `ExternalEvent`; the other 19 are named by map, class and slot, and the level's
+  first `TriggeredCondition` settles each one. **Four complete at once** — an enabled condition makes
+  `InitActionFor` return false — and **fifteen block**: ten behind a condition that states no `bEnabled` and so
+  takes the class's false default, five in maps that place no condition at all and leave `t` at `None`. Eighteen of
+  the 19 would answer the same under any actor order; `M15A`'s is the one that would not, and the package's own
+  order puts its enabled condition first. 207 placements also state `bCheckRecentEvents`, the class's own
+  lost-wakeup guard — inert on these 19, because the arm is guarded by `ExternalEvent != 'None'`.
+* **The fire with no name fires nothing.** `Actor.TriggerEvent` returns on `EventName == 'None'` before it iterates
+  and before `Level.AddEventToCache`, so the one `ACTION_TriggerEvent` placement that states no `Event` is a no-op
+  rather than a broadcast: the same `None` that means "no filter" to the wait's iterator is an early return here.
 * **The random branch is still `FRand()`'s.** All 39 `ACTION_IfRandomPct` placements state a `Probability` between
   0.15 and 0.5 (median 0.3), so no placement has already called its coin — the same conclusion
   `docs/MAP_ACTION_DEFECTS.md` reached by a different walk, and the one place 5.2 still ends in a runtime value.
@@ -163,8 +198,8 @@ Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21584;classes
 
 ## Next instrument
 
-The residue rows are the live list: for each `wait_unstated` placement, resolve the level's first
-`TriggeredCondition` and its placed `bEnabled` — the event pages already index that class by tag — and the last
-unread parameter of a waited sequence becomes a lookup rather than a caveat. For a refused-property placement, the
-locator's candidate start with the most declared names would recover its true block; the actor-side version of that
-rule is already in `tools/actor-prefix-anchor.py`.
+The residue rows are the live list, and three of its kinds are now lookups rather than caveats: `wait_unstated`
+carries the condition its map offers and what the wait does with it, `trigger_unstated` and `timer_unstated` name
+the placements whose default is a no-op and a zero-second timer. What remains is where a refused-property
+placement's true block starts — the locator's candidate with the most declared names would recover it, and the
+actor-side version of that rule is already in `tools/actor-prefix-anchor.py`.
