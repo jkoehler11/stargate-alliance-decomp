@@ -13989,3 +13989,36 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   page with `tools/xemu/frame-diff.py`.
 - **Not in this PR.** The zero-width cell itself, and the emitter's class-level locator guard (still James's call:
   313 classes promoted, 1,664 -> 1,977 clean blocks).
+
+### Execution notes (2026-11-19, a list box is a component, and the zero-width cell's cull)
+
+- **Task.** The previous note's two open items: the zero-width cell (the boot or `0x002ff790`) and the box
+  branch's row draw. Both answered from the image, and the second one corrected the thread's shape: a list box is
+  not a list.
+- **The box is another tree.** `GUIListBoxBase` extends `GUIMultiComponent`, whose `PreDraw` (`0x002fab10`) calls
+  the base `PreDraw` and then slot 58 **once** with the canvas. `GUIListBoxBase` overrides that slot (`0x003015b0`,
+  the selected row, reading the hosted list's `ItemsPerPage`/`ItemHeight`/`interItemGutter`) and
+  `GUIMultiColumnListBox` overrides it again (`0x00301890`, the per-column path); `GUIListBox` and
+  `GUIScrollTextBox` differ from the box root in slot 3 alone. The same `+0xe8` offset is a different body in each
+  tree, which is what made the earlier note read the box as a list with a missing dispatch.
+- **The dispatch is missing and it does not matter.** Of the 252 slot bodies in the box tree, none loads the
+  `OnDrawItem` index (`0x007b8144`) or calls its dispatcher (`0x00300ee0`). Every one of the 6 shipped wirings
+  resolves to a list-tree receiver: `List` is `GUIListBox`'s `var GUIVertList` (4 wirings reach it, including
+  `ObjectivesBox.List` and `TeamListBox.List`, whose owners are `SGListBox`es) and `CoopPlayerPanel.List` /
+  `ServerList`'s `self` are `GUIMultiColumnList`. Ten box-typed widgets over six pages is the corpus's population.
+- **The zero-width cell.** `GUIStyles.DrawText` (`0x002ff790`) is reached twice from the stock item draw
+  (`0x00301d7e`/`0x00301dd3`, `0x55` apart). Its suppression logic is four compares against the canvas clip rect
+  (`X` vs `+0x44`, `X+W` vs `+0x3c`, `Y` vs `+0x48`, `Y+H` vs `+0x40`); the width appears in one sum and in the
+  rect handed to the canvas text virtual (`+0xc4`), never in a compare. A zero-width cell is culled only when its
+  anchor is outside the clip rect, so `CoopPlayerPanel`'s four cell columns paint through the style layer; what the
+  canvas glyph loop does with an empty rect is the remaining boot question.
+- **Files.** `tools/ui-list-native.py` (new: `box_half`, `drawtext_half`, `clip_signature`, `is_text_routine`,
+  `receiver_class`, `prop_type`, `Image.callers_in`, the two rendered subsections), `inventory/ui_list_native.csv`
+  (59 rows: +6 `box`, +4 `drawtext`, +1 `page widgets`), `docs/systems/UI.md` (the generated subsections and the
+  prose around them, the *Not measured* bullet), `docs/UNKNOWNS.md` U28 (both open items answered in place),
+  `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The canvas glyph loop (`+0xc4` on the canvas virtual table) for an empty rect -- the last
+  step of the zero-width cell; or the emitter's class-level locator guard, still James's call (313 classes
+  promoted, 1,664 -> 1,977 clean blocks), which is what keeps the twelve panel blocks unwritten.
+- **Not in this PR.** The emitter's class-level locator guard.
+

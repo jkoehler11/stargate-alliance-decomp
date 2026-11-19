@@ -9,6 +9,7 @@ box,GUIListBoxBase,GUI,,0x00538f10,extends GUIMultiComponent,"component, not a l
 box,GUIMultiColumnListBox,GUI,58,0x00301890,override,its own item draw,item-draw,replaces GUIListBoxBase's slot 58 body 0x003015b0
 box,GUIScrollTextBox,GUI,,0x00539010,inherits every slot,no draw of its own,passthrough,its table differs from GUIListBoxBase's only in slot 3
 box,delegate audit,box tree,,,252 slot bodies,0 references,absent,"no box slot body loads the OnDrawItem index or calls its dispatcher, so a body wired onto a box would never run"
+box,page widgets,menu_flow.csv,,,10 widgets over 6 pages,6 box classes,placed,"GUIListBox 5, GUIScrollTextBox 1, MapFileList 1, SGScrollTextBox 1, SavedGameList 1, ServerSelectionListBox 1; the page-owned subclasses (MapFileList, SavedGameList, ServerSelectionListBox) declare their rows on a box class but wire them to the inherited List, a GUIVertList"
 box,GUIListBoxBase,slot 30,30,0x002fab10,"one call, no loop",draws one item per frame,pre-draw,inherited from GUIMultiComponent: calls GUIComponent's slot 30 (0x002f9e20) and then slot 58 once with the canvas
 box,GUIListBoxBase,slot 58,58,0x003015b0,override of GUIMultiComponent,the selected row,item-draw,reads the List's ItemsPerPage/ItemHeight/gutter and draws one row; no OnDrawItem dispatch
 box,receiver audit,ui_list_rows.csv,,,6 wirings,6 list receivers,no box receiver,"every receiver resolves to a GUIListBase descendant (GUIMultiColumnList 1, GUIVertList 4, ServerList 1), so the box's missing dispatch is unreachable from the shipped corpus"

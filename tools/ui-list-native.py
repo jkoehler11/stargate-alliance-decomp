@@ -370,6 +370,7 @@ def family(classes):
 
 PROPERTIES = os.path.join(ROOT, "inventory/class_properties.csv")
 WIRINGS = os.path.join(ROOT, "inventory/ui_list_rows.csv")
+FLOW = os.path.join(ROOT, "inventory/menu_flow.csv")
 
 
 def load_properties():
@@ -553,6 +554,36 @@ def box_half(img, classes, fam, sym_slots, sym_names, del_index, dispatcher, loo
                           "missing dispatch is unreachable from the shipped corpus"
                           % ", ".join("%s %d" % (k, v) for k, v in
                                       sorted(collections.Counter(x[2] for x in resolved).items()))))
+
+    # and who shows one: the page-side widget census, from the menu-flow tree
+    widgets, pages = [], set()
+    if os.path.exists(FLOW):
+        with open(FLOW, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("kind") not in ("component", "subcomponent"):
+                    continue
+                w, cur, depth, box = r.get("verdict") or "", r.get("verdict") or "", 0, False
+                while cur and depth < 32:
+                    if cur == BOX_ROOT:
+                        box = True
+                        break
+                    cur, depth = (classes.get(cur, {}).get("super") or ""), depth + 1
+                if box:
+                    widgets.append((r["name"], r.get("target") or "", w))
+                    pages.add(r["name"])
+    if not widgets:
+        sys.exit("FAIL ui-list-native: no page places a %s widget" % BOX_ROOT)
+    owned = sorted({w for _p, _t, w in widgets if w not in ("GUIListBox", "GUIScrollTextBox", "SGScrollTextBox")})
+    rows.append(dict(kind="box", name="page widgets", owner="menu_flow.csv", slot="", va="",
+                     form="%d widgets over %d pages" % (len(widgets), len(pages)),
+                     value="%d box classes" % len({w for _p, _t, w in widgets}),
+                     verdict="placed",
+                     note="%s; the page-owned subclasses (%s) declare their rows on a box class but "
+                          "wire them to the inherited List, a GUIVertList"
+                          % (", ".join("%s %d" % (k, v) for k, v in
+                                       sorted(collections.Counter(w for _p, _t, w in widgets).items())),
+                             ", ".join(owned) or "none")))
+    return rows
     return rows
 
 
@@ -953,7 +984,8 @@ def render(rows):
                    "so a body wired onto one of those classes would have nowhere to be dispatched "
                    "from." % ("` and `".join(passthrough), BOX_ROOT))
         out.append("")
-    audits = [r for r in rows if r["kind"] == "box" and r["name"] in ("delegate audit", "receiver audit")]
+    audits = [r for r in rows if r["kind"] == "box" and r["name"] in ("delegate audit", "receiver audit",
+                                                                      "page widgets")]
     for r in audits:
         out.append("* **%s** -- %s: %s" % (r["name"], r["form"], r["note"]))
     out.append("")

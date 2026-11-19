@@ -4949,12 +4949,27 @@ its list from `AddControl(DefaultListClass)`, and the box's own defaultpropertie
 refuses. Every multi-column list in the game is therefore a plain `GUIMultiColumnList`, a page's subclass is never
 instantiated by a box, and `StargateMenus.ServerList` has no route to the screen at all.
 
-**Still open.** Whether a `GUIStyles.DrawText` of width 0 paints nothing or a clipped glyph -- the three live bodies
-that return false place their columns by screen fraction, so only `CoopPlayerPanel` (which returns true and paints
-its own row) reaches `GetCellLeftWidth` and passes a zero `CellWidth` to the style. Two routes: `GUIStyles.DrawText`
-is `native final` with token 0, so it binds by name and has no table slot -- read it from the styled-text routine the
-stock row calls (`0x002ff790`, found from slot 58's body), or boot one co-op waiting page with
-`tools/xemu/frame-diff.py` and diff a `CellSpacing` change.
+**The zero-width cell, answered from the routine (2026-11-19).** `GUIStyles.DrawText` is `native final` with token
+0, so it has no table slot; the stock item draw reaches it at two sites (`0x00301d7e` and `0x00301dd3`, `0x55` apart)
+and the routine is `0x002ff790`. Its whole suppression logic is four compares against the canvas clip rect: `X`
+against the clip's right edge (`+0x44`), `X+W` against its left (`+0x3c`), `Y` against the bottom (`+0x48`) and
+`Y+H` against the top (`+0x40`). The width appears in **one** of those sums and in the rect handed to the canvas's
+text virtual (`+0xc4`); nothing compares it with zero. A zero-width cell is therefore not shortcircuited -- it is
+culled only when its anchor lies outside the clip rect, and otherwise goes to the canvas as a degenerate rectangle.
+The routine also indexes the style's font array (`+0xb0`) with the style byte and saves/restores five canvas fields
+around the draw. So the answer to "nothing or a clipped glyph" is: the style layer paints, and the canvas's own
+glyph loop decides; that last step is the only part left for a boot.
 
-**Status.** Answered: the row rectangle, `ItemHeight`'s source, the stock item draw and `ServerList`'s placement.
-Open only for the zero-width cell.
+**The box branch is a second tree (2026-11-19).** `GUIListBoxBase` extends `GUIMultiComponent`, not `GUIListBase`,
+and `GUIMultiComponent`'s `PreDraw` (`0x002fab10`) draws exactly one item per frame through *its* slot 58 --
+`0x2f8bc0` on the component, `0x003015b0` as `GUIListBoxBase` overrides it, `0x00301890` again on
+`GUIMultiColumnListBox`. None of the 252 slot bodies in that tree loads the `OnDrawItem` index or calls the
+dispatcher, so a delegate declared on a box class never runs; every shipped wiring instead targets the `List`
+property, which is `GUIListBox`'s `GUIVertList`, i.e. the list tree. Ten box-typed widgets over six pages is what
+the corpus places (`GUIListBox` five times on `InGameScoreboard`, `GUIScrollTextBox`/`SGScrollTextBox` on
+`HintScreen` and `TextGameInfo`, `MapFileList`, `SavedGameList` and `ServerSelectionListBox` as page-owned
+subclasses), and the box classes add no draw of their own: `GUIListBox` and `GUIScrollTextBox` differ from
+`GUIListBoxBase` in slot 3 alone.
+
+**Status.** Answered: the row rectangle, `ItemHeight`'s source, the stock item draw, `ServerList`'s placement, the
+zero-width cell at the style layer, and the box branch's own item draw.
