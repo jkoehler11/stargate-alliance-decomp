@@ -164,6 +164,24 @@ Measured names for the helpers it calls: `0x0003ceb0` reads the next tag name in
 pairs on both sides of the same stream, which is consistent with a tag writer/reader pair but does
 not establish the tag record's field order.
 
+**A tag whose name the object does not declare costs the tag, not the object.** The tagged path reads a tag
+(`0x0003ceb0`), then searches the property list at `[this+0x64]`: each entry's name index is at `+0x20` and the
+next entry at `+0x4c` (`0x3be62`-`0x3be7a`). When nothing matches it takes the not-found branch at `0x3be94`,
+formats `Property %s of %s not found` (the string is at `0x4d4c14`, pushed at `0x3beb1`) and falls into the
+same handler the type-mismatch and array-bounds refusals use (`0x3c155`, reached by the tail `jmp` at
+`0x3bebc`). That handler logs `Skipping %i bytes of type %i` (`0x4d4a20`, pushed at `0x3c187`) — unless the
+name is `XLevel` (`0x4d4aac`, compared at `0x3c165`), the fork's silent case — then reads the tag's `Size`
+bytes one at a time (`0x37040` called from the loop at `0x3c19a`, the count taken from the tag's own `Size`
+field) and jumps back to the tag loop at `0x3be40`. So an unknown name is logged twice, as not found and as
+skipped, and every later tag in the object is still applied: the object is not refused, truncated or left
+half-read. The body is 1,540 bytes per `symbols/xbox_functions.csv`, so this is the whole routine.
+
+This is the case a map hits when a class revision drops a property: `ACTION_SetIMusic`'s five `EndType` tags
+are declared by no class `GamePlay.u` ships, and the walk above is why the placements still load
+(`inventory/tag_origin.csv`, `docs/MAP_ACTION_PARAMETERS.md`). The skip needs only the tag's own `Size`, which
+is why a stale tag is harmless where a stale *type* is not: a mismatch takes the same handler, so a name that
+is present with the wrong type is skipped exactly like an absent one.
+
 ## 5. Fork behaviour worth carrying into 4.8
 
 - `0x0003a220` carries `"DecoHack: skipping property %s"` next to `"Binary-serialized struct
@@ -235,7 +253,9 @@ The walk in §4 then uses these fields: it looks the name up in the object's pro
 (`"Property %s of %s struct type mismatch %s/%s"`), and warns when the bytes consumed by the value do
 not match `Size` (`"Tag %s of %s size mismatch.  Serialized %d but expected %d"`). Bytes it cannot use
 are skipped with `"Skipping %i bytes of type %i"`, and a property named `XLevel` is skipped silently —
-the fork's own special case.
+the fork's own special case. **A tag the object does not declare is the same skip**: the name search fails,
+the walk logs `"Property %s of %s not found"`, and the tag's `Size` bytes are consumed before the next tag is
+read (§4) — so a save or a map written against a class revision with one more property still loads.
 
 Not measured here: the writer side. The reader is what a rebuilt save must satisfy, and the
 `Ar.IsSaving()` half of the same routine exists, but no writer body was decompiled, so this document
