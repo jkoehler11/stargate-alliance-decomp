@@ -16,6 +16,8 @@ decide a run on their own:
 * `ACTION_WaitForEvent.InitActionFor` resolves a `TriggeredCondition` by the tag `ExternalEvent`; a placement that
   states no `ExternalEvent` looks one up under `None`, which is the engine's "no tag filter", so the first
   `TriggeredCondition` in the level decides whether the wait completes at once.
+* `ACTION_TriggerEvent.InitActionFor` hands its `Event` to `C.TriggerEvent(Event, ...)`, and that function returns
+  at the top when the name is `None` -- so a placement that states no `Event` fires nothing at all.
 * `ACTION_WaitForTimer` hands `PauseTime` straight to `SetTimer(..., false)`, so the largest placed value is how long
   a sequence can sit still.
 
@@ -44,6 +46,7 @@ DOC = os.path.join(ROOT, "docs/MAP_ACTION_PARAMETERS.md")
 CLASSES = os.path.join(ROOT, "inventory/classes.csv")
 PROPERTIES = os.path.join(ROOT, "inventory/class_properties.csv")
 WIRING = os.path.join(ROOT, "inventory/action_wiring.csv")
+MAP_CLASSES = os.path.join(ROOT, "inventory/map_export_classes.csv")
 DOC_START = "<!-- generated:action-parameters -->"
 DOC_END = "<!-- /generated:action-parameters -->"
 
@@ -52,6 +55,10 @@ FIELDS = ["kind", "map", "name", "class", "property", "type", "placements", "sta
 ACTION_BASES = {"ScriptedAction", "LatentScriptedAction"}
 NUMERIC = ("Byte", "Int", "Float")
 NAMEY = ("Name", "Str", "Object", "Class")
+# The class an untagged wait resolves against, and the value its own text leaves `bEnabled` at: `var() bool
+# bEnabled` states no default, so an instance that does not state one is disabled.
+CONDITION_CLASS = "TriggeredCondition"
+DEFAULT_ENABLED = False
 
 
 def _load(name, filename):
@@ -157,8 +164,46 @@ def median(values):
     return vals[mid] if n % 2 else (vals[mid - 1] + vals[mid]) / 2.0
 
 
+def condition_index(entries, blocks):
+    """Per map, the `TriggeredCondition` placements in export order, with the `bEnabled` each one states.
+
+    `ACTION_WaitForEvent.InitActionFor` keeps the **first** condition its `foreach` yields -- the body is a bare
+    `break` -- and then tests `t.bEnabled`, so an untagged wait's outcome is this list's first row. A condition
+    that states no `bEnabled` takes the class's own `var() bool bEnabled`, which has no default, so it is false:
+    `enabled` is `None` for the placement and `resolved()` supplies what the class does.
+    """
+    out = []
+    for i, e in enumerate(entries):
+        if e["class"] != CONDITION_CLASS:
+            continue
+        idx = i + 1
+        stated = None
+        for p in (blocks.get(idx) or {}).get("props") or []:
+            if p["name"] == "bEnabled":
+                stated = bool(p.get("value"))
+        out.append({"index": idx, "enabled": stated})
+    return out
+
+
+def resolved(cond):
+    """The `bEnabled` the engine sees: the placement's own value, or the class default it does not override."""
+    return cond["enabled"] if cond["enabled"] is not None else DEFAULT_ENABLED
+
+
+def wait_verdict(conds):
+    """(outcome, order_free) for a wait that states no `ExternalEvent`: the `None` name filters nothing.
+
+    `order_free` says whether the answer survives not knowing the level's actor order -- true when every
+    condition the map carries resolves the same way (including a map that carries none at all).
+    """
+    if not conds:
+        return "no_condition", True
+    order_free = len({resolved(c) for c in conds}) == 1
+    return ("completes" if resolved(conds[0]) else "blocks"), order_free
+
+
 def measure(entries, blocks, action_cls, sequence_cls=frozenset(), slots=None, label="", declared=None,
-            supers=None, slot_count=None):
+            supers=None, slot_count=None, conds=None):
     """One map -> (per-class, per-property, census, residues). No package needed, so `--check` drives it."""
     classes = [e["class"] for e in entries]
     per_class = collections.defaultdict(collections.Counter)
@@ -253,6 +298,21 @@ def measure(entries, blocks, action_cls, sequence_cls=frozenset(), slots=None, l
                         census["timer_sentinel"] += 1
                     elif value <= 0.0:
                         census["timer_nonpositive"] += 1
+            else:
+                census["timer_unstated"] += 1
+                here = slots.get(idx)
+                residues.append(dict(kind="residue", name="timer_unstated", **{"class": cls},
+                                     map=label, note="slot %s" % (here[1] if here else "")))
+        elif cls == "ACTION_TriggerEvent":
+            census["trigger_placements"] += 1
+            if "Event" in stated:
+                census["trigger_stated"] += 1
+            else:
+                # `Actor.TriggerEvent` returns at the top on a `None` name, so this placement fires nothing.
+                census["trigger_unstated"] += 1
+                here = slots.get(idx)
+                residues.append(dict(kind="residue", name="trigger_unstated", **{"class": cls},
+                                     map=label, note="slot %s" % (here[1] if here else "")))
         elif cls == "ACTION_WaitForEvent":
             census["wait_placements"] += 1
             if "ExternalEvent" in stated:
@@ -260,8 +320,20 @@ def measure(entries, blocks, action_cls, sequence_cls=frozenset(), slots=None, l
             else:
                 census["wait_unstated"] += 1
                 here = slots.get(idx)
-                residues.append(dict(kind="residue", name="wait_unstated", **{"class": cls},
-                                     map=label, note="slot %d" % here[1] if here else ""))
+                outcome, order_free = wait_verdict(conds or [])
+                census["wait_unstated_" + outcome] += 1
+                if order_free:
+                    census["wait_unstated_order_free"] += 1
+                first = (conds or [None])[0]
+                if not first:
+                    which = "none"
+                elif first["enabled"] is None:
+                    which = "default (%s)" % ("true" if DEFAULT_ENABLED else "false")
+                else:
+                    which = "stated %s" % ("true" if first["enabled"] else "false")
+                residues.append(dict(kind="residue", name="wait_unstated", **{"class": cls}, map=label,
+                                     note="slot=%s;conditions=%d;first=%s;outcome=%s" % (
+                                         here[1] if here else "", len(conds or []), which, outcome)))
             if any(p["name"] == "bCheckRecentEvents" and p.get("value") for p in props):
                 census["wait_recent"] += 1
         elif cls == "ACTION_Talk":
@@ -286,7 +358,8 @@ def rows_of(maps, per_class, per_prop, census, residues, classes_total):
         c = info["census"]
         rows.append(dict(kind="map", map=label, name="", **{"class": ""}, property="", type="",
                          placements=c["placements"], stated=c["props_stated"],
-                         note="blocked=%d;unblocked=%d;classes=%d" % (c["blocked"], c["unblocked"], len(info["class"]))))
+                         note="blocked=%d;unblocked=%d;classes=%d;conditions=%d"
+                              % (c["blocked"], c["unblocked"], len(info["class"]), c.get("conditions", 0))))
     totals = collections.Counter()
     for info in maps.values():
         for key, value in info["census"].items():
@@ -347,8 +420,10 @@ def sweep(dump, out, classes_path=CLASSES, only=None):
         entries = [{"class": pkg.class_name_of(e), "name": pkg.name(e["name"])} for e in pkg.exports]
         blocks = read_blocks(pkg)
         slots, slot_count = slot_index(blocks, [e["class"] for e in entries], sequence_cls)
+        conds = condition_index(entries, blocks)
         per_class, per_prop, census, res = measure(entries, blocks, action_cls, sequence_cls, slots, label,
-                                                  declared, supers, slot_count)
+                                                  declared, supers, slot_count, conds)
+        census["conditions"] = len(conds)
         maps[label] = {"class": per_class, "census": census}
         for cls, info in per_class.items():
             all_class[cls].update(info)
@@ -374,8 +449,23 @@ def sweep(dump, out, classes_path=CLASSES, only=None):
             for r in rows:
                 w.writerow({k: r.get(k, "") for k in FIELDS})
         print("wrote %s (%d rows)" % (path, len(rows)))
+    condition_control({label: info["census"].get("conditions", 0) for label, info in maps.items()})
     control(rows)
     return rows
+
+
+def condition_control(per_map):
+    """`TriggeredCondition` placements per map against `map_export_classes.csv` -- a second reader, same packages."""
+    if not os.path.exists(MAP_CLASSES):
+        return
+    want = {}
+    with open(MAP_CLASSES, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r.get("class") == CONDITION_CLASS:
+                want[r["map"]] = int(r["count"])
+    agree = sum(1 for m, n in per_map.items() if want.get(m, 0) == n)
+    print("control: %d of %d maps carry the same %s count as map_export_classes.csv"
+          % (agree, len(per_map), CONDITION_CLASS))
 
 
 def control(rows):
@@ -490,21 +580,51 @@ def render(rows):
     if timer_row:
         out.append("**`PauseTime` is the sequence's clock, and the top of its range is a park.** The class hands the "
                    "value straight to `SetTimer(..., false)`, so %d placements state a pause and %d state none at all "
-                   "-- a zero-second timer that fires as soon as the action starts. The stated values run from %s to "
+                   "-- a zero-second timer that fires as soon as the action starts, and both are named in the residue "
+                   "rows. The stated values run from %s to "
                    "%s seconds (median %s); the top is 27.8 hours, the corpus's way of holding a sequence where it is "
                    "for a whole play, and %d placements sit at or below zero."
                    % (c.get("timer_stated", 0), c.get("timer_placements", 0) - c.get("timer_stated", 0),
                       timer_row["min"], timer_row["max"], timer_row["median"], c.get("timer_nonpositive", 0)))
         out.append("")
-    out.append("**The wait with no `ExternalEvent` is not a wait on nothing.** `InitActionFor` runs "
+    out.append("**The wait with no `ExternalEvent` is a resolved lookup, not a caveat.** `InitActionFor` runs "
                "`foreach C.DynamicActors(Class'Gameplay.TriggeredCondition', t, ExternalEvent)` with the name the "
                "placement states; a placement that states none passes `None`, which the iterator does not filter on, "
-               "so the first `TriggeredCondition` in the level is the one whose `bEnabled` decides the branch. %d of "
-               "the %d `ACTION_WaitForEvent` placements state it and %d do not -- the same 19 the "
-               "`MAP_EVENT_WIRING` wait count was short of this placement total -- and %d placements state "
-               "`bCheckRecentEvents`, which completes a wait immediately when the event already fired."
+               "and the loop body is a bare `break`, so the **first** condition the level yields is the one kept. "
+               "The test that follows is `if(t != none && t.bEnabled) return false` -- an enabled condition completes "
+               "the wait at once, a disabled one lets the action block, and a map with no condition leaves `t` at "
+               "`None` and blocks the same way. %d of the %d `ACTION_WaitForEvent` placements state the name and "
+               "**%d do not** -- the same 19 the `MAP_EVENT_WIRING` wait count was short of this placement total. "
+               "Of those 19, **%d complete at once**; the other **%d block** -- %d behind a disabled first condition "
+               "and %d in a map that places no `TriggeredCondition` at all. The class's "
+               "`bCheckRecentEvents` arm cannot rescue any of them (it is guarded by `ExternalEvent != 'None'`), and "
+               "**%d of the 19 do not depend on the actor order at all**, because every condition their map carries "
+               "resolves the same way. The one row that does depend on it is `M15A`'s: five conditions, one enabled "
+               "and four not, and the package's own order puts the enabled one first."
                % (c.get("wait_stated", 0), c.get("wait_placements", 0), c.get("wait_unstated", 0),
-                  c.get("wait_recent", 0)))
+                  c.get("wait_unstated_completes", 0),
+                  c.get("wait_unstated_blocks", 0) + c.get("wait_unstated_no_condition", 0),
+                  c.get("wait_unstated_blocks", 0), c.get("wait_unstated_no_condition", 0),
+                  c.get("wait_unstated_order_free", 0)))
+    out.append("")
+    unstated = [r for r in rows if r["kind"] == "residue" and r["name"] == "wait_unstated"]
+    if unstated:
+        out.append("| map | sequence slot | `TriggeredCondition`s | the first one's `bEnabled` | what the wait does |")
+        out.append("|---|---:|---:|---|---|")
+        for r in sorted(unstated, key=lambda r: (r["map"], int(dict(
+                p.split("=", 1) for p in r["note"].split(";") if "=" in p).get("slot") or -1))):
+            parts = dict(p.split("=", 1) for p in r["note"].split(";") if "=" in p)
+            out.append("| `%s` | %s | %s | %s | %s |" % (r["map"], parts.get("slot", ""),
+                                                        parts.get("conditions", ""), parts.get("first", ""),
+                                                        parts.get("outcome", "")))
+        out.append("")
+    out.append("**The fire with no name is a no-op, not a broadcast.** `ACTION_TriggerEvent.InitActionFor` hands its "
+               "`Event` to `C.TriggerEvent(Event, ...)`, and `Actor.TriggerEvent` returns at the top on "
+               "`EventName == 'None'` -- before the actor iterator and before `Level.AddEventToCache`. So the **%d** "
+               "`ACTION_TriggerEvent` placement that states no `Event` fires nothing at all, which is the opposite "
+               "of what the same name means on the wait side: there `None` is an iterator tag that filters nothing, "
+               "here it is an early return. The class states its event on %d of its %d placements."
+               % (c.get("trigger_unstated", 0), c.get("trigger_stated", 0), c.get("trigger_placements", 0)))
     out.append("")
     out.append("**`ACTION_Talk` carries its subtitle in the package.** %d of its %d placements state `SubTitleText` "
                "(a localized `string`, so the text ships in the map, not only in a voice package), %d state "
@@ -544,11 +664,15 @@ def render(rows):
     out.append("")
     out.append("Census: placements=%d;blocked=%d;unblocked=%d;props_stated=%d;classes=%d;maps=%d;"
                "goto_stated=%d;goto_unset=%d;props_refused=%d;wait_stated=%d;wait_unstated=%d;"
-               "timer_stated=%d;timer_sentinel=%d."
+               "timer_stated=%d;timer_sentinel=%d;trigger_stated=%d;trigger_unstated=%d;conditions=%d;"
+               "wait_completes=%d;wait_blocks=%d;wait_no_condition=%d;wait_order_free=%d."
                % (c.get("placements", 0), c.get("blocked", 0), c.get("unblocked", 0), c.get("props_stated", 0),
                   len(classes), c.get("maps", 0), c.get("goto_stated", 0), c.get("goto_unset", 0),
                   c.get("props_refused", 0), c.get("wait_stated", 0), c.get("wait_unstated", 0),
-                  c.get("timer_stated", 0), c.get("timer_sentinel", 0)))
+                  c.get("timer_stated", 0), c.get("timer_sentinel", 0), c.get("trigger_stated", 0),
+                  c.get("trigger_unstated", 0), c.get("conditions", 0), c.get("wait_unstated_completes", 0),
+                  c.get("wait_unstated_blocks", 0), c.get("wait_unstated_no_condition", 0),
+                  c.get("wait_unstated_order_free", 0)))
     return "\n".join(out)
 
 
@@ -588,35 +712,58 @@ def report(path=ARTIFACT):
 
 
 def check():
-    """Synthetic blocks only: stated and unstated parameters, the slot-0 goto, the timer sentinel, the residue."""
+    """Synthetic blocks only: stated and unstated parameters, the slot-0 goto, the timer sentinel, the residues,
+    and the condition a wait with no event resolves against."""
     action_cls = {"ACTION_GotoAction", "ACTION_WaitForTimer", "ACTION_WaitForEvent", "ACTION_Talk",
-                  "Action_PLAYANIM", "ACTION_EndSection"}
+                  "ACTION_TriggerEvent", "Action_PLAYANIM", "ACTION_EndSection"}
     sequence_cls = {"ScriptedTrigger"}
     entries = [{"class": "Level", "name": "L"}, {"class": "ScriptedTrigger", "name": "S"},
                {"class": "ACTION_GotoAction", "name": "G0"}, {"class": "ACTION_GotoAction", "name": "G1"},
                {"class": "ACTION_WaitForTimer", "name": "T0"}, {"class": "ACTION_WaitForTimer", "name": "T1"},
                {"class": "ACTION_WaitForEvent", "name": "W0"}, {"class": "ACTION_WaitForEvent", "name": "W1"},
-               {"class": "ACTION_EndSection", "name": "E"}]
-    blocks = {2: {"props": [], "actions": (6, [3, 4, 5, 6, 7, 9])},
+               {"class": "ACTION_EndSection", "name": "E"},
+               {"class": "TriggeredCondition", "name": "C0"}, {"class": "TriggeredCondition", "name": "C1"},
+               {"class": "ACTION_TriggerEvent", "name": "X0"}]
+    blocks = {2: {"props": [], "actions": (7, [3, 4, 5, 6, 7, 9, 12])},
               3: {"props": [], "actions": None},                       # goto at slot 0, states nothing
               4: {"props": [{"name": "ActionNumber", "type": "Int", "value": 5}], "actions": None},
               5: {"props": [{"name": "PauseTime", "type": "Float", "value": 99999.0}], "actions": None},
               6: {"props": [{"name": "PauseTime", "type": "Float", "value": 0.5}], "actions": None},
               7: {"props": [], "actions": None},                       # wait with no ExternalEvent
               8: {"props": [{"name": "ExternalEvent", "type": "Name", "value": "EV"},
-                            {"name": "bCheckRecentEvents", "type": "Bool", "value": True}], "actions": None}}
+                            {"name": "bCheckRecentEvents", "type": "Bool", "value": True}], "actions": None},
+              10: {"props": [{"name": "bEnabled", "type": "Bool", "value": True}], "actions": None},
+              11: {"props": [], "actions": None},                      # condition that states no bEnabled
+              12: {"props": [], "actions": None}}                      # fire with no Event
     slots, slot_count = slot_index(blocks, [e["class"] for e in entries], sequence_cls)
+    conds = condition_index(entries, blocks)
+    if [c["index"] for c in conds] != [10, 11] or conds[0]["enabled"] is not True or conds[1]["enabled"] is not None:
+        print("FAIL action-parameters: condition index %r" % (conds,))
+        return 1
     per_class, per_prop, census, residues = measure(entries, blocks, action_cls, sequence_cls, slots, "",
-                                                   None, None, slot_count)
-    want = dict(placements=7, blocked=6, unblocked=1, goto_placements=2, goto_stated=1, goto_unset=1,
+                                                   None, None, slot_count, conds)
+    want = dict(placements=8, blocked=7, unblocked=1, goto_placements=2, goto_stated=1, goto_unset=1,
                 goto_unset_slot0=1, goto_forward=1, wait_stated=1, wait_unstated=1, wait_recent=1,
-                timer_placements=2, timer_stated=2, timer_sentinel=1)
+                timer_placements=2, timer_stated=2, timer_sentinel=1, trigger_placements=1, trigger_unstated=1,
+                wait_unstated_completes=1, wait_unstated_order_free=0)
     for key, value in want.items():
         if census[key] != value:
             print("FAIL action-parameters: synthetic %s=%r, want %r" % (key, census[key], value))
             return 1
-    if len(residues) != 2 or {r["name"] for r in residues} != {"goto_unset_slot0", "wait_unstated"}:
+    if len(residues) != 3 or {r["name"] for r in residues} != {"goto_unset_slot0", "wait_unstated",
+                                                              "trigger_unstated"}:
         print("FAIL action-parameters: residues %r" % (residues,))
+        return 1
+    notes = [r["note"] for r in residues if r["name"] == "wait_unstated"]
+    if not all("outcome=completes" in n and "first=stated true" in n for n in notes):
+        print("FAIL action-parameters: wait notes %r" % (notes,))
+        return 1
+    # A disabled first condition blocks, and a map that places none does too -- the other two arms.
+    if wait_verdict([{"index": 1, "enabled": None}]) != ("blocks", True):
+        print("FAIL action-parameters: an unstated bEnabled does not block")
+        return 1
+    if wait_verdict([]) != ("no_condition", True):
+        print("FAIL action-parameters: an empty condition list does not report no_condition")
         return 1
     timer = per_prop[("ACTION_WaitForTimer", "PauseTime", "Float")]
     if timer["stated"] != 2 or sorted(round(v) for v in timer["values"]) != [0, 99999]:
@@ -624,11 +771,12 @@ def check():
         return 1
     rows = rows_of({"A": {"class": per_class, "census": census}}, per_class, per_prop, census, residues, 6)
     got = census_of(rows)
-    if (got["placements"], got["goto_unset"], got["maps"]) != (7, 1, 1):
+    if (got["placements"], got["goto_unset"], got["maps"]) != (8, 1, 1):
         print("FAIL action-parameters: census rows %r" % (got,))
         return 1
     block = render(rows)
-    for want_text in ("slot 0", "PauseTime", "distinct", "Census: placements=7"):
+    for want_text in ("slot 0", "PauseTime", "distinct", "Census: placements=8", "sequence slot",
+                      "no-op, not a broadcast"):
         if want_text not in block:
             print("FAIL action-parameters: render is missing %r" % want_text)
             return 1
@@ -645,8 +793,8 @@ def check():
         if len(back) != len(rows) or set(back[0]) != set(FIELDS):
             print("FAIL action-parameters: artifact round trip %d/%d" % (len(back), len(rows)))
             return 1
-    print("ok   action-parameters: stated and unstated parameters, the slot-0 goto, the 99999 timer and the two "
-          "residues are told apart")
+    print("ok   action-parameters: stated and unstated parameters, the slot-0 goto, the 99999 timer, the "
+          "trigger with no name, and the condition an untagged wait resolves against are told apart")
     return 0
 
 

@@ -1,77 +1,77 @@
 kind,map,name,class,property,type,placements,stated,distinct,min,max,median,note
-map,CTF-Abydos,,,,,26,24,,,,,blocked=24;unblocked=2;classes=5
-map,CTF-LostCity,,,,,0,0,,,,,blocked=0;unblocked=0;classes=0
-map,DM-Ha'tak,,,,,20,20,,,,,blocked=17;unblocked=3;classes=5
-map,DM-KelownanTrain,,,,,31,29,,,,,blocked=28;unblocked=3;classes=7
-map,DM-Langara,,,,,3,2,,,,,blocked=2;unblocked=1;classes=3
-map,DM-LostCity,,,,,0,0,,,,,blocked=0;unblocked=0;classes=0
-map,DM-Subterranean,,,,,21,19,,,,,blocked=19;unblocked=2;classes=6
-map,DM-Tomb,,,,,11,12,,,,,blocked=8;unblocked=3;classes=6
-map,DM-WorstCaseScenario,,,,,20,23,,,,,blocked=17;unblocked=3;classes=6
-map,Entry,,,,,1,2,,,,,blocked=1;unblocked=0;classes=1
-map,M00,,,,,704,780,,,,,blocked=590;unblocked=114;classes=25
-map,M02A,,,,,551,588,,,,,blocked=454;unblocked=97;classes=33
-map,M02B,,,,,319,300,,,,,blocked=236;unblocked=83;classes=29
-map,M02C,,,,,284,387,,,,,blocked=221;unblocked=63;classes=28
-map,M02D,,,,,99,169,,,,,blocked=88;unblocked=11;classes=16
-map,M04B,,,,,301,422,,,,,blocked=269;unblocked=32;classes=30
-map,M04a,,,,,316,396,,,,,blocked=266;unblocked=50;classes=34
-map,M07A,,,,,414,438,,,,,blocked=336;unblocked=78;classes=33
-map,M07B,,,,,555,732,,,,,blocked=479;unblocked=76;classes=33
-map,M07C,,,,,415,495,,,,,blocked=330;unblocked=85;classes=30
-map,M07D,,,,,502,540,,,,,blocked=428;unblocked=74;classes=28
-map,M07E,,,,,462,541,,,,,blocked=385;unblocked=77;classes=30
-map,M10A,,,,,551,601,,,,,blocked=469;unblocked=82;classes=40
-map,M10B,,,,,400,414,,,,,blocked=327;unblocked=73;classes=40
-map,M10C,,,,,186,201,,,,,blocked=153;unblocked=33;classes=28
-map,M10D,,,,,614,697,,,,,blocked=494;unblocked=120;classes=42
-map,M12A,,,,,202,205,,,,,blocked=164;unblocked=38;classes=27
-map,M12B,,,,,298,347,,,,,blocked=251;unblocked=47;classes=29
-map,M12C,,,,,398,476,,,,,blocked=351;unblocked=47;classes=30
-map,M12D,,,,,323,340,,,,,blocked=287;unblocked=36;classes=31
-map,M12E,,,,,150,140,,,,,blocked=124;unblocked=26;classes=24
-map,M12F,,,,,115,140,,,,,blocked=103;unblocked=12;classes=17
-map,M13A,,,,,662,870,,,,,blocked=530;unblocked=132;classes=38
-map,M13B,,,,,239,313,,,,,blocked=204;unblocked=35;classes=26
-map,M13C,,,,,457,540,,,,,blocked=375;unblocked=82;classes=32
-map,M13D,,,,,104,146,,,,,blocked=91;unblocked=13;classes=26
-map,M14A,,,,,454,567,,,,,blocked=378;unblocked=76;classes=33
-map,M14B,,,,,120,132,,,,,blocked=95;unblocked=25;classes=17
-map,M14C,,,,,376,480,,,,,blocked=313;unblocked=63;classes=27
-map,M15A,,,,,539,574,,,,,blocked=420;unblocked=119;classes=35
-map,M15B,,,,,78,88,,,,,blocked=59;unblocked=19;classes=21
-map,M15C,,,,,148,173,,,,,blocked=119;unblocked=29;classes=25
-map,M15D,,,,,112,131,,,,,blocked=90;unblocked=22;classes=28
-map,M15E,,,,,213,272,,,,,blocked=179;unblocked=34;classes=29
-map,M15F,,,,,274,316,,,,,blocked=224;unblocked=50;classes=28
-map,M16A,,,,,465,499,,,,,blocked=381;unblocked=84;classes=39
-map,M16B,,,,,98,129,,,,,blocked=85;unblocked=13;classes=17
-map,M16C,,,,,47,63,,,,,blocked=41;unblocked=6;classes=13
-map,M16D,,,,,245,274,,,,,blocked=201;unblocked=44;classes=26
-map,M16E,,,,,168,217,,,,,blocked=143;unblocked=25;classes=31
-map,M16F,,,,,249,329,,,,,blocked=234;unblocked=15;classes=25
-map,M16G,,,,,67,121,,,,,blocked=62;unblocked=5;classes=15
-map,M17A,,,,,432,466,,,,,blocked=358;unblocked=74;classes=30
-map,M17B,,,,,330,348,,,,,blocked=298;unblocked=32;classes=30
-map,M17D,,,,,133,198,,,,,blocked=122;unblocked=11;classes=21
-map,M18A,,,,,125,172,,,,,blocked=119;unblocked=6;classes=16
-map,M18B,,,,,141,194,,,,,blocked=127;unblocked=14;classes=21
-map,M18D,,,,,226,352,,,,,blocked=197;unblocked=29;classes=26
-map,M19A,,,,,193,182,,,,,blocked=157;unblocked=36;classes=27
-map,M19B,,,,,361,391,,,,,blocked=272;unblocked=89;classes=25
-map,M19C,,,,,171,192,,,,,blocked=151;unblocked=20;classes=18
-map,M19D,,,,,170,190,,,,,blocked=157;unblocked=13;classes=19
-map,M19E,,,,,360,402,,,,,blocked=294;unblocked=66;classes=27
-map,M20A,,,,,310,367,,,,,blocked=264;unblocked=46;classes=33
-map,M20B,,,,,198,217,,,,,blocked=167;unblocked=31;classes=24
-map,M20C,,,,,199,202,,,,,blocked=168;unblocked=31;classes=25
-map,M20D,,,,,253,402,,,,,blocked=206;unblocked=47;classes=31
-map,M21A,,,,,400,459,,,,,blocked=330;unblocked=70;classes=41
-map,M21B,,,,,332,326,,,,,blocked=263;unblocked=69;classes=35
-map,M21C,,,,,257,289,,,,,blocked=215;unblocked=42;classes=34
-map,M21D,,,,,375,399,,,,,blocked=322;unblocked=53;classes=30
-map,MainMenu,,,,,110,93,,,,,blocked=86;unblocked=24;classes=14
-map,SGCTF-AbydosVsSGC,,,,,27,29,,,,,blocked=23;unblocked=4;classes=6
+map,CTF-Abydos,,,,,26,24,,,,,blocked=24;unblocked=2;classes=5;conditions=0
+map,CTF-LostCity,,,,,0,0,,,,,blocked=0;unblocked=0;classes=0;conditions=0
+map,DM-Ha'tak,,,,,20,20,,,,,blocked=17;unblocked=3;classes=5;conditions=0
+map,DM-KelownanTrain,,,,,31,29,,,,,blocked=28;unblocked=3;classes=7;conditions=1
+map,DM-Langara,,,,,3,2,,,,,blocked=2;unblocked=1;classes=3;conditions=0
+map,DM-LostCity,,,,,0,0,,,,,blocked=0;unblocked=0;classes=0;conditions=0
+map,DM-Subterranean,,,,,21,19,,,,,blocked=19;unblocked=2;classes=6;conditions=0
+map,DM-Tomb,,,,,11,12,,,,,blocked=8;unblocked=3;classes=6;conditions=0
+map,DM-WorstCaseScenario,,,,,20,23,,,,,blocked=17;unblocked=3;classes=6;conditions=0
+map,Entry,,,,,1,2,,,,,blocked=1;unblocked=0;classes=1;conditions=0
+map,M00,,,,,704,780,,,,,blocked=590;unblocked=114;classes=25;conditions=6
+map,M02A,,,,,551,588,,,,,blocked=454;unblocked=97;classes=33;conditions=1
+map,M02B,,,,,319,300,,,,,blocked=236;unblocked=83;classes=29;conditions=1
+map,M02C,,,,,284,387,,,,,blocked=221;unblocked=63;classes=28;conditions=1
+map,M02D,,,,,99,169,,,,,blocked=88;unblocked=11;classes=16;conditions=0
+map,M04B,,,,,301,422,,,,,blocked=269;unblocked=32;classes=30;conditions=0
+map,M04a,,,,,316,396,,,,,blocked=266;unblocked=50;classes=34;conditions=2
+map,M07A,,,,,414,438,,,,,blocked=336;unblocked=78;classes=33;conditions=18
+map,M07B,,,,,555,732,,,,,blocked=479;unblocked=76;classes=33;conditions=10
+map,M07C,,,,,415,495,,,,,blocked=330;unblocked=85;classes=30;conditions=5
+map,M07D,,,,,502,540,,,,,blocked=428;unblocked=74;classes=28;conditions=18
+map,M07E,,,,,462,541,,,,,blocked=385;unblocked=77;classes=30;conditions=27
+map,M10A,,,,,551,601,,,,,blocked=469;unblocked=82;classes=40;conditions=6
+map,M10B,,,,,400,414,,,,,blocked=327;unblocked=73;classes=40;conditions=2
+map,M10C,,,,,186,201,,,,,blocked=153;unblocked=33;classes=28;conditions=0
+map,M10D,,,,,614,697,,,,,blocked=494;unblocked=120;classes=42;conditions=0
+map,M12A,,,,,202,205,,,,,blocked=164;unblocked=38;classes=27;conditions=1
+map,M12B,,,,,298,347,,,,,blocked=251;unblocked=47;classes=29;conditions=5
+map,M12C,,,,,398,476,,,,,blocked=351;unblocked=47;classes=30;conditions=12
+map,M12D,,,,,323,340,,,,,blocked=287;unblocked=36;classes=31;conditions=3
+map,M12E,,,,,150,140,,,,,blocked=124;unblocked=26;classes=24;conditions=5
+map,M12F,,,,,115,140,,,,,blocked=103;unblocked=12;classes=17;conditions=3
+map,M13A,,,,,662,870,,,,,blocked=530;unblocked=132;classes=38;conditions=0
+map,M13B,,,,,239,313,,,,,blocked=204;unblocked=35;classes=26;conditions=0
+map,M13C,,,,,457,540,,,,,blocked=375;unblocked=82;classes=32;conditions=0
+map,M13D,,,,,104,146,,,,,blocked=91;unblocked=13;classes=26;conditions=2
+map,M14A,,,,,454,567,,,,,blocked=378;unblocked=76;classes=33;conditions=4
+map,M14B,,,,,120,132,,,,,blocked=95;unblocked=25;classes=17;conditions=0
+map,M14C,,,,,376,480,,,,,blocked=313;unblocked=63;classes=27;conditions=0
+map,M15A,,,,,539,574,,,,,blocked=420;unblocked=119;classes=35;conditions=5
+map,M15B,,,,,78,88,,,,,blocked=59;unblocked=19;classes=21;conditions=1
+map,M15C,,,,,148,173,,,,,blocked=119;unblocked=29;classes=25;conditions=0
+map,M15D,,,,,112,131,,,,,blocked=90;unblocked=22;classes=28;conditions=1
+map,M15E,,,,,213,272,,,,,blocked=179;unblocked=34;classes=29;conditions=1
+map,M15F,,,,,274,316,,,,,blocked=224;unblocked=50;classes=28;conditions=0
+map,M16A,,,,,465,499,,,,,blocked=381;unblocked=84;classes=39;conditions=1
+map,M16B,,,,,98,129,,,,,blocked=85;unblocked=13;classes=17;conditions=0
+map,M16C,,,,,47,63,,,,,blocked=41;unblocked=6;classes=13;conditions=0
+map,M16D,,,,,245,274,,,,,blocked=201;unblocked=44;classes=26;conditions=0
+map,M16E,,,,,168,217,,,,,blocked=143;unblocked=25;classes=31;conditions=0
+map,M16F,,,,,249,329,,,,,blocked=234;unblocked=15;classes=25;conditions=1
+map,M16G,,,,,67,121,,,,,blocked=62;unblocked=5;classes=15;conditions=0
+map,M17A,,,,,432,466,,,,,blocked=358;unblocked=74;classes=30;conditions=4
+map,M17B,,,,,330,348,,,,,blocked=298;unblocked=32;classes=30;conditions=3
+map,M17D,,,,,133,198,,,,,blocked=122;unblocked=11;classes=21;conditions=1
+map,M18A,,,,,125,172,,,,,blocked=119;unblocked=6;classes=16;conditions=2
+map,M18B,,,,,141,194,,,,,blocked=127;unblocked=14;classes=21;conditions=1
+map,M18D,,,,,226,352,,,,,blocked=197;unblocked=29;classes=26;conditions=0
+map,M19A,,,,,193,182,,,,,blocked=157;unblocked=36;classes=27;conditions=0
+map,M19B,,,,,361,391,,,,,blocked=272;unblocked=89;classes=25;conditions=7
+map,M19C,,,,,171,192,,,,,blocked=151;unblocked=20;classes=18;conditions=5
+map,M19D,,,,,170,190,,,,,blocked=157;unblocked=13;classes=19;conditions=0
+map,M19E,,,,,360,402,,,,,blocked=294;unblocked=66;classes=27;conditions=1
+map,M20A,,,,,310,367,,,,,blocked=264;unblocked=46;classes=33;conditions=3
+map,M20B,,,,,198,217,,,,,blocked=167;unblocked=31;classes=24;conditions=0
+map,M20C,,,,,199,202,,,,,blocked=168;unblocked=31;classes=25;conditions=6
+map,M20D,,,,,253,402,,,,,blocked=206;unblocked=47;classes=31;conditions=4
+map,M21A,,,,,400,459,,,,,blocked=330;unblocked=70;classes=41;conditions=6
+map,M21B,,,,,332,326,,,,,blocked=263;unblocked=69;classes=35;conditions=13
+map,M21C,,,,,257,289,,,,,blocked=215;unblocked=42;classes=34;conditions=1
+map,M21D,,,,,375,399,,,,,blocked=322;unblocked=53;classes=30;conditions=11
+map,MainMenu,,,,,110,93,,,,,blocked=86;unblocked=24;classes=14;conditions=1
+map,SGCTF-AbydosVsSGC,,,,,27,29,,,,,blocked=23;unblocked=4;classes=6;conditions=0
 class,corpus,ACTION_WaitForEvent,ACTION_WaitForEvent,,,2722,2,,,,,"blocked=2703;unblocked=19;ExternalEvent,bCheckRecentEvents"
 class,corpus,ACTION_TriggerEvent,ACTION_TriggerEvent,,,2658,1,,,,,blocked=2657;unblocked=1;Event
 class,corpus,ACTION_WaitForTimer,ACTION_WaitForTimer,,,2216,1,,,,,blocked=2214;unblocked=2;PauseTime
@@ -310,45 +310,48 @@ property,corpus,,Action_PLAYANIM,BlendInTime,Float,227,8,4,0.3,1,0.4,
 property,corpus,,Action_PLAYANIM,BlendOutTime,Float,227,1,1,2.5,2.5,2.5,
 property,corpus,,Action_PLAYANIM,StartFrame,Float,227,1,1,9,9,9,
 property,corpus,,Action_PLAYANIM,bLoopAnim,Bool,227,47,1,,,,
-residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 3
-residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 16
-residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 25
-residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
-residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
-residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=3;conditions=6;first=default (false);outcome=blocks
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=16;conditions=6;first=default (false);outcome=blocks
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=25;conditions=6;first=default (false);outcome=blocks
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=6;first=default (false);outcome=blocks
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=6;first=default (false);outcome=blocks
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=6;first=default (false);outcome=blocks
 residue,M02A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
 residue,M07B,property_refused,ACTION_Talk,,,,,,,,,Oneill slot 9
 residue,M07B,property_refused,ACTION_Talk,,,,,,,,,m07_12_g_oneill slot 9
 residue,M07B,property_refused,ACTION_Talk,,,,,,,,,SheerRate slot 9
 residue,M07B,property_refused,ACTION_Talk,,,,,,,,,StaticMeshActor832 slot 9
 residue,M07B,property_refused,ACTION_Talk,,,,,,,,,Brush98 slot 9
+residue,M07C,timer_unstated,ACTION_WaitForTimer,,,,,,,,,slot 16
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,UseStateCheck slot 0
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 3
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,UseStateCheck slot 1
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 4
-residue,M14A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 6
-residue,M14A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 6
+residue,M14A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=6;conditions=4;first=default (false);outcome=blocks
+residue,M14A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=6;conditions=4;first=default (false);outcome=blocks
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
+residue,M14B,timer_unstated,ACTION_WaitForTimer,,,,,,,,,slot 2
 residue,M15A,property_refused,ACTION_DisplayMessage,,,,,,,,,Max slot 0
 residue,M15A,property_refused,ACTION_DisplayMessage,,,,,,,,,Roster_JaffaHorusM8 slot 0
 residue,M15A,property_refused,ACTION_DisplayMessage,,,,,,,,,Location slot 0
-residue,M15A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 9
+residue,M15A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=9;conditions=5;first=stated true;outcome=completes
 residue,M15D,property_refused,ACTION_DisplayMessage,,,,,,,,,Distance slot 0
 residue,M15D,property_refused,ACTION_DisplayMessage,,,,,,,,,StaticMeshInstance5933 slot 0
 residue,M15D,property_refused,ACTION_DisplayMessage,,,,,,,,,Region slot 0
 residue,M15F,property_refused,ACTION_SaveGame,,,,,,,,,Group slot 0
 residue,M15F,property_refused,ACTION_SaveGame,,,,,,,,,SubActionFade0 slot 0
-residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 9
-residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 9
-residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 7
-residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 7
-residue,M16E,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 3
-residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
-residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
-residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 11
-residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 1
-residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 2
+residue,M16A,trigger_unstated,ACTION_TriggerEvent,,,,,,,,,slot 8
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=9;conditions=0;first=none;outcome=no_condition
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=9;conditions=0;first=none;outcome=no_condition
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=7;conditions=0;first=none;outcome=no_condition
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=7;conditions=0;first=none;outcome=no_condition
+residue,M16E,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=3;conditions=0;first=none;outcome=no_condition
+residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=1;first=stated true;outcome=completes
+residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=1;first=stated true;outcome=completes
+residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=11;conditions=1;first=stated true;outcome=completes
+residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=1;conditions=4;first=default (false);outcome=blocks
+residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=2;conditions=4;first=default (false);outcome=blocks
 residue,M20A,property_refused,ACTION_DisplayMessage,,,,,,,,,StaticMeshActor slot 0
 residue,M20A,property_refused,ACTION_DisplayMessage,,,,,,,,,StaticMeshInstance584 slot 0
 residue,M20A,property_refused,ACTION_DisplayMessage,,,,,,,,,Region slot 0
@@ -358,6 +361,7 @@ residue,M20C,property_refused,ACTION_DisplayMessage,,,,,,,,,Level slot 0
 census,corpus,anim_placements,,,,227,,,,,,
 census,corpus,anim_stated,,,,227,,,,,,
 census,corpus,blocked,,,,15441,,,,,,
+census,corpus,conditions,,,,212,,,,,,
 census,corpus,empty_block,,,,3074,,,,,,
 census,corpus,goto_back,,,,111,,,,,,
 census,corpus,goto_forward,,,,40,,,,,,
@@ -376,10 +380,18 @@ census,corpus,talk_subtitle,,,,717,,,,,,
 census,corpus,timer_placements,,,,2216,,,,,,
 census,corpus,timer_sentinel,,,,1,,,,,,
 census,corpus,timer_stated,,,,2214,,,,,,
+census,corpus,timer_unstated,,,,2,,,,,,
+census,corpus,trigger_placements,,,,2658,,,,,,
+census,corpus,trigger_stated,,,,2657,,,,,,
+census,corpus,trigger_unstated,,,,1,,,,,,
 census,corpus,unblocked,,,,3069,,,,,,
 census,corpus,wait_placements,,,,2722,,,,,,
 census,corpus,wait_recent,,,,207,,,,,,
 census,corpus,wait_stated,,,,2703,,,,,,
 census,corpus,wait_unstated,,,,19,,,,,,
+census,corpus,wait_unstated_blocks,,,,10,,,,,,
+census,corpus,wait_unstated_completes,,,,4,,,,,,
+census,corpus,wait_unstated_no_condition,,,,5,,,,,,
+census,corpus,wait_unstated_order_free,,,,18,,,,,,
 census,corpus,maps,,,,73,,,,,,
 census,corpus,classes,,,,83,,,,,,family=118
