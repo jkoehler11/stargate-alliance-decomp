@@ -4826,15 +4826,16 @@ boot, would say what a package load does with the range -- it changes no number 
 
 **Status.** Answered for the index the shipped state code addresses (`Auto`); open for the 876 nulls behind it.
 
-## U27. A page's widgets are rows, a panel's are a second file, and twelve panels have no emitted block
+## U27. A page's widgets are rows, a panel's are a second file, and the twelve container panels hold one tag
 
 **Observed.** `tools/ui-menu-flow.py` reads the `Begin Object` blocks out of the `defaults-emit` tree
-(`inventory/menu_flow.csv`, `kind=component`; `make ui-menu-flow`): **114 components over 46 of the 59 pages**,
-**110 declared once by the page that uses them and 4 restatements** of an inherited widget under a narrower
+(`inventory/menu_flow.csv`, `kind=component`; `make ui-menu-flow`): **135 components over 46 of the 59 pages**,
+**130 declared once by the page that uses them and 5 restatements** of an inherited widget under a narrower
 class -- `chPN` as `ChapterSelectionPanel` on `SinglePlayerChapterSelect`, as `MapSelectionPanel` on
 `MultiplayerMapSelect` and `QuickLoadMapTempPage`, and as `MultiplayerServerPanel` then
-`XBoxLiveServerSelectionPanel` on the server-select chain -- in **31 widget classes**. Position is data too:
-**83** components state all four `Win*` values, the other **25** state none and take theirs from the widget
+`XBoxLiveServerSelectionPanel` on the server-select chain, plus `cTitle` as `GUILabel` on `InGameScoreboard`
+where `SGPageBase` declares an `SGLabel` -- in **31 widget classes**. Position is data too:
+**102** components state all four `Win*` values, the other **25** state none and take theirs from the widget
 class's own defaults (`GUI.GUIButton`, `GUI.GUILabel`, ...), and **none** is left without one anywhere on its
 chain.
 
@@ -4842,15 +4843,26 @@ chain.
 contents are the panel class's own defaults (`kind=subcomponent`, `depth=2`), and a child class can declare
 blocks in turn (`depth=3`: `GUIVertScrollBar` states its zone, two buttons and a grip). Of the 31 widget
 classes, **12 declare 28 children over 14 classes**, **7 are widgets whose block declares no children**, and
-**12 have no emitted block at all** -- so "every one of which the corpus carries" was wrong, and the tree is
-cut one level below the page for the whole server, team, character, chapter and profile family.
+**12 have no emitted block at all**. That last group is not a decode gap: each of the twelve has a **one-tag
+block** that begins exactly where its record's closing group ends and ends on the payload's last byte, and the
+tag names a child object the panel's own class owns -- `ChapterSelectionPanel` → `ChapterList=ChapterList'chList'`,
+`CharacterSelectionPanel` → `CharList=CharacterSelectionList'cList'`, `CoopPlayerPanel` →
+`PlayerListBox=GUIMultiColumnListBox'cPlayers'`, `GameModeSelectionPanel` → `GameModeList'cList'`, `ProfilePanel`
+→ `ProfileList'cList'`, `SelectPawnPanel`/`SelectTeamPanel` → `SGListBox'cListBox'`, `XBoxLiveServerSelectionPanel`
+→ `XBoxLiveServerSelectionListBox'cServer'`, `GUIListBox` → `GUIVertList'theList'`, `RightLockingMenuPanel` →
+`HintLB=GUILabel'cHint'`, `FullSlidingPanel` → `Background`; `MultiplayerServerPanel`'s block is **empty**. The
+emitter writes no file for them because its class-level locator ranks a three-tag parse *inside* the record's
+closing group above the block at the group's end -- the ranking `inventory/class_defaults_misses.csv` used to
+report as nine `type-contradiction` rows and now reports as `single-declared`, one property each.
 
-**The twelve are a decode gap, not script built.** Each has a defaults *block* in its package (**121-129
-declared properties, 1,487 across the twelve**), and `inventory/class_defaults_misses.csv` says where the
-reader stops: nine `type-contradiction` at the first tag, two `single-declared` (`GUIListBox`,
-`FullSlidingPanel`) and `MultiplayerServerPanel` `empty-block`. The classes are exactly the containers --
-`RightLockingMenuPanel`, `ChapterSelectionPanel`, `CharacterSelectionPanel`, `ProfilePanel`, `CoopPlayerPanel`,
-the four selection panels and `GUIListBox`.
+**The widgets a page names inside a panel are the page's own subobjects, and all 140 bindings resolve.** A page
+binds each widget twice: the `Begin Object ... Name=` block and a property pointing at it
+(`MenuPanel=RightLockingMenuPanel'cPanel'`, `MyComponents(0)=GUIButton'cContinueBN'`). The array form points
+*into* the panel's block, but the object it names is an export whose Outer is the **page** class, with its own
+block and its own four `Win*` values. `defaults-emit` followed only the class-level reference list, so those
+widgets were never in the tree and read as `binding` rows inside "refused" panels. Following the subobject's own
+block one level further places **21 more blocks and 244 more properties** (all in `StargateMenus`), and the flow
+table's 114 components became 135 with **0 dangling bindings**.
 
 **What `Win*` is relative to is now answered at the data level.** The base `GUIComponent` states **2 of the
 four** (`WinWidth`, `WinHeight`) and the panel classes state none, so a panel *is* its parent's whole box; and
@@ -4865,7 +4877,10 @@ whether a value above 1 is absolute, and where the owner's own offset enters. Tw
 own body -- its vtable slot is in the class table -- is the cheaper read and needs no boot; (2) the frame
 instrument 7.2 already uses: boot to one options page, capture with `tools/xemu/frame-diff.py`, rebuild that
 page's package with one `WinTop` changed by 0.05 and read whether the frame differs in that widget's rectangle
-and nowhere else.
+and nowhere else. A second, separate question is a policy call rather than a measurement: routing the emitter's
+class-level locator through the record-group guard would give each of the twelve a file, at the cost of
+promoting **313** classes corpus-wide (1,664 → 1,977 clean blocks), which is the same call `MIN_PROPERTIES`
+records.
 
-**Status.** Answered at the data level (parent-relative and unclamped); open for the native composition, and
-for the twelve refused panel blocks it depends on.
+**Status.** Answered at the data level (parent-relative and unclamped, every binding placed); open for the
+native composition and for the twelve one-tag panel files, which are a locator policy decision.

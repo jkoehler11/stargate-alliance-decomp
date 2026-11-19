@@ -13851,3 +13851,55 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   small enough to hand-check against the bar's own block.
 - **Not in this PR.** A list's row geometry: an item's rectangle comes from the list class's own drawing code,
   not from a `Begin Object` block, so the `MyComponents` binding is the last layout data the tree holds.
+
+### Execution notes (2026-11-18, the twelve panels hold one tag, and the 21 bindings were the emitter's depth)
+
+- **Task.** The previous note's next measurement — "the twelve refused panel blocks" — widened to the bindings
+  that hung off them, because both turned out to be one question about where a block ends and how far a reader
+  follows a reference.
+- **The twelve are not refused, and not empty.** Each has a defaults block of exactly **one tag**, starting at
+  its record's closing group's end and ending on the payload's last byte, and the tag names a child object its
+  own class owns: `ChapterSelectionPanel` → `ChapterList=ChapterList'chList'`, `CharacterSelectionPanel` →
+  `CharacterList'cList'`, `CoopPlayerPanel` → `GUIMultiColumnListBox'cPlayers'`, `GameModeSelectionPanel` →
+  `GameModeList'cList'`, `ProfilePanel` → `ProfileList'cList'`, `SelectPawnPanel`/`SelectTeamPanel` →
+  `SGListBox'cListBox'`, `XBoxLiveServerSelectionPanel` → `XBoxLiveServerSelectionListBox'cServer'`,
+  `GUIListBox` → `GUIVertList'theList'`, `RightLockingMenuPanel` → `HintLB=GUILabel'cHint'` (with the label's own
+  block: `WinTop` 0.53, `WinLeft` 0.62), `FullSlidingPanel` → `Background`; `MultiplayerServerPanel`'s block is
+  a single `00`, an empty block. So the panels' children are their own subobject exports, not a script-built tree.
+- **Twenty-nine `type-contradiction`/`incomplete` rows were the ledger's own blind spot.** `--misses`
+  re-derived its candidates without the chooser's `guarded()` set, so it never saw the one-tag candidate at the
+  record group's end that `all_packages` had already published a `block_start` for, and ranked a three-tag parse
+  *inside* the group above it — which is where both verdicts came from. Routed through `guarded()` and with a
+  one-tag block whose only tag the class declares read as `single-declared`, the ledger goes from
+  `type-contradiction` **30 → 5**, `incomplete` **4 → 0** and `single-declared` **285 → 314** (655 classes
+  without a fully declared block: 334 `empty-block`, 314 `single-declared`, 5 `type-contradiction`, 1
+  `single-property`, 1 `trailer-over-64`); `--check-misses` passes unchanged.
+- **The 21 dangling bindings were the emitter's depth, not a missing rectangle.** A page binds a widget twice:
+  `Begin Object ... Name=` and a property pointing at it, and the array form (`MyComponents(0)=GUIButton'cContinueBN'`)
+  points *into the panel's block* — but the object it names is an export whose **Outer is the page class**, with
+  its own block and its own four `Win*`. `defaults-emit` collected subobject references from the class-level
+  block only, so those widgets never reached the tree. Following each subobject's own block one level further
+  adds **21 blocks and 244 properties**, all in `StargateMenus` (`class_defaults_emit.csv`: inline_objects 143 →
+  164, inline_properties 950 → 1,194; the corpus total 1,318 → 1,339), and the flow table goes from 114
+  components to **135** with **140 of 140 bindings resolved and 0 dangling**. The rectangles were in the package
+  all along: `cContinueBN` at `WinTop` 0.07/`WinLeft` 0.465/0.25×0.05, `cOkayButton` at 0.25/0.5/0.15×0.06.
+- **What that cost the claim in the last PR.** "21 controls exist by name and class and have no rectangle
+  anywhere" was a statement about the emitted tree, not about the game: every one of them has a block. The doc
+  section is regenerated rather than annotated, and its panel table now names each panel's one tag.
+- **Measured, deliberately not taken: the emitter's class-level locator through the guard.** Doing the same
+  `guarded()` routing in `block_of` would give each of the twelve a file, and it promotes **313** classes
+  corpus-wide (1,664 → 1,977 clean blocks, properties 15,521 → 15,834, subobjects 1,339 → 1,697). That is the
+  `MIN_PROPERTIES` decision over again — a one-tag verdict on a population — so the tool's docstring carries the
+  measurement and the note leaves it to James. `defaults-emit`'s own numbers are otherwise unchanged (1,898
+  blocks, 1,664 clean, 15,521 rendered).
+- **Files.** `tools/class-defaults.py` (`misses()` through `guarded()`, the one-tag `single-declared` verdict),
+  `tools/defaults-emit.py` (`render_subobject` queues the refs of its own block; `render_class` drains the queue
+  two levels deep; `block_of`'s docstring carries the deferred-guard measurement), `tools/ui-menu-flow.py`
+  (`subcomponents_block` prose and table regenerated for the twelve's one tag; the resolved-bindings paragraph),
+  `inventory/class_defaults_misses.csv`, `inventory/class_defaults_emit.csv`, `inventory/menu_flow.csv` (135
+  component rows, no `binding` rows), `docs/systems/UI.md` (generated), `docs/UNKNOWNS.md` U27 rewritten in
+  place, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** A list's row geometry: an item's rectangle comes from the list class's own drawing code
+  (`MyOnDrawItem` on `CoopPlayerPanel` is a 513-byte body), not from a `Begin Object` block -- the twelve panels
+  each name their list, and `inventory/menu_flow.csv` now places the pages, so the drawing body is the next read
+  that adds layout data the tree cannot hold.
