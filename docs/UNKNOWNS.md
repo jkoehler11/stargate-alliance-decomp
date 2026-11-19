@@ -1422,9 +1422,21 @@ with `0x80` when the array index is non-zero or a bool property's value is true.
 **size is a measured serialized length**, produced by running the value through a scratch archive —
 which is why the reader can report a size mismatch. `docs/NATIVE_PROPERTIES.md` §6.
 
-**One residual:** the routine that writes the assembled tag struct to the archive byte by byte was not
-followed, so the on-disk *caller* of the writer is open for 6.2 even though field order, packing and
-size thresholds are measured.
+**Writer's on-disk half measured 2026-11-19.** The caller is the walk itself: `0x0003cd70` has one `E8`
+site in the image, `0x0003c368` in `0x0003bdc0`, and the call nine bytes later (`0x0003c373`) re-enters
+`0x0003ceb0`, the tag routine — the reader *is* the writer, and every field goes through the archive's own
+operators. The value follows at `0x0003c384` to `0x00038c30`, whose fourth call site (`0x0003ce00`) is
+**inside** the writer: the value is serialised once to be measured and again to be written, which is where the
+"measured `Size`" comes from. `tools/tag-encode.py` then re-encodes **1,212,640 shipped tags (137,427 blocks)
+to their own bytes with zero mismatches**, which settles four things the two bodies left open — the name on
+disk is a compact index and not the int32 §6's table said (188,506 tags would desync a four-byte reader), the
+size class takes the five implied widths before the explicit ones (0 exceptions in the corpus), a bool's
+`Size` is 0 with its value in bit 7, and the array index is packed 1/2/4 bytes (three one-byte, six two-byte
+and fourteen four-byte among the shipped tags). The nine checkpoints are the control and the walk finds 1,216
+more tags than the older `Sg1Tool save` table. `docs/NATIVE_PROPERTIES.md` §6.
+
+**One residual:** the value's internal layout (a `Str`'s prefix, an `Array`'s count, a `Struct`'s members) is
+not decoded; only its width per type is measured.
 
 ## U11. Which D3D8 device caps the renderer asks for
 
