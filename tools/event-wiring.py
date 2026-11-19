@@ -422,8 +422,12 @@ def render(rows):
         sites, placed, clean, over = control
         out.append("**The wait side is a subset of the placements.** `inventory/map_export_classes.csv` counts "
                    "%d placed `ACTION_WaitForEvent` actors over these maps, so the %d scripted wait sites leave "
-                   "%d placements that override no `ExternalEvent` and wait on nothing; no map has more wait "
-                   "sites than placements (%d of %d maps agree, %s)."
+                   "%d placements that state no `ExternalEvent`; no map has more wait "
+                   "sites than placements (%d of %d maps agree, %s). Those placements do not wait on "
+                   "nothing: the class looks its condition up with the default name, `None`, which the actor "
+                   "iterator does not filter on, so the first `TriggeredCondition` in the level decides "
+                   "whether the wait completes at once -- `docs/MAP_ACTION_PARAMETERS.md` names them by map, "
+                   "class and slot and counts the placements that state `bCheckRecentEvents` beside them."
                    % (placed, sites, placed - sites, clean, clean + len(over),
                       "no exception" if not over else "exceptions: %s"
                       % ", ".join("`%s` (%d vs %d)" % o for o in over[:6])))

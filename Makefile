@@ -498,6 +498,14 @@ ci:
 	@$(PYTHON) tools/ui-layout-native.py --check
 	@$(PYTHON) tools/ui-layout-native.py --check-doc docs/systems/UI.md
 	@$(PYTHON) tools/defaults-locator-guard.py --check
+	@$(PYTHON) tools/action-wiring.py --check-doc docs/MAP_ACTION_WIRING.md
+	@$(PYTHON) tools/event-wiring.py --check-doc docs/MAP_EVENT_WIRING.md
+	@$(PYTHON) tools/event-targets.py --check-doc docs/MAP_EVENT_TARGETS.md
+	@$(PYTHON) tools/action-order.py --check-doc docs/MAP_ACTION_ORDER.md
+	@$(PYTHON) tools/action-paths.py --check-doc docs/MAP_ACTION_PATHS.md
+	@$(PYTHON) tools/action-reach.py --check-doc docs/MAP_ACTION_REACH.md
+	@$(PYTHON) tools/action-defects.py --check-doc docs/MAP_ACTION_DEFECTS.md
+	@$(PYTHON) tools/action-parameters.py --check-doc docs/MAP_ACTION_PARAMETERS.md
 	@sh -n tools/build.sh && echo "ok   build-pipeline: tools/build.sh parses"
 	@$(PYTHON) -m py_compile tools/xemu/mem.py tools/xemu/bootcheck.py tools/xemu/drive.py \
 		tools/xemu/console-line.py tools/xemu/map-index.py tools/xemu/frame-diff.py \
