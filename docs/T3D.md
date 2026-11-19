@@ -63,11 +63,16 @@ they spawn. The doc now says that instead.
 means (a start in the first 64 bytes whose stream ends exactly at the export's end and whose names all resolve).
 That is a strict reading — it counts what can be read, not what might be there.
 
-`squad_scripts.csv` is not written by it. The same pass finds **581** `(map, script)` pairs against the committed
-file's **614**: 35 references the old enumeration had and this one does not, 2 the other way. The old script
-therefore used something broader than a located property block — a second property, or a looser block rule — and
-until that is identified the file stays as it is rather than losing references. `make map-census` prints the
-delta instead of overwriting, which is the honest version of "this number is not yet reproducible".
+`squad_scripts.csv` is not written by it, and the "not yet reproducible" reading above is superseded
+(2026-11-19): the difference is not a broader rule, it is the name-table fix. A walk of the same reader over
+all 73 maps finds **630** `(map, script)` pairs against the committed file's **614**, and the whole delta is two
+maps — `M17D` and `M21A`, the two whose name tables the length rule truncated
+(`docs/PACKAGE_READER.md`), which the committed file records as a single `?` row each (8 and 10 spawners).
+With the fix they resolve to **18 named scripts**, which is exactly `614 - 2 + 18 = 630`. What still differs is
+the spawner count behind those rows: the walk sees **719** spawner properties (`IntelligentSpawner` 706,
+`HaakenPod` 13) where the committed file totals 711, an 8-property residue left open here rather than
+overwritten — so the file stays as it is until that residue is pinned, and `make map-census` keeps printing
+the delta.
 
 ## Every map written, with references resolved (measured 2026-11-06)
 
@@ -92,6 +97,81 @@ its own defect rather than a missing feature:
 | `M15A` | `Max` | `ref:7470` | an export index past the map's export table |
 | `M17B` | `StaticMesh` | `ref:5758` | same shape, different map |
 
+**The totals above are superseded** by the 2026-11-19 section at the end of this page: the table is regenerated
+by `make t3d`, and the two maps whose name tables the length rule had truncated (`M17D`, `M21A`) now locate
+169 more actors and 2,808 more properties.
+
 **What this does not claim.** References resolve; *arrays and structs are still emitted by size*, so a property whose
 value is a struct array does not round-trip through an editor yet, and the `Level` export's script sequence is still
 separate from the actors. The T3D is much closer to editor-loadable than the previous note said, and not yet there.
+The array half of that sentence is the next section's, and it is now only half true.
+
+## An array is its elements, and a struct's width is not fixed (measured 2026-11-19)
+
+The writer above still printed an `Array` property's payload as one opaque string, which is the difference
+between a T3D an editor can load and one it cannot: `PathList=` followed by byte soup is not a reach-spec array.
+The layout had already been measured for one array — `tools/action-wiring.py` reads `Actions` as a compact count
+followed by exactly that many compact object indices — and this writer now applies that rule to every array.
+
+**The two tests that make it safe.** A payload decodes as an object array only when it consumes itself exactly
+*and* every index lands in the package's own export or import table. The second test is what keeps a struct array
+from being read as actors: `SizeScale` is 35 bytes of floats and its first byte is a plausible count. Anything
+that fails either test is counted, never printed.
+
+| what the writer emits | before | now |
+|---|---|---|
+| object array | one string of bytes | `PathList(0)=ReachSpec'ReachSpec2550'`, one line per element |
+| struct array | the same string | `// SizeScale: 2 element(s) of 17 byte(s), element type not in the export` |
+| struct value | `(X=…,Y=…,Z=…)` for `Vector`/`Rotator`/`Color` only | unchanged, and the census counts the rest |
+
+Two censuses are committed beside the coverage table, both written by `make t3d` and arithmetic on each other
+under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventory/t3d_structs.csv` per struct name.
+
+<!-- generated:t3d-values -->
+| measure | value |
+|---|---:|
+| maps | 73 |
+| `Array` properties | 37889 |
+| of those, object arrays | **32586** |
+| object references inside them | **117398** |
+| arrays refused a shape | 5303 (4510 struct arrays holding 14576 records) |
+| struct-typed properties | 312295 |
+| struct properties decoded to numbers | **203147** |
+| struct property names | 79 |
+
+| struct | properties | decoded | sizes (bytes:instances) |
+|---|---:|---:|---|
+| `Vector` | 152140 | 152108 | 12:152108 / 16:19 / 9:7 / 6:5 / 2:1 |
+| `PointRegion` | 77025 | 0 | 13:61298 / 14:15726 / 16:1 |
+| `Rotator` | 50518 | 50518 | 12:50518 |
+| `Scale` | 17561 | 0 | 25:17550 / 28:8 / 16:1 / 1:1 / 4:1 |
+| `RangeVector` | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 |
+| `Range` | 4138 | 0 | 13:4111 / 15:26 / 1:1 |
+| `Color` | 521 | 521 | 4:521 |
+| `None` | 57 | 0 | 2:26 / 0:18 / 4:8 / 1:4 / 12:1 |
+| `Orientation` | 43 | 0 | 106:29 / 122:7 / 123:7 |
+| `Plane` | 42 | 0 | 26:29 / 29:12 / 1:1 |
+| `SheerRate` | 21 | 0 | 4:21 |
+| `?` | 14 | 0 | 1:12 / 0:1 / 4:1 |
+<!-- /generated:t3d-values -->
+
+**The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,510
+of the 5,303 refusals divide exactly into 14,576 records; the other 793 do not divide and stay a commented
+one-liner. That is the shape `SizeScale`, `ColorScale`, `SoundEmitters` and `BeamEndPoints` have, and it is where
+a struct array stops: the element's type lives in the class's `ArrayProperty` declaration, and this reader carries
+a map's values, not its class declarations.
+
+**A struct's width is a property of the instance, not of the name.** `Vector` is 12 bytes on 152,108 properties
+and **16 on 19**; `PointRegion` 13 on 61,298 and **14 on 15,726**; `Scale` 25 on 17,550 and 28 on 8;
+`Orientation` 106, 122 and 123. So no decoder may key on a struct's name alone, and `prop-stream.py`'s four
+fixed-size decoders are right only because each also tests the size. It is also why "decode the structs" is not a
+one-line change: **109,148 of 312,295** struct properties sit at a size their name does not predict.
+
+**The coverage table was stale by one reader fix, and regenerating it moved 2 of the 73 rows, not 73.** The
+committed `inventory/t3d_coverage.csv` predated the name-table fix in `docs/PACKAGE_READER.md`: `M17D` and `M21A`
+now locate **169 more actors** and **2,808 more properties**, so the totals are **121,394 actors / 1,180,949
+properties / 3 unresolved references** and the T3D is 49,211,838 bytes, because an array is now one line per
+element rather than one line of bytes. A second run reproduces the table byte for byte.
+
+**Not in this PR.** The array element type (a class-declaration read), the struct decoders beyond the three whose
+layout is established, and the `Level` export's script sequence.
