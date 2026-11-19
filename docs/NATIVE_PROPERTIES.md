@@ -377,13 +377,95 @@ Two consequences for a rebuild. **A bool's `Size` is zero**, not one: the value 
 The checkpoints are the control: the nine `.sgs` files hold 20,296 tags over 1,458 blocks in this walk, against the 19,080 `Sg1Tool save` records `docs/formats/sgs-checkpoint.md` tabulates. The walk reads 1,216 more, every header it counts re-encodes to the file's own bytes, and the older table is lower on all nine files, so the two readers disagree about how many tags the saves hold rather than about whether these tags are there. 218 block(s) end without a zero index: the payload ends past the last complete tag, which is the shape a save's last object takes.
 <!-- /generated:tag-encodings -->
 
+### The value's own layout: `[property+0xa0]` is the class's own `SerializeItem`
+
+The header is settled in both directions; the value is one slot further. `0x00038c30` folds a bool's
+value into the tag's type byte and otherwise dispatches `[property+0xa0]`, so there is no single value
+format at all: there are fourteen small serialisers, one per property class, and each one's traffic is a
+rule a rebuild can follow. `inventory/property_serialisers.csv` already names each body; the widths below
+are **read off those bodies** rather than quoted -- every archive operator pushes its own length at the
+archive's `Serialize` (`0x00037040` one byte, `0x00037080` two, `0x00037110` and `0x00037170` four).
+
+| class | body | what the value is |
+|---|---|---|
+| `IntProperty`, `PointerProperty` | `0x00077c30`, `0x00077dc0` -> `0x00037110` | four bytes |
+| `FloatProperty` | `0x000783c0` -> `0x00037170` | four bytes |
+| `ByteProperty` | `0x00077ab0` -> `0x00037040` | one byte |
+| `BoolProperty` | `0x00078230` -> `0x00037040` | no byte in a tag (the value rides in bit 7); one byte when nested |
+| `ObjectProperty`, `ClassProperty` | `0x00078660` -> `Ar[+0x18]` | one compact object index |
+| `NameProperty` | `0x00078840` -> `Ar[+0x1c]` | one compact name index |
+| `DelegateProperty` | `0x00077f00` | an object index, then a name index |
+| `StrProperty` | `0x00078900` -> `0x00058850` | a compact length, then that many characters |
+| `ArrayProperty` | `0x00078ea0` | a compact count, then the `Inner`'s rule that many times |
+| `FixedArrayProperty` | `0x00078a20` | the `Inner`'s rule `ArrayDim` times, and no count |
+| `StructProperty` | `0x000795f0` | the struct's tagged walk, unless it is `Vector`, `Rotator` or `Color` |
+| `MapProperty` | `0x000794a0` | nothing: three bytes and no archive call at all |
+
+Then the two bodies that corrected what the tag alone could not say:
+
+- **A `Str` is an `FString` whose prefix counts the terminating NUL** (`0x00058850`). The length is the
+  same compact int the header uses (`0x000637e0`: six bits, a `0x40` continuation flag, one byte below
+  `0x40`), and then the writer emits **exactly `len` characters** -- one byte each while every character
+  is under `0x100` (`call 0x37040` in the loop at `0x00058940`), two when one is not (`call 0x37080` at
+  `0x0005896e`), with the length negated in the Unicode case (`neg edx`, `0x00058897`) and never a NUL
+  the declared size has no room for. An **empty** string is therefore `0x00` and one byte wide -- the
+  `Size` 2,492 shipped `Str` tags report in `inventory/tag_encodings.csv`, a string of no characters and
+  not a one-character string.
+- **An `Array` is a compact count and then its `Inner`'s own rule** (`0x00078ea0`). The count goes
+  through `0x000637e0`; the loading branch sizes the buffer from `count * [Inner+0x38]` (`0x00055ed0`
+  frees, `0x0002c800` grows), and the loop calls `[Inner+0xa0]` per element, advancing by that same
+  `ElementSize`. `FixedArrayProperty` runs the same loop with **no count at all** -- `[property+0x70]`
+  is the dimension, and it is not on disk.
+
+`StructProperty` is the one class that decides a format rather than a width. `0x000795f0` compares
+`[Inner+0x20]` with the name indices `0x57`, `0x58` and `0x5a` and only reaches the struct's own tagged
+walk (`[Inner+0x98]`, `0x0003bdc0`) when the name is none of them; the seed table
+(`inventory/gname_seed.csv`) spells those three `Vector`, `Rotator` and `Color`. The corpus splits the
+same way and nowhere else: those three hold one width and never walk as a tag list, while every other
+struct -- `PointRegion`, `Scale`, `RangeVector`, `Range`, `Matrix` -- is a tag stream of its own, zero
+index included.
+
+That makes the value a **second opinion on the parse**, and a stricter one than the header: a header is
+only self-consistent with itself, so a parse that began inside a value reproduces its own tags, while the
+value's declared `Size` is a number the reader has to consume exactly.
+
+<!-- generated:value-layouts -->
+**Every value is decoded by its class's own rule, and the decode has to consume exactly the `Size` its header declares.** Of the 1,211,640 tag(s) in 82 file(s), 1,136,029 are exact, 9,001 are not, 27,196 carry a type no property class in this build reports (`Invalid`, the legacy `String`, and `Vector`/`Rotator`, whose properties are `Struct`s of those names), and 39,414 carry a type whose value is not self-describing (`Map`, and an `Array`'s elements, whose `Inner` the tag does not name).
+
+| class | tags | the rule its body spells | exact | inexact | open | impossible |
+|---|---:|---|---:|---:|---:|---:|
+| Object | 344,528 | one compact object index | 343,905 | 623 | 0 | 0 |
+| Struct | 317,720 | the struct's own tagged walk, unless it is Vector, Rotator or Color | 317,467 | 253 | 0 | 0 |
+| Int | 138,538 | 4 bytes (`0x00037110`) | 137,526 | 1,012 | 0 | 0 |
+| Name | 124,761 | one compact name index | 124,243 | 518 | 0 | 0 |
+| Float | 82,569 | 4 bytes (`0x00037170`) | 81,787 | 782 | 0 | 0 |
+| Bool | 80,313 | no byte in a tag (the value rides in bit 7), one byte when nested | 78,644 | 1,669 | 0 | 0 |
+| Byte | 47,289 | one byte (`0x00037040`) | 46,862 | 427 | 0 | 0 |
+| Array | 38,226 | a compact count, then the Inner's rule count times | 0 | 0 | 38,226 | 0 |
+| Invalid | 25,203 | no property class in this build | 0 | 0 | 0 | 25,203 |
+| Str | 8,366 | a compact length (counting the NUL), then that many characters | 5,252 | 3,114 | 0 | 0 |
+| Class | 946 | one compact object index | 343 | 603 | 0 | 0 |
+| String | 833 | no property class in this build | 0 | 0 | 0 | 833 |
+| Rotator | 815 | no property class in this build | 0 | 0 | 0 | 815 |
+| FixedArray | 641 | the Inner's rule ArrayDim times, and no count | 0 | 0 | 641 | 0 |
+| Map | 547 | nothing: no archive traffic at all | 0 | 0 | 547 | 0 |
+| Vector | 345 | no property class in this build | 0 | 0 | 0 | 345 |
+
+**A struct value is a tagged block, unless the struct is one of the three the serialiser skips.** `0x000795f0` compares `[Inner+0x20]` with name indices `0x57`, `0x58` and `0x5a`, which the seed table (`inventory/gname_seed.csv`) spells `Color`, `Rotator`, `Vector` -- and the corpus splits the same way: 3 struct name(s) hold a fixed width (`Color` native 4, `Rotator` native 12, `Vector` native 12) and never walk as a tag list, 76 walk as tag lists (`PointRegion`, `Scale`, `RangeVector`, `Range`, `Orientation`, `AnimRep`, `?`, `Plane`), and no name does both.
+
+**The failures cluster, which is what says the rules are not simply wrong.** Only 1,014 of the 9,001 inexact value(s) sit in a block where every other value decodes (Str 370, Bool 209, Int 106, Float 86, Name 61, Object 54, Struct 52, Class 46, Byte 30) -- a rule that missed one type would fail on lone values too, so these are parses that began inside a value and not a class whose layout is still unread.
+
+**The value is a second opinion on the block start, and it is the stricter one.** Of the 137,444 block(s) that walk, the header test refuses 1,534 outright (a tag the writer's rules cannot produce, `tag-encode`'s refusal); of the rest, 2,487 hold at least one value their class cannot produce although every header re-encodes, and 2,480 of those payloads carry a later start whose whole block decodes and still ends where the export ends -- so a header is only self-consistent with itself, and a value is what says a parse started inside one.
+
+What stays open is what the rule cannot reach, and it is counted above rather than guessed at: an `Array`'s count decodes but its elements are the `Inner`'s rule, a `FixedArray`'s dimension is the property's own field and not on disk at all, a `Map` value is the stub at `0x000794a0` that writes three bytes and no field, and the legacy `String` has no class to read.
+<!-- /generated:value-layouts -->
+
 ## 7. Not established
 
-- **The value's internal layout.** The tag is settled in both directions and the value's *width* per type
-  is measured, but not the bytes inside it: a `Str`'s length prefix, an `Array`'s count and element stride, a
-  `Struct`'s member order and a bulk-data tag's chunk list are all "`Size` bytes, the class's own serializer"
-  here. A rebuilt value needs them, and `0x00038c30`'s dispatch through `[property+0xa0]` is the body that
-  writes them.
+- **What a value's rule cannot reach.** An `Array`'s count decodes but its elements are its `Inner`
+  property's rule, and the tag names no `Inner`; a `FixedArray`'s dimension is `[property+0x70]` and is
+  not on disk at all; `MapProperty`'s serialiser is the three-byte stub at `0x000794a0`. A rebuild can
+  write those only with the class's own property table in hand, not from the tag alone.
 - **Which class owns `0x00078c20`.** Three classes are 0x74 bytes and two of them are accounted
   for; the constructors of `FixedArrayProperty` and `MapProperty` were not exported.
 - **The rest of `UObject`/`UStruct`.** Only the fields a consumer was seen reading are listed;

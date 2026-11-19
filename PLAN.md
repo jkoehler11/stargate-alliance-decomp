@@ -14377,3 +14377,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement.** The array's element type — the class's `ArrayProperty` declaration, which is where the
   4,510 struct arrays and the 793 unshaped payloads stop — and after that the per-instance struct layout the
   census says a name cannot give.
+
+### Execution notes (2026-11-19, the tag's value is each class's own serialiser, and the corpus can decode 94% of it)
+
+**The value's internal layout is the `[property+0xa0]` dispatch, and it is fourteen rules rather than one.**
+The previous run left the tag settled in both directions and the value's *width* per type measured, with the
+bytes inside it open. `0x00038c30` folds a bool's value into the tag's type byte and otherwise calls
+`[property+0xa0]`, which `inventory/property_serialisers.csv` already names per class, so reading those
+fourteen bodies settles it: the archive operators carry the widths and **push their own length at `Serialize`**
+(`0x00037040` one byte, `0x00037080` two, `0x00037110`/`0x00037170` four), a name or object reference is the
+compact index the header already uses, a `Str` is an `FString` whose prefix **counts the terminating NUL**
+(`0x00058850` writes exactly `len` characters, one byte each while every character is under `0x100` and two
+when one is not, so an empty string is one `0x00` byte -- the `Size` of 2,492 shipped `Str` tags), an `Array`
+is a compact count (`0x000637e0`) then the `Inner`'s own rule (the loop at `0x00078f00`, stride
+`[Inner+0x38]`), a `FixedArray` is that loop with **no count** (`[property+0x70]` is the dimension and is not
+on disk), and a `Deleg`ate is an object index then a name index. `StructProperty` is the one class that picks a
+format: `0x000795f0` compares `[Inner+0x20]` with name indices `0x57`/`0x58`/`0x5a` and only those three skip
+the struct's tagged walk -- and `inventory/gname_seed.csv` spells them `Vector`, `Rotator` and `Color`, the
+three struct names the corpus finds at one fixed width and never walking as a tag list (76 other names do
+walk, `PointRegion`/`Scale`/`RangeVector`/`Range`/`Matrix` among them).
+
+**The corpus test is the deliverable, because the value is the header's second opinion.** `tools/value-layouts.py`
+decodes every shipped value by its class's rule and requires it to consume exactly the tag's `Size`: over 82
+files (73 maps and the 9 checkpoints) **1,211,640 values, 1,136,029 exact (93.8%), 9,001 inexact, 39,414 open
+and 27,196 impossible** -- the last being types no property class in this build reports (`Invalid`, the legacy
+`String`, `Vector`/`Rotator` as tag types), which is a fact about the parse, not about a value. The value test
+is the **stricter** block locator: of 137,444 blocks that walk, the header test refuses 1,534, and **2,487 more
+hold a value their class cannot produce although every header re-encodes**, with 2,480 of those carrying a
+later start whose whole block decodes and still ends where the export ends. So a header is only
+self-consistent with itself, and the value is what says a parse started inside one. Only 1,014 of the 9,001
+failures sit in a block where every other value decodes, and they are spread across every class rather than
+concentrated in one -- a rule that had one class wrong would fail on that class alone.
+
+Tool (`tools/value-layouts.py`: the class-rule table read off the bodies with the widths measured from their
+own `push`, the two-pass struct-width census, the value rules, the value-only relocation, `--sweep`/`--report`/
+`--write-doc`/`--check-doc`/`--check` with twelve synthetic cases) + `inventory/value_layouts.csv` (new, 274
+rows) + `docs/NATIVE_PROPERTIES.md` §6 (the new subsection, the generated block, §7's value bullet retired for
+what the rule cannot reach) + `docs/UNKNOWNS.md` U10 + `make value-layouts` + the `value-layouts-doc` gate,
+and the `tag-encodings-doc` gate the previous bundle shipped as a target but never added to `make ci` + this
+note. 82 files in 112 s; no boot.
+
+**Not measured here:** an `Array`'s element stride per `Inner` (the tag names no `Inner`, so the count decodes
+and the elements do not), `MapProperty`'s three-byte stub, and the legacy `String` type, which has no class in
+this build.
+
