@@ -317,7 +317,6 @@ residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=6;first=
 residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=6;first=default (false);outcome=blocks
 residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=6;first=default (false);outcome=blocks
 residue,M02A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
-residue,M07B,block_moved,ACTION_Talk,,,,,,,,,"slot=9;from=3;to=0;recovered=Oneill,m07_12_g_oneill,SheerRate,StaticMeshActor832,Brush98;still=-"
 residue,M07C,timer_unstated,ACTION_WaitForTimer,,,,,,,,,slot 16
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 3
 residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
@@ -329,9 +328,6 @@ residue,M14A,block_moved,ACTION_SetIMusic,,,,,,,,,slot=0;from=0;to=4;recovered=U
 residue,M14A,block_moved,ACTION_SetIMusic,,,,,,,,,slot=1;from=0;to=4;recovered=UseStateCheck;still=EndType
 residue,M14B,timer_unstated,ACTION_WaitForTimer,,,,,,,,,slot 2
 residue,M15A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=9;conditions=5;first=stated true;outcome=completes
-residue,M15A,block_moved,ACTION_DisplayMessage,,,,,,,,,"slot=0;from=4;to=0;recovered=Max,Roster_JaffaHorusM8,Location;still=-"
-residue,M15D,block_moved,ACTION_DisplayMessage,,,,,,,,,"slot=0;from=4;to=0;recovered=Distance,StaticMeshInstance5933,Region;still=-"
-residue,M15F,block_moved,ACTION_SaveGame,,,,,,,,,"slot=0;from=9;to=0;recovered=Group,SubActionFade0;still=-"
 residue,M16A,trigger_unstated,ACTION_TriggerEvent,,,,,,,,,slot 8
 residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=9;conditions=0;first=none;outcome=no_condition
 residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=9;conditions=0;first=none;outcome=no_condition
@@ -343,29 +339,26 @@ residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=5;conditions=1;first
 residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=11;conditions=1;first=stated true;outcome=completes
 residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=1;conditions=4;first=default (false);outcome=blocks
 residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot=2;conditions=4;first=default (false);outcome=blocks
-residue,M20A,block_moved,ACTION_DisplayMessage,,,,,,,,,"slot=0;from=4;to=0;recovered=StaticMeshActor,StaticMeshInstance584,Region;still=-"
-residue,M20C,block_moved,ACTION_DisplayMessage,,,,,,,,,"slot=0;from=4;to=0;recovered=Group,SpriteEmitter198,Level;still=-"
 census,corpus,anim_placements,,,,227,,,,,,
 census,corpus,anim_stated,,,,227,,,,,,
 census,corpus,blocked,,,,15441,,,,,,
 census,corpus,conditions,,,,212,,,,,,
 census,corpus,empty_block,,,,3069,,,,,,
-census,corpus,goto_back,,,,111,,,,,,
-census,corpus,goto_forward,,,,40,,,,,,
+census,corpus,goto_back,,,,122,,,,,,
+census,corpus,goto_forward,,,,43,,,,,,
 census,corpus,goto_placements,,,,580,,,,,,
 census,corpus,goto_stated,,,,165,,,,,,
 census,corpus,goto_unset,,,,415,,,,,,
-census,corpus,goto_unset_unwired,,,,30,,,,,,
-census,corpus,goto_unset_wired,,,,385,,,,,,
-census,corpus,goto_unwired,,,,14,,,,,,
+census,corpus,goto_unset_unwired,,,,1,,,,,,
+census,corpus,goto_unset_wired,,,,414,,,,,,
 census,corpus,placements,,,,18510,,,,,,
 census,corpus,placements_refused,,,,5,,,,,,
 census,corpus,props_refused,,,,5,,,,,,
 census,corpus,props_stated,,,,21596,,,,,,
-census,corpus,refused_before,,,,26,,,,,,
-census,corpus,refused_placements_before,,,,12,,,,,,
-census,corpus,relocated,,,,8,,,,,,
-census,corpus,relocated_props,,,,21,,,,,,
+census,corpus,refused_before,,,,7,,,,,,
+census,corpus,refused_placements_before,,,,6,,,,,,
+census,corpus,relocated,,,,2,,,,,,
+census,corpus,relocated_props,,,,2,,,,,,
 census,corpus,talk_finished,,,,256,,,,,,
 census,corpus,talk_placements,,,,719,,,,,,
 census,corpus,talk_subtitle,,,,718,,,,,,

@@ -106,11 +106,26 @@ defect,M17D,ACTION_WaitForTimer,ScriptedTrigger,14,slot_unreached,,"wired, on no
 defect,M17D,ACTION_Talk,ScriptedTrigger,15,slot_unreached,,"wired, on no path"
 defect,M17D,ACTION_Talk,ScriptedTrigger,16,slot_unreached,,"wired, on no path"
 defect,M17D,ACTION_TriggerEvent,ScriptedTrigger,17,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_IfCondition,ScriptedTrigger,5,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_EndSection,ScriptedTrigger,6,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_WaitForTimer,ScriptedTrigger,7,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_GotoAction,ScriptedTrigger,8,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_SetBotScript,ScriptedTrigger,9,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_SetBotScript,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_SetBotScript,ScriptedTrigger,11,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_TriggerEvent,ScriptedTrigger,6,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_TriggerEvent,ScriptedTrigger,7,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_TriggerEvent,ScriptedTrigger,8,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_WaitForEvent,ScriptedTrigger,9,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_TriggerEvent,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_WaitForEvent,ScriptedTrigger,11,slot_unreached,,"wired, on no path"
+defect,M18A,ACTION_TriggerEvent,ScriptedTrigger,12,slot_unreached,,"wired, on no path"
 defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,10,slot_unreached,,"wired, on no path"
 defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,11,slot_unreached,,"wired, on no path"
 defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,12,slot_unreached,,"wired, on no path"
 defect,M18B,ACTION_TriggerEvent,ScriptedTrigger,13,slot_unreached,,"wired, on no path"
 defect,M18B,ACTION_SaveGame,ScriptedTrigger,14,slot_unreached,,"wired, on no path"
+defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
 defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
 defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
 defect,M21B,ACTION_IfCondition,ScriptedTrigger,6,unfired_condition,,placed bEnabled=True
@@ -144,14 +159,14 @@ map,M07B,,,,,,branches=16;random_drawn=5;skip_off_array=3;slot_unreached=6
 map,M07C,,,,,,branches=2
 map,M07D,,,,,,branches=26;operand_unset=3
 map,M07E,,,,,,branches=4
-map,M10A,,,,,,branches=14;slot_unreached=20;unfired_condition=2
+map,M10A,,,,,,branches=16;slot_unreached=20;unfired_condition=2
 map,M10B,,,,,,branches=2
 map,M10C,,,,,,
 map,M10D,,,,,,
 map,M12A,,,,,,
-map,M12B,,,,,,branches=5
+map,M12B,,,,,,branches=9
 map,M12C,,,,,,branches=9;slot_unreached=3
-map,M12D,,,,,,branches=4
+map,M12D,,,,,,branches=5
 map,M12E,,,,,,branches=3
 map,M12F,,,,,,branches=1;unfired_condition=1
 map,M13A,,,,,,branches=3;random_drawn=3;slot_unreached=1
@@ -161,11 +176,11 @@ map,M13D,,,,,,branches=1;slot_unreached=1
 map,M14A,,,,,,branches=5;slot_unreached=16
 map,M14B,,,,,,
 map,M14C,,,,,,
-map,M15A,,,,,,branches=8;random_drawn=7;slot_unreached=3
+map,M15A,,,,,,branches=9;random_drawn=8;slot_unreached=3
 map,M15B,,,,,,branches=4;random_drawn=3
 map,M15C,,,,,,branches=1;random_drawn=1
 map,M15D,,,,,,branches=3;random_drawn=1
-map,M15E,,,,,,branches=3;random_drawn=3
+map,M15E,,,,,,branches=6;random_drawn=5
 map,M15F,,,,,,branches=1;random_drawn=1
 map,M16A,,,,,,branches=1;slot_unreached=11
 map,M16B,,,,,,
@@ -175,14 +190,14 @@ map,M16E,,,,,,
 map,M16F,,,,,,branches=2
 map,M16G,,,,,,
 map,M17A,,,,,,branches=4;slot_unreached=11
-map,M17B,,,,,,branches=5;slot_unreached=1
+map,M17B,,,,,,branches=6;slot_unreached=1
 map,M17D,,,,,,branches=1;slot_unreached=4
-map,M18A,,,,,,
+map,M18A,,,,,,branches=1;slot_unreached=14
 map,M18B,,,,,,branches=1;slot_unreached=5
 map,M18D,,,,,,
 map,M19A,,,,,,branches=2
 map,M19B,,,,,,branches=20
-map,M19C,,,,,,branches=3
+map,M19C,,,,,,branches=7
 map,M19D,,,,,,branches=3
 map,M19E,,,,,,
 map,M20A,,,,,,branches=1
@@ -190,16 +205,16 @@ map,M20B,,,,,,branches=7;random_drawn=7
 map,M20C,,,,,,branches=1
 map,M20D,,,,,,
 map,M21A,,,,,,branches=12
-map,M21B,,,,,,branches=29;unfired_condition=4
+map,M21B,,,,,,branches=34;unfired_condition=5
 map,M21C,,,,,,branches=1
 map,M21D,,,,,,branches=25;unfired_condition=4
 map,MainMenu,,,,,,
 map,SGCTF-AbydosVsSGC,,,,,,
 census,corpus,skip_off_array,,,,5,
 census,corpus,operand_unset,,,,3,
-census,corpus,unfired_condition,,,,11,
+census,corpus,unfired_condition,,,,12,
 census,corpus,random_decided,,,,0,
-census,corpus,slot_unreached,,,,101,
-census,corpus,random_drawn,,,,36,
-census,corpus,branches,,,,257,
+census,corpus,slot_unreached,,,,115,
+census,corpus,random_drawn,,,,39,
+census,corpus,branches,,,,279,
 census,corpus,maps,,,,73,

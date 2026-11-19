@@ -29,31 +29,31 @@ reporting a percentage as a verdict.
 Nothing game-derived is written: the CSV carries class names and counts, and this page quotes no event name.
 
 <!-- generated:event-targets -->
-**1374 of the 16886 actions a sequence's `Actions` array wires (8.1%) sit in a sequence whose own `Tag` some placed actor fires; 15481 sit in a sequence with a tag nothing fires, and 31 in a sequence with no tag at all.**
+**1506 of the 18498 actions a sequence's `Actions` array wires (8.1%) sit in a sequence whose own `Tag` some placed actor fires; 16961 sit in a sequence with a tag nothing fires, and 31 in a sequence with no tag at all.**
 
 | measure | answer |
 |---|---|
 | maps read | **73** |
 | exports over those maps | **194190** |
-| exports carrying a tag, a fire or an `Actions` array | **83840** |
-| fire sites | **5953** |
-| distinct tags in those maps | **10781** |
-| tags carried by more than one actor | **2205** |
-| fire-to-actor landings | **7047** over 66 classes |
-| sequences carrying an `Actions` array | **2694** over 8 classes |
-| sequences carrying a tag at all | **2692 of 2694** |
-| sequences whose own `Tag` is a name something fires | **497** in 67 maps |
-| actions wired by an array | **16886** |
-| -- in a sequence whose tag is fired | **1374** |
-| -- in a sequence with a tag nothing fires | **15481** |
+| exports carrying a tag, a fire or an `Actions` array | **83924** |
+| fire sites | **5973** |
+| distinct tags in those maps | **10801** |
+| tags carried by more than one actor | **2206** |
+| fire-to-actor landings | **7099** over 66 classes |
+| sequences carrying an `Actions` array | **2939** over 8 classes |
+| sequences carrying a tag at all | **2937 of 2939** |
+| sequences whose own `Tag` is a name something fires | **541** in 68 maps |
+| actions wired by an array | **18498** |
+| -- in a sequence whose tag is fired | **1506** |
+| -- in a sequence with a tag nothing fires | **16961** |
 | -- in a sequence that carries no tag at all | **31** |
 | sequences whose array is empty | **0** |
 
-A fired name resolves through `Tag`, not through a pointer: `TriggerEvent('X')` walks every actor tagged `X`, so the landing count is a count of pairs and 2205 tags address more than one actor. That is why the second column of this page is a **class** histogram -- what receives an event is the class of the actor that carries the tag.
+A fired name resolves through `Tag`, not through a pointer: `TriggerEvent('X')` walks every actor tagged `X`, so the landing count is a count of pairs and 2206 tags address more than one actor. That is why the second column of this page is a **class** histogram -- what receives an event is the class of the actor that carries the tag.
 
-**This is the chain 5.2 has been asking about, in one number.** `docs/MAP_ACTION_WIRING.md` says which sequence names which action; `docs/MAP_EVENT_WIRING.md` says which name a placed actor fires and which name a sequence waits on. Neither answers *does it run*: an action in a sequence that nothing starts is wired and still dead. Joining the sequence's own `Tag` to the fire population does, and 1374 of 16886 wired actions survive that join -- a placement is not a run, and being named by an array is not one either.
+**This is the chain 5.2 has been asking about, in one number.** `docs/MAP_ACTION_WIRING.md` says which sequence names which action; `docs/MAP_EVENT_WIRING.md` says which name a placed actor fires and which name a sequence waits on. Neither answers *does it run*: an action in a sequence that nothing starts is wired and still dead. Joining the sequence's own `Tag` to the fire population does, and 1506 of 18498 wired actions survive that join -- a placement is not a run, and being named by an array is not one either.
 
-**The population is the classes', not one number's.** TeamScriptedSequence carries 1141 of the 2694 arrays and 8716 of the 16886 wired actions with 0 of them in a sequence a fire arms; ScriptedTrigger carries 1073 and 7065 with 1330 armed. The rest of the split is the finding: 15481 wired actions sit in a sequence whose tag nothing fires and 31 in one that carries no tag, so a name-based read decides the 1374 that are armed and sizes -- but does not settle -- the rest.
+**The population is the classes', not one number's.** TeamScriptedSequence carries 1246 of the 2939 arrays and 9468 of the 18498 wired actions with 0 of them in a sequence a fire arms; ScriptedTrigger carries 1171 and 7851 with 1462 armed. The rest of the split is the finding: 16961 wired actions sit in a sequence whose tag nothing fires and 31 in one that carries no tag, so a name-based read decides the 1506 that are armed and sizes -- but does not settle -- the rest.
 
 A `ScriptedTrigger` is a touch volume as well as a sequence -- a pawn walking into it starts the array with no name involved -- which is why the armed column is not a verdict on the classes that carry a volume. For the classes that are pure sequences the tag is the only handle a package gives, and there the fired-name count is the one that says whether anything in the level starts them.
 
@@ -61,16 +61,16 @@ A `ScriptedTrigger` is a touch volume as well as a sequence -- a pawn walking in
 
 | class of the actor carrying the tag | landings |
 |---|---:|
-| `Mover` | 1603 |
+| `Mover` | 1629 |
 | `IntelligentSpawner` | 903 |
-| `Emitter` | 815 |
-| `MovementMarker` | 722 |
-| `ScriptedTrigger` | 646 |
-| `counter` | 468 |
-| `MissionObjective` | 415 |
+| `Emitter` | 817 |
+| `MovementMarker` | 723 |
+| `ScriptedTrigger` | 648 |
+| `counter` | 483 |
+| `MissionObjective` | 417 |
 | `SceneManager` | 291 |
-| `TriggeredCondition` | 282 |
-| `Trigger` | 134 |
+| `TriggeredCondition` | 284 |
+| `Trigger` | 136 |
 | `TransportRings` | 116 |
 | `SGUseTrigger` | 96 |
 | `CoverInfo` | 68 |
@@ -81,31 +81,31 @@ A `ScriptedTrigger` is a touch volume as well as a sequence -- a pawn walking in
 
 | class | sequences with an `Actions` array | actions wired | in a fired-tag sequence |
 |---|---:|---:|---:|
-| `TeamScriptedSequence` | 1141 | 8716 | 0 |
-| `ScriptedTrigger` | 1073 | 7065 | 1330 |
-| `TriggeredScript` | 193 | 738 | 26 |
-| `UnrealScriptedSequence` | 25 | 349 | 0 |
+| `TeamScriptedSequence` | 1246 | 9468 | 0 |
+| `ScriptedTrigger` | 1171 | 7851 | 1462 |
+| `TriggeredScript` | 203 | 780 | 26 |
+| `UnrealScriptedSequence` | 26 | 381 | 0 |
 | `ScriptedSpawner` | 4 | 15 | 15 |
 | `ScriptedSequence` | 1 | 3 | 3 |
 | `SGSceneManager` | 5 | 0 | 0 |
-| `SceneManager` | 252 | 0 | 0 |
+| `SceneManager` | 283 | 0 | 0 |
 
 ### The maps with the most wired actions nothing arms
 
 | map | wired | in a fired-tag sequence | tagged, tag never fired | no tag |
 |---|---:|---:|---:|---:|
-| `M00` | 697 | 0 | 697 | 0 |
-| `M13A` | 613 | 0 | 596 | 17 |
-| `M10D` | 565 | 10 | 555 | 0 |
+| `M00` | 704 | 0 | 704 | 0 |
+| `M13A` | 662 | 0 | 645 | 17 |
+| `M10D` | 614 | 10 | 604 | 0 |
 | `M02A` | 551 | 6 | 545 | 0 |
-| `M07B` | 550 | 15 | 535 | 0 |
-| `M15A` | 512 | 10 | 502 | 0 |
-| `M10A` | 499 | 10 | 489 | 0 |
-| `M07D` | 452 | 6 | 446 | 0 |
-| `M07E` | 412 | 6 | 406 | 0 |
-| `M07C` | 415 | 10 | 405 | 0 |
+| `M10A` | 551 | 10 | 541 | 0 |
+| `M07B` | 555 | 15 | 540 | 0 |
+| `M15A` | 530 | 10 | 520 | 0 |
+| `M07D` | 502 | 10 | 492 | 0 |
+| `M07E` | 462 | 6 | 456 | 0 |
+| `M13C` | 457 | 3 | 454 | 0 |
 
-Census: maps=73;sequences=2694;sequences_tagged=2692;armed=497;wired=16886;wired_armed=1374;wired_tag_unfired=15481;wired_untagged=31;landings=7047.
+Census: maps=73;sequences=2939;sequences_tagged=2937;armed=541;wired=18498;wired_armed=1506;wired_tag_unfired=16961;wired_untagged=31;landings=7099.
 <!-- /generated:event-targets -->
 
 ## Reading a row

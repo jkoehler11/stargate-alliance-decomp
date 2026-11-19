@@ -182,7 +182,7 @@ def read_block(buf, pkg, want_values=False, limit=2000):
     return props, off, "limit"
 
 
-def find_block(data, pkg, min_props=2, values=True, native_width=None):
+def find_block(data, pkg, min_props=2, values=True, native_width=None, window=None):
     """Locate the property block: the start whose block terminates exactly at the export's end.
 
     UE2 objects do not all begin with their property block -- a class can serialise native data first (a
@@ -198,8 +198,14 @@ def find_block(data, pkg, min_props=2, values=True, native_width=None):
     the same order and the first whose every checkable value consumes exactly its declared `Size` wins;
     a block nothing can check (`seen == 0`) is not evidence and falls through to the property count.  When
     no candidate passes, the header's choice stands -- that residue is counted, not guessed away.
+
+    `window` pins the prefix the search may read.  Unset is the reader's rule: the first 64 bytes, then one
+    window further when nothing inside decodes (a `Brush` starts at 74).  A caller that knows its objects
+    cannot carry a longer native prefix passes it -- `tools/map-to-t3d.py` does, because a map's actor prefix
+    is at most 17 bytes and a `StaticMeshInstance`'s payload is a native record whose only "block" is a
+    parse of two tag-shaped bytes inside it.
     """
-    found = candidates(data, pkg, min_props)
+    found = candidates(data, pkg, min_props, window or WINDOW)
     best = max(found, key=lambda c: c[0]) if found else None
     if not values:
         return best
@@ -207,6 +213,8 @@ def find_block(data, pkg, min_props=2, values=True, native_width=None):
         bad, seen = block_bad(props, data, start, native_width)
         if bad == 0 and seen:
             return count, start, props
+    if window is not None:
+        return best
     # Nothing inside the header's window decodes: look one window further before accepting a block the
     # value test knows is wrong, and fall back to the header's choice only when nothing there does either.
     wider = candidates(data, pkg, min_props, PREFIX_WINDOW, WINDOW)

@@ -68,7 +68,7 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 | control | this walk | committed artifact |
 |---|---:|---:|
 | placed actions | 18,510 | `action_wiring.csv` totals 18,510 |
-| property statements refused because the class chain does not declare them | 5 (was 26 before the re-location) | `class_properties.csv` |
+| property statements refused because the class chain does not declare them | 5 (was 7 before the re-location) | `class_properties.csv` |
 
 ### The three defaults that decide a run
 
@@ -78,7 +78,7 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 | `ACTION_WaitForEvent.ExternalEvent` | 2722 | 2703 | **19** | the tag is looked up under `None`, which the engine treats as no filter, so the level's first `TriggeredCondition` decides whether the wait completes at once |
 | `ACTION_WaitForTimer.PauseTime` | 2216 | 2214 | 2 | handed straight to `SetTimer(PauseTime, false)`, so the largest placed value is how long a sequence can sit still |
 
-**A goto with no `ActionNumber` is a jump to the first element, and none of the 415 sits at the first element already -- each one re-runs its own sequence from the top. `ProceedToNextAction` clamps the value (`Max(0, ActionNumber)`), so the default is slot 0 rather than a no-op. 385 of them sit on a slot of some sequence's array -- the population `MAP_ACTION_ORDER` counts as gotos with no target (its 377 is by slot on its own walk) -- and 30 in none. Of the 165 that state one, 111 target a slot behind themselves, 40 a slot ahead, 0 their own slot, and 14 sit in no sequence's array at all.
+**A goto with no `ActionNumber` is a jump to the first element, and none of the 415 sits at the first element already -- each one re-runs its own sequence from the top. `ProceedToNextAction` clamps the value (`Max(0, ActionNumber)`), so the default is slot 0 rather than a no-op. 414 of them sit on a slot of some sequence's array -- the population `MAP_ACTION_ORDER` counts as gotos with no target (its 377 is by slot on its own walk) -- and 1 in none. Of the 165 that state one, 122 target a slot behind themselves, 43 a slot ahead, 0 their own slot, and 0 sit in no sequence's array at all.
 
 **`PauseTime` is the sequence's clock, and the top of its range is a park.** The class hands the value straight to `SetTimer(..., false)`, so 2214 placements state a pause and 2 state none at all -- a zero-second timer that fires as soon as the action starts, and both are named in the residue rows. The stated values run from 0.001 to 1e+05 seconds (median 2); the top is 27.8 hours, the corpus's way of holding a sequence where it is for a whole play, and 0 placements sit at or below zero.
 
@@ -112,18 +112,12 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 
 ### The re-located blocks, and the five tags the class does not declare
 
-A block is located by where it *ends*: every property boundary in the export's first 64 bytes is a valid start, so "earliest start with the most properties" is a tie-break rather than a reading, and on a minority of placements it lands inside the block. The control that catches that is the class declaration (`class_properties.csv`), which refuses a block naming a property its chain does not declare. **12 placements carried 26 refused statements, and 8 of the 12 are a start the locator picked too early.** Re-scoring every candidate start by the *fraction* of declared names -- `tools/class-defaults.py`'s chooser, the rule the class-defaults work already ships -- moves 8 placements and recovers **21 statements**; the five that remain are not a locator defect at all.
+A block is located by where it *ends*: every property boundary in the export's first 64 bytes is a valid start, so "earliest start with the most properties" is a tie-break rather than a reading, and on a minority of placements it lands inside the block. The control that catches that is the class declaration (`class_properties.csv`), which refuses a block naming a property its chain does not declare. **6 placements carried 7 refused statements, and 2 of the 6 are a start the locator picked too early.** Re-scoring every candidate start by the *fraction* of declared names -- `tools/class-defaults.py`'s chooser, the rule the class-defaults work already ships -- moves 2 placements and recovers **2 statements**; the five that remain are not a locator defect at all.
 
 | map | class | sequence slot | start | refused names it recovered | still refused |
 |---|---|---:|---:|---|---|
-| `M07B` | `ACTION_Talk` | 9 | 3 -> 0 | `Oneill`, `m07_12_g_oneill`, `SheerRate`, `StaticMeshActor832`, `Brush98` | none |
 | `M14A` | `ACTION_SetIMusic` | 0 | 0 -> 4 | `UseStateCheck` | none |
 | `M14A` | `ACTION_SetIMusic` | 1 | 0 -> 4 | `UseStateCheck` | `EndType` |
-| `M15A` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `Max`, `Roster_JaffaHorusM8`, `Location` | none |
-| `M15D` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `Distance`, `StaticMeshInstance5933`, `Region` | none |
-| `M15F` | `ACTION_SaveGame` | 0 | 9 -> 0 | `Group`, `SubActionFade0` | none |
-| `M20A` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `StaticMeshActor`, `StaticMeshInstance584`, `Region` | none |
-| `M20C` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `Group`, `SpriteEmitter198`, `Level` | none |
 
 **The five left are one name on one class.** Every remaining refusal is `EndType` on `ACTION_SetIMusic`, in two maps; the name is a declared property of `Engine.IMusicActor` (`UByteProperty`, enum `LevelInfo.EIMusicEndType`), and `ACTION_SetIMusic`'s own chain declares four names, none of them `EndType`. The tag sits *last* in a block whose other names are all declared, its value is a one-byte enum index, and the same class's other placements in the same maps read back as exactly its four names -- so the block is where it belongs and the tag is the residue: a placement authored against a class revision that declared one more property than the shipped `GamePlay.u` does. The engine's property reader skips a tag it cannot resolve by the size in its info byte, which is what makes the leftover harmless at run time -- `inventory/tag_origin.csv` measures the name's origin and `docs/NATIVE_PROPERTIES.md` §4 the walk that skips it.
 
@@ -135,7 +129,7 @@ A block is located by where it *ends*: every property boundary in the export's f
 | `M14A` | `ACTION_SetIMusic` | 3 | `EndType` |
 | `M14A` | `ACTION_SetIMusic` | 4 | `EndType` |
 
-**The chooser is a repair, not a rewrite.** Run over every placement in all 73 maps (`--relocate`, `inventory/action_block_relocation.csv`), the declared-name chooser picks exactly the start `find_block` does on **all 15,429 placements the refusal never fired on** (0 moved) -- so the rule changes no published block, and the 8 it does change are precisely the rows that were refused.
+**The chooser is a repair, not a rewrite.** Run over every placement in all 73 maps (`--relocate`, `inventory/action_block_relocation.csv`), the declared-name chooser picks exactly the start `find_block` does on **all 15,435 placements the refusal never fired on** (0 moved) -- so the rule changes no published block, and the 2 it does change are precisely the rows that were refused.
 
 ### Each class's parameter surface
 
@@ -189,7 +183,7 @@ A block is located by where it *ends*: every property boundary in the export's f
 
 Only counts and ranges are written: a name-typed parameter contributes its distinct count and how often it is `None`, never the names themselves, and a string parameter only its presence. The residue rows name a map, a class and a slot -- enough to find the placement in the dump, and no content. A statement the class chain does not declare (`class_properties.csv`) is refused and counted as a residue rather than published as a parameter: the property reader locates a block by where it ends, so a mis-parsed start can invent a name, and that control is what keeps it out of the class table.
 
-Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21596;classes=83;maps=73;goto_stated=165;goto_unset=415;props_refused=5;wait_stated=2703;wait_unstated=19;timer_stated=2214;timer_sentinel=1;trigger_stated=2657;trigger_unstated=1;conditions=212;wait_completes=4;wait_blocks=10;wait_no_condition=5;wait_order_free=18;refused_before=26;relocated=8;relocated_props=21.
+Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21596;classes=83;maps=73;goto_stated=165;goto_unset=415;props_refused=5;wait_stated=2703;wait_unstated=19;timer_stated=2214;timer_sentinel=1;trigger_stated=2657;trigger_unstated=1;conditions=212;wait_completes=4;wait_blocks=10;wait_no_condition=5;wait_order_free=18;refused_before=7;relocated=2;relocated_props=2.
 <!-- /generated:action-parameters -->
 
 ## What the parameters say that the graph did not

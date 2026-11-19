@@ -27,37 +27,37 @@ Every statement on this page is a count of classes or sites. The event names the
 of them is written to the artifact or quoted here.
 
 <!-- generated:event-wiring -->
-**2495 of the 2838 events a map's sequences wait on (87.9%) are fired by a placed actor in the same map; 343 are not.** The map's event space is a name space with two ends: 2838 wait sites and 5898 fire sites over 74 classes, and the join between them needs no index, no name table lookup and no other package.
+**2506 of the 2838 events a map's sequences wait on (88.3%) are fired by a placed actor in the same map; 332 are not.** The map's event space is a name space with two ends: 2838 wait sites and 5922 fire sites over 76 classes, and the join between them needs no index, no name table lookup and no other package.
 
 | measure | answer |
 |---|---|
 | maps read | **73** |
 | exports over those maps | **194190** |
-| exports with a name-valued property block | **93310** |
+| exports with a name-valued property block | **93348** |
 | wait sites (`ExternalEvent`) | **2838** over 2 classes |
 | wait sites in the scripted family | **2703** |
 | wait sites in the scene (`MatAction`) family | **135** |
 | distinct names waited on | **1894** |
-| fire sites | **5898** over 74 classes and 29 properties |
-| actors carrying a fire property | **5584** |
-| distinct names fired | **4179** |
-| fire sites whose name is a placed actor's `Tag` | **3950** |
-| fire sites no waiter in the map waits on | **3526** |
-| wait sites a fire in the same map satisfies | **2495** |
-| distinct names that connect the two ends | **1672** |
-| wait sites nothing in the map fires | **343** in 60 maps |
-| -- of those, the name is a placed actor's `Tag` | **83** |
+| fire sites | **5922** over 76 classes and 30 properties |
+| actors carrying a fire property | **5597** |
+| distinct names fired | **4192** |
+| fire sites whose name is a placed actor's `Tag` | **3984** |
+| fire sites no waiter in the map waits on | **3539** |
+| wait sites a fire in the same map satisfies | **2506** |
+| distinct names that connect the two ends | **1680** |
+| wait sites nothing in the map fires | **332** in 57 maps |
+| -- of those, the name is a placed actor's `Tag` | **87** |
 | -- the name is a placed actor's object name | **0** |
-| -- the name is neither | **260** |
-| -- the name is fired in some *other* map | **16** |
+| -- the name is neither | **245** |
+| -- the name is fired in some *other* map | **15** |
 
-**A fire site's property is a declared `UNameProperty` on its class chain** in `inventory/class_properties.csv`, a different reader of a different artifact: **4** name-typed properties whose spelling says event and that census does not declare were refused rather than counted, because the property reader landing on an object name is a mis-parse and not a fire. The wait side needs no such guard -- `ExternalEvent` is the only property name it accepts.
+**A fire site's property is a declared `UNameProperty` on its class chain** in `inventory/class_properties.csv`, a different reader of a different artifact: **0** name-typed properties whose spelling says event and that census does not declare were refused rather than counted, because the property reader landing on an object name is a mis-parse and not a fire. The wait side needs no such guard -- `ExternalEvent` is the only property name it accepts.
 
 Names compare case-insensitively in UnrealScript, so the join folds case; a name that differs only in case is a match, not a miss. Every count here is a class name or a number -- the names themselves are game content and none is written to the artifact.
 
 **The wait side is a subset of the placements.** `inventory/map_export_classes.csv` counts 2722 placed `ACTION_WaitForEvent` actors over these maps, so the 2703 scripted wait sites leave 19 placements that state no `ExternalEvent`; no map has more wait sites than placements (73 of 73 maps agree, no exception). Those placements do not wait on nothing: the class looks its condition up with the default name, `None`, which the actor iterator does not filter on, so the first `TriggeredCondition` in the level decides whether the wait completes at once -- `docs/MAP_ACTION_PARAMETERS.md` names them by map, class and slot and counts the placements that state `bCheckRecentEvents` beside them.
 
-**A wait site is not a wait for an event the level fires from its data alone.** 343 of the 2838 waits name something no placed actor fires, and 83 of those name a placed actor's `Tag` -- a name a `TriggerEvent` could address, but one nothing in the map addresses. Of the 260 that name nothing in their own map, 16 are fired by a *different* map -- a handful of names are conventions shared across levels rather than edges inside one -- and the rest are fired by nothing in any package, which is where native code and runtime-spawned actors take over from placed data.
+**A wait site is not a wait for an event the level fires from its data alone.** 332 of the 2838 waits name something no placed actor fires, and 87 of those name a placed actor's `Tag` -- a name a `TriggerEvent` could address, but one nothing in the map addresses. Of the 245 that name nothing in their own map, 15 are fired by a *different* map -- a handful of names are conventions shared across levels rather than edges inside one -- and the rest are fired by nothing in any package, which is where native code and runtime-spawned actors take over from placed data.
 
 ### By waiter class
 
@@ -71,17 +71,17 @@ Names compare case-insensitively in UnrealScript, so the join folds case; a name
 | class | fire sites |
 |---|---:|
 | `ACTION_TriggerEvent` | 2657 |
-| `Trigger` | 547 |
+| `Trigger` | 551 |
 | `SubActionTrigger` | 431 |
-| `Mover` | 308 |
+| `Mover` | 314 |
 | `ACTION_Talk` | 256 |
-| `SGUseTrigger` | 219 |
-| `SceneManager` | 145 |
+| `SGUseTrigger` | 222 |
+| `SceneManager` | 148 |
 | `PlayerStart` | 122 |
 | `SQUAD_JaffaHorusL_Single` | 112 |
 | `SQUAD_JaffaSerpentL_Single` | 110 |
 | `SQUAD_JaffaHorusM_Single` | 105 |
-| `counter` | 94 |
+| `counter` | 98 |
 | `MissionObjective` | 77 |
 | `SQUAD_JaffaJackalM_Single` | 63 |
 | `SQUAD_JaffaSerpentM_Single` | 62 |
@@ -90,18 +90,18 @@ Names compare case-insensitively in UnrealScript, so the join folds case; a name
 
 | property | fire sites |
 |---|---:|
-| `Event` | 3689 |
+| `Event` | 3700 |
 | `DeathEvent` | 584 |
 | `EventName` | 431 |
 | `DialogueFinishedEvent` | 256 |
 | `CombatEvent` | 228 |
-| `OpeningEvent` | 180 |
-| `EventEnd` | 113 |
+| `OpeningEvent` | 186 |
+| `EventEnd` | 115 |
 | `ObjectiveCompleteEvent` | 77 |
 | `OpenedEvent` | 76 |
 | `ClosingEvent` | 71 |
 | `ClosedEvent` | 39 |
-| `EventStart` | 32 |
+| `EventStart` | 33 |
 | `HackCompleteEvent` | 30 |
 | `FiredEvent` | 13 |
 | `ThawCompletedEvent` | 13 |
@@ -121,7 +121,7 @@ Names compare case-insensitively in UnrealScript, so the join folds case; a name
 | `M07E` | 84 | 87 | 74 | 10 |
 | `M10D` | 114 | 128 | 104 | 10 |
 
-Census: maps=73;waits=2838;fires=5898;matched=2495;orphan=343;orphan_tag=83;orphan_none=260;orphan_cross=16.
+Census: maps=73;waits=2838;fires=5922;matched=2506;orphan=332;orphan_tag=87;orphan_none=245;orphan_cross=15.
 <!-- /generated:event-wiring -->
 
 ## Reading a row

@@ -145,42 +145,42 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | measure | value |
 |---|---:|
 | maps | 73 |
-| `Array` properties | 37889 |
-| of those, object arrays | **32586** |
-| object references inside them | **117398** |
-| arrays refused a shape | 5303 (4510 struct arrays holding 14576 records) |
-| -- of the struct arrays, element type declared | **4470** |
+| `Array` properties | 38739 |
+| of those, object arrays | **34083** |
+| object references inside them | **126356** |
+| arrays refused a shape | 4656 (4528 struct arrays holding 14590 records) |
+| -- of the struct arrays, element type declared | **4501** |
 | -- of those, elements decoded | **2019** |
-| struct-typed properties | 312295 |
-| struct properties decoded to numbers | **203148** |
-| struct property names | 79 |
+| struct-typed properties | 314940 |
+| struct properties decoded to numbers | **203184** |
+| struct property names | 12 |
 
 | struct | properties | decoded | sizes (bytes:instances) |
 |---|---:|---:|---|
-| `Vector` | 152141 | 152109 | 12:152109 / 16:19 / 9:7 / 6:5 / 2:1 |
-| `PointRegion` | 77026 | 0 | 13:61299 / 14:15726 / 16:1 |
-| `Rotator` | 50518 | 50518 | 12:50518 |
-| `Scale` | 17561 | 0 | 25:17550 / 28:8 / 16:1 / 1:1 / 4:1 |
+| `Vector` | 152138 | 152138 | 12:152138 |
+| `PointRegion` | 79867 | 0 | 13:63992 / 14:15875 |
+| `Rotator` | 50523 | 50523 | 12:50523 |
+| `Scale` | 17558 | 0 | 25:17550 / 28:8 |
 | `RangeVector` | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 |
-| `Range` | 4138 | 0 | 13:4111 / 15:26 / 1:1 |
-| `Color` | 521 | 521 | 4:521 |
-| `None` | 56 | 0 | 2:26 / 0:18 / 4:8 / 1:3 / 12:1 |
+| `Range` | 4149 | 0 | 13:4123 / 15:26 |
+| `Color` | 523 | 523 | 4:523 |
 | `Orientation` | 43 | 0 | 106:29 / 122:7 / 123:7 |
-| `Plane` | 42 | 0 | 26:29 / 29:12 / 1:1 |
-| `SheerRate` | 21 | 0 | 4:21 |
-| `?` | 14 | 0 | 1:12 / 0:1 / 4:1 |
+| `Plane` | 41 | 0 | 26:29 / 29:12 |
+| `Matrix` | 10 | 0 | 129:10 |
+| `InterpCurve` | 9 | 0 | 5:9 |
+| `Tag` | 1 | 0 | 16:1 |
 
 | array element type | declared on | arrays | records | widths (bytes:arrays) |
 |---|---|---:|---:|---|
 | `ParticleColorScale` | `ParticleEmitter` | 2472 | 5746 | 14:2156 / 17:203 / 15:102 / 16:11 |
 | `ParticleTimeScale` | `ParticleEmitter` | 1330 | 2000 | 34:656 / 35:281 / 31:220 / 33:102 / 32:71 |
-| `SoundEmitter` | `AmbientSound` | 446 | 767 | 38:337 / 37:84 / 41:21 / 40:4 |
+| `SoundEmitter` | `AmbientSound` | 476 | 797 | 38:363 / 37:84 / 41:23 / 40:6 |
 | `ParticleSound` | `ParticleEmitter` | 58 | 73 | 85:55 / 84:3 |
 | `ParticleBeamEndPoint` | `BeamEmitter` | 52 | 93 | 74:40 / 75:5 / 78:4 / 73:2 / 83:1 |
-| `IMusicSegment` | `IMusicActor` | 44 | 3694 | 73:21 / 41:8 / 68:8 / 59:4 / 39:1 / 47:1 / 75:1 |
+| `IMusicSegment` | `IMusicActor` | 45 | 3695 | 73:21 / 41:8 / 68:8 / 59:4 / 39:1 / 47:1 / 75:1 / 49:1 |
 | `ParticleVelocityScale` | `ParticleEmitter` | 36 | 114 | 23:21 / 24:15 |
-| *(not declared)* | -- | 22 | 26 | 15:9 / 1:8 / 3:5 |
-| *(not declared)* | `Actor` | 18 | 18 | 1:13 / 3:3 / 15:1 / 6:1 |
+| *(not declared)* | `Actor` | 15 | 15 | 1:13 / 15:1 / 3:1 |
+| *(not declared)* | -- | 12 | 12 | 1:8 / 3:4 |
 | `int` | `FluidSurfaceInfo` | 12 | 2017 | 4:12 |
 <!-- /generated:t3d-values -->
 
