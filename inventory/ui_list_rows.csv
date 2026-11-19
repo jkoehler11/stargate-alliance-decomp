@@ -28,7 +28,7 @@ placement,CoopPlayerPanel,,,block,WaitingForPlayers,,block,placed by a Begin Obj
 placement,ObjectivesPanel,,,string,InGameInfoPanel,,string,"named by a string in code, not by a block"
 placement,SavedGameList,,,block,SaveGamePanel,,block,placed by a Begin Object block
 placement,SelectTeamPanel,,,block,SelectTeamPage,,block,placed by a Begin Object block
-placement,ServerList,,,none,,,none,nothing in the corpus names it
+placement,ServerList,,,none,,,none,no emitted block and no script string names it
 placement,ServerSelectionListBox,,,block,ServerSelectionPanel,,block,placed by a Begin Object block
 rowrect,GUIListBase,GUI,,ItemHeight,var(List),,native,subclass should set in PreDraw
 rowrect,GUIListBase,GUI,,ItemWidth,var(List),,native,subclass should set in PreDraw
@@ -46,4 +46,4 @@ wiring,SavedGameList,StargateMenus,,commented,MyOnDrawItem,,commented,"List, com
 wiring,SelectTeamPanel,StargateMenus,,live,MyOnDrawItem,,live,TeamListBox.List
 wiring,ServerList,StargateMenus,,live,MyOnDrawItem,,live,self
 wiring,ServerSelectionListBox,StargateMenus,,live,MyOnDrawItem,,live,List
-census,list-rows,,,,,,,bodies=6|canvas=6|cell=9|cell_classes=2|columns=15|cut_columns=2|cut_wirings=1|defaults_blocks=1664|defaults_with_columns=0|height_props=3|height_writers=7|live=5|other=0|overlay=3|replace=2|row=2|unwired=1|wirings=6
+census,list-rows,,,,,,,bodies=6|canvas=6|cell=9|cell_classes=2|columns=15|columns_capable=3|columns_capable_held=3|cut_columns=2|cut_wirings=1|defaults_blocks=1664|defaults_with_columns=0|height_props=3|height_writers=7|live=5|other=0|overlay=3|replace=2|row=2|unwired=1|wirings=6

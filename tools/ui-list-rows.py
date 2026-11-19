@@ -269,7 +269,8 @@ def read_bodies(system_dir, defaults_tree=""):
 
     # The cell table: every column placed through `GetCellLeftWidth` needs `ColumnWidths`, and that array is
     # only ever filled from `Columns`. So count the blocks that state `Columns`, over the whole emitted tree.
-    blocks, with_columns = read_defaults_tree(defaults_tree)
+    (held, blocks), with_columns = read_defaults_tree(defaults_tree)
+    capable, capable_held = columns_capable(held)
     cell_classes = sorted({r["name"] for r in rows if r["kind"] == "column" and r["form"] == "cell"})
     for cls in cell_classes:
         rows.append({"kind": "celltable", "name": cls, "package": "StargateMenus", "form": "Columns",
@@ -299,7 +300,8 @@ def read_bodies(system_dir, defaults_tree=""):
                      "value": "var(List)", "verdict": "native", "note": gloss})
     rows.sort(key=lambda r: (r["kind"] != "census", r["kind"], r["name"], r.get("column", ""),
                              r.get("form", "")))
-    rows.append(census_row(rows))
+    extra = {"columns_capable": len(capable), "columns_capable_held": capable_held}
+    rows.append(census_row(rows, extra))
     return rows
 
 
@@ -340,27 +342,52 @@ def read_placements(text_of, tree, classes):
         else:
             rows.append({"kind": "placement", "name": cls, "package": "", "form": "none",
                          "value": "", "verdict": "none",
-                         "note": "nothing in the corpus names it"})
+                         "note": "no emitted block and no script string names it"})
     return rows
 
 
+def columns_capable(blocks):
+    """(capable, emitted): the classes that can state `Columns`, and how many of them the tree holds.
+
+    `Columns` is declared on `GUIMultiColumnList` and `GUIMultiColumnListBox`, so only their descendants can
+    carry it -- a class that does not descend from either cannot make the cell table non-empty however its
+    block reads. Read from the committed class table, so the check needs no dump.
+    """
+    path = os.path.join(ROOT, "inventory/classes.csv")
+    if not os.path.isfile(path):
+        return [], 0
+    with open(path, newline="", encoding="utf-8") as fh:
+        supers = {r["class"]: r["super"] for r in csv.DictReader(fh)}
+    declarers = {"GUIMultiColumnList", "GUIMultiColumnListBox"}
+    capable = []
+    for cls in supers:
+        seen, cur = set(), cls
+        while cur and cur not in seen and cur not in declarers:
+            seen.add(cur)
+            cur = supers.get(cur, "")
+        if cur in declarers:
+            capable.append(cls)
+    return sorted(capable), len([c for c in capable if c in blocks])
+
+
 def read_defaults_tree(tree):
-    """(blocks, how many state a top-level `Columns`) over the `defaults-emit --emit` tree."""
+    """((held, blocks), how many blocks state a top-level `Columns`) over the `defaults-emit --emit` tree."""
     if not tree or not os.path.isdir(tree):
-        return 0, 0
-    blocks = with_columns = 0
+        return (set(), 0), 0
+    blocks, held, with_columns = 0, set(), 0
     for dirpath, _dirs, files in os.walk(tree):
         for fname in files:
             if not fname.endswith(".defaultproperties.uc"):
                 continue
             blocks += 1
+            held.add(fname[:-len(".defaultproperties.uc")])
             with open(os.path.join(dirpath, fname), encoding="utf-8", errors="replace") as fh:
                 if re.search(r"^\s*Columns\s*[=(]", fh.read(), re.M):
                     with_columns += 1
-    return blocks, with_columns
+    return (held, blocks), with_columns
 
 
-def census_row(rows):
+def census_row(rows, extra=None):
     bodies = [r for r in rows if r["kind"] == "body"]
     live = [r for r in bodies if r["verdict"] != "unwired"]
     all_columns = [r for r in rows if r["kind"] == "column"]
@@ -382,6 +409,7 @@ def census_row(rows):
         defaults_blocks=cell[0]["value"].split("/")[1] if cell else "0",
         defaults_with_columns=cell[0]["value"].split("/")[0] if cell else "0",
     )
+    fields.update(extra or {})
     note = "|".join("%s=%s" % (k, v) for k, v in sorted(fields.items()))
     return {"kind": "census", "name": "list-rows", "note": note}
 
@@ -449,7 +477,9 @@ def render(rows):
     out.append("**Where the list reaches the screen: a block, a string, or nothing.** A body draws whatever list "
                "its class holds, and the layout tree holds only what a `Begin Object` block places -- "
                "**%(block)s** of the **%(total)s** classes are placed that way, **%(string)s** is created from a "
-               "*string* in code, and **%(none)s** nothing in the corpus names." %
+               "*string* in code, and **%(none)s** nothing the corpus states names -- no emitted block, no string "
+               "in any of the 18 packages, and no `.ini` key. The 32 `StargateMenus` classes whose block the "
+               "emitter refuses sit outside the block scan." %
                {"block": by_form.get("block", 0), "string": by_form.get("string", 0),
                 "none": by_form.get("none", 0), "total": len(places)})
     out.append("")
@@ -461,12 +491,12 @@ def render(rows):
     out.append("**The cell table is empty, so the cell-placed columns have no width.** `ColumnWidths[i] = "
                "ActualWidth() * Columns[i].Percentage` is filled by `InitializeColumns`, and `Columns` reaches a "
                "list only through `GUIMultiColumnListBox.InitBaseList`'s `if ( Columns.Length > 0 )`. "
-               "**%(defaults_with_columns)s of %(blocks_fmt)s** emitted defaults blocks state `Columns`, "
-               "and the two classes that declare the array are both among them, so `GetCellLeftWidth` answers "
-               "`Width = 0` for every cell of the **%(cell_classes)s** cell-placed bodies -- each of their "
-               "columns then starts at the list's own `ClientBounds[0]` plus whatever row `X` the caller adds. "
-               "The 655 classes the emitter refuses are outside that count; a list class among them could state "
-               "the array, and none of the shipped list classes is one." % s)
+               "**%(defaults_with_columns)s of %(blocks_fmt)s** emitted defaults blocks state `Columns`, and "
+               "**%(columns_capable_held)s of the %(columns_capable)s** classes that *can* -- the descendants of "
+               "`GUIMultiColumnList` and `GUIMultiColumnListBox` -- have an emitted block at all, so no class "
+               "that could fill the table is outside the scan. `GetCellLeftWidth` therefore answers `Width = 0` "
+               "for every cell of the **%(cell_classes)s** cell-placed bodies, and each of their columns starts "
+               "at the list's own `ClientBounds[0]` plus whatever row `X` the caller adds." % s)
     out.append("")
     out.append("**The row height is native, and the corpus writes one only where a class draws its own rows.** "
                "`ItemHeight`, `ItemWidth` and `ItemsPerPage` are `var(List)` on the native `GUIListBase` -- "

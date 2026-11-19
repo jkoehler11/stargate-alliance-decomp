@@ -635,7 +635,7 @@ A page's `Begin Object` block places the list; where each row's *columns* sit is
 | `ServerSelectionListBox` | 1 | canvas | `L=0.015+0.31+0.01 W=0.28` | `GameTypeName` | aligned left |
 | `ServerSelectionListBox` | 2 | canvas | `L=0.015+0.31+0.01+0.28+0.01 W=0.09` | `CurrentPlayers/MaxPlayers` | aligned left |
 
-**Where the list reaches the screen: a block, a string, or nothing.** A body draws whatever list its class holds, and the layout tree holds only what a `Begin Object` block places -- **4** of the **6** classes are placed that way, **1** is created from a *string* in code, and **1** nothing in the corpus names.
+**Where the list reaches the screen: a block, a string, or nothing.** A body draws whatever list its class holds, and the layout tree holds only what a `Begin Object` block places -- **4** of the **6** classes are placed that way, **1** is created from a *string* in code, and **1** nothing the corpus states names -- no emitted block, no string in any of the 18 packages, and no `.ini` key. The 32 `StargateMenus` classes whose block the emitter refuses sit outside the block scan.
 
 | body class | reached by | holder |
 |---|---|---|
@@ -646,7 +646,7 @@ A page's `Begin Object` block places the list; where each row's *columns* sit is
 | `ServerList` | none | - |
 | `ObjectivesPanel` | string | InGameInfoPanel |
 
-**The cell table is empty, so the cell-placed columns have no width.** `ColumnWidths[i] = ActualWidth() * Columns[i].Percentage` is filled by `InitializeColumns`, and `Columns` reaches a list only through `GUIMultiColumnListBox.InitBaseList`'s `if ( Columns.Length > 0 )`. **0 of 1,664** emitted defaults blocks state `Columns`, and the two classes that declare the array are both among them, so `GetCellLeftWidth` answers `Width = 0` for every cell of the **2** cell-placed bodies -- each of their columns then starts at the list's own `ClientBounds[0]` plus whatever row `X` the caller adds. The 655 classes the emitter refuses are outside that count; a list class among them could state the array, and none of the shipped list classes is one.
+**The cell table is empty, so the cell-placed columns have no width.** `ColumnWidths[i] = ActualWidth() * Columns[i].Percentage` is filled by `InitializeColumns`, and `Columns` reaches a list only through `GUIMultiColumnListBox.InitBaseList`'s `if ( Columns.Length > 0 )`. **0 of 1,664** emitted defaults blocks state `Columns`, and **3 of the 3** classes that *can* -- the descendants of `GUIMultiColumnList` and `GUIMultiColumnListBox` -- have an emitted block at all, so no class that could fill the table is outside the scan. `GetCellLeftWidth` therefore answers `Width = 0` for every cell of the **2** cell-placed bodies, and each of their columns starts at the list's own `ClientBounds[0]` plus whatever row `X` the caller adds.
 
 **The row height is native, and the corpus writes one only where a class draws its own rows.** `ItemHeight`, `ItemWidth` and `ItemsPerPage` are `var(List)` on the native `GUIListBase` -- *"subclass should set in PreDraw"*, *"is set natively"* -- and the script writes are:
 
@@ -699,6 +699,11 @@ No menu list is in that table: `moListEditBox` sizes the list it holds to its ow
    `MapSelectionPanel` on the two pages that restate it, and a `MultiplayerServerPanel` →
    `XBoxLiveServerSelectionPanel` again on the server-select chain, so a rebuild that loses a restatement draws
    the wrong panel where the shipped build drew the narrow one.
+7. **A list's row is a native rectangle and a script body, and `make ui-list-rows` gates the script half.** The
+   fifteen columns the five live bodies draw are rows in `inventory/ui_list_rows.csv` — placement, value, field —
+   so a rebuilt list that moves a column, drops one, or changes a placement kind changes that artifact and
+   `make ci` says so. What it cannot gate is the cell table being *empty*: no class states `Columns`, so a rebuild
+   that keeps the corpus's own defaults draws the same zero-width cells the shipped build does.
 
 ## Not measured
 
@@ -713,7 +718,10 @@ No menu list is in that table: `moListEditBox` sizes the list it holds to its ow
   four pages still carry `SGPageBase`'s placeholder title (`Basic SG GUI Page: Insert Title`) and 9 of the 59
   pages state no defaults at all. So the *data* behind a page — its frame, its captions, its components, their
   classes and their geometry — is counted; whether a page draws the layout that data describes is what still
-  needs a running build.
+  needs a running build. The rows *inside* a list are the third level and are counted too (the block above,
+  `docs/UNKNOWNS.md` U28): **15 columns over five bodies**, placed through a cell table, the screen or the row.
+  What stays unmeasured there is the rectangle itself — `GUIListBase` is native, so the row's `X/Y/W/H` and its
+  `ItemHeight` are C++, and whether a `DrawText` of width 0 paints nothing or a clipped glyph needs the boot.
 * **Why the ten are dead is a *where*, not a *why*.** The corpus names none of them — measured over every
   class body, every emitted defaults block and every menu key in the five shipped `.ini`s — but which editor
   pass cut them, and whether the cut pages' bodies still compile against the classes around them, is a
