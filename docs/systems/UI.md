@@ -529,6 +529,32 @@ The panels the tree does not carry are not script-built: each has a defaults *bl
 | `SelectTeamPanel` | StargateMenus | 123 | `type-contradiction` | 1 |
 | `XBoxLiveServerSelectionPanel` | StargateMenus | 129 | `type-contradiction` | 1 |
 
+**21 of the 140 bindings name a widget no block declares.** A page binds each widget twice: the `Begin Object ... Name=` block places it and a property points at it (`MenuPanel=RightLockingMenuPanel'cPanel'`). Where the block lives in a panel class the reader refuses, the pointer resolves to a name and nothing else -- so the rows below are controls that exist (their class is stated) and cannot be placed (their rectangle is in the refused block). 21 of them sit inside a refused panel.
+
+| page | widget | class | bound by | enclosing block |
+|---|---|---|---|---|
+| `StargateMenus.ErrorPage` | `cDesc` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.ErrorPage` | `cOkayButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.InGameScoreboard` | `cTitle` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.InGameScoreboard` | `cTitle2` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.MainMenu` | `cContinueBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cExtrasBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cMultiBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cOptionsBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cSingleBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cAppearance` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cAudio` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cControls` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cName` | `moEditBox` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cVideo` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.QuestionPage` | `cDesc` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.QuestionPage` | `cNoButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.QuestionPage` | `cYesButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cChapterBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cLoadBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cNewGameBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cTutorialBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+
 **What the `Win*` numbers are relative to.** The base `GUIComponent` states **2** of the four (`WinWidth`, `WinHeight`) and a panel class states none, so every panel *is* its container: the two values the base does state make its rectangle its parent's whole box. Two measurements then say the numbers are read against that box and not against the screen. First, 13 of the 18 children that state a rectangle run past the unit square on one axis — nothing clamps them, so the range is not a screen fraction the engine keeps inside the display. Second, 12 widget classes are used by more than one page and 5 of those are placed at more than one page-side rectangle, while the children's numbers are one set — a class has one defaults block, so a child's `Win*` cannot be a screen position, only an offset inside whichever instance box the parent draws. The screen position is the composed product down the tree, which is what `GUIComponent`'s own native body computes and what `docs/UNKNOWNS.md` U27 still wants decoded.
 
 ### The wiring, and the pages that replace it

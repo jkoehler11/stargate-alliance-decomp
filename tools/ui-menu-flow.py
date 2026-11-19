@@ -118,6 +118,8 @@ COMP_CLASS = re.compile(r"\bClass=(?P<cls>[A-Za-z0-9_]+)")
 COMP_NAME = re.compile(r"\bName=(?P<name>[A-Za-z0-9_]+)")
 # The four `GUIComponent` geometry values a widget can state for itself.
 WIN_KEYS = ("WinTop", "WinLeft", "WinWidth", "WinHeight")
+# A class-typed default names a subobject as `Class'Name'`; the block that declares it may be in another file.
+REF_VALUE = re.compile(r"^(?P<cls>[A-Za-z_][A-Za-z0-9_]*)'(?P<name>[A-Za-z_][A-Za-z0-9_]*)'$")
 TOP_PROP = re.compile(r"^\s*(?P<prop>[A-Za-z0-9_]+)(?:\(\d+\))?\s*=\s*(?P<val>.*?)\s*$")
 FUNC_DECL = re.compile(r"^function\s+(?:[A-Za-z0-9_]+\s+)?(?P<name>[A-Za-z0-9_]+)\s*\(", re.M)
 XC_CODE = re.compile(r"\bXC_[A-Z]+\b")
@@ -836,6 +838,81 @@ def read_subcomponents(tree, family, supers, by_name, _cache=None):
     return rows, stats
 
 
+def _subobject_refs(path):
+    """[(property, target class, target name, enclosing block class)] for the `Class'Name'` values in a file.
+
+    A page's defaults bind its widgets twice: once by the `Begin Object ... Name=` block that declares them, and
+    once by the property that points at the block (`MenuPanel=RightLockingMenuPanel'cPanel'`,
+    `BuildStampLB=SGLabel'cBuildStamp'`). A binding whose `Name=` has no block is a widget the file does not
+    declare -- in the UI tree that is the *panel* case: the button lives in the panel class's defaults, which
+    the reader refuses, so the page can name it and nothing in the emitted tree places it.
+    """
+    names, refs = set(), []
+    depth, stack = 0, []
+    for line in open(path, encoding="latin-1", errors="replace"):
+        m = BEGIN_COMP.match(line)
+        if m:
+            depth += 1
+            c, n = COMP_CLASS.search(m.group("rest")), COMP_NAME.search(m.group("rest"))
+            stack.append(c.group("cls") if c else "")
+            if n:
+                names.add(n.group("name"))
+            continue
+        if END_OBJECT.match(line):
+            depth = max(0, depth - 1)
+            if stack:
+                stack.pop()
+            continue
+        t = TOP_PROP.match(line)
+        if not t:
+            continue
+        v = REF_VALUE.match(t.group("val").strip())
+        if v:
+            refs.append((t.group("prop"), v.group("cls"), v.group("name"), stack[0] if stack else ""))
+    return names, refs
+
+
+def read_bindings(tree, family, sub_rows, by_name):
+    """The widgets a page *names* without declaring, which is what a refused panel block costs.
+
+    A page's `MyComponents(0)=GUIButton'cContinueBN'` names a button no block in the page declares: the widget
+    is in `RightLockingMenuPanel`'s own defaults, which the reader refuses, so the binding resolves to a name and
+    nothing else. Row `kind=binding` carries only the dangling ones; the count of all bindings is in the census,
+    because a binding that resolves is already a `component` row.
+    """
+    refused = {r["name"] for r in sub_rows if r["form"] == "none"}
+    rows, stats = [], collections.Counter()
+    for cls, pkgname in sorted(family.items()):
+        path = os.path.join(tree, pkgname, cls + ".defaultproperties.uc")
+        if not os.path.isfile(path):
+            continue
+        names, refs = _subobject_refs(path)
+        page_names = {c["name"] for c in read_children(tree, pkgname, cls)} | names
+        for prop, target_cls, name, owner in refs:
+            if prop in ("Class", "Package", "Outer"):
+                continue
+            stats["bindings"] += 1
+            if name in page_names:
+                stats["resolved"] += 1
+                continue
+            home = class_home(tree, target_cls, pkgname, by_name)
+            if name in {c["name"] for c in read_children(tree, home, target_cls)}:
+                stats["resolved"] += 1        # the target class declares it after all
+                continue
+            stats["dangling"] += 1
+            note = "bound by %s" % prop
+            if owner:
+                note += " inside %s" % owner
+                if owner in refused:
+                    stats["in_refused_panel"] += 1
+                    note += ", whose defaults block the reader refuses"
+            else:
+                note += " at the page's level"
+            rows.append(dict(kind="binding", name=cls, package=pkgname, form="dangling", target=name,
+                             verdict=target_cls, depth="", platform="", note=note))
+    return rows, stats
+
+
 def read_overrides(text, cls, pkgname):
     """Which of the four wiring functions a page replaces, and whether `InitComponent` forwards to `Super`.
 
@@ -1011,6 +1088,11 @@ def sweep(dump, defaults_tree=""):
     sub_rows, sub_stats = (read_subcomponents(defaults_tree, family, supers, by_name)
                            if defaults_tree else ([], collections.Counter()))
     rows.extend(sub_rows)
+    # The bindings: a page can name a widget whose block the panel class declares, and when that class has no
+    # emitted block the name is all that is left -- which is what the panels above cost.
+    bind_rows, bind_stats = (read_bindings(defaults_tree, family, sub_rows, by_name)
+                             if defaults_tree else ([], collections.Counter()))
+    rows.extend(bind_rows)
     codes_by_class = {}
     for (pkgname, cls), text in sorted(text_of.items()):
         if family.get(cls) == pkgname:
@@ -1051,7 +1133,7 @@ def sweep(dump, defaults_tree=""):
             if r["kind"] == "hud_swap" and "HUD" not in tcls.upper():
                 continue
         elif r["kind"] in ("hint", "caption", "draw", "override", "hint_handler", "component",
-                           "subcomponent", "layout_gap"):
+                           "subcomponent", "layout_gap", "binding"):
             verdict, tpkg, tcls, note = (r.get("verdict") or "", "", "", "")
         else:
             verdict, tpkg, tcls, note = "", "", "", ""
@@ -1176,6 +1258,10 @@ def sweep(dump, defaults_tree=""):
                       "sub_overshoot=%d" % sub_stats.get("overshoot", 0),
                       "sub_base_keys=%s" % (sub_stats.get("base_keys") or "-"),
                       "gap_classes=%d" % sub_stats.get("gap_joined", 0),
+                      "binding_rows=%d" % bind_stats.get("bindings", 0),
+                      "binding_resolved=%d" % bind_stats.get("resolved", 0),
+                      "binding_dangling=%d" % bind_stats.get("dangling", 0),
+                      "binding_in_refused=%d" % bind_stats.get("in_refused_panel", 0),
                       "gap_declared=%d" % sub_stats.get("gap_declared", 0),
                       "titles_own=%d" % page_stats.get("titles_own", 0),
                       "placeholder_titles=%d" % page_stats.get("placeholder_titles", 0),
@@ -1369,6 +1455,25 @@ def subcomponents_block(s, rows):
             m = re.search(r"^(\S+) of its", r["note"])
             out.append("| `%s` | %s | %s | `%s` | %s |" %
                        (r["name"], r["package"], r["target"], r["verdict"], m.group(1) if m else "?"))
+        dangle = [r for r in rows if r["kind"] == "binding"]
+        if dangle:
+            out.append("")
+            out.append("**%s of the %s bindings name a widget no block declares.** A page binds each widget "
+                       "twice: the `Begin Object ... Name=` block places it and a property points at it "
+                       "(`MenuPanel=RightLockingMenuPanel'cPanel'`). Where the block lives in a panel class the "
+                       "reader refuses, the pointer resolves to a name and nothing else -- so the rows below are "
+                       "controls that exist (their class is stated) and cannot be placed (their rectangle is in "
+                       "the refused block). %s of them sit inside a refused panel."
+                       % (s.get("binding_dangling", "0"), s.get("binding_rows", "0"),
+                          s.get("binding_in_refused", "0")))
+            out.append("")
+            out.append("| page | widget | class | bound by | enclosing block |")
+            out.append("|---|---|---|---|---|")
+            for r in sorted(dangle, key=lambda r: (r["package"], r["name"], r["target"])):
+                m = re.search(r"bound by (\w+)(?: inside ([\w.]+))?", r["note"])
+                out.append("| `%s.%s` | `%s` | `%s` | `%s` | `%s` |" %
+                           (r["package"], r["name"], r["target"], r["verdict"],
+                            m.group(1) if m else "?", m.group(2) if m and m.group(2) else "-"))
         out.append("")
         keys = [k for k in s.get("sub_base_keys", "-").split(",") if k.startswith("Win")]
         out.append("**What the `Win*` numbers are relative to.** The base `GUIComponent` states %s of the four "
@@ -1955,9 +2060,23 @@ def selftest():
     assert "geometry from GUI.GUIVertScrollBar" in [r["note"] for r in sub_rows
                                                     if r["target"] == "cBar"][0], sub_rows
     assert "What a panel declares inside itself" in sub_text, sub_text
+    # a page that binds a widget its panel class does not declare: the binding is dangling, and it is inside a
+    # refused panel, so the row says which class the widget is and which property points at it.
+    with tempfile.TemporaryDirectory() as td:
+        os.makedirs(os.path.join(td, "StargateMenus"))
+        with open(os.path.join(td, "StargateMenus", "KidPage.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write("defaultproperties\n{\n\tBegin Object Class=ChapterPanel Name=cCh\n"
+                     "\t\tMyComponents(0)=GUIButton'cGoBN'\n\tEnd Object\n"
+                     "\tMenuPanel=ChapterPanel'cCh'\n}\n")
+        b_rows, b_stats = read_bindings(td, {"KidPage": "StargateMenus"},
+                                       [dict(name="ChapterPanel", form="none")], {})
+    assert b_stats["bindings"] == 2 and b_stats["resolved"] == 1 and b_stats["dangling"] == 1, b_stats
+    assert b_stats["in_refused_panel"] == 1, b_stats
+    assert b_rows[0]["target"] == "cGoBN" and b_rows[0]["verdict"] == "GUIButton", b_rows
+    assert "bound by MyComponents inside ChapterPanel" in b_rows[0]["note"], b_rows
     assert "The widgets a page declares" in render(fake), "the layout section renders without rows"
-    print("ok   menu-flow: 63 assertions over the parsers, the resolver, the closure, the three name readers, "
-          "the page-level defaults, the component blocks and the panels' own nested layout")
+    print("ok   menu-flow: 67 assertions over the parsers, the resolver, the closure, the three name readers, "
+          "the page-level defaults, the component blocks, the panels' own nested layout and the dangling bindings")
 
 
 

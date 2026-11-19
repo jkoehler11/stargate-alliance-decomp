@@ -4826,25 +4826,46 @@ boot, would say what a package load does with the range -- it changes no number 
 
 **Status.** Answered for the index the shipped state code addresses (`Auto`); open for the 876 nulls behind it.
 
-## U27. A page's widgets are a table, and where they draw is not measured
+## U27. A page's widgets are rows, a panel's are a second file, and twelve panels have no emitted block
 
-**Observed.** `tools/ui-menu-flow.py` now reads the `Begin Object` blocks out of the `defaults-emit` tree
+**Observed.** `tools/ui-menu-flow.py` reads the `Begin Object` blocks out of the `defaults-emit` tree
 (`inventory/menu_flow.csv`, `kind=component`; `make ui-menu-flow`): **114 components over 46 of the 59 pages**,
 **110 declared once by the page that uses them and 4 restatements** of an inherited widget under a narrower
 class -- `chPN` as `ChapterSelectionPanel` on `SinglePlayerChapterSelect`, as `MapSelectionPanel` on
 `MultiplayerMapSelect` and `QuickLoadMapTempPage`, and as `MultiplayerServerPanel` then
-`XBoxLiveServerSelectionPanel` on the server-select chain -- in **31 widget classes**, every one of which the
-corpus carries. Position is data too: **83** components state all four `Win*` values, the other **25** state
-none and take theirs from the widget class's own defaults (`GUI.GUIButton`, `GUI.GUILabel`, ...), and **none**
-is left without one anywhere on its chain. `docs/systems/UI.md` renders the census; `--check-doc` gates it.
+`XBoxLiveServerSelectionPanel` on the server-select chain -- in **31 widget classes**. Position is data too:
+**83** components state all four `Win*` values, the other **25** state none and take theirs from the widget
+class's own defaults (`GUI.GUIButton`, `GUI.GUILabel`, ...), and **none** is left without one anywhere on its
+chain.
 
-**What is still open.** The corpus states a widget's class, the property its page binds it to and its four
-rectangle values. It does not state what those four are *relative to* (the page's own rectangle, the widget's
-`Owner`, or the screen), and nothing here has watched a page draw, so "the layout is in the components" is a
-statement about data rather than about pixels. Two routes: (1) the frame instrument 7.2 already uses -- boot the
-front end to one options page, capture it with `tools/xemu/frame-diff.py`, then rebuild that page's package with
-one `WinTop` changed by 0.05 and read whether the frame differs in that widget's rectangle and nowhere else;
-(2) `GUIComponent`'s own body, whose vtable slot the class table names, would say how `WinTop` is normalised
-against the owner before drawing, which is the cheaper read and needs no boot.
+**The layout is a tree, and its second level is a different file.** A page's block places a panel; the panel's
+contents are the panel class's own defaults (`kind=subcomponent`, `depth=2`), and a child class can declare
+blocks in turn (`depth=3`: `GUIVertScrollBar` states its zone, two buttons and a grip). Of the 31 widget
+classes, **12 declare 28 children over 14 classes**, **7 are widgets whose block declares no children**, and
+**12 have no emitted block at all** -- so "every one of which the corpus carries" was wrong, and the tree is
+cut one level below the page for the whole server, team, character, chapter and profile family.
 
-**Status.** Open: the data is counted and gated; the drawn result is not.
+**The twelve are a decode gap, not script built.** Each has a defaults *block* in its package (**121-129
+declared properties, 1,487 across the twelve**), and `inventory/class_defaults_misses.csv` says where the
+reader stops: nine `type-contradiction` at the first tag, two `single-declared` (`GUIListBox`,
+`FullSlidingPanel`) and `MultiplayerServerPanel` `empty-block`. The classes are exactly the containers --
+`RightLockingMenuPanel`, `ChapterSelectionPanel`, `CharacterSelectionPanel`, `ProfilePanel`, `CoopPlayerPanel`,
+the four selection panels and `GUIListBox`.
+
+**What `Win*` is relative to is now answered at the data level.** The base `GUIComponent` states **2 of the
+four** (`WinWidth`, `WinHeight`) and the panel classes state none, so a panel *is* its parent's whole box; and
+**13 of the 18** nested children that state a rectangle run past the unit square on one axis, so nothing clamps
+the range. **12 widget classes are used by more than one page, 5 of them placed at more than one page-side
+rectangle, while the children's numbers are one set** -- one defaults block per class cannot encode a screen
+position. The values are offsets inside the parent's box, and the screen position is their composition down
+the chain.
+
+**What is still open.** The composition itself: whether `WinLeft`/`WinTop` scale by the parent's width/height,
+whether a value above 1 is absolute, and where the owner's own offset enters. Two routes: (1) `GUIComponent`'s
+own body -- its vtable slot is in the class table -- is the cheaper read and needs no boot; (2) the frame
+instrument 7.2 already uses: boot to one options page, capture with `tools/xemu/frame-diff.py`, rebuild that
+page's package with one `WinTop` changed by 0.05 and read whether the frame differs in that widget's rectangle
+and nowhere else.
+
+**Status.** Answered at the data level (parent-relative and unclamped); open for the native composition, and
+for the twelve refused panel blocks it depends on.
