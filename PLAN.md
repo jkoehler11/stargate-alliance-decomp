@@ -14074,3 +14074,34 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   route (`frame-diff.py` with one `WinTop` changed) stays the control.
 - **Not in this PR.** The composition itself, and the decision to adopt the guard emitter-side (measured here,
   not taken: the emitter's `block_of` still runs unguarded).
+- **The eight `Win*` conversions are in the class table, not behind their thunks, and the two families are
+  inverse.** `GUIComponent`'s own table (`0x00536648`, 58 slots) holds them at 35-42; each `intUGUIComponentexec*`
+  thunk tail-calls `[opcode*4 + 0x6313e8]` (an opcode-route table), so the thunk names no slot and the first shape
+  answered "no class-table slot" for all eight. Read from the table and bounded by the next body's start and its
+  `int3` pad (149-234 bytes, matching the Ghidra seed), each body names its own conversion: `-1.0f`
+  (`0x004daba0`) the omitted-argument sentinel, `|v| < 2.0` (`0x004d21c0`) the fraction band, the `Win*` field the
+  `movss` the body substitutes, position `BoundingType` (`+0x95`) and size `ScalingType` (`+0x96`), and slots 35-38
+  recurse into their own slot on the owner while 39-42 call the owner's `Actual*` pair. Hence
+  `ActualLeft = owner.ActualLeft + v * owner.ActualWidth` in pixels and
+  `RelativeLeft = (v - owner.ActualLeft) / owner.ActualWidth` -- inverses of one mapping, not siblings.
+- **The band splits at 2, and the corpus confirms it at the page frame.** 1,339 emitted `Begin Object` blocks over
+  149 classes state a `Win*` at 136/139/139/145 axes: 135/138/136/139 fractions, 1/1/3/6 pixels, and every pixel
+  block resolves against the screen. The one block that states all four in pixels is `GUI.GUIPage`'s `RemoveMeToo`
+  (`X=GUIImage`), which places every page at `(38, 28)` `564x424` = 640-2*38 by 480-2*28; the other five are single
+  axes (36-pixel title bars, a 32-pixel label, an `8x16` arrow pair). Three values sit in `[1,2)`, all exactly
+  `1.0`, so above the unit square is still a fraction; 50 blocks state a `BoundingType` and 42 a `ScalingType`, so
+  x/y 50 and w 38 / h 42 axes are parent-relative and the rest are screen-space.
+- **One defect falls out of the same read.** `RelativeHeight` (`0x002f8a30`) tests `0x800000`, the *width's*
+  convert bit, where `ActualHeight` (`0x002f8520`) tests `0x1000000` (`f7 46 7c 00 00 80 00` at `0x002f8a7c`): a
+  component that converts width but not height gets an inverse height composed against a box it never opted into.
+- **Files.** `tools/ui-layout-native.py` (new: `body_at`, `modrm_disp`, `route_table_slot`, `convert_mask`,
+  `read_native`, `native_half`, `corpus_half`, `render`), `inventory/ui_layout_native.csv` (new, 8 rows),
+  `inventory/ui_layout_values.csv` (new, 1,340 rows), `docs/systems/UI.md` (new generated section and its prose),
+  `docs/UNKNOWNS.md` U27 rewritten in place, `Makefile` (`make ui-layout-native`, the ci pair), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, and this note.
+- **Gates.** `make ui-layout-native` writes both artifacts from the dump plus the defaults tree; `--check` is a
+  synthetic reader test plus the artifact's own shape (no dump, no writes); `--check-doc` keeps the page block
+  byte-identical.
+- **Next measurement.** The frame control (one page rebuilt with a `WinTop` +0.05, `tools/xemu/frame-diff.py`) now
+  tests a formula instead of discovering one; the larger open item in this thread is the emitter-side adoption of
+  the locator guard.

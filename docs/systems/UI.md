@@ -828,6 +828,71 @@ list's heading text, its drag handle and its click target are all unset in the c
 background. What the header *does* show -- a column of empty cells under the body's own rectangle -- is a question
 for the boot the next section names.
 
+## The `Win*` units: eight natives, a fraction band, and an inverse pair
+
+`WinLeft`/`WinTop`/`WinWidth`/`WinHeight` are script floats and `GUIComponent` converts them in C++; the eight
+conversions sit in the class's own table at slots 35-42 (`0x00536648`) rather than behind their exec thunks --
+each `intUGUIComponentexec*` thunk stores the `-1.0f` sentinel and tail-calls `[opcode*4 + 0x6313e8]`, an
+opcode-route table, so a thunk names no slot. Read from the table, each body answers three questions the data
+could not: which `Win*` field stands in for an omitted argument (the `-1.0f` at `0x004daba0`), where a fraction
+stops being one (`|v| < 2.0` at `0x004d21c0`, so 2 and above are pixels), and which way the owner enters.
+
+Slots 35-38 are the `Actual*` family and answer **pixels**: `ActualLeft = owner.ActualLeft + v *
+owner.ActualWidth`, `ActualWidth = v * owner.ActualWidth`. Slots 39-42 are `Relative*` and divide instead:
+`RelativeLeft = (v - owner.ActualLeft) / owner.ActualWidth`. They are inverses of one mapping rather than
+siblings, which is why both families read the same four fields and call the same owner slots -- and why the
+family can be named from the bytes (a body that calls its own slot on the owner is an `Actual`).
+
+An axis becomes parent-relative only where the widget's class opts in: position reads `BoundingType` (`+0x95`)
+and size `ScalingType` (`+0x96`), with 1/3 opening x or width and 2/3 opening y or height, gated by the
+`bConvert*` bits on the `+0x7c` flag word (`0x200000` bound x, `0x400000` bound y, `0x800000` scale x,
+`0x1000000` scale y). `GUIComponent` states `SCALE_None`, so the default is the screen, and a screen-space axis
+whose convert bit is set scales by `ResX`/`ResY` (`+0x218`/`+0x21c` on the controller at `+0x28`) instead of the
+parent's extent.
+
+One defect shares the read. `RelativeHeight` (`0x002f8a30`) tests `0x800000` -- the *width's* convert bit --
+where `ActualHeight` (`0x002f8520`) tests `0x1000000` (the byte is `f7 46 7c 00 00 80 00` at `0x002f8a7c`), so a
+component that converts its width and not its height gets an inverse height composed against a box it never
+opted into.
+
+<!-- generated:ui-layout -->
+The composition is C++ and the corpus is data; both are re-derived here.
+
+| conversion | slot | body | direction | `Win*` field | sentinel | fraction band | type values | convert bit | calls on the owner |
+|---|---|---|---|---|---|---|---|---|---|
+| `ActualLeft` | 35 | `0x2f85c0` | fraction->pixel | `0x110` | -1 | 2 | 1,3 | 0x200000 | 35,37 |
+| `ActualTop` | 36 | `0x2f86a0` | fraction->pixel | `0x10c` | -1 | 2 | 2,3 | 0x400000 | 36,38 |
+| `ActualWidth` | 37 | `0x2f8480` | fraction->pixel | `0x114` | -1 | 2 | 1,3 | 0x800000 | 37 |
+| `ActualHeight` | 38 | `0x2f8520` | fraction->pixel | `0x118` | -1 | 2 | 2,3 | 0x1000000 | 38 |
+| `RelativeLeft` | 39 | `0x2f8790` | pixel->fraction | `0x110` | -1 | 2 | 1,3 | 0x200000 | 35,37 |
+| `RelativeTop` | 40 | `0x2f8880` | pixel->fraction | `0x10c` | -1 | 2 | 2,3 | 0x400000 | 36,38 |
+| `RelativeWidth` | 41 | `0x2f8970` | pixel->fraction | `0x114` | -1 | 2 | 1,3 | 0x800000 | 37 |
+| `RelativeHeight` | 42 | `0x2f8a30` | pixel->fraction | `0x118` | -1 | 2 | 2,3 | 0x800000 | 38 |
+
+`1339` blocks over `149` classes, each axis counted where the block states a value:
+
+| axis | stated | fraction (`abs < 2`) | pixel (`abs >= 2`) | parent-relative |
+|---|---|---|---|---|
+| left | 136 | 135 | 1 | 50 |
+| top | 139 | 138 | 1 | 50 |
+| width | 139 | 136 | 3 | 38 |
+| height | 145 | 139 | 6 | 42 |
+
+`3` stated values sit in `[1, 2)` -- above the unit square, below the pixel band, so they still scale.
+<!-- /generated:ui-layout -->
+
+**The corpus uses the band the way the band expects.** Of the 1,339 emitted `Begin Object` blocks over 149
+classes, 136-145 state each axis at all: 135/138/136/139 of those are fractions and only 1/1/3/6 are pixels, and
+every one of the six pixel blocks resolves against the screen (`BoundingType` and `ScalingType` both 0). The only
+block that states all four in pixels is `GUI.GUIPage`'s `RemoveMeToo` (`X=GUIImage`), which places every page at
+`(38, 28)` `564x424` -- 640-2*38 by 480-2*28 -- i.e. the page frame; the other five are single axes (a 36-pixel
+title-bar height, a 32-pixel label height, an `8x16` arrow pair), so the band is decided per axis and not per
+block. Three values sit in `[1,2)`, all exactly `1.0`: above the unit square, below the band, so they still
+scale. Fifty blocks state a `BoundingType` and 42 a `ScalingType`, which is what makes x/y 50 axes and w 38 /
+h 42 axes parent-relative; the rest resolve against the screen, which is why the panel classes that state no
+`Win*` of their own are the whole parent box rather than a rectangle.
+
+
 ## What this means for the rebuild
 
 1. **UI is the cheapest script to port and the hardest to verify.** No natives in the menu package means
