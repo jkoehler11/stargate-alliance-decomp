@@ -41,6 +41,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 VALUES = os.path.normpath(os.path.join(HERE, "..", "inventory", "t3d_values.csv"))
 STRUCTS = os.path.normpath(os.path.join(HERE, "..", "inventory", "t3d_structs.csv"))
 ARRAYS = os.path.normpath(os.path.join(HERE, "..", "inventory", "t3d_arrays.csv"))
+COVERAGE = os.path.normpath(os.path.join(HERE, "..", "inventory", "t3d_coverage.csv"))
 CLASSES = os.path.normpath(os.path.join(HERE, "..", "inventory", "classes.csv"))
 DECLARED = os.path.normpath(os.path.join(HERE, "..", "inventory", "class_properties.csv"))
 
@@ -86,6 +87,22 @@ def load_prop_stream():
     import importlib.util
     path = os.path.join(HERE, "prop-stream.py")
     spec = importlib.util.spec_from_file_location("prop_stream", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def load_prefix_record():
+    """`actor-prefix-record.py`, whose `record()` reads the actor's prefix and names where the block starts.
+
+    The writer delegates its start the same way it delegates the value test: the prefix rule is a *positive*
+    reading of the bytes in front of the block (`[class index][the index again][8 x 0xff][4 bytes][0x81]`, so
+    `2*w + 13`), and measured against this writer's own choice it names a later start on 25,499 of the 79,925
+    blocks that carry the record. Those are the blocks whose start sat inside the record's own tail.
+    """
+    import importlib.util
+    path = os.path.join(HERE, "actor-prefix-record.py")
+    spec = importlib.util.spec_from_file_location("actor_prefix_record", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -198,7 +215,7 @@ def fmt_element(value):
     return str(int(value))
 
 
-def locate(data, pkg, ps):
+def locate(data, pkg, ps, preferred=None):
     """The actor's property block, located by the reader's own value test.
 
     This writer used to carry a second locator: the start whose block spends every object reference in the
@@ -212,18 +229,22 @@ def locate(data, pkg, ps):
     starts later than 32 bytes in (`inventory/actor_prefix_census.csv`), so the only exports a wider look finds
     are `StaticMeshInstance`s, whose payload is a packed native record with no tagged block at all -- the tags
     read out of it are two bytes of a transform.
+
+    `preferred` is the prefix record's end when its bytes are the record, and `pad_tail=1` reads the two
+    `Cubemap`s whose block ends one zero byte short of the export (U30).
     """
-    found = ps.find_block(data, pkg, 2, True, window=getattr(ps, "WINDOW", 64))
+    found = ps.find_block(data, pkg, 2, True, window=getattr(ps, "WINDOW", 64),
+                          preferred=preferred, pad_tail=1)
     if not found:
         return None
     _count, start, _props = found
-    props, _end, _reason = ps.read_block(data[start:], pkg, True)
+    props, end, _reason = ps.read_block(data[start:], pkg, True)
     if not props:
         return None
-    return len(props), start, props
+    return len(props), start, props, len(data) - start - end
 
 
-def drive_map(path, outdir, ps, parent=None, types=None, verbose=False):
+def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=None):
     pkg = Package(path)
     pkg.read_names()
     pkg.read_imports()
@@ -233,14 +254,22 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False):
     actors = props_total = 0
     st = {"arrays": 0, "object_arrays": 0, "object_elements": 0, "struct_arrays": 0,
           "struct_records": 0, "unshaped": 0, "struct_props": 0, "struct_decoded": 0, "struct_raw": 0,
-          "elements_decoded": 0}
+          "elements_decoded": 0, "record_starts": 0, "padded_blocks": 0}
     structs, arrays = {}, {}
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
-        found = locate(data, pkg, ps)
+        preferred = None
+        if prec is not None:
+            predicted, matched = prec.record(data, exp["class"])
+            if matched:
+                st["record_starts"] += 1
+                preferred = predicted
+        found = locate(data, pkg, ps, preferred)
         if not found:
             continue
-        _count, start, props = found
+        _count, start, props, tail = found
+        if tail:
+            st["padded_blocks"] += 1
         cls = pkg.class_name_of(exp)
         lines.append("Begin Actor Class=%s Name=%s_%d" % (cls, cls, exp["index"] + 1))
         for p in props:
@@ -321,8 +350,8 @@ class _Ps:
     """Canned blocks keyed by the first byte of the buffer, so the delegation is driven without a package.
 
     The value test itself is `prop-stream`'s and is proved there; what this writer has to prove is that it hands
-    the location over to it -- with the writer's pinned window -- and writes the block *it* chose rather than a
-    second rule of its own.
+    the location over to it -- with the writer's pinned window, the prefix record's start and the one-byte tail
+    -- and writes the block *it* chose rather than a second rule of its own.
     """
 
     WINDOW = 64
@@ -330,8 +359,11 @@ class _Ps:
     def __init__(self, table, start=0):
         self.table = table
         self.start = start
+        self.seen = {}
 
-    def find_block(self, data, pkg, min_props=2, values=True, native_width=None, window=None):
+    def find_block(self, data, pkg, min_props=2, values=True, native_width=None, window=None,
+                   preferred=None, pad_tail=0):
+        self.seen = {"window": window, "preferred": preferred, "pad_tail": pad_tail}
         props = [dict(p) for p in self.table[data[self.start]]]
         return len(props), self.start, props
 
@@ -344,7 +376,12 @@ class _NoBlock:
 
     WINDOW = 64
 
-    def find_block(self, data, pkg, min_props=2, values=True, native_width=None, window=None):
+    def __init__(self):
+        self.seen = {}
+
+    def find_block(self, data, pkg, min_props=2, values=True, native_width=None, window=None,
+                   preferred=None, pad_tail=0):
+        self.seen = {"window": window, "preferred": preferred, "pad_tail": pad_tail}
         return None
 
 
@@ -362,11 +399,10 @@ def struct_types(path=DECLARED):
     return out
 
 
-# The one struct name no declaration carries, with the property count it was measured at. `M07A`'s `Cubemap`
-# export (#2149) appends its mip tail natively, so no start's block can end at the export's end; the value test
-# finds nothing and the header's choice stands, reading `Tag` as the tag's struct-name index. The count is pinned
-# rather than the name allowed, so a second one -- or a bigger one -- trips the gate.
-RESIDUE_STRUCTS = {"Tag": 1}
+# A struct name the corpus does not declare is a mislocated start, and since the prefix record names the start
+# (`locate()`'s `preferred`) none is left: the gate below is strict, and `padded_blocks` pins the only export
+# whose block ends short of the export -- the two `Cubemap`s (U30).
+RESIDUE_STRUCTS = {}
 
 
 def check(values, structs, stats, arrays=ARRAYS):
@@ -420,6 +456,12 @@ def check(values, structs, stats, arrays=ARRAYS):
         crows = read_csv(stats)
         if [r["map"] for r in crows] != [r["map"] for r in vrows]:
             problems.append("%s: the map column disagrees with the values census" % stats)
+        padded = [(r["map"], int(r.get("padded_blocks") or 0)) for r in crows if int(r.get("padded_blocks") or 0)]
+        if sum(n for _m, n in padded) != 2 or [m for m, _n in padded] != ["M07A", "M07B"]:
+            problems.append("%s: padded blocks %s, expected the two Cubemaps in M07A and M07B"
+                            % (stats, padded))
+        if not any(int(r.get("record_starts") or 0) for r in crows):
+            problems.append("%s: no block was located through the prefix record" % stats)
     # The element-type census partitions the refused arrays the values census counts: every refused array is
     # either unshaped or has a (count, width) layout and therefore one row here.
     arows = read_csv(arrays)
@@ -462,14 +504,32 @@ def check(values, structs, stats, arrays=ARRAYS):
     # leave, so this file does not need a second rule to test.
     data = b"\x00\x01" + b"\x00" * 8
     clean = [{"name": "A", "type": "Object", "ref": 1}, {"name": "B", "type": "Int"}]
-    got = locate(data, _Pkg(2), _Ps({0: clean}, 0))
+    stub = _Ps({0: clean}, 0)
+    got = locate(data, _Pkg(2), stub, 17)
     if got is None or got[1] != 0 or len(got[2]) != len(clean):
         problems.append("locate does not write the block find_block chose")
+    if stub.seen.get("preferred") != 17 or stub.seen.get("pad_tail") != 1 or stub.seen.get("window") != 64:
+        problems.append("locate does not hand the prefix record and the tail to the reader: %s" % stub.seen)
+    if got[3] != len(data) - len(data):
+        problems.append("locate reports a tail where the block spends the export")
     got = locate(data, _Pkg(2), _Ps({1: clean}, 1))
     if got is None or got[1] != 1:
         problems.append("locate does not take a start the reader found past the first byte")
     if locate(data, _Pkg(2), _NoBlock()) is not None:
         problems.append("locate invents a block when the reader finds none")
+    # The tail the writer counts is what `padded_blocks` sums, so drive the reader's own padded rule here: a
+    # block at the first byte of an export one byte longer than it must come back with tail 1, and a second
+    # zero-free byte must not.
+    pkg = _Pkg(2)
+    pkg.name = lambda i: ["None", "A", "B"][i] if i < 3 else "?"
+    body = b"\x01\x22\x04\x00\x00\x00" + b"\x02\x22\x04\x00\x00\x00" + b"\x00"
+    block = ps.padded_block(body + b"\x00", pkg, 2, 1)
+    if not block or block[1] != 0 or len(block[2]) != 2:
+        problems.append("padded_block does not read a block one zero byte short of the export")
+    if ps.padded_block(body + b"\x07", pkg, 2, 1) is not None:
+        problems.append("padded_block accepts a nonzero tail")
+    if ps.padded_block(body, pkg, 2, 1) is not None:
+        problems.append("padded_block claims a block that spends the whole export")
     if problems:
         for p in problems:
             print("FAIL %s" % p)
@@ -554,9 +614,9 @@ def main():
     ap.add_argument("--out", help="$WORK/extracted/maps (never the repository)")
     ap.add_argument("--limit", type=int, help="first N maps only")
     ap.add_argument("-v", "--verbose", action="store_true")
-    ap.add_argument("--stats", metavar="CSV",
-                    help="write one row per map (map, actors, properties, unresolved refs, bytes); counts only, "
-                         "so it may live in inventory/")
+    ap.add_argument("--stats", metavar="CSV", default=COVERAGE,
+                    help="per-map counts (default: inventory/t3d_coverage.csv); counts only, so it may live in "
+                         "inventory/")
     ap.add_argument("--values", metavar="CSV", default=VALUES,
                     help="per-map array/struct census (default: inventory/t3d_values.csv)")
     ap.add_argument("--structs", metavar="CSV", default=STRUCTS,
@@ -586,6 +646,7 @@ def main():
         print("note: writing into %s — this is game content, keep it under $WORK" % args.out)
 
     ps = load_prop_stream()
+    prec = load_prefix_record()
     paths = ([os.path.join(args.path, f) for f in sorted(os.listdir(args.path)) if f.lower().endswith(".unr")]
              if os.path.isdir(args.path) else [args.path])
     if args.limit:
@@ -596,10 +657,11 @@ def main():
     structs = {}
     parent, types = load_declarations()
     for path in paths:
-        got = drive_map(path, args.out, ps, parent, types, args.verbose)
+        got = drive_map(path, args.out, ps, parent, types, args.verbose, prec)
         for key in total:
             total[key] += got[key]
-        rows.append((got["map"], got["actors"], got["props"], got["unresolved"], got["bytes"]))
+        rows.append((got["map"], got["actors"], got["props"], got["unresolved"], got["bytes"],
+                     got["values"]["record_starts"], got["values"]["padded_blocks"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -621,9 +683,9 @@ def main():
                  v["object_elements"], v["struct_props"]))
     if args.stats:
         with open(args.stats, "w", encoding="utf-8", newline="") as fh:
-            fh.write("map,actors,properties,unresolved_refs,t3d_bytes\n")
+            fh.write("map,actors,properties,unresolved_refs,t3d_bytes,record_starts,padded_blocks\n")
             for row in rows:
-                fh.write("%s,%d,%d,%d,%d\n" % row)
+                fh.write("%s,%d,%d,%d,%d,%d,%d\n" % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"

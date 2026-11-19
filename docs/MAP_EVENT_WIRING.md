@@ -27,7 +27,7 @@ Every statement on this page is a count of classes or sites. The event names the
 of them is written to the artifact or quoted here.
 
 <!-- generated:event-wiring -->
-**2506 of the 2838 events a map's sequences wait on (88.3%) are fired by a placed actor in the same map; 332 are not.** The map's event space is a name space with two ends: 2838 wait sites and 5922 fire sites over 76 classes, and the join between them needs no index, no name table lookup and no other package.
+**2506 of the 2838 events a map's sequences wait on (88.3%) are fired by a placed actor in the same map; 332 are not.** The map's event space is a name space with two ends: 2838 wait sites and 5924 fire sites over 76 classes, and the join between them needs no index, no name table lookup and no other package.
 
 | measure | answer |
 |---|---|
@@ -38,11 +38,11 @@ of them is written to the artifact or quoted here.
 | wait sites in the scripted family | **2703** |
 | wait sites in the scene (`MatAction`) family | **135** |
 | distinct names waited on | **1894** |
-| fire sites | **5922** over 76 classes and 30 properties |
-| actors carrying a fire property | **5597** |
-| distinct names fired | **4192** |
-| fire sites whose name is a placed actor's `Tag` | **3984** |
-| fire sites no waiter in the map waits on | **3539** |
+| fire sites | **5924** over 76 classes and 30 properties |
+| actors carrying a fire property | **5599** |
+| distinct names fired | **4194** |
+| fire sites whose name is a placed actor's `Tag` | **3986** |
+| fire sites no waiter in the map waits on | **3541** |
 | wait sites a fire in the same map satisfies | **2506** |
 | distinct names that connect the two ends | **1680** |
 | wait sites nothing in the map fires | **332** in 57 maps |
@@ -71,7 +71,7 @@ Names compare case-insensitively in UnrealScript, so the join folds case; a name
 | class | fire sites |
 |---|---:|
 | `ACTION_TriggerEvent` | 2657 |
-| `Trigger` | 551 |
+| `Trigger` | 553 |
 | `SubActionTrigger` | 431 |
 | `Mover` | 314 |
 | `ACTION_Talk` | 256 |
@@ -90,7 +90,7 @@ Names compare case-insensitively in UnrealScript, so the join folds case; a name
 
 | property | fire sites |
 |---|---:|
-| `Event` | 3700 |
+| `Event` | 3702 |
 | `DeathEvent` | 584 |
 | `EventName` | 431 |
 | `DialogueFinishedEvent` | 256 |
@@ -121,7 +121,7 @@ Names compare case-insensitively in UnrealScript, so the join folds case; a name
 | `M07E` | 84 | 87 | 74 | 10 |
 | `M10D` | 114 | 128 | 104 | 10 |
 
-Census: maps=73;waits=2838;fires=5922;matched=2506;orphan=332;orphan_tag=87;orphan_none=245;orphan_cross=15.
+Census: maps=73;waits=2838;fires=5924;matched=2506;orphan=332;orphan_tag=87;orphan_none=245;orphan_cross=15.
 <!-- /generated:event-wiring -->
 
 ## Reading a row

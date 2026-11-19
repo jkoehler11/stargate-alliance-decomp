@@ -28,7 +28,7 @@ the same arrays in the same pass, and the sweep checks it against that tool's co
 so the path walk is that measurement plus branch edges rather than a second opinion about the same bytes.
 
 <!-- generated:action-paths -->
-**Every conditional in an `Actions` array reads an operand the placement carries, and 18497 of the 18520 slots a map's sequences wire are on some path: the straight index run reaches 18288, a branch's skip edge reaches 219 more, and 10 of the slots that count includes are on no path at all.**
+**Every conditional in an `Actions` array reads an operand the placement carries, and 18510 of the 18533 slots a map's sequences wire are on some path: the straight index run reaches 18301, a branch's skip edge reaches 219 more, and 10 of the slots that count includes are on no path at all.**
 
 `docs/MAP_ACTION_ORDER.md` measured the order and stopped at a schedule: "`ACTION_IfCondition` and `ACTION_IfProximity` decide at run time, so which side of a section a given play takes is not in the package". The decision is, though -- not `FRand()`'s draw, but *what the branch reads*, which is placed data. All three conditionals read a property of the placed element itself, and `ScriptedAction.ProceedToSectionEnd` is the skip they share.
 
@@ -36,13 +36,13 @@ so the path walk is that measurement plus branch edges rather than a second opin
 |---|---|
 | maps read | **73** |
 | conditional classes in the build | **3** |
-| arrays walked | **2651** (18520 elements) |
+| arrays walked | **2654** (18533 elements) |
 | branch slots in them | **283** (`ACTION_IfCondition` 244, `ACTION_IfProximity` 0, `ACTION_IfRandomPct` 39) |
 | branches whose skip finds its `EndSection` | **277** (none with an empty body: every branch that pairs skips at least one slot) |
 | branches whose skip runs off the array (the run ends there) | **5** |
-| slots reached by some path (the union) | **18497** of 18520, against **18288** for the straight run |
+| slots reached by some path (the union) | **18510** of 18533, against **18301** for the straight run |
 | slots a branch can skip (conditional) | **690** |
-| slots every path runs (the straight run minus a branch's span) | **17807** |
+| slots every path runs (the straight run minus a branch's span) | **17820** |
 | slots the straight count includes but no path from index 0 returns to (a backward goto) | **10** |
 | slots a branch edge reaches that the straight run does not | **219** |
 | placed `TriggeredCondition` actors across the maps | **212** |
@@ -67,14 +67,14 @@ so the path walk is that measurement plus branch edges rather than a second opin
 
 | sequence class | arrays | elements | branches | reached / straight | conditional | matched / unmatched / empty |
 |---|---|---|---|---|---|---|
-| `TeamScriptedSequence` | 1246 | 9469 | 76 | 9463 / 9415 | 195 | 76 / 0 / 0 |
+| `TeamScriptedSequence` | 1248 | 9481 | 76 | 9475 / 9427 | 195 | 76 / 0 / 0 |
 | `ScriptedTrigger` | 1171 | 7860 | 188 | 7847 / 7718 | 451 | 182 / 5 / 0 |
-| `TriggeredScript` | 203 | 792 | 19 | 788 / 756 | 44 | 19 / 0 / 0 |
+| `TriggeredScript` | 204 | 793 | 19 | 789 / 757 | 44 | 19 / 0 / 0 |
 | `UnrealScriptedSequence` | 26 | 381 | 0 | 381 / 381 | 0 | 0 / 0 / 0 |
 | `ScriptedSpawner` | 4 | 15 | 0 | 15 / 15 | 0 | 0 / 0 / 0 |
 | `ScriptedSequence` | 1 | 3 | 0 | 3 / 3 | 0 | 0 / 0 / 0 |
 
-**Two readers, one population.** The `straight` column is `tools/action-order.py`'s walk run again over the same arrays in the same pass: it agrees with the committed `inventory/action_order.csv` on **73 of 73 maps** and reproduces its 18520 elements and 2651 arrays exactly, so the path walk above is that walk plus branch edges rather than a second opinion.
+**Two readers, one population.** The `straight` column is `tools/action-order.py`'s walk run again over the same arrays in the same pass: it agrees with the committed `inventory/action_order.csv` on **73 of 73 maps** and reproduces its 18533 elements and 2654 arrays exactly, so the path walk above is that walk plus branch edges rather than a second opinion.
 
 ## Reading a row
 

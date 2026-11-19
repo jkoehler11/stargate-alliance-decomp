@@ -200,7 +200,7 @@ def read_blocks(pkg, skip_classes=("Class", "Function", "State", "ScriptStruct",
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
         if not data or pkg.class_name_of(exp) in skip_classes:
             continue
-        found = ps.find_block(data, pkg, min_props=1)
+        found = ps.find_block(data, pkg, min_props=1, record_class=exp["class"])
         if not found:
             continue
         _count, start, _props = found

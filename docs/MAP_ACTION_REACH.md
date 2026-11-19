@@ -34,7 +34,7 @@ rest of the family — `ScriptedSequence`, `UnrealScriptedSequence`, `TeamScript
 totals (16,886 wired, 1,374 in an armed sequence), plus `action-paths`' array and element counts.
 
 <!-- generated:action-reach -->
-**Of the 18498 actions the maps wire, 8614 sit in a sequence that starts and at a slot some path reaches; the closure that says so begins at 1374 sequences that need no name at all.**
+**Of the 18510 actions the maps wire, 8614 sit in a sequence that starts and at a slot some path reaches; the closure that says so begins at 1375 sequences that need no name at all.**
 
 `docs/MAP_ACTION_PATHS.md` left one question open -- "whether the firing placement is itself reached is still a runtime question". The firing placement is a placed action, so the three readings this project already has decide it: an action runs only if an `Actions` array names it (`docs/MAP_ACTION_WIRING.md`), only if its slot is on some path (`docs/MAP_ACTION_PATHS.md`), and only if the sequence holding that slot starts (`docs/MAP_EVENT_TARGETS.md`). Chaining them is a closure, not a count -- a sequence starts because a reached carrier fires its tag, and a carrier is reached because a started sequence names it -- so this walk grows the start set outward from the sequences that start by themselves and stops when nothing new starts.
 
@@ -43,38 +43,38 @@ totals (16,886 wired, 1,374 in an armed sequence), plus `action-paths`' array an
 | maps read | **73** |
 | sequence classes carrying an `Actions` array | **6** |
 | of those, classes that start with no name | **2** |
-| sequences carrying an array (the six scripted classes) | **2651** |
-| exports carrying an array at all (every class: `event-targets`' population) | **2939** |
-| -- of those, a `Tag` some placed property fires | **541** (267 scene-manager camera arrays) |
-| slots wired | **18520** |
-| fire sites | **5973** over 5597 carrier actors |
-| -- carrier is a placed scripted action | **2916** (2681 carriers of other classes) |
+| sequences carrying an array (the six scripted classes) | **2654** |
+| exports carrying an array at all (every class: `event-targets`' population) | **2944** |
+| -- of those, a `Tag` some placed property fires | **543** (269 scene-manager camera arrays) |
+| slots wired | **18533** |
+| fire sites | **5975** over 5599 carrier actors |
+| -- carrier is a placed scripted action | **2916** (2683 carriers of other classes) |
 | -- carrier reached (a started sequence names it, on a path) | **2527** |
 | -- carrier wired but on no path a started sequence reaches | **389** |
-| -- carrier no array names (volume, mover, native start) | **2681** |
-| fire-to-actor landings | **7099** |
+| -- carrier no array names (volume, mover, native start) | **2683** |
+| fire-to-actor landings | **7101** |
 | sequences whose tag some placed property fires (armed) | **274** |
-| -- in the start closure by their own class | **1374** |
+| -- in the start closure by their own class | **1375** |
 | -- in the start closure through a chain of fires | **0** |
-| sequences in the closure altogether | **1374** |
-| sequences no chain reaches (stalled) | **1277** |
+| sequences in the closure altogether | **1375** |
+| sequences no chain reaches (stalled) | **1279** |
 | rounds the closure took (deepest chain) | **1** |
-| actions wired by an array | **18498** |
+| actions wired by an array | **18510** |
 | -- in a sequence whose tag a fire names (armed) | **1506** |
 | -- in a started sequence | **8631** |
 | -- there and on a reached slot (the full chain) | **8614** |
-| -- behind nothing that starts, or off the paths | **9884** |
+| -- behind nothing that starts, or off the paths | **9896** |
 
 A fire site's carrier is classified by where placed data puts *it*. `reached` means a started sequence's `Actions` array names it at a slot on some path; `dead` means an array names it but only at slots the paths do not reach, or inside a sequence nothing starts; `outside` means no array names it at all -- a door `Mover`, an `Emitter`, a spawner, which the engine starts and no property in the map records. The self-starting classes are read from their own shipped text, not assumed: `ScriptedTrigger`'s `PostBeginPlay` spawns its controller and calls `InitializeFor(self)`, and `TriggeredScript` does the same from `Touch`.
 
-**What the closure adds over the two-hop count.** `docs/MAP_EVENT_TARGETS.md` reported 1506 wired actions in a sequence whose tag is fired -- an arm, not a run, because the fire that arms it may itself sit in a sequence nothing starts. The closure answers both directions at once: 8631 wired actions are in a started sequence, 8614 of those on a reached slot, and 9884 lie behind no start at all. A cycle of sequences that fire each other and take no seed never enters the set, which is why the count is a fixed point rather than two hops.
+**What the closure adds over the two-hop count.** `docs/MAP_EVENT_TARGETS.md` reported 1506 wired actions in a sequence whose tag is fired -- an arm, not a run, because the fire that arms it may itself sit in a sequence nothing starts. The closure answers both directions at once: 8631 wired actions are in a started sequence, 8614 of those on a reached slot, and 9896 lie behind no start at all. A cycle of sequences that fire each other and take no seed never enters the set, which is why the count is a fixed point rather than two hops.
 
 ### Which classes fire, and from where
 
 | class of the actor carrying the fire property | fire sites | carrier reached | carrier dead | carrier outside | landings |
 |---|---:|---:|---:|---:|---:|
 | `ACTION_TriggerEvent` | 2657 | 2329 | 328 | 0 | 4162 |
-| `Trigger` | 551 | 0 | 0 | 551 | 603 |
+| `Trigger` | 553 | 0 | 0 | 553 | 605 |
 | `SubActionTrigger` | 431 | 0 | 0 | 431 | 284 |
 | `Mover` | 314 | 0 | 0 | 220 | 387 |
 | `ACTION_Talk` | 256 | 198 | 58 | 0 | 21 |
@@ -93,14 +93,14 @@ A fire site's carrier is classified by where placed data puts *it*. `reached` me
 
 | sequence class | arrays | armed | started | stalled | wired | in a started sequence | there and on a path |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `TeamScriptedSequence` | 1246 | 0 | 0 | 1246 | 9468 | 0 | 0 |
+| `TeamScriptedSequence` | 1248 | 0 | 0 | 1248 | 9480 | 0 | 0 |
 | `ScriptedTrigger` (starts with no name) | 1171 | 263 | 1171 | 0 | 7851 | 7851 | 7838 |
-| `TriggeredScript` (starts with no name) | 203 | 6 | 203 | 0 | 780 | 780 | 776 |
+| `TriggeredScript` (starts with no name) | 204 | 6 | 204 | 0 | 780 | 780 | 776 |
 | `UnrealScriptedSequence` | 26 | 0 | 0 | 26 | 381 | 0 | 0 |
 | `ScriptedSpawner` | 4 | 4 | 0 | 4 | 15 | 0 | 0 |
 | `ScriptedSequence` | 1 | 1 | 0 | 1 | 3 | 0 | 0 |
 
-Census: maps=73;fires=5973;reached=2527;dead=389;outside=2681;holders=2651;started=1374;stalled=1277;rounds=1;wired=18498;wired_started=8631;wired_started_reach=8614.
+Census: maps=73;fires=5975;reached=2527;dead=389;outside=2683;holders=2654;started=1375;stalled=1279;rounds=1;wired=18510;wired_started=8631;wired_started_reach=8614.
 <!-- /generated:action-reach -->
 
 ## What the closure changes

@@ -203,7 +203,7 @@ def main():
             # stay one reading, and the scan sits before the `blocks_in` gate so that an export the coverage
             # locator refuses still contributes its value.
             data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
-            best = ps.find_block(data, pkg)
+            best = ps.find_block(data, pkg, record_class=exp["class"])
             if best is not None:
                 reread, _rend, _rreason = ps.read_block(data[best[1]:], pkg, True)
                 squad = next((p for p in reread if p["name"] == "SuggestedSquadScript"), None)

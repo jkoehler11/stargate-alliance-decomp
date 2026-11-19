@@ -13,7 +13,7 @@ page is that read: the walk is four lines of the build's own UnrealScript, so th
 element is measured, and what the maps add is how far down that order each array actually gets.
 
 <!-- generated:action-order -->
-**An `Actions` array runs from index 0 upward, and 18288 of the 18520 elements a map's sequences wire are reached by that straight run; the five classes that move the counter are the only branches in the schedule.**
+**An `Actions` array runs from index 0 upward, and 18301 of the 18533 elements a map's sequences wire are reached by that straight run; the five classes that move the counter are the only branches in the schedule.**
 
 The order is not inferred from the bytes: it is the build's own walk, shipped as each class's own `ScriptText` (`docs/PACKAGE_SCRIPT_TEXT.md`). `ScriptedSequence.SetActions` reads `Actions[C.ActionNum]`; `ScriptedTriggerController.InitializeFor` sets that counter to 0 and calls `SetActions`; `ScriptedAction.ProceedToNextAction` is `C.ActionNum += 1`. So the array is the schedule, index 0 first, and the only thing that changes the order is a class that overrides that function.
 
@@ -22,16 +22,16 @@ The order is not inferred from the bytes: it is the build's own walk, shipped as
 | maps read | **73** |
 | classes whose body states a rule | **122** (2 sequence, 120 action) |
 | sequence classes carrying an `Actions` array in a map | **6** |
-| arrays those sequences carry | **2651** |
-| elements wired by them | **18520** slots, of which **22** are `None` (an empty slot, which ends the run where it sits) |
-| elements a straight index run reaches | **18288** |
-| slots naming an action (`elements - None`) | **18498** |
+| arrays those sequences carry | **2654** |
+| elements wired by them | **18533** slots, of which **23** are `None` (an empty slot, which ends the run where it sits) |
+| elements a straight index run reaches | **18301** |
+| slots naming an action (`elements - None`) | **18510** |
 | arrays a straight run cannot finish | **39** |
-| `ACTION_GotoAction` elements wired | **554** (552 target inside their own array, 2 outside, 406 state no target at all) |
+| `ACTION_GotoAction` elements wired | **555** (553 target inside their own array, 2 outside, 407 state no target at all) |
 | arrays whose section nesting does not close | **5** |
 | elements reached by `ACTION_LeaveSequence` (which ends the run) | **288** |
 | elements a gating sequence refuses | **2** |
-| scene-manager (camera) arrays, counted apart | **288** arrays / **1679** elements |
+| scene-manager (camera) arrays, counted apart | **290** arrays / **1695** elements |
 
 **Five classes move the counter, and each says how in its own body.**
 
@@ -49,14 +49,14 @@ The order is not inferred from the bytes: it is the build's own walk, shipped as
 
 | sequence class | arrays | elements | reached | short | goto in / out / default | unbalanced |
 |---|---|---|---|---|---|---|
-| `TeamScriptedSequence` | 1246 | 9469 | 9415 | 12 | 133 / 0 / 49 | 1 |
+| `TeamScriptedSequence` | 1248 | 9481 | 9427 | 12 | 134 / 0 / 50 | 1 |
 | `ScriptedTrigger` | 1171 | 7860 | 7718 | 23 | 408 / 1 / 349 | 4 |
-| `TriggeredScript` | 203 | 792 | 756 | 4 | 11 / 1 / 8 | 0 |
+| `TriggeredScript` | 204 | 793 | 757 | 4 | 11 / 1 / 8 | 0 |
 | `UnrealScriptedSequence` | 26 | 381 | 381 | 0 | 0 / 0 / 0 | 0 |
 | `ScriptedSpawner` | 4 | 15 | 15 | 0 | 0 / 0 / 0 | 0 |
 | `ScriptedSequence` | 1 | 3 | 3 | 0 | 0 / 0 / 0 | 0 |
 
-The scene manager's own `Actions` array (camera moves, `MatAction` elements) is counted apart: **288 arrays / 1679 elements**, which are not scripted actions and are not part of the walk above.
+The scene manager's own `Actions` array (camera moves, `MatAction` elements) is counted apart: **290 arrays / 1695 elements**, which are not scripted actions and are not part of the walk above.
 
 
 <!-- /generated:action-order -->

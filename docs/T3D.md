@@ -145,21 +145,21 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | measure | value |
 |---|---:|
 | maps | 73 |
-| `Array` properties | 38739 |
-| of those, object arrays | **34083** |
-| object references inside them | **126356** |
-| arrays refused a shape | 4656 (4528 struct arrays holding 14590 records) |
+| `Array` properties | 38790 |
+| of those, object arrays | **34218** |
+| object references inside them | **127563** |
+| arrays refused a shape | 4572 (4501 struct arrays holding 14563 records) |
 | -- of the struct arrays, element type declared | **4501** |
 | -- of those, elements decoded | **2019** |
-| struct-typed properties | 314940 |
-| struct properties decoded to numbers | **203184** |
-| struct property names | 12 |
+| struct-typed properties | 315013 |
+| struct properties decoded to numbers | **203200** |
+| struct property names | 11 |
 
 | struct | properties | decoded | sizes (bytes:instances) |
 |---|---:|---:|---|
-| `Vector` | 152138 | 152138 | 12:152138 |
-| `PointRegion` | 79867 | 0 | 13:63992 / 14:15875 |
-| `Rotator` | 50523 | 50523 | 12:50523 |
+| `Vector` | 152152 | 152152 | 12:152152 |
+| `PointRegion` | 79925 | 0 | 13:64022 / 14:15903 |
+| `Rotator` | 50525 | 50525 | 12:50525 |
 | `Scale` | 17558 | 0 | 25:17550 / 28:8 |
 | `RangeVector` | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 |
 | `Range` | 4149 | 0 | 13:4123 / 15:26 |
@@ -168,7 +168,6 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `Plane` | 41 | 0 | 26:29 / 29:12 |
 | `Matrix` | 10 | 0 | 129:10 |
 | `InterpCurve` | 9 | 0 | 5:9 |
-| `Tag` | 1 | 0 | 16:1 |
 
 | array element type | declared on | arrays | records | widths (bytes:arrays) |
 |---|---|---:|---:|---|
@@ -179,9 +178,9 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `ParticleBeamEndPoint` | `BeamEmitter` | 52 | 93 | 74:40 / 75:5 / 78:4 / 73:2 / 83:1 |
 | `IMusicSegment` | `IMusicActor` | 45 | 3695 | 73:21 / 41:8 / 68:8 / 59:4 / 39:1 / 47:1 / 75:1 / 49:1 |
 | `ParticleVelocityScale` | `ParticleEmitter` | 36 | 114 | 23:21 / 24:15 |
-| *(not declared)* | `Actor` | 15 | 15 | 1:13 / 15:1 / 3:1 |
-| *(not declared)* | -- | 12 | 12 | 1:8 / 3:4 |
 | `int` | `FluidSurfaceInfo` | 12 | 2017 | 4:12 |
+| `Plane` | `ParticleEmitter` | 8 | 8 | 26:7 / 29:1 |
+| `ParticleRevolutionScale` | `ParticleEmitter` | 4 | 8 | 23:3 / 24:1 |
 <!-- /generated:t3d-values -->
 
 **The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,528
@@ -301,7 +300,62 @@ The order the engine runs is the thing the old start was breaking: a sequence's 
 count followed by compact indices, and a block located four bytes inside that array read the count as a tag and
 lost every index after it. The arrays hold **1,820 more references** and name **1,612 more actions**.
 
-**Not in this PR.** The struct decoders beyond the three whose layout is established; the 27 arrays above,
-counted and named but not fixed (they are blocks with no checkable value, so the value test has nothing to
-refuse); the `StaticMeshInstance` payload's own record format; and the `Level` export's script sequence.
+**Not in this PR.** The struct decoders beyond the three whose layout is established; the `StaticMeshInstance`
+payload's own record format; and the `Level` export's script sequence. *(The 27 refused arrays this paragraph
+called "not fixed" are closed at the end of this page: they were starts inside the prefix record.)*
 
+
+## The prefix record names the start, and the last residue is a tail byte (measured 2026-11-19)
+
+**The start rule the page kept asking for.** `find_block` located a block by its *values*: a start was right
+when every checkable value consumed exactly the tag's `Size` and the block ended at the export's end. That test
+has a blind spot -- a block with nothing to check (`seen == 0`) falls through to the property count, and a parse
+that begins inside the actor's own prefix record satisfies both -- and the previous section left the 27 arrays
+it produced as a start rule, not a value rule. The prefix is a record:
+`[class index][the same index again][8 x 0xff][4 bytes][0x81]`, so `2*w + 13` bytes with `w` the class index's
+encoded width (`tools/actor-prefix-record.py`), and the locator now reads it first. When the bytes *are* the
+record its end is the start; when they are not, the value test decides as before.
+
+**What that moves.** 79,991 of these 194,190 exports carry the record. The old locator's start was the
+record's end on 54,348 of them and **inside the record's tail on 25,499**; those are the parses that read one to
+three bytes of the record as a property tag. Properties fall **1,174,435 -> 1,148,994** because the property
+that goes is the invented one -- each moved block's parse is the old one minus its head -- and no export is
+lost (`unresolved refs` stays 0). The height of the movement is per class: `PathNode` (whose chain declares no
+properties of its own, so nothing but the start could say a `Vector` tag was a parse), `Light`, `ZoneInfo`,
+`PlayerStart`.
+
+**The two `Cubemap`s.** Both 57-byte payloads hold a nine-property block -- `Faces[0..5]`, `Palette`,
+`InternalTime[0..1]` -- terminated by `None` at 56, and the export carries **one zero byte after it**. The
+exact-end rule refused the only real start, so `M07A` #2149 was written from a parse three properties into the
+payload (the `PhysicsVolume`/`TypeEnd` pair, and the `Tag` struct row) and `M07B` #2717 was not written at all.
+`prop-stream.padded_block` reads a block at the export's first byte when it ends at `None` with at most one
+zero byte after it, and `locate()` passes `pad_tail=1`; it is consulted only when no exact-end block passes
+the value test, so it cannot displace one. Two exports of 194,190 have such a tail and both are these, which is
+what `t3d_coverage.csv`'s `padded_blocks` column pins (the gate fails on a third, or on either map losing it).
+
+**The residue the struct gate used to allow is gone.** `t3d_structs.csv` loses its `Tag` row -- 12 names to
+**11, every one a declared `UStructProperty` type** -- and `t3d_arrays.csv` loses **both** `*(not declared)*`
+rows (16 rows to 14). Those two rows were the 27 refused arrays the previous section named and left
+(`PathNode.Vector` 13, `Light.PrePivot`, `Light.Filename`, ..., 15 under `Actor` and 12 with no declaring
+class): every one was a tag a start inside the prefix read as an array, so the element type they were missing
+was never missing. Actors **121,394 -> 121,395** (`M07B`'s `Cubemap` is written for the first time).
+
+**Every census that reads a block start inherits it, so all of them were re-run** (11 targets, ~90 s each, no
+boot). The order the engine runs is what a start inside the record was breaking, and the residual wiring
+orphans close:
+
+| artifact | before | after |
+|---|---|---|
+| `action_wiring.csv` orphan sequence references | 36 | **0** |
+| `action_wiring.csv` actions no array names | 12 in 2 maps | **0** |
+| `event_wiring.csv` waits with no matching fire | 332 | re-measured |
+| `action_parameters.csv` runat/immediate split | 60 silent of 455 | re-measured |
+
+`tools/prop-stream.py` (the `preferred`/`record_class`/`pad_tail` start rule and `padded_block`) +
+`tools/map-to-t3d.py` (the delegation, `padded_blocks`/`record_starts` in the coverage census, the tail gate
+and three self-tests) + the eight map-side tools that now hand the export's class to the locator +
+`inventory/t3d_{coverage,values,structs,arrays}.csv` + the regenerated map-side artifacts and their pages.
+
+**Not in this PR.** The `StaticMeshInstance` payload's own record format (33,509 exports whose payload is a
+packed colour table, not a tagged block); the `Level` export's script sequence; the struct decoders beyond
+`Vector`/`Rotator`/`Color`; and the arrays that divide by nothing at all.
