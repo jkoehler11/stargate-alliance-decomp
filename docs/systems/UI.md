@@ -674,6 +674,68 @@ No menu list is in that table: `moListEditBox` sizes the list it holds to its ow
 **The commented wiring is a cut row, not a reader's gap.** `SavedGameList` declares `MyOnDrawItem` inside a block comment together with both of its `InitComponent` lines, so the save-game list draws the stock item -- one column, no date/type split -- and the two-column body above never runs. It is the same shape as the pages the corpus names only inside a comment.
 <!-- /generated:list-rows -->
 
+### The native half: which slot draws a row, and what it measures
+
+`tools/ui-list-native.py` (`make ui-list-native`, `inventory/ui_list_native.csv`) reads the drawing half out of
+`default.xbe`, so none of it is a boot any more. The chain is derived rather than assumed: the wide string
+`OnDrawItem` is the cached `FName` index at `0x007b8144`, exactly one body loads it (`0x00300ee0`), and that
+body's direct callers are the row loops -- `GUIVertList` slot 31 (`0x00301de0`, vertical) and `GUIHorzList` slot
+31 (`0x00302370`, horizontal). `GUIMultiColumnList` inherits the vertical loop unchanged, so a multi-column list
+draws its rows with the plain list's code and differs only in the columns its script body places.
+`GUIListBase` adds exactly one slot over `GUIComponent`, **slot 58** (`0x00301c30`), and that is the stock item
+draw both loops call through `+0xe8` -- the virtual an `OnDrawItem` body shortcircuits when it returns true.
+
+**The row is the client rect plus `ItemHeight`.** The vertical loop hands the delegate
+`X = ClientBounds[0]`, `Y = ClientBounds[1] + interItemGutter/2`, `W = (int)(ClientBounds[2] - ClientBounds[0])`,
+`H = ItemHeight`, and advances by `ItemHeight + interItemGutter` per row; the horizontal loop swaps in `ItemWidth`
+for the width and the step and centres the strip vertically when its flag is set. `bSelected` is `Index` compared
+per item, so the delegate sees the same selected row the hit test does.
+
+**`ItemHeight` is measured every frame, not stated anywhere.** `GUIVertList`'s `PreDraw` (`0x003013c0`) asks the
+item style for its text height (`TextSize`), adds the style's top and bottom border offsets and `ItemPadding`, and
+then counts `ItemsPerPage` by stepping `ItemHeight + interItemGutter` down the client rect, capped at 1000. A list
+that states no height therefore still has one -- which is why the corpus holds no menu list's number, and why
+changing a list's `ItemStyle` changes its row height.
+
+**The field offsets were never in a package.** `Top` is `+0x258`, `Index` `+0x25c`, `ItemsPerPage` `+0x260`,
+`ItemHeight` `+0x264`, `ItemWidth` `+0x268`, `interItemGutter` `+0x26c` and `ItemPadding` `+0x270`, each witnessed
+by the body that stores or reads it -- the tool fails if a claimed offset does not appear in its witness.
+
+**`ServerList` is placed by nothing, and the box is why.** A `GUIMultiColumnListBox` creates its list in
+`InitComponent` from its own `DefaultListClass`, and that string's default is `"GUI.GUIMultiColumnList"`
+(`GUIMultiColumnListBox`'s defaultproperties, a class the defaults emitter refuses) -- so every multi-column list
+in the game is a plain `GUIMultiColumnList`, never a page's subclass, and `StargateMenus.ServerList` is cut
+content with no route to the screen.
+
+<!-- generated:list-native -->
+**The row is a class-table slot, and the chain that finds it is derived from the image.** The row loops are the callers of the one body that loads the cached `OnDrawItem` index (`0x00300ee0`); the family's tables are read slot by slot in `inventory/xbe_class_tables.csv`, so `9` classes, `11` overrides and `2` row loops come out of the same scan.
+
+| class | slots | override | slot | body | dispatches |
+|---|---|---|---|---|---|
+| `GUIHorzList` | | inherited | 58 | `0x00301c30` | stock item draw |
+| `GUIHorzList` | | override | 31 | `0x00302370` | calls ItemCount;calls OnColumnSized;calls OnDrawItem;calls OnSortChanged |
+| `GUIVertList` | | override | 31 | `0x00301de0` | calls ItemCount;calls OnDrawItem |
+| `GUIMultiColumnList` | | inherited | 58 | `0x00301c30` | stock item draw |
+| `GUIVertList` | | inherited | 58 | `0x00301c30` | stock item draw |
+
+* `h` = `ItemHeight` -- the row height is the PreDraw's number, not the corpus's
+* `pitch` = `ItemHeight + interItemGutter` -- the step to the next row
+* `w` = `(int)(client[2] - client[0])` -- the full client width, truncated to an int
+* `x` = `client[0]` -- the row starts at the list's left edge
+* `y` = `client[1] + interItemGutter/2` -- half a gutter insets the first row
+
+| field | offset | read by |
+|---|---|---|
+| `Index` | `0x25c` | the selected row: compared per item to pass `bSelected` |
+| `ItemHeight` | `0x264` | set from the style's text height, then used as the row's H |
+| `ItemPadding` | `0x270` | read into ItemHeight once, before ItemsPerPage is counted |
+| `ItemWidth` | `0x268` | the horizontal loop's item width |
+| `ItemsPerPage` | `0x260` | counted up by the PreDraw's fit loop, capped at 1000 |
+| `Top` | `0x258` | row loop starts at [this+0x258] and stops at Top+ItemsPerPage |
+| `interItemGutter` | `0x26c` | the step between rows, and half of it insets the first |
+<!-- /generated:list-native -->
+
+
 **The header shows the same table the body does.** `GUIMultiColumnListBox.InitBaseList` gives the header the
 list it belongs to (`Header.MyList = List`), so a column heading is `MyList.Columns[i]` -- the array nothing states
 -- and the header's own emitted block is four values: `SizingCol=-1`, `ClickingCol=-1`, `bAcceptsInput=True` and

@@ -4932,11 +4932,29 @@ named by nothing the corpus states** -- no emitted block, no string in any of th
 (the 32 `StargateMenus` classes whose block the emitter refuses are outside the block scan) -- so its five
 cell-placed columns never draw, which is also what the empty cell table would do to them.
 
-**What would settle the rest.** (1) The native half: `PreDraw`'s `ItemHeight` for these lists, the row's
-`X/Y/W/H`, and whether a `DrawText` of width 0 paints nothing or a clipped glyph -- one boot to the co-op waiting
-page or the server browser with `tools/xemu/frame-diff.py` answers all three, and the map-load harness is working
-(`docs/XEMU.md`). (2) Whether `ServerList` had a wiring the corpus does not carry: a `DefaultListClass=` string is
-the only route a `GUIMultiColumnList` subclass has, and no class states one.
+**Answered in the image (2026-11-18).** `tools/ui-list-native.py` derives the chain: the cached `FName` index for
+`OnDrawItem` is `0x007b8144`, one body loads it (`0x00300ee0`), and its callers are the row loops -- `GUIVertList`
+slot 31 (`0x00301de0`) and `GUIHorzList` slot 31 (`0x00302370`), which `GUIMultiColumnList` inherits unchanged. The
+row is `(ClientBounds[0], ClientBounds[1] + interItemGutter/2, (int)(ClientBounds[2]-ClientBounds[0]), ItemHeight)`
+with a pitch of `ItemHeight + interItemGutter`. `ItemHeight` is *measured* each frame by `PreDraw` (`0x003013c0`):
+the item style's `TextSize` height plus its top/bottom border offsets plus `ItemPadding`, after which
+`ItemsPerPage` is counted by stepping that pitch down the client rect (capped at 1000). The item draw the delegate
+shortcircuits is `GUIListBase`'s only added slot, 58 (`0x00301c30`). Object offsets: `Top` `+0x258`, `Index`
+`+0x25c`, `ItemsPerPage` `+0x260`, `ItemHeight` `+0x264`, `ItemWidth` `+0x268`, `interItemGutter` `+0x26c`,
+`ItemPadding` `+0x270`.
 
-**Status.** Answered at the data level; open for the native row rectangle and for the boot that says whether a
-zero-width cell draws.
+**`ServerList`'s missing wiring is answered, and it is not missing.** `GUIMultiColumnListBox.InitComponent` builds
+its list from `AddControl(DefaultListClass)`, and the box's own defaultproperties state
+`DefaultListClass="GUI.GUIMultiColumnList"` -- the base class states the string, in a class the defaults emitter
+refuses. Every multi-column list in the game is therefore a plain `GUIMultiColumnList`, a page's subclass is never
+instantiated by a box, and `StargateMenus.ServerList` has no route to the screen at all.
+
+**Still open.** Whether a `GUIStyles.DrawText` of width 0 paints nothing or a clipped glyph -- the three live bodies
+that return false place their columns by screen fraction, so only `CoopPlayerPanel` (which returns true and paints
+its own row) reaches `GetCellLeftWidth` and passes a zero `CellWidth` to the style. Two routes: `GUIStyles.DrawText`
+is `native final` with token 0, so it binds by name and has no table slot -- read it from the styled-text routine the
+stock row calls (`0x002ff790`, found from slot 58's body), or boot one co-op waiting page with
+`tools/xemu/frame-diff.py` and diff a `CellSpacing` change.
+
+**Status.** Answered: the row rectangle, `ItemHeight`'s source, the stock item draw and `ServerList`'s placement.
+Open only for the zero-width cell.

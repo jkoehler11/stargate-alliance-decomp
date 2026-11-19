@@ -13954,3 +13954,38 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   or a clipped glyph.
 - **Not in this PR.** The boot half (a zero-width cell on screen) and the emitter's class-level locator guard,
   which is still James's call (313 classes promoted, 1,664 -> 1,977 clean blocks).
+
+### Execution notes (2026-11-18, a list's row is a class-table slot, and `ItemHeight` is measured every frame)
+
+- **Task.** The previous note's "not in this PR", native half: `DrawItem`/`PreDraw` as C++ rather than as a boot.
+  Answered without a boot, because the chain from the delegate's name to the slot that draws the row is mechanical:
+  cached `FName` index for `OnDrawItem` (`0x007b8144`) -> the single body that loads it (`0x00300ee0`) -> its direct
+  callers (`0x00301de0` vertical, `0x00302370` horizontal) -> the class tables that hold them (`GUIVertList` slot 31,
+  `GUIHorzList` slot 31).
+- **The row rectangle.** `X = ClientBounds[0]`, `Y = ClientBounds[1] + interItemGutter/2`,
+  `W = (int)(ClientBounds[2]-ClientBounds[0])`, `H = ItemHeight`, pitch `ItemHeight + interItemGutter`; the
+  horizontal variant uses `ItemWidth` for the width and the pitch and centres vertically behind a flag. `bSelected`
+  is `Index` compared per item, and `GUIMultiColumnList` inherits the vertical loop unchanged -- a multi-column list
+  draws rows with the plain list's code.
+- **`ItemHeight` has a writer after all, and it is not a constant.** `GUIVertList`'s `PreDraw` (`0x003013c0`) takes
+  the item style's `TextSize` height, adds the style's top/bottom border offsets and `ItemPadding`, and counts
+  `ItemsPerPage` by stepping `ItemHeight + interItemGutter` down the client rect (cap 1000). That is why no menu
+  list states a height, and why `ItemStyle` moves a row's height.
+- **The stock item draw is one added slot.** `GUIListBase` adds exactly one slot over `GUIComponent`, slot 58
+  (`0x00301c30`), and both row loops call it through `+0xe8` when the delegate is absent, empty or returns false;
+  it fills the row with the style's state material and draws the tree's own text through `0x002ff790`.
+- **`ServerList` is cut content, and the mechanism is the box.** `GUIMultiColumnListBox.InitComponent` builds its
+  list from `AddControl(DefaultListClass)`; the box's own defaultproperties state
+  `DefaultListClass="GUI.GUIMultiColumnList"` -- a class the defaults emitter refuses, which is why the corpus read
+  as "no class states one". Every multi-column list is therefore a plain `GUIMultiColumnList`, and the page's
+  `ServerList` subclass is never instantiated.
+- **Files.** `tools/ui-list-native.py` (new: `fname_pairs`, `Image`, `family`, `store_hits`, the `render` block and
+  a synthetic `--check`), `inventory/ui_list_native.csv` (46 rows: 8 `class`, 21 `slot`, 7 `field`, 10 `rect`,
+  4 `bind`), `docs/systems/UI.md` (the generated *native half* block and its prose), `docs/UNKNOWNS.md` U28
+  (answered in place), `Makefile` (`make ui-list-native`, the ci pair), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The zero-width cell: `GUIStyles.DrawText` is `native final` with token 0, so read it from
+  the styled-text routine the stock row calls (`0x002ff790`), or diff a `CellSpacing` change on one co-op waiting
+  page with `tools/xemu/frame-diff.py`.
+- **Not in this PR.** The zero-width cell itself, and the emitter's class-level locator guard (still James's call:
+  313 classes promoted, 1,664 -> 1,977 clean blocks).
