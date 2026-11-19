@@ -1455,3 +1455,83 @@ their record's end -- and `GUIListBox`, `CoopPlayerPanel` and the rest place the
 subobject walk follows those references, so the rendered tree grows by **358 references and 1,024 inline
 properties** with no new decode: the panels' children were already exports with readable blocks.
 `MultiplayerServerPanel`'s block is empty, so no rule gives it one.
+
+## The 342 withheld classes get a reason, and 179 read one byte per name
+
+`--explain` answers why a class is not emitted, and until now it answered at the wrong scope: it walked the
+**unguarded** candidate list and printed payload sizes, so its buckets did not describe the ledger they explain --
+the guard had already moved starts on 228 classes, and 227 of those are classes this mode counted differently.
+It now walks `pick_both`'s guarded set, the same pick `render_class` takes, and writes one row per withheld class
+(`inventory/class_defaults_withheld.csv`, `make defaults-withheld`): the reason, **which parse the row describes**,
+and the tag shape that settles it. `--check` without the dump refuses a ledger whose rows are not exactly the
+classes `inventory/class_defaults_emit_classes.csv` does not call clean, with the same status on each, so the two
+artifacts cannot drift apart; that is the gate this PR adds, and corrupting one row's status makes it fail naming
+the class.
+
+`parse` matters because a withheld class has up to three readings: the pick the ledger withheld (`chosen`), the best
+parse its own candidate set still holds after the floor refused it (`candidate`), and a parse only the *unguarded*
+list holds (`unguarded`) -- the reading the older mode reported. A `none` row holds no parse on either list.
+
+<!-- generated:defaults-withheld -->
+| reason | classes | parse the row describes | what it says |
+|---|---:|---|---|
+| `partial` | 6 | chosen 6 | one tag names a declared property and the rest name nothing the class's chain declares |
+| `names-no-declared-property` | 199 | candidate 199 | the best parse names none of the class's properties |
+| `no-candidate` | 137 | none 85, unguarded 52 | no offset parses two tags to the payload's last byte |
+
+| class | tags | declared | undeclared | one-byte undeclared | trailer | the declared tag | its kind | its type | type agrees | the first tag | its type |
+|---|---:|---:|---:|---:|---:|---|---|---|---|---|---|
+| `Engine.ArmorPickup` | 2 | 1 | 1 | 0 | 12 | `bDirectional` | UBoolProperty | Invalid | **no** | `ConsoleCommand` | Name |
+| `Engine.PlaylistParserBase` | 2 | 1 | 1 | 0 | 0 | `SpecialChars` | UArrayProperty | Array | yes | `DT_VerticalSprite` | Byte |
+| `GamePlay.SP_Timer` | 2 | 1 | 1 | 1 | 0 | `bBlockPlayers` | UBoolProperty | Byte | **no** | `bBlockPlayers` | Byte |
+| `IpDrv.ClientBeaconReceiver` | 5 | 1 | 4 | 4 | 0 | `bAlwaysTick` | UBoolProperty | Class | **no** | `bAlwaysTick` | Class |
+| `IpDrv.MasterServerClient` | 4 | 1 | 3 | 3 | 0 | `Class` | UClassProperty | Vector | **no** | `Class` | Vector |
+| `StargateMenus.MultiplayerMapFileList` | 2 | 1 | 1 | 0 | 0 | `WinLeft` | UFloatProperty | String | **no** | `WinLeft` | String |
+
+| reading | classes |
+|---|---:|
+| every tag in the parse is one byte wide | 179 |
+| no parse at all, on either candidate list | 85 |
+| a parse only the unguarded list holds | 52 |
+
+342 withheld: the locator's 336 classes with no block (`inventory/class_defaults_per_class.csv`) plus the 6 whose parse names a declared property, and every class with no block is here -- `inventory/class_defaults_withheld.csv`, written by `python3 tools/defaults-emit.py --explain -o inventory` and rendered here by `--explain-doc`.
+<!-- /generated:defaults-withheld -->
+
+**The ledger is the locator's no-block population plus six.** Every class the locator reports with no block
+(`inventory/class_defaults_per_class.csv`, `defaults=0`) is here, and the only rows it does not report are the six
+whose parse names a declared property and leaves the rest unaccounted for -- a candidate the two-property floor
+calls `type-contradiction` five times and `single-property` once (`inventory/class_defaults_misses.csv`). So the
+emitter and the locator withhold the same classes; they differ in what they call the reason, and both are now
+stated instead of counted.
+
+**The six are one shape, and it is not a block.** Each of them carries exactly one tag whose name the class's chain
+declares, and every other tag names something no class in that chain declares:
+
+* **Five of the six carry a declared tag whose type its kind forbids** -- a `Bool` typed `Byte`, another typed
+  `Class`, a `Float` typed `String`, a `Class` typed `Vector`, and a `Bool` typed `Invalid`. Those are exactly the
+  five rows `inventory/class_defaults_misses.csv` calls `type-contradiction`; the sixth,
+  `Engine.PlaylistParserBase`, types its declared `SpecialChars` as an `Array`, which agrees, and the parse is
+  withheld because of the undeclared tag in front of it instead.
+* **The undeclared side is where the bytes are wrong.** `Engine.ArmorPickup` reads `ConsoleCommand` as a 147-byte
+  `Name` and leaves a 12-byte trailer; `Engine.PlaylistParserBase` reads `DT_VerticalSprite` as a 16-byte `Byte` and
+  tiles exactly. A 147- or 16-byte value under a `Name` or `Byte` tag is not a length this reader decodes anywhere
+  else in the corpus.
+* **The other four read one byte per name**: `GamePlay.SP_Timer` ends on `Core` (one byte, typed `Float`),
+  `StargateMenus.MultiplayerMapFileList` on `Core` (two bytes, `Invalid`), and `IpDrv.ClientBeaconReceiver` /
+  `IpDrv.MasterServerClient` read three or four more one-byte tags named `Lighting`, `Movement`, `LightColor` and
+  `Class`. Those are the class record's own reference words -- a package, a class and three record fields -- read
+  as tag names, which is the same residue `inventory/class_defaults_nostream.csv` measures from the other side.
+
+**And that width is the whole population's tell.** Of the 342 rows, the ones whose every tag is one byte wide are
+the majority of each reason: 127 of the 199 that name no declared property, 49 of the 137 with no candidate, and 3
+of the 6. A one-byte tag naming an undeclared name is the shape of a compact index, not of a property value: a
+value is one byte only for a `Byte` or a `Bool`, and those tags carry their own type nibble. So the parse in these
+rows is reading the record's pair list -- which is why no floor, no guard and no type map recovers a block from
+them, and why the ledger says `no block` rather than `unrendered`.
+
+**The renderer's own scope is now a row on the status table.** `class defaults decoded` counts the locator's
+`fully_declared` population, which is the floor-of-two verdict: 1,664 of 2,319. The renderer emits **1,977**
+blocks, because a one-tag block is emitted when the class accounts for it and the locator's floor refuses a verdict
+on 313 of them. Two scopes, two rows -- the second is `defaults blocks emitted (renderer)` in `docs/STATUS.md`,
+cited to `inventory/class_defaults_emit_classes.csv`. Neither row is a correction of the other: the difference is
+exactly the one-tag population, whose completeness is the question `MIN_PROPERTIES` still leaves open.

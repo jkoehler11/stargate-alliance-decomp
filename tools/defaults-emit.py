@@ -559,7 +559,7 @@ def pick_both(pkg, cls, exp, supers, declared_all, limit=None):
     best_g, reason_g = choose_scored(g_cands, decl, own)
     best_u, reason_u = choose_scored(cands, decl, own)
     return {"data": data, "where": where, "g": best_g, "g_reason": reason_g,
-            "u": best_u, "u_reason": reason_u}
+            "u": best_u, "u_reason": reason_u, "g_cands": g_cands, "u_cands": cands}
 
 
 def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
@@ -1120,79 +1120,114 @@ def exp_size(pkg, cls):
 
 # --------------------------------------------------------------------------------------------------- main
 
-def explain(system_dir):
-    """Why a class is not emitted, measured rather than guessed.
+def describe_parse(pkg, best, data, decl, kinds):
+    """(start, tags, declared, undeclared, one_byte, trailer, first_name, first_kind, first_type,
+    declared_name, declared_kind, declared_type, declared_ok) for one parse.
+
+    `declared_ok` is 0 where the tag that names a declared property carries a type its declared kind forbids --
+    the `contradictions()` test -- and 1 where the kind is unconstrained (`UDelegateProperty`) or the type
+    agrees. It is empty when no tag names a declared property, because there is no kind to test against.
+    """
+    empty = ("", 0, 0, 0, 0, "", "", "", "", "", "", "", "")
+    if best is None:
+        return empty
+    _score, count, start, _names, _bad = best
+    try:
+        props, end, why = ps.read_block(data[start:], pkg, True)
+    except Exception:                                   # noqa: BLE001 - a short payload is a skip, not a crash
+        return (start, count, 0, 0, 0, "", "", "", "", "", "", "", "")
+    if why != "None":
+        return (start, count, 0, 0, 0, "", "", "", "", "", "", "", "")
+    declared = [p for p in props if p["name"] in decl]
+    undecl = [p for p in props if p["name"] not in decl]
+    one = [p for p in undecl if p.get("size") == 1]
+    first = props[0]
+    dname = dkind = dtype = dok = ""
+    if declared:
+        dname, dtype = declared[0]["name"], declared[0]["type"]
+        dkind = kinds.get(dname) or ""
+        allowed = cd.TYPE_AGREEMENT.get(kinds.get(dname))
+        dok = 1 if allowed is None or dtype in allowed else 0
+    return (start, len(props), len(declared), len(undecl), len(one), len(data) - start - end,
+            first["name"], kinds.get(first["name"]) or "", first["type"], dname, dkind, dtype, dok)
+
+
+def explain(system_dir, outdir=None):
+    """Why a class is not emitted, measured rather than guessed -- one row per withheld class.
 
     Three outcomes exist per class: a block that accounts for itself (emitted), a candidate block that does not
-    (withheld), and no candidate at all. This mode reports the residue and the evidence for what it is —
-    payload sizes, how many names are unaccounted for, and which names they are — without printing property
-    values. It exists because three plausible explanations have been tested and rejected already: the 64-byte
-    trailer bound (relaxing it to 4,096 recovers 2 classes), the property metadata (`inventory/class_properties.csv`
-    covers all 11,493 class-owned property exports, 0 missing), and payload size (clean payloads are also small —
-    median 159 bytes against 112 for withheld).
+    (withheld), and no candidate at all. The earlier version of this mode printed a summary and described the
+    payload sizes only, and it read the *unguarded* candidate list -- so its buckets did not reconcile with the
+    ledger it explains. This one walks `pick_both`'s guarded set, the same pick `render_class` takes, and writes
+    a row per withheld class: the reason, which parse the row describes, and the tag shape that settles it.
+
+    `parse` says whose reading the shape comes from: `chosen` (the pick the ledger withheld), `candidate` (the
+    floor refused every candidate, so the row describes the best parse the guard's set holds), or `none`.
     """
     supers = cd.super_map()
     declared_all = cd.declared_properties()
-    clean_sizes, withheld_sizes, none_sizes, silent_sizes = [], [], [], []
-    undeclared = collections.Counter()
-    bucket = collections.Counter()
+    rows, bucket, shapes = [], collections.Counter(), collections.Counter()
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
         pkg.read_imports()
         pkg.read_exports()
+        pkg_name = fname[:-2]
         for exp in pkg.exports:
             if pkg.class_name_of(exp) != "Class":
                 continue
             cls = pkg.name(exp["name"])
-            decl = set()
-            cur, seen = cls, set()
-            while cur and cur not in seen:
-                seen.add(cur)
-                decl |= declared_all.get(cur, set())
-                cur = supers.get(cur)
-            cands, _data = cd.candidates(pkg, ps, exp, kinds=cd.kinds_for_class(cls))
-            best, reason = choose_scored(cands, decl, declared_all.get(cls, set()))
-            if best is None:
-                if reason == "no-declared-name":
-                    # The chosen parse names no property the class declares: the renderer withholds the block
-                    # (`choose_scored`), so this class belongs with the no-candidate residue, not with a
-                    # withheld block. Its payload size is reported separately because it is a different shape.
-                    silent_sizes.append(exp["size"])
-                    bucket["no block: the chosen parse names no declared property"] += 1
-                    continue
-                none_sizes.append(exp["size"])
-                bucket["no candidate"] += 1
+            decl = class_declared(cls, supers, declared_all)
+            own = declared_all.get(cls, set())
+            kinds = cd.kinds_for_class(cls)
+            picks = pick_both(pkg, cls, exp, supers, declared_all)
+            best, reason = picks["g"], picks["g_reason"]
+            if best is not None:
+                status = "clean" if (best[0][0] == 1.0 and best[4] == 0) else "dirty"
+            else:
+                status = "no-declared-name" if reason == "no-declared-name" else "none"
+            if status == "clean":
+                bucket["clean"] += 1
                 continue
-            if best[0][0] == 1.0 and best[4] == 0:
-                clean_sizes.append(exp["size"])
-                bucket["emitted"] += 1
-                continue
-            if best[4]:
-                bucket["withheld, tag type contradicts the declared kind"] += 1
-            withheld_sizes.append(exp["size"])
-            bucket["withheld"] += 1
-            bad = [n for n in best[3] if n not in decl]
-            bucket["withheld with 1 unaccounted name" if len(bad) == 1 else "withheld with 2+"] += 1
-            for n in bad:
-                undeclared[n] += 1
-
-    def describe(values):
-        values = sorted(values)
-        if not values:
-            return "n=0"
-        return ("n=%d, median %d bytes, p90 %d, max %d, under 256 bytes %d"
-                % (len(values), statistics.median(values), values[int(len(values) * 0.9)], values[-1],
-                   sum(1 for v in values if v < 256)))
-
+            if best is not None:
+                parse = "chosen"
+                desc = describe_parse(pkg, best, picks["data"], decl, kinds)
+            else:
+                alt = cd.choose(picks["g_cands"], decl, own)
+                parse = "candidate"
+                if alt is None:
+                    alt = cd.choose(picks["u_cands"], decl, own)
+                    parse = "unguarded"
+                if alt is None:
+                    parse = "none"
+                desc = describe_parse(pkg, alt, picks["data"], decl, kinds)
+            why = {"dirty": "partial", "no-declared-name": "names-no-declared-property"}.get(status,
+                                                                                            "no-candidate")
+            bucket[(status, why)] += 1
+            shapes[(why, parse, desc[1], desc[2], desc[3], desc[4])] += 1
+            rows.append([pkg_name, cls, status, why, parse, exp["size"]] + list(desc))
+    rows.sort(key=lambda r: (r[0], r[1]))
+    if outdir:
+        os.makedirs(outdir, exist_ok=True)
+        path = os.path.join(outdir, "class_defaults_withheld.csv")
+        with open(path, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(EXPLAIN_COLUMNS)
+            w.writerows(rows)
+        print("wrote %s (%d classes)" % (path, len(rows)))
     print("outcomes: %s" % dict(bucket))
-    print("emitted payloads:   %s" % describe(clean_sizes))
-    print("withheld payloads:  %s" % describe(withheld_sizes))
-    print("no-block payloads:  %s" % describe(silent_sizes))
-    print("no-candidate:       %s" % describe(none_sizes))
-    print("most frequent unaccounted names: %s" % undeclared.most_common(12))
-    print("total unaccounted name slots: %d" % sum(undeclared.values()))
-    return 0
+    print("%d classes withheld; shapes (reason, parse, tags, declared, undeclared, one_byte):" % len(rows))
+    for k, v in shapes.most_common(12):
+        print("   %5d  %s" % (v, k))
+    partial = [r for r in rows if r[3] == "partial"]
+    if partial:
+        print("the %d rows that name a declared property:" % len(partial))
+        for r in partial:
+            print("   %-16s %-28s tags=%d declared=%d undeclared=%d one_byte=%d trailer=%s "
+                  "declared=%s (%s/%s ok=%s) first=%s (%s/%s)"
+                  % (r[0], r[1], r[7], r[8], r[9], r[10], r[11], r[15], r[16], r[17], r[18], r[12], r[13],
+                     r[14]))
+    return rows, bucket
 
 
 def reconcile(system_dir):
@@ -1291,14 +1326,148 @@ def cross_check(outdir=None):
     return 0
 
 
+EXPLAIN_COLUMNS = ["package", "class", "status", "reason", "parse", "payload_size", "start", "tags",
+                   "declared", "undeclared", "one_byte", "trailer", "first_name", "first_kind", "first_type",
+                   "declared_name", "declared_kind", "declared_type", "declared_ok"]
+
+REASON_TEXT = {
+    "partial": "one tag names a declared property and the rest name nothing the class's chain declares",
+    "names-no-declared-property": "the best parse names none of the class's properties",
+    "no-candidate": "no offset parses two tags to the payload's last byte",
+}
+
+DOC = os.path.join(ROOT, "docs", "CLASS_DEFAULTS.md")
+DOC_START = "<!-- generated:defaults-withheld -->"
+DOC_END = "<!-- /generated:defaults-withheld -->"
+
+
+def withheld_rows(path=None):
+    path = path or os.path.join(ROOT, "inventory", "class_defaults_withheld.csv")
+    with open(path, newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def render_withheld():
+    """The page block, from the committed artifact: the reason census and the rows that name a property."""
+    rows = withheld_rows()
+    reasons = collections.Counter(r["reason"] for r in rows)
+    parses = collections.defaultdict(collections.Counter)
+    for r in rows:
+        parses[r["reason"]][r["parse"]] += 1
+    lines = ["| reason | classes | parse the row describes | what it says |", "|---|---:|---|---|"]
+    for reason in ("partial", "names-no-declared-property", "no-candidate"):
+        if not reasons.get(reason):
+            continue
+        got = ", ".join("%s %d" % (k, v) for k, v in sorted(parses[reason].items()))
+        lines.append("| `%s` | %d | %s | %s |" % (reason, reasons[reason], got, REASON_TEXT[reason]))
+    partial = [r for r in rows if r["reason"] == "partial"]
+    if partial:
+        lines += ["", "| class | tags | declared | undeclared | one-byte undeclared | trailer | "
+                      "the declared tag | its kind | its type | type agrees | the first tag | its type |",
+                  "|---|---:|---:|---:|---:|---:|---|---|---|---|---|---|"]
+        for r in partial:
+            agree = {"1": "yes", "0": "**no**"}.get(r["declared_ok"], "-")
+            lines.append("| `%s.%s` | %s | %s | %s | %s | %s | `%s` | %s | %s | %s | `%s` | %s |"
+                         % (r["package"], r["class"], r["tags"], r["declared"], r["undeclared"],
+                            r["one_byte"], r["trailer"] or "0", r["declared_name"],
+                            r["declared_kind"] or "-", r["declared_type"], agree, r["first_name"],
+                            r["first_type"]))
+    one_byte = sum(1 for r in rows if r["undeclared"] != "0" and r["one_byte"] == r["undeclared"])
+    no_parse = sum(1 for r in rows if r["parse"] == "none")
+    unguarded = sum(1 for r in rows if r["parse"] == "unguarded")
+    lines += ["", "| reading | classes |", "|---|---:|",
+              "| every tag in the parse is one byte wide | %d |" % one_byte,
+              "| no parse at all, on either candidate list | %d |" % no_parse,
+              "| a parse only the unguarded list holds | %d |" % unguarded]
+    per = os.path.join(ROOT, "inventory", "class_defaults_per_class.csv")
+    with open(per, newline="", encoding="utf-8") as fh:
+        no_block = {(r["package"], r["class"]) for r in csv.DictReader(fh) if r["defaults"] == "0"}
+    here = {(r["package"], r["class"]) for r in rows}
+    lines += ["", "%s withheld: the locator's %s classes with no block (`inventory/class_defaults_per_class.csv`) "
+                  "plus the %d whose parse names a declared property, and every class with no block is here -- "
+                  "`inventory/class_defaults_withheld.csv`, written by `python3 tools/defaults-emit.py --explain "
+                  "-o inventory` and rendered here by `--explain-doc`."
+              % ("{:,}".format(len(rows)), "{:,}".format(len(no_block)), len(here - no_block))]
+    return "\n".join(lines)
+
+
+def splice_doc(text, block, path=DOC):
+    if DOC_START not in text or DOC_END not in text:
+        raise ValueError("%s has no %s ... %s markers" % (path, DOC_START, DOC_END))
+    head, rest = text.split(DOC_START, 1)
+    _old, tail = rest.split(DOC_END, 1)
+    return head + DOC_START + "\n" + block + "\n" + DOC_END + tail
+
+
+def write_doc(path=DOC):
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(splice_doc(text, render_withheld(), path))
+    print("wrote %s" % path)
+    return 0
+
+
+def doc_check(path=DOC):
+    problems = []
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    try:
+        want = splice_doc(text, render_withheld(), path)
+    except ValueError as exc:
+        problems.append(str(exc))
+        want = text
+    if want != text:
+        problems.append("the block does not match inventory/class_defaults_withheld.csv; run `--explain-doc`")
+    if problems:
+        print("FAIL defaults-emit: " + "; ".join(problems[:4]))
+        return 1
+    print("ok   defaults-emit: docs/CLASS_DEFAULTS.md's withheld block matches the artifact (%d classes)"
+          % len(withheld_rows()))
+    return 0
+
+
+def withheld_check():
+    """Dump-free: the withheld ledger's shape, and that it holds exactly the classes the emitter did not emit."""
+    problems = checkcsv.shape(os.path.join(ROOT, "inventory", "class_defaults_withheld.csv"), EXPLAIN_COLUMNS,
+                              key="class")
+    if problems:
+        print("FAIL defaults-emit: " + "; ".join(problems[:5]))
+        return 1
+    rows = withheld_rows()
+    classes = []
+    with open(os.path.join(ROOT, "inventory", "class_defaults_emit_classes.csv"), newline="",
+              encoding="utf-8") as fh:
+        classes = list(csv.DictReader(fh))
+    want = {(r["package"], r["class"]): r["status"] for r in classes if r["status"] != "clean"}
+    got = {(r["package"], r["class"]): r["status"] for r in rows}
+    if set(want) != set(got):
+        extra = sorted(set(got) - set(want))[:2]
+        missing = sorted(set(want) - set(got))[:2]
+        print("FAIL defaults-emit: the withheld ledger and the emitter's ledger name different classes "
+              "(%d vs %d; extra %s, missing %s)" % (len(got), len(want), extra, missing))
+        return 1
+    disagreed = [k for k in want if got[k] != want[k]]
+    if disagreed:
+        print("FAIL defaults-emit: %d class(es) carry a different status in the two ledgers, first %s.%s"
+              % (len(disagreed), disagreed[0][0], disagreed[0][1]))
+        return 1
+    if any(r["reason"] not in REASON_TEXT for r in rows):
+        print("FAIL defaults-emit: a withheld row carries a reason the page does not explain")
+        return 1
+    return 0
+
+
 def check_dump_free():
-    """`--check` without the dump: both artifacts' shape, and the emitter/locator equality."""
+    """`--check` without the dump: the artifacts' shape, the two ledgers' population, and their agreement."""
     problems = checkcsv.shape(os.path.join(ROOT, "inventory", "class_defaults_emit.csv"), COLUMNS,
                               key="package")
     problems += checkcsv.shape(os.path.join(ROOT, "inventory", "class_defaults_emit_classes.csv"),
                                CLASS_COLUMNS, key="class")
     if problems:
         print("FAIL defaults-emit: " + "; ".join(problems[:5]))
+        return 1
+    if withheld_check():
         return 1
     return cross_check()
 
@@ -1316,7 +1485,11 @@ def main():
     ap.add_argument("--unguarded", action="store_true",
                     help="locate with the pre-guard chooser (reproduces the artifact before the guard was taken)")
     ap.add_argument("--explain", action="store_true",
-                    help="classify the classes that are not emitted, with the evidence for why")
+                    help="classify the classes that are not emitted, with the evidence for why "
+                         "(`-o inventory` writes inventory/class_defaults_withheld.csv)")
+    ap.add_argument("--explain-doc", action="store_true",
+                    help="render docs/CLASS_DEFAULTS.md's withheld block from the artifact")
+    ap.add_argument("--check-doc", action="store_true", help="check that block instead of writing it")
     ap.add_argument("--reconcile", action="store_true",
                     help="cross-tab this tool's block per class against tools/class-defaults.py (the guard's share)")
     ap.add_argument("--class", dest="cls", help="limit --show to this class")
@@ -1332,7 +1505,9 @@ def main():
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             sweep(args.path, tmp, guard=guard)
-            for name in ("class_defaults_emit.csv", "class_defaults_emit_classes.csv"):
+            explain(args.path, tmp)
+            for name in ("class_defaults_emit.csv", "class_defaults_emit_classes.csv",
+                         "class_defaults_withheld.csv"):
                 new = open(os.path.join(tmp, name), "rb").read()
                 committed = os.path.join(ROOT, "inventory", name)
                 old = open(committed, "rb").read()
@@ -1341,11 +1516,14 @@ def main():
                         if a != b:
                             sys.exit("inventory/%s drifted at line %d: %r != %r" % (name, n, a, b))
                     sys.exit("inventory/%s drifted (length %d vs %d)" % (name, len(new), len(old)))
-        print("ok   class-defaults-emit: inventory/class_defaults_emit.csv and "
-              "class_defaults_emit_classes.csv reproduce")
+        print("ok   class-defaults-emit: inventory/class_defaults_emit.csv, "
+              "class_defaults_emit_classes.csv and class_defaults_withheld.csv reproduce")
         return 0
+    if args.explain_doc:
+        return doc_check() if args.check_doc else write_doc()
     if args.explain:
-        return explain(args.path)
+        explain(args.path, args.out)
+        return 0
     if args.reconcile:
         return reconcile(args.path)
     if args.verify:

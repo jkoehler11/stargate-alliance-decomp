@@ -419,6 +419,18 @@ def check_tool_contract():
     ok(name, detail)
 
 
+def check_defaults_withheld_doc():
+    """docs/CLASS_DEFAULTS.md's withheld block is rendered from inventory/class_defaults_withheld.csv."""
+    name = "defaults-withheld-doc"
+    r = subprocess.run([sys.executable, repo("tools", "defaults-emit.py"), "--explain-doc", "--check-doc"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   defaults-emit: ", "") if out else "")
+
+
 def check_defaults_misses():
     """The miss reasons must reconcile with the per-class defaults artifact."""
     name = "defaults-misses"
@@ -658,6 +670,7 @@ def main():
     check_switch_join()
     check_switch_arms()
     check_defaults_misses()
+    check_defaults_withheld_doc()
     check_tool_contract()
     check_savegame_paths()
     check_interaction_setup()

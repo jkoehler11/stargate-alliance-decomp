@@ -14149,3 +14149,40 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `inventory/ui_layout_values.csv` are re-rendered by `--write-doc`.
 - **Not in this PR.** The frame control, and any change to `MIN_PROPERTIES` (`class_defaults_per_class.csv`
   keeps its 1,983 blocks / 1,664 fully declared).
+
+### Execution notes (2026-11-19, the withheld ledger gets a reason, and 179 of the 342 read one byte per name)
+
+- **Task.** The previous note's stated residue on the ledger side: the emitter withholds 342 classes and its
+  per-class artifact says only `no-declared-name` / `none` / `dirty`, while the tool that explains them
+  (`--explain`) walked the *unguarded* candidate list -- so its buckets described a chooser the ledger no longer
+  uses, on 228 classes. Explaining the ledger now means reproducing it first.
+- **The fix is the walk, and the artifact is the reason.** `--explain` takes `pick_both`'s guarded set, the same
+  pick `render_class` takes, and writes `inventory/class_defaults_withheld.csv` (342 rows): the reason
+  (`partial` 6, `names-no-declared-property` 199, `no-candidate` 137), **which parse the row describes**
+  (`chosen` / `candidate` / `unguarded` / `none`), and the tag shape -- tags, declared, undeclared, one-byte
+  undeclared, trailer, the first tag, and the declared tag with its kind, its type and whether the two agree.
+- **What it measures that nothing did.** **179** of the 342 read nothing but **1-byte** tags, the width of a
+  compact index and never of a `Name`, `Vector` or `Class` value; **85** hold no parse on either candidate list and
+  **52** only an unguarded one. And the six `partial` rows are one shape: each names exactly one declared property
+  and nothing else the chain declares -- five of them with a type its kind forbids (the same five
+  `class_defaults_misses.csv` calls `type-contradiction`), the sixth (`Engine.PlaylistParserBase`) with an
+  undeclared 16-byte `DT_VerticalSprite` in front of a correctly typed `Array`.
+- **The ledger reconciles with the locator by construction now.** The 342 are exactly the locator's **336**
+  `defaults=0` classes plus those six, and no class with no block is missing. `--check` without the dump refuses a
+  ledger whose population or status disagrees with `class_defaults_emit_classes.csv`; corrupting one row's status
+  makes it fail naming the class, and `make ci`'s `defaults-withheld-doc` keeps the page's block on the artifact.
+- **The table gains the renderer's scope.** `tools/status.py` adds `defaults blocks emitted (renderer)`
+  **1,977 of 2,319 (85.25%)** beside `class defaults decoded` **1,664 (71.76%)**: two scopes, not a correction --
+  the difference is the 313 one-tag blocks the locator's two-property floor refuses a verdict on.
+- **Files.** `tools/defaults-emit.py` (`describe_parse`, the artifact-writing `explain`, `withheld_check`, the
+  `--explain-doc`/`--check-doc` pair, `pick_both` returning both candidate lists), `inventory/class_defaults_withheld.csv`
+  (new, 342 rows), `docs/CLASS_DEFAULTS.md` (the new section and its generated block), `tools/status.py`,
+  `tools/ci.py` (`defaults-withheld-doc`), `Makefile` (`make defaults-withheld`), `docs/UNKNOWNS.md` (U18's
+  forty-fifth), `docs/STATUS.md`/`README.md` (generated), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`,
+  and this note.
+- **Gates.** `make defaults-withheld` writes the ledger and the page block from the dump; `--check` reproduces all
+  three artifacts byte for byte with the dump and checks shape, population and status without it; `--check-doc`
+  holds the page block. Two 5-second walks; no boot, no Ghidra.
+- **Not in this PR.** The frame control (`tools/xemu/frame-diff.py` with one page's `WinTop` +0.05) and any change
+  to `MIN_PROPERTIES`: the one-tag verdict still needs the compile loop reading these files back, and that is still
+  the thread's open end.

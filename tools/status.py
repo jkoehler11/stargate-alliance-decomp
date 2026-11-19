@@ -97,6 +97,12 @@ def collect():
     cd_read = sum(int(r["fully_declared"]) for r in cd_rows)
     out.append(("Script", "class defaults decoded", cd_read, cd_total,
                 "inventory/class_defaults_coverage.csv (fully_declared / classes)"))
+    # The renderer's scope, not the locator's: `status=clean` counts a one-tag block the locator's two-property
+    # floor refuses a verdict on, so the two rows differ by exactly those blocks. A second scope, not a
+    # correction -- docs/CLASS_DEFAULTS.md states the difference.
+    ec_rows = rows_of("inventory/class_defaults_emit_classes.csv")
+    out.append(("Script", "defaults blocks emitted (renderer)", sum(1 for r in ec_rows if r["status"] == "clean"),
+                len(ec_rows), "inventory/class_defaults_emit_classes.csv (status=clean / classes)"))
     em_rows = rows_of("inventory/class_defaults_emit.csv")
     em_props = sum(int(r["properties"]) for r in em_rows)
     em_done = sum(int(r["rendered"]) for r in em_rows)
