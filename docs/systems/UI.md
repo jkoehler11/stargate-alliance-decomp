@@ -752,7 +752,7 @@ content with no route to the screen.
 
 #### The styled-text routine: four clip culls and no width test
 
-The stock item draw reaches `GUIStyles.DrawText` (`0x002ff790`) twice -- once per text pass -- and that routine's whole suppression logic is four compares against the canvas clip rect: a cell's width is used only in the `X + W` sum of one of them and in the rect handed to the canvas, so a **zero-width cell is not shortcircuited** -- it is culled only when its anchor lies outside the clip rectangle.
+The box's item draw reaches `GUIStyles.DrawText` (`0x002ff790`) twice -- once per style -- and that routine's whole suppression logic is four compares against the canvas clip rect: a cell's width is used only in the `X + W` sum of one of them and in the rect handed to the canvas, so a **zero-width cell is not shortcircuited** -- it is culled only when its anchor lies outside the clip rectangle.
 
 | measure | answer |
 |---|---|
@@ -760,6 +760,27 @@ The stock item draw reaches `GUIStyles.DrawText` (`0x002ff790`) twice -- once pe
 | `font table` | the style byte indexes the font array and the body sets the canvas's font/colour for the draw, then restores the five fields it saved |
 | `styled text` | the stock item draw calls it at two sites 0x55 apart with different rect arguments; the styled text of a row is that call |
 | `width use` | the width reaches one clip sum and the rect handed to the canvas (vtable +0xc4); no compare in the body tests it, so a zero-width cell is culled only when its anchor lies outside the clip rectangle |
+
+#### The canvas's own glyph loop, and the empty rect
+
+The style layer hands the cell's rect to `Canvas`'s text entry -- slot 49, the vtable displacement `+0xc4` (`0x00101490`) -- and that entry, not the style routine, is where the rectangle becomes a clip: it switches the four clip floats to the call's rect for the length of the pass and restores them afterwards, measures the string through slot 40, and runs the glyph pass through slot 41 (`0x00103d40`), which calls 0x001036e0.
+
+That loop, `0x001036e0`, is what decides a zero-width cell: 8 compares cull a glyph whose anchor is past the clip's extent (or whose own right or bottom is at or below zero), and a glyph that runs past the extent is **trimmed** to it -- the width becomes `(extent - glyph) / scale`, so an extent of 0 is a quad of width 0. The tile path `0x00103400` has no float compare at all: its only early exits are two null checks.
+
+So an empty rect paints **nothing**, and no compare in the chain tests the width: in the clip's frame the first glyph has X = 0 and is trimmed to width 0, and every later glyph has X > 0 and is culled by an extent of 0. That is the last step of the zero-width cell -- the boot the page used to ask for is not needed.
+
+| part | slot | body | what it does |
+|---|---|---|---|
+| `clip swap` | - | `0x3c..0x48` | the entry writes the call's rect as an origin and an extent -- 0x44 = right - left, 0x48 = bottom - top -- for the length of the pass and puts the four values back afterwards, so the rect the style layer hands down is the rectangle every glyph below is tested against |
+| `glyph loop` | - | `0x001036e0` | cull if the glyph's right <= 0, the clip's extent < the glyph's X, its bottom <= 0 or the clip's lower extent < the glyph's Y |
+| `glyph pass` | 41 | `0x00103d40` | the pass calls 0x001036e0, which culls a glyph whose anchor is past the clip's right or bottom edge and trims one that runs past it |
+| `measure` | 40 | `0x00103c30` | the entry calls it first and moves the draw position by the width it answers |
+| `text entry` | 49 | `0x00101490` | the styled draw's canvas virtual: copies the string, zeroes the cursor, swaps the clip for the call's rect, measures and draws through +0xa0/+0xa4, then restores the four clip floats |
+| `tile path` | 32 | `0x00103400` | the body the glyph loop emits through has no float compare in it: its only early exits are two null checks and it scales the quad by the canvas's four scale floats, so a zero-width quad is submitted and simply covers nothing |
+| `styled-text callers` | - | `0x002ff790` | 0x002ed320, 0x002f1530, 0x002f1a10, 0x002ffa80, 0x00301890, 0x00302b40, 0x003032a0 |
+| `empty rect` | - | - | the pass works in the clip's own frame: the entry zeroes the cursor, so the first glyph's advance is 0 and its X is 0 -- the anchor cull does not fire and the trim answers (0 - 0)/scale = 0, a quad of no width |
+
+`GUIMultiColumnListBox`'s item draw reaches the styled text twice, once per style: `cell pass` at `0x00301d7e`, style +0x254; `row pass` at `0x00301dd3`, style +0x58.
 <!-- /generated:list-native -->
 
 **A list box is not a list, and the difference is which slot 58 runs.** `GUIListBoxBase` extends

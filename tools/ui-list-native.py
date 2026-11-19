@@ -21,6 +21,10 @@ memory, no boot, no decompiler project:
   a row, and multiplied into the box's scroll range -- and the tool fails if a claimed offset does not
   appear in the body that is supposed to witness it.
 
+* **the empty rect**: the rect the style layer passes reaches the canvas's own text entry (slot 49,
+  `+0xc4`), which swaps the canvas clip for it; the glyph loop below (slot 41) trims the first glyph to
+  a width of 0 and culls the rest, and nothing in the chain compares the width with zero.
+
 The row itself (vertical list, `GUIVertList` slot 31 at `0x00301de0`):
 
     X = ClientBounds[0]
@@ -111,6 +115,21 @@ CLIP_FIELDS = [(0x3C, "clip left"), (0x40, "clip top"), (0x44, "clip right"), (0
 # The style's font table: `GUIStyles` indexes it by the style byte to pick the font it sets on the
 # canvas for the duration of one draw.
 FONT_ARRAY = 0xB0
+
+# The canvas the style layer draws through. `GUIStyles.DrawText` hands the cell's rect to the canvas's
+# own text entry -- `Canvas`'s slot 49, the vtable displacement `+0xc4` -- and that entry installs the
+# rect as the canvas's clip for the length of the glyph pass. The offsets below are the canvas's, each
+# read out of a body: the entry saves and swaps the clip, the glyph loop compares against it.
+CANVAS = "Canvas"
+CANVAS_TEXT_OFFSET = 0xC4        # slot 49: the text entry the styled draw dispatches
+CANVAS_MEASURE_OFFSET = 0xA0     # slot 40: the advance it aligns the text on
+CANVAS_DRAW_OFFSET = 0xA4        # slot 41: the glyph pass
+CANVAS_TILE_OFFSET = 0x80        # slot 32: the quad one glyph emits
+CLIP_LEFT, CLIP_TOP = 0x3C, 0x40     # the clip rect's origin
+CLIP_RIGHT, CLIP_BOTTOM = 0x44, 0x48  # its extent: the entry writes right-left and bottom-top here
+CUR_X, CUR_Y = 0x4C, 0x50            # the text cursor the entry zeroes
+CANVAS_SLOT_NAMES = ("text entry", "measure", "glyph pass", "tile path")
+BOX_COLUMN_ROOT = "GUIMultiColumnListBox"   # the box whose item draw reaches the text twice
 
 
 # ------------------------------------------------------------------ image
@@ -618,9 +637,8 @@ def is_text_routine(blob):
             and 0x3C in loads and 0x40 in loads and struct.pack("<I", FONT_ARRAY) in blob)
 
 
-def drawtext_half(img, classes, fam, sym_slots, sym_names, loops):
-    """`GUIStyles.DrawText`: the routine the stock item draw reaches, and its clip culls."""
-    rows = []
+def text_routine(img, sym_slots, sym_names):
+    """`GUIStyles.DrawText`: the body called twice by the stock item draw that carries the clip rect."""
     root = ROOTS[0][1]
     tv = [t for t, c in sym_names.items() if c == root][0]
     n = sym_slots[tv]
@@ -630,8 +648,7 @@ def drawtext_half(img, classes, fam, sym_slots, sym_names, loops):
     counts = collections.Counter()
     for i in range(len(blob) - 5):
         if blob[i] == 0xE8:
-            rel = struct.unpack_from("<i", blob, i + 1)[0]
-            counts[lo + i + 5 + rel] += 1
+            counts[lo + i + 5 + struct.unpack_from("<i", blob, i + 1)[0]] += 1
     twice = [t for t, c in counts.items() if c == 2]
     # more than one target is called twice (the item's style material as well as the text), so the
     # text routine is the one whose body carries the clip rectangle and the style's font table
@@ -639,7 +656,13 @@ def drawtext_half(img, classes, fam, sym_slots, sym_names, loops):
     if len(texts) != 1:
         sys.exit("FAIL ui-list-native: %d targets called twice carry the clip rect, expected 1"
                  % len(texts))
-    text = texts[0]
+    return texts[0]
+
+
+def drawtext_half(img, classes, fam, sym_slots, sym_names, loops):
+    """`GUIStyles.DrawText`: the routine the stock item draw reaches, and its clip culls."""
+    rows = []
+    text = text_routine(img, sym_slots, sym_names)
     tl, th = text, extent(text)
     tbody = img.bytes_at(tl, th - tl)
     if not is_text_routine(tbody):
@@ -670,6 +693,218 @@ def drawtext_half(img, classes, fam, sym_slots, sym_names, loops):
                           "font/colour for the draw, then restores the five fields it saved"))
     if struct.pack("<I", FONT_ARRAY) not in tbody:
         sys.exit("FAIL ui-list-native: the text routine never indexes the font array")
+    return rows
+
+
+def float_stores(img, lo, hi, disp):
+    """Every `movss [reg+disp],xmm` that writes `disp`, at either displacement width."""
+    blob = img.bytes_at(lo, max(0, hi - lo))
+    out, i = [], 0
+    while True:
+        i = blob.find(b"\xf3\x0f\x11", i)
+        if i < 0:
+            return out
+        mod, raw = blob[i + 3] >> 6, blob[i + 4:i + 8]
+        if mod == 1 and raw[:1] == bytes([disp & 0xFF]):
+            out.append(lo + i)
+        elif mod == 2 and raw == struct.pack("<I", disp):
+            out.append(lo + i)
+        i += 4
+
+
+def float_loads(img, lo, hi, disp):
+    """Every `movss xmm,[reg+disp]` that reads `disp`."""
+    blob = img.bytes_at(lo, max(0, hi - lo))
+    out, i = [], 0
+    while True:
+        i = blob.find(b"\xf3\x0f\x10", i)
+        if i < 0:
+            return out
+        mod, raw = blob[i + 3] >> 6, blob[i + 4:i + 8]
+        if mod == 1 and raw[:1] == bytes([disp & 0xFF]):
+            out.append(lo + i)
+        elif mod == 2 and raw == struct.pack("<I", disp):
+            out.append(lo + i)
+        i += 4
+
+
+def mem_compares(body):
+    """The displacement of every `comiss` whose second operand is memory (`disp8` or `disp32`)."""
+    out, i = [], 0
+    while True:
+        i = body.find(b"\x0f\x2f", i)
+        if i < 0:
+            return out
+        mod = body[i + 2] >> 6
+        if mod == 1:
+            out.append(body[i + 3])
+        elif mod == 2:
+            out.append(struct.unpack_from("<I", body, i + 3)[0])
+        i += 2
+
+
+def vcall_offsets(body):
+    """Every `call [reg+disp32]` in a body, as the vtable displacement it dispatches."""
+    out, i = [], 0
+    while True:
+        i = body.find(b"\xff\x90", i)
+        if i < 0:
+            return out
+        out.append(struct.unpack_from("<I", body, i + 2)[0])
+        i += 4
+
+
+def is_glyph_loop(body):
+    """The canvas's glyph pass: it clips every glyph against two far edges and trims to them.
+
+    The signature is the trim, not the loop: four or more memory compares, the clip's far pair among
+    them, a `divss` that turns `(edge - glyph) / scale` into the width the quad keeps, and the
+    `cvttss2si` that hands it on as an integer.
+    """
+    mem = mem_compares(body)
+    return (len([m for m in mem if m in (CLIP_RIGHT, CLIP_BOTTOM)]) >= 2
+            and body.count(b"\x0f\x2f") >= 4
+            and b"\xf3\x0f\x5e" in body and b"\xf3\x0f\x2c" in body)
+
+
+def canvas_half(img, sym_slots, sym_names, text_routine, box_item):
+    """The canvas's own text entry: where the styled rect goes, and what an empty one draws.
+
+    `GUIStyles.DrawText` is native and has no slot, so the rect it culls against is the *style*
+    layer's. The canvas below it is a class like any other: slot 49 (`+0xc4`) is the text entry, and
+    it installs the call's rect as the canvas clip, measures the string through slot 40, runs the
+    glyph pass through slot 41 and restores the clip. The pass is the body that decides an empty
+    rect, because nothing above it tests the width.
+    """
+    rows = []
+    tv = [t for t, c in sym_names.items() if c == CANVAS]
+    if not tv:
+        sys.exit("FAIL ui-list-native: %s has no class table" % CANVAS)
+    tv = tv[0]
+    n = sym_slots[tv]
+
+    def slot(off):
+        if off // 4 >= n:
+            sys.exit("FAIL ui-list-native: %s has %d slots, no +0x%x" % (CANVAS, n, off))
+        return img.u32(tv + off)
+
+    entry, measure = slot(CANVAS_TEXT_OFFSET), slot(CANVAS_MEASURE_OFFSET)
+    draw, tile = slot(CANVAS_DRAW_OFFSET), slot(CANVAS_TILE_OFFSET)
+    ebody = img.bytes_at(entry, extent(entry) - entry)
+
+    # the entry is the text call: a 0x1000-byte stack copy of the string, a zeroed cursor, the measure
+    # and the glyph pass dispatched through its own table, and the clip saved and swapped around it
+    if b"\x68\x00\x10\x00\x00" not in ebody:
+        sys.exit("FAIL ui-list-native: 0x%08x does not build the 0x1000-byte text buffer" % entry)
+    calls = vcall_offsets(ebody)
+    for off, label in ((CANVAS_MEASURE_OFFSET, "measure"), (CANVAS_DRAW_OFFSET, "glyph pass")):
+        if off not in calls:
+            sys.exit("FAIL ui-list-native: the text entry never dispatches +0x%x (%s)" % (off, label))
+    for off, label in ((CUR_X, "CurX"), (CUR_Y, "CurY")):
+        if not float_stores(img, entry, extent(entry), off):
+            sys.exit("FAIL ui-list-native: the text entry never zeroes +0x%x (%s)" % (off, label))
+    for off, label in ((CLIP_LEFT, "left"), (CLIP_TOP, "top"), (CLIP_RIGHT, "right"), (CLIP_BOTTOM, "bottom")):
+        if not float_stores(img, entry, extent(entry), off) or not float_loads(img, entry, extent(entry), off):
+            sys.exit("FAIL ui-list-native: the text entry does not save and swap the clip's %s (+0x%x)"
+                     % (label, off))
+    rows.append(dict(kind="canvas", name="text entry", owner=CANVAS, slot=str(CANVAS_TEXT_OFFSET // 4),
+                     va="0x%08x" % entry, form="+0x%x" % CANVAS_TEXT_OFFSET,
+                     value="the rect's own draw", verdict="entry",
+                     note="the styled draw's canvas virtual: copies the string, zeroes the cursor, "
+                          "swaps the clip for the call's rect, measures and draws through +0x%x/+0x%x, "
+                          "then restores the four clip floats" % (CANVAS_MEASURE_OFFSET, CANVAS_DRAW_OFFSET)))
+    rows.append(dict(kind="canvas", name="clip swap", owner=CANVAS, slot="", va="0x%x..0x%x" % (CLIP_LEFT, CLIP_BOTTOM),
+                     form="four floats", value="origin 0x3c/0x40, extent 0x44/0x48", verdict="measured",
+                     note="the entry writes the call's rect as an origin and an extent -- 0x44 = right - left, "
+                          "0x48 = bottom - top -- for the length of the pass and puts the four values back "
+                          "afterwards, so the rect the style layer hands down is the rectangle every glyph "
+                          "below is tested against"))
+    rows.append(dict(kind="canvas", name="measure", owner=CANVAS, slot=str(CANVAS_MEASURE_OFFSET // 4),
+                     va="0x%08x" % measure, form="dispatched before the pass",
+                     value="the advance the alignment uses", verdict="measured",
+                     note="the entry calls it first and moves the draw position by the width it answers; "
+                          "the alignment moves the text, the clip is the rect and is not re-derived from it"))
+    gbody = img.bytes_at(draw, extent(draw) - draw)
+    loop = None
+    for i in range(len(gbody) - 5):
+        if gbody[i] != 0xE8:
+            continue
+        t = draw + i + 5 + struct.unpack_from("<i", gbody, i + 1)[0]
+        if is_glyph_loop(img.bytes_at(t, extent(t) - t)):
+            loop = t
+            break
+    if loop is None:
+        sys.exit("FAIL ui-list-native: the glyph pass 0x%08x calls no body that clips per glyph" % draw)
+    lb = img.bytes_at(loop, extent(loop) - loop)
+    mem = [m for m in mem_compares(lb) if m in (CLIP_RIGHT, CLIP_BOTTOM)]
+    if len(mem) < 2 or b"\xf3\x0f\x5e" not in lb:
+        sys.exit("FAIL ui-list-native: 0x%08x is not the glyph loop (no trim to the far edges)" % loop)
+    rows.append(dict(kind="canvas", name="glyph pass", owner=CANVAS, slot=str(CANVAS_DRAW_OFFSET // 4),
+                     va="0x%08x" % draw, form="one quad per glyph",
+                     value="clips against the far edges", verdict="measured",
+                     note="the pass calls 0x%08x, which culls a glyph whose anchor is past the clip's "
+                          "right or bottom edge and trims one that runs past it" % loop))
+    rows.append(dict(kind="canvas", name="glyph loop", owner=CANVAS, slot="", va="0x%08x" % loop,
+                     form="%d compares, %d clip fields" % (lb.count(b"\x0f\x2f"), len(mem)),
+                     value="four culls, two trims", verdict="measured",
+                     note="cull if the glyph's right <= 0, the clip's extent < the glyph's X, its bottom <= 0 or "
+                          "the clip's lower extent < the glyph's Y; then trim the width to "
+                          "(extent - glyph)/scale and the height the same way"))
+    tbody = img.bytes_at(tile, extent(tile) - tile)
+    if b"\x0f\x2f" in tbody:
+        sys.exit("FAIL ui-list-native: the tile path 0x%08x tests a float after all" % tile)
+    rows.append(dict(kind="canvas", name="tile path", owner=CANVAS, slot=str(CANVAS_TILE_OFFSET // 4),
+                     va="0x%08x" % tile, form="one quad", value="no size test", verdict="measured",
+                     note="the body the glyph loop emits through has no float compare in it: its only "
+                          "early exits are two null checks and it scales the quad by the canvas's four "
+                          "scale floats, so a zero-width quad is submitted and simply covers nothing"))
+    rows.append(dict(kind="canvas", name="empty rect", owner="rect", slot="", va="", form="W = 0",
+                     value="nothing paints", verdict="answered",
+                     note="the pass works in the clip's own frame: the entry zeroes the cursor, so the first glyph's "
+                          "advance is 0 and its X is 0 -- the anchor cull does not fire and the trim answers "
+                          "(0 - 0)/scale = 0, a quad of no width; every later glyph has X > 0 and is culled "
+                          "by the clip's extent, which is 0"))
+    callers = img.callers(text_routine)
+    bodies = sorted({body_of(img, c) for c in callers})
+    rows.append(dict(kind="canvas", name="styled-text callers", owner="GUIStyles.DrawText", slot="",
+                     va="0x%08x" % text_routine, form="%d sites in %d bodies" % (len(callers), len(bodies)),
+                     value="the styled text of a row is one of them", verdict="measured",
+                     note="%s" % ", ".join("0x%08x" % b for b in bodies)))
+
+    # the box whose item draw reaches the text twice: the two sites carry the cell's own style and the
+    # list's, and each computes the width it passes as a subtraction, so 0 arrives as 0
+    sites = img.callers_in(box_item, text_routine, extent(box_item))
+    if len(sites) != 2:
+        sys.exit("FAIL ui-list-native: %s's item draw reaches the text %d times, expected 2"
+                 % (BOX_COLUMN_ROOT, len(sites)))
+    gap = sites[1] - sites[0]
+    styles, subs = [], []
+    for site in sites:
+        back = img.bytes_at(max(box_item, site - 0x60), site - max(box_item, site - 0x60))
+        off = None
+        for i in range(len(back) - 2):
+            if back[i:i + 2] == b"\x8b\x8e" and i + 6 <= len(back):   # mov ecx,[esi+disp32]
+                off = struct.unpack_from("<I", back, i + 2)[0]
+            elif back[i:i + 2] == b"\x8b\x4e" and i + 3 <= len(back):  # mov ecx,[esi+disp8]
+                off = back[i + 2]
+        styles.append(off)
+        subs.append(b"\xf3\x0f\x5c" in back)              # subss: the width as `right - left`
+    if None in styles or styles[0] == styles[1]:
+        sys.exit("FAIL ui-list-native: the two text sites carry the same style (%r)" % (styles,))
+    if not subs[0]:
+        sys.exit("FAIL ui-list-native: the cell site 0x%08x does not subtract a width before the call" % sites[0])
+    rows.append(dict(kind="call", name="cell pass", owner=BOX_COLUMN_ROOT, slot="58", va="0x%08x" % sites[0],
+                     form="style +0x%x" % styles[0], value="the cell's own style",
+                     verdict="measured",
+                     note="the item draw's first text site reads the cell style and the item's column "
+                          "array, and computes the width it passes as `right - left`, so a zero-width "
+                          "cell arrives as a literal 0"))
+    rows.append(dict(kind="call", name="row pass", owner=BOX_COLUMN_ROOT, slot="58", va="0x%08x" % sites[1],
+                     form="style +0x%x" % styles[1], value="the list's style",
+                     verdict="measured",
+                     note="the second site, 0x%x further on in the same body, uses the list's own style "
+                          "and a plain string, and takes its rect from the row the caller already "
+                          "computed" % gap))
     return rows
 
 
@@ -890,6 +1125,14 @@ def measure(xbe_path):
                           "the page's subclass and StargateMenus.ServerList is placed by nothing"))
     rows.extend(box_half(img, classes, fam, sym_slots, sym_names, glob, dispatcher, loops))
     rows.extend(drawtext_half(img, classes, fam, sym_slots, sym_names, loops))
+    col = [t for t, c in sym_names.items() if c == BOX_COLUMN_ROOT]
+    if not col:
+        raise SystemExit("FAIL ui-list-native: %s has no class table" % BOX_COLUMN_ROOT)
+    box_item = img.u32(col[0] + 58 * 4)
+    for cls, slot in ((BOX_COLUMN_ROOT, 58),):
+        if img.u32(col[0] + slot * 4) != box_item:
+            raise SystemExit("FAIL ui-list-native: %s slot %d is not the item draw" % (cls, slot))
+    rows.extend(canvas_half(img, sym_slots, sym_names, text_routine(img, sym_slots, sym_names), box_item))
     return rows
 
 
@@ -926,7 +1169,9 @@ def summarize(rows):
                 rects=sum(1 for r in rows if r["kind"] == "rect"),
                 box=sum(1 for r in rows if r["kind"] == "box" and r["verdict"] in ("item-draw", "passthrough")),
                 box_bodies=int(box_bodies[0]["form"].split()[0]) if box_bodies else 0,
-                text=sum(1 for r in rows if r["kind"] == "drawtext"))
+                text=sum(1 for r in rows if r["kind"] == "drawtext"),
+                canvas=sum(1 for r in rows if r["kind"] == "canvas"),
+                calls=sum(1 for r in rows if r["kind"] == "call"))
 
 
 def render(rows):
@@ -994,7 +1239,7 @@ def render(rows):
     texts = [r for r in rows if r["kind"] == "drawtext"]
     if texts:
         styled = [r for r in rows if r["kind"] == "drawtext" and r["name"] == "styled text"][0]
-        out.append("The stock item draw reaches `%s.DrawText` (`%s`) twice -- once per text pass -- "
+        out.append("The box's item draw reaches `%s.DrawText` (`%s`) twice -- once per style -- "
                    "and that routine's whole suppression logic is four compares against the canvas "
                    "clip rect: a cell's width is used only in the `X + W` sum of one of them and in "
                    "the rect handed to the canvas, so a "
@@ -1005,6 +1250,46 @@ def render(rows):
         out.append("|---|---|")
         for r in texts:
             out.append("| `%s` | %s |" % (r["name"], r["note"]))
+    canv = [r for r in rows if r["kind"] == "canvas"]
+    if canv:
+        entry = [r for r in canv if r["name"] == "text entry"][0]
+        loop = [r for r in canv if r["name"] == "glyph loop"][0]
+        tile = [r for r in canv if r["name"] == "tile path"][0]
+        out.append("")
+        out.append("#### The canvas's own glyph loop, and the empty rect")
+        out.append("")
+        out.append("The style layer hands the cell's rect to `%s`'s text entry -- slot %s, the vtable "
+                   "displacement `%s` (`%s`) -- and that entry, not the style routine, is where the "
+                   "rectangle becomes a clip: it switches the four clip floats to the call's rect for the "
+                   "length of the pass and restores them afterwards, measures the string through slot 40, "
+                   "and runs the glyph pass through slot 41 (`%s`), which calls %s."
+                   % (CANVAS, entry["slot"], entry["form"], entry["va"],
+                      [r for r in canv if r["name"] == "glyph pass"][0]["va"], loop["va"]))
+        out.append("")
+        out.append("That loop, `%s`, is what decides a zero-width cell: %d compares cull a glyph whose "
+                   "anchor is past the clip's extent (or whose own right or bottom is at or below zero), and "
+                   "a glyph that runs past the extent is **trimmed** to it -- the width becomes "
+                   "`(extent - glyph) / scale`, so an extent of 0 is a quad of width 0. The tile path `%s` "
+                   "has no float compare at all: its only early exits are two null checks."
+                   % (loop["va"], int(loop["form"].split()[0]), tile["va"]))
+        out.append("")
+        out.append("So an empty rect paints **nothing**, and no compare in the chain tests the width: in the "
+                   "clip's frame the first glyph has X = 0 and is trimmed to width 0, and every later glyph "
+                   "has X > 0 and is culled by an extent of 0. That is the last step of the zero-width cell "
+                   "-- the boot the page used to ask for is not needed.")
+        out.append("")
+        out.append("| part | slot | body | what it does |")
+        out.append("|---|---|---|---|")
+        for r in canv:
+            out.append("| `%s` | %s | %s | %s |"
+                       % (r["name"], r["slot"] or "-", ("`%s`" % r["va"]) if r["va"] else "-",
+                          r["note"].split("; ")[0]))
+        calls = [r for r in rows if r["kind"] == "call"]
+        if calls:
+            out.append("")
+            out.append("`%s`'s item draw reaches the styled text twice, once per style: %s."
+                       % (BOX_COLUMN_ROOT,
+                          "; ".join("`%s` at `%s`, %s" % (r["name"], r["va"], r["form"]) for r in calls)))
     return "\n".join(out)
 
 
@@ -1039,6 +1324,7 @@ def report(path=ARTIFACT):
     print("row rect: %(rects)d terms; %(fields)d field offsets, each witnessed by a body" % s)
     print("box tree: %(box)d draw rows, %(box_bodies)d slot bodies with no delegate; "
           "%(text)d styled-text rows" % s)
+    print("canvas: %(canvas)d rows, %(calls)d call sites in the box's item draw" % s)
 
 
 # ------------------------------------------------------------- self-test
@@ -1089,6 +1375,32 @@ def selftest():
     # the box tree and the list tree must stay apart: their slot 58s share an offset, not a body
     assert BOX_ROOT != ROOTS[0][1] and BOX_ROOT == "GUIListBoxBase"
     assert [d for d, _l in CLIP_FIELDS] == [0x3C, 0x40, 0x44, 0x48]
+    # the canvas half: the offsets it reads are declared, and the glyph-loop signature accepts a body
+    # that trims to the far edges and rejects one that only compares
+    assert CANVAS_TEXT_OFFSET == 0xC4 and CANVAS_DRAW_OFFSET == 0xA4 and CANVAS_TILE_OFFSET == 0x80
+    assert (CLIP_LEFT, CLIP_TOP, CLIP_RIGHT, CLIP_BOTTOM) == (0x3C, 0x40, 0x44, 0x48)
+    loop = (b"\x0f\x2f\x46\x44"          # comiss xmm0,[esi+0x44]
+            b"\x0f\x2f\x46\x48"          # comiss xmm0,[esi+0x48]
+            b"\x0f\x2f\xc1"              # comiss xmm0,xmm1
+            b"\x0f\x2f\xd3"              # comiss xmm2,xmm3
+            b"\xf3\x0f\x5e\xd6"          # divss xmm2,xmm6
+            b"\xf3\x0f\x2c\xca")         # cvttss2si ecx,xmm2
+    assert is_glyph_loop(loop)
+    assert not is_glyph_loop(loop.replace(b"\xf3\x0f\x5e\xd6", b"\x90\x90\x90\x90"))
+    assert not is_glyph_loop(loop.replace(b"\x0f\x2f\x46\x48", b"\x90\x90\x90\x90"))
+    assert mem_compares(loop) == [0x44, 0x48]
+    assert vcall_offsets(b"\xff\x90\xa4\x00\x00\x00") == [0xA4]
+    # a float store at both displacement widths, the two forms the entry uses
+    class Len:
+        def __init__(self, b):
+            self.b = b
+
+        def bytes_at(self, lo, n):
+            return self.b[:n]
+
+    assert float_stores(Len(b"\xf3\x0f\x11\x5e\x3c"), 0, 5, CLIP_LEFT) == [0]
+    assert float_stores(Len(b"\xf3\x0f\x11\x5e\x3c"), 0, 5, CLIP_TOP) == []
+    assert float_loads(Len(b"\xf3\x0f\x10\x46\x44"), 0, 5, CLIP_RIGHT) == [0]
     print("ok   list-native: synthetic name table, store parse and field witness")
 
 
