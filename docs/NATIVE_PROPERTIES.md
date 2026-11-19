@@ -333,48 +333,48 @@ from the outside -- the width of each type's serialized value, which is the part
 must produce before any of its internal layout can matter.
 
 <!-- generated:tag-encodings -->
-**Every one of the 1,212,640 property tags counted here re-encodes to the bytes the file holds**: 1,212,640 headers over 137,427 blocks in 73 map packages and 9 checkpoints; the per-file rows below count each block's terminating zero index as well, so they sum to the tags plus the blocks.
+**Every one of the 1,208,260 property tags counted here re-encodes to the bytes the file holds**: 1,208,260 headers over 137,900 blocks in 73 map packages and 9 checkpoints; the per-file rows below count each block's terminating zero index as well, so they sum to the tags plus the blocks.
 
-The walk uses the shipped locator and then the writer's rules as a second test: 1,536 block(s) it chose hold a tag those rules cannot produce (20,691 tag(s)), and 1,517 of those payloads carry a later start whose whole block re-encodes -- so the encoder also settles a block start the count-of-names rule gets wrong. The counts below are over the blocks that agree.
+The walk uses the shipped locator and then the writer's rules as a second test: 377 block(s) it chose hold a tag those rules cannot produce (4,359 tag(s)), and 343 of those payloads carry a later start whose whole block re-encodes -- so the encoder also settles a block start the count-of-names rule gets wrong. The counts below are over the blocks that agree.
 
-The rule that reproduces them: the **name** is a compact index -- 1,024,134 tags in one byte and 188,506 in two or more, so a four-byte int32 reader (what §6's table said) would desync on 188,506 of them; the **type byte** is the property type OR-ed with the size class the measured `Size` picks, implied widths first and the explicit classes after; the **array index** is packed one byte to `0x7f`, two to `0x3fff`, four above, and the shipped corpus writes 3,243 one-byte, 6 two-byte and 14 four-byte index(es), largest 1,073,741,823.
+The rule that reproduces them: the **name** is a compact index -- 1,020,968 tags in one byte and 187,292 in two or more, so a four-byte int32 reader (what §6's table said) would desync on 187,292 of them; the **type byte** is the property type OR-ed with the size class the measured `Size` picks, implied widths first and the explicit classes after; the **array index** is packed one byte to `0x7f`, two to `0x3fff`, four above, and the shipped corpus writes 2,884 one-byte, 3 two-byte and 1 four-byte index(es), largest 394,337,537.
 
 | size class | tags | what it says on disk |
 |---|---|---|
-| `0x00` | 334,672 | implied 1 byte |
-| `0x10` | 216,891 | implied 2 bytes |
-| `0x20` | 222,954 | implied 4 bytes |
-| `0x30` | 207,403 | implied 12 bytes |
-| `0x40` | 737 | implied 16 bytes |
-| `0x50` | 229,790 | one explicit size byte |
+| `0x00` | 329,495 | implied 1 byte |
+| `0x10` | 217,383 | implied 2 bytes |
+| `0x20` | 220,790 | implied 4 bytes |
+| `0x30` | 207,339 | implied 12 bytes |
+| `0x40` | 379 | implied 16 bytes |
+| `0x50` | 232,681 | one explicit size byte |
 | `0x60` | 193 | a two-byte size |
 
-Two consequences for a rebuild. **A bool's `Size` is zero**, not one: the value rides in bit 7 and the writer measures an empty value, so a bool lands in the explicit one-byte class (`0x50`) -- 33,923 bool tags read true and 46,304 false with no value byte. And **the explicit classes are only reached when no implied width matches**: 0 tag(s) write a width of 1/2/4/12/16 in an explicit class and 0 non-bool tag(s) set bit 7 with a zero array index, both of which the writer's rule forbids. 319,288 struct tag(s) carry a struct name.
+Two consequences for a rebuild. **A bool's `Size` is zero**, not one: the value rides in bit 7 and the writer measures an empty value, so a bool lands in the explicit one-byte class (`0x50`) -- 33,818 bool tags read true and 45,321 false with no value byte. And **the explicit classes are only reached when no implied width matches**: 0 tag(s) write a width of 1/2/4/12/16 in an explicit class and 0 non-bool tag(s) set bit 7 with a zero array index, both of which the writer's rule forbids. 321,268 struct tag(s) carry a struct name.
 
 | property type | tags | `Size` on disk, commonest first |
 |---|---|---|
-| Object | 346,615 | `1` (188,757), `2` (157,533), `4` (280), `16` (28) and 8 more |
-| Struct | 319,288 | `12` (207,032), `13` (67,423), `25` (17,550), `14` (15,882) and 26 more |
-| Int | 138,232 | `4` (137,561), `1` (607), `16` (23), `2` (14) and 9 more |
-| Name | 124,764 | `1` (68,393), `2` (56,162), `4` (159), `16` (32) and 6 more |
-| Float | 82,623 | `4` (82,122), `1` (430), `16` (39), `2` (16) and 8 more |
-| Bool | 80,227 | `0` (79,105), `1` (881), `4` (119), `2` (71) and 8 more |
-| Byte | 46,782 | `1` (46,467), `4` (263), `16` (28), `2` (10) and 6 more |
-| Array | 38,636 | `3` (7,798), `5` (5,836), `7` (4,807), `9` (3,246) and 120 more |
-| Invalid | 25,121 | `1` (24,858), `4` (174), `12` (41), `16` (33) and 4 more |
-| Str | 7,745 | `1` (2,492), `11` (667), `8` (538), `29` (430) and 257 more |
-| Class | 630 | `1` (437), `4` (149), `16` (21), `2` (10) and 4 more |
-| Rotator | 547 | `1` (233), `4` (188), `2` (83), `16` (32) and 7 more |
-| String | 532 | `1` (317), `4` (169), `16` (20), `12` (11) and 7 more |
-| FixedArray | 427 | `1` (197), `4` (176), `16` (37), `2` (9) and 6 more |
-| Map | 248 | `1` (103), `4` (91), `16` (22), `2` (18) and 6 more |
-| Vector | 223 | `4` (101), `1` (64), `16` (30), `2` (21) and 2 more |
+| Object | 349,031 | `1` (190,702), `2` (158,328), `66` (1) |
+| Struct | 321,268 | `12` (207,038), `13` (69,466), `25` (17,550), `14` (15,903) and 22 more |
+| Int | 137,442 | `4` (137,441), `1` (1) |
+| Name | 123,976 | `1` (67,795), `2` (56,179), `12` (1), `4` (1) |
+| Float | 82,021 | `4` (82,020), `66` (1) |
+| Bool | 79,139 | `0` (79,133), `12` (4), `16` (2) |
+| Byte | 44,917 | `1` (44,915), `12` (1), `4` (1) |
+| Array | 39,139 | `3` (7,867), `5` (5,979), `7` (4,948), `9` (3,382) and 121 more |
+| Invalid | 25,904 | `1` (25,835), `12` (33), `4` (16), `16` (15) and 2 more |
+| Str | 5,227 | `11` (666), `8` (532), `29` (430), `5` (240) and 254 more |
+| Rotator | 44 | `16` (21), `4` (11), `2` (5), `1` (5) and 1 more |
+| FixedArray | 42 | `16` (17), `1` (10), `4` (9), `2` (4) and 2 more |
+| Vector | 35 | `16` (16), `4` (7), `1` (5), `2` (4) and 1 more |
+| String | 34 | `1` (15), `16` (10), `4` (7), `2` (2) |
+| Map | 27 | `16` (9), `4` (6), `2` (6), `1` (3) and 3 more |
+| Class | 14 | `1` (13), `2` (1) |
 
-**The value's width is its serialized length, so a type has a modal width and a long tail.** Object `1` on 188,757 of 346,615 (54.5%); Struct `12` on 207,032 of 319,288 (64.8%); Int `4` on 137,561 of 138,232 (99.5%); Name `1` on 68,393 of 124,764 (54.8%); Float `4` on 82,122 of 82,623 (99.4%); Bool `0` on 79,105 of 80,227 (98.6%). `Struct` is the members' own bytes -- 30 widths, 207,032 of its 319,288 tags at `12` and 67,423 at `13` -- and `Str` grows with the string, its one-byte values being a length prefix and no characters.
+**The value's width is its serialized length, so a type has a modal width and a long tail.** Object `1` on 190,702 of 349,031 (54.6%); Struct `12` on 207,038 of 321,268 (64.4%); Int `4` on 137,441 of 137,442 (100%); Name `1` on 67,795 of 123,976 (54.7%); Float `4` on 82,020 of 82,021 (100%); Bool `0` on 79,133 of 79,139 (100%). `Struct` is the members' own bytes -- 26 widths, 207,038 of its 321,268 tags at `12` and 69,466 at `13` -- and `Str` grows with the string, its one-byte values being a length prefix and no characters.
 
-**Most of the tail is ordinary**: a reference's second byte (`Object` is `1` on 54.5% and `2` on 45.4% of its tags), a struct's members, a string's characters. What is left is a residue carrying a width its own class cannot write, and every one of those headers still re-encodes: 607 `Int`(s) and 430 `Float`(s) at `1` where the class writes 4, 881 bool(s) at `1` where a bool writes nothing at all, and 217 of the 223 `Vector` tags -- whose class writes 12 -- sitting at `4` (101), `1` (64), `16` (30). A header is only self-consistent with itself, so a desynchronised parse survives the header test; the value's width is the only second opinion the shipped corpus offers, and this is where it disagrees.
+**Most of the tail is ordinary**: a reference's second byte (`Object` is `1` on 54.6% and `2` on 45.4% of its tags), a struct's members, a string's characters. What is left is a residue carrying a width its own class cannot write, and every one of those headers still re-encodes: 1 `Int`(s) and 0 `Float`(s) at `1` where the class writes 4, 0 bool(s) at `1` where a bool writes nothing at all, and 32 of the 35 `Vector` tags -- whose class writes 12 -- sitting at `16` (16), `4` (7), `1` (5). A header is only self-consistent with itself, so a desynchronised parse survives the header test; the value's width is the only second opinion the shipped corpus offers, and this is where it disagrees.
 
-The checkpoints are the control: the nine `.sgs` files hold 20,296 tags over 1,458 blocks in this walk, against the 19,080 `Sg1Tool save` records `docs/formats/sgs-checkpoint.md` tabulates. The walk reads 1,216 more, every header it counts re-encodes to the file's own bytes, and the older table is lower on all nine files, so the two readers disagree about how many tags the saves hold rather than about whether these tags are there. 218 block(s) end without a zero index: the payload ends past the last complete tag, which is the shape a save's last object takes.
+The checkpoints are the control: the nine `.sgs` files hold 19,542 tags over 1,458 blocks in this walk, against the 19,080 `Sg1Tool save` records `docs/formats/sgs-checkpoint.md` tabulates. The walk reads 462 more, every header it counts re-encodes to the file's own bytes, and the older table is lower on all nine files, so the two readers disagree about how many tags the saves hold rather than about whether these tags are there. 218 block(s) end without a zero index: the payload ends past the last complete tag, which is the shape a save's last object takes.
 <!-- /generated:tag-encodings -->
 
 ### The value's own layout: `[property+0xa0]` is the class's own `SerializeItem`
@@ -430,32 +430,32 @@ only self-consistent with itself, so a parse that began inside a value reproduce
 value's declared `Size` is a number the reader has to consume exactly.
 
 <!-- generated:value-layouts -->
-**Every value is decoded by its class's own rule, and the decode has to consume exactly the `Size` its header declares.** Of the 1,211,640 tag(s) in 82 file(s), 1,136,029 are exact, 9,001 are not, 27,196 carry a type no property class in this build reports (`Invalid`, the legacy `String`, and `Vector`/`Rotator`, whose properties are `Struct`s of those names), and 39,414 carry a type whose value is not self-describing (`Map`, and an `Array`'s elements, whose `Inner` the tag does not name).
+**Every value is decoded by its class's own rule, and the decode has to consume exactly the `Size` its header declares.** Of the 1,206,114 tag(s) in 82 file(s), 1,140,573 are exact, 24 are not, 26,257 carry a type no property class in this build reports (`Invalid`, the legacy `String`, and `Vector`/`Rotator`, whose properties are `Struct`s of those names), and 39,260 carry a type whose value is not self-describing (`Map`, and an `Array`'s elements, whose `Inner` the tag does not name).
 
 | class | tags | the rule its body spells | exact | inexact | open | impossible |
 |---|---:|---|---:|---:|---:|---:|
-| Object | 344,528 | one compact object index | 343,905 | 623 | 0 | 0 |
-| Struct | 317,720 | the struct's own tagged walk, unless it is Vector, Rotator or Color | 317,467 | 253 | 0 | 0 |
-| Int | 138,538 | 4 bytes (`0x00037110`) | 137,526 | 1,012 | 0 | 0 |
-| Name | 124,761 | one compact name index | 124,243 | 518 | 0 | 0 |
-| Float | 82,569 | 4 bytes (`0x00037170`) | 81,787 | 782 | 0 | 0 |
-| Bool | 80,313 | no byte in a tag (the value rides in bit 7), one byte when nested | 78,644 | 1,669 | 0 | 0 |
-| Byte | 47,289 | one byte (`0x00037040`) | 46,862 | 427 | 0 | 0 |
-| Array | 38,226 | a compact count, then the Inner's rule count times | 0 | 0 | 38,226 | 0 |
-| Invalid | 25,203 | no property class in this build | 0 | 0 | 0 | 25,203 |
-| Str | 8,366 | a compact length (counting the NUL), then that many characters | 5,252 | 3,114 | 0 | 0 |
-| Class | 946 | one compact object index | 343 | 603 | 0 | 0 |
-| String | 833 | no property class in this build | 0 | 0 | 0 | 833 |
-| Rotator | 815 | no property class in this build | 0 | 0 | 0 | 815 |
-| FixedArray | 641 | the Inner's rule ArrayDim times, and no count | 0 | 0 | 641 | 0 |
-| Map | 547 | nothing: no archive traffic at all | 0 | 0 | 547 | 0 |
-| Vector | 345 | no property class in this build | 0 | 0 | 0 | 345 |
+| Object | 348,290 | one compact object index | 348,273 | 17 | 0 | 0 |
+| Struct | 320,367 | the struct's own tagged walk, unless it is Vector, Rotator or Color | 320,365 | 2 | 0 | 0 |
+| Int | 137,376 | 4 bytes (`0x00037110`) | 137,375 | 1 | 0 | 0 |
+| Name | 123,744 | one compact name index | 123,743 | 1 | 0 | 0 |
+| Float | 81,708 | 4 bytes (`0x00037170`) | 81,707 | 1 | 0 | 0 |
+| Bool | 79,005 | no byte in a tag (the value rides in bit 7), one byte when nested | 79,005 | 0 | 0 | 0 |
+| Byte | 44,884 | one byte (`0x00037040`) | 44,882 | 2 | 0 | 0 |
+| Array | 39,075 | a compact count, then the Inner's rule count times | 0 | 0 | 39,075 | 0 |
+| Invalid | 26,006 | no property class in this build | 0 | 0 | 0 | 26,006 |
+| Str | 5,201 | a compact length (counting the NUL), then that many characters | 5,201 | 0 | 0 | 0 |
+| Rotator | 130 | no property class in this build | 0 | 0 | 0 | 130 |
+| FixedArray | 95 | the Inner's rule ArrayDim times, and no count | 0 | 0 | 95 | 0 |
+| Map | 90 | nothing: no archive traffic at all | 0 | 0 | 90 | 0 |
+| Vector | 67 | no property class in this build | 0 | 0 | 0 | 67 |
+| String | 54 | no property class in this build | 0 | 0 | 0 | 54 |
+| Class | 22 | one compact object index | 22 | 0 | 0 | 0 |
 
-**A struct value is a tagged block, unless the struct is one of the three the serialiser skips.** `0x000795f0` compares `[Inner+0x20]` with name indices `0x57`, `0x58` and `0x5a`, which the seed table (`inventory/gname_seed.csv`) spells `Color`, `Rotator`, `Vector` -- and the corpus splits the same way: 3 struct name(s) hold a fixed width (`Color` native 4, `Rotator` native 12, `Vector` native 12) and never walk as a tag list, 76 walk as tag lists (`PointRegion`, `Scale`, `RangeVector`, `Range`, `Orientation`, `AnimRep`, `?`, `Plane`), and no name does both.
+**A struct value is a tagged block, unless the struct is one of the three the serialiser skips.** `0x000795f0` compares `[Inner+0x20]` with name indices `0x57`, `0x58` and `0x5a`, which the seed table (`inventory/gname_seed.csv`) spells `Color`, `Rotator`, `Vector` -- and the corpus splits the same way: 3 struct name(s) hold a fixed width (`Color` native 4, `Rotator` native 12, `Vector` native 12) and never walk as a tag list, 11 walk as tag lists (`PointRegion`, `Scale`, `RangeVector`, `Range`, `Orientation`, `AnimRep`, `Plane`, `Matrix`), and no name does both.
 
-**The failures cluster, which is what says the rules are not simply wrong.** Only 1,014 of the 9,001 inexact value(s) sit in a block where every other value decodes (Str 370, Bool 209, Int 106, Float 86, Name 61, Object 54, Struct 52, Class 46, Byte 30) -- a rule that missed one type would fail on lone values too, so these are parses that began inside a value and not a class whose layout is still unread.
+**The failures cluster, which is what says the rules are not simply wrong.** Only 22 of the 24 inexact value(s) sit in a block where every other value decodes (Object 17, Struct 2, Byte 1, Float 1, Name 1) -- a rule that missed one type would fail on lone values too, so these are parses that began inside a value and not a class whose layout is still unread.
 
-**The value is a second opinion on the block start, and it is the stricter one.** Of the 137,444 block(s) that walk, the header test refuses 1,534 outright (a tag the writer's rules cannot produce, `tag-encode`'s refusal); of the rest, 2,487 hold at least one value their class cannot produce although every header re-encodes, and 2,480 of those payloads carry a later start whose whole block decodes and still ends where the export ends -- so a header is only self-consistent with itself, and a value is what says a parse started inside one.
+**The value is the block start's second opinion, and the locator now takes it.** Of the 137,932 block(s) that walk, the header test refuses 375 outright (a tag the writer's rules cannot produce, `tag-encode`'s refusal); 3,692 more are blocks whose every header re-encodes and whose start the value test moves -- the header's candidate held a value its class cannot produce and another start's did not. What is left is 6 block(s) where a value still does not decode: no start in the prefix window fixes those, so they are counted rather than guessed away. A header is only self-consistent with itself; the value's declared `Size` is the number a parse inside another value cannot satisfy.
 
 What stays open is what the rule cannot reach, and it is counted above rather than guessed at: an `Array`'s count decodes but its elements are the `Inner`'s rule, a `FixedArray`'s dimension is the property's own field and not on disk at all, a `Map` value is the stub at `0x000794a0` that writes three bytes and no field, and the legacy `String` has no class to read.
 <!-- /generated:value-layouts -->

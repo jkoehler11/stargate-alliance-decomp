@@ -1,275 +1,216 @@
 scope,key,count,note
 census,files,82,maps=73;checkpoints=9
-census,tags,1211640,
-census,exact,1136029,the value consumes exactly its Size
-census,inexact,9001,the value does not
-census,open,39414,the type has no self-describing rule
-census,impossible,27196,a type no property class in this build reports
-census,blocks,137444,
-census,blocks_exact,133742,every checkable value in the block decodes
-census,blocks_inexact,3702,
-census,blocks_header_refused,1534,the header test refuses the block (the tag-encode refusal)
-census,blocks_value_only,2487,the headers all re-encode and a value still does not
-census,lone_inexact,1014,inexact value(s) that sit in a block where every other value decodes
-census,blocks_moved,2480,"of those, ones with a later start whose whole block decodes"
+census,tags,1206114,
+census,exact,1140573,the value consumes exactly its Size
+census,inexact,24,the value does not
+census,open,39260,the type has no self-describing rule
+census,impossible,26257,a type no property class in this build reports
+census,blocks,137932,
+census,blocks_exact,137909,every checkable value in the block decodes
+census,blocks_inexact,23,
+census,blocks_header_refused,375,the header test refuses the block (the tag-encode refusal)
+census,blocks_value_only,6,a value still does not decode where the locator put the start (the residue)
+census,lone_inexact,22,inexact value(s) that sit in a block where every other value decodes
+census,blocks_relocated,3692,the header test's start held a value its class cannot produce and another start does not
 census,native_structs,3,"the names the serialiser skips: Color, Rotator, Vector"
-native,Color,4,521 of 521 value(s)
-native,Rotator,12,51963 of 51963 value(s)
-native,Vector,12,154254 of 154289 value(s)
-class,Array,38226,"a compact count, then the Inner's rule count times; exact=0; inexact=0; open=38226"
+native,Color,4,523 of 523 value(s)
+native,Rotator,12,51968 of 51968 value(s)
+native,Vector,12,154285 of 154285 value(s)
+class,Array,39075,"a compact count, then the Inner's rule count times; exact=0; inexact=0; open=39075"
 class-exact,Array,0,
 class-inexact,Array,0,
-class-open,Array,38226,
+class-open,Array,39075,
 class-impossible,Array,0,
 class-lone,Array,0,
-class,Bool,80313,"no byte in a tag (the value rides in bit 7), one byte when nested; exact=78644; inexact=1669; open=0"
-class-exact,Bool,78644,
-class-inexact,Bool,1669,
+class,Bool,79005,"no byte in a tag (the value rides in bit 7), one byte when nested; exact=79005; inexact=0; open=0"
+class-exact,Bool,79005,
+class-inexact,Bool,0,
 class-open,Bool,0,
 class-impossible,Bool,0,
-class-lone,Bool,209,
-class,Byte,47289,one byte (`0x00037040`); exact=46862; inexact=427; open=0
-class-exact,Byte,46862,
-class-inexact,Byte,427,
+class-lone,Bool,0,
+class,Byte,44884,one byte (`0x00037040`); exact=44882; inexact=2; open=0
+class-exact,Byte,44882,
+class-inexact,Byte,2,
 class-open,Byte,0,
 class-impossible,Byte,0,
-class-lone,Byte,30,
-class,Class,946,one compact object index; exact=343; inexact=603; open=0
-class-exact,Class,343,
-class-inexact,Class,603,
+class-lone,Byte,1,
+class,Class,22,one compact object index; exact=22; inexact=0; open=0
+class-exact,Class,22,
+class-inexact,Class,0,
 class-open,Class,0,
 class-impossible,Class,0,
-class-lone,Class,46,
-class,FixedArray,641,"the Inner's rule ArrayDim times, and no count; exact=0; inexact=0; open=641"
+class-lone,Class,0,
+class,FixedArray,95,"the Inner's rule ArrayDim times, and no count; exact=0; inexact=0; open=95"
 class-exact,FixedArray,0,
 class-inexact,FixedArray,0,
-class-open,FixedArray,641,
+class-open,FixedArray,95,
 class-impossible,FixedArray,0,
 class-lone,FixedArray,0,
-class,Float,82569,4 bytes (`0x00037170`); exact=81787; inexact=782; open=0
-class-exact,Float,81787,
-class-inexact,Float,782,
+class,Float,81708,4 bytes (`0x00037170`); exact=81707; inexact=1; open=0
+class-exact,Float,81707,
+class-inexact,Float,1,
 class-open,Float,0,
 class-impossible,Float,0,
-class-lone,Float,86,
-class,Int,138538,4 bytes (`0x00037110`); exact=137526; inexact=1012; open=0
-class-exact,Int,137526,
-class-inexact,Int,1012,
+class-lone,Float,1,
+class,Int,137376,4 bytes (`0x00037110`); exact=137375; inexact=1; open=0
+class-exact,Int,137375,
+class-inexact,Int,1,
 class-open,Int,0,
 class-impossible,Int,0,
-class-lone,Int,106,
-class,Invalid,25203,no property class in this build; exact=0; inexact=0; open=0
+class-lone,Int,0,
+class,Invalid,26006,no property class in this build; exact=0; inexact=0; open=0
 class-exact,Invalid,0,
 class-inexact,Invalid,0,
 class-open,Invalid,0,
-class-impossible,Invalid,25203,
+class-impossible,Invalid,26006,
 class-lone,Invalid,0,
-class,Map,547,nothing: no archive traffic at all; exact=0; inexact=0; open=547
+class,Map,90,nothing: no archive traffic at all; exact=0; inexact=0; open=90
 class-exact,Map,0,
 class-inexact,Map,0,
-class-open,Map,547,
+class-open,Map,90,
 class-impossible,Map,0,
 class-lone,Map,0,
-class,Name,124761,one compact name index; exact=124243; inexact=518; open=0
-class-exact,Name,124243,
-class-inexact,Name,518,
+class,Name,123744,one compact name index; exact=123743; inexact=1; open=0
+class-exact,Name,123743,
+class-inexact,Name,1,
 class-open,Name,0,
 class-impossible,Name,0,
-class-lone,Name,61,
-class,Object,344528,one compact object index; exact=343905; inexact=623; open=0
-class-exact,Object,343905,
-class-inexact,Object,623,
+class-lone,Name,1,
+class,Object,348290,one compact object index; exact=348273; inexact=17; open=0
+class-exact,Object,348273,
+class-inexact,Object,17,
 class-open,Object,0,
 class-impossible,Object,0,
-class-lone,Object,54,
-class,Rotator,815,no property class in this build; exact=0; inexact=0; open=0
+class-lone,Object,17,
+class,Rotator,130,no property class in this build; exact=0; inexact=0; open=0
 class-exact,Rotator,0,
 class-inexact,Rotator,0,
 class-open,Rotator,0,
-class-impossible,Rotator,815,
+class-impossible,Rotator,130,
 class-lone,Rotator,0,
-class,Str,8366,"a compact length (counting the NUL), then that many characters; exact=5252; inexact=3114; open=0"
-class-exact,Str,5252,
-class-inexact,Str,3114,
+class,Str,5201,"a compact length (counting the NUL), then that many characters; exact=5201; inexact=0; open=0"
+class-exact,Str,5201,
+class-inexact,Str,0,
 class-open,Str,0,
 class-impossible,Str,0,
-class-lone,Str,370,
-class,String,833,no property class in this build; exact=0; inexact=0; open=0
+class-lone,Str,0,
+class,String,54,no property class in this build; exact=0; inexact=0; open=0
 class-exact,String,0,
 class-inexact,String,0,
 class-open,String,0,
-class-impossible,String,833,
+class-impossible,String,54,
 class-lone,String,0,
-class,Struct,317720,"the struct's own tagged walk, unless it is Vector, Rotator or Color; exact=317467; inexact=253; open=0"
-class-exact,Struct,317467,
-class-inexact,Struct,253,
+class,Struct,320367,"the struct's own tagged walk, unless it is Vector, Rotator or Color; exact=320365; inexact=2; open=0"
+class-exact,Struct,320365,
+class-inexact,Struct,2,
 class-open,Struct,0,
 class-impossible,Struct,0,
-class-lone,Struct,52,
-class,Vector,345,no property class in this build; exact=0; inexact=0; open=0
+class-lone,Struct,2,
+class,Vector,67,no property class in this build; exact=0; inexact=0; open=0
 class-exact,Vector,0,
 class-inexact,Vector,0,
 class-open,Vector,0,
-class-impossible,Vector,345,
+class-impossible,Vector,67,
 class-lone,Vector,0,
-struct,Vector,154289,native 12; exact=154254; inexact=35; sizes 2:2 6:5 9:7 12:154254 16:21
-struct,PointRegion,78218,tagged; exact=78217; inexact=1; sizes 13:62491 14:15726 16:1
-struct,Rotator,51963,native 12; exact=51963; inexact=0; sizes 12:51963
-struct,Scale,17561,tagged; exact=17558; inexact=3; sizes 1:1 4:1 16:1 25:17550 28:8
+struct,Vector,154285,native 12; exact=154285; inexact=0; sizes 12:154285
+struct,PointRegion,81065,tagged; exact=81065; inexact=0; sizes 13:65190 14:15875
+struct,Rotator,51968,native 12; exact=51968; inexact=0; sizes 12:51968
+struct,Scale,17558,tagged; exact=17558; inexact=0; sizes 25:17550 28:8
 struct,RangeVector,10078,tagged; exact=10078; inexact=0; sizes 52:9410 54:30 55:614 61:13 62:3 64:8
-struct,Range,4233,tagged; exact=4232; inexact=1; sizes 1:1 13:4196 15:36
-struct,Color,521,native 4; exact=521; inexact=0; sizes 4:521
+struct,Range,4244,tagged; exact=4244; inexact=0; sizes 13:4208 15:36
+struct,Color,523,native 4; exact=523; inexact=0; sizes 4:523
 struct,Orientation,506,tagged; exact=506; inexact=0; sizes 106:75 122:267 123:150 124:14
 struct,AnimRep,78,tagged; exact=78; inexact=0; sizes 19:4 20:18 21:8 22:48
-struct,?,72,tagged; exact=0; inexact=72; sizes 0:19 1:16 2:26 4:9 12:1 40:1
-struct,Plane,42,tagged; exact=41; inexact=1; sizes 1:1 26:29 29:12
-struct,SheerRate,21,tagged; exact=0; inexact=21; sizes 4:21
+struct,Plane,41,tagged; exact=41; inexact=0; sizes 26:29 29:12
 struct,Matrix,10,tagged; exact=10; inexact=0; sizes 129:10
-struct,LightSaturation,9,tagged; exact=0; inexact=9; sizes 1:6 2:3
 struct,InterpCurve,9,tagged; exact=9; inexact=0; sizes 5:9
-struct,iLeaf,7,tagged; exact=0; inexact=7; sizes 2:6 16:1
-struct,reachFlags,6,tagged; exact=0; inexact=6; sizes 4:6
-struct,Tag,5,tagged; exact=0; inexact=5; sizes 4:1 16:4
-struct,PhysicsVolume,5,tagged; exact=0; inexact=5; sizes 2:1 4:2 16:2
-struct,Brush,4,tagged; exact=0; inexact=4; sizes 1:4
-struct,HaakenVent_fallingEvent,4,tagged; exact=0; inexact=4; sizes 4:4
-struct,Level,3,tagged; exact=0; inexact=3; sizes 1:1 4:1 16:1
-struct,ScaleGlow,3,tagged; exact=0; inexact=3; sizes 1:3
-struct,DrawScale3D,3,tagged; exact=0; inexact=3; sizes 1:1 2:1 12:1
-struct,Model33,3,tagged; exact=0; inexact=3; sizes 2:3
-struct,End,3,tagged; exact=0; inexact=3; sizes 1:3
-struct,bBlockNonZeroExtentTraces,2,tagged; exact=0; inexact=2; sizes 2:1 16:1
-struct,StaticMesh,2,tagged; exact=0; inexact=2; sizes 2:2
-struct,Z,2,tagged; exact=0; inexact=2; sizes 1:1 12:1
-struct,StaticMeshInstance,2,tagged; exact=0; inexact=2; sizes 4:1 16:1
-struct,StaticMeshInstance2153,2,tagged; exact=0; inexact=2; sizes 2:2
-struct,saveme,2,tagged; exact=0; inexact=2; sizes 4:2
-struct,Max,2,tagged; exact=0; inexact=2; sizes 16:2
-struct,StaticMeshActor,2,tagged; exact=0; inexact=2; sizes 1:1 16:1
-struct,AmbientSound,2,tagged; exact=0; inexact=2; sizes 1:2
-struct,Region,2,tagged; exact=0; inexact=2; sizes 4:1 16:1
-struct,BasePos,2,tagged; exact=0; inexact=2; sizes 12:2
-struct,RespawnDeadParticles,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,nextNavigationPoint,1,tagged; exact=0; inexact=1; sizes 2:1
-struct,LookAtOffset_Relative,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Model26,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,DeathEvent,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,ReachSpec7694,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Zone,1,tagged; exact=0; inexact=1; sizes 16:1
-struct,Y,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,PctInStart,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Action_WAITFOREVENT31,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,LightCone,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,LevelInfo0,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,NavigationPointList,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,CollisionRadius,1,tagged; exact=0; inexact=1; sizes 20:1
-struct,StaticMeshInstance2117,1,tagged; exact=0; inexact=1; sizes 2:1
-struct,StaticMeshActor448,1,tagged; exact=0; inexact=1; sizes 2:1
-struct,Carter,1,tagged; exact=0; inexact=1; sizes 12:1
-struct,bBlockZeroExtentTraces,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,bDeactivateAfterUse,1,tagged; exact=0; inexact=1; sizes 2:1
-struct,ZoneNumber,1,tagged; exact=0; inexact=1; sizes 16:1
-struct,bTriggerOnceOnly,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Distance,1,tagged; exact=0; inexact=1; sizes 16:1
-struct,jacob_point2,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Jackson,1,tagged; exact=0; inexact=1; sizes 12:1
-struct,HiddenList,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Light,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Texture,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,ACTION_Talk1,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,bHasPathNodes,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,LightHue,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Gate,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,PathNode,1,tagged; exact=0; inexact=1; sizes 4:1
-struct,MainScale,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,Transition,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,PathList,1,tagged; exact=0; inexact=1; sizes 2:1
-struct,InterpolationPoint19,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,X,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,bAcceptsProjectors,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,InitialState,1,tagged; exact=0; inexact=1; sizes 12:1
-struct,Light48,1,tagged; exact=0; inexact=1; sizes 1:1
-struct,ColorScale,1,tagged; exact=0; inexact=1; sizes 16:1
-struct,ColLocation,1,tagged; exact=0; inexact=1; sizes 3:1
-file,Maps/CTF-Abydos.unr,25526,blocks=1971;inexact_values=7;moved=0
-file,Maps/CTF-LostCity.unr,9257,blocks=924;inexact_values=163;moved=48
-file,Maps/DM-Ha'tak.unr,10291,blocks=1005;inexact_values=46;moved=16
-file,Maps/DM-KelownanTrain.unr,5500,blocks=597;inexact_values=92;moved=21
-file,Maps/DM-Langara.unr,8484,blocks=780;inexact_values=4;moved=1
-file,Maps/DM-LostCity.unr,9383,blocks=934;inexact_values=158;moved=53
-file,Maps/DM-Subterranean.unr,4410,blocks=391;inexact_values=2;moved=0
-file,Maps/DM-Tomb.unr,30161,blocks=2141;inexact_values=2;moved=1
-file,Maps/DM-WorstCaseScenario.unr,20954,blocks=2010;inexact_values=170;moved=17
-file,Maps/Entry.unr,239,blocks=23;inexact_values=0;moved=0
-file,Maps/M00.unr,27609,blocks=3302;inexact_values=114;moved=23
-file,Maps/M02A.unr,23063,blocks=2708;inexact_values=5;moved=2
-file,Maps/M02B.unr,18899,blocks=1999;inexact_values=6;moved=1
-file,Maps/M02C.unr,20325,blocks=2076;inexact_values=9;moved=4
-file,Maps/M02D.unr,13584,blocks=1385;inexact_values=206;moved=65
-file,Maps/M04B.unr,5615,blocks=938;inexact_values=27;moved=9
-file,Maps/M04a.unr,8530,blocks=1154;inexact_values=6;moved=1
-file,Maps/M07A.unr,19385,blocks=2458;inexact_values=25;moved=7
-file,Maps/M07B.unr,21684,blocks=2888;inexact_values=49;moved=19
-file,Maps/M07C.unr,22564,blocks=2620;inexact_values=9;moved=2
-file,Maps/M07D.unr,25364,blocks=3038;inexact_values=81;moved=9
-file,Maps/M07E.unr,21095,blocks=2521;inexact_values=68;moved=6
-file,Maps/M10A.unr,21011,blocks=2587;inexact_values=295;moved=91
-file,Maps/M10B.unr,28882,blocks=3348;inexact_values=182;moved=58
-file,Maps/M10C.unr,16970,blocks=1868;inexact_values=114;moved=32
-file,Maps/M10D.unr,22104,blocks=2829;inexact_values=91;moved=16
-file,Maps/M12A.unr,18924,blocks=2306;inexact_values=123;moved=9
-file,Maps/M12B.unr,16692,blocks=2092;inexact_values=94;moved=22
-file,Maps/M12C.unr,20783,blocks=2772;inexact_values=54;moved=12
-file,Maps/M12D.unr,16684,blocks=2358;inexact_values=173;moved=45
-file,Maps/M12E.unr,19201,blocks=2192;inexact_values=28;moved=11
-file,Maps/M12F.unr,11725,blocks=1394;inexact_values=533;moved=94
-file,Maps/M13A.unr,20225,blocks=2628;inexact_values=33;moved=12
-file,Maps/M13B.unr,7816,blocks=1025;inexact_values=124;moved=42
-file,Maps/M13C.unr,13527,blocks=1660;inexact_values=11;moved=3
-file,Maps/M13D.unr,19854,blocks=2475;inexact_values=782;moved=254
-file,Maps/M14A.unr,23039,blocks=2765;inexact_values=320;moved=125
-file,Maps/M14B.unr,21042,blocks=2011;inexact_values=250;moved=98
-file,Maps/M14C.unr,15324,blocks=1804;inexact_values=563;moved=198
-file,Maps/M15A.unr,19379,blocks=2471;inexact_values=31;moved=13
-file,Maps/M15B.unr,9078,blocks=1080;inexact_values=28;moved=4
-file,Maps/M15C.unr,17057,blocks=1969;inexact_values=30;moved=5
-file,Maps/M15D.unr,18517,blocks=2076;inexact_values=148;moved=52
-file,Maps/M15E.unr,12752,blocks=1631;inexact_values=324;moved=65
-file,Maps/M15F.unr,14892,blocks=1920;inexact_values=8;moved=0
-file,Maps/M16A.unr,13542,blocks=1826;inexact_values=55;moved=9
-file,Maps/M16B.unr,8861,blocks=1101;inexact_values=188;moved=57
-file,Maps/M16C.unr,5947,blocks=566;inexact_values=91;moved=67
-file,Maps/M16D.unr,13270,blocks=1555;inexact_values=45;moved=20
-file,Maps/M16E.unr,7654,blocks=955;inexact_values=15;moved=5
-file,Maps/M16F.unr,8832,blocks=1082;inexact_values=7;moved=1
-file,Maps/M16G.unr,6341,blocks=645;inexact_values=140;moved=47
-file,Maps/M17A.unr,22538,blocks=2526;inexact_values=14;moved=5
-file,Maps/M17B.unr,25519,blocks=2748;inexact_values=44;moved=3
-file,Maps/M17D.unr,20104,blocks=2096;inexact_values=636;moved=151
-file,Maps/M18A.unr,16977,blocks=1659;inexact_values=383;moved=101
-file,Maps/M18B.unr,22905,blocks=2323;inexact_values=37;moved=1
-file,Maps/M18D.unr,18003,blocks=1978;inexact_values=147;moved=36
-file,Maps/M19A.unr,14094,blocks=1692;inexact_values=100;moved=23
-file,Maps/M19B.unr,13291,blocks=1727;inexact_values=8;moved=1
-file,Maps/M19C.unr,8148,blocks=909;inexact_values=332;moved=84
-file,Maps/M19D.unr,13662,blocks=1555;inexact_values=18;moved=1
-file,Maps/M19E.unr,14550,blocks=1803;inexact_values=59;moved=15
-file,Maps/M20A.unr,15182,blocks=1897;inexact_values=11;moved=4
-file,Maps/M20B.unr,17386,blocks=2059;inexact_values=11;moved=7
-file,Maps/M20C.unr,22069,blocks=2483;inexact_values=34;moved=12
-file,Maps/M20D.unr,12222,blocks=1593;inexact_values=3;moved=0
-file,Maps/M21A.unr,20888,blocks=2271;inexact_values=113;moved=59
-file,Maps/M21B.unr,17527,blocks=1839;inexact_values=22;moved=7
-file,Maps/M21C.unr,20205,blocks=2114;inexact_values=265;moved=58
-file,Maps/M21D.unr,22816,blocks=2445;inexact_values=62;moved=3
-file,Maps/MainMenu.unr,5822,blocks=668;inexact_values=405;moved=99
-file,Maps/SGCTF-AbydosVsSGC.unr,30002,blocks=2963;inexact_values=117;moved=0
-file,System/Profiles/DefaultProfile/C_M02A_Drillsite.sgs,2132,blocks=166;inexact_values=8;moved=7
-file,System/Profiles/DefaultProfile/C_M02A_Firstsymbol.sgs,1983,blocks=164;inexact_values=5;moved=5
-file,System/Profiles/DefaultProfile/C_M02B_Secondpositioningdevice.sgs,1881,blocks=152;inexact_values=6;moved=5
-file,System/Profiles/DefaultProfile/C_M02B_Secondsymbol.sgs,1865,blocks=152;inexact_values=2;moved=2
-file,System/Profiles/DefaultProfile/C_M02C_TeopalPyramid.sgs,2386,blocks=180;inexact_values=2;moved=2
-file,System/Profiles/DefaultProfile/C_M04a_VanatagePoint2.sgs,2029,blocks=152;inexact_values=11;moved=5
-file,System/Profiles/DefaultProfile/C_M04b_Ruins approach.sgs,1239,blocks=98;inexact_values=1;moved=0
-file,System/Profiles/DefaultProfile/C_M10B_EnteringtheDepot..sgs,2368,blocks=178;inexact_values=16;moved=12
-file,System/Profiles/DefaultProfile/C_M12A_Mission 12 - Checkpoint 1.sgs,0,blocks=0;inexact_values=0;moved=0
+struct,Tag,1,tagged; exact=0; inexact=1; sizes 16:1
+struct,?,1,tagged; exact=0; inexact=1; sizes 40:1
+residue,Maps/CTF-Abydos.unr#2706,1,KMeshProps;start=10;tags=2
+residue,Maps/M07A.unr#2149,1,Cubemap;start=32;tags=2
+residue,Maps/M10C.unr#644,2,StaticMeshInstance;start=54;tags=4
+residue,Maps/M10C.unr#655,1,StaticMeshInstance;start=56;tags=3
+residue,Maps/M14B.unr#447,1,Model;start=1;tags=1
+residue,Maps/M19A.unr#690,1,Model;start=2;tags=1
+file,Maps/CTF-Abydos.unr,25520,blocks=1971;inexact_values=1;relocated=6
+file,Maps/CTF-LostCity.unr,9098,blocks=926;inexact_values=0;relocated=74
+file,Maps/DM-Ha'tak.unr,10251,blocks=1005;inexact_values=0;relocated=16
+file,Maps/DM-KelownanTrain.unr,5443,blocks=597;inexact_values=0;relocated=26
+file,Maps/DM-Langara.unr,8492,blocks=786;inexact_values=0;relocated=3
+file,Maps/DM-LostCity.unr,9226,blocks=936;inexact_values=0;relocated=74
+file,Maps/DM-Subterranean.unr,4409,blocks=391;inexact_values=0;relocated=2
+file,Maps/DM-Tomb.unr,30161,blocks=2141;inexact_values=0;relocated=1
+file,Maps/DM-WorstCaseScenario.unr,20890,blocks=2012;inexact_values=16;relocated=52
+file,Maps/Entry.unr,239,blocks=23;inexact_values=0;relocated=0
+file,Maps/M00.unr,27533,blocks=3302;inexact_values=0;relocated=60
+file,Maps/M02A.unr,23061,blocks=2708;inexact_values=0;relocated=5
+file,Maps/M02B.unr,18896,blocks=1999;inexact_values=0;relocated=4
+file,Maps/M02C.unr,20318,blocks=2076;inexact_values=0;relocated=9
+file,Maps/M02D.unr,13476,blocks=1388;inexact_values=0;relocated=70
+file,Maps/M04B.unr,5591,blocks=938;inexact_values=0;relocated=14
+file,Maps/M04a.unr,8530,blocks=1156;inexact_values=0;relocated=5
+file,Maps/M07A.unr,19373,blocks=2458;inexact_values=1;relocated=13
+file,Maps/M07B.unr,21629,blocks=2888;inexact_values=0;relocated=28
+file,Maps/M07C.unr,22554,blocks=2620;inexact_values=1;relocated=8
+file,Maps/M07D.unr,25301,blocks=3038;inexact_values=0;relocated=38
+file,Maps/M07E.unr,21053,blocks=2523;inexact_values=0;relocated=29
+file,Maps/M10A.unr,20774,blocks=2587;inexact_values=0;relocated=120
+file,Maps/M10B.unr,28697,blocks=3348;inexact_values=0;relocated=136
+file,Maps/M10C.unr,16890,blocks=1868;inexact_values=3;relocated=44
+file,Maps/M10D.unr,22054,blocks=2831;inexact_values=0;relocated=41
+file,Maps/M12A.unr,18858,blocks=2306;inexact_values=0;relocated=34
+file,Maps/M12B.unr,16630,blocks=2092;inexact_values=0;relocated=42
+file,Maps/M12C.unr,20750,blocks=2772;inexact_values=0;relocated=24
+file,Maps/M12D.unr,16538,blocks=2358;inexact_values=0;relocated=67
+file,Maps/M12E.unr,19187,blocks=2193;inexact_values=0;relocated=14
+file,Maps/M12F.unr,11363,blocks=1400;inexact_values=0;relocated=153
+file,Maps/M13A.unr,20199,blocks=2628;inexact_values=0;relocated=16
+file,Maps/M13B.unr,7697,blocks=1025;inexact_values=0;relocated=59
+file,Maps/M13C.unr,13521,blocks=1660;inexact_values=0;relocated=6
+file,Maps/M13D.unr,19310,blocks=2475;inexact_values=0;relocated=298
+file,Maps/M14A.unr,22715,blocks=2766;inexact_values=0;relocated=149
+file,Maps/M14B.unr,20864,blocks=2013;inexact_values=1;relocated=115
+file,Maps/M14C.unr,14926,blocks=1804;inexact_values=0;relocated=228
+file,Maps/M15A.unr,19364,blocks=2471;inexact_values=0;relocated=20
+file,Maps/M15B.unr,9116,blocks=1109;inexact_values=0;relocated=12
+file,Maps/M15C.unr,17172,blocks=2034;inexact_values=0;relocated=24
+file,Maps/M15D.unr,18473,blocks=2095;inexact_values=0;relocated=64
+file,Maps/M15E.unr,12599,blocks=1631;inexact_values=0;relocated=87
+file,Maps/M15F.unr,14886,blocks=1920;inexact_values=0;relocated=5
+file,Maps/M16A.unr,13470,blocks=1826;inexact_values=0;relocated=38
+file,Maps/M16B.unr,8729,blocks=1101;inexact_values=0;relocated=74
+file,Maps/M16C.unr,5827,blocks=566;inexact_values=0;relocated=72
+file,Maps/M16D.unr,13237,blocks=1555;inexact_values=0;relocated=27
+file,Maps/M16E.unr,7646,blocks=955;inexact_values=0;relocated=10
+file,Maps/M16F.unr,8825,blocks=1082;inexact_values=0;relocated=7
+file,Maps/M16G.unr,6232,blocks=648;inexact_values=0;relocated=61
+file,Maps/M17A.unr,22528,blocks=2526;inexact_values=0;relocated=6
+file,Maps/M17B.unr,25504,blocks=2753;inexact_values=0;relocated=23
+file,Maps/M17D.unr,19659,blocks=2096;inexact_values=0;relocated=210
+file,Maps/M18A.unr,16672,blocks=1664;inexact_values=0;relocated=122
+file,Maps/M18B.unr,22909,blocks=2328;inexact_values=0;relocated=36
+file,Maps/M18D.unr,17898,blocks=1978;inexact_values=0;relocated=47
+file,Maps/M19A.unr,14055,blocks=1698;inexact_values=1;relocated=37
+file,Maps/M19B.unr,13286,blocks=1728;inexact_values=0;relocated=7
+file,Maps/M19C.unr,7976,blocks=910;inexact_values=0;relocated=94
+file,Maps/M19D.unr,13647,blocks=1555;inexact_values=0;relocated=13
+file,Maps/M19E.unr,14515,blocks=1804;inexact_values=0;relocated=28
+file,Maps/M20A.unr,15301,blocks=1959;inexact_values=0;relocated=10
+file,Maps/M20B.unr,17585,blocks=2162;inexact_values=0;relocated=7
+file,Maps/M20C.unr,22279,blocks=2590;inexact_values=0;relocated=22
+file,Maps/M20D.unr,12228,blocks=1597;inexact_values=0;relocated=5
+file,Maps/M21A.unr,20764,blocks=2279;inexact_values=0;relocated=88
+file,Maps/M21B.unr,17519,blocks=1843;inexact_values=0;relocated=14
+file,Maps/M21C.unr,20101,blocks=2135;inexact_values=0;relocated=90
+file,Maps/M21D.unr,22798,blocks=2453;inexact_values=0;relocated=38
+file,Maps/MainMenu.unr,5531,blocks=668;inexact_values=0;relocated=122
+file,Maps/SGCTF-AbydosVsSGC.unr,29902,blocks=2963;inexact_values=0;relocated=48
+file,System/Profiles/DefaultProfile/C_M02A_Drillsite.sgs,2130,blocks=166;inexact_values=0;relocated=8
+file,System/Profiles/DefaultProfile/C_M02A_Firstsymbol.sgs,1983,blocks=164;inexact_values=0;relocated=5
+file,System/Profiles/DefaultProfile/C_M02B_Secondpositioningdevice.sgs,1879,blocks=152;inexact_values=0;relocated=5
+file,System/Profiles/DefaultProfile/C_M02B_Secondsymbol.sgs,1864,blocks=152;inexact_values=0;relocated=2
+file,System/Profiles/DefaultProfile/C_M02C_TeopalPyramid.sgs,2386,blocks=180;inexact_values=0;relocated=2
+file,System/Profiles/DefaultProfile/C_M04a_VanatagePoint2.sgs,2026,blocks=152;inexact_values=0;relocated=5
+file,System/Profiles/DefaultProfile/C_M04b_Ruins approach.sgs,1239,blocks=98;inexact_values=0;relocated=1
+file,System/Profiles/DefaultProfile/C_M10B_EnteringtheDepot..sgs,2357,blocks=178;inexact_values=0;relocated=13
+file,System/Profiles/DefaultProfile/C_M12A_Mission 12 - Checkpoint 1.sgs,0,blocks=0;inexact_values=0;relocated=0
