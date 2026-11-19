@@ -13903,3 +13903,54 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   (`MyOnDrawItem` on `CoopPlayerPanel` is a 513-byte body), not from a `Begin Object` block -- the twelve panels
   each name their list, and `inventory/menu_flow.csv` now places the pages, so the drawing body is the next read
   that adds layout data the tree cannot hold.
+
+### Execution notes (2026-11-18, a list's row is a native rectangle, and the columns are script)
+
+- **Task.** The previous note's "not in this PR": a list's row geometry, which is the list class's own drawing code
+  rather than a `Begin Object` block. Read as the delegate it is -- `GUIListBase.OnDrawItem`, whose bodies the
+  corpus carries as `MyOnDrawItem` -- and widened to the two questions the bodies raise: what the cell table holds
+  and where each list reaches the screen.
+- **The delegate's rectangle is native, so the return value is the row.** `GUI.GUIListBase` is a `native` class and
+  its own declaration states the contract -- the floats are *"the pos/dimension of the item to be drawn"*, the bool
+  is *"Return true to shortcircuit the native DrawItem"*. **6 `MyOnDrawItem` declarations** over `StargateMenus`
+  with **6 wirings**, and **1 wiring is commented out**: `SavedGameList` declares the body and both of its
+  `InitComponent` lines inside a block comment, so the save-game list draws the stock item. Of the five live bodies
+  **2 return true** (`CoopPlayerPanel`, `ServerList` -- the native item draw is skipped and they stroke their own
+  background, with `ServerList` stating only a *selection* rectangle) and **3 return false** (`ObjectivesPanel`,
+  `SelectTeamPanel`, `ServerSelectionListBox` -- they paint over the native item and set `MSAT_Focused` when
+  selected). 15 columns in all.
+- **Three placements, and only one is relative to the row.** A cell-table call places **9** columns, a
+  `Canvas.ClipX * f` pair places **6**, and `W/2` places **2** (the commented body's). The screen-relative ones are
+  the measurement that matters: `ServerSelectionListBox` places its three at 0.015/0.31, 0.01/0.28 and 0.01/0.09 of
+  the canvas and `SelectTeamPanel` at 0.01/0.22 and 0.01/0.05, so neither list's columns move when its own
+  rectangle does.
+- **The cell table is empty, so nine columns have no width.** `GUIMultiColumnList.InitializeColumns` computes
+  `ColumnWidths[i] = ActualWidth() * Columns[i].Percentage`, and `Columns` reaches a list only through
+  `GUIMultiColumnListBox.InitBaseList`'s `if ( Columns.Length > 0 )`. **0 of 1,664** emitted defaults blocks state
+  `Columns`, and both classes that declare the array are in that tree, so this is not a block the emitter refused;
+  `GetCellLeftWidth` therefore answers `Width = 0` for all nine, each starting at the list's `ClientBounds[0]` plus
+  the caller's row `X`.
+- **No menu list writes a row height.** `ItemHeight`/`ItemWidth`/`ItemsPerPage` are `var(List)` on the native base
+  (*"subclass should set in PreDraw"*, *"is set natively"*); the corpus's seven writes are `moListEditBox` (its own
+  height), `UPreviewMapListClient` (25), `GUIListBase`'s own `ItemsPerPage = 0` reset and four stock `UWindow`
+  widgets, which draw their rows in script -- which is why they can state one.
+- **Where the list reaches the screen repeats the page thread's split.** Four body classes are placed by a block
+  (`CoopPlayerPanel` in `WaitingForPlayers`, `SelectTeamPanel` in `SelectTeamPage`, `ServerSelectionListBox` in
+  `ServerSelectionPanel`, `SavedGameList` in `SaveGamePanel`); `ObjectivesPanel` is created from a **string**
+  (`InGameInfoPanel`'s `TabControl.AddTab(" OBJECTIVES ", "StargateMenus.ObjectivesPanel", , ...)`); and
+  **`ServerList` is named by nothing the corpus states** -- no emitted block, no string in the 18 packages, no
+  `.ini` key, with the 32 refused `StargateMenus` blocks outside that scan -- so its five cell columns can never
+  draw, which the empty cell table would do to them anyway.
+- **Files.** `tools/ui-list-rows.py` (new: `read_bodies`, `classify`, `read_placements`, `read_defaults_tree`, the
+  `render` block and a synthetic `--check`), `inventory/ui_list_rows.csv` (48 rows: 6 `body`, 15 `column`,
+  6 `wiring`, 6 `placement`, 10 `rowrect`, 2 `celltable`, 1 `census`), `docs/systems/UI.md` (the generated *a
+  list's row* section, the header paragraph, the rebuild list's seventh item, the counted half named in *Not
+  measured*),
+  `docs/UNKNOWNS.md` U28 (new; U27's status points at it), `Makefile` (`make ui-list-rows`, the ci pair),
+  `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The native rectangle: `GUIListBase`'s `DrawItem`/`PreDraw` is C++, so the row's
+  `X/Y/W/H` and `ItemHeight` are one vtable slot away in the class table (the slot-11 route 3.7 used), and a boot
+  to the co-op waiting page with `tools/xemu/frame-diff.py` answers whether a `DrawText` of width 0 paints nothing
+  or a clipped glyph.
+- **Not in this PR.** The boot half (a zero-width cell on screen) and the emitter's class-level locator guard,
+  which is still James's call (313 classes promoted, 1,664 -> 1,977 clean blocks).

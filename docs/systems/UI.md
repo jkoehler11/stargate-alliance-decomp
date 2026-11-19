@@ -597,6 +597,91 @@ On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu
 | `StargateContent.ReplicatorPossess` | hud_swap | `StargateGame.ReplicatorHUD` | class |
 <!-- /generated:menu-flow -->
 
+<!-- generated:list-rows -->
+### A list's row: the rectangle is native, and the columns are script
+
+A page's `Begin Object` block places the list; where each row's *columns* sit is the list's own drawing code, which the corpus carries as the `OnDrawItem` delegate body `MyOnDrawItem`. **6 bodies** are declared and **6 wirings** assign one -- **1 of them commented out** -- and the **5 live** bodies draw **15 columns**.
+
+**The rectangle a body receives is not in the corpus.** `GUI.GUIListBase` is a `native` class, and the delegate's own declaration states the contract: the floats are *"the pos/dimension of the item to be drawn"* and the return is *"Return true to shortcircuit the native DrawItem"*. That makes the return value the row's visible difference: a **true** body draws the row itself and the native item draw is skipped (**2** bodies); a **false** body paints over the native item (**3**).
+
+| body class | declaration | returns | columns | what it does to the row |
+|---|---|---|---:|---|
+| `CoopPlayerPanel` | `bool(7)` | `replace` | 4 | returns true, so the native item draw is skipped; draws the row background itself; selection is a drawn state, not a style |
+| `ObjectivesPanel` | `bool(7)` | `overlay` | 1 | returns false, so the native item draw still runs; selection is a drawn state, not a style; `COLUMN_INDENT = 0.03` indents a nested row |
+| `SelectTeamPanel` | `bool(7)` | `overlay` | 2 | returns false, so the native item draw still runs |
+| `ServerList` | `bool(7)` | `replace` | 5 | returns true, so the native item draw is skipped; draws the selection rectangle itself, so an unselected row is the native draw; selection is a drawn state, not a style |
+| `ServerSelectionListBox` | `bool(7)` | `overlay` | 3 | returns false, so the native item draw still runs; selection is a drawn state, not a style |
+| `SavedGameList` | `bool(7)` | `unwired` | 2 | declaration and wiring are both inside a block comment; draws the row background itself; selection is a drawn state, not a style |
+
+**Three placements, and only one of them is relative to the row.** A cell-table call (`GetCellLeftWidth`) places **9** columns, a screen fraction (`Canvas.ClipX * f`) places **6**, and a row fraction (`W/n`) places **2** -- the row-fraction pair is the commented body's, so **2** of these columns never draw.
+
+| body class | # | placement | value | field | note |
+|---|---:|---|---|---|---|
+| `CoopPlayerPanel` | 0 | cell | `cell 0` | `Name` | aligned left |
+| `CoopPlayerPanel` | 1 | cell | `cell 1` | `ID` | aligned left |
+| `CoopPlayerPanel` | 2 | cell | `cell 2` | `Character` | aligned left |
+| `CoopPlayerPanel` | 3 | cell | `cell 3` | `Ready` | aligned left |
+| `ObjectivesPanel` | 0 | canvas | `L=0.005 W=row` | `Description` | aligned left |
+| `SavedGameList` | 0 | row | `1/2` | `GetPrettyDate` | aligned left |
+| `SavedGameList` | 1 | row | `1/2` | `GetTypeString` | aligned left |
+| `SelectTeamPanel` | 0 | canvas | `L=0.01 W=0.22` | `TeamName` | aligned left |
+| `SelectTeamPanel` | 1 | canvas | `L=0.01+0.22+0.01 W=0.05` | `NumPlayers` | only when bDisplayNumPlayers; aligned right |
+| `ServerList` | 0 | cell | `cell 0` | `ServerName` | aligned left |
+| `ServerList` | 1 | cell | `cell 1` | `IP` | aligned left |
+| `ServerList` | 2 | cell | `cell 2` | `GameType` | aligned left |
+| `ServerList` | 3 | cell | `cell 3` | `MapName` | aligned left |
+| `ServerList` | 4 | cell | `cell 4` | `NumPlayers` | aligned left |
+| `ServerSelectionListBox` | 0 | canvas | `L=0.015 W=0.31` | `MapName` | aligned left |
+| `ServerSelectionListBox` | 1 | canvas | `L=0.015+0.31+0.01 W=0.28` | `GameTypeName` | aligned left |
+| `ServerSelectionListBox` | 2 | canvas | `L=0.015+0.31+0.01+0.28+0.01 W=0.09` | `CurrentPlayers/MaxPlayers` | aligned left |
+
+**Where the list reaches the screen: a block, a string, or nothing.** A body draws whatever list its class holds, and the layout tree holds only what a `Begin Object` block places -- **4** of the **6** classes are placed that way, **1** is created from a *string* in code, and **1** nothing the corpus states names -- no emitted block, no string in any of the 18 packages, and no `.ini` key. The 32 `StargateMenus` classes whose block the emitter refuses sit outside the block scan.
+
+| body class | reached by | holder |
+|---|---|---|
+| `CoopPlayerPanel` | block | WaitingForPlayers |
+| `SavedGameList` | block | SaveGamePanel |
+| `SelectTeamPanel` | block | SelectTeamPage |
+| `ServerSelectionListBox` | block | ServerSelectionPanel |
+| `ServerList` | none | - |
+| `ObjectivesPanel` | string | InGameInfoPanel |
+
+**The cell table is empty, so the cell-placed columns have no width.** `ColumnWidths[i] = ActualWidth() * Columns[i].Percentage` is filled by `InitializeColumns`, and `Columns` reaches a list only through `GUIMultiColumnListBox.InitBaseList`'s `if ( Columns.Length > 0 )`. **0 of 1,664** emitted defaults blocks state `Columns`, and **3 of the 3** classes that *can* -- the descendants of `GUIMultiColumnList` and `GUIMultiColumnListBox` -- have an emitted block at all, so no class that could fill the table is outside the scan. `GetCellLeftWidth` therefore answers `Width = 0` for every cell of the **2** cell-placed bodies, and each of their columns starts at the list's own `ClientBounds[0]` plus whatever row `X` the caller adds.
+
+**The row height is native, and the corpus writes one only where a class draws its own rows.** `ItemHeight`, `ItemWidth` and `ItemsPerPage` are `var(List)` on the native `GUIListBase` -- *"subclass should set in PreDraw"*, *"is set natively"* -- and the script writes are:
+
+| class | property | written value |
+|---|---|---|
+| `GUI.GUIListBase` | `ItemsPerPage` | `0` |
+| `GUI.moListEditBox` | `ItemHeight` | `ActualHeight()` |
+| `UDebugMenu.UDebugMenuBar` | `ItemWidth` | `W` |
+| `UPreview.UPreviewMapListClient` | `ItemHeight` | `25` |
+| `UWindow.UWindowComboList` | `ItemHeight` | `15` |
+| `UWindow.UWindowMenuBar` | `ItemWidth` | `W` |
+| `UWindow.UWindowPulldownMenu` | `ItemHeight` | `LookAndFeel.Pulldown_ItemHeight` |
+
+No menu list is in that table: `moListEditBox` sizes the list it holds to its own height, `UPreviewMapListClient` states 25 and the stock `UWindow` widgets draw their own rows, which is why they can state one. So the row a menu list hands its body is whatever the native `PreDraw` computes -- the one number of this thread the packages do not hold.
+
+| wiring site | form | body | receiver |
+|---|---|---|---|
+| `SavedGameList` | commented | `MyOnDrawItem` | `List, commented out, so the body never runs` |
+| `CoopPlayerPanel` | live | `MyOnDrawItem` | `List` |
+| `ObjectivesPanel` | live | `MyOnDrawItem` | `ObjectivesBox.List` |
+| `SelectTeamPanel` | live | `MyOnDrawItem` | `TeamListBox.List` |
+| `ServerList` | live | `MyOnDrawItem` | `self` |
+| `ServerSelectionListBox` | live | `MyOnDrawItem` | `List` |
+
+**The commented wiring is a cut row, not a reader's gap.** `SavedGameList` declares `MyOnDrawItem` inside a block comment together with both of its `InitComponent` lines, so the save-game list draws the stock item -- one column, no date/type split -- and the two-column body above never runs. It is the same shape as the pages the corpus names only inside a comment.
+<!-- /generated:list-rows -->
+
+**The header shows the same table the body does.** `GUIMultiColumnListBox.InitBaseList` gives the header the
+list it belongs to (`Header.MyList = List`), so a column heading is `MyList.Columns[i]` -- the array nothing states
+-- and the header's own emitted block is four values: `SizingCol=-1`, `ClickingCol=-1`, `bAcceptsInput=True` and
+`StyleName=NoBackground`. Both the column it sizes and the column it answers a click on are -1, so a multi-column
+list's heading text, its drag handle and its click target are all unset in the corpus, and its own style draws no
+background. What the header *does* show -- a column of empty cells under the body's own rectangle -- is a question
+for the boot the next section names.
+
 ## What this means for the rebuild
 
 1. **UI is the cheapest script to port and the hardest to verify.** No natives in the menu package means
@@ -622,6 +707,11 @@ On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu
    `MapSelectionPanel` on the two pages that restate it, and a `MultiplayerServerPanel` →
    `XBoxLiveServerSelectionPanel` again on the server-select chain, so a rebuild that loses a restatement draws
    the wrong panel where the shipped build drew the narrow one.
+7. **A list's row is a native rectangle and a script body, and `make ui-list-rows` gates the script half.** The
+   fifteen columns the five live bodies draw are rows in `inventory/ui_list_rows.csv` — placement, value, field —
+   so a rebuilt list that moves a column, drops one, or changes a placement kind changes that artifact and
+   `make ci` says so. What it cannot gate is the cell table being *empty*: no class states `Columns`, so a rebuild
+   that keeps the corpus's own defaults draws the same zero-width cells the shipped build does.
 
 ## Not measured
 
@@ -636,7 +726,10 @@ On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu
   four pages still carry `SGPageBase`'s placeholder title (`Basic SG GUI Page: Insert Title`) and 9 of the 59
   pages state no defaults at all. So the *data* behind a page — its frame, its captions, its components, their
   classes and their geometry — is counted; whether a page draws the layout that data describes is what still
-  needs a running build.
+  needs a running build. The rows *inside* a list are the third level and are counted too (the block above,
+  `docs/UNKNOWNS.md` U28): **15 columns over five bodies**, placed through a cell table, the screen or the row.
+  What stays unmeasured there is the rectangle itself — `GUIListBase` is native, so the row's `X/Y/W/H` and its
+  `ItemHeight` are C++, and whether a `DrawText` of width 0 paints nothing or a clipped glyph needs the boot.
 * **Why the ten are dead is a *where*, not a *why*.** The corpus names none of them — measured over every
   class body, every emitted defaults block and every menu key in the five shipped `.ini`s — but which editor
   pass cut them, and whether the cut pages' bodies still compile against the classes around them, is a

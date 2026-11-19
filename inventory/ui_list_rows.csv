@@ -1,0 +1,49 @@
+kind,name,package,column,form,value,field,verdict,note
+body,CoopPlayerPanel,StargateMenus,,bool(7),4,,replace,"returns true, so the native item draw is skipped; draws the row background itself; selection is a drawn state, not a style"
+body,ObjectivesPanel,StargateMenus,,bool(7),1,,overlay,"returns false, so the native item draw still runs; selection is a drawn state, not a style; `COLUMN_INDENT = 0.03` indents a nested row"
+body,SavedGameList,StargateMenus,,bool(7),2,,unwired,"declaration and wiring are both inside a block comment; draws the row background itself; selection is a drawn state, not a style"
+body,SelectTeamPanel,StargateMenus,,bool(7),2,,overlay,"returns false, so the native item draw still runs"
+body,ServerList,StargateMenus,,bool(7),5,,replace,"returns true, so the native item draw is skipped; draws the selection rectangle itself, so an unselected row is the native draw; selection is a drawn state, not a style"
+body,ServerSelectionListBox,StargateMenus,,bool(7),3,,overlay,"returns false, so the native item draw still runs; selection is a drawn state, not a style"
+celltable,CoopPlayerPanel,StargateMenus,,Columns,0/1664,,empty,"ColumnWidths[i] = ActualWidth() * Columns[i].Percentage, and no emitted block states Columns"
+celltable,ServerList,StargateMenus,,Columns,0/1664,,empty,"ColumnWidths[i] = ActualWidth() * Columns[i].Percentage, and no emitted block states Columns"
+column,CoopPlayerPanel,StargateMenus,0,cell,cell 0,Name,,aligned left
+column,CoopPlayerPanel,StargateMenus,1,cell,cell 1,ID,,aligned left
+column,CoopPlayerPanel,StargateMenus,2,cell,cell 2,Character,,aligned left
+column,CoopPlayerPanel,StargateMenus,3,cell,cell 3,Ready,,aligned left
+column,ObjectivesPanel,StargateMenus,0,canvas,L=0.005 W=row,Description,,aligned left
+column,SavedGameList,StargateMenus,0,row,1/2,GetPrettyDate,commented,aligned left
+column,SavedGameList,StargateMenus,1,row,1/2,GetTypeString,commented,aligned left
+column,SelectTeamPanel,StargateMenus,0,canvas,L=0.01 W=0.22,TeamName,,aligned left
+column,SelectTeamPanel,StargateMenus,1,canvas,L=0.01+0.22+0.01 W=0.05,NumPlayers,,only when bDisplayNumPlayers; aligned right
+column,ServerList,StargateMenus,0,cell,cell 0,ServerName,,aligned left
+column,ServerList,StargateMenus,1,cell,cell 1,IP,,aligned left
+column,ServerList,StargateMenus,2,cell,cell 2,GameType,,aligned left
+column,ServerList,StargateMenus,3,cell,cell 3,MapName,,aligned left
+column,ServerList,StargateMenus,4,cell,cell 4,NumPlayers,,aligned left
+column,ServerSelectionListBox,StargateMenus,0,canvas,L=0.015 W=0.31,MapName,,aligned left
+column,ServerSelectionListBox,StargateMenus,1,canvas,L=0.015+0.31+0.01 W=0.28,GameTypeName,,aligned left
+column,ServerSelectionListBox,StargateMenus,2,canvas,L=0.015+0.31+0.01+0.28+0.01 W=0.09,CurrentPlayers/MaxPlayers,,aligned left
+placement,CoopPlayerPanel,,,block,WaitingForPlayers,,block,placed by a Begin Object block
+placement,ObjectivesPanel,,,string,InGameInfoPanel,,string,"named by a string in code, not by a block"
+placement,SavedGameList,,,block,SaveGamePanel,,block,placed by a Begin Object block
+placement,SelectTeamPanel,,,block,SelectTeamPage,,block,placed by a Begin Object block
+placement,ServerList,,,none,,,none,no emitted block and no script string names it
+placement,ServerSelectionListBox,,,block,ServerSelectionPanel,,block,placed by a Begin Object block
+rowrect,GUIListBase,GUI,,ItemHeight,var(List),,native,subclass should set in PreDraw
+rowrect,GUIListBase,GUI,,ItemWidth,var(List),,native,subclass should set in PreDraw
+rowrect,GUIListBase,GUI,,ItemsPerPage,0,,script,ItemsPerPage = 0
+rowrect,GUIListBase,GUI,,ItemsPerPage,var(List),,native,is set natively
+rowrect,UDebugMenuBar,UDebugMenu,,ItemWidth,W,,script,ItemWidth = W
+rowrect,UPreviewMapListClient,UPreview,,ItemHeight,25,,script,ItemHeight = 25
+rowrect,UWindowComboList,UWindow,,ItemHeight,15,,script,ItemHeight = 15
+rowrect,UWindowMenuBar,UWindow,,ItemWidth,W,,script,ItemWidth = W
+rowrect,UWindowPulldownMenu,UWindow,,ItemHeight,LookAndFeel.Pulldown_ItemHeight,,script,ItemHeight = LookAndFeel.Pulldown_ItemHeight
+rowrect,moListEditBox,GUI,,ItemHeight,ActualHeight(),,script,ItemHeight = ActualHeight()
+wiring,CoopPlayerPanel,StargateMenus,,live,MyOnDrawItem,,live,List
+wiring,ObjectivesPanel,StargateMenus,,live,MyOnDrawItem,,live,ObjectivesBox.List
+wiring,SavedGameList,StargateMenus,,commented,MyOnDrawItem,,commented,"List, commented out, so the body never runs"
+wiring,SelectTeamPanel,StargateMenus,,live,MyOnDrawItem,,live,TeamListBox.List
+wiring,ServerList,StargateMenus,,live,MyOnDrawItem,,live,self
+wiring,ServerSelectionListBox,StargateMenus,,live,MyOnDrawItem,,live,List
+census,list-rows,,,,,,,bodies=6|canvas=6|cell=9|cell_classes=2|columns=15|columns_capable=3|columns_capable_held=3|cut_columns=2|cut_wirings=1|defaults_blocks=1664|defaults_with_columns=0|height_props=3|height_writers=7|live=5|other=0|overlay=3|replace=2|row=2|unwired=1|wirings=6

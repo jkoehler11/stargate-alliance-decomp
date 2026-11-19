@@ -4883,4 +4883,60 @@ promoting **313** classes corpus-wide (1,664 → 1,977 clean blocks), which is t
 records.
 
 **Status.** Answered at the data level (parent-relative and unclamped, every binding placed); open for the
-native composition and for the twelve one-tag panel files, which are a locator policy decision.
+native composition and for the twelve one-tag panel files, which is a locator policy decision. The rows a list
+draws inside its own box are U28.
+
+## U28. A list's row is a native rectangle and a script body -- answered: three placements, an empty cell table, and one list class nothing names
+
+**Observed.** `tools/ui-list-rows.py` (`make ui-list-rows`, `inventory/ui_list_rows.csv`) reads the drawing code a
+list hands each item. A page's `Begin Object` block places the list; what the row *says* is the `GUIListBase`
+delegate `OnDrawItem`, and the corpus carries it as **6 `MyOnDrawItem` declarations** over `StargateMenus` with
+**6 wirings**, **1 of them commented out**. The five live bodies draw **15 columns**.
+
+**The row's rectangle is not in the corpus.** `GUI.GUIListBase` is a `native` class, and the delegate's own
+declaration states the contract: the floats are *"the pos/dimension of the item to be drawn"* and the bool return is
+*"Return true to shortcircuit the native DrawItem"*. So a body's return value is the row's visible difference:
+**2** bodies return **true** and the native item draw is skipped (`CoopPlayerPanel`, `ServerList`), **3** return
+**false** and paint over it (`ObjectivesPanel`, `SelectTeamPanel`, `ServerSelectionListBox`). The `true` bodies
+that state a background stroke it themselves; `ServerList` states only a *selection* rectangle, so its unselected
+rows are whatever the native draw leaves.
+
+**Three placements, and only one is relative to the row.** A cell-table call (`GetCellLeftWidth`) places **9**
+columns, a screen fraction (`Canvas.ClipX * f`) places **6**, and a row fraction (`W/2`) places **2** -- both of
+those in the commented body. The screen-fraction columns are the interesting ones: `ServerSelectionListBox` places
+its three at 0.015/0.31, 0.01/0.28 and 0.01/0.09 of `Canvas.ClipX`, and `SelectTeamPanel` at 0.01/0.22 and
+0.01/0.05, so neither list box's columns move when its own rectangle does.
+
+**The cell table is empty, so the cell-placed columns have no width.** `GUIMultiColumnList.InitializeColumns`
+computes `ColumnWidths[i] = ActualWidth() * Columns[i].Percentage`, and `Columns` reaches a list only through
+`GUIMultiColumnListBox.InitBaseList`'s `if ( Columns.Length > 0 ) List.Columns = Columns`. **0 of 1,664** emitted
+defaults blocks state `Columns`, and **3 of the 3** classes that *can* state it -- the descendants of the two
+declarers, `GUIMultiColumnList`, `GUIMultiColumnListBox` and `ServerList` -- are in that tree, so this is not a
+population the emitter refused. `GetCellLeftWidth` therefore answers `Width = 0` for all **9** cell-placed columns,
+and each of them starts at the list's `ClientBounds[0]` plus whatever row `X` the caller adds. The header reads the same array -- `GUIMultiColumnListBox.InitBaseList` sets
+`Header.MyList = List` -- and its own block states only `SizingCol=-1`, `ClickingCol=-1`, `bAcceptsInput=True` and
+`StyleName=NoBackground`, so no heading text and no click target are set either.
+
+**The row height is native, and no menu list writes one.** `ItemHeight`, `ItemWidth` and `ItemsPerPage` are
+`var(List)` on `GUIListBase` (*"subclass should set in PreDraw"*, *"is set natively"*). The corpus's writes are
+`moListEditBox` (its own height), `UPreviewMapListClient` (25), `GUIListBase`'s own `ItemsPerPage = 0` reset and
+the stock `UWindow` widgets (15, a pulldown's look-and-feel value, `W`), which draw their rows in script -- which is
+why they can state one.
+
+**Where each list reaches the screen repeats the page thread's three-way split.** Four body classes are placed by
+a `Begin Object` block (`CoopPlayerPanel` in `WaitingForPlayers`, `SelectTeamPanel` in `SelectTeamPage`,
+`ServerSelectionListBox` in `ServerSelectionPanel`, and the commented `SavedGameList` in `SaveGamePanel`);
+`ObjectivesPanel` is created from a **string** (`InGameInfoPanel.InitComponent`'s
+`TabControl.AddTab(" OBJECTIVES ", "StargateMenus.ObjectivesPanel", , "Show Objectives")`); and **`ServerList` is
+named by nothing the corpus states** -- no emitted block, no string in any of the 18 packages, and no `.ini` key
+(the 32 `StargateMenus` classes whose block the emitter refuses are outside the block scan) -- so its five
+cell-placed columns never draw, which is also what the empty cell table would do to them.
+
+**What would settle the rest.** (1) The native half: `PreDraw`'s `ItemHeight` for these lists, the row's
+`X/Y/W/H`, and whether a `DrawText` of width 0 paints nothing or a clipped glyph -- one boot to the co-op waiting
+page or the server browser with `tools/xemu/frame-diff.py` answers all three, and the map-load harness is working
+(`docs/XEMU.md`). (2) Whether `ServerList` had a wiring the corpus does not carry: a `DefaultListClass=` string is
+the only route a `GUIMultiColumnList` subclass has, and no class states one.
+
+**Status.** Answered at the data level; open for the native row rectangle and for the boot that says whether a
+zero-width cell draws.
