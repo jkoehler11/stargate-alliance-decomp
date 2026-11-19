@@ -5049,3 +5049,31 @@ step of the zero-width cell needed no boot. `GUIMultiColumnListBox`'s item draw 
 
 **Status.** Answered: the row rectangle, `ItemHeight`'s source, the stock item draw, `ServerList`'s placement, the
 zero-width cell at the style layer and at the canvas glyph loop, and the box branch's own item draw.
+
+## U29. Which class revision wrote the five `EndType` tags in `M02A` and `M14A`
+
+**Measured 2026-11-19.** The map-action census parses every placed action's property block and refuses a statement
+whose name the class chain does not declare (`docs/MAP_ACTION_PARAMETERS.md`). After the declared-name re-location
+moved the eight blocks that were a start picked too early, **five statements remain refused, and all five are the
+same tag**: `EndType`, on `ACTION_SetIMusic`, in two maps (`M02A` one, `M14A` four).
+
+The tag is real data, not a parse defect: `EndType` is a declared property of `Engine.IMusicActor` (`UByteProperty`,
+enum `LevelInfo.EIMusicEndType`), `ACTION_SetIMusic`'s chain declares exactly four names and none of them is it, the
+tag sits last in a block whose other names are all declared, its value is a one-byte enum index, and the same
+class's other placements in the same two maps read back as exactly those four names. So the block start is right and
+the placement carries a property the shipped `GamePlay.u` does not declare -- which is what a placement saved
+against a class revision with one more property looks like, because a map's objects keep the tags they were saved
+with while the class definition ships separately.
+
+**What would settle it** — which revision, and whether the engine tolerates it:
+
+* `ACTION_SetIMusic`'s own body. If its text still refers to an end type (a call to
+  `IMusicController.SetMusicEndType`, which exists and is 52 bytes of script), the property was renamed or folded
+  into `NewState` and the maps predate the change; if it never mentions one, the tag is a leftover the class no
+  longer has any code for. The decompiled `GamePlay` bodies are the read, not the payload.
+* `GamePlay.u`'s name table. A name that survives there only because a class default still spells it is a removed
+  property; a name with no remaining referent is an authoring leftover. The package's own name table is already
+  read by `tools/ue2pkg.py` (`make package-names`), so this needs no boot.
+* Run time: whether the property deserialiser skips an unknown tag by its info-byte size (one byte here) or refuses
+  the object. The reader in `tools/prop-stream.py` skips by that size because the stream requires it; the build's
+  `AActor`/`UObject` `Serialize` is where that becomes a fact, and no string in the XBE has been tied to it yet.

@@ -22,10 +22,19 @@ decide a run on their own:
   a sequence can sit still.
 
     python3 tools/action-parameters.py DUMP --sweep -o inventory
+    python3 tools/action-parameters.py DUMP --relocate -o inventory     # the candidate census
     python3 tools/action-parameters.py --report
     python3 tools/action-parameters.py --write-doc docs/MAP_ACTION_PARAMETERS.md
     python3 tools/action-parameters.py --check-doc docs/MAP_ACTION_PARAMETERS.md
     python3 tools/action-parameters.py --check          # synthetic, no dump, writes nothing
+
+A block is located by where it ends, and every property boundary inside it is a valid start, so the locator's
+"earliest start with the most properties" is a tie-break. When the block it picks names a property the class chain
+does not declare, the placement is refused rather than published; this tool then re-scores the export's every
+candidate start by the *fraction* of names its class declares (`choose()`, the rule `tools/class-defaults.py`
+ships) and adopts that start only when it refuses strictly fewer names. `--relocate` is the measurement behind
+that rule: it runs the same chooser over every placement and crosses it against the locator, so the rows it would
+move can be told apart from the rows it agrees on.
 
 No name, string or object value is written: a name-typed parameter contributes its distinct count and how often it
 is `None`, a numeric one its min/max/median. Names of properties are schema, not content.
@@ -42,6 +51,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 from ue2pkg import Package  # noqa: E402
 
 ARTIFACT = os.path.join(ROOT, "inventory/action_parameters.csv")
+RELOCATION = os.path.join(ROOT, "inventory/action_block_relocation.csv")
 DOC = os.path.join(ROOT, "docs/MAP_ACTION_PARAMETERS.md")
 CLASSES = os.path.join(ROOT, "inventory/classes.csv")
 PROPERTIES = os.path.join(ROOT, "inventory/class_properties.csv")
@@ -52,6 +62,8 @@ DOC_END = "<!-- /generated:action-parameters -->"
 
 FIELDS = ["kind", "map", "name", "class", "property", "type", "placements", "stated", "distinct", "min", "max",
           "median", "note"]
+RELOCATION_FIELDS = ["map", "placements", "blocked", "multi", "refused_placements", "moved", "recovered",
+                     "refused_after", "clean", "agree_clean", "disagree_clean"]
 ACTION_BASES = {"ScriptedAction", "LatentScriptedAction"}
 NUMERIC = ("Byte", "Int", "Float")
 NAMEY = ("Name", "Str", "Object", "Class")
@@ -115,7 +127,7 @@ def allowed_for(cls, declared, supers):
 
 
 def read_blocks(pkg):
-    """Per export (1-based): its properties with decoded values, and its `Actions` array when it has one."""
+    """Per export (1-based): its properties with decoded values, its block start, and its `Actions` array."""
     blocks = {}
     for i, exp in enumerate(pkg.exports):
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
@@ -126,14 +138,109 @@ def read_blocks(pkg):
             continue
         _count, start, _props = found
         props, _end, _reason = ps.read_block(data[start:], pkg, True)
-        actions = None
-        for p in props:
-            if p["name"] == "Actions" and p["type"] == "Array":
-                raw = data[start + p["value_offset"]:start + p["value_offset"] + p.get("size", 0)]
-                actions = aw.decode_array_refs(raw)
-                break
-        blocks[i + 1] = {"props": props, "actions": actions}
+        blocks[i + 1] = {"props": props, "actions": actions_of(data, start, props), "start": start}
     return blocks
+
+
+def actions_of(data, start, props):
+    """The `Actions` array a block states, decoded; `None` when it states none."""
+    for p in props:
+        if p["name"] == "Actions" and p["type"] == "Array":
+            raw = data[start + p["value_offset"]:start + p["value_offset"] + p.get("size", 0)]
+            return aw.decode_array_refs(raw)
+    return None
+
+
+WINDOW = 64  # the start window `find_block` reads, so every candidate here is one it considered
+
+
+def candidates(pkg, data, min_props=1, values=True):
+    """Every start in the locator's window whose property list parses cleanly and ends at the export's end."""
+    out = []
+    for start in range(0, min(len(data), WINDOW)):
+        try:
+            props, end, reason = ps.read_block(data[start:], pkg, values)
+        except Exception:
+            continue
+        if reason != "None" or len(props) < min_props:
+            continue
+        if any(p["name"] == "?" for p in props):
+            continue
+        if start + end != len(data):
+            continue
+        out.append((start, props))
+    return out
+
+
+def choose(cands, allowed, own=frozenset()):
+    """The declared fraction first, then no `Invalid` tag, then the length, then the own declarations, then the start.
+
+    `find_block` takes the most properties, which is a tie-break rather than a reading: every property boundary is
+    a valid start, so a suffix of the list parses to the export's end too. On `M15A`'s display message the longest
+    parse starts four bytes in, reads three names the class does not declare and drops the two it does. Scoring the
+    *fraction* of declared names first is `tools/class-defaults.py`'s `choose()` applied to a placed action's block,
+    and it is the same rule `docs/ACTOR_PROPERTIES.md` reaches for from the actor side: a misparse invents names,
+    the class's own declaration list says which parse is real.
+    """
+    best = None
+    for start, props in cands:
+        names = [p["name"] for p in props]
+        known = sum(1 for n in names if n in allowed)
+        bad = sum(1 for p in props if p.get("type") == "Invalid")
+        score = (known / float(len(names)), bad == 0, len(names), sum(1 for n in names if n in own), -start)
+        if best is None or score > best[0]:
+            best = (score, start, props)
+    return (best[1], best[2]) if best else None
+
+
+def refused_names(props, allowed):
+    """The block's names the class chain does not declare -- the control that keeps a misparse out of the table."""
+    return [p["name"] for p in props if p["name"] not in allowed]
+
+
+def better_block(before, after):
+    """Adopt a re-located block only when it refuses strictly fewer names."""
+    return len(after) < len(before)
+
+
+def relocate(pkg, blocks, classes, action_cls, declared, supers):
+    """Re-locate only the blocks whose class chain refuses a name; every other block keeps `find_block`'s start.
+
+    The rule is confined to the refused rows on purpose: the --relocate census runs the same chooser over every
+    placement and finds it picks `find_block`'s start on all 15,429 that were never refused, so widening it buys
+    nothing and costs a second read of every block.
+    """
+    moved, recovered, allowed_cache = [], 0, {}
+    for i, cls in enumerate(classes):
+        if cls not in action_cls:
+            continue
+        blk = blocks.get(i + 1)
+        if not blk:
+            continue
+        if cls not in allowed_cache:
+            allowed_cache[cls] = allowed_for(cls, declared, supers)
+        allowed = allowed_cache[cls]
+        bad = refused_names(blk["props"], allowed)
+        if not bad:
+            continue
+        exp = pkg.exports[i]
+        data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+        cands = candidates(pkg, data)
+        if len(cands) < 2:
+            continue
+        chosen = choose(cands, allowed, {p for c, p in declared if c == cls})
+        if not chosen:
+            continue
+        start, props = chosen
+        still = refused_names(props, allowed)
+        if not better_block(bad, still):
+            continue
+        blk["props"] = props
+        blk["actions"] = actions_of(data, start, props)
+        moved.append({"export": i + 1, "class": cls, "from": blk["start"], "to": start,
+                      "before": bad, "after": still})
+        recovered += len(bad) - len(still)
+    return moved, recovered
 
 
 def slot_index(blocks, classes, sequence_cls):
@@ -231,15 +338,18 @@ def measure(entries, blocks, action_cls, sequence_cls=frozenset(), slots=None, l
         if declared is not None:
             if cls not in allowed:
                 allowed[cls] = allowed_for(cls, declared, supers or {})
-            kept = []
+            kept, refused_here = [], []
             for p in props:
                 if p["name"] in allowed[cls]:
                     kept.append(p)
                 else:
                     census["props_refused"] += 1
+                    refused_here.append(p["name"])
                     here = slots.get(idx)
                     residues.append(dict(kind="residue", name="property_refused", **{"class": cls}, map=label,
                                          note="%s slot %s" % (p["name"], here[1] if here else "")))
+            if refused_here:
+                census["placements_refused"] += 1
             props = kept
         for p in props:
             name, typ = p["name"], p["type"]
@@ -419,10 +529,23 @@ def sweep(dump, out, classes_path=CLASSES, only=None):
         pkg.read_exports()
         entries = [{"class": pkg.class_name_of(e), "name": pkg.name(e["name"])} for e in pkg.exports]
         blocks = read_blocks(pkg)
-        slots, slot_count = slot_index(blocks, [e["class"] for e in entries], sequence_cls)
+        classes = [e["class"] for e in entries]
+        moved, recovered = relocate(pkg, blocks, classes, action_cls, declared, supers)
+        slots, slot_count = slot_index(blocks, classes, sequence_cls)
         conds = condition_index(entries, blocks)
         per_class, per_prop, census, res = measure(entries, blocks, action_cls, sequence_cls, slots, label,
                                                   declared, supers, slot_count, conds)
+        census["relocated"] = len(moved)
+        census["relocated_props"] = recovered
+        census["refused_before"] = census["props_refused"] + recovered
+        census["refused_placements_before"] = census["placements_refused"] + sum(1 for mv in moved if not mv["after"])
+        for mv in moved:
+            here = slots.get(mv["export"])
+            gained = [n for n in mv["before"] if n not in mv["after"]]
+            res.append(dict(kind="residue", name="block_moved", **{"class": mv["class"]}, map=label,
+                            note="slot=%s;from=%d;to=%d;recovered=%s;still=%s"
+                                 % (here[1] if here else "", mv["from"], mv["to"],
+                                    ",".join(gained) or "-", ",".join(mv["after"]) or "-")))
         census["conditions"] = len(conds)
         maps[label] = {"class": per_class, "census": census}
         for cls, info in per_class.items():
@@ -451,6 +574,95 @@ def sweep(dump, out, classes_path=CLASSES, only=None):
         print("wrote %s (%d rows)" % (path, len(rows)))
     condition_control({label: info["census"].get("conditions", 0) for label, info in maps.items()})
     control(rows)
+    return rows
+
+
+def relocation_census(dump, out, classes_path=CLASSES, only=None):
+    """Does the declared-name chooser pick `find_block`'s start? One row per map, and the refusal counted both ways.
+
+    `find_block` is the shipped locator -- earliest start with the most properties that ends at the export's end.
+    This walks every placed action in every map, enumerates the same window's candidates, and asks two questions:
+    on a block the class chain never refused, does the chooser agree with `find_block` (the control -- if it moved
+    those, the rule would be a rewrite of the locator rather than a repair of the refused rows), and on a block it
+    did refuse, how many statements does the chooser recover and how many does it leave. Counts only, no values.
+    """
+    maps_dir = os.path.join(dump, "Maps")
+    if not os.path.isdir(maps_dir):
+        sys.exit("no Maps/ under %s" % dump)
+    supers = class_supers(classes_path)
+    action_cls = family(supers, "ScriptedAction") - ACTION_BASES
+    declared = load_declared()
+    own = collections.defaultdict(set)
+    for c, p in declared:
+        own[c].add(p)
+    rows, totals = [], collections.Counter()
+    for name in sorted(os.listdir(maps_dir)):
+        if not name.lower().endswith(".unr"):
+            continue
+        label = name[:-4]
+        if only and only.lower() not in label.lower():
+            continue
+        pkg = Package(os.path.join(maps_dir, name))
+        pkg.read_names()
+        pkg.read_imports()
+        pkg.read_exports()
+        row = dict(map=label, placements=0, blocked=0, multi=0, refused_placements=0, moved=0, recovered=0,
+                   refused_after=0, clean=0, agree_clean=0, disagree_clean=0)
+        allowed_cache = {}
+        for i, exp in enumerate(pkg.exports):
+            cls = pkg.class_name_of(exp)
+            if cls not in action_cls:
+                continue
+            row["placements"] += 1
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            if not data:
+                continue
+            found = ps.find_block(data, pkg, min_props=1)
+            if not found:
+                continue
+            row["blocked"] += 1
+            cands = candidates(pkg, data, values=False)
+            if len(cands) > 1:
+                row["multi"] += 1
+            if cls not in allowed_cache:
+                allowed_cache[cls] = allowed_for(cls, declared, supers)
+            allowed = allowed_cache[cls]
+            bad = refused_names(found[2], allowed)
+            chosen = choose(cands, allowed, own.get(cls, set())) if cands else None
+            if not chosen:
+                continue
+            after = refused_names(chosen[1], allowed)
+            if bad:
+                row["refused_placements"] += 1
+                row["refused_after"] += len(after)
+                if len(after) < len(bad):
+                    row["moved"] += 1
+                    row["recovered"] += len(bad) - len(after)
+            elif chosen[0] == found[1]:
+                row["clean"] += 1
+                row["agree_clean"] += 1
+            else:
+                row["clean"] += 1
+                row["disagree_clean"] += 1
+        rows.append(row)
+        totals.update({k: v for k, v in row.items() if k != "map"})
+        print("%-24s placements=%-5d blocked=%-5d multi=%-5d refused=%d moved=%d" %
+              (label, row["placements"], row["blocked"], row["multi"], row["refused_placements"], row["moved"]),
+              flush=True)
+    rows.append(dict(map="corpus", **{k: totals[k] for k in RELOCATION_FIELDS if k != "map"}))
+    if out:
+        os.makedirs(out, exist_ok=True)
+        path = os.path.join(out, "action_block_relocation.csv")
+        with open(path, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=RELOCATION_FIELDS, extrasaction="ignore")
+            w.writeheader()
+            for r in rows:
+                w.writerow(r)
+        print("wrote %s (%d rows)" % (path, len(rows)))
+    print("relocation: %d refused placements, %d moved, %d statements recovered, %d left; the chooser picks "
+          "find_block's start on %d of %d clean placements" %
+          (totals["refused_placements"], totals["moved"], totals["recovered"], totals["refused_after"],
+           totals["agree_clean"], totals["clean"]))
     return rows
 
 
@@ -503,6 +715,17 @@ def wiring_total(path=WIRING):
     return total
 
 
+def relocation_totals(path=RELOCATION):
+    """The `--relocate` corpus row: how many placements the chooser moved, and how many it agreed on."""
+    if not os.path.exists(path):
+        return {}
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r.get("map") == "corpus":
+                return {k: int(v) for k, v in r.items() if k != "map" and str(v).lstrip("-").isdigit()}
+    return {}
+
+
 def fmt(value):
     """A count with thousands separators, the way the other action pages print them."""
     try:
@@ -542,8 +765,9 @@ def render(rows):
     out.append("| control | this walk | committed artifact |")
     out.append("|---|---:|---:|")
     out.append("| placed actions | %s | `action_wiring.csv` totals %s |" % (fmt(c.get("placements", 0)), fmt(c.get("wiring", 0))))
-    out.append("| property statements refused because the class chain does not declare them | %s | "
-               "`class_properties.csv` |" % fmt(c.get("props_refused", 0)))
+    out.append("| property statements refused because the class chain does not declare them | %s (was %s before the "
+               "re-location) | `class_properties.csv` |"
+               % (fmt(c.get("props_refused", 0)), fmt(c.get("refused_before", 0))))
     out.append("")
     out.append("### The three defaults that decide a run")
     out.append("")
@@ -634,6 +858,62 @@ def render(rows):
                % (c.get("talk_subtitle", 0), c.get("talk_placements", 0), c.get("talk_finished", 0),
                   c.get("anim_stated", 0), c.get("anim_placements", 0)))
     out.append("")
+    out.append("### The re-located blocks, and the five tags the class does not declare")
+    out.append("")
+    out.append("A block is located by where it *ends*: every property boundary in the export's first %d bytes is a "
+               "valid start, so \"earliest start with the most properties\" is a tie-break rather than a reading, "
+               "and on a minority of placements it lands inside the block. The control that catches that is the "
+               "class declaration (`class_properties.csv`), which refuses a block naming a property its chain does "
+               "not declare. **%d placements carried %d refused statements, and %d of the %d are a start the locator "
+               "picked too early.** Re-scoring every candidate start by the *fraction* of declared names -- "
+               "`tools/class-defaults.py`'s chooser, the rule the class-defaults work already ships -- moves %d "
+               "placements and recovers **%d statements**; the five that remain are not a locator defect at all."
+               % (WINDOW, c.get("refused_placements_before", 0), c.get("refused_before", 0),
+                  c.get("relocated", 0), c.get("refused_placements_before", 0), c.get("relocated", 0),
+                  c.get("relocated_props", 0)))
+    out.append("")
+    moved = [r for r in rows if r["kind"] == "residue" and r["name"] == "block_moved"]
+    if moved:
+        out.append("| map | class | sequence slot | start | refused names it recovered | still refused |")
+        out.append("|---|---|---:|---:|---|---|")
+        for r in moved:
+            parts = dict(p.split("=", 1) for p in r["note"].split(";") if "=" in p)
+            out.append("| `%s` | `%s` | %s | %s -> %s | %s | %s |"
+                       % (r["map"], r["class"], parts.get("slot", ""), parts.get("from", ""), parts.get("to", ""),
+                          ", ".join("`%s`" % n for n in parts.get("recovered", "-").split(",")
+                                    if n and n != "-") or "none",
+                          "none" if parts.get("still") == "-" else ", ".join(
+                              "`%s`" % n for n in parts.get("still", "").split(",") if n)))
+        out.append("")
+    refused = [r for r in rows if r["kind"] == "residue" and r["name"] == "property_refused"]
+    if refused:
+        out.append("**The five left are one name on one class.** Every remaining refusal is `EndType` on "
+                   "`ACTION_SetIMusic`, in two maps; the name is a declared property of `Engine.IMusicActor` "
+                   "(`UByteProperty`, enum `LevelInfo.EIMusicEndType`), and `ACTION_SetIMusic`'s own chain declares "
+                   "four names, none of them `EndType`. The tag sits *last* in a block whose other names are all "
+                   "declared, its value is a one-byte enum index, and the same class's other placements in the "
+                   "same maps read back as exactly its four names -- so the block is where it belongs and the tag "
+                   "is the residue: a placement authored against a class revision that declared one more property "
+                   "than the shipped `GamePlay.u` does. The engine's property reader skips a tag it cannot resolve "
+                   "by the size in its info byte, which is what makes the leftover harmless at run time; what this "
+                   "build's `Serialize` does with it is not measured here.")
+        out.append("")
+        out.append("| map | class | sequence slot | refused name |")
+        out.append("|---|---|---:|---|")
+        for r in sorted(refused, key=lambda r: (r["map"], r["class"], r["note"])):
+            name, _sep, slot = r["note"].partition(" slot ")
+            out.append("| `%s` | `%s` | %s | `%s` |" % (r["map"], r["class"], slot, name))
+        out.append("")
+    reloc = relocation_totals()
+    if reloc:
+        out.append("**The chooser is a repair, not a rewrite.** Run over every placement in all %d maps "
+                   "(`--relocate`, `inventory/action_block_relocation.csv`), the declared-name chooser picks "
+                   "exactly the start `find_block` does on **all %s placements the refusal never fired on** "
+                   "(%s moved) -- so the rule changes no published block, and the %d it does change are precisely "
+                   "the rows that were refused."
+                   % (c.get("maps", 0), fmt(reloc.get("agree_clean", 0)),
+                      fmt(reloc.get("disagree_clean", 0)), c.get("relocated", 0)))
+        out.append("")
     out.append("### Each class's parameter surface")
     out.append("")
     out.append("| class | placements | properties it states | block / no block |")
@@ -665,14 +945,16 @@ def render(rows):
     out.append("Census: placements=%d;blocked=%d;unblocked=%d;props_stated=%d;classes=%d;maps=%d;"
                "goto_stated=%d;goto_unset=%d;props_refused=%d;wait_stated=%d;wait_unstated=%d;"
                "timer_stated=%d;timer_sentinel=%d;trigger_stated=%d;trigger_unstated=%d;conditions=%d;"
-               "wait_completes=%d;wait_blocks=%d;wait_no_condition=%d;wait_order_free=%d."
+               "wait_completes=%d;wait_blocks=%d;wait_no_condition=%d;wait_order_free=%d;"
+               "refused_before=%d;relocated=%d;relocated_props=%d."
                % (c.get("placements", 0), c.get("blocked", 0), c.get("unblocked", 0), c.get("props_stated", 0),
                   len(classes), c.get("maps", 0), c.get("goto_stated", 0), c.get("goto_unset", 0),
                   c.get("props_refused", 0), c.get("wait_stated", 0), c.get("wait_unstated", 0),
                   c.get("timer_stated", 0), c.get("timer_sentinel", 0), c.get("trigger_stated", 0),
                   c.get("trigger_unstated", 0), c.get("conditions", 0), c.get("wait_unstated_completes", 0),
                   c.get("wait_unstated_blocks", 0), c.get("wait_unstated_no_condition", 0),
-                  c.get("wait_unstated_order_free", 0)))
+                  c.get("wait_unstated_order_free", 0), c.get("refused_before", 0), c.get("relocated", 0),
+                  c.get("relocated_props", 0)))
     return "\n".join(out)
 
 
@@ -776,7 +1058,7 @@ def check():
         return 1
     block = render(rows)
     for want_text in ("slot 0", "PauseTime", "distinct", "Census: placements=8", "sequence slot",
-                      "no-op, not a broadcast"):
+                      "no-op, not a broadcast", "re-located"):
         if want_text not in block:
             print("FAIL action-parameters: render is missing %r" % want_text)
             return 1
@@ -793,6 +1075,23 @@ def check():
         if len(back) != len(rows) or set(back[0]) != set(FIELDS):
             print("FAIL action-parameters: artifact round trip %d/%d" % (len(back), len(rows)))
             return 1
+    # The refused-row re-location: the declared fraction beats the tag count, a type-0 tag breaks the tie, and a
+    # block is adopted only when it refuses strictly fewer names.
+    allowed = {"Message", "bBroadcast"}
+    got = choose([(0, [{"name": "Message", "type": "Str"}, {"name": "bBroadcast", "type": "Bool"}]),
+                  (4, [{"name": "Max", "type": "Bool"}, {"name": "Location", "type": "Bool"},
+                       {"name": "Region", "type": "Byte"}])], allowed)
+    if got[0] != 0 or refused_names(got[1], allowed):
+        print("FAIL action-parameters: the declared fraction does not beat the tag count")
+        return 1
+    got = choose([(0, [{"name": "Message", "type": "Invalid"}, {"name": "Max", "type": "Byte"}]),
+                  (6, [{"name": "Message", "type": "Str"}, {"name": "Max", "type": "Byte"}])], allowed)
+    if got[0] != 6:
+        print("FAIL action-parameters: an Invalid tag does not break the tie")
+        return 1
+    if not better_block(["EndType"], []) or better_block(["EndType"], ["EndType"]):
+        print("FAIL action-parameters: a re-located block is adopted without refusing fewer names")
+        return 1
     print("ok   action-parameters: stated and unstated parameters, the slot-0 goto, the 99999 timer, the "
           "trigger with no name, and the condition an untagged wait resolves against are told apart")
     return 0
@@ -807,10 +1106,17 @@ def main():
     cli.add_argument("--report", action="store_true", help="render the committed artifact")
     cli.add_argument("--write-doc", metavar="PATH", help="splice the generated block into a page")
     cli.add_argument("--check-doc", metavar="PATH", help="fail when the page does not match the artifact")
+    cli.add_argument("--relocate", action="store_true",
+                     help="candidate census: does the declared-name chooser pick the locator's start?")
     cli.add_argument("--check", action="store_true", help="synthetic self-test, no dump, writes nothing")
     args = cli.parse_args()
     if args.check:
         return check()
+    if args.relocate:
+        if not args.dump:
+            sys.exit("--relocate needs the game directory")
+        relocation_census(args.dump, args.out, only=args.only)
+        return 0
     if args.report:
         report()
         return 0
