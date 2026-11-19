@@ -14138,6 +14138,40 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Not in this PR.** The zero-width cell itself, and the emitter's class-level locator guard (still James's call:
   313 classes promoted, 1,664 -> 1,977 clean blocks).
 
+### Execution notes (2026-11-19, a struct's value is a tagged block, and the palette is what the colour payload is)
+
+- **Task.** `docs/T3D.md`'s three standing omissions: the struct decoders beyond `Vector`/`Rotator`/`Color`, the
+  `StaticMeshInstance` payload's record format (33,509 exports), and the arrays that divide by nothing.
+- **There are no per-struct decoders to write.** `0x000795f0` skips the tagged walk for exactly three names, so
+  every other struct's value *is* a property block of its own fields: `PointRegion` is
+  `Zone:Object, iLeaf:Int, ZoneNumber:Byte`, `RangeVector` is `X/Y/Z:Range`, `Orientation` has 16 fields.
+  Decoded struct properties go **203,200 -> 315,004 of 315,013**; the nine left are one name (`InterpCurve`,
+  whose only field is an `Array`). The width still varies within a name (13/14 for `PointRegion`) because the
+  first field is a compact index -- the instance, not the name, as the page said.
+- **The payload is `[0x00][compact count][count x FColor]` then a native tail.** All **33,509** payloads carry
+  it, **7,112,701** colours in all, **0** refused; the alpha byte is only ever `0xff` or `0x00` (47 payloads go
+  clear after 84 records). No map object references one of these exports (0 in `M07A`'s 445), so they are the
+  level's baked colours, not actors -- and **211** of them had been written as two-property actors because the
+  prefix record's end leaves two tag-shaped bytes that pass the value test. Actors **121,395 -> 121,184**,
+  properties **1,148,994 -> 1,148,526**.
+- **The undividable arrays are a declaration, not a width.** `array<string>` is asked first -- it has to be, or a
+  payload of equally long strings divides by its count -- and **25 arrays / 126 elements** decode that way. The
+  compact-index hypothesis is **refuted**: `ZoneInfo.ManualExcludes`, the shape that looked like eight indices
+  in 14 bytes, is an ordinary object array once the start is the record's end, and **0** arrays in the corpus
+  are arrays of compact indices. The rule stays with its synthetic test so the zero is a measurement.
+- **Two spellings corrected.** `Int`/`Byte` values were written quoted (`iLeaf="-1"`), and a struct no rule
+  reached printed as the empty string, so **111,804** struct properties carried nothing.
+- **Files.** `tools/prop-stream.py` (`struct_fields`; `native_width`/`depth` threaded through
+  `read_value`/`read_block`), `tools/map-to-t3d.py` (`fmt_struct`, `struct_shape`, `decode_compact_array`,
+  `decode_string_array`, `palette_record`, the census writers and their gates, `fmt`'s number spelling),
+  `inventory/t3d_{coverage,values,structs,arrays}.csv` (new columns and a `fields` column per struct name),
+  `docs/T3D.md` (a new section and the generated block), and this note.
+- **Next measurement.** The palette's **tail** -- 17,183,118 bytes after 7,112,701 colours (2.4 per colour), the
+  only part of that record still unread; and the element layouts of the five typed struct arrays, whose records
+  are now nameable (`ParticleColorScale` 14-17 bytes) but not yet decodable.
+- **Not in this PR.** The `Level` export's script sequence, the palette tail, the five typed struct-array
+  element layouts, and the 46 arrays neither the width nor the declaration rule reaches.
+
 ### Execution notes (2026-11-19, a list box is a component, and the zero-width cell's cull)
 
 - **Task.** The previous note's two open items: the zero-width cell (the boot or `0x002ff790`) and the box

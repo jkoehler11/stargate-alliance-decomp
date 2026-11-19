@@ -148,26 +148,35 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `Array` properties | 38790 |
 | of those, object arrays | **34218** |
 | object references inside them | **127563** |
-| arrays refused a shape | 4572 (4501 struct arrays holding 14563 records) |
+| arrays refused a (count, width) layout | 4547 (4501 struct arrays holding 14563 records) |
+| -- of those, a compact-index array | **0** (0 element(s)) |
+| -- of those, a string array | **25** (126 element(s) decoded) |
 | -- of the struct arrays, element type declared | **4501** |
 | -- of those, elements decoded | **2019** |
 | struct-typed properties | 315013 |
-| struct properties decoded to numbers | **203200** |
+| struct properties decoded | **315004** |
+| -- native bodies (`Vector`, `Rotator`, `Color`) | 203200 |
+| -- tagged blocks (fields read from the payload) | **111804** |
 | struct property names | 11 |
+| `StaticMeshInstance` payloads | 33509 |
+| palette colours inside them | **7112701** |
+| records whose alpha is zero | 5643 |
+| payloads the palette rule refuses | 0 |
+| native bytes after the palette | 17183118 |
 
-| struct | properties | decoded | sizes (bytes:instances) |
-|---|---:|---:|---|
-| `Vector` | 152152 | 152152 | 12:152152 |
-| `PointRegion` | 79925 | 0 | 13:64022 / 14:15903 |
-| `Rotator` | 50525 | 50525 | 12:50525 |
-| `Scale` | 17558 | 0 | 25:17550 / 28:8 |
-| `RangeVector` | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 |
-| `Range` | 4149 | 0 | 13:4123 / 15:26 |
-| `Color` | 523 | 523 | 4:523 |
-| `Orientation` | 43 | 0 | 106:29 / 122:7 / 123:7 |
-| `Plane` | 41 | 0 | 26:29 / 29:12 |
-| `Matrix` | 10 | 0 | 129:10 |
-| `InterpCurve` | 9 | 0 | 5:9 |
+| struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |
+|---|---:|---:|---:|---:|---|---|
+| `Vector` | 152152 | 152152 | 0 | 152152 | 12:152152 | `--` |
+| `PointRegion` | 79925 | 79925 | 79925 | 0 | 13:64022 / 14:15903 | `Zone:Object+iLeaf:Int+ZoneNumber:Byte` |
+| `Rotator` | 50525 | 50525 | 0 | 50525 | 12:50525 | `--` |
+| `Scale` | 17558 | 17558 | 17558 | 0 | 25:17550 / 28:8 | `Scale:Struct<Vector>+SheerRate:Float+SheerAxis:Byte` |
+| `RangeVector` | 10078 | 10078 | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 | `X:Struct<Range>+Y:Struct<Range>+Z:Struct<Range>` |
+| `Range` | 4149 | 4149 | 4149 | 0 | 13:4123 / 15:26 | `Min:Float+Max:Float` |
+| `Color` | 523 | 523 | 0 | 523 | 4:523 | `--` |
+| `Orientation` | 43 | 43 | 43 | 0 | 106:29 / 122:7 / 123:7 | `CamOrientation:Byte+LookAt:Object+DollyWith:Object+EaseIntime:Float+bReversePitch:Int+bReverseYaw:Int+bReverseRoll:Int+LookAtActor:Object+LookAtActorTag:Name+LookAtBoneName:Name+LookAtOffset_Relative:Struct<Vector>+LookAtOffset_Absolute:Struct<Vector>+PctInStart:Float+PctInEnd:Float+PctInDuration:Float+StartingRotation:Struct<Rotator>` |
+| `Plane` | 41 | 41 | 41 | 0 | 26:29 / 29:12 | `W:Float+X:Float+Y:Float+Z:Float` |
+| `Matrix` | 10 | 10 | 10 | 0 | 129:10 | `XPlane:Struct<Plane>+YPlane:Struct<Plane>+ZPlane:Struct<Plane>+WPlane:Struct<Plane>` |
+| `InterpCurve` | 9 | 0 | 0 | 0 | 5:9 | `Points:Array` |
 
 | array element type | declared on | arrays | records | widths (bytes:arrays) |
 |---|---|---:|---:|---|
@@ -230,7 +239,8 @@ The per-element-type census is `inventory/t3d_arrays.csv` (16 rows, written by `
 `t3d_values.csv` under `--check`), and the table below is rendered from it.
 
 **Not in this PR.** The struct decoders beyond the three whose layout is established, the element layouts of
-the five typed struct arrays, and the `Level` export's script sequence.
+the five typed struct arrays, and the `Level` export's script sequence. *(The first of those is settled two
+sections down -- a struct's value is a tagged block, so there are no per-struct decoders to write.)*
 
 ## The writer takes the reader's locator, and the struct census collapses (measured 2026-11-19)
 
@@ -356,6 +366,85 @@ orphans close:
 and three self-tests) + the eight map-side tools that now hand the export's class to the locator +
 `inventory/t3d_{coverage,values,structs,arrays}.csv` + the regenerated map-side artifacts and their pages.
 
-**Not in this PR.** The `StaticMeshInstance` payload's own record format (33,509 exports whose payload is a
-packed colour table, not a tagged block); the `Level` export's script sequence; the struct decoders beyond
-`Vector`/`Rotator`/`Color`; and the arrays that divide by nothing at all.
+**Not in this PR.** The `Level` export's script sequence. *(The other three are settled at the end of this
+page: the `StaticMeshInstance` payload's record format, the struct decoders beyond `Vector`/`Rotator`/`Color`,
+and the arrays that divide by nothing.)*
+
+## A struct's value is a tagged block, and the palette is the last opaque payload (measured 2026-11-19)
+
+**The struct decoders the page kept deferring were never separate work.** `0x000795f0` skips the tagged walk
+for exactly three struct names (`Vector`, `Rotator`, `Color`, by the GNames indices it compares), and every
+other struct serialises as **a property block of its own fields** -- name index, tag, value, `None` -- so the
+field names, their order and their types are in the payload rather than only in the class declaration. Reading
+them needs no per-struct decoder: `prop_stream.struct_fields` runs the reader it already had over the value and
+requires two things of the parse, the same two the locator's value test uses -- it ends at `None` on the value's
+last byte, and `tag-encode` re-encodes the same tags.
+
+| struct | properties | decoded | how | field list (the payload's own) |
+|---|---:|---:|---|---|
+| `PointRegion` | 79,925 | 79,925 | tagged | `Zone:Object, iLeaf:Int, ZoneNumber:Byte` |
+| `Scale` | 17,558 | 17,558 | tagged | `Scale:Vector, SheerRate:Float, SheerAxis:Byte` |
+| `RangeVector` | 10,078 | 10,078 | tagged | `X:Range, Y:Range, Z:Range` |
+| `Range` | 4,149 | 4,149 | tagged | `Min:Float, Max:Float` |
+| `Orientation` | 43 | 43 | tagged | 16 fields, `CamOrientation` through `StartingRotation:Rotator` |
+| `Plane` | 41 | 41 | tagged | `W:Float, X:Float, Y:Float, Z:Float` |
+| `Matrix` | 10 | 10 | tagged | `XPlane`, `YPlane`, `ZPlane`, `WPlane`, each a `Plane` |
+| `InterpCurve` | 9 | **0** | -- | `Points:Array` |
+
+Decoded struct properties go **203,200 -> 315,004 of 315,013** (99.997%), and the nine that do not decode are
+one name: `InterpCurve`'s only field is an `Array`, which a tuple cannot carry, so the writer refuses the whole
+struct rather than printing a hole. The width is still a property of the instance -- `PointRegion` is 13 bytes
+on 64,022 and 14 on 15,903, `Scale` 25 and 28, `RangeVector` six widths -- and that is the field, not the name:
+the first field is a compact object index, so its own encoded width moves the record by one byte.
+
+**Two corrections follow from reading the fields.** The writer printed `Int` and `Byte` values quoted
+(`iLeaf="-1"`), which a struct made obvious: a number beside a quoted name in the same tuple. It now writes
+`iLeaf=-1`. And struct values that no rule reached used to print as the empty string `""` -- 111,804 properties
+carried nothing at all -- because `fmt(None)` is `""`; every one of them is now a field tuple.
+
+**The `StaticMeshInstance` payload is a colour table, and it is not an actor.** 33,509 of the 194,190 exports
+have that class, it never carries a property block, and the record is
+`[0x00][compact count][count x FColor]` followed by the instance's own native tail:
+
+| measure | value |
+|---|---:|
+| payloads | **33,509** |
+| colours inside them | **7,112,701** |
+| records whose alpha is zero | 5,643 |
+| payloads the rule refuses | **0** |
+| native bytes after the palette | 17,183,118 |
+
+The fourth byte of each record is the colour's alpha and in this corpus it is only ever `0xff` or `0x00`:
+33,462 payloads are opaque throughout and 47 go clear after exactly **84** records (`CTF-Abydos` #3539,
+`M07C` #2392, `M07D` #1459 and `M07B` #3609 all break at the same index), which is why the test is
+`{0x00, 0xff}` and not `0xff`. Nothing in a map references one of these exports -- the read finds zero object
+references to them in `M07A`'s 445 -- so they are the level's baked per-mesh colours, saved beside the actors.
+
+**211 of them used to be written as actors.** The prefix record's end lands inside a palette, and two
+tag-shaped bytes there pass the value test, so the writer placed a two-property actor for each: naming the
+palette rule removes them, and the actor total falls **121,395 -> 121,184** with properties
+**1,148,994 -> 1,148,526**. The locator still counts those 211 exports as having a block
+(`inventory/actor_property_coverage.csv`'s 121,394 is a locator count, not an actor count); the palette rule is
+what says they are not actors.
+
+**The arrays that divide by nothing have a declaration, not a width.** `LevelInfo.LoadLipSincWithPrefix` is
+`array<string>`, so each element carries its own length prefix (which counts the terminating NUL) and the
+payload's remainder over its count is arithmetic on nothing. The declaration is asked **first**, and it has to
+be: a payload of two equally long strings divides by its count (`\x02\x04abc\x00\x04def\x00` is 5 bytes per
+element), so a divisibility test alone reads an `array<string>` as a struct array. **25 arrays / 126 elements**
+decode as strings this way. The rest of the refusal population is **46 arrays** that neither rule reaches, and
+the compact-index hypothesis is refuted rather than pending: `ZoneInfo.ManualExcludes` -- the shape the earlier
+reading called "eight indices in 14 bytes", which is what a compact element would look like -- is an ordinary
+object array once the start is the prefix record's end, and **0** arrays in the corpus are arrays of compact
+indices. The writer still carries that rule, with a synthetic test, so the zero is a measurement and not a gap.
+
+**Files.** `tools/prop-stream.py` (`struct_fields`, the `native_width`/`depth` threading, and the struct branch
+of `read_value`), `tools/map-to-t3d.py` (`fmt_struct`, `struct_shape`, `decode_compact_array`,
+`decode_string_array`, `palette_record`, the two census writers and their gates, the number spelling in `fmt`),
+`inventory/t3d_{coverage,values,structs,arrays}.csv` (new columns: `struct_tagged`/`struct_native`,
+`compact_*`/`string_*`, `palette_*`, and a `fields` column per struct name), `docs/T3D.md` and this note.
+
+**Not in this PR.** The `Level` export's script sequence; the `StaticMeshInstance` record's **tail** (17,183,118
+bytes, 2.4 bytes per colour, not decoded -- the palette boundary is measured, what follows it is not); the
+element layouts of the five typed struct arrays; and the 46 arrays neither the width nor the declaration rule
+reaches.
