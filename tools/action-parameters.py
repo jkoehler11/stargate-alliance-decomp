@@ -895,8 +895,9 @@ def render(rows):
                    "same maps read back as exactly its four names -- so the block is where it belongs and the tag "
                    "is the residue: a placement authored against a class revision that declared one more property "
                    "than the shipped `GamePlay.u` does. The engine's property reader skips a tag it cannot resolve "
-                   "by the size in its info byte, which is what makes the leftover harmless at run time; what this "
-                   "build's `Serialize` does with it is not measured here.")
+                   "by the size in its info byte, which is what makes the leftover harmless at run time -- "
+                   "`inventory/tag_origin.csv` measures the name's origin and `docs/NATIVE_PROPERTIES.md` "
+                   "§4 the walk that skips it.")
         out.append("")
         out.append("| map | class | sequence slot | refused name |")
         out.append("|---|---|---:|---|")
