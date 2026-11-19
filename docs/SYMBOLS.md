@@ -1,6 +1,6 @@
 # The symbol map (`symbols/xbox.map`)
 
-Status: emitted and checked. **15,439 symbols** — 14,973 functions plus 466 class tables — every one
+Status: emitted and checked. **15,447 symbols** — 14,973 functions plus 474 class tables — every one
 inside the image's own sections, and `gdb` resolves them from the assembled form. This is PLAN 4.10.
 
 ## What is in it
@@ -61,16 +61,17 @@ resolves, not a live attach.
 ## What the map does and does not claim
 
 - **Every address is inside the image.** `make symbols` passes `--xbe` and the tool fails if a symbol
-  falls outside the section table: measured **15,423 of 15,423 inside, 0 outside**.
+  falls outside the section table: measured **15,447 of 15,447 inside, 0 outside**.
 - **Names are file-level, not unique.** 128 names are used by more than one function — the assert
   attribution names a function by its source file, so `Core_UnTemplate` covers 310 of them,
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
   gives every duplicate an `_<address>` suffix (1,167 symbols affected) so a debugger can address
   them separately, and the count is printed on every run.
-- **12,020 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
-  without a name — and naming them is 4.2's blocked signature work (`docs/UNKNOWNS.md` U9), not a gap
-  in this file. The class-construction pass took this from 12,935: 915 functions now carry the class whose
-  object they build.
+- **8,320 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
+  without a name — and they are the engine bodies with no naming evidence (`docs/NAMING.md`), not a gap in
+  this file. The library sections are named from a locally supplied XDK 5849.17 set (`make xdk-lib-names`,
+  PLAN 4.2): 2,532 of the 3,109 bodies there, plus 1,169 in `.text`. The class-construction pass took the
+  remainder from 12,935: 915 functions carry the class whose object they build.
 - **No types, no variables, no source lines.** The map carries code addresses and class-table
   addresses only; there is no debug information in this build (`RSDS` absent, PLAN §0).
 

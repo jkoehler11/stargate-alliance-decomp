@@ -12,6 +12,8 @@ SYSTEM_DIR ?= $(GAME_DIR)/System
 # the tool on an empty path
 MAPS_DIR   ?= $(GAME_DIR)/Maps
 WORK     ?= $(HOME)/sg1/work
+# The XDK static libraries a supplied set brings (PLAN 4.2, U9). Never committed: it is a path, not an input.
+XDK_LIBS ?= $(HOME)/sg1/work/xdk/libs-all
 GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
 VA       ?= 0x53f770
@@ -609,6 +611,19 @@ symbols:
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe") -o symbols
 	@as --32 -o symbols/xbox.sym.o symbols/xbox.sym.s
 	@echo "load it: gdb -batch -ex \"symbol-file symbols/xbox.sym.o\""
+
+# Names the library sections from a locally supplied set of static libraries (PLAN 4.2, U9).
+# A linked copy of a COFF member differs only where the linker patched an operand, so masking the
+# member's relocation offsets on both sides leaves a byte-exact body -- the libraries are the database,
+# and they stay outside this tree. --apply folds the names into the override file and the function map.
+xdk-lib-names:
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@test -d "$(XDK_LIBS)" || { echo "no library directory at $(XDK_LIBS) -- set XDK_LIBS to the XDK's xbox/lib"; exit 2; }
+	@$(PYTHON) tools/xdk-lib-match.py --libs "$(XDK_LIBS)" --xbe "$(GAME_DIR)/default.xbe" \
+		--functions symbols/xbox_functions.csv -o inventory/xdk_lib_names.csv --apply
+	@$(PYTHON) tools/native-summary.py --symbols symbols/xbox_functions.csv --overrides symbols/xbe_overrides.csv -o inventory/
+	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
+	@echo "wrote inventory/xdk_lib_names.csv and the names it earned"
 
 # The libraries the image was linked against (PLAN 2.6, docs/IMPORTS.md). Reads the header only.
 libraries:
