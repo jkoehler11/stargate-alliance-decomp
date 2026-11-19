@@ -4247,6 +4247,21 @@ per-class artifact `inventory/class_defaults_emit_classes.csv` (2,319 rows) is g
 `class_defaults_per_class.csv` -- same start on every class, dump-free in `--check` -- so the renderer/locator gap
 (85 blocks) is now zero by check. Depth: `docs/CLASS_DEFAULTS.md`, *The emitter takes the guard*.
 
+**2026-11-19 (forty-fifth): the 342 withheld classes have a reason each, and 179 read one byte per name.**
+`--explain` described the *unguarded* candidate list, so its buckets were not the ledger's; it now walks
+`pick_both`'s guarded set -- the pick `render_class` takes -- and writes `inventory/class_defaults_withheld.csv`
+(`make defaults-withheld`): one row per withheld class with the reason, which parse the row describes, and the tag
+shape that settles it. The ledger is exactly the locator's **336** classes with no block plus the **6** whose parse
+names a declared property (`199` name no declared property, `137` have no candidate, and every locator no-block
+class is present), and `--check` without the dump refuses a ledger that differs from
+`inventory/class_defaults_emit_classes.csv` in population or status. Of the 342, **179** read nothing but 1-byte
+tags -- the width of a compact index, never of a `Name`/`Vector`/`Class` value -- and **85** hold no parse on
+either list. Five of the six partial rows are the same five `inventory/class_defaults_misses.csv` calls
+`type-contradiction`. The status table gains the renderer's own scope beside the locator's: **1,977 of 2,319
+(85.25%)** emitted against **1,664 (71.76%)** fully declared, and the difference is the 313 one-tag blocks the
+floor still refuses a verdict on -- the question that stays open is unchanged and still needs the compile loop.
+Depth: `docs/CLASS_DEFAULTS.md`, *The 342 withheld classes get a reason*.
+
 
 ## U19. What a `State` payload's code region ends on -- answered: a `LabelTable` on the None name, the `0x47` marker, then a 22-byte record whose WORD is the table's offset in the *widened* code
 
