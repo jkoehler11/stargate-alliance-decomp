@@ -1,0 +1,17 @@
+element_type,declared_by,arrays,records,widths
+ParticleColorScale,ParticleEmitter,2472,5746,14:2156;17:203;15:102;16:11
+ParticleTimeScale,ParticleEmitter,1330,2000,34:656;35:281;31:220;33:102;32:71
+SoundEmitter,AmbientSound,446,767,38:337;37:84;41:21;40:4
+ParticleSound,ParticleEmitter,58,73,85:55;84:3
+ParticleBeamEndPoint,BeamEmitter,52,93,74:40;75:5;78:4;73:2;83:1
+IMusicSegment,IMusicActor,44,3694,73:21;41:8;68:8;59:4;39:1;47:1;75:1
+ParticleVelocityScale,ParticleEmitter,36,114,23:21;24:15
+?,,22,26,15:9;1:8;3:5
+?,Actor,18,18,1:13;3:3;15:1;6:1
+int,FluidSurfaceInfo,12,2017,4:12
+Plane,ParticleEmitter,8,8,26:7;29:1
+ParticleRevolutionScale,ParticleEmitter,4,8,23:3;24:1
+ParticleBeamScale,BeamEmitter,3,3,24:3
+PassengerWeaponStruct,StargateVehicle,2,6,11:2
+float,ParticleEmitter,2,2,4:2
+SoundEmitter,ACTION_PlayAmbientSound,1,1,38:1

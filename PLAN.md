@@ -1047,6 +1047,23 @@ other 38 rows.
       4) + `docs/T3D.md` (the defect table replaced by the rule, and the "820 unresolved references" bullet
       struck with what settled it) + this note. 73 maps in 67 s; no boot.
 
+      **The array element type is a declaration, and it names 99.1% of the refused arrays (2026-11-19).** The
+      page's last open sentence said the element's type "lives in the class's `ArrayProperty` declaration, and this
+      reader carries a map's values, not its class declarations". The declaration is committed already
+      (`inventory/class_properties.csv`, `array<ParticleColorScale>`), and inheritance is the half that was
+      missing -- `SpriteEmitter.ColorScale` is declared on `ParticleEmitter` -- so the join walks
+      `inventory/classes.csv`'s super chain and names **4,470 of 4,510** refused struct arrays (14,532 of 14,576
+      records). The residue is named: **40** arrays whose property the chain does not declare as an array
+      (`Light.PrePivot`, `PathNode.Vector`, `StaticMeshActor.ColLocation`, `SoundTrigger.ZoneNumber`) are tags a
+      mislocated block start decodes as `Array` -- the same defect the locator tie-break fixes -- and **793**
+      payloads do not divide. Decoding stops at the width: `ParticleColorScale` is 14 bytes in 2,156 arrays and 17
+      in 203, so only a type whose width is a fact about the type is decoded, and **2,019** records are (**2,017**
+      `int` in 12 `array<int>` properties and 2 `float`); everything else is a typed comment. Tool
+      (`load_declarations`/`declared` walk the chain, `decode_elements` tests the width, `--arrays` writes the
+      census, `--check` holds the arithmetic against `t3d_values.csv` and drives the chain, the width test and
+      three locator tie-breaks synthetically) + `inventory/t3d_arrays.csv` (16 rows) + `docs/T3D.md` (a new
+      section and the generated block) + `make t3d` echoing the filename + this note. 73 maps in 67 s; no boot.
+
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an

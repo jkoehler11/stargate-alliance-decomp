@@ -30,6 +30,7 @@ and the docs say the same). What is committed is the tool and the counts it prin
 import argparse
 import csv
 import os
+import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -38,6 +39,46 @@ from ue2pkg import Package  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 VALUES = os.path.normpath(os.path.join(HERE, "..", "inventory", "t3d_values.csv"))
 STRUCTS = os.path.normpath(os.path.join(HERE, "..", "inventory", "t3d_structs.csv"))
+ARRAYS = os.path.normpath(os.path.join(HERE, "..", "inventory", "t3d_arrays.csv"))
+CLASSES = os.path.normpath(os.path.join(HERE, "..", "inventory", "classes.csv"))
+DECLARED = os.path.normpath(os.path.join(HERE, "..", "inventory", "class_properties.csv"))
+
+# The element types whose width is a fact about the type, so a payload that divides by its count can be decoded:
+# bytes per element and the struct format. A name here is a claim about the *type* -- `Vector` is 12 bytes on
+# 152,109 properties and 16 on 19 -- so the width test in `decode_elements` is what keeps the claim honest.
+ELEMENT = {"int": (4, "<i"), "float": (4, "<f"), "byte": (1, "<B"), "bool": (4, "<i"),
+           "Vector": (12, "<3f"), "Rotator": (12, "<3i"), "Color": (4, "<4B")}
+
+
+def load_declarations(path_classes=CLASSES, path_props=DECLARED):
+    """(class -> super) and (class, property) -> declared friendly type, from the two committed class artifacts.
+
+    An array's element type is written down in one place only: the declaration. A map's payload carries values,
+    not a declaration, which is why this writer printed a struct array as "N element(s) of W byte(s), element
+    type not in the export". `inventory/class_properties.csv` has the declaration on the class that declares it
+    and a placed class inherits -- `SpriteEmitter.ColorScale` is `array<ParticleColorScale>` on its parent
+    `ParticleEmitter` -- so the lookup walks the super chain in `inventory/classes.csv`.
+    """
+    parent, types = {}, {}
+    with open(path_classes, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            parent.setdefault(r["class"], r["super"])
+    with open(path_props, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            types[(r["class"], r["property"])] = r["friendly_type"]
+    return parent, types
+
+
+def declared(parent, types, cls, prop, depth=40):
+    """The property's declaration through the super chain: (friendly type, the class that declares it)."""
+    seen = 0
+    while cls and seen < depth:
+        hit = types.get((cls, prop))
+        if hit:
+            return hit, cls
+        cls = parent.get(cls)
+        seen += 1
+    return "", ""
 
 
 def load_prop_stream():
@@ -117,6 +158,45 @@ def element_layout(raw, ps):
     return count, rest // count
 
 
+def decode_elements(raw, ps, element_type):
+    """An array of a fixed-width element type -> its values, or None when the type's width is not the payload's.
+
+    The width test is the whole guard: `Vector` is 12 bytes in 152,109 places and 16 in 19, so a payload whose
+    remainder over its count is not the type's width is left as a typed comment rather than decoded. Nothing here
+    guesses at a struct's field layout -- a struct element type is named and left alone, because its width is a
+    property of the instance (compact indices inside it), not of the name.
+    """
+    lay = element_layout(raw, ps)
+    if not lay:
+        return None
+    count, width = lay
+    fmt = ELEMENT.get(element_type)
+    if not fmt or fmt[0] != width:
+        return None
+    pat = fmt[1]
+    step = struct.calcsize(pat)
+    off = len(raw) - count * width
+    out = []
+    for _ in range(count):
+        vals = struct.unpack_from(pat, raw, off)
+        off += step
+        out.append(vals[0] if len(vals) == 1 else vals)
+    return out
+
+
+def fmt_element(value):
+    """One decoded element, in the editor's spelling (`Vector` is `(X=…,Y=…,Z=…,`Rotator` `(Pitch=…)`)."""
+    if isinstance(value, tuple) and len(value) == 3:
+        if all(isinstance(v, float) for v in value):
+            return "(X=%.6g,Y=%.6g,Z=%.6g)" % value
+        return "(Pitch=%d,Yaw=%d,Roll=%d)" % value
+    if isinstance(value, tuple):
+        return "(%s)" % ",".join(str(v) for v in value)
+    if isinstance(value, float):
+        return "%.6g" % value
+    return str(int(value))
+
+
 def locate(data, pkg, ps):
     """The actor's property block, for a reader that decodes values.
 
@@ -151,7 +231,7 @@ def locate(data, pkg, ps):
     return best[1], best[2], best[3]
 
 
-def drive_map(path, outdir, ps, verbose=False):
+def drive_map(path, outdir, ps, parent=None, types=None, verbose=False):
     pkg = Package(path)
     pkg.read_names()
     pkg.read_imports()
@@ -160,8 +240,9 @@ def drive_map(path, outdir, ps, verbose=False):
     lines = ["// %s — written by tools/map-to-t3d.py" % name, ""]
     actors = props_total = 0
     st = {"arrays": 0, "object_arrays": 0, "object_elements": 0, "struct_arrays": 0,
-          "struct_records": 0, "unshaped": 0, "struct_props": 0, "struct_decoded": 0, "struct_raw": 0}
-    structs = {}
+          "struct_records": 0, "unshaped": 0, "struct_props": 0, "struct_decoded": 0, "struct_raw": 0,
+          "elements_decoded": 0}
+    structs, arrays = {}, {}
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
         found = locate(data, pkg, ps)
@@ -186,8 +267,21 @@ def drive_map(path, outdir, ps, verbose=False):
                 if layout:
                     st["struct_arrays"] += 1
                     st["struct_records"] += layout[0]
-                    lines.append("   // %s: %d element(s) of %d byte(s), element type not in the export"
-                                 % (p["name"], layout[0], layout[1]))
+                    dt, owner = declared(parent or {}, types or {}, cls, p["name"])
+                    et = dt[6:-1] if dt.startswith("array<") else ""
+                    row = arrays.setdefault((et, owner), {"arrays": 0, "records": 0, "widths": {}})
+                    row["arrays"] += 1
+                    row["records"] += layout[0]
+                    row["widths"][layout[1]] = row["widths"].get(layout[1], 0) + 1
+                    elements = decode_elements(raw, ps, et)
+                    if elements is not None:
+                        st["elements_decoded"] += len(elements)
+                        for i, value in enumerate(elements):
+                            lines.append("   %s(%d)=%s" % (p["name"], i, fmt_element(value)))
+                        continue
+                    lines.append("   // %s: %d element(s) of %d byte(s)%s"
+                                 % (p["name"], layout[0], layout[1],
+                                    (" of " + et) if et else ", element type not declared"))
                 else:
                     st["unshaped"] += 1
                     lines.append("   // %s: %d byte(s), no self-consuming layout" % (p["name"], len(raw)))
@@ -215,7 +309,7 @@ def drive_map(path, outdir, ps, verbose=False):
     if verbose:
         print("  %s" % os.path.join(outdir, name + ".t3d"))
     return {"map": name, "actors": actors, "bytes": len(text), "props": props_total,
-            "unresolved": text.count("ref:"), "values": st, "structs": structs}
+            "unresolved": text.count("ref:"), "values": st, "structs": structs, "arrays": arrays}
 
 
 def read_csv(path):
@@ -241,7 +335,7 @@ class _Ps:
         return [dict(p) for p in self.table[buf[0]]], len(buf), "None"
 
 
-def check(values, structs, stats):
+def check(values, structs, stats, arrays=ARRAYS):
     """The censuses are arithmetic on each other, and a synthetic payload drives the reader. No dump."""
     problems = []
     ps = load_prop_stream()
@@ -249,13 +343,13 @@ def check(values, structs, stats):
     if len(vrows) != 73:
         problems.append("%s: %d rows, expected 73" % (values, len(vrows)))
     tot = {"arrays": 0, "object_arrays": 0, "arrays_refused": 0, "struct_props": 0,
-           "struct_decoded": 0, "object_elements": 0}
+           "struct_decoded": 0, "object_elements": 0, "struct_arrays": 0, "struct_array_records": 0}
     for r in vrows:
-        arrays, obj, refused = int(r["arrays"]), int(r["object_arrays"]), int(r["arrays_refused"])
+        n_arrays, obj, refused = int(r["arrays"]), int(r["object_arrays"]), int(r["arrays_refused"])
         sp, sd = int(r["struct_props"]), int(r["struct_decoded"])
-        if obj + refused != arrays:
+        if obj + refused != n_arrays:
             problems.append("%s: %s says %d object + %d refused != %d arrays"
-                            % (values, r["map"], obj, refused, arrays))
+                            % (values, r["map"], obj, refused, n_arrays))
         if sd > sp:
             problems.append("%s: %s decodes %d of %d structs" % (values, r["map"], sd, sp))
         if int(r["struct_arrays"]) and not int(r["struct_array_records"]):
@@ -277,6 +371,34 @@ def check(values, structs, stats):
         crows = read_csv(stats)
         if [r["map"] for r in crows] != [r["map"] for r in vrows]:
             problems.append("%s: the map column disagrees with the values census" % stats)
+    # The element-type census partitions the refused arrays the values census counts: every refused array is
+    # either unshaped or has a (count, width) layout and therefore one row here.
+    arows = read_csv(arrays)
+    if not arows:
+        problems.append("%s: empty" % arrays)
+    if sum(int(r["arrays"]) for r in arows) != tot["struct_arrays"]:
+        problems.append("%s: %d arrays != the values census's %d struct arrays"
+                        % (arrays, sum(int(r["arrays"]) for r in arows), tot["struct_arrays"]))
+    if sum(int(r["records"]) for r in arows) != int(sum(int(r["struct_array_records"]) for r in vrows)):
+        problems.append("%s: records do not add up to the values census's struct_array_records" % arrays)
+    if any(r["element_type"] != "?" and not r["declared_by"] for r in arows):
+        problems.append("%s: a declared element type does not name the class that declares it" % arrays)
+    if any(not r["widths"] for r in arows):
+        problems.append("%s: a row carries no element width" % arrays)
+    parent = {"Child": "Base", "Base": ""}
+    types = {("Base", "Foo"): "array<int>", ("Base", "Bar"): "float"}
+    if declared(parent, types, "Child", "Foo") != ("array<int>", "Base"):
+        problems.append("declared() does not walk the super chain")
+    if declared(parent, types, "Child", "Nope") != ("", ""):
+        problems.append("declared() invents a declaration")
+    if decode_elements(b"\x02" + struct.pack("<2i", 7, -8), ps, "int") != [7, -8]:
+        problems.append("decode_elements does not decode two ints")
+    if decode_elements(b"\x02" + struct.pack("<2i", 7, -8), ps, "byte") is not None:
+        problems.append("decode_elements decodes an int payload as bytes")
+    if decode_elements(b"\x01" + struct.pack("<3f", 1.0, 2.0, 3.0), ps, "Vector") != [(1.0, 2.0, 3.0)]:
+        problems.append("decode_elements does not decode a Vector element")
+    if fmt_element((1, 2, 3)) != "(Pitch=1,Yaw=2,Roll=3)":
+        problems.append("fmt_element does not spell a Rotator element")
     if decode_obj_array(b"\x02\x01\x02", _Pkg(2), ps) != [1, 2]:
         problems.append("decode_obj_array refuses a well-formed two-element payload")
     if decode_obj_array(b"\x02\x01", _Pkg(2), ps) is not None:
@@ -310,10 +432,11 @@ def check(values, structs, stats):
     return 0
 
 
-def render_doc(values, structs):
+def render_doc(values, structs, arrays=ARRAYS):
     """The page's generated block: the array census and the struct census, from the two artifacts only."""
     vrows = read_csv(values)
     srows = read_csv(structs)
+    arows = read_csv(arrays)
     tot = {k: sum(int(r[k]) for r in vrows) for k in
            ("arrays", "object_arrays", "object_elements", "arrays_refused", "struct_arrays",
             "struct_array_records", "struct_props", "struct_decoded", "struct_raw")}
@@ -326,6 +449,10 @@ def render_doc(values, structs):
     out.append("| object references inside them | **%d** |" % tot["object_elements"])
     out.append("| arrays refused a shape | %d (%d struct arrays holding %d records) |"
                % (tot["arrays_refused"], tot["struct_arrays"], tot["struct_array_records"]))
+    out.append("| -- of the struct arrays, element type declared | **%d** |"
+               % sum(int(r["arrays"]) for r in arows if r["element_type"] != "?"))
+    out.append("| -- of those, elements decoded | **%d** |"
+               % sum(int(r["records"]) for r in arows if r["element_type"] in ELEMENT))
     out.append("| struct-typed properties | %d |" % tot["struct_props"])
     out.append("| struct properties decoded to numbers | **%d** |" % tot["struct_decoded"])
     out.append("| struct property names | %d |" % len(srows))
@@ -335,6 +462,13 @@ def render_doc(values, structs):
     for r in srows[:12]:
         out.append("| `%s` | %s | %s | %s |" % (r["struct"], r["properties"], r["decoded"],
                                                 r["sizes"].replace(";", " / ")))
+    out.append("")
+    out.append("| array element type | declared on | arrays | records | widths (bytes:arrays) |")
+    out.append("|---|---|---:|---:|---|")
+    for r in arows[:10]:
+        et = "*(not declared)*" if r["element_type"] == "?" else "`%s`" % r["element_type"]
+        out.append("| %s | %s | %s | %s | %s |" % (et, ("`%s`" % r["declared_by"]) if r["declared_by"] else "--",
+                                                   r["arrays"], r["records"], r["widths"].replace(";", " / ")))
     return "\n".join(out)
 
 
@@ -377,6 +511,8 @@ def main():
                     help="per-map array/struct census (default: inventory/t3d_values.csv)")
     ap.add_argument("--structs", metavar="CSV", default=STRUCTS,
                     help="per-struct census (default: inventory/t3d_structs.csv)")
+    ap.add_argument("--arrays", metavar="CSV", default=ARRAYS,
+                    help="per-element-type census (default: inventory/t3d_arrays.csv)")
     ap.add_argument("--check", action="store_true",
                     help="assert the two censuses agree with each other and drive the reader (no dump)")
     ap.add_argument("--doc", default=os.path.normpath(os.path.join(HERE, "..", "docs", "T3D.md")),
@@ -386,11 +522,11 @@ def main():
     args = ap.parse_args()
 
     if args.check_doc:
-        return write_doc(args.doc, render_doc(args.values, args.structs), check_only=True)
+        return write_doc(args.doc, render_doc(args.values, args.structs, args.arrays), check_only=True)
     if args.write_doc:
-        return write_doc(args.doc, render_doc(args.values, args.structs))
+        return write_doc(args.doc, render_doc(args.values, args.structs, args.arrays))
     if args.check:
-        return check(args.values, args.structs, args.stats)
+        return check(args.values, args.structs, args.stats, args.arrays)
 
     if not args.path:
         sys.exit("a .unr file or a directory is required to write T3D")
@@ -406,9 +542,11 @@ def main():
         paths = paths[: args.limit]
 
     total = {"actors": 0, "bytes": 0, "props": 0, "unresolved": 0}
-    rows, vrows, structs = [], [], {}
+    rows, vrows, arrays = [], [], {}
+    structs = {}
+    parent, types = load_declarations()
     for path in paths:
-        got = drive_map(path, args.out, ps, args.verbose)
+        got = drive_map(path, args.out, ps, parent, types, args.verbose)
         for key in total:
             total[key] += got[key]
         rows.append((got["map"], got["actors"], got["props"], got["unresolved"], got["bytes"]))
@@ -416,6 +554,12 @@ def main():
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
                       v["struct_props"], v["struct_decoded"], v["struct_raw"]))
+        for key, row in got["arrays"].items():
+            agg = arrays.setdefault(key, {"arrays": 0, "records": 0, "widths": {}})
+            agg["arrays"] += row["arrays"]
+            agg["records"] += row["records"]
+            for width, n in row["widths"].items():
+                agg["widths"][width] = agg["widths"].get(width, 0) + n
         for sn, row in got["structs"].items():
             agg = structs.setdefault(sn, {"n": 0, "sizes": {}, "decoded": 0})
             agg["n"] += row["n"]
@@ -444,6 +588,13 @@ def main():
             sizes = ";".join("%d:%d" % (s, n) for s, n in sorted(row["sizes"].items(), key=lambda kv: -kv[1]))
             fh.write("%s,%d,%d,%s\n" % (sn, row["n"], row["decoded"], sizes))
     print("structs: %s (%d rows)" % (args.structs, len(structs)))
+    with open(args.arrays, "w", encoding="utf-8", newline="") as fh:
+        fh.write("element_type,declared_by,arrays,records,widths\n")
+        for key in sorted(arrays, key=lambda k: (-arrays[k]["arrays"], k[0], k[1])):
+            row = arrays[key]
+            widths = ";".join("%d:%d" % (w, n) for w, n in sorted(row["widths"].items(), key=lambda kv: -kv[1]))
+            fh.write("%s,%s,%d,%d,%s\n" % (key[0] or "?", key[1], row["arrays"], row["records"], widths))
+    print("arrays: %s (%d rows)" % (args.arrays, len(arrays)))
     print("\nmaps: %d, actors: %d, properties: %d, unresolved refs: %d, t3d bytes: %d, out: %s"
           % (len(paths), total["actors"], total["props"], total["unresolved"], total["bytes"], args.out))
     return 0

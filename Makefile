@@ -737,7 +737,9 @@ prop-stream:
 t3d:
 	@$(PYTHON) tools/map-to-t3d.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" \
 		--out "$(or $(WORK),work)/extracted/maps" --stats inventory/t3d_coverage.csv \
-		--values inventory/t3d_values.csv --structs inventory/t3d_structs.csv
+		--values inventory/t3d_values.csv --structs inventory/t3d_structs.csv \
+		--arrays inventory/t3d_arrays.csv
+	@echo "wrote inventory/t3d_arrays.csv (element type, arrays, records, widths)"
 
 # docs/T3D.md's array/struct census block, rendered from the two artifacts `make t3d` writes.
 t3d-values-doc:

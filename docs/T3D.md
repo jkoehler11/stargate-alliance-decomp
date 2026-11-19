@@ -149,6 +149,8 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | of those, object arrays | **32586** |
 | object references inside them | **117398** |
 | arrays refused a shape | 5303 (4510 struct arrays holding 14576 records) |
+| -- of the struct arrays, element type declared | **4470** |
+| -- of those, elements decoded | **2019** |
 | struct-typed properties | 312295 |
 | struct properties decoded to numbers | **203148** |
 | struct property names | 79 |
@@ -167,6 +169,19 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `Plane` | 42 | 0 | 26:29 / 29:12 / 1:1 |
 | `SheerRate` | 21 | 0 | 4:21 |
 | `?` | 14 | 0 | 1:12 / 0:1 / 4:1 |
+
+| array element type | declared on | arrays | records | widths (bytes:arrays) |
+|---|---|---:|---:|---|
+| `ParticleColorScale` | `ParticleEmitter` | 2472 | 5746 | 14:2156 / 17:203 / 15:102 / 16:11 |
+| `ParticleTimeScale` | `ParticleEmitter` | 1330 | 2000 | 34:656 / 35:281 / 31:220 / 33:102 / 32:71 |
+| `SoundEmitter` | `AmbientSound` | 446 | 767 | 38:337 / 37:84 / 41:21 / 40:4 |
+| `ParticleSound` | `ParticleEmitter` | 58 | 73 | 85:55 / 84:3 |
+| `ParticleBeamEndPoint` | `BeamEmitter` | 52 | 93 | 74:40 / 75:5 / 78:4 / 73:2 / 83:1 |
+| `IMusicSegment` | `IMusicActor` | 44 | 3694 | 73:21 / 41:8 / 68:8 / 59:4 / 39:1 / 47:1 / 75:1 |
+| `ParticleVelocityScale` | `ParticleEmitter` | 36 | 114 | 23:21 / 24:15 |
+| *(not declared)* | -- | 22 | 26 | 15:9 / 1:8 / 3:5 |
+| *(not declared)* | `Actor` | 18 | 18 | 1:13 / 3:3 / 15:1 / 6:1 |
+| `int` | `FluidSurfaceInfo` | 12 | 2017 | 4:12 |
 <!-- /generated:t3d-values -->
 
 **The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,510
@@ -187,5 +202,32 @@ now locate **169 more actors** and **2,808 more properties**, so the totals are 
 properties / 3 unresolved references** and the T3D is 49,211,838 bytes, because an array is now one line per
 element rather than one line of bytes. A second run reproduces the table byte for byte.
 
-**Not in this PR.** The array element type (a class-declaration read), the struct decoders beyond the three whose
-layout is established, and the `Level` export's script sequence.
+## The element type is a declaration, and the declaration is in the class (measured 2026-11-19)
+
+The sentence this page ended on said the element's type "lives in the class's `ArrayProperty` declaration, and
+this reader carries a map's values, not its class declarations". The declaration was already committed, in
+`inventory/class_properties.csv` (`array<ParticleColorScale>` as the property's friendly type), and a placed
+class inherits it: `SpriteEmitter.ColorScale` is declared on `ParticleEmitter`, so the join walks the super
+chain in `inventory/classes.csv`. It names the element type of **4,470 of the 4,510** refused struct arrays
+(99.1%, 14,532 of their 14,576 records), and the residue is named rather than left as a mystery: **40** refused
+arrays whose property their class chain does not declare as an array -- `Light.PrePivot`, `PathNode.Vector`,
+`StaticMeshActor.ColLocation`, `SoundTrigger.ZoneNumber` -- which are *not* arrays at all but tags a mislocated
+block start decodes as one, the same defect the locator tie-break above fixes in its three cases; and the
+**793** payloads that divide by nothing at all.
+
+**Typed is not decoded, and the width is why.** The element's *layout* is not in either artifact: a struct
+array's element width is the payload's remainder over its count, and it varies within one type
+(`ParticleColorScale` 14 bytes in 2,156 arrays and 17 in 203; `ParticleTimeScale` 34 in 656 and 31 in 220),
+because compact indices inside the element are one or two bytes. So the writer decodes nothing it cannot fix
+the width of: an element type whose width is a fact about the type (`int`, `float`, `byte`, `bool`, `Vector`,
+`Rotator`, `Color`) is decoded when the payload's width is that type's, and **2,019 records** are: **2,017
+`int`** in 12 `array<int>` properties (`FluidSurfaceInfo`) and 2 `float`. Every other typed array is emitted
+as `// SizeScale: 2 element(s) of 17 byte(s) of ParticleTimeScale` -- a comment with a name an editor can look
+up, not a name invented for the bytes.
+
+The per-element-type census is `inventory/t3d_arrays.csv` (16 rows, written by `make t3d`, arithmetic against
+`t3d_values.csv` under `--check`), and the table below is rendered from it.
+
+**Not in this PR.** The struct decoders beyond the three whose layout is established, the element layouts of
+the five typed struct arrays, and the `Level` export's script sequence.
+
