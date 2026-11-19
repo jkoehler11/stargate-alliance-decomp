@@ -13630,3 +13630,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   headers are not in the image, and matching a package-based `UState`'s field order to them is a join this read does
   not make. (2) What the 876 empty slots are for -- `GNames[690]` (`0x2b2`, the value the setter treats as
   `BadToken`) beside a slot the reserve does name, in one live boot (U26).
+### Execution notes (2026-11-18, the UI page flow is a string graph, and the Replicator HUD is player-only)
+
+- **Task.** `docs/systems/UI.md`'s two unmeasured bullets: *what any page looks like or which flow leads where*
+  and *which HUD the game actually selects for the Replicator mode, and whether it is player- or bot-only*.
+- **The root is configuration, not code.** `Default.ini`, `UW.ini` and `UnrealEngine2.ini` each state
+  `MainMenuClass=StargateMenus.MainMenu`, `GUIController.GetMainMenuClass()` is native and returns it, and
+  `StoryModeGame`'s login path calls `GUI.OpenMenu(GUI.GetMainMenuClass())` in a live (`#ifndef PS2`) branch.
+- **Two edge sources, and only one is script.** `tools/ui-menu-flow.py` (`make ui-menu-flow`,
+  `inventory/menu_flow.csv`, `--check` and `--check-doc` in `make ci`) reads **50 literal** `OpenMenu`/
+  `ReplaceMenu`/`ClientOpenMenu` targets over 38 classes (22 more sites pass a variable, so they name no page
+  statically), and the `ButtonMenus` array `RightLockingMenuPanel` walks. That array is **not** in the class's
+  `TextBuffer` — a class's `defaultproperties` are compiled into its record — so the tool reads the tree
+  `defaults-emit --emit` renders (1,664 of 2,319 blocks) and gets **14 entries** from three classes.
+- **Five unresolved targets, and each fails differently.** Three sites name `UCMenu.*` pages in a package the
+  disc does not ship; `GUI.JoeTest` is a `UDebugMenu` page no package declares; `GUI.SGWaitingForPlayers` sits
+  inside an `#ifdef PS2` branch this build does not compile and names no class even there (the page that exists
+  is `StargateMenus.WaitingForPlayers`); and `OptionsEditProfile`'s fourth `ButtonMenus` entry is
+  `"StargateMenus.OptionsEditAudio)"` — a stray `)` that turns a page into a typo, with an empty fifth slot after
+  it. A string-keyed menu turns a renamed page into a missing page with no error, which is why the table is
+  gated.
+- **The closure splits 59 pages three ways.** From the ini root: **34 reachable** (depth 0-6, the single-player
+  and multiplayer paths), **12 opened only from outside the menu graph** (the in-game pages `StargatePlayer`
+  opens, `RestartGame` from `StoryModeGame`, the save pair), **13 nothing opens** — `CreditsPage` because its
+  call is inside the block comment that is `MainMenu`'s shipped body, `VSMainMenu` because its `AutoLoad=` line
+  is commented beside the live `MainMenu` one, the rest opened by class reference or no longer used.
+- **The HUD is a string, and the Replicator one is player-only.** `Engine.GameInfo` declares `var string HUDType`
+  and resolves it with `DynamicLoadObject`; the corpus states four (`Engine.HUD`, `StargateHUD`,
+  `StargateTeamHUD` twice) and **no class names `ReplicatorHUD`**. That HUD is swapped in by
+  `StargateContent.ReplicatorPossess.Trigger`, which calls `ClientSetHUD` with
+  `DynamicLoadObject("StargateGame.ReplicatorHUD")` and `TeamScoreBoard` inside a test for
+  `EventInstigator.IsPlayerPawn()` (its own log: `replicator was triggered by a player`), and restores
+  `Level.Game.HUDType` on release — so the Replicator interface is a player-possession interface, not a game
+  mode's, and a bot-possessed one keeps the game's HUD.
+- **Files.** `tools/ui-menu-flow.py` (script/literal and defaults edge readers, the package-qualified resolver
+  with its typo/case/absent-package verdicts, the preprocessor branch census, the BFS closure, five self-test
+  fixtures, `--check-doc`), `inventory/menu_flow.csv` (157 rows: 72 edge sites, 14 array entries, 6 ini root
+  rows, 59 page rows, one census row), `docs/systems/UI.md` (new *page flow* and *HUD* sections, generated
+  block, the two answered bullets replaced and the two residuals it leaves), the `ui-menu-flow` target and its
+  two `ci` gates, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The 13 pages the closure cannot reach are opened by *class reference* — `SGPageBase`
+  pages reached through a panel or an interaction rather than by a name string — and `SGMenuInteraction`'s 294
+  defaults properties (the largest property set in any fork class) are the obvious place a page table would be
+  kept: emitting that one class's defaults and joining its `Class` properties against the 13 would say whether
+  they are load-bearing or leftovers.
