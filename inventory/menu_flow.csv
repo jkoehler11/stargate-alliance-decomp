@@ -104,6 +104,206 @@ mention,XBoxLivePlayMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSe
 mention,XBoxLivePlayMenu,StargateMenus,comment,StargateMenus.MultiplayerServerSelect,StargateMenus,class,,1,,inside a comment
 mention,XBoxLivePlayMenu,StargateMenus,comment,StargateMenus.XBoxLiveServerSelect,StargateMenus,class,,1,,inside a comment
 edge,UDebugMenuBar,UDebugMenu,literal,GUI.JoeTest,GUI,absent,,1,,
+hint,CreateNewProfile,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.OptionsEditProfile"
+hint,CreateNewProfile,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.OptionsEditProfile"
+draw,DeleteProfilePage,StargateMenus,defaults,StyleName,,1,,1,,
+draw,DeleteSavedGamePage,StargateMenus,defaults,StyleName,,1,,1,,
+hint,EnterFriendNamePage,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.VirtualKeyboardPage"
+hint,EnterFriendNamePage,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.VirtualKeyboardPage"
+hint,EnterFriendNamePage,StargateMenus,inherited,bButtonX,,,,1,,"Delete via Engine.Localizer.sDelete, inherited from StargateMenus.VirtualKeyboardPage"
+hint,EnterFriendNamePage,StargateMenus,inherited,bButtonY,,,,1,,"Create New via Engine.Localizer.sCreateNew, inherited from StargateMenus.VirtualKeyboardPage"
+hint,EnterProfileNamePage,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.VirtualKeyboardPage"
+hint,EnterProfileNamePage,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.VirtualKeyboardPage"
+hint,EnterProfileNamePage,StargateMenus,inherited,bButtonX,,,,1,,"Delete via Engine.Localizer.sDelete, inherited from StargateMenus.VirtualKeyboardPage"
+hint,EnterProfileNamePage,StargateMenus,inherited,bButtonY,,,,1,,"Create New via Engine.Localizer.sCreateNew, inherited from StargateMenus.VirtualKeyboardPage"
+draw,HintScreen,StargateMenus,defaults,"Background,BackgroundStyle,BoundingType,ScalingType,WinTop",,5,,1,,
+hint,InGameInfoScreen,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+draw,InGameScoreboard,StargateMenus,defaults,Background,,1,,1,,
+hint,LoadGameMenu,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,LoadGameMenu,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,MultiplayerCharSelect,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,MultiplayerCharSelect,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,MultiplayerGameSelect,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,MultiplayerGameSelect,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,MultiplayerMapSelect,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.SinglePlayerChapterSelect"
+hint,MultiplayerMapSelect,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.SinglePlayerChapterSelect"
+hint,MultiplayerMenu,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,MultiplayerSelectProfile,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.SinglePlayerSelectProfile"
+hint,MultiplayerSelectProfile,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.SinglePlayerSelectProfile"
+hint,MultiplayerSelectProfile,StargateMenus,inherited,bButtonY,,,,1,,"Create New via Engine.Localizer.sCreateNew, inherited from StargateMenus.SinglePlayerSelectProfile"
+hint,MultiplayerServerSelect,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.ServerSelectionPage"
+hint,MultiplayerServerSelect,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.ServerSelectionPage"
+draw,NoMatchFoundPage,StargateMenus,defaults,StyleName,,1,,1,,
+draw,NotYetImplementedPage,StargateMenus,defaults,"WinHeight,WinLeft,WinTop,WinWidth",,4,,1,,
+hint,OptionsEditAppearance,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.OptionsEditBase"
+hint,OptionsEditAppearance,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.OptionsEditBase"
+hint,OptionsEditAudio,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.OptionsEditBase"
+hint,OptionsEditAudio,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.OptionsEditBase"
+hint,OptionsEditBase,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,OptionsEditBase,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,OptionsEditProfile,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,OptionsEditProfile,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,OptionsEditVideo,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.OptionsEditBase"
+hint,OptionsEditVideo,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.OptionsEditBase"
+hint,OptionsPage,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.SinglePlayerSelectProfile"
+hint,OptionsPage,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.SinglePlayerSelectProfile"
+hint,OptionsPage,StargateMenus,own,bButtonX,,,,1,,Delete via Engine.Localizer.sDelete
+hint,OptionsPage,StargateMenus,inherited,bButtonY,,,,1,,"Create New via Engine.Localizer.sCreateNew, inherited from StargateMenus.SinglePlayerSelectProfile"
+hint,QuickLoadMapTempPage,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.SinglePlayerChapterSelect"
+hint,QuickLoadMapTempPage,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.SinglePlayerChapterSelect"
+hint,SaveGameMenu,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,SaveGameMenu,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,SaveGameMenu,StargateMenus,own,bButtonX,,,,1,,Delete via Engine.Localizer.sDelete
+hint,SelectPawnPage,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,SelectPawnPage,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,SelectTeamPage,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,SelectTeamPage,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,ServerSelectionPage,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,ServerSelectionPage,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+draw,SinglePlayerChapterSelect,StargateMenus,defaults,URL,,1,,1,,?Game=StargateGame.StoryModeGame
+hint,SinglePlayerChapterSelect,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,SinglePlayerChapterSelect,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,SinglePlayerLoadGame,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.LoadGameMenu"
+hint,SinglePlayerLoadGame,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.LoadGameMenu"
+hint,SinglePlayerMenu,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,SinglePlayerSelectProfile,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,SinglePlayerSelectProfile,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,SinglePlayerSelectProfile,StargateMenus,own,bButtonY,,,,1,,Create New via Engine.Localizer.sCreateNew
+hint,SystemLinkMenu,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+draw,TextGameInfo,StargateMenus,defaults,Background,,1,,1,,
+draw,VSMainMenu,StargateMenus,defaults,StyleName,,1,,1,,
+hint,VirtualKeyboardPage,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,VirtualKeyboardPage,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,VirtualKeyboardPage,StargateMenus,own,bButtonX,,,,1,,Delete via Engine.Localizer.sDelete
+hint,VirtualKeyboardPage,StargateMenus,own,bButtonY,,,,1,,Create New via Engine.Localizer.sCreateNew
+hint,WaitingForPlayers,StargateMenus,own,bButtonA,,,,1,,Select via Engine.Localizer.sSelect
+hint,WaitingForPlayers,StargateMenus,own,bButtonB,,,,1,,Back via Engine.Localizer.sBack
+hint,XBoxLiveServerSelect,StargateMenus,inherited,bButtonA,,,,1,,"Select via Engine.Localizer.sSelect, inherited from StargateMenus.ServerSelectionPage"
+hint,XBoxLiveServerSelect,StargateMenus,inherited,bButtonB,,,,1,,"Back via Engine.Localizer.sBack, inherited from StargateMenus.ServerSelectionPage"
+draw,XBoxLiveSignOutConfirm,StargateMenus,defaults,StyleName,,1,,1,,
+caption,sBack,Engine,defaults,Back,,,,1,,Localizer
+caption,sCreateNew,Engine,defaults,Create New,,,,1,,Localizer
+caption,sDelete,Engine,defaults,Delete,,,,1,,Localizer
+caption,sSelect,Engine,defaults,Select,,,,1,,Localizer
+override,CreateNewProfile,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,CreateNewProfile,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_Y
+override,HintScreen,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,HintScreen,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,InGameInfoScreen,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,InGameInfoScreen,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names no XC_ code
+override,InGameMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,InGameScoreboard,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,LoadGameMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,LoadGameMenu,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,MainMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,MultiplayerCharSelect,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,MultiplayerCharSelect,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,MultiplayerGameSelect,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,MultiplayerGameSelect,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,MultiplayerMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,MultiplayerSelectProfile,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,OptionsEditAppearance,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,OptionsEditAudio,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,OptionsEditBase,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,OptionsEditBase,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,OptionsEditProfile,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,OptionsEditProfile,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_Y
+override,OptionsEditVideo,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,OptionsPage,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,OptionsPage,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,"names XC_A, XC_X"
+override,QuestionPage,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,RestartGame,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,SaveGameMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,SaveGameMenu,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,"names XC_A, XC_X"
+override,SelectPawnPage,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,SelectPawnPage,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,SelectTeamPage,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,SelectTeamPage,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,ServerSelectionPage,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,ServerSelectionPage,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,SinglePlayerChapterSelect,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,SinglePlayerChapterSelect,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,SinglePlayerInGame,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,SinglePlayerSelectProfile,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,SinglePlayerSelectProfile,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,"names XC_A, XC_Y"
+override,TextGameInfo,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,VSMainMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,VSMainMenu,StargateMenus,body,MyKeyEvent,,own,,1,,names no XC_ code
+override,VirtualKeyboardPage,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,VirtualKeyboardPage,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,"names XC_A, XC_X, XC_Y"
+override,WaitingForPlayers,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,WaitingForPlayers,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_A
+override,XBoxLiveFindGameMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,XBoxLiveFriendsMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,XBoxLiveMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+override,XBoxLivePlayMenu,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
+hint_handler,CreateNewProfile,StargateMenus,body,bButtonA,,no-handler,,1,,names no XC_A on the chain
+hint_handler,CreateNewProfile,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,EnterFriendNamePage,StargateMenus,body,bButtonA,,handled,,1,,names VirtualKeyboardPage
+hint_handler,EnterFriendNamePage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,EnterFriendNamePage,StargateMenus,body,bButtonX,,handled,,1,,names VirtualKeyboardPage
+hint_handler,EnterFriendNamePage,StargateMenus,body,bButtonY,,handled,,1,,names VirtualKeyboardPage
+hint_handler,EnterProfileNamePage,StargateMenus,body,bButtonA,,handled,,1,,names VirtualKeyboardPage
+hint_handler,EnterProfileNamePage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,EnterProfileNamePage,StargateMenus,body,bButtonX,,handled,,1,,names VirtualKeyboardPage
+hint_handler,EnterProfileNamePage,StargateMenus,body,bButtonY,,handled,,1,,names VirtualKeyboardPage
+hint_handler,InGameInfoScreen,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,LoadGameMenu,StargateMenus,body,bButtonA,,handled,,1,,names LoadGameMenu
+hint_handler,LoadGameMenu,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,MultiplayerCharSelect,StargateMenus,body,bButtonA,,handled,,1,,names MultiplayerCharSelect
+hint_handler,MultiplayerCharSelect,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,MultiplayerGameSelect,StargateMenus,body,bButtonA,,handled,,1,,names MultiplayerGameSelect
+hint_handler,MultiplayerGameSelect,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,MultiplayerMapSelect,StargateMenus,body,bButtonA,,handled,,1,,names SinglePlayerChapterSelect
+hint_handler,MultiplayerMapSelect,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,MultiplayerMenu,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,MultiplayerSelectProfile,StargateMenus,body,bButtonA,,handled,,1,,"names MultiplayerSelectProfile, SinglePlayerSelectProfile"
+hint_handler,MultiplayerSelectProfile,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,MultiplayerSelectProfile,StargateMenus,body,bButtonY,,handled,,1,,names SinglePlayerSelectProfile
+hint_handler,MultiplayerServerSelect,StargateMenus,body,bButtonA,,handled,,1,,names ServerSelectionPage
+hint_handler,MultiplayerServerSelect,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,OptionsEditAppearance,StargateMenus,body,bButtonA,,handled,,1,,names OptionsEditBase
+hint_handler,OptionsEditAppearance,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,OptionsEditAudio,StargateMenus,body,bButtonA,,handled,,1,,names OptionsEditBase
+hint_handler,OptionsEditAudio,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,OptionsEditBase,StargateMenus,body,bButtonA,,handled,,1,,names OptionsEditBase
+hint_handler,OptionsEditBase,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,OptionsEditProfile,StargateMenus,body,bButtonA,,no-handler,,1,,names no XC_A on the chain
+hint_handler,OptionsEditProfile,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,OptionsEditVideo,StargateMenus,body,bButtonA,,handled,,1,,names OptionsEditBase
+hint_handler,OptionsEditVideo,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,OptionsPage,StargateMenus,body,bButtonA,,handled,,1,,"names OptionsPage, SinglePlayerSelectProfile"
+hint_handler,OptionsPage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,OptionsPage,StargateMenus,body,bButtonX,,handled,,1,,names OptionsPage
+hint_handler,OptionsPage,StargateMenus,body,bButtonY,,handled,,1,,names SinglePlayerSelectProfile
+hint_handler,QuickLoadMapTempPage,StargateMenus,body,bButtonA,,handled,,1,,names SinglePlayerChapterSelect
+hint_handler,QuickLoadMapTempPage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SaveGameMenu,StargateMenus,body,bButtonA,,handled,,1,,names SaveGameMenu
+hint_handler,SaveGameMenu,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SaveGameMenu,StargateMenus,body,bButtonX,,handled,,1,,names SaveGameMenu
+hint_handler,SelectPawnPage,StargateMenus,body,bButtonA,,handled,,1,,names SelectPawnPage
+hint_handler,SelectPawnPage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SelectTeamPage,StargateMenus,body,bButtonA,,handled,,1,,names SelectTeamPage
+hint_handler,SelectTeamPage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,ServerSelectionPage,StargateMenus,body,bButtonA,,handled,,1,,names ServerSelectionPage
+hint_handler,ServerSelectionPage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SinglePlayerChapterSelect,StargateMenus,body,bButtonA,,handled,,1,,names SinglePlayerChapterSelect
+hint_handler,SinglePlayerChapterSelect,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SinglePlayerLoadGame,StargateMenus,body,bButtonA,,handled,,1,,names LoadGameMenu
+hint_handler,SinglePlayerLoadGame,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SinglePlayerMenu,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SinglePlayerSelectProfile,StargateMenus,body,bButtonA,,handled,,1,,names SinglePlayerSelectProfile
+hint_handler,SinglePlayerSelectProfile,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,SinglePlayerSelectProfile,StargateMenus,body,bButtonY,,handled,,1,,names SinglePlayerSelectProfile
+hint_handler,SystemLinkMenu,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,VirtualKeyboardPage,StargateMenus,body,bButtonA,,handled,,1,,names VirtualKeyboardPage
+hint_handler,VirtualKeyboardPage,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,VirtualKeyboardPage,StargateMenus,body,bButtonX,,handled,,1,,names VirtualKeyboardPage
+hint_handler,VirtualKeyboardPage,StargateMenus,body,bButtonY,,handled,,1,,names VirtualKeyboardPage
+hint_handler,WaitingForPlayers,StargateMenus,body,bButtonA,,handled,,1,,names WaitingForPlayers
+hint_handler,WaitingForPlayers,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
+hint_handler,XBoxLiveServerSelect,StargateMenus,body,bButtonA,,handled,,1,,names ServerSelectionPage
+hint_handler,XBoxLiveServerSelect,StargateMenus,body,bButtonB,,handled,,1,,names SGPageBase
 hud,GameInfo,Engine,defaults,Engine.HUD,Engine,class,,1,,
 mention,STY_MainMenu,GUI,defaults,MainMenu,,unqualified,,1,,KeyName
 hud,StargateDeathMatch,StargateGame,defaults,StargateGame.StargateHUD,StargateGame,class,,1,,
@@ -218,4 +418,4 @@ page,TextGameInfo,StargateMenus,page,StargateMenus.TextGameInfo,StargateMenus,un
 page,VSMainMenu,StargateMenus,page,StargateMenus.VSMainMenu,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,VirtualKeyboardPage,StargateMenus,page,StargateMenus.VirtualKeyboardPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,XBoxLiveBackDrop,StargateMenus,page,StargateMenus.XBoxLiveBackDrop,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
-census,corpus,,,,,,,1,,packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10
+census,corpus,,,,,,,1,,packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10|defaults_tree=1|hint_pages=30|no_hint_pages=29|hints_on=67|hint_own=35|hint_inherited=32|page_blocks=50|page_top_props=255|page_components=114|pages_with_components=46|titles_own=39|placeholder_titles=4|draw_rows=16|draw_pages=9|url_pages=1|override_pages=34|init_overrides=33|init_super=33|init_nosuper=0|handler_pages=18|hint_handled=65|hint_no_handler=2

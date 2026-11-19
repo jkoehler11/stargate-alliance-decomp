@@ -85,9 +85,16 @@ Below the root a page is opened three ways, and only the first is a line of scri
   the rest are the root. That is why the closure's unreached pages are cut pages rather than a reader's gap.
 
 The defaults start one level down the same page: `SGPageBase.InitComponent` builds its four
-controller-button captions from `Localizer`'s defaults (`sSelect`, `sBack`, `sDelete`, `sCreateNew`) and shows
-each only when the page sets `bButtonA`…`bButtonY`, which is why a page's button hints are a page property and
-not a global table.
+controller-button captions from `Engine.Localizer`'s defaults (`sSelect` → "Select", `sBack` → "Back",
+`sDelete` → "Delete", `sCreateNew` → "Create New") and calls `SetVisibility(bButtonA)`…`bButtonY` on them, so a
+page's button hints are a page property and not a global table — and the census of those four flags over all 59
+pages is in the generated block below. **30 pages set at least one** (35 declarations of their own and 32
+inherited: `OptionsEditBase`'s A+B reach three subclasses, `VirtualKeyboardPage`'s four reach `EnterFriendNamePage`
+and `EnterProfileNamePage`), so **29 pages show no controller caption at all**. All 33 `InitComponent` overrides
+forward to `Super`, which is what makes a declared flag a drawn caption rather than a dead value; a *press* is
+answered by whichever class names its `XC_` code, and **65 of the 67 hint flags have such a handler on the page's
+chain** — the two that do not are `CreateNewProfile`'s and `OptionsEditProfile`'s `bButtonA`, i.e. both pages
+print "Select" with no page-class `XC_A` handler anywhere above them.
 
 **The links that name nothing.** Five targets do not resolve, and each fails differently: three sites name
 `UCMenu.*` pages (`TeaserPage`, `LiveInteractionBox`) in a package the disc does not ship — those calls can
@@ -301,6 +308,130 @@ a player` — so a Replicator possessed by a bot keeps the game mode's HUD. On r
 
 7 further value(s) look like a page name but name something else — `KeyName=MainMenu`, `StyleName=MainMenu`, which resolves to no package — and are in the artifact with an `unqualified` verdict rather than counted here.
 
+### The controller hints each page shows
+
+A page's hints are its `bButtonA`…`bButtonY` defaults, and 30 of the 59 pages set at least one: **67 hint rows**, 35 declared by the page itself and 32 inherited. The other **29 pages set none** and therefore draw no controller caption at all.
+
+The inherited ones come from `StargateMenus.LoadGameMenu` (2 flags); `StargateMenus.OptionsEditBase` (6 flags); `StargateMenus.OptionsEditProfile` (2 flags); `StargateMenus.ServerSelectionPage` (4 flags); `StargateMenus.SinglePlayerChapterSelect` (4 flags); `StargateMenus.SinglePlayerSelectProfile` (6 flags); `StargateMenus.VirtualKeyboardPage` (8 flags).
+
+| hints | pages | which |
+|---|---:|---|
+| A B | 19 | `StargateMenus.CreateNewProfile`, `StargateMenus.LoadGameMenu`, `StargateMenus.MultiplayerCharSelect`, `StargateMenus.MultiplayerGameSelect`, `StargateMenus.MultiplayerMapSelect`, `StargateMenus.MultiplayerServerSelect`, `StargateMenus.OptionsEditAppearance`, `StargateMenus.OptionsEditAudio`, `StargateMenus.OptionsEditBase`, `StargateMenus.OptionsEditProfile`, `StargateMenus.OptionsEditVideo`, `StargateMenus.QuickLoadMapTempPage`, `StargateMenus.SelectPawnPage`, `StargateMenus.SelectTeamPage`, `StargateMenus.ServerSelectionPage`, `StargateMenus.SinglePlayerChapterSelect`, `StargateMenus.SinglePlayerLoadGame`, `StargateMenus.WaitingForPlayers`, `StargateMenus.XBoxLiveServerSelect` |
+| A B X Y | 4 | `StargateMenus.EnterFriendNamePage`, `StargateMenus.EnterProfileNamePage`, `StargateMenus.OptionsPage`, `StargateMenus.VirtualKeyboardPage` |
+| B | 4 | `StargateMenus.InGameInfoScreen`, `StargateMenus.MultiplayerMenu`, `StargateMenus.SinglePlayerMenu`, `StargateMenus.SystemLinkMenu` |
+| A B Y | 2 | `StargateMenus.MultiplayerSelectProfile`, `StargateMenus.SinglePlayerSelectProfile` |
+| A B X | 1 | `StargateMenus.SaveGameMenu` |
+
+| flag | caption | from |
+|---|---|---|
+| `bButtonA` | **Select** | `Engine.Localizer` |
+| `bButtonB` | **Back** | `Engine.Localizer` |
+| `bButtonX` | **Delete** | `Engine.Localizer` |
+| `bButtonY` | **Create New** | `Engine.Localizer` |
+
+| page | hints | declared |
+|---|---|---|
+| `StargateMenus.CreateNewProfile` | A=Select B=Back | StargateMenus.OptionsEditProfile |
+| `StargateMenus.EnterFriendNamePage` | A=Select B=Back X=Delete Y=Create New | StargateMenus.VirtualKeyboardPage |
+| `StargateMenus.EnterProfileNamePage` | A=Select B=Back X=Delete Y=Create New | StargateMenus.VirtualKeyboardPage |
+| `StargateMenus.InGameInfoScreen` | B=Back | own |
+| `StargateMenus.LoadGameMenu` | A=Select B=Back | own |
+| `StargateMenus.MultiplayerCharSelect` | A=Select B=Back | own |
+| `StargateMenus.MultiplayerGameSelect` | A=Select B=Back | own |
+| `StargateMenus.MultiplayerMapSelect` | A=Select B=Back | StargateMenus.SinglePlayerChapterSelect |
+| `StargateMenus.MultiplayerMenu` | B=Back | own |
+| `StargateMenus.MultiplayerSelectProfile` | A=Select B=Back Y=Create New | StargateMenus.SinglePlayerSelectProfile |
+| `StargateMenus.MultiplayerServerSelect` | A=Select B=Back | StargateMenus.ServerSelectionPage |
+| `StargateMenus.OptionsEditAppearance` | A=Select B=Back | StargateMenus.OptionsEditBase |
+| `StargateMenus.OptionsEditAudio` | A=Select B=Back | StargateMenus.OptionsEditBase |
+| `StargateMenus.OptionsEditBase` | A=Select B=Back | own |
+| `StargateMenus.OptionsEditProfile` | A=Select B=Back | own |
+| `StargateMenus.OptionsEditVideo` | A=Select B=Back | StargateMenus.OptionsEditBase |
+| `StargateMenus.OptionsPage` | A=Select B=Back X=Delete Y=Create New | StargateMenus.SinglePlayerSelectProfile |
+| `StargateMenus.QuickLoadMapTempPage` | A=Select B=Back | StargateMenus.SinglePlayerChapterSelect |
+| `StargateMenus.SaveGameMenu` | A=Select B=Back X=Delete | own |
+| `StargateMenus.SelectPawnPage` | A=Select B=Back | own |
+| `StargateMenus.SelectTeamPage` | A=Select B=Back | own |
+| `StargateMenus.ServerSelectionPage` | A=Select B=Back | own |
+| `StargateMenus.SinglePlayerChapterSelect` | A=Select B=Back | own |
+| `StargateMenus.SinglePlayerLoadGame` | A=Select B=Back | StargateMenus.LoadGameMenu |
+| `StargateMenus.SinglePlayerMenu` | B=Back | own |
+| `StargateMenus.SinglePlayerSelectProfile` | A=Select B=Back Y=Create New | own |
+| `StargateMenus.SystemLinkMenu` | B=Back | own |
+| `StargateMenus.VirtualKeyboardPage` | A=Select B=Back X=Delete Y=Create New | own |
+| `StargateMenus.WaitingForPlayers` | A=Select B=Back | own |
+| `StargateMenus.XBoxLiveServerSelect` | A=Select B=Back | StargateMenus.ServerSelectionPage |
+
+29 pages show no controller hint: `CreditsPage`, `DeleteProfilePage`, `DeleteSavedGamePage`, `ErrorPage`, `ExtrasPage`, `HintScreen`, `InGameMenu`, `InGameScoreboard`, `MainMenu`, `MultiPlayerInGame`, `NoMatchFoundPage`, `NotYetImplementedPage`, `OptionsEditControls`, `OverwriteSavedGamePage`, `QuestionPage`, `QuitPage`, `RestartGame`, `ReturnToMainPage`, `SinglePlayerInGame`, `SinglePlayerNewGame`, `SinglePlayerTutorial`, `TextGameInfo`, `VSMainMenu`, `XBoxLiveBackDrop`, `XBoxLiveFindGameMenu`, `XBoxLiveFriendsMenu`, `XBoxLiveMenu`, `XBoxLivePlayMenu`, `XBoxLiveSignOutConfirm`.
+
+By page verdict, the 30 hinting pages are comment-only 2, outside 3, reachable 21, unopened 4 and the 29 silent ones break down as comment-only 1, outside 9, reachable 13, unopened 6.
+
+### What a page's own defaults state
+
+| measure | answer |
+|---|---|
+| pages with a defaults block of their own | **50** of 59 (9 state nothing) |
+| top-level properties over those pages | **255** |
+| ... `TitleString`, the page's caption | **39**, and **4** pages keep `SGPageBase`'s placeholder |
+| `Begin Object` component blocks | **114** over 46 pages |
+| properties that draw something (`StyleName`, `Background`, `BackgroundStyle`, the four `Win*` geometry values) | **16** over 9 pages |
+| `URL`, a page whose default is a map | **1** page |
+
+| page | what it states |
+|---|---|
+| `StargateMenus.DeleteProfilePage` | `StyleName` |
+| `StargateMenus.DeleteSavedGamePage` | `StyleName` |
+| `StargateMenus.HintScreen` | `Background`, `BackgroundStyle`, `BoundingType`, `ScalingType`, `WinTop` |
+| `StargateMenus.InGameScoreboard` | `Background` |
+| `StargateMenus.NoMatchFoundPage` | `StyleName` |
+| `StargateMenus.NotYetImplementedPage` | `WinHeight`, `WinLeft`, `WinTop`, `WinWidth` |
+| `StargateMenus.SinglePlayerChapterSelect` | `URL` |
+| `StargateMenus.TextGameInfo` | `Background` |
+| `StargateMenus.VSMainMenu` | `StyleName` |
+| `StargateMenus.XBoxLiveSignOutConfirm` | `StyleName` |
+
+### The wiring, and the pages that replace it
+
+| measure | answer |
+|---|---|
+| pages replacing one of the four wiring functions | **34** of 59 |
+| ... `InitComponent` | **33**, of which **33** call `Super.InitComponent` |
+| ... replacing it without the `Super` call | **0** |
+| ... `InternalOnXControllerEvent` | **18** pages handle the controller themselves |
+
+The `InitComponent` overrides: `CreateNewProfile`, `HintScreen`, `InGameInfoScreen`, `InGameMenu`, `InGameScoreboard`, `LoadGameMenu`, `MainMenu`, `MultiplayerCharSelect`, `MultiplayerGameSelect`, `MultiplayerMenu`, `OptionsEditAppearance`, `OptionsEditAudio`, `OptionsEditBase`, `OptionsEditProfile`, `OptionsEditVideo`, `OptionsPage`, `QuestionPage`, `RestartGame`, `SaveGameMenu`, `SelectPawnPage`, `SelectTeamPage`, `ServerSelectionPage`, `SinglePlayerChapterSelect`, `SinglePlayerInGame`, `SinglePlayerSelectProfile`, `TextGameInfo`, `VSMainMenu`, `VirtualKeyboardPage`, `WaitingForPlayers`, `XBoxLiveFindGameMenu`, `XBoxLiveFriendsMenu`, `XBoxLiveMenu`, `XBoxLivePlayMenu`.
+
+| page | replaces | codes its own body names |
+|---|---|---|
+| `StargateMenus.CreateNewProfile` | `InternalOnXControllerEvent` | XC_Y |
+| `StargateMenus.HintScreen` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.InGameInfoScreen` | `InternalOnXControllerEvent` | no XC_ code |
+| `StargateMenus.LoadGameMenu` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.MultiplayerCharSelect` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.MultiplayerGameSelect` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.MultiplayerSelectProfile` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.OptionsEditBase` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.OptionsEditProfile` | `InternalOnXControllerEvent` | XC_Y |
+| `StargateMenus.OptionsPage` | `InternalOnXControllerEvent` | XC_A, XC_X |
+| `StargateMenus.SaveGameMenu` | `InternalOnXControllerEvent` | XC_A, XC_X |
+| `StargateMenus.SelectPawnPage` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.SelectTeamPage` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.ServerSelectionPage` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.SinglePlayerChapterSelect` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.SinglePlayerSelectProfile` | `InternalOnXControllerEvent` | XC_A, XC_Y |
+| `StargateMenus.VirtualKeyboardPage` | `InternalOnXControllerEvent` | XC_A, XC_X, XC_Y |
+| `StargateMenus.WaitingForPlayers` | `InternalOnXControllerEvent` | XC_A |
+| `StargateMenus.VSMainMenu` | `MyKeyEvent` | no XC_ code |
+
+Every one of the 33 `InitComponent` overrides forwards to `Super`, so the four captions are wired on every page that declares a flag — the flags are a real caption census, not a declaration the base never reads.
+
+On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu(true,true)`, which is why Back is the one hint a page can trust without a handler of its own. For the other three the flag states the caption only: **65 of the 67 hint flags** have a class on the page's chain whose handler names the code, and the other **2** name none — that is where a press falls to the focused component's delegate, or to nothing the class tree states. The rows below are the page's own body, so a page that inherits `XC_A` from a mid class counts for that class.
+
+| page | flag with no handler on its chain |
+|---|---|
+| `StargateMenus.CreateNewProfile` | `bButtonA` |
+| `StargateMenus.OptionsEditProfile` | `bButtonA` |
+
 ### `SGMenuInteraction`, the 294-property class, is a style table
 
 | measure | answer |
@@ -336,11 +467,23 @@ a player` — so a Replicator possessed by a bot keeps the game mode's HUD. On r
    drops a page, renames one without its string, or loses the `ButtonMenus` defaults changes the edge set and
    `make ci` says so. The five unresolved targets are the baseline: a rebuild that makes them resolve is a
    behaviour change, not a fix, unless the change is deliberate.
+5. **The hints are a visible contract, and they are the page's own.** 67 `bButtonA`…`bButtonY` flags over 30
+   pages decide which of four captions each page prints, and the class tree names a handler for 65 of them. A
+   rebuilt page that drops a flag loses a caption the shipped build drew — a regression no compiler sees — so
+   `make ui-menu-flow` is the target that keeps that half honest alongside the flow.
 
 ## Not measured
 
-* **What any page draws.** The flow is measured; the layout is not — textures, styles and control geometry
-  are property values (`StyleName`, `Background`, `WinWidth`…) whose *drawing* needs a running build.
+* **What a page draws is counted; the drawing itself is not.** The page *frame* is inherited rather than
+  per-page: `SGPageBase`'s own block carries `Background=Shader'Engine.MM_main_menu_S'`,
+  `BackgroundStyle=ISTY_ScaledBackground` and `StyleName=MainMenu`, and only **nine pages state anything visual
+  at all — 16 rows** over 255 top-level properties (16 of 255 is the whole of a page's own visual data):
+  `StyleName` on five, `Background` on three, `HintScreen`'s `BackgroundStyle`/`BoundingType`/`ScalingType`/
+  `WinTop` and `NotYetImplementedPage`'s four `Win*` geometry values. The widgets themselves are in **114
+  `Begin Object` component blocks over 46 pages**, which the defaults tree renders but this census only counts;
+  four pages still carry `SGPageBase`'s placeholder title (`Basic SG GUI Page: Insert Title`) and 9 of the 59
+  pages state no defaults at all. So the *data* behind a page is now counted — whether it draws the layout it
+  names is what still needs a running build.
 * **Why the ten are dead is a *where*, not a *why*.** The corpus names none of them — measured over every
   class body, every emitted defaults block and every menu key in the five shipped `.ini`s — but which editor
   pass cut them, and whether the cut pages' bodies still compile against the classes around them, is a

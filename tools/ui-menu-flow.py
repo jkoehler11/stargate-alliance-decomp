@@ -101,6 +101,24 @@ CLSREF_DEFAULT = re.compile(r"^\s*(?P<prop>[A-Za-z0-9_]+)(?:\(\d+\))?\s*=\s*clas
 ANY_LIT = re.compile(r'"([^"\\\n]{1,80})"')
 DEFAULTS_ANY = re.compile(r"^\s*(?P<prop>[A-Za-z0-9_]+)(?:\(\d+\))?\s*=\s*(?P<val>.+?)\s*$", re.M)
 
+# The four controller-button hints `SGPageBase.InitComponent` wires, and the `Engine.Localizer` string each
+# caption comes from. The base declares the four flags with no value, so a page opts in by defaulting one True.
+HINT_FLAGS = (("bButtonA", "sSelect"), ("bButtonB", "sBack"), ("bButtonX", "sDelete"), ("bButtonY", "sCreateNew"))
+CAPTION_KEYS = ("sSelect", "sBack", "sDelete", "sCreateNew")
+# `SGPageBase`'s own `TitleString`; a page that never sets one still shows this placeholder.
+PLACEHOLDER_TITLE = "Basic SG GUI Page: Insert Title"
+# Properties a page's own defaults use to draw something, as opposed to behaviour, a child handle or a delegate.
+DRAW_PROPS = {"StyleName", "Background", "BackgroundStyle", "WinLeft", "WinTop", "WinWidth", "WinHeight",
+              "BoundingType", "ScalingType"}
+BEGIN_OBJECT = re.compile(r"^\s*Begin\s+Object\b")
+END_OBJECT = re.compile(r"^\s*End\s+Object\b")
+TOP_PROP = re.compile(r"^\s*(?P<prop>[A-Za-z0-9_]+)(?:\(\d+\))?\s*=\s*(?P<val>.*?)\s*$")
+FUNC_DECL = re.compile(r"^function\s+(?:[A-Za-z0-9_]+\s+)?(?P<name>[A-Za-z0-9_]+)\s*\(", re.M)
+XC_CODE = re.compile(r"\bXC_[A-Z]+\b")
+# The four functions `SGPageBase` uses to wire a page: the component setup, the controller handler, the key
+# handler and the activation hook. Overriding one is how a page replaces the base's behaviour.
+WIRING_FUNCS = ("InitComponent", "InternalOnXControllerEvent", "MyKeyEvent", "InternalOnActivate")
+
 
 def names_page(s, pages):
     """Whether a string names one of the page classes: `Pkg.Page` or a bare `Page`."""
@@ -417,6 +435,182 @@ def read_defaults(tree, pages=frozenset()):
     return rows, classes
 
 
+def read_default_block(tree, pkgname, cls):
+    """(top-level properties, subobject count) from a class's emitted `defaultproperties` file.
+
+    `defaults-emit` renders a page's `Begin Object ... End Object` children *inline*, and a child's properties
+    (`WinTop`, `StyleName`, `Caption`, its own `bButtonA`) are the component's, not the page's. A first pass that
+    counted every `Name=value` line reported 31 pages setting `WinTop` where the page itself sets it on two, so
+    the file is read with the nesting tracked and only depth-0 properties are the page's own.
+    """
+    path = os.path.join(tree, pkgname, cls + ".defaultproperties.uc")
+    if not os.path.isfile(path):
+        return {}, 0
+    props, depth, children = {}, 0, 0
+    with open(path, encoding="latin-1") as fh:
+        for line in fh:
+            if BEGIN_OBJECT.match(line):
+                depth += 1
+                children += 1
+                continue
+            if END_OBJECT.match(line):
+                depth = max(0, depth - 1)
+                continue
+            if depth:
+                continue
+            m = TOP_PROP.match(line)
+            if m and not m.group("prop").startswith("//"):
+                props[m.group("prop")] = m.group("val")
+    return props, children
+
+
+def super_path(pkgname, cls, supers, by_name):
+    """The class's chain up the tree, package-qualified, stopping at a name the corpus does not carry."""
+    path, cur, curpkg, seen = [], cls, pkgname, set()
+    while cur and cur not in seen and len(path) < 16:
+        seen.add(cur)
+        path.append((curpkg, cur))
+        nxt = supers.get(cur, "")
+        if not nxt or nxt == "None":
+            break
+        pkgs = by_name.get(nxt) or []
+        curpkg = curpkg if curpkg in pkgs else (pkgs[0] if pkgs else curpkg)
+        cur = nxt
+    return path
+
+
+def read_page_defaults(tree, family, supers, by_name):
+    """What each page's own defaults state: its four hint flags, its title, and how much of it is visual.
+
+    `SGPageBase.InitComponent` builds four `ControllerButton`s and calls `SetVisibility(bButtonA)`..`bButtonY` on
+    them, so a page's controller hints are four booleans in the same defaults tree the flow's `ButtonMenus` array
+    comes from -- and the base declares them with no value, which is why a page that sets none shows none. A page
+    can also inherit one (three take `bButtonA`/`bButtonB` from `OptionsEditBase`), so the effective value is read
+    up the chain and the row names the class it came from.
+
+    The same pass measures what else a page states: its `TitleString`, the ten visual rows six pages carry, and
+    the `Begin Object` children (114 blocks over 46 pages) that hold the widgets, which is where a page's drawing
+    actually lives. Values are not committed -- only the property names and the captions the flags print.
+    """
+    captions = {}
+    loc, _ = read_default_block(tree, "Engine", "Localizer")
+    for key in CAPTION_KEYS:
+        if key in loc:
+            captions[key] = loc[key].strip('"').strip()
+    rows, stats = [], collections.Counter()
+    for cls, pkgname in sorted(family.items()):
+        path = super_path(pkgname, cls, supers, by_name)
+        own, children = read_default_block(tree, pkgname, cls)
+        stats["page_blocks"] += 1 if (own or children) else 0
+        stats["page_top_props"] += len(own)
+        stats["page_components"] += children
+        stats["pages_with_components"] += 1 if children else 0
+        if "TitleString" in own:
+            stats["titles_own"] += 1
+        title = ""
+        for p2, c2 in path:                      # effective title, for the pages that never set one
+            blk, _ = read_default_block(tree, p2, c2)
+            if "TitleString" in blk:
+                title = blk["TitleString"].strip('"')
+                break
+        if title == PLACEHOLDER_TITLE:
+            stats["placeholder_titles"] += 1
+        draw = sorted(k for k in own if k in DRAW_PROPS)
+        stats["draw_rows"] += len(draw)
+        stats["draw_pages"] += 1 if draw else 0
+        if draw:
+            rows.append(dict(kind="draw", name=cls, package=pkgname, form="defaults", target=",".join(draw),
+                             verdict=len(draw), platform="", note=""))
+        if "URL" in own:
+            stats["url_pages"] += 1
+            rows.append(dict(kind="draw", name=cls, package=pkgname, form="defaults", target="URL", verdict=1,
+                             platform="", note=own["URL"].strip().strip('"')[:60]))
+        flags = {}
+        for flag, key in HINT_FLAGS:
+            value, src = "False", ""
+            for i, (p2, c2) in enumerate(path):
+                blk, _ = (own, children) if i == 0 else read_default_block(tree, p2, c2)
+                if flag in blk:
+                    value = "True" if blk[flag].strip().lower() == "true" else "False"
+                    src = "own" if i == 0 else "%s.%s" % (p2, c2)
+                    break
+            flags[flag] = value
+            if value == "True":
+                rows.append(dict(kind="hint", name=cls, package=pkgname,
+                                 form="own" if src == "own" else "inherited", target=flag, platform="",
+                                 note="%s via Engine.Localizer.%s%s" %
+                                      (captions.get(key, "?"), key,
+                                       "" if src == "own" else ", inherited from " + src)))
+                stats["hints_on"] += 1
+                stats["hint_own" if src == "own" else "hint_inherited"] += 1
+        if any(v == "True" for v in flags.values()):
+            stats["hint_pages"] += 1
+        else:
+            stats["no_hint_pages"] += 1
+    for key, text in sorted(captions.items()):
+        rows.append(dict(kind="caption", name=key, package="Engine", form="defaults", target=text,
+                         platform="", note="Localizer"))
+    stats["captions"] = len(captions)
+    return rows, stats
+
+
+def read_overrides(text, cls, pkgname):
+    """Which of the four wiring functions a page replaces, and whether `InitComponent` forwards to `Super`.
+
+    A page that replaces `InitComponent` without calling `Super.InitComponent` never runs the base's hint wiring,
+    so a flag it sets would print nothing -- the census the flags need to mean anything. The handler rows name
+    the `XC_` codes the page's *own* body compares, which is the other half of a hint: the caption says what the
+    button is for, the handler says what it does.
+    """
+    rows = []
+    for m in FUNC_DECL.finditer(text):
+        name = m.group("name")
+        if name not in WIRING_FUNCS:
+            continue
+        end = text.find("\n}", m.start())
+        body = text[m.start():end if end > 0 else m.start() + 6000]
+        if name == "InitComponent":
+            sup = bool(re.search(r"\bSuper\s*\.\s*Init[Cc]omponent", body, re.I))
+            verdict = "super" if sup else "no-super"
+            note = "calls Super.InitComponent" if sup else "replaces the base wiring, never calls Super"
+        else:
+            codes = sorted(handler_codes(text))
+            verdict = "own"
+            note = "names %s" % ", ".join(codes) if codes else "names no XC_ code"
+        rows.append(dict(kind="override", name=cls, package=pkgname, form="body", target=name, verdict=verdict,
+                         platform="", note=note))
+    return rows
+
+
+def handler_codes(text):
+    """The `XC_` codes a class's *own* `InternalOnXControllerEvent` body compares."""
+    for m in FUNC_DECL.finditer(text):
+        if m.group("name") != "InternalOnXControllerEvent":
+            continue
+        end = text.find("\n}", m.start())
+        body = text[m.start():end if end > 0 else m.start() + 6000]
+        return set(XC_CODE.findall(body))
+    return set()
+
+
+def handler_coverage(hint_rows, codes_by_class, supers, by_name):
+    """For each hint flag a page shows: does any class on its chain handle that button code?
+
+    The flag states the *caption*; the press is answered by the page's own handler, an inherited one, or the
+    focused component's delegate -- so `no-handler` here means "no page class on the chain names the code", a
+    fact about the class tree, not a claim that the button does nothing.
+    """
+    rows = []
+    for r in hint_rows:
+        pkgname, cls = r["package"], r["name"]
+        code = "XC_" + r["target"][-1]
+        who = [c for _p, c in super_path(pkgname, cls, supers, by_name) if code in codes_by_class.get(c, ())]
+        rows.append(dict(kind="hint_handler", name=cls, package=pkgname, form="body", target=r["target"],
+                         verdict="handled" if who else "no-handler", platform="",
+                         note=("names " + ", ".join(who)) if who else ("names no %s on the chain" % code)))
+    return rows
+
+
 def read_inis(system_dir):
     """Every menu-class key in the shipped `.ini`s: live, commented out, or present with an empty value.
 
@@ -518,6 +712,22 @@ def sweep(dump, defaults_tree=""):
             holders += 1
         rows.extend(got)
 
+    # The page's *contents*: the four hint flags `SGPageBase.InitComponent` wires, the `Engine.Localizer` strings
+    # they print, what each page's own defaults state, and which of the four wiring functions it replaces. All of
+    # it is page-level and needs the defaults tree, so a `--defaults`-less run counts the flags as unread rather
+    # than reporting zero hints.
+    page_rows, page_stats = (read_page_defaults(defaults_tree, family, supers, by_name)
+                             if defaults_tree else ([], collections.Counter()))
+    rows.extend(page_rows)
+    codes_by_class = {}
+    for (pkgname, cls), text in sorted(text_of.items()):
+        if family.get(cls) == pkgname:
+            rows.extend(read_overrides(text, cls, pkgname))
+            codes_by_class[cls] = handler_codes(text)
+        elif cls == "SGPageBase":                # the base's handler is what every page inherits for Back
+            codes_by_class[cls] = handler_codes(text)
+    rows.extend(handler_coverage([r for r in page_rows if r["kind"] == "hint"], codes_by_class, supers, by_name))
+
     def_rows, def_classes = read_defaults(defaults_tree, page_names)
     rows.extend(def_rows)
     ini_rows = read_inis(system_dir)
@@ -548,6 +758,8 @@ def sweep(dump, defaults_tree=""):
             verdict, tpkg, tcls, note = resolve(r["target"], per_pkg, by_name)
             if r["kind"] == "hud_swap" and "HUD" not in tcls.upper():
                 continue
+        elif r["kind"] in ("hint", "caption", "draw", "override", "hint_handler"):
+            verdict, tpkg, tcls, note = (r.get("verdict") or "", "", "", "")
         else:
             verdict, tpkg, tcls, note = "", "", "", ""
         r.update(target_package=tpkg, verdict=verdict, depth="", sites=1, note=(r.get("note") or note))
@@ -593,6 +805,7 @@ def sweep(dump, defaults_tree=""):
     def count(kind, verdict=None):
         return sum(1 for r in out if r["kind"] == kind and (verdict is None or r["verdict"] == verdict))
 
+    over = [r for r in out if r["kind"] == "override"]
     census = dict(kind="census", name="corpus", package="", form="", target="", target_package="",
                   verdict="", depth="", sites=1,
                   note="|".join([
@@ -629,6 +842,30 @@ def sweep(dump, defaults_tree=""):
                                               and "empty value" in r["note"]),
                       "config_commented=%d" % sum(1 for r in out if r["kind"] == "config"
                                                   and "commented out" in r["note"]),
+                      "defaults_tree=%d" % (1 if defaults_tree else 0),
+                      "hint_pages=%d" % page_stats.get("hint_pages", 0),
+                      "no_hint_pages=%d" % page_stats.get("no_hint_pages", 0),
+                      "hints_on=%d" % page_stats.get("hints_on", 0),
+                      "hint_own=%d" % page_stats.get("hint_own", 0),
+                      "hint_inherited=%d" % page_stats.get("hint_inherited", 0),
+                      "page_blocks=%d" % page_stats.get("page_blocks", 0),
+                      "page_top_props=%d" % page_stats.get("page_top_props", 0),
+                      "page_components=%d" % page_stats.get("page_components", 0),
+                      "pages_with_components=%d" % page_stats.get("pages_with_components", 0),
+                      "titles_own=%d" % page_stats.get("titles_own", 0),
+                      "placeholder_titles=%d" % page_stats.get("placeholder_titles", 0),
+                      "draw_rows=%d" % page_stats.get("draw_rows", 0),
+                      "draw_pages=%d" % page_stats.get("draw_pages", 0),
+                      "url_pages=%d" % page_stats.get("url_pages", 0),
+                      "override_pages=%d" % len({r["name"] for r in over}),
+                      "init_overrides=%d" % sum(1 for r in over if r["target"] == "InitComponent"),
+                      "init_super=%d" % sum(1 for r in over if r["verdict"] == "super"),
+                      "init_nosuper=%d" % sum(1 for r in over if r["verdict"] == "no-super"),
+                      "handler_pages=%d" % sum(1 for r in over if r["target"] == "InternalOnXControllerEvent"),
+                      "hint_handled=%d" % sum(1 for r in out if r["kind"] == "hint_handler"
+                                              and r["verdict"] == "handled"),
+                      "hint_no_handler=%d" % sum(1 for r in out if r["kind"] == "hint_handler"
+                                                 and r["verdict"] == "no-handler"),
                   ]))
     out.append(census)
     return out, dict(packages=len(per_pkg), classes_with_text=len(text_of), holders=holders, roots=roots,
@@ -803,6 +1040,139 @@ def render(rows):
                    % (len(unqualified), "`, `".join(sorted({("%s=%s" % (r["note"], r["target"]))
                                                             for r in unqualified})[:4])))
 
+    hints = [r for r in rows if r["kind"] == "hint"]
+    captions = [r for r in rows if r["kind"] == "caption"]
+    draw = [r for r in rows if r["kind"] == "draw"]
+    overrides = [r for r in rows if r["kind"] == "override"]
+    if s.get("defaults_tree") == "1":
+        out.append("")
+        out.append("### The controller hints each page shows")
+        out.append("")
+        by_page = collections.defaultdict(list)
+        for r in hints:
+            by_page[r["name"]].append(r)
+        out.append("A page's hints are its `bButtonA`…`bButtonY` defaults, and %s of the %d pages set at least one: "
+                   "**%s hint rows**, %s declared by the page itself and %s inherited. The other **%s pages set none** "
+                   "and therefore draw no controller caption at all." %
+                   (s["hint_pages"], total_pages, s["hints_on"], s["hint_own"], s["hint_inherited"],
+                    s["no_hint_pages"]))
+        inherited_from = collections.Counter(r["note"].split("inherited from ")[-1] for r in hints
+                                             if r["form"] == "inherited" and "inherited from " in r["note"])
+        if inherited_from:
+            out.append("")
+            out.append("The inherited ones come from %s." % "; ".join(
+                "`%s` (%d flag%s)" % (k, v, "" if v == 1 else "s") for k, v in sorted(inherited_from.items())))
+        out.append("")
+        out.append("| hints | pages | which |")
+        out.append("|---|---:|---|")
+        for hs, n in sorted(collections.Counter(tuple(sorted(r["target"] for r in v))
+                                               for v in by_page.values()).items(), key=lambda kv: (-kv[1], kv[0])):
+            who = sorted({v[0]["package"] + "." + v[0]["name"] for v in by_page.values()
+                          if tuple(sorted(r["target"] for r in v)) == hs})
+            out.append("| %s | %d | %s |" % (" ".join(h[-1] for h in hs), n, ", ".join("`%s`" % w for w in who)))
+        out.append("")
+        out.append("| flag | caption | from |")
+        out.append("|---|---|---|")
+        order = {f: i for i, (f, _k) in enumerate(HINT_FLAGS)}
+        for r in sorted(captions, key=lambda r: order.get(dict((k, f) for f, k in HINT_FLAGS).get(r["name"], ""), 9)):
+            flag = dict((k, f) for f, k in HINT_FLAGS).get(r["name"], "")
+            out.append("| `%s` | **%s** | `%s.%s` |" % (flag, r["target"], r["package"], r["note"]))
+        out.append("")
+        out.append("| page | hints | declared |")
+        out.append("|---|---|---|")
+        for name in sorted(by_page):
+            rs = sorted(by_page[name], key=lambda r: r["target"])
+            got = " ".join("%s=%s" % (r["target"][-1], r["note"].split(" via ")[0]) for r in rs)
+            src = "own" if all(r["form"] == "own" for r in rs) else \
+                ", ".join(sorted({r["note"].split("inherited from ")[-1] for r in rs if r["form"] == "inherited"}))
+            out.append("| `%s.%s` | %s | %s |" % (rs[0]["package"], name, got, src))
+        no_hint = sorted(p["name"] for p in pages if p["name"] not in by_page)
+        out.append("")
+        out.append("%d pages show no controller hint: %s." % (len(no_hint), ", ".join("`%s`" % n for n in no_hint)))
+        verdict_of = {p["name"]: p["verdict"] for p in pages}
+        withhint = collections.Counter(verdict_of.get(n, "?") for n in by_page)
+        out.append("")
+        out.append("By page verdict, the %d hinting pages are %s and the %d silent ones break down as %s." %
+                   (len(by_page), ", ".join("%s %d" % (k, v) for k, v in sorted(withhint.items())),
+                    len(no_hint), ", ".join("%s %d" % (k, v) for k, v in
+                                            sorted(collections.Counter(verdict_of[n] for n in no_hint).items()))))
+        out.append("")
+        out.append("### What a page's own defaults state")
+        out.append("")
+        out.append("| measure | answer |")
+        out.append("|---|---|")
+        out.append("| pages with a defaults block of their own | **%s** of %d (%d state nothing) |" %
+                   (s["page_blocks"], total_pages, total_pages - int(s["page_blocks"])))
+        out.append("| top-level properties over those pages | **%s** |" % s["page_top_props"])
+        out.append("| ... `TitleString`, the page's caption | **%s**, and **%s** pages keep `SGPageBase`'s "
+                   "placeholder |" % (s["titles_own"], s["placeholder_titles"]))
+        out.append("| `Begin Object` component blocks | **%s** over %s pages |" %
+                   (s["page_components"], s["pages_with_components"]))
+        out.append("| properties that draw something (`StyleName`, `Background`, `BackgroundStyle`, the four `Win*` "
+                   "geometry values) | **%s** over %s pages |" % (s["draw_rows"], s["draw_pages"]))
+        if s.get("url_pages", "0") != "0":
+            out.append("| `URL`, a page whose default is a map | **%s** page |" % s["url_pages"])
+        if draw:
+            out.append("")
+            out.append("| page | what it states |")
+            out.append("|---|---|")
+            for r in sorted(draw, key=lambda r: r["name"]):
+                out.append("| `%s.%s` | %s |" % (r["package"], r["name"],
+                                                 ", ".join("`%s`" % p for p in r["target"].split(","))))
+            out.append("")
+            out.append("### The wiring, and the pages that replace it")
+            out.append("")
+        else:
+            out.append("")
+            out.append("### The wiring, and the pages that replace it")
+            out.append("")
+        out.append("| measure | answer |")
+        out.append("|---|---|")
+        out.append("| pages replacing one of the four wiring functions | **%s** of %d |" %
+                   (s["override_pages"], total_pages))
+        out.append("| ... `InitComponent` | **%s**, of which **%s** call `Super.InitComponent` |" %
+                   (s["init_overrides"], s["init_super"]))
+        out.append("| ... replacing it without the `Super` call | **%s** |" % s["init_nosuper"])
+        out.append("| ... `InternalOnXControllerEvent` | **%s** pages handle the controller themselves |" %
+                   s["handler_pages"])
+        inits = [r for r in overrides if r["target"] == "InitComponent"]
+        handlers = [r for r in overrides if r["target"] != "InitComponent"]
+        if inits:
+            out.append("")
+            out.append("The `InitComponent` overrides: %s." %
+                       ", ".join("`%s`" % r["name"] for r in sorted(inits, key=lambda r: r["name"])))
+        if handlers:
+            out.append("")
+            out.append("| page | replaces | codes its own body names |")
+            out.append("|---|---|---|")
+            for r in sorted(handlers, key=lambda r: (r["target"], r["name"])):
+                out.append("| `%s.%s` | `%s` | %s |" % (r["package"], r["name"], r["target"],
+                                                        r["note"].replace("names ", "")))
+        out.append("")
+        if s["init_nosuper"] == "0":
+            out.append("Every one of the %s `InitComponent` overrides forwards to `Super`, so the four captions are "
+                       "wired on every page that declares a flag — the flags are a real caption census, not a "
+                       "declaration the base never reads." % s["init_overrides"])
+        else:
+            out.append("**%s** of the %s `InitComponent` overrides never call `Super.InitComponent`, so those "
+                       "pages' flags never reach `SetVisibility` — read their hint rows as declarations the page "
+                       "made and did not wire." % (s["init_nosuper"], s["init_overrides"]))
+        out.append("")
+        out.append("On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu(true,true)`, "
+                   "which is why Back is the one hint a page can trust without a handler of its own. For the other "
+                   "three the flag states the caption only: **%s of the %s hint flags** have a class on the page's "
+                   "chain whose handler names the code, and the other **%s** name none — that is where a press "
+                   "falls to the focused component's delegate, or to nothing the class tree states. The rows below "
+                   "are the page's own body, so a page that inherits `XC_A` from a mid class counts for that class."
+                   % (s["hint_handled"], s["hints_on"], s["hint_no_handler"]))
+        covered = [r for r in rows if r["kind"] == "hint_handler" and r["verdict"] == "no-handler"]
+        if covered:
+            out.append("")
+            out.append("| page | flag with no handler on its chain |")
+            out.append("|---|---|")
+            for r in sorted(covered, key=lambda r: (r["target"], r["name"])):
+                out.append("| `%s.%s` | `%s` |" % (r["package"], r["name"], r["target"]))
+
     comp = interaction_composition()
     if comp:
         out.append("")
@@ -862,6 +1232,10 @@ def report(path=ARTIFACT):
     print("names: %(classrefs)s class references, %(mentions)s non-call strings (%(mention_comment)s commented), "
           "%(config_rows)s config keys (%(config_empty)s empty, %(config_commented)s commented)" % s)
     print("hud: %(hud_assign)s assignments, %(hud_swaps)s swaps" % s)
+    if s.get("defaults_tree") == "1":
+        print("pages: %(hint_pages)s show a controller hint (%(hints_on)s flags, %(hint_inherited)s inherited), "
+              "%(no_hint_pages)s show none; %(init_overrides)s replace InitComponent (%(init_nosuper)s without "
+              "Super), %(handler_pages)s handle the controller" % s)
 
 
 # ---------------------------------------------------------------- self-test
@@ -938,7 +1312,11 @@ def selftest():
                   "literal_edges=1|game_edges=1|preproc_edges=0|dead_branch_edges=0|computed=1|arrays=2|commented=1|"
                   "roots=1|classrefs=1|mentions=2|mention_comment=1|mention_unqualified=0|config_rows=3|config_empty=1|"
                   "config_commented=1|reachable_pages=1|outside_pages=0|mention_pages=1|comment_only_pages=1|"
-                  "unopened_pages=0|defaults_classes=1|hud_assign=1|hud_swaps=0"),
+                  "unopened_pages=0|defaults_classes=1|hud_assign=1|hud_swaps=0|defaults_tree=1|hint_pages=1|"
+                  "no_hint_pages=1|hints_on=2|hint_own=1|hint_inherited=1|page_blocks=2|page_top_props=5|"
+                  "page_components=1|pages_with_components=1|titles_own=1|placeholder_titles=1|draw_rows=1|"
+                  "draw_pages=1|override_pages=1|init_overrides=1|init_super=1|init_nosuper=0|handler_pages=0|"
+                  "url_pages=0|hint_handled=1|hint_no_handler=1"),
             dict(kind="page", name="KidPage", package="StargateMenus", target="StargateMenus.KidPage",
                  verdict="reachable", depth=1, sites=2, form="page", target_package="StargateMenus", note=""),
             dict(kind="page", name="CutPage", package="StargateMenus", target="StargateMenus.CutPage",
@@ -970,7 +1348,69 @@ def selftest():
     assert sum(1 for r in ini if "commented out" in r["note"]) == 1, ini
     text = render(fake)
     assert "KidPage" in text and "**2**" in text and "comment-only" in text, text
-    print("ok   menu-flow: 26 assertions over the parsers, the resolver, the closure and the three name readers")
+    assert "The controller hints each page shows" in text, text
+
+    # --- the page's contents: a child's properties belong to the component, not the page
+    with tempfile.TemporaryDirectory() as td:
+        os.makedirs(os.path.join(td, "StargateMenus"))
+        os.makedirs(os.path.join(td, "Engine"))
+        with open(os.path.join(td, "Engine", "Localizer.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write('defaultproperties\n{\n\tsSelect=Select\n\tsBack=Back\n\tsDelete=Delete\n'
+                     '\tsCreateNew="Create New"\n}\n')
+        with open(os.path.join(td, "StargateMenus", "BasePage.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write('defaultproperties\n{\n\tbButtonA=True\n\tbButtonB=True\n\tbButtonX=True\n'
+                     '\tTitleString="Base"\n}\n')
+        with open(os.path.join(td, "StargateMenus", "MidPage.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write('defaultproperties\n{\n\tbButtonB=True\n\tbButtonX=False\n}\n')
+        with open(os.path.join(td, "StargateMenus", "KidPage.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write('defaultproperties\n{\n\tbButtonY=True\n\ttitlebar=SGLabel\'cTitle\'\n'
+                     'Begin Object Class=ControllerButton Name=ButtonA\n\tbButtonA=False\n\tWinTop=0.1\n'
+                     'End Object\n\tStyleName=MainMenu\n}\n')
+        supers = {"BasePage": "SGPageBase", "MidPage": "BasePage", "KidPage": "MidPage"}
+        by_pkg = {"BasePage": ["StargateMenus"], "MidPage": ["StargateMenus"], "KidPage": ["StargateMenus"],
+                  "SGPageBase": ["StargateMenus"]}
+        fam = {"BasePage": "StargateMenus", "MidPage": "StargateMenus", "KidPage": "StargateMenus"}
+        rows3, stats3 = read_page_defaults(td, fam, supers, by_pkg)
+    flags_of = collections.defaultdict(dict)
+    for r in rows3:
+        if r["kind"] == "hint":
+            flags_of[r["name"]][r["target"]] = r
+    assert set(flags_of["BasePage"]) == {"bButtonA", "bButtonB", "bButtonX"}, flags_of["BasePage"]
+    # MidPage turns X off, so it is absent; A is inherited from BasePage and B is the page's own
+    assert set(flags_of["MidPage"]) == {"bButtonA", "bButtonB"}, flags_of["MidPage"]
+    assert flags_of["MidPage"]["bButtonA"]["form"] == "inherited", flags_of["MidPage"]
+    # KidPage's *child* block defaults bButtonA False; the page's own value is the inherited True
+    assert flags_of["KidPage"]["bButtonA"]["form"] == "inherited", flags_of["KidPage"]
+    assert flags_of["KidPage"]["bButtonY"]["form"] == "own", flags_of["KidPage"]
+    # and the child's WinTop is not one of the page's visual rows -- only its StyleName is
+    draw3 = [r for r in rows3 if r["kind"] == "draw"]
+    assert [r["target"] for r in draw3] == ["StyleName"], draw3
+    assert stats3["draw_rows"] == 1 and stats3["page_components"] == 1, stats3
+    assert stats3["hint_pages"] == 3 and stats3["no_hint_pages"] == 0, stats3
+    caps = {r["name"]: r["target"] for r in rows3 if r["kind"] == "caption"}
+    assert caps == {"sSelect": "Select", "sBack": "Back", "sDelete": "Delete", "sCreateNew": "Create New"}, caps
+    body = ("class KidPage extends MidPage;\n"
+            "function InitComponent(GUIController MyController, GUIComponent MyOwner)\n{\n"
+            "\tSuper.InitComponent(MyController, MyOwner);\n\tButtonA.SetVisibility(bButtonA);\n}\n"
+            "function bool InternalOnXControllerEvent(Byte ID, eXControllerCodes Code)\n{\n"
+            "\tif (Code == XC_X) return true;\n\treturn false;\n}\n")
+    ors = read_overrides(body, "KidPage", "StargateMenus")
+    assert {r["target"]: r["verdict"] for r in ors} == {"InitComponent": "super",
+                                                       "InternalOnXControllerEvent": "own"}, ors
+    assert "XC_X" in [r for r in ors if r["target"] == "InternalOnXControllerEvent"][0]["note"], ors
+    nosup = read_overrides("function InitComponent(GUIController c, GUIComponent o)\n{\n\treturn;\n}\n",
+                           "KidPage", "StargateMenus")
+    assert [r["verdict"] for r in nosup] == ["no-super"], nosup
+    # the coverage join: KidPage's own XC_A handles Select, the base's XC_B handles Back, nobody handles Create New
+    cov = {(r["name"], r["target"]): r["verdict"] for r in
+           handler_coverage([r for r in rows3 if r["kind"] == "hint"],
+                            {"KidPage": {"XC_A"}, "SGPageBase": {"XC_B", "XC_BACK"}, "BasePage": set()},
+                            supers, by_pkg)}
+    assert cov[("KidPage", "bButtonA")] == "handled", cov
+    assert cov[("KidPage", "bButtonB")] == "handled", cov           # inherited from SGPageBase's handler
+    assert cov[("KidPage", "bButtonY")] == "no-handler", cov
+    print("ok   menu-flow: 43 assertions over the parsers, the resolver, the closure, the three name readers "
+          "and the page-level defaults")
 
 
 
@@ -1001,6 +1441,8 @@ def main():
         return
     if not args.dump:
         sys.exit("a dump directory is required (or --report/--check)")
+    if args.sweep and not args.defaults:
+        sys.exit("FAIL menu-flow: --sweep needs --defaults <the defaults-emit tree>; the page-level half reads it")
     rows, _meta = sweep(args.dump, args.defaults)
     if args.out:
         write(rows, args.out)
