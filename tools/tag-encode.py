@@ -254,6 +254,8 @@ def tally(tags, buckets):
         buckets["name_width"]["%d" % len(pack_index(tag["name"]))] += 1
         if tag["size"] in IMPLIED.values() and IMPLIED.get(tag["tbyte"] & 0x70) != tag["size"]:
             buckets["implied_class_miss"] += 1
+        buckets["value_size"].setdefault(TYPE_NAMES.get(tag["type"], tag["type"]),
+                                         collections.Counter())[tag["size"]] += 1
 
 
 def relocate(data, pkg, chosen, limit=64):
@@ -330,7 +332,7 @@ def new_buckets():
                 index_width=collections.Counter(), index_max=0, bit7_zero_index=0,
                 bool=collections.Counter(), struct=collections.Counter(),
                 name_width=collections.Counter(), walk_reason=collections.Counter(),
-                mismatch=collections.Counter(), implied_class_miss=0)
+                mismatch=collections.Counter(), implied_class_miss=0, value_size={})
 
 
 def sweep(dump, limit=None):
@@ -357,6 +359,9 @@ def sweep(dump, limit=None):
                 total[key] += one[key]
             elif isinstance(total[key], collections.Counter):
                 total[key].update(one[key])
+            elif isinstance(total[key], dict):
+                for sub_key, cnt in one[key].items():
+                    total[key].setdefault(sub_key, collections.Counter()).update(cnt)
         total["index_max"] = max(total["index_max"], one["index_max"])
         print("%-44s %5d tags %5d blocks  equal %5d  mismatch %d"
               % (name, tags, blocks, one["equal"], sum(one["mismatch"].values())), flush=True)
@@ -398,6 +403,12 @@ def rows_of(file_rows, total, n_maps, n_saves):
         rows.append(dict(scope="struct", key=str(key), count=total["struct"][key], note=""))
     for key in sorted(total["type"]):
         rows.append(dict(scope="type", key=key, count=total["type"][key], note=""))
+    rows.append(dict(scope="census", key="tags_walked", count=total["tags"] + total["terminators"],
+                     note="every tag plus the zero index that ends its block"))
+    for key in sorted(total["value_size"]):
+        sizes = total["value_size"][key]
+        rows.append(dict(scope="value", key=key, count=sum(sizes.values()),
+                         note=";".join("%d:%d" % (sz, n) for sz, n in sorted(sizes.items()))))
     rows.extend(file_rows)
     return rows
 
@@ -436,7 +447,8 @@ def render(rows):
     multi = sum(v for k, v in name.items() if k != "1_byte")
     out = []
     out.append("**Every one of the %s property tags counted here re-encodes to the bytes the file holds**: %s "
-               "headers over %s blocks in %s map packages and %d checkpoints."
+               "headers over %s blocks in %s map packages and %d checkpoints; the per-file rows below "
+               "count each block's terminating zero index as well, so they sum to the tags plus the blocks."
                % (format(tags, ","), format(census["headers_reencoded"], ","), format(census["blocks"], ","),
                   note.get("files", "").split(";")[0].replace("maps=", ""), len(saves)))
     out.append("")
@@ -475,6 +487,66 @@ def render(rows):
                   format(census["implied_class_miss"], ","), format(census["bit7_zero_index"], ","),
                   format(structs.get("tags", 0), ",")))
     out.append("")
+    value = {r["key"]: (int(r["count"]), r["note"]) for r in rows if r["scope"] == "value"}
+    if value:
+        out.append("| property type | tags | `Size` on disk, commonest first |")
+        out.append("|---|---|---|")
+        modal, tail = {}, 0
+        for key in sorted(value, key=lambda k: (-value[k][0], k)):
+            count, note = value[key]
+            widths = sorted(((int(n), int(w)) for w, n in (kv.split(":") for kv in note.split(";") if kv)),
+                            reverse=True)
+            shown = ", ".join("`%d` (%s)" % (w, format(n, ",")) for n, w in widths[:4])
+            if len(widths) > 4:
+                shown += " and %d more" % (len(widths) - 4)
+            out.append("| %s | %s | %s |" % (key, format(count, ","), shown))
+            modal[key] = (widths[0][1], widths[0][0], count, len(widths))
+            tail += count - widths[0][0]
+        out.append("")
+        def widths_of(key):
+            return sorted(((int(w), int(n)) for w, n in
+                           (kv.split(":") for kv in value.get(key, (0, ""))[1].split(";") if kv)),
+                          key=lambda pair: (-pair[1], -pair[0]))
+
+        def rows_at(key, width):
+            return dict(widths_of(key)).get(width, 0)
+
+        SCALAR = {"Byte": 1, "Int": 4, "Float": 4, "Bool": 0, "Vector": 12, "Rotator": 12}
+        off = {key: value[key][0] - rows_at(key, width)
+               for key, width in SCALAR.items() if key in value}
+        biggest = sorted(modal, key=lambda k: -modal[k][2])[:6]
+        out.append("**The value's width is its serialized length, so a type has a modal width and a long "
+                   "tail.** %s. `Struct` is the members' own bytes -- %s widths, %s of its %s tags at `%d` and "
+                   "%s at `13` -- and `Str` grows with the string, its one-byte values being a length prefix "
+                   "and no characters."
+                   % ("; ".join("%s `%d` on %s of %s (%s%%)" % (k, modal[k][0], format(modal[k][1], ","),
+                                                                format(modal[k][2], ","),
+                                                                ("%.1f" % (100.0 * modal[k][1] / modal[k][2]))
+                                                                .rstrip("0").rstrip("."))
+                                for k in biggest),
+                      modal.get("Struct", (0, 0, 0, 0))[3], format(modal.get("Struct", (0, 0, 0, 0))[1], ","),
+                      format(modal.get("Struct", (0, 0, 0, 0))[2], ","), modal.get("Struct", (0, 0, 0, 0))[0],
+                      format(dict((int(w), int(n)) for w, n in
+                                  (kv.split(":") for kv in value.get("Struct", (0, ""))[1].split(";")
+                                   if kv)).get(13, 0), ",")))
+        out.append("")
+        vec = widths_of("Vector") if "Vector" in value else []
+        out.append("**Most of the tail is ordinary**: a reference's second byte (`Object` is `1` on %s%% and "
+                   "`2` on %s%% of its tags), a struct's members, a string's characters. What is left is a "
+                   "residue carrying a width its own class cannot write, and every one of those headers still "
+                   "re-encodes: %s `Int`(s) and %s `Float`(s) at `1` where the class writes 4, %s bool(s) at "
+                   "`1` where a bool writes nothing at all, and %s of the %d `Vector` tags -- whose class "
+                   "writes 12 -- sitting at %s. A header is only self-consistent with itself, so a "
+                   "desynchronised parse survives the header test; the value's width is the only second "
+                   "opinion the shipped corpus offers, and this is where it disagrees."
+                   % (("%.1f" % (100.0 * rows_at("Object", 1) / max(1, value.get("Object", (0, ""))[0]))).rstrip("0").rstrip("."),
+                      ("%.1f" % (100.0 * rows_at("Object", 2) / max(1, value.get("Object", (0, ""))[0]))).rstrip("0").rstrip("."),
+                      format(rows_at("Int", 1), ","), format(rows_at("Float", 1), ","),
+                      format(rows_at("Bool", 1), ","), format(off.get("Vector", 0), ","),
+                      value.get("Vector", (0, ""))[0],
+                      ", ".join("`%d` (%s)" % (w, format(n, ","))
+                                for w, n in [pair for pair in vec if pair[0] != 12][:3])))
+        out.append("")
     out.append("The checkpoints are the control: the nine `.sgs` files hold %s tags over %s blocks in this "
                "walk, against the 19,080 `Sg1Tool save` records `docs/formats/sgs-checkpoint.md` tabulates. The "
                "walk reads %s more, every header it counts re-encodes to the file's own bytes, and the older "
@@ -521,14 +593,22 @@ def check_artifact(rows):
     if tags != census["tags"]:
         sys.exit("FAIL tag-encode: size classes sum to %d, census says %d tags" % (tags, census["tags"]))
     files = sum(int(r["count"]) for r in rows if r["scope"] in ("map", "checkpoint"))
-    if files > census["tags"]:
-        sys.exit("FAIL tag-encode: file rows hold more tags than the total")
+    if files != census["tags"] + census["blocks"]:
+        sys.exit("FAIL tag-encode: file rows hold %d row(s), the census's %d tags + %d block terminators "
+                 "make %d" % (files, census["tags"], census["blocks"], census["tags"] + census["blocks"]))
+    if census.get("tags_walked", files) != files:
+        sys.exit("FAIL tag-encode: tags_walked %d disagrees with the file rows %d"
+                 % (census["tags_walked"], files))
+    valued = sum(int(r["count"]) for r in rows if r["scope"] == "value")
+    if valued != census["tags"]:
+        sys.exit("FAIL tag-encode: the per-type value rows hold %d tag(s), the census says %d"
+                 % (valued, census["tags"]))
     if census["headers_reencoded"] + census["mismatches"] != census["tags"]:
         sys.exit("FAIL tag-encode: re-encoded + mismatches does not equal the tag total")
     if census["index_max"] > 0x3FFF and not any(r["key"] == "4_byte" for r in rows if r["scope"] == "index_width"):
         sys.exit("FAIL tag-encode: an index above 0x3fff with no four-byte row")
-    print("ok   tag-encode: %d tags, %d re-encoded, buckets sum to the total" % (census["tags"],
-                                                                               census["headers_reencoded"]))
+    print("ok   tag-encode: %d tags, %d re-encoded, buckets, file rows and value rows all sum to the total"
+          % (census["tags"], census["headers_reencoded"]))
 
 
 def check():
@@ -570,8 +650,8 @@ def check():
     assert reason3 == "None" and end3 == len(bad)
     equal3, terms3, reasons3 = compare(bad, tags3)
     assert equal3 == 0 and terms3 == 1 and reasons3.get("type-byte") == 1, (equal3, terms3, reasons3)
-    rows = rows_of([dict(scope="map", key="M00", count=10, note="blocks=2;refused=0;relocated=0;equal=10"),
-                    dict(scope="checkpoint", key="C_1", count=5, note="blocks=1;refused=0;relocated=0;equal=5")],
+    rows = rows_of([dict(scope="map", key="M00", count=12, note="blocks=2;refused=0;relocated=0;equal=10"),
+                    dict(scope="checkpoint", key="C_1", count=6, note="blocks=1;refused=0;relocated=0;equal=5")],
                    dict(tags=15, equal=15, terminators=3, refused_blocks=0, refused_tags=0, relocated=0,
                         residue_blocks=0, residue_bytes=0,
                         size_class=collections.Counter({"0x00": 10, "0x50": 5}),
@@ -579,8 +659,33 @@ def check():
                         index_max=0, bit7_zero_index=0, bool=collections.Counter(),
                         struct=collections.Counter(), name_width=collections.Counter({"1_byte": 15}),
                         walk_reason=collections.Counter(), mismatch=collections.Counter(),
-                        implied_class_miss=0), 1, 1)
+                        implied_class_miss=0,
+                        value_size={"Int": collections.Counter({4: 15})}), 1, 1)
     check_artifact(rows)
+
+    def _bad(mutate):
+        bad = [dict(r) for r in rows]
+        mutate(bad)
+        try:
+            check_artifact(bad)
+        except SystemExit:
+            return
+        raise AssertionError("check_artifact accepted an artifact whose rows do not add up")
+
+    def _one_file(bad):
+        for r in bad:
+            if r["scope"] == "map":
+                r["count"] = int(r["count"]) - 1
+                return
+
+    def _one_value(bad):
+        for r in bad:
+            if r["scope"] == "value":
+                r["count"] = int(r["count"]) - 1
+                return
+
+    _bad(_one_file)
+    _bad(_one_value)
     block = render(rows)
     assert render(rows) == block
     tmp = tempfile.mkdtemp()
@@ -607,7 +712,8 @@ def check():
             os.unlink(os.path.join(tmp, name))
         os.rmdir(tmp)
     print("ok   tag-encode: compact name and array-index encoders, size classes, walk spans, bool size, "
-          "a corrupted tag refused, artifact sums, doc round trip (8 cases)")
+          "a corrupted tag refused, artifact sums incl. a per-file and a value row that do not, "
+          "doc round trip (10 cases)")
 
 
 def main(argv=None):

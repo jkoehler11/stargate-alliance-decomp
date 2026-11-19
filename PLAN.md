@@ -3,7 +3,8 @@
 Status: **phase 0-2 done; phase 3 script tree complete, compile loop not started; phase 4 under way,
 4.4 re-done against the runtime dispatch table after the earlier correction, 4.3 executor, binder,
 expression decoder and `ProcessEvent` measured; 4.3's property type space, class roster and field
-layout measured, the tagged tag record open)**
+layout measured, the tag record read and written, its value widths measured and the value layout
+open)**
 (last run 2026-11-06). This is the working task list for the
 project described in [README.md](README.md). Section 0 was measured against the real release; every box
 ticked below was executed, and its output is committed under `inventory/`, `tools/` and `docs/`.
@@ -1048,10 +1049,36 @@ other 38 rows.
       the tag loop at `0x3be40` -- so the object is not refused, only the tag is spent. Tool
       (`tools/tag-origin.py`: the name-table and class-text census, the placement walk through the shipped
       locator and its repair, the enum parsed off the declaring class's own text, 5 synthetic cases in
-      `--check`) + `inventory/tag_origin.csv` (27 rows, new) + `docs/MAP_ACTION_PARAMETERS.md` (the answered
+      `--check`) + `inventory/tag_origin.csv` (101 rows, new) + `docs/MAP_ACTION_PARAMETERS.md` (the answered
       paragraph, a generated block, the "not measured here" caveat retired) + `docs/NATIVE_PROPERTIES.md`
       §4/§6 (the unknown-name path at its addresses) + `docs/UNKNOWNS.md` U29 + `make tag-origin` + this
       note. 3.5 s; no boot.
+      **The tag writer's on-disk half is the reader, and 1.2M shipped tags re-encode to their own bytes
+      (2026-11-19).** `0x0003cd70` had one open question -- which routine puts its struct on disk -- and the
+      answer is the routine that reads a tag: the byte scan finds exactly one `E8` site for the writer
+      (`0x0003c368` in the walk `0x0003bdc0`), and the call nine bytes after it (`0x0003c373`) re-enters
+      `0x0003ceb0`, so the tag bytes are the reader's own archive operators. The decompiled save branch shows
+      the same three calls in order (fill `0x0003cd70`, tag `0x0003ceb0`, value `0x0003c384` ->
+      `0x00038c30`), and `0x00038c30` has a fourth call site **inside the writer** (`0x0003ce00`) -- the
+      measuring pass that produces the `Size` the reader later warns about. `tools/tag-encode.py` turns that
+      into a corpus test: it recovers each tag's fields with the build's own reader and re-encodes them with
+      the writer's rules, and **1,212,640 tags over 137,427 blocks in 73 maps and 9 checkpoints come back
+      byte-identical, 0 mismatches**. Four rules fall out that neither body stated: the **name is a compact
+      index**, not the int32 §6's table said (188,506 tags use two or more bytes, so a four-byte reader
+      desyncs); the **size class prefers the implied widths** (1/2/4/12/16) and only then the explicit ones
+      (0 exceptions in the corpus); a **bool's `Size` is 0** with its value in bit 7, so it lands in the
+      explicit one-byte class (33,923 true, 46,304 false); and the **array index packs 1/2/4 bytes** (three,
+      six and fourteen shipped tags, largest 1,073,741,823). The per-type table then measures the value half
+      from outside: **the value's width is its serialized length, so each type has a modal width and a tail**
+      -- `Int` 4 bytes on 99.5% of its tags, `Float` 4 on 99.4%, `Byte` 1 on 99.3%, a reference a 1- or
+      2-byte compact index (`Object` 54.5%/45.4%), a `Struct` 12 bytes on 64.8% and 13 on a further 21% --
+      and the residue is the finding: 607 `Int`s and 430 `Float`s at size 1, 881 bools at 1, and 217 of the
+      223 `Vector` tags at something other than the 12 their class writes, every one of them a header that
+      re-encodes. So the value's width is the only second opinion the corpus offers about a desynchronised
+      parse, and this table is where it disagrees. Tool (`tools/tag-encode.py`: the encoder, the walk, the relocation test, the per-type value census, ten
+      synthetic cases, and a dump-free `--report`) + `inventory/tag_encodings.csv` (new) +
+      `docs/NATIVE_PROPERTIES.md` §6 (the on-disk half, the generated block, the value table) and §7 (the
+      bullet retired) + `docs/UNKNOWNS.md` U10 + `make tag-encodings` + this note. 82 files in 96 s; no boot.
       **The last map-side artifact with no generator now has one, and `squad_scripts.csv` is 630 rows, not 614
       (2026-11-19).** `docs/ARTIFACTS.md` kept this file in its orphan list because `make map-census` refused to
       write it: the pass found 581 `(map, script)` pairs where the file had 614, and the note here read that as

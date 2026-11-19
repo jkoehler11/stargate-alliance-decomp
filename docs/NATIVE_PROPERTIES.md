@@ -257,9 +257,11 @@ the fork's own special case. **A tag the object does not declare is the same ski
 the walk logs `"Property %s of %s not found"`, and the tag's `Size` bytes are consumed before the next tag is
 read (§4) — so a save or a map written against a class revision with one more property still loads.
 
-Not measured here: the writer side. The reader is what a rebuilt save must satisfy, and the
-`Ar.IsSaving()` half of the same routine exists, but no writer body was decompiled, so this document
-claims nothing about how the build *writes* a tag beyond "the same routine, the other branch".
+**The on-disk writer is the reader, and the corpus can test it.** `0x0003cd70` has exactly one caller
+in the whole image -- `0x0003c368` in the walk below -- and the call right after it (`0x0003c373`) enters
+`0x0003ceb0` again, so the routine that *reads* a tag is the routine that *writes* one. That makes the whole
+record testable on shipped data: the fields this build's own reader recovers are re-encoded with the writer's
+rules and compared with the bytes the file holds (§6's second subsection).
 
 ### The writer, `0x0003cd70`
 
@@ -297,11 +299,91 @@ Three things follow that the reader alone could not settle:
   it when the array index is non-zero, or when the property is a bool whose value is true, which is
   exactly what the reader checks before reading an array index.
 
+### The on-disk half: the walk fills a tag and hands it back to the tag routine
+
+`0x0003bdc0`'s save branch, decompiled (`~/sg1/work/module-export/Core-800/0003bdc0_Core_UnClass.c`), is three
+calls in order -- the element serializer through the property's own vtable, then the tag:
+
+```
+iVar4 = (**(code **)(*local_18 + 0x94))(iVar4 + param_3, iVar6);   ; the value's serializer
+...
+FUN_0003cd70(piVar1, local_18, iVar7, iVar9);   ; 0x0003c368: fill the tag struct for this property
+FUN_0003ceb0(piVar1, local_14);                 ; 0x0003c373: write it -- the reader's own routine
+Core_UnClass(piVar1, local_18, iVar9, 0);       ; 0x0003c384: 0x00038c30, the value
+```
+
+The three addresses are the byte scan's, not the decompiler's
+(`python3 tools/vtable-reach.py <xbe> --va 0x3cd70 --va 0x3ceb0 --va 0x38c30`): `0x0003cd70` has **one** `E8`
+site in the image, `0x0003c368`, nine bytes before the `0x0003c373` that re-enters `0x0003ceb0`; the reader
+has two, `0x0003be4e` on the load path and that `0x0003c373` on the save path. So the tag bytes are the
+reader's own operators -- the name and the struct name through the archive's vtable `+0x1c`, the type byte and
+the explicit sizes and the array index through `0x00037040`/`0x00037080`/`0x00037110` -- and a rebuilt save has
+to satisfy the same routine it was read by.
+
+**The value writer is called twice per tag, and that is where `Size` comes from.** `0x00038c30` has four call
+sites: three in the walk's own body (`0x0003bf73`, `0x0003c1ed`, `0x0003c384`) and one at **`0x0003ce00`, inside
+`0x0003cd70` itself** -- the measuring pass, which serialises the value into a scratch archive so the tag can
+record how many bytes it produced, and then the emit at `0x0003c384` writes them. `0x00038c30` folds a bool's
+value into the tag's type byte and otherwise dispatches `[property+0xa0]`, so the value is each property
+class's own serializer output.
+
+The corpus half of that claim is the block below: **every property tag in the 73 map packages and the 9
+checkpoints re-encodes to the bytes the file holds**, and the per-type table is what the value half looks like
+from the outside -- the width of each type's serialized value, which is the part of the value a rebuilt writer
+must produce before any of its internal layout can matter.
+
+<!-- generated:tag-encodings -->
+**Every one of the 1,212,640 property tags counted here re-encodes to the bytes the file holds**: 1,212,640 headers over 137,427 blocks in 73 map packages and 9 checkpoints; the per-file rows below count each block's terminating zero index as well, so they sum to the tags plus the blocks.
+
+The walk uses the shipped locator and then the writer's rules as a second test: 1,536 block(s) it chose hold a tag those rules cannot produce (20,691 tag(s)), and 1,517 of those payloads carry a later start whose whole block re-encodes -- so the encoder also settles a block start the count-of-names rule gets wrong. The counts below are over the blocks that agree.
+
+The rule that reproduces them: the **name** is a compact index -- 1,024,134 tags in one byte and 188,506 in two or more, so a four-byte int32 reader (what §6's table said) would desync on 188,506 of them; the **type byte** is the property type OR-ed with the size class the measured `Size` picks, implied widths first and the explicit classes after; the **array index** is packed one byte to `0x7f`, two to `0x3fff`, four above, and the shipped corpus writes 3,243 one-byte, 6 two-byte and 14 four-byte index(es), largest 1,073,741,823.
+
+| size class | tags | what it says on disk |
+|---|---|---|
+| `0x00` | 334,672 | implied 1 byte |
+| `0x10` | 216,891 | implied 2 bytes |
+| `0x20` | 222,954 | implied 4 bytes |
+| `0x30` | 207,403 | implied 12 bytes |
+| `0x40` | 737 | implied 16 bytes |
+| `0x50` | 229,790 | one explicit size byte |
+| `0x60` | 193 | a two-byte size |
+
+Two consequences for a rebuild. **A bool's `Size` is zero**, not one: the value rides in bit 7 and the writer measures an empty value, so a bool lands in the explicit one-byte class (`0x50`) -- 33,923 bool tags read true and 46,304 false with no value byte. And **the explicit classes are only reached when no implied width matches**: 0 tag(s) write a width of 1/2/4/12/16 in an explicit class and 0 non-bool tag(s) set bit 7 with a zero array index, both of which the writer's rule forbids. 319,288 struct tag(s) carry a struct name.
+
+| property type | tags | `Size` on disk, commonest first |
+|---|---|---|
+| Object | 346,615 | `1` (188,757), `2` (157,533), `4` (280), `16` (28) and 8 more |
+| Struct | 319,288 | `12` (207,032), `13` (67,423), `25` (17,550), `14` (15,882) and 26 more |
+| Int | 138,232 | `4` (137,561), `1` (607), `16` (23), `2` (14) and 9 more |
+| Name | 124,764 | `1` (68,393), `2` (56,162), `4` (159), `16` (32) and 6 more |
+| Float | 82,623 | `4` (82,122), `1` (430), `16` (39), `2` (16) and 8 more |
+| Bool | 80,227 | `0` (79,105), `1` (881), `4` (119), `2` (71) and 8 more |
+| Byte | 46,782 | `1` (46,467), `4` (263), `16` (28), `2` (10) and 6 more |
+| Array | 38,636 | `3` (7,798), `5` (5,836), `7` (4,807), `9` (3,246) and 120 more |
+| Invalid | 25,121 | `1` (24,858), `4` (174), `12` (41), `16` (33) and 4 more |
+| Str | 7,745 | `1` (2,492), `11` (667), `8` (538), `29` (430) and 257 more |
+| Class | 630 | `1` (437), `4` (149), `16` (21), `2` (10) and 4 more |
+| Rotator | 547 | `1` (233), `4` (188), `2` (83), `16` (32) and 7 more |
+| String | 532 | `1` (317), `4` (169), `16` (20), `12` (11) and 7 more |
+| FixedArray | 427 | `1` (197), `4` (176), `16` (37), `2` (9) and 6 more |
+| Map | 248 | `1` (103), `4` (91), `16` (22), `2` (18) and 6 more |
+| Vector | 223 | `4` (101), `1` (64), `16` (30), `2` (21) and 2 more |
+
+**The value's width is its serialized length, so a type has a modal width and a long tail.** Object `1` on 188,757 of 346,615 (54.5%); Struct `12` on 207,032 of 319,288 (64.8%); Int `4` on 137,561 of 138,232 (99.5%); Name `1` on 68,393 of 124,764 (54.8%); Float `4` on 82,122 of 82,623 (99.4%); Bool `0` on 79,105 of 80,227 (98.6%). `Struct` is the members' own bytes -- 30 widths, 207,032 of its 319,288 tags at `12` and 67,423 at `13` -- and `Str` grows with the string, its one-byte values being a length prefix and no characters.
+
+**Most of the tail is ordinary**: a reference's second byte (`Object` is `1` on 54.5% and `2` on 45.4% of its tags), a struct's members, a string's characters. What is left is a residue carrying a width its own class cannot write, and every one of those headers still re-encodes: 607 `Int`(s) and 430 `Float`(s) at `1` where the class writes 4, 881 bool(s) at `1` where a bool writes nothing at all, and 217 of the 223 `Vector` tags -- whose class writes 12 -- sitting at `4` (101), `1` (64), `16` (30). A header is only self-consistent with itself, so a desynchronised parse survives the header test; the value's width is the only second opinion the shipped corpus offers, and this is where it disagrees.
+
+The checkpoints are the control: the nine `.sgs` files hold 20,296 tags over 1,458 blocks in this walk, against the 19,080 `Sg1Tool save` records `docs/formats/sgs-checkpoint.md` tabulates. The walk reads 1,216 more, every header it counts re-encodes to the file's own bytes, and the older table is lower on all nine files, so the two readers disagree about how many tags the saves hold rather than about whether these tags are there. 218 block(s) end without a zero index: the payload ends past the last complete tag, which is the shape a save's last object takes.
+<!-- /generated:tag-encodings -->
+
 ## 7. Not established
 
-- **Which routine consumes the writer's tag.** `0x0003cd70` fills a tag in memory; the path that
-  writes that struct to an archive byte by byte was not followed, so the on-disk *caller* is open even
-  though the field order, packing and size thresholds are measured (PLAN 6.2).
+- **The value's internal layout.** The tag is settled in both directions and the value's *width* per type
+  is measured, but not the bytes inside it: a `Str`'s length prefix, an `Array`'s count and element stride, a
+  `Struct`'s member order and a bulk-data tag's chunk list are all "`Size` bytes, the class's own serializer"
+  here. A rebuilt value needs them, and `0x00038c30`'s dispatch through `[property+0xa0]` is the body that
+  writes them.
 - **Which class owns `0x00078c20`.** Three classes are 0x74 bytes and two of them are accounted
   for; the constructors of `FixedArrayProperty` and `MapProperty` were not exported.
 - **The rest of `UObject`/`UStruct`.** Only the fields a consumer was seen reading are listed;
