@@ -23,7 +23,7 @@ Measured over the same 73 maps:
 | maps whose spawners reference a squad script | **61 of 73** |
 | references that do not resolve (`?`) | 820 |
 
-`inventory/squad_scripts.csv` holds (map, squad script, spawner count) — 614 rows of identifiers.
+`inventory/squad_scripts.csv` holds (map, squad script, spawner count) — 630 rows of identifiers.
 
 ## Spawners point at named AI scripts
 
@@ -50,8 +50,10 @@ they spawn. The doc now says that instead.
 
 ## Still not measured
 
-* The 820 unresolved references, and the 18 `?` squad scripts. They cluster rather than scatter, which points
-  at references to imports this reader does not index, not at random corruption — but that is a hypothesis.
+* ~~The 820 unresolved references, and the 18 `?` squad scripts.~~ **Settled** (2026-11-19): the name-table
+  fix names all 18 (`inventory/squad_scripts.csv` is 630 rows), and the three references that survived it were
+  one locator rule -- the T3D now has none. The old hypothesis, that they point at imports the reader does not
+  index, is wrong: both were reads that stopped one test short. See "the three values that fell through".
 * Class defaults, above.
 * The `Level` export's script sequence: the `ACTION_*` actors' parameters are visible, their order is not.
 
@@ -63,16 +65,24 @@ they spawn. The doc now says that instead.
 means (a start in the first 64 bytes whose stream ends exactly at the export's end and whose names all resolve).
 That is a strict reading — it counts what can be read, not what might be there.
 
-`squad_scripts.csv` is not written by it, and the "not yet reproducible" reading above is superseded
-(2026-11-19): the difference is not a broader rule, it is the name-table fix. A walk of the same reader over
-all 73 maps finds **630** `(map, script)` pairs against the committed file's **614**, and the whole delta is two
-maps — `M17D` and `M21A`, the two whose name tables the length rule truncated
-(`docs/PACKAGE_READER.md`), which the committed file records as a single `?` row each (8 and 10 spawners).
-With the fix they resolve to **18 named scripts**, which is exactly `614 - 2 + 18 = 630`. What still differs is
-the spawner count behind those rows: the walk sees **719** spawner properties (`IntelligentSpawner` 706,
-`HaakenPod` 13) where the committed file totals 711, an 8-property residue left open here rather than
-overwritten — so the file stays as it is until that residue is pinned, and `make map-census` keeps printing
-the delta.
+`squad_scripts.csv` is written by it too, as of 2026-11-19, and the "not yet reproducible" reading above was
+the name-table fix rather than a broader rule: the pass finds **630** `(map, script)` pairs where the old file
+had **614**, and the whole delta is two maps — `M17D` and `M21A`, the two whose name tables the length rule
+truncated (`docs/PACKAGE_READER.md`), which the old file recorded as a single `?` row each. Those two rows are
+now the **18 scripts** behind them: `M17D`'s 8 spawners are seven scripts named once each and a `noScript`
+shared by nine, `M21A`'s 10 are ten singletons. So `614 - 2 + 18 = 630` rows, and the spawner column moves
+with them: **719** properties (`IntelligentSpawner` 706, `HaakenPod` 13) against the old file's 711, because
+the `M17D` placeholder held 8 where the map carries 16 — 8 spawners were never counted at all, which is what
+the earlier note called a "residue" and left open. Every one of the 612 rows the two enumerations share
+agrees on its spawner count (`711 - 18 + 26 = 719` the other way), so this is a replacement and not a second
+enumeration.
+
+**It reads the value from the block the T3D writer reads.** The coverage locator takes the *earliest* start
+whose block ends at the export's end; the writer takes the candidate with the most properties. On these 73
+maps the first names **591** pairs and the second **630**, so the artifact follows the writer — the page and
+the file have to be one reading, and the 39 pairs are the cost of the earlier parse. `make map-census` writes
+all four map-side artifacts and its `--check` (dump-free) validates this one's shape, positive counts and
+unique pairs; the pass is 80 s, 30 s of it the coverage walk and the rest this re-read.
 
 ## Every map written, with references resolved (measured 2026-11-06)
 
@@ -87,15 +97,19 @@ the delta.
 | unresolved object references | **3** |
 | T3D bytes | 44,375,952 |
 
-**The `ref:<index>` reading is stale.** `prop-stream.py` resolves an export index to `Class'Package.Name'` and a
-negative one to the import's `Class'Package.Object'`; only three values in 1.18 million fall through, and each is
-its own defect rather than a missing feature:
-
-| map | property | value | what it suggests |
-|---|---|---|---|
-| `M02A` | `Vector` | `ref:-17179869183` | a struct-typed tag decoded as an object reference |
-| `M15A` | `Max` | `ref:7470` | an export index past the map's export table |
-| `M17B` | `StaticMesh` | `ref:5758` | same shape, different map |
+**The `ref:<index>` reading is stale, and the three values that fell through were one rule (2026-11-19).**
+`prop-stream.py` resolves an export index to `Class'Package.Name'` and a negative one to the import's
+`Class'Package.Object'`; three values in 1.18 million used to fall through, and this page listed them as three
+defects -- a struct read as an object in `M02A`, an index past the export table in `M15A`, the same in `M17B`.
+They are one defect: the locator's tie-break tested the block's *names* and not its *references*, so in `M02A`
+a `Trigger`, in `M15A` a `MissionObjective` and in `M17B` a `StaticMeshActor` the parse began at a start that
+spent the front of the next property on a reference landing nowhere -- byte 1 of a 17-byte export in `M02A`
+(inside the record in front of the block), byte 19 of `M15A` and byte 18 of `M17B` (four and three bytes into
+the block). Reading the same 73 maps with "every object reference in the block resolves" as the first test
+moves **3 of 121,394** block starts -- exactly those three -- and leaves every other start where it was, so the
+writer now has **0 unresolved references**, **1,180,946** properties (3 fewer: the bytes the misparse invented
+were being counted as properties) and 49,212,006 bytes of T3D. The three defects are gone rather than named:
+no `ref:` reaches the text, and `inventory/t3d_coverage.csv` counts any that come back.
 
 **The totals above are superseded** by the 2026-11-19 section at the end of this page: the table is regenerated
 by `make t3d`, and the two maps whose name tables the length rule had truncated (`M17D`, `M21A`) now locate
@@ -135,24 +149,39 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | of those, object arrays | **32586** |
 | object references inside them | **117398** |
 | arrays refused a shape | 5303 (4510 struct arrays holding 14576 records) |
+| -- of the struct arrays, element type declared | **4470** |
+| -- of those, elements decoded | **2019** |
 | struct-typed properties | 312295 |
-| struct properties decoded to numbers | **203147** |
+| struct properties decoded to numbers | **203148** |
 | struct property names | 79 |
 
 | struct | properties | decoded | sizes (bytes:instances) |
 |---|---:|---:|---|
-| `Vector` | 152140 | 152108 | 12:152108 / 16:19 / 9:7 / 6:5 / 2:1 |
-| `PointRegion` | 77025 | 0 | 13:61298 / 14:15726 / 16:1 |
+| `Vector` | 152141 | 152109 | 12:152109 / 16:19 / 9:7 / 6:5 / 2:1 |
+| `PointRegion` | 77026 | 0 | 13:61299 / 14:15726 / 16:1 |
 | `Rotator` | 50518 | 50518 | 12:50518 |
 | `Scale` | 17561 | 0 | 25:17550 / 28:8 / 16:1 / 1:1 / 4:1 |
 | `RangeVector` | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 |
 | `Range` | 4138 | 0 | 13:4111 / 15:26 / 1:1 |
 | `Color` | 521 | 521 | 4:521 |
-| `None` | 57 | 0 | 2:26 / 0:18 / 4:8 / 1:4 / 12:1 |
+| `None` | 56 | 0 | 2:26 / 0:18 / 4:8 / 1:3 / 12:1 |
 | `Orientation` | 43 | 0 | 106:29 / 122:7 / 123:7 |
 | `Plane` | 42 | 0 | 26:29 / 29:12 / 1:1 |
 | `SheerRate` | 21 | 0 | 4:21 |
 | `?` | 14 | 0 | 1:12 / 0:1 / 4:1 |
+
+| array element type | declared on | arrays | records | widths (bytes:arrays) |
+|---|---|---:|---:|---|
+| `ParticleColorScale` | `ParticleEmitter` | 2472 | 5746 | 14:2156 / 17:203 / 15:102 / 16:11 |
+| `ParticleTimeScale` | `ParticleEmitter` | 1330 | 2000 | 34:656 / 35:281 / 31:220 / 33:102 / 32:71 |
+| `SoundEmitter` | `AmbientSound` | 446 | 767 | 38:337 / 37:84 / 41:21 / 40:4 |
+| `ParticleSound` | `ParticleEmitter` | 58 | 73 | 85:55 / 84:3 |
+| `ParticleBeamEndPoint` | `BeamEmitter` | 52 | 93 | 74:40 / 75:5 / 78:4 / 73:2 / 83:1 |
+| `IMusicSegment` | `IMusicActor` | 44 | 3694 | 73:21 / 41:8 / 68:8 / 59:4 / 39:1 / 47:1 / 75:1 |
+| `ParticleVelocityScale` | `ParticleEmitter` | 36 | 114 | 23:21 / 24:15 |
+| *(not declared)* | -- | 22 | 26 | 15:9 / 1:8 / 3:5 |
+| *(not declared)* | `Actor` | 18 | 18 | 1:13 / 3:3 / 15:1 / 6:1 |
+| `int` | `FluidSurfaceInfo` | 12 | 2017 | 4:12 |
 <!-- /generated:t3d-values -->
 
 **The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,510
@@ -173,5 +202,32 @@ now locate **169 more actors** and **2,808 more properties**, so the totals are 
 properties / 3 unresolved references** and the T3D is 49,211,838 bytes, because an array is now one line per
 element rather than one line of bytes. A second run reproduces the table byte for byte.
 
-**Not in this PR.** The array element type (a class-declaration read), the struct decoders beyond the three whose
-layout is established, and the `Level` export's script sequence.
+## The element type is a declaration, and the declaration is in the class (measured 2026-11-19)
+
+The sentence this page ended on said the element's type "lives in the class's `ArrayProperty` declaration, and
+this reader carries a map's values, not its class declarations". The declaration was already committed, in
+`inventory/class_properties.csv` (`array<ParticleColorScale>` as the property's friendly type), and a placed
+class inherits it: `SpriteEmitter.ColorScale` is declared on `ParticleEmitter`, so the join walks the super
+chain in `inventory/classes.csv`. It names the element type of **4,470 of the 4,510** refused struct arrays
+(99.1%, 14,532 of their 14,576 records), and the residue is named rather than left as a mystery: **40** refused
+arrays whose property their class chain does not declare as an array -- `Light.PrePivot`, `PathNode.Vector`,
+`StaticMeshActor.ColLocation`, `SoundTrigger.ZoneNumber` -- which are *not* arrays at all but tags a mislocated
+block start decodes as one, the same defect the locator tie-break above fixes in its three cases; and the
+**793** payloads that divide by nothing at all.
+
+**Typed is not decoded, and the width is why.** The element's *layout* is not in either artifact: a struct
+array's element width is the payload's remainder over its count, and it varies within one type
+(`ParticleColorScale` 14 bytes in 2,156 arrays and 17 in 203; `ParticleTimeScale` 34 in 656 and 31 in 220),
+because compact indices inside the element are one or two bytes. So the writer decodes nothing it cannot fix
+the width of: an element type whose width is a fact about the type (`int`, `float`, `byte`, `bool`, `Vector`,
+`Rotator`, `Color`) is decoded when the payload's width is that type's, and **2,019 records** are: **2,017
+`int`** in 12 `array<int>` properties (`FluidSurfaceInfo`) and 2 `float`. Every other typed array is emitted
+as `// SizeScale: 2 element(s) of 17 byte(s) of ParticleTimeScale` -- a comment with a name an editor can look
+up, not a name invented for the bytes.
+
+The per-element-type census is `inventory/t3d_arrays.csv` (16 rows, written by `make t3d`, arithmetic against
+`t3d_values.csv` under `--check`), and the table below is rendered from it.
+
+**Not in this PR.** The struct decoders beyond the three whose layout is established, the element layouts of
+the five typed struct arrays, and the `Level` export's script sequence.
+

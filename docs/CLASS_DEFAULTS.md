@@ -981,8 +981,8 @@ often?
   shipped source (verified character by character on the two blocks above that do agree), not compiled. 3.6 is
   where that gets tested.
 * ~~**The roster itself.**~~ **Measured** (`docs/MAP_NAME_VALUES.md`): `SuggestedSquadScript` is a declared
-  `UNameProperty` on `IntelligentSpawner` (`inventory/class_properties.csv`), and all 614 squad-script pairs in
-  `inventory/squad_scripts.csv` are property *values* -- 612 of them in their own map -- so the roster is data on
+  `UNameProperty` on `IntelligentSpawner` (`inventory/class_properties.csv`), and all 630 squad-script pairs in
+  `inventory/squad_scripts.csv` are property *values* in the map that names them -- so the roster is data on
   the spawner that names it. Nothing here needs the `Level` export this bullet blamed, and `docs/MAP_NAME_VALUES.md`
   counts the whole shape: 13,329 of the 249,426 distinct name-table entries the 73 maps need exist only because a
   property names them.

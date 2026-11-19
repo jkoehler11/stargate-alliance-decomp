@@ -14,6 +14,14 @@ The three artifacts `docs/ARTIFACTS.md` still lists as orphaned. All three come 
   rather than one, and the `flags_split` column says whether the export flags separate the offsets.
 * `squad_scripts.csv` — per map, every `SuggestedSquadScript` value and how many spawners name it.
 
+`squad_scripts.csv` is written here as of 2026-11-19: it was the last artifact in `docs/ARTIFACTS.md` with no
+generator, because this pass used to find 581 `(map, script)` pairs against the file's 614 and refused to
+overwrite. The difference was never a broader rule — it was the two maps whose name tables the length rule
+truncated (`docs/PACKAGE_READER.md`), where the old file carries one `?` row each and this pass names the 26
+scripts behind them. Every one of the 693 rows the two share agrees on its spawner count, which is the control
+that makes the 26 new rows a replacement rather than a different enumeration. The file keeps its `\n` line
+endings so the diff is the changed rows and not every byte.
+
 "Carries a property block" means the locator in `tools/class-defaults.py` finds one: a start offset in the first
 64 bytes whose stream terminates exactly at the export's end and whose names all resolve. That is deliberately the
 strict reading — it counts what can be read, not what might be there.
@@ -36,6 +44,36 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PREFIX_COLUMNS = ["class", "exports", "blocks", "prefixes", "dominant_prefix", "dominant_count", "flags_values",
                   "verdict", "flags_split"]
+SQUAD_COLUMNS = ["map", "squad_script", "spawners"]
+
+
+def squad_problems(outdir):
+    """`squad_scripts.csv`'s shape, and that every count is a positive integer.
+
+    Dump-free: the pairs themselves cannot be re-derived here, but a row with a zero, negative or non-numeric
+    spawner count is a broken row whatever the maps say, and a duplicated `(map, script)` pair would double-count
+    a spawner in every doc that totals the column.
+    """
+    path = os.path.join(outdir, "squad_scripts.csv")
+    problems = checkcsv.shape(path, SQUAD_COLUMNS, key="squad_script")
+    if problems:
+        return problems
+    with open(path, newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    seen = set()
+    for r in rows:
+        try:
+            n = int(r["spawners"])
+        except ValueError:
+            problems.append("%s/%s: spawners %r is not a number" % (r["map"], r["squad_script"], r["spawners"]))
+            continue
+        if n < 1:
+            problems.append("%s/%s: %d spawners" % (r["map"], r["squad_script"], n))
+        key = (r["map"], r["squad_script"])
+        if key in seen:
+            problems.append("%s/%s: the pair appears twice" % key)
+        seen.add(key)
+    return problems
 
 
 def prefix_problems(outdir):
@@ -130,9 +168,10 @@ def main():
                                       ["class", "exports", "blocks_with_properties", "coverage"],)):
             problems += checkcsv.shape(os.path.join(outdir, name), header, key=header[0])
         problems += prefix_problems(outdir)
+        problems += squad_problems(outdir)
         return checkcsv.report("map-census", problems,
-                               "map_property_coverage.csv, actor_property_coverage.csv and actor_prefix_census.csv "
-                               "are the shapes this tool \n"
+                               "map_property_coverage.csv, actor_property_coverage.csv, actor_prefix_census.csv and "
+                               "squad_scripts.csv are the shapes this tool \n"
                                "     writes, and the prefix census agrees with its own histograms (shape only: needs "
                                "the dump)")
 
@@ -157,6 +196,19 @@ def main():
             if cls not in class_totals:
                 first_seen.append(cls)
             class_totals[cls] += 1
+            # The squad value is read from the block the T3D writer reads, not from `blocks_in`'s props: `blocks_in`
+            # takes the *earliest* start whose block ends at the export's end, the writer takes the candidate with
+            # the most properties, and on these 73 maps the earliest start names 591 `(map, script)` pairs where
+            # the writer's block names 630. The artifact follows the writer so the page's numbers and this file
+            # stay one reading, and the scan sits before the `blocks_in` gate so that an export the coverage
+            # locator refuses still contributes its value.
+            data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+            best = ps.find_block(data, pkg)
+            if best is not None:
+                reread, _rend, _rreason = ps.read_block(data[best[1]:], pkg, True)
+                squad = next((p for p in reread if p["name"] == "SuggestedSquadScript"), None)
+                if squad is not None:
+                    squads[str(squad.get("value") or "").strip()] += 1
             found = blocks_in(pkg, ps, exp)
             if found is None:
                 continue
@@ -165,9 +217,6 @@ def main():
             class_blocks[cls] += 1
             class_prefix[cls][start] += 1
             class_flags[cls][start].add(exp["flags"])
-            squad = next((p for p in props if p["name"] == "SuggestedSquadScript"), None)
-            if squad is not None:
-                squads[str(squad.get("value") or "").strip()] += 1
         map_rows.append([map_name, len(pkg.exports), with_block])
         for script, n in sorted(squads.items()):
             if script and script != "None":
@@ -206,12 +255,13 @@ def main():
         prefix_rows.append([cls, total, blocks, len(hist), dom, dom_n, len(flag_to_prefix),
                             "constant" if len(hist) == 1 else "varies", split])
 
-    # `squad_scripts.csv` is deliberately *not* written: this pass finds 581 (map, script) pairs where the
-    # committed artifact has 614, so the enumeration that produced it was broader than "a located property block
-    # in a map export". Overwriting would silently drop 35 references that other docs count, so the delta is
-    # reported instead and reconciling it is its own task.
-    print("squad_scripts.csv: %d pairs found, committed has %d -- not written (see docs/T3D.md)"
-          % (len(squad_rows), len(open(os.path.join(outdir, "squad_scripts.csv"), newline="").readlines()) - 1))
+    # `squad_scripts.csv` is written here as of 2026-11-19. The old note in this spot said the enumeration that
+    # produced the committed file was broader than "a located property block in a map export"; it was not. The 33
+    # rows this pass used to come up short were the two maps whose name tables the length rule truncated
+    # (`docs/PACKAGE_READER.md`), and the committed file says so itself: one `?` row each, 8 spawners under `M17D`
+    # and 10 under `M21A`. This pass names the 26 scripts behind those placeholders (16 and 10), and the two counts
+    # disagree for `M17D` because 8 of its spawners were not read at all before the fix -- that is the residue
+    # `docs/T3D.md` left open, and it is 16 spawners, not a different rule.
 
     files = [
         ("map_property_coverage.csv", ["map", "exports", "blocks_with_properties"], map_rows),
@@ -241,6 +291,25 @@ def main():
                 w.writerow(header)
                 w.writerows(rows)
             print("wrote %s (%d rows)" % (path, len(rows)))
+
+    # `squad_scripts.csv` carries `\n` endings (every row of it, before and after this tool wrote it), so it is
+    # compared and written row by row rather than through the loop above, whose files are `\r\n`.
+    squad_path = os.path.join(outdir, "squad_scripts.csv")
+    want = "\n".join([",".join(SQUAD_COLUMNS)] +
+                     [",".join(str(c) for c in r) for r in squad_rows]) + "\n"
+    if args.check:
+        try:
+            have = open(squad_path, encoding="utf-8", newline="").read()
+        except FileNotFoundError:
+            have = None
+        if have != want:
+            stale.append("squad_scripts.csv")
+        print("%-4s %s (%d rows, %d spawners)" % ("ok" if have == want else "DIFF", "squad_scripts.csv",
+                                                  len(squad_rows), sum(r[2] for r in squad_rows)))
+    else:
+        with open(squad_path, "w", encoding="utf-8", newline="") as fh:
+            fh.write(want)
+        print("wrote %s (%d rows, %d spawners)" % (squad_path, len(squad_rows), sum(r[2] for r in squad_rows)))
     if args.check and stale:
         print("stale: %s" % ", ".join(stale))
         return 1

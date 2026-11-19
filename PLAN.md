@@ -1012,6 +1012,58 @@ other 38 rows.
       `inventory/action_parameters.csv` (384 rows: map, class, property, residue and census) +
       `docs/MAP_ACTION_PARAMETERS.md` (*What a placed action says about itself*) + `make action-parameters` + this
       note. 73 maps in 3.5 min; no boot.
+      **The last map-side artifact with no generator now has one, and `squad_scripts.csv` is 630 rows, not 614
+      (2026-11-19).** `docs/ARTIFACTS.md` kept this file in its orphan list because `make map-census` refused to
+      write it: the pass found 581 `(map, script)` pairs where the file had 614, and the note here read that as
+      "the enumeration that produced it was broader than a located property block". It was not broader. The 581
+      was the *same* reading before the name-table fix (it is **591** now, and 677 spawners), and the reading the
+      page's numbers come from -- the block the T3D writer reads, the candidate with the most properties, rather
+      than the coverage locator's earliest start -- finds **630 pairs over 719 spawner properties**. The whole
+      difference from the old file is its two `?` rows, `M17D` and `M21A`, the two maps whose name tables the
+      length rule truncated: they are now the **18 scripts** behind them (7 named once each plus a `noScript`
+      shared by 9, then 10 singletons), and `M17D`'s placeholder said 8 spawners where the map carries **16**, so
+      the "8-property residue" this item left open was 8 spawners the old enumeration never read -- not a second
+      rule, and not a count to reconcile by hand. The control is the 612 rows the two enumerations share: they
+      agree on every spawner count, `614 - 2 + 18 = 630` and `711 - 18 + 26 = 719`. Tool (`tools/map-census.py`
+      writes the fourth artifact in the file's own `\n` shape, and its dump-free `--check` fails on a
+      non-positive count or a duplicated `(map, script)` pair) + the artifact (630 rows) + `docs/T3D.md` (both
+      paragraphs about the `?` rows replaced by the measurement) + `docs/MAP_NAME_VALUES.md` and its CSV (the
+      value-only arm is 630 of 630 -- every one of them a data-only value in its own map) +
+      `docs/CLASS_DEFAULTS.md`'s roster bullet + the `make map-census` recipe echoing the filename + this note.
+      73 maps in 80 s; no boot.
+
+      **The three references the T3D could not resolve are one tie-break, and the writer now has none
+      (2026-11-19).** This item's page listed them as three defects -- `M02A``Trigger`/`Vector`
+      `ref:-17179869183`, `M15A` `MissionObjective`/`Max` `ref:7470`, `M17B` `StaticMeshActor`/`StaticMesh`
+      `ref:5758` -- and the values settle it: the parse began at a start whose *names* all resolve but whose
+      **references** do not, so the front of the next property was spent on an object index landing outside the
+      package (`M15A` and `M17B`, 4 and 3 bytes into the block) or inside the 17-byte record in front of it
+      (`M02A`, byte 1 of the export). `tools/map-to-t3d.py`'s `locate()` now prefers a candidate in which every
+      object reference resolves and only then the one with the most properties, and over the 73 maps that moves
+      **3 of 121,394** starts -- those three, no others, which is the control -- for **0** unresolved references,
+      **1,180,946** properties (3 fewer, the invented ones) and 49,212,006 bytes of T3D. Three synthetic
+      candidates in `--check` hold the order of the two tests (references first, then count). Tool (`locate()`
+      and its docstring) + the three censuses (`t3d_coverage.csv` 3 rows, `t3d_values.csv` 1, `t3d_structs.csv`
+      4) + `docs/T3D.md` (the defect table replaced by the rule, and the "820 unresolved references" bullet
+      struck with what settled it) + this note. 73 maps in 67 s; no boot.
+
+      **The array element type is a declaration, and it names 99.1% of the refused arrays (2026-11-19).** The
+      page's last open sentence said the element's type "lives in the class's `ArrayProperty` declaration, and this
+      reader carries a map's values, not its class declarations". The declaration is committed already
+      (`inventory/class_properties.csv`, `array<ParticleColorScale>`), and inheritance is the half that was
+      missing -- `SpriteEmitter.ColorScale` is declared on `ParticleEmitter` -- so the join walks
+      `inventory/classes.csv`'s super chain and names **4,470 of 4,510** refused struct arrays (14,532 of 14,576
+      records). The residue is named: **40** arrays whose property the chain does not declare as an array
+      (`Light.PrePivot`, `PathNode.Vector`, `StaticMeshActor.ColLocation`, `SoundTrigger.ZoneNumber`) are tags a
+      mislocated block start decodes as `Array` -- the same defect the locator tie-break fixes -- and **793**
+      payloads do not divide. Decoding stops at the width: `ParticleColorScale` is 14 bytes in 2,156 arrays and 17
+      in 203, so only a type whose width is a fact about the type is decoded, and **2,019** records are (**2,017**
+      `int` in 12 `array<int>` properties and 2 `float`); everything else is a typed comment. Tool
+      (`load_declarations`/`declared` walk the chain, `decode_elements` tests the width, `--arrays` writes the
+      census, `--check` holds the arithmetic against `t3d_values.csv` and drives the chain, the width test and
+      three locator tie-breaks synthetically) + `inventory/t3d_arrays.csv` (16 rows) + `docs/T3D.md` (a new
+      section and the generated block) + `make t3d` echoing the filename + this note. 73 maps in 67 s; no boot.
+
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an

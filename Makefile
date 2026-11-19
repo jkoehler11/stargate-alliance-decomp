@@ -648,6 +648,7 @@ compile-readiness-doc:
 
 map-census:
 	@$(PYTHON) tools/map-census.py "$(MAPS_DIR)" -o inventory
+	@echo "wrote inventory/squad_scripts.csv (map, squad_script, spawners)"
 
 # The extent locator takes the earliest parse, and a misparse's leading tag decodes as type 0 (`Invalid`), so the
 # block's start is decided by the tag's type instead. Reads the maps; no boot, no image.
@@ -736,7 +737,9 @@ prop-stream:
 t3d:
 	@$(PYTHON) tools/map-to-t3d.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/Maps" \
 		--out "$(or $(WORK),work)/extracted/maps" --stats inventory/t3d_coverage.csv \
-		--values inventory/t3d_values.csv --structs inventory/t3d_structs.csv
+		--values inventory/t3d_values.csv --structs inventory/t3d_structs.csv \
+		--arrays inventory/t3d_arrays.csv
+	@echo "wrote inventory/t3d_arrays.csv (element type, arrays, records, widths)"
 
 # docs/T3D.md's array/struct census block, rendered from the two artifacts `make t3d` writes.
 t3d-values-doc:
