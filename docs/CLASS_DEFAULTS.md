@@ -1444,6 +1444,12 @@ start to be the locator's on **every** class -- the renderer was 85 blocks short
 and that gap is now zero by gate. Corrupting one row's start makes the check fail naming the class
 (`StargateMenus.RightLockingMenuPanel: locator start '155', emitter start '999'`), so the gate bites.
 
+**The only value oracle the build ships is unchanged.** `--verify` reads the two `defaultproperties` sections the
+script text retains (`Core.Locale`, 50 shipped properties, and `GUI.SGVertScrollBar`, 13): 1 matched, 1 differ, 61
+shipped-only, both inside a block comment, exactly the counts this page quoted before the change. Neither class is
+among the 313 (`Locale` has no candidate; `SGVertScrollBar`'s two-property start is the same on both choosers), so
+the adoption moves no value the one oracle can check.
+
 **What the tree gains.** Eleven of the twelve container panels now have a file -- the one-tag child pointer at
 their record's end -- and `GUIListBox`, `CoopPlayerPanel` and the rest place their list from it. The emitter's
 subobject walk follows those references, so the rendered tree grows by **358 references and 1,024 inline
