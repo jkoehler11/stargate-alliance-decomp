@@ -78,7 +78,38 @@ def read_fstring(buf, start, size):
     return buf[start + used:start + size].split(b"\0")[0].decode("latin1", "replace")
 
 
-def read_value(buf, off, pkg, want_values):
+def struct_fields(buf, pkg, native_width=None, depth=0):
+    """A struct value -> its ordered fields, or `None` when the bytes are not a tagged block.
+
+    Every struct except the three `0x000795f0` skips (`Vector`, `Rotator`, `Color`) serialises as a
+    property block of its own: the field's name index, its tag and its value, terminated by `None`. That is
+    why `PointRegion` reads as `Zone` (one compact object index) + `iLeaf` (four bytes) + `ZoneNumber` (one)
+    on 79,925 properties whose width is 13 on 63,992 and 14 on 15,875 -- the width varies with the index
+    inside the first field, not with the struct's name, so no decoder may key on the name alone.
+
+    Two tests make a field list trustworthy, and they are the ones `decode_value` already runs for the
+    locator: the block has to end at `None` exactly on the value's last byte, and `tag-encode`'s walk has to
+    re-encode the same tags. A struct payload that fails either is left as bytes.
+    """
+    if depth > 4:
+        return None
+    try:
+        props, end, reason = read_block(buf, pkg, True, native_width=native_width, depth=depth)
+    except Exception:
+        return None
+    if reason != "None" or end != len(buf) or not props:
+        return None
+    try:
+        tags, wend, treason = tag_walk().walk(buf)
+        _equal, _terms, reasons = tag_walk().compare(buf, tags)
+    except Exception:
+        return None
+    if treason != "None" or wend != len(buf) or reasons:
+        return None
+    return props
+
+
+def read_value(buf, off, pkg, want_values, native_width=None, depth=0):
     """Return (entry dict, new offset) for one property value starting at `off` (the info byte)."""
     info = buf[off]
     off += 1
@@ -110,14 +141,17 @@ def read_value(buf, off, pkg, want_values):
         # width is what left Location and Squad empty in the first attempt at this.
         if t == 10:
             sn = entry["struct"]
-            if sn == "Vector" and size == 12:
-                entry["value"] = struct.unpack_from("<3f", buf, start)
-            elif sn == "Rotator" and size == 12:
-                entry["value"] = struct.unpack_from("<3i", buf, start)
-            elif sn == "Color" and size >= 4:
-                entry["value"] = tuple(buf[start:start + 4])
-            elif sn == "PointRegion" and size >= 13:
-                entry["value"] = None
+            width = NATIVE_WIDTH if native_width is None else native_width
+            if sn in width and size == width[sn]:
+                # The three native bodies: a packed tuple, in the order the serialiser writes it.
+                if sn == "Color":
+                    entry["value"] = tuple(buf[start:start + 4])
+                elif sn == "Rotator":
+                    entry["value"] = struct.unpack_from("<3i", buf, start)
+                else:
+                    entry["value"] = struct.unpack_from("<3f", buf, start)
+            else:
+                entry["fields"] = struct_fields(buf[start:start + size], pkg, width, depth + 1)
         elif t in (5, 6):
             idx, used = read_index(buf, start)
             entry["index_bytes"] = used - start
@@ -167,14 +201,14 @@ def resolve_ref(pkg, ref):
         return "ref:%d" % ref
 
 
-def read_block(buf, pkg, want_values=False, limit=2000):
+def read_block(buf, pkg, want_values=False, limit=2000, native_width=None, depth=0):
     """Parse the property block at the start of `buf`; returns (properties, end offset, reason)."""
     off, props = 0, []
     while off < len(buf) and len(props) < limit:
         name, off = read_index(buf, off)
         if name == 0 or pkg.name(name) == "None":
             return props, off, "None"
-        entry, off = read_value(buf, off, pkg, want_values)
+        entry, off = read_value(buf, off, pkg, want_values, native_width, depth)
         entry["name"] = pkg.name(name)
         props.append(entry)
         if off > len(buf):
