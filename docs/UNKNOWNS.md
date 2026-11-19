@@ -5065,15 +5065,32 @@ the placement carries a property the shipped `GamePlay.u` does not declare -- wh
 against a class revision with one more property looks like, because a map's objects keep the tags they were saved
 with while the class definition ships separately.
 
-**What would settle it** — which revision, and whether the engine tolerates it:
+**Answered — the name, the placement, and the engine's path (2026-11-19).** `tools/tag-origin.py` walks every
+`System/*.u` name table with its class texts and every `Maps/*.unr` table:
 
-* `ACTION_SetIMusic`'s own body. If its text still refers to an end type (a call to
-  `IMusicController.SetMusicEndType`, which exists and is 52 bytes of script), the property was renamed or folded
-  into `NewState` and the maps predate the change; if it never mentions one, the tag is a leftover the class no
-  longer has any code for. The decompiled `GamePlay` bodies are the read, not the payload.
-* `GamePlay.u`'s name table. A name that survives there only because a class default still spells it is a removed
-  property; a name with no remaining referent is an authoring leftover. The package's own name table is already
-  read by `tools/ue2pkg.py` (`make package-names`), so this needs no boot.
-* Run time: whether the property deserialiser skips an unknown tag by its info-byte size (one byte here) or refuses
-  the object. The reader in `tools/prop-stream.py` skips by that size because the stream requires it; the build's
-  `AActor`/`UObject` `Serialize` is where that becomes a fact, and no string in the XBE has been tied to it yet.
+* **`GamePlay.u` cannot hold the name at all.** `EndType` is absent from its 1,201-name table and no class text
+  in the package spells it, so no class that package ships can declare the property or read it. The name is in
+  `Engine`'s table at index 5959, declared by `Engine.IMusicActor`, and spelled by three of `Engine`'s class
+  texts (`IMusicActor`, `IMusicController`, `PlayerController`). The action's own text never refers to an end
+  type: `ACTION_SetIMusic.InitActionFor` calls only `IMusicController.RequestState` and
+  `RequestStartActorTag`, and the end type is set on the other path, `PlayerController.ClientSetIMusicState`
+  → `IMusicController.SetMusicEndType`, which no `ACTION_SetIMusic` placement reaches — so the shipped class
+  has no code for the property, and it was neither renamed nor folded into `NewState`.
+* **The two maps are the only other holders.** Exactly 2 of 73 map packages hold `EndType` in their own table,
+  and they are the two that state the tag (`M02A`, `M14A`). A map can only write a name its own table holds,
+  so the tag was saved against a revision that declared the property — which is why the class definition can
+  drop it without breaking the placement.
+* **The engine skips it, and the object survives.** The tag walk `0x0003bdc0` searches the object's property
+  list, logs `Property %s of %s not found` (the string at `0x4d4c14`, pushed at `0x3beb1`), takes the shared
+  refusal handler at `0x3c155`, logs `Skipping %i bytes of type %i` (`0x4d4a20`, pushed at `0x3c187`) unless
+  the name is `XLevel`, reads the tag's `Size` bytes one at a time (`0x37040` in the loop at `0x3c19a`) and
+  re-enters the tag loop at `0x3be40` (`docs/NATIVE_PROPERTIES.md` §4). All five tags are a `Byte` of size 1
+  reading `IMEND_ONESHOT`, `LevelInfo.EIMusicEndType`'s second member, and each block refuses no other name
+  (`others_refused=0`), so the placement's other four parameters still apply and only the end-type intent is
+  lost.
+
+**Status.** Answered: the tag is a property the shipped `GamePlay.u` has no name for, written by the two maps
+that state it; all five values are `IMEND_ONESHOT`; and the engine's unknown-name path is measured, so the
+leftover costs the tag and not the object. `inventory/tag_origin.csv` is the artifact and
+`docs/MAP_ACTION_PARAMETERS.md` renders it; the revision itself cannot be named further, because the tag is
+its only trace in the build.

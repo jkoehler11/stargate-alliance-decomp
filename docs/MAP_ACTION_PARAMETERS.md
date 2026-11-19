@@ -125,7 +125,7 @@ A block is located by where it *ends*: every property boundary in the export's f
 | `M20A` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `StaticMeshActor`, `StaticMeshInstance584`, `Region` | none |
 | `M20C` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `Group`, `SpriteEmitter198`, `Level` | none |
 
-**The five left are one name on one class.** Every remaining refusal is `EndType` on `ACTION_SetIMusic`, in two maps; the name is a declared property of `Engine.IMusicActor` (`UByteProperty`, enum `LevelInfo.EIMusicEndType`), and `ACTION_SetIMusic`'s own chain declares four names, none of them `EndType`. The tag sits *last* in a block whose other names are all declared, its value is a one-byte enum index, and the same class's other placements in the same maps read back as exactly its four names -- so the block is where it belongs and the tag is the residue: a placement authored against a class revision that declared one more property than the shipped `GamePlay.u` does. The engine's property reader skips a tag it cannot resolve by the size in its info byte, which is what makes the leftover harmless at run time; what this build's `Serialize` does with it is not measured here.
+**The five left are one name on one class.** Every remaining refusal is `EndType` on `ACTION_SetIMusic`, in two maps; the name is a declared property of `Engine.IMusicActor` (`UByteProperty`, enum `LevelInfo.EIMusicEndType`), and `ACTION_SetIMusic`'s own chain declares four names, none of them `EndType`. The tag sits *last* in a block whose other names are all declared, its value is a one-byte enum index, and the same class's other placements in the same maps read back as exactly its four names -- so the block is where it belongs and the tag is the residue: a placement authored against a class revision that declared one more property than the shipped `GamePlay.u` does. The engine's property reader skips a tag it cannot resolve by the size in its info byte, which is what makes the leftover harmless at run time -- `inventory/tag_origin.csv` measures the name's origin and `docs/NATIVE_PROPERTIES.md` §4 the walk that skips it.
 
 | map | class | sequence slot | refused name |
 |---|---|---:|---|
@@ -244,8 +244,57 @@ carries the condition its map offers and what the wait does with it, `trigger_un
 the placements whose default is a no-op and a zero-second timer. `block_moved` is the re-location's own record: the
 map, the class, the slot, both starts and the names it recovered.
 
-What is left is the five `EndType` tags, and it is a question about `GamePlay.u`, not about the maps: `ACTION_SetIMusic`
-declares four properties and two maps' placements state a fifth that belongs to `Engine.IMusicActor`. Two routes
-would settle which revision wrote them — the class's own body (does `ACTION_SetIMusic`'s text still refer to an end
-type, which the decompiled `GamePlay` bodies would show) and the shipped `.u`'s name table (a name that survives in
-`GamePlay` only because a default still spells it is a removed property, not an unknown one).
+What is left of the refusal list is answered, and it is a fact about `GamePlay.u` rather than about the maps: `Engine`
+holds the name in its table, `Engine.IMusicActor` declares it, and three of `Engine`'s class texts spell it, while
+`GamePlay.u` holds neither the string nor a way to spell it -- so no class that package ships can declare the
+property. The only other packages whose tables hold `EndType` are the two maps that state the tag, which is the
+shape of a placement written against a revision that had the property. The engine does not refuse it: the tagged
+walk logs it as not found, skips its one-byte size and reads the next tag (`docs/NATIVE_PROPERTIES.md` §4), so a
+map saved that way still loads and the placement's other four parameters still apply. `UNKNOWNS.md` U29 carries
+the reading; the block below is `inventory/tag_origin.csv`, and `make tag-origin` regenerates it.
+
+<!-- generated:tag-origin -->
+**`EndType` is a name `Engine.IMusicActor` declares, no `GamePlay` class can even spell, and the two maps wrote it themselves: the five refused tags are a placement against a class revision this build no longer ships, and the engine reads them as a skip, not a refusal.**
+
+`inventory/tag_origin.csv` walks every `System/*.u` name table (18 packages, 37094 names), every `Maps/*.unr` table (73 maps) and every class text in the former. **1 of 18** packages hold the tag's name, **1** spell it in a class text, and **2 of 73** maps hold it -- the two the refused tags sit in. A map can only write a name its own table holds, and a class can only declare one its package's table holds, so `GamePlay.u`'s table is the whole answer: the property is not there.
+
+| package | names | holds `EndType` | classes declaring | class texts spelling it |
+|---|---|---|---|---|
+| `AmbientCreatures` | 313 | no | - | 0 |
+| `Core` | 472 | no | - | 0 |
+| `Editor` | 299 | no | - | 0 |
+| `Engine` | 10406 | index 5959 | IMusicActor | 3 |
+| `Fire` | 173 | no | - | 0 |
+| `GUI` | 2116 | no | - | 0 |
+| `GamePlay` | 1201 | no | - | 0 |
+| `IpDrv` | 445 | no | - | 0 |
+| `Sharpeffects` | 856 | no | - | 0 |
+| `StargateContent` | 6970 | no | - | 0 |
+| `StargateGame` | 8029 | no | - | 0 |
+| `StargateMenus` | 1016 | no | - | 0 |
+| `StargateVehicles` | 1848 | no | - | 0 |
+| `Stargateeffects` | 585 | no | - | 0 |
+| `UDebugMenu` | 652 | no | - | 0 |
+| `UPreview` | 164 | no | - | 0 |
+| `UWindow` | 1388 | no | - | 0 |
+| `UnrealEd` | 161 | no | - | 0 |
+
+The maps that hold the name in their own table:
+
+| map | names | `EndType` index |
+|---|---|---|
+| `M02A` | 4782 | 702 |
+| `M14A` | 4527 | 302 |
+
+**The five placements, read with the shipped locator and its declared-name repair.**
+
+| map | slot | class | tag type | size | value |
+|---|---|---|---|---|---|
+| `M02A` | 1 | `ACTION_SetIMusic` | Byte | 1 | IMEND_ONESHOT |
+| `M14A` | 1 | `ACTION_SetIMusic` | Byte | 1 | IMEND_ONESHOT |
+| `M14A` | 1 | `ACTION_SetIMusic` | Byte | 1 | IMEND_ONESHOT |
+| `M14A` | 3 | `ACTION_SetIMusic` | Byte | 1 | IMEND_ONESHOT |
+| `M14A` | 4 | `ACTION_SetIMusic` | Byte | 1 | IMEND_ONESHOT |
+
+`LevelInfo.EIMusicEndType` declares `IMEND_LOOP`, `IMEND_ONESHOT`; the five tags read IMEND_ONESHOT=5, so every one names a member of the enum the *declaring* class carries, and none is out of range. Each tag's `others_refused` is 0: the block start is the shipped one, and the tag is the only name the shipped `GamePlay.u` cannot declare. What the engine does with it is `docs/NATIVE_PROPERTIES.md` §4/§6.
+<!-- /generated:tag-origin -->
