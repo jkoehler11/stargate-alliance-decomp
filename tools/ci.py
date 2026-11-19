@@ -340,6 +340,30 @@ def check_map_name_values_doc():
         ok(name, out[-1].replace("ok   map-name-values: ", "") if out else "")
 
 
+def check_value_layouts_doc():
+    """docs/NATIVE_PROPERTIES.md's value-layout block must match the committed artifact."""
+    name = "value-layouts-doc"
+    r = subprocess.run([sys.executable, repo("tools", "value-layouts.py"), "--check-doc",
+                        "docs/NATIVE_PROPERTIES.md"], capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   value-layouts: ", "") if out else "")
+
+
+def check_tag_encodings_doc():
+    """The tag-encoding block above it is gated the same way -- it shipped without this check."""
+    name = "tag-encodings-doc"
+    r = subprocess.run([sys.executable, repo("tools", "tag-encode.py"), "--check-doc",
+                        "docs/NATIVE_PROPERTIES.md"], capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   ", "") if out else "")
+
+
 def check_class_text_comments_doc():
     """docs/PACKAGE_SCRIPT_TEXT.md's commented-out-revision block must match the committed artifact."""
     name = "class-text-comments-doc"
@@ -696,6 +720,8 @@ def main():
     check_t3d_values_doc()
     check_map_name_values_doc()
     check_class_text_comments_doc()
+    check_tag_encodings_doc()
+    check_value_layouts_doc()
     check_native_count_closure_doc()
     check_lipsinc_index()
     check_addresses_in_image()

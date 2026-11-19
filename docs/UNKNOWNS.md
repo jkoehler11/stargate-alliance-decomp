@@ -1435,8 +1435,17 @@ size class takes the five implied widths before the explicit ones (0 exceptions 
 and fourteen four-byte among the shipped tags). The nine checkpoints are the control and the walk finds 1,216
 more tags than the older `Sg1Tool save` table. `docs/NATIVE_PROPERTIES.md` §6.
 
-**One residual:** the value's internal layout (a `Str`'s prefix, an `Array`'s count, a `Struct`'s members) is
-not decoded; only its width per type is measured.
+**The value half measured 2026-11-19.** `0x00038c30` dispatches `[property+0xa0]`, and each property class's
+`SerializeItem` body gives its value a rule: four bytes for `Int`/`Float`/`Pointer`, one for `Byte`, no byte
+for a `Bool` in a tag, a compact index for `Object`/`Class`/`Name`, an index then a name for a delegate, a
+compact length then that many characters for a `Str` (the prefix counts the NUL, so an empty string is one
+`0x00` byte), a compact count then the `Inner`'s rule for an `Array`, and the `Inner`'s rule `ArrayDim` times
+with no count for a `FixedArray`. A `Struct` is the one branch that decides a format: `0x000795f0` sends
+`Vector`, `Rotator` and `Color` (names `0x57`/`0x58`/`0x5a`) to a native body and every other struct to the
+tagged walk. `tools/value-layouts.py` decodes **1,211,640 shipped values (82 files)**: 1,136,029 consume
+exactly their declared `Size`, 9,001 do not, and the residue is a parse rather than a layout -- 2,487 blocks
+pass the header test with a value their class cannot produce, and 2,480 of them carry a later start whose
+whole block decodes. `docs/NATIVE_PROPERTIES.md` §6.
 
 ## U11. Which D3D8 device caps the renderer asks for
 
