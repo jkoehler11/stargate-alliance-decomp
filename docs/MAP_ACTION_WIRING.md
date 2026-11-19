@@ -11,7 +11,7 @@ left two things open in its own words: *which sequence runs which action*, and *
 read.
 
 <!-- generated:action-wiring -->
-**16886 of the 18510 actions a map places are named by a sequence's `Actions` array, and 1624 (8.8%) are named by none** -- so a placement is not a run. The arrays are the only thing in the package that orders a level's logic: 2694 arrays over 8 classes hold 18379 references, 16886 of which resolve to a placed action.
+**18498 of the 18510 actions a map places are named by a sequence's `Actions` array, and 12 (0.1%) are named by none** -- so a placement is not a run. The arrays are the only thing in the package that orders a level's logic: 2939 arrays over 8 classes hold 20199 references, 18498 of which resolve to a placed action.
 
 | measure | answer |
 |---|---|
@@ -19,48 +19,48 @@ read.
 | exports over those maps | **194190** |
 | placed actions, by class hierarchy | **18510** over 83 classes |
 | placed actions, by the `ACTION_` spelling | **18283** |
-| `Actions` arrays | **2694** on 8 classes |
+| `Actions` arrays | **2939** on 8 classes |
 | holders with an empty array | **0** |
-| references in those arrays | **18379** |
-| references that resolve to a placed action | **16886** |
-| references that name `None` -- an empty slot in an order | **21** |
-| references to a `MatAction` (the scene family) | **1472** |
+| references in those arrays | **20199** |
+| references that resolve to a placed action | **18498** |
+| references that name `None` -- an empty slot in an order | **22** |
+| references to a `MatAction` (the scene family) | **1679** |
 | references to anything else placed | **0** |
 | references to an import (never a placement) | **0** |
 | references past the export table (dangling) | **0** |
 | actions named by more than one array | **0** |
-| actions no array names | **1624** in 49 maps |
+| actions no array names | **12** in 2 maps |
 
 Every reference resolves inside its own map: the array holds 1-based export indices, so the wiring needs no name resolution and no cross-package join. `Actions` sits on 8 different classes, so the ordered lists are not a property of one actor class -- `ScriptedSequence` and its `ScriptedTrigger`/`TeamScriptedSequence` subclasses carry most of them, and the census row names how many holders are empty (a sequence that exists and runs nothing).
 
-**`Actions` is two properties, not one.** 1472 of the 18379 references leave the scripted-action family and land on `MatAction` subclasses -- the scene manager's own `Actions` array, which orders a level's cutscene camera and animation steps. A join on the property name alone would read a camera move as a mission action. Both families are listed apart for that reason, and the holder table names which classes carry each.
+**`Actions` is two properties, not one.** 1679 of the 20199 references leave the scripted-action family and land on `MatAction` subclasses -- the scene manager's own `Actions` array, which orders a level's cutscene camera and animation steps. A join on the property name alone would read a camera move as a mission action. Both families are listed apart for that reason, and the holder table names which classes carry each.
 
 ### By action class
 
 | class | placed | named by an array | never named | shared |
 |---|---:|---:|---:|---:|
-| `ACTION_WaitForEvent` | 2722 | 2470 | 252 | 0 |
-| `ACTION_TriggerEvent` | 2658 | 2411 | 247 | 0 |
-| `ACTION_WaitForTimer` | 2216 | 2016 | 200 | 0 |
-| `ACTION_SetAlertness` | 1404 | 1285 | 119 | 0 |
-| `ACTION_MoveToPoint` | 1266 | 1171 | 95 | 0 |
-| `ACTION_SetViewTarget` | 901 | 832 | 69 | 0 |
-| `ACTION_Talk` | 719 | 643 | 76 | 0 |
-| `ACTION_GotoAction` | 580 | 536 | 44 | 0 |
-| `ACTION_SetBotScript` | 557 | 505 | 52 | 0 |
-| `ACTION_Run` | 423 | 389 | 34 | 0 |
-| `ACTION_TeleportToPoint` | 326 | 305 | 21 | 0 |
-| `ACTION_LeaveSequence` | 301 | 270 | 31 | 0 |
-| `ACTION_SetIMusic` | 281 | 267 | 14 | 0 |
-| `ACTION_EndSection` | 279 | 256 | 23 | 0 |
-| `ACTION_Walk` | 278 | 258 | 20 | 0 |
-| `ACTION_SquadMoveInFormation` | 271 | 240 | 31 | 0 |
-| `ACTION_Crouch` | 269 | 251 | 18 | 0 |
-| `ACTION_PlayAmbientSound` | 247 | 209 | 38 | 0 |
-| `ACTION_IfCondition` | 244 | 224 | 20 | 0 |
-| `Action_PLAYANIM` | 227 | 210 | 17 | 0 |
-| `ACTION_ShootTarget` | 211 | 193 | 18 | 0 |
-| `ACTION_PlaySound` | 180 | 170 | 10 | 0 |
+| `ACTION_WaitForEvent` | 2722 | 2722 | 0 | 0 |
+| `ACTION_TriggerEvent` | 2658 | 2658 | 0 | 0 |
+| `ACTION_WaitForTimer` | 2216 | 2214 | 2 | 0 |
+| `ACTION_SetAlertness` | 1404 | 1402 | 2 | 0 |
+| `ACTION_MoveToPoint` | 1266 | 1264 | 2 | 0 |
+| `ACTION_SetViewTarget` | 901 | 899 | 2 | 0 |
+| `ACTION_Talk` | 719 | 719 | 0 | 0 |
+| `ACTION_GotoAction` | 580 | 579 | 1 | 0 |
+| `ACTION_SetBotScript` | 557 | 557 | 0 | 0 |
+| `ACTION_Run` | 423 | 423 | 0 | 0 |
+| `ACTION_TeleportToPoint` | 326 | 326 | 0 | 0 |
+| `ACTION_LeaveSequence` | 301 | 301 | 0 | 0 |
+| `ACTION_SetIMusic` | 281 | 281 | 0 | 0 |
+| `ACTION_EndSection` | 279 | 279 | 0 | 0 |
+| `ACTION_Walk` | 278 | 278 | 0 | 0 |
+| `ACTION_SquadMoveInFormation` | 271 | 270 | 1 | 0 |
+| `ACTION_Crouch` | 269 | 268 | 1 | 0 |
+| `ACTION_PlayAmbientSound` | 247 | 247 | 0 | 0 |
+| `ACTION_IfCondition` | 244 | 244 | 0 | 0 |
+| `Action_PLAYANIM` | 227 | 227 | 0 | 0 |
+| `ACTION_ShootTarget` | 211 | 211 | 0 | 0 |
+| `ACTION_PlaySound` | 180 | 180 | 0 | 0 |
 
 **The `ACTION_` spelling is not the family.** 227 of the 18510 placements carry a class the prefix cannot see (`Action_PLAYANIM`), so a census that counts by name reads them as nothing; the family here is `inventory/classes.csv`'s `super` chain reaching `ScriptedAction`, which is 83 concrete classes.
 
@@ -70,11 +70,11 @@ Every reference resolves inside its own map: the array holds 1-based export indi
 
 | class carrying `Actions` | arrays |
 |---|---:|
-| `TeamScriptedSequence` | 1141 |
-| `ScriptedTrigger` | 1073 |
-| `SceneManager` | 252 |
-| `TriggeredScript` | 193 |
-| `UnrealScriptedSequence` | 25 |
+| `TeamScriptedSequence` | 1246 |
+| `ScriptedTrigger` | 1171 |
+| `SceneManager` | 283 |
+| `TriggeredScript` | 203 |
+| `UnrealScriptedSequence` | 26 |
 | `SGSceneManager` | 5 |
 | `ScriptedSpawner` | 4 |
 | `ScriptedSequence` | 1 |
@@ -83,18 +83,18 @@ Every reference resolves inside its own map: the array holds 1-based export indi
 
 | map | actions | named | never named | arrays |
 |---|---:|---:|---:|---:|
-| `M14C` | 376 | 254 | 122 | 32 |
-| `M13B` | 239 | 132 | 107 | 15 |
-| `M19C` | 171 | 82 | 89 | 17 |
-| `M14A` | 454 | 370 | 84 | 54 |
-| `M12D` | 323 | 247 | 76 | 53 |
-| `M15E` | 213 | 146 | 67 | 23 |
-| `M12F` | 115 | 54 | 61 | 15 |
-| `M13C` | 457 | 402 | 55 | 38 |
-| `M12B` | 298 | 245 | 53 | 44 |
-| `M10A` | 551 | 499 | 52 | 88 |
+| `M15A` | 539 | 530 | 9 | 77 |
+| `M12F` | 115 | 112 | 3 | 29 |
+| `CTF-Abydos` | 26 | 26 | 0 | 8 |
+| `CTF-LostCity` | 0 | 0 | 0 | 0 |
+| `DM-Ha'tak` | 20 | 20 | 0 | 5 |
+| `DM-KelownanTrain` | 31 | 31 | 0 | 8 |
+| `DM-Langara` | 3 | 3 | 0 | 1 |
+| `DM-LostCity` | 0 | 0 | 0 | 0 |
+| `DM-Subterranean` | 21 | 21 | 0 | 2 |
+| `DM-Tomb` | 11 | 11 | 0 | 4 |
 
-Census: maps=73;actions=18510;referenced=16886;orphan=1624;holder_classes=8;arrays=2694;refs=18379.
+Census: maps=73;actions=18510;referenced=18498;orphan=12;holder_classes=8;arrays=2939;refs=20199.
 <!-- /generated:action-wiring -->
 
 ## How an order is stored, and why it is one read

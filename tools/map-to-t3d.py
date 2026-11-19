@@ -8,13 +8,14 @@ per actor, with the properties written the way the editor writes them.
     python3 tools/map-to-t3d.py DUMP/Maps/M02A.unr --out $WORK/extracted/maps
     python3 tools/map-to-t3d.py DUMP/Maps --out $WORK/extracted/maps --stats inventory/t3d_coverage.csv
 
-**The locator tests the references, not only the names** (2026-11-19). `prop_stream.find_block` takes the
-candidate block with the most properties and requires its *names* to resolve; a writer that decodes values needs
-one more test, because a tag parse that consumes a byte or two of the next property still yields a plausible
-block whose object reference lands nowhere. `locate()` prefers a candidate in which every object reference
-resolves, then the most properties: it moves **3** of the 73 maps' 121,394 located starts and takes the
-`ref:` count from **3 to 0**, and those three are exactly the three `docs/T3D.md` used to list as separate
-defects.
+**The writer uses the reader's locator** (2026-11-19). `locate()` used to carry a rule of its own -- the start
+whose block spends every object reference, then the most properties. `prop_stream.find_block` now runs a
+stronger test (every checkable value consumes exactly its declared `Size`), and the writer delegates to it with
+the prefix pinned to 64 bytes: no map actor's block starts later than 32 bytes in, while the only exports a
+wider look finds are `StaticMeshInstance`s whose payload is a packed native record. The block starts move on **4,133 of
+121,394** exports, properties fall by **6,511** (an invented tag is not a property), the struct census drops
+from **79 names to 12** -- 11 the classes declare plus one named residue -- and file size rises 0.7% because the
+properties that survive carry values where the invented ones did not.
 
 **An array is its elements** (2026-11-19). An `Array` property's payload is a compact count followed by exactly
 that many compact indices when its elements are object references — the rule `tools/action-wiring.py` measured
@@ -198,37 +199,28 @@ def fmt_element(value):
 
 
 def locate(data, pkg, ps):
-    """The actor's property block, for a reader that decodes values.
+    """The actor's property block, located by the reader's own value test.
 
-    `prop_stream.find_block` picks the candidate with the most properties and tests only that its *names*
-    resolve. That is the right rule for a census, and it is one test short of what a writer needs: a tag parse
-    can consume a byte or two of the next property and still produce a plausible block, and the value it then
-    decodes is a reference that lands nowhere (`ref:<n>` in the text, or `ref:-17179869183` for a struct read as
-    an object). Testing the second half -- every object reference in the block lands in the package's own tables
-    -- moves **three** block starts in the 73 maps and resolves **all three** references that used to fall
-    through; no other export's start moves, which is the control that makes it a tie-break and not a new parse.
+    This writer used to carry a second locator: the start whose block spends every object reference in the
+    package's own tables, then the most properties. `prop_stream.find_block` now runs a stronger test -- every
+    checkable value has to consume exactly the `Size` its tag declares -- and that is the test a *writer* needs:
+    a parse that begins inside a struct payload still ends at the export's end and still resolves every name,
+    so only the values can tell it is not a block.
+
+    The prefix is pinned to the reader's 64-byte window for the same reason. Left to itself `find_block` looks
+    one window further when nothing inside decodes, which is right for a class header; no map actor's block
+    starts later than 32 bytes in (`inventory/actor_prefix_census.csv`), so the only exports a wider look finds
+    are `StaticMeshInstance`s, whose payload is a packed native record with no tagged block at all -- the tags
+    read out of it are two bytes of a transform.
     """
-    best = None
-    for start in range(0, min(len(data), 64)):
-        try:
-            names, end, reason = ps.read_block(data[start:], pkg, False)
-        except Exception:
-            continue
-        if reason != "None" or len(names) < 2:
-            continue
-        if any(p["name"] == "?" for p in names):
-            continue
-        if start + end != len(data):
-            continue
-        props, _e, _r = ps.read_block(data[start:], pkg, True)
-        stray = sum(1 for p in props if p["type"] in ("Object", "Class")
-                    and p.get("ref") is not None and not resolves(pkg, p["ref"]))
-        key = (stray, -len(props))
-        if best is None or key < best[0]:
-            best = (key, len(props), start, props)
-    if best is None:
+    found = ps.find_block(data, pkg, 2, True, window=getattr(ps, "WINDOW", 64))
+    if not found:
         return None
-    return best[1], best[2], best[3]
+    _count, start, _props = found
+    props, _end, _reason = ps.read_block(data[start:], pkg, True)
+    if not props:
+        return None
+    return len(props), start, props
 
 
 def drive_map(path, outdir, ps, parent=None, types=None, verbose=False):
@@ -326,13 +318,55 @@ class _Pkg:
 
 
 class _Ps:
-    """Canned blocks keyed by the first byte of the buffer, so the tie-break is driven without a package."""
+    """Canned blocks keyed by the first byte of the buffer, so the delegation is driven without a package.
 
-    def __init__(self, table):
+    The value test itself is `prop-stream`'s and is proved there; what this writer has to prove is that it hands
+    the location over to it -- with the writer's pinned window -- and writes the block *it* chose rather than a
+    second rule of its own.
+    """
+
+    WINDOW = 64
+
+    def __init__(self, table, start=0):
         self.table = table
+        self.start = start
+
+    def find_block(self, data, pkg, min_props=2, values=True, native_width=None, window=None):
+        props = [dict(p) for p in self.table[data[self.start]]]
+        return len(props), self.start, props
 
     def read_block(self, buf, pkg, want_values=False):
         return [dict(p) for p in self.table[buf[0]]], len(buf), "None"
+
+
+class _NoBlock:
+    """A reader that finds no block, so the writer cannot fall back to a rule of its own."""
+
+    WINDOW = 64
+
+    def find_block(self, data, pkg, min_props=2, values=True, native_width=None, window=None):
+        return None
+
+
+def struct_types(path=DECLARED):
+    """Every struct name the corpus declares: a `UStructProperty`'s friendly type in class_properties.csv.
+
+    A tag's struct field is a *name index*, so a block that begins inside a value reads whatever word sits at
+    that index as the struct's type. Only a declaration can say whether the word is a type.
+    """
+    out = set()
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r["kind"] == "UStructProperty" and r["friendly_type"]:
+                out.add(r["friendly_type"])
+    return out
+
+
+# The one struct name no declaration carries, with the property count it was measured at. `M07A`'s `Cubemap`
+# export (#2149) appends its mip tail natively, so no start's block can end at the export's end; the value test
+# finds nothing and the header's choice stands, reading `Tag` as the tag's struct-name index. The count is pinned
+# rather than the name allowed, so a second one -- or a bigger one -- trips the gate.
+RESIDUE_STRUCTS = {"Tag": 1}
 
 
 def check(values, structs, stats, arrays=ARRAYS):
@@ -367,6 +401,21 @@ def check(values, structs, stats, arrays=ARRAYS):
                         % (structs, sum(int(r["decoded"]) for r in srows), tot["struct_decoded"]))
     if any(not r["sizes"] for r in srows):
         problems.append("%s: a struct row carries no size" % structs)
+    # A struct name is a *type*, and the corpus declares 55 of them (`class_properties.csv`, a
+    # `UStructProperty`'s friendly type). A name in this census that no declaration carries is a name-table
+    # word a mislocated block start read as the tag's struct-name index -- the earlier reading of these 73
+    # maps had 79 rows and 67 of them were actor instance names (`StaticMeshActor448`, `ACTION_Talk1`),
+    # property names (`ColLocation`) and `X`/`Y`/`Z` read out of a payload. `?` is the one allowed residue:
+    # it is a name index the table does not hold. This gate fails on that reading, which is what makes it a
+    # gate and not a description.
+    declared_types = struct_types()
+    stray = [(r["struct"], int(r["properties"])) for r in srows
+             if r["struct"] not in declared_types and r["struct"] != "?"
+             and RESIDUE_STRUCTS.get(r["struct"]) != int(r["properties"])]
+    if stray:
+        problems.append("%s: %d struct name(s) no property declaration names (%d properties): %s"
+                        % (structs, len(stray), sum(n for _s, n in stray),
+                           ", ".join(s for s, _n in stray[:8])))
     if stats:
         crows = read_csv(stats)
         if [r["map"] for r in crows] != [r["map"] for r in vrows]:
@@ -407,28 +456,29 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("decode_obj_array accepts an index past the export table")
     if element_layout(b"\x02" + b"\x00" * 8, ps) != (2, 4):
         problems.append("element_layout does not divide 8 bytes over 2 elements")
-    # The locator's tie-break: a candidate whose object references land nowhere loses to one whose references
-    # resolve, whatever their property counts; between two clean candidates the longer block still wins.
+    # The locator is the reader's, so these assertions are the delegation: the start `find_block` returned is
+    # the one written, wherever in the prefix it sits, and no start is invented when it returns nothing. The
+    # value test's own bite is `prop-stream`'s; `t3d_coverage.csv` counts the references a wrong start would
+    # leave, so this file does not need a second rule to test.
     data = b"\x00\x01" + b"\x00" * 8
-    stray = [{"name": "A", "type": "Object", "ref": 9}, {"name": "B", "type": "Int"}]
     clean = [{"name": "A", "type": "Object", "ref": 1}, {"name": "B", "type": "Int"}]
-    got = locate(data, _Pkg(2), _Ps({0: stray, 1: clean}))
+    got = locate(data, _Pkg(2), _Ps({0: clean}, 0))
+    if got is None or got[1] != 0 or len(got[2]) != len(clean):
+        problems.append("locate does not write the block find_block chose")
+    got = locate(data, _Pkg(2), _Ps({1: clean}, 1))
     if got is None or got[1] != 1:
-        problems.append("locate prefers a block with a reference that lands nowhere")
-    got = locate(data, _Pkg(2), _Ps({0: stray + [{"name": "C", "type": "Int"}], 1: clean}))
-    if got is None or got[1] != 1:
-        problems.append("locate takes more properties over resolving references")
-    got = locate(data, _Pkg(2), _Ps({0: clean, 1: clean + [{"name": "C", "type": "Int"}]}))
-    if got is None or got[1] != 1:
-        problems.append("locate does not take the longer of two clean blocks")
+        problems.append("locate does not take a start the reader found past the first byte")
+    if locate(data, _Pkg(2), _NoBlock()) is not None:
+        problems.append("locate invents a block when the reader finds none")
     if problems:
         for p in problems:
             print("FAIL %s" % p)
         return 1
     print("ok   t3d-values: %d maps, %d arrays (%d object with %d elements, %d refused), %d struct properties "
-          "over %d struct names, %d decoded" % (len(vrows), tot["arrays"], tot["object_arrays"],
-                                                tot["object_elements"], tot["arrays_refused"], tot["struct_props"],
-                                                len(srows), tot["struct_decoded"]))
+          "over %d struct names (%d declared), %d decoded"
+          % (len(vrows), tot["arrays"], tot["object_arrays"], tot["object_elements"], tot["arrays_refused"],
+             tot["struct_props"], len(srows), sum(1 for r in srows if r["struct"] in struct_types()),
+             tot["struct_decoded"]))
     return 0
 
 

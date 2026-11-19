@@ -26,7 +26,7 @@ reads), then a per-map row and one `census` row per kind. No placement name and 
 class and a slot index are enough to find the placement in the dump.
 
 <!-- generated:action-defects -->
-**19 branch placements in the 73 maps are decided by nothing but their own default, and 0 `ACTION_IfRandomPct` slots are a coin the placement already called -- so `FRand()` decides the 36 that are left.**
+**20 branch placements in the 73 maps are decided by nothing but their own default, and 0 `ACTION_IfRandomPct` slots are a coin the placement already called -- so `FRand()` decides the 39 that are left.**
 
 `docs/MAP_ACTION_PATHS.md` reported these as counts and `docs/MAP_ACTION_REACH.md` closed the reach question beside them; this page is the list those counts are made of. Each row names a map, the class of the element and the slot index inside its sequence, because what a defect is depends on where it sits: a branch that skips past the end of its array stops a run, while the same branch one slot earlier would only skip a body.
 
@@ -34,17 +34,17 @@ class and a slot index are enough to find the placement in the dump.
 |---|---:|---|
 | `skip_off_array` | **5** | the branch's section never closes, so `ProceedToSectionEnd` walks off the array and the run ends there |
 | `operand_unset` | **3** | the branch states no operand, so the class default decides every pass |
-| `unfired_condition` | **11** | the `TriggeredCondition` it names is fired by no placed property, so the placed `bEnabled` is its value for the whole play |
+| `unfired_condition` | **12** | the `TriggeredCondition` it names is fired by no placed property, so the placed `bEnabled` is its value for the whole play |
 | `random_decided` | **0** | `Probability` at or below 0 (skips every pass) or at or above 1 (never skips): placed data, not a draw |
-| `slot_unreached` | **101** | an action wired at a slot no path reaches |
+| `slot_unreached` | **115** | an action wired at a slot no path reaches |
 
 | control | this walk | `action_paths.csv` |
 |---|---:|---:|
-| branch slots | **257** | 260 |
+| branch slots | **279** | 260 |
 | skip that walks off the array | **5** | 5 |
 | branch with no operand stated | **3** | 3 |
 
-**`FRand()`'s draw is 36 slots, not a schedule.** Of the 36 `ACTION_IfRandomPct` placements that walk a path, 36 state a probability strictly between 0 and 1 -- the population a play's randomness actually decides -- and 0 state one the placement has already resolved. That is the whole of what 5.2 could not settle, and it is now a count rather than a caveat.
+**`FRand()`'s draw is 39 slots, not a schedule.** Of the 39 `ACTION_IfRandomPct` placements that walk a path, 39 state a probability strictly between 0 and 1 -- the population a play's randomness actually decides -- and 0 state one the placement has already resolved. That is the whole of what 5.2 could not settle, and it is now a count rather than a caveat.
 
 The first rows of `inventory/action_defects.csv` are the placements themselves -- one row per defect, `kind=defect`, with its map, element class, holding sequence class and slot index -- so a claim about a map can be checked against the artifact instead of re-derived.
 
@@ -54,23 +54,23 @@ The first rows of `inventory/action_defects.csv` are the placements themselves -
 |---|---|---:|
 | `operand_unset` | `ACTION_IfCondition` | 3 |
 | `skip_off_array` | `ACTION_IfCondition` | 5 |
-| `slot_unreached` | `ACTION_TriggerEvent` | 20 |
-| `slot_unreached` | `ACTION_WaitForTimer` | 20 |
+| `slot_unreached` | `ACTION_TriggerEvent` | 25 |
+| `slot_unreached` | `ACTION_WaitForTimer` | 21 |
+| `slot_unreached` | `ACTION_WaitForEvent` | 12 |
+| `slot_unreached` | `ACTION_GotoAction` | 11 |
 | `slot_unreached` | `ACTION_Talk` | 11 |
-| `slot_unreached` | `ACTION_GotoAction` | 10 |
-| `slot_unreached` | `ACTION_WaitForEvent` | 10 |
 | `slot_unreached` | `ACTION_LeaveSequence` | 7 |
+| `slot_unreached` | `ACTION_SetBotScript` | 6 |
+| `slot_unreached` | `ACTION_EndSection` | 4 |
+| `slot_unreached` | `ACTION_IfCondition` | 4 |
 | `slot_unreached` | `ACTION_PlaySound` | 4 |
-| `slot_unreached` | `ACTION_EndSection` | 3 |
-| `slot_unreached` | `ACTION_IfCondition` | 3 |
 | `slot_unreached` | `ACTION_SetAlertness` | 3 |
-| `slot_unreached` | `ACTION_SetBotScript` | 3 |
 | `slot_unreached` | `ACTION_MoveToPoint` | 2 |
 | `slot_unreached` | `ACTION_StopShooting` | 2 |
 | `slot_unreached` | `ACTION_DisplaySGText` | 1 |
 | `slot_unreached` | `ACTION_SaveGame` | 1 |
 | `slot_unreached` | `Action_PLAYANIM` | 1 |
-| `unfired_condition` | `ACTION_IfCondition` | 11 |
+| `unfired_condition` | `ACTION_IfCondition` | 12 |
 
 | branch class | operand it reads | checks |
 |---|---|---|
@@ -78,7 +78,7 @@ The first rows of `inventory/action_defects.csv` are the placements themselves -
 | `ACTION_IfProximity` | `ProximityActorTag` | proximity |
 | `ACTION_IfRandomPct` | `Probability` | random |
 
-Census: maps=73;branches=257;skip_off_array=5;operand_unset=3;unfired_condition=11;random_decided=0;random_drawn=36;slot_unreached=101.
+Census: maps=73;branches=279;skip_off_array=5;operand_unset=3;unfired_condition=12;random_decided=0;random_drawn=39;slot_unreached=115.
 <!-- /generated:action-defects -->
 
 ## What the list says that the counts did not

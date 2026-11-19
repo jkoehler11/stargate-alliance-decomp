@@ -14421,3 +14421,52 @@ note. 82 files in 112 s; no boot.
 and the elements do not), `MapProperty`'s three-byte stub, and the legacy `String` type, which has no class in
 this build.
 
+
+### Execution notes (2026-11-19, the writer takes the reader's locator and every map-side census is re-run)
+
+**One locator, not two.** `tools/map-to-t3d.py`'s `locate()` carried the second one: the start whose block
+spends every object reference in the package's tables, then the most properties. `prop-stream.find_block` now
+tests values (every checkable value consumes exactly the tag's `Size`), which is the test a writer needs -- a
+parse that begins inside a struct payload still ends at the export's end and still resolves every name -- so the
+writer delegates. `find_block` grew an optional `window`, because the second half of the reader's own rule (look
+one window further when nothing inside the first decodes) is right for a class header and wrong for a map:
+unpinned it locates **490 more exports, every one a `StaticMeshInstance`**, at starts 65-95, each a parse of
+two tag-shaped bytes inside a packed transform record. No map actor's block starts later than 32 bytes in
+(`actor_prefix_census.csv`: `Cubemap` 32, `StaticMeshInstance` 30, `TerrainSector` 21, the rest 17 or less), so
+the writer pins the prefix at the reader's 64 and the 490 disappear.
+
+**What moves.** 4,133 of 121,394 block starts; properties **1,180,946 -> 1,174,435** (an invented tag is not a
+property); unresolved references stay 0; T3D bytes 49,206,276 -> 49,538,664 because the
+blocks that survive are whole ones -- 1,497 more arrays decode as object arrays and 8,958 more element
+references print (`inventory/t3d_arrays.csv`: 16 rows).
+
+**The struct census collapses from 79 names to 12, and 11 of them are declared types.** The old names included
+actor instance names (`StaticMeshActor448`), property names (`ColLocation`) and `X`/`Y`/`Z` -- words a parse
+inside a value read at the tag's struct-name index. The twelfth is `Tag`, from one property in one block, and
+it is named rather than allowed: `M07A` export #2149, a 57-byte `Cubemap` whose two locatable starts read
+`PhysicsVolume`(Struct, 16) + `TypeEnd`(FixedArray, 1) although the class declares only
+`CubemapRenderInterface`+`Faces`. `map-to-t3d --check` now **fails** on a struct row that is neither a declared
+type nor that residue at its measured count; `docs/UNKNOWNS.md` U30 is the open question (the same class in
+`M07B` is 57 bytes that locate nothing, and both payloads carry a six-fold table).
+
+**Everything that reads a block start inherits it, so all of it was re-run** (10 targets, 64 s each, no boot):
+`action-wiring` (orphan sequence references 4,872 -> 36; actions no array names 1,624 -> 12),
+`event-wiring` (fires with no declared event 8 -> 0), `event-targets` (tagged sequences 5,384 -> 5,874),
+`action-order`, `action-paths` (branches 783 -> 852), `action-reach`, `action-defects` (204 -> 219 rows, 486 -> 526 defects),
+`action-parameters` (refused placements 24 -> 12, clean 30,858 -> 30,870 -- the declared-name chooser and the
+reader now agree on all but 12), `map-name-values` (rows 286 -> 179, malformed values 116 -> 2) and
+`map-census` (squad scripts 630 -> 632 rows, spawners 719 -> 721, the two new pairs both in `M16B`). The
+`Actions` array is the shape that suffers most from a start inside a value: its count reads as a tag and every
+index after it is lost, which is why 1,612 more actions are now named by the sequence that runs them.
+
+Tool (`tools/map-to-t3d.py`: `locate()` delegating, the pinned window, `struct_types()`/`RESIDUE_STRUCTS`, the
+`--check` struct gate and three delegation self-tests; `tools/prop-stream.py`: the `window` parameter) +
+`inventory/t3d_{coverage,values,structs,arrays}.csv` + the nine regenerated map-side artifacts and their pages
++ `docs/T3D.md` (the new section, and the three stale hand-typed counts corrected) + `docs/UNKNOWNS.md` U30 +
+`make artifact-hashes`/`make status` + this note. `make ci` green.
+
+**Not measured here:** the 27 arrays whose property no declaration names as an array (`PathNode.Vector` 13,
+`Light.PrePivot`, …) are counted and named but not fixed -- they are blocks with no checkable value, so the
+value test has nothing to refuse, and closing them is a start rule, not a value rule; the `StaticMeshInstance`
+payload's own record format; the struct decoders beyond `Vector`/`Rotator`/`Color`; the `Level` export's script
+sequence.

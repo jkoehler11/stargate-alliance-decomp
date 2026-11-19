@@ -5115,3 +5115,33 @@ that state it; all five values are `IMEND_ONESHOT`; and the engine's unknown-nam
 leftover costs the tag and not the object. `inventory/tag_origin.csv` is the artifact and
 `docs/MAP_ACTION_PARAMETERS.md` renders it; the revision itself cannot be named further, because the tag is
 its only trace in the build.
+
+## U30. `M07A`'s `Cubemap` export holds 57 bytes no tag walk explains
+
+**Measured 2026-11-19.** The map writer's locator is now the reader's (`docs/T3D.md`), and it names **12**
+struct types over the 73 maps where the old locator named 79. Eleven are `UStructProperty` friendly types
+declared in `inventory/class_properties.csv`; the twelfth is the word `Tag`, from one property in one block:
+`M07A`, export **#2149**.
+
+**The block.** `#2149` is a `Cubemap` export of **57 bytes**. Two starts in its 64-byte prefix walk to the
+export's end -- 32 with two properties, 51 with one -- so the locator takes the longer, and that parse reads a
+16-byte `Struct` named `PhysicsVolume` and a 1-byte `FixedArray` named `TypeEnd`. The struct tag's name index
+lands on the table word `Tag`, which no `UStructProperty` in the corpus declares as a type.
+
+**Why that cannot be the record.** `Engine.Cubemap` (`inventory/class_properties.csv`) declares exactly two
+properties, `CubemapRenderInterface` (`UIntProperty`, 4 bytes) and `Faces` (`UObjectProperty`), and
+`inventory/classes.csv` shows the class as non-native, 4 levels under `Object` with no functions of its own. A
+tagged block holding only those two would be about six bytes; 57 bytes hold neither reading, and no start in
+the prefix produces them.
+
+**What the bytes do say.** `M07B`'s export **#2717** is the same class and the same **57 bytes**, and the
+writer locates **no block in it at all** -- not one start in its prefix walks to the export's end. The two
+payloads have the same shape, too: the two-byte word a `6e 03`/`41 04` pair opens, repeated six times, with a
+`95` followed by a byte counting 1 to 5 between consecutive repeats. That is a six-entry table whose entries
+differ by one index, which is what a cube's six faces look like; what it is not is a tagged property list.
+
+**Open.** The entry's grammar: is the repeating pair a name index, an export index or a byte count, and does
+the six-fold table name six textures or six faces of one? `M07B`'s payload is not located at all while
+`M07A`'s is, so the field that decides locatability is one of the few they differ in, and the difference is
+where a reader starts. The census counts the residue rather than dropping it, and `map-to-t3d --check` fails if the row
+grows -- so this is one export, not a class of them.
