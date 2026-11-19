@@ -13596,3 +13596,37 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   `+0xc`/`+0x1c`/`+0x20`/`+0x24`/`+0x48`/`+0x94`; the page records the shapes and the constants that match them, not
   the headers. (3) The names of the two event indices 316/317 the setter fires before and after the switch -- order
   says end/begin, measurement has not been made.
+
+- **Task.** The three questions `docs/systems/STATE_NATIVES.md` closed on -- which name `FName` 100 is, which
+  events sit at 316/317, and what a bare `GotoState` does with the 23 tables whose entry label is not `Begin` -- are
+  one read: three slots of the global name table, which the image seeds before the first package loads.
+- **The seed is code, and it carries its indices.** `FName::StaticInit` (`0x5c080`) zeroes the name hash
+  (`0x006ba0c8`, 4096 dwords), sets the initialised flag (`0x006be0c8`) and then, name by name, allocates an entry
+  of `2*len+0xe`, writes the index into the entry's first dword, copies the text and appends it through `0x5be10`.
+  That append routine grows `GNames` (`0x006be0d8`) to cover the index, **zeroing the slots it skipped**, and
+  refuses an occupied one. `tools/gname-seed.py` reads all **325** of them (309 inline blocks, 16 through the
+  constructor at `0x5bdc0`); `--verify` re-derives every row from the image and `--check` is the dump-free gate in
+  `make ci`.
+- **Slot 100 is `Begin`, 317 `EndState`, 316 `BeginState`.** `execGotoState` loads `0x64` at `0x487af` for the
+  default entry label; `state_set` writes `0x13d` at `0x48f73` (before the switch, on the old state) and `0x13c` at
+  `0x49073` (after it, on the new state). Order and name now agree, so the page's `EndState`/`BeginState` inference
+  is a measurement and the default label is no longer a guess -- the same read also settles the last sentence of
+  U25's label half.
+- **The reserve is sparse and structured.** 325 names in **32 runs** between index 0 and 1200, **876 null slots**:
+  the compiler's own names at 102-107 (`State`, `Function`, `Self`, `True`, `False`), the 25-name built-in actor
+  event run 301-325 (`Destroyed` .. `EndedRotation`) that `BeginState`/`EndState` sit inside, and singletons such
+  as `ForceCleanUp` at 1200.
+- **The corpus consequence, and it is a negative.** Of the **615** one-argument literal `GotoState` sites, **215**
+  enter a state whose chain's table carries `Begin`, **0** enter a table whose entry byte carries another name and
+  **400** enter a state with no table anywhere on the chain. So the 23 non-`Begin` tables are never entered bare,
+  and the silent default-label miss is unreachable in shipped content -- a result no boot was needed for, and one
+  that would have been a wrong prediction from the entry-byte census alone.
+- Tool (`tools/gname-seed.py`, `--check`/`--check-doc` in `make ci`, `--verify` against the image) +
+  `inventory/gname_seed.csv` (325 rows) + `docs/systems/STATE_NATIVES.md` (*The names*, generated block; the two
+  answered "not measured" bullets gone) + `tools/state-entry.py`'s `bare_entries*` census in
+  `inventory/state_entry.csv` + `docs/UNKNOWNS.md` U26 + `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, the
+  `gname-seed` target and this note.
+- **Not in this PR.** (1) The engine's member names for `+0xc`/`+0x1c`/`+0x20`/`+0x24`/`+0x48`/`+0x94`: the
+  headers are not in the image, and matching a package-based `UState`'s field order to them is a join this read does
+  not make. (2) What the 876 empty slots are for -- `GNames[690]` (`0x2b2`, the value the setter treats as
+  `BadToken`) beside a slot the reserve does name, in one live boot (U26).

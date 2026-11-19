@@ -550,8 +550,9 @@ def entry_point(entries):
     """The table entry the runtime starts at: the one at the first byte of code, `Begin` first among aliases.
 
     Six tables name two labels at offset 0 (`ShieldCover` carries `Begin` and `Turn` on its first byte), so the
-    entry point is a *set* of names there; `Begin` is preferred only so this read agrees with `tools/state-code.py`
-    on which one to print. `entry_names` is the whole set.
+    entry point is a *set* of names there; `Begin` is preferred because that is the name the runtime looks up when
+    a bare `GotoState('X')` passes no label -- FName 100 is `Begin` in the image's own name reserve
+    (`tools/gname-seed.py`), not merely the compiler's habit. `entry_names` is the whole set.
     """
     if not entries:
         return None
@@ -626,6 +627,39 @@ def label_join(sites, tables, meta=None, text_states=None):
         "of those, resolved through the target state's own `Super` -- its code is the state it inherits from")
     add("entry_labels_absent", absent, "of those, a label the target state's table does not name")
     add("entry_labels_no_code", nocode, "of those, whose target state carries a record and no table")
+    # A bare `GotoState('X')` passes no label, so the native enters `X` at FName 100 -- and the image's name reserve
+    # spells slot 100 `Begin` (`tools/gname-seed.py`, docs/systems/STATE_NATIVES.md). A table whose entry byte
+    # carries another name therefore has no `Begin` to land on: the lookup misses, clears the frame's code pointer
+    # and the state is entered without running. This is the corpus side of the native read, so it is counted here
+    # rather than in the page's prose.
+    bare = [r for r in sites if r["op"] == "GotoState" and r["target_kind"] == "literal" and r["target"]
+            and not r["label"] and r["args"] == 1]
+    on_begin = other = no_table = 0
+    for r in bare:
+        names, how = resolve_table(r["package"], r["class"], r["target"], tables, supers, meta)
+        if names is None:
+            no_table += 1
+            continue
+        if "begin" in {x.lower() for x in names}:
+            on_begin += 1
+            continue
+        other += 1
+        names0 = [n for n, off in (meta.get((r["package"].lower(), r["class"].lower(), r["target"].lower()),
+                                            {}).get("entries") or []) if off == 0]
+        rows.append({"kind": "bare", "package": r["package"], "class": r["class"], "state": r["state"],
+                     "function": r.get("function", ""), "scope": r.get("scope", ""),
+                     "offset": r.get("offset", ""), "op": "GotoState", "target_kind": r["target_kind"],
+                     "target": r["target"], "label": "", "args": r.get("args", ""), "key": "no-begin",
+                     "count": 1,
+                     "note": "the entry byte carries %s, not `Begin`%s"
+                             % (" and ".join("`%s`" % n for n in names0) or "no name",
+                                " (reached via %s)" % how if how else "")})
+    add("bare_entries", len(bare), "`GotoState('X')` sites with a literal target and no label")
+    add("bare_entries_begin", on_begin,
+        "of those, whose target's table carries `Begin` -- the name the default label resolves to")
+    add("bare_entries_other_label", other,
+        "of those, whose target's entry byte carries another name -- the lookup misses and the state does not run")
+    add("bare_entries_no_table", no_table, "of those, whose target carries no table at all")
     # The same link seen from the other side: how many record-only states are record-only *here* only, because the
     # code they run is the `Super` state's. That is the population a "record-only means no code" reading would miss.
     inherited = [k for k in meta if k not in tables and meta[k].get("super")]
