@@ -61,6 +61,16 @@ quote here (15 bytes on 49,820 exports, 0 on 41,097, 12 on 24,096) summed to les
 census supersedes it: the offset is what a T3D writer needs in order to sit on top of this, **but it is not a
 per-class constant**, and the next section measures why.
 
+**The tie-break has since been priced on the action side.** `docs/MAP_ACTION_PARAMETERS.md` reads 18,510 placed
+actions with this same reader and the same locator, and finds "most properties" picking a start *inside* the block
+on 12 of them — caught because the block then names a property its class chain does not declare. Re-scoring the
+candidates by the fraction of declared names recovers 21 of those 26 statements on 8 placements, and picks exactly
+this locator's start on **all 15,429** placements whose block names only declared properties
+(`inventory/action_block_relocation.csv`). So the ambiguity is real, and on the action side the class's own
+declaration list is the discriminator — the actor side's version of the same test is the type-0 rejection
+`tools/actor-prefix-anchor.py` measures, and the `StaticMeshActor` blocks there whose front begins with `PrePivot`
+typed `Invalid` are the same defect seen from the other end.
+
 ## What this unblocks
 
 * **T3D is now a formatting problem, not a parsing one.** Location, Rotation and the actor's property set are

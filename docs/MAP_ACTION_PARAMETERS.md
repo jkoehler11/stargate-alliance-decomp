@@ -25,6 +25,7 @@ parameter, with how many placements state it — and the four defaults that deci
   in this play" without ending the run.
 
     python3 tools/action-parameters.py "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15" --sweep -o inventory
+    python3 tools/action-parameters.py "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15" --relocate -o inventory
     python3 tools/action-parameters.py --report
     python3 tools/action-parameters.py --write-doc docs/MAP_ACTION_PARAMETERS.md
     python3 tools/action-parameters.py --check-doc docs/MAP_ACTION_PARAMETERS.md
@@ -38,12 +39,21 @@ reader as `actor-properties` and the checkpoint work (`tools/prop-stream.py`), i
 against `action_wiring.csv`, and every statement is checked against `class_properties.csv` — the class chain has to
 declare the name, which is what refuses a mis-parsed block's invented property instead of publishing it.
 
+That refusal is also the locator's control, so it comes with a repair: a refused block is re-located by scoring the
+export's every candidate start on the *fraction* of names its class chain declares (the chooser
+`tools/class-defaults.py` ships for a class's defaults block) and adopting the better start — never a worse one.
+`inventory/action_block_relocation.csv` (`--relocate`, `make action-relocation`) is the measurement that says the
+rule is a repair: over all 73 maps the chooser picks exactly the shipped locator's start on the 15,429 placements
+whose block was never refused, so the only blocks it moves are the ones the declaration control had already
+rejected. Those twelve blocks also carry declared names the long parse had dropped, so the published statement
+total rises from 21,584 to 21,596 — more than the 21 refused statements the repair recovers.
+
 **No parameter value that is content is written.** A name-typed parameter contributes its distinct count and how
 often it is `None`; a string parameter only whether it is stated; a residue row names a map, a class and a slot.
 That is enough to find a placement in the dump and not enough to carry game data into the repository.
 
 <!-- generated:action-parameters -->
-**18510 placed actions over 83 classes carry 21584 stated properties in 73 of the 73 maps' packages; every other parameter is the class default, and three of those defaults decide a run on their own.**
+**18510 placed actions over 83 classes carry 21596 stated properties in 73 of the 73 maps' packages; every other parameter is the class default, and three of those defaults decide a run on their own.**
 
 The wiring, order, path, reach and defect pages read the graph the actions sit in. This page reads what each placement says about itself: its property block, parsed with the shared reader (`tools/prop-stream.py`, the same one `actor-properties` and the checkpoint work use). A property the block does not state is the class's own `var(Action)` default, so a parameter is decided by the package either way -- and for three classes the default is enough to change what a play does.
 
@@ -52,13 +62,13 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 | placed actions (the `ScriptedAction` family, minus its two bases) | **18,510** |
 | with a property block that terminates exactly at the export's end | **15,441** |
 | with no block at all (the class default is the whole placement) | **3,069** |
-| property statements read | **21,584** |
+| property statements read | **21,596** |
 | placement classes | **83** |
 
 | control | this walk | committed artifact |
 |---|---:|---:|
 | placed actions | 18,510 | `action_wiring.csv` totals 18,510 |
-| property statements refused because the class chain does not declare them | 26 | `class_properties.csv` |
+| property statements refused because the class chain does not declare them | 5 (was 26 before the re-location) | `class_properties.csv` |
 
 ### The three defaults that decide a run
 
@@ -98,7 +108,34 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 
 **The fire with no name is a no-op, not a broadcast.** `ACTION_TriggerEvent.InitActionFor` hands its `Event` to `C.TriggerEvent(Event, ...)`, and `Actor.TriggerEvent` returns at the top on `EventName == 'None'` -- before the actor iterator and before `Level.AddEventToCache`. So the **1** `ACTION_TriggerEvent` placement that states no `Event` fires nothing at all, which is the opposite of what the same name means on the wait side: there `None` is an iterator tag that filters nothing, here it is an early return. The class states its event on 2657 of its 2658 placements.
 
-**`ACTION_Talk` carries its subtitle in the package.** 717 of its 719 placements state `SubTitleText` (a localized `string`, so the text ships in the map, not only in a voice package), 256 state `DialogueFinishedEvent`, and the parameter surface is otherwise `TalkerTag`/`DialogueName`/`myDirectory`. `Action_PLAYANIM` -- the class whose name the `ACTION_` prefix cannot see -- states `BaseAnim` on 227 of its 227 placements, which is what makes it a real action rather than a marker.
+**`ACTION_Talk` carries its subtitle in the package.** 718 of its 719 placements state `SubTitleText` (a localized `string`, so the text ships in the map, not only in a voice package), 256 state `DialogueFinishedEvent`, and the parameter surface is otherwise `TalkerTag`/`DialogueName`/`myDirectory`. `Action_PLAYANIM` -- the class whose name the `ACTION_` prefix cannot see -- states `BaseAnim` on 227 of its 227 placements, which is what makes it a real action rather than a marker.
+
+### The re-located blocks, and the five tags the class does not declare
+
+A block is located by where it *ends*: every property boundary in the export's first 64 bytes is a valid start, so "earliest start with the most properties" is a tie-break rather than a reading, and on a minority of placements it lands inside the block. The control that catches that is the class declaration (`class_properties.csv`), which refuses a block naming a property its chain does not declare. **12 placements carried 26 refused statements, and 8 of the 12 are a start the locator picked too early.** Re-scoring every candidate start by the *fraction* of declared names -- `tools/class-defaults.py`'s chooser, the rule the class-defaults work already ships -- moves 8 placements and recovers **21 statements**; the five that remain are not a locator defect at all.
+
+| map | class | sequence slot | start | refused names it recovered | still refused |
+|---|---|---:|---:|---|---|
+| `M07B` | `ACTION_Talk` | 9 | 3 -> 0 | `Oneill`, `m07_12_g_oneill`, `SheerRate`, `StaticMeshActor832`, `Brush98` | none |
+| `M14A` | `ACTION_SetIMusic` | 0 | 0 -> 4 | `UseStateCheck` | none |
+| `M14A` | `ACTION_SetIMusic` | 1 | 0 -> 4 | `UseStateCheck` | `EndType` |
+| `M15A` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `Max`, `Roster_JaffaHorusM8`, `Location` | none |
+| `M15D` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `Distance`, `StaticMeshInstance5933`, `Region` | none |
+| `M15F` | `ACTION_SaveGame` | 0 | 9 -> 0 | `Group`, `SubActionFade0` | none |
+| `M20A` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `StaticMeshActor`, `StaticMeshInstance584`, `Region` | none |
+| `M20C` | `ACTION_DisplayMessage` | 0 | 4 -> 0 | `Group`, `SpriteEmitter198`, `Level` | none |
+
+**The five left are one name on one class.** Every remaining refusal is `EndType` on `ACTION_SetIMusic`, in two maps; the name is a declared property of `Engine.IMusicActor` (`UByteProperty`, enum `LevelInfo.EIMusicEndType`), and `ACTION_SetIMusic`'s own chain declares four names, none of them `EndType`. The tag sits *last* in a block whose other names are all declared, its value is a one-byte enum index, and the same class's other placements in the same maps read back as exactly its four names -- so the block is where it belongs and the tag is the residue: a placement authored against a class revision that declared one more property than the shipped `GamePlay.u` does. The engine's property reader skips a tag it cannot resolve by the size in its info byte, which is what makes the leftover harmless at run time; what this build's `Serialize` does with it is not measured here.
+
+| map | class | sequence slot | refused name |
+|---|---|---:|---|
+| `M02A` | `ACTION_SetIMusic` | 1 | `EndType` |
+| `M14A` | `ACTION_SetIMusic` | 1 | `EndType` |
+| `M14A` | `ACTION_SetIMusic` | 1 | `EndType` |
+| `M14A` | `ACTION_SetIMusic` | 3 | `EndType` |
+| `M14A` | `ACTION_SetIMusic` | 4 | `EndType` |
+
+**The chooser is a repair, not a rewrite.** Run over every placement in all 73 maps (`--relocate`, `inventory/action_block_relocation.csv`), the declared-name chooser picks exactly the start `find_block` does on **all 15,429 placements the refusal never fired on** (0 moved) -- so the rule changes no published block, and the 8 it does change are precisely the rows that were refused.
 
 ### Each class's parameter surface
 
@@ -140,10 +177,10 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 | `ACTION_MoveToPoint` | `DestinationTag` | Name | 1255 | 1094 |  |  |  |
 | `ACTION_SetAlertness` | `Alertness` | Byte | 1066 | 3 | 1 | 3 | 2 |
 | `ACTION_SetViewTarget` | `ViewTargetTag` | Name | 739 | 318 |  |  |  |
+| `ACTION_Talk` | `DialogueName` | Name | 719 | 704 |  |  |  |
 | `ACTION_Talk` | `myDirectory` | Str | 719 | 31 |  |  |  |
-| `ACTION_Talk` | `DialogueName` | Name | 718 | 703 |  |  |  |
-| `ACTION_Talk` | `SubTitleText` | Str | 717 | 545 |  |  |  |
-| `ACTION_Talk` | `TalkerTag` | Name | 713 | 19 |  |  |  |
+| `ACTION_Talk` | `SubTitleText` | Str | 718 | 546 |  |  |  |
+| `ACTION_Talk` | `TalkerTag` | Name | 714 | 19 |  |  |  |
 | `ACTION_SetBotScript` | `ScriptTargetTag` | Name | 556 | 498 |  |  |  |
 | `ACTION_SetBotScript` | `TargetTag` | Name | 539 | 73 |  |  |  |
 | `ACTION_TeleportToPoint` | `DestinationTag` | Name | 322 | 296 |  |  |  |
@@ -152,20 +189,22 @@ The wiring, order, path, reach and defect pages read the graph the actions sit i
 
 Only counts and ranges are written: a name-typed parameter contributes its distinct count and how often it is `None`, never the names themselves, and a string parameter only its presence. The residue rows name a map, a class and a slot -- enough to find the placement in the dump, and no content. A statement the class chain does not declare (`class_properties.csv`) is refused and counted as a residue rather than published as a parameter: the property reader locates a block by where it ends, so a mis-parsed start can invent a name, and that control is what keeps it out of the class table.
 
-Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21584;classes=83;maps=73;goto_stated=165;goto_unset=415;props_refused=26;wait_stated=2703;wait_unstated=19;timer_stated=2214;timer_sentinel=1;trigger_stated=2657;trigger_unstated=1;conditions=212;wait_completes=4;wait_blocks=10;wait_no_condition=5;wait_order_free=18.
+Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21596;classes=83;maps=73;goto_stated=165;goto_unset=415;props_refused=5;wait_stated=2703;wait_unstated=19;timer_stated=2214;timer_sentinel=1;trigger_stated=2657;trigger_unstated=1;conditions=212;wait_completes=4;wait_blocks=10;wait_no_condition=5;wait_order_free=18;refused_before=26;relocated=8;relocated_props=21.
 <!-- /generated:action-parameters -->
 
 ## What the parameters say that the graph did not
 
-* **A placement either states its arguments or states nothing, and "nothing" is a class story.** 3,074 of the
+* **A placement either states its arguments or states nothing, and "nothing" is a class story.** 3,069 of the
   18,510 placements carry no property statement at all — `ACTION_EndSection` (279 of 279) and
   `ACTION_LeaveSequence` (301 of 301) are the marker classes whose body *is* the behaviour, and the rest are
   placements that override nothing and take every default. The census counts both halves, so an empty block is a
-  measured property of a class rather than a failed parse.
-* **`ACTION_Talk` ships its subtitle in the map.** 717 of its 719 placements state `SubTitleText`, a localized
+  measured property of a class rather than a failed parse; the five placements the re-location moved off a fully
+  refused parse are the exception that proves it, because they only *looked* empty.
+* **`ACTION_Talk` ships its subtitle in the map.** 718 of its 719 placements state `SubTitleText`, a localized
   `string` in the property block, and all 719 state `myDirectory`; 256 state `DialogueFinishedEvent`. The subtitle
   text a scene shows is placed data, which is why `docs/DIALOGUE.md`'s text census and the voice packages do not
-  have to agree one for one.
+  have to agree one for one. (`M07B`'s placement is the one the re-location recovered: the long parse read five
+  scene names off a start three bytes into the block and dropped the four subtitle fields it was sitting on.)
 * **`Action_PLAYANIM` is a full action, not a name accident.** All 227 of its placements state `BaseAnim`, and 89
   state `AnimIterations` — the class the `ACTION_` prefix cannot see, and the reason `docs/MAP_ACTION_WIRING.md`
   counts the family by the `super` chain.
@@ -192,14 +231,21 @@ Census: placements=18510;blocked=15441;unblocked=3069;props_stated=21584;classes
   still appears in the census; only the parameters the class's own text names are described above.
 * **That a name-typed parameter's identity is known.** Distinct counts and the `None` share are the measurement;
   which names they are is content, and stays in the dump.
-* **That a refused statement is a parser bug to fix.** The class-property control refuses 26 statements across the
-  corpus whose name the chain does not declare; each is a block start the locator picked too early, the same
-  ambiguity `docs/ACTOR_PROPERTIES.md` measured on actors, and the residue row is the record of it.
+* **That a refused statement is a parser bug.** The class-property control refuses 26 statements across the corpus
+  whose name the chain does not declare; 21 of them are a block start the locator picked too early and the
+  re-location recovers them, and the last five are a real tag the shipped class does not declare (below). Neither
+  kind is editable: the block is where the bytes say it is, and the control's job is to keep the data out of the
+  class table, not to make the corpus cleaner than it is.
 
 ## Next instrument
 
 The residue rows are the live list, and three of its kinds are now lookups rather than caveats: `wait_unstated`
 carries the condition its map offers and what the wait does with it, `trigger_unstated` and `timer_unstated` name
-the placements whose default is a no-op and a zero-second timer. What remains is where a refused-property
-placement's true block starts — the locator's candidate with the most declared names would recover it, and the
-actor-side version of that rule is already in `tools/actor-prefix-anchor.py`.
+the placements whose default is a no-op and a zero-second timer. `block_moved` is the re-location's own record: the
+map, the class, the slot, both starts and the names it recovered.
+
+What is left is the five `EndType` tags, and it is a question about `GamePlay.u`, not about the maps: `ACTION_SetIMusic`
+declares four properties and two maps' placements state a fifth that belongs to `Engine.IMusicActor`. Two routes
+would settle which revision wrote them — the class's own body (does `ACTION_SetIMusic`'s text still refer to an end
+type, which the decompiled `GamePlay` bodies would show) and the shipped `.u`'s name table (a name that survives in
+`GamePlay` only because a default still spells it is a removed property, not an unknown one).

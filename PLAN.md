@@ -1012,6 +1012,25 @@ other 38 rows.
       `inventory/action_parameters.csv` (384 rows: map, class, property, residue and census) +
       `docs/MAP_ACTION_PARAMETERS.md` (*What a placed action says about itself*) + `make action-parameters` + this
       note. 73 maps in 3.5 min; no boot.
+      **The refused statements are two different things, and the locator owns only 21 of them (2026-11-19).**
+      The item left the 26 refused statements as "each is a block start the locator picked too early". Scoring
+      each export's candidate starts by the fraction of names its class chain declares -- the chooser
+      `tools/class-defaults.py` already ships -- and adopting the better start only when it refuses strictly
+      fewer names moves **8 placements** and recovers **21 statements**; the published total rises 21,584 ->
+      21,596 because those twelve blocks also carried declared names the long parse had dropped, and
+      `ACTION_Talk`'s `SubTitleText` goes 717 -> 718 on `M07B` (its long parse read five scene names off a start
+      three bytes in). The **five** left are all `EndType` on `ACTION_SetIMusic` in `M02A` and `M14A`:
+      `Engine.IMusicActor`'s `UByteProperty` (`LevelInfo.EIMusicEndType`), which no action class declares -- the
+      block is where the bytes say it is and the tag is a placement written against a class revision with one
+      more property, so the residue is data, not a parse. The control is the bundle's point: `--relocate` runs
+      the same chooser over all 15,441 blocks and it picks the shipped locator's start on **15,429 of 15,429**
+      that were never refused, so the rule moves only rows the declaration check had already rejected. Tool
+      (`relocate()`/`choose()`/`better_block()` and three synthetic cases in `--check`, the `--relocate` mode) +
+      `inventory/action_parameters.csv` (388 rows; `block_moved` residue rows, `props_refused` 26 -> 5) +
+      `inventory/action_block_relocation.csv` (74 rows, new) + `docs/MAP_ACTION_PARAMETERS.md` (a new section,
+      the corrected "does not claim" bullet, a new next instrument, the generated block) +
+      `docs/ACTOR_PROPERTIES.md` (the tie-break priced from the action side) + `make action-parameters`/
+      `make action-relocation` + this note. 73 maps in ~2.5 min for the relocate pass; no boot.
       **The last map-side artifact with no generator now has one, and `squad_scripts.csv` is 630 rows, not 614
       (2026-11-19).** `docs/ARTIFACTS.md` kept this file in its orphan list because `make map-census` refused to
       write it: the pass found 581 `(map, script)` pairs where the file had 614, and the note here read that as
