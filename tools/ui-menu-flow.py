@@ -717,9 +717,10 @@ def layout_gaps(classes):
     """{class: row} for the component classes whose defaults *block* the reader refuses.
 
     A widget class the defaults tree does not carry is not therefore a panel built in script: the package holds
-    its block (`inventory/class_defaults_misses.csv` names the declared property count and the reason the
-    reader stops), and the emitted tree has no file because the decode refused the block's first tag. The join
-    is against that committed artifact so the doc says *why* the layout is missing, not just that it is.
+    its block (`inventory/class_defaults_misses.csv` names the declared property count, the one tag the block
+    holds and the property it names), and the emitted tree has no file because the class-level locator ranks a
+    parse inside the record's closing group above the block at the group's end. The join is against that
+    committed artifact so the doc says *why* the layout is missing, not just that it is.
     """
     path = os.path.join(ROOT, "inventory", "class_defaults_misses.csv")
     out = {}
@@ -742,8 +743,8 @@ def read_subcomponents(tree, family, supers, by_name, _cache=None):
     blocks become `depth=2` rows, and a child class that declares blocks of its own (`GUIVertScrollBar` names
     its zone and two buttons) is followed to `depth=3`, so the walk is a tree rather than one level.
 
-    A widget class with no emitted file is reported as `form="none"` and joined to the defaults reader's own
-    verdict by `layout_gaps` -- its block is in the package; the decode refused it.
+    A widget class with no emitted file is reported as `form="none"` and joined to the defaults chooser's own
+    verdict by `layout_gaps` -- its block is in the package, one tag long, and the ledgers name the tag.
     """
     if _cache is None:
         _cache = {}
@@ -873,12 +874,13 @@ def _subobject_refs(path):
 
 
 def read_bindings(tree, family, sub_rows, by_name):
-    """The widgets a page *names* without declaring, which is what a refused panel block costs.
+    """The widgets a page *names* without declaring anywhere in the emitted tree.
 
-    A page's `MyComponents(0)=GUIButton'cContinueBN'` names a button no block in the page declares: the widget
-    is in `RightLockingMenuPanel`'s own defaults, which the reader refuses, so the binding resolves to a name and
-    nothing else. Row `kind=binding` carries only the dangling ones; the count of all bindings is in the census,
-    because a binding that resolves is already a `component` row.
+    A page's `MyComponents(0)=GUIButton'cContinueBN'` names a button through a property of the *panel* it placed,
+    while the button itself is a subobject of the page. A row here is a binding that resolves to nothing even
+    after the page's own blocks and the target class's blocks are both read -- a genuinely missing widget, not a
+    panel whose contents were not emitted. Row `kind=binding` carries only the dangling ones; the count of all
+    bindings is in the census, because a binding that resolves is already a `component` row.
     """
     refused = {r["name"] for r in sub_rows if r["form"] == "none"}
     rows, stats = [], collections.Counter()
@@ -1444,17 +1446,22 @@ def subcomponents_block(s, rows):
                    (len(leaves), ", ".join("`%s`" % n for p, n in leaves)))
     if gaps:
         out.append("")
-        out.append("The panels the tree does not carry are not script-built: each has a defaults *block* in its "
-                   "package (121-129 declared properties) that the reader refuses at the start, so the emitted "
-                   "tree has no file for it and its contents stay unknown. `inventory/class_defaults_misses.csv` "
-                   "holds the reader's own verdict, joined here per class.")
+        out.append("The panels the tree does not carry are **not** classes whose block the reader refuses: each "
+                   "block is one tag, sitting exactly where its record's closing group ends and ending on the "
+                   "payload's last byte, and that tag names a child object the panel's own class owns "
+                   "(`ChapterList'chList'`, `GUILabel'cHint'`, `SGListBox'cListBox'`, ...). The emitter writes no "
+                   "file for them because its class-level locator ranks a three-tag parse *inside* the record's "
+                   "closing group above the block at the group's end — the same ranking the misses ledger used to "
+                   "call these `type-contradiction`. So what is missing is not the panel's contents but the "
+                   "file's one line, and every child a panel owns is itself an export with a readable block.")
         out.append("")
-        out.append("| widget class | package | declared properties | reader verdict | read before refusing |")
-        out.append("|---|---|---:|---|---:|")
+        out.append("| widget class | package | declared properties | reader verdict | its block's tag |")
+        out.append("|---|---|---:|---|---|")
         for r in sorted(gaps, key=lambda r: (r["package"], r["name"])):
-            m = re.search(r"^(\S+) of its", r["note"])
+            prop = r.get("property") or ""
             out.append("| `%s` | %s | %s | `%s` | %s |" %
-                       (r["name"], r["package"], r["target"], r["verdict"], m.group(1) if m else "?"))
+                       (r["name"], r["package"], r["target"], r["verdict"],
+                        ("`%s`" % prop) if prop else "none (empty block)"))
         dangle = [r for r in rows if r["kind"] == "binding"]
         if dangle:
             out.append("")
@@ -1474,6 +1481,18 @@ def subcomponents_block(s, rows):
                 out.append("| `%s.%s` | `%s` | `%s` | `%s` | `%s` |" %
                            (r["package"], r["name"], r["target"], r["verdict"],
                             m.group(1) if m else "?", m.group(2) if m and m.group(2) else "-"))
+        else:
+            out.append("")
+            out.append("**All %s of the page-level bindings resolve.** A page binds each widget twice: the "
+                       "`Begin Object ... Name=` block places it, and a property points at it "
+                       "(`MenuPanel=RightLockingMenuPanel'cPanel'`, `MyComponents(0)=GUIButton'cContinueBN'`). "
+                       "The second form points *into* a panel's block, but the object it names is a subobject "
+                       "of the **page** (its Outer is the page class, and its rectangle is in its own block) — "
+                       "so a reader that stops at the panel's contents loses those controls, which is what a "
+                       "dangling binding was. Following one more level places all %s of them: %s resolved, %s "
+                       "dangling."
+                       % (s.get("binding_rows", "0"), s.get("binding_rows", "0"),
+                          s.get("binding_resolved", "0"), s.get("binding_dangling", "0")))
         out.append("")
         keys = [k for k in s.get("sub_base_keys", "-").split(",") if k.startswith("Win")]
         out.append("**What the `Win*` numbers are relative to.** The base `GUIComponent` states %s of the four "

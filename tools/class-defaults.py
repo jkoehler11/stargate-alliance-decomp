@@ -495,11 +495,21 @@ def misses(system_dir, outdir):
                 cur = supers.get(cur)
             kinds = kinds_for_class(cls)
             if defaults:
-                cands, _data = candidates(pkg, mod, exp, kinds=kinds)
+                cands, data = candidates(pkg, mod, exp, kinds=kinds)
+                # The chooser's own candidate set, not a re-derivation of it: without the record's closing group
+                # a one-tag block at the group's end is invisible here while `all_packages` published its start,
+                # and a parse *inside* the group wins the ranking -- which is how nine of the twelve container
+                # panels were reported as `type-contradiction` on a block the sweep had already located.
+                cands, _where = guarded(cands, data, pkg, decl, kinds, len(pkg.imports or []))
                 best = choose(cands, decl, declared_all.get(cls, set()))
                 bad = best[4] if best else 0
-                reason, props, trailer, prop = "type-contradiction" if bad else "incomplete", \
-                    defaults, fully, ""
+                if best and best[1] == 1 and best[3][0] in decl:
+                    # The published block holds one tag and the class declares it: a `single-declared` row, the
+                    # same verdict `check_misses` gives the shape when the scan finds it without the guard.
+                    reason, props, trailer, prop = "single-declared", 1, 0, best[3][0]
+                else:
+                    reason, props, trailer, prop = "type-contradiction" if bad else "incomplete", \
+                        defaults, fully, ""
                 if reason == "incomplete":
                     # No parse holds two declared names: whatever block this payload has, the only block-shaped
                     # evidence is one tag. Name it instead of calling the class incomplete (a floor of one would

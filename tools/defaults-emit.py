@@ -558,7 +558,15 @@ def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
 
 
 def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
-    """(props, start, trailer) for a class's defaults block, or (None, reason)."""
+    """(props, start, trailer) for a class's defaults block, or (None, reason).
+
+    Unguarded on purpose: routing this through `cd.guarded()` was measured at **+313 clean blocks** (1,664 ->
+    1,977) and 232 more properties, because the guard's group-tail candidates promote one-tag parses across the
+    corpus -- so adopting it here is the same policy call `PLAN.md` records against `MIN_PROPERTIES`, and not a
+    fix to a bug. What it costs the UI tree is one file per container panel (each panel's block is a single
+    child pointer: `RightLockingMenuPanel` at +155 reads `HintLB=GUILabel'cHint'`), reported in
+    `docs/systems/UI.md`.
+    """
     exp = None
     for e in pkg.exports:
         if pkg.class_name_of(e) == "Class" and pkg.name(e["name"]) == cls:
@@ -666,8 +674,16 @@ def object_refs(pkg, props, buf, meta_of, ctx, container_index):
     return out
 
 
-def render_subobject(pkg, ref, supers, declared_all, props_meta, ctx, tot, seen, depth=0):
-    """Render one subobject export as a `Begin Object` block; returns its lines or None."""
+def render_subobject(pkg, ref, supers, declared_all, props_meta, ctx, tot, seen, depth=0,
+                     container_index=None, queue=None):
+    """Render one subobject export as a `Begin Object` block; returns its lines or None.
+
+    `queue`, when given, receives the exports *this* block points at with the same Outer as the class
+    (`container_index`) at `depth + 1`. Without it a page's panel is emitted and the buttons the panel's own
+    `MyComponents` array names are dropped: the widget is a subobject of the *page* (its Outer is the page
+    class), so it is neither in the panel's file nor in the class-level ref list, and every reader downstream
+    sees a binding with no block behind it.
+    """
     exp = pkg.exports[ref - 1]
     cls = pkg.class_name_of(exp)
     name = pkg.name(exp["name"])
@@ -698,6 +714,16 @@ def render_subobject(pkg, ref, supers, declared_all, props_meta, ctx, tot, seen,
                         lines.append("%s(%d)=%s" % (prop["name"], index, value))
                     continue
                 lines.append("%s=%s" % (prop["name"], text))
+            if queue is not None and container_index is not None and depth == 0:
+                inner = object_refs(pkg, props, buf, meta_of, ctx, container_index)
+                have = set(seen) | {(pkg.class_name_of(pkg.exports[r - 1]),
+                                     pkg.name(pkg.exports[r - 1]["name"])) for r in queue if r[1] == depth + 1}
+                for r in inner:
+                    iexp = pkg.exports[r - 1]
+                    if (pkg.class_name_of(iexp), pkg.name(iexp["name"])) in have:
+                        continue
+                    queue.append((r, depth + 1))
+                    have.add((pkg.class_name_of(iexp), pkg.name(iexp["name"])))
     lines.append("End Object")
     return lines
 
@@ -777,12 +803,16 @@ def render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, note
             lines.append("%s=%s" % (p["name"], text))
 
     # `editinline` references point at exports whose outer is this class, and the compiler requires each of
-    # those to be declared by a `Begin Object` block before the assignment that names it.
+    # those to be declared by a `Begin Object` block before the assignment that names it. A subobject's own
+    # block can name more of them (a page's panel names its buttons through `MyComponents`), so the walk is a
+    # queue over both levels rather than one pass over the class-level list.
     refs = object_refs(pkg, props, buf, meta_of, ctx, exp["index"] + 1)
     if refs:
-        decls, seen = [], set()
-        for ref in refs:
-            block = render_subobject(pkg, ref, supers, declared_all, props_meta, ctx, row, seen)
+        decls, seen, queue = [], set(), [(r, 0) for r in refs]
+        while queue:
+            ref, depth = queue.pop(0)
+            block = render_subobject(pkg, ref, supers, declared_all, props_meta, ctx, row, seen,
+                                     depth=depth, container_index=exp["index"] + 1, queue=queue)
             if block:
                 decls.extend(block)
         if decls:
