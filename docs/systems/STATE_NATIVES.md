@@ -197,17 +197,80 @@ re-derives every row from the image, and `--check` is the dump-free half in `mak
   all: the commoner shape, where the state has no statement code of its own and its behaviour lives in the functions
   it declares. `inventory/state_entry.csv` counts all four populations (`bare_entries*`).
 
-## Not measured, and what would settle it
+## The members, and the record's field order
 
-* **Which engine field each offset is.** `+0xc` (the state frame), `+0x1c` (the state the lookup walks from),
-  `+0x20` (a state's name), `+0x24` (the object's current state), `+0x48` (the state's code base), `+0x94` (the
-  WORD label offset) are measured *shapes*, not named members: the engine headers are not in the image, and the
-  record built at load is the package-based `UState` whose field order this page's constants match one for one.
-* **What the 876 empty slots are for.** The reserve names 325 of the 1,201 slots it reaches and leaves the rest
-  zero, and the append routine only ever grows the array *past* the index it is handed, so nothing it does reuses a
-  hole. Whether the holes are numbers the shipped code addresses directly (`execGotoState` also compares `0x2b2` =
-  690) or just the gaps a generated header left is open: a live read of `GNames[690]` and of a slot the reserve does
-  name, in the same boot, would settle which population is real.
+The six offsets this page listed as *shapes* are named where the image names them, and one of them was mislabelled.
+`Core_UnObj` asserts on a script frame's code pointer with an expression that prints the members it tests --
+`StateFrame->Code>=&StateFrame->Node->Script(0) && StateFrame->Code<&StateFrame->Node->Script(StateFrame->Node->Script.Num())`
+-- and the assertion sits in the body whose loads it tests, so the expression is a name map for the displacements
+that body dereferences. `tools/state-members.py` reads that chain instead of restating it: it finds the expression,
+the site that pushes it, the body that carries the site and the **last write** of every register the comparison
+uses, so a row's evidence is an instruction and a body that stops matching the shape fails the read.
+
+<!-- generated:state-members -->
+**The image names six of the members itself.** The frame assert's expression is the source: a row below is a displacement whose name is the identifier the expression prints for it, read out of the same body's def-use chain, plus the four members a fixed instruction reads.
+
+| owner | offset | size | name | how it is known | site |
+| --- | ---: | ---: | --- | --- | --- |
+| `UObject` | `+0xc` | 4 | `StateFrame` | assert | `0x0640a8` |
+| `FStateFrame` | `+0x4` | 4 | `Node` | assert | `0x0640b2` |
+| `FStateFrame` | `+0xc` | 4 | `Code` | assert | `0x0640ab` |
+| `UStruct` | `+0x48` | 12 | `Script` | assert | `0x0640b5` |
+| `FStateFrame` | `+0x1c` | 4 | *(no name in the image)* | shape | `0x048eac` |
+| `UObject` | `+0x20` | 4 | `Name` | runtime | `-` |
+| `UObject` | `+0x24` | 4 | `Class` | runtime | `-` |
+| `UState` | `+0x90` | 4 | `Flags` | measured | `0x48f14` |
+| `UState` | `+0x80` | 8 | `ProbeMask` | measured | `0x4900d` |
+| `UState` | `+0x88` | 8 | `IgnoreMask` | measured | `0x49027` |
+| `UState` | `+0x94` | 2 | `LabelTableOffset` | measured | `0x46f22` |
+
+**The 22-byte record's fields are written in this order** -- `UState::Serialize` hands their pointers to four size-fixed writers, and cdecl makes the *second-to-last* push the field:
+
+| write | owner | offset | size | field | instruction |
+| ---: | --- | ---: | ---: | --- | --- |
+| 1 | `UState` | `+0x80` | 8 | `ProbeMask` | `write 1 of 4, lea ecx,[esi+0x80], handed to the 8-byte writer` |
+| 2 | `UState` | `+0x88` | 8 | `IgnoreMask` | `write 2 of 4, lea eax,[esi+0x88], handed to the 8-byte writer` |
+| 3 | `UState` | `+0x94` | 2 | `LabelTableOffset` | `write 3 of 4, add esi,0x94, handed to the 2-byte writer` |
+| 4 | `UState` | `+0x90` | 4 | `Flags` | `write 4 of 4, lea edx,[esi+0x90], handed to the 4-byte writer` |
+
+**The `0x2b2` index has five sites in `.text`** -- four compares that ask for it, and the reserve's own store that names it (`inventory/gname_seed.csv` row 690):
+
+| body | site | what it is | instruction |
+| --- | --- | --- | --- |
+| `execGotoState` | `0x04880d` | cmp | `cmp edx,0x2b2` |
+| `execGotoState` | `0x0488d1` | cmp | `cmp edx,0x2b2` |
+| `FUN_00048e90` | `0x048ec9` | cmp | `cmp ebp,0x2b2` |
+| `FUN_00048e90` | `0x048f43` | cmp | `cmp ebp,0x2b2` |
+| `Core_UnName` | `0x05e938` | seed-store | `mov DWORD PTR [ebp+0x0],0x2b2` |
+
+The last two writes are the correction this read carries: the two-byte field is at **`+0x94`**, the four-byte one at **`+0x90`** -- the order the label lookup and the setter read them in.
+<!-- /generated:state-members -->
+
+What the table settles, and the one thing it corrects:
+
+* **`+0xc` is `StateFrame` and `+0x48` is `Script`.** The payload's field order and the runtime's offsets are one
+  layout: the code base the label lookup adds a table offset to (`+0x48`) is `Script.Data`, the `TArray` the assert
+  bounds the code pointer with, and its count is `+0x4c`.
+* **`+0x24` is the header's `Class`, not "the object's current state".** The setter loads `[esi+0x24]` and compares
+  a state pointer against it (`0x48eaf`), and `tools/xemu/names.py --verify` measured that slot as `UObject::Class`
+  over hundreds of live objects; the name the setter then prints is the *state's* (`+0x20` of the state it holds).
+* **The record's last two fields were swapped in `docs/NATIVE_VM.md`.** The two-byte field is at **`+0x94`** and the
+  four-byte one at **`+0x90`**. The writers are cdecl with two stack arguments, so the *second-to-last* push is the
+  field, and the pointer a caller leaves on the stack is written **second** -- which is the order the label lookup
+  reads (`mov ax,[esi+0x94]`, `cmp ax,0xffff`) and the setter reads (`mov cl,[eax+0x90]`, `test cl,0x2`).
+* **`0x2b2` is a name, not a `BadToken`.** The index the setter treats as "the `auto` state" is `GNames[690]`, and
+  the reserve names that slot **`Auto`** (`inventory/gname_seed.csv`, seeded at `0x5e938`); every other instruction
+  in `.text` that carries the immediate is a compare. The constant is the auto state's own name, which is why the
+  setter's flag walk (`test cl,0x2`) and the compare agree. `docs/UNKNOWNS.md` U26 is rewritten with it.
+
+## Still open
+
+* **`+0x1c` is the one offset of the six the image names nowhere.** The setter reads `[frame+0x1c]` and takes its
+  `+0x20` as a name (`0x48eac`), so it is a state pointer, but no assert, symbol or string spells the member.
+* **The 876 slots the reserve leaves null** are the encode of a generated header this image does not carry. The one
+  index in the state machine's range that shipped code compares is a *named* slot (`Auto`), so no hole is addressed
+  by the state machine; whether any other subsystem addresses one is not measured, and a live read of a hole slot
+  beside a named one in the same boot would say what a package load does with the range.
 
 ## Reproduce
 
@@ -218,3 +281,5 @@ re-derives every row from the image, and `--check` is the dump-free half in `mak
     make gname-seed SG1_DUMP=$HOME/nfs/sg1-dump         # the name reserve the three slots are read from
     python3 tools/gname-seed.py --verify                # re-derive all 325 rows from the image
     python3 tools/gname-seed.py --check                 # the committed rows, no dump
+    make state-members SG1_DUMP=$HOME/nfs/sg1-dump      # the names the image prints, and the record's order
+    python3 tools/state-members.py --check              # the committed rows, no dump

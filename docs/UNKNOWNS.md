@@ -4792,7 +4792,7 @@ bare spelling (`text_label_bare`). **What is still open:** what the native `Obje
 `0x71`) does when the state is found and the label is not -- warn and land on the entry point, or refuse the
 transition. That is a runtime-semantics question and it changes no number here.
 
-## U26. The name reserve is sparse: 325 named slots between 0 and 1200, and 876 nulls
+## U26. The one index the state machine compares is `Auto`, not a hole -- and the 876 nulls are addressed by no state code
 
 **Observed.** `tools/gname-seed.py` (`inventory/gname_seed.csv`, `make gname-seed`) reads every `FNameEntry` the
 image creates before any package loads, from the seed routine `FName::StaticInit` (`0x5c080`): **325** names, every
@@ -4810,13 +4810,18 @@ enter a state whose chain's table carries `Begin`, **0** enter a table whose ent
 **400** enter a state whose chain carries no table at all -- so no shipped site can observe the 23 non-`Begin`
 tables being entered bare.
 
-**What is still open.** Whether a hole is a *number the shipped code addresses* rather than a gap a generated header
-left. `execGotoState` compares its evaluated argument against **`0x2b2`** (690), the `BadToken` sentinel the compiler
-emits when it could not build an argument, so slot 690 is either a hole (and the sentinel is a value that never
-names a state) or a name a package load put there. The reserve does not fill it, and nothing else in the image does.
+**The index the setter compares is a name: 690 is `Auto`.** `execGotoState` compares its evaluated argument against
+**`0x2b2`** twice (`0x4880d`, `0x488d1`) and `state_set` twice (`0x48ec9`, `0x48f43`), and the reserve files slot
+**690** as **`Auto`**, seeded by the store at `0x5e938` -- the only instruction in `.text` that carries the immediate
+and is not a compare (`tools/state-members.py`, `inventory/state_members.csv`, the `sentinel` rows). So the constant
+is the auto state's own name, and the setter's next move agrees with it: it walks the chain for the state whose flag
+byte has bit **`0x2`** set (`mov cl,[eax+0x90]`, `test cl,0x2`). The earlier reading in this entry -- "690 is either
+a hole, and the sentinel is a value that never names a state, or a name a package load put there" -- was wrong on
+both counts: it is in the reserve, inside run 18 (`671-714`, `Intrinsic` .. `Delegate`), and no package is involved.
 
-**What would settle it.** A live read of `GNames[690]` beside a slot the reserve does name (`GNames[100]`), in the
-same boot: `tools/xemu/names.py --at 0x006be0d8` with the indices named, on a menu boot (its `num=` is 34,800 there
-against 41,265 in a level, so the two populations are distinguishable). It changes no number in the state page.
+**What is still open.** The other **876** nulls: nothing in the state machine addresses one, and the image carries no
+headers, so whether a generated `enum` left them (the runs look like one enum each) or the build reserved them for
+content that was cut is not decidable here. A live read of `GNames` slot in a hole beside a seeded slot, in the same
+boot, would say what a package load does with the range -- it changes no number in the state page.
 
-**Status.** Open. The three slots the state page needed are answered; this entry tracks the 876 holes behind them.
+**Status.** Answered for the index the shipped state code addresses (`Auto`); open for the 876 nulls behind it.

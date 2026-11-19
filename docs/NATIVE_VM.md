@@ -989,7 +989,7 @@ Three writers say otherwise, read from the bodies under `$WORK/module-export/Cor
 | `FUN_000637e0` | a count: a raw 4-byte integer (`0x00037110`) **only when both the loading and the saving flag are clear**, otherwise an `FCompactIndex` built byte by byte through `0x00037040` | in a cooked package -- a *saving* archive -- **every array count in the record is compact** |
 | `FUN_0003d900` | the 12-byte-record array: the count, then per record one **object reference** (archive vtable `+0x18`) and two 4-byte dwords (`0x00037110`, `0x000370e0`) | a record is **9 bytes** when its reference is one byte long |
 | `FUN_0003d160` | the two "dword" arrays: the count, then each element through archive vtable **`+0x1c`, the *name* method** -- the one `UStruct::Serialize` uses for `FriendlyName` | they are `TArray<FName>`, **one compact index per element** (`tools/archive-slots.py`), **not** `n x 4 bytes` |
-| `FUN_000394c0` (`UState::Serialize`) | runs before `UClass`'s own fields: `0x000371d0` writes **8** bytes at `+0x80` and again at `+0x88`, `0x00037080` writes **2** at `+0x90`, `0x000370e0` writes **4** at `+0x94` | **22 bytes** the field table did not have |
+| `FUN_000394c0` (`UState::Serialize`) | runs before `UClass`'s own fields: `0x000371d0` writes **8** bytes at `+0x80` and again at `+0x88`, `0x00037080` writes **2** at **`+0x94`**, `0x000370e0` writes **4** at **`+0x90`** (the pushes are cdecl: the second-to-last is the field, and the pointer left on the stack is written second -- `tools/state-members.py`) | **22 bytes** the field table did not have |
 
 **The stride-9 unit has an owner.** The residue's repeated 4-byte value at a stride of 9 (`docs/CLASS_DEFAULTS.md`,
 69 of 540 candidates) is one streamed 12-byte record: a one-byte object reference followed by the record's two
@@ -2108,7 +2108,7 @@ fields, and its listing and decompiled form agree on it:
 
 | call | what it writes |
 |---|---|
-| `FUN_000394c0(archive)` | `UState::Serialize` -- `UStruct::Serialize` first, then 8 + 8 + 2 + 4 bytes |
+| `FUN_000394c0(archive)` | `UState::Serialize` -- `UStruct::Serialize` first, then 8 + 8 + 2 + 4 bytes (at `+0x80`, `+0x88`, **`+0x94`**, **`+0x90`**) |
 | `FUN_000370e0(archive, +0x498)` | one dword (`Serialize(ptr,4)` on the proxy) |
 | `FUN_000370e0(archive, +0x4a0 .. +0x4ac)` | four dwords -- 20 bytes |
 | `FUN_0003d900(archive, +0x4d0)` | the 12-byte-record array: a compact count, then count x (compact reference, dword, dword) |
