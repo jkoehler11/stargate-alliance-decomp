@@ -88,7 +88,8 @@ The setter (`+0x34`) resolves the name to a state, and the shape around it is a 
 * an *unresolved* name falls back to the object's current state, and the setter returns 0 -- the call is a no-op
   rather than a move.
 * a real change fires a built-in event on the old state (FName index **317**) before the switch and one on the new
-  state (**316**) after it; the order is the evidence, the pages' names for those two indices are not measured here.
+  state (**316**) after it; the order is the evidence, and the reserve spells those two slots `EndState` and
+  `BeginState` (*The names*, below).
 * then the frame's code pointer is cleared, the frame's probe masks are recomputed from the old and new states'
   `ProbeMask`/`IgnoreMask`, and the object's flags are marked as having begun a state.
 
@@ -120,19 +121,93 @@ runtime read above:
   with the label `KeepGoing`, re-derived with the same read as the AI page's join. It is the only site in the corpus
   that reaches the `Label not found` line.
 
+## The names: `Begin` at 100, and the two events at 316 and 317
+
+Three questions this page ended on are one read, because they are all slots of the global name table `GNames`
+(`0x006be0d8`): the default entry label `GotoState` passes, the two events the setter fires, and -- from the corpus
+side -- whether a table whose entry byte carries another name can be entered without one. The packages cannot answer
+any of them (a package's name table is its own), but the **image** seeds the global table before the first package
+loads, and every seed entry carries its index as an immediate. `FName::StaticInit` (`0x5c080`) zeroes the name hash
+(`0x006ba0c8`, 4096 dwords), sets the initialised flag (`0x006be0c8`) and then, name by name, allocates an
+`FNameEntry` of `2*len+0xe` bytes -- the size this page's natives measure -- writes the index into the entry's first
+dword, copies the text and hands it to the append routine (`0x5be10`). That routine is what makes the reserve
+*sparse*: it grows `GNames` to cover the index, **zeroing every slot it skipped**, and stores the entry there.
+`tools/gname-seed.py` (`make gname-seed`, `inventory/gname_seed.csv`) reads all of those blocks; `--verify`
+re-derives every row from the image, and `--check` is the dump-free half in `make ci`.
+
+<!-- generated:gname-seed -->
+325 names are reserved before the first package loads, in 32 contiguous runs between index 0 and 1200, so 876 of those slots stay null (`16` of the entries are built by the constructor at `0x5bdc0`, the rest inline).
+
+| run | indices | names | first | last |
+| ---: | --- | ---: | --- | --- |
+| 1 | 0-16 | 17 | `None` | `PointerProperty` |
+| 2 | 20-23 | 4 | `Core` | `Gameplay` |
+| 3 | 80-88 | 9 | `Byte` | `Rotator` |
+| 4 | 90-95 | 6 | `Color` | `Quat` |
+| 5 | 100 | 1 | `Begin` | `Begin` |
+| 6 | 102-107 | 6 | `State` | `Transient` |
+| 7 | 117 | 1 | `Enum` | `Enum` |
+| 8 | 119-122 | 4 | `Replication` | `Always` |
+| 9 | 150-163 | 14 | `Field` | `PlayerInput` |
+| 10 | 301-366 | 66 | `Destroyed` | `LIPSincAnimEnd` |
+| 11 | 600-601 | 2 | `Vect` | `Rot` |
+| 12 | 605-607 | 3 | `ArrayCount` | `Rng` |
+| 13 | 620-623 | 4 | `Else` | `Stop` |
+| 14 | 625-635 | 11 | `Until` | `Continue` |
+| 15 | 640-644 | 5 | `Private` | `EdFindable` |
+| 16 | 646-650 | 5 | `Skip` | `Config` |
+| 17 | 652-665 | 14 | `Travel` | `Automated` |
+| 18 | 671-714 | 44 | `Intrinsic` | `Delegate` |
+| 19 | 720-723 | 4 | `Var` | `From` |
+| 20 | 730-732 | 3 | `Spawn` | `Map` |
+| 21 | 740 | 1 | `Tag` | `Tag` |
+| 22 | 742-745 | 4 | `Role` | `User` |
+| 23 | 760-794 | 35 | `Log` | `UserPrompt` |
+| 24 | 800-808 | 9 | `White` | `DefaultColor` |
+| 25 | 820-833 | 14 | `KeyType` | `NotifyLevelChange` |
+| 26 | 835-864 | 30 | `SendText` | `DevLIPSinc` |
+| 27 | 870 | 1 | `DevUI` | `DevUI` |
+| 28 | 900 | 1 | `UTrace` | `UTrace` |
+| 29 | 910-911 | 2 | `Long` | `ShitBag` |
+| 30 | 927 | 1 | `RecordCache` | `RecordCache` |
+| 31 | 1000-1002 | 3 | `Persistent` | `DontSaveGame` |
+| 32 | 1200 | 1 | `ForceCleanUp` | `ForceCleanUp` |
+
+| index | name | what the state machine does with it | read at |
+| ---: | --- | --- | --- |
+| 100 | `Begin` | the default entry label `execGotoState` passes (0x487af: `mov eax,0x64`) | `0x05cbc7` |
+| 317 | `EndState` | the event `state_set` fires on the old state before the switch (0x48f73) | `0x061389` |
+| 316 | `BeginState` | the event `state_set` fires on the new state after it (0x49073) | `0x06133e` |
+<!-- /generated:gname-seed -->
+
+* **The default label is `Begin`.** `execGotoState` loads `0x64` at `0x487af` when the call passes no label, and slot
+  100 of the reserve is `Begin`. A bare `GotoState('X')` therefore asks `X`'s table -- and whatever the lookup's chain
+  reaches -- for an entry named `Begin`; **143 of the 166** tables carry one.
+* **The two events are `EndState` and `BeginState`.** `state_set` writes `0x13d` at `0x48f73`, before the switch and
+  on the old state, and `0x13c` at `0x49073`, after it and on the new state, and the reserve spells those two slots
+  `EndState` and `BeginState`. Order and name now agree with each other: the old state ends, the new one begins.
+* **The reserve is not only the state names.** It carries the compiler's own names too (`State` 102, `Function` 103,
+  `Self` 104, `True` 105, `False` 106) and, in one run of 25 from `Destroyed` (301) to `EndedRotation` (325), the
+  engine's built-in actor events -- the block `BeginState`/`EndState` sit in, which is why the state machine's two
+  events are name indices rather than a separate enumeration.
+* **No shipped site enters a non-`Begin` table bare.** Of the **615** `GotoState` sites that pass one literal
+  argument, **215** enter a state whose table (or whose state chain's table) carries `Begin`, and **0** enter one
+  whose table carries another name -- so the 23 non-`Begin` tables are never entered without a label, and the default
+  label's miss is unreachable in shipped content. The remaining **400** enter a state whose chain carries no table at
+  all: the commoner shape, where the state has no statement code of its own and its behaviour lives in the functions
+  it declares. `inventory/state_entry.csv` counts all four populations (`bare_entries*`).
+
 ## Not measured, and what would settle it
 
-* **Which name FName 100 is.** The default label is the engine's own name index, and the packages' name tables are
-  per-package, so the only instrument that answers it is a GNames read in a live guest: slot 100 of the array at
-  `0x006be0d8` (`tools/xemu/mem.py --virtual`, the same read `docs/NATIVE_PROPERTIES.md` makes of that global). In
-  the corpus, 143 of the 166 tables put `Begin` on their entry byte and 23 put something else there, so the two
-  readings disagree for 23 states and the runtime's answer decides which.
 * **Which engine field each offset is.** `+0xc` (the state frame), `+0x1c` (the state the lookup walks from),
   `+0x20` (a state's name), `+0x24` (the object's current state), `+0x48` (the state's code base), `+0x94` (the
   WORD label offset) are measured *shapes*, not named members: the engine headers are not in the image, and the
   record built at load is the package-based `UState` whose field order this page's constants match one for one.
-* **The names of the two events.** Indices 316 and 317 are fired before and after the switch; that they are
-  `EndState`/`BeginState` is an inference from order and from the shipped text, not a measurement.
+* **What the 876 empty slots are for.** The reserve names 325 of the 1,201 slots it reaches and leaves the rest
+  zero, and the append routine only ever grows the array *past* the index it is handed, so nothing it does reuses a
+  hole. Whether the holes are numbers the shipped code addresses directly (`execGotoState` also compares `0x2b2` =
+  690) or just the gaps a generated header left is open: a live read of `GNames[690]` and of a slot the reserve does
+  name, in the same boot, would settle which population is real.
 
 ## Reproduce
 
@@ -140,3 +215,6 @@ runtime read above:
     python3 tools/state-natives.py --verify             # re-read every claim from the image
     python3 tools/state-natives.py --check              # the committed rows, no dump
     make state-entry SG1_DUMP=$HOME/nfs/sg1-dump        # the corpus side this page quotes (`docs/systems/AI.md`)
+    make gname-seed SG1_DUMP=$HOME/nfs/sg1-dump         # the name reserve the three slots are read from
+    python3 tools/gname-seed.py --verify                # re-derive all 325 rows from the image
+    python3 tools/gname-seed.py --check                 # the committed rows, no dump

@@ -1342,6 +1342,10 @@ census,,,,,,,,,,,,entry_labels_in_table,103,"of those, the label an entry of the
 census,,,,,,,,,,,,entry_labels_via_state_super,4,"of those, resolved through the target state's own `Super` -- its code is the state it inherits from"
 census,,,,,,,,,,,,entry_labels_absent,1,"of those, a label the target state's table does not name"
 census,,,,,,,,,,,,entry_labels_no_code,1,"of those, whose target state carries a record and no table"
+census,,,,,,,,,,,,bare_entries,615,`GotoState('X')` sites with a literal target and no label
+census,,,,,,,,,,,,bare_entries_begin,215,"of those, whose target's table carries `Begin` -- the name the default label resolves to"
+census,,,,,,,,,,,,bare_entries_other_label,0,"of those, whose target's entry byte carries another name -- the lookup misses and the state does not run"
+census,,,,,,,,,,,,bare_entries_no_table,400,"of those, whose target carries no table at all"
 census,,,,,,,,,,,,record_states,387,`State` exports whose own payload is a record with no label table
 census,,,,,,,,,,,,record_states_super,52,"of those, that name a `Super` state"
 census,,,,,,,,,,,,record_states_inherited_code,24,"of those, whose `Super` chain reaches a state with a table -- the code they run"

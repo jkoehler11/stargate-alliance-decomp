@@ -4791,3 +4791,32 @@ first byte carries two label names (`alias` rows), the two unresolved entry labe
 bare spelling (`text_label_bare`). **What is still open:** what the native `Object.GotoState` (`native(113)`, slot
 `0x71`) does when the state is found and the label is not -- warn and land on the entry point, or refuse the
 transition. That is a runtime-semantics question and it changes no number here.
+
+## U26. The name reserve is sparse: 325 named slots between 0 and 1200, and 876 nulls
+
+**Observed.** `tools/gname-seed.py` (`inventory/gname_seed.csv`, `make gname-seed`) reads every `FNameEntry` the
+image creates before any package loads, from the seed routine `FName::StaticInit` (`0x5c080`): **325** names, every
+one carrying its index as an immediate, in **32** contiguous runs between index **0** (`None`) and **1200**
+(`ForceCleanUp`). The append routine they are handed to (`0x5be10`) grows `GNames` (`0x006be0d8`) to cover the index,
+**zeroes every slot it skipped** and refuses to overwrite an occupied slot (it logs through `0x4db690` instead), so
+the **876** holes in that range are the build's own shape rather than a decode artefact.
+
+**What the reserve settles, and where it is used.** Three slots are load-bearing for the state machine
+(`docs/systems/STATE_NATIVES.md`, *The names*): **100** is `Begin` -- the default entry label `execGotoState` loads
+at `0x487af` -- and **317**/**316** are `EndState`/`BeginState`, the events `state_set` fires before and after its
+switch (`0x48f73`, `0x49073`). The reserve also explains why `True`/`False`/`Self` (105/106/104) need no package:
+they are seeded. The corpus side is closed with it: of the **615** one-argument literal `GotoState` sites, **215**
+enter a state whose chain's table carries `Begin`, **0** enter a table whose entry byte carries another name and
+**400** enter a state whose chain carries no table at all -- so no shipped site can observe the 23 non-`Begin`
+tables being entered bare.
+
+**What is still open.** Whether a hole is a *number the shipped code addresses* rather than a gap a generated header
+left. `execGotoState` compares its evaluated argument against **`0x2b2`** (690), the `BadToken` sentinel the compiler
+emits when it could not build an argument, so slot 690 is either a hole (and the sentinel is a value that never
+names a state) or a name a package load put there. The reserve does not fill it, and nothing else in the image does.
+
+**What would settle it.** A live read of `GNames[690]` beside a slot the reserve does name (`GNames[100]`), in the
+same boot: `tools/xemu/names.py --at 0x006be0d8` with the indices named, on a menu boot (its `num=` is 34,800 there
+against 41,265 in a level, so the two populations are distinguishable). It changes no number in the state page.
+
+**Status.** Open. The three slots the state page needed are answered; this entry tracks the 876 holes behind them.
