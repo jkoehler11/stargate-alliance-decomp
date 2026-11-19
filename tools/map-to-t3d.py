@@ -25,6 +25,14 @@ bytes would print invented actor names, so it is counted as a refusal instead. A
 arrays are counted with their count and element width (`rest / count`, when it divides) and left as a comment:
 an array's element type lives in the class's property declaration, which this reader does not carry.
 
+**A struct array's element is a tagged block** (2026-11-19). The array that "divides by its count" was left
+as a comment because a struct's width is not a fact about its name; the width is a fact about the *element*,
+and the element is a tagged property block like every other struct value (`decode_struct_elements`). It
+replaces the element-layout deferral: the walk reads each element's own field names and its own end, and it is
+the struct rule (`struct_fields`) applied to each element rather than a second rule. Every declared struct
+array in these 73 maps decodes, including the 46 the width rule could not reach, so no array payload is left
+unread.
+
 Output is game-derived content: `$WORK` only, never this repository (`.gitignore` keeps `/work` and `/out` out,
 and the docs say the same). What is committed is the tool and the counts it prints.
 """
@@ -316,6 +324,51 @@ def decode_string_array(raw, ps):
     return out if off == len(raw) else None
 
 
+def array_row(arrays, element_type, owner):
+    """The census row for one (element type, declaring class), with every column the two rules fill."""
+    return arrays.setdefault((element_type, owner),
+                             {"arrays": 0, "records": 0, "widths": {}, "tagged": 0,
+                              "tagged_widths": {}, "shapes": {}})
+
+
+def decode_struct_elements(raw, pkg, ps):
+    """`[count][count tagged blocks]` -> `[(width, fields)]`, or `None` when the payload is not that.
+
+    An array whose element is a struct needs no element layout, and this is the section that used to defer
+    them: a struct's value is a tagged property block (`prop_stream.struct_fields`), so each element carries
+    its own field names, its own order and its own width -- the width moves because the first field is a
+    compact index. `ParticleColorScale` is 14 bytes on some records, 17 on others, inside one array type.
+
+    The element rule is the struct rule, not a second one: `read_block` gives the element's end, and
+    `struct_fields` then has to accept exactly those bytes with both of its tests (ends at `None` on the last
+    byte, `tag-encode` re-encodes the same tags). The array is this count followed by that many of them,
+    consuming the payload exactly, so a payload of object indices or floats refuses rather than being counted
+    as a struct array that happens to divide.
+    """
+    try:
+        count, off = ps.read_index(raw, 0)
+    except IndexError:
+        return None
+    if count < 1 or count > 8192:
+        return None
+    out = []
+    for _ in range(count):
+        if off >= len(raw):
+            return None
+        try:
+            _props, end, reason = ps.read_block(raw[off:], pkg, True)
+        except Exception:
+            return None
+        if reason != "None" or end <= 0:
+            return None
+        fields = ps.struct_fields(raw[off:off + end], pkg)
+        if not fields:
+            return None
+        out.append((end, fields))
+        off += end
+    return out if off == len(raw) else None
+
+
 def palette_record(data, ps):
     """A `StaticMeshInstance` payload -> `(colours, clear, tail bytes)` when the bytes are the packed colour table.
 
@@ -385,7 +438,8 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "struct_tagged": 0, "struct_native": 0, "compact_arrays": 0, "compact_elements": 0,
           "string_arrays": 0, "string_elements": 0, "elements_decoded": 0, "record_starts": 0,
           "padded_blocks": 0, "palette_payloads": 0, "palette_refused": 0, "palette_colours": 0,
-          "palette_clear": 0, "palette_tail": 0}
+          "palette_clear": 0, "palette_tail": 0, "palette_tails": 0, "palette_head2": 0,
+          "struct_element_arrays": 0, "struct_element_records": 0}
     structs, arrays = {}, {}
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
@@ -402,6 +456,10 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                 st["palette_colours"] += palette[0]
                 st["palette_clear"] += palette[1]
                 st["palette_tail"] += palette[2]
+                if palette[2] >= 4:
+                    st["palette_tails"] += 1
+                    if data[-palette[2]:4 - palette[2]] == b"\x02\x00\x00\x00":
+                        st["palette_head2"] += 1
             continue
         preferred = None
         if prec is not None:
@@ -441,11 +499,38 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                     for i, ref in enumerate(refs):
                         lines.append("   %s(%d)=%s" % (p["name"], i, ps.resolve_ref(pkg, ref)))
                     continue
+                elements = decode_struct_elements(raw, pkg, ps)
+                if elements is not None:
+                    # A struct array whichever rule reads it: `struct_arrays` is the refused population the
+                    # partition in `--check` counts, and `struct_element_*` is the half this rule settled.
+                    st["struct_arrays"] += 1
+                    st["struct_records"] += len(elements)
+                    st["struct_element_arrays"] += 1
+                    st["struct_element_records"] += len(elements)
+                    row = array_row(arrays, et, owner)
+                    row["arrays"] += 1
+                    row["records"] += len(elements)
+                    row["tagged"] += 1
+                    printed = []
+                    for width, fields in elements:
+                        row["tagged_widths"][width] = row["tagged_widths"].get(width, 0) + 1
+                        shape = struct_shape(fields)
+                        row["shapes"][shape] = row["shapes"].get(shape, 0) + 1
+                        printed.append(fmt_struct(fields))
+                    if any(text is None for text in printed):
+                        # One field is an array (`IMusicSegment.Transition`), so the field list is known and
+                        # the element is not printable as a tuple: say which shape, never a hole.
+                        lines.append("   // %s: %d element(s) of %s"
+                                     % (p["name"], len(elements), struct_shape(elements[0][1])))
+                        continue
+                    for i, text in enumerate(printed):
+                        lines.append("   %s(%d)=%s" % (p["name"], i, text))
+                    continue
                 layout = element_layout(raw, ps)
                 if layout:
                     st["struct_arrays"] += 1
                     st["struct_records"] += layout[0]
-                    row = arrays.setdefault((et, owner), {"arrays": 0, "records": 0, "widths": {}})
+                    row = array_row(arrays, et, owner)
                     row["arrays"] += 1
                     row["records"] += layout[0]
                     row["widths"][layout[1]] = row["widths"].get(layout[1], 0) + 1
@@ -595,7 +680,8 @@ def check(values, structs, stats, arrays=ARRAYS):
     tot = {"arrays": 0, "object_arrays": 0, "arrays_refused": 0, "struct_props": 0,
            "struct_decoded": 0, "object_elements": 0, "struct_arrays": 0, "struct_array_records": 0,
            "struct_tagged": 0, "struct_native": 0, "compact_arrays": 0, "compact_elements": 0,
-           "string_arrays": 0, "string_elements": 0}
+           "string_arrays": 0, "string_elements": 0,
+           "struct_element_arrays": 0, "struct_element_records": 0}
     for r in vrows:
         n_arrays, obj, refused = int(r["arrays"]), int(r["object_arrays"]), int(r["arrays_refused"])
         sp, sd = int(r["struct_props"]), int(r["struct_decoded"])
@@ -610,6 +696,11 @@ def check(values, structs, stats, arrays=ARRAYS):
                             % (values, r["map"], sd, int(r["struct_tagged"]), int(r["struct_native"])))
         if int(r["compact_elements"]) < ca or int(r["string_elements"]) < sa:
             problems.append("%s: %s counts fewer elements than arrays" % (values, r["map"]))
+        if int(r["struct_element_arrays"]) > int(r["struct_arrays"]):
+            problems.append("%s: %s decodes %d tagged element arrays of %d struct arrays"
+                            % (values, r["map"], int(r["struct_element_arrays"]), int(r["struct_arrays"])))
+        if int(r["struct_element_arrays"]) and not int(r["struct_element_records"]):
+            problems.append("%s: %s decodes tagged element arrays with no records" % (values, r["map"]))
         if int(r["struct_arrays"]) and not int(r["struct_array_records"]):
             problems.append("%s: %s has struct arrays with no records" % (values, r["map"]))
         for k in tot:
@@ -664,6 +755,10 @@ def check(values, structs, stats, arrays=ARRAYS):
         refused = sum(int(r.get("palette_refused") or 0) for r in crows)
         if refused:
             problems.append("%s: %d StaticMeshInstance payload(s) refuse the palette rule" % (stats, refused))
+        if sum(int(r.get("palette_head2") or 0) for r in crows) > sum(int(r.get("palette_tails") or 0) for r in crows):
+            problems.append("%s: more head-dword-2 tails than tails" % stats)
+        if sum(int(r.get("palette_tails") or 0) for r in crows) > sum(int(r.get("palette_payloads") or 0) for r in crows):
+            problems.append("%s: more tails than palette payloads" % stats)
         if sum(int(r.get("palette_payloads") or 0) for r in crows) == 0:
             problems.append("%s: no palette payload measured" % stats)
         fewer = [r["map"] for r in crows
@@ -682,8 +777,18 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("%s: records do not add up to the values census's struct_array_records" % arrays)
     if any(r["element_type"] != "?" and not r["declared_by"] for r in arows):
         problems.append("%s: a declared element type does not name the class that declares it" % arrays)
-    if any(not r["widths"] for r in arows):
+    if any(not r["widths"] and not r["element_widths"] for r in arows):
         problems.append("%s: a row carries no element width" % arrays)
+    if sum(int(r["tagged_elements"]) for r in arows) != tot["struct_element_arrays"]:
+        problems.append("%s: %d tagged arrays != the values census's %d"
+                        % (arrays, sum(int(r["tagged_elements"]) for r in arows), tot["struct_element_arrays"]))
+    if any(int(r["tagged_elements"]) and not r["element_widths"] for r in arows):
+        problems.append("%s: a tagged row carries no element width" % arrays)
+    # The rule's bite is that nothing is left: every refused array either has a (count, width) layout or is a
+    # count of tagged elements, so `arrays_refused == struct_arrays` and the `unshaped` residue is zero.
+    if tot["arrays_refused"] != tot["struct_arrays"]:
+        problems.append("%s: %d refused arrays are not struct arrays (unshaped: %d)"
+                        % (values, tot["arrays_refused"], tot["arrays_refused"] - tot["struct_arrays"]))
     parent = {"Child": "Base", "Base": ""}
     types = {("Base", "Foo"): "array<int>", ("Base", "Bar"): "float"}
     if declared(parent, types, "Child", "Foo") != ("array<int>", "Base"):
@@ -704,6 +809,31 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("decode_obj_array accepts a payload one element short")
     if decode_obj_array(b"\x01\x09", _Pkg(2), ps) is not None:
         problems.append("decode_obj_array accepts an index past the export table")
+    # The element walk is driven with canned blocks: what is under test is the count, the exact consumption and
+    # the two refusals, not the tag reader (whose own tests are `prop_stream`'s).
+    class _ElemPs:
+        def __init__(self, widths):
+            self.widths = widths
+
+        def read_index(self, buf, off):
+            return buf[off], off + 1
+
+        def read_block(self, buf, pkg, want_values=False, **kw):
+            width = self.widths.get(buf[0])
+            return ([{"name": "A", "type": "Int", "value": 1}], width, "None") if width else ([], 0, "?")
+
+        def struct_fields(self, buf, pkg, native_width=None, depth=0):
+            return [{"name": "A", "type": "Int", "value": 1}]
+
+    two = b"\x02" + b"\x05\x00\x00\x00\x00" + b"\x06\x00\x00\x00\x00"
+    if [w for w, _f in (decode_struct_elements(two, None, _ElemPs({5: 5, 6: 5})) or [])] != [5, 5]:
+        problems.append("decode_struct_elements does not walk two tagged elements")
+    if decode_struct_elements(two[:-1], None, _ElemPs({5: 5, 6: 5})) is not None:
+        problems.append("decode_struct_elements accepts a payload one byte short")
+    if decode_struct_elements(b"\x01\x07\x00\x00\x00\x00", None, _ElemPs({5: 5})) is not None:
+        problems.append("decode_struct_elements accepts a block that is not tagged")
+    if decode_struct_elements(b"\x00", None, _ElemPs({})) is not None:
+        problems.append("decode_struct_elements accepts an empty payload")
     if element_layout(b"\x02" + b"\x00" * 8, ps) != (2, 4):
         problems.append("element_layout does not divide 8 bytes over 2 elements")
     # An array of compact indices is exactly the payload `element_layout` refuses, so the two rules have to be
@@ -800,10 +930,11 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
     tot = {k: sum(int(r[k]) for r in vrows) for k in
            ("arrays", "object_arrays", "object_elements", "arrays_refused", "struct_arrays",
             "struct_array_records", "struct_props", "struct_decoded", "struct_raw", "struct_tagged",
-            "struct_native", "compact_arrays", "compact_elements", "string_arrays", "string_elements")}
+            "struct_native", "compact_arrays", "compact_elements", "string_arrays", "string_elements",
+            "struct_element_arrays", "struct_element_records")}
     ptot = {k: sum(int(r[k]) for r in crows) for k in
             ("palette_payloads", "palette_colours", "palette_clear", "palette_refused",
-             "palette_tail_bytes")}
+             "palette_tail_bytes", "palette_tails", "palette_head2")}
     out = []
     out.append("| measure | value |")
     out.append("|---|---:|")
@@ -819,8 +950,11 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
                % (tot["string_arrays"], tot["string_elements"]))
     out.append("| -- of the struct arrays, element type declared | **%d** |"
                % sum(int(r["arrays"]) for r in arows if r["element_type"] != "?"))
-    out.append("| -- of those, elements decoded | **%d** |"
+    out.append("| -- of those, elements decoded by a fixed width | **%d** |"
                % sum(int(r["records"]) for r in arows if r["element_type"] in ELEMENT))
+    out.append("| -- of those, elements decoded as tagged blocks | **%d** arrays, **%d** records |"
+               % (tot["struct_element_arrays"], tot["struct_element_records"]))
+    out.append("| -- arrays no rule reaches | **%d** |" % (tot["arrays_refused"] - tot["struct_arrays"]))
     out.append("| struct-typed properties | %d |" % tot["struct_props"])
     out.append("| struct properties decoded | **%d** |" % tot["struct_decoded"])
     out.append("| -- native bodies (`Vector`, `Rotator`, `Color`) | %d |" % tot["struct_native"])
@@ -831,6 +965,7 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
     out.append("| records whose alpha is zero | %d |" % ptot["palette_clear"])
     out.append("| payloads the palette rule refuses | %d |" % ptot["palette_refused"])
     out.append("| native bytes after the palette | %d |" % ptot["palette_tail_bytes"])
+    out.append("| tails whose head dword is 2 | **%d** of %d |" % (ptot["palette_head2"], ptot["palette_tails"]))
     out.append("")
     out.append("| struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |")
     out.append("|---|---:|---:|---:|---:|---|---|")
@@ -840,12 +975,20 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
                    % (r["struct"], r["properties"], r["decoded"], r["tagged"], r["native"],
                       r["sizes"].replace(";", " / "), fields))
     out.append("")
-    out.append("| array element type | declared on | arrays | records | widths (bytes:arrays) |")
-    out.append("|---|---|---:|---:|---|")
-    for r in arows[:10]:
+    out.append("| array element type | declared on | arrays | records | tagged arrays | "
+               "element widths (bytes:records) | payload fields |")
+    out.append("|---|---|---:|---:|---:|---|---|")
+    for r in arows[:12]:
         et = "*(not declared)*" if r["element_type"] == "?" else "`%s`" % r["element_type"]
-        out.append("| %s | %s | %s | %s | %s |" % (et, ("`%s`" % r["declared_by"]) if r["declared_by"] else "--",
-                                                   r["arrays"], r["records"], r["widths"].replace(";", " / ")))
+        widths = r["element_widths"] or r["widths"]
+        if r["widths"]:
+            widths = "%s (arrays)" % r["widths"].replace(";", " / ")
+        else:
+            widths = widths.replace(";", " / ")
+        shape = r["shapes"].split(";")[0].rsplit(":", 1)[0] if r["shapes"] else "--"
+        out.append("| %s | %s | %s | %s | %s | %s | `%s` |"
+                   % (et, ("`%s`" % r["declared_by"]) if r["declared_by"] else "--", r["arrays"],
+                      r["records"], r["tagged_elements"], widths, shape))
     return "\n".join(out)
 
 
@@ -931,19 +1074,26 @@ def main():
                      got["values"]["record_starts"], got["values"]["padded_blocks"],
                      got["values"]["palette_payloads"], got["values"]["palette_colours"],
                      got["values"]["palette_clear"], got["values"]["palette_refused"],
-                     got["values"]["palette_tail"]))
+                     got["values"]["palette_tail"],
+                     got["values"]["palette_tails"], got["values"]["palette_head2"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
                       v["struct_props"], v["struct_decoded"], v["struct_raw"], v["struct_tagged"],
                       v["struct_native"], v["compact_arrays"], v["compact_elements"],
-                      v["string_arrays"], v["string_elements"]))
+                      v["string_arrays"], v["string_elements"],
+                      v["struct_element_arrays"], v["struct_element_records"]))
         for key, row in got["arrays"].items():
-            agg = arrays.setdefault(key, {"arrays": 0, "records": 0, "widths": {}})
+            agg = array_row(arrays, key[0], key[1])
             agg["arrays"] += row["arrays"]
             agg["records"] += row["records"]
+            agg["tagged"] += row["tagged"]
             for width, n in row["widths"].items():
                 agg["widths"][width] = agg["widths"].get(width, 0) + n
+            for width, n in row["tagged_widths"].items():
+                agg["tagged_widths"][width] = agg["tagged_widths"].get(width, 0) + n
+            for shape, n in row["shapes"].items():
+                agg["shapes"][shape] = agg["shapes"].get(shape, 0) + n
         for sn, row in got["structs"].items():
             agg = structs.setdefault(sn, {"n": 0, "sizes": {}, "decoded": 0, "tagged": 0,
                                           "native": 0, "shapes": {}})
@@ -961,16 +1111,18 @@ def main():
     if args.stats:
         with open(args.stats, "w", encoding="utf-8", newline="") as fh:
             fh.write("map,actors,properties,unresolved_refs,t3d_bytes,record_starts,padded_blocks,"
-                     "palette_payloads,palette_colours,palette_clear,palette_refused,palette_tail_bytes\n")
+                     "palette_payloads,palette_colours,palette_clear,palette_refused,palette_tail_bytes,"
+                     "palette_tails,palette_head2\n")
             for row in rows:
-                fh.write("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" % row)
+                fh.write("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"
                  "struct_array_records,struct_props,struct_decoded,struct_raw,struct_tagged,"
-                 "struct_native,compact_arrays,compact_elements,string_arrays,string_elements\n")
+                 "struct_native,compact_arrays,compact_elements,string_arrays,string_elements,"
+                 "struct_element_arrays,struct_element_records\n")
         for r in vrows:
-            fh.write("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" % r)
+            fh.write("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" % r)
     print("values: %s (%d rows)" % (args.values, len(vrows)))
     with open(args.structs, "w", encoding="utf-8", newline="") as fh:
         fh.write("struct,properties,decoded,tagged,native,sizes,fields\n")
@@ -983,11 +1135,18 @@ def main():
                                                  sizes, shapes))
     print("structs: %s (%d rows)" % (args.structs, len(structs)))
     with open(args.arrays, "w", encoding="utf-8", newline="") as fh:
-        fh.write("element_type,declared_by,arrays,records,widths\n")
+        fh.write("element_type,declared_by,arrays,records,widths,tagged_elements,element_widths,"
+                 "shapes\n")
         for key in sorted(arrays, key=lambda k: (-arrays[k]["arrays"], k[0], k[1])):
             row = arrays[key]
             widths = ";".join("%d:%d" % (w, n) for w, n in sorted(row["widths"].items(), key=lambda kv: -kv[1]))
-            fh.write("%s,%s,%d,%d,%s\n" % (key[0] or "?", key[1], row["arrays"], row["records"], widths))
+            ewidths = ";".join("%d:%d" % (w, n) for w, n in sorted(row["tagged_widths"].items(),
+                                                                   key=lambda kv: -kv[1]))
+            shapes = ";".join("%s:%d" % (sh, n) for sh, n in sorted(row["shapes"].items(),
+                                                                    key=lambda kv: -kv[1]))
+            fh.write("%s,%s,%d,%d,%s,%d,%s,%s\n"
+                     % (key[0] or "?", key[1], row["arrays"], row["records"], widths, row["tagged"],
+                        ewidths, shapes))
     print("arrays: %s (%d rows)" % (args.arrays, len(arrays)))
     print("\nmaps: %d, actors: %d, properties: %d, unresolved refs: %d, t3d bytes: %d, out: %s"
           % (len(paths), total["actors"], total["props"], total["unresolved"], total["bytes"], args.out))

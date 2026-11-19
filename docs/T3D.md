@@ -55,6 +55,8 @@ they spawn. The doc now says that instead.
   one locator rule -- the T3D now has none. The old hypothesis, that they point at imports the reader does not
   index, is wrong: both were reads that stopped one test short. See "the three values that fell through".
 * Class defaults, above.
+* The palette's tail after the colour table: 17,183,118 bytes on all 33,509 payloads, whose first field is a
+  dword in 2..10 and whose remainder is not a tagged block (both measured at the end of this page).
 * The `Level` export's script sequence: the `ACTION_*` actors' parameters are visible, their order is not.
 
 ## Regenerating these numbers
@@ -148,11 +150,13 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `Array` properties | 38790 |
 | of those, object arrays | **34218** |
 | object references inside them | **127563** |
-| arrays refused a (count, width) layout | 4547 (4501 struct arrays holding 14563 records) |
+| arrays refused a (count, width) layout | 4547 (4547 struct arrays holding 19114 records) |
 | -- of those, a compact-index array | **0** (0 element(s)) |
 | -- of those, a string array | **25** (126 element(s) decoded) |
-| -- of the struct arrays, element type declared | **4501** |
-| -- of those, elements decoded | **2019** |
+| -- of the struct arrays, element type declared | **4547** |
+| -- of those, elements decoded by a fixed width | **2019** |
+| -- of those, elements decoded as tagged blocks | **4533** arrays, **17095** records |
+| -- arrays no rule reaches | **0** |
 | struct-typed properties | 315013 |
 | struct properties decoded | **315004** |
 | -- native bodies (`Vector`, `Rotator`, `Color`) | 203200 |
@@ -163,6 +167,7 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | records whose alpha is zero | 5643 |
 | payloads the palette rule refuses | 0 |
 | native bytes after the palette | 17183118 |
+| tails whose head dword is 2 | **30450** of 33509 |
 
 | struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |
 |---|---:|---:|---:|---:|---|---|
@@ -178,18 +183,20 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `Matrix` | 10 | 10 | 10 | 0 | 129:10 | `XPlane:Struct<Plane>+YPlane:Struct<Plane>+ZPlane:Struct<Plane>+WPlane:Struct<Plane>` |
 | `InterpCurve` | 9 | 0 | 0 | 0 | 5:9 | `Points:Array` |
 
-| array element type | declared on | arrays | records | widths (bytes:arrays) |
-|---|---|---:|---:|---|
-| `ParticleColorScale` | `ParticleEmitter` | 2472 | 5746 | 14:2156 / 17:203 / 15:102 / 16:11 |
-| `ParticleTimeScale` | `ParticleEmitter` | 1330 | 2000 | 34:656 / 35:281 / 31:220 / 33:102 / 32:71 |
-| `SoundEmitter` | `AmbientSound` | 476 | 797 | 38:363 / 37:84 / 41:23 / 40:6 |
-| `ParticleSound` | `ParticleEmitter` | 58 | 73 | 85:55 / 84:3 |
-| `ParticleBeamEndPoint` | `BeamEmitter` | 52 | 93 | 74:40 / 75:5 / 78:4 / 73:2 / 83:1 |
-| `IMusicSegment` | `IMusicActor` | 45 | 3695 | 73:21 / 41:8 / 68:8 / 59:4 / 39:1 / 47:1 / 75:1 / 49:1 |
-| `ParticleVelocityScale` | `ParticleEmitter` | 36 | 114 | 23:21 / 24:15 |
-| `int` | `FluidSurfaceInfo` | 12 | 2017 | 4:12 |
-| `Plane` | `ParticleEmitter` | 8 | 8 | 26:7 / 29:1 |
-| `ParticleRevolutionScale` | `ParticleEmitter` | 4 | 8 | 23:3 / 24:1 |
+| array element type | declared on | arrays | records | tagged arrays | element widths (bytes:records) | payload fields |
+|---|---|---:|---:|---:|---|---|
+| `ParticleColorScale` | `ParticleEmitter` | 2472 | 5746 | 2472 | 14:5095 / 17:411 / 15:213 / 16:27 | `RelativeTime:Float+Color:Struct<Color>` |
+| `ParticleTimeScale` | `ParticleEmitter` | 1330 | 2000 | 1330 | 34:877 / 31:434 / 35:429 / 32:147 / 33:113 | `RelativeTime:Float+RelativeSize:Float+UseXYZ:Bool+RelativeSizeXYZ:Struct<Vector>` |
+| `SoundEmitter` | `AmbientSound` | 486 | 823 | 486 | 38:551 / 37:233 / 41:31 / 40:8 | `EmitInterval:Float+EmitVariance:Float+Volume:Struct<Range>+EmitSound:Object` |
+| `IMusicSegment` | `IMusicActor` | 81 | 8220 | 81 | 83:1336 / 63:1336 / 61:1282 / 80:1277 / 87:908 / 66:906 / 59:506 / 77:448 / 68:113 / 84:56 / 155:21 / 281:12 / 41:8 / 81:3 / 39:2 / 40:2 / 70:2 / 47:1 / 49:1 | `SegmentName:Str+State:Byte+TypeStart:Bool+TypeEnd:Bool+TypeLoop:Bool+Transition:Array+TransitionFlags:Int+TestedValue:Int` |
+| `ParticleSound` | `ParticleEmitter` | 58 | 73 | 58 | 85:70 / 84:3 | `Sound:Object+Radius:Struct<Range>+Pitch:Struct<Range>+Weight:Int+Volume:Struct<Range>+Probability:Struct<Range>` |
+| `ParticleBeamEndPoint` | `BeamEmitter` | 52 | 93 | 52 | 74:77 / 75:8 / 78:5 / 73:2 / 83:1 | `ActorTag:Name+offset:Struct<RangeVector>+Weight:Float+ActorRef:Object` |
+| `ParticleVelocityScale` | `ParticleEmitter` | 36 | 114 | 36 | 23:63 / 24:51 | `RelativeTime:Float+RelativeVelocity:Struct<Vector>` |
+| `int` | `FluidSurfaceInfo` | 12 | 2017 | 0 | 4:12 (arrays) | `--` |
+| `Plane` | `ParticleEmitter` | 8 | 8 | 8 | 26:7 / 29:1 | `W:Float+X:Float+Y:Float+Z:Float` |
+| `ParticleRevolutionScale` | `ParticleEmitter` | 4 | 8 | 4 | 23:6 / 24:2 | `RelativeTime:Float+RelativeRevolution:Struct<Vector>` |
+| `ParticleBeamScale` | `BeamEmitter` | 3 | 3 | 3 | 24:3 | `FrequencyScale:Struct<Vector>+RelativeLength:Float` |
+| `PassengerWeaponStruct` | `StargateVehicle` | 2 | 6 | 2 | 11:6 | `WeaponPawnClass:Object+WeaponBone:Name` |
 <!-- /generated:t3d-values -->
 
 **The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,528
@@ -235,8 +242,9 @@ the width of: an element type whose width is a fact about the type (`int`, `floa
 as `// SizeScale: 2 element(s) of 17 byte(s) of ParticleTimeScale` -- a comment with a name an editor can look
 up, not a name invented for the bytes.
 
-The per-element-type census is `inventory/t3d_arrays.csv` (16 rows, written by `make t3d`, arithmetic against
-`t3d_values.csv` under `--check`), and the table below is rendered from it.
+The per-element-type census is `inventory/t3d_arrays.csv` (14 rows, written by `make t3d`, arithmetic against
+`t3d_values.csv` under `--check`), and the table below is rendered from it. *(The width question this paragraph
+stops on is answered at the end of this page: the element is a tagged block, so there is no width to fix.)*
 
 **Not in this PR.** The struct decoders beyond the three whose layout is established, the element layouts of
 the five typed struct arrays, and the `Level` export's script sequence. *(The first of those is settled two
@@ -432,7 +440,8 @@ what says they are not actors.
 payload's remainder over its count is arithmetic on nothing. The declaration is asked **first**, and it has to
 be: a payload of two equally long strings divides by its count (`\x02\x04abc\x00\x04def\x00` is 5 bytes per
 element), so a divisibility test alone reads an `array<string>` as a struct array. **25 arrays / 126 elements**
-decode as strings this way. The rest of the refusal population is **46 arrays** that neither rule reaches, and
+decode as strings this way. The rest of the refusal population was **46 arrays** that neither rule reached;
+those are decoded at the end of this page (a tagged element has no width to divide), and
 the compact-index hypothesis is refuted rather than pending: `ZoneInfo.ManualExcludes` -- the shape the earlier
 reading called "eight indices in 14 bytes", which is what a compact element would look like -- is an ordinary
 object array once the start is the prefix record's end, and **0** arrays in the corpus are arrays of compact
@@ -448,3 +457,46 @@ of `read_value`), `tools/map-to-t3d.py` (`fmt_struct`, `struct_shape`, `decode_c
 bytes, 2.4 bytes per colour, not decoded -- the palette boundary is measured, what follows it is not); the
 element layouts of the five typed struct arrays; and the 46 arrays neither the width nor the declaration rule
 reaches.
+
+## An array element is a tagged block, and the palette's tail begins with a discriminator (measured 2026-11-19)
+
+**The element layouts the page kept deferring do not exist.** The previous section left 4,501 typed struct
+arrays as `N element(s) of W byte(s)` comments because a struct's width is not a fact about its name: the same
+type is 14 bytes on one array and 17 on the next. That is the *element's* width, and the element is a tagged
+property block like every other struct value -- so each record carries its own field names, their order and its
+own end. `decode_struct_elements` applies the struct rule (`prop_stream.struct_fields`, which already requires a
+block to end at `None` on its last byte and its tags to re-encode) to each element of the array's count, and the
+array has to consume itself exactly.
+
+| | before | after |
+|---|---:|---:|
+| struct arrays decoded | 4,501 of 4,547 (2,019 records by width) | **4,547 of 4,547 (17,095 records as tagged blocks, 2,019 by width)** |
+| arrays no rule reaches | 46 | **0** |
+| records inside the struct arrays | 14,563 | **19,114** |
+
+**The 46 are the same shape, and they were the widest elements.** They are **36 `array<IMusicSegment>`** (45
+arrays -> 81, 3,695 -> 8,220 records) and **10 `array<SoundEmitter>`** (476 -> 486 arrays, 797 -> 823 records):
+both types carry a `Str` field or a long name, so no element width divides their payloads per array -- the width
+rule could only have read them by accident. Their payload field lists are the definitions: `IMusicSegment` is
+`SegmentName:Str, State:Byte, TypeStart/TypeEnd/TypeLoop:Bool, Transition:Array, TransitionFlags:Int,
+TestedValue:Int`, and one field is an array, so the writer prints those elements as their shape rather than as a
+tuple with a hole (3,695 of the 17,095 records, and the only ones not printable).
+
+**Two censuses agree on a struct that has both shapes.** `Plane` is a struct property 41 times *and* an array
+element 8 times, and both rows read the same four fields (`W:Float+X:Float+Y:Float+Z:Float`), from two
+independent passes over the payloads -- the struct census at the value, the array census at the element. The
+element widths also reproduce the width census they replace (the array counts there were divided per array; here
+they are counted per record): `ParticleColorScale` 14 bytes on 5,095 records and 17 on 411, `ParticleTimeScale`
+34/31/35/32/33 over 2,000 records, `SoundEmitter` 38/37/41/40 over 823.
+
+**The palette's tail starts with a discriminator, and it is not a tagged block.** All 33,509 payloads carry
+bytes after the last colour (17,183,118, 2.4 per colour), and the first four of them are a dword in **2..10** on
+every one: 30,450 read 2, then 899 read 4, 728 read 10, 620 read 6, 606 read 3, 132 read 7, 41 read 9, 28 read 8
+and 5 read 5. The dword is not a count -- it does not divide the remainder -- and reading the tail as a tagged
+block refuses on all 33,509, while reading it as a *sequence* of blocks "succeeds" on 896 with every field typed
+`Invalid`, i.e. on tags the type table does not have. So the colour table's boundary is measured and the record
+after it is a native structure whose first field is a small enum; naming its fields is a read of the class's
+serialiser in the XBE, not another parse of these bytes. `inventory/t3d_coverage.csv` carries the two counts per
+map (`palette_tails`, `palette_head2`) and `--check` holds them to the payload total.
+
+**Not in this PR.** The `Level` export's script sequence, and the palette tail's fields beyond its head.

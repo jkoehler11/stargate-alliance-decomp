@@ -14138,6 +14138,33 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Not in this PR.** The zero-width cell itself, and the emitter's class-level locator guard (still James's call:
   313 classes promoted, 1,664 -> 1,977 clean blocks).
 
+### Execution notes (2026-11-19, an array element is a tagged block, so no array payload is left unread)
+
+- **Task.** PLAN 5.2's recorded residues, three of them in one branch: the five typed struct-array element
+  layouts, the 46 arrays the width and declaration rules could not reach, and the palette's tail.
+- **The element layouts do not exist.** A struct's value is a tagged block (the previous note), and an array of
+  structs is a count of those blocks: `decode_struct_elements` gives each element its own field list and its own
+  end, and the array must consume itself exactly. Struct arrays decoded **4,501 -> 4,547 of 4,547**, records
+  **14,563 -> 19,114**, of which **17,095 are read as tagged blocks** and 2,019 keep the fixed-width rule
+  (`array<int>` 2,017, `array<float>` 2). The 46 leftovers were **36 `array<IMusicSegment>` + 10
+  `array<SoundEmitter>`** -- the types whose elements carry a `Str` or a long name, so no width divides per
+  array -- and they are the same shape, so "no rule reaches this array" is now a measured zero
+  (`arrays_refused == struct_arrays` is a gate in `--check`).
+- **One element type is not printable as a tuple.** `IMusicSegment.Transition` is an array inside the element, so
+  those 3,695 records print their shape (`// segments: 152 element(s) of SegmentName:Str+...`) rather than a
+  tuple with a hole in it. Everything else prints values.
+- **A control across two censuses.** `Plane` is 41 struct properties and 8 array elements, and both rows read
+  `W:Float+X:Float+Y:Float+Z:Float` from separate passes -- the width story ("a struct's width is not a fact
+  about its name") is now also an element story: `ParticleColorScale` is 14 bytes on 5,095 records, 17 on 411.
+- **The palette's tail is measured to its first field.** Every one of the 33,509 tails begins with a dword in
+  2..10 (30,450 read 2); it is not a count (it does not divide the remainder), the tail is not a tagged block
+  (0 of 33,509), and a block *sequence* "reads" only 896 payloads, every field typed `Invalid`. Two census
+  columns carry it (`palette_tails`, `palette_head2`) and `--check` holds them to the payload total; what is
+  still unread is the native structure after that head, which needs `UStaticMeshInstance`'s serialiser.
+- **Files.** `tools/map-to-t3d.py` (`decode_struct_elements`, `array_row`, the two census columns, the render and
+  its gates, four synthetic cases for the walk), `inventory/t3d_{coverage,values,arrays}.csv`, `docs/T3D.md`.
+- **Not in this PR.** The `Level` export's script sequence; the palette tail past its head.
+
 ### Execution notes (2026-11-19, a struct's value is a tagged block, and the palette is what the colour payload is)
 
 - **Task.** `docs/T3D.md`'s three standing omissions: the struct decoders beyond `Vector`/`Rotator`/`Color`, the
