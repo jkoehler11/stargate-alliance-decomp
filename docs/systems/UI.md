@@ -35,10 +35,14 @@ Two full player HUDs — `StargateHUD` and `ReplicatorHUD` — which means playi
 first-class mode with its own interface, not a reskin. `SelectionMenu` (29 functions, 26 properties),
 `GameMenu` (18/2), `WeaponMenu` (12/1) and `SquadMenu` (11/21) complete the game-side set.
 
-`SGMenuInteraction` is an outlier worth naming: **294 properties** against 27 functions. That is an
-editor-tuned configuration blob — more properties than `PlayerController` (300 across 360 functions) and
-more than four times `StargateHUD`. It is the single largest property set in any fork class, and it belongs
-to menu navigation rather than to gameplay.
+`SGMenuInteraction` is an outlier worth naming: **294 declared properties** against 27 functions — more
+properties than `PlayerController` (300 across 360 functions) and more than four times `StargateHUD`. It is
+the single largest property set in any fork class. What it *holds* is a text-style table, not a page list:
+**256 of the 294 are `string`s**, and the rest are 15 floats, 8 `Color`s, 4 `Font`s, 3 bools, 3 `Texture`s,
+2 ints and three one-offs — **no class-typed property at all**. Its compiled defaults block carries **18
+values** (four fonts, twelve colours, two cursor/arrow textures, `bSubtitlesOn`, `bVisible` and a `MapSize`),
+and no property of it names a page. So the class that looked like the likeliest place for a page table is a
+style sheet the interaction reads its own drawing from.
 
 ## A correction to the fork count
 
@@ -53,14 +57,14 @@ classes to stock-named packages, which means:
 * separating stock from fork needs a stock UE2.5 class table to diff against, which the repository does not
   have (already listed as a limit in `FORK_SURFACE.md`, now with a concrete example of it biting).
 
-## The page flow: a config root, two edge sources, and 59 pages
+## The page flow: a config root, three ways in, and 59 pages
 
 The interface's structure is not in the class graph. It is in a **string**: `Default.ini`, `UW.ini` and
 `UnrealEngine2.ini` each state `MainMenuClass=StargateMenus.MainMenu`, `GUIController.GetMainMenuClass()` is
 native and returns it, and `StoryModeGame`'s login path calls `GUI.OpenMenu(GUI.GetMainMenuClass())`. So the
 root page is configuration read by a native, and everything below it is script or data.
 
-Below the root a page is opened two ways, and only the first is a line of script:
+Below the root a page is opened three ways, and only the first is a line of script:
 
 * **a literal target** in a `Controller.OpenMenu("Pkg.Page")` / `ReplaceMenu` / `ClientOpenMenu` call — **50
   sites over 38 classes**, 47 of them in the game's own packages and 3 in stock `Engine`/`GUI` bodies that open
@@ -70,10 +74,15 @@ Below the root a page is opened two ways, and only the first is a line of script
   `Controller.OpenMenu(ButtonMenus[i])`. That array is **not in the class's `TextBuffer`**: a class's
   `defaultproperties` are compiled into its record, which is why `tools/defaults-emit.py` has to render them
   (1,664 blocks out of 2,319 classes) before the flow can be read. **14 entries** come out of three classes —
-13 page names and one empty slot —
-  and `MainMenu` holds five of them — `QuickLoadMapTempPage`, both profile selectors, `OptionsPage` and
-  `ExtrasPage`. Its own button switch over `CreditsBN`/`ExtrasBN` is inside a block comment in the shipped
-  text, so the array, not the code, is what the main menu's buttons are.
+  13 page names and one empty slot — and `MainMenu` holds five of them — `QuickLoadMapTempPage`, both profile
+  selectors, `OptionsPage` and `ExtrasPage`. Its own button switch over `CreditsBN`/`ExtrasBN` is inside a
+  block comment in the shipped text, so the array, not the code, is what the main menu's buttons are;
+* **a class reference, or a config key** — the route a page takes when its *name* is never an argument. A
+  class-typed property can hold a page (`Foo=class'StargateMenus.Bar'`), a body can mention the class, and
+  `GUIController` opens the mid-game, demo, admin and chat-password menus with `OpenMenu(MidGameMenuClass)`
+  shaped calls whose target is an `.ini` value. All three are read: **0 class references name a page**, and of
+  the **30 menu-class keys in the five shipped `.ini`s**, 10 are commented out, 8 are present with no value and
+  the rest are the root. That is why the closure's unreached pages are cut pages rather than a reader's gap.
 
 The defaults start one level down the same page: `SGPageBase.InitComponent` builds its four
 controller-button captions from `Localizer`'s defaults (`sSelect`, `sBack`, `sDelete`, `sCreateNew`) and shows
@@ -101,12 +110,22 @@ is a fact about the shipped build, not about the reader:
   `RestartGame` from `StoryModeGame` with `LoadGameMenu` behind it, `ReturnToMainPage` behind `InGameMenu`'s
   call, the save pair `SaveGameMenu`→(`OverwriteSavedGamePage`, `DeleteSavedGamePage`),
   `SinglePlayerLoadGame`, `NotYetImplementedPage`. They are reachable in play, just not from the root;
-* **13 nothing opens**: `CreditsPage` (its call is the commented-out one), `InGameMenu`, `SaveGameMenu`,
-  `ServerSelectionPage`, `EnterFriendNamePage`, `ErrorPage`, `QuestionPage`, `OptionsEditBase`,
-  `VirtualKeyboardPage`, `TextGameInfo`, `WaitingForPlayers`, `XBoxLiveBackDrop`, and `VSMainMenu` — the last
-  with a commented `AutoLoad=` line beside the live `MainMenu` one in the ini, a second main menu the config
-  keeps switched off. Several of the rest are opened by class reference from a panel or an interaction rather
-  than by name.
+* **13 nothing opens**, and the reason is measured rather than inferred: a page can also be reached by a
+  *class* reference (`Foo=class'StargateMenus.Bar'` in a defaults block, or `class'..'` in a body) or through
+  an `.ini` key, so all three were read. **No class reference in the corpus names a page** — zero of 1,664
+  emitted defaults blocks and zero of 2,319 class bodies — and **every menu-class key in the shipped `.ini`s
+  is the root, commented out, or empty**: `MidGameMenuClass`, `DemoMenuClass`, `AdminMenuClass` and
+  `ChatPasswordMenuClass` are present with no value in both `DefUser.ini` and `User.ini`, which is what the
+  22 computed `OpenMenu(MidGameMenuClass)`-shaped sites read. Three of the thirteen are named **only inside a
+  comment**: `CreditsPage` (MainMenu's shipped body is inside a block comment), `SaveGameMenu`
+  (`SinglePlayerInGame`'s call is commented out — and `OverwriteSavedGamePage` and `DeleteSavedGamePage` sit
+  behind it, so that whole save sub-tree hangs off a comment) and `WaitingForPlayers` (`StoryModeGame`'s call
+  is commented, next to an `#ifdef PS2` site that names the class `GUI.SGWaitingForPlayers` instead). The other
+  **10 are named nowhere at all** — not by a call, a string, a class reference or a config key:
+  `InGameMenu`, `EnterFriendNamePage`, `ErrorPage`, `QuestionPage`, `OptionsEditBase`, `ServerSelectionPage`,
+  `VirtualKeyboardPage`, `TextGameInfo`, `XBoxLiveBackDrop` and `VSMainMenu` (the last with a commented
+  `AutoLoad=` beside the live `MainMenu` one, a second main menu the config keeps switched off).
+
 
 ## The HUD is a string, and the Replicator one is player-only
 
@@ -125,7 +144,7 @@ a player` — so a Replicator possessed by a bot keeps the game mode's HUD. On r
 **player-possession** interface: present, reachable, and gated on a player trigger, not on the game type.
 
 <!-- generated:menu-flow -->
-**50 of the 72 `OpenMenu`-family sites carry a literal page target, 47 of those are in the game's own packages, and 6 name a class their own package does not export; 34 of the 59 menu pages are reachable from the build's own `MainMenuClass`.**
+**50 of the 72 `OpenMenu`-family sites carry a literal page target, 47 of those are in the game's own packages, and 6 name a class their own package does not export; 34 of the 59 menu pages are reachable from the build's own `MainMenuClass` and the rest split three ways -- 0 are named only by a string that is not a call, 3 only inside a comment, and 10 nothing names at all.**
 
 | measure | answer |
 |---|---|
@@ -141,9 +160,18 @@ a player` — so a Replicator possessed by a bot keeps the game mode's HUD. On r
 | `ButtonMenus[n]` strings | **14** |
 | sites inside a comment (cut pages) | **37** |
 | `MainMenuClass` roots | **1** |
+| class references naming a page (defaults + bodies) | **0** |
+| strings naming a page outside a menu call | **39** |
+| ... of those inside a comment | **32** |
+| ... that name no package at all | **7** |
+| menu-class keys in the shipped `.ini`s | **30** |
+| ... present with no value | **8** |
+| ... commented out | **10** |
 | pages reachable from a root | **34** |
 | pages opened only from outside the graph | **12** |
-| pages nothing opens | **13** |
+| pages named only by a non-call string | **0** |
+| pages named only inside a comment | **3** |
+| pages nothing names at all | **10** |
 | `HUDType=` assignments | **4** |
 | runtime HUD swaps | **1** |
 
@@ -202,31 +230,86 @@ a player` — so a Replicator possessed by a bot keeps the game mode's HUD. On r
 | `StargateMenus.XBoxLiveServerSelect` | reachable | 5 | 3 |
 | `StargateMenus.MultiplayerMapSelect` | reachable | 6 | 2 |
 | `StargateMenus.SelectPawnPage` | reachable | 6 | 1 |
-| `StargateMenus.CreditsPage` | unopened | - | 0 |
 | `StargateMenus.DeleteSavedGamePage` | outside | - | 1 |
-| `StargateMenus.EnterFriendNamePage` | unopened | - | 0 |
-| `StargateMenus.ErrorPage` | unopened | - | 0 |
 | `StargateMenus.HintScreen` | outside | - | 1 |
 | `StargateMenus.InGameInfoScreen` | outside | - | 1 |
-| `StargateMenus.InGameMenu` | unopened | - | 0 |
 | `StargateMenus.InGameScoreboard` | outside | - | 1 |
 | `StargateMenus.LoadGameMenu` | outside | - | 1 |
 | `StargateMenus.MultiPlayerInGame` | outside | - | 1 |
 | `StargateMenus.NotYetImplementedPage` | outside | - | 2 |
-| `StargateMenus.OptionsEditBase` | unopened | - | 0 |
 | `StargateMenus.OverwriteSavedGamePage` | outside | - | 1 |
-| `StargateMenus.QuestionPage` | unopened | - | 0 |
 | `StargateMenus.RestartGame` | outside | - | 1 |
 | `StargateMenus.ReturnToMainPage` | outside | - | 1 |
-| `StargateMenus.SaveGameMenu` | unopened | - | 0 |
-| `StargateMenus.ServerSelectionPage` | unopened | - | 0 |
 | `StargateMenus.SinglePlayerInGame` | outside | - | 1 |
 | `StargateMenus.SinglePlayerLoadGame` | outside | - | 1 |
+| `StargateMenus.CreditsPage` | comment-only | - | 0 |
+| `StargateMenus.SaveGameMenu` | comment-only | - | 0 |
+| `StargateMenus.WaitingForPlayers` | comment-only | - | 0 |
+| `StargateMenus.EnterFriendNamePage` | unopened | - | 0 |
+| `StargateMenus.ErrorPage` | unopened | - | 0 |
+| `StargateMenus.InGameMenu` | unopened | - | 0 |
+| `StargateMenus.OptionsEditBase` | unopened | - | 0 |
+| `StargateMenus.QuestionPage` | unopened | - | 0 |
+| `StargateMenus.ServerSelectionPage` | unopened | - | 0 |
 | `StargateMenus.TextGameInfo` | unopened | - | 0 |
 | `StargateMenus.VSMainMenu` | unopened | - | 0 |
 | `StargateMenus.VirtualKeyboardPage` | unopened | - | 0 |
-| `StargateMenus.WaitingForPlayers` | unopened | - | 0 |
 | `StargateMenus.XBoxLiveBackDrop` | unopened | - | 0 |
+
+### The config keys, which are the computed calls' targets
+
+| file | key | value | verdict |
+|---|---|---|---|
+| DefUser.ini | `adminmenuclass` | - | empty value |
+| DefUser.ini | `chatpasswordmenuclass` | - | empty value |
+| DefUser.ini | `demomenuclass` | - | empty value |
+| DefUser.ini | `midgamemenuclass` | - | empty value |
+| Default.ini | `autoload` | `StargateMenus.MainMenu` | class |
+| Default.ini | `autoload` | `StargateMenus.VSMainMenu` | commented out |
+| Default.ini | `connectingmenuclass` | `Stargategame.SGServerLoading` | package name differs in case: StargateGame |
+| Default.ini | `defaultplayermenu` | `UDebugMenu.UDebugRootWindow` | class |
+| Default.ini | `initialmenuclass` | `GUI.MyMainMenu` | commented out |
+| Default.ini | `mainmenuclass` | `StargateMenus.MainMenu` | commented out |
+| Default.ini | `mainmenuclass` | `StargateMenus.MainMenu` | class |
+| UW.ini | `autoload` | `StargateMenus.MainMenu` | class |
+| UW.ini | `connectingmenuclass` | `Stargategame.SGServerLoading` | package name differs in case: StargateGame |
+| UW.ini | `defaultplayermenu` | `UDebugMenu.UDebugRootWindow` | class |
+| UW.ini | `disconnectmenuclass` | `GUI2K4.UT2K4DisconnectOptionPage` | commented out; no such package on disk |
+| UW.ini | `disconnectmenuclass` | `GUI.SGDisconnectedMenu` | commented out |
+| UW.ini | `loadingclass` | `GUI2K4.UT2K4SP_LadderLoading` | commented out; no such package on disk |
+| UW.ini | `mainmenuclass` | `StargateMenus.MainMenu` | class |
+| UW.ini | `singleplayermenuclass` | `GUI2K4.UT2K4SP_Main` | commented out; no such package on disk |
+| UnrealEngine2.ini | `autoload` | `StargateMenus.MainMenu` | class |
+| UnrealEngine2.ini | `autoload` | `StargateMenus.VSMainMenu` | commented out |
+| UnrealEngine2.ini | `connectingmenuclass` | `Stargategame.SGServerLoading` | package name differs in case: StargateGame |
+| UnrealEngine2.ini | `defaultplayermenu` | `UDebugMenu.UDebugRootWindow` | class |
+| UnrealEngine2.ini | `initialmenuclass` | `GUI.MyMainMenu` | commented out |
+| UnrealEngine2.ini | `mainmenuclass` | `StargateMenus.MainMenu` | commented out |
+| UnrealEngine2.ini | `mainmenuclass` | `StargateMenus.MainMenu` | class |
+| User.ini | `adminmenuclass` | - | empty value |
+| User.ini | `chatpasswordmenuclass` | - | empty value |
+| User.ini | `demomenuclass` | - | empty value |
+| User.ini | `midgamemenuclass` | - | empty value |
+
+### What names the pages no call names
+
+| page | holder | form | verdict |
+|---|---|---|---|
+| `StargateMenus.CreditsPage` | `StargateMenus.MainMenu` | comment | inside a comment |
+| `StargateMenus.SaveGameMenu` | `StargateMenus.SinglePlayerInGame` | comment | inside a comment |
+| `StargateMenus.WaitingForPlayers` | `StargateGame.StoryModeGame` | comment | inside a comment |
+
+7 further value(s) look like a page name but name something else — `KeyName=MainMenu`, `StyleName=MainMenu`, which resolves to no package — and are in the artifact with an `unqualified` verdict rather than counted here.
+
+### `SGMenuInteraction`, the 294-property class, is a style table
+
+| measure | answer |
+|---|---|
+| declared properties | **294** |
+| ... class-typed | **0** |
+| ... the five commonest types | string 256, float 15, Color 8, Font 4, bool 3 |
+| values in its emitted defaults block | **18** |
+| properties naming a page | **0** |
 
 ### The HUD, which is a string
 
@@ -258,6 +341,16 @@ a player` — so a Replicator possessed by a bot keeps the game mode's HUD. On r
 
 * **What any page draws.** The flow is measured; the layout is not — textures, styles and control geometry
   are property values (`StyleName`, `Background`, `WinWidth`…) whose *drawing* needs a running build.
-* The pages opened by class reference rather than by name (the 13 the closure cannot reach): which panel
-  or interaction holds the reference is a per-class property read this census does not do.
+* **Why the ten are dead is a *where*, not a *why*.** The corpus names none of them — measured over every
+  class body, every emitted defaults block and every menu key in the five shipped `.ini`s — but which editor
+  pass cut them, and whether the cut pages' bodies still compile against the classes around them, is a
+  question about the build's history that the build does not state. `InGameMenu` is the interesting one: the
+  only page nothing names, while its own body opens `QuitPage` and `ReturnToMainPage`, so the in-game pause
+  menu is present, complete and unreachable — the `MidGameMenuClass=` key it would be reached through is
+  empty.
+* **The one live non-root config value names a non-page.** `ConnectingMenuClass=Stargategame.SGServerLoading`
+  resolves (the package differs only in case) to a class whose chain is `Vignette` via `SGLoadingPageBase`, so
+  the connecting "menu" is a cutscene class and the page family has no member for it. Whether it draws a
+  menu-shaped frame is a question for a running build.
 * The stock/fork split inside `GUI` and `UWindow` — needs the stock class table.
+
