@@ -59,8 +59,8 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Script | functions whose shipped bytecode matches (L2) | 11,687 | 12,472 | `██████████████████████░░` 93.71% | 🟩 |
 | Script | classes compiling clean (L1) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
 | Script | class defaults decoded | 1,664 | 2,319 | `█████████████████░░░░░░░` 71.76% | 🟨 |
-| Script | default properties rendered | 15,521 | 15,521 | `████████████████████████` 100.00% | 🟩 |
-| Script | subobject defaults rendered | 16,057 | 16,065 | `████████████████████████` 99.95% | 🟩 |
+| Script | default properties rendered | 15,834 | 15,834 | `████████████████████████` 100.00% | 🟩 |
+| Script | subobject defaults rendered | 17,081 | 17,089 | `████████████████████████` 99.95% | 🟩 |
 | Content | classes the shipped content reaches | 1,145 | 2,319 | `████████████░░░░░░░░░░░░` 49.37% | 🟧 |
 | Native | functions carrying a name | 2,953 | 14,973 | `█████░░░░░░░░░░░░░░░░░░░` 19.72% | 🟧 |
 | Native | functions attributed to a module | 6,092 | 14,973 | `██████████░░░░░░░░░░░░░░` 40.69% | 🟧 |

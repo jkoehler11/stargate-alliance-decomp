@@ -513,7 +513,7 @@ A page's block places a panel; what the panel *contains* is its own class's defa
 
 The 7 classes that declare no children are widgets, not empty panels: `GUIButton`, `GUILabel`, `GUIPanel`, `GUITitleBar`, `SGLabel`, `moComboBox`, `moEditBox`. Their block states properties (`Caption`, `StyleName`, the rectangle), never a child.
 
-The panels the tree does not carry are **not** classes whose block the reader refuses: each block is one tag, sitting exactly where its record's closing group ends and ending on the payload's last byte, and that tag names a child object the panel's own class owns (`ChapterList'chList'`, `GUILabel'cHint'`, `SGListBox'cListBox'`, ...). The emitter writes no file for them because its class-level locator ranks a three-tag parse *inside* the record's closing group above the block at the group's end — the same ranking the misses ledger used to call these `type-contradiction`. So what is missing is not the panel's contents but the file's one line, and every child a panel owns is itself an export with a readable block.
+The panels this page once listed as carried by no file are **not** classes whose block the reader refuses: each block is one tag, sitting exactly where its record's closing group ends and ending on the payload's last byte, and that tag names a child object the panel's own class owns (`ChapterList'chList'`, `GUILabel'cHint'`, `SGListBox'cListBox'`, ...). The emitter now writes each of these files: its class-level locator treats the record's closing group as a rule (`docs/CLASS_DEFAULTS.md`, *The emitter takes the guard*), so every panel with a non-empty block publishes its one tag at the group's end, and the subobject walk follows the pointer. Before that change the locator ranked a three-tag parse *inside* the record's closing group above the block at the group's end -- the same ranking the misses ledger used to call these `type-contradiction`.
 
 | widget class | package | declared properties | reader verdict | its block's tag |
 |---|---|---:|---|---|
@@ -530,7 +530,7 @@ The panels the tree does not carry are **not** classes whose block the reader re
 | `SelectTeamPanel` | StargateMenus | 123 | `single-declared` | `TeamListBox:Object` |
 | `XBoxLiveServerSelectionPanel` | StargateMenus | 129 | `single-declared` | `ServerListBox:Object` |
 
-**The trade that withholds them is measured, not asserted.** `tools/defaults-locator-guard.py` (`inventory/defaults_locator_guard.csv`, 314 rows) runs the emitter's chooser and the record-group rule over the same candidate sets. With the rule, **313** classes publish a start the emitter has none for (**227** move one, **86** had none), **313 of the 313** end on the payload's last byte and **313** hold exactly one tag; **194 of the moved** unguarded starts sat *inside* the record's closing group, so what the emitter writes for those today is the record's own bytes. **1** class loses its block, 11 of the panels above are in that set, and the rule publishes a start while the two-property floor still withholds "fully declared": a file per panel, `single-declared` in the misses ledger.
+**The trade that withholds them is measured, not asserted.** `tools/defaults-locator-guard.py` (`inventory/defaults_locator_guard.csv`, 314 rows) runs the emitter's chooser and the record-group rule over the same candidate sets. With the rule, **313** classes publish a start the emitter has none for (**227** move one, **86** had none), **313 of the 313** end on the payload's last byte and **313** hold exactly one tag; **194 of the moved** unguarded starts sat *inside* the record's closing group, so what the emitter writes for those today is the record's own bytes. **1** class loses its block, 11 of the panels above are in that set, and the rule publishes a start while the two-property floor still withholds "fully declared": a file per panel, `single-declared` in the misses ledger. `tools/defaults-emit.py` now takes the rule, so a panel with a non-empty block has a file and the tree places its list from it.
 
 **All 140 of the page-level bindings resolve.** A page binds each widget twice: the `Begin Object ... Name=` block places it, and a property points at it (`MenuPanel=RightLockingMenuPanel'cPanel'`, `MyComponents(0)=GUIButton'cContinueBN'`). The second form points *into* a panel's block, but the object it names is a subobject of the **page** (its Outer is the page class, and its rectangle is in its own block) — so a reader that stops at the panel's contents loses those controls, which is what a dangling binding was. Following one more level places all 140 of them: 140 resolved, 0 dangling.
 
@@ -637,7 +637,7 @@ A page's `Begin Object` block places the list; where each row's *columns* sit is
 | `ServerSelectionListBox` | 1 | canvas | `L=0.015+0.31+0.01 W=0.28` | `GameTypeName` | aligned left |
 | `ServerSelectionListBox` | 2 | canvas | `L=0.015+0.31+0.01+0.28+0.01 W=0.09` | `CurrentPlayers/MaxPlayers` | aligned left |
 
-**Where the list reaches the screen: a block, a string, or nothing.** A body draws whatever list its class holds, and the layout tree holds only what a `Begin Object` block places -- **4** of the **6** classes are placed that way, **1** is created from a *string* in code, and **1** nothing the corpus states names -- no emitted block, no string in any of the 18 packages, and no `.ini` key. The 32 `StargateMenus` classes whose block the emitter refuses sit outside the block scan.
+**Where the list reaches the screen: a block, a string, or nothing.** A body draws whatever list its class holds, and the layout tree holds only what a `Begin Object` block places -- **4** of the **6** classes are placed that way, **1** is created from a *string* in code, and **1** nothing the corpus states names -- no emitted block, no string in any of the 18 packages, and no `.ini` key. The `StargateMenus` classes whose block the emitter refuses sit outside the block scan.
 
 | body class | reached by | holder |
 |---|---|---|
@@ -869,28 +869,30 @@ The composition is C++ and the corpus is data; both are re-derived here.
 | `RelativeWidth` | 41 | `0x2f8970` | pixel->fraction | `0x114` | -1 | 2 | 1,3 | 0x800000 | 37 |
 | `RelativeHeight` | 42 | `0x2f8a30` | pixel->fraction | `0x118` | -1 | 2 | 2,3 | 0x800000 | 38 |
 
-`1339` blocks over `149` classes, each axis counted where the block states a value:
+`1697` blocks over `159` classes, each axis counted where the block states a value:
 
 | axis | stated | fraction (`abs < 2`) | pixel (`abs >= 2`) | parent-relative |
 |---|---|---|---|---|
-| left | 136 | 135 | 1 | 50 |
-| top | 139 | 138 | 1 | 50 |
-| width | 139 | 136 | 3 | 38 |
-| height | 145 | 139 | 6 | 42 |
+| left | 147 | 146 | 1 | 59 |
+| top | 150 | 149 | 1 | 59 |
+| width | 150 | 147 | 3 | 47 |
+| height | 155 | 149 | 6 | 51 |
 
 `3` stated values sit in `[1, 2)` -- above the unit square, below the pixel band, so they still scale.
 <!-- /generated:ui-layout -->
 
-**The corpus uses the band the way the band expects.** Of the 1,339 emitted `Begin Object` blocks over 149
-classes, 136-145 state each axis at all: 135/138/136/139 of those are fractions and only 1/1/3/6 are pixels, and
-every one of the six pixel blocks resolves against the screen (`BoundingType` and `ScalingType` both 0). The only
-block that states all four in pixels is `GUI.GUIPage`'s `RemoveMeToo` (`X=GUIImage`), which places every page at
-`(38, 28)` `564x424` -- 640-2*38 by 480-2*28 -- i.e. the page frame; the other five are single axes (a 36-pixel
-title-bar height, a 32-pixel label height, an `8x16` arrow pair), so the band is decided per axis and not per
-block. Three values sit in `[1,2)`, all exactly `1.0`: above the unit square, below the band, so they still
-scale. Fifty blocks state a `BoundingType` and 42 a `ScalingType`, which is what makes x/y 50 axes and w 38 /
-h 42 axes parent-relative; the rest resolve against the screen, which is why the panel classes that state no
-`Win*` of their own are the whole parent box rather than a rectangle.
+**The corpus uses the band the way the band expects, and the guard's 358 blocks do not move it.** Of the 1,697
+emitted `Begin Object` blocks over 159 classes (1,339 over 149 before the emitter took the guard), 147-155 state
+each axis at all: 146/149/147/149 of those are fractions and only 1/1/3/6 are pixels -- the same six pixel blocks,
+so every block the guard adds states a fraction on every axis it states. Every one of the six pixel blocks
+resolves against the screen (`BoundingType` and `ScalingType` both 0). The only block that states all four in
+pixels is still `GUI.GUIPage`'s `RemoveMeToo` (`X=GUIImage`), which places every page at `(38, 28)` `564x424` --
+640-2*38 by 480-2*28 -- i.e. the page frame; the other five state one or two pixel axes each (two title bars' and
+a label's height, a two-image option's width and height), so the band is decided per axis and not per block. Three values sit
+in `[1,2)`, all exactly `1.0`: above the unit square, below the band, so they still scale. Fifty-nine blocks state
+a `BoundingType` and 51 a `ScalingType`, which is what makes x/y 59 axes and w 47 / h 51 axes parent-relative; the
+rest resolve against the screen, which is why the panel classes that state no `Win*` of their own are the whole
+parent box rather than a rectangle.
 
 
 ## What this means for the rebuild

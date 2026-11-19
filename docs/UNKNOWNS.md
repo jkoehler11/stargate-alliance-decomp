@@ -4231,6 +4231,23 @@ menu pages ship no delegate default, and there is no tag grammar left in the bui
 chooser. Depth: `docs/CLASS_DEFAULTS.md`, *The block opens on a class's own declaration*.
 
 
+**2026-11-19 (forty-fourth): the renderer takes the guard, because the block it was writing was the record's own
+bytes.** The thirty-eighth entry above answered "should not" on a block count; this one reverses it on what the
+unguarded chooser actually emits. `tools/defaults-emit.py` now chooses class blocks from `cd.guarded()`'s
+candidates (`pick_both()` ranks both sets from one candidate walk; `--unguarded` reproduces the old artifact byte
+for byte as the control). Measured: clean blocks **1,664 -> 1,977**, properties in emitted blocks **15,521 ->
+15,834**, subobject references **1,339 -> 1,697** and their properties **16,065 -> 17,089**; blocks chosen
+**1,898 -> 1,983**; withheld-for-an-undeclared-name **234 -> 7**; chosen parse naming no declared property
+**311 -> 199**; no candidate **110 -> 137**. The 234 withheld split into the guard's **227** moved starts (all now
+clean, **194** of them previously parsing a start inside the record's closing group), **6** parses the class still
+does not account for, and **1** lost block (`StargateGame.HighlightStaticMeshActor`, the trailer floor). The 86
+gained come from 61 `no-declared-name` and 25 `none`. 1,664 + 227 + 86 = 1,977 and no clean class regresses. The
+one-tag verdict is unchanged: `class_defaults_misses.csv` still calls the 313 `single-declared`. The new
+per-class artifact `inventory/class_defaults_emit_classes.csv` (2,319 rows) is gated against
+`class_defaults_per_class.csv` -- same start on every class, dump-free in `--check` -- so the renderer/locator gap
+(85 blocks) is now zero by check. Depth: `docs/CLASS_DEFAULTS.md`, *The emitter takes the guard*.
+
+
 ## U19. What a `State` payload's code region ends on -- answered: a `LabelTable` on the None name, the `0x47` marker, then a 22-byte record whose WORD is the table's offset in the *widened* code
 
 **Observed.** `tools/state-code.py` (PLAN 3.10, `docs/systems/AI.md`) walks a `State` export's payload as code and
@@ -4851,8 +4868,8 @@ tag names a child object the panel's own class owns -- `ChapterSelectionPanel` �
 → `ProfileList'cList'`, `SelectPawnPanel`/`SelectTeamPanel` → `SGListBox'cListBox'`, `XBoxLiveServerSelectionPanel`
 → `XBoxLiveServerSelectionListBox'cServer'`, `GUIListBox` → `GUIVertList'theList'`, `RightLockingMenuPanel` →
 `HintLB=GUILabel'cHint'`, `FullSlidingPanel` → `Background`; `MultiplayerServerPanel`'s block is **empty**. The
-emitter writes no file for them because its class-level locator ranks a three-tag parse *inside* the record's
-closing group above the block at the group's end -- the ranking `inventory/class_defaults_misses.csv` used to
+emitter wrote no file for them before it took the guard (2026-11-19 entry below), because its class-level
+locator ranked a three-tag parse *inside* the record's closing group above the block at the group's end -- the ranking `inventory/class_defaults_misses.csv` used to
 report as nine `type-contradiction` rows and now reports as `single-declared`, one property each.
 
 **The widgets a page names inside a panel are the page's own subobjects, and all 140 bindings resolve.** A page
@@ -4900,11 +4917,21 @@ call is the *verdict*, not the measurement: a one-tag block is below `MIN_PROPER
 start and withholds "fully declared" — that is `docs/systems/UI.md`'s measured trade, and it is the same call
 `MIN_PROPERTIES` records.
 
+**2026-11-19: the emitter publishes eleven of the twelve, and the tree places their lists.** The entry above left
+only the *policy* of publishing a one-tag block open. `tools/defaults-emit.py` now chooses from the guard's
+candidates, and all eleven panels with a non-empty block are `clean` in `inventory/class_defaults_emit_classes.csv`
+-- one tag each, at the group's end, 0 bytes left (`GUIListBox` 139 `group-end`, `RightLockingMenuPanel` 155,
+`CharacterSelectionPanel` 92, `ProfilePanel` 132, `ChapterSelectionPanel` 123, `GameModeSelectionPanel` 103,
+`SelectPawnPanel` 148, `FullSlidingPanel` 92 (the one *gained*), `SelectTeamPanel` 238, `CoopPlayerPanel` 573,
+`XBoxLiveServerSelectionPanel` 92). `MultiplayerServerPanel`'s block stays empty, so it is the one panel with no
+file. The subobject walk now follows each panel's child pointer, which is where the tree's +358 references come
+from; `StargateMenus` classes the emitter refuses fall **32 -> 5**.
+
 **Status.** Answered, both halves: the data level (parent-relative and unclamped, every binding placed) and
 the native composition (`inventory/ui_layout_native.csv`, eight conversions; `inventory/ui_layout_values.csv`,
-1,339 blocks over 149 classes with their bands and their per-axis space, in `docs/systems/UI.md`'s
-`ui-layout` block). The twelve panel blocks are measured as one-tag group-end blocks with their tags, and only
-the *policy* of publishing them is open. What a boot could still add is the frame control -- one page rebuilt
+1,697 blocks over 159 classes with their bands and their per-axis space, in `docs/systems/UI.md`'s
+`ui-layout` block). The twelve panel blocks are measured as one-tag group-end blocks with their tags, and the policy is
+taken: the emitter publishes eleven of them (2026-11-19 entry above). What a boot could still add is the frame control -- one page rebuilt
 with a `WinTop` changed by 0.05 -- which is a check on the formula, not an unknown. The rows a list draws inside
 its own box are U28.
 

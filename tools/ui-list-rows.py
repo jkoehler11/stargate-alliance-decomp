@@ -478,7 +478,7 @@ def render(rows):
                "its class holds, and the layout tree holds only what a `Begin Object` block places -- "
                "**%(block)s** of the **%(total)s** classes are placed that way, **%(string)s** is created from a "
                "*string* in code, and **%(none)s** nothing the corpus states names -- no emitted block, no string "
-               "in any of the 18 packages, and no `.ini` key. The 32 `StargateMenus` classes whose block the "
+               "in any of the 18 packages, and no `.ini` key. The `StargateMenus` classes whose block the "
                "emitter refuses sit outside the block scan." %
                {"block": by_form.get("block", 0), "string": by_form.get("string", 0),
                 "none": by_form.get("none", 0), "total": len(places)})

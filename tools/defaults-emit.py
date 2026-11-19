@@ -5,10 +5,11 @@
 takes the next step: decode each value and print it as the UnrealScript a compiler would accept, so the
 reconstructed source tree has defaults and not just functions.
 
-    python3 tools/defaults-emit.py DUMP/System --sweep -o inventory     # coverage artifact
+    python3 tools/defaults-emit.py DUMP/System --sweep -o inventory     # coverage + per-class artifacts
     python3 tools/defaults-emit.py DUMP/System --emit $WORK/defaults    # one .uc snippet per class
     python3 tools/defaults-emit.py DUMP/System --verify                  # against the shipped text blocks
-    python3 tools/defaults-emit.py DUMP/System --reconcile               # block count against class-defaults.py
+    python3 tools/defaults-emit.py DUMP/System --reconcile               # the pre-guard chooser's share
+    python3 tools/defaults-emit.py DUMP/System --sweep -o inventory --unguarded  # the artifact before the guard
     python3 tools/defaults-emit.py DUMP/System --class SGOrder --package StargateGame --show
 
 Rendering rules, all of them learned from bytes rather than assumed:
@@ -530,18 +531,46 @@ def choose_scored(cands, decl, own=None):
     return best, None
 
 
-def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
-    """Locate one export's property block, scored against the properties `cls` declares.
-
-    `block_of` finds a class by name; a subobject is an export whose own name is not a class, so the class it is
-    scored against is its *class* (`pkg.class_name_of`), and the same candidate/choose rule applies.
-    """
-    decl = set()
-    cur, seen = cls, set()
+def class_declared(cls, supers, declared_all):
+    """The names `cls` declares, its ancestors' included (the closure the chooser scores against)."""
+    decl, cur, seen = set(), cls, set()
     while cur and cur not in seen:
         seen.add(cur)
         decl |= declared_all.get(cur, set())
         cur = supers.get(cur)
+    return decl
+
+
+def pick_both(pkg, cls, exp, supers, declared_all, limit=None):
+    """One candidate scan, both choosers: the guard's pick and the unguarded one.
+
+    `cd.guarded()` refuses a candidate start the record's closing group *covers* -- a record field's bytes
+    cannot be the defaults block's first byte -- and offers the group's end (a one-property block the
+    two-property floor withholds) plus, past an empty group end, the offsets in `GROUP_TAIL`. The unguarded
+    pick is the same `choose_scored()` on the untouched list, which is what this tool located with until the
+    guard was adopted; keeping both picks from one scan is what makes the trade checkable per class without
+    walking the packages twice.
+    """
+    decl = class_declared(cls, supers, declared_all)
+    own = declared_all.get(cls, set())
+    kinds = cd.kinds_for_class(cls)
+    cands, data = cd.candidates(pkg, ps, exp, limit=limit, kinds=kinds)
+    g_cands, where = cd.guarded(list(cands), data, pkg, decl, kinds, len(pkg.imports or []))
+    best_g, reason_g = choose_scored(g_cands, decl, own)
+    best_u, reason_u = choose_scored(cands, decl, own)
+    return {"data": data, "where": where, "g": best_g, "g_reason": reason_g,
+            "u": best_u, "u_reason": reason_u}
+
+
+def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
+    """Locate one export's property block, scored against the properties `cls` declares.
+
+    `block_of` finds a class by name; a subobject is an export whose own name is not a class, so the class it is
+    scored against is its *class* (`pkg.class_name_of`), and the same candidate/choose rule applies. The guard
+    is a rule about a **`UClass` record's** closing group, and a subobject's payload is a component record, so
+    this path stays unguarded: applying the class-record grammar to it would be a guess.
+    """
+    decl = class_declared(cls, supers, declared_all)
     cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
     best, reason = choose_scored(cands, decl, declared_all.get(cls, set()))
     if best is None:
@@ -557,15 +586,18 @@ def block_for_export(pkg, exp, cls, supers, declared_all, limit=None):
     return (props, start, best[0][0] == 1.0 and bad == 0), None
 
 
-def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
+def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False, guard=True):
     """(props, start, trailer) for a class's defaults block, or (None, reason).
 
-    Unguarded on purpose: routing this through `cd.guarded()` was measured at **+313 clean blocks** (1,664 ->
-    1,977) and 232 more properties, because the guard's group-tail candidates promote one-tag parses across the
-    corpus -- so adopting it here is the same policy call `PLAN.md` records against `MIN_PROPERTIES`, and not a
-    fix to a bug. What it costs the UI tree is one file per container panel (each panel's block is a single
-    child pointer: `RightLockingMenuPanel` at +155 reads `HintLB=GUILabel'cHint'`), reported in
-    `docs/systems/UI.md`.
+    **The guard is taken, and the trade it was held back for is now measured on both sides.** Until this
+    change the chooser was `cd.choose()` alone, on the reading that the guard's 313 starts across the corpus
+    are one-tag blocks the two-property floor refuses a verdict on -- a policy call, not a defect. The
+    measurement that settles it is what the unguarded path writes: on 194 of the 227 moved classes its start
+    sits *inside* the record's closing group, so the block it parses is the record's own bytes, and the
+    classes whose payload has no other start were withheld for naming no declared property. A start inside a
+    committed record field is not a defaults block under any floor. What the guard writes instead is the one
+    tag the class declares, ending on the payload's last byte (`inventory/defaults_locator_guard.csv`).
+    `guard=False` reproduces the old artifact for the comparison; `--unguarded` is that switch.
     """
     exp = None
     for e in pkg.exports:
@@ -574,18 +606,12 @@ def block_of(pkg, cls, supers, declared_all, limit=None, want_score=False):
             break
     if exp is None:
         return None, "no-export"
-    decl = set()
-    cur, seen = cls, set()
-    while cur and cur not in seen:
-        seen.add(cur)
-        decl |= declared_all.get(cur, set())
-        cur = supers.get(cur)
-    cands, _data = cd.candidates(pkg, ps, exp, limit=limit, kinds=cd.kinds_for_class(cls))
-    best, reason = choose_scored(cands, decl, declared_all.get(cls, set()))
+    picks = pick_both(pkg, cls, exp, supers, declared_all, limit=limit)
+    best, reason = (picks["g"], picks["g_reason"]) if guard else (picks["u"], picks["u_reason"])
     if best is None:
         return None, reason
     _score, _count, start, _names, bad = best
-    data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+    data = picks["data"]
     try:
         props, end, reason = ps.read_block(data[start:], pkg, True)
     except Exception:                                   # noqa: BLE001 - a short payload is a skip, not a crash
@@ -740,27 +766,41 @@ def class_set(path=None):
     return out
 
 
-def render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, notes):
-    """Render one class's block into lines; adds to `row`/`notes`.
+def render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, notes, guard=True):
+    """Render one class's block into lines; adds to `row`/`notes`, returns (lines, status, record).
 
-    Returns (lines, status) where status is "clean" (every property name declared by the class: emit it),
-    "dirty" (a candidate block the class does not account for: withhold and count it), "no-declared-name"
-    (the chosen parse names none of the class's properties, so there is no block: withhold it the same way
-    `tools/class-defaults.py` does) or "none".
+    Returns status "clean" (every property name declared by the class: emit it), "dirty" (a candidate block
+    the class does not account for: withhold and count it), "no-declared-name" (the chosen parse names none
+    of the class's properties, so there is no block: withhold it the same way `tools/class-defaults.py` does)
+    or "none". `record` is the row `class_defaults_emit_classes.csv` carries: status, start, the start's
+    origin in the guard's candidate set, the tag count, whether the block is a single tag, and where the
+    unguarded chooser put its start -- both picks come from one scan (`pick_both`).
     """
-    got, reason = block_of(pkg, cls, supers, declared_all, want_score=True)
-    if got is None:
-        return None, reason if reason == "no-declared-name" else "none"
-    props, start, clean = got
+    picks = pick_both(pkg, cls, exp, supers, declared_all)
+    best, reason = (picks["g"], picks["g_reason"]) if guard else (picks["u"], picks["u_reason"])
+    u_start = picks["u"][2] if picks["u"] else ""
+    if best is None:
+        status = "no-declared-name" if reason == "no-declared-name" else "none"
+        return None, status, [status, "", "", 0, 0, u_start]
+    _score, count, start, _names, bad = best
+    clean = _score[0] == 1.0 and bad == 0
+    record = ["clean" if clean else "dirty", start, picks["where"].get(start, "candidate"), count,
+              1 if count == 1 else 0, u_start]
     if not clean:
         # A block whose property names the class does not all declare is a parse that fits the bytes rather
         # than a block. 532 of the 2,084 candidates are like this and they hold almost every odd type (an
         # `Invalid` value, a 16-byte `Float`, a `Vector` of 139 bytes), so their contents are not emitted.
-        row["dirty_properties"] += len(props)
-        return None, "dirty"
-    meta_of = prop_meta_for(cls, supers, props_meta)
-    data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
+        row["dirty_properties"] += count
+        return None, "dirty", record
+    data = picks["data"]
     buf = data[start:]
+    try:
+        props, _end, why = ps.read_block(buf, pkg, True)
+    except Exception:                                   # noqa: BLE001 - a short payload is a skip
+        return None, "none", record
+    if why != "None":
+        return None, "none", record
+    meta_of = prop_meta_for(cls, supers, props_meta)
     lines = []
     for p in props:
         row["properties"] += 1
@@ -817,16 +857,20 @@ def render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, note
                 decls.extend(block)
         if decls:
             lines = decls + lines
-    return lines, "clean"
+    return lines, "clean", record
 
 
-def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
+CLASS_COLUMNS = ["package", "class", "status", "start", "origin", "properties", "one_tag",
+                 "unguarded_start"]
+
+
+def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None, guard=True):
     supers = cd.super_map()
     declared_all = cd.declared_properties()
     props_meta = property_meta()
     enums, enum_conflicts = global_enums(system_dir)
     ctx = {"enums": enums, "classes": class_set()}
-    rows, tot, notes = [], collections.Counter(), collections.Counter()
+    rows, tot, notes, choices = [], collections.Counter(), collections.Counter(), []
     for fname in sorted(f for f in os.listdir(system_dir) if f.lower().endswith(".u")):
         pkg = Package(os.path.join(system_dir, fname))
         pkg.read_names()
@@ -839,7 +883,10 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
         emitted = {}
         for exp in classes:
             cls = pkg.name(exp["name"])
-            lines, status = render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx, row, notes)
+            lines, status, record = render_class(pkg, cls, exp, supers, declared_all, props_meta, ctx,
+                                                 row, notes, guard=guard)
+            tot["status_" + status] += 1
+            choices.append([pkg_name, cls] + record)
             if status == "clean":
                 row["clean_blocks"] += 1
                 emitted[cls] = lines
@@ -878,6 +925,12 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
             for row in rows:
                 w.writerow(row)
         print("wrote %s" % path)
+        path = os.path.join(outdir, "class_defaults_emit_classes.csv")
+        with open(path, "w", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(CLASS_COLUMNS)
+            w.writerows(choices)
+        print("wrote %s (%d classes)" % (path, len(choices)))
     if merge_dir:
         print("merged %d blocks into %s; %d classes had no extracted source"
               % (tot["merged"], merge_dir, tot["merge_missing"]))
@@ -893,6 +946,11 @@ def sweep(system_dir, outdir, emit_dir=None, show_class=None, merge_dir=None):
              tot["bytes_resolved"], tot["bytes"]))
     print("%d subobject references rendered as Begin Object blocks (%d properties, %d rendered)"
           % (tot["inline_objects"], tot["inline_properties"], tot["inline_rendered"]))
+    origins = collections.Counter(c[4] for c in choices if c[4])
+    one_tag = sum(1 for c in choices if c[6] == 1)
+    moved = sum(1 for c in choices if c[7] != "" and c[3] != c[7])
+    print("start origin: %s; %d one-tag block(s); %d start(s) moved off the unguarded chooser"
+          % (", ".join("%s %d" % (k, v) for k, v in origins.most_common()), one_tag, moved))
     print("unrendered by reason: %s; %d enum-name conflicts" % (dict(notes.most_common()), enum_conflicts))
     return rows, tot
 
@@ -1138,13 +1196,12 @@ def explain(system_dir):
 
 
 def reconcile(system_dir):
-    """The renderer's block count against the locator's, class by class.
+    """This tool's two choosers against the locator, per class export.
 
-    `tools/class-defaults.py` chooses from `guarded()`'s candidates, which refuse a start inside the front of
-    the record and can substitute a `group-end` one; this tool locates on `cd.choose` alone. Both withhold a
-    parse that names no declared property now (`choose_scored`), so what is left of the disagreement between
-    the two artifacts is the guard's share -- and this mode measures it rather than asserting it: the
-    cross-tab of the two outcomes over every class export, plus the count whose start both paths agree on.
+    `tools/class-defaults.py` chooses from `guarded()`'s candidates and this tool now does the same, so the
+    adopted path's residue against that artifact should be zero -- `cross_check()` gates exactly that on the
+    committed CSVs. What this mode adds is the other side: the pre-guard chooser, class by class, which is the
+    trade the adoption settled (the blocks it loses, the ones it held on the record's own bytes).
     """
     supers = cd.super_map()
     declared_all = cd.declared_properties()
@@ -1160,16 +1217,12 @@ def reconcile(system_dir):
             if pkg.class_name_of(exp) != "Class":
                 continue
             cls = pkg.name(exp["name"])
-            decl, cur, seen = set(), cls, set()
-            while cur and cur not in seen:
-                seen.add(cur)
-                decl |= declared_all.get(cur, set())
-                cur = supers.get(cur)
+            decl = class_declared(cls, supers, declared_all)
             kinds = cd.kinds_for_class(cls)
             cands, data = cd.candidates(pkg, ps, exp, kinds=kinds)
             best_u, reason_u = choose_scored(cands, decl, declared_all.get(cls, set()))
-            guarded, _where = cd.guarded(cands, data, pkg, decl, kinds, len(pkg.imports or []))
-            best_g = cd.choose(guarded, decl, declared_all.get(cls, set()))
+            guarded, _where = cd.guarded(list(cands), data, pkg, decl, kinds, len(pkg.imports or []))
+            best_g, _reason_g = choose_scored(guarded, decl, declared_all.get(cls, set()))
             here = "block" if best_u else ("no-declared-name" if reason_u == "no-declared-name" else "no-candidate")
             there = "no-block" if best_g is None else (
                 "block" if any(n in decl for n in best_g[3]) else "no-declared-name")
@@ -1177,28 +1230,77 @@ def reconcile(system_dir):
             if best_u and best_g and best_u[2] == best_g[2]:
                 agree_start += 1
             if there == "block" and here != "block":
-                # A block the locator settles and this tool does not: is it worth taking? `clean` is the same
-                # verdict `render_class` publishes, and it is a verdict about the *block*, so a guard-adopted
-                # renderer would withhold anything that is not clean exactly as it does now.
+                # A block the locator settles and the pre-guard chooser did not: `clean` is the same verdict
+                # `render_class` publishes, so one that is not clean is withheld by the adopted path too.
                 gained.append((best_g[0][0] == 1.0 and best_g[4] == 0, best_g[1]))
             if here == "block" and there != "block":
                 lost.append(best_u[1])
-    print("renderer / locator, per class export:")
+    print("pre-guard chooser / locator, per class export:")
     for (here, there), count in sorted(cats.items(), key=lambda kv: (-kv[1], kv[0])):
-        print("  renderer %-16s locator %-16s %5d" % (here, there, count))
+        print("  pre-guard %-16s locator %-16s %5d" % (here, there, count))
     print("start identical on both paths: %d" % agree_start)
-    print("blocks: renderer %d, locator %d (%+d)"
+    print("blocks: pre-guard %d, locator %d (%+d)"
           % (sum(v for (h, _t), v in cats.items() if h == "block"),
              sum(v for (_h, t), v in cats.items() if t == "block"),
              sum(v for (_h, t), v in cats.items() if t == "block")
              - sum(v for (h, _t), v in cats.items() if h == "block")))
     if gained:
-        print("the guard would add %d blocks: %d of them fully declared, %d properties in all, %d in the clean ones"
+        print("the guard adds %d blocks: %d of them fully declared, %d properties in all, %d in the clean ones"
               % (len(gained), sum(1 for clean, _n in gained if clean), sum(n for _c, n in gained),
                  sum(n for clean, n in gained if clean)))
     if lost:
-        print("the guard would remove %d block(s): %d properties" % (len(lost), sum(lost)))
+        print("the guard removes %d block(s): %d properties" % (len(lost), sum(lost)))
     return 0
+
+
+def cross_check(outdir=None):
+    """The emitter's chosen starts against the locator's, class for class -- dump-free.
+
+    `inventory/class_defaults_per_class.csv` is what `tools/class-defaults.py` publishes, and since the guard
+    was adopted on both sides the two artifacts must agree on **every** class: same start where the locator
+    publishes one, no start where it publishes none. That equality is the whole point of the change (the
+    renderer was 85 blocks short of the locator before it), so it is a gate and not a note. It also reads
+    without the packages, which is what `make ci` can do.
+    """
+    outdir = outdir or os.path.join(ROOT, "inventory")
+    mine = {}
+    with open(os.path.join(outdir, "class_defaults_emit_classes.csv"), newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            mine[(r["package"], r["class"])] = r
+    problems, checked, moved = [], 0, 0
+    with open(os.path.join(outdir, "class_defaults_per_class.csv"), newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            key = (r["package"], r["class"])
+            row = mine.get(key)
+            if row is None:
+                problems.append("%s.%s is in the locator and not in the emitter's classes" % key)
+                continue
+            checked += 1
+            if (r["block_start"] or "") != (row["start"] or ""):
+                problems.append("%s.%s: locator start %r, emitter start %r"
+                                % (key[0], key[1], r["block_start"], row["start"]))
+            u = row["unguarded_start"] or ""
+            if u and u != (row["start"] or ""):
+                moved += 1
+    if problems:
+        print("FAIL class-defaults-emit: %d disagreement(s) between the emitter and the locator, e.g. %s"
+              % (len(problems), "; ".join(problems[:4])))
+        return 1
+    print("ok   class-defaults-emit: %d classes, the emitter's start is the locator's on every one "
+          "(%d moved off the unguarded start)" % (checked, moved))
+    return 0
+
+
+def check_dump_free():
+    """`--check` without the dump: both artifacts' shape, and the emitter/locator equality."""
+    problems = checkcsv.shape(os.path.join(ROOT, "inventory", "class_defaults_emit.csv"), COLUMNS,
+                              key="package")
+    problems += checkcsv.shape(os.path.join(ROOT, "inventory", "class_defaults_emit_classes.csv"),
+                               CLASS_COLUMNS, key="class")
+    if problems:
+        print("FAIL defaults-emit: " + "; ".join(problems[:5]))
+        return 1
+    return cross_check()
 
 
 def main():
@@ -1211,6 +1313,8 @@ def main():
                     help="append each block to TREE/<Pkg>/<Class>.uc (the tree `make extract-script` writes)")
     ap.add_argument("--verify", action="store_true", help="compare against the shipped text blocks")
     ap.add_argument("--check", action="store_true", help="recompute and diff against the committed CSV")
+    ap.add_argument("--unguarded", action="store_true",
+                    help="locate with the pre-guard chooser (reproduces the artifact before the guard was taken)")
     ap.add_argument("--explain", action="store_true",
                     help="classify the classes that are not emitted, with the evidence for why")
     ap.add_argument("--reconcile", action="store_true",
@@ -1219,26 +1323,26 @@ def main():
     ap.add_argument("--package", dest="pkg", help="the class's package (with --class)")
     ap.add_argument("--show", action="store_true", help="print one class's block (game data: explicit)")
     args = ap.parse_args()
+    guard = not args.unguarded
     if args.check and not args.path:
-        # Dump-free: the artifact cannot be recomputed here, but it can be checked for the shape this tool writes.
-        return checkcsv.report("defaults-emit",
-                               checkcsv.shape(os.path.join(ROOT, "inventory", "class_defaults_emit.csv"),
-                                              COLUMNS, key="package"),
-                               "class_defaults_emit.csv is the shape this tool writes (shape only: needs the dump)")
+        # Dump-free: the artifacts cannot be recomputed here, but their shape and their agreement can be checked.
+        return check_dump_free()
 
     if args.check:
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
-            sweep(args.path, tmp)
-            new = open(os.path.join(tmp, "class_defaults_emit.csv"), "rb").read()
-            committed = os.path.join(ROOT, "inventory", "class_defaults_emit.csv")
-            old = open(committed, "rb").read()
-            if new != old:
-                for n, (a, b) in enumerate(zip(new.splitlines(), old.splitlines()), start=1):
-                    if a != b:
-                        sys.exit("inventory/class_defaults_emit.csv drifted at line %d: %r != %r" % (n, a, b))
-                sys.exit("inventory/class_defaults_emit.csv drifted (length %d vs %d)" % (len(new), len(old)))
-        print("ok   class-defaults-emit: inventory/class_defaults_emit.csv reproduces")
+            sweep(args.path, tmp, guard=guard)
+            for name in ("class_defaults_emit.csv", "class_defaults_emit_classes.csv"):
+                new = open(os.path.join(tmp, name), "rb").read()
+                committed = os.path.join(ROOT, "inventory", name)
+                old = open(committed, "rb").read()
+                if new != old:
+                    for n, (a, b) in enumerate(zip(new.splitlines(), old.splitlines()), start=1):
+                        if a != b:
+                            sys.exit("inventory/%s drifted at line %d: %r != %r" % (name, n, a, b))
+                    sys.exit("inventory/%s drifted (length %d vs %d)" % (name, len(new), len(old)))
+        print("ok   class-defaults-emit: inventory/class_defaults_emit.csv and "
+              "class_defaults_emit_classes.csv reproduce")
         return 0
     if args.explain:
         return explain(args.path)
@@ -1250,14 +1354,14 @@ def main():
     if args.emit or args.merge:
         if args.emit:
             os.makedirs(args.emit, exist_ok=True)
-        sweep(args.path, None, emit_dir=args.emit, merge_dir=args.merge)
+        sweep(args.path, None, emit_dir=args.emit, merge_dir=args.merge, guard=guard)
         return 0
     if args.show:
         if not args.cls:
             sys.exit("--show needs --class")
-        rows, _tot = sweep(args.path, None, show_class=(args.pkg, args.cls))
+        rows, _tot = sweep(args.path, None, show_class=(args.pkg, args.cls), guard=guard)
         return 0
-    sweep(args.path, args.out)
+    sweep(args.path, args.out, guard=guard)
     return 0
 
 

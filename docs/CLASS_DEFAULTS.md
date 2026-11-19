@@ -1390,3 +1390,68 @@ buffer in their payloads to promote -- the withholding is correct on the bytes, 
 of the 655. **What it does not settle**: whether any of them *should* declare defaults. The shipped text is not an
 oracle for that question on this build (see the section above), so a zero here is a property of what the package
 carries, not a claim about the class's intent.
+
+## The emitter takes the guard, and the file it gains is the block at the record's end
+
+`tools/defaults-emit.py` now chooses class blocks from `cd.guarded()`'s candidates, the chooser
+`tools/class-defaults.py` publishes, after the two sections above argued the other way on a block count. What
+decided it is not a preference between one-tag and two-tag blocks: it is what the unguarded chooser was writing on
+the classes where it *did* have a parse.
+
+**One scan, both choosers.** `pick_both()` walks the candidates once and ranks two sets -- the guarded list and the
+untouched one -- so the artifact states the trade per class instead of a second sweep. `--unguarded` selects the
+old set and reproduces the artifact of the commit before this change byte for byte (1,898 blocks, 1,664 clean,
+15,521 properties), which is the control the table below is measured against.
+
+| | before (unguarded) | after (guarded) |
+|---|---|---|
+| class blocks chosen | 1,898 | 1,983 |
+| clean blocks emitted | 1,664 | **1,977** |
+| withheld, the class does not account for the parse | 234 | 7 |
+| chosen parse names no declared property | 311 | 199 |
+| no candidate | 110 | 137 |
+| properties in emitted blocks | 15,521 | 15,834 |
+| subobject references rendered | 1,339 | 1,697 |
+| inline properties (of them rendered) | 16,065 (16,057) | 17,089 (17,081) |
+
+**The 227 that move were all withheld, and their replacement is one tag.** The 234 classes the old chooser withheld
+split three ways: **227** are the guard's moved starts, **6** keep a parse the class does not account for
+(`Engine.PlaylistParserBase`, `Engine.ArmorPickup`, `GamePlay.SP_Timer`, `IpDrv.ClientBeaconReceiver`,
+`IpDrv.MasterServerClient`, `StargateMenus.MultiplayerMapFileList`), and **1** loses its block
+(`StargateGame.HighlightStaticMeshActor`, whose unguarded start sits inside the record's group and whose
+replacement the trailer floor withdraws). The 86 gained come from **61** classes whose chosen parse named no
+declared property and **25** with no candidate at all. Every one of the 313 publishes a start with exactly one tag,
+ending on the payload's last byte. The arithmetic closes: 1,664 + 227 + 86 = 1,977, and no class that was clean
+stops being clean.
+
+**What the old chooser emitted for those 227 was the record's own bytes.** On **194** of the 227 moved classes the
+unguarded start sits inside the record's closing group (`inventory/defaults_locator_guard.csv`'s `from_covered`
+column), so the parse it ranked best *was* the record's last field read as property tags. That is what turned the
+policy question into a defect: a start inside a committed record field is not a defaults block under any floor.
+The other 33 moved to a different block-shaped start the guard leaves.
+
+**What the adoption costs, named.** 199 classes still get no file for naming no declared property, 137 have no
+candidate, and 6 hold a parse the class does not account for (17 properties withheld, against 491 before). One
+class -- `HighlightStaticMeshActor` -- loses a two-property block. Whether a one-tag block is *complete* for its
+class stays unmeasured, and no byte test can decide it: `class_defaults_misses.csv` still calls each of the 313
+`single-declared`, which is the verdict rule's honest answer, not the emitter's.
+
+**The per-class artifact, and the gate.** `--sweep -o inventory` now also writes
+`inventory/class_defaults_emit_classes.csv` (2,319 rows: status, start, the start's origin in the guard's candidate
+set -- `candidate` 1,670 / `group-end` 313 -- the tag count, the one-tag bit, and where the unguarded chooser put
+its start). `--check` without the dump reads it against `class_defaults_per_class.csv` and requires the emitter's
+start to be the locator's on **every** class -- the renderer was 85 blocks short of the locator before this change,
+and that gap is now zero by gate. Corrupting one row's start makes the check fail naming the class
+(`StargateMenus.RightLockingMenuPanel: locator start '155', emitter start '999'`), so the gate bites.
+
+**The only value oracle the build ships is unchanged.** `--verify` reads the two `defaultproperties` sections the
+script text retains (`Core.Locale`, 50 shipped properties, and `GUI.SGVertScrollBar`, 13): 1 matched, 1 differ, 61
+shipped-only, both inside a block comment, exactly the counts this page quoted before the change. Neither class is
+among the 313 (`Locale` has no candidate; `SGVertScrollBar`'s two-property start is the same on both choosers), so
+the adoption moves no value the one oracle can check.
+
+**What the tree gains.** Eleven of the twelve container panels now have a file -- the one-tag child pointer at
+their record's end -- and `GUIListBox`, `CoopPlayerPanel` and the rest place their list from it. The emitter's
+subobject walk follows those references, so the rendered tree grows by **358 references and 1,024 inline
+properties** with no new decode: the panels' children were already exports with readable blocks.
+`MultiplayerServerPanel`'s block is empty, so no rule gives it one.

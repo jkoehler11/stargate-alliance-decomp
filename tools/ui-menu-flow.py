@@ -1473,14 +1473,16 @@ def subcomponents_block(s, rows):
                    (len(leaves), ", ".join("`%s`" % n for p, n in leaves)))
     if gaps:
         out.append("")
-        out.append("The panels the tree does not carry are **not** classes whose block the reader refuses: each "
-                   "block is one tag, sitting exactly where its record's closing group ends and ending on the "
-                   "payload's last byte, and that tag names a child object the panel's own class owns "
-                   "(`ChapterList'chList'`, `GUILabel'cHint'`, `SGListBox'cListBox'`, ...). The emitter writes no "
-                   "file for them because its class-level locator ranks a three-tag parse *inside* the record's "
-                   "closing group above the block at the group's end — the same ranking the misses ledger used to "
-                   "call these `type-contradiction`. So what is missing is not the panel's contents but the "
-                   "file's one line, and every child a panel owns is itself an export with a readable block.")
+        out.append("The panels this page once listed as carried by no file are **not** classes whose block "
+                   "the reader refuses: each block is one tag, sitting exactly where its record's closing group "
+                   "ends and ending on the payload's last byte, and that tag names a child object the panel's "
+                   "own class owns (`ChapterList'chList'`, `GUILabel'cHint'`, `SGListBox'cListBox'`, ...). The "
+                   "emitter now writes each of these files: its class-level locator treats the record's closing "
+                   "group as a rule (`docs/CLASS_DEFAULTS.md`, *The emitter takes the guard*), so every panel "
+                   "with a non-empty block publishes its one tag at the group's end, and the subobject walk "
+                   "follows the pointer. Before that change the locator ranked a three-tag parse *inside* the "
+                   "record's closing group above the block at the group's end -- the same ranking the misses "
+                   "ledger used to call these `type-contradiction`.")
         out.append("")
         out.append("| widget class | package | declared properties | reader verdict | its block's tag |")
         out.append("|---|---|---:|---|---|")
@@ -1508,7 +1510,9 @@ def subcomponents_block(s, rows):
                        "moved** unguarded starts sat *inside* the record's closing group, so what the emitter writes "
                        "for those today is the record's own bytes. %s, %d of the panels above are in that set, and "
                        "the rule publishes a start while the two-property floor still withholds \"fully "
-                       "declared\": a file per panel, `single-declared` in the misses ledger."
+                       "declared\": a file per panel, `single-declared` in the misses ledger. "
+                       "`tools/defaults-emit.py` now takes the rule, so a panel with a non-empty block has a "
+                       "file and the tree places its list from it."
                        % (len(guard_block), moved + gained, moved, gained, ended, moved + gained, one, covered,
                           "**1** class loses its block" if lost == 1 else "**%d** classes lose theirs" % lost,
                           len(here)))

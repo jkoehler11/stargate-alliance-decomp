@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""What the emitter's class-level locator would publish if it carried the record-group rule.
+"""What the emitter's class-level locator gains from the record-group rule -- the record that settled it.
 
 `tools/class-defaults.py` chooses a class's defaults block with the record's closing group as a rule
-(`guarded()`), and `tools/defaults-emit.py` deliberately does not -- its `block_of` says so in one line,
-"unguarded on purpose: routing this through `cd.guarded()` was measured at **+313 clean blocks**".
+(`guarded()`), and `tools/defaults-emit.py` did not, on the reading that the rule's 313 starts are one-tag blocks
+the two-property floor refuses a verdict on. This tool measured both sides before the decision: it is what showed
+that 194 of the 227 moved starts sat inside the record's closing group, i.e. what the unguarded chooser emitted
+for them was the record's own bytes. The emitter now **takes** the rule and reports the same starts
+(`inventory/class_defaults_emit_classes.csv`, whose `--check` gates them against `class_defaults_per_class.csv`),
+so this artifact stays as the per-class trade record rather than as a forecast.
 That comment counts the gain and not the cost, and it is the whole record of a trade that decides
 whether the twelve UI container panels get a file. This measures both sides over the same packages,
 class by class, and writes the difference:

@@ -87,7 +87,7 @@ help:
 	@echo "  prop-stream   read one map export's property block (MAP=... EXPORT=...)"
 	@echo "  t3d           write every map's actors as T3D into \$$WORK/extracted/maps (PLAN 5.2)"
 	@echo "  class-defaults read one class's default properties (PKG=... CLASS=...)"
-	@echo "  defaults-emit  render every class's defaultproperties block (PLAN 3.5, needs the dump)"
+	@echo "  defaults-emit  render every class's defaultproperties block (PLAN 3.5, needs the dump; writes the per-class chooser too)"
 	@echo "  defaults-coverage  roll the defaults locator up per package (needs the dump)"
 	@echo "  defaults-per-class per-class defaults rows: block size, declared fraction (needs the dump)"
 	@echo "  class-records where a class payload stops being a record (needs the dump)"
@@ -732,9 +732,12 @@ class-defaults:
 
 # Every class's defaults, rendered back to UnrealScript (docs/CLASS_DEFAULTS.md). Needs the dump, so this is a
 # nightly/local check rather than a `make ci` one; `make defaults-tree` is what the compile loop consumes.
+# Both artifacts: the per-package rollup and the per-class chooser (`class_defaults_emit_classes.csv`,
+# 2,319 rows -- status, start, the start's origin in the guard's candidate set, and where the pre-guard
+# chooser put its start). `--unguarded` is the comparison, not the build.
 defaults-emit:
 	@$(PYTHON) tools/defaults-emit.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" --sweep -o inventory
-	@echo "wrote inventory/class_defaults_emit.csv"
+	@echo "wrote inventory/class_defaults_emit.csv and inventory/class_defaults_emit_classes.csv"
 
 # The rebuild pipeline, one stage at a time (docs/REBUILD.md, PLAN 6.1). Needs the dump; the compiler stages
 # report SKIP with their reason rather than pretending.

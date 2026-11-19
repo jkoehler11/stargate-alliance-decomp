@@ -14105,3 +14105,47 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Next measurement.** The frame control (one page rebuilt with a `WinTop` +0.05, `tools/xemu/frame-diff.py`) now
   tests a formula instead of discovering one; the larger open item in this thread is the emitter-side adoption of
   the locator guard.
+
+### Execution notes (2026-11-19, the emitter takes the locator guard, and the 227 it withheld were the record's bytes)
+
+- **Task.** The previous note's larger open item: adopting the guard emitter-side. It was recorded as a policy
+  call on a block count, and it is not -- the guard's start is what the unguarded chooser was already emitting on
+  the classes where its parse was *clean*, and on the 227 where it was not, the parse was of the record's own
+  closing group.
+- **The chooser.** `tools/defaults-emit.py` takes `cd.guarded()`'s candidate set on its class path
+  (`pick_both()` ranks the guarded and the untouched lists from one candidate walk; `block_for_export()` stays
+  unguarded because a subobject payload is not a `UClass` record). `--unguarded` selects the old set and
+  reproduces the pre-change artifact byte for byte -- the control. Clean blocks **1,664 -> 1,977**, properties in
+  emitted blocks **15,521 -> 15,834**, subobject references **1,339 -> 1,697** and their properties
+  **16,065 -> 17,089**, blocks chosen **1,898 -> 1,983**; withheld-for-an-undeclared-name **234 -> 7**, chosen
+  parse naming no declared property **311 -> 199**, no candidate **110 -> 137**. 1,664 + 227 moved + 86 gained =
+  1,977, with one class losing a two-property block.
+- **Why the 227 were not a trade.** 194 of them had their unguarded start inside the record's closing group
+  (`defaults_locator_guard.csv`'s `from_covered`), i.e. the block was the record's last field read as tags; all
+  227 are now `group-end` one-tag starts that end on the payload's last byte. Eleven of the twelve container
+  panels get a file, `MultiplayerServerPanel`'s block being empty. `StargateMenus` classes the emitter refuses
+  fall **32 -> 5**.
+- **The artifact and the gate.** `--sweep -o inventory` also writes `inventory/class_defaults_emit_classes.csv`
+  (2,319 rows: status, start, origin, tag count, one-tag bit, unguarded start). `--check` without the dump now
+  reads it against `class_defaults_per_class.csv` and requires the same start on every class -- the renderer's
+  85-block deficit is zero by gate, and corrupting one row's start fails the check naming the class.
+- **Files.** `tools/defaults-emit.py` (`pick_both`, `class_declared`, `render_class`'s record, `cross_check`,
+  `check_dump_free`, `--unguarded`), `inventory/class_defaults_emit.csv` (regenerated),
+  `inventory/class_defaults_emit_classes.csv` (new), `docs/CLASS_DEFAULTS.md` (new section), `docs/systems/UI.md`
+  (the panels' three paragraphs and the `StargateMenus` count corrected), `docs/UNKNOWNS.md` (U18 forty-fourth,
+  U27's status), `Makefile`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Gates.** `make defaults-emit` writes both artifacts; `--check` with the dump reproduces both byte for byte;
+  `--check` without it is shape plus the cross-artifact equality; `--check-doc` is not used by this page.
+- **Next measurement.** The frame control (`tools/xemu/frame-diff.py` with one page's `WinTop` +0.05), which now
+  tests a formula rather than discovering one; and the one-tag verdict in `MIN_PROPERTIES` -- the ledger still
+  calls the 313 `single-declared`, and what would settle whether a one-tag block is *complete* for its class is
+  the compile loop reading these files back, not another byte test.
+- **The band census over the enlarged tree, and the fractions are all it adds.** `make ui-layout-native` over the
+  new `--emit` tree reads **1,697** blocks over **159** classes (1,339 / 149 before): 147-155 state each axis,
+  **146/149/147/149** of them fractions and **1/1/3/6** pixels -- the same six pixel blocks, so every added block
+  states a fraction on every axis it states. Parent-relative axes x 59 / y 59 / w 47 / h 51 (59 blocks state a
+  `BoundingType`, 51 a `ScalingType`), and the only all-four-pixel block is still `GUIPage`'s `RemoveMeToo`
+  (38, 28, 564x424). The page's prose is corrected in place; the generated block and
+  `inventory/ui_layout_values.csv` are re-rendered by `--write-doc`.
+- **Not in this PR.** The frame control, and any change to `MIN_PROPERTIES` (`class_defaults_per_class.csv`
+  keeps its 1,983 blocks / 1,664 fully declared).
