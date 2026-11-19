@@ -1,0 +1,47 @@
+kind,name,owner,slot,va,form,value,verdict,note
+bind,page -> list,GUI,,,DefaultListClass,GUI.GUIMultiColumnList,measured,"GUIMultiColumnListBox.InitComponent calls AddControl(DefaultListClass) and the class's own defaults state GUI.GUIMultiColumnList, so a box never hosts the page's subclass and StargateMenus.ServerList is placed by nothing"
+bind,stock item draw slot,GUIListBase,58,0x00301c30,added over GUIComponent,the row loop calls it through +0xe8,derived,the virtual the OnDrawItem delegate shortcircuits
+bind,OnDrawItem,default.xbe,,0x007b8144,FName index global,wide string,derived,the name the delegate is dispatched under
+bind,delegate dispatcher,default.xbe,,0x00300ee0,loads the OnDrawItem index,1 reference(s),derived,builds the delegate's parameter block and calls it; its return is the `shortcircuit` bool
+bind,name-index table,default.xbe,,0x001226a0,471 name-ctor sites,103 names cached,derived,the static initialisers that cache an FName index per event name (4 bodies)
+class,GUIHorzList,GUI,59,0x005395b8,script,list,family,extends GUIListBase
+class,GUIListBase,GUI,59,0x005392e8,native,list,family,extends GUIComponent
+class,GUIListBox,GUI,63,0x00539110,script,box,family,extends GUIListBoxBase
+class,GUIListBoxBase,GUI,63,0x00538f10,script,box,family,extends GUIMultiComponent
+class,GUIMultiColumnList,GUI,59,0x005396c8,native,list,family,extends GUIVertList
+class,GUIMultiColumnListBox,GUI,63,0x005397b8,script,box,family,extends GUIListBoxBase
+class,GUIScrollText,GUI,59,0x005394c8,native,list,family,extends GUIVertList
+class,GUIScrollTextBox,GUI,63,0x00539010,script,box,family,extends GUIListBoxBase
+class,GUIVertList,GUI,59,0x005393d8,script,list,family,extends GUIListBase
+field,Index,GUIListBase,,0x25c,object offset,witnessed in 2 body/bodies,measured,"the selected row: compared per item to pass `bSelected` -- 0x00301de0, 0x00302370"
+field,ItemHeight,GUIListBase,,0x264,object offset,witnessed in 1 body/bodies,measured,"set from the style's text height, then used as the row's H -- 0x003013c0"
+field,ItemPadding,GUIListBase,,0x270,object offset,witnessed in 1 body/bodies,measured,"read into ItemHeight once, before ItemsPerPage is counted -- 0x003013c0"
+field,ItemWidth,GUIListBase,,0x268,object offset,witnessed in 1 body/bodies,measured,the horizontal loop's item width -- 0x00302370
+field,ItemsPerPage,GUIListBase,,0x260,object offset,witnessed in 1 body/bodies,measured,"counted up by the PreDraw's fit loop, capped at 1000 -- 0x003013c0"
+field,Top,GUIListBase,,0x258,object offset,witnessed in 2 body/bodies,measured,"row loop starts at [this+0x258] and stops at Top+ItemsPerPage -- 0x00301de0, 0x00302370"
+field,interItemGutter,GUIListBase,,0x26c,object offset,witnessed in 2 body/bodies,measured,"the step between rows, and half of it insets the first -- 0x00301de0, 0x00302370"
+rect,h,GUIHorzList,,0x12c,client rect,(int)(client[3] - client[1]),measured,the full client height
+rect,pitch,GUIHorzList,,0x12c,client rect,ItemWidth + interItemGutter,measured,the step to the next item
+rect,w,GUIHorzList,,0x12c,client rect,ItemWidth,measured,the horizontal loop's item width
+rect,x,GUIHorzList,,0x12c,client rect,client[0],measured,the strip starts at the list's left edge
+rect,y,GUIHorzList,,0x12c,client rect,client[1] + interItemGutter/2,measured,or vertically centred when the flag is set
+rect,h,GUIVertList,,0x12c,client rect,ItemHeight,measured,"the row height is the PreDraw's number, not the corpus's"
+rect,pitch,GUIVertList,,0x12c,client rect,ItemHeight + interItemGutter,measured,the step to the next row
+rect,w,GUIVertList,,0x12c,client rect,(int)(client[2] - client[0]),measured,"the full client width, truncated to an int"
+rect,x,GUIVertList,,0x12c,client rect,client[0],measured,the row starts at the list's left edge
+rect,y,GUIVertList,,0x12c,client rect,client[1] + interItemGutter/2,measured,half a gutter insets the first row
+slot,GUIListBase,GUIComponent,32,0x003012e0,override,calls CanAcceptFocus;calls OnHitTest,,0x003012e0..0x003013c0
+slot,GUIListBase,GUIComponent,58,0x00301c30,added,-,,0x00301c30..0x00301de0
+slot,GUIHorzList,GUIHorzList,58,0x00301c30,inherited,stock item draw,stock-draw,the row loop calls it through +0xe8
+slot,GUIHorzList,GUIListBase,30,0x003020e0,override,-,,0x003020e0..0x00302370
+slot,GUIHorzList,GUIListBase,31,0x00302370,override,calls ItemCount;calls OnColumnSized;calls OnDrawItem;calls OnSortChanged,row-draw,0x00302370..0x00302b40
+slot,GUIVertList,GUIListBase,30,0x003013c0,override,writes ItemHeight and ItemsPerPage,predraw,"measured by the offsets it stores, not by its name"
+slot,GUIVertList,GUIListBase,31,0x00301de0,override,calls ItemCount;calls OnDrawItem,row-draw,0x00301de0..0x003020e0
+slot,GUIMultiColumnListBox,GUIListBoxBase,58,0x00301890,override,-,,0x00301890..0x00301de0
+slot,GUIMultiColumnList,GUIMultiColumnList,58,0x00301c30,inherited,stock item draw,stock-draw,the row loop calls it through +0xe8
+slot,GUIListBoxBase,GUIMultiComponent,58,0x003015b0,override,-,,0x003015b0..0x00301890
+slot,GUIMultiColumnList,GUIVertList,30,0x003013c0,inherited,writes ItemHeight and ItemsPerPage,predraw,"measured by the offsets it stores, not by its name"
+slot,GUIScrollText,GUIVertList,30,0x00303fd0,override,calls AlignThumb,,0x00303fd0..0x00304450
+slot,GUIScrollText,GUIVertList,31,0x00302e10,override,-,,0x00302e10..0x00302ef0
+slot,GUIScrollText,GUIVertList,58,0x00303510,override,-,,0x00303510..0x00303ab0
+slot,GUIVertList,GUIVertList,58,0x00301c30,inherited,stock item draw,stock-draw,the row loop calls it through +0xe8
