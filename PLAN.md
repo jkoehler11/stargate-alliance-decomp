@@ -14607,3 +14607,39 @@ sequence.
   U31, this note.
 - **Gates.** `make ci` green; `make t3d` is 73 maps and a 49 MB T3D write, and both censuses reproduce. No boot.
 - **Not in this PR.** The record body's field widths (`U31`); the `TerrainInfo` payload itself.
+
+### Execution notes (2026-11-19, the palette records name lights, and the terrain actors are written)
+
+- **Task.** `docs/UNKNOWNS.md` U31 (a `StaticMeshInstance` record's own fields) and the two items the previous
+  note listed as "not in this PR" -- the record body's field widths and the `TerrainInfo` payload.
+- **The record body is the archive's three overloads, and the 790 were a flag.** `FUN_0024e6e0` preloads
+  `count * 0x14` and writes each element's `+0` through the compact slot (`FUN_000637e0`, `FCompactIndex`), `+4`
+  as a `TArray<BYTE>` (`FUN_0001aed0`: preload, compact count, raw bytes) and `+0x10` as a raw dword
+  (`FUN_00037110`); `4 + 12 + 4` is the 0x14 the preload sizes. The dword is **0 or 1**, so all 33,509 payloads
+  close and **466,858 records** are counted (10,582 with 0). All 466,858 records' first field lands in the
+  map's export table and **466,435 (99.91%)** name a light -- `Light` 404,667, `Sunlight` 35,210, `Spotlight`
+  25,998, `Emitter` 531, `TriggerLight` 29 -- so a `StaticMeshInstance` export is the level's baked per-light
+  lighting.
+- **The `Level` trailer is five strings.** `"unreal"`, three empty strings and `"Index.unr"`, then 32 bytes (31
+  in `DM-WorstCaseScenario`): the earlier "41 to 43 compact values" was those ASCII bytes read as compact
+  indices. `level_strings` (365 = 5 x 73) and `level_tail_bytes` (2,335) carry it and `--check` holds every map
+  to five.
+- **The class that had "no property block" has one.** A `TerrainInfo` payload is `[17-byte actor prefix]
+  [property block][native terrain record]`: `actor-prefix-record.py` matches 66 of 66, the block opens
+  `TerrainMap`, `TerrainScale`, `Layers` (3-4 `TerrainLayer` structs), the two bitmaps, `Level`, `Region` and
+  terminates on `None` 258..4,850 bytes in, with 10 KB to 2.6 MB of terrain record after it. `find_block` needs
+  a block at the export's end, so no candidate existed; `locate()` now takes the block at the prefix record's
+  end for the classes in `NATIVE_TAIL` when the value test accepts it, and `native_tails` (**66**) is that
+  rule's control. The 65 actors a `Level` named and no T3D held are written: **121,184 -> 121,250 actors**,
+  **1,148,526 -> 1,149,471 properties**, `level_unwritten` **65 -> 0** (the pin moved with it). Two new
+  `TerrainInfo` array declarations put `int` (132 arrays, 12,480 elements) and `DecorationLayer` (8 arrays, 10
+  records) in the element-type census.
+- **Files.** `tools/map-to-t3d.py` (`smi_tail`, `level_record`, `locate`'s `NATIVE_TAIL` rule,
+  `NATIVE_TAIL`/`NATIVE_TAIL_PIN`/`LEVEL_STRINGS`/`LIGHT_FAMILY`, ten census columns, six gates, seven
+  synthetic cases), `inventory/t3d_{coverage,values,structs,arrays}.csv` (73 rows regenerated),
+  `docs/T3D.md` (new section, three stale claims corrected in place), `docs/UNKNOWNS.md` U31 answered + U32
+  opened, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `--write-doc`/`--check-doc` agree, `--check` reads the committed censuses with no
+  dump, and the 73-map write reproduces its own totals. No boot.
+- **Not in this PR.** The palette tail's head dword (2..10) and the `Level` trailer's 32 bytes are counted, not
+  named (`U32`); the terrain record after the block is untouched.

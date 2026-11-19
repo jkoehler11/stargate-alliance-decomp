@@ -149,42 +149,49 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | measure | value |
 |---|---:|
 | maps | 73 |
-| `Array` properties | 38790 |
+| `Array` properties | 38930 |
 | of those, object arrays | **34218** |
 | object references inside them | **127563** |
-| arrays refused a (count, width) layout | 4547 (4547 struct arrays holding 19114 records) |
+| arrays refused a (count, width) layout | 4687 (4687 struct arrays holding 31604 records) |
 | -- of those, a compact-index array | **0** (0 element(s)) |
 | -- of those, a string array | **25** (126 element(s) decoded) |
-| -- of the struct arrays, element type declared | **4547** |
-| -- of those, elements decoded by a fixed width | **2019** |
-| -- of those, elements decoded as tagged blocks | **4533** arrays, **17095** records |
+| -- of the struct arrays, element type declared | **4687** |
+| -- of those, elements decoded by a fixed width | **14499** |
+| -- of those, elements decoded as tagged blocks | **4541** arrays, **17105** records |
 | -- arrays no rule reaches | **0** |
-| struct-typed properties | 315013 |
-| struct properties decoded | **315004** |
-| -- native bodies (`Vector`, `Rotator`, `Color`) | 203200 |
-| -- tagged blocks (fields read from the payload) | **111804** |
-| struct property names | 11 |
+| struct-typed properties | 315462 |
+| struct properties decoded | **315453** |
+| -- native bodies (`Vector`, `Rotator`, `Color`) | 203340 |
+| -- tagged blocks (fields read from the payload) | **112113** |
+| struct property names | 12 |
 | `StaticMeshInstance` payloads | 33509 |
 | palette colours inside them | **7112701** |
 | records whose alpha is zero | 5643 |
 | payloads the palette rule refuses | 0 |
 | native bytes after the palette | 17183118 |
+| exports whose block is followed by a native record | 66 |
 | tails whose head dword is 2 | **30450** of 33509 |
 | records the tails count | **466858** |
-| tails whose record list closes exactly | **32719** of 33509 |
+| -- records whose flag dword is 0 | 10582 |
+| -- records whose first field is an export index | **466858** of 466858 |
+| -- of those, naming a light actor | **466435** (423 other) |
+| tails whose record list closes exactly | **33509** of 33509 |
 | `Level` exports read | **73** |
 | actors the `Level` exports name | **79063** |
-| actors a `Level` names that the writer does not write | **65** |
+| strings in the `Level` trailer | **365** over 73 maps |
+| bytes after them | 2335 |
+| actors a `Level` names that the writer does not write | **0** |
 
 | struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |
 |---|---:|---:|---:|---:|---|---|
-| `Vector` | 152152 | 152152 | 0 | 152152 | 12:152152 | `--` |
-| `PointRegion` | 79925 | 79925 | 79925 | 0 | 13:64022 / 14:15903 | `Zone:Object+iLeaf:Int+ZoneNumber:Byte` |
-| `Rotator` | 50525 | 50525 | 0 | 50525 | 12:50525 | `--` |
+| `Vector` | 152289 | 152289 | 0 | 152289 | 12:152289 | `--` |
+| `PointRegion` | 79991 | 79991 | 79991 | 0 | 13:64084 / 14:15907 | `Zone:Object+iLeaf:Int+ZoneNumber:Byte` |
+| `Rotator` | 50528 | 50528 | 0 | 50528 | 12:50528 | `--` |
 | `Scale` | 17558 | 17558 | 17558 | 0 | 25:17550 / 28:8 | `Scale:Struct<Vector>+SheerRate:Float+SheerAxis:Byte` |
 | `RangeVector` | 10078 | 10078 | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 | `X:Struct<Range>+Y:Struct<Range>+Z:Struct<Range>` |
 | `Range` | 4149 | 4149 | 4149 | 0 | 13:4123 / 15:26 | `Min:Float+Max:Float` |
 | `Color` | 523 | 523 | 0 | 523 | 4:523 | `--` |
+| `TerrainLayer` | 243 | 243 | 243 | 0 | 214:70 / 215:52 / 211:26 / 227:20 / 226:19 / 206:16 / 213:13 / 219:8 / 225:7 / 210:6 / 223:3 / 212:2 / 222:1 | `Texture:Object+AlphaMap:Object+UScale:Float+VScale:Float+UPan:Float+VPan:Float+TextureMapAxis:Byte+TextureRotation:Float+LayerRotation:Struct<Rotator>+TerrainMatrix:Struct<Matrix>+KFriction:Float+KRestitution:Float` |
 | `Orientation` | 43 | 43 | 43 | 0 | 106:29 / 122:7 / 123:7 | `CamOrientation:Byte+LookAt:Object+DollyWith:Object+EaseIntime:Float+bReversePitch:Int+bReverseYaw:Int+bReverseRoll:Int+LookAtActor:Object+LookAtActorTag:Name+LookAtBoneName:Name+LookAtOffset_Relative:Struct<Vector>+LookAtOffset_Absolute:Struct<Vector>+PctInStart:Float+PctInEnd:Float+PctInDuration:Float+StartingRotation:Struct<Rotator>` |
 | `Plane` | 41 | 41 | 41 | 0 | 26:29 / 29:12 | `W:Float+X:Float+Y:Float+Z:Float` |
 | `Matrix` | 10 | 10 | 10 | 0 | 129:10 | `XPlane:Struct<Plane>+YPlane:Struct<Plane>+ZPlane:Struct<Plane>+WPlane:Struct<Plane>` |
@@ -195,15 +202,15 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `ParticleColorScale` | `ParticleEmitter` | 2472 | 5746 | 2472 | 14:5095 / 17:411 / 15:213 / 16:27 | `RelativeTime:Float+Color:Struct<Color>` |
 | `ParticleTimeScale` | `ParticleEmitter` | 1330 | 2000 | 1330 | 34:877 / 31:434 / 35:429 / 32:147 / 33:113 | `RelativeTime:Float+RelativeSize:Float+UseXYZ:Bool+RelativeSizeXYZ:Struct<Vector>` |
 | `SoundEmitter` | `AmbientSound` | 486 | 823 | 486 | 38:551 / 37:233 / 41:31 / 40:8 | `EmitInterval:Float+EmitVariance:Float+Volume:Struct<Range>+EmitSound:Object` |
+| `int` | `TerrainInfo` | 132 | 12480 | 0 | 4:132 (arrays) | `--` |
 | `IMusicSegment` | `IMusicActor` | 81 | 8220 | 81 | 83:1336 / 63:1336 / 61:1282 / 80:1277 / 87:908 / 66:906 / 59:506 / 77:448 / 68:113 / 84:56 / 155:21 / 281:12 / 41:8 / 81:3 / 39:2 / 40:2 / 70:2 / 47:1 / 49:1 | `SegmentName:Str+State:Byte+TypeStart:Bool+TypeEnd:Bool+TypeLoop:Bool+Transition:Array+TransitionFlags:Int+TestedValue:Int` |
 | `ParticleSound` | `ParticleEmitter` | 58 | 73 | 58 | 85:70 / 84:3 | `Sound:Object+Radius:Struct<Range>+Pitch:Struct<Range>+Weight:Int+Volume:Struct<Range>+Probability:Struct<Range>` |
 | `ParticleBeamEndPoint` | `BeamEmitter` | 52 | 93 | 52 | 74:77 / 75:8 / 78:5 / 73:2 / 83:1 | `ActorTag:Name+offset:Struct<RangeVector>+Weight:Float+ActorRef:Object` |
 | `ParticleVelocityScale` | `ParticleEmitter` | 36 | 114 | 36 | 23:63 / 24:51 | `RelativeTime:Float+RelativeVelocity:Struct<Vector>` |
 | `int` | `FluidSurfaceInfo` | 12 | 2017 | 0 | 4:12 (arrays) | `--` |
+| `DecorationLayer` | `TerrainInfo` | 8 | 10 | 8 | 653:4 / 657:3 / 659:1 / 655:1 / 684:1 | `ShowOnTerrain:Int+ScaleMap:Object+DensityMap:Object+ColorMap:Object+StaticMesh:Object+FadeoutRadius:Struct<Range>+BillboardFadeinRadius:Struct<Range>+BillboardHardCullDist:Float+BillboardTexture:Object+RedColorVariance:Byte+GreenColorVariance:Byte+BlueColorVariance:Byte+BillboardAlphaFadeEnabled:Bool+BillboardAlphaRef:Byte+BillboardUpdateThreshold:Float+BillboardMorphHorizontal:Float+BillboardMorphVertical:Float+ScaleMultiplier:Struct<RangeVector>+MeshExtents:Struct<Range>+swayRange:Struct<Range>+swaySpeed:Struct<Range>+DensityMultiplier:Struct<Range>+MaxPerQuad:Int+Seed:Int+AlignToTerrain:Int+DrawOrder:Byte+ShowOnInvisibleTerrain:Int+LitDirectional:Int+DisregardTerrainLighting:Int+RandomYaw:Int+EnableCollision:Bool+CollisionRadius:Float+CollisionHeight:Float+swayRotators:Struct<FTreeSwayRotation>+swayRotators:Struct<FTreeSwayRotation>+swayRotators:Struct<FTreeSwayRotation>` |
 | `Plane` | `ParticleEmitter` | 8 | 8 | 8 | 26:7 / 29:1 | `W:Float+X:Float+Y:Float+Z:Float` |
 | `ParticleRevolutionScale` | `ParticleEmitter` | 4 | 8 | 4 | 23:6 / 24:2 | `RelativeTime:Float+RelativeRevolution:Struct<Vector>` |
-| `ParticleBeamScale` | `BeamEmitter` | 3 | 3 | 3 | 24:3 | `FrequencyScale:Struct<Vector>+RelativeLength:Float` |
-| `PassengerWeaponStruct` | `StargateVehicle` | 2 | 6 | 2 | 11:6 | `WeaponPawnClass:Object+WeaponBone:Name` |
 <!-- /generated:t3d-values -->
 
 **The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,528
@@ -518,22 +525,79 @@ override; the two that matter here are `Level` `0x00161b70` and `StaticMeshInsta
 **The `Level` export is the level's actor list, and there is no script to find.** Its payload is
 `[0x00][u32 count][u32 count][count x compact export index][trailer]`: the leading zero is the empty property
 block's `None` terminator, the two dwords are the same number, and every index lands in the package's own export
-table. Across the 73 maps it names **79,063 actors** and a trailer of **41 to 43 compact values**. The writer
+table. Across the 73 maps it names **79,063 actors** and a trailer this page reads at its end: five `FString`s and 32 bytes, not the "41 to 43 compact
+values" an earlier reading counted here. The writer
 never emitted this export -- it has no tagged block, so `locate()` correctly refuses it -- and it now reads the
-list and cross-checks itself against it: of the actors a level names, **65 are not in any T3D and all 65 are
-`TerrainInfo`**, whose payload is the terrain's own native record with no property block. That residue is pinned
-by the gate, and the T3D now carries the count in its header (`// Level: N actor(s) ...`).
+list and cross-checks itself against it: of the actors a level names, 65 were not in any T3D and all 65 were
+`TerrainInfo`, whose payload the last section of this page shows does carry a property block. Those 65 are
+written now, so the residue is **0** and the gate pins that, and the T3D now carries the count in its header (`// Level: N actor(s) ...`).
 
 **The palette's tail is a count of records, not a head plus fields.** `UStaticMeshInstance::Serialize` runs only
 on load, writes the class's instance record (the `TArray<FColor>` that is the colour table, then one dword) and,
 when the package version is at least `0x6e`, a `TArray` of 20-byte records through the array serialiser at
 `0x0024e6e0` -- a compact count, then each member. So the bytes after the colours are
-`[dword][compact count][count records]`, each record ending with the dword 1: **466,858 records** over the 33,509
-payloads, and the frame spends the tail exactly on all of them. The record body's own field set is not pinned:
-97.6% of payloads (**32,719**) parse as a compact value and a length-prefixed byte blob, and the rest close on the
-frame but not on that body shape, so the body grammar is counted and the frame is what the gate holds.
+`[dword][compact count][count records]`, each record ending with a dword that is 0 or 1: **466,858 records** over
+the 33,509 payloads, and the frame spends the tail exactly on all of them. The record body is pinned at the end of
+this page: `[compact export index][compact length][bytes][dword 0 or 1]`, read from the serialiser's three
+members, which closes every payload -- the 790 that did not close on the earlier reading were records ending on 0.
 
 **Files.** `tools/map-to-t3d.py` (`level_record`, `smi_tail`, the writer's `Level` branch and its header line,
 five columns on the coverage census, `LEVEL_UNWRITTEN`, the gates and six synthetic cases),
 `inventory/t3d_coverage.csv` (five new columns, 73 rows regenerated), the writer's own T3D under `$WORK`, and
 this page's generated block.
+
+## The records name lights, the trailer is strings, and the terrain actor was written (measured 2026-11-19)
+
+Three residues this page carried were one read each, and none of them was the measurement the page predicted.
+
+**The palette record's body is `[compact export index][compact length][bytes][dword flag]`, and the flag is 0 as
+often as 1.** The 790 payloads the earlier reading left over were not a second body shape: their records end on
+the dword **0**, not 1. `FUN_0024e6e0` -- the record array `UStaticMeshInstance::Serialize` hands `this+0x28` to
+-- preloads `count * 0x14` and writes the element's three members in order: `+0` through the archive's compact
+slot at `+0x18` (`FUN_000637e0`, the `FCompactIndex` writer, called with the member's own address), `+4` as a
+`TArray<BYTE>` (`FUN_0001aed0`: preload, compact count, then `Ar.Serialize(data, count)` through the raw slot at
+`+4`), and `+0x10` as a raw dword (`FUN_00037110`, slot `+4` with length 4). Those three members are the 20 bytes
+the preload sizes -- `4 + 12 + 4` -- so the element's field widths are the archive's serialisation overloads and
+not a payload convention, which is what U31 asked for. Accepting both flag values closes **33,509 of 33,509**
+payloads: **466,858 records**, **10,582** of them carrying 0 (every one of those sits in `DM-Tomb` and its
+neighbours, which is why the earlier miss counts clustered there).
+
+**The first field is an actor reference, and the actor is a light.** All **466,858** values land in the map's own
+export table and **466,435 (99.91%)** name a light class -- `Light` 404,667, `Sunlight` 35,210, `Spotlight`
+25,998, `Emitter` 531, `TriggerLight` 29 -- while 423 name an `InterpolationPoint`, `PathNode` or `LookTarget`.
+So a `StaticMeshInstance` export is the level's baked per-light lighting: the colour table above it, then one
+record per (light, instance) pair carrying a compressed byte blob and a flag. The gate holds the reference count
+to the record count and the non-light share under one percent, and the flag-0 count is published beside them
+rather than left as a residue.
+
+**The `Level` trailer is five strings, not a run of compact values.** After the actor list the payload carries
+`07 "unreal"`, `00`, `0a "Index.unr"`, `00`, `00` -- five length-prefixed `FString`s whose lengths count the
+terminating NUL, the same five in all 73 maps -- and then **32 bytes** (31 in `DM-WorstCaseScenario`, the one
+map whose Level payload is a byte shorter), whose first eight are `61 1e 00 00 01 00 00 00` and whose last six
+differ per map. The earlier "41 to 43 compact values" was those ASCII bytes read as compact indices. The census
+carries `level_strings` (365 = 5 x 73) and `level_tail_bytes` (2,335) and the gate holds every map to five.
+
+**A `TerrainInfo`'s payload is `[17-byte actor prefix][property block][native terrain record]`, so the class the
+page called blockless has a block.** `actor-prefix-record.py`'s rule matches on **66 of 66** exports and names
+the block's start, and the block parses to `TerrainMap:Object`, `TerrainScale:Struct<Vector>`,
+`Layers:Struct<TerrainLayer>` (three or four of them), `QuadVisibilityBitmap:Array`, `EdgeTurnBitmap:Array`,
+`Level:Object`, `Region:Struct<PointRegion>`, ... and terminates on `None` 258 to 4,850 bytes in, with 10 KB to
+2.6 MB of terrain record after it. `find_block` requires a block to end at the export's end, so no candidate
+existed and the class read as "no property block at all". `locate()` now takes the block at the prefix record's
+end for the classes in `NATIVE_TAIL` when the value test accepts it, and `native_tails` (**66**) is that rule's
+own control. The 65 actors the `Level` exports named and no T3D held are written: **121,184 -> 121,250 actors**
+and **1,148,526 -> 1,149,471 properties**, `level_unwritten` is **0** where the gate pinned 65, and the two new
+`TerrainInfo` array declarations put `int` (132 arrays, 12,480 elements) and `DecorationLayer` (8 arrays, 10
+records) into the element-type census with their payload field lists.
+
+**Files.** `tools/map-to-t3d.py` (`smi_tail`'s flag and reference census, `level_record`'s string trailer,
+`locate`'s `NATIVE_TAIL` rule, `NATIVE_TAIL`/`NATIVE_TAIL_PIN`/`LEVEL_STRINGS`/`LIGHT_FAMILY`, ten new census
+columns and the six gates and seven synthetic cases that hold them), `inventory/t3d_coverage.csv` (73 rows
+regenerated), `inventory/t3d_{values,structs,arrays}.csv` (regenerated by the same run), `docs/T3D.md` and this
+note.
+
+**Not in this PR.** The palette tail's head dword (2 to 10, present on 30,450 of the 33,509 tails) and the 32
+trailer bytes of the `Level` export are still counted, not named; both are fields of the class's instance record
+or of whatever the level writes last, and neither has a serialiser read yet. The 1,415 `TerrainInfo` properties'
+`Layers` struct widths (206..227 bytes, tagged) are decoded field by field, but the terrain record after the
+block -- heights, sectors, the 10 KB to 2.6 MB -- is untouched.

@@ -5144,17 +5144,45 @@ read nine properties each, `M07B`'s export is written for the first time (121,39
 `padded_blocks` column pins the population at these two -- one in `M07A`, one in `M07B` -- which `--check`
 fails on if a third appears or either loses it.
 
-## U31 -- a `StaticMeshInstance` records own fields
+## U31. A `StaticMeshInstance` record's own fields -- answered
 
-## U31 -- a `StaticMeshInstance` record's own fields
+**Measured 2026-11-19.** The record is `[compact export index][compact length][bytes][dword flag]`, and the flag
+is **0 or 1**; nothing about the 790 payloads the earlier reading left over was a second body shape, their
+records simply end on 0.
 
-**Question.** The palette's tail is `[dword][compact count][count records]` (33,509 payloads, 466,858 records,
-each ending on the dword 1) and that frame is measured, but a record's *body* is not: 32,719 of 33,509 payloads
-parse as a compact value and a length-prefixed byte blob, and the other 790 close on the frame but not on that
-body shape.
+**The field widths are the archive's overloads, read from the body that calls them.** `FUN_0024e6e0` -- the
+record array `UStaticMeshInstance::Serialize` (`0x0024b5f0`) hands `this+0x28` to -- preloads `count * 0x14` and
+writes each element's three members in order: `+0` through the archive slot at `+0x18` (`FUN_000637e0`, the
+`FCompactIndex` writer, called with the member's address), `+4` as a `TArray<BYTE>` (`FUN_0001aed0`: preload,
+compact count, then `Ar.Serialize(data, count)` through the raw slot at `+4`), and `+0x10` as a raw dword
+(`FUN_00037110`, slot `+4`, length 4). `4 + 12 + 4` is the 0x14 the preload sizes, so the three members are the
+20 bytes and no fourth field exists between them.
 
-**What would settle it.** The record is `UStaticMeshInstance`'s 20-byte member: `0x0024e6e0` preloads
-`count * 0x14` and serialises members at +0, +4 and +0x10, then a byte array and a dword. The body's field
-widths are therefore `FArchive::operator<<` overloads, not a payload convention -- read the three overloads the
-archive vtable points at for this class and the 790 payloads become a second measurement rather than a residue.
-Reading more payloads by hand is the route that has already failed on this page.
+**The corpus is the second measurement.** Accepting both flag values closes **33,509 of 33,509** payloads and
+counts **466,858 records**, 10,582 of them carrying 0 (all in `DM-Tomb`'s neighbourhood). All 466,858 records'
+first field lands in the map's own export table and **466,435 (99.91%)** name a light (`Light` 404,667,
+`Sunlight` 35,210, `Spotlight` 25,998, `Emitter` 531, `TriggerLight` 29; 423 name an `InterpolationPoint`,
+`PathNode` or `LookTarget`), so a palette export is the level's baked per-light lighting rather than a mesh's
+colours alone.
+
+**Status.** Answered in the tool, not in a page sentence: `map-to-t3d.smi_tail` accepts both flag values and
+returns the record count, the flag-0 count and every reference; `inventory/t3d_coverage.csv` carries
+`palette_records`, `palette_records_flag0`, `palette_refs`, `palette_ref_light` and `palette_ref_other`, and
+`--check` fails when a payload stops closing, when a record's first field leaves the export table, or when the
+non-light share passes one percent. `docs/T3D.md` has the section.
+
+## U32. Two fields this page's records carry are counted, not named
+
+**Question.** Two runs of bytes are read to their extent and not to their meaning. (1) Every `StaticMeshInstance`
+palette tail opens with a dword in **2..10** (30,450 of the 33,509 read 2) before the record count; it is not a
+count of the records or of the colours and it does not divide the remainder. (2) The `Level` export's trailer is
+five `FString`s (`"unreal"`, three empty, `"Index.unr"`) followed by **32 bytes** (31 in `DM-WorstCaseScenario`),
+whose first eight are `61 1e 00 00 01 00 00 00` and whose last six differ per map.
+
+**What would settle it.** Both are members written by a serialiser this project has already located: the head
+dword belongs to the instance record `UStaticMeshInstance::Serialize` writes before the array (the 28-byte
+`0x24f160` path is the version-0x70 branch and has not been read against the 0x82 packages), and the 32 trailer
+bytes are whatever `ULevel::Serialize` (`0x00161b70`, whose tail is past the part this project decompiled) writes
+after the actor array. Read those two bodies at the offsets that write them -- a disassembly of the window plus
+the class's own declaration -- rather than parsing more payloads, which is what produced the "41 to 43 compact
+values" this page has now withdrawn.
