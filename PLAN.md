@@ -983,6 +983,35 @@ other 38 rows.
       re-derives every count against its denominator, joins the anchor's block totals and drives six synthetic
       prefixes) + `inventory/actor_prefix_record.csv` (295 rows) + `docs/ACTOR_PROPERTIES.md` (*The prefix is a
       record*) + `make actor-prefix-record` + this note. 73 maps in 74 s; no boot.
+      **Every parameter a placed action carries is now read, and the 19 waits that state no event are named
+      (2026-11-19).** The graph pages read one parameter per branch; this walks all 73 maps once and parses every
+      placement's property block with the shared reader (`tools/prop-stream.py`): **18,510 placements over the 83
+      placed classes of the family's 118**, **15,441** with a block that terminates at the export's end, **3,069**
+      with none at all -- the marker classes (`ACTION_EndSection`, `ACTION_LeaveSequence`) and every placement that
+      overrides nothing -- and **21,584** property statements after refusing **26** whose name the class chain does
+      not declare (`class_properties.csv`; each is a mis-parsed block start named per map, class and slot, and
+      dropping them is what keeps the class table honest). The placed total reproduces `action_wiring.csv`'s 18,510
+      exactly, which is the control. What the parameters decide: **415 of the 580 `ACTION_GotoAction` placements
+      state no `ActionNumber`**, and `ProceedToNextAction`'s `Max(0, ActionNumber)` sends every one of them to slot
+      0 -- 385 sit on a slot of some sequence's array (that page's 377 is by slot on its own walk) and 30 in none,
+      and **none at slot 0 itself**, so each is a real jump back to the top of its sequence; of
+      the 165 that state one, 111 target behind themselves, 40 ahead and 14 sit in no array. **`PauseTime` runs from
+      0.001 to 100,000 seconds** (median 2) and 2,214 of 2,216 `ACTION_WaitForTimer` placements state it, so the
+      top value holds a sequence for 27.8 hours -- the corpus's park, not a timeout -- and the two that state none
+      fire a zero-second timer at once. **2,703 of 2,722 `ACTION_WaitForEvent` placements state `ExternalEvent`**:
+      the 19-placement gap the event pages reported is exactly the placements that state none, now listed per map,
+      class and slot, and with the name left at `None` -- which the actor iterator does not filter on -- the
+      level's first `TriggeredCondition` decides whether the wait completes at once; **207** placements also state
+      `bCheckRecentEvents`, the class's own lost-wakeup guard. **`ACTION_Talk` ships its subtitle in the map** (717
+      of 719 placements state `SubTitleText` as a localized string, 256 state `DialogueFinishedEvent`, 719
+      `myDirectory`), `Action_PLAYANIM` states `BaseAnim` on all 227 of its placements, and `ACTION_IfRandomPct`'s
+      39 placements all state a `Probability` between 0.15 and 0.5 (median 0.3), so `FRand()` still owns the whole
+      of the random branch. Tool (`tools/action-parameters.py`: `measure()` counts a placement's statements and the
+      slot context of its goto, the class-property control refuses a name the chain does not declare, `--check`
+      drives a synthetic map with a slot-0 goto, a 99999-second timer and both residues) +
+      `inventory/action_parameters.csv` (384 rows: map, class, property, residue and census) +
+      `docs/MAP_ACTION_PARAMETERS.md` (*What a placed action says about itself*) + `make action-parameters` + this
+      note. 73 maps in 3.5 min; no boot.
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an

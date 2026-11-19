@@ -131,4 +131,6 @@ an upper bound on what runs where a goto jumps forward, and a lower bound where 
 * **A per-placement target for the 377 gotos that state none.** Their class declares `ActionNumber` and its
   defaults block names only `ActionString`, so the field keeps the type's zero and the jump goes to index 0. That
   is the loop the class's own comment warns about; whether any particular one was meant to be filled in is not
-  something a package can say.
+  something a package can say. `docs/MAP_ACTION_PARAMETERS.md` counts the population by placement rather than
+  by slot -- 415 placements state no `ActionNumber`, 385 of them on a slot of some array and 30 in none, and
+  none sits at slot 0 itself -- so the 377 here and the 385 there differ by what is counted, not by a reading.
