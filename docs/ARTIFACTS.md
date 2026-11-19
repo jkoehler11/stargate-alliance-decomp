@@ -263,7 +263,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/switch_join.csv` | 200 | 9 | `make switch-join` |
 | `inventory/switch_operands.csv` | 200 | 10 | `make switch-operands` |
 | `inventory/t3d_arrays.csv` | 14 | 8 | `make t3d` |
-| `inventory/t3d_coverage.csv` | 73 | 14 | `make t3d` |
+| `inventory/t3d_coverage.csv` | 73 | 19 | `make t3d` |
 | `inventory/t3d_structs.csv` | 11 | 7 | `make t3d` |
 | `inventory/t3d_values.csv` | 73 | 18 | `make t3d` |
 | `inventory/tag_encodings.csv` | 145 | 4 | `make ci` |

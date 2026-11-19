@@ -14575,3 +14575,24 @@ Tool (`tools/map-to-t3d.py`: `locate()` delegating, the pinned window, `struct_t
 value test has nothing to refuse, and closing them is a start rule, not a value rule; the `StaticMeshInstance`
 payload's own record format; the struct decoders beyond `Vector`/`Rotator`/`Color`; the `Level` export's script
 sequence.
+
+### Execution notes (2026-11-19, the Level export is the actor list, and the palette tail is a record list)
+
+- **Two native records, read from their serialisers.** `inventory/class_serialize_slots.csv`'s slot-11
+  `Serialize` for `Level` (`0x00161b70`) and `StaticMeshInstance` (`0x0024b5f0`) were decompiled from the kept
+  Ghidra project; `ExportNew.java` creates a function at an unseeded address and exports it, which `ExportAt.java`
+  refuses. The `Level` payload is `[00][count][count][count x compact export index][trailer]`: the level's own
+  actor list, **79,063 actors** over the 73 maps, every index inside the export table. The `StaticMeshInstance`
+  tail is a dword, a compact count and that many records -- what `UStaticMeshInstance::Serialize` writes after the
+  colour table, so it is a count, not a field past a head.
+- **The writer now cross-checks itself.** `tools/map-to-t3d.py` reads both, writes `// Level: N actor(s) named by
+  the level's own list, X not written` into each T3D, and carries five new columns on
+  `inventory/t3d_coverage.csv`. Of the actors a level names, **65** are not written and all 65 are `TerrainInfo`
+  (its payload is the terrain's own native record, with no property block); `LEVEL_UNWRITTEN` pins that, so a new
+  class that stops being written fails `--check`.
+- **Files.** `tools/map-to-t3d.py` (`level_record`, `smi_tail`, the `Level` branch and header line, five census
+  columns, the gates, six synthetic cases), `inventory/t3d_coverage.csv`, `docs/T3D.md` (two sections, the stale
+  "script sequence" bullet corrected), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, `docs/UNKNOWNS.md`
+  U31, this note.
+- **Gates.** `make ci` green; `make t3d` is 73 maps and a 49 MB T3D write, and both censuses reproduce. No boot.
+- **Not in this PR.** The record body's field widths (`U31`); the `TerrainInfo` payload itself.

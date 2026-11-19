@@ -33,6 +33,13 @@ the struct rule (`struct_fields`) applied to each element rather than a second r
 array in these 73 maps decodes, including the 46 the width rule could not reach, so no array payload is left
 unread.
 
+**Two native records the page deferred, read from the class's own serialiser** (2026-11-19). A map's `Level`
+export is not an actor and has no property block; its payload is `[0x00][count][count][count x compact export
+indices][trailer]`, i.e. **the level's actor list**, and the writer now cross-checks its own output against it.
+The `StaticMeshInstance` payload's tail is `[dword][compact count][that many records]`, the record list
+`UStaticMeshInstance::Serialize` (`0x0024b5f0`) writes after the colour table; it is a count, not a field past
+a head. Nothing here is a guess about the bytes: both frames come from the functions that write them.
+
 Output is game-derived content: `$WORK` only, never this repository (`.gitignore` keeps `/work` and `/out` out,
 and the docs say the same). What is committed is the tool and the counts it prints.
 """
@@ -396,6 +403,84 @@ def palette_record(data, ps):
     return count, alphas.count(0), len(data) - off - 4 * count
 
 
+def level_record(data, pkg, ps):
+    """A `Level` export's payload -> `(actor count, {export indices}, trailer values)`.
+
+    The `Level` object is not an actor and carries no property block. Its payload is
+    `[0x00][u32 count][u32 count][count x compact export index][trailer]`: the leading zero is the empty
+    property block's `None` terminator, the two dwords are the same number (the level's own actor count),
+    and every index lands in this package's export table. The trailer is whatever follows the actor list,
+    a run of short compact values, and it is counted rather than named.
+
+    The writer never emitted this export -- it has no tagged block, so `locate()` correctly refuses it --
+    and until now nothing read it either. `docs/T3D.md` called it "the `Level` export's script sequence";
+    it is the level's actor list, and `docs/MAP_SCRIPTS.md` settled the script half: no map ships one.
+    """
+    if len(data) < 10 or data[0] != 0:
+        return None
+    count, again = struct.unpack("<II", data[1:9])
+    if count != again or not 0 < count <= len(pkg.exports):
+        return None
+    off, idx = 9, set()
+    for _ in range(count):
+        if off >= len(data):
+            return None
+        try:
+            value, off = ps.read_index(data, off)
+        except IndexError:
+            return None
+        if not 1 <= value <= len(pkg.exports):
+            return None
+        idx.add(value)
+    trailer = 0
+    try:
+        while off < len(data):
+            _value, off = ps.read_index(data, off)
+            trailer += 1
+    except IndexError:
+        return None
+    return count, idx, trailer
+
+
+def smi_tail(tail, ps):
+    """A `StaticMeshInstance` payload's tail -> `(head dword, record count, closes exactly)`.
+
+    `UStaticMeshInstance::Serialize` (`0x0024b5f0`) is where this record's shape comes from: it runs only on
+    load, writes the class's 28-byte instance record (a `TArray<FColor>` -- the colour table above -- and one
+    dword) and then, when the package version is at least 0x6e, a `TArray` of 20-byte records through the
+    array serialiser at `0x0024e6e0` (a compact count, then each member). That is why the bytes after the
+    colours are **a dword and a count of records**, not "fields past a head": the dword is a member of the
+    instance record the same function writes, and the number after it counts the array that follows.
+
+    Each record's body begins with compact values and, on 97.6% of the payloads, a length-prefixed byte blob,
+    and ends with the dword 1; the remaining payloads close on the frame but not on that body shape, so the
+    body grammar is counted, never asserted. What is asserted is the frame: the head, the count, and that the
+    records spend the tail exactly.
+    """
+    if len(tail) < 5:
+        return None
+    head = struct.unpack("<I", tail[:4])[0]
+    try:
+        count, off = ps.read_index(tail, 4)
+    except IndexError:
+        return None
+    if count < 0:
+        return None
+    for _ in range(count):
+        try:
+            _first, off = ps.read_index(tail, off)
+            size, off = ps.read_index(tail, off)
+        except IndexError:
+            return head, count, False
+        if size < 0 or off + size + 4 > len(tail):
+            return head, count, False
+        off += size
+        if tail[off:off + 4] != b"\x01\x00\x00\x00":
+            return head, count, False
+        off += 4
+    return head, count, off == len(tail)
+
+
 def locate(data, pkg, ps, preferred=None):
     """The actor's property block, located by the reader's own value test.
 
@@ -439,11 +524,21 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "string_arrays": 0, "string_elements": 0, "elements_decoded": 0, "record_starts": 0,
           "padded_blocks": 0, "palette_payloads": 0, "palette_refused": 0, "palette_colours": 0,
           "palette_clear": 0, "palette_tail": 0, "palette_tails": 0, "palette_head2": 0,
-          "struct_element_arrays": 0, "struct_element_records": 0}
+          "palette_sections": 0, "palette_closed": 0, "level_actors": 0, "level_trailer": 0,
+          "level_unwritten": 0, "struct_element_arrays": 0, "struct_element_records": 0}
     structs, arrays = {}, {}
+    written, level_idx = set(), set()
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
         cls = pkg.class_name_of(exp)
+        if cls == "Level":
+            # The level object: not an actor, no property block. Its payload is the level's own actor list
+            # (`level_record`), which is the one reading of this export that the writer can cross-check
+            # against its own output -- every index it names should be an actor the writer writes.
+            level = level_record(data, pkg, ps)
+            if level is not None:
+                st["level_actors"], level_idx, st["level_trailer"] = level
+            continue
         if cls == "StaticMeshInstance":
             # No property block at all: the payload is the instance's native record, whose first half is a
             # packed colour table (`palette_record`). Counted here rather than written as an actor -- there
@@ -460,6 +555,11 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                     st["palette_tails"] += 1
                     if data[-palette[2]:4 - palette[2]] == b"\x02\x00\x00\x00":
                         st["palette_head2"] += 1
+                tail = smi_tail(data[len(data) - palette[2]:], ps)
+                if tail is not None:
+                    st["palette_sections"] += tail[1]
+                    if tail[2]:
+                        st["palette_closed"] += 1
             continue
         preferred = None
         if prec is not None:
@@ -474,6 +574,7 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         if tail:
             st["padded_blocks"] += 1
         lines.append("Begin Actor Class=%s Name=%s_%d" % (cls, cls, exp["index"] + 1))
+        written.add(exp["index"] + 1)
         for p in props:
             value = p.get("value")
             raw = data[start + p["value_offset"]:start + p["value_offset"] + p["size"]]
@@ -588,6 +689,11 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         lines.append("End Actor")
         lines.append("")
         actors += 1
+    if level_idx:
+        st["level_unwritten"] = len(level_idx - written)
+        lines.insert(2, "// Level: %d actor(s) named by the level's own list, %d not written"
+                     % (st["level_actors"], st["level_unwritten"]))
+        lines.insert(3, "")
     text = "\n".join(lines)
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, name + ".t3d"), "w") as f:
@@ -668,6 +774,11 @@ def struct_types(path=DECLARED):
 # (`locate()`'s `preferred`) none is left: the gate below is strict, and `padded_blocks` pins the only export
 # whose block ends short of the export -- the two `Cubemap`s (U30).
 RESIDUE_STRUCTS = {}
+
+# Every `Level` export names its own actors, and the writer writes each one -- except these: `TerrainInfo`
+# carries no property block (its payload is the terrain's own native record), so `locate()` refuses it and the
+# export is not in any T3D. The gate pins the count so a new class that stops being written is a failure.
+LEVEL_UNWRITTEN = 65
 
 
 def check(values, structs, stats, arrays=ARRAYS):
@@ -765,6 +876,26 @@ def check(values, structs, stats, arrays=ARRAYS):
                  if int(r.get("palette_colours") or 0) < int(r.get("palette_payloads") or 0)]
         if fewer:
             problems.append("%s: %d map(s) count fewer colours than payloads" % (stats, len(fewer)))
+        # The tail is a frame the class's serialiser fixes: a dword, a compact count, that many records.
+        # The frame has to close on every payload, and the records have to be there -- a zero would mean
+        # the count was read off the wrong byte and the "records" were the colour table's own bytes.
+        if sum(int(r.get("palette_sections") or 0) for r in crows) <= sum(int(r.get("palette_payloads") or 0)
+                                                                        for r in crows):
+            problems.append("%s: the palette tails carry no more records than payloads" % stats)
+        closed = sum(int(r.get("palette_closed") or 0) for r in crows)
+        if closed > sum(int(r.get("palette_payloads") or 0) for r in crows):
+            problems.append("%s: more closed tails than palette payloads" % stats)
+        # Every map's `Level` export names its own actors, and the writer writes each one it names: a map
+        # whose level names an actor the writer skipped is the writer's bug, not a census question.
+        bare = [r["map"] for r in crows if int(r.get("level_actors") or 0) <= 0]
+        if bare:
+            problems.append("%s: %d map(s) read no actor list from the Level export: %s"
+                            % (stats, len(bare), ", ".join(bare[:6])))
+        unwritten = sum(int(r.get("level_unwritten") or 0) for r in crows)
+        if unwritten != LEVEL_UNWRITTEN:
+            problems.append("%s: the Level exports name %d actor(s) the writer does not write, expected %d "
+                            "(all `TerrainInfo`: the class has no property block)" % (stats, unwritten,
+                                                                                    LEVEL_UNWRITTEN))
     # The element-type census partitions the refused arrays the values census counts: every refused array is
     # either unshaped or has a (count, width) layout and therefore one row here.
     arows = read_csv(arrays)
@@ -847,6 +978,25 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("decode_compact_array accepts a payload one element short")
     if decode_compact_array(b"\x00", ps) is not None:
         problems.append("decode_compact_array accepts an empty payload")
+    # The `StaticMeshInstance` tail's frame: a dword, a compact count, that many records ending on the dword 1.
+    good_tail = (struct.pack("<I", 2) + b"\x02"
+                 + b"\x03\x00" + b"\x01\x00\x00\x00"
+                 + b"\x04\x01\xff" + b"\x01\x00\x00\x00")
+    if smi_tail(good_tail, ps) != (2, 2, True):
+        problems.append("smi_tail does not read two records")
+    if smi_tail(good_tail[:-4], ps) != (2, 2, False):
+        problems.append("smi_tail closes a tail whose last record has no terminator")
+    if smi_tail(b"\x00\x00", ps) is not None:
+        problems.append("smi_tail accepts a tail too short to read")
+    # The `Level` payload's frame: an empty property block, the same count twice, that many export indices,
+    # then a trailer. An index past the export table is a misread count, so it refuses.
+    level = b"\x00" + struct.pack("<II", 2, 2) + b"\x01\x02" + b"\x05\x06"
+    if level_record(level, _Pkg(2), ps) != (2, {1, 2}, 2):
+        problems.append("level_record does not read two actors and a two-value trailer")
+    if level_record(b"\x00" + struct.pack("<II", 2, 3) + b"\x01\x02", _Pkg(2), ps) is not None:
+        problems.append("level_record accepts a count its second dword disagrees with")
+    if level_record(b"\x00" + struct.pack("<II", 2, 2) + b"\x01\x07", _Pkg(2), ps) is not None:
+        problems.append("level_record accepts an index past the export table")
     # A `Str` element carries its own length, and the length counts the terminating NUL: two strings of three
     # characters are `\x04abc\x00\x04def\x00`. A payload whose last element has no NUL must be refused.
     strings = b"\x02\x04abc\x00\x04def\x00"
@@ -934,7 +1084,8 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
             "struct_element_arrays", "struct_element_records")}
     ptot = {k: sum(int(r[k]) for r in crows) for k in
             ("palette_payloads", "palette_colours", "palette_clear", "palette_refused",
-             "palette_tail_bytes", "palette_tails", "palette_head2")}
+             "palette_tail_bytes", "palette_tails", "palette_head2", "palette_sections",
+             "palette_closed", "level_actors", "level_trailer", "level_unwritten")}
     out = []
     out.append("| measure | value |")
     out.append("|---|---:|")
@@ -966,6 +1117,12 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
     out.append("| payloads the palette rule refuses | %d |" % ptot["palette_refused"])
     out.append("| native bytes after the palette | %d |" % ptot["palette_tail_bytes"])
     out.append("| tails whose head dword is 2 | **%d** of %d |" % (ptot["palette_head2"], ptot["palette_tails"]))
+    out.append("| records the tails count | **%d** |" % ptot["palette_sections"])
+    out.append("| tails whose record list closes exactly | **%d** of %d |"
+               % (ptot["palette_closed"], ptot["palette_payloads"]))
+    out.append("| `Level` exports read | **%d** |" % len(crows))
+    out.append("| actors the `Level` exports name | **%d** |" % ptot["level_actors"])
+    out.append("| actors a `Level` names that the writer does not write | **%d** |" % ptot["level_unwritten"])
     out.append("")
     out.append("| struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |")
     out.append("|---|---:|---:|---:|---:|---|---|")
@@ -1075,7 +1232,10 @@ def main():
                      got["values"]["palette_payloads"], got["values"]["palette_colours"],
                      got["values"]["palette_clear"], got["values"]["palette_refused"],
                      got["values"]["palette_tail"],
-                     got["values"]["palette_tails"], got["values"]["palette_head2"]))
+                     got["values"]["palette_tails"], got["values"]["palette_head2"],
+                     got["values"]["palette_sections"], got["values"]["palette_closed"],
+                     got["values"]["level_actors"], got["values"]["level_trailer"],
+                     got["values"]["level_unwritten"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -1112,9 +1272,10 @@ def main():
         with open(args.stats, "w", encoding="utf-8", newline="") as fh:
             fh.write("map,actors,properties,unresolved_refs,t3d_bytes,record_starts,padded_blocks,"
                      "palette_payloads,palette_colours,palette_clear,palette_refused,palette_tail_bytes,"
-                     "palette_tails,palette_head2\n")
+                     "palette_tails,palette_head2,palette_sections,palette_closed,"
+                     "level_actors,level_trailer,level_unwritten\n")
             for row in rows:
-                fh.write("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" % row)
+                fh.write("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"
