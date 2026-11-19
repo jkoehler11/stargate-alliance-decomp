@@ -4877,14 +4877,21 @@ whether a value above 1 is absolute, and where the owner's own offset enters. Tw
 own body -- its vtable slot is in the class table -- is the cheaper read and needs no boot; (2) the frame
 instrument 7.2 already uses: boot to one options page, capture with `tools/xemu/frame-diff.py`, rebuild that
 page's package with one `WinTop` changed by 0.05 and read whether the frame differs in that widget's rectangle
-and nowhere else. A second, separate question is a policy call rather than a measurement: routing the emitter's
-class-level locator through the record-group guard would give each of the twelve a file, at the cost of
-promoting **313** classes corpus-wide (1,664 → 1,977 clean blocks), which is the same call `MIN_PROPERTIES`
-records.
+and nowhere else. The twelve one-tag panel files are no longer a guess: `tools/defaults-locator-guard.py` runs the emitter's
+chooser and `class-defaults.py`'s record-group rule over the same candidates and writes the difference
+(`inventory/defaults_locator_guard.csv`, 314 rows). Under the rule **313** classes publish a start the emitter
+has none for — 227 move one, 86 had none — **all 313 end on the payload's last byte** and **all 313 hold exactly
+one tag**; 194 of the 227 unguarded starts sat *inside* the record's closing group, so the block the emitter
+writes today for those is a parse of the record's own bytes. One class loses its block. Eleven of the twelve
+panels are in that 313 (`MultiplayerServerPanel`'s block is empty, so no rule gives it one), and each one's tag
+is now in the page's table (`HintLB=GUILabel`, `PlayerListBox=GUIMultiColumnListBox`, ...). What stays a policy
+call is the *verdict*, not the measurement: a one-tag block is below `MIN_PROPERTIES`, so the rule publishes the
+start and withholds "fully declared" — that is `docs/systems/UI.md`'s measured trade, and it is the same call
+`MIN_PROPERTIES` records.
 
-**Status.** Answered at the data level (parent-relative and unclamped, every binding placed); open for the
-native composition and for the twelve one-tag panel files, which is a locator policy decision. The rows a list
-draws inside its own box are U28.
+**Status.** Answered at the data level (parent-relative and unclamped, every binding placed); the twelve panel
+blocks are measured as one-tag group-end blocks with their tags, and only the *policy* of publishing them is
+open. The native composition is still open. The rows a list draws inside its own box are U28.
 
 ## U28. A list's row is a native rectangle and a script body -- answered: three placements, an empty cell table, and one list class nothing names
 
@@ -4971,5 +4978,17 @@ the corpus places (`GUIListBox` five times on `InGameScoreboard`, `GUIScrollText
 subclasses), and the box classes add no draw of their own: `GUIListBox` and `GUIScrollTextBox` differ from
 `GUIListBoxBase` in slot 3 alone.
 
+**The empty rect, answered at the canvas (2026-11-19).** The `+0xc4` the style layer dispatches is `Canvas`'s
+slot 49 (`0x00101490`): it copies the string, zeroes the cursor, measures through slot 40 (`0x00103c30`), installs
+the call's rect as the canvas clip — origin `+0x3c`/`+0x40`, extent `+0x44`/`+0x48`, written as `right - left` and
+`bottom - top` and restored afterwards — and runs the glyph pass through slot 41 (`0x00103d40`, which calls
+`0x001036e0`). That loop culls each glyph whose anchor is past the clip's extent (or whose own right/bottom is at or
+below zero), trims one that runs past to `(extent - glyph) / scale`, and hands the quad to the tile path
+(`0x00103400`), which carries no float compare at all. With an extent of 0 the first glyph (X = 0 in the clip's
+frame) becomes a quad of width 0 and every later glyph is culled, so **an empty cell paints nothing** — the last
+step of the zero-width cell needed no boot. `GUIMultiColumnListBox`'s item draw reaches the styled text at two sites
+`0x55` apart (`0x00301d7e` on the cell style `+0x254` with the item's column array, `0x00301dd3` on the list's own
+`+0x58`), and the first computes the width it passes as a subtraction, so a zero-width cell arrives as a literal 0.
+
 **Status.** Answered: the row rectangle, `ItemHeight`'s source, the stock item draw, `ServerList`'s placement, the
-zero-width cell at the style layer, and the box branch's own item draw.
+zero-width cell at the style layer and at the canvas glyph loop, and the box branch's own item draw.

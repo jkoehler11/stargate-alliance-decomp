@@ -14022,3 +14022,55 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   promoted, 1,664 -> 1,977 clean blocks), which is what keeps the twelve panel blocks unwritten.
 - **Not in this PR.** The emitter's class-level locator guard.
 
+
+### Execution notes (2026-11-19, the canvas glyph loop, and the locator guard measured)
+
+- **Task.** The previous note's two open items: the canvas glyph loop at `+0xc4` for an empty rect (the last
+  step of the zero-width cell), and the emitter's class-level locator guard, which keeps the twelve panel
+  blocks unwritten. Both measured; neither needed a boot.
+- **The canvas entry is a class slot like any other.** `GUIStyles.DrawText` dispatches `+0xc4` on the canvas,
+  and that displacement is `Canvas` slot 49 (`0x00101490`): it copies the string into a `0x1000`-byte stack
+  buffer, zeroes `CurX`/`CurY` (`+0x4c`/`+0x50`), measures through slot 40 (`0x00103c30`), swaps the four clip
+  floats for the call's rect — origin `+0x3c`/`+0x40`, extent `+0x44`/`+0x48`, written as `right - left` and
+  `bottom - top` — runs the glyph pass through slot 41 (`0x00103d40`), and restores the clip.
+- **The glyph loop is the cull the boot was going to find.** `0x00103d40` calls `0x001036e0`, which has **8**
+  compares: a glyph whose own right or bottom is at or below zero is skipped, one whose anchor is past the
+  clip's extent is skipped, and one that runs past the extent is **trimmed** to `(extent - glyph)/scale` before
+  the quad is emitted through slot 32 (`0x00103400`). That tile path has no float compare in it at all — two
+  null checks and the scale multiply are its whole test — so a zero-width quad is submitted and covers nothing.
+  With an extent of 0 the first glyph (X = 0 in the clip's frame) is a width-0 quad and every later glyph is
+  culled: **an empty cell paints nothing**, and no compare in the chain tests the width.
+- **The style layer's two sites are one body, not two passes.** Both `0x00301d7e` and `0x00301dd3` sit in
+  `GUIMultiColumnListBox` slot 58 (`0x00301890`), which is *the box's* item draw rather than a list's: the first
+  site uses the cell style (`+0x254`) and the item's column array (`+0x27c`, stride `0x1c`) and computes its
+  width as `right - left`; the second uses the list's own style (`+0x58`) and a plain string. `GUIStyles.DrawText`
+  itself has **9 call sites in 7 bodies**, so the styled text of a row is one of many.
+- **The locator guard, both sides.** `tools/defaults-locator-guard.py` runs the emitter's chooser and
+  `class-defaults.py`'s record-group rule over the same candidate sets and writes the difference, reconciling
+  its guarded side against `class_defaults_per_class.csv` on every sweep (a disagreement fails). Of 2,319
+  classes **314** change: **227 moved**, **86 gained**, **1 lost**. All **313** group-end starts end on the
+  payload's last byte and all 313 hold exactly one tag; **194 of the 227** unguarded starts sat inside the
+  record's closing group, i.e. what the emitter writes for them today is the record's own bytes. The 86 gained
+  come from 25 classes with no block at all and 61 whose unguarded parse named no declared property.
+- **Eleven of the twelve panels are in that 313**, and their tags are now the page's table rather than "none":
+  `HintLB=GUILabel` (`RightLockingMenuPanel`), `PlayerListBox=GUIMultiColumnListBox` (`CoopPlayerPanel`),
+  `List=GUIVertList` (`GUIListBox`), `PawnListBox`/`TeamListBox=SGListBox`, `ChapterList`/`CharList`,
+  `ModeList`, `ProfileList`, `ServerListBox=XBoxLiveServerSelectionListBox`, `Background`
+  (`FullSlidingPanel`, the one *gained*). `MultiplayerServerPanel` is in no diff because its block is empty.
+  What remains a policy call is the verdict, not the measurement: a one-tag block is below `MIN_PROPERTIES`,
+  so the rule publishes the start and withholds "fully declared" — the emitter would write a file per panel and
+  the misses ledger would keep calling each one `single-declared`.
+- **Files.** `tools/ui-list-native.py` (`text_routine` extracted, `canvas_half`, `float_stores`, `float_loads`,
+  `mem_compares`, `vcall_offsets`, `is_glyph_loop`, the two rendered sections), `inventory/ui_list_native.csv`
+  (69 rows: +8 `canvas`, +2 `call`), `tools/defaults-locator-guard.py` (new),
+  `inventory/defaults_locator_guard.csv` (new, 314 rows), `docs/systems/UI.md` (the panel tags, the measured
+  trade, the generated canvas section, the *Not measured* bullet), `docs/UNKNOWNS.md` (U27 and U28 rewritten in
+  place), `Makefile`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Gates.** `make ui-list-native` writes both artifacts; `make defaults-locator-guard` writes the third;
+  `--check` on both is synthetic/artifact-arithmetic only (no dump, no writes), and `--check-doc` keeps the
+  page's block byte-identical.
+- **Next measurement.** U27's native composition: `GUIComponent`'s own body (its vtable slot is in the class
+  table) is the cheap read for how `WinLeft`/`WinTop`/`WinWidth`/`WinHeight` compose down the tree; the boot
+  route (`frame-diff.py` with one `WinTop` changed) stays the control.
+- **Not in this PR.** The composition itself, and the decision to adopt the guard emitter-side (measured here,
+  not taken: the emitter's `block_of` still runs unguarded).
