@@ -1,0 +1,385 @@
+kind,map,name,class,property,type,placements,stated,distinct,min,max,median,note
+map,CTF-Abydos,,,,,26,24,,,,,blocked=24;unblocked=2;classes=5
+map,CTF-LostCity,,,,,0,0,,,,,blocked=0;unblocked=0;classes=0
+map,DM-Ha'tak,,,,,20,20,,,,,blocked=17;unblocked=3;classes=5
+map,DM-KelownanTrain,,,,,31,29,,,,,blocked=28;unblocked=3;classes=7
+map,DM-Langara,,,,,3,2,,,,,blocked=2;unblocked=1;classes=3
+map,DM-LostCity,,,,,0,0,,,,,blocked=0;unblocked=0;classes=0
+map,DM-Subterranean,,,,,21,19,,,,,blocked=19;unblocked=2;classes=6
+map,DM-Tomb,,,,,11,12,,,,,blocked=8;unblocked=3;classes=6
+map,DM-WorstCaseScenario,,,,,20,23,,,,,blocked=17;unblocked=3;classes=6
+map,Entry,,,,,1,2,,,,,blocked=1;unblocked=0;classes=1
+map,M00,,,,,704,780,,,,,blocked=590;unblocked=114;classes=25
+map,M02A,,,,,551,588,,,,,blocked=454;unblocked=97;classes=33
+map,M02B,,,,,319,300,,,,,blocked=236;unblocked=83;classes=29
+map,M02C,,,,,284,387,,,,,blocked=221;unblocked=63;classes=28
+map,M02D,,,,,99,169,,,,,blocked=88;unblocked=11;classes=16
+map,M04B,,,,,301,422,,,,,blocked=269;unblocked=32;classes=30
+map,M04a,,,,,316,396,,,,,blocked=266;unblocked=50;classes=34
+map,M07A,,,,,414,438,,,,,blocked=336;unblocked=78;classes=33
+map,M07B,,,,,555,732,,,,,blocked=479;unblocked=76;classes=33
+map,M07C,,,,,415,495,,,,,blocked=330;unblocked=85;classes=30
+map,M07D,,,,,502,540,,,,,blocked=428;unblocked=74;classes=28
+map,M07E,,,,,462,541,,,,,blocked=385;unblocked=77;classes=30
+map,M10A,,,,,551,601,,,,,blocked=469;unblocked=82;classes=40
+map,M10B,,,,,400,414,,,,,blocked=327;unblocked=73;classes=40
+map,M10C,,,,,186,201,,,,,blocked=153;unblocked=33;classes=28
+map,M10D,,,,,614,697,,,,,blocked=494;unblocked=120;classes=42
+map,M12A,,,,,202,205,,,,,blocked=164;unblocked=38;classes=27
+map,M12B,,,,,298,347,,,,,blocked=251;unblocked=47;classes=29
+map,M12C,,,,,398,476,,,,,blocked=351;unblocked=47;classes=30
+map,M12D,,,,,323,340,,,,,blocked=287;unblocked=36;classes=31
+map,M12E,,,,,150,140,,,,,blocked=124;unblocked=26;classes=24
+map,M12F,,,,,115,140,,,,,blocked=103;unblocked=12;classes=17
+map,M13A,,,,,662,870,,,,,blocked=530;unblocked=132;classes=38
+map,M13B,,,,,239,313,,,,,blocked=204;unblocked=35;classes=26
+map,M13C,,,,,457,540,,,,,blocked=375;unblocked=82;classes=32
+map,M13D,,,,,104,146,,,,,blocked=91;unblocked=13;classes=26
+map,M14A,,,,,454,567,,,,,blocked=378;unblocked=76;classes=33
+map,M14B,,,,,120,132,,,,,blocked=95;unblocked=25;classes=17
+map,M14C,,,,,376,480,,,,,blocked=313;unblocked=63;classes=27
+map,M15A,,,,,539,574,,,,,blocked=420;unblocked=119;classes=35
+map,M15B,,,,,78,88,,,,,blocked=59;unblocked=19;classes=21
+map,M15C,,,,,148,173,,,,,blocked=119;unblocked=29;classes=25
+map,M15D,,,,,112,131,,,,,blocked=90;unblocked=22;classes=28
+map,M15E,,,,,213,272,,,,,blocked=179;unblocked=34;classes=29
+map,M15F,,,,,274,316,,,,,blocked=224;unblocked=50;classes=28
+map,M16A,,,,,465,499,,,,,blocked=381;unblocked=84;classes=39
+map,M16B,,,,,98,129,,,,,blocked=85;unblocked=13;classes=17
+map,M16C,,,,,47,63,,,,,blocked=41;unblocked=6;classes=13
+map,M16D,,,,,245,274,,,,,blocked=201;unblocked=44;classes=26
+map,M16E,,,,,168,217,,,,,blocked=143;unblocked=25;classes=31
+map,M16F,,,,,249,329,,,,,blocked=234;unblocked=15;classes=25
+map,M16G,,,,,67,121,,,,,blocked=62;unblocked=5;classes=15
+map,M17A,,,,,432,466,,,,,blocked=358;unblocked=74;classes=30
+map,M17B,,,,,330,348,,,,,blocked=298;unblocked=32;classes=30
+map,M17D,,,,,133,198,,,,,blocked=122;unblocked=11;classes=21
+map,M18A,,,,,125,172,,,,,blocked=119;unblocked=6;classes=16
+map,M18B,,,,,141,194,,,,,blocked=127;unblocked=14;classes=21
+map,M18D,,,,,226,352,,,,,blocked=197;unblocked=29;classes=26
+map,M19A,,,,,193,182,,,,,blocked=157;unblocked=36;classes=27
+map,M19B,,,,,361,391,,,,,blocked=272;unblocked=89;classes=25
+map,M19C,,,,,171,192,,,,,blocked=151;unblocked=20;classes=18
+map,M19D,,,,,170,190,,,,,blocked=157;unblocked=13;classes=19
+map,M19E,,,,,360,402,,,,,blocked=294;unblocked=66;classes=27
+map,M20A,,,,,310,367,,,,,blocked=264;unblocked=46;classes=33
+map,M20B,,,,,198,217,,,,,blocked=167;unblocked=31;classes=24
+map,M20C,,,,,199,202,,,,,blocked=168;unblocked=31;classes=25
+map,M20D,,,,,253,402,,,,,blocked=206;unblocked=47;classes=31
+map,M21A,,,,,400,459,,,,,blocked=330;unblocked=70;classes=41
+map,M21B,,,,,332,326,,,,,blocked=263;unblocked=69;classes=35
+map,M21C,,,,,257,289,,,,,blocked=215;unblocked=42;classes=34
+map,M21D,,,,,375,399,,,,,blocked=322;unblocked=53;classes=30
+map,MainMenu,,,,,110,93,,,,,blocked=86;unblocked=24;classes=14
+map,SGCTF-AbydosVsSGC,,,,,27,29,,,,,blocked=23;unblocked=4;classes=6
+class,corpus,ACTION_WaitForEvent,ACTION_WaitForEvent,,,2722,2,,,,,"blocked=2703;unblocked=19;ExternalEvent,bCheckRecentEvents"
+class,corpus,ACTION_TriggerEvent,ACTION_TriggerEvent,,,2658,1,,,,,blocked=2657;unblocked=1;Event
+class,corpus,ACTION_WaitForTimer,ACTION_WaitForTimer,,,2216,1,,,,,blocked=2214;unblocked=2;PauseTime
+class,corpus,ACTION_SetAlertness,ACTION_SetAlertness,,,1404,1,,,,,blocked=1066;unblocked=338;Alertness
+class,corpus,ACTION_MoveToPoint,ACTION_MoveToPoint,,,1266,1,,,,,blocked=1255;unblocked=11;DestinationTag
+class,corpus,ACTION_SetViewTarget,ACTION_SetViewTarget,,,901,1,,,,,blocked=739;unblocked=162;ViewTargetTag
+class,corpus,ACTION_Talk,ACTION_Talk,,,719,8,,,,,"blocked=719;unblocked=0;DialogueFinishedEvent,DialogueName,ListenDistance,LookAtTag,Play3D,SubTitleText,TalkerTag,myDirectory"
+class,corpus,ACTION_GotoAction,ACTION_GotoAction,,,580,1,,,,,blocked=165;unblocked=415;ActionNumber
+class,corpus,ACTION_SetBotScript,ACTION_SetBotScript,,,557,3,,,,,"blocked=557;unblocked=0;ScriptTargetTag,TargetPlayerName,TargetTag"
+class,corpus,ACTION_Run,ACTION_Run,,,423,0,,,,,blocked=0;unblocked=423;
+class,corpus,ACTION_TeleportToPoint,ACTION_TeleportToPoint,,,326,2,,,,,"blocked=322;unblocked=4;DestinationTag,bPlaySpawnEffect"
+class,corpus,ACTION_LeaveSequence,ACTION_LeaveSequence,,,301,0,,,,,blocked=0;unblocked=301;
+class,corpus,ACTION_SetIMusic,ACTION_SetIMusic,,,281,4,,,,,"blocked=281;unblocked=0;NewState,SetActor,SetState,iMusicActorTag"
+class,corpus,ACTION_EndSection,ACTION_EndSection,,,279,0,,,,,blocked=0;unblocked=279;
+class,corpus,ACTION_Walk,ACTION_Walk,,,278,0,,,,,blocked=0;unblocked=278;
+class,corpus,ACTION_SquadMoveInFormation,ACTION_SquadMoveInFormation,,,271,2,,,,,"blocked=270;unblocked=1;DestinationTag,FormationClass"
+class,corpus,ACTION_Crouch,ACTION_Crouch,,,269,0,,,,,blocked=0;unblocked=269;
+class,corpus,ACTION_PlayAmbientSound,ACTION_PlayAmbientSound,,,247,6,,,,,"blocked=245;unblocked=2;ActorTag,AmbientSound,Emitters,SoundPitch,SoundRadius,SoundVolume"
+class,corpus,ACTION_IfCondition,ACTION_IfCondition,,,244,1,,,,,blocked=241;unblocked=3;TriggeredConditionTag
+class,corpus,Action_PLAYANIM,Action_PLAYANIM,,,227,7,,,,,"blocked=227;unblocked=0;AnimIterations,AnimRate,BaseAnim,BlendInTime,BlendOutTime,StartFrame,bLoopAnim"
+class,corpus,ACTION_ShootTarget,ACTION_ShootTarget,,,211,4,,,,,"blocked=211;unblocked=0;FiringMode,NumShots,ViewTargetTag,bSpray"
+class,corpus,ACTION_PlaySound,ACTION_PlaySound,,,180,5,,,,,"blocked=173;unblocked=7;ActorTag,Pitch,Sound,Volume,bAttenuate"
+class,corpus,ACTION_SetStance,ACTION_SetStance,,,156,1,,,,,blocked=39;unblocked=117;Stance
+class,corpus,ACTION_PlaySGSound,ACTION_PlaySGSound,,,121,11,,,,,"blocked=121;unblocked=0;PauseTime,Pitch,Sound,SoundSourceTag,SoundType,SubTitleText,SubtitleDuration,Volume,bAttenuate,bWaitPauseTime,whoSpoke"
+class,corpus,ACTION_SetBotMoveMode,ACTION_SetBotMoveMode,,,115,2,,,,,"blocked=93;unblocked=22;MovePreset,PawnTag"
+class,corpus,ACTION_SetHidden,ACTION_SetHidden,,,98,2,,,,,"blocked=98;unblocked=0;HideActorTag,bHidden"
+class,corpus,ACTION_DestroyActor,ACTION_DestroyActor,,,91,1,,,,,blocked=91;unblocked=0;DestroyTag
+class,corpus,ACTION_TeleportSpecificPawn,ACTION_TeleportSpecificPawn,,,85,4,,,,,"blocked=85;unblocked=0;DestinationTag,TeleportingPawnTag,bKeepPawnDynamics,bPlaySpawnEffect"
+class,corpus,ACTION_PlayLocalSound,ACTION_PlayLocalSound,,,76,1,,,,,blocked=57;unblocked=19;Sound
+class,corpus,ACTION_ChangeLevel,ACTION_ChangeLevel,,,69,3,,,,,"blocked=69;unblocked=0;URL,bShowLoadingMessage,bTravelInventory"
+class,corpus,ACTION_Lookat,ACTION_Lookat,,,67,2,,,,,"blocked=66;unblocked=1;LookAtActorTag,PawnTags"
+class,corpus,ACTION_SquadMoveToPlayer,ACTION_SquadMoveToPlayer,,,58,1,,,,,blocked=2;unblocked=56;FormationClass
+class,corpus,ACTION_WaitForPlayer,ACTION_WaitForPlayer,,,55,2,,,,,"blocked=54;unblocked=1;Distance,PollTime"
+class,corpus,ACTION_WaitForAnimEnd,ACTION_WaitForAnimEnd,,,50,0,,,,,blocked=0;unblocked=50;
+class,corpus,ACTION_ChangeBotWeapon,ACTION_ChangeBotWeapon,,,49,1,,,,,blocked=47;unblocked=2;newWeapon
+class,corpus,ACTION_DisplaySGText,ACTION_DisplaySGText,,,49,3,,,,,"blocked=49;unblocked=0;SubTitleText,SubtitleDuration,bWaitDuration"
+class,corpus,ACTION_DestroyPawn,ACTION_DestroyPawn,,,46,0,,,,,blocked=0;unblocked=46;
+class,corpus,ACTION_KillActor,ACTION_KillActor,,,46,2,,,,,"blocked=46;unblocked=0;DamageType,DestroyTag"
+class,corpus,ACTION_SaveGame,ACTION_SaveGame,,,45,1,,,,,blocked=45;unblocked=0;SaveDescription
+class,corpus,ACTION_UseActor,ACTION_UseActor,,,45,2,,,,,"blocked=45;unblocked=0;UseTag,bIgnoreLineOfSight"
+class,corpus,ACTION_ReviveSG1,ACTION_ReviveSG1,,,40,0,,,,,blocked=0;unblocked=40;
+class,corpus,ACTION_IfRandomPct,ACTION_IfRandomPct,,,39,1,,,,,blocked=39;unblocked=0;Probability
+class,corpus,ACTION_Sprint,ACTION_Sprint,,,39,0,,,,,blocked=0;unblocked=39;
+class,corpus,ACTION_SetPlayerMoveRestrictions,ACTION_SetPlayerMoveRestrictions,,,38,3,,,,,"blocked=23;unblocked=15;bAllowFire,bAllowMovement,bAllowViewRotation"
+class,corpus,ACTION_ForceBotEnemy,ACTION_ForceBotEnemy,,,35,2,,,,,"blocked=34;unblocked=1;NewEnemyTag,bForceEnemyForWholeSquad"
+class,corpus,ACTION_TurnTowardPlayer,ACTION_TurnTowardPlayer,,,33,0,,,,,blocked=0;unblocked=33;
+class,corpus,ACTION_SetPosture,ACTION_SetPosture,,,30,1,,,,,blocked=26;unblocked=4;AnimationPosture
+class,corpus,ACTION_SpawnActor,ACTION_SpawnActor,,,28,3,,,,,"blocked=28;unblocked=0;ActorTag,LocationOffset,actorClass"
+class,corpus,ACTION_DisplayMessage,ACTION_DisplayMessage,,,27,2,,,,,"blocked=27;unblocked=0;Message,bBroadcast"
+class,corpus,ACTION_SetGodMode,ACTION_SetGodMode,,,27,2,,,,,"blocked=26;unblocked=1;TargetPawnTag,bNewGodModeValue"
+class,corpus,ACTION_StopAnimation,ACTION_StopAnimation,,,27,0,,,,,blocked=0;unblocked=27;
+class,corpus,ACTION_ChangeScript,ACTION_ChangeScript,,,25,1,,,,,blocked=25;unblocked=0;NextScriptTag
+class,corpus,ACTION_WaitForConditions,ACTION_WaitForConditions,,,24,1,,,,,blocked=24;unblocked=0;ConditionTags
+class,corpus,ACTION_MoveToPlayer,ACTION_MoveToPlayer,,,23,0,,,,,blocked=0;unblocked=23;
+class,corpus,ACTION_SGWaitForPlayer,ACTION_SGWaitForPlayer,,,19,9,,,,,"blocked=19;unblocked=0;Distance,GotoActionAfterPlayerSeek,ImpatienceTime,MaxImpatienceLevel,PollTime,SubTitleText,SubtitleDuration,Volume,whoSpoke"
+class,corpus,ACTION_UseScriptRotation,ACTION_UseScriptRotation,,,17,0,,,,,blocked=0;unblocked=17;
+class,corpus,ACTION_ChangePodLock,ACTION_ChangePodLock,,,16,2,,,,,"blocked=16;unblocked=0;TargetHaakenPodTag,bLocked"
+class,corpus,ACTION_Killinstigator,ACTION_Killinstigator,,,15,1,,,,,blocked=9;unblocked=6;DamageType
+class,corpus,ACTION_SetIMusicState,ACTION_SetIMusicState,,,11,1,,,,,blocked=1;unblocked=10;NewState
+class,corpus,ACTION_GuardActor,ACTION_GuardActor,,,10,2,,,,,"blocked=10;unblocked=0;GuardFocusRange,GuardTargetTag"
+class,corpus,ACTION_ChangeWeapon,ACTION_ChangeWeapon,,,9,1,,,,,blocked=8;unblocked=1;newWeapon
+class,corpus,ACTION_GivePlayerHint,ACTION_GivePlayerHint,,,9,1,,,,,blocked=9;unblocked=0;HintText
+class,corpus,ACTION_VehicleActivateTurret,ACTION_VehicleActivateTurret,,,9,2,,,,,"blocked=9;unblocked=0;PawnTag,bActive"
+class,corpus,ACTION_GuardPlayer,ACTION_GuardPlayer,,,8,1,,,,,blocked=6;unblocked=2;GuardFocusRange
+class,corpus,ACTION_Jump,ACTION_Jump,,,8,0,,,,,blocked=0;unblocked=8;
+class,corpus,ACTION_SetBotToSnipe,ACTION_SetBotToSnipe,,,7,1,,,,,blocked=7;unblocked=0;TargetPlayerName
+class,corpus,ACTION_SquadWander,ACTION_SquadWander,,,7,2,,,,,"blocked=7;unblocked=0;AllowedRadius,CenterTag"
+class,corpus,ACTION_SetBotShootMode,ACTION_SetBotShootMode,,,6,1,,,,,blocked=4;unblocked=2;PawnTag
+class,corpus,ACTION_VehicleEnter,ACTION_VehicleEnter,,,6,1,,,,,blocked=6;unblocked=0;TargetVehicleTag
+class,corpus,ACTION_VehicleTransportRings,ACTION_VehicleTransportRings,,,5,3,,,,,"blocked=5;unblocked=0;PawnTag,SpawnScript,SpawnSquad"
+class,corpus,ACTION_ActivateHelmet,ACTION_ActivateHelmet,,,3,0,,,,,blocked=0;unblocked=3;
+class,corpus,ACTION_ChangeVehicleStatus,ACTION_ChangeVehicleStatus,,,3,2,,,,,"blocked=3;unblocked=0;TargetVehicleTag,bPlayerLocked"
+class,corpus,ACTION_Hack,ACTION_Hack,,,3,1,,,,,blocked=3;unblocked=0;HackingPawnTag
+class,corpus,ACTION_MindControl,ACTION_MindControl,,,3,2,,,,,"blocked=3;unblocked=0;MindControlCrystalTag,MindControlledPawnTag"
+class,corpus,ACTION_SquadGetIntoFormation,ACTION_SquadGetIntoFormation,,,3,0,,,,,blocked=0;unblocked=3;
+class,corpus,ACTION_StopShooting,ACTION_StopShooting,,,3,0,,,,,blocked=0;unblocked=3;
+class,corpus,ACTION_TriggerMatinee,ACTION_TriggerMatinee,,,3,1,,,,,blocked=3;unblocked=0;Event
+class,corpus,ACTION_CarpetBombing,ACTION_CarpetBombing,,,2,3,,,,,"blocked=2;unblocked=0;MaxBombs,PawnTag,TargetTag"
+class,corpus,ACTION_SetSquadScript,ACTION_SetSquadScript,,,2,2,,,,,"blocked=2;unblocked=0;ScriptTargetTag,SquadTag"
+class,corpus,ACTION_SpawnScriptedActor,ACTION_SpawnScriptedActor,,,2,3,,,,,"blocked=2;unblocked=0;ActorTag,ScriptTag,actorClass"
+class,corpus,ACTION_VehicleExit,ACTION_VehicleExit,,,2,0,,,,,blocked=0;unblocked=2;
+class,corpus,ACTION_WaitForPlayerGettingInVehicle,ACTION_WaitForPlayerGettingInVehicle,,,2,2,,,,,"blocked=2;unblocked=0;PollTime,TargetVehicleTag"
+class,corpus,ACTION_SetAlertnessVariables,ACTION_SetAlertnessVariables,,,1,6,,,,,"blocked=1;unblocked=0;AlertHearingThreshold,AlertSightRadius,RelaxedHearingThreshold,RelaxedSightRadius,SuspiciousHearingThreshold,SuspiciousSightRadius"
+property,corpus,,ACTION_CarpetBombing,MaxBombs,Int,2,2,2,14,20,17,
+property,corpus,,ACTION_CarpetBombing,PawnTag,Name,2,2,1,,,,none=0
+property,corpus,,ACTION_CarpetBombing,TargetTag,Name,2,2,1,,,,none=0
+property,corpus,,ACTION_ChangeBotWeapon,newWeapon,Object,49,47,8,,,,none=0
+property,corpus,,ACTION_ChangeLevel,URL,Str,69,69,63,,,,none=0
+property,corpus,,ACTION_ChangeLevel,bShowLoadingMessage,Bool,69,49,1,,,,
+property,corpus,,ACTION_ChangeLevel,bTravelInventory,Bool,69,19,2,,,,
+property,corpus,,ACTION_ChangePodLock,TargetHaakenPodTag,Name,16,16,10,,,,none=0
+property,corpus,,ACTION_ChangePodLock,bLocked,Bool,16,16,1,,,,
+property,corpus,,ACTION_ChangeScript,NextScriptTag,Name,25,25,22,,,,none=0
+property,corpus,,ACTION_ChangeVehicleStatus,TargetVehicleTag,Name,3,3,2,,,,none=0
+property,corpus,,ACTION_ChangeVehicleStatus,bPlayerLocked,Bool,3,3,1,,,,
+property,corpus,,ACTION_ChangeWeapon,newWeapon,Object,9,8,5,,,,none=0
+property,corpus,,ACTION_DestroyActor,DestroyTag,Name,91,91,75,,,,none=0
+property,corpus,,ACTION_DisplayMessage,Message,Str,27,23,18,,,,none=0
+property,corpus,,ACTION_DisplayMessage,bBroadcast,Bool,27,19,1,,,,
+property,corpus,,ACTION_DisplaySGText,SubTitleText,Str,49,49,43,,,,none=0
+property,corpus,,ACTION_DisplaySGText,SubtitleDuration,Float,49,24,9,1,20,2,
+property,corpus,,ACTION_DisplaySGText,bWaitDuration,Bool,49,1,1,,,,
+property,corpus,,ACTION_ForceBotEnemy,NewEnemyTag,Name,35,34,8,,,,none=0
+property,corpus,,ACTION_ForceBotEnemy,bForceEnemyForWholeSquad,Bool,35,6,1,,,,
+property,corpus,,ACTION_GivePlayerHint,HintText,Str,9,9,9,,,,none=0
+property,corpus,,ACTION_GotoAction,ActionNumber,Int,580,165,22,1,27,4,
+property,corpus,,ACTION_GuardActor,GuardFocusRange,Float,10,8,7,50,1024,600,
+property,corpus,,ACTION_GuardActor,GuardTargetTag,Name,10,10,9,,,,none=0
+property,corpus,,ACTION_GuardPlayer,GuardFocusRange,Float,8,6,4,50,3000,968,
+property,corpus,,ACTION_Hack,HackingPawnTag,Name,3,3,3,,,,none=0
+property,corpus,,ACTION_IfCondition,TriggeredConditionTag,Name,244,241,118,,,,none=0
+property,corpus,,ACTION_IfRandomPct,Probability,Float,39,39,4,0.15,0.5,0.3,
+property,corpus,,ACTION_KillActor,DamageType,Object,46,20,5,,,,none=0
+property,corpus,,ACTION_KillActor,DestroyTag,Name,46,46,41,,,,none=0
+property,corpus,,ACTION_Killinstigator,DamageType,Object,15,9,4,,,,none=0
+property,corpus,,ACTION_Lookat,LookAtActorTag,Name,67,56,34,,,,none=0
+property,corpus,,ACTION_Lookat,PawnTags,Array,67,44,0,,,,
+property,corpus,,ACTION_MindControl,MindControlCrystalTag,Name,3,3,3,,,,none=0
+property,corpus,,ACTION_MindControl,MindControlledPawnTag,Name,3,3,3,,,,none=0
+property,corpus,,ACTION_MoveToPoint,DestinationTag,Name,1266,1255,1094,,,,none=0
+property,corpus,,ACTION_PlayAmbientSound,ActorTag,Name,247,238,138,,,,none=0
+property,corpus,,ACTION_PlayAmbientSound,AmbientSound,Object,247,131,49,,,,none=0
+property,corpus,,ACTION_PlayAmbientSound,Emitters,Array,247,1,0,,,,
+property,corpus,,ACTION_PlayAmbientSound,SoundPitch,Byte,247,62,18,40,85,57.5,
+property,corpus,,ACTION_PlayAmbientSound,SoundRadius,Float,247,159,19,1,5000,500,
+property,corpus,,ACTION_PlayAmbientSound,SoundVolume,Byte,247,124,12,0,255,200,
+property,corpus,,ACTION_PlayLocalSound,Sound,Object,76,57,45,,,,none=0
+property,corpus,,ACTION_PlaySGSound,PauseTime,Float,121,2,1,3,3,3,
+property,corpus,,ACTION_PlaySGSound,Pitch,Float,121,1,1,0.5,0.5,0.5,
+property,corpus,,ACTION_PlaySGSound,Sound,Object,121,111,72,,,,none=0
+property,corpus,,ACTION_PlaySGSound,SoundSourceTag,Name,121,66,44,,,,none=0
+property,corpus,,ACTION_PlaySGSound,SoundType,Byte,121,38,1,1,1,1,
+property,corpus,,ACTION_PlaySGSound,SubTitleText,Str,121,11,10,,,,none=0
+property,corpus,,ACTION_PlaySGSound,SubtitleDuration,Float,121,4,3,4,8,5.625,
+property,corpus,,ACTION_PlaySGSound,Volume,Float,121,83,26,0.5,1e+06,50,
+property,corpus,,ACTION_PlaySGSound,bAttenuate,Bool,121,23,1,,,,
+property,corpus,,ACTION_PlaySGSound,bWaitPauseTime,Bool,121,2,1,,,,
+property,corpus,,ACTION_PlaySGSound,whoSpoke,Str,121,11,7,,,,none=0
+property,corpus,,ACTION_PlaySound,ActorTag,Name,180,97,43,,,,none=0
+property,corpus,,ACTION_PlaySound,Pitch,Float,180,6,4,0.25,0.9375,0.6875,
+property,corpus,,ACTION_PlaySound,Sound,Object,180,146,80,,,,none=0
+property,corpus,,ACTION_PlaySound,Volume,Float,180,43,24,0,1e+05,100,
+property,corpus,,ACTION_PlaySound,bAttenuate,Bool,180,7,1,,,,
+property,corpus,,ACTION_SGWaitForPlayer,Distance,Float,19,19,5,300,750,300,
+property,corpus,,ACTION_SGWaitForPlayer,GotoActionAfterPlayerSeek,Int,19,17,2,-3,3,-3,
+property,corpus,,ACTION_SGWaitForPlayer,ImpatienceTime,Float,19,19,2,5,12.5,12.5,
+property,corpus,,ACTION_SGWaitForPlayer,MaxImpatienceLevel,Int,19,18,3,5,10,5,
+property,corpus,,ACTION_SGWaitForPlayer,PollTime,Float,19,18,2,0.1,0.2,0.2,
+property,corpus,,ACTION_SGWaitForPlayer,SubTitleText,Str,19,19,4,,,,none=0
+property,corpus,,ACTION_SGWaitForPlayer,SubtitleDuration,Float,19,1,1,6,6,6,
+property,corpus,,ACTION_SGWaitForPlayer,Volume,Float,19,1,1,5,5,5,
+property,corpus,,ACTION_SGWaitForPlayer,whoSpoke,Str,19,19,3,,,,none=0
+property,corpus,,ACTION_SaveGame,SaveDescription,Str,45,44,43,,,,none=0
+property,corpus,,ACTION_SetAlertness,Alertness,Byte,1404,1066,3,1,3,2,
+property,corpus,,ACTION_SetAlertnessVariables,AlertHearingThreshold,Float,1,1,1,4e+04,4e+04,4e+04,
+property,corpus,,ACTION_SetAlertnessVariables,AlertSightRadius,Float,1,1,1,4e+04,4e+04,4e+04,
+property,corpus,,ACTION_SetAlertnessVariables,RelaxedHearingThreshold,Float,1,1,1,4e+04,4e+04,4e+04,
+property,corpus,,ACTION_SetAlertnessVariables,RelaxedSightRadius,Float,1,1,1,4e+04,4e+04,4e+04,
+property,corpus,,ACTION_SetAlertnessVariables,SuspiciousHearingThreshold,Float,1,1,1,4e+04,4e+04,4e+04,
+property,corpus,,ACTION_SetAlertnessVariables,SuspiciousSightRadius,Float,1,1,1,4e+04,4e+04,4e+04,
+property,corpus,,ACTION_SetBotMoveMode,MovePreset,Object,115,67,41,,,,none=0
+property,corpus,,ACTION_SetBotMoveMode,PawnTag,Name,115,64,42,,,,none=0
+property,corpus,,ACTION_SetBotScript,ScriptTargetTag,Name,557,556,498,,,,none=0
+property,corpus,,ACTION_SetBotScript,TargetPlayerName,Str,557,65,14,,,,none=1
+property,corpus,,ACTION_SetBotScript,TargetTag,Name,557,539,73,,,,none=0
+property,corpus,,ACTION_SetBotShootMode,PawnTag,Name,6,4,4,,,,none=0
+property,corpus,,ACTION_SetBotToSnipe,TargetPlayerName,Str,7,7,2,,,,none=0
+property,corpus,,ACTION_SetGodMode,TargetPawnTag,Name,27,25,8,,,,none=0
+property,corpus,,ACTION_SetGodMode,bNewGodModeValue,Bool,27,19,1,,,,
+property,corpus,,ACTION_SetHidden,HideActorTag,Name,98,98,52,,,,none=0
+property,corpus,,ACTION_SetHidden,bHidden,Bool,98,57,1,,,,
+property,corpus,,ACTION_SetIMusic,NewState,Byte,281,213,2,1,3,1,
+property,corpus,,ACTION_SetIMusic,SetActor,Bool,281,217,1,,,,
+property,corpus,,ACTION_SetIMusic,SetState,Bool,281,280,1,,,,
+property,corpus,,ACTION_SetIMusic,iMusicActorTag,Name,281,219,13,,,,none=0
+property,corpus,,ACTION_SetIMusicState,NewState,Byte,11,1,1,3,3,3,
+property,corpus,,ACTION_SetPlayerMoveRestrictions,bAllowFire,Bool,38,12,1,,,,
+property,corpus,,ACTION_SetPlayerMoveRestrictions,bAllowMovement,Bool,38,20,1,,,,
+property,corpus,,ACTION_SetPlayerMoveRestrictions,bAllowViewRotation,Bool,38,4,1,,,,
+property,corpus,,ACTION_SetPosture,AnimationPosture,Byte,30,26,2,1,3,1,
+property,corpus,,ACTION_SetSquadScript,ScriptTargetTag,Name,2,2,2,,,,none=0
+property,corpus,,ACTION_SetSquadScript,SquadTag,Name,2,2,2,,,,none=0
+property,corpus,,ACTION_SetStance,Stance,Byte,156,39,3,1,3,3,
+property,corpus,,ACTION_SetViewTarget,ViewTargetTag,Name,901,739,318,,,,none=0
+property,corpus,,ACTION_ShootTarget,FiringMode,Name,211,2,1,,,,none=0
+property,corpus,,ACTION_ShootTarget,NumShots,Int,211,209,25,1,6.554e+04,4,
+property,corpus,,ACTION_ShootTarget,ViewTargetTag,Name,211,189,100,,,,none=0
+property,corpus,,ACTION_ShootTarget,bSpray,Bool,211,91,1,,,,
+property,corpus,,ACTION_SpawnActor,ActorTag,Name,28,7,6,,,,none=0
+property,corpus,,ACTION_SpawnActor,LocationOffset,Struct,28,4,0,,,,
+property,corpus,,ACTION_SpawnActor,actorClass,Object,28,28,6,,,,none=0
+property,corpus,,ACTION_SpawnScriptedActor,ActorTag,Name,2,2,2,,,,none=0
+property,corpus,,ACTION_SpawnScriptedActor,ScriptTag,Name,2,2,2,,,,none=0
+property,corpus,,ACTION_SpawnScriptedActor,actorClass,Object,2,2,2,,,,none=0
+property,corpus,,ACTION_SquadMoveInFormation,DestinationTag,Name,271,270,230,,,,none=0
+property,corpus,,ACTION_SquadMoveInFormation,FormationClass,Object,271,46,7,,,,none=0
+property,corpus,,ACTION_SquadMoveToPlayer,FormationClass,Object,58,2,2,,,,none=0
+property,corpus,,ACTION_SquadWander,AllowedRadius,Float,7,4,2,600,5000,2800,
+property,corpus,,ACTION_SquadWander,CenterTag,Name,7,7,7,,,,none=0
+property,corpus,,ACTION_Talk,DialogueFinishedEvent,Name,719,256,256,,,,none=0
+property,corpus,,ACTION_Talk,DialogueName,Name,719,718,703,,,,none=0
+property,corpus,,ACTION_Talk,ListenDistance,Float,719,44,10,1,1e+05,2000,
+property,corpus,,ACTION_Talk,LookAtTag,Name,719,282,27,,,,none=0
+property,corpus,,ACTION_Talk,Play3D,Bool,719,12,1,,,,
+property,corpus,,ACTION_Talk,SubTitleText,Str,719,717,545,,,,none=0
+property,corpus,,ACTION_Talk,TalkerTag,Name,719,713,19,,,,none=0
+property,corpus,,ACTION_Talk,myDirectory,Str,719,719,31,,,,none=0
+property,corpus,,ACTION_TeleportSpecificPawn,DestinationTag,Name,85,85,71,,,,none=0
+property,corpus,,ACTION_TeleportSpecificPawn,TeleportingPawnTag,Name,85,85,11,,,,none=0
+property,corpus,,ACTION_TeleportSpecificPawn,bKeepPawnDynamics,Bool,85,17,1,,,,
+property,corpus,,ACTION_TeleportSpecificPawn,bPlaySpawnEffect,Bool,85,1,1,,,,
+property,corpus,,ACTION_TeleportToPoint,DestinationTag,Name,326,322,296,,,,none=0
+property,corpus,,ACTION_TeleportToPoint,bPlaySpawnEffect,Bool,326,2,1,,,,
+property,corpus,,ACTION_TriggerEvent,Event,Name,2658,2657,1851,,,,none=0
+property,corpus,,ACTION_TriggerMatinee,Event,Name,3,3,3,,,,none=0
+property,corpus,,ACTION_UseActor,UseTag,Name,45,45,38,,,,none=0
+property,corpus,,ACTION_UseActor,bIgnoreLineOfSight,Bool,45,18,1,,,,
+property,corpus,,ACTION_VehicleActivateTurret,PawnTag,Name,9,9,5,,,,none=0
+property,corpus,,ACTION_VehicleActivateTurret,bActive,Bool,9,4,1,,,,
+property,corpus,,ACTION_VehicleEnter,TargetVehicleTag,Name,6,6,2,,,,none=0
+property,corpus,,ACTION_VehicleTransportRings,PawnTag,Name,5,5,1,,,,none=0
+property,corpus,,ACTION_VehicleTransportRings,SpawnScript,Name,5,5,2,,,,none=0
+property,corpus,,ACTION_VehicleTransportRings,SpawnSquad,Object,5,5,5,,,,none=0
+property,corpus,,ACTION_WaitForConditions,ConditionTags,Array,24,24,0,,,,
+property,corpus,,ACTION_WaitForEvent,ExternalEvent,Name,2722,2703,1557,,,,none=0
+property,corpus,,ACTION_WaitForEvent,bCheckRecentEvents,Bool,2722,207,1,,,,
+property,corpus,,ACTION_WaitForPlayer,Distance,Float,55,54,13,50,3000,450,
+property,corpus,,ACTION_WaitForPlayer,PollTime,Float,55,4,1,0.2,0.2,0.2,
+property,corpus,,ACTION_WaitForPlayerGettingInVehicle,PollTime,Float,2,1,1,3,3,3,
+property,corpus,,ACTION_WaitForPlayerGettingInVehicle,TargetVehicleTag,Name,2,1,1,,,,none=0
+property,corpus,,ACTION_WaitForTimer,PauseTime,Float,2216,2214,98,0.001,1e+05,2,
+property,corpus,,Action_PLAYANIM,AnimIterations,Byte,227,89,8,1,13,1,
+property,corpus,,Action_PLAYANIM,AnimRate,Float,227,38,8,0,50,0.8,
+property,corpus,,Action_PLAYANIM,BaseAnim,Name,227,227,85,,,,none=0
+property,corpus,,Action_PLAYANIM,BlendInTime,Float,227,8,4,0.3,1,0.4,
+property,corpus,,Action_PLAYANIM,BlendOutTime,Float,227,1,1,2.5,2.5,2.5,
+property,corpus,,Action_PLAYANIM,StartFrame,Float,227,1,1,9,9,9,
+property,corpus,,Action_PLAYANIM,bLoopAnim,Bool,227,47,1,,,,
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 3
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 16
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 25
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
+residue,M00,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
+residue,M02A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
+residue,M07B,property_refused,ACTION_Talk,,,,,,,,,Oneill slot 9
+residue,M07B,property_refused,ACTION_Talk,,,,,,,,,m07_12_g_oneill slot 9
+residue,M07B,property_refused,ACTION_Talk,,,,,,,,,SheerRate slot 9
+residue,M07B,property_refused,ACTION_Talk,,,,,,,,,StaticMeshActor832 slot 9
+residue,M07B,property_refused,ACTION_Talk,,,,,,,,,Brush98 slot 9
+residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,UseStateCheck slot 0
+residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 3
+residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,UseStateCheck slot 1
+residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
+residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 4
+residue,M14A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 6
+residue,M14A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 6
+residue,M14A,property_refused,ACTION_SetIMusic,,,,,,,,,EndType slot 1
+residue,M15A,property_refused,ACTION_DisplayMessage,,,,,,,,,Max slot 0
+residue,M15A,property_refused,ACTION_DisplayMessage,,,,,,,,,Roster_JaffaHorusM8 slot 0
+residue,M15A,property_refused,ACTION_DisplayMessage,,,,,,,,,Location slot 0
+residue,M15A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 9
+residue,M15D,property_refused,ACTION_DisplayMessage,,,,,,,,,Distance slot 0
+residue,M15D,property_refused,ACTION_DisplayMessage,,,,,,,,,StaticMeshInstance5933 slot 0
+residue,M15D,property_refused,ACTION_DisplayMessage,,,,,,,,,Region slot 0
+residue,M15F,property_refused,ACTION_SaveGame,,,,,,,,,Group slot 0
+residue,M15F,property_refused,ACTION_SaveGame,,,,,,,,,SubActionFade0 slot 0
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 9
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 9
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 7
+residue,M16D,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 7
+residue,M16E,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 3
+residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
+residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 5
+residue,M16F,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 11
+residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 1
+residue,M17A,wait_unstated,ACTION_WaitForEvent,,,,,,,,,slot 2
+residue,M20A,property_refused,ACTION_DisplayMessage,,,,,,,,,StaticMeshActor slot 0
+residue,M20A,property_refused,ACTION_DisplayMessage,,,,,,,,,StaticMeshInstance584 slot 0
+residue,M20A,property_refused,ACTION_DisplayMessage,,,,,,,,,Region slot 0
+residue,M20C,property_refused,ACTION_DisplayMessage,,,,,,,,,Group slot 0
+residue,M20C,property_refused,ACTION_DisplayMessage,,,,,,,,,SpriteEmitter198 slot 0
+residue,M20C,property_refused,ACTION_DisplayMessage,,,,,,,,,Level slot 0
+census,corpus,anim_placements,,,,227,,,,,,
+census,corpus,anim_stated,,,,227,,,,,,
+census,corpus,blocked,,,,15441,,,,,,
+census,corpus,empty_block,,,,3074,,,,,,
+census,corpus,goto_back,,,,111,,,,,,
+census,corpus,goto_forward,,,,40,,,,,,
+census,corpus,goto_placements,,,,580,,,,,,
+census,corpus,goto_stated,,,,165,,,,,,
+census,corpus,goto_unset,,,,415,,,,,,
+census,corpus,goto_unset_unwired,,,,30,,,,,,
+census,corpus,goto_unset_wired,,,,385,,,,,,
+census,corpus,goto_unwired,,,,14,,,,,,
+census,corpus,placements,,,,18510,,,,,,
+census,corpus,props_refused,,,,26,,,,,,
+census,corpus,props_stated,,,,21584,,,,,,
+census,corpus,talk_finished,,,,256,,,,,,
+census,corpus,talk_placements,,,,719,,,,,,
+census,corpus,talk_subtitle,,,,717,,,,,,
+census,corpus,timer_placements,,,,2216,,,,,,
+census,corpus,timer_sentinel,,,,1,,,,,,
+census,corpus,timer_stated,,,,2214,,,,,,
+census,corpus,unblocked,,,,3069,,,,,,
+census,corpus,wait_placements,,,,2722,,,,,,
+census,corpus,wait_recent,,,,207,,,,,,
+census,corpus,wait_stated,,,,2703,,,,,,
+census,corpus,wait_unstated,,,,19,,,,,,
+census,corpus,maps,,,,73,,,,,,
+census,corpus,classes,,,,83,,,,,,family=118
