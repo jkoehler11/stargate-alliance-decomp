@@ -378,7 +378,7 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x00036b50,FUN_00036b50,Core,.text,19,1,29,0,0,0,0,0,0,0,silent,,
 0x00036b70,FUN_00036b70,Core,.text,10,1,1,0,0,0,0,0,0,0,silent,,
 0x00036b80,FUN_00036b80,Core,.text,66,1,15,0,0,0,0,0,0,0,silent,,
-0x00036bd0,FUN_00036bd0,Core,.text,28,1,24,0,0,0,0,0,0,0,silent,,
+0x00036bd0,?compare@?$char_traits@D@std@@SAHPBD0I@Z,Core,.text,28,1,24,0,0,0,0,0,0,0,silent,,
 0x00036c20,_memmove,Core,.text,5,0,15,0,0,0,0,0,0,0,ret-stub,,
 0x00036c30,FUN_00036c30,Core,.text,43,1,31,0,0,0,0,0,0,0,silent,,
 0x00036c60,FUN_00036c60,Core,.text,37,1,43,0,0,0,0,0,0,0,silent,,

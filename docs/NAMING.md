@@ -115,3 +115,30 @@ The artifact has one row per exported body — the census as well as the candida
 `FUN_*` name it had, its size, which evidence class it fell in, the new name (blank unless something named
 it), the class and method the literal carried, the body's own source file if it had one, and its twin's
 address when a twin named it.
+
+## The library half: a masked body is a name (2026-11-19)
+
+The library sections this page called unreachable become readable when the libraries are supplied, because a
+linked copy differs from its archive member only where the linker patched an operand. `tools/xdk-lib-match.py`
+(`make xdk-lib-names`) reads each COFF member's symbols and relocations, zeroes the operand bytes at every
+relocation offset, and compares the whole body against `symbols/xbox_functions.csv`; a match is the member's
+name at the image address. With a locally supplied XDK 5849.17 set it names **3,700** functions — 2,531 of the
+3,109 library-section bodies and 1,169 in `.text` — taking the map from 19.7% named to 44.4%.
+
+Three rules keep it honest, and each came from a wrong answer:
+
+- **A body under 12 bytes names nothing.** The image holds several `mov eax,1; ret N` stubs, and an 8-byte
+  match named four separate addresses `_Direct3DCreate8@4`. A body is trusted at 12 bytes when it carries at
+  least one relocation, or 24 when it carries none; 287 candidate matches failed that rule.
+- **A signature two members share is not a name.** COMDAT duplicates and linker-folded twins give one masked
+  body several names; 338 candidates were rejected on this rule, and a name claimed twice is dropped.
+- **Verify against the libraries' own call graph, not the count.** For every match, each `REL32` relocation
+  whose target is a function is chased to its image address: **8,461 of 8,476** land on the function the member
+  names (99.82%), and the 15 that do not are `__alloca_probe` == `__chkstk`. The other control is the 207
+  names Ghidra's FID already carried: 173 of the 176 the matcher could resolve reproduce (98.3%), and all 3
+  misses are bodies under 12 bytes.
+
+`--apply` writes the names into `symbols/xbe_overrides.csv` (append-only, evidence = the member) so a later
+Ghidra import reproduces them, and applies them to `symbols/xbox_functions.csv` names-only — 3,700 renamed, 0
+addresses, sizes or modules moved. The libraries are never committed: `--libs` is a path argument, and the
+set's identity is the `xdk-libs` line in `tools/versions.lock`.

@@ -536,6 +536,17 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       vocabulary is 363 strings, and RTTI carries four descriptors (all CRT exception classes). So an
       engine-module-style naming pass has nothing to read here; U9's signature data is the only route, and
       the section table is the population a partial database would be scored against.
+      **The library half is named (2026-11-19)** — `tools/xdk-lib-match.py` (`make xdk-lib-names`,
+      `inventory/xdk_lib_names.csv`) matches a library member's body against the image after masking the
+      operands the linker patched, and a masked body is a name. With a locally supplied XDK 5849.17 set
+      (60 release archives, outside the repository by the U9 rule) it names **3,700** functions: **2,531 of
+      the 3,109** library-section bodies (`XNET` 332, `XONLINE` 592, `D3D` 234, `D3DX` 325, `XGRPH` 510,
+      `DSOUND` 327, `XPP` 211 — `docs/LIBRARIES.md`'s table reads 2,532 because one name there predates this
+      pass) and 1,169 in `.text` (`xvoice` 643, `uix` 304, `xapilib` 310, the CRT).
+      Two controls: 98.3% agreement with the names Ghidra's FID already carried, and 99.82% of the
+      libraries' own call edges landing on the function they name. The artifact's shape is gated in
+      `make ci`; the generator needs the libraries and the dump, so it is named in the CI output like
+      `map-census`. What a supplied MSVC signature database would still add is the residue.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
       Table **located** at `0x006313e8` with `EX_Max` 4096, in the uninitialised part of `.data`; the image
@@ -690,8 +701,8 @@ other 38 rows.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
       Done: **15,422 symbols** (14,956 functions + 466 class tables), every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
-      (`docs/SYMBOLS.md`). 12,971 stay `FUN_*` — that is 4.2's blocked signature work (U9), not a gap in
-      the file. 127 names are file-level and therefore shared by more than one function; the assembled
+      (`docs/SYMBOLS.md`). 8,320 stay `FUN_*` — the engine bodies with no naming evidence, not a gap in
+      the file; the library sections are named from a supplied XDK 5849.17 set (4.2, `make xdk-lib-names`). 127 names are file-level and therefore shared by more than one function; the assembled
       form suffixes duplicates with their address.
 
 **Acceptance:** every `native()` declaration resolves to a named address; zero unnamed functions in the game modules;
