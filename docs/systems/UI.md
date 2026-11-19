@@ -674,6 +674,14 @@ No menu list is in that table: `moListEditBox` sizes the list it holds to its ow
 **The commented wiring is a cut row, not a reader's gap.** `SavedGameList` declares `MyOnDrawItem` inside a block comment together with both of its `InitComponent` lines, so the save-game list draws the stock item -- one column, no date/type split -- and the two-column body above never runs. It is the same shape as the pages the corpus names only inside a comment.
 <!-- /generated:list-rows -->
 
+**The header shows the same table the body does.** `GUIMultiColumnListBox.InitBaseList` gives the header the
+list it belongs to (`Header.MyList = List`), so a column heading is `MyList.Columns[i]` -- the array nothing states
+-- and the header's own emitted block is four values: `SizingCol=-1`, `ClickingCol=-1`, `bAcceptsInput=True` and
+`StyleName=NoBackground`. Both the column it sizes and the column it answers a click on are -1, so a multi-column
+list's heading text, its drag handle and its click target are all unset in the corpus, and its own style draws no
+background. What the header *does* show -- a column of empty cells under the body's own rectangle -- is a question
+for the boot the next section names.
+
 ## What this means for the rebuild
 
 1. **UI is the cheapest script to port and the hardest to verify.** No natives in the menu package means

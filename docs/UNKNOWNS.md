@@ -4913,7 +4913,9 @@ computes `ColumnWidths[i] = ActualWidth() * Columns[i].Percentage`, and `Columns
 defaults blocks state `Columns`, and **3 of the 3** classes that *can* state it -- the descendants of the two
 declarers, `GUIMultiColumnList`, `GUIMultiColumnListBox` and `ServerList` -- are in that tree, so this is not a
 population the emitter refused. `GetCellLeftWidth` therefore answers `Width = 0` for all **9** cell-placed columns,
-and each of them starts at the list's `ClientBounds[0]` plus whatever row `X` the caller adds.
+and each of them starts at the list's `ClientBounds[0]` plus whatever row `X` the caller adds. The header reads the same array -- `GUIMultiColumnListBox.InitBaseList` sets
+`Header.MyList = List` -- and its own block states only `SizingCol=-1`, `ClickingCol=-1`, `bAcceptsInput=True` and
+`StyleName=NoBackground`, so no heading text and no click target are set either.
 
 **The row height is native, and no menu list writes one.** `ItemHeight`, `ItemWidth` and `ItemsPerPage` are
 `var(List)` on `GUIListBase` (*"subclass should set in PreDraw"*, *"is set natively"*). The corpus's writes are

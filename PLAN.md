@@ -13944,7 +13944,8 @@ class list, a decompiled script tree and a hundred-plus named native functions.
 - **Files.** `tools/ui-list-rows.py` (new: `read_bodies`, `classify`, `read_placements`, `read_defaults_tree`, the
   `render` block and a synthetic `--check`), `inventory/ui_list_rows.csv` (48 rows: 6 `body`, 15 `column`,
   6 `wiring`, 6 `placement`, 10 `rowrect`, 2 `celltable`, 1 `census`), `docs/systems/UI.md` (the generated *a
-  list's row* section, the rebuild list's seventh item, the counted half named in *Not measured*),
+  list's row* section, the header paragraph, the rebuild list's seventh item, the counted half named in *Not
+  measured*),
   `docs/UNKNOWNS.md` U28 (new; U27's status points at it), `Makefile` (`make ui-list-rows`, the ci pair),
   `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
 - **Next measurement.** The native rectangle: `GUIListBase`'s `DrawItem`/`PreDraw` is C++, so the row's
