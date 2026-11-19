@@ -733,7 +733,62 @@ content with no route to the screen.
 | `ItemsPerPage` | `0x260` | counted up by the PreDraw's fit loop, capped at 1000 |
 | `Top` | `0x258` | row loop starts at [this+0x258] and stops at Top+ItemsPerPage |
 | `interItemGutter` | `0x26c` | the step between rows, and half of it insets the first |
+
+#### The box is not a list, and its item draw is another slot 58
+
+`GUIListBoxBase` extends `GUIMultiComponent`, not `GUIListBase`: a list box is a component that hosts a list, and its `PreDraw` draws **one** item per frame through slot 58 -- the component's slot 58 (`+0xe8`), a different body from `GUIListBase`'s slot 58 at the same offset. `2` classes override that item draw, and of the `252` slot bodies in the box tree not one loads the `OnDrawItem` index or calls its dispatcher, so a body wired onto a box would never run.
+
+| class | slot | body | what it draws |
+|---|---|---|---|
+| `GUIMultiColumnListBox` | 58 | `0x00301890` | its own item draw |
+| `GUIListBoxBase` | 30 | `0x002fab10` | draws one item per frame |
+| `GUIListBoxBase` | 58 | `0x003015b0` | the selected row |
+
+`GUIListBox` and `GUIScrollTextBox` add no draw of their own: their tables differ from `GUIListBoxBase`'s only in slot 3, so a body wired onto one of those classes would have nowhere to be dispatched from.
+
+* **delegate audit** -- 252 slot bodies: no box slot body loads the OnDrawItem index or calls its dispatcher, so a body wired onto a box would never run
+* **page widgets** -- 10 widgets over 6 pages: GUIListBox 5, GUIScrollTextBox 1, MapFileList 1, SGScrollTextBox 1, SavedGameList 1, ServerSelectionListBox 1; the page-owned subclasses (MapFileList, SavedGameList, ServerSelectionListBox) declare their rows on a box class but wire them to the inherited List, a GUIVertList
+* **receiver audit** -- 6 wirings: every receiver resolves to a GUIListBase descendant (GUIMultiColumnList 1, GUIVertList 4, ServerList 1), so the box's missing dispatch is unreachable from the shipped corpus
+
+#### The styled-text routine: four clip culls and no width test
+
+The stock item draw reaches `GUIStyles.DrawText` (`0x002ff790`) twice -- once per text pass -- and that routine's whole suppression logic is four compares against the canvas clip rect: a cell's width is used only in the `X + W` sum of one of them and in the rect handed to the canvas, so a **zero-width cell is not shortcircuited** -- it is culled only when its anchor lies outside the clip rectangle.
+
+| measure | answer |
+|---|---|
+| `clip rect` | the rect is culled against this box only: right edge past the left clip, left edge past the right clip, and the same for the vertical pair |
+| `font table` | the style byte indexes the font array and the body sets the canvas's font/colour for the draw, then restores the five fields it saved |
+| `styled text` | the stock item draw calls it at two sites 0x55 apart with different rect arguments; the styled text of a row is that call |
+| `width use` | the width reaches one clip sum and the rect handed to the canvas (vtable +0xc4); no compare in the body tests it, so a zero-width cell is culled only when its anchor lies outside the clip rectangle |
 <!-- /generated:list-native -->
+
+**A list box is not a list, and the difference is which slot 58 runs.** `GUIListBoxBase` extends
+`GUIMultiComponent`, not `GUIListBase` -- the two trees share the `+0xe8` offset and share nothing else.
+`GUIMultiComponent`'s `PreDraw` (`0x002fab10`) calls the base `PreDraw` and then its own slot 58 **once** with the
+canvas; `GUIListBoxBase` overrides that slot with `0x003015b0`, which reads the list the box hosts and paints one
+row -- its `Index`, `ItemsPerPage`, `ItemHeight` and `interItemGutter` come off that object, not off a rect handed
+in. `GUIMultiColumnListBox` overrides it again (`0x00301890`) with the per-column path, and `GUIListBox` and
+`GUIScrollTextBox` add nothing at all: of the `63` slots `GUIMultiComponent` declares, those two classes differ
+from the box root in slot 3 alone.
+
+So a delegate body attached to a box would never run, and **none is**: the box tree's 252 slot bodies contain no
+load of the `OnDrawItem` index and no call to its dispatcher. What makes that harmless is where the fork put its
+bodies -- `ObjectivesPanel` and `SelectTeamPanel` own an `SGListBox` and wire `ObjectivesBox.List` / `TeamListBox.List`,
+and `List` is `GUIListBox`'s own `var GUIVertList`, so the receiver is the inner list, which dispatches like any
+other. `SavedGameList` and `ServerSelectionListBox`, which extend `SGListBox`, are the same shape. Ten box-typed
+widgets over six pages is what the corpus places (`GUIListBox` five times on `InGameScoreboard`, the scroll-text
+boxes on `HintScreen` and `TextGameInfo`, and the three page-owned subclasses), and every one of their rows is a
+list-tree row.
+
+**The zero-width cell has no shortcut.** `GUIStyles.DrawText` is `native final` with token 0, so it has no table
+slot and binds by name; the stock item draw reaches it at two sites (`0x00301d7e`, `0x00301dd3`, `0x55` apart) and
+the routine's whole suppression logic is four compares against the canvas clip rectangle -- `X` against the clip's
+right edge, `X+W` against its left, and the same pair vertically -- followed by a style-font lookup and a canvas
+state save/restore. The width is used **only** in that one `X+W` sum and in the rect handed to the canvas, so a
+cell of width 0 is not shortcircuited: it is culled only when its anchor falls outside the clip rect, and
+otherwise reaches the canvas as a degenerate rectangle. `CoopPlayerPanel` is the one body that passes such a width
+(it is the only live body that returns true and paints its own row), and its four cell columns are the ones
+`GetCellLeftWidth` answers 0 for.
 
 
 **The header shows the same table the body does.** `GUIMultiColumnListBox.InitBaseList` gives the header the
@@ -791,7 +846,9 @@ for the boot the next section names.
   needs a running build. The rows *inside* a list are the third level and are counted too (the block above,
   `docs/UNKNOWNS.md` U28): **15 columns over five bodies**, placed through a cell table, the screen or the row.
   What stays unmeasured there is the rectangle itself — `GUIListBase` is native, so the row's `X/Y/W/H` and its
-  `ItemHeight` are C++, and whether a `DrawText` of width 0 paints nothing or a clipped glyph needs the boot.
+  `ItemHeight` are C++. The zero-width cell is now answered as far as the image can: `GUIStyles.DrawText` culls
+  against the canvas clip rect and nothing else, so a width of 0 is not shortcircuited. What is left is whether the
+  canvas's own glyph loop paints an empty rect, which is the boot.
 * **Why the ten are dead is a *where*, not a *why*.** The corpus names none of them — measured over every
   class body, every emitted defaults block and every menu key in the five shipped `.ini`s — but which editor
   pass cut them, and whether the cut pages' bodies still compile against the classes around them, is a
