@@ -13630,6 +13630,49 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   headers are not in the image, and matching a package-based `UState`'s field order to them is a join this read does
   not make. (2) What the 876 empty slots are for -- `GNames[690]` (`0x2b2`, the value the setter treats as
   `BadToken`) beside a slot the reserve does name, in one live boot (U26).
+### Execution notes (2026-11-18, a page's widgets are its own and its frame is the only thing inherited)
+
+- **Task.** The previous note's next measurement: the 114 `Begin Object` component blocks a page's defaults
+  carry, which the census counted but never read — emitting the options family's subobject properties to say
+  whether a component set is inherited the way the hint flags are. Widened to all 59 pages, since the same tree
+  already holds them.
+- **The layout is now a table, not a count.** `tools/ui-menu-flow.py` reads the blocks out of the
+  `defaults-emit` tree and every one becomes a `kind=component` row: **114 components over 46 pages, 110
+  declared once by the page that uses them and 4 restatements, in 31 widget classes, none of which the corpus
+  fails to carry.** Each row names the widget class, the property the page binds it to (`cTitle`,
+  `cButtonA`…`cButtonY`, `cPanel`, `chPN`), how much of its rectangle it states, and — when it states none —
+  the class that supplies it.
+- **The options family answers the inheritance question: hints yes, widgets no.** `OptionsEditBase` declares
+  A+B and `OptionsEditAudio`, `OptionsEditVideo` and `OptionsEditAppearance` inherit both, but the three share
+  **not one widget** — Audio declares three `moEditBox` rows, Video one `moComboBox`, Appearance a
+  `CharacterSelectionPanel`+`CurrentCharPanel` pair, and the base declares none. `OptionsEditProfile` and
+  `OptionsEditControls` extend `SGPageBase` directly and add one `RightLockingMenuPanel` and nothing. So the
+  inheritance the hint census found carries the **frame and the captions** (`SGPageBase`'s five components are
+  declared once and re-declared by no page), and a page's controls are declared where they are used.
+- **A restatement is a type refinement, and the four form a chain.** A subclass can replace an inherited widget
+  by restating its `Name=` with a narrower class: `chPN` is a `ChapterSelectionPanel` on
+  `SinglePlayerChapterSelect`, a `MapSelectionPanel` on `MultiplayerMapSelect` and `QuickLoadMapTempPage`, a
+  `MultiplayerServerPanel` on `MultiplayerServerSelect` and an `XBoxLiveServerSelectionPanel` on
+  `XBoxLiveServerSelect` — so the server-select chain restates a name its parent restated, two steps deep.
+- **Geometry is per widget, and every component has one somewhere.** 83 of the 114 blocks state all four `Win*`
+  values; the other 25 state none and take theirs from the widget class's own defaults (`GUI.GUIButton`,
+  `GUI.GUILabel`, …), and **not one** is without a rectangle anywhere on its chain. Reading a component's
+  class defaults needed its own package (`class_home`): a page's widgets are `GUI` classes, so looking them up
+  in the page's directory finds no file and reads every widget as unpositioned.
+- **Files.** `tools/ui-menu-flow.py` (`read_children`, `class_home`, `class_geometry`, `read_components`, the
+  `components_block` renderer, the census keys and ten new self-test assertions), `inventory/menu_flow.csv`
+  (534 rows: 114 component rows beside the 420 the flow census carried), `docs/systems/UI.md` (a generated
+  *widgets* section with the count table, the per-page widget table and the restatement table, the layout
+  paragraph in the page-flow section, the rewritten *what a page draws* bullet and a sixth rebuild bullet),
+  `docs/UNKNOWNS.md` U27, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** U27's cheaper route: what the four `Win*` values are *relative to*. `GUIComponent`'s
+  own body (its vtable slot is in the class table) normalises them against the widget's owner before drawing,
+  and reading that one function would turn the rectangle columns into a screen position without a boot; the
+  frame instrument is the alternative if the body is unreadable.
+- **Not in this PR.** A component's *own* contents: a panel's sub-widgets are declared in the panel class's
+  defaults (a nested block, not a page's), so the panel classes' own layouts (`RightLockingMenuPanel`,
+  `ChapterSelectionPanel`, …) are a second read in the same tree.
+
 ### Execution notes (2026-11-18, a page's hints are four defaults flags, and its frame is inherited)
 
 - **Task.** The previous note's next measurement: `SGPageBase.InitComponent` shows a controller-button caption

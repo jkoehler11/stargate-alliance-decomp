@@ -185,6 +185,120 @@ caption,sBack,Engine,defaults,Back,,,,1,,Localizer
 caption,sCreateNew,Engine,defaults,Create New,,,,1,,Localizer
 caption,sDelete,Engine,defaults,Delete,,,,1,,Localizer
 caption,sSelect,Engine,defaults,Select,,,,1,,Localizer
+component,CreditsPage,StargateMenus,own,cTempLB,,GUILabel,,1,,props=6 geometry=4/4
+component,DeleteProfilePage,StargateMenus,own,cBackground,,GUIButton,,1,,props=9 geometry=4/4
+component,DeleteProfilePage,StargateMenus,own,cYesButton,,GUIButton,,1,,props=9 geometry=4/4
+component,DeleteProfilePage,StargateMenus,own,cNoButton,,GUIButton,,1,,props=10 geometry=4/4
+component,DeleteProfilePage,StargateMenus,own,cDesc,,GUILabel,,1,,props=9 geometry=4/4
+component,DeleteProfilePage,StargateMenus,own,cProfile,,GUILabel,,1,,props=9 geometry=4/4
+component,DeleteSavedGamePage,StargateMenus,own,cBackground,,GUIButton,,1,,props=9 geometry=4/4
+component,DeleteSavedGamePage,StargateMenus,own,cYesButton,,GUIButton,,1,,props=9 geometry=4/4
+component,DeleteSavedGamePage,StargateMenus,own,cNoButton,,GUIButton,,1,,props=10 geometry=4/4
+component,DeleteSavedGamePage,StargateMenus,own,cDesc,,GUILabel,,1,,props=9 geometry=4/4
+component,DeleteSavedGamePage,StargateMenus,own,cFile,,GUILabel,,1,,props=9 geometry=4/4
+component,ErrorPage,StargateMenus,own,cPanel,,FullSlidingPanel,,1,,"props=4 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,ExtrasPage,StargateMenus,own,cTempLB,,GUILabel,,1,,props=6 geometry=4/4
+component,HintScreen,StargateMenus,own,MyHintTextBox,,SGScrollTextBox,,1,,props=4 geometry=4/4
+component,HintScreen,StargateMenus,own,MyContinueBN,,ControllerButton,,1,,props=5 geometry=4/4
+component,InGameInfoScreen,StargateMenus,own,MyGameInfoPN,,InGameInfoPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.InGameInfoPanel"
+component,InGameMenu,StargateMenus,own,MyBackPN,,GUIPanel,,1,,props=6 geometry=1/4
+component,InGameMenu,StargateMenus,own,cExitBN,,GUIButton,,1,,props=11 geometry=4/4
+component,InGameScoreboard,StargateMenus,own,ListBox1,,GUIListBox,,1,,props=6 geometry=4/4
+component,InGameScoreboard,StargateMenus,own,ListBox2,,GUIListBox,,1,,props=6 geometry=4/4
+component,InGameScoreboard,StargateMenus,own,ListBox3,,GUIListBox,,1,,props=6 geometry=4/4
+component,InGameScoreboard,StargateMenus,own,ListBox4,,GUIListBox,,1,,props=6 geometry=4/4
+component,InGameScoreboard,StargateMenus,own,ListBox5,,GUIListBox,,1,,props=6 geometry=4/4
+component,InGameScoreboard,StargateMenus,own,cPanel,,FullSlidingPanel,,1,,"props=9 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,LoadGameMenu,StargateMenus,own,cSavePN,,SaveGamePanel,,1,,props=4 geometry=4/4
+component,MainMenu,StargateMenus,own,cBuildStamp,,SGLabel,,1,,props=8 geometry=4/4
+component,MainMenu,StargateMenus,own,cPanel,,RightLockingMenuPanel,,1,,"props=11 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,MultiPlayerInGame,StargateMenus,own,cResumeGameBN,,GUIButton,,1,,props=10 geometry=4/4
+component,MultiPlayerInGame,StargateMenus,own,cOptionsBN,,GUIButton,,1,,props=11 geometry=4/4
+component,MultiplayerCharSelect,StargateMenus,own,cChar,,CharacterSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,MultiplayerCharSelect,StargateMenus,own,cCurr,,CurrentCharPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.LeftLockingPanel"
+component,MultiplayerGameSelect,StargateMenus,own,gmPN,,GameModeSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,MultiplayerGameSelect,StargateMenus,own,cCurr,,CurrentGameModePanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.LeftLockingPanel"
+component,MultiplayerMapSelect,StargateMenus,restated,chPN,,MapSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel; restates StargateMenus.SinglePlayerChapterSelect whose class is ChapterSelectionPanel"
+component,MultiplayerMenu,StargateMenus,own,cSystem,,GUIButton,,1,,props=11 geometry=4/4
+component,MultiplayerMenu,StargateMenus,own,cLive,,GUIButton,,1,,props=10 geometry=4/4
+component,MultiplayerMenu,StargateMenus,own,cEdit,,GUIButton,,1,,props=11 geometry=4/4
+component,MultiplayerMenu,StargateMenus,own,cSplit,,GUIButton,,1,,props=11 geometry=4/4
+component,MultiplayerMenu,StargateMenus,own,cHint,,GUILabel,,1,,props=5 geometry=4/4
+component,MultiplayerServerSelect,StargateMenus,restated,chPN,,MultiplayerServerPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel; restates StargateMenus.ServerSelectionPage whose class is ServerSelectionPanel"
+component,NoMatchFoundPage,StargateMenus,own,cBackground,,GUIButton,,1,,props=9 geometry=4/4
+component,NoMatchFoundPage,StargateMenus,own,cOkButton,,GUIButton,,1,,props=9 geometry=4/4
+component,NoMatchFoundPage,StargateMenus,own,cDesc,,GUILabel,,1,,props=9 geometry=4/4
+component,NoMatchFoundPage,StargateMenus,own,cDesc2,,GUILabel,,1,,props=9 geometry=4/4
+component,NotYetImplementedPage,StargateMenus,own,cOkBN,,GUIButton,,1,,props=11 geometry=4/4
+component,NotYetImplementedPage,StargateMenus,own,cQuitBackground,,GUIButton,,1,,props=8 geometry=1/4
+component,NotYetImplementedPage,StargateMenus,own,cQuitDesc,,GUILabel,,1,,props=8 geometry=3/4
+component,OptionsEditAppearance,StargateMenus,own,cChar,,CharacterSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,OptionsEditAppearance,StargateMenus,own,cCurr,,CurrentCharPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.LeftLockingPanel"
+component,OptionsEditAudio,StargateMenus,own,cMusic,,moEditBox,,1,,props=11 geometry=4/4
+component,OptionsEditAudio,StargateMenus,own,cVoice,,moEditBox,,1,,props=11 geometry=4/4
+component,OptionsEditAudio,StargateMenus,own,cSoundFX,,moEditBox,,1,,props=11 geometry=4/4
+component,OptionsEditProfile,StargateMenus,own,cPanel,,RightLockingMenuPanel,,1,,"props=11 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,OptionsEditVideo,StargateMenus,own,vpBox,,moComboBox,,1,,props=13 geometry=4/4
+component,QuestionPage,StargateMenus,own,cPanel,,FullSlidingPanel,,1,,"props=5 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,QuickLoadMapTempPage,StargateMenus,restated,chPN,,MapSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel; restates StargateMenus.SinglePlayerChapterSelect whose class is ChapterSelectionPanel"
+component,RestartGame,StargateMenus,own,cAutoLoadBN,,GUIButton,,1,,props=10 geometry=4/4
+component,RestartGame,StargateMenus,own,cRestartBN,,GUIButton,,1,,props=11 geometry=4/4
+component,RestartGame,StargateMenus,own,cLoadGameBN,,GUIButton,,1,,props=11 geometry=4/4
+component,SaveGameMenu,StargateMenus,own,cSavePN,,SaveGamePanel,,1,,props=5 geometry=4/4
+component,SelectPawnPage,StargateMenus,own,cPanel,,SelectPawnPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,SelectPawnPage,StargateMenus,own,cSelectBn,,ControllerButton,,1,,props=4 geometry=4/4
+component,SelectPawnPage,StargateMenus,own,cCurr,,CurrentCharPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.LeftLockingPanel"
+component,SelectTeamPage,StargateMenus,own,cPanel,,SelectTeamPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,SelectTeamPage,StargateMenus,own,cSelectBn,,ControllerButton,,1,,props=4 geometry=4/4
+component,ServerSelectionPage,StargateMenus,own,chPN,,ServerSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,SinglePlayerChapterSelect,StargateMenus,own,chPN,,ChapterSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,SinglePlayerChapterSelect,StargateMenus,own,cCurr,,CurrentChapterPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.LeftLockingPanel"
+component,SinglePlayerInGame,StargateMenus,own,cResumeGameBN,,GUIButton,,1,,props=10 geometry=4/4
+component,SinglePlayerInGame,StargateMenus,own,cRestartBN,,GUIButton,,1,,props=11 geometry=4/4
+component,SinglePlayerMenu,StargateMenus,own,cPanel,,RightLockingMenuPanel,,1,,"props=9 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,SinglePlayerSelectProfile,StargateMenus,own,cProfile,,ProfilePanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,SinglePlayerSelectProfile,StargateMenus,own,cCurr,,CurrentProfilePanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.LeftLockingPanel"
+component,SinglePlayerTutorial,StargateMenus,own,cBackground,,GUIButton,,1,,props=7 geometry=2/4
+component,SinglePlayerTutorial,StargateMenus,own,cYesButton,,GUIButton,,1,,props=9 geometry=4/4
+component,SinglePlayerTutorial,StargateMenus,own,cNoButton,,GUIButton,,1,,props=10 geometry=4/4
+component,SinglePlayerTutorial,StargateMenus,own,cQuestion,,GUILabel,,1,,props=9 geometry=4/4
+component,SystemLinkMenu,StargateMenus,own,cHost,,GUIButton,,1,,props=10 geometry=4/4
+component,SystemLinkMenu,StargateMenus,own,cJoin,,GUIButton,,1,,props=11 geometry=4/4
+component,SystemLinkMenu,StargateMenus,own,cHint,,GUILabel,,1,,props=5 geometry=4/4
+component,TextGameInfo,StargateMenus,own,cReturnToGameButton,,GUIButton,,1,,props=9 geometry=4/4
+component,TextGameInfo,StargateMenus,own,MyHeader,,GUITitleBar,,1,,props=5 geometry=2/4
+component,TextGameInfo,StargateMenus,own,laScrollTextBoxLabel,,GUILabel,,1,,props=5 geometry=4/4
+component,TextGameInfo,StargateMenus,own,caScrolltextBox,,GUIScrollTextBox,,1,,props=7 geometry=4/4
+component,VSMainMenu,StargateMenus,own,cNewGameBN,,GUIButton,,1,,props=10 geometry=4/4
+component,VSMainMenu,StargateMenus,own,cLoadBN,,GUIButton,,1,,props=11 geometry=4/4
+component,VSMainMenu,StargateMenus,own,cQuitButton,,GUIButton,,1,,props=11 geometry=4/4
+component,VSMainMenu,StargateMenus,own,cHint,,GUILabel,,1,,props=10 geometry=4/4
+component,VSMainMenu,StargateMenus,own,cVersion,,GUILabel,,1,,props=5 geometry=4/4
+component,VSMainMenu,StargateMenus,own,cTitle,,GUITitleBar,,1,,props=4 geometry=2/4
+component,VirtualKeyboardPage,StargateMenus,own,cKeyboardPN,,VirtualKeyboardPanel,,1,,props=4 geometry=4/4
+component,WaitingForPlayers,StargateMenus,own,myCoop,,CoopPlayerPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,XBoxLiveFindGameMenu,StargateMenus,own,cFind,,GUIButton,,1,,props=10 geometry=4/4
+component,XBoxLiveFindGameMenu,StargateMenus,own,cStatus,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLiveFindGameMenu,StargateMenus,own,cGamer,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLiveFriendsMenu,StargateMenus,own,cFriends,,GUIButton,,1,,props=11 geometry=4/4
+component,XBoxLiveFriendsMenu,StargateMenus,own,cStatus,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLiveFriendsMenu,StargateMenus,own,cGamer,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLiveMenu,StargateMenus,own,cHost,,GUIButton,,1,,props=10 geometry=4/4
+component,XBoxLiveMenu,StargateMenus,own,cSignInOut,,GUIButton,,1,,props=9 geometry=4/4
+component,XBoxLiveMenu,StargateMenus,own,cFriends,,GUIButton,,1,,props=11 geometry=4/4
+component,XBoxLiveMenu,StargateMenus,own,cPlayers,,GUIButton,,1,,props=11 geometry=4/4
+component,XBoxLiveMenu,StargateMenus,own,cStatus,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLiveMenu,StargateMenus,own,cGamer,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLivePlayMenu,StargateMenus,own,cHost,,GUIButton,,1,,props=10 geometry=4/4
+component,XBoxLivePlayMenu,StargateMenus,own,cInstant,,GUIButton,,1,,props=11 geometry=4/4
+component,XBoxLivePlayMenu,StargateMenus,own,cFind,,GUIButton,,1,,props=11 geometry=4/4
+component,XBoxLivePlayMenu,StargateMenus,own,cStatus,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLivePlayMenu,StargateMenus,own,cGamer,,GUILabel,,1,,props=6 geometry=4/4
+component,XBoxLiveServerSelect,StargateMenus,restated,chPN,,XBoxLiveServerSelectionPanel,,1,,props=5 geometry=4/4; restates StargateMenus.MultiplayerServerSelect whose class is MultiplayerServerPanel
+component,XBoxLiveSignOutConfirm,StargateMenus,own,cQuitBackground,,GUIButton,,1,,props=9 geometry=4/4
+component,XBoxLiveSignOutConfirm,StargateMenus,own,cYesButton,,GUIButton,,1,,props=9 geometry=4/4
+component,XBoxLiveSignOutConfirm,StargateMenus,own,cNoButton,,GUIButton,,1,,props=10 geometry=4/4
+component,XBoxLiveSignOutConfirm,StargateMenus,own,cQuitDesc,,GUILabel,,1,,props=9 geometry=4/4
 override,CreateNewProfile,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
 override,CreateNewProfile,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_Y
 override,HintScreen,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
@@ -418,4 +532,4 @@ page,TextGameInfo,StargateMenus,page,StargateMenus.TextGameInfo,StargateMenus,un
 page,VSMainMenu,StargateMenus,page,StargateMenus.VSMainMenu,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,VirtualKeyboardPage,StargateMenus,page,StargateMenus.VirtualKeyboardPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,XBoxLiveBackDrop,StargateMenus,page,StargateMenus.XBoxLiveBackDrop,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
-census,corpus,,,,,,,1,,packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10|defaults_tree=1|hint_pages=30|no_hint_pages=29|hints_on=67|hint_own=35|hint_inherited=32|page_blocks=50|page_top_props=255|page_components=114|pages_with_components=46|titles_own=39|placeholder_titles=4|draw_rows=16|draw_pages=9|url_pages=1|override_pages=34|init_overrides=33|init_super=33|init_nosuper=0|handler_pages=18|hint_handled=65|hint_no_handler=2
+census,corpus,,,,,,,1,,packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10|defaults_tree=1|hint_pages=30|no_hint_pages=29|hints_on=67|hint_own=35|hint_inherited=32|page_blocks=50|page_top_props=255|page_components=114|pages_with_components=46|component_pages=46|component_own=110|component_restated=4|component_classes=31|component_geom_full=83|component_geom_none=25|component_geom_from_class=25|component_geom_nowhere=0|component_unresolved=0|titles_own=39|placeholder_titles=4|draw_rows=16|draw_pages=9|url_pages=1|override_pages=34|init_overrides=33|init_super=33|init_nosuper=0|handler_pages=18|hint_handled=65|hint_no_handler=2

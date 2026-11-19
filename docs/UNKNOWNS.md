@@ -4825,3 +4825,26 @@ content that was cut is not decidable here. A live read of `GNames` slot in a ho
 boot, would say what a package load does with the range -- it changes no number in the state page.
 
 **Status.** Answered for the index the shipped state code addresses (`Auto`); open for the 876 nulls behind it.
+
+## U27. A page's widgets are a table, and where they draw is not measured
+
+**Observed.** `tools/ui-menu-flow.py` now reads the `Begin Object` blocks out of the `defaults-emit` tree
+(`inventory/menu_flow.csv`, `kind=component`; `make ui-menu-flow`): **114 components over 46 of the 59 pages**,
+**110 declared once by the page that uses them and 4 restatements** of an inherited widget under a narrower
+class -- `chPN` as `ChapterSelectionPanel` on `SinglePlayerChapterSelect`, as `MapSelectionPanel` on
+`MultiplayerMapSelect` and `QuickLoadMapTempPage`, and as `MultiplayerServerPanel` then
+`XBoxLiveServerSelectionPanel` on the server-select chain -- in **31 widget classes**, every one of which the
+corpus carries. Position is data too: **83** components state all four `Win*` values, the other **25** state
+none and take theirs from the widget class's own defaults (`GUI.GUIButton`, `GUI.GUILabel`, ...), and **none**
+is left without one anywhere on its chain. `docs/systems/UI.md` renders the census; `--check-doc` gates it.
+
+**What is still open.** The corpus states a widget's class, the property its page binds it to and its four
+rectangle values. It does not state what those four are *relative to* (the page's own rectangle, the widget's
+`Owner`, or the screen), and nothing here has watched a page draw, so "the layout is in the components" is a
+statement about data rather than about pixels. Two routes: (1) the frame instrument 7.2 already uses -- boot the
+front end to one options page, capture it with `tools/xemu/frame-diff.py`, then rebuild that page's package with
+one `WinTop` changed by 0.05 and read whether the frame differs in that widget's rectangle and nowhere else;
+(2) `GUIComponent`'s own body, whose vtable slot the class table names, would say how `WinTop` is normalised
+against the owner before drawing, which is the cheaper read and needs no boot.
+
+**Status.** Open: the data is counted and gated; the drawn result is not.

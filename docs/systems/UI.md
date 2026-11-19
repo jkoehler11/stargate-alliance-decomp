@@ -96,6 +96,25 @@ answered by whichever class names its `XC_` code, and **65 of the 67 hint flags 
 chain** — the two that do not are `CreateNewProfile`'s and `OptionsEditProfile`'s `bButtonA`, i.e. both pages
 print "Select" with no page-class `XC_A` handler anywhere above them.
 
+**A page's widgets are its own; only the frame is shared.** The `Begin Object` blocks hold a page's layout, and
+the census over all 59 pages is a table now: **114 blocks over 46 pages — 110 declared once by the page that
+uses them and 4 that *restate* a widget an ancestor already declares**, in **31 widget classes** (all of which
+the corpus carries). Inheritance carries the *frame and the captions*, not the controls: `SGPageBase`'s five
+components (`cTitle`, `cButtonA`…`cButtonY`) are declared once and re-declared by no page, so every page draws
+them and adds its own. The options pages make the split plain: `OptionsEditBase` declares A+B and its three
+subclasses (`OptionsEditAudio`, `OptionsEditVideo`, `OptionsEditAppearance`) inherit both — yet they share **not
+one widget**: Audio declares three `moEditBox` rows, Video one `moComboBox`, Appearance a
+`CharacterSelectionPanel`+`CurrentCharPanel` pair, and the base itself none; `OptionsEditProfile` and
+`OptionsEditControls`, which extend `SGPageBase` directly, add one `RightLockingMenuPanel` and nothing at all. A
+subclass replaces an inherited control the way it replaces a default: by restating its `Name=` with a narrower
+class, which is what
+`MultiplayerMapSelect` and `QuickLoadMapTempPage` do to `SinglePlayerChapterSelect`'s `chPN`
+(`ChapterSelectionPanel` → `MapSelectionPanel`), and `MultiplayerServerSelect` → `XBoxLiveServerSelect` do again
+on top of that (`ServerSelectionPanel` → `MultiplayerServerPanel` → `XBoxLiveServerSelectionPanel`). Geometry is
+per widget as well: **83 of the 114 blocks state all four `Win*` values** and the other **25** state none and
+take theirs from the widget class's own defaults (`GUI.GUIButton`, `GUILabel`, …) — **not one** component is
+left without a position anywhere on its chain.
+
 **The links that name nothing.** Five targets do not resolve, and each fails differently: three sites name
 `UCMenu.*` pages (`TeaserPage`, `LiveInteractionBox`) in a package the disc does not ship — those calls can
 only return false; `GUI.JoeTest` is a `UDebugMenu` scratch page no package declares; `GUI.SGWaitingForPlayers`
@@ -390,6 +409,76 @@ By page verdict, the 30 hinting pages are comment-only 2, outside 3, reachable 2
 | `StargateMenus.VSMainMenu` | `StyleName` |
 | `StargateMenus.XBoxLiveSignOutConfirm` | `StyleName` |
 
+### The widgets a page declares
+
+A page's `Begin Object` blocks are its layout: each block names a widget class and the property the page binds it to, and the four `Win*` values a block states are that widget's place on the page. The base's own five (`cTitle`, `cButtonA`..`cButtonY`) are declared once, so a page draws its inherited frame plus whatever it adds — and a subclass can replace an inherited widget outright by restating its `Name=` with a different class.
+
+| measure | answer |
+|---|---|
+| `Begin Object` component blocks | **114** over 46 pages |
+| ... declared once, by the page itself | **110** |
+| ... restating a widget an ancestor already declares | **4** |
+| distinct widget classes | **31** |
+| ... classes the corpus does not carry | **0** |
+| ... stating all four `Win*` values on the page | **83** |
+| ... stating none | **25**, of which **25** take theirs from the widget class's own defaults and **0** state none anywhere |
+
+| page | widgets | with geometry | own | restated |
+|---|---|---:|---:|---:|
+| `StargateMenus.CreditsPage` | `GUILabel:cTempLB` | 1 | 1 | 0 |
+| `StargateMenus.DeleteProfilePage` | `GUIButton:cBackground`, `GUILabel:cDesc`, `GUIButton:cNoButton`, `GUILabel:cProfile`, `GUIButton:cYesButton` | 5 | 5 | 0 |
+| `StargateMenus.DeleteSavedGamePage` | `GUIButton:cBackground`, `GUILabel:cDesc`, `GUILabel:cFile`, `GUIButton:cNoButton`, `GUIButton:cYesButton` | 5 | 5 | 0 |
+| `StargateMenus.ErrorPage` | `FullSlidingPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.ExtrasPage` | `GUILabel:cTempLB` | 1 | 1 | 0 |
+| `StargateMenus.HintScreen` | `ControllerButton:MyContinueBN`, `SGScrollTextBox:MyHintTextBox` | 2 | 2 | 0 |
+| `StargateMenus.InGameInfoScreen` | `InGameInfoPanel:MyGameInfoPN` | 0 | 1 | 0 |
+| `StargateMenus.InGameMenu` | `GUIPanel:MyBackPN`, `GUIButton:cExitBN` | 1 | 2 | 0 |
+| `StargateMenus.InGameScoreboard` | `GUIListBox:ListBox1`, `GUIListBox:ListBox2`, `GUIListBox:ListBox3`, `GUIListBox:ListBox4`, `GUIListBox:ListBox5`, `FullSlidingPanel:cPanel` | 5 | 6 | 0 |
+| `StargateMenus.LoadGameMenu` | `SaveGamePanel:cSavePN` | 1 | 1 | 0 |
+| `StargateMenus.MainMenu` | `SGLabel:cBuildStamp`, `RightLockingMenuPanel:cPanel` | 1 | 2 | 0 |
+| `StargateMenus.MultiPlayerInGame` | `GUIButton:cOptionsBN`, `GUIButton:cResumeGameBN` | 2 | 2 | 0 |
+| `StargateMenus.MultiplayerCharSelect` | `CharacterSelectionPanel:cChar`, `CurrentCharPanel:cCurr` | 0 | 2 | 0 |
+| `StargateMenus.MultiplayerGameSelect` | `CurrentGameModePanel:cCurr`, `GameModeSelectionPanel:gmPN` | 0 | 2 | 0 |
+| `StargateMenus.MultiplayerMapSelect` | `MapSelectionPanel:chPN` | 0 | 0 | 1 |
+| `StargateMenus.MultiplayerMenu` | `GUIButton:cEdit`, `GUILabel:cHint`, `GUIButton:cLive`, `GUIButton:cSplit`, `GUIButton:cSystem` | 5 | 5 | 0 |
+| `StargateMenus.MultiplayerServerSelect` | `MultiplayerServerPanel:chPN` | 0 | 0 | 1 |
+| `StargateMenus.NoMatchFoundPage` | `GUIButton:cBackground`, `GUILabel:cDesc`, `GUILabel:cDesc2`, `GUIButton:cOkButton` | 4 | 4 | 0 |
+| `StargateMenus.NotYetImplementedPage` | `GUIButton:cOkBN`, `GUIButton:cQuitBackground`, `GUILabel:cQuitDesc` | 1 | 3 | 0 |
+| `StargateMenus.OptionsEditAppearance` | `CharacterSelectionPanel:cChar`, `CurrentCharPanel:cCurr` | 0 | 2 | 0 |
+| `StargateMenus.OptionsEditAudio` | `moEditBox:cMusic`, `moEditBox:cSoundFX`, `moEditBox:cVoice` | 3 | 3 | 0 |
+| `StargateMenus.OptionsEditProfile` | `RightLockingMenuPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.OptionsEditVideo` | `moComboBox:vpBox` | 1 | 1 | 0 |
+| `StargateMenus.QuestionPage` | `FullSlidingPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.QuickLoadMapTempPage` | `MapSelectionPanel:chPN` | 0 | 0 | 1 |
+| `StargateMenus.RestartGame` | `GUIButton:cAutoLoadBN`, `GUIButton:cLoadGameBN`, `GUIButton:cRestartBN` | 3 | 3 | 0 |
+| `StargateMenus.SaveGameMenu` | `SaveGamePanel:cSavePN` | 1 | 1 | 0 |
+| `StargateMenus.SelectPawnPage` | `CurrentCharPanel:cCurr`, `SelectPawnPanel:cPanel`, `ControllerButton:cSelectBn` | 1 | 3 | 0 |
+| `StargateMenus.SelectTeamPage` | `SelectTeamPanel:cPanel`, `ControllerButton:cSelectBn` | 1 | 2 | 0 |
+| `StargateMenus.ServerSelectionPage` | `ServerSelectionPanel:chPN` | 0 | 1 | 0 |
+| `StargateMenus.SinglePlayerChapterSelect` | `CurrentChapterPanel:cCurr`, `ChapterSelectionPanel:chPN` | 0 | 2 | 0 |
+| `StargateMenus.SinglePlayerInGame` | `GUIButton:cRestartBN`, `GUIButton:cResumeGameBN` | 2 | 2 | 0 |
+| `StargateMenus.SinglePlayerMenu` | `RightLockingMenuPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.SinglePlayerSelectProfile` | `CurrentProfilePanel:cCurr`, `ProfilePanel:cProfile` | 0 | 2 | 0 |
+| `StargateMenus.SinglePlayerTutorial` | `GUIButton:cBackground`, `GUIButton:cNoButton`, `GUILabel:cQuestion`, `GUIButton:cYesButton` | 3 | 4 | 0 |
+| `StargateMenus.SystemLinkMenu` | `GUILabel:cHint`, `GUIButton:cHost`, `GUIButton:cJoin` | 3 | 3 | 0 |
+| `StargateMenus.TextGameInfo` | `GUITitleBar:MyHeader`, `GUIButton:cReturnToGameButton`, `GUIScrollTextBox:caScrolltextBox`, `GUILabel:laScrollTextBoxLabel` | 3 | 4 | 0 |
+| `StargateMenus.VSMainMenu` | `GUILabel:cHint`, `GUIButton:cLoadBN`, `GUIButton:cNewGameBN`, `GUIButton:cQuitButton`, `GUITitleBar:cTitle`, `GUILabel:cVersion` | 5 | 6 | 0 |
+| `StargateMenus.VirtualKeyboardPage` | `VirtualKeyboardPanel:cKeyboardPN` | 1 | 1 | 0 |
+| `StargateMenus.WaitingForPlayers` | `CoopPlayerPanel:myCoop` | 0 | 1 | 0 |
+| `StargateMenus.XBoxLiveFindGameMenu` | `GUIButton:cFind`, `GUILabel:cGamer`, `GUILabel:cStatus` | 3 | 3 | 0 |
+| `StargateMenus.XBoxLiveFriendsMenu` | `GUIButton:cFriends`, `GUILabel:cGamer`, `GUILabel:cStatus` | 3 | 3 | 0 |
+| `StargateMenus.XBoxLiveMenu` | `GUIButton:cFriends`, `GUILabel:cGamer`, `GUIButton:cHost`, `GUIButton:cPlayers`, `GUIButton:cSignInOut`, `GUILabel:cStatus` | 6 | 6 | 0 |
+| `StargateMenus.XBoxLivePlayMenu` | `GUIButton:cFind`, `GUILabel:cGamer`, `GUIButton:cHost`, `GUIButton:cInstant`, `GUILabel:cStatus` | 5 | 5 | 0 |
+| `StargateMenus.XBoxLiveServerSelect` | `XBoxLiveServerSelectionPanel:chPN` | 1 | 0 | 1 |
+| `StargateMenus.XBoxLiveSignOutConfirm` | `GUIButton:cNoButton`, `GUIButton:cQuitBackground`, `GUILabel:cQuitDesc`, `GUIButton:cYesButton` | 4 | 4 | 0 |
+
+| page | widget | class | ancestor | its class |
+|---|---|---|---|---|
+| `StargateMenus.MultiplayerMapSelect` | `chPN` | `MapSelectionPanel` | `StargateMenus.SinglePlayerChapterSelect` | `ChapterSelectionPanel` |
+| `StargateMenus.MultiplayerServerSelect` | `chPN` | `MultiplayerServerPanel` | `StargateMenus.ServerSelectionPage` | `ServerSelectionPanel` |
+| `StargateMenus.QuickLoadMapTempPage` | `chPN` | `MapSelectionPanel` | `StargateMenus.SinglePlayerChapterSelect` | `ChapterSelectionPanel` |
+| `StargateMenus.XBoxLiveServerSelect` | `chPN` | `XBoxLiveServerSelectionPanel` | `StargateMenus.MultiplayerServerSelect` | `MultiplayerServerPanel` |
+
 ### The wiring, and the pages that replace it
 
 | measure | answer |
@@ -471,6 +560,13 @@ On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu
    pages decide which of four captions each page prints, and the class tree names a handler for 65 of them. A
    rebuilt page that drops a flag loses a caption the shipped build drew — a regression no compiler sees — so
    `make ui-menu-flow` is the target that keeps that half honest alongside the flow.
+6. **A page's layout is a data contract too, and the same target gates it.** The 114 component blocks are rows
+   now — widget class, bound property, declared-versus-restated, and the geometry the page states — so a rebuilt
+   page that drops a widget or slides one changes `inventory/menu_flow.csv` and `make ci` says so. The four
+   restatements are the baseline to hold: `chPN` is a `ChapterSelectionPanel` on `SinglePlayerChapterSelect`, a
+   `MapSelectionPanel` on the two pages that restate it, and a `MultiplayerServerPanel` →
+   `XBoxLiveServerSelectionPanel` again on the server-select chain, so a rebuild that loses a restatement draws
+   the wrong panel where the shipped build drew the narrow one.
 
 ## Not measured
 
@@ -479,11 +575,13 @@ On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu
   `BackgroundStyle=ISTY_ScaledBackground` and `StyleName=MainMenu`, and only **nine pages state anything visual
   at all — 16 rows** over 255 top-level properties (16 of 255 is the whole of a page's own visual data):
   `StyleName` on five, `Background` on three, `HintScreen`'s `BackgroundStyle`/`BoundingType`/`ScalingType`/
-  `WinTop` and `NotYetImplementedPage`'s four `Win*` geometry values. The widgets themselves are in **114
-  `Begin Object` component blocks over 46 pages**, which the defaults tree renders but this census only counts;
+  `WinTop` and `NotYetImplementedPage`'s four `Win*` geometry values. The widgets themselves are **114
+  `Begin Object` component blocks over 46 pages**, now a table of the widget class, the property the page binds
+  it to, whether the page declares it or restates an inherited one, and how much of its own geometry it states;
   four pages still carry `SGPageBase`'s placeholder title (`Basic SG GUI Page: Insert Title`) and 9 of the 59
-  pages state no defaults at all. So the *data* behind a page is now counted — whether it draws the layout it
-  names is what still needs a running build.
+  pages state no defaults at all. So the *data* behind a page — its frame, its captions, its components, their
+  classes and their geometry — is counted; whether a page draws the layout that data describes is what still
+  needs a running build.
 * **Why the ten are dead is a *where*, not a *why*.** The corpus names none of them — measured over every
   class body, every emitted defaults block and every menu key in the five shipped `.ini`s — but which editor
   pass cut them, and whether the cut pages' bodies still compile against the classes around them, is a
