@@ -116,7 +116,7 @@ def read_exports(pkg):
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
         if not data or pkg.class_name_of(exp) in SKIP_EXPORTS:
             continue
-        found = ps.find_block(data, pkg, min_props=1)
+        found = ps.find_block(data, pkg, min_props=1, record_class=exp["class"])
         if not found:
             continue
         _count, start, _props = found

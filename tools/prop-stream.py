@@ -182,7 +182,43 @@ def read_block(buf, pkg, want_values=False, limit=2000):
     return props, off, "limit"
 
 
-def find_block(data, pkg, min_props=2, values=True, native_width=None, window=None):
+def padded_block(data, pkg, min_props=2, max_tail=1):
+    """A block that starts at the export's first byte and ends at `None` with a short zero tail.
+
+    A start inside a value is what the exact-end rule exists to refuse, and this is not one: the block begins
+    where the object begins.  What an export can carry after its terminating `None` is the object's own native
+    tail, and in this corpus it is zero bytes: of 194,190 exports, **two** have such a tail, one byte each, and
+    both are `Cubemap`s whose six `Faces` are a tagged block the exact-end rule refused (U30).
+    """
+    try:
+        props, end, reason = read_block(data, pkg, False)
+    except Exception:
+        return None
+    if reason != "None" or len(props) < min_props or not 0 < len(data) - end <= max_tail:
+        return None
+    if any(data[end:]):
+        return None
+    if any(p["name"] == "?" for p in props):
+        return None
+    return len(props), 0, props
+
+
+_PREFIX = None
+
+
+def prefix_record():
+    """`actor-prefix-record.py`, loaded on first use: it imports this module, so the dependency is deferred."""
+    global _PREFIX
+    if _PREFIX is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "actor-prefix-record.py")
+        spec = importlib.util.spec_from_file_location("actor_prefix_record", path)
+        _PREFIX = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_PREFIX)
+    return _PREFIX
+
+
+def find_block(data, pkg, min_props=2, values=True, native_width=None, window=None,
+               preferred=None, pad_tail=0, record_class=None):
     """Locate the property block: the start whose block terminates exactly at the export's end.
 
     UE2 objects do not all begin with their property block -- a class can serialise native data first (a
@@ -204,15 +240,47 @@ def find_block(data, pkg, min_props=2, values=True, native_width=None, window=No
     cannot carry a longer native prefix passes it -- `tools/map-to-t3d.py` does, because a map's actor prefix
     is at most 17 bytes and a `StaticMeshInstance`'s payload is a native record whose only "block" is a
     parse of two tag-shaped bytes inside it.
+
+    `preferred` is a start a positive rule outside this one has already named -- the map side passes the end
+    of the object's prefix record -- and it wins over the property count when the value test accepts it.
+    `record_class` is the export's own class index: when the bytes in front of the block *are* the prefix record
+    (`[class index][the index again][8 x 0xff][4 bytes][0x81]`, `2*w + 13` long), its end is the start, and a
+    caller that hands the export's class in gets that rule without reading the prefix itself.
+    `pad_tail` allows a block at the export's first byte to be followed by that many zero bytes, which is how
+    an object with a native tail after its `None` is read; it is consulted only when no exact-end block passes
+    the value test, so it cannot displace one.
     """
     found = candidates(data, pkg, min_props, window or WINDOW)
     best = max(found, key=lambda c: c[0]) if found else None
+    if preferred is None and record_class is not None:
+        predicted, matched = prefix_record().record(data, record_class)
+        if matched:
+            preferred = predicted
     if not values:
         return best
+    clean = []
     for count, start, props in sorted(found, key=lambda c: (-c[0], c[1])):
         bad, seen = block_bad(props, data, start, native_width)
         if bad == 0 and seen:
-            return count, start, props
+            clean.append((count, start, props))
+    # `preferred` is a start named by a positive rule outside this one -- the map side passes the end of the
+    # object's prefix record (`actor-prefix-record.py`: 2*w + 13), which is where the block starts because the
+    # bytes in front of it are that record.  It is taken only from the blocks the value test already accepts,
+    # so a prefix that names a start the values refuse cannot override them.
+    if preferred:
+        for cand in clean:
+            if cand[1] == preferred:
+                return cand
+    if clean:
+        return clean[0]
+    # Nothing inside the first window decodes: an export may still hold a block at its first byte plus a short
+    # native tail (the two `Cubemap`s), and that is a block whose start is not inside a value.
+    if pad_tail:
+        got = padded_block(data, pkg, min_props, pad_tail)
+        if got:
+            bad, seen = block_bad(got[2], data, got[1], native_width)
+            if bad == 0 and seen:
+                return got
     if window is not None:
         return best
     # Nothing inside the header's window decodes: look one window further before accepting a block the

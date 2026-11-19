@@ -14422,6 +14422,50 @@ and the elements do not), `MapProperty`'s three-byte stub, and the legacy `Strin
 this build.
 
 
+### Execution notes (2026-11-19, the prefix record names the start, and a one-byte tail closes U30)
+
+**The start rule the last note asked for is the prefix.** `prop-stream.find_block` located a block by its
+values, and a block with nothing to check (`seen == 0`) fell through to the property count -- so a parse that
+began inside the actor's own prefix record survived, and the 27 arrays whose declaration names no array were
+what that looked like. The prefix is a record (`[class index][the index again][8 x 0xff][4 bytes][0x81]`,
+`2*w + 13`; `tools/actor-prefix-record.py`), and `find_block` now takes it as `record_class` (the export's own
+class index): when the bytes are the record, its end is the start. It is a *positive* rule, taken only from
+blocks the value test already accepts, so it cannot displace one.
+
+**What moved.** 79,991 of 194,190 exports carry the record; the old start was the record's end on 54,348 and
+**inside the record's tail on 25,499**. Properties **1,174,435 -> 1,148,994** (the property that goes is the
+invented head of the parse), actors **121,394 -> 121,395**, unresolved references stay 0, and the arrays census
+loses **both** `*(not declared)*` rows (16 -> 14) -- `PathNode.Vector` and its 26 siblings, closed.
+
+**U30 is answered, and it was one tail byte.** Both 57-byte `Cubemap` payloads hold `Faces[0..5]`, `Palette`,
+`InternalTime[0..1]` -- nine properties, terminated by `None` at byte 56, with **one zero byte** after it. The
+exact-end rule refused the only real start, so `M07A` #2149 was written from a parse three properties in (the
+`PhysicsVolume`/`TypeEnd` pair and the `Tag` struct row) and `M07B` #2717 was dropped. `padded_block()` reads a
+block at the export's first byte when it ends at `None` with at most one zero byte after it, consulted only
+when no exact-end block passes the values. Two exports of 194,190 have such a tail and both are these;
+`t3d_coverage.csv` carries `record_starts` and `padded_blocks`, and `--check` pins the tail population and its
+two maps (proved by corrupting one row: `FAIL ... padded blocks [('CTF-Abydos', 1), ('M07A', 1), ('M07B', 1)]`).
+
+**The struct residue went with it.** `t3d_structs.csv`: 12 names -> **11, every one a declared
+`UStructProperty` friendly type**, so `RESIDUE_STRUCTS` is empty and the gate is strict. `t3d_arrays.csv`
+16 -> 14 rows, no undeclared element type.
+
+**Eleven map-side targets were re-run** (each ~90 s, no boot; the eight that locate a block now pass the
+export's class to the locator): `map-script`, `action-wiring` (**orphan sequence references 36 -> 0**, actions
+no array names 12 -> **0**, arrays 2,944, element refs 20,228), `event-wiring`, `map-name-values`,
+`action-order`, `action-paths`, `action-reach`, `action-defects`, `action-parameters`, `tag-origin`,
+`map-census`. The Action payloads are the shape that suffers most: an `Actions` array's count reads as a tag
+when the start is inside the record, and every index after it is lost.
+
+Tool (`tools/prop-stream.py`: `preferred`/`record_class`/`pad_tail` and `padded_block`; `tools/map-to-t3d.py`:
+the delegation, the two new coverage columns, the tail gate, three self-tests; the eight map-side tools' one
+argument each) + `inventory/t3d_*.csv` + the regenerated map-side artifacts and pages + `docs/T3D.md` (the new
+section, and the 27-array paragraph corrected in place) + `docs/UNKNOWNS.md` U30 + this note.
+
+**Not in this PR:** the `StaticMeshInstance` payload's own record format (33,509 exports of a packed colour
+table, never a tagged block); the `Level` export's script sequence; the struct decoders beyond
+`Vector`/`Rotator`/`Color`; and the arrays that divide by nothing at all.
+
 ### Execution notes (2026-11-19, the writer takes the reader's locator and every map-side census is re-run)
 
 **One locator, not two.** `tools/map-to-t3d.py`'s `locate()` carried the second one: the start whose block

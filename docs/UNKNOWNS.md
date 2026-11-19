@@ -5116,32 +5116,30 @@ leftover costs the tag and not the object. `inventory/tag_origin.csv` is the art
 `docs/MAP_ACTION_PARAMETERS.md` renders it; the revision itself cannot be named further, because the tag is
 its only trace in the build.
 
-## U30. `M07A`'s `Cubemap` export holds 57 bytes no tag walk explains
+## U30. The two `Cubemap` exports hold a nine-property block with a one-byte tail -- answered
 
-**Measured 2026-11-19.** The map writer's locator is now the reader's (`docs/T3D.md`), and it names **12**
-struct types over the 73 maps where the old locator named 79. Eleven are `UStructProperty` friendly types
-declared in `inventory/class_properties.csv`; the twelfth is the word `Tag`, from one property in one block:
-`M07A`, export **#2149**.
+**Measured 2026-11-19 (the second reading).** Both 57-byte payloads hold a tagged block that terminates at
+`None` on byte **56**, and the export carries **one zero byte after it** (`0x00`). The exact-end rule a start
+had to satisfy therefore refused the only real start.
 
-**The block.** `#2149` is a `Cubemap` export of **57 bytes**. Two starts in its 64-byte prefix walk to the
-export's end -- 32 with two properties, 51 with one -- so the locator takes the longer, and that parse reads a
-16-byte `Struct` named `PhysicsVolume` and a 1-byte `FixedArray` named `TypeEnd`. The struct tag's name index
-lands on the table word `Tag`, which no `UStructProperty` in the corpus declares as a type.
+**The six-fold table is `Faces`, and it is an array.** `6e 03` (238 in `M07A`, `41 04` = 257 in `M07B`) is the
+property name `Faces`; `0x15` is `Object` at the two-byte size class; `95 0n` is the array index 1..5 -- the
+first entry carries none because zero is the implicit default -- and each value is a compact **object**
+reference, not a name index: `M07A`'s six faces are `M07_Water_GenRef_Cube_00..04_temp` plus `_00` again,
+`M07B`'s `M07_Water_Palace_Cube_00..04_temp` plus `_00`. The block then names `Palette` (an `Object`) and
+`InternalTime` twice (an `Int` pair), all three declared by `Texture`, which `Cubemap` sits under -- so the
+payload is a texture's block plus the class's own `Faces` array, nine properties in 56 bytes.
 
-**Why that cannot be the record.** `Engine.Cubemap` (`inventory/class_properties.csv`) declares exactly two
-properties, `CubemapRenderInterface` (`UIntProperty`, 4 bytes) and `Faces` (`UObjectProperty`), and
-`inventory/classes.csv` shows the class as non-native, 4 levels under `Object` with no functions of its own. A
-tagged block holding only those two would be about six bytes; 57 bytes hold neither reading, and no start in
-the prefix produces them.
+**Why the earlier reading could not see it.** `M07A`'s prefix happened to hold a second candidate that ended
+at 57 -- a parse of `PhysicsVolume`(Struct, 16) + `TypeEnd`(FixedArray, 1) at byte 32 -- so the writer took it
+and the struct census carried the word `Tag`; `M07B`'s prefix held no candidate at all, so its export was not
+written. Neither payload's *values* could refuse the `M07A` parse (`TypeEnd` is unshaped and `PhysicsVolume`'s
+tail has nothing checkable), which is why this needed a start rule.
 
-**What the bytes do say.** `M07B`'s export **#2717** is the same class and the same **57 bytes**, and the
-writer locates **no block in it at all** -- not one start in its prefix walks to the export's end. The two
-payloads have the same shape, too: the two-byte word a `6e 03`/`41 04` pair opens, repeated six times, with a
-`95` followed by a byte counting 1 to 5 between consecutive repeats. That is a six-entry table whose entries
-differ by one index, which is what a cube's six faces look like; what it is not is a tagged property list.
-
-**Open.** The entry's grammar: is the repeating pair a name index, an export index or a byte count, and does
-the six-fold table name six textures or six faces of one? `M07B`'s payload is not located at all while
-`M07A`'s is, so the field that decides locatability is one of the few they differ in, and the difference is
-where a reader starts. The census counts the residue rather than dropping it, and `map-to-t3d --check` fails if the row
-grows -- so this is one export, not a class of them.
+**Status.** Answered, in the locator and not in a one-off: `prop-stream.padded_block()` reads a block at the
+export's first byte when it ends at `None` with at most one zero byte after it, `map-to-t3d.locate()` passes
+`pad_tail=1`, and it is consulted only when no exact-end block passes the value test. Both `Cubemap`s now
+read nine properties each, `M07B`'s export is written for the first time (121,394 -> 121,395 actors), the
+`Tag` row is gone from `t3d_structs.csv` (12 names, every one declared), and `inventory/t3d_coverage.csv`'s
+`padded_blocks` column pins the population at these two -- one in `M07A`, one in `M07B` -- which `--check`
+fails on if a third appears or either loses it.
