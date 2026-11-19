@@ -14140,5 +14140,12 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   tests a formula rather than discovering one; and the one-tag verdict in `MIN_PROPERTIES` -- the ledger still
   calls the 313 `single-declared`, and what would settle whether a one-tag block is *complete* for its class is
   the compile loop reading these files back, not another byte test.
+- **The band census over the enlarged tree, and the fractions are all it adds.** `make ui-layout-native` over the
+  new `--emit` tree reads **1,697** blocks over **159** classes (1,339 / 149 before): 147-155 state each axis,
+  **146/149/147/149** of them fractions and **1/1/3/6** pixels -- the same six pixel blocks, so every added block
+  states a fraction on every axis it states. Parent-relative axes x 59 / y 59 / w 47 / h 51 (59 blocks state a
+  `BoundingType`, 51 a `ScalingType`), and the only all-four-pixel block is still `GUIPage`'s `RemoveMeToo`
+  (38, 28, 564x424). The page's prose is corrected in place; the generated block and
+  `inventory/ui_layout_values.csv` are re-rendered by `--write-doc`.
 - **Not in this PR.** The frame control, and any change to `MIN_PROPERTIES` (`class_defaults_per_class.csv`
   keeps its 1,983 blocks / 1,664 fully declared).

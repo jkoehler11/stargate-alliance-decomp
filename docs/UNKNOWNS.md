@@ -4929,7 +4929,7 @@ from; `StargateMenus` classes the emitter refuses fall **32 -> 5**.
 
 **Status.** Answered, both halves: the data level (parent-relative and unclamped, every binding placed) and
 the native composition (`inventory/ui_layout_native.csv`, eight conversions; `inventory/ui_layout_values.csv`,
-1,339 blocks over 149 classes with their bands and their per-axis space, in `docs/systems/UI.md`'s
+1,697 blocks over 159 classes with their bands and their per-axis space, in `docs/systems/UI.md`'s
 `ui-layout` block). The twelve panel blocks are measured as one-tag group-end blocks with their tags, and the policy is
 taken: the emitter publishes eleven of them (2026-11-19 entry above). What a boot could still add is the frame control -- one page rebuilt
 with a `WinTop` changed by 0.05 -- which is a check on the formula, not an unknown. The rows a list draws inside
