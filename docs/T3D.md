@@ -57,7 +57,9 @@ they spawn. The doc now says that instead.
 * Class defaults, above.
 * The palette's tail after the colour table: 17,183,118 bytes on all 33,509 payloads, whose first field is a
   dword in 2..10 and whose remainder is not a tagged block (both measured at the end of this page).
-* The `Level` export's script sequence: the `ACTION_*` actors' parameters are visible, their order is not.
+* ~~The `Level` export's script sequence.~~ **Settled** (2026-11-19): there is no script in any map
+  (`docs/MAP_SCRIPTS.md`), and the export's payload is the level's own actor list (the section at the end of
+  this page). The `ACTION_*` ordering the old bullet pointed at is `docs/MAP_ACTION_ORDER.md`.
 
 ## Regenerating these numbers
 
@@ -168,6 +170,11 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | payloads the palette rule refuses | 0 |
 | native bytes after the palette | 17183118 |
 | tails whose head dword is 2 | **30450** of 33509 |
+| records the tails count | **466858** |
+| tails whose record list closes exactly | **32719** of 33509 |
+| `Level` exports read | **73** |
+| actors the `Level` exports name | **79063** |
+| actors a `Level` names that the writer does not write | **65** |
 
 | struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |
 |---|---:|---:|---:|---:|---|---|
@@ -499,4 +506,34 @@ after it is a native structure whose first field is a small enum; naming its fie
 serialiser in the XBE, not another parse of these bytes. `inventory/t3d_coverage.csv` carries the two counts per
 map (`palette_tails`, `palette_head2`) and `--check` holds them to the payload total.
 
-**Not in this PR.** The `Level` export's script sequence, and the palette tail's fields beyond its head.
+**Not in this PR.** *(Both are in the next section.)*
+
+
+## The level's actor list and the palette's record list (measured 2026-11-19)
+
+Both items this page kept deferring are native records, so both were read from the functions that write them
+rather than from the bytes. `inventory/class_serialize_slots.csv` carries each class's slot-11 `Serialize`
+override; the two that matter here are `Level` `0x00161b70` and `StaticMeshInstance` `0x0024b5f0`.
+
+**The `Level` export is the level's actor list, and there is no script to find.** Its payload is
+`[0x00][u32 count][u32 count][count x compact export index][trailer]`: the leading zero is the empty property
+block's `None` terminator, the two dwords are the same number, and every index lands in the package's own export
+table. Across the 73 maps it names **79,063 actors** and a trailer of **41 to 43 compact values**. The writer
+never emitted this export -- it has no tagged block, so `locate()` correctly refuses it -- and it now reads the
+list and cross-checks itself against it: of the actors a level names, **65 are not in any T3D and all 65 are
+`TerrainInfo`**, whose payload is the terrain's own native record with no property block. That residue is pinned
+by the gate, and the T3D now carries the count in its header (`// Level: N actor(s) ...`).
+
+**The palette's tail is a count of records, not a head plus fields.** `UStaticMeshInstance::Serialize` runs only
+on load, writes the class's instance record (the `TArray<FColor>` that is the colour table, then one dword) and,
+when the package version is at least `0x6e`, a `TArray` of 20-byte records through the array serialiser at
+`0x0024e6e0` -- a compact count, then each member. So the bytes after the colours are
+`[dword][compact count][count records]`, each record ending with the dword 1: **466,858 records** over the 33,509
+payloads, and the frame spends the tail exactly on all of them. The record body's own field set is not pinned:
+97.6% of payloads (**32,719**) parse as a compact value and a length-prefixed byte blob, and the rest close on the
+frame but not on that body shape, so the body grammar is counted and the frame is what the gate holds.
+
+**Files.** `tools/map-to-t3d.py` (`level_record`, `smi_tail`, the writer's `Level` branch and its header line,
+five columns on the coverage census, `LEVEL_UNWRITTEN`, the gates and six synthetic cases),
+`inventory/t3d_coverage.csv` (five new columns, 73 rows regenerated), the writer's own T3D under `$WORK`, and
+this page's generated block.

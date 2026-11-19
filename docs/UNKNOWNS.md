@@ -5143,3 +5143,18 @@ read nine properties each, `M07B`'s export is written for the first time (121,39
 `Tag` row is gone from `t3d_structs.csv` (12 names, every one declared), and `inventory/t3d_coverage.csv`'s
 `padded_blocks` column pins the population at these two -- one in `M07A`, one in `M07B` -- which `--check`
 fails on if a third appears or either loses it.
+
+## U31 -- a `StaticMeshInstance` records own fields
+
+## U31 -- a `StaticMeshInstance` record's own fields
+
+**Question.** The palette's tail is `[dword][compact count][count records]` (33,509 payloads, 466,858 records,
+each ending on the dword 1) and that frame is measured, but a record's *body* is not: 32,719 of 33,509 payloads
+parse as a compact value and a length-prefixed byte blob, and the other 790 close on the frame but not on that
+body shape.
+
+**What would settle it.** The record is `UStaticMeshInstance`'s 20-byte member: `0x0024e6e0` preloads
+`count * 0x14` and serialises members at +0, +4 and +0x10, then a byte array and a dword. The body's field
+widths are therefore `FArchive::operator<<` overloads, not a payload convention -- read the three overloads the
+archive vtable points at for this class and the 790 payloads become a second measurement rather than a residue.
+Reading more payloads by hand is the route that has already failed on this page.
