@@ -299,6 +299,65 @@ component,XBoxLiveSignOutConfirm,StargateMenus,own,cQuitBackground,,GUIButton,,1
 component,XBoxLiveSignOutConfirm,StargateMenus,own,cYesButton,,GUIButton,,1,,props=9 geometry=4/4
 component,XBoxLiveSignOutConfirm,StargateMenus,own,cNoButton,,GUIButton,,1,,props=10 geometry=4/4
 component,XBoxLiveSignOutConfirm,StargateMenus,own,cQuitDesc,,GUILabel,,1,,props=9 geometry=4/4
+subcomponent,ChapterSelectionPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,CharacterSelectionPanel,StargateMenus,none,,,,2,1,,used by 2 page(s); no emitted defaults block
+subcomponent,ControllerButton,GUI,class,glTheCaption,,GUILabel,2,1,,"props=6 geometry=0/4, geometry from GUI.GUILabel"
+subcomponent,CoopPlayerPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,CurrentChapterPanel,StargateMenus,class,cTempLB,,GUILabel,2,1,,props=7 geometry=4/4
+subcomponent,CurrentChapterPanel,StargateMenus,class,cTempLB2,,GUILabel,2,1,,props=7 geometry=4/4
+subcomponent,CurrentChapterPanel,StargateMenus,class,cPic,,GUIImage,2,1,,props=8 geometry=4/4
+subcomponent,CurrentCharPanel,StargateMenus,class,cTempLB,,GUILabel,2,1,,props=7 geometry=4/4
+subcomponent,CurrentCharPanel,StargateMenus,class,cPic,,GUIImage,2,1,,props=8 geometry=4/4
+subcomponent,CurrentGameModePanel,StargateMenus,class,cTempLB,,GUILabel,2,1,,props=7 geometry=4/4
+subcomponent,CurrentGameModePanel,StargateMenus,class,cPic,,GUIImage,2,1,,props=8 geometry=4/4
+subcomponent,CurrentProfilePanel,StargateMenus,class,cTempLB,,GUILabel,2,1,,props=7 geometry=4/4
+subcomponent,CurrentProfilePanel,StargateMenus,class,cPic,,GUIImage,2,1,,props=8 geometry=4/4
+subcomponent,FullSlidingPanel,StargateMenus,none,,,,2,1,,used by 3 page(s); no emitted defaults block
+subcomponent,GUIButton,GUI,leaf,,,,2,1,,used by 43 page(s); its block declares no children
+subcomponent,GUILabel,GUI,leaf,,,,2,1,,used by 24 page(s); its block declares no children
+subcomponent,GUIListBox,StargateMenus,none,,,,2,1,,used by 5 page(s); no emitted defaults block
+subcomponent,GUIPanel,GUI,leaf,,,,2,1,,used by 1 page(s); its block declares no children
+subcomponent,GUIScrollTextBox,GUI,class,TheText,,GUIScrollText,2,1,,"props=4 geometry=0/4, geometry from GUI.GUIComponent"
+subcomponent,GUIScrollTextBox,GUI,class,TheScrollbar,,GUIVertScrollBar,2,1,,"props=2 geometry=0/4, geometry from GUI.GUIVertScrollBar"
+subcomponent,GUIVertScrollBar,GUI,class,ScrollZone,,GUIVertScrollZone,3,1,,"props=0 geometry=0/4, geometry from GUI.GUIVertScrollZone"
+subcomponent,GUIVertScrollBar,GUI,class,UpBut,,GUIVertScrollButton,3,1,,"props=3 geometry=0/4, geometry from GUI.GUIButton"
+subcomponent,GUIVertScrollBar,GUI,class,DownBut,,GUIVertScrollButton,3,1,,"props=2 geometry=0/4, geometry from GUI.GUIButton"
+subcomponent,GUIVertScrollBar,GUI,class,Grip,,GUIVertGripButton,3,1,,"props=2 geometry=0/4, geometry from GUI.GUIVertGripButton"
+subcomponent,GUITitleBar,GUI,leaf,,,,2,1,,used by 2 page(s); its block declares no children
+subcomponent,GameModeSelectionPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,InGameInfoPanel,StargateMenus,class,MyTabs,,GUITabControl,2,1,,props=6 geometry=4/4
+subcomponent,MapSelectionPanel,StargateMenus,class,cFilter,,GUIEditBox,2,1,,props=10 geometry=4/4
+subcomponent,MapSelectionPanel,StargateMenus,class,cFilterLB,,GUILabel,2,1,,props=8 geometry=4/4
+subcomponent,MapSelectionPanel,StargateMenus,class,chList,,MapFileList,2,1,,props=4 geometry=4/4
+subcomponent,MultiplayerServerPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,ProfilePanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,RightLockingMenuPanel,StargateMenus,none,,,,2,1,,used by 3 page(s); no emitted defaults block
+subcomponent,SGLabel,GUI,leaf,,,,2,1,,used by 1 page(s); its block declares no children
+subcomponent,SGScrollTextBox,GUI,class,TheScrollbar,,SGVertScrollBar,2,1,,"props=0 geometry=0/4, geometry from GUI.SGVertScrollBar"
+subcomponent,SaveGamePanel,StargateMenus,class,sList,,SavedGameList,2,1,,"props=0 geometry=0/4, geometry from GUI.GUIComponent"
+subcomponent,SelectPawnPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,SelectTeamPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,ServerSelectionPanel,StargateMenus,class,cServer,,ServerSelectionListBox,2,1,,props=4 geometry=4/4
+subcomponent,ServerSelectionPanel,StargateMenus,class,cLabel_GameType,,SGLabel,2,1,,props=8 geometry=4/4
+subcomponent,ServerSelectionPanel,StargateMenus,class,cLabel_MapName,,SGLabel,2,1,,props=8 geometry=4/4
+subcomponent,ServerSelectionPanel,StargateMenus,class,cLabel_NumPlayer,,SGLabel,2,1,,props=8 geometry=4/4
+subcomponent,VirtualKeyboardPanel,StargateMenus,class,KeyboardBackground,,GUIImage,2,1,,"props=3 geometry=0/4, geometry from GUI.GUIComponent"
+subcomponent,VirtualKeyboardPanel,StargateMenus,class,TextEditBox,,GUIEditBox,2,1,,props=11 geometry=4/4
+subcomponent,XBoxLiveServerSelectionPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
+subcomponent,moComboBox,GUI,leaf,,,,2,1,,used by 1 page(s); its block declares no children
+subcomponent,moEditBox,GUI,leaf,,,,2,1,,used by 3 page(s); its block declares no children
+layout_gap,ChapterSelectionPanel,StargateMenus,defaults,122,,type-contradiction,,1,,1 of its 122 declared properties read before the block start is refused
+layout_gap,CharacterSelectionPanel,StargateMenus,defaults,122,,type-contradiction,,1,,1 of its 122 declared properties read before the block start is refused
+layout_gap,CoopPlayerPanel,StargateMenus,defaults,128,,type-contradiction,,1,,1 of its 128 declared properties read before the block start is refused
+layout_gap,FullSlidingPanel,StargateMenus,defaults,124,,single-declared,,1,,1 of its 124 declared properties read before the block start is refused
+layout_gap,GUIListBox,GUI,defaults,122,,single-declared,,1,,1 of its 122 declared properties read before the block start is refused
+layout_gap,GameModeSelectionPanel,StargateMenus,defaults,121,,type-contradiction,,1,,1 of its 121 declared properties read before the block start is refused
+layout_gap,MultiplayerServerPanel,StargateMenus,defaults,129,,empty-block,,1,,45 of its 129 declared properties read before the block start is refused
+layout_gap,ProfilePanel,StargateMenus,defaults,121,,type-contradiction,,1,,1 of its 121 declared properties read before the block start is refused
+layout_gap,RightLockingMenuPanel,StargateMenus,defaults,124,,type-contradiction,,1,,1 of its 124 declared properties read before the block start is refused
+layout_gap,SelectPawnPanel,StargateMenus,defaults,122,,type-contradiction,,1,,1 of its 122 declared properties read before the block start is refused
+layout_gap,SelectTeamPanel,StargateMenus,defaults,123,,type-contradiction,,1,,1 of its 123 declared properties read before the block start is refused
+layout_gap,XBoxLiveServerSelectionPanel,StargateMenus,defaults,129,,type-contradiction,,1,,1 of its 129 declared properties read before the block start is refused
 override,CreateNewProfile,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
 override,CreateNewProfile,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_Y
 override,HintScreen,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
@@ -532,4 +591,4 @@ page,TextGameInfo,StargateMenus,page,StargateMenus.TextGameInfo,StargateMenus,un
 page,VSMainMenu,StargateMenus,page,StargateMenus.VSMainMenu,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,VirtualKeyboardPage,StargateMenus,page,StargateMenus.VirtualKeyboardPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,XBoxLiveBackDrop,StargateMenus,page,StargateMenus.XBoxLiveBackDrop,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
-census,corpus,,,,,,,1,,packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10|defaults_tree=1|hint_pages=30|no_hint_pages=29|hints_on=67|hint_own=35|hint_inherited=32|page_blocks=50|page_top_props=255|page_components=114|pages_with_components=46|component_pages=46|component_own=110|component_restated=4|component_classes=31|component_geom_full=83|component_geom_none=25|component_geom_from_class=25|component_geom_nowhere=0|component_unresolved=0|titles_own=39|placeholder_titles=4|draw_rows=16|draw_pages=9|url_pages=1|override_pages=34|init_overrides=33|init_super=33|init_nosuper=0|handler_pages=18|hint_handled=65|hint_no_handler=2
+census,corpus,,,,,,,1,,"packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10|defaults_tree=1|hint_pages=30|no_hint_pages=29|hints_on=67|hint_own=35|hint_inherited=32|page_blocks=50|page_top_props=255|page_components=114|pages_with_components=46|component_pages=46|component_own=110|component_restated=4|component_classes=31|component_geom_full=83|component_geom_none=25|component_geom_from_class=25|component_geom_nowhere=0|component_unresolved=0|sub_classes=31|sub_uses=114|sub_with_layout=12|sub_no_layout=12|sub_leaf=7|sub_multi_use=12|sub_multi_place=5|sub_children=28|sub_depth2=24|sub_depth3=4|sub_second_level=1|sub_child_classes=14|sub_geom_full=18|sub_geom_none=10|sub_geom_partial=0|sub_geom_from_class=10|sub_geom_nowhere=0|sub_outside_unit=0|sub_overshoot=13|sub_base_keys=WinWidth,WinHeight|gap_classes=12|gap_declared=1487|titles_own=39|placeholder_titles=4|draw_rows=16|draw_pages=9|url_pages=1|override_pages=34|init_overrides=33|init_super=33|init_nosuper=0|handler_pages=18|hint_handled=65|hint_no_handler=2"

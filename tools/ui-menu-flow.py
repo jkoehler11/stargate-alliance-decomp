@@ -591,6 +591,7 @@ def read_children(tree, pkgname, cls):
                 p = TOP_PROP.match(line)
                 if p and not p.group("prop").startswith("//"):
                     cur["props"].append(p.group("prop"))
+                    cur.setdefault("values", {})[p.group("prop")] = p.group("val")
     return kids
 
 
@@ -684,6 +685,154 @@ def read_components(tree, family, supers, by_name, per_pkg):
             rows.append(dict(kind="component", name=cls, package=pkgname, form=form, target=c["name"],
                              verdict=c["cls"], platform="", note=note))
     stats["classes"] = len(classes)
+    return rows, stats
+
+
+def box_of(child):
+    """A block's four `Win*` values as a tuple, or `None` when it states fewer than four."""
+    vals = child.get("values") or {}
+    try:
+        return tuple(float(vals[k]) for k in WIN_KEYS)
+    except (KeyError, ValueError):
+        return None
+
+
+def class_pages(tree, family):
+    """{widget class: [(page, the page-side rectangle the page places it at)]} for a page's components.
+
+    The rectangle is the *page's* statement of where the component goes; it is carried because a class used by
+    several pages is the argument for what a child's `Win*` is relative to (one defaults block per class, so the
+    children's numbers cannot encode a screen position when the instances sit in different places).
+    """
+    pages_of = collections.defaultdict(list)
+    for cls, pkgname in sorted(family.items()):
+        for c in read_children(tree, pkgname, cls):
+            pages_of[c["cls"]].append(("%s.%s" % (pkgname, cls), box_of(c)))
+    return pages_of
+
+
+def layout_gaps(classes):
+    """{class: row} for the component classes whose defaults *block* the reader refuses.
+
+    A widget class the defaults tree does not carry is not therefore a panel built in script: the package holds
+    its block (`inventory/class_defaults_misses.csv` names the declared property count and the reason the
+    reader stops), and the emitted tree has no file because the decode refused the block's first tag. The join
+    is against that committed artifact so the doc says *why* the layout is missing, not just that it is.
+    """
+    path = os.path.join(ROOT, "inventory", "class_defaults_misses.csv")
+    out = {}
+    if not os.path.isfile(path):
+        return out
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if r["class"] in classes:
+                out[r["class"]] = r
+    return out
+
+
+def read_subcomponents(tree, family, supers, by_name, _cache=None):
+    """What a page's component declares *inside itself*: the panel classes' own nested layout.
+
+    A page's `Begin Object` block names a widget class and, most of the time, states only that class's
+    rectangle -- the contents are in the class's own defaults. `MapSelectionPanel` declares a filter box, its
+    label and the map list, so a page that binds `chPN=MapSelectionPanel'cPN'` has a three-row layout that the
+    page's block does not contain. This is the second read: for every widget class a page names, the class's own
+    blocks become `depth=2` rows, and a child class that declares blocks of its own (`GUIVertScrollBar` names
+    its zone and two buttons) is followed to `depth=3`, so the walk is a tree rather than one level.
+
+    A widget class with no emitted file is reported as `form="none"` and joined to the defaults reader's own
+    verdict by `layout_gaps` -- its block is in the package; the decode refused it.
+    """
+    if _cache is None:
+        _cache = {}
+    pages_of = class_pages(tree, family)
+    rows, stats, child_classes = [], collections.Counter(), set()
+    max_depth = 6
+    for cls in sorted(pages_of):
+        uses = pages_of[cls]
+        users = [u for u, _box in uses]
+        home = class_home(tree, cls, users[0].split(".")[0], by_name)
+        stats["classes"] += 1
+        stats["uses"] += len(users)
+        boxes = {b for _u, b in uses if b}
+        if len(users) > 1:
+            stats["multi_use"] += 1
+            if len(boxes) > 1:
+                stats["multi_place"] += 1
+        stack, seen = [(cls, home, 2)], {(cls, home)}
+        first = True
+        while stack:
+            owner, opkg, level = stack.pop(0)
+            kids = read_children(tree, opkg, owner)
+            if first:
+                first = False
+                if kids:
+                    stats["with_layout"] += 1
+                elif os.path.isfile(os.path.join(tree, opkg, owner + ".defaultproperties.uc")):
+                    stats["leaf"] += 1                       # a widget: its block states no children
+                    rows.append(dict(kind="subcomponent", name=cls, package=home, form="leaf", target="",
+                                     verdict="", depth="2", platform="",
+                                     note="used by %d page(s); its block declares no children" % len(users)))
+                    continue
+                else:
+                    stats["no_layout"] += 1                  # no emitted block: the block exists, refused
+                    rows.append(dict(kind="subcomponent", name=cls, package=home, form="none", target="",
+                                     verdict="", depth="2", platform="",
+                                     note="used by %d page(s); no emitted defaults block" % len(users)))
+                    continue
+            else:
+                stats["second_level"] += 1
+            for k in kids:
+                child_classes.add(k["cls"])
+                stats["children"] += 1
+                stats["depth_%d" % level] += 1
+                geo = [p for p in WIN_KEYS if p in k["props"]]
+                note = "props=%d geometry=%d/4" % (len(k["props"]), len(geo))
+                if len(geo) == 4:
+                    stats["geom_full"] += 1
+                    try:
+                        box = tuple(float(k.get("values", {})[p]) for p in WIN_KEYS)
+                    except ValueError:
+                        box = ()
+                    if box and any(v < 0 or v > 1 for v in box):
+                        stats["outside_unit"] += 1
+                    if box and (box[0] < 0 or box[1] < 0 or box[0] + box[2] > 1 or box[1] + box[3] > 1):
+                        stats["overshoot"] += 1
+                elif not geo:
+                    stats["geom_none"] += 1
+                    src = class_geometry(tree, class_home(tree, k["cls"], opkg, by_name), k["cls"],
+                                         supers, by_name, _cache)
+                    if src:
+                        stats["geom_from_class"] += 1
+                        note += ", geometry from " + src
+                    else:
+                        stats["geom_nowhere"] += 1
+                else:
+                    stats["geom_partial"] += 1
+                rows.append(dict(kind="subcomponent", name=owner, package=opkg, form="class",
+                                 target=k["name"], verdict=k["cls"], depth=str(level), platform="",
+                                 note=note))
+                home2 = class_home(tree, k["cls"], opkg, by_name)
+                if level + 1 <= max_depth and (k["cls"], home2) not in seen \
+                        and read_children(tree, home2, k["cls"]):
+                    seen.add((k["cls"], home2))
+                    stack.append((k["cls"], home2, level + 1))
+    stats["child_classes"] = len(child_classes)
+    base_home = class_home(tree, "GUIComponent", "GUI", by_name)
+    base_blk, _ = read_default_block(tree, base_home, "GUIComponent")
+    stats["base_keys"] = ",".join(k for k in WIN_KEYS if k in base_blk)
+    for cls in sorted(pages_of):
+        if cls not in {r["name"] for r in rows if r["form"] == "none"}:
+            continue
+        gap = layout_gaps({cls}).get(cls)
+        if gap:
+            stats["gap_joined"] += 1
+            stats["gap_declared"] += int(gap.get("declared_properties") or 0)
+            rows.append(dict(kind="layout_gap", name=cls, package=gap["package"], form="defaults",
+                             target=gap.get("declared_properties", ""), verdict=gap.get("reason", ""),
+                             depth="", platform="",
+                             note="%s of its %s declared properties read before the block start is refused"
+                                  % (gap.get("best_properties", "?"), gap.get("declared_properties", "?"))))
     return rows, stats
 
 
@@ -857,6 +1006,11 @@ def sweep(dump, defaults_tree=""):
     comp_rows, comp_stats = (read_components(defaults_tree, family, supers, by_name, per_pkg)
                              if defaults_tree else ([], collections.Counter()))
     rows.extend(comp_rows)
+    # The page's *nested* layout: what each of those components declares inside itself, which is the panel
+    # class's own defaults rather than the page's block.
+    sub_rows, sub_stats = (read_subcomponents(defaults_tree, family, supers, by_name)
+                           if defaults_tree else ([], collections.Counter()))
+    rows.extend(sub_rows)
     codes_by_class = {}
     for (pkgname, cls), text in sorted(text_of.items()):
         if family.get(cls) == pkgname:
@@ -896,11 +1050,13 @@ def sweep(dump, defaults_tree=""):
             verdict, tpkg, tcls, note = resolve(r["target"], per_pkg, by_name)
             if r["kind"] == "hud_swap" and "HUD" not in tcls.upper():
                 continue
-        elif r["kind"] in ("hint", "caption", "draw", "override", "hint_handler", "component"):
+        elif r["kind"] in ("hint", "caption", "draw", "override", "hint_handler", "component",
+                           "subcomponent", "layout_gap"):
             verdict, tpkg, tcls, note = (r.get("verdict") or "", "", "", "")
         else:
             verdict, tpkg, tcls, note = "", "", "", ""
-        r.update(target_package=tpkg, verdict=verdict, depth="", sites=1, note=(r.get("note") or note))
+        r.update(target_package=tpkg, verdict=verdict, depth=r.get("depth") or "", sites=1,
+                 note=(r.get("note") or note))
         out.append(r)
     for r in ini_rows:
         r = dict(r)
@@ -999,6 +1155,28 @@ def sweep(dump, defaults_tree=""):
                       "component_geom_from_class=%d" % comp_stats.get("geom_from_class", 0),
                       "component_geom_nowhere=%d" % comp_stats.get("geom_nowhere", 0),
                       "component_unresolved=%d" % comp_stats.get("unresolved", 0),
+                      "sub_classes=%d" % sub_stats.get("classes", 0),
+                      "sub_uses=%d" % sub_stats.get("uses", 0),
+                      "sub_with_layout=%d" % sub_stats.get("with_layout", 0),
+                      "sub_no_layout=%d" % sub_stats.get("no_layout", 0),
+                      "sub_leaf=%d" % sub_stats.get("leaf", 0),
+                      "sub_multi_use=%d" % sub_stats.get("multi_use", 0),
+                      "sub_multi_place=%d" % sub_stats.get("multi_place", 0),
+                      "sub_children=%d" % sub_stats.get("children", 0),
+                      "sub_depth2=%d" % sub_stats.get("depth_2", 0),
+                      "sub_depth3=%d" % sub_stats.get("depth_3", 0),
+                      "sub_second_level=%d" % sub_stats.get("second_level", 0),
+                      "sub_child_classes=%d" % sub_stats.get("child_classes", 0),
+                      "sub_geom_full=%d" % sub_stats.get("geom_full", 0),
+                      "sub_geom_none=%d" % sub_stats.get("geom_none", 0),
+                      "sub_geom_partial=%d" % sub_stats.get("geom_partial", 0),
+                      "sub_geom_from_class=%d" % sub_stats.get("geom_from_class", 0),
+                      "sub_geom_nowhere=%d" % sub_stats.get("geom_nowhere", 0),
+                      "sub_outside_unit=%d" % sub_stats.get("outside_unit", 0),
+                      "sub_overshoot=%d" % sub_stats.get("overshoot", 0),
+                      "sub_base_keys=%s" % (sub_stats.get("base_keys") or "-"),
+                      "gap_classes=%d" % sub_stats.get("gap_joined", 0),
+                      "gap_declared=%d" % sub_stats.get("gap_declared", 0),
                       "titles_own=%d" % page_stats.get("titles_own", 0),
                       "placeholder_titles=%d" % page_stats.get("placeholder_titles", 0),
                       "draw_rows=%d" % page_stats.get("draw_rows", 0),
@@ -1075,6 +1253,7 @@ def components_block(s, rows):
     out = ["### The widgets a page declares", ""]
     if not comps:
         out.append("No `--defaults` tree was read, so the `Begin Object` blocks are uncounted in this run.")
+        out.extend(subcomponents_block(s, rows))
         return out
     out.append("A page's `Begin Object` blocks are its layout: each block names a widget class and the property "
                "the page binds it to, and the four `Win*` values a block states are that widget's place on the "
@@ -1117,6 +1296,96 @@ def components_block(s, rows):
             out.append("| `%s.%s` | `%s` | `%s` | `%s` | `%s` |" %
                        (r["package"], r["name"], r["target"], r["verdict"],
                         m.group("where") if m else "?", m.group("cls") if m else "?"))
+    out.extend(subcomponents_block(s, rows))
+    return out
+
+
+def subcomponents_block(s, rows):
+    """The nested half of the layout census: what each component's *own class* declares inside itself.
+
+    A page's block places a panel; the panel's class states what is inside it. The two reads are separate files
+    in the same tree, so the second one is the panel classes' own defaults -- and a class the decode refuses has
+    no file at all, which is a gap in the reader rather than a panel the script builds.
+    """
+    subs = [r for r in rows if r["kind"] == "subcomponent"]
+    gaps = [r for r in rows if r["kind"] == "layout_gap"]
+    out = ["", "### What a panel declares inside itself", ""]
+    if not subs:
+        out.append("No `--defaults` tree was read, so the panels' own contents are uncounted in this run.")
+        return out
+    out.append("A page's block places a panel; what the panel *contains* is its own class's defaults, in a "
+               "second file of the same tree. So the layout is a tree and not a list: %s of the %s widget "
+               "classes a page names declare blocks of their own, %s are widgets whose block declares no "
+               "children, and a child class can declare blocks too (`GUIVertScrollBar` states its zone and "
+               "two buttons, which is the third level)." %
+               (s.get("sub_with_layout", "0"), s.get("sub_classes", "0"), s.get("sub_leaf", "0")))
+    out.append("")
+    out.append("| measure | answer |")
+    out.append("|---|---|")
+    out.append("| widget classes a page names | **%s**, used by **%s** component blocks |" %
+               (s.get("sub_classes", "0"), s.get("sub_uses", "0")))
+    out.append("| ... declaring their own children | **%s** |" % s.get("sub_with_layout", "0"))
+    out.append("| ... widgets, whose block declares no children | **%s** |" % s.get("sub_leaf", "0"))
+    out.append("| ... with no emitted block at all | **%s** |" % s.get("sub_no_layout", "0"))
+    out.append("| nested children | **%s** over **%s** classes (depth 2 **%s**, depth 3 **%s**) |" %
+               (s.get("sub_children", "0"), s.get("sub_child_classes", "0"), s.get("sub_depth2", "0"),
+                s.get("sub_depth3", "0")))
+    out.append("| ... stating all four `Win*` values | **%s** |" % s.get("sub_geom_full", "0"))
+    out.append("| ... stating none | **%s**, %s resolved on the child's own class chain |" %
+               (s.get("sub_geom_none", "0"),
+                "all" if s.get("sub_geom_none") == s.get("sub_geom_from_class") else
+                s.get("sub_geom_from_class", "0")))
+    out.append("| ... a rectangle that runs past the unit square | **%s** of the %s that state one |" %
+               (s.get("sub_overshoot", "0"), s.get("sub_geom_full", "0")))
+    out.append("")
+    by_owner = collections.OrderedDict()
+    for r in sorted(subs, key=lambda r: (r["package"], r["name"], r["depth"], r["target"])):
+        by_owner.setdefault((r["package"], r["name"]), []).append(r)
+    out.append("| panel class | package | children | child classes | stating a rectangle |")
+    out.append("|---|---|---:|---:|---:|")
+    for (pkg, cls), got in by_owner.items():
+        kids = [r for r in got if r["form"] == "class"]
+        if not kids:
+            continue
+        full = sum(1 for r in kids if "geometry=4/4" in r["note"])
+        out.append("| `%s` | %s | %d | %d | %d |" %
+                   (cls, pkg, len(kids), len({r["verdict"] for r in kids}), full))
+    leaves = sorted({(r["package"], r["name"]) for r in subs if r["form"] == "leaf"})
+    if leaves:
+        out.append("")
+        out.append("The %d classes that declare no children are widgets, not empty panels: %s. Their block "
+                   "states properties (`Caption`, `StyleName`, the rectangle), never a child." %
+                   (len(leaves), ", ".join("`%s`" % n for p, n in leaves)))
+    if gaps:
+        out.append("")
+        out.append("The panels the tree does not carry are not script-built: each has a defaults *block* in its "
+                   "package (121-129 declared properties) that the reader refuses at the start, so the emitted "
+                   "tree has no file for it and its contents stay unknown. `inventory/class_defaults_misses.csv` "
+                   "holds the reader's own verdict, joined here per class.")
+        out.append("")
+        out.append("| widget class | package | declared properties | reader verdict | read before refusing |")
+        out.append("|---|---|---:|---|---:|")
+        for r in sorted(gaps, key=lambda r: (r["package"], r["name"])):
+            m = re.search(r"^(\S+) of its", r["note"])
+            out.append("| `%s` | %s | %s | `%s` | %s |" %
+                       (r["name"], r["package"], r["target"], r["verdict"], m.group(1) if m else "?"))
+        out.append("")
+        keys = [k for k in s.get("sub_base_keys", "-").split(",") if k.startswith("Win")]
+        out.append("**What the `Win*` numbers are relative to.** The base `GUIComponent` states %s of the four "
+                   "(%s) and a panel class states none, so every panel *is* its container: the two values the "
+                   "base does state make its rectangle its parent's whole box. Two measurements then say the "
+                   "numbers are read against that box and not against the screen. First, %s of the %s children "
+                   "that state a rectangle run past the unit square on one axis — nothing clamps them, so the "
+                   "range is not a screen fraction the engine keeps inside the display. Second, %s widget "
+                   "classes are used by more than one page and %s of those are placed at more than one page-side "
+                   "rectangle, while the children's numbers are one set — a class has one defaults "
+                   "block, so a child's `Win*` cannot be a screen position, only an offset inside whichever "
+                   "instance box the parent draws. The screen position is the composed product down the tree, "
+                   "which is what `GUIComponent`'s own native body computes and what `docs/UNKNOWNS.md` U27 "
+                   "still wants decoded."
+                   % ("**%d**" % len(keys) if keys else "none", ", ".join("`%s`" % k for k in keys) or "none",
+                      s.get("sub_overshoot", "0"), s.get("sub_geom_full", "0"),
+                      s.get("sub_multi_use", "0"), s.get("sub_multi_place", "0")))
     return out
 
 
@@ -1650,9 +1919,45 @@ def selftest():
     assert restated[0]["name"] == "KidPage" and restated[0]["target"] == "ButtonA", restated
     assert "restates StargateMenus.MidPage whose class is GUIButton" in restated[0]["note"], restated[0]
     assert "geometry from GUI.GUIButton" in restated[0]["note"], restated[0]
+    # --- the nested read: a component's own class declares what is inside it, one level deeper than the page
+    with tempfile.TemporaryDirectory() as td:
+        for pkg in ("StargateMenus", "GUI"):
+            os.makedirs(os.path.join(td, pkg))
+        with open(os.path.join(td, "GUI", "GUIVertScrollBar.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write("defaultproperties\n{\n\tWinWidth=16.0\n\tBegin Object Class=GUIVertScrollZone Name=ScrollZone\n"
+                     "\tEnd Object\n\tBegin Object Class=GUIVertScrollButton Name=UpBut\n\tEnd Object\n}\n")
+        with open(os.path.join(td, "StargateMenus", "MapPanel.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write("defaultproperties\n{\n\tBegin Object Class=GUIEditBox Name=cFilter\n\t\tWinTop=0.9\n"
+                     "\t\tWinLeft=0.2\n\t\tWinWidth=0.5\n\t\tWinHeight=0.1\n\tEnd Object\n"
+                     "\tBegin Object Class=GUIVertScrollBar Name=cBar\n\tEnd Object\n}\n")
+        with open(os.path.join(td, "StargateMenus", "KidPage.defaultproperties.uc"), "w", encoding="latin-1") as fh:
+            fh.write("defaultproperties\n{\n\tBegin Object Class=MapPanel Name=cPN\n\tEnd Object\n"
+                     "\tBegin Object Class=ChapterPanel Name=cCh\n\tEnd Object\n}\n")
+        supers3 = {"MapPanel": "GUIPanel", "ChapterPanel": "GUIPanel", "KidPage": "SGPageBase"}
+        by3 = {"GUIVertScrollBar": ["GUI"], "MapPanel": ["StargateMenus"], "ChapterPanel": ["StargateMenus"],
+               "KidPage": ["StargateMenus"]}
+        sub_rows, sub_stats = read_subcomponents(td, {"KidPage": "StargateMenus"}, supers3, by3)
+        sub_text = render(fake[:1] + fake[1:2] + [dict(kind=r["kind"], name=r["name"], package=r["package"],
+                                                       form=r["form"], target=r["target"], verdict=r["verdict"],
+                                                       depth=r.get("depth", ""), note=r["note"],
+                                                       target_package="", sites="", platform="")
+                                                   for r in sub_rows])
+    assert sub_stats["classes"] == 2 and sub_stats["uses"] == 2, sub_stats
+    assert sub_stats["with_layout"] == 1 and sub_stats["no_layout"] == 1, sub_stats
+    assert sub_stats["depth_2"] == 2 and sub_stats["depth_3"] == 2, sub_stats
+    assert sub_stats["second_level"] == 1 and sub_stats["child_classes"] == 4, sub_stats
+    assert sub_stats["geom_full"] == 1 and sub_stats["geom_from_class"] == 1, sub_stats
+    assert sub_stats["overshoot"] == 1, sub_stats          # the synthetic rectangle ends at 1.0 and one past it
+    assert sorted((r["name"], r["target"], r["depth"]) for r in sub_rows if r["form"] == "class") == \
+        [("GUIVertScrollBar", "ScrollZone", "3"), ("GUIVertScrollBar", "UpBut", "3"),
+         ("MapPanel", "cBar", "2"), ("MapPanel", "cFilter", "2")], sub_rows
+    assert [r["name"] for r in sub_rows if r["form"] == "none"] == ["ChapterPanel"], sub_rows
+    assert "geometry from GUI.GUIVertScrollBar" in [r["note"] for r in sub_rows
+                                                    if r["target"] == "cBar"][0], sub_rows
+    assert "What a panel declares inside itself" in sub_text, sub_text
     assert "The widgets a page declares" in render(fake), "the layout section renders without rows"
-    print("ok   menu-flow: 53 assertions over the parsers, the resolver, the closure, the three name readers, "
-          "the page-level defaults and the component blocks")
+    print("ok   menu-flow: 63 assertions over the parsers, the resolver, the closure, the three name readers, "
+          "the page-level defaults, the component blocks and the panels' own nested layout")
 
 
 
