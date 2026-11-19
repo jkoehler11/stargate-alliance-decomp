@@ -8,6 +8,14 @@ per actor, with the properties written the way the editor writes them.
     python3 tools/map-to-t3d.py DUMP/Maps/M02A.unr --out $WORK/extracted/maps
     python3 tools/map-to-t3d.py DUMP/Maps --out $WORK/extracted/maps --stats inventory/t3d_coverage.csv
 
+**The locator tests the references, not only the names** (2026-11-19). `prop_stream.find_block` takes the
+candidate block with the most properties and requires its *names* to resolve; a writer that decodes values needs
+one more test, because a tag parse that consumes a byte or two of the next property still yields a plausible
+block whose object reference lands nowhere. `locate()` prefers a candidate in which every object reference
+resolves, then the most properties: it moves **3** of the 73 maps' 121,394 located starts and takes the
+`ref:` count from **3 to 0**, and those three are exactly the three `docs/T3D.md` used to list as separate
+defects.
+
 **An array is its elements** (2026-11-19). An `Array` property's payload is a compact count followed by exactly
 that many compact indices when its elements are object references — the rule `tools/action-wiring.py` measured
 on `Actions`, now applied to every array. A payload that does not consume itself exactly, or whose indices do
@@ -109,6 +117,40 @@ def element_layout(raw, ps):
     return count, rest // count
 
 
+def locate(data, pkg, ps):
+    """The actor's property block, for a reader that decodes values.
+
+    `prop_stream.find_block` picks the candidate with the most properties and tests only that its *names*
+    resolve. That is the right rule for a census, and it is one test short of what a writer needs: a tag parse
+    can consume a byte or two of the next property and still produce a plausible block, and the value it then
+    decodes is a reference that lands nowhere (`ref:<n>` in the text, or `ref:-17179869183` for a struct read as
+    an object). Testing the second half -- every object reference in the block lands in the package's own tables
+    -- moves **three** block starts in the 73 maps and resolves **all three** references that used to fall
+    through; no other export's start moves, which is the control that makes it a tie-break and not a new parse.
+    """
+    best = None
+    for start in range(0, min(len(data), 64)):
+        try:
+            names, end, reason = ps.read_block(data[start:], pkg, False)
+        except Exception:
+            continue
+        if reason != "None" or len(names) < 2:
+            continue
+        if any(p["name"] == "?" for p in names):
+            continue
+        if start + end != len(data):
+            continue
+        props, _e, _r = ps.read_block(data[start:], pkg, True)
+        stray = sum(1 for p in props if p["type"] in ("Object", "Class")
+                    and p.get("ref") is not None and not resolves(pkg, p["ref"]))
+        key = (stray, -len(props))
+        if best is None or key < best[0]:
+            best = (key, len(props), start, props)
+    if best is None:
+        return None
+    return best[1], best[2], best[3]
+
+
 def drive_map(path, outdir, ps, verbose=False):
     pkg = Package(path)
     pkg.read_names()
@@ -122,13 +164,10 @@ def drive_map(path, outdir, ps, verbose=False):
     structs = {}
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
-        found = ps.find_block(data, pkg)
+        found = locate(data, pkg, ps)
         if not found:
             continue
-        _count, start, _ = found
-        # re-parse from the located start, this time decoding values: find_block works on names and sizes
-        # only, so the values have to be read on a second pass over the same bytes.
-        props, _end, _reason = ps.read_block(data[start:], pkg, True)
+        _count, start, props = found
         cls = pkg.class_name_of(exp)
         lines.append("Begin Actor Class=%s Name=%s_%d" % (cls, cls, exp["index"] + 1))
         for p in props:
@@ -192,6 +231,16 @@ class _Pkg:
         self.imports = []
 
 
+class _Ps:
+    """Canned blocks keyed by the first byte of the buffer, so the tie-break is driven without a package."""
+
+    def __init__(self, table):
+        self.table = table
+
+    def read_block(self, buf, pkg, want_values=False):
+        return [dict(p) for p in self.table[buf[0]]], len(buf), "None"
+
+
 def check(values, structs, stats):
     """The censuses are arithmetic on each other, and a synthetic payload drives the reader. No dump."""
     problems = []
@@ -236,6 +285,20 @@ def check(values, structs, stats):
         problems.append("decode_obj_array accepts an index past the export table")
     if element_layout(b"\x02" + b"\x00" * 8, ps) != (2, 4):
         problems.append("element_layout does not divide 8 bytes over 2 elements")
+    # The locator's tie-break: a candidate whose object references land nowhere loses to one whose references
+    # resolve, whatever their property counts; between two clean candidates the longer block still wins.
+    data = b"\x00\x01" + b"\x00" * 8
+    stray = [{"name": "A", "type": "Object", "ref": 9}, {"name": "B", "type": "Int"}]
+    clean = [{"name": "A", "type": "Object", "ref": 1}, {"name": "B", "type": "Int"}]
+    got = locate(data, _Pkg(2), _Ps({0: stray, 1: clean}))
+    if got is None or got[1] != 1:
+        problems.append("locate prefers a block with a reference that lands nowhere")
+    got = locate(data, _Pkg(2), _Ps({0: stray + [{"name": "C", "type": "Int"}], 1: clean}))
+    if got is None or got[1] != 1:
+        problems.append("locate takes more properties over resolving references")
+    got = locate(data, _Pkg(2), _Ps({0: clean, 1: clean + [{"name": "C", "type": "Int"}]}))
+    if got is None or got[1] != 1:
+        problems.append("locate does not take the longer of two clean blocks")
     if problems:
         for p in problems:
             print("FAIL %s" % p)

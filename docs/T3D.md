@@ -50,8 +50,10 @@ they spawn. The doc now says that instead.
 
 ## Still not measured
 
-* The 820 unresolved references, and the 18 `?` squad scripts. They cluster rather than scatter, which points
-  at references to imports this reader does not index, not at random corruption — but that is a hypothesis.
+* ~~The 820 unresolved references, and the 18 `?` squad scripts.~~ **Settled** (2026-11-19): the name-table
+  fix names all 18 (`inventory/squad_scripts.csv` is 630 rows), and the three references that survived it were
+  one locator rule -- the T3D now has none. The old hypothesis, that they point at imports the reader does not
+  index, is wrong: both were reads that stopped one test short. See "the three values that fell through".
 * Class defaults, above.
 * The `Level` export's script sequence: the `ACTION_*` actors' parameters are visible, their order is not.
 
@@ -95,15 +97,19 @@ unique pairs; the pass is 80 s, 30 s of it the coverage walk and the rest this r
 | unresolved object references | **3** |
 | T3D bytes | 44,375,952 |
 
-**The `ref:<index>` reading is stale.** `prop-stream.py` resolves an export index to `Class'Package.Name'` and a
-negative one to the import's `Class'Package.Object'`; only three values in 1.18 million fall through, and each is
-its own defect rather than a missing feature:
-
-| map | property | value | what it suggests |
-|---|---|---|---|
-| `M02A` | `Vector` | `ref:-17179869183` | a struct-typed tag decoded as an object reference |
-| `M15A` | `Max` | `ref:7470` | an export index past the map's export table |
-| `M17B` | `StaticMesh` | `ref:5758` | same shape, different map |
+**The `ref:<index>` reading is stale, and the three values that fell through were one rule (2026-11-19).**
+`prop-stream.py` resolves an export index to `Class'Package.Name'` and a negative one to the import's
+`Class'Package.Object'`; three values in 1.18 million used to fall through, and this page listed them as three
+defects -- a struct read as an object in `M02A`, an index past the export table in `M15A`, the same in `M17B`.
+They are one defect: the locator's tie-break tested the block's *names* and not its *references*, so in `M02A`
+a `Trigger`, in `M15A` a `MissionObjective` and in `M17B` a `StaticMeshActor` the parse began at a start that
+spent the front of the next property on a reference landing nowhere -- byte 1 of a 17-byte export in `M02A`
+(inside the record in front of the block), byte 19 of `M15A` and byte 18 of `M17B` (four and three bytes into
+the block). Reading the same 73 maps with "every object reference in the block resolves" as the first test
+moves **3 of 121,394** block starts -- exactly those three -- and leaves every other start where it was, so the
+writer now has **0 unresolved references**, **1,180,946** properties (3 fewer: the bytes the misparse invented
+were being counted as properties) and 49,212,006 bytes of T3D. The three defects are gone rather than named:
+no `ref:` reaches the text, and `inventory/t3d_coverage.csv` counts any that come back.
 
 **The totals above are superseded** by the 2026-11-19 section at the end of this page: the table is regenerated
 by `make t3d`, and the two maps whose name tables the length rule had truncated (`M17D`, `M21A`) now locate
@@ -144,19 +150,19 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | object references inside them | **117398** |
 | arrays refused a shape | 5303 (4510 struct arrays holding 14576 records) |
 | struct-typed properties | 312295 |
-| struct properties decoded to numbers | **203147** |
+| struct properties decoded to numbers | **203148** |
 | struct property names | 79 |
 
 | struct | properties | decoded | sizes (bytes:instances) |
 |---|---:|---:|---|
-| `Vector` | 152140 | 152108 | 12:152108 / 16:19 / 9:7 / 6:5 / 2:1 |
-| `PointRegion` | 77025 | 0 | 13:61298 / 14:15726 / 16:1 |
+| `Vector` | 152141 | 152109 | 12:152109 / 16:19 / 9:7 / 6:5 / 2:1 |
+| `PointRegion` | 77026 | 0 | 13:61299 / 14:15726 / 16:1 |
 | `Rotator` | 50518 | 50518 | 12:50518 |
 | `Scale` | 17561 | 0 | 25:17550 / 28:8 / 16:1 / 1:1 / 4:1 |
 | `RangeVector` | 10078 | 0 | 52:9410 / 55:614 / 54:30 / 61:13 / 64:8 / 62:3 |
 | `Range` | 4138 | 0 | 13:4111 / 15:26 / 1:1 |
 | `Color` | 521 | 521 | 4:521 |
-| `None` | 57 | 0 | 2:26 / 0:18 / 4:8 / 1:4 / 12:1 |
+| `None` | 56 | 0 | 2:26 / 0:18 / 4:8 / 1:3 / 12:1 |
 | `Orientation` | 43 | 0 | 106:29 / 122:7 / 123:7 |
 | `Plane` | 42 | 0 | 26:29 / 29:12 / 1:1 |
 | `SheerRate` | 21 | 0 | 4:21 |

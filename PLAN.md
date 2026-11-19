@@ -1032,6 +1032,21 @@ other 38 rows.
       `docs/CLASS_DEFAULTS.md`'s roster bullet + the `make map-census` recipe echoing the filename + this note.
       73 maps in 80 s; no boot.
 
+      **The three references the T3D could not resolve are one tie-break, and the writer now has none
+      (2026-11-19).** This item's page listed them as three defects -- `M02A``Trigger`/`Vector`
+      `ref:-17179869183`, `M15A` `MissionObjective`/`Max` `ref:7470`, `M17B` `StaticMeshActor`/`StaticMesh`
+      `ref:5758` -- and the values settle it: the parse began at a start whose *names* all resolve but whose
+      **references** do not, so the front of the next property was spent on an object index landing outside the
+      package (`M15A` and `M17B`, 4 and 3 bytes into the block) or inside the 17-byte record in front of it
+      (`M02A`, byte 1 of the export). `tools/map-to-t3d.py`'s `locate()` now prefers a candidate in which every
+      object reference resolves and only then the one with the most properties, and over the 73 maps that moves
+      **3 of 121,394** starts -- those three, no others, which is the control -- for **0** unresolved references,
+      **1,180,946** properties (3 fewer, the invented ones) and 49,212,006 bytes of T3D. Three synthetic
+      candidates in `--check` hold the order of the two tests (references first, then count). Tool (`locate()`
+      and its docstring) + the three censuses (`t3d_coverage.csv` 3 rows, `t3d_values.csv` 1, `t3d_structs.csv`
+      4) + `docs/T3D.md` (the defect table replaced by the rule, and the "820 unresolved references" bullet
+      struck with what settled it) + this note. 73 maps in 67 s; no boot.
+
 - [x] 5.3 Extract the WAVs with speech/sound categorization (dialogue, SFX, music) and pull `Speech/` dialogue
       data. All three layers are now counted: 1,364 speech lines (150.8 MiB), 1,923 music WAVs (348 MiB, 16 groups) and
       **3,047 sound effects inside 55 `.uax` packages** (88 MiB) — the last of which needed the package reader, not an
