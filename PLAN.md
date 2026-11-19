@@ -13804,3 +13804,50 @@ class list, a decompiled script tree and a hundred-plus named native functions.
   page sets `bButtonA`…`bButtonY`, so a census of those flags over the 59 pages (they are booleans in the same
   defaults tree) would say which pages show which hints — the first page-level property measurement the flow
   table cannot give.
+
+### Execution notes (2026-11-18, a panel's own defaults hold the second level, and twelve of them the reader refuses)
+
+- **Task.** The previous note's "not in this PR": a component's *own* contents. A page's `Begin Object` block
+  places a panel, and what the panel contains is declared in the panel class's defaults -- a second file of the
+  same tree. Widened to the whole tree (a third level included) and to the question a missing file raises.
+- **The layout is a tree, and the controls are one level below the page.** Of the **31 widget classes** the 114
+  component blocks name, **12 declare children** -- **28 children over 14 classes, 24 at depth 2 and 4 at depth
+  3** (`GUIVertScrollBar` declares its zone, two buttons and a grip, which is the first third level). **7** are
+  widgets whose own block declares no children at all (`GUIButton`, `GUILabel`, `moEditBox`, ...), and **12**
+  have no emitted block, below. Every child's rectangle resolves: **18** state all four `Win*` values and the
+  other **10** inherit one from the child's own class, so no nested widget is left unplaced.
+- **The twelve panels with no file are a reader gap, not script.** `ChapterSelectionPanel`,
+  `RightLockingMenuPanel`, `ProfilePanel`, `CharacterSelectionPanel`, the four selection panels and
+  `GUIListBox` each have a defaults *block* in their package -- **121-129 declared properties, 1,487 across the
+  twelve** -- and `inventory/class_defaults_misses.csv` names why the decode stops: **nine are
+  `type-contradiction` at the first tag**, two are `single-declared`, and `MultiplayerServerPanel` is
+  `empty-block`. So the layout tree is cut one level below the page for exactly the *container* classes, and
+  the next instrument is their block start rather than a search for a script that builds them.
+- **The refused panels are not empty names: 21 controls hang off them.** A page binds each widget twice, with
+  the `Begin Object ... Name=` block that places it and a property that points at it
+  (`MenuPanel=RightLockingMenuPanel'cPanel'`, `MyComponents(0)=GUIButton'cContinueBN'`). Of the **140**
+  class-typed bindings in the page defaults, **119** resolve to a block the page or the target class declares
+  and **21** resolve to nothing -- and **all 21 sit inside `RightLockingMenuPanel` (14) and
+  `FullSlidingPanel` (7)**, two of the twelve refused panels. So the main menu's five buttons, the error
+  page's two and the scoreboard's two exist by name and class and have no rectangle anywhere: that is the
+  concrete cost of the decode gap, in controls rather than classes.
+- **`Win*` is parent-relative, and measured rather than assumed.** The base `GUIComponent` states **2 of the
+  four** (`WinWidth`, `WinHeight`) and a panel class states none, so a panel *is* its parent's whole box. Two
+  measurements then put the numbers in that box rather than on the screen: **13 of the 18** nested children
+  that state a rectangle run past the unit square on one axis, so nothing clamps the range, and **12 widget
+  classes are used by more than one page while 5 of those are placed at more than one page-side rectangle** --
+  one defaults block per class, so a child's numbers cannot encode a screen position. What remains open is the
+  composition itself (the native normalisation), not whether the frame is the parent.
+- **Files.** `tools/ui-menu-flow.py` (`box_of`, `class_pages`, `layout_gaps`, `read_subcomponents`, the
+  `subcomponents_block` renderer, `read_bindings` with `_subobject_refs`, 26 census keys and fourteen new
+  self-test assertions, `read_children` now keeping each child's values), `inventory/menu_flow.csv` (614 rows:
+  47 `subcomponent`, 12 `layout_gap` and 21 `binding` beside the 534 the flow census carried), `docs/systems/UI.md` (the generated *what a panel declares inside itself*
+  section: the count table, the per-panel table, the leaf-widget list, the reader-refusal table and the units
+  paragraph), `docs/UNKNOWNS.md` U27 rewritten in place (its "every one of which the corpus carries" was
+  wrong), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, and this note.
+- **Next measurement.** The twelve refused blocks: a `type-contradiction` at the first tag with 5-7 candidates
+  is the shape the defaults chooser has already settled twice, and these panels are the largest visible hole in
+  the layout tree. If that stalls, the four `GUIVertScrollBar` children state no rectangle at all, which is
+  small enough to hand-check against the bar's own block.
+- **Not in this PR.** A list's row geometry: an item's rectangle comes from the list class's own drawing code,
+  not from a `Begin Object` block, so the `MyComponents` binding is the last layout data the tree holds.

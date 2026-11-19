@@ -479,6 +479,84 @@ A page's `Begin Object` blocks are its layout: each block names a widget class a
 | `StargateMenus.QuickLoadMapTempPage` | `chPN` | `MapSelectionPanel` | `StargateMenus.SinglePlayerChapterSelect` | `ChapterSelectionPanel` |
 | `StargateMenus.XBoxLiveServerSelect` | `chPN` | `XBoxLiveServerSelectionPanel` | `StargateMenus.MultiplayerServerSelect` | `MultiplayerServerPanel` |
 
+### What a panel declares inside itself
+
+A page's block places a panel; what the panel *contains* is its own class's defaults, in a second file of the same tree. So the layout is a tree and not a list: 12 of the 31 widget classes a page names declare blocks of their own, 7 are widgets whose block declares no children, and a child class can declare blocks too (`GUIVertScrollBar` states its zone and two buttons, which is the third level).
+
+| measure | answer |
+|---|---|
+| widget classes a page names | **31**, used by **114** component blocks |
+| ... declaring their own children | **12** |
+| ... widgets, whose block declares no children | **7** |
+| ... with no emitted block at all | **12** |
+| nested children | **28** over **14** classes (depth 2 **24**, depth 3 **4**) |
+| ... stating all four `Win*` values | **18** |
+| ... stating none | **10**, all resolved on the child's own class chain |
+| ... a rectangle that runs past the unit square | **13** of the 18 that state one |
+
+| panel class | package | children | child classes | stating a rectangle |
+|---|---|---:|---:|---:|
+| `ControllerButton` | GUI | 1 | 1 | 0 |
+| `GUIScrollTextBox` | GUI | 2 | 2 | 0 |
+| `GUIVertScrollBar` | GUI | 4 | 3 | 0 |
+| `SGScrollTextBox` | GUI | 1 | 1 | 0 |
+| `CurrentChapterPanel` | StargateMenus | 3 | 2 | 3 |
+| `CurrentCharPanel` | StargateMenus | 2 | 2 | 2 |
+| `CurrentGameModePanel` | StargateMenus | 2 | 2 | 2 |
+| `CurrentProfilePanel` | StargateMenus | 2 | 2 | 2 |
+| `InGameInfoPanel` | StargateMenus | 1 | 1 | 1 |
+| `MapSelectionPanel` | StargateMenus | 3 | 3 | 3 |
+| `SaveGamePanel` | StargateMenus | 1 | 1 | 0 |
+| `ServerSelectionPanel` | StargateMenus | 4 | 2 | 4 |
+| `VirtualKeyboardPanel` | StargateMenus | 2 | 2 | 1 |
+
+The 7 classes that declare no children are widgets, not empty panels: `GUIButton`, `GUILabel`, `GUIPanel`, `GUITitleBar`, `SGLabel`, `moComboBox`, `moEditBox`. Their block states properties (`Caption`, `StyleName`, the rectangle), never a child.
+
+The panels the tree does not carry are not script-built: each has a defaults *block* in its package (121-129 declared properties) that the reader refuses at the start, so the emitted tree has no file for it and its contents stay unknown. `inventory/class_defaults_misses.csv` holds the reader's own verdict, joined here per class.
+
+| widget class | package | declared properties | reader verdict | read before refusing |
+|---|---|---:|---|---:|
+| `GUIListBox` | GUI | 122 | `single-declared` | 1 |
+| `ChapterSelectionPanel` | StargateMenus | 122 | `type-contradiction` | 1 |
+| `CharacterSelectionPanel` | StargateMenus | 122 | `type-contradiction` | 1 |
+| `CoopPlayerPanel` | StargateMenus | 128 | `type-contradiction` | 1 |
+| `FullSlidingPanel` | StargateMenus | 124 | `single-declared` | 1 |
+| `GameModeSelectionPanel` | StargateMenus | 121 | `type-contradiction` | 1 |
+| `MultiplayerServerPanel` | StargateMenus | 129 | `empty-block` | 45 |
+| `ProfilePanel` | StargateMenus | 121 | `type-contradiction` | 1 |
+| `RightLockingMenuPanel` | StargateMenus | 124 | `type-contradiction` | 1 |
+| `SelectPawnPanel` | StargateMenus | 122 | `type-contradiction` | 1 |
+| `SelectTeamPanel` | StargateMenus | 123 | `type-contradiction` | 1 |
+| `XBoxLiveServerSelectionPanel` | StargateMenus | 129 | `type-contradiction` | 1 |
+
+**21 of the 140 bindings name a widget no block declares.** A page binds each widget twice: the `Begin Object ... Name=` block places it and a property points at it (`MenuPanel=RightLockingMenuPanel'cPanel'`). Where the block lives in a panel class the reader refuses, the pointer resolves to a name and nothing else -- so the rows below are controls that exist (their class is stated) and cannot be placed (their rectangle is in the refused block). 21 of them sit inside a refused panel.
+
+| page | widget | class | bound by | enclosing block |
+|---|---|---|---|---|
+| `StargateMenus.ErrorPage` | `cDesc` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.ErrorPage` | `cOkayButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.InGameScoreboard` | `cTitle` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.InGameScoreboard` | `cTitle2` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.MainMenu` | `cContinueBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cExtrasBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cMultiBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cOptionsBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.MainMenu` | `cSingleBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cAppearance` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cAudio` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cControls` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cName` | `moEditBox` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.OptionsEditProfile` | `cVideo` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.QuestionPage` | `cDesc` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.QuestionPage` | `cNoButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.QuestionPage` | `cYesButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cChapterBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cLoadBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cNewGameBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+| `StargateMenus.SinglePlayerMenu` | `cTutorialBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+
+**What the `Win*` numbers are relative to.** The base `GUIComponent` states **2** of the four (`WinWidth`, `WinHeight`) and a panel class states none, so every panel *is* its container: the two values the base does state make its rectangle its parent's whole box. Two measurements then say the numbers are read against that box and not against the screen. First, 13 of the 18 children that state a rectangle run past the unit square on one axis — nothing clamps them, so the range is not a screen fraction the engine keeps inside the display. Second, 12 widget classes are used by more than one page and 5 of those are placed at more than one page-side rectangle, while the children's numbers are one set — a class has one defaults block, so a child's `Win*` cannot be a screen position, only an offset inside whichever instance box the parent draws. The screen position is the composed product down the tree, which is what `GUIComponent`'s own native body computes and what `docs/UNKNOWNS.md` U27 still wants decoded.
+
 ### The wiring, and the pages that replace it
 
 | measure | answer |
