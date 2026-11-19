@@ -517,18 +517,20 @@ The panels the tree does not carry are **not** classes whose block the reader re
 
 | widget class | package | declared properties | reader verdict | its block's tag |
 |---|---|---:|---|---|
-| `GUIListBox` | GUI | 122 | `single-declared` | none (empty block) |
-| `ChapterSelectionPanel` | StargateMenus | 122 | `single-declared` | none (empty block) |
-| `CharacterSelectionPanel` | StargateMenus | 122 | `single-declared` | none (empty block) |
-| `CoopPlayerPanel` | StargateMenus | 128 | `single-declared` | none (empty block) |
-| `FullSlidingPanel` | StargateMenus | 124 | `single-declared` | none (empty block) |
-| `GameModeSelectionPanel` | StargateMenus | 121 | `single-declared` | none (empty block) |
+| `GUIListBox` | GUI | 122 | `single-declared` | `List:Object` |
+| `ChapterSelectionPanel` | StargateMenus | 122 | `single-declared` | `ChapterList:Object` |
+| `CharacterSelectionPanel` | StargateMenus | 122 | `single-declared` | `CharList:Object` |
+| `CoopPlayerPanel` | StargateMenus | 128 | `single-declared` | `PlayerListBox:Object` |
+| `FullSlidingPanel` | StargateMenus | 124 | `single-declared` | `Background:Object` |
+| `GameModeSelectionPanel` | StargateMenus | 121 | `single-declared` | `ModeList:Object` |
 | `MultiplayerServerPanel` | StargateMenus | 129 | `empty-block` | none (empty block) |
-| `ProfilePanel` | StargateMenus | 121 | `single-declared` | none (empty block) |
-| `RightLockingMenuPanel` | StargateMenus | 124 | `single-declared` | none (empty block) |
-| `SelectPawnPanel` | StargateMenus | 122 | `single-declared` | none (empty block) |
-| `SelectTeamPanel` | StargateMenus | 123 | `single-declared` | none (empty block) |
-| `XBoxLiveServerSelectionPanel` | StargateMenus | 129 | `single-declared` | none (empty block) |
+| `ProfilePanel` | StargateMenus | 121 | `single-declared` | `ProfileList:Object` |
+| `RightLockingMenuPanel` | StargateMenus | 124 | `single-declared` | `HintLB:Object` |
+| `SelectPawnPanel` | StargateMenus | 122 | `single-declared` | `PawnListBox:Object` |
+| `SelectTeamPanel` | StargateMenus | 123 | `single-declared` | `TeamListBox:Object` |
+| `XBoxLiveServerSelectionPanel` | StargateMenus | 129 | `single-declared` | `ServerListBox:Object` |
+
+**The trade that withholds them is measured, not asserted.** `tools/defaults-locator-guard.py` (`inventory/defaults_locator_guard.csv`, 314 rows) runs the emitter's chooser and the record-group rule over the same candidate sets. With the rule, **313** classes publish a start the emitter has none for (**227** move one, **86** had none), **313 of the 313** end on the payload's last byte and **313** hold exactly one tag; **194 of the moved** unguarded starts sat *inside* the record's closing group, so what the emitter writes for those today is the record's own bytes. **1** class loses its block, 11 of the panels above are in that set, and the rule publishes a start while the two-property floor still withholds "fully declared": a file per panel, `single-declared` in the misses ledger.
 
 **All 140 of the page-level bindings resolve.** A page binds each widget twice: the `Begin Object ... Name=` block places it, and a property points at it (`MenuPanel=RightLockingMenuPanel'cPanel'`, `MyComponents(0)=GUIButton'cContinueBN'`). The second form points *into* a panel's block, but the object it names is a subobject of the **page** (its Outer is the page class, and its rectangle is in its own block) — so a reader that stops at the panel's contents loses those controls, which is what a dangling binding was. Following one more level places all 140 of them: 140 resolved, 0 dangling.
 
@@ -811,6 +813,12 @@ otherwise reaches the canvas as a degenerate rectangle. `CoopPlayerPanel` is the
 (it is the only live body that returns true and paints its own row), and its four cell columns are the ones
 `GetCellLeftWidth` answers 0 for.
 
+The degenerate rectangle is where the answer stops being the style layer's: the canvas's own text entry takes it
+(slot 49, `+0xc4` at `0x00101490`), installs it as the canvas clip, and the glyph loop under it (`0x001036e0`)
+trims the first glyph to a width of 0, culls every later one against a clip extent of 0, and hands the zero-width
+quad to a tile path that never tests a size. So an empty cell paints nothing, from the style layer to the tile
+path, and no compare in the chain tests the width.
+
 
 **The header shows the same table the body does.** `GUIMultiColumnListBox.InitBaseList` gives the header the
 list it belongs to (`Header.MyList = List`), so a column heading is `MyList.Columns[i]` -- the array nothing states
@@ -867,9 +875,11 @@ for the boot the next section names.
   needs a running build. The rows *inside* a list are the third level and are counted too (the block above,
   `docs/UNKNOWNS.md` U28): **15 columns over five bodies**, placed through a cell table, the screen or the row.
   What stays unmeasured there is the rectangle itself — `GUIListBase` is native, so the row's `X/Y/W/H` and its
-  `ItemHeight` are C++. The zero-width cell is now answered as far as the image can: `GUIStyles.DrawText` culls
-  against the canvas clip rect and nothing else, so a width of 0 is not shortcircuited. What is left is whether the
-  canvas's own glyph loop paints an empty rect, which is the boot.
+  `ItemHeight` are C++. The zero-width cell is answered end to end from the image: `GUIStyles.DrawText` culls against the
+  canvas clip rect and nothing else, the canvas's text entry (`+0xc4`, slot 49 at `0x00101490`) installs that rect
+  as the clip, and the glyph loop below it (`0x001036e0`) trims the first glyph to a width of 0 and culls the rest,
+  so an empty cell paints nothing and no boot was needed for it. What still needs a boot here is the *layout*, not
+  the text: whether the composed rectangle lands where the numbers say.
 * **Why the ten are dead is a *where*, not a *why*.** The corpus names none of them — measured over every
   class body, every emitted defaults block and every menu key in the five shipped `.ini`s — but which editor
   pass cut them, and whether the cut pages' bodies still compile against the classes around them, is a

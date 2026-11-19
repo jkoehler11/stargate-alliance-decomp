@@ -63,6 +63,12 @@ DOC = os.path.join(ROOT, "docs/systems/UI.md")
 DOC_START = "<!-- generated:menu-flow -->"
 DOC_END = "<!-- /generated:menu-flow -->"
 
+# The emitter's locator writes no file for a panel whose block is one tag; `tools/defaults-locator-guard.py`
+# measures what the record-group rule would publish for it (`inventory/defaults_locator_guard.csv`), and its
+# `tag` column is the block's one tag as `name:type`. Read here so the page's gap table names it instead of
+# saying "none", and so the counts in the paragraph below come from the artifact rather than this file.
+GUARD = os.path.join(ROOT, "inventory/defaults_locator_guard.csv")
+
 FIELDS = ["kind", "name", "package", "form", "target", "target_package", "verdict", "depth", "sites",
           "platform", "note"]
 
@@ -1388,6 +1394,27 @@ def components_block(s, rows):
     return out
 
 
+_GUARD_CACHE = {}
+
+
+def guard_rows():
+    """The locator-guard artifact, or [] when it has not been generated in this checkout."""
+    if "rows" not in _GUARD_CACHE:
+        rows = []
+        if os.path.isfile(GUARD):
+            with open(GUARD, newline="", encoding="utf-8") as fh:
+                rows = list(csv.DictReader(fh))
+        _GUARD_CACHE["rows"] = rows
+        _GUARD_CACHE["tags"] = {(r["package"], r["class"]): r["tag"] for r in rows if r["tag"]}
+    return _GUARD_CACHE["rows"]
+
+
+def guard_tags():
+    """`(package, class) -> tag` for the classes whose block the rule would publish, one tag each."""
+    guard_rows()
+    return _GUARD_CACHE["tags"]
+
+
 def subcomponents_block(s, rows):
     """The nested half of the layout census: what each component's *own class* declares inside itself.
 
@@ -1459,9 +1486,32 @@ def subcomponents_block(s, rows):
         out.append("|---|---|---:|---|---|")
         for r in sorted(gaps, key=lambda r: (r["package"], r["name"])):
             prop = r.get("property") or ""
+            tag = guard_tags().get((r["package"], r["name"])) or prop
             out.append("| `%s` | %s | %s | `%s` | %s |" %
                        (r["name"], r["package"], r["target"], r["verdict"],
-                        ("`%s`" % prop) if prop else "none (empty block)"))
+                        ("`%s`" % tag) if tag else "none (empty block)"))
+        guard_block = guard_rows()
+        if guard_block:
+            moved = sum(1 for r in guard_block if r["kind"] == "moved")
+            gained = sum(1 for r in guard_block if r["kind"] == "gained")
+            lost = sum(1 for r in guard_block if r["kind"] == "lost")
+            ended = sum(1 for r in guard_block if r["kind"] in ("moved", "gained") and r["trailer"] == "0")
+            one = sum(1 for r in guard_block if r["kind"] in ("moved", "gained") and r["tag"])
+            covered = sum(1 for r in guard_block if r["kind"] == "moved" and r["from_covered"] == "1")
+            here = [r["name"] for r in gaps if (r["package"], r["name"]) in guard_tags()]
+            out.append("")
+            out.append("**The trade that withholds them is measured, not asserted.** "
+                       "`tools/defaults-locator-guard.py` (`inventory/defaults_locator_guard.csv`, %d rows) runs the "
+                       "emitter's chooser and the record-group rule over the same candidate sets. With the rule, "
+                       "**%d** classes publish a start the emitter has none for (**%d** move one, **%d** had none), "
+                       "**%d of the %d** end on the payload's last byte and **%d** hold exactly one tag; **%d of the "
+                       "moved** unguarded starts sat *inside* the record's closing group, so what the emitter writes "
+                       "for those today is the record's own bytes. %s, %d of the panels above are in that set, and "
+                       "the rule publishes a start while the two-property floor still withholds \"fully "
+                       "declared\": a file per panel, `single-declared` in the misses ledger."
+                       % (len(guard_block), moved + gained, moved, gained, ended, moved + gained, one, covered,
+                          "**1** class loses its block" if lost == 1 else "**%d** classes lose theirs" % lost,
+                          len(here)))
         dangle = [r for r in rows if r["kind"] == "binding"]
         if dangle:
             out.append("")
