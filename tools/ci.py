@@ -316,6 +316,18 @@ def check_action_wiring_doc():
         ok(name, out[-1].replace("ok   action-wiring: ", "") if out else "")
 
 
+def check_t3d_values_doc():
+    """docs/T3D.md's array/struct census block must match the two committed artifacts."""
+    name = "t3d-values-doc"
+    r = subprocess.run([sys.executable, repo("tools", "map-to-t3d.py"), "--check-doc"],
+                       capture_output=True, text=True, cwd=ROOT)
+    out = (r.stdout or r.stderr).strip().splitlines()
+    if r.returncode != 0:
+        fail(name, out[-1] if out else "exit %d" % r.returncode)
+    else:
+        ok(name, out[-1].replace("ok   ", "") if out else "")
+
+
 def check_map_name_values_doc():
     """docs/MAP_NAME_VALUES.md's block must match the committed artifact."""
     name = "map-name-values-doc"
@@ -681,6 +693,7 @@ def main():
     check_native_opcodes_census()
     check_map_script_doc()
     check_action_wiring_doc()
+    check_t3d_values_doc()
     check_map_name_values_doc()
     check_class_text_comments_doc()
     check_native_count_closure_doc()
