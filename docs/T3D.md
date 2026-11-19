@@ -184,23 +184,25 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | `int` | `FluidSurfaceInfo` | 12 | 2017 | 4:12 |
 <!-- /generated:t3d-values -->
 
-**The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,510
-of the 5,303 refusals divide exactly into 14,576 records; the other 793 do not divide and stay a commented
+**The refused fifth is a struct array, and its element width is the payload's remainder over its count.** 4,528
+of the 4,656 refusals divide exactly into 14,590 records; the other 128 do not divide and stay a commented
 one-liner. That is the shape `SizeScale`, `ColorScale`, `SoundEmitters` and `BeamEndPoints` have, and it is where
 a struct array stops: the element's type lives in the class's `ArrayProperty` declaration, and this reader carries
 a map's values, not its class declarations.
 
-**A struct's width is a property of the instance, not of the name.** `Vector` is 12 bytes on 152,108 properties
-and **16 on 19**; `PointRegion` 13 on 61,298 and **14 on 15,726**; `Scale` 25 on 17,550 and 28 on 8;
-`Orientation` 106, 122 and 123. So no decoder may key on a struct's name alone, and `prop-stream.py`'s four
-fixed-size decoders are right only because each also tests the size. It is also why "decode the structs" is not a
-one-line change: **109,148 of 312,295** struct properties sit at a size their name does not predict.
+**A struct's width is a property of the instance, not of the name.** `PointRegion` is 13 bytes on 63,992
+properties and **14 on 15,875**; `Scale` 25 on 17,550 and 28 on 8; `Orientation` 106, 122 and 123. So no decoder
+may key on a struct's name alone, and `prop-stream.py`'s four fixed-size decoders are right only because each
+also tests the size. It is also why "decode the structs" is not a one-line change: **111,756 of 314,940** struct
+properties sit at a size their name does not predict.
 
 **The coverage table was stale by one reader fix, and regenerating it moved 2 of the 73 rows, not 73.** The
 committed `inventory/t3d_coverage.csv` predated the name-table fix in `docs/PACKAGE_READER.md`: `M17D` and `M21A`
-now locate **169 more actors** and **2,808 more properties**, so the totals are **121,394 actors / 1,180,949
-properties / 3 unresolved references** and the T3D is 49,211,838 bytes, because an array is now one line per
-element rather than one line of bytes. A second run reproduces the table byte for byte.
+now locate **169 more actors** and **2,808 more properties**, so the totals were **121,394 actors / 1,180,946
+properties / 3 unresolved references** and the T3D 49,211,838 bytes, because an array is now one line per
+element rather than one line of bytes. A second run reproduces the table byte for byte. *(The property total is
+superseded by the writer's own locator, measured at the end of this page: 6,511 of those properties were a parse
+that started inside a value.)*
 
 ## The element type is a declaration, and the declaration is in the class (measured 2026-11-19)
 
@@ -208,12 +210,12 @@ The sentence this page ended on said the element's type "lives in the class's `A
 this reader carries a map's values, not its class declarations". The declaration was already committed, in
 `inventory/class_properties.csv` (`array<ParticleColorScale>` as the property's friendly type), and a placed
 class inherits it: `SpriteEmitter.ColorScale` is declared on `ParticleEmitter`, so the join walks the super
-chain in `inventory/classes.csv`. It names the element type of **4,470 of the 4,510** refused struct arrays
-(99.1%, 14,532 of their 14,576 records), and the residue is named rather than left as a mystery: **40** refused
-arrays whose property their class chain does not declare as an array -- `Light.PrePivot`, `PathNode.Vector`,
-`StaticMeshActor.ColLocation`, `SoundTrigger.ZoneNumber` -- which are *not* arrays at all but tags a mislocated
-block start decodes as one, the same defect the locator tie-break above fixes in its three cases; and the
-**793** payloads that divide by nothing at all.
+chain in `inventory/classes.csv`. It names the element type of **4,501 of the 4,528** refused struct arrays
+(99.4%, 14,563 of their 14,590 records), and the residue is named rather than left as a mystery: **27** refused
+arrays whose property their class chain does not declare as an array -- `PathNode.Vector` (13 arrays),
+`Light.PrePivot`, `Light.Filename`, `Light.Distance`, `Light.LightSaturation`, `Light.DrawScale3D`,
+`Light.State`, `SoundTrigger.ZoneNumber`, `MovementMarker.ColLocation`, `PathNode.Tag` -- which are *not* arrays
+at all but tags a mislocated block start decodes as one; and the **128** payloads that divide by nothing at all.
 
 **Typed is not decoded, and the width is why.** The element's *layout* is not in either artifact: a struct
 array's element width is the payload's remainder over its count, and it varies within one type
@@ -230,4 +232,76 @@ The per-element-type census is `inventory/t3d_arrays.csv` (16 rows, written by `
 
 **Not in this PR.** The struct decoders beyond the three whose layout is established, the element layouts of
 the five typed struct arrays, and the `Level` export's script sequence.
+
+## The writer takes the reader's locator, and the struct census collapses (measured 2026-11-19)
+
+`locate()` used to carry a locator of its own: the start whose block spends every object reference in the
+package's tables, then the most properties. `prop_stream.find_block` now runs a stronger test -- every
+checkable value consumes exactly the `Size` its tag declares -- and that is the test a writer needs, because a
+parse that begins inside a struct payload still ends at the export's end and still resolves every name. So the
+writer delegates: one locator, one answer, and `value-layouts.csv`'s relocation count and this writer's start
+are the same rule rather than two that agree by luck.
+
+The prefix is pinned to the reader's 64-byte window, and that is a measurement rather than a preference.
+Unpinned, `find_block` will look one window further when nothing inside the first decodes -- right for a class
+header, wrong for a map: the wider look locates **490 more exports** than the old rule did, **every one of them
+a `StaticMeshInstance`**, at starts 65-95, each a parse of two tag-shaped bytes inside a packed transform
+record. No map actor's block starts later than **32** bytes into its export (`inventory/actor_prefix_census.csv`:
+`Cubemap` 32, `StaticMeshInstance` 30, `TerrainSector` 21, every other class 17 or less), so the pin costs
+nothing and stops the writer from inventing an actor out of a native payload.
+
+| | before | after |
+|---|---:|---:|
+| actors written | 121,394 | 121,394 |
+| properties | 1,180,946 | **1,174,435** |
+| block starts that move | -- | **4,133** of 121,394 |
+| unresolved references | 0 | 0 |
+| T3D bytes | 49,206,276 | 49,538,664 |
+| `Array` properties | 37,889 | 38,739 |
+| -- object arrays | 32,586 | **34,083** |
+| -- references inside them | 117,398 | **126,356** |
+| arrays refused a shape | 5,303 | 4,656 |
+| struct property names | 79 | **12** |
+
+Tags *fall* by 6,511 because a parse inside a value invents properties that are not there, and the file grows
+0.7% anyway: the properties that survive are whole ones, so 1,497 more arrays decode as object arrays and
+8,958 more element references are printed.
+
+**The 79 struct names were 67 words that are not types.** Of the twelve names the corpus now finds, **eleven
+are `UStructProperty` friendly types** declared in `inventory/class_properties.csv` (`Vector`, `PointRegion`,
+`Rotator`, `Scale`, `RangeVector`, `Range`, `Color`, `Orientation`, `Plane`, `Matrix`, `InterpCurve`). The old
+census's remaining names were actor instance names (`StaticMeshActor448`, `ACTION_Talk1`), property names
+(`ColLocation`), and bare `X`/`Y`/`Z` -- words that had been sitting at the name index the tag's struct field
+points at, because the parse had begun inside a value and was reading the value's bytes as a tag.
+
+**The one residue is named, and its export has no property block at all.** The residue row is a single property,
+and it is `M07A`'s export **#2149** (`Cubemap`, 57 bytes): two of the starts in its prefix walk to the export's
+end -- 32 with two properties, 51 with one -- so the locator takes the longer, and that block reads a 16-byte
+`Struct` named `PhysicsVolume` and a 1-byte `FixedArray` named `TypeEnd`. `Engine.Cubemap` declares two
+properties, `CubemapRenderInterface` (`UIntProperty`) and `Faces` (`UObjectProperty`), and neither is a struct
+-- so those 57 bytes are not a tagged block, and the best parse available still names a type the corpus does not
+have. `--check` now **fails** on any struct row that is neither a declared type nor that residue at its measured
+property count, so the gate bites on the 79-name reading and on any growth of the residue.
+
+**Every census that reads a block start inherits the fix, so they are all re-run here.** The map-side
+artifacts are one story about one locator, and the movement is largest where a misparse had cut an array in
+half:
+
+| artifact | before | after |
+|---|---|---|
+| `action_wiring.csv` orphan sequence references | 4,872 | **36** |
+| `action_wiring.csv` actions no array names | 1,624 in 49 maps | **12 in 2 maps** |
+| `event_wiring.csv` fires with no declared event | 8 | **0** |
+| `event_targets.csv` sequences carrying a tag | 5,384 | 5,874 |
+| `action_parameters.csv` refused placements | 24 | **12** |
+| `map_name_values.csv` malformed name values | 116 | **2** |
+| `squad_scripts.csv` rows / spawners | 630 / 719 | **632 / 721** |
+
+The order the engine runs is the thing the old start was breaking: a sequence's `Actions` array is a compact
+count followed by compact indices, and a block located four bytes inside that array read the count as a tag and
+lost every index after it. The arrays hold **1,820 more references** and name **1,612 more actions**.
+
+**Not in this PR.** The struct decoders beyond the three whose layout is established; the 27 arrays above,
+counted and named but not fixed (they are blocks with no checkable value, so the value test has nothing to
+refuse); the `StaticMeshInstance` payload's own record format; and the `Level` export's script sequence.
 

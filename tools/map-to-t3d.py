@@ -11,8 +11,8 @@ per actor, with the properties written the way the editor writes them.
 **The writer uses the reader's locator** (2026-11-19). `locate()` used to carry a rule of its own -- the start
 whose block spends every object reference, then the most properties. `prop_stream.find_block` now runs a
 stronger test (every checkable value consumes exactly its declared `Size`), and the writer delegates to it with
-the prefix pinned to 64 bytes: a map actor's native prefix is at most 17, while the only exports a wider look
-finds are `StaticMeshInstance`s whose payload is a packed native record. The block starts move on **4,133 of
+the prefix pinned to 64 bytes: no map actor's block starts later than 32 bytes in, while the only exports a
+wider look finds are `StaticMeshInstance`s whose payload is a packed native record. The block starts move on **4,133 of
 121,394** exports, properties fall by **6,511** (an invented tag is not a property), the struct census drops
 from **79 names to 12** -- 11 the classes declare plus one named residue -- and file size rises 0.7% because the
 properties that survive carry values where the invented ones did not.
@@ -208,9 +208,10 @@ def locate(data, pkg, ps):
     so only the values can tell it is not a block.
 
     The prefix is pinned to the reader's 64-byte window for the same reason. Left to itself `find_block` looks
-    one window further when nothing inside decodes, which is right for a class header; a map's actor prefix is
-    at most 17 bytes, so the only exports a wider look finds are `StaticMeshInstance`s, whose payload is a
-    packed native record with no tagged block at all -- the tags read out of it are two bytes of a transform.
+    one window further when nothing inside decodes, which is right for a class header; no map actor's block
+    starts later than 32 bytes in (`inventory/actor_prefix_census.csv`), so the only exports a wider look finds
+    are `StaticMeshInstance`s, whose payload is a packed native record with no tagged block at all -- the tags
+    read out of it are two bytes of a transform.
     """
     found = ps.find_block(data, pkg, 2, True, window=getattr(ps, "WINDOW", 64))
     if not found:
