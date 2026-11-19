@@ -93,16 +93,21 @@ Where it still fails:
   | reason | classes | what it means |
   |---|---:|---|
   | `empty-block` | 334 | the payload parses a valid **empty** block, and no offset anywhere yields a parse holding two of the class's properties -- *The 334 payloads with no start name the record's own references* above measures what they hold instead |
-  | `single-declared` | 285 | the payload's tail is a one-property block whose name the class declares, and no parse holds two declared names -- the floor-of-one measurement below |
-  | `type-contradiction` | 30 | a block was chosen whose names are declared, but at least one tag's type the declared kind cannot carry (below) |
-  | `incomplete` | 4 | a block was chosen, but it holds names the class does not declare -- the tie below |
+  | `single-declared` | 314 | the payload's tail is a one-property block whose name the class declares, and no parse holds two declared names -- the floor-of-one measurement below |
+  | `type-contradiction` | 5 | a block was chosen whose names are declared, but at least one tag's type the declared kind cannot carry (below) |
+  | `incomplete` | 0 | a block was chosen, but it holds names the class does not declare -- the tie below |
   | `single-property` | 1 | only one-property blocks parse |
   | `trailer-over-64` | 1 | one class is rejected by the 64-byte bound |
   | `no-block-parses` | 0 | every class parses *something* |
 
   `single-declared` is new and it is a *reason*, not a located block: the `property` column names the tag a
   floor of one would have promoted the class on, and the tag is usually the payload's own tail rather than its
-  block. Nine of the 285 name `VoiceSets` — the nine packs that set the `array<VoiceSet>` — and
+  block. This count moved 285 -> 314 when `--misses` was routed through the chooser's own guarded candidate set:
+  the one-tag block that begins where a record's closing group ends, and that `class_defaults_per_class.csv` had
+  already published a `block_start` for, was invisible to the unguarded re-derivation there, so 25 rows were
+  reported as `type-contradiction` and 4 as `incomplete` on a parse *inside* the group. The twelve container
+  panels (`RightLockingMenuPanel`, `ChapterSelectionPanel`, `GUIListBox`, ...) are of this shape: each block is
+  exactly one tag, naming a child object its own class owns. Nine of the 314 name `VoiceSets` — the nine packs that set the `array<VoiceSet>` — and
   `tools/voice-sets.py` reads that same array independently, so *those* rows are a real one-property block. `ActionString` is the tag for **53** of them, which
   is a menu-table tail shared across classes, and `VoicePack` itself would be "fully declared" on `LifeSpan` out of
   a 108-byte payload that holds no `defaultproperties` at all. The `empty-block` and `type-contradiction`

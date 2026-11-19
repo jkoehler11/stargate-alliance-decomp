@@ -97,8 +97,8 @@ chain** — the two that do not are `CreateNewProfile`'s and `OptionsEditProfile
 print "Select" with no page-class `XC_A` handler anywhere above them.
 
 **A page's widgets are its own; only the frame is shared.** The `Begin Object` blocks hold a page's layout, and
-the census over all 59 pages is a table now: **114 blocks over 46 pages — 110 declared once by the page that
-uses them and 4 that *restate* a widget an ancestor already declares**, in **31 widget classes** (all of which
+the census over all 59 pages is a table now: **135 blocks over 46 pages — 130 declared once by the page that
+uses them and 5 that *restate* a widget an ancestor already declares**, in **31 widget classes** (all of which
 the corpus carries). Inheritance carries the *frame and the captions*, not the controls: `SGPageBase`'s five
 components (`cTitle`, `cButtonA`…`cButtonY`) are declared once and re-declared by no page, so every page draws
 them and adds its own. The options pages make the split plain: `OptionsEditBase` declares A+B and its three
@@ -111,7 +111,7 @@ class, which is what
 `MultiplayerMapSelect` and `QuickLoadMapTempPage` do to `SinglePlayerChapterSelect`'s `chPN`
 (`ChapterSelectionPanel` → `MapSelectionPanel`), and `MultiplayerServerSelect` → `XBoxLiveServerSelect` do again
 on top of that (`ServerSelectionPanel` → `MultiplayerServerPanel` → `XBoxLiveServerSelectionPanel`). Geometry is
-per widget as well: **83 of the 114 blocks state all four `Win*` values** and the other **25** state none and
+per widget as well: **102 of the 135 blocks state all four `Win*` values** and the other **25** state none and
 take theirs from the widget class's own defaults (`GUI.GUIButton`, `GUILabel`, …) — **not one** component is
 left without a position anywhere on its chain.
 
@@ -392,7 +392,7 @@ By page verdict, the 30 hinting pages are comment-only 2, outside 3, reachable 2
 | pages with a defaults block of their own | **50** of 59 (9 state nothing) |
 | top-level properties over those pages | **255** |
 | ... `TitleString`, the page's caption | **39**, and **4** pages keep `SGPageBase`'s placeholder |
-| `Begin Object` component blocks | **114** over 46 pages |
+| `Begin Object` component blocks | **135** over 46 pages |
 | properties that draw something (`StyleName`, `Background`, `BackgroundStyle`, the four `Win*` geometry values) | **16** over 9 pages |
 | `URL`, a page whose default is a map | **1** page |
 
@@ -415,12 +415,12 @@ A page's `Begin Object` blocks are its layout: each block names a widget class a
 
 | measure | answer |
 |---|---|
-| `Begin Object` component blocks | **114** over 46 pages |
-| ... declared once, by the page itself | **110** |
-| ... restating a widget an ancestor already declares | **4** |
+| `Begin Object` component blocks | **135** over 46 pages |
+| ... declared once, by the page itself | **130** |
+| ... restating a widget an ancestor already declares | **5** |
 | distinct widget classes | **31** |
 | ... classes the corpus does not carry | **0** |
-| ... stating all four `Win*` values on the page | **83** |
+| ... stating all four `Win*` values on the page | **102** |
 | ... stating none | **25**, of which **25** take theirs from the widget class's own defaults and **0** state none anywhere |
 
 | page | widgets | with geometry | own | restated |
@@ -428,14 +428,14 @@ A page's `Begin Object` blocks are its layout: each block names a widget class a
 | `StargateMenus.CreditsPage` | `GUILabel:cTempLB` | 1 | 1 | 0 |
 | `StargateMenus.DeleteProfilePage` | `GUIButton:cBackground`, `GUILabel:cDesc`, `GUIButton:cNoButton`, `GUILabel:cProfile`, `GUIButton:cYesButton` | 5 | 5 | 0 |
 | `StargateMenus.DeleteSavedGamePage` | `GUIButton:cBackground`, `GUILabel:cDesc`, `GUILabel:cFile`, `GUIButton:cNoButton`, `GUIButton:cYesButton` | 5 | 5 | 0 |
-| `StargateMenus.ErrorPage` | `FullSlidingPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.ErrorPage` | `GUILabel:cDesc`, `GUIButton:cOkayButton`, `FullSlidingPanel:cPanel` | 2 | 3 | 0 |
 | `StargateMenus.ExtrasPage` | `GUILabel:cTempLB` | 1 | 1 | 0 |
 | `StargateMenus.HintScreen` | `ControllerButton:MyContinueBN`, `SGScrollTextBox:MyHintTextBox` | 2 | 2 | 0 |
 | `StargateMenus.InGameInfoScreen` | `InGameInfoPanel:MyGameInfoPN` | 0 | 1 | 0 |
 | `StargateMenus.InGameMenu` | `GUIPanel:MyBackPN`, `GUIButton:cExitBN` | 1 | 2 | 0 |
-| `StargateMenus.InGameScoreboard` | `GUIListBox:ListBox1`, `GUIListBox:ListBox2`, `GUIListBox:ListBox3`, `GUIListBox:ListBox4`, `GUIListBox:ListBox5`, `FullSlidingPanel:cPanel` | 5 | 6 | 0 |
+| `StargateMenus.InGameScoreboard` | `GUIListBox:ListBox1`, `GUIListBox:ListBox2`, `GUIListBox:ListBox3`, `GUIListBox:ListBox4`, `GUIListBox:ListBox5`, `FullSlidingPanel:cPanel`, `GUILabel:cTitle`, `GUILabel:cTitle2` | 5 | 7 | 1 |
 | `StargateMenus.LoadGameMenu` | `SaveGamePanel:cSavePN` | 1 | 1 | 0 |
-| `StargateMenus.MainMenu` | `SGLabel:cBuildStamp`, `RightLockingMenuPanel:cPanel` | 1 | 2 | 0 |
+| `StargateMenus.MainMenu` | `SGLabel:cBuildStamp`, `GUIButton:cContinueBN`, `GUIButton:cExtrasBN`, `GUIButton:cMultiBN`, `GUIButton:cOptionsBN`, `RightLockingMenuPanel:cPanel`, `GUIButton:cSingleBN` | 6 | 7 | 0 |
 | `StargateMenus.MultiPlayerInGame` | `GUIButton:cOptionsBN`, `GUIButton:cResumeGameBN` | 2 | 2 | 0 |
 | `StargateMenus.MultiplayerCharSelect` | `CharacterSelectionPanel:cChar`, `CurrentCharPanel:cCurr` | 0 | 2 | 0 |
 | `StargateMenus.MultiplayerGameSelect` | `CurrentGameModePanel:cCurr`, `GameModeSelectionPanel:gmPN` | 0 | 2 | 0 |
@@ -446,9 +446,9 @@ A page's `Begin Object` blocks are its layout: each block names a widget class a
 | `StargateMenus.NotYetImplementedPage` | `GUIButton:cOkBN`, `GUIButton:cQuitBackground`, `GUILabel:cQuitDesc` | 1 | 3 | 0 |
 | `StargateMenus.OptionsEditAppearance` | `CharacterSelectionPanel:cChar`, `CurrentCharPanel:cCurr` | 0 | 2 | 0 |
 | `StargateMenus.OptionsEditAudio` | `moEditBox:cMusic`, `moEditBox:cSoundFX`, `moEditBox:cVoice` | 3 | 3 | 0 |
-| `StargateMenus.OptionsEditProfile` | `RightLockingMenuPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.OptionsEditProfile` | `GUIButton:cAppearance`, `GUIButton:cAudio`, `GUIButton:cControls`, `moEditBox:cName`, `RightLockingMenuPanel:cPanel`, `GUIButton:cVideo` | 5 | 6 | 0 |
 | `StargateMenus.OptionsEditVideo` | `moComboBox:vpBox` | 1 | 1 | 0 |
-| `StargateMenus.QuestionPage` | `FullSlidingPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.QuestionPage` | `GUILabel:cDesc`, `GUIButton:cNoButton`, `FullSlidingPanel:cPanel`, `GUIButton:cYesButton` | 3 | 4 | 0 |
 | `StargateMenus.QuickLoadMapTempPage` | `MapSelectionPanel:chPN` | 0 | 0 | 1 |
 | `StargateMenus.RestartGame` | `GUIButton:cAutoLoadBN`, `GUIButton:cLoadGameBN`, `GUIButton:cRestartBN` | 3 | 3 | 0 |
 | `StargateMenus.SaveGameMenu` | `SaveGamePanel:cSavePN` | 1 | 1 | 0 |
@@ -457,7 +457,7 @@ A page's `Begin Object` blocks are its layout: each block names a widget class a
 | `StargateMenus.ServerSelectionPage` | `ServerSelectionPanel:chPN` | 0 | 1 | 0 |
 | `StargateMenus.SinglePlayerChapterSelect` | `CurrentChapterPanel:cCurr`, `ChapterSelectionPanel:chPN` | 0 | 2 | 0 |
 | `StargateMenus.SinglePlayerInGame` | `GUIButton:cRestartBN`, `GUIButton:cResumeGameBN` | 2 | 2 | 0 |
-| `StargateMenus.SinglePlayerMenu` | `RightLockingMenuPanel:cPanel` | 0 | 1 | 0 |
+| `StargateMenus.SinglePlayerMenu` | `GUIButton:cChapterBN`, `GUIButton:cLoadBN`, `GUIButton:cNewGameBN`, `RightLockingMenuPanel:cPanel`, `GUIButton:cTutorialBN` | 4 | 5 | 0 |
 | `StargateMenus.SinglePlayerSelectProfile` | `CurrentProfilePanel:cCurr`, `ProfilePanel:cProfile` | 0 | 2 | 0 |
 | `StargateMenus.SinglePlayerTutorial` | `GUIButton:cBackground`, `GUIButton:cNoButton`, `GUILabel:cQuestion`, `GUIButton:cYesButton` | 3 | 4 | 0 |
 | `StargateMenus.SystemLinkMenu` | `GUILabel:cHint`, `GUIButton:cHost`, `GUIButton:cJoin` | 3 | 3 | 0 |
@@ -474,6 +474,7 @@ A page's `Begin Object` blocks are its layout: each block names a widget class a
 
 | page | widget | class | ancestor | its class |
 |---|---|---|---|---|
+| `StargateMenus.InGameScoreboard` | `cTitle` | `GUILabel` | `StargateMenus.SGPageBase` | `SGLabel` |
 | `StargateMenus.MultiplayerMapSelect` | `chPN` | `MapSelectionPanel` | `StargateMenus.SinglePlayerChapterSelect` | `ChapterSelectionPanel` |
 | `StargateMenus.MultiplayerServerSelect` | `chPN` | `MultiplayerServerPanel` | `StargateMenus.ServerSelectionPage` | `ServerSelectionPanel` |
 | `StargateMenus.QuickLoadMapTempPage` | `chPN` | `MapSelectionPanel` | `StargateMenus.SinglePlayerChapterSelect` | `ChapterSelectionPanel` |
@@ -485,7 +486,7 @@ A page's block places a panel; what the panel *contains* is its own class's defa
 
 | measure | answer |
 |---|---|
-| widget classes a page names | **31**, used by **114** component blocks |
+| widget classes a page names | **31**, used by **135** component blocks |
 | ... declaring their own children | **12** |
 | ... widgets, whose block declares no children | **7** |
 | ... with no emitted block at all | **12** |
@@ -512,48 +513,24 @@ A page's block places a panel; what the panel *contains* is its own class's defa
 
 The 7 classes that declare no children are widgets, not empty panels: `GUIButton`, `GUILabel`, `GUIPanel`, `GUITitleBar`, `SGLabel`, `moComboBox`, `moEditBox`. Their block states properties (`Caption`, `StyleName`, the rectangle), never a child.
 
-The panels the tree does not carry are not script-built: each has a defaults *block* in its package (121-129 declared properties) that the reader refuses at the start, so the emitted tree has no file for it and its contents stay unknown. `inventory/class_defaults_misses.csv` holds the reader's own verdict, joined here per class.
+The panels the tree does not carry are **not** classes whose block the reader refuses: each block is one tag, sitting exactly where its record's closing group ends and ending on the payload's last byte, and that tag names a child object the panel's own class owns (`ChapterList'chList'`, `GUILabel'cHint'`, `SGListBox'cListBox'`, ...). The emitter writes no file for them because its class-level locator ranks a three-tag parse *inside* the record's closing group above the block at the group's end — the same ranking the misses ledger used to call these `type-contradiction`. So what is missing is not the panel's contents but the file's one line, and every child a panel owns is itself an export with a readable block.
 
-| widget class | package | declared properties | reader verdict | read before refusing |
-|---|---|---:|---|---:|
-| `GUIListBox` | GUI | 122 | `single-declared` | 1 |
-| `ChapterSelectionPanel` | StargateMenus | 122 | `type-contradiction` | 1 |
-| `CharacterSelectionPanel` | StargateMenus | 122 | `type-contradiction` | 1 |
-| `CoopPlayerPanel` | StargateMenus | 128 | `type-contradiction` | 1 |
-| `FullSlidingPanel` | StargateMenus | 124 | `single-declared` | 1 |
-| `GameModeSelectionPanel` | StargateMenus | 121 | `type-contradiction` | 1 |
-| `MultiplayerServerPanel` | StargateMenus | 129 | `empty-block` | 45 |
-| `ProfilePanel` | StargateMenus | 121 | `type-contradiction` | 1 |
-| `RightLockingMenuPanel` | StargateMenus | 124 | `type-contradiction` | 1 |
-| `SelectPawnPanel` | StargateMenus | 122 | `type-contradiction` | 1 |
-| `SelectTeamPanel` | StargateMenus | 123 | `type-contradiction` | 1 |
-| `XBoxLiveServerSelectionPanel` | StargateMenus | 129 | `type-contradiction` | 1 |
+| widget class | package | declared properties | reader verdict | its block's tag |
+|---|---|---:|---|---|
+| `GUIListBox` | GUI | 122 | `single-declared` | none (empty block) |
+| `ChapterSelectionPanel` | StargateMenus | 122 | `single-declared` | none (empty block) |
+| `CharacterSelectionPanel` | StargateMenus | 122 | `single-declared` | none (empty block) |
+| `CoopPlayerPanel` | StargateMenus | 128 | `single-declared` | none (empty block) |
+| `FullSlidingPanel` | StargateMenus | 124 | `single-declared` | none (empty block) |
+| `GameModeSelectionPanel` | StargateMenus | 121 | `single-declared` | none (empty block) |
+| `MultiplayerServerPanel` | StargateMenus | 129 | `empty-block` | none (empty block) |
+| `ProfilePanel` | StargateMenus | 121 | `single-declared` | none (empty block) |
+| `RightLockingMenuPanel` | StargateMenus | 124 | `single-declared` | none (empty block) |
+| `SelectPawnPanel` | StargateMenus | 122 | `single-declared` | none (empty block) |
+| `SelectTeamPanel` | StargateMenus | 123 | `single-declared` | none (empty block) |
+| `XBoxLiveServerSelectionPanel` | StargateMenus | 129 | `single-declared` | none (empty block) |
 
-**21 of the 140 bindings name a widget no block declares.** A page binds each widget twice: the `Begin Object ... Name=` block places it and a property points at it (`MenuPanel=RightLockingMenuPanel'cPanel'`). Where the block lives in a panel class the reader refuses, the pointer resolves to a name and nothing else -- so the rows below are controls that exist (their class is stated) and cannot be placed (their rectangle is in the refused block). 21 of them sit inside a refused panel.
-
-| page | widget | class | bound by | enclosing block |
-|---|---|---|---|---|
-| `StargateMenus.ErrorPage` | `cDesc` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
-| `StargateMenus.ErrorPage` | `cOkayButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
-| `StargateMenus.InGameScoreboard` | `cTitle` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
-| `StargateMenus.InGameScoreboard` | `cTitle2` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
-| `StargateMenus.MainMenu` | `cContinueBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.MainMenu` | `cExtrasBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.MainMenu` | `cMultiBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.MainMenu` | `cOptionsBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.MainMenu` | `cSingleBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.OptionsEditProfile` | `cAppearance` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.OptionsEditProfile` | `cAudio` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.OptionsEditProfile` | `cControls` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.OptionsEditProfile` | `cName` | `moEditBox` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.OptionsEditProfile` | `cVideo` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.QuestionPage` | `cDesc` | `GUILabel` | `MyComponents` | `FullSlidingPanel` |
-| `StargateMenus.QuestionPage` | `cNoButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
-| `StargateMenus.QuestionPage` | `cYesButton` | `GUIButton` | `MyComponents` | `FullSlidingPanel` |
-| `StargateMenus.SinglePlayerMenu` | `cChapterBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.SinglePlayerMenu` | `cLoadBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.SinglePlayerMenu` | `cNewGameBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
-| `StargateMenus.SinglePlayerMenu` | `cTutorialBN` | `GUIButton` | `MyComponents` | `RightLockingMenuPanel` |
+**All 140 of the page-level bindings resolve.** A page binds each widget twice: the `Begin Object ... Name=` block places it, and a property points at it (`MenuPanel=RightLockingMenuPanel'cPanel'`, `MyComponents(0)=GUIButton'cContinueBN'`). The second form points *into* a panel's block, but the object it names is a subobject of the **page** (its Outer is the page class, and its rectangle is in its own block) — so a reader that stops at the panel's contents loses those controls, which is what a dangling binding was. Following one more level places all 140 of them: 140 resolved, 0 dangling.
 
 **What the `Win*` numbers are relative to.** The base `GUIComponent` states **2** of the four (`WinWidth`, `WinHeight`) and a panel class states none, so every panel *is* its container: the two values the base does state make its rectangle its parent's whole box. Two measurements then say the numbers are read against that box and not against the screen. First, 13 of the 18 children that state a rectangle run past the unit square on one axis — nothing clamps them, so the range is not a screen fraction the engine keeps inside the display. Second, 12 widget classes are used by more than one page and 5 of those are placed at more than one page-side rectangle, while the children's numbers are one set — a class has one defaults block, so a child's `Win*` cannot be a screen position, only an offset inside whichever instance box the parent draws. The screen position is the composed product down the tree, which is what `GUIComponent`'s own native body computes and what `docs/UNKNOWNS.md` U27 still wants decoded.
 
@@ -638,9 +615,9 @@ On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu
    pages decide which of four captions each page prints, and the class tree names a handler for 65 of them. A
    rebuilt page that drops a flag loses a caption the shipped build drew — a regression no compiler sees — so
    `make ui-menu-flow` is the target that keeps that half honest alongside the flow.
-6. **A page's layout is a data contract too, and the same target gates it.** The 114 component blocks are rows
+6. **A page's layout is a data contract too, and the same target gates it.** The 135 component blocks are rows
    now — widget class, bound property, declared-versus-restated, and the geometry the page states — so a rebuilt
-   page that drops a widget or slides one changes `inventory/menu_flow.csv` and `make ci` says so. The four
+   page that drops a widget or slides one changes `inventory/menu_flow.csv` and `make ci` says so. The five
    restatements are the baseline to hold: `chPN` is a `ChapterSelectionPanel` on `SinglePlayerChapterSelect`, a
    `MapSelectionPanel` on the two pages that restate it, and a `MultiplayerServerPanel` →
    `XBoxLiveServerSelectionPanel` again on the server-select chain, so a rebuild that loses a restatement draws
@@ -653,7 +630,7 @@ On the handler side the base's own body answers `XC_B`/`XC_BACK` with `CloseMenu
   `BackgroundStyle=ISTY_ScaledBackground` and `StyleName=MainMenu`, and only **nine pages state anything visual
   at all — 16 rows** over 255 top-level properties (16 of 255 is the whole of a page's own visual data):
   `StyleName` on five, `Background` on three, `HintScreen`'s `BackgroundStyle`/`BoundingType`/`ScalingType`/
-  `WinTop` and `NotYetImplementedPage`'s four `Win*` geometry values. The widgets themselves are **114
+  `WinTop` and `NotYetImplementedPage`'s four `Win*` geometry values. The widgets themselves are **135
   `Begin Object` component blocks over 46 pages**, now a table of the widget class, the property the page binds
   it to, whether the page declares it or restates an inherited one, and how much of its own geometry it states;
   four pages still carry `SGPageBase`'s placeholder title (`Basic SG GUI Page: Insert Title`) and 9 of the 59

@@ -197,6 +197,8 @@ component,DeleteSavedGamePage,StargateMenus,own,cNoButton,,GUIButton,,1,,props=1
 component,DeleteSavedGamePage,StargateMenus,own,cDesc,,GUILabel,,1,,props=9 geometry=4/4
 component,DeleteSavedGamePage,StargateMenus,own,cFile,,GUILabel,,1,,props=9 geometry=4/4
 component,ErrorPage,StargateMenus,own,cPanel,,FullSlidingPanel,,1,,"props=4 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,ErrorPage,StargateMenus,own,cOkayButton,,GUIButton,,1,,props=10 geometry=4/4
+component,ErrorPage,StargateMenus,own,cDesc,,GUILabel,,1,,props=10 geometry=4/4
 component,ExtrasPage,StargateMenus,own,cTempLB,,GUILabel,,1,,props=6 geometry=4/4
 component,HintScreen,StargateMenus,own,MyHintTextBox,,SGScrollTextBox,,1,,props=4 geometry=4/4
 component,HintScreen,StargateMenus,own,MyContinueBN,,ControllerButton,,1,,props=5 geometry=4/4
@@ -209,9 +211,16 @@ component,InGameScoreboard,StargateMenus,own,ListBox3,,GUIListBox,,1,,props=6 ge
 component,InGameScoreboard,StargateMenus,own,ListBox4,,GUIListBox,,1,,props=6 geometry=4/4
 component,InGameScoreboard,StargateMenus,own,ListBox5,,GUIListBox,,1,,props=6 geometry=4/4
 component,InGameScoreboard,StargateMenus,own,cPanel,,FullSlidingPanel,,1,,"props=9 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,InGameScoreboard,StargateMenus,restated,cTitle,,GUILabel,,1,,props=8 geometry=3/4; restates StargateMenus.SGPageBase whose class is SGLabel
+component,InGameScoreboard,StargateMenus,own,cTitle2,,GUILabel,,1,,props=8 geometry=3/4
 component,LoadGameMenu,StargateMenus,own,cSavePN,,SaveGamePanel,,1,,props=4 geometry=4/4
 component,MainMenu,StargateMenus,own,cBuildStamp,,SGLabel,,1,,props=8 geometry=4/4
 component,MainMenu,StargateMenus,own,cPanel,,RightLockingMenuPanel,,1,,"props=11 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,MainMenu,StargateMenus,own,cContinueBN,,GUIButton,,1,,props=12 geometry=4/4
+component,MainMenu,StargateMenus,own,cSingleBN,,GUIButton,,1,,props=13 geometry=4/4
+component,MainMenu,StargateMenus,own,cMultiBN,,GUIButton,,1,,props=13 geometry=4/4
+component,MainMenu,StargateMenus,own,cOptionsBN,,GUIButton,,1,,props=13 geometry=4/4
+component,MainMenu,StargateMenus,own,cExtrasBN,,GUIButton,,1,,props=13 geometry=4/4
 component,MultiPlayerInGame,StargateMenus,own,cResumeGameBN,,GUIButton,,1,,props=10 geometry=4/4
 component,MultiPlayerInGame,StargateMenus,own,cOptionsBN,,GUIButton,,1,,props=11 geometry=4/4
 component,MultiplayerCharSelect,StargateMenus,own,cChar,,CharacterSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
@@ -238,8 +247,16 @@ component,OptionsEditAudio,StargateMenus,own,cMusic,,moEditBox,,1,,props=11 geom
 component,OptionsEditAudio,StargateMenus,own,cVoice,,moEditBox,,1,,props=11 geometry=4/4
 component,OptionsEditAudio,StargateMenus,own,cSoundFX,,moEditBox,,1,,props=11 geometry=4/4
 component,OptionsEditProfile,StargateMenus,own,cPanel,,RightLockingMenuPanel,,1,,"props=11 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,OptionsEditProfile,StargateMenus,own,cControls,,GUIButton,,1,,props=13 geometry=4/4
+component,OptionsEditProfile,StargateMenus,own,cAppearance,,GUIButton,,1,,props=13 geometry=4/4
+component,OptionsEditProfile,StargateMenus,own,cVideo,,GUIButton,,1,,props=13 geometry=4/4
+component,OptionsEditProfile,StargateMenus,own,cAudio,,GUIButton,,1,,props=13 geometry=4/4
+component,OptionsEditProfile,StargateMenus,own,cName,,moEditBox,,1,,props=10 geometry=4/4
 component,OptionsEditVideo,StargateMenus,own,vpBox,,moComboBox,,1,,props=13 geometry=4/4
 component,QuestionPage,StargateMenus,own,cPanel,,FullSlidingPanel,,1,,"props=5 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,QuestionPage,StargateMenus,own,cYesButton,,GUIButton,,1,,props=10 geometry=4/4
+component,QuestionPage,StargateMenus,own,cNoButton,,GUIButton,,1,,props=11 geometry=4/4
+component,QuestionPage,StargateMenus,own,cDesc,,GUILabel,,1,,props=10 geometry=4/4
 component,QuickLoadMapTempPage,StargateMenus,restated,chPN,,MapSelectionPanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel; restates StargateMenus.SinglePlayerChapterSelect whose class is ChapterSelectionPanel"
 component,RestartGame,StargateMenus,own,cAutoLoadBN,,GUIButton,,1,,props=10 geometry=4/4
 component,RestartGame,StargateMenus,own,cRestartBN,,GUIButton,,1,,props=11 geometry=4/4
@@ -256,6 +273,10 @@ component,SinglePlayerChapterSelect,StargateMenus,own,cCurr,,CurrentChapterPanel
 component,SinglePlayerInGame,StargateMenus,own,cResumeGameBN,,GUIButton,,1,,props=10 geometry=4/4
 component,SinglePlayerInGame,StargateMenus,own,cRestartBN,,GUIButton,,1,,props=11 geometry=4/4
 component,SinglePlayerMenu,StargateMenus,own,cPanel,,RightLockingMenuPanel,,1,,"props=9 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
+component,SinglePlayerMenu,StargateMenus,own,cNewGameBN,,GUIButton,,1,,props=12 geometry=4/4
+component,SinglePlayerMenu,StargateMenus,own,cChapterBN,,GUIButton,,1,,props=13 geometry=4/4
+component,SinglePlayerMenu,StargateMenus,own,cLoadBN,,GUIButton,,1,,props=13 geometry=4/4
+component,SinglePlayerMenu,StargateMenus,own,cTutorialBN,,GUIButton,,1,,props=13 geometry=4/4
 component,SinglePlayerSelectProfile,StargateMenus,own,cProfile,,ProfilePanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.RightLockingPanel"
 component,SinglePlayerSelectProfile,StargateMenus,own,cCurr,,CurrentProfilePanel,,1,,"props=0 geometry=0/4, geometry from StargateMenus.LeftLockingPanel"
 component,SinglePlayerTutorial,StargateMenus,own,cBackground,,GUIButton,,1,,props=7 geometry=2/4
@@ -313,8 +334,8 @@ subcomponent,CurrentGameModePanel,StargateMenus,class,cPic,,GUIImage,2,1,,props=
 subcomponent,CurrentProfilePanel,StargateMenus,class,cTempLB,,GUILabel,2,1,,props=7 geometry=4/4
 subcomponent,CurrentProfilePanel,StargateMenus,class,cPic,,GUIImage,2,1,,props=8 geometry=4/4
 subcomponent,FullSlidingPanel,StargateMenus,none,,,,2,1,,used by 3 page(s); no emitted defaults block
-subcomponent,GUIButton,GUI,leaf,,,,2,1,,used by 43 page(s); its block declares no children
-subcomponent,GUILabel,GUI,leaf,,,,2,1,,used by 24 page(s); its block declares no children
+subcomponent,GUIButton,GUI,leaf,,,,2,1,,used by 59 page(s); its block declares no children
+subcomponent,GUILabel,GUI,leaf,,,,2,1,,used by 28 page(s); its block declares no children
 subcomponent,GUIListBox,StargateMenus,none,,,,2,1,,used by 5 page(s); no emitted defaults block
 subcomponent,GUIPanel,GUI,leaf,,,,2,1,,used by 1 page(s); its block declares no children
 subcomponent,GUIScrollTextBox,GUI,class,TheText,,GUIScrollText,2,1,,"props=4 geometry=0/4, geometry from GUI.GUIComponent"
@@ -345,40 +366,19 @@ subcomponent,VirtualKeyboardPanel,StargateMenus,class,KeyboardBackground,,GUIIma
 subcomponent,VirtualKeyboardPanel,StargateMenus,class,TextEditBox,,GUIEditBox,2,1,,props=11 geometry=4/4
 subcomponent,XBoxLiveServerSelectionPanel,StargateMenus,none,,,,2,1,,used by 1 page(s); no emitted defaults block
 subcomponent,moComboBox,GUI,leaf,,,,2,1,,used by 1 page(s); its block declares no children
-subcomponent,moEditBox,GUI,leaf,,,,2,1,,used by 3 page(s); its block declares no children
-layout_gap,ChapterSelectionPanel,StargateMenus,defaults,122,,type-contradiction,,1,,1 of its 122 declared properties read before the block start is refused
-layout_gap,CharacterSelectionPanel,StargateMenus,defaults,122,,type-contradiction,,1,,1 of its 122 declared properties read before the block start is refused
-layout_gap,CoopPlayerPanel,StargateMenus,defaults,128,,type-contradiction,,1,,1 of its 128 declared properties read before the block start is refused
+subcomponent,moEditBox,GUI,leaf,,,,2,1,,used by 4 page(s); its block declares no children
+layout_gap,ChapterSelectionPanel,StargateMenus,defaults,122,,single-declared,,1,,1 of its 122 declared properties read before the block start is refused
+layout_gap,CharacterSelectionPanel,StargateMenus,defaults,122,,single-declared,,1,,1 of its 122 declared properties read before the block start is refused
+layout_gap,CoopPlayerPanel,StargateMenus,defaults,128,,single-declared,,1,,1 of its 128 declared properties read before the block start is refused
 layout_gap,FullSlidingPanel,StargateMenus,defaults,124,,single-declared,,1,,1 of its 124 declared properties read before the block start is refused
 layout_gap,GUIListBox,GUI,defaults,122,,single-declared,,1,,1 of its 122 declared properties read before the block start is refused
-layout_gap,GameModeSelectionPanel,StargateMenus,defaults,121,,type-contradiction,,1,,1 of its 121 declared properties read before the block start is refused
+layout_gap,GameModeSelectionPanel,StargateMenus,defaults,121,,single-declared,,1,,1 of its 121 declared properties read before the block start is refused
 layout_gap,MultiplayerServerPanel,StargateMenus,defaults,129,,empty-block,,1,,45 of its 129 declared properties read before the block start is refused
-layout_gap,ProfilePanel,StargateMenus,defaults,121,,type-contradiction,,1,,1 of its 121 declared properties read before the block start is refused
-layout_gap,RightLockingMenuPanel,StargateMenus,defaults,124,,type-contradiction,,1,,1 of its 124 declared properties read before the block start is refused
-layout_gap,SelectPawnPanel,StargateMenus,defaults,122,,type-contradiction,,1,,1 of its 122 declared properties read before the block start is refused
-layout_gap,SelectTeamPanel,StargateMenus,defaults,123,,type-contradiction,,1,,1 of its 123 declared properties read before the block start is refused
-layout_gap,XBoxLiveServerSelectionPanel,StargateMenus,defaults,129,,type-contradiction,,1,,1 of its 129 declared properties read before the block start is refused
-binding,ErrorPage,StargateMenus,dangling,cOkayButton,,GUIButton,,1,,"bound by MyComponents inside FullSlidingPanel, whose defaults block the reader refuses"
-binding,ErrorPage,StargateMenus,dangling,cDesc,,GUILabel,,1,,"bound by MyComponents inside FullSlidingPanel, whose defaults block the reader refuses"
-binding,InGameScoreboard,StargateMenus,dangling,cTitle,,GUILabel,,1,,"bound by MyComponents inside FullSlidingPanel, whose defaults block the reader refuses"
-binding,InGameScoreboard,StargateMenus,dangling,cTitle2,,GUILabel,,1,,"bound by MyComponents inside FullSlidingPanel, whose defaults block the reader refuses"
-binding,MainMenu,StargateMenus,dangling,cContinueBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,MainMenu,StargateMenus,dangling,cSingleBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,MainMenu,StargateMenus,dangling,cMultiBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,MainMenu,StargateMenus,dangling,cOptionsBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,MainMenu,StargateMenus,dangling,cExtrasBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,OptionsEditProfile,StargateMenus,dangling,cControls,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,OptionsEditProfile,StargateMenus,dangling,cAppearance,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,OptionsEditProfile,StargateMenus,dangling,cVideo,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,OptionsEditProfile,StargateMenus,dangling,cAudio,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,OptionsEditProfile,StargateMenus,dangling,cName,,moEditBox,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,QuestionPage,StargateMenus,dangling,cYesButton,,GUIButton,,1,,"bound by MyComponents inside FullSlidingPanel, whose defaults block the reader refuses"
-binding,QuestionPage,StargateMenus,dangling,cNoButton,,GUIButton,,1,,"bound by MyComponents inside FullSlidingPanel, whose defaults block the reader refuses"
-binding,QuestionPage,StargateMenus,dangling,cDesc,,GUILabel,,1,,"bound by MyComponents inside FullSlidingPanel, whose defaults block the reader refuses"
-binding,SinglePlayerMenu,StargateMenus,dangling,cNewGameBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,SinglePlayerMenu,StargateMenus,dangling,cChapterBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,SinglePlayerMenu,StargateMenus,dangling,cLoadBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
-binding,SinglePlayerMenu,StargateMenus,dangling,cTutorialBN,,GUIButton,,1,,"bound by MyComponents inside RightLockingMenuPanel, whose defaults block the reader refuses"
+layout_gap,ProfilePanel,StargateMenus,defaults,121,,single-declared,,1,,1 of its 121 declared properties read before the block start is refused
+layout_gap,RightLockingMenuPanel,StargateMenus,defaults,124,,single-declared,,1,,1 of its 124 declared properties read before the block start is refused
+layout_gap,SelectPawnPanel,StargateMenus,defaults,122,,single-declared,,1,,1 of its 122 declared properties read before the block start is refused
+layout_gap,SelectTeamPanel,StargateMenus,defaults,123,,single-declared,,1,,1 of its 123 declared properties read before the block start is refused
+layout_gap,XBoxLiveServerSelectionPanel,StargateMenus,defaults,129,,single-declared,,1,,1 of its 129 declared properties read before the block start is refused
 override,CreateNewProfile,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
 override,CreateNewProfile,StargateMenus,body,InternalOnXControllerEvent,,own,,1,,names XC_Y
 override,HintScreen,StargateMenus,body,InitComponent,,super,,1,,calls Super.InitComponent
@@ -612,4 +612,4 @@ page,TextGameInfo,StargateMenus,page,StargateMenus.TextGameInfo,StargateMenus,un
 page,VSMainMenu,StargateMenus,page,StargateMenus.VSMainMenu,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,VirtualKeyboardPage,StargateMenus,page,StargateMenus.VirtualKeyboardPage,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
 page,XBoxLiveBackDrop,StargateMenus,page,StargateMenus.XBoxLiveBackDrop,StargateMenus,unopened,,0,,"nothing in the corpus names it, by string or by class"
-census,corpus,,,,,,,1,,"packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10|defaults_tree=1|hint_pages=30|no_hint_pages=29|hints_on=67|hint_own=35|hint_inherited=32|page_blocks=50|page_top_props=255|page_components=114|pages_with_components=46|component_pages=46|component_own=110|component_restated=4|component_classes=31|component_geom_full=83|component_geom_none=25|component_geom_from_class=25|component_geom_nowhere=0|component_unresolved=0|sub_classes=31|sub_uses=114|sub_with_layout=12|sub_no_layout=12|sub_leaf=7|sub_multi_use=12|sub_multi_place=5|sub_children=28|sub_depth2=24|sub_depth3=4|sub_second_level=1|sub_child_classes=14|sub_geom_full=18|sub_geom_none=10|sub_geom_partial=0|sub_geom_from_class=10|sub_geom_nowhere=0|sub_outside_unit=0|sub_overshoot=13|sub_base_keys=WinWidth,WinHeight|gap_classes=12|binding_rows=140|binding_resolved=119|binding_dangling=21|binding_in_refused=21|gap_declared=1487|titles_own=39|placeholder_titles=4|draw_rows=16|draw_pages=9|url_pages=1|override_pages=34|init_overrides=33|init_super=33|init_nosuper=0|handler_pages=18|hint_handled=65|hint_no_handler=2"
+census,corpus,,,,,,,1,,"packages=18|classes_with_text=2319|holders=38|edges=72|literal_edges=50|game_edges=47|preproc_edges=2|dead_branch_edges=1|computed=22|arrays=14|commented=37|roots=1|reachable_pages=34|outside_pages=12|mention_pages=0|comment_only_pages=3|unopened_pages=10|defaults_classes=1664|hud_assign=4|hud_swaps=1|classrefs=0|mentions=39|mention_comment=32|mention_unqualified=7|config_rows=30|config_empty=8|config_commented=10|defaults_tree=1|hint_pages=30|no_hint_pages=29|hints_on=67|hint_own=35|hint_inherited=32|page_blocks=50|page_top_props=255|page_components=135|pages_with_components=46|component_pages=46|component_own=130|component_restated=5|component_classes=31|component_geom_full=102|component_geom_none=25|component_geom_from_class=25|component_geom_nowhere=0|component_unresolved=0|sub_classes=31|sub_uses=135|sub_with_layout=12|sub_no_layout=12|sub_leaf=7|sub_multi_use=12|sub_multi_place=5|sub_children=28|sub_depth2=24|sub_depth3=4|sub_second_level=1|sub_child_classes=14|sub_geom_full=18|sub_geom_none=10|sub_geom_partial=0|sub_geom_from_class=10|sub_geom_nowhere=0|sub_outside_unit=0|sub_overshoot=13|sub_base_keys=WinWidth,WinHeight|gap_classes=12|binding_rows=140|binding_resolved=140|binding_dangling=0|binding_in_refused=0|gap_declared=1487|titles_own=39|placeholder_titles=4|draw_rows=16|draw_pages=9|url_pages=1|override_pages=34|init_overrides=33|init_super=33|init_nosuper=0|handler_pages=18|hint_handled=65|hint_no_handler=2"
