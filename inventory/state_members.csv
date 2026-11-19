@@ -1,0 +1,21 @@
+kind,owner,offset,size,name,basis,site,evidence
+member,UObject,0xc,4,StateFrame,assert,0x0640a8,"Core_UnObj+0x138: the assert dereferences the pointer loaded here (`mov eax,DWORD PTR [esi+0xc]`)"
+member,FStateFrame,0x4,4,Node,assert,0x0640b2,its `+0x4` is compared against `Script` at `0x0640b5`
+member,FStateFrame,0xc,4,Code,assert,0x0640ab,"compared against `Node->Script.Data` at `0x0640b5` (`cmp ecx,DWORD PTR [edx+0x48]`)"
+member,UStruct,0x48,12,Script,assert,0x0640b5,"`cmp ecx,DWORD PTR [edx+0x48]` -- the TArray the assert indexes; `+0x4c` is its `Num()`"
+member,FStateFrame,0x1c,4,,shape,0x048eac,the state setter reads `[frame+0x1c]` and takes its `+0x20` as a name; the image names no member
+member,UObject,0x20,4,Name,runtime,,`tools/xemu/names.py --verify`: the dword that resolves through `GNames` to the object's name
+member,UObject,0x24,4,Class,runtime,,`tools/xemu/names.py --verify`: the dword pointing at the object's `UClass`
+record,UState,0x80,8,ProbeMask,writer,0x0394d5,"write 1 of 4, `lea ecx,[esi+0x80]`, handed to the 8-byte writer"
+record,UState,0x88,8,IgnoreMask,writer,0x0394ce,"write 2 of 4, `lea eax,[esi+0x88]`, handed to the 8-byte writer"
+record,UState,0x94,2,LabelTableOffset,writer,0x0394f5,"write 3 of 4, `add esi,0x94`, handed to the 2-byte writer"
+record,UState,0x90,4,Flags,writer,0x0394ee,"write 4 of 4, `lea edx,[esi+0x90]`, handed to the 4-byte writer"
+member,UState,0x90,4,Flags,measured,0x48f14,"FUN_00048e90: `mov cl,BYTE PTR [eax+0x90]` -- the state setter reads the flag byte: `test cl,0x2` marks the `auto` state"
+member,UState,0x80,8,ProbeMask,measured,0x4900d,"FUN_00048e90: `mov edx,DWORD PTR [eax+0x80]` -- the state setter recomputes the frame's probe mask from it"
+member,UState,0x88,8,IgnoreMask,measured,0x49027,"FUN_00048e90: `and edx,DWORD PTR [edi+0x88]` -- the second half of the same recompute"
+member,UState,0x94,2,LabelTableOffset,measured,0x46f22,"FUN_00046f00: `mov ax,WORD PTR [esi+0x94]` -- the label lookup reads it and compares it against 0xffff"
+sentinel,execGotoState,,4,0x2b2,cmp,0x04880d,"cmp edx,0x2b2"
+sentinel,execGotoState,,4,0x2b2,cmp,0x0488d1,"cmp edx,0x2b2"
+sentinel,FUN_00048e90,,4,0x2b2,cmp,0x048ec9,"cmp ebp,0x2b2"
+sentinel,FUN_00048e90,,4,0x2b2,cmp,0x048f43,"cmp ebp,0x2b2"
+sentinel,Core_UnName,,4,Auto,seed-store,0x05e938,"mov DWORD PTR [ebp+0x0],0x2b2"
