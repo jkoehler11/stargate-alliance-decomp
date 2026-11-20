@@ -77,7 +77,9 @@ banner (`docs/NATIVE_NOTES.md`, "The shader toolchain"). They are not in any pac
 at runtime through `PreProcessor` → `d3dxasm_parse` → `XGRAPHICS::D3DTokensToUCode` → the
 `VS_GRAPH_OPTIMIZER::Instruction` graph pass, and **every one of the 45 is referenced** — 41 from per-program
 wrappers that call `ShaderCompileVertex` or `ShaderCompilePixel`, 4 from one function's `mov` immediates
-(`inventory/shader_programs.csv`).
+(`inventory/shader_programs.csv`). The compile is **not** in the boot window: 1,200 EIP samples across the first
+102 s, with rendering active, hit neither dispatcher nor `_XGAssembleShader` (`docs/NATIVE_NOTES.md`, "Runtime
+sampling"). It is a map-load cost, and that is where a rebuild must reproduce it.
 
 That makes shaders the one part of the script/toolchain surface a rebuild cannot skip by reusing shipped
 assets: either the compile path is reproduced, or the microcode for those 45 programs is produced once and

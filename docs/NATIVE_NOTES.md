@@ -787,6 +787,55 @@ xapilib is a guess from four and six names), and the byte totals are the body-ma
 libs' own. It is a survey, not a reading; the four clusters that matter are named, and no conclusion here rests
 on a prefix that the artifact does not show.
 
+## Runtime sampling: what runs, and what samples cannot see (2026-11-19)
+
+The static readings end with a population they cannot name: 7,819 `FUN_*` engine bodies with no in-image
+evidence. `tools/xemu/eip-functions.py` is the first instrument that reads them at runtime — it boots the title
+under xemu, samples `EIP` through QMP's monitor at 4–12 Hz, and maps each sample into
+`symbols/xbox_functions.csv`.
+
+**The harness, as measured** (xemu 0.8.139, debug flash, this desktop):
+
+- The guest needs a **regular file** for its DVD: xemu's QEMU backend rejects a directory mount
+  (`'file' driver requires ... to be a regular file`), so `tools/xemu/build-xiso.sh` has to build the 2.25 GB
+  XISO first. The build also reports that this is a **debug-kit** XBE (media types zero), which is why the debug
+  flash is required.
+- From ssh the session is **KDE Wayland**: `XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1` launches
+  xemu with GL up. `DISPLAY=:0` is refused and this SDL build has no `dummy` driver, so neither works headless.
+- The AppImage spawns `AppRun` → `qemu-system` as children, so terminating the wrapper leaves a qemu holding
+  `xbox_hdd.qcow2`; the next boot then dies with **`Failed to get "write" lock`** and no QMP socket. The tool now
+  launches with `start_new_session=True` and kills the whole process group.
+
+**Two runs, both after the title came up:**
+
+| window | samples | distinct EIP | inside a named function | hottest |
+|---|---:|---:|---:|---|
+| 170 s → 230 s | 240 | 180 | 207 (86%) | `FUN_00463864` 26, `FUN_0022b0a0` 12, `Core_UnTemplate` 9, `FUN_002b5c20` 8, `_D3DDevice_SetStreamSource@12` 6 |
+| 6 s → 102 s | 1,200 | 585 | 785 (65%) | `FUN_00463864` 62, `FUN_002b5c20` 38, `Core_UnTemplate` 36, `FUN_00229390` 30, `_D3DDevice_SetStreamSource@12` 29, `_D3DDevice_DrawIndexedVertices@12` 12, `D3DDrv_D3DRenderInterface` 12 |
+
+Four things this establishes:
+
+1. **The instrument works.** Two thirds to five sixths of samples land inside a named function, and the hot list is
+   recognisable engine work — `Core_UnTemplate`, `Core_UnClass`, `Engine_UnRenderVisibility`, the D3D device calls.
+   So the map is good enough to interpret a sample, which is the precondition for everything below.
+2. **The hot `FUN_*` are now ranked by measurement rather than by guess.** `FUN_00463864` is the busiest unnamed
+   body in both runs (5.2% of the boot window), then `FUN_002b5c20`, `FUN_00229390`, `FUN_002bc350`. That is the
+   reading order for 4.9's engine half, and it costs one boot instead of a session of guessing.
+3. **The shader prediction failed, informatively.** Neither `ShaderCompileVertex` nor `ShaderCompilePixel` nor
+   `_XGAssembleShader@44` was sampled in either window, while rendering was demonstrably active
+   (`_D3DDevice_DrawIndexedVertices`, `D3DDrv_D3DRenderInterface`, `?BlockOnTime@D3D@@`). If all 45 programs were
+   compiled inside the sampled window and the work took ~0.5 s in total, 1,200 samples at 0.08 s would expect
+   about six hits; zero hits means the compile is **not** in the boot window. It belongs to map load or first use,
+   so a rebuild exercises the shader path when it loads a map, not when it starts — and "shaders compile at
+   startup" is now retired from `docs/REBUILD.md`'s wording of the requirement.
+4. **Sampling cannot see short work, and that is a property of the instrument.** One-shot init bodies (a few
+   milliseconds), anything under ~80 ms at this rate, and code that runs before the first sample are all invisible.
+   Confirming a one-shot needs a breakpoint or a much higher rate during a narrower window, not a longer run.
+
+**What the residue means.** In the boot-window run 415 of 1,200 samples fell in no map row (35%). Some are
+Ghidra-merged bodies and some are the `FUN_*` gaps the map itself marks; either way that fraction is a measure of
+the map's runtime coverage, and it is the next thing to push down rather than a defect in the sampler.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
