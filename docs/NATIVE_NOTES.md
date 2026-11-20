@@ -1256,6 +1256,56 @@ is the next scan: the same pattern against every function that writes `[0x460ef0
 **Still open.** Whether `NN` equals a `D3DRS_*` index is not established; the 17 words are the vocabulary this build
 uses in this band, not the state space, which has room for about thirty two-byte slots between `0x300` and `0x37c`.
 
+### The push buffer has four users, and records are not all eight bytes (2026-11-19)
+
+Two scans close this out. First, the *shape* — `mov eax,[wptr]; add eax,n; cmp eax,[limit]` — finds only two bodies,
+and they share the same buffer with different record sizes:
+
+| body | buffer | step |
+|---|---|---:|
+| `@D3DDevice_SetRenderState_Simple@8` | `0x460ef0` / `0x460ef4` | 8 |
+| `@D3DDevice_SetVertexShaderConstant1Fast@8` | `0x460ef0` / `0x460ef4` | **28** (`0x1c`) |
+
+Then the census, by every reference to the two absolutes: **8 references to the write pointer in 4 functions, 4
+references to the limit in 3** — and nothing else in the code section touches either:
+
+| function | write-pointer refs | role |
+|---|---:|---|
+| `_Direct3D_CreateDevice@24` | 1 | initialises the buffer |
+| `@D3DDevice_SetRenderState_Simple@8` | 2 | appends an 8-byte state record |
+| `@D3DDevice_SetVertexShaderConstant1Fast@8` | 2 | appends a 28-byte constant record |
+| `@D3DDevice_SetVertexShaderConstantNotInl` | 3 | appends the same record, out of line |
+
+Three readings:
+
+1. **The buffer is heterogeneous.** Records are 8 bytes for a state and 28 for a vertex-shader constant, so whatever
+   walks it must decode by command word before it knows the stride. That is a stronger constraint on a rebuild than
+   "append pairs": the walker, not the emitters, defines the format.
+2. **The whole push surface is four functions.** Not "the driver emits commands in many places" — three emitters and
+   one initialiser, all in `d3d8`, which makes this a tractable thing to reproduce or intercept rather than a diffuse
+   behaviour.
+3. **No pixel-shader constant setter is linked, and that is a question rather than a note.** Nothing in the map
+   matches `PixelShaderConstant`, so this build never calls `D3DDevice_SetPixelShaderConstant*`. The obvious
+   explanation — that the shaders do not use constants — is **wrong**: `ps.1.1` has the constant registers `c0`–`c7`,
+   and counting programs whose text reads one gives 26 of the 60:
+
+   | version | programs | reading a `c#` register |
+   |---|---:|---:|
+   | `ps.1.1` | 9 | 6 |
+   | `xps.1.1` | 12 | 9 |
+   | `ps.1.4` | 17 | **17** |
+   | `vs.1.1` | 19 | 19 |
+   | `xvs.1.1` | 3 | 2 |
+
+   So pixel constants are used and no linked entry point sets them, which means they arrive by a route not yet found:
+   an unnamed setter pushing to a different buffer, or a second FIFO beside `0x460ef0`. Both are checkable — the first
+   by scanning for absolute references to other write-pointer/limit pairs, the second by the same shape scan with a
+   wider `add eax,n` tolerance. Recorded as open, not as settled.
+
+**Limits.** The shape scan misses emitters that reach the buffer by a different instruction sequence, so the census
+above — by absolute reference — is the stronger of the two and is the one the four-user claim rests on. Whether the
+28-byte record carries a register index plus four floats is not read here; the step is measured, the layout is not.
+
 **Limits.** The buffer addresses (`0x460ef0`, `0x460ef4`) are read as a write pointer and a limit from these 39 bytes,
 and the consumer of the buffer was not read here.
 
