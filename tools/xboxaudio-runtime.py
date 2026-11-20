@@ -20,10 +20,17 @@ wide literal, builds an `FString` from it, pushes a second wide literal, builds 
 and calls `0x2530f0` on the engine's counter block (`0x7b5dd8`); the same first literal (`Audio`)
 precedes every call and the second differs. The return lands in a field of the object. That is a
 named-counter registration: a group, a name, and a per-instance handle, done once and guarded by a
-global flag -- the same shape as Unreal's `FStat`, and the block the pump's `rdtsc` bookkeeping
-indexes (`0x7b5dfc`) is the counter array those handles index into. No string in the body says
+global flag -- the same shape as Unreal's `FStat`. No string in the body says
 "stat", so the rows below carry the evidence (group, name, store offset, the guard global) and the
 word *registration* rather than a class name.
+
+**The handles and the pump's `rdtsc` are two different mechanisms, and the census says so.** The
+first reading of this body guessed that the cycle-counter array the pump writes (`0x007b5dfc`) was
+the one the eight handles index into. Counting the absolute references to both globals refutes it:
+`0x007b5dfc` is read from 106 sites in dozens of engine bodies (renderer, actor, spawn, level tick,
+the D3D driver), which is an engine-wide cycle-scope array, while the block at `0x007b5dd8` is an
+object whose address is passed as `this` into its own methods. The rows below carry both counts, so
+the shape is stated and the guess is not.
 
     python3 tools/xboxaudio-runtime.py --image DUMP/default.xbe -o inventory/audio_runtime.csv
     python3 tools/xboxaudio-runtime.py --check     # synthetic instruction rows; no dump, writes nothing
@@ -47,6 +54,7 @@ INVENTORY = os.path.join(ROOT, "inventory")
 FUNCTIONS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 TABLES = os.path.join(INVENTORY, "xbe_class_tables.csv")
 NAMES = os.path.join(INVENTORY, "xbe_class_table_names.csv")
+MODULES = os.path.join(INVENTORY, "function_modules.csv")
 OUT = os.path.join(INVENTORY, "audio_runtime.csv")
 HEADER = ["kind", "address", "value", "detail"]
 
@@ -188,12 +196,111 @@ def cache_row(rows):
             "second-instance path the cached ids and their count")
 
 
+def dword_refs(xbe, va):
+    """Every aligned dword in a loaded section that spells `va`: an absolute reference to it."""
+    needle = struct.pack("<I", va)
+    hits = []
+    for s in xbe.sections:
+        if s.fsize <= 0:
+            continue
+        blob = xbe.data[s.foff:s.foff + s.fsize]
+        start = 0
+        while True:
+            i = blob.find(needle, start)
+            if i < 0:
+                break
+            if i % 4 == 0:
+                hits.append(s.va + i)
+            start = i + 1
+    return hits
+
+
+def insn_at(xbe, funcs, va, bases=None):
+    """The decoded instruction that covers `va`, in the body the map places there."""
+    import bisect
+    bases = bases if bases is not None else sorted(funcs)
+    i = bisect.bisect_right(bases, va) - 1
+    owner = None
+    if i >= 0:
+        base = bases[i]
+        name, size = funcs[base]
+        if base <= va < base + size:
+            owner = (base, name, size)
+    if not owner:
+        return None, None
+    best = None
+    for site, text in disasm(xbe, owner[0], owner[2]):
+        if site <= va:
+            best = (site, text)
+        else:
+            break
+    return owner, best
+
+
+def counter_ref_rows(xbe, funcs, modules):
+    """Who else reads the counter block and its array, and from which module.
+
+    The previous reading called `0x007b5dfc` "the counter array the eight handles index into". An
+    absolute-reference census says otherwise: the same array is read by engine bodies with nothing to
+    do with audio (renderer, actor, spawn, level tick, the D3D driver), which is what an engine-wide
+    cycle-scope array looks like, and the block at `0x007b5dd8` is an object whose address is passed
+    as `this` to its own methods. Counting the references is what separates the two.
+    """
+    out = []
+    bases = sorted(funcs)
+    for va, label in ((COUNTER_BLOCK, "block"), (COUNTER_ARRAY, "array")):
+        grouped = {}
+        loose = []
+        for site in dword_refs(xbe, va):
+            owner, insn = insn_at(xbe, funcs, site, bases)
+            if not owner:
+                loose.append(site)
+                continue
+            grouped.setdefault(owner, []).append((site, insn[1] if insn else "?"))
+        for (base, name, size), hits in sorted(grouped.items(), key=lambda kv: -len(kv[1])):
+            site, text = hits[0]
+            out.append(("counter-ref", "0x%08x" % va,
+                        "%s@0x%08x (%d site%s)" % (name, base, len(hits),
+                                                   "" if len(hits) == 1 else "s"),
+                        "%s (%d bytes, %s): %d reference(s), first at 0x%08x `%s`"
+                        % (name, size, modules.get(base, "unattributed"), len(hits), site, text)))
+        if loose:
+            out.append(("counter-ref", "0x%08x" % va, "%d site(s) with no body" % len(loose),
+                        "references inside a body the function map does not cover: %s"
+                        % ", ".join("0x%08x" % s for s in loose[:8])))
+    return out
+
+
+def ref_census(rows, funcs, modules):
+    """One line per target: sites, bodies, and how many of those bodies are not audio module code."""
+    out = []
+    for va, label in ((COUNTER_BLOCK, "block"), (COUNTER_ARRAY, "array")):
+        local = [r for r in rows if r[0] == "counter-ref" and r[1] == "0x%08x" % va]
+        sites = 0
+        bodies = 0
+        audio = 0
+        for r in local:
+            text = r[3]
+            if "no body" in r[2]:
+                sites += int(r[2].split()[0])
+                continue
+            bodies += 1
+            sites += int(r[2].rsplit("(", 1)[1].split()[0])
+            if "XboxAudio" in text:
+                audio += 1
+        out.append(("ref-census", "0x%08x" % va, "%s" % label,
+                    "%d site(s) over %d bod%s, %d of them XboxAudio"
+                    % (sites, bodies, "y" if bodies == 1 else "ies", audio)))
+    return out
+
+
 def counter_row(rows, this_reg="ebp", window=14):
     """The cycle-counter bookkeeping: an `rdtsc` whose low dword is subtracted into a counter.
 
-    The row names the counter array, the field that indexes it, and the subtraction, because that is
-    what makes the block the pump writes the same block the device's registrations hand out handles
-    into -- a claim about two artifacts, so both sides are named here.
+    The row names the array, the field that indexes it, and the subtraction. Whether that array is
+    the one the registrations hand handles into is a *separate* question, and the `counter-ref`
+    census below answers it: `0x007b5dfc` is read by engine bodies with nothing to do with audio,
+    so the pump's `rdtsc` block is the engine's shared cycle-scope idiom, not one of the eight.
     """
     for i, (site, text) in enumerate(rows):
         if not text.startswith("rdtsc"):
@@ -437,6 +544,17 @@ def main():
         if cache:
             out.append(cache)
 
+    # Who else reads the block and the array the registration hands handles into.
+    modules = {}
+    for r in rows(MODULES):
+        try:
+            modules[int(r["address"], 16)] = (r.get("module") or "unattributed")
+        except (KeyError, ValueError):
+            continue
+    refs = counter_ref_rows(xbe, funcs, modules)
+    out.extend(refs)
+    out.extend(ref_census(refs, funcs, modules))
+
     out.append(("census", "", "pump",
                 "pump=%d insns %d direct %d sdk-band %d indirect %d literals; guards=%d; "
                 "file=%d; registrations=%d; registers=%d"
@@ -519,7 +637,21 @@ def selftest():
     names = {0x4a20e0: "_DirectSoundCreate@12", 0x33e2cd: "_CreateFileA@28", 0x574d0: "FUN_000574d0"}
     assert [n for _, _, n in api_calls([(1, "call 0x4a20e0"), (2, "call 0x574d0")], names.get)] \
         == ["_DirectSoundCreate@12"]
-    print("xboxaudio-runtime: self-test ok (pool boundary, gates, pairs, stores, SDK filter)")
+
+    # The reference census counts sites from the row text it wrote, and a body row is one body.
+    synth = [("counter-ref", "0x007b5dfc", "FUN_00000010 (3 sites)",
+              "FUN_00000010 (40 bytes, Engine): first at 0x00000020 `mov eax,ds:0x7b5dfc`"),
+             ("counter-ref", "0x007b5dfc", "XboxAudio_Foo (1 site)",
+              "XboxAudio_Foo (60 bytes, XboxAudio): first at 0x00031000 `mov ecx,DWORD PTR ds:0x7b5dfc`"),
+             ("counter-ref", "0x007b5dfc", "2 site(s) with no body",
+              "references inside a body the function map does not cover: 0x0008953c, 0x00093294"),
+             ("counter-ref", "0x007b5dd8", "FUN_000002e9 (2 sites)",
+              "FUN_000002e9 (691 bytes, XboxAudio): first at 0x0002ea74 `mov ecx,0x7b5dd8`")]
+    cen = {r[1]: r for r in ref_census(synth, {}, {})}
+    assert cen["0x007b5dfc"][3] == "6 site(s) over 2 bodies, 1 of them XboxAudio", cen["0x007b5dfc"]
+    assert cen["0x007b5dd8"][3] == "2 site(s) over 1 body, 1 of them XboxAudio", cen["0x007b5dd8"]
+
+    print("xboxaudio-runtime: self-test ok (pool boundary, gates, pairs, stores, SDK filter, refs)")
     return 0
 
 

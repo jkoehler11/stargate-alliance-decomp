@@ -154,7 +154,7 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x000320c0,dtor_XBoxAudioSubsystem,class table installed before any call; the body does not return this,,,,,,,
 0x00033450,ctor_XHVVoiceSubsystem,class table installed after a call into the base constructor; the body returns this,,,,,,,
 0x00033fc0,dtor_XHVVoiceSubsystem,class table installed before any call; the body does not return this,,,,,,,
-0x000340c0,appMallocBeforeInit,logs the wide literal "Called %s before memory init" with "appMalloc" and returns 0; reached through a pointer (call [reg]) from 961 sites = the pre-init allocator slot,,,,,Core,,29
+0x000340c0,appMallocBeforeInit,"logs the wide literal ""Called %s before memory init"" with ""appMalloc"" and returns 0; reached through a pointer (call [reg]) from 961 sites = the pre-init allocator slot",,,,,Core,,29
 0x000341a0,FFileManagerError_CreateFileReader,own method literal FFileManagerError::CreateFileReader,FFileManagerError,,,,Core,,24
 0x000341c0,FFileManagerError_CreateFileWriter,own method literal FFileManagerError::CreateFileWriter,FFileManagerError,,,,Core,,24
 0x00035890,ctor_StrProperty,class table installed after a call into the base constructor; the body returns this,,,,,,,
@@ -179,7 +179,7 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x000539f0,dtor_LinkerSave,class table installed before any call; the body does not return this,,,,,,,
 0x00053b70,dtor_LinkerSaveGame,class table installed before any call; the body does not return this,,,,,,,
 0x00053c10,dtor_LinkerLoadGame,class table installed before any call; the body does not return this,,,,,,,
-0x00058a30,appAssertFailed,wide literal "Assertion failed: %s [File:%s] [Line: %i]" is the format it logs; its arguments are expression / file / line; 2432 direct call sites,,,,,Core,,67
+0x00058a30,appAssertFailed,"wide literal ""Assertion failed: %s [File:%s] [Line: %i]"" is the format it logs; its arguments are expression / file / line; 2432 direct call sites",,,,,Core,,67
 0x00062ce0,ctor_Object,class table installed after a call into the base constructor; the body returns this,,,,,,,
 0x00063410,UObject_StaticShutdownAfterError,own method literal UObject::StaticShutdownAfterError,UObject,,,,Core,,142
 0x00066b60,ctor_Commandlet,class table installed after a call into the base constructor; the body returns this,,,,,,,
@@ -5216,28 +5216,28 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x0002fd70,XboxAudio_CreateDevice,"audio chain: slot 31 of XBoxAudioSubsystem's table (+0x7c) and no direct caller; calls _DirectSoundCreate@12 then _XAudioDownloadEffectsImage@16, then six bring-up bodies",,,,,XboxAudio,,272
 0x0002dff0,XboxAudio_SetNextStream,"audio chain: XBoxAudioSubsystem +0xd0 (slot 52) and no direct caller; its own literal SetNextStream, and it calls _XWaveFileCreateMediaObject@12",,,,,XboxAudio,,531
 0x0002a2f0,XboxAudio_CreateVoiceCodecs,audio chain: two _XVoiceCreateMediaObjectEx@28 calls with two callbacks into one slot object,,,,,XboxAudio,,104
-0x0002a9b0,FUN_0002a9b0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,80
+0x0002a9b0,XboxAudio_InitBufferDesc,"audio chain: zeroes a six-dword descriptor, fills pointer/length/index from [this+0x38] and the caller's buffer, then memsets the length",,,,,XboxAudio,,80
 0x0002db10,XboxAudio_UnregisterSoundBytes,audio chain: its own literals Sound Data Freed and UnRegSoundBytesAlloc; calls the streaming stop first,,,,,XboxAudio,,198
-0x0002fa90,FUN_0002fa90,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,278
-0x0002b5c0,FUN_0002b5c0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,358
-0x00032040,FUN_00032040,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,65
-0x0002e900,FUN_0002e900,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,691
+0x0002fa90,XboxAudio_SetSoundDevice,"audio chain: slot 32 (+0x80) of XBoxAudioSubsystem's table 0x004d21f8; stops the old device's streaming sounds, stores the new device at +0x98 (the field the pump's first gate tests), applies two mix-bin settings and rebuilds the 0x6c21b0 list",,,,,XboxAudio,,278
+0x0002b5c0,XboxAudio_ShutdownSlots,"audio chain: stops every registered sound (0x2b500), then eight vtable-slot-4 releases and six operator-delete frees",,,,,XboxAudio,,358
+0x00032040,XboxAudio_ResetStreamArray,"audio chain: walks the 0x50-byte records (count +0x4) calling 0x31df0 on each, sets the count to 0 and reallocates one record through 0x55ed0",,,,,XboxAudio,,65
+0x0002e900,XboxAudio_RegisterCounters,"audio chain: eight registrations, each pushing the wide literal Audio then a name (PlaySound twice, Occlusion twice, Update, Streaming, Regular, StoppedSounds), building two FStrings and calling 0x2530f0 on the counter block 0x7b5dd8; returns kept at +0x10/+0x04/+0x14/+0x0c/+0x08/+0x18/+0x1c/+0x20, once-only flag 0x7b5df4",,,,,XboxAudio,,691
 0x0002a6f0,XboxAudio_InitVoiceSlot,"audio chain: per index (this+2*index+0x74): CreateVoiceCodecs then the two slot stages, sets a bit in this+0x60",,,,,XboxAudio,,112
 0x0002ed20,XboxAudio_FlushSounds,"audio chain: its own literal [RA] : Flushing, then calls the flush body and the sound-byte unregisterer",,,,,XboxAudio,,137
-0x0002b500,FUN_0002b500,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,91
-0x0002a410,FUN_0002a410,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,97
-0x0002a500,FUN_0002a500,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,152
-0x0002a480,FUN_0002a480,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,115
-0x0002b730,FUN_0002b730,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,178
-0x0002d120,FUN_0002d120,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,364
-0x0002edb0,FUN_0002edb0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,301
-0x0002b320,FUN_0002b320,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,230
-0x0002ac50,FUN_0002ac50,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,67
-0x0002b410,FUN_0002b410,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,229
-0x0002fbb0,FUN_0002fbb0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,203
-0x0002b140,FUN_0002b140,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,228
-0x0002af50,FUN_0002af50,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,89
-0x0002b230,FUN_0002b230,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,228
-0x0002a770,FUN_0002a770,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,72
-0x0002a7c0,FUN_0002a7c0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,165
+0x0002b500,XboxAudio_StopAllSounds,"audio chain: walks the 0x34-byte slot table (count +0x4, base +0x54) and calls 0x2b320 for every slot that holds a key",,,,,XboxAudio,,91
+0x0002a410,XboxAudio_ReleaseSlotObjects,"audio chain: releases the three interface pointers at +0x8/+0xc/+0x10 through vtable slot 4 and frees the two heap blocks at +0x1c/+0x20, clearing each field",,,,,XboxAudio,,97
+0x0002a500,XboxAudio_SubmitMixBuffers,"audio chain: reads the slot index from +0x4, copies three fields through 0x2ac50, zeroes the two buffers at +0x20 and submits them through the second interface (+0xc)",,,,,XboxAudio,,152
+0x0002a480,XboxAudio_SubmitSlotBuffers,"audio chain: builds two 24-byte descriptors over the buffer at +0x1c (stride [obj+0x38]) and submits them through vtable slot 0x10 of the interface at +0x8, returning E_FAIL if either call fails",,,,,XboxAudio,,115
+0x0002b730,XboxAudio_PollDeviceChanges,"audio chain: _XGetDeviceChanges@12 on two masks, merged into +0x64/+0x68; per channel it closes (0x2b410) on either mask and initialises (0x2a6f0) when the bit is present, armed at +0x70 and not yet started in +0x60",,,,,XboxAudio,,178
+0x0002d120,XboxAudio_FindFreeableSource,"audio chain: returns the source with the smallest float at +0x84 among the 0x28-byte entries at +0xd8 (count +0xdc), skipping nulls and entries whose +0x74/+0x75 flags are set; its only caller frees it when a pending read would pass 7 MB",,,,,XboxAudio,,364
+0x0002edb0,XboxAudio_OpenStreamRead,"audio chain: flushes, names the file (Read %s from hard disk), then _CreateFileA@28, _CreateEventA@16, _SetFilePointer@16 and _ReadFile@20 into the overlapped block at +0x134, handle at +0x11c",,,,,XboxAudio,,301
+0x0002b320,XboxAudio_StopSoundByKey,"audio chain: over four channels removes the key from both lists, then finds the slot and calls vtable slot 0x18 on its object (stop), clearing the key and the slot's +0x18",,,,,XboxAudio,,230
+0x0002ac50,XboxAudio_GetSlotFields,"audio chain: indexes the 0x20-byte records at [this+0x14] and writes three fields ([rec+0x1c], [rec+0x18], [rec+0x34]) through three out-pointers",,,,,XboxAudio,,67
+0x0002b410,XboxAudio_CloseSoundDevice,"audio chain: clears the channel's bit in +0x60, zeroes its 0x24-byte block at +0x74, stops the channel's object and re-registers every key of both lists through 0x2b140/0x2b230",,,,,XboxAudio,,229
+0x0002fbb0,XboxAudio_CompleteStreamRead,"audio chain: _GetOverlappedResult@16, accumulates +0x13c, and once the requested size (+0x124) is in closes both handles and flags the stream (+0x74: -0x1000, +0x2000)",,,,,XboxAudio,,203
+0x0002b140,XboxAudio_RemoveLiveKey,"audio chain: removes a 12-byte key from the list at [this + channel*16 + 0x118] (shift down, count -= 12) and writes the key back through 0x2a7c0 when the other list does not hold it",,,,,XboxAudio,,228
+0x0002af50,XboxAudio_HasPendingKey,audio chain: membership test over the 12-byte records at [this + channel*16 + 0x158]; returns 0 or 1,,,,,XboxAudio,,89
+0x0002b230,XboxAudio_RemovePendingKey,"audio chain: the same removal on the list at [this + channel*16 + 0x158], writing the key back when the +0x118 list does not hold it",,,,,XboxAudio,,228
+0x0002a770,XboxAudio_FindSlotByKey,audio chain: scans the count at +0x4 entries of the 0x34-byte slot table at +0x54 for a 12-byte key whose third dword is masked to two bits; returns the index or the count,,,,,XboxAudio,,72
+0x0002a7c0,XboxAudio_ApplyBufferParams,"audio chain: stores the key at rec[index*4+0x20], builds a seven-dword parameter block (four floats floored at -10000 centibels) and hands it to the import at 0x4a0530",,,,,XboxAudio,,165
 0x00121350,Engine_UnEngine_InitAudio,"audio init: pushes ini:Engine.Engine.AudioDevice, constructs the class that key names and stores it at this+0x34, then dispatches slot 31 (+0x7c) on the new object (XboxAudio_CreateDevice); builds the voice subsystem at this+0x3c from the hardcoded XboxAudio.XHVVoiceSubsystem; its only callers are Engine_UnGame and 0x00139d50; no class table installs it, so it is not virtual",,0,0,,Engine,,316

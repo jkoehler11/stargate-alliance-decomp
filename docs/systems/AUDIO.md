@@ -311,9 +311,10 @@ Three things this settles for the audio work:
    `XboxAudio_CreateDevice` (`0x0002fd70`) — a body nothing calls directly, stored only in
    `XBoxAudioSubsystem`'s class table at **slot 31 of 55** (`+0x7c`), whose 272 bytes call
    `_DirectSoundCreate` and then `_XAudioDownloadEffectsImage`. The stream (`+0xc8`), the per-frame pump
-   (`+0x88`) and the next-stream setter (`+0xd0`) are three more slots of the same table, so a rebuild
-   supplies those four virtuals, not a UE2 native. The module's own 31-body chain — ten of them named from
-   their edges — is `docs/NATIVE_NOTES.md`'s last section and `inventory/xboxaudio_chain.csv`.
+   (`+0x88`), the next-stream setter (`+0xd0`) and the device setter (`+0x80`) are four more slots of the
+   same table, so a rebuild supplies those **five** virtuals, not a UE2 native. The module's own 31-body
+   chain — **all 31 named** — is `docs/NATIVE_NOTES.md`'s "module chain" section and
+   `inventory/xboxaudio_chain.csv`.
 
 What is *not* measured: no method in this stack carries a string (0 of 345), so none is confirmed by its own
 message. The device virtual does have a dispatcher, and it is engine code: `Engine_UnEngine_InitAudio`
@@ -406,11 +407,13 @@ was handed:
 |---|---|
 | `+0x98` | the whole body — it is the "is there a device" test |
 | `+0x16c` | `0x0002d9a0`, a 262-byte body that closes an overlapped read (`_GetOverlappedResult@16`, `_CloseHandle@4`) over a file opened by `0x0002d890` (`_CreateFileA@28`, `_SetFilePointer@16`, `_CreateEventA@16`) |
-| `+0x160` | `0x0002fbb0` (203 B), the same completion for the *streaming* path, over `0x0002edb0` (301 B, `_ReadFile@20` and the literal `Read %s from hard disk`) |
+| `+0x160` | `XboxAudio_CompleteStreamRead` (203 B), the same completion for the *streaming* path, over `XboxAudio_OpenStreamRead` (301 B, `_ReadFile@20` and the literal `Read %s from hard disk`) |
 
 It also opens a cycle counter before any of that: `rdtsc`, then `[0x007b5dfc + [this+0x18c]*4] -= timestamp`
-— a per-object slot in an engine-wide array. That array is the other half of a block the device body
-registers when it is created, which is the one thing here that is bookkeeping rather than audio.
+— a per-object slot in an engine-wide array. That array is **not** one of the counters the device registers
+(below): the census in `inventory/audio_runtime.csv` finds the same array read from 106 sites in 52 bodies,
+most of them renderer, actor, spawn and level-tick code, so it is the engine's shared cycle-scope array and
+the pump is one more of its clients.
 
 ## Eight named counters registered at device creation (2026-11-20)
 
@@ -430,10 +433,26 @@ Eight registrations over **six distinct names** — `PlaySound` and `Occlusion` 
 two different fields — and the block runs **once** in the process: a global flag (`0x7b5df4`) is tested at the
 top and set at the end, and the second-instance path copies the cached ids out of a global array
 (`0x7b5ec8`, count `0x7b5ecc`) instead of registering again. The shape is a named-counter registration — a
-group, a name, and a per-instance handle — and the counter array the pump's `rdtsc` bookkeeping indexes is
-the one those handles index into. **No string in the body says "stat"**, so this page states the shape and
-the evidence (group, names, store offsets, the guard flag) rather than a class name, and names the reading a
-registration rather than a sample.
+group, a name, and a per-instance handle. **No string in the body says "stat"**, so this page states the
+shape and the evidence (group, names, store offsets, the guard flag) rather than a class name, and names the
+reading a registration rather than a sample.
+
+**The eight handles are not the pump's `rdtsc` array, and the census is what says so.** `0x7b5dd8` is a
+global *object* — every reference to it loads its address as `this` for one of its own methods
+(`mov ecx,0x7b5dd8`) — and only four bodies touch it: the registration body itself (2 sites), two large
+`Core` bodies (20 and 12 sites) and one `Engine` body (1). The array the pump subtracts its timestamp into,
+`0x7b5dfc` (`0x7b5dd8 + 0x24`), is a different thing again: **106 sites over 52 bodies**, only two of them in
+`XboxAudio` (the pump, and a 1,764-byte `XboxAudio_XboxAudioSubsystem` body), the rest renderer, actor,
+spawn, physics and level-tick code. So the registration is a call into an engine registry object and the
+pump's `rdtsc` block is the engine's shared cycle-scope idiom; the first reading of this section claimed they
+were the same array, and the reference census refutes it. The rows are `counter-ref` and `ref-census` in
+`inventory/audio_runtime.csv`.
+
+What that leaves is a limit rather than a question: of the four bodies that reference the counter block,
+exactly one is `XboxAudio` code — the registration itself — so **no other audio body touches the registry
+directly**. An increment, if it happens per sound, is therefore engine code applying one of the eight handle
+ids: the two `Core` bodies that also reference the block (`0x00253950`, 10,539 bytes and `0x002b0770`,
+4,294 bytes) are the registry's own code, and which of them adds to an entry is not read here.
 
 The nine names together are the audio module's own instrumentation, and they read as the output path's
 outline: what is played, what is occluded, what is streamed, what is regular streaming, what was stopped, and
