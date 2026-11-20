@@ -448,11 +448,20 @@ pump's `rdtsc` block is the engine's shared cycle-scope idiom; the first reading
 were the same array, and the reference census refutes it. The rows are `counter-ref` and `ref-census` in
 `inventory/audio_runtime.csv`.
 
-What that leaves is a limit rather than a question: of the four bodies that reference the counter block,
-exactly one is `XboxAudio` code — the registration itself — so **no other audio body touches the registry
-directly**. An increment, if it happens per sound, is therefore engine code applying one of the eight handle
-ids: the two `Core` bodies that also reference the block (`0x00253950`, 10,539 bytes and `0x002b0770`,
-4,294 bytes) are the registry's own code, and which of them adds to an entry is not read here.
+The block is an engine **stat registry**, and the two `Core` bodies that reference it are initializers, not
+increments. `tools/stat-registry.py` reads all three bodies that register into it (`inventory/stat_registry.csv`,
+`make stat-registry`): `0x00253950` (10,539 B) makes **145** registrations over **22 groups** — `Game` 28,
+`Net` 21, `StaticMesh` 15, `Karma` 10, `LIPSinc` 9, `Visibility` 9, `Mesh` 8, `BSP` 6, `Particle` 6, and
+`Frame`, `LightMap`, `Projector`, `Stencil`, `Terrain`, `DecoLayer`, `Matinee`, `Batch`, `Collision`,
+`Fluid` and the three `StaticMesh Cache` rows below them — while `0x002b0770` (4,294 B) makes **59**, every one
+of them in the single group `Hardware` (the D3D driver's own table), and the audio body makes its 8 in group
+`Audio`. Every registration in all three has the same shape: two wide literals pushed, two `FString`s built,
+`0x2530f0` called with the registry in `ecx`, and the returned handle stored in a field — `+0x04`..`+0x20` for
+the audio module. **Zero `add`, `inc` or `sub` on any `[reg+disp]` stat field appears in any of the three
+bodies**, so the answer to "which `Core` body increments each of the eight counters" is neither: they are the
+engine's and the renderer's registration tables, and an increment is a different method on the same registry,
+reached with a handle rather than a name. Which of the eight audio handles is incremented where is therefore
+still open, but it is not a `Core` body, and the handles are what a reader would have to follow next.
 
 The nine names together are the audio module's own instrumentation, and they read as the output path's
 outline: what is played, what is occluded, what is streamed, what is regular streaming, what was stopped, and
@@ -467,6 +476,55 @@ the module pushes `PlaySound`. `tools/xboxaudio-chain.py` now stops the literal 
 self-test on a two-string blob), and the artifact regenerated with **18 lines changed, all of them that
 column** — the 31 bodies, 240 edges and 115 sites are byte-identical, which is what makes the fix a reader
 fix rather than a re-measurement.
+
+## The four voice modes, and the device each opens (2026-11-20)
+
+The poll (`XboxAudio_PollDeviceChanges`, above) watches device changes and starts or stops a channel; what
+answers a channel is the XHV voice engine's *mode*, and the modes were the last audio classes with no reading.
+They are read now: `CVoiceChatMode` **23** methods, `CVoiceMailMode` **12**, `CLoopbackMode` **4**, `CBaseMode`
+**4** and `CInactiveMode` **1** — **44 methods, 21 of them measured in this bundle**
+(`inventory/{voice_mail,loopback,base,inactive}_mode_methods.csv`). All 44 carry `lib`/`object` attribution:
+`xvoice.lib`, `voicechatmode.obj`, `voicemailmode.obj`, `loopbackmode.obj` and `inactivemode.obj`, which also
+holds `CBaseMode`'s four out-of-line bodies.
+
+They are C++ singletons with real vtables, not UE2 class tables. `tools/xvoice-modes.py` (`make xvoice-modes`)
+reads four **27-slot** tables, contiguous in `.rdata`, and the static object each one is installed in:
+
+| mode | table | slots | static object | span |
+|---|---|---:|---|---:|
+| `CInactiveMode` | `0x00540570` | 27 | `0x005ca294` | `0x14` |
+| `CVoiceMailMode` | `0x005405e0` | 27 | `0x005ca2a8` | `0xa0` |
+| `CVoiceChatMode` | `0x00540658` | 27 | `0x005ca348` | `0x108` |
+| `CLoopbackMode` | `0x005406c8` | 27 | `0x005ca450` | — |
+
+Each table's address appears **exactly once in the image, and never in code**: at the first dword of a
+zero-filled object in `.data`. So the modes are statically constructed singletons, not objects the engine
+allocates, and the span between objects is the mode's own size — 20 bytes for the inactive mode, 160 for the
+mailbox, 264 for chat. **34 of the 108 slot entries are the same target in the same slot as the inactive
+table's**: the concrete modes override `ValidateSet`, `AdditionalInitialize` and `ProcessFrame` (chat also the
+remote-talker calls, mailbox also `VoiceMailPlay`/`VoiceMailStop`), and inherit the rest — `AddLocalTalker` and
+`RemoveLocalTalker` are `CBaseMode`'s bodies in both the mailbox and loopback tables. `CBaseMode` has no table
+of its own; it is only ever inherited from.
+
+**`DSoundInitialize` is not virtual**, so it is in none of the four tables: it is declared `QAE` and each
+mode's own `AdditionalInitialize` calls it directly (`E8 rel32` sites — `0x00345828` from chat's, `0x00344f62`
+from the mailbox's, `0x003460b2` from loopback's). That is the "each mode creates its own `CDirectSound`" story
+in one shape: the engine switches processing mode, that mode's `AdditionalInitialize` runs, and the device is
+opened then, not at boot.
+
+What each one does around the create call is readable in the arguments and the stores:
+
+| mode | device stored at | create arguments | after the create call |
+|---|---|---|---|
+| `CVoiceChatMode` | `+0x24` | the frame value in `esi` for the GUID and the third argument (`create_setup` in the artifact) | `_IDirectSound_SetMixBinHeadroom(0)`, then `CRemoteTalker::InitializeVoiceChatMode` |
+| `CVoiceMailMode` | `+0x10` | `NULL` GUID, `NULL` third argument | a 0x184-byte `DSMIXBINS` through `XHVSysAlloc`, a 0x60-byte talker, then `InitializeVoiceMailMode` |
+| `CLoopbackMode` | `+0x10` | `NULL` GUID, `NULL` third argument | the same allocation and `InitializeLoopbackMode` |
+
+So the mailbox and loopback modes open the default device and build their own mix-bin block, while the chat
+mode stores its device elsewhere and flattens the mix-bin headroom before handing the device to the remote
+talker — the two paths the slot 20 `SetMixBinVolumes` and slot 18 `IsTalking` overrides then drive. None of the
+three selects a device by an immediate, so the four channels the module's poll watches are the
+`_XGetDeviceChanges` masks, not four hard-wired outputs.
 
 ## What this means for a rebuild
 

@@ -1,0 +1,113 @@
+kind,class,table,slots,object,object_span,installer,installer_va,additional_init,dsound_body,dsound_size,dsound_caller,create_setup,slot,target,target_name,target_class,shared_with_base,note
+table,CInactiveMode,0x00540570,27,0x005ca294,0x14,,,,,0,,,,,,,,"5 named slots; object statically initialised, no code dword spells the table"
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,0,0x00344e79,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,1,0x00344e21,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,2,0x00344e0e,Shutdown,CBaseMode,,
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,3,0x00344e4c,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,4,0x00344e2d,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,5,0x00344e58,ValidateSet,CInactiveMode,,
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,6,0x00344d2d,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,7,0x00344cfd,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,8,0x00344cfd,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,9,0x00344d05,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,10,0x00344dc9,AdditionalInitialize,CBaseMode,,
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,11,0x00344d36,AddLocalTalker,CBaseMode,,
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,12,0x00344d6e,RemoveLocalTalker,CBaseMode,,
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,13,0x00344d0d,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,14,0x003479e6,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,15,0x00344d10,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,16,0x00344d18,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,17,0x00344e79,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,18,0x00344d20,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,19,0x00344d10,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,20,0x00344d25,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,21,0x00344d05,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,22,0x00344d10,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,23,0x00344d18,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,24,0x00344d25,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,25,0x00344d25,,,,unnamed in the map
+slot,CInactiveMode,0x00540570,27,,,,,,,,,,26,0x00344d05,,,,unnamed in the map
+table,CVoiceChatMode,0x00540658,27,0x005ca348,0x108,,,0x00345f3d,0x00345828,213,CVoiceChatMode::AdditionalInitialize,"push esi ; lea edi,[ecx+0x24] ; push edi ; push esi",,,,,,"7 named slots; object statically initialised, no code dword spells the table"
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,0,0x00345d17,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,1,0x003454d4,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,2,0x003458fd,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,3,0x003454eb,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,4,0x00345d67,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,5,0x003455d6,ValidateSet,CVoiceChatMode,,
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,6,0x00345187,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,7,0x003456a6,RegisterRemoteTalker,CVoiceChatMode,,
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,8,0x00345e4a,UnregisterRemoteTalker,CVoiceChatMode,,
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,9,0x00345723,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,10,0x00345f3d,AdditionalInitialize,CVoiceChatMode,,
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,11,0x00345d2b,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,12,0x00345d46,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,13,0x00344d0d,,,yes,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,14,0x00345ddf,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,15,0x00345a08,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,16,0x00344d18,,,yes,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,17,0x00344e79,,,yes,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,18,0x00345a7b,IsTalking,CVoiceChatMode,,
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,19,0x00345aa0,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,20,0x00345ad6,SetMixBinVolumes,CVoiceChatMode,,
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,21,0x00345d1b,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,22,0x003457cb,SetPlaybackPriority,CVoiceChatMode,,
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,23,0x0034581c,,,,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,24,0x00344d25,,,yes,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,25,0x00344d25,,,yes,unnamed in the map
+slot,CVoiceChatMode,0x00540658,27,,,,,,,,,,26,0x00344d05,,,yes,unnamed in the map
+table,CVoiceMailMode,0x005405e0,27,0x005ca2a8,0xa0,,,0x003452a9,0x00344f62,218,CVoiceMailMode::AdditionalInitialize,"push esi ; xor eax,eax ; lea edi,[ebp-0x8] ; push ecx",,,,,,"6 named slots; object statically initialised, no code dword spells the table"
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,0,0x0034516a,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,1,0x00344ef5,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,2,0x00345088,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,3,0x00344f01,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,4,0x00345434,ProcessFrame,CVoiceMailMode,,
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,5,0x00344f41,ValidateSet,CVoiceMailMode,,
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,6,0x00345187,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,7,0x00344cfd,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,8,0x00344cfd,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,9,0x00344d05,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,10,0x003452a9,AdditionalInitialize,CVoiceMailMode,,
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,11,0x0034518b,AddLocalTalker,CVoiceMailMode,,
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,12,0x003453b0,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,13,0x0034516e,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,14,0x003450d4,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,15,0x00344d10,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,16,0x00344d18,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,17,0x00344e79,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,18,0x00344d20,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,19,0x00344d10,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,20,0x00344d25,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,21,0x00344d05,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,22,0x00344d10,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,23,0x00344d18,,,yes,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,24,0x003451a1,,,,unnamed in the map
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,25,0x003451e2,VoiceMailPlay,CVoiceMailMode,,
+slot,CVoiceMailMode,0x005405e0,27,,,,,,,,,,26,0x003453e2,VoiceMailStop,CVoiceMailMode,,
+table,CLoopbackMode,0x005406c8,27,0x005ca450,,,,0x003461d8,0x003460b2,218,CLoopbackMode::AdditionalInitialize,"push esi ; xor eax,eax ; lea edi,[ebp-0x8] ; push ecx",,,,,,"5 named slots; object statically initialised, no code dword spells the table"
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,0,0x00345187,,,,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,1,0x00346040,,,,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,2,0x0034618c,,,,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,3,0x0034604c,,,,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,4,0x00346058,ProcessFrame,CLoopbackMode,,
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,5,0x00346091,ValidateSet,CLoopbackMode,,
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,6,0x00345187,,,,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,7,0x00344cfd,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,8,0x00344cfd,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,9,0x00344d05,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,10,0x003461d8,AdditionalInitialize,CLoopbackMode,,
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,11,0x00344d36,AddLocalTalker,CBaseMode,yes,
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,12,0x00344d6e,RemoveLocalTalker,CBaseMode,yes,
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,13,0x0034516e,,,,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,14,0x003479e6,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,15,0x00344d10,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,16,0x00344d18,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,17,0x00344e79,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,18,0x00344d20,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,19,0x00344d10,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,20,0x00344d25,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,21,0x00345d1b,,,,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,22,0x00344d10,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,23,0x00344d18,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,24,0x00344d25,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,25,0x00344d25,,,yes,unnamed in the map
+slot,CLoopbackMode,0x005406c8,27,,,,,,,,,,26,0x00344d05,,,yes,unnamed in the map

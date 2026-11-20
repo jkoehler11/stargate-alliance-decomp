@@ -50,6 +50,8 @@ LIBRARY_READINGS = [
     ("CLocalTalker", "local_talker"), ("CRemoteTalker", "remote_talker"),
     ("CI3DL2Listener", "i3dl2_listener"), ("CFullHRTFSource", "hrtf_source"),
     ("CWaveFile", "wave_file"), ("CQueueXMO", "queue_xmo"), ("XHawkMediaObject", "hawk_media_object"),
+    ("CVoiceMailMode", "voice_mail_mode"), ("CLoopbackMode", "loopback_mode"),
+    ("CBaseMode", "base_mode"), ("CInactiveMode", "inactive_mode"),
 ]
 NAMES = os.path.join("symbols", "xbox_functions.csv")
 IMAGE_REL_I386_REL32 = 0x20

@@ -658,6 +658,31 @@ voice mail arrive. `0x0002feb0` (+0x88, slot 34, 5,277 B) is the per-frame pump:
 `XboxAudio_CreateVoiceStream`, called twice from `XboxAudio_SetUpVoiceStreams`. The chain those bodies
 belong to is the next subsection: 31 bodies, every one named.
 
+### The voice modes: four singletons with a 27-slot vtable (2026-11-20)
+
+The stack above stops at the engine: `CXHVEngine` owns a *mode*, and the four modes are what opens a
+`CDirectSound` for voice. They are measured now — the last audio classes without a reading:
+`CVoiceMailMode` 12 methods, `CLoopbackMode` 4, `CBaseMode` 4, `CInactiveMode` 1 (plus `CVoiceChatMode`'s 23
+from the earlier bundle) — **44 methods, 21 in this bundle**, all attributed to `xvoice.lib`
+(`voicemailmode.obj`, `loopbackmode.obj`, `inactivemode.obj`, which also carries `CBaseMode`). Artifacts:
+`inventory/{voice_mail,loopback,base,inactive}_mode_methods.csv`; `LIBRARY_READINGS` now names all four, so
+`make native-method-notes` regenerates and `--check` validates 36 readings.
+
+The class reading is the vtable reading: `tools/xvoice-modes.py` scans `.rdata` for runs of code pointers and
+attributes each to the class whose `ValidateSet` it installs, which is what separates a base table from a
+derived one. Four tables, **27 slots each**, contiguous at `0x00540570` (`CInactiveMode`), `0x005405e0`
+(`CVoiceMailMode`), `0x00540658` (`CVoiceChatMode`) and `0x005406c8` (`CLoopbackMode`), each installed in a
+zero-filled singleton in `.data` (`0x005ca294`, `0x005ca2a8`, `0x005ca348`, `0x005ca450`) at the object's own
+size (20 / 160 / 264 bytes). **34 of the 108 slots are inherited from the inactive table's same slot**, so the
+family's shape is "one base implementation, three overrides of `ValidateSet`/`AdditionalInitialize`/
+`ProcessFrame`".
+
+`DSoundInitialize` is `QAE` — public, not virtual — so it appears in no table and is the one audio method with
+a caller that is not a vtable slot: each mode's own `AdditionalInitialize` calls it (`0x00345828`, `0x00344f62`,
+`0x003460b2`). The artifact also records the four instructions before each `_DirectSoundCreate` call, which is
+how the page says the mailbox and loopback modes pass a null GUID and store the device at `+0x10` while chat
+stores at `+0x24`.
+
 ### The module chain: 31 bodies, every one named from its own bytes (2026-11-19, closed 2026-11-20)
 
 The entry-point census ended with "the module census places none of the bodies around them because they call

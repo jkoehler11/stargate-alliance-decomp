@@ -1,0 +1,5 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x00346058,ProcessFrame,UAEXXZ,57,xvoice,obj\i386\loopbackmode.obj,CLocalTalker::LoopbackModeProcessFrame; CRemoteTalker::LoopbackModeProcessFrame,CLocalTalker; CRemoteTalker,
+0x00346091,ValidateSet,UAEJXZ,33,xvoice,obj\i386\loopbackmode.obj,CXHVEngine::GetProcessingMode,CXHVEngine,
+0x003460b2,DSoundInitialize,QAEJXZ,218,xvoice,obj\i386\loopbackmode.obj,_DirectSoundCreate; CXHVEngine::GetEffectMap; XHVNamespace::XHVSysAlloc; XHVNamespace::?0CRemoteTalker; ??_H@YGXPAXIHP6EPAX0@Z@Z; CRemoteTalker::InitializeLoopbackMode,CRemoteTalker; CXHVEngine; XHVNamespace,
+0x003461d8,AdditionalInitialize,UAEJXZ,50,xvoice,obj\i386\loopbackmode.obj,CBaseMode::AdditionalInitialize; CLoopbackMode::DSoundInitialize,CBaseMode; CLoopbackMode,

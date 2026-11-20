@@ -1,0 +1,5 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x00344d36,AddLocalTalker,UAEXPAVCLocalTalker@2@@Z,56,xvoice,obj\i386\inactivemode.obj,CLocalTalker::ResetHeadphone,CLocalTalker,
+0x00344d6e,RemoveLocalTalker,UAEXPAVCLocalTalker@2@@Z,91,xvoice,obj\i386\inactivemode.obj,,,
+0x00344dc9,AdditionalInitialize,UAEJXZ,69,xvoice,obj\i386\inactivemode.obj,XHVNamespace::XHVSysAlloc,XHVNamespace,
+0x00344e0e,Shutdown,UAEXXZ,19,xvoice,obj\i386\inactivemode.obj,XHVNamespace::XHVSysFree,XHVNamespace,

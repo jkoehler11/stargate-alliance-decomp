@@ -5326,6 +5326,20 @@ created once, on the object the init already holds, and is never reached again t
 field-origin sites that stayed untyped are not that pointer. `tools/xemu/field-objects.py` would still type
 them, and it is no longer on the critical path.
 
+**The counters are registered, not incremented (2026-11-20).** The eight handles the device body registers
+were said here to be incremented by "the two `Core` bodies" that reference the same block; `tools/stat-registry.py`
+(`inventory/stat_registry.csv`) reads all three registering bodies and refutes it. `0x00253950` (10,539 B) makes
+**145** registrations over 22 groups, `0x002b0770` (4,294 B) makes **59** in one group (`Hardware`) and
+`XboxAudio_RegisterCounters` makes **8** in group `Audio`; every one has the same shape (two wide literals, two
+`FString`s, `0x2530f0` with the registry in `ecx`, handle stored in a field) and **none of the three does any
+`add`/`inc`/`sub` on a `[reg+disp]` stat field**. Which method increments an audio handle is still open; that it
+is not a `Core` initializer is measured.
+
+**The voice modes answer the poll, and they are read (2026-11-20).** `tools/xvoice-modes.py` /
+`inventory/xvoice_mode_vtables.csv`: four 27-slot vtables (`0x00540570`, `0x005405e0`, `0x00540658`,
+`0x005406c8`) installed in four zero-filled singletons in `.data`, `DSoundInitialize` non-virtual and called
+from each mode's own `AdditionalInitialize`, and the method artifacts for all five mode classes (44 methods).
+
 **Status.** `tools/xdk-entry-callers.py` and `inventory/xdk_entry_callers.csv` (11 sites over the three
 `_DirectSound*` entry points); the account is `docs/NATIVE_NOTES.md`, "Who calls the three audio entry
 points", and the counts moved in `docs/systems/AUDIO.md`. The module's own chain is

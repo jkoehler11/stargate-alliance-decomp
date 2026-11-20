@@ -1,0 +1,2 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x00344e58,ValidateSet,UAEJXZ,33,xvoice,obj\i386\inactivemode.obj,CXHVEngine::GetProcessingMode,CXHVEngine,
