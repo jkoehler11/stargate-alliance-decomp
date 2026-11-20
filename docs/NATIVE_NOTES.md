@@ -172,6 +172,60 @@ The nine name-only groups (`?$set`, `?$basic_string`, `CIrql`, `PixelShaderVerif
 `VCWaveFileMediaObject`, and four more) come from the assert pass and carry no library attribution —
 recorded as `evidence=name only` rather than guessed into a library.
 
+## `CXnIp`, read from its own call edges (2026-11-19)
+
+PLAN 4.9's first subsystem, and the reading is deliberately mechanical: every library member carries a
+relocation list, a `REL32` is a call whose target the library names, and `tools/native-method-notes.py`
+(`make native-method-notes CLASS=CXnIp`, `inventory/cxn_ip_methods.csv`) resolves those per method.
+144 methods, 118 with at least one callee. **Two carry a string literal** — the release libraries are
+release builds — so the evidence here is the call graph, not prose the compiler kept.
+
+What the call edges say, in four flows:
+
+| method | bytes | calls |
+|---|---:|---|
+| `IpInit` | 502 | `CXnEnet::EnetInit`, `CXnHal::SetInitFlag`, `CXnIp::IpConfigInit`, `_XcHMAC`, `_XcDESKeyParity`, `CXnBase::Rand` |
+| `IpStop` | 80 | `SecRegShutdown`, `IpConfigResetPppoe`, `EnetPush`, `NicFlush`, `IpConfigReset`, `CXnHal::SetInitFlag`, `CXnEnet::EnetStop` |
+| `IpXmitIp` | 564 | `RouteLookup`, `RouteRelease`, `_tcpipxsum`, `CPacket::GetEnetHdr`, `CXnEnet::EnetXmit` |
+| `IpDecrypt` | 282 | `SecRegLookup`, `CPacket::GetIpHdrNext`, `CPacket::GetXspInfo`, `XnHmacVerify`, `IpCalcIvAtSeq`, `CryptDes` |
+| `IpLogonGetStatus` | 731 | `XnSha`, `_XcVerifyPKCS1Signature`, `XnChalExec`, `CXnBase::TimerSet`, `IpXmitSecMsg` |
+| `IpRegisterKey` | 252 | `_XcModExp`, `CXnBase::Rand`, `KeyRegLookup`, `KeyRegShaDesKeys` |
+
+1. **Lifecycle is ordered and explicit.** `IpInit` brings up the Ethernet layer, sets the HAL init flag,
+   initialises config and derives crypto state (`_XcHMAC`, `_XcDESKeyParity`, `CXnBase::Rand`) — the
+   ordering is the evidence that configuration precedes any traffic. `IpStop` unwinds in the reverse
+   spirit: security registry down, PPPoE and IP config reset, then the NIC flushed and the Ethernet
+   layer stopped. 80 bytes and seven calls: teardown is a sequence, not a cleanup loop.
+2. **Transmit has four distinct paths, all resolving a route first.** `IpXmitIp` (plain IP),
+   `IpXmitXsp` (748 B, security payload), `IpXmitSecMsg` and its four wrappers
+   (`Delete`, `ChangeUsers`, `NatDetect`, `XbToSgPulse`), and the three key-exchange variants
+   `IpXmitKeyExXbToTs` / `XbToSg` / `XbToXb` — to the title server, the security gateway and a peer.
+   The key-exchange paths are the only ones that call `CXoBase::XoKerbBuildApReq` and `CXoBase::XoKerbGetInfo`:
+   Kerberos ticket exchange lives here, above IP, not in the socket layer.
+3. **Receive verifies before it decrypts.** `IpDecrypt` calls `XnHmacVerify` and `IpCalcIvAtSeq`
+   (IV derived from the sequence number) after fetching the XSP info — integrity first, then
+   confidentiality, with the security registry consulted by `SecRegLookup`. `IpRecvTcp` computes
+   `_tcpipxsum`, so the checksum sits in the receive path rather than in the caller.
+4. **Logon is a state machine with an event queue.** `IpLogonGetQFlags`, `GetQVals`, `SetQVals`,
+   `SetQEvent`, `ClearQEvent`, `SetBwLimit`, `NoteSystemTime`, `SetPState`, `GetStatus`, `IpLogoff` —
+   ten methods over a queue of pending values, which is what a network layer does when the title's
+   UI thread must not block on the network. `IpLogonGetStatus` (731 B) verifies a PKCS#1 signature
+   over a challenge (`XnSha`, `XnChalExec`, `_XcVerifyPKCS1Signature`) and answers with
+   `IpXmitSecMsg`, and `IpRegisterKey` does RSA modexp (`_XcModExp`) — the Xbox Live key registration
+   handshake, in the IP layer.
+
+Supporting cast the same artifact names: a route table with refcount discipline
+(`RouteAdd` 250 B, `RouteLookup`, `RouteRelease`, `RouteRedirect`, `RouteEntryOrphan`, `RouteListOrphan`),
+a packet-fragment pool (`FragFree`, `FragTerm` over `CPacketQueue::Dequeue` and `CXnBase::PoolFree`),
+and a timer wheel (`IpSetEventTimer` over `CXnBase::TimerSet`).
+
+**What this is not.** These are call edges and byte counts. `IpXmitXsp` calling `IpCalcIvAtSeq` proves
+the IV comes from the sequence number; it does not prove the cipher mode, the key schedule, or what
+`IpCheckChangeUsersComplete` waits for. The 26 methods with no callee are leaves — arithmetic, field
+accessors and the entry points the image calls directly — and the strings that would explain them are
+not in a release build. The next reading is `CXo` (377 methods), where the Kerberos bodies these calls
+reach actually live.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
