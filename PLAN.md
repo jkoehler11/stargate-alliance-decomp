@@ -726,6 +726,11 @@ other 38 rows.
       runtime through two now-named dispatchers; and the UIX front-end (286 across 27 classes) is the Live
       dashboard — logon, players, friends, voice mail — linked into `.text` and internally live. What remains is
       the rest of the library sections, `CUIPlugin`'s registration path, and the game modules' own subsystems.
+      **The audio stack is read** (2026-11-19,
+      `docs/NATIVE_NOTES.md`): 303 methods over 14 classes -- `DirectSound`/`CDirectSound`/
+      `CDirectSoundVoice`, `CMcpxAPU`/`CMcpxCore`, `CMcpxVoiceClient`/`CMcpxBuffer`/`CMcpxStream`, the
+      four `xvoice` voice-chat classes and the two 3D classes -- **199 attributed to `dsound.lib` and
+      104 to `xvoice.lib`**, every artifact row naming its COFF member.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
       Done: **15,447 symbols**, every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
@@ -14816,3 +14821,45 @@ sequence.
   agree; `make t3d` reproduces 121,250 actors, 1,149,471 properties and 54,957,213 T3D bytes.
 - **Not in this PR.** What the dword means -- the next instrument is a search for `call [reg + 4]` with `reg` loaded
   from `[obj + 0x34]`.
+
+### Execution notes (2026-11-19, the audio stack: 303 methods from the XDK audio libraries)
+
+- **Task.** `4.9`'s "rest of the library sections", the audio family the class census named and nobody had
+  read: `DirectSound`/`CDirectSound`/`CDirectSoundVoice` (59), `CMcpxAPU`/`CMcpxCore` (44),
+  `CMcpxVoiceClient`/`CMcpxBuffer`/`CMcpxStream` (74),
+  `CXHVEngine`/`CVoiceChatMode`/`CLocalTalker`/`CRemoteTalker` (104), `CI3DL2Listener`/`CFullHRTFSource` (22)
+  -- 14 artifacts, **303 methods, 34,328 bytes**.
+- **The instrument was wrong in two places, and the earlier readings were the control.** `callee_classes` was
+  empty on **all 1,260 rows** of the twelve committed artifacts (`class_of()` applied to a display name, not
+  the reloc symbol), and no artifact said which library a method came from. Both fixed at the source; the
+  eleven earlier artifacts re-render with **zero fields moved** and now carry `lib`/`object`: **199 methods
+  from `dsound.lib` (14 objects), 104 from `xvoice.lib` (5)**. `--check` now validates all **25** artifacts
+  (1,315 methods, 1,315 attributed) instead of the one class the tool defaulted to, and `make
+  native-method-notes` regenerates the whole set.
+- **The API layer holds a critical section; the MCPX takes the interrupt.** 13 of `CDirectSound`'s 14 entry
+  points open with `DirectSoundEnterCriticalSection` (0 of `CDirectSoundVoice`'s 10); every 3D setter funnels
+  into `CommitDeferredSettings` -> `CDirectSound3DCalculator::Calculate3D` +
+  `CMcpxAPU::CommitI3DL2Listener`; `DoWork` pumps the APU's deferred queue, which is why the game calls
+  `_DirectSoundDoWork`. 41 methods take the APU's `CIrql` lock and none of them is in `CDirectSound`.
+- **The APU driver is a hardware bring-up.** `CMcpxAPU::Initialize` installs the ISR/DPC pair and two command
+  queues; `WaitForMagicWrite` polls the DSP through `CMcpxCore::SetPrivLockState`; `HandleDeltaPanic` resets
+  the AC97 channels and the encode processor; `CMcpxCore::Initialize` is one call per block (reset, APU
+  memory, front end, voice, AC97, DSPs, engine state, channel start).
+- **A stream is an XMO packet queue, not decoded PCM.** `CMcpxStream::SubmitPacket` -> `XMOAcceptPacket`,
+  `MapPacket` into the voice's scatter-gather list, `CommitSsl` to start it; `CMcpxBuffer` is the same voice
+  object driven from a static buffer, so streaming and one-shot sound are one code path below the API.
+- **Voice chat is a codec and a stream per speaker.** `CVoiceChatMode::DSoundInitialize` calls a second
+  `_DirectSoundCreate` (the only one in these 303 methods) and routes each talker by mix bin;
+  `CLocalTalker::OnInsertion` -> `_XVoiceCreateMediaObjectEx`; `CRemoteTalker::InitializeStream` ->
+  `_DirectSoundCreateStream` + `CWMAVoiceDecoder::Process`; voice mail writes a WAV. 0 of its 104 methods
+  take the interrupt lock.
+- **Files.** `tools/native-method-notes.py` (the `lib`/`object` columns, the `callee_classes` fix,
+  `LIBRARY_READINGS`, the all-readings default and `--check`), `Makefile` (the target regenerates every
+  reading), 14 new `inventory/*_methods.csv` and the eleven earlier ones regenerated, `docs/NATIVE_NOTES.md`
+  (a new section), `docs/systems/AUDIO.md` (the native half), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `native-method-notes.py --check` green over 25 artifacts; the eleven earlier
+  artifacts diff to zero moved fields; the corpus reproduces from `make native-method-notes`.
+- **Not in this PR.** The media decoders (`CWaveFile` 11, `CQueueXMO` 18, `XHawkMediaObject` 13 -- 42
+  methods measured, not written up), and the caller side: `module_export_census.csv` holds 0 of these 303
+  addresses, so the next instrument is a caller census on the `_DirectSound*` entry points.

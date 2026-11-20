@@ -452,6 +452,144 @@ show game or engine code opening a UIX screen, and it does not show that none do
 plug-in seam (`CUIPlugin`) is named but not read — who registers a plug-in, and whether the title registers one,
 is the next question this subsystem raises.
 
+## The audio stack: `DirectSound`, the MCPX, and Xbox Live voice (2026-11-19)
+
+Five readings, **303 methods, 34,328 bytes**: the DirectSound API object (59), the MCPX APU driver (44),
+the voice path under it (74), Xbox Live voice chat (104) and the positional layer (22) —
+`inventory/dsound_methods.csv`, `dsound_object_methods.csv`, `dsound_voice_methods.csv`,
+`mcpx_apu_methods.csv`, `mcpx_core_methods.csv`, `mcpx_buffer_methods.csv`, `mcpx_stream_methods.csv`,
+`mcpx_voice_client_methods.csv`, `xhv_engine_methods.csv`, `voice_chat_mode_methods.csv`,
+`local_talker_methods.csv`, `remote_talker_methods.csv`, `i3dl2_listener_methods.csv`,
+`hrtf_source_methods.csv`.
+
+| reading | classes | methods | bytes | library |
+|---|---|---:|---:|---|
+| the API layer | `DirectSound` 35, `CDirectSound` 14, `CDirectSoundVoice` 10 | 59 | 4,674 | dsound |
+| the APU driver | `CMcpxAPU` 26, `CMcpxCore` 18 | 44 | 5,353 | dsound |
+| the voice path | `CMcpxVoiceClient` 27, `CMcpxStream` 24, `CMcpxBuffer` 23 | 74 | 11,165 | dsound |
+| Xbox Live voice chat | `CLocalTalker` 32, `CXHVEngine` 26, `CVoiceChatMode` 23, `CRemoteTalker` 23 | 104 | 9,056 | xvoice |
+| positional audio | `CI3DL2Listener` 12, `CFullHRTFSource` 10 | 22 | 4,080 | dsound |
+
+**The attribution is the archive member.** Each artifact row now carries `lib`/`object`, taken from the COFF
+member the symbol matched: **199 methods from `dsound.lib` (14 objects) and 104 from `xvoice.lib` (5)** —
+`dsapi.obj` 37, `mcpvoice.obj` 28, `mcpapu.obj` 27, `mcpstrm.obj` 26, `mcpbuf.obj` 25, `mcpxcore.obj` 20,
+`hrtf.obj` 10, `i3dl2.obj` 12, `heap.obj` 4, `ac97.obj` 2, plus one or two each in `dspdma.obj`,
+`epdsp.obj`, `gpdsp.obj`, `wavexmo.obj`, `xhvengine.obj` 25, `voicechatmode.obj` 23,
+`voicemailmode.obj` 1. They sit at `0x00344318`..`0x004aa5bb` — xvoice in its own section, dsound in the
+next one — so this is the SDK's audio stack linked into the image, not a reading of names.
+
+**The instrument changed twice, and both changes are visible in the artifacts.** The `lib`/`object` pair is
+new, and `callee_classes` — the column the earlier readings printed and never filled — was **empty on all
+1,260 rows of the twelve artifacts then committed**, because the class was taken from a display name
+(`CXnSock::TcpConnect`) instead of the raw reloc symbol. Fixed at the source, every earlier reading
+re-renders with **zero fields moved** (144 `CXnIp` rows, 377 `CXo`, 98 `XGRAPHICS`, 49 `Instruction` … all
+compared field by field), so the corpus is the control for the fix. `--check` now validates **all 25
+artifacts** (1,315 methods, 1,315 with attribution) rather than the one class the tool defaulted to.
+
+**No string anywhere.** 0 of the 303 methods carries a literal, against 24 of `PreProcessor`'s 49: these
+libraries ship without assert text, so no method in this stack can be confirmed by its own message. The
+control that this zero is the library's and not the reader's: a byte scan of the 248 bodies finds 120
+printable runs of four or more characters, and every one sampled is an encoding, not text — `SUVW` is
+`53 55 56 57`, four register pushes.
+
+### The API layer: one critical section, one commit
+
+`DirectSound` is a namespace of nested classes (`CDirectSound`, `CDirectSoundVoice`, `CDirectSoundBuffer`,
+`CDirectSoundStream` and their `…Settings`), and **13 of `CDirectSound`'s 14 entry points open with
+`DirectSoundEnterCriticalSection`** — while the nested `CDirectSoundVoice` never takes it (0 of 10): the lock
+belongs to the object the game holds, not to the pieces under it. Every setter
+(`SetPosition`, `SetVelocity`, `SetOrientation`, `SetDistanceFactor`, `SetRolloffFactor`) does nothing but
+funnel into `CommitDeferredSettings`, which is where `CDirectSound3DCalculator::Calculate3D` and
+`CMcpxAPU::CommitI3DL2Listener` actually run — so 3D state commits once per frame, not once per setter.
+`Initialize` (313 B, the largest here) allocates the settings object, constructs the APU and calls
+`CMcpxAPU::Initialize`; `CreateSoundBuffer` / `CreateSoundStream` construct and initialise their nested
+object. `DoWork` → `CMcpxAPU::ServiceDeferredCommandsLow`: the deferred queue is pumped from the caller's
+own thread, which is why the game has to call `_DirectSoundDoWork`.
+
+### The APU driver: an ISR/DPC pair, two command queues, and a hardware handshake
+
+`CMcpxAPU::Initialize` installs the interrupt pair (`ApuInterruptServiceRoutine`,
+`ApuInterruptDpcRoutine`), a deferred-command DPC, and both command queues
+(`ScheduleDeferredCommandHigh`/`Low` with 214/37 B bodies, `ServiceDeferredCommandsHigh`/`Low`,
+`RemoveDeferredCommand`/`High`). Voice slots are a pool (`AllocateVoices`, `FreeVoices`), and
+`WaitForMagicWrite` (99 B) polls a register through `CMcpxCore::SetPrivLockState` — a handshake with the
+DSP rather than a wait on a driver object. The two error paths are handlers of their own: `HandleFETrap`
+(front-end trap → `CMcpxCore::SetFrontEndState`) and `HandleDeltaPanic`, which resets the AC97 channels
+(`CAc97Channel::Reset`, `Run`), the global counters and the encode processor.
+
+`CMcpxCore` is the bring-up: `Initialize` (108 B) calls `Reset`, `AllocateApuMemory`,
+`SetupFrontEndProcessor`, `SetupVoiceProcessor`, `SetupAc97`, `SetupDSPs`, `SetSetupEngineState` and
+`CAc97Channel::Run` — one method per hardware block, and the last two put the codec into its engine state
+and start the channel. `AllocateApuMemory` (384 B) sizes the scatter-gather and slop heaps
+(`CMcpxBufferSgeHeap`, `CMcpxSlopMemoryHeap`) from the encode processor's own scratch request;
+`SetupAc97` (185 B) creates the codec device and channels and attaches a packet; `SetupEncodeProcessor`
+(420 B) builds the encode DSP (`CMcpxEPDspManager`, AC3 analog/digital output). **14 of these 44 methods
+take the interrupt lock.**
+
+### The voice path: a voice object, and a buffer or a stream on top of it
+
+`CMcpxVoiceClient` (27 methods, 5,595 B — the largest class in the stack) is the voice:
+`AllocateVoiceResources` → `CMcpxAPU::AllocateVoices`, `ReleaseVoiceResources` → `FreeVoices`, and
+`PauseVoice` moves the voice between the APU's synchronous and free lists (`AddSynchVoice` /
+`RemoveSynchVoice`). `CMcpxBuffer` (23) drives one voice from a buffer: `PlayFromPosition` (383 B) and
+`PlayFromCurrent` (321 B) convert bytes↔samples through the client and activate it, `GetCurrentPosition`
+reads `CMcpxVoiceClient::GetSslPosition`; `MapBuffer`/`UnmapBuffer`/`MapEffectsBuffer` place the data.
+`CMcpxStream` (24) drives one from a packet queue: `SubmitPacket` takes an `XMOAcceptPacket` payload,
+`MapPacket` (355 B) maps it into the voice's scatter-gather list, `CommitSsl` activates the voice and
+`Process`/`CompletePackets` retire what the DSP finished, so **a DirectSound stream is a queue of XMO
+packets decoded by the APU, not by the CPU**. Streaming and static buffers are the same voice object with
+a different producer. **26 of the 74 take the interrupt lock**, `CMcpxVoiceClient` 15 of them.
+
+### Xbox Live voice chat: a codec and a stream per remote player
+
+`CXHVEngine` (26, `xvoice.lib`) is the engine: `InitEngine` (238 B) builds a custom stack, a
+`CLocalTalker` and a `VoiceFrameDpc`; `CheckDeviceChanges` (165 B) polls `_XPeekDevices` and calls
+`OnDPCRemoval`/`OnDPCInsertion`; processing modes are switched by name
+(`EnableProcessingMode`, `ShutdownProcessingModes`, `GetProcessingMode`); voice mail lives here too
+(`VoiceMailRecord`, `VoiceMailPlay`). `CVoiceChatMode` (23) is the mode: `AdditionalInitialize` (259 B)
+constructs a `CRemoteTalker`, the mode's own `VoiceChatDpc` and its allocator; `DoDPCWork` compresses the
+local microphone packet (`CLocalTalker::CompressVoiceChatPacketForNetwork`) and decompresses each remote
+one (`CRemoteTalker::DecompressVoiceChatPacketForPlayback`); `RearrangePriorities`/`SetPlaybackPriority`
+reorder the talkers.
+
+**It creates its own DirectSound device.** `CVoiceChatMode::DSoundInitialize` calls `_DirectSoundCreate`
+and `_IDirectSound_SetMixBinHeadroom` — the only `_DirectSoundCreate` in these 303 methods — and the
+routing is a mix bin per talker (`_IDirectSoundStream_SetMixBins`, `_IDirectSoundStream_SetMixBinVolumes`,
+`_IDirectSoundStream_SetHeadroom`). `CLocalTalker` (32) is the microphone half: `OnInsertion` calls
+`_XVoiceCreateMediaObjectEx` and installs `MicrophoneCallback`/`HeadphoneCallback` (the USB media object),
+`CompressVoiceChatPacketForNetwork` → `CMicrophoneProxy::EncodeOutputPacket`, and recording writes a WAV
+(`VoiceMailRecord` → `GenerateWAVHeader`, `EndRecording` → `UpdateWAVFileSize`). `CRemoteTalker` (23) is
+the playback half: `InitializeStream` (320 B) calls `_DirectSoundCreateStream` with a trigger-packet
+callback and a double-buffering callback, `StreamCallbackTriggerPacketsWork` runs
+`CWMAVoiceDecoder::Process` and then `_IDirectSoundStream_FlushEx`, and `InitializeLoopbackMode` /
+`InitializeVoiceMailMode` are the other two modes. Voice chat is therefore **WMA encode/decode plus one
+DirectSound stream per speaker, with mix bins as the mixer**, and it needs no interrupt-level code of its
+own: **0 of these 104 methods take the lock.**
+
+### Positional audio: an I3DL2 parameter set and a real HRTF filter pair
+
+`CI3DL2Listener` (12, 2,236 B) turns listener properties into an I3DL2 parameter set: `CalculateI3DL2`
+(904 B, the largest single method in the audio set) drives `SetReflectionsGain`, `SetReflectionsDelay`,
+`SetDecayTimes`, `SetDecayFilter`, `SetDiffusion`, `SetReverbDelay`, `SetSize` and `SetInputFilter`, with
+`mBToLinear` conversions and a one-pole low-pass (`Get1PoleLoPass`) per filter. `CFullHRTFSource` (10)
+holds the per-source 3D maths: `CalcPolarCoords` (355 B), `CalcNormPos`, `CalcConeAngle`,
+`CalcRelativeVelocity`, `GetFilterPair` (284 B — the pair `CMcpxVoiceClient::LoadHRTFFilter` loads), and the
+gain reductions `GetDistanceVolume`, `GetFrontRearVolume`, `GetCenterVolume`, `GetConeVolume`,
+`GetDopplerPitch`. Both sit on the SDK's shared `Math::` helpers (17 methods here), so the 3D path is float
+arithmetic in user code and the APU receives parameters, not geometry.
+
+### What this reading does not say
+
+- **Callers.** `inventory/module_export_census.csv` indexes UE2 exports, and **0 of these 303 addresses has
+  a row in it** — so which engine or game body calls `_DirectSoundCreate` first, and whether the game's own
+  device is a `CDirectSound` at all, is not measured here. The next instrument is a caller census on the
+  four `_DirectSound*` entry points, not another class read.
+- **Ordering.** Every claim above is a call edge. The APU's register writes are inside bodies that have not
+  been decompiled, so "the ISR runs before the DPC" is the SDK's structure, not this build's timing.
+- **The media decoders are next, not here.** `CWaveFile` (11), `CQueueXMO` (18) and `XHawkMediaObject` (13)
+  — RIFF/AIFF parsing, the XMO timestamp queue and the USB media object — read 42 more methods; they were
+  measured with the same tool and left out of this bundle.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented

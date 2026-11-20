@@ -273,6 +273,42 @@ are the shared sets; `surfaces` (156) is footsteps and impacts by material.
 All three layers are now counted, which is what PLAN 5.3 asked for. Extraction is still separate from
 indexing: the effects live inside packages and pulling them out as WAVs is the export pass (5.1), not this.
 
+## The native audio stack, read end to end (measured 2026-11-19)
+
+The script half of audio is above; this is the code underneath it. Five readings, **303 methods, 34,328
+bytes**, all matched to the XDK's own libraries by COFF member — 199 from `dsound.lib` (14 objects) and 104
+from `xvoice.lib` (5). The full account, with every method name and the call edges, is
+`docs/NATIVE_NOTES.md` ("The audio stack"); the artifacts are `inventory/dsound*_methods.csv`,
+`inventory/mcpx_*_methods.csv`, `inventory/xhv_engine_methods.csv`,
+`inventory/voice_chat_mode_methods.csv`, `inventory/{local,remote}_talker_methods.csv`,
+`inventory/i3dl2_listener_methods.csv` and `inventory/hrtf_source_methods.csv`.
+
+| layer | what it is | methods |
+|---|---|---:|
+| `DirectSound` / `CDirectSound` / `CDirectSoundVoice` | the API object the game holds: one critical section, deferred 3D settings committed once per frame | 59 |
+| `CMcpxAPU` / `CMcpxCore` | the MCPX audio processor: ISR/DPC pair, two deferred-command queues, voice pool, AC97 setup, DSP effect heaps | 44 |
+| `CMcpxVoiceClient` / `CMcpxBuffer` / `CMcpxStream` | one voice object; a static buffer or an XMO packet queue drives it through its scatter-gather list | 74 |
+| `CXHVEngine` / `CVoiceChatMode` / `CLocalTalker` / `CRemoteTalker` | Xbox Live voice chat: WMA encode of the microphone, one DirectSound stream per remote speaker, mix-bin routing | 104 |
+| `CI3DL2Listener` / `CFullHRTFSource` | positional audio: an I3DL2 parameter set per listener, an HRTF filter pair and distance/cone/doppler gain per source | 22 |
+
+Three things this settles for the audio work:
+
+1. **Voice chat is not a separate audio system.** It is a codec (WMA) plus a DirectSound stream per remote
+   talker, created by a *second* `_DirectSoundCreate` inside `CVoiceChatMode` — so a rebuild has to provide
+   the DSound object and the stream API, not a chat transport, and it must survive two audio devices.
+2. **Streams are decoded by the APU, not the CPU.** `CMcpxStream::SubmitPacket` takes an `XMOAcceptPacket`
+   payload and `MapPacket` puts it into the voice's scatter-gather list; music and voice mail both arrive
+   that way. A rebuild that feeds decoded PCM through `_IDirectSoundBuffer` is not the shipped path.
+3. **The interrupt discipline is at the MCPX boundary.** 41 methods take the APU's interrupt lock
+   (`CIrql::Raise`/`Lower`): 14 in the driver, 26 in the voice path, and one in a heap constructor nested
+   inside the `DirectSound` namespace — **none** in `CDirectSound`, `CDirectSoundVoice`, voice chat or the
+   3D maths. Everything above the MCPX is user-mode by comparison.
+
+What is *not* measured: no method in this stack carries a string (0 of 303), so none is confirmed by its own
+message; and the **callers** are not counted — `inventory/module_export_census.csv` covers UE2 exports, so
+which engine body creates the game's own DirectSound object is still open. The media decoders
+(`CWaveFile`, `CQueueXMO`, `XHawkMediaObject`, 42 methods) are read and not yet written up.
+
 ## What this means for the rebuild
 
 1. **Speech and music are safe to rebuild** — loose WAVs plus script-only classes (except `IMusic*`'s 3

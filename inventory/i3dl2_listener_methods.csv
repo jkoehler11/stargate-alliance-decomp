@@ -1,0 +1,13 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x004a7fa9,SetSize,AAEXM@Z,142,dsound,obj\i386\i3dl2.obj,Math::FloatToLong,Math,
+0x004a8037,SetReflectionsGain,AAEXM@Z,57,dsound,obj\i386\i3dl2.obj,Math::FloatToLong,Math,
+0x004a8070,SetReflectionsDelay,AAEXM@Z,30,dsound,obj\i386\i3dl2.obj,Math::FloatToLong,Math,
+0x004a808e,SetReverbGain,AAEXM@Z,56,dsound,obj\i386\i3dl2.obj,Math::FloatToLong,Math,
+0x004a80c6,SetReverbDelay,AAEXM@Z,154,dsound,obj\i386\i3dl2.obj,Math::FloatToLong,Math,
+0x004a8160,SetDiffusion,AAEXM@Z,125,dsound,obj\i386\i3dl2.obj,Math::FloatToLong,Math,
+0x004a81dd,Initialize,AAEXXZ,77,dsound,obj\i386\i3dl2.obj,,,
+0x004a822a,Get1PoleLoPass,AAEXJJMMPAM0@Z,189,dsound,obj\i386\i3dl2.obj,mBToLinear,,
+0x004a8373,SetInputFilter,AAEXJM@Z,97,dsound,obj\i386\i3dl2.obj,CI3DL2Listener::Get1PoleLoPass; Math::FloatToLong,CI3DL2Listener; Math,
+0x004a83d4,SetDecayFilter,AAEXPAU_DSFX_I3DL2REVERB_IIR@@KMMM@Z,171,dsound,obj\i386\i3dl2.obj,Math::FloatToLong; CI3DL2Listener::Get1PoleLoPass,CI3DL2Listener; Math,
+0x004a85ae,SetDecayTimes,AAEXMMM@Z,234,dsound,obj\i386\i3dl2.obj,CI3DL2Listener::SetDecayFilter,CI3DL2Listener,
+0x004a8698,CalculateI3DL2,QAEXPBU_DS3DCALCI3DL2LISTENER@@PAU_DSFX_I3DL2REVERB_PARAMS@@@Z,904,dsound,obj\i386\i3dl2.obj,CI3DL2Listener::Initialize; CI3DL2Listener::SetInputFilter; mBToLinear; CI3DL2Listener::SetReflectionsGain; CI3DL2Listener::SetReflectionsDelay; CI3DL2Listener::SetReverbGain; CI3DL2Listener::SetReverbDelay; CI3DL2Listener::SetSize; CI3DL2Listener::SetDecayTimes; CI3DL2Listener::SetDiffusion; Math::FloatToLong,CI3DL2Listener; Math,

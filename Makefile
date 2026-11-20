@@ -648,12 +648,12 @@ shader-programs:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
 	@$(PYTHON) tools/shader-program-refs.py --xbe "$(GAME_DIR)/default.xbe" -o inventory/shader_programs.csv
 
-# Per-method evidence for one class: callees from REL32, literals from DIR32 (PLAN 4.9).
-# Needs the libraries and the dump. CLASS is the demangled class name.
+# Per-method evidence: callees from REL32, literals from DIR32, library attribution from the
+# archive member (PLAN 4.9). Needs the libraries and the dump. With no CLASS it regenerates every
+# reading the tool knows, which is what the committed artifacts are.
 native-method-notes:
-	@test -n "$(CLASS)" || { echo "set CLASS=<ClassName>, e.g. CLASS=CXnIp"; exit 2; }
-	@$(PYTHON) tools/native-method-notes.py --class "$(CLASS)" --libs "$(XDK_LIBS)" \
-		--xbe "$(GAME_DIR)/default.xbe" -o inventory/$(shell echo $(CLASS) | tr A-Z a-z)_methods.csv
+	@$(PYTHON) tools/native-method-notes.py $(if $(CLASS),--class "$(CLASS)",) --libs "$(XDK_LIBS)" \
+		--xbe "$(GAME_DIR)/default.xbe"
 
 # Group the named library code by C++ class, from the mangled names (PLAN 4.9)
 native-code-classes:
