@@ -1225,10 +1225,39 @@ to reproduce the buffer and its walker, because ordering and batching live in th
 explains why sampling the driver shows so much time in small bodies: the hot work is command emission, and the
 `FUN_002bc350` state block is a burst of these appends.
 
+### The whole band, from a byte scan (2026-11-19)
+
+One caller is a block; the vocabulary needs every caller. Scanning every code section for `mov ecx,<imm>` with `imm`
+in `0x40000`–`0x4FFFF` followed within 45 bytes by a `call 0x4525a0` gives **47 sites, 17 distinct command words, all
+inside `0x00040300`–`0x0004037c`**, every one of them with high word `0x4`:
+
+| emitter | sites |
+|---|---:|
+| `FUN_002bbb60` | 15 |
+| `FUN_002bc350` | 15 |
+| `FUN_0032b6e0` | 6 |
+| `FUN_0032b880` | 6 |
+| `D3DDrv_D3DRenderDevice` | 2 |
+| `FUN_0032f8a0` | 2 |
+
+The words used are `0x300 0x304 0x310 0x33c 0x340 0x344 0x348 0x354 0x358 0x35c 0x360 0x364 0x368 0x36c 0x374 0x378
+0x37c`.
+
+**What it confirms.** The `0x0004_00NN` form holds across all 47 sites, so `NN` is a state index in this family rather
+than a quirk of one function. It also closes a loop opened by the sampler: `FUN_002bc350` was ranked hot by EIP
+sampling and is now shown to be a fifteen-command state emitter, and `D3DDrv_D3DRenderDevice` — the render device, not
+the interface — emits two of its own.
+
+**What it does not do, and the test that failed.** A second band was the way to generalise the encoding to the whole
+command space, and there is no second band: all 47 sites use the same one. So `0x0004_00NN` is established for this
+family only, and the rest of the command space — other high words — must go through *different* append functions, which
+is the next scan: the same pattern against every function that writes `[0x460ef0]`-style buffers.
+
+**Still open.** Whether `NN` equals a `D3DRS_*` index is not established; the 17 words are the vocabulary this build
+uses in this band, not the state space, which has room for about thirty two-byte slots between `0x300` and `0x37c`.
+
 **Limits.** The buffer addresses (`0x460ef0`, `0x460ef4`) are read as a write pointer and a limit from these 39 bytes,
-and the consumer of the buffer was not read here. The `0x0004_00NN` form is inferred from fifteen command words in one
-contiguous band emitted by one function — fifteen records from one caller is a block, not the encoding of the whole
-command space, and a second state-emitting function with a different band is what would generalise it.
+and the consumer of the buffer was not read here.
 
 ## What this means for Phase 4
 
