@@ -1032,6 +1032,41 @@ programs a map compiles in total — the cap truncated that — and what the `x`
 dispatcher, and the assembler accepts the string as given). A `--stops 60` run would count the rest, and the
 `x`-prefixed text itself is the evidence for what the prefix is: compare one against its un-prefixed twin.
 
+## How many of the 60 programs a map compiles: seven (2026-11-19)
+
+Breaking only on `_XGAssembleShader@44` and letting `M00` load answers the count, because every compile passes
+through it and its `stdcall` frame carries the program pointer — unlike the dispatchers, where the pointer is
+inside the recorded stack window for only 5 of 25 stops and cannot be used as a counter.
+
+Ten assembler stops, **seven distinct programs** (three were compiled twice):
+
+| program | version | bytes | first line |
+|---|---|---:|---|
+| `0x00524b00` | `vs.1.1` | 217 | `m4x4 oPos, v0, c0` |
+| `0x00524be0` | `xps.1.1` | 108 | `tex t0` |
+| `0x00524c50` | `xps.1.1` | 193 | `tex t0` |
+| `0x00524d18` | `xps.1.1` | 90 | `tex t0` |
+| `0x00526160` | `xvs.1.1` | 450 | `m4x4 oPos, v0, c0` |
+| `0x00526c38` | `xps.1.1` | 312 | `tex t0` |
+| `0x00528354` | `vs.1.1` | 49 | `m4x4 oPos, v0, c0` |
+
+Three readings:
+
+1. **A mission needs a small subset, not the library.** M00 compiles 7 of the 60, so the other 53 exist for other
+   maps or other passes. That changes the Phase 6 requirement from "reproduce the assembler for 60 programs" to
+   "reproduce it for the programs a map selects, or bake those".
+2. **The `x` variants are the ones actually used.** Five of the seven are prefixed (`xps.1.1` four times,
+   `xvs.1.1` once). The prefix is not a stray byte — it is the form this build compiles on the render path, which
+   is worth knowing before treating the un-prefixed twins as the canonical text.
+3. **Three programs are compiled twice.** `0x524b00`, `0x524d18` and `0x526160` each stop twice in one load. Whether
+   that is a second render pass, a per-context device, or a missing cache is not established; the stop record shows
+   the repeats, and a breakpoint on the cache-lookup path (`_CreateFileA`/`_ReadFile` in `ShaderCompilePixel`'s
+   callees) is what would say which.
+
+**Limits.** This is one mission on one load. A campaign pass (`missions.sh --all`) with the same breakpoint would
+say whether any map needs a program outside this set, and that is the measurement that would make a baked table
+safe. Nothing here says what the `x` prefix *means*, only that the game prefers those strings.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented

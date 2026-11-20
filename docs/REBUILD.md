@@ -80,10 +80,11 @@ at runtime through `PreProcessor` → `d3dxasm_parse` → `XGRAPHICS::D3DTokensT
 wrappers that call `ShaderCompileVertex` or `ShaderCompilePixel`, 4 from one function's `mov` immediates
 (`inventory/shader_programs.csv`). The compile is **not** in the boot window: 1,200 EIP samples across the first
 102 s, with rendering active, hit neither dispatcher nor `_XGAssembleShader` (`docs/NATIVE_NOTES.md`, "Runtime
-sampling"). It is a map-load cost, and that is where a rebuild must reproduce it.
+sampling"). It is a map-load cost, and that is where a rebuild must reproduce it — **seven programs for one mission
+load** (`M00`, counted at the assembler), not all 60.
 
 That makes shaders the one part of the script/toolchain surface a rebuild cannot skip by reusing shipped
-assets: either the compile path is reproduced, or the microcode for those 45 programs is produced once and
+assets: either the compile path is reproduced, or the microcode for the programs a map actually selects is produced once and
 shipped in their place. `tools/build.sh` does neither today, and the difference is invisible in a script-only
 check — the packages would verify and the first draw would fail.
 
