@@ -5246,3 +5246,6 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x00328e00,XBoxLiveManager_ConnectTo,own method literal XBoxLiveManager::ConnectTo,XBoxLiveManager,,,,XboxLive,,864
 0x00329160,XboxLiveManager_StartStatsQuery,own method literal XboxLiveManager::StartStatsQuery,XboxLiveManager,,,,Core,XboxLive.h,311
 0x003292a0,XboxLiveManager_StartNewSession,own method literal XboxLiveManager::StartNewSession,XboxLiveManager,,,,Core,XboxLive.h,634
+0x0002fa30,FUN_0002fa30,"added to the map by symbols/xbe_boundaries.csv: 87 bytes closed by `ret` at 0x2fa86 and followed by 9 int3 bytes, slot 33 (+0x84) of XBoxAudioSubsystem's table 0x004d21f8 between SetSoundDevice and the pump; no E8 or E9 in the image targets it, so only this row can create the function",,,,,,,87
+0x0003bd30,FUN_0003bd30,"map row the analysis never re-created: 133 bytes from `mov eax,ds:0x630d4c` to `pop esi; ret 0x18` at 0x3bdb4, followed by 11 int3 bytes (next body 0x3bdc0); nothing the analysis follows reaches it",,,,,,,133
+0x0024af30,FUN_0024af30,"map row the analysis never re-created: 809 bytes from the SEH prologue `push -1; mov eax,fs:[0]` to `add esp,0x58; ret` at 0x24b258, followed by 7 int3 bytes (next body 0x24b260); nothing the analysis follows reaches it",,,,,,,809
