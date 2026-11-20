@@ -1,0 +1,11 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x0049f97f,SetPitch,QAGJJ@Z,25,dsound,obj\i386\dsapi.obj,CMcpxVoiceClient::SetPitch,CMcpxVoiceClient,
+0x0049f998,SetVolume,QAGJJ@Z,28,dsound,obj\i386\dsapi.obj,CMcpxVoiceClient::SetVolume,CMcpxVoiceClient,
+0x0049f9b4,SetHeadroom,QAGJK@Z,35,dsound,obj\i386\dsapi.obj,CMcpxVoiceClient::SetVolume,CMcpxVoiceClient,
+0x0049f9f4,CommitDeferredSettings,QAGJXZ,17,dsound,obj\i386\dsapi.obj,CMcpxVoiceClient::Commit3dSettings,CMcpxVoiceClient,
+0x004a09ee,Initialize,QAGXPAVCMcpxVoiceClient@2@PAVCDirectSoundVoiceSettings@2@@Z,151,dsound,obj\i386\dsapi.obj,VCMcpxVoiceClient::?$__AddRef; VCDirectSoundVoiceSettings::?$__AddRef,VCDirectSoundVoiceSettings; VCMcpxVoiceClient,
+0x004a0a85,SetFrequency,QAGJK@Z,36,dsound,obj\i386\dsapi.obj,_XAudioCalculatePitch; CDirectSoundVoice::SetPitch,CDirectSoundVoice,
+0x004a0ac6,SetMaxDistance,QAGJMK@Z,51,dsound,obj\i386\dsapi.obj,CDirectSoundVoice::CommitDeferredSettings,CDirectSoundVoice,
+0x004a0af9,SetMinDistance,QAGJMK@Z,51,dsound,obj\i386\dsapi.obj,CDirectSoundVoice::CommitDeferredSettings,CDirectSoundVoice,
+0x004a0b2c,SetPosition,QAGJMMMK@Z,82,dsound,obj\i386\dsapi.obj,CDirectSoundVoice::CommitDeferredSettings,CDirectSoundVoice,
+0x004a0b7e,SetVelocity,QAGJMMMK@Z,82,dsound,obj\i386\dsapi.obj,CDirectSoundVoice::CommitDeferredSettings,CDirectSoundVoice,
