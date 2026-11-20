@@ -674,28 +674,36 @@ members, and the exported payloads close on it exactly:
 | sectors | compact count + that many compact references | 765 over 66 exports, **every one a `TerrainSector` export** |
 | positions | compact count + 12 bytes each | one `FVector` per vertex: **313,344** |
 | sector grid | two int32 | x and y of the sector grid; their product is the sector count on 66 of 66 |
-| records | compact count + 24 bytes each | two vectors per vertex: **313,344** records |
-| bounds | 40 bytes + 40 bytes | two fixed ten-dword members (`FUN_0021f140`, called twice) |
-| tail | `[0][0][0][float][int][int]` | the two ints are equal on 66 of 66 and one more than the furthest sector edge |
+| records | compact count + 24 bytes each | two triangle normals per vertex: **313,344** records |
+| frame | 48 bytes | the terrain's grid-to-world frame, twelve floats (`FUN_0021f140`) |
+| inverse | 48 bytes | the same frame inverted, twelve floats (`FUN_000541f0`) |
+| grid | two int32 | the vertex grid's width and height -- the two ints `FUN_0026bda0` indexes the positions with |
 | colours | compact count + 4 bytes each | the `TArray<FColor>` the previous section measured |
+
+**The stretch after the record array is 48 + 48 + 8, not 80 + 24.** The first reading of this chain split it as
+"two 40-byte members and a 24-byte tail", and both readings close on 66 of 66 exports, so only the code tells
+them apart. It does, three ways: the two members sit at `this+0x1358` and `this+0x1388`, which are 0x30 = **48**
+bytes apart; `FUN_0021f140`, the writer called once per member, is twelve four-byte writes (`param+0x00` through
+`param+0x2c`), so its decompile reads `[param, param+4, param+8][param+0xc, param+0x10, param+0x14][param+0x18,
+param+0x1c, param+0x20][param+0x24, param+0x28, param+0x2c]`; and the dwords the old reading called the tail's
+`[0][0][0][float]` are the **fourth vector of the second frame** -- its `(0, 0, 1/scale-z)`. The tail proper is
+the two dwords at `this+0x1334`/`this+0x1338`, written after the frames by two plain four-byte serializations,
+and they are the terrain's grid: `FUN_0026bda0` addresses the position array with `[+0x1334] * row + col` and
+sizes it to `[+0x1334] * [+0x1338]`. So `U33`'s "tail float" is not a tail member at all -- it is the inverse
+frame's z scale, and it is `4.571` on `CTF-Abydos` because that map's forward z scale is `0.2188`.
 
 **Three counts that are one number.** The positions, the 24-byte records and the vertex colours are each
 **313,344** over the corpus, and `terrain_body` refuses a body whose counts disagree, so the record's three
 per-vertex members are the same grid by measurement rather than by resemblance. The positions are the terrain's
-vertex grid, not a byte count: they step regularly along both axes and the tail's two ints are the side of the
-sector grid, which is `sqrt(colours)` on 62 of the 66 exports and half of it on the four largest (the 16,384-
-and 65,536-colour terrain maps: `CTF-Abydos` 217, both `LostCity` maps and `DM-WorstCaseScenario`) -- those four
-carry twice as many positions per sector vertex as the rest, so the colour grid and the sector grid are not the
-same grid there. What the two 40-byte members and the 24-byte records' two vectors *mean* is not named here;
-their widths and counts are.
+vertex grid, not a byte count: they step regularly along both axes.
 
 **A `TerrainSector` names its terrain, and its terrain's size counts its sectors.** The class has no property
 block, so its payload is its native instance record: `[0x00][compact index of its TerrainInfo][quads x]
 [quads y][origin x][origin y]`. All **765** sector payloads open this way, all 765 name the `TerrainInfo` in
 their own map, and their quads are 8, 16 or 32 with the far edge one short (15 for 16, to avoid duplicating the
 shared boundary) on origins that are multiples of eight. So the two records read each other: the terrain's
-sector list names the sectors, and the terrain's tail ints equal the furthest `origin + quads` in that list plus
-one, on 66 of 66. The sectors cover **194,114** quads.
+sector list names the sectors, and the terrain's grid dwords equal the furthest `origin + quads` in that list
+plus one, on 66 of 66. The sectors cover **194,114** quads.
 
 **Files.** `tools/map-to-t3d.py` (`terrain_body`, `terrain_span`, `sector_record`, `compact_width`, nine new
 census columns, six new gates, ten synthetic cases, the T3D comment line under each terrain actor),
@@ -703,7 +711,68 @@ census columns, six new gates, ten synthetic cases, the T3D comment line under e
 `PLAN.md`.
 
 **Gates.** `make ci` green; `--check` reads the committed census with no dump; the 73-map write reproduces its
-own totals (121,250 actors, 1,149,471 properties, 54,954,428 T3D bytes); `--write-doc`/`--check-doc` agree.
+own totals (121,250 actors, 1,149,471 properties, 54,957,213 T3D bytes); `--write-doc`/`--check-doc` agree.
 
-**Not in this PR.** The meaning of the two 40-byte members, of the 24-byte records' two vectors, and of the
-tail's float (`U33`); the palette dword's reader and the `Level` trailer's 24 bytes stay counted (`U32`).
+**Not in this PR.** ~~The meaning of the two 40-byte members, of the 24-byte records' two vectors, and of the
+tail's float~~ (named in the two sections below); the palette dword's reader and the `Level` trailer's 24 bytes
+stay counted (`U32`).
+
+## The two 48-byte members are a frame and its inverse (measured 2026-11-19)
+
+`FUN_00264220` is what builds them, and it is the terrain's own record: it computes twelve floats from
+`this+0x154`/`+0x158`/`+0x15c` (three offsets) and `this+0x3ec`/`+0x3f0`/`+0x3f4` (three scales), copies them
+into `this+0x1358`, and copies `FUN_000541f0`'s answer -- the same twelve floats inverted -- into `this+5000`,
+which is `0x1388`. The layout is one translation followed by three axis vectors carrying one scale each:
+
+    [tx][ty][tz] [sx][0][0] [0][sy][0] [0][0][sz]
+
+Each of the three axis vectors has a single non-zero component on **66 of 66** exports, and the two members are
+each other's inverse on 66 of 66 by two products: `inverse[3]*frame[3] == inverse[7]*frame[7] ==
+inverse[11]*frame[11] == 1`, and `inverse[0] == -frame[0]*frame[3]`, likewise for the y offset against
+`frame[7]` and the z offset against `frame[11]`. `frame_inverse` is that test and it is a gate: a payload whose
+second frame is not the first one's inverse fails the census.
+
+**The frame is a grid-to-world map, and it is the one the vertex array is built with.** `FUN_0026bda0` walks the
+grid, takes the height sample from `Engine_UnTerrain(col, row)`, subtracts the frame's translation and scales
+each axis: `world.x = (grid.x - frame[0]) * frame[3]`, and the same for y and z, so the x and y scales are world
+units per cell and the z scale is world units per height sample. The terrain's positions are exactly that
+product, which is why the vertex grid's spacing equals `frame[3]`.
+
+**The one map that carries two vertices per cell.** The spacing is the frame's own x scale on **65 of 66**
+exports and **half** of it on `CTF-Abydos`'s 16,384-vertex terrain (`frame[3]` 448, spacing 224, `frame[0]`
+28.42 -- `FUN_00264220` shifts the translation by `[+0x1334]/2` and `[+0x1338]/2` when `this+0x3e4` is set,
+which is the doubled-resolution case). The grid dwords are a second, independent measurement: the vertex grid is
+**twice** those dwords on **four** exports (`CTF-Abydos` 217 and 246, and both `LostCity` maps, whose 64x64 and
+128x128 grids sit under 128x128 and 256x256 vertex arrays) and equal to them on the other 62,
+`DM-WorstCaseScenario` included. So "the four largest terrains carry twice as many positions per sector vertex"
+is not one rule: of the four the earlier section named, one halves the cell size (`CTF-Abydos` 217), two carry a
+vertex grid twice the grid dwords (both `LostCity`), and `DM-WorstCaseScenario` does neither -- and a fourth
+export (`CTF-Abydos` 246, an ordinary 4,096-colour terrain) carries the doubled vertex grid as well.
+
+**Gates on the two.** `terrain_frames` is 66 (the inverse holds), `terrain_half_grid` is 4 (the grid dwords
+against the vertex side), and `terrain_steps` is 65 x `1.00` and one `0.50` (the spacing against the frame's x
+scale) -- three census columns, all read back by `--check` with no dump.
+
+## The 24-byte record is two triangle normals (measured 2026-11-19)
+
+`FUN_00277ec0` is the array writer: `Preload(count*0x18, max*0x18)`, then the compact count, then `FUN_00263c10`
+per element, and `FUN_00263c10` is six four-byte writes at `param+0x00`..`param+0x14`. The element is two
+`FVector`s, and `FUN_0026bda0` writes both: for the vertex at `(col, row)` it takes the three neighbouring
+positions, takes their cross product (`FUN_001cb420`), normalises it, and stores it at element `index-1`'s first
+vector and, from the other pair of neighbours, its second vector. A degenerate cross product is stored as
+`(0, 0, 0)` rather than skipped. So each vertex carries the normal of **both triangles it belongs to** -- which
+is why a flat terrain's records are two identical `(0, 0, 1)`s (`M02A`), why a rough one's differ (`CTF-Abydos`
+has 60 distinct second vectors in its first 64 records), and why the first vector is a unit vector wherever it
+is not zero.
+
+**Files.** `tools/map-to-t3d.py` (`frame_inverse`, `vertex_step`, the three census columns, the T3D comment
+line's frame scale, four synthetic cases), `tools/ghidra/ghidra_scripts/OffsetReaders.java` (the new script that
+found the readers: every instruction whose displacement is a named instance offset, with its function),
+`inventory/t3d_coverage.csv`, this section, `docs/UNKNOWNS.md` U33, the execution note in `PLAN.md`.
+
+**Gates.** `make ci` green; `--check` reads the committed census with no dump; `--write-doc`/`--check-doc` agree;
+`--check`'s synthetic cases cover a frame pair that is not an inverse, a frame paired with itself, a grid at the
+frame's scale and at half of it, a grid whose spacing is uneven, and a zero scale.
+
+**Not in this PR.** The palette dword's reader (what consumes `rec+0x18`, `U32`) and the `Level` trailer's 24
+bytes (`U32`) stay counted, not named.

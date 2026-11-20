@@ -5204,23 +5204,42 @@ consumes them (`ULevel`'s `FURL`-shaped members are the five strings, whose valu
 (3) **The terrain record's tail is settled** (`docs/T3D.md`): it ends with the terrain's own `TArray<FColor>`,
 counted as a vertex grid on 66 of 66 exports.
 
-## U33. The terrain body's shapes are read; three of its members are not named
+## U33. The terrain body's members are named -- answered
 
-**Question.** `docs/T3D.md`'s terrain section now reads a `TerrainInfo`'s record member by member -- its sector
-list, one `FVector` per vertex, a 12-byte member per vertex, its sector grid, two ten-dword members, a 24-byte
-tail and the vertex colours -- and every one of the 66 exports closes on that frame (`terrain_body`,
-`terrain_span`, `sector_record`). What is still counted and not named: (1) the two 40-byte members between the
-per-vertex records and the tail; (2) the 24-byte per-vertex record's two three-float vectors (the first is
-`(0,0,1)` on a flat `M02A` vertex, so at least one of them is a normal, but which and what the second is is open);
-(3) the float in the tail, which is `4.0` on `M02A`, `4.571` on `CTF-Abydos` and `2.667` on `LostCity` and is
-not `1/spacing`.
+**Question.** `docs/T3D.md`'s terrain section read a `TerrainInfo`'s record member by member, and left three of
+them counted but unnamed: (1) the two members between the per-vertex records and the tail; (2) the 24-byte
+per-vertex record's two three-float vectors; (3) the float in the tail, `4.0` on `M02A`, `4.571` on `CTF-Abydos`
+and `2.667` on `LostCity`. It also left the four largest terrains' "twice as many positions per sector vertex"
+unexplained.
 
-**Routes.** The three are read by `ATerrainInfo::Serialize`'s own callees: `FUN_0021f140` (the 40-byte member,
-called twice at `this+0x1358` and `this+0x1388`), `FUN_00263c10` (one 24-byte element, six raw dwords) and the
-inline write of the tail. Naming them is a matter of what reads those members elsewhere in the image -- the
-renderer that consumes the terrain's per-vertex records, or `ATerrainInfo`'s own accessors -- which no pass has
-walked yet.
+**Measured 2026-11-19.** All four are settled, and the first one was a framing error: there is no 24-byte tail.
 
-**Also open in this area.** The colour grid and the sector grid disagree on the four largest terrains (16,384
-and 65,536 colours): those carry twice as many positions per sector vertex as the other 62, and the reason (a
-different height-field resolution per quad, or two vertices per quad) is not measured.
+(1) **The two members are 48 bytes each, and they are a frame and its inverse.** `this+0x1358` and
+`this+0x1388` are 0x30 = 48 bytes apart, `FUN_0021f140` writes twelve four-byte values (`param+0x00` ..
+`param+0x2c`), and `FUN_00264220` builds the pair: twelve floats from `this+0x154`/`+0x158`/`+0x15c` and
+`this+0x3ec`/`+0x3f0`/`+0x3f4`, copied to `this+0x1358`, and `FUN_000541f0`'s inverse of them at `this+5000`
+(`0x1388`). The layout is `[tx][ty][tz][sx][0][0][0][sy][0][0][0][sz]`; the inverse is reciprocal on each scale
+and `-t*s` on each offset on **66 of 66** exports (`frame_inverse` in `tools/map-to-t3d.py` is that test, and it
+is a gate). `FUN_0026bda0` consumes the forward frame as `world = (grid - t) * s`, with the z scale world units
+per height sample from `Engine_UnTerrain(col, row)`.
+
+(2) **The 24-byte record is two triangle normals.** `FUN_00277ec0` is the array writer (`Preload(count*0x18,
+max*0x18)`, compact count, `FUN_00263c10` per element) and `FUN_00263c10` is six four-byte writes. `FUN_0026bda0`
+fills both vectors per vertex: the normalised cross product (`FUN_001cb420`) of the vertex's two triangle
+neighbourhoods, stored at `index-1`'s first and second vectors. A flat terrain's records are therefore two
+`(0,0,1)`s, a rough one's differ, and a degenerate cross product is stored as `(0,0,0)`.
+
+(3) **The "tail float" is the inverse frame's z scale, and the tail is two ints.** The dwords the earlier reading
+called `[0][0][0][float]` are the second frame's fourth vector, `(0, 0, 1/sz)` -- `4.571` on `CTF-Abydos` is
+`1/0.2188`. The tail is `this+0x1334` and `this+0x1338`: the vertex grid's width and height, which
+`FUN_0026bda0` indexes the position array with (`[+0x1334] * row + col`) and sizes it to. So the frame is 48 + 48
+and the tail 8, not 80 + 24; both readings close on 66 of 66 exports and only the code separates them.
+
+(4) **The four large terrains do not share one doubling.** The vertex spacing is the frame's x scale on 65 of 66
+exports and half of it on `CTF-Abydos` 217 (the doubled-resolution case, where `FUN_00264220` shifts the
+translation by half the grid). The vertex grid is twice the grid dwords on four exports (`CTF-Abydos` 217 and
+246, both `LostCity`) and equal on the other 62, `DM-WorstCaseScenario` included -- so of the four the earlier
+section named, one halves the cell size, two double the vertex grid, and one does neither.
+
+**Routes for what is left.** None here. The neighbours of this area are `U32`'s two fields (the palette dword's
+reader and the `Level` trailer's 24 bytes), which stay counted.
