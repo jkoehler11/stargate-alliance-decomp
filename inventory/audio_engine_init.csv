@@ -1,0 +1,33 @@
+kind,address,value,detail
+body,0x00121350,Engine_UnEngine_InitAudio (316 bytes),"the body that pushes 'ini:Engine.Engine.AudioDevice' -- it builds the subsystem, it does not read one"
+guard,0x00121353,+0x34,the field tested before anything is built: a null there is what the body fills
+literal,0x00121378,NOSOUND,wide literal pushed in the body
+literal,0x00121393,ini:Engine.Engine.AudioDevice,the config key: UE2 condenses a lookup into `ini:Section.Key`
+literal,0x001213d0,Audio initialization failed.,wide literal pushed in the body
+literal,0x00121404,Audio initialization failed.,wide literal pushed in the body
+literal,0x00121427,Engine,wide literal pushed in the body
+literal,0x0012144a,XboxAudio.XHVVoiceSubsystem,wide literal pushed in the body
+class,,XboxAudio.XboxAudioSubsystem,"Default.ini [Engine.Engine] AudioDevice -- the class the key resolves to; the image holds no such string, which is why a string search cannot find this path"
+store,0x001213ba,+0x34,the return of `Core_UnObjBas` (0x001272e0) lands here
+store,0x00121470,+0x3c,the return of `Core_UnObjBas` (0x00127370) lands here
+dispatch,0x001213c4,+0x7c -> 0x0002fd70 XboxAudio_CreateDevice,slot 31 of the object built into +0x34; XboxAudioSubsystem's own table installs that
+dispatch,0x001213ee,+0xc -> 0x00032090 FUN_00032090,slot 3 of the object built into +0x34; XboxAudioSubsystem's own table installs that
+dispatch,0x00121484,+0x80,slot 32 of the object built into +0x3c
+clear,0x001213f1,+0x34,the field is zeroed on the failure path
+call,0x0012137d,FUN_000572b0,6 bytes
+call,0x00121383,FUN_000567d0,83 bytes
+call,0x00121399,FUN_00018050,38 bytes
+call,0x0012139f,Core_UnObj,379 bytes
+call,0x001213b5,Core_UnObjBas,131 bytes
+call,0x001213db,FUN_00057440,135 bytes
+call,0x0012140f,FUN_00057440,135 bytes
+call,0x0012142c,Engine_UnAudio,180 bytes
+call,0x00121439,FUN_000e2470,264 bytes
+call,0x00121452,Core_UnObj,379 bytes
+call,0x00121468,Core_UnObjBas,131 bytes
+caller,0x00139ac5,Engine_UnGame,the engine's own body: it calls the init and then uses its product
+readback,0x00139ac5,+0x34,the caller reads the offset the store wrote and dispatches slot 32 (+0x80) on it: 0x0002fa90 FUN_0002fa90 from the same table
+caller,0x0013abfe,FUN_00139d50,the engine's own body: it calls the init and then uses its product
+readback,0x0013abfe,+0x34,the caller reads the offset the store wrote and dispatches slot 32 (+0x80) on it: 0x0002fa90 FUN_0002fa90 from the same table
+vtable,,0,"class tables in the image that install the body -- 0 is what makes it a non-virtual member function, reached by `call`, not by dispatch"
+join,+0x34,0,"of 115 census sites, those that read a field at the offset the engine writes: 0 means no site dispatches the device through the engine's own field"

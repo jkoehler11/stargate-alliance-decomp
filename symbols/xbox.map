@@ -3809,7 +3809,7 @@
 0x001210c0 FUN_001210c0                                  264 
 0x001211d0 FUN_001211d0                                  264 
 0x001212e0 FUN_001212e0                                   49 
-0x00121350 FUN_00121350                                  316 
+0x00121350 Engine_UnEngine_InitAudio                     316 
 0x00121490 Core_UnObjBas                                 670 
 0x00121730 Core_UnObjBas                                 479 
 0x00121910 Engine_UnEngine                               180 

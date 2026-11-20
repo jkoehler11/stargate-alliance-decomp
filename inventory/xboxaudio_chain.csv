@@ -328,7 +328,7 @@ slot31,0x0010e010,Engine_UnConn,302,Engine,.text,0x0010e134,call [edi+0x7c],0x00
 slot31,0x0010e330,Engine_UnConn,362,Engine,.text,0x0010e356,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x0010e4a0,Core_UnClass,1920,Core,.text,0x0010eae2,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
 slot31,0x00116290,execMoveToward,3015,(dispatch: declared),.text,0x00116a62,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
-slot31,0x00121350,FUN_00121350,316,,.text,0x001213c4,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00121350,Engine_UnEngine_InitAudio,316,Engine,.text,0x001213c4,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x00000000,,0,,.text,0x0012a753,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x00000000,,0,,.text,0x0013243b,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x00000000,,0,,.text,0x0013244b,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,

@@ -5240,3 +5240,4 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x0002b230,FUN_0002b230,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,228
 0x0002a770,FUN_0002a770,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,72
 0x0002a7c0,FUN_0002a7c0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,165
+0x00121350,Engine_UnEngine_InitAudio,"audio init: pushes ini:Engine.Engine.AudioDevice, constructs the class that key names and stores it at this+0x34, then dispatches slot 31 (+0x7c) on the new object (XboxAudio_CreateDevice); builds the voice subsystem at this+0x3c from the hardcoded XboxAudio.XHVVoiceSubsystem; its only callers are Engine_UnGame and 0x00139d50; no class table installs it, so it is not virtual",,0,0,,Engine,,316

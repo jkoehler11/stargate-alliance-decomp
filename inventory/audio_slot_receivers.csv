@@ -41,7 +41,7 @@ site_va,slot,reg,function,defining_va,bytes,form,source,base,disp,value,value_ki
 0x0010e356,31,eax,Engine_UnConn,0x0010e34d,8b 06,"mov eax,[esi]",object-head,esi,,,,0,14,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
 0x0010eae2,31,edx,Core_UnClass,0x0010ead4,8b 17,"mov edx,[edi]",object-head,edi,,,,0,484,yes,agree,call   DWORD PTR [edx+0x7c],stack,0x0010eac2,edi
 0x00116a62,31,edx,execMoveToward,0x00116a5d,8b 10,"mov edx,[eax]",object-head,eax,,,,0,536,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x00116a2a,eax
-0x001213c4,31,edx,FUN_00121350,0x001213bd,8b 10,"mov edx,[eax]",object-head,eax,,,,0,37,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x001213b5,eax
+0x001213c4,31,edx,Engine_UnEngine_InitAudio,0x001213bd,8b 10,"mov edx,[eax]",object-head,eax,,,,0,37,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x001213b5,eax
 0x0012a753,31,edx,,,68 f3 0f 11 44 24 5c f3 0f 11 44 24 60 f3 0f 11 44 24 64 8b 10 51 8b c8,,not-a-boundary,,,,,0,0,no,none,,,,
 0x0013243b,31,edx,,0x0013242b,8b 16,"mov edx,[esi]",object-head,esi,,,,0,0,no,none,,,,
 0x0013244b,31,eax,,0x00132449,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,0,no,none,,,,
