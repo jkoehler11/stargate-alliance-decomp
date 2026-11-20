@@ -628,6 +628,17 @@ xdk-lib-names:
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
 	@echo "wrote inventory/xdk_lib_names.csv and the names it earned"
 
+# Name what the masked-body pass cannot reach: a matched function's calls name their targets
+# (PLAN 4.2). --apply folds the names into the override file and the function map.
+xdk-call-names:
+	@test -d "$(XDK_LIBS)" || { echo "no library directory at $(XDK_LIBS) -- set XDK_LIBS"; exit 2; }
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@$(PYTHON) tools/xdk-call-names.py --libs "$(XDK_LIBS)" --xbe "$(GAME_DIR)/default.xbe" \
+		-o inventory/xdk_call_names.csv --apply
+	@$(PYTHON) tools/native-summary.py --symbols symbols/xbox_functions.csv --overrides symbols/xbe_overrides.csv -o inventory/
+	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
+	@echo "wrote inventory/xdk_call_names.csv and the names it earned"
+
 # The asset export (PLAN 5.1): umodel over every shipped .utx/.usx/.ukx/.uax package. The exported
 # data is game data and lands under $WORK; what is committed is the census (inventory/assets.csv,
 # inventory/asset_classes.csv) and docs/ASSETS.md, which is generated from it.
