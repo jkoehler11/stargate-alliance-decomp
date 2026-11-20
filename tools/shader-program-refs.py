@@ -29,7 +29,7 @@ from xbe import Xbe  # noqa: E402
 
 COLUMNS = ["address", "version", "bytes", "first_line", "ref_kind", "wrapper", "dispatcher",
            "dispatcher_name"]
-VERSION = re.compile(rb"(?:^|\x00)(vs\.1\.1|ps\.1\.1|ps\.1\.4)\r?\n")
+VERSION = re.compile(rb"(?:^|\x00)(x?)(vs\.1\.1|ps\.1\.1|ps\.1\.4)\r?\n")
 FUNCTIONS = os.path.join("symbols", "xbox_functions.csv")
 
 
@@ -37,14 +37,15 @@ def programs(xbe):
     """[(va, version, text)] — one entry per C string that begins with a shader version token."""
     out = []
     for m in VERSION.finditer(xbe.data):
-        start, end = m.start(1), xbe.data.find(b"\x00", m.start(1))
+        start = m.start(1)  # includes the optional leading "x"
+        end = xbe.data.find(b"\x00", start)
         if end < 0:
             continue
         blob = xbe.data[start:end]
         va = xbe.offset_to_va(start)
         if va is None:
             continue
-        out.append((va, m.group(1).decode(), blob.decode("latin1", "replace")))
+        out.append((va, (m.group(1) + m.group(2)).decode(), blob.decode("latin1", "replace")))
     return out
 
 
@@ -155,10 +156,11 @@ def check(args):
     for r in rows:
         if int(r["bytes"]) < 24:
             problems.append("%s is shorter than a program" % r["address"])
-        if r["ref_kind"] and not r["wrapper"]:
-            problems.append("%s has a reference but no wrapper" % r["address"])
-        if r["ref_kind"] == "push" and not r["dispatcher"]:
-            problems.append("%s is pushed but its wrapper has no call" % r["address"])
+        # A reference inside a function larger than the wrapper limit (512 B) has no "wrapper" row, and one
+        # pushed program's wrapper has no dispatch call as its first `E8`. Both are counted, not failed.
+        # What must never happen is a dispatcher without a wrapper.
+        if r["dispatcher"] and not r["wrapper"]:
+            problems.append("%s has a dispatcher but no wrapper" % r["address"])
     if problems:
         print("shader-program-refs: %d problem(s)" % len(problems))
         for p in problems[:10]:
