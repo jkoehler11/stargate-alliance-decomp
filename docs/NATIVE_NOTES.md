@@ -1515,11 +1515,14 @@ member, and the two engine functions split cleanly by stage:
 | caller | programs | versions |
 |---|---:|---|
 | `FUN_002ae4e0` | 21 | `vs.1.1` 19, `xvs.1.1` 2 |
-| `FUN_002af230` | 41 | `ps.1.1` 9, `xps.1.1` 15, `ps.1.4` 17 |
+| `FUN_002af230` | 41 references / 38 programs | `ps.1.1` 9, `xps.1.1` 12, `ps.1.4` 17 |
 | `?CompileVertexShaderToUCode@Assembler@XGRAPHICS@@…` | 1 | `xvs.1.1` (the `XGRPH` preamble string) |
 
 Not one vertex program is dispatched by the pixel function, and not one pixel program by the vertex function: these are
-the **stage dispatchers**, one per shader type, and the seven a mission compiles are selected from them.
+the **stage dispatchers**, one per shader type, and the seven a mission compiles are selected from them. The pixel
+dispatcher's 41 is a count of **references**, not programs — the id table resolves 29 ids to 38 distinct pixel programs,
+so three of them are reached from two places. Counting calls and calling that a program count is the mistake this page
+has now made twice; the version totals (9 + 12 + 17) are the programs, and 38 is the number that matches the inventory.
 
 **The method matters, because the first attempt inverted the answer.** An absolute-value xref scan reported 0 of 60
 callers — the entire shader library as dead code. It sees `push imm32` (how a program pointer is passed) but not `call
@@ -1600,7 +1603,9 @@ Three readings:
    then calls a 28-byte constructor at `0x002b3da0` or `0x002b3dc0`. So they are a different kind of entry in the same
    switch — an allocated 24-byte shader *object* rather than a compiled program — and calling that gap a blind spot in
    the scan would have been the wrong description. The scan follows direct `call`s and those two ids simply do not make
-   one to a wrapper; the remaining gap is the three of the 41 pixel programs no case reaches.
+   one to a wrapper. There is in fact **no program-level gap**: checking every pixel program against the artifact leaves
+   38 of 38 reached, which is also why the "41 programs" in the dispatcher table was a reference count — 41 references,
+   38 programs, three of them reached from two ids.
 3. **The table is a committed artifact, not a paragraph.** `make pixel-shader-ids` regenerates it from the dump;
    `--check` validates it without one, and CI treats a missing dump as "needs the dump" rather than a failure.
 
