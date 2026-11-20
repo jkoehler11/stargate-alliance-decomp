@@ -1063,7 +1063,7 @@ Three readings:
    the repeats, and a breakpoint on the cache-lookup path (`_CreateFileA`/`_ReadFile` in `ShaderCompilePixel`'s
    callees) is what would say which.
 
-**Three missions compile the same seven.** The same measurement on `M04B` (index 15) and `M12F` (index 31)
+**Four loads compile the same seven.** The same measurement on `M04B` (index 15) and `M12F` (index 31)
 gives 8 and 10 stops and **the same program set** — `M04B` a subset of five, `M12F` all seven, and nothing exclusive
 to any mission:
 
@@ -1072,9 +1072,13 @@ to any mission:
 | `M00` | 10 | 7 | none |
 | `M04B` | 8 | 5 | none |
 | `M12F` | 10 | 7 | none |
+| front-end menus | 10 | 7 | none |
 
 So the set is **global, not per-map**: the game compiles one fixed set of seven programs on the render path, and the
-other 53 of the 60 are unused in normal play — plausibly editor, debug or unused-content strings. That is the
+other 53 of the 60 are never compiled in normal play. The front end is the strongest of the four samples, because every
+session renders it: sitting at the title and menus with the assembler armed gives **10 stops and the same seven**, no
+menu-only program and nothing missing. Four independent loads — one front end, three missions — and the union is exactly
+the seven a mission needs. That is the
 measurement a baked table needed, and it makes the requirement concrete: bake seven programs, not sixty, not "the
 programs each map selects".
 
