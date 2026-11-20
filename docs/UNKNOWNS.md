@@ -1383,6 +1383,19 @@ the 327. The dispatch-site route is counted (82 `call [reg+0x4c]`/`[reg+0x50]` s
 typed receiver first, so the next instrument is a breakpoint on the two bodies in a booted guest, not another
 `.text` scan. `docs/NATIVE_CLASS_TREE.md` carries the numbers.
 
+**Measured 2026-11-19, the call-edge route is read and closed.** A matched library function's `REL32`
+relocations name their targets from the library's own symbol table (`tools/xdk-call-names.py`,
+`inventory/xdk_call_names.csv`): **482** `FUN_*` addresses named, 256 of them by more than one caller,
+which takes the seven sections to **2,838 of 3,109 (91.3%)** and the map from 44.43% to 47.65%
+(`docs/LIBRARIES.md`, `docs/NAMING.md`). The route names a target only when a strict majority of its
+callers agree, which keeps a wrong body match from propagating: a name voted by 124 callers is a
+decoded stub and one voted by a single caller is one match's claim. **What it cannot reach:** the other
+**271** bodies -- 250 with no name in the map at all and the 21 `thunk_` stubs -- are landed on by no
+call edge any matched body carries, and they reference no string either, so both image-only routes are
+now exhausted on them. The residue this entry opened on (12,347 of 14,280 `FUN_*`) is **7,838 of
+14,973**, and the unblock is unchanged: a locally supplied signature database, scored against the same
+section table.
+
 **Status.** Open, blocked on data the project may not ship.
 
 ## U10. The tagged property record's field order — closed 2026-10-24
