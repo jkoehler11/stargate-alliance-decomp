@@ -5184,39 +5184,43 @@ returns the record count, the flag-0 count and every reference; `inventory/t3d_c
 `--check` fails when a payload stops closing, when a record's first field leaves the export table, or when the
 non-light share passes one percent. `docs/T3D.md` has the section.
 
-## U32. The palette record's head dword is open; the `Level` trailer's tail is a URL and a time
+## U32. The `Level` trailer's tail is a URL, a `Model` and a time; the palette head dword is per map
 
 **Question.** Two runs of bytes were read to their extent and not to their meaning: (1) the `StaticMeshInstance`
 instance record's dword, in **2..10** on all 33,509 payloads (30,450 read 2), after the colour array; (2) the
 `Level` export's trailer, five `FString`s and **32 bytes** (31 in one map).
 
-**Answered 2026-11-19 (the trailer, and the record's middle member).** *(2) is a `FURL` and the level's saved
-time.* `7777` and `1` are the same pair on all 73 maps (`Port`, `Valid`), and the float at bytes 2..5 of the 24
-that follow equals that map's own `LevelInfo.TimeSeconds` on **73 of 73** -- 59.005 on `M02A`, 391.213 on
-`CTF-LostCity`, 1,605.09 on `DM-LostCity`. One map (`Entry`) carries a one-byte field ahead of the float instead
-of two, so its `TimeSeconds` sits one byte earlier; both alignments close. What is left of the 24 bytes is that
-one-or-two-byte value (883..21,101) and 18 zero bytes on 72 maps (17 of 18 on `Entry`, 1,313 in total).
+**Answered 2026-11-19 (the trailer).** The 32 bytes are a `FURL`, a **compact export reference** and the level's
+saved time. `7777` and `1` are the same pair on all 73 maps (`Port`, `Valid`); the reference resolves to an export
+whose class is `Model` on **73 of 73** maps and which is the package's **largest** `Model` export on **73 of 73**
+-- so it is the level's own `Model`, and a `Model` at random would satisfy neither half. The float after it equals
+that map's own `LevelInfo.TimeSeconds` on **73 of 73** (59.005 on `M02A`, 1,605.09 on `DM-LostCity`). The field
+that looked like a two-byte value of 883..21,101 matching nothing was a u16 misreading: as a compact index it is
+**27..5,293**, encodes in two bytes on 72 maps and one byte on `Entry` (its reference is 27), and that width
+alone is why `Entry`'s trailer is 31 bytes and its float sits at byte 9. Eighteen zero bytes follow the float on
+every map (1,314 total), so the trailer is `[five strings][7777][1][compact Model][float TimeSeconds][18 x 0]`.
 
-**The record's middle member is named too, and it is not part of U32's question but its answer's neighbour.** The
-`TArray<BYTE>` between a record's light index and its flag is a bitmask over the payload's colour table: its length
-is `ceil(colours/8)` on **466,858 of 466,858** records (13,989,855 mask bytes), one bit per colour entry, and the
-last byte's spare bits are padding set on 43,126 records. `docs/T3D.md` has both sections and
-`inventory/t3d_coverage.csv` carries the columns; `--check` gates them.
+**The record's middle member is a mask.** The `TArray<BYTE>` between a record's light index and its flag is exactly
+`ceil(colours/8)` bytes on **466,858 of 466,858** records (13,989,855 mask bytes), one bit per colour entry, and
+the last byte's spare bits are padding set on 43,126 records -- so a record is one light and the colours it bakes.
+The 423 records that do not name a light name exactly three classes, and all three are invisible placement actors:
+`InterpolationPoint` 292, `PathNode` 96, `LookTarget` 35. `docs/T3D.md` has the sections; `--check` fails on a
+fourth class.
 
-**(1) stays open, and five readings of the dword are refuted.** Measured against the masks the same walk reads:
-it is not the colour count (0 of 33,509), not the record count (they agree only where both are 2, 2,706 payloads),
-not the largest number of lights over one colour (225 of 1,200 sampled), not the masks' byte total, not the number
-of non-empty masks, and not the flag-0 count. It is the instance record's own member -- `rec+0x18`, the four-byte
-write `FUN_00037110` makes after `FUN_001f7df0` serialises the colour array, both inside `FUN_001f7680`, which
-`UStaticMeshInstance::Serialize` (`0x0024b5f0`) calls with `this+0x34` -- so its name is in the code that reads
-`UStaticMeshInstance+0x4c`.
+**(1) is bounded, not named: the head dword is one value per map.** The census now carries each map's histogram
+(`palette_heads`): **59 of 73 maps carry a single value** and the corpus takes nine values (2 on 30,450 payloads,
+then 4 on 899, 10 on 728, 6 on 620, 3 on 606, 7 on 132, 9 on 41, 8 on 28, 5 on 5). The 13 maps with a second value
+scatter it through the export table in 1..112 runs (never one block), and `M00` alone carries 6, 7, 8, 9 and 10.
+Every count a payload carries was already refuted (records, colours, mask bytes, non-empty masks, distinct lights,
+the largest mask, the bits masks use, flag-0 records) and a value constant across a map cannot be any of them, so
+the dword is a mark the bake wrote per map and re-wrote for the payloads it re-baked. Its *name* therefore lives in
+the renderer's per-level state (`UStaticMeshInstance+0x4c`), not in a per-payload field, and the displacement sweep
+cannot isolate that reader (`+0x4c` is read by 1,231 functions).
 
-**Routes for what is left.** (a) A reader of `+0x4c` that is *known* to take a `UStaticMeshInstance`; the
-displacement sweep cannot supply one (`OffsetReaders.java` over `+0x28`, `+0x2c`, `+0x34`, `+0x38`, `+0x3c`,
-`+0x4c` returns 40,474 instructions in 5,280 functions, 1,231 of them reading `+0x4c` alone), so the sweep has to
-start from a function whose argument is the class -- the renderer's static-mesh pass or the class's registration.
-(b) The same field in a package this build wrote: `FUN_0024f160` (`0x24f160`, the version-0x70 branch) writes the
-record for older packages, and a payload saved by this image would show what the writer puts there.
+**Routes for what is left.** A reader that combines `+0x4c` with a *second* known `UStaticMeshInstance` offset in
+one function (the sweep returns each displacement separately and has no intersection filter), or the same field in
+a package this build wrote: `FUN_0024f160` (`0x24f160`, the version-0x70 branch) writes the record for older
+packages, so a payload saved by this image would show what the writer puts there.
 
 ## U33. The terrain body's members are named -- answered
 

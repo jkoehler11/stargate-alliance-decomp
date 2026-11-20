@@ -413,8 +413,8 @@ def palette_record(data, ps):
     return count, alphas.count(0), len(data) - off - 4 * count
 
 
-def level_trailer(tail):
-    """A `Level` trailer's bytes after its strings -> `(port, valid, prefix, seconds, zero bytes)`.
+def level_trailer(tail, ps):
+    """A `Level` trailer's bytes after its strings -> `(port, valid, model, width, seconds, alt, zero bytes)`.
 
     **The 32 bytes are a URL and one 4-byte float.** The first eight are `7777` and `1` on all 73 maps -- a
     `FURL`'s `Port` and `Valid`, which is what the five strings in front of them are (`"unreal"`, three empty,
@@ -422,18 +422,23 @@ def level_trailer(tail):
     own `LevelInfo.TimeSeconds` on **73 of 73** maps (compared with the actor's property as the same pass reads
     it), so the trailer is a saved URL plus the level's saved time.
 
-    Bytes 0..1 hold a small value (243..20309 as a little-endian u16 on 72 maps; one byte on `Entry`, whose float
-    then sits one byte earlier and still equals its `TimeSeconds`), and bytes 6..23 are zero on 72 maps and 17 of
-    18 on `Entry` -- so 20 of the 24 bytes are one two-byte field and a run of zeros.
+    The field ahead of the float is a **compact export reference** (two bytes on 72 maps, one on `Entry`, whose
+    reference is 27), and the float sits immediately after it, so `Entry`'s trailer is 31 bytes rather than 32.
+    After the float the rest is zero on **73 of 73** maps, 18 bytes each.
     """
     if len(tail) < 14:
         return None
     port, valid = struct.unpack("<II", tail[:8])
-    prefix = struct.unpack("<H", tail[8:10])[0]
-    # The field ahead of the float is one byte wide in one map (`Entry`), so both alignments are handed back
-    # and the caller takes the one that equals that map's own `LevelInfo.TimeSeconds`.
-    return (port, valid, prefix, struct.unpack("<f", tail[10:14])[0],
-            struct.unpack("<f", tail[9:13])[0], sum(1 for b in tail[14:] if b == 0))
+    # The field ahead of the float is a **compact index**, not a u16: its width is the encoding's, so the map
+    # whose float sits one byte earlier (`Entry`) is the map whose reference needs one byte, not a map with a
+    # narrow field. Both float alignments are handed back for the same reason as before -- the caller takes
+    # the one that equals that map's own `LevelInfo.TimeSeconds`.
+    try:
+        model, nxt = ps.read_index(tail, 8)
+    except IndexError:
+        return None
+    return (port, valid, model, nxt - 8, struct.unpack("<f", tail[nxt:nxt + 4])[0], nxt,
+            sum(1 for b in tail[nxt + 4:] if b == 0))
 
 
 def level_record(data, pkg, ps):
@@ -480,7 +485,7 @@ def level_record(data, pkg, ps):
                 break
         strings += 1
         off = nxt + size
-    return count, idx, strings, len(data) - off, level_trailer(data[off:])
+    return count, idx, strings, len(data) - off, level_trailer(data[off:], ps)
 
 
 def smi_tail(tail, ps, colours=None):
@@ -821,7 +826,8 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "terrain_frames": 0, "terrain_half_grid": 0, "terrain_steps": [],
           "palette_masks": 0, "palette_mask_bytes": 0, "palette_mask_bad": 0, "palette_pad_bits": 0,
           "level_tail_port": 0, "level_tail_prefix": 0, "level_tail_zero": 0, "level_seconds_match": 0,
-          "level_seconds_off": 0}
+          "level_seconds_off": 0, "palette_heads": {}, "palette_other": {},
+          "level_model_class": "", "level_model_biggest": 0, "level_model_width": 0}
     structs, arrays = {}, {}
     terrain_grid_set = set()
     written, level_idx = set(), set()
@@ -849,10 +855,21 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                 # The 32 bytes after the strings are a `FURL` (`7777`, `1`) and one float, which is the
                 # level's own `TimeSeconds`: it is held against the `LevelInfo` actor's property below.
                 if level[4] is not None:
-                    port, _valid, prefix, seconds, alt_seconds, zero = level[4]
-                    st["level_tail_port"], st["level_tail_prefix"] = port, prefix
+                    port, _valid, model, width, seconds, at, zero = level[4]
+                    st["level_tail_port"], st["level_tail_prefix"] = port, model
                     st["level_tail_zero"] = zero
-                    level_seconds = (seconds, alt_seconds)
+                    st["level_model_width"] = width
+                    level_seconds = (seconds, at)
+                    # The reference names the level's own `Model`: the *largest* `Model` export in the
+                    # package on **73 of 73** maps, which is the level's BSP (`Model1` on most maps -- the
+                    # other `Model` exports belong to brushes and movers). Both halves are held because a
+                    # reference that lands on a `Model` at random would satisfy neither.
+                    if 1 <= model <= len(pkg.exports):
+                        target = pkg.exports[model - 1]
+                        st["level_model_class"] = pkg.class_name_of(target)
+                        sizes = [e["size"] for e in pkg.exports if pkg.class_name_of(e) == "Model"]
+                        if sizes and target["size"] == max(sizes):
+                            st["level_model_biggest"] += 1
             continue
         if cls == "TerrainSector":
             # A sector's payload is its native record (`sector_record`): no property block, a header that
@@ -882,6 +899,10 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                     st["palette_tails"] += 1
                     if data[-palette[2]:4 - palette[2]] == b"\x02\x00\x00\x00":
                         st["palette_head2"] += 1
+                    # The head dword is carried per map: it is one value on 59 of 72 maps (2 on 30,450
+                    # payloads), so the census records the histogram rather than a single number.
+                    head = struct.unpack("<I", data[len(data) - palette[2]:][:4])[0]
+                    st["palette_heads"][head] = st["palette_heads"].get(head, 0) + 1
                 tail = smi_tail(data[len(data) - palette[2]:], ps, palette[0])
                 if tail is not None:
                     st["palette_records"] += tail[1]
@@ -900,8 +921,10 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                                 st["palette_ref_light"] += 1
                             else:
                                 st["palette_ref_other"] += 1
+                                st["palette_other"][cname] = st["palette_other"].get(cname, 0) + 1
                         else:
                             st["palette_ref_other"] += 1
+                            st["palette_other"]["<out of range>"] = st["palette_other"].get("<out of range>", 0) + 1
             continue
         preferred = None
         if prec is not None:
@@ -1101,12 +1124,11 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         lines.insert(3, "")
     st["terrain_grids"] = ";".join(str(n) for n in sorted(terrain_grid_set))
     if level_seconds and levelinfo_seconds is not None:
-        # Two-byte field first, then the one-byte alignment `Entry` uses; the offset is carried so the
-        # census can say which of the two a map took rather than only that it matched.
-        for shift, candidate in ((2, level_seconds[0]), (1, level_seconds[1])):
-            if abs(candidate - levelinfo_seconds) <= 1e-4 * max(1.0, abs(levelinfo_seconds)):
-                st["level_seconds_match"], st["level_seconds_off"] = 1, shift
-                break
+        # The float's offset is the one the reference's own width puts it at (9 on `Entry`, 10 elsewhere), so
+        # the match against `LevelInfo.TimeSeconds` is an independent control on where the reader put it.
+        seconds, at = level_seconds
+        if abs(seconds - levelinfo_seconds) <= 1e-4 * max(1.0, abs(levelinfo_seconds)):
+            st["level_seconds_match"], st["level_seconds_off"] = 1, at - 8
     text = "\n".join(lines)
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, name + ".t3d"), "w") as f:
@@ -1207,7 +1229,26 @@ LEVEL_STRINGS = 5
 LEVEL_TAIL_PORT = 7777
 LEVEL_SECONDS_MATCH = 73
 LEVEL_SECONDS_SHIFTS = {2: 72, 1: 1}
-LEVEL_TAIL_ZERO = 1313
+LEVEL_TAIL_ZERO = 1314
+
+# The field ahead of that float is a **compact export reference** and it names the level's own `Model`: the
+# *largest* `Model` export of the package on **73 of 73** maps, and its class is `Model` on every one. The
+# one-byte width on `Entry` is the compact encoding's own width (`63` and under encode in one byte), which is
+# the same map whose float sits one byte earlier -- so the census holds `level_model_width` to
+# `level_seconds_off` and the two readings explain each other instead of contradicting.
+LEVEL_MODEL_CLASS = "Model"
+LEVEL_MODEL_BIGGEST = 73
+
+# The head dword of a `StaticMeshInstance` tail is one value per map: **59 of 72** maps carry a single value
+# (2 on 30,450 of 33,509 payloads) and the other 13 carry a second value scattered through the export table
+# (1..112 runs), so it is a mark the bake wrote per map, not a count of anything in the payload.
+PALETTE_HEAD_VALUES = 9
+PALETTE_HEAD_SINGLE = 59
+
+# The palette references that do not name a light are **423** and exactly three classes: the invisible
+# navigation actors `InterpolationPoint`, `PathNode` and `LookTarget`. A fourth class is a new reading.
+PALETTE_REF_OTHER = 423
+PALETTE_OTHER_CLASSES = {"InterpolationPoint": 292, "PathNode": 96, "LookTarget": 35}
 
 # A palette record's middle member is a bitmask over the payload's colour table: its length is `ceil(colours/8)`
 # on **466,858 of 466,858** records, so a record is one light and the colours it bakes. The last byte's spare
@@ -1406,6 +1447,21 @@ def check(values, structs, stats, arrays=ARRAYS):
         if shifts != LEVEL_SECONDS_SHIFTS:
             problems.append("%s: the Level trailer's float sits at %s, expected %s"
                             % (stats, shifts or "no offset", LEVEL_SECONDS_SHIFTS))
+        # The compact reference before that float names the level's `Model`: its class is `Model` and it is
+        # the largest `Model` export on every map, and its own width is what moves the float on `Entry`.
+        wrong_class = [r["map"] for r in crows if (r.get("level_model_class") or "?") != LEVEL_MODEL_CLASS]
+        if wrong_class:
+            problems.append("%s: %d map(s) whose trailer reference is not a Model: %s"
+                            % (stats, len(wrong_class), ", ".join(wrong_class[:6])))
+        biggest = sum(int(r.get("level_model_biggest") or 0) for r in crows)
+        if biggest != LEVEL_MODEL_BIGGEST:
+            problems.append("%s: the trailer names the largest Model export on %d maps, expected %d"
+                            % (stats, biggest, LEVEL_MODEL_BIGGEST))
+        moved = [r["map"] for r in crows
+                 if int(r.get("level_model_width") or 0) != int(r.get("level_seconds_off") or 0)]
+        if moved:
+            problems.append("%s: %d map(s) whose float offset is not the reference's width: %s"
+                            % (stats, len(moved), ", ".join(moved[:6])))
         # A record's first field is an export index: it has to land in the package's export table, and the class
         # it names is the actor whose light the record bakes. `palette_ref_other` is the control -- it is not
         # asserted zero, because an `InterpolationPoint`/`PathNode` is an actor too, only that it stays small.
@@ -1418,6 +1474,40 @@ def check(values, structs, stats, arrays=ARRAYS):
             problems.append("%s: light %d + other %d != %d references" % (stats, light, other, refs))
         if other * 100 > refs:
             problems.append("%s: %d of %d palette records do not name a light" % (stats, other, refs))
+        if other != PALETTE_REF_OTHER:
+            problems.append("%s: %d palette records name something other than a light, expected %d"
+                            % (stats, other, PALETTE_REF_OTHER))
+        seen = {}
+        for r in crows:
+            for part in (r.get("palette_other_classes") or "").split(";"):
+                if not part:
+                    continue
+                cls, _sep, n = part.rpartition(":")
+                seen[cls] = seen.get(cls, 0) + int(n)
+        if seen != PALETTE_OTHER_CLASSES:
+            problems.append("%s: the non-light palette references name %s, expected %s"
+                            % (stats, seen or "nothing", PALETTE_OTHER_CLASSES))
+        # The head dword's per-map histogram: every tail is counted once, and the corpus keeps its shape.
+        heads, single = {}, 0
+        for r in crows:
+            hist = {}
+            for part in (r.get("palette_heads") or "").split(";"):
+                if not part:
+                    continue
+                val, _sep, n = part.rpartition(":")
+                hist[int(val)] = int(n)
+                heads[int(val)] = heads.get(int(val), 0) + int(n)
+            if hist and sum(hist.values()) != int(r.get("palette_tails") or 0):
+                problems.append("%s: %s counts %d tails but the map has %s"
+                                % (stats, r["map"], sum(hist.values()), r.get("palette_tails")))
+            if len(hist) == 1:
+                single += 1
+        if len(heads) != PALETTE_HEAD_VALUES:
+            problems.append("%s: the palette head takes %d values (%s), expected %d"
+                            % (stats, len(heads), sorted(heads), PALETTE_HEAD_VALUES))
+        if single != PALETTE_HEAD_SINGLE:
+            problems.append("%s: %d map(s) carry one palette head value, expected %d"
+                            % (stats, single, PALETTE_HEAD_SINGLE))
         # Every map's `Level` export names its own actors, and the writer writes each one it names: a map
         # whose level names an actor the writer skipped is the writer's bug, not a census question.
         bare = [r["map"] for r in crows if int(r.get("level_actors") or 0) <= 0]
@@ -1638,14 +1728,21 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("level_record does not read a length-prefixed trailer string")
     # The trailer's 32 bytes: a `FURL` (`7777`, `1`), a two-byte value, a float and a zero run. The float is
     # the level's `TimeSeconds`; the reader has to hand back all four so the census can hold them.
-    tail32 = struct.pack("<IIHf", 7777, 1, 985, 59.005) + b"\x00" * 18
-    if level_trailer(tail32) != (7777, 1, 985, struct.unpack("<f", struct.pack("<f", 59.005))[0],
-                                 struct.unpack("<f", tail32[9:13])[0], 18):
-        problems.append("level_trailer does not read the URL frame, the float and the zero run")
-    if level_trailer(tail32[:13]) is not None:
+    tail32 = struct.pack("<II", 7777, 1) + b"\x6c\x04" + struct.pack("<f", 59.005) + b"\x00" * 18
+    if level_trailer(tail32, ps) != (7777, 1, 300, 2, struct.unpack("<f", struct.pack("<f", 59.005))[0],
+                                     10, 18):
+        problems.append("level_trailer does not read the URL frame, the reference, the float and the zero run")
+    if level_trailer(tail32[:13], ps) is not None:
         problems.append("level_trailer accepts a trailer too short to hold the float")
-    if level_trailer(tail32)[3] != struct.unpack("<f", tail32[10:14])[0]:
+    if level_trailer(tail32, ps)[4] != struct.unpack("<f", tail32[10:14])[0]:
         problems.append("level_trailer reads its float off the wrong byte")
+    # A reference under 64 encodes in one byte, and then the float sits one byte earlier: the width is the
+    # encoding's, not a different field -- which is the correction this bundle carries.
+    short = struct.pack("<II", 7777, 1) + b"\x1b" + struct.pack("<f", 248.649) + b"\x00" * 18
+    if level_trailer(short, ps)[3:] != (1, struct.unpack("<f", short[9:13])[0], 9, 18):
+        problems.append("level_trailer does not read a one-byte reference as a one-byte width")
+    if level_trailer(short, ps)[2] != 27:
+        problems.append("level_trailer misreads a one-byte compact reference")
     if level_record(b"\x00" + struct.pack("<II", 2, 3) + b"\x01\x02", _Pkg(2), ps) is not None:
         problems.append("level_record accepts a count its second dword disagrees with")
     if level_record(b"\x00" + struct.pack("<II", 2, 2) + b"\x01\x07", _Pkg(2), ps) is not None:
@@ -1846,7 +1943,24 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
              "level_tail_port", "level_seconds_match", "level_seconds_off", "level_tail_zero",
              "native_tails", "terrain_bytes", "terrain_colours", "terrain_colour_exports",
              "terrain_body", "terrain_sectors", "terrain_sector_refs", "terrain_verts",
-             "terrain_records", "terrain_span", "sector_payloads", "sector_named", "sector_quads")}
+             "terrain_records", "terrain_span", "sector_payloads", "sector_named", "sector_quads",
+             "level_model_biggest")}
+    # Two of the new columns carry a histogram rather than a number, so they are summed here rather than in
+    # the comprehension above: one palette head value per map is the shape the census pins.
+    ptot["palette_heads"], ptot["palette_other"], ptot["palette_head_single"] = {}, {}, 0
+    for r in crows:
+        hist = {}
+        for part in (r.get("palette_heads") or "").split(";"):
+            if part:
+                val, _sep, n = part.rpartition(":")
+                hist[int(val)] = int(n)
+                ptot["palette_heads"][int(val)] = ptot["palette_heads"].get(int(val), 0) + int(n)
+        if len(hist) == 1:
+            ptot["palette_head_single"] += 1
+        for part in (r.get("palette_other_classes") or "").split(";"):
+            if part:
+                cls, _sep, n = part.rpartition(":")
+                ptot["palette_other"][cls] = ptot["palette_other"].get(cls, 0) + int(n)
     out = []
     out.append("| measure | value |")
     out.append("|---|---:|")
@@ -1904,6 +2018,15 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
                % (sum(1 for r in crows if int(r.get("level_seconds_off") or 0) == 2),
                   sum(1 for r in crows if int(r.get("level_seconds_off") or 0) == 1)))
     out.append("| -- zero bytes after the float | %d |" % ptot["level_tail_zero"])
+    out.append("| -- the compact reference before the float names the largest `Model` export | **%d** of %d maps |"
+               % (ptot["level_model_biggest"], len(crows)))
+    out.append("| palette head dword: maps carrying one value / values it takes | **%d** of %d / %d |"
+               % (ptot["palette_head_single"], len(crows), len(ptot["palette_heads"])))
+    out.append("| -- palette references that name something other than a light | **%d** |"
+               % ptot["palette_ref_other"])
+    out.append("| -- their classes | %s |"
+               % ", ".join("`%s` %d" % (c, n) for c, n in sorted(ptot["palette_other"].items(),
+                                                                 key=lambda kv: -kv[1])))
     out.append("| actors a `Level` names that the writer does not write | **%d** |" % ptot["level_unwritten"])
     out.append("| native terrain record bytes after a `TerrainInfo` block | **%d** |" % ptot["terrain_bytes"])
     out.append("| -- exports whose record ends on a vertex-colour array | **%d** of %d |"
@@ -2048,7 +2171,11 @@ def main():
                      got["values"]["palette_mask_bad"], got["values"]["palette_pad_bits"],
                      got["values"]["level_tail_port"], got["values"]["level_tail_prefix"],
                      got["values"]["level_tail_zero"], got["values"]["level_seconds_match"],
-                     got["values"]["level_seconds_off"]))
+                     got["values"]["level_seconds_off"],
+                     ";".join("%d:%d" % (h, n) for h, n in sorted(got["values"]["palette_heads"].items())),
+                     ";".join("%s:%d" % (c, n) for c, n in sorted(got["values"]["palette_other"].items())),
+                     len(got["values"]["palette_heads"]), got["values"]["level_model_class"],
+                     got["values"]["level_model_biggest"], got["values"]["level_model_width"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -2094,9 +2221,11 @@ def main():
                      "terrain_frames,terrain_half_grid,terrain_steps,"
                      "palette_masks,palette_mask_bytes,palette_mask_bad,palette_pad_bits,"
                      "level_tail_port,level_tail_prefix,level_tail_zero,level_seconds_match,"
-                     "level_seconds_off\n")
+                     "level_seconds_off,palette_heads,palette_other_classes,palette_head_values,"
+                     "level_model_class,level_model_biggest,level_model_width\n")
             for row in rows:
-                fh.write(("%s" + ",%d" * 36 + ",%s" + ",%d,%d,%s" + ",%d" * 9 + "\n") % row)
+                fh.write(("%s" + ",%d" * 36 + ",%s" + ",%d,%d,%s" + ",%d" * 9 + ",%s,%s,%d,%s,%d,%d\n")
+                         % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"

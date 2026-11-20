@@ -192,7 +192,11 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | -- of those, the `FURL` frame (`7777` and `1`) | **73** maps |
 | -- the trailer float equals `LevelInfo.TimeSeconds` | **73** of 73 maps |
 | -- at the two-byte field's end / one byte earlier | **72** / 1 |
-| -- zero bytes after the float | 1313 |
+| -- zero bytes after the float | 1314 |
+| -- the compact reference before the float names the largest `Model` export | **73** of 73 maps |
+| palette head dword: maps carrying one value / values it takes | **59** of 73 / 9 |
+| -- palette references that name something other than a light | **423** |
+| -- their classes | `InterpolationPoint` 292, `PathNode` 96, `LookTarget` 35 |
 | actors a `Level` names that the writer does not write | **0** |
 | native terrain record bytes after a `TerrainInfo` block | **12543159** |
 | -- exports whose record ends on a vertex-colour array | **66** of 66 |
@@ -820,33 +824,78 @@ lives in the code that reads `UStaticMeshInstance+0x4c` -- which the displacemen
 `+0x28`, `+0x2c`, `+0x34`, `+0x38`, `+0x3c` and `+0x4c` are displacements 40,474 instructions in 5,280 functions
 carry, and 1,231 functions read `+0x4c`.
 
-## The `Level` trailer is a URL and the level's saved time (measured 2026-11-19)
+**The dword is one value per map, and that is a sixth refutation.** The census now carries each map's histogram
+(`palette_heads`): **59 of 73 maps carry a single value**, and the corpus's 33,509 payloads take only nine values
+(2 on 30,450, then 4 on 899, 10 on 728, 6 on 620, 3 on 606, 7 on 132, 9 on 41, 8 on 28, 5 on 5). The 13 maps that
+carry a second value put it in 1..112 scattered runs through the export table, never as one block (`M20C`: 533 at 2
+and 4 at 3; `M13D`: 438 at 4, 22 at 6, 5 at 5), and `M00` alone carries 6, 7, 8, 9 and 10 side by side. A value that
+is constant across a whole map cannot be the record count, the colour count, the mask bytes, the distinct
+references, the largest mask or the bits any mask uses -- measured over every payload, the three that sometimes
+coincide (`records`, `distinct`, and a `ceil(colours/8)` mask) still fail on 30,803, 30,803 and 32,523 of them. So the dword is a mark the bake wrote per map, re-written for the payloads it
+re-baked; its reader is the renderer's per-level state, which is why a per-payload byte test never reaches it.
 
-The 32 bytes after the five strings are a `FURL` and one float. `7777` and `1` are the same pair on all 73 maps
-(`Port` and `Valid`), and the float at bytes 2..5 of the 24 that follow is the map's **own `LevelInfo.TimeSeconds`**
--- 59.005 on `M02A`, 391.213 on `CTF-LostCity`, 1,605.09 on `DM-LostCity` -- equal on **73 of 73** maps when it
-is read in the same pass as the actor's property.
+## 423 palette references name a navigation actor, not a light (measured 2026-11-19)
+
+A record's first field is an export index and the class it names is the actor whose light the record bakes: of the
+**466,858** records, 466,435 name a light (`Light`, `Sunlight`, `Spotlight`, `Emitter`, `TriggerLight`). The 423
+that do not are not a random residue -- they name exactly three classes, and all three are invisible placement
+actors:
+
+| class | records | what the class is |
+|---|---:|---|
+| `InterpolationPoint` | **292** | a patrol-route anchor: a point an AI walks between |
+| `PathNode` | **96** | a navigation node, in the reachability graph |
+| `LookTarget` | **35** | an AI aim target |
+
+**None of the three renders, so none of them can be a light**, and the residue is 0.09% of the records. Two
+readings survive: the bake attached colour groups to these actors' positions on purpose (all three are placed,
+referenced actors), or the indices are stale -- a light deleted and re-created in the editor leaves the bake's
+record pointing at whatever export now holds the number. The bytes cannot separate them, and neither can the
+renderer (it reads the record's mask, not the actor's class), so the census pins the class triple instead: a
+fourth class in `palette_other_classes` fails `--check`.
+
+## The `Level` trailer is a URL, the level's `Model` and its saved time (measured 2026-11-19)
+
+The 32 bytes after the five strings are a `FURL`, a compact export reference and one float. `7777` and `1` are
+the same pair on all 73 maps (`Port` and `Valid`); the reference names the level's `Model`; and the float after it
+is the map's **own `LevelInfo.TimeSeconds`** -- 59.005 on `M02A`, 391.213 on `CTF-LostCity`, 1,605.09 on
+`DM-LostCity` -- equal on **73 of 73** maps when it is read in the same pass as the actor's property.
 
 | measure | value |
 |---|---:|
 | `Level` exports whose trailer is the `FURL` frame | **73** |
 | -- whose float equals `LevelInfo.TimeSeconds` | **73** |
-| -- at the two-byte field's end / one byte earlier | **72** / 1 |
+| -- whose reference names the largest `Model` export | **73** |
+| -- the reference's width: two bytes / one | **72** / 1 |
+| -- zero bytes after the float | **1,314** (18 on every map) |
 
-**One map's field ahead of the float is one byte wide.** `Entry` carries `1b` where the other 72 carry two bytes,
-and its `TimeSeconds` (248.649) then sits at byte 1 of the 24, which is why the reader hands back both alignments
-and the census counts which one a map took (`level_seconds_off`). The two-byte value is 883..21,101 and is not the
-actor count; 18 bytes after the float are zero on 72 maps and 17 of 18 on `Entry` (`level_tail_zero` totals 1,313,
-which `--check` pins).
+**The field ahead of the float is a compact index, and it names the level's `Model`.** Read as a u16 it was
+883..21,101 and matched nothing; read as a compact index (`read_index`) it resolves to an export on every map, and
+that export is a `Model` -- the **largest** `Model` export in the package on **73 of 73** maps (`Model1` on most;
+`Model43`, `Model227` where brush models sort before it). A `Model` at random would satisfy neither the class nor
+the size, so the two halves together are the reading.
 
-**Files.** `tools/map-to-t3d.py` (`level_trailer`, `level_record`'s fifth field, `smi_tail`'s mask rule, the nine
-census columns, four gates and five synthetic cases), `inventory/t3d_coverage.csv` (73 rows regenerated),
-`docs/UNKNOWNS.md` U32 and this page's generated block.
+**What looked like two field widths is the compact encoding's own width.** 64 and over encode in two bytes and 63
+and under in one, and `Entry`'s reference is **27**: its trailer is **31 bytes** rather than 32 and its float sits
+at byte 9 rather than 10. `level_model_width` and `level_seconds_off` are two measurements of the same shift and
+`--check` holds them equal, while the float's equality with `TimeSeconds` is the independent control on where the
+reader put it.
+
+**Eighteen zero bytes follow the float on every map, `Entry` included** (`level_tail_zero` totals 1,314). The
+trailer is therefore `[five strings][7777][1][compact Model reference][float TimeSeconds][18 x 0]`, and the only
+member whose *length* varies between maps is the reference.
+
+**Files.** `tools/map-to-t3d.py` (`level_trailer`, `level_record`'s fifth field, `smi_tail`'s mask rule and the
+head histogram, the reference's resolution in `drive_map`, sixteen census columns, nine gates and seven synthetic
+cases), `inventory/t3d_coverage.csv` (73 rows regenerated), `docs/UNKNOWNS.md` U32 and this page's generated block.
 
 **Gates.** `make ci` green; `--check` reads the committed census with no dump and fails when a mask stops being
-`ceil(colours/8)`, when the trailer stops being `7777`, when a map's float stops equalling its `TimeSeconds`, or
-when the zero run moves; `--write-doc`/`--check-doc` agree; `make t3d` still reproduces 121,250 actors, 1,149,471
-properties and 54,957,213 T3D bytes.
+`ceil(colours/8)`, when the trailer stops being `7777`, when a map's float stops equalling its `TimeSeconds`, when
+the reference stops resolving to the largest `Model`, when its width stops placing the float, when the zero run
+moves, when a fourth class appears among the non-light references, or when a map's head histogram stops summing to
+its tail count; `--write-doc`/`--check-doc` agree; `make t3d` still reproduces 121,250 actors, 1,149,471 properties
+and 54,957,213 T3D bytes.
 
-**Not in this PR.** The head dword's reader (the five refutations above are what the bytes can say), and the two
-bytes ahead of the trailer's float.
+**Not in this PR.** The head dword's reader: the bytes now bound it to one value per map (59 of 73 single-valued,
+nine values, re-written per payload in 13 maps), so the reader is per-level renderer state rather than a field any
+payload's own counts can name.
