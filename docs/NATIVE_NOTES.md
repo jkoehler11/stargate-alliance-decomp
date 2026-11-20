@@ -1461,6 +1461,41 @@ Three readings:
 formats them (`CD3DXAssembler::Production` is the obvious candidate at 3,262 bytes, but no body was read here) is not
 established. The meanings of the `w` and `s` suffixes in `xvsw`/`xvss` are unknown.
 
+### The push buffer is a ring, and flushing patches it (2026-11-19)
+
+Two more bodies finish the picture, and both change what a rebuild has to do.
+
+**`?InitializePushBuffer@CDevice@D3D@@QAEJXZ`** (`0x00457740`, 160 bytes) allocates the buffer and lays out the block:
+
+| store | value |
+|---|---|
+| `[dev+0x24]` | the allocation |
+| `[dev+0]` | base |
+| `[dev+4]` | `base + (size/4)*4 - 0x204` — the limit, with 516 bytes kept back |
+| `[dev+0x2c]` | `5` |
+| `[base]` | `3` — a first command written before anything else |
+| `[dev+0x38]` | `pages - 1`, a mask, where `pages` is the next power of two above `size / [0x463680]` |
+| `[dev+0x48]` | an allocation of `pages * 8` bytes — a page table |
+
+Mask plus a per-page table is what a **ring** looks like: the buffer wraps, and something has to know which pages hold
+live records. The limit being `end - 0x204` rather than `end` means the final 516 bytes are never written.
+
+**`?FixupPushBuffer@D3D@@YGXPAUPushBufferFixup@1@@Z`** (`0x0045c810`, 145 bytes) walks a chain of fixup records and
+rewrites the buffer in place: at `[entry+8]` it stores `(len & 0x0fffffff) + 1` from `[entry]`; when bit `0x20000000` is
+set it walks a list of (length, offset) pairs from `[entry+0xc]`, copying bytes from a source and adding the base in
+`[entry+0x10]`; it clears bit `0x40000000` and marks the chain finished with `next = -1`.
+
+**What this changes for a rebuild.** The records an emitter builds are not final: lengths and address-bearing ranges are
+patched at flush time, and the buffer they live in wraps. So intercepting or reproducing the render path means
+reproducing the *fixup pass* as well as the emitters — the bytes the GPU sees are not the bytes the emitters wrote. It
+also explains why the emitters store addresses in records at all (`DrawVertices` puts a vertex-buffer address in its
+record): those addresses are the things a fixup has to adjust.
+
+**Limits.** The page-size source at `[0x463680]` and the meaning of the `5` at `[dev+0x2c]` are unread; `0x204` is
+measured as the gap between limit and end, not explained; the fixup entry layout above is read from the offsets the
+body touches, and one entry's later fields are not decoded. The `3` written at `[base]` is a first command of unknown
+kind.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
