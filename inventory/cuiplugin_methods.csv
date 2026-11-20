@@ -1,0 +1,11 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x00339983,FontDrawText,QAEXPAGKKKK@Z,83,uix,obj\i386\plugin.obj,,,
+0x003399d6,FontGetTextSize,QAEXPAGKPAK1@Z,77,uix,obj\i386\plugin.obj,,,
+0x00339a59,GetLBItemHeight,QAEGPAU_UIX_SKIN_LAYOUT_INFO@@@Z,45,uix,obj\i386\plugin.obj,,,
+0x00339b60,SetPluginSupport,UAGJPAUPluginSupport@@@Z,53,uix,obj\i386\plugin.obj,StdImage::Retrieve,StdImage,
+0x00339b95,CreateObject,UAGJW4_UIX_OBJECT_TYPE@@KKKPAK@Z,236,uix,obj\i386\plugin.obj,CArray::Append; _PluginSupport_GetLayout; CUIObject::Create,CArray; CUIObject,
+0x00339d3b,SetText,UAGJKKPBGKPBU_UIX_SKIN_ICON_INFO@@@Z,87,uix,obj\i386\plugin.obj,CUIObject::SetText,CUIObject,
+0x00339d92,InsertItem,UAGJKKPAK@Z,134,uix,obj\i386\plugin.obj,CArray::Insert; CArray::Append; CUIPlugin::GetLBItemHeight; CUIObject::Create,CArray; CUIObject; CUIPlugin,
+0x00339e18,Clear,UAGJKH@Z,82,uix,obj\i386\plugin.obj,CUIObject::DestroyChildObjects,CUIObject,
+0x00339e6a,SetObjectState,UAGJKKW4_UIX_OBJSTATE_TYPE@@K@Z,216,uix,obj\i386\plugin.obj,,,
+0x00339f42,GetObjectState,UAGJKKW4_UIX_OBJSTATE_TYPE@@PAK@Z,124,uix,obj\i386\plugin.obj,,,
