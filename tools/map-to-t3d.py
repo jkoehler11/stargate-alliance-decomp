@@ -562,16 +562,24 @@ def terrain_body(tail, ps, colours):
 
     `ATerrainInfo::Serialize` (`0x00273e80`) writes, for a package version above `0x74`:
     `Super::Serialize`, a list of sectors, one 12-byte member per vertex, two dwords, one 24-byte member per
-    vertex, two 40-byte members, a 24-byte tail, then the `TArray<FColor>` `terrain_colours` reads:
+    vertex, two 48-byte frames, the terrain grid's two dwords, then the `TArray<FColor>` `terrain_colours`
+    reads:
 
         [compact count][that many compact object references]      the terrain's sectors
         [compact count][count * 12 bytes]                         one FVector per vertex (its position)
         [int][int]                                                the sector grid, x and y
-        [compact count][count * 24 bytes]                         two vectors per vertex
-        [40 bytes][40 bytes]                                      two fixed records
-        [0][0][0][float][int][int]                                the tail, whose two ints are the
-                                                                  sector grid's vertex side
+        [compact count][count * 24 bytes]                         two triangle normals per vertex
+        [48 bytes][48 bytes]                                      the terrain's frame and its inverse
+        [int][int]                                                the terrain grid, its width and height
         [compact count][count * 4 bytes]                          the vertex colours
+
+    **The stretch after the record array is 48 + 48 + 8, not 80 + 24.** The two members sit at
+    `this+0x1358` and `this+0x1388` -- 0x30 = 48 bytes apart -- and `FUN_0021f140`, which writes each one,
+    is twelve four-byte writes (`param+0x00` .. `param+0x2c`). So the last four dwords the earlier reading
+    called "the tail" (`[0][0][0][float]`) are the *fourth vector of the second frame*, and the tail proper
+    is the two dwords at `this+0x1334`/`this+0x1338` -- the grid `FUN_0026bda0` indexes the vertex array
+    with (`[+0x1334] * row + col`). Both readings close on 66 of 66 exports; this one is the one the code
+    writes, and `frames` carries the two frames' twelve floats each.
 
     Every one of the 66 exports closes exactly on this frame when `colours` is the count
     `terrain_colours` read, and the counts agree: positions and records both equal the vertex colours
@@ -607,9 +615,12 @@ def terrain_body(tail, ps, colours):
             return None
         records_at = off
         off += 24 * records
-        off += 80
-        dims = struct.unpack_from("<ii", tail, off + 16)
-        off += 24
+        if off + 96 + 8 > end:
+            return None
+        frames = (struct.unpack_from("<12f", tail, off), struct.unpack_from("<12f", tail, off + 48))
+        off += 96
+        dims = struct.unpack_from("<ii", tail, off)
+        off += 8
     except (IndexError, struct.error):
         return None
     if off != end:
@@ -621,7 +632,44 @@ def terrain_body(tail, ps, colours):
     if dims[0] != dims[1] or dims[0] < 2:
         return None
     return dict(sectors=refs, verts=verts, verts_at=verts_at, grid=grid, records=records,
-                records_at=records_at, dims=dims)
+                records_at=records_at, dims=dims, frames=frames)
+
+
+def frame_inverse(frames):
+    """`True` when the second frame is the first one's inverse, the way `FUN_000541f0` builds it.
+
+    The first frame carries a translation in cells and one scale per axis (the x and y axes are world units
+    per cell, the z axis world units per height sample); `FUN_00264220` copies it to `this+0x1358` and its
+    inverse to `this+0x1388`. Measured over the corpus the inverse is `1/scale` on each axis and
+    `-translation * scale` on each offset, so the test is those six products -- 66 of 66 exports hold it.
+    """
+    a, b = frames
+    for i, scale in ((3, a[3]), (7, a[7]), (11, a[11])):
+        if scale == 0 or abs(b[i] * scale - 1.0) > 1e-3:
+            return False
+    for offset, scale in ((0, a[3]), (1, a[7]), (2, a[11])):
+        if abs(b[offset] + a[offset] * scale) > 1e-3 * max(1.0, abs(a[offset] * scale)):
+            return False
+    return True
+
+
+def vertex_step(rec, verts_at, verts, scale):
+    """The vertex grid's spacing per axis, as a multiple of the frame's x scale, or `None`.
+
+    The positions are a rectilinear grid: `sqrt(n)` distinct x values and that many y values, evenly spaced.
+    Their spacing is the frame's own x scale on 65 of the 66 exports and **half** of it on `CTF-Abydos`'s
+    16,384-vertex terrain -- the one map that carries two vertices per cell on each axis.
+    """
+    side = int(round(verts ** 0.5))
+    if side * side != verts or side < 3 or not scale:
+        return None
+    xs = sorted(set(round(struct.unpack_from("<f", rec, verts_at + 12 * i)[0], 3) for i in range(verts)))
+    if len(xs) != side:
+        return None
+    gaps = [xs[i + 1] - xs[i] for i in range(side - 1)]
+    if max(gaps) - min(gaps) > 1e-3 * max(1.0, abs(max(gaps))):
+        return None
+    return round(((min(gaps) + max(gaps)) / 2) / scale, 2)
 
 
 def terrain_span(refs, sectors):
@@ -731,7 +779,8 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "struct_element_records": 0, "terrain_bytes": 0, "terrain_colours": 0,
           "terrain_colour_exports": 0, "terrain_grids": "", "terrain_body": 0,
           "terrain_sectors": 0, "terrain_sector_refs": 0, "terrain_verts": 0, "terrain_records": 0,
-          "terrain_span": 0, "sector_payloads": 0, "sector_named": 0, "sector_quads": 0}
+          "terrain_span": 0, "sector_payloads": 0, "sector_named": 0, "sector_quads": 0,
+          "terrain_frames": 0, "terrain_half_grid": 0, "terrain_steps": []}
     structs, arrays = {}, {}
     terrain_grid_set = set()
     written, level_idx = set(), set()
@@ -827,8 +876,8 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                 st["terrain_colour_exports"] += 1
                 terrain_grid_set.add(terrain_n)
             # The body between the block and the colours: its sector list, its per-vertex members, its
-            # sector grid and its tail (`terrain_body`). Counted against the colours it ends on, and its
-            # tail held to the furthest edge in the sector list it carries.
+            # sector grid, its two frames and its grid (`terrain_body`). Counted against the colours it
+            # ends on, and its grid held to the furthest edge in the sector list it carries.
             body = terrain_body(native_bytes, ps, terrain_n)
             if body is not None:
                 st["terrain_body"] += 1
@@ -838,9 +887,22 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                 for ref in body["sectors"]:
                     if 1 <= ref <= len(pkg.exports) and pkg.class_name_of(pkg.exports[ref - 1]) == "TerrainSector":
                         st["terrain_sector_refs"] += 1
+                side = int(round(body["verts"] ** 0.5))
                 span = terrain_span(body["sectors"], sector_rows)
                 if span == body["dims"]:
                     st["terrain_span"] += 1
+                # The two frames: `FUN_00264220` builds a grid->world frame at `this+0x1358` and its
+                # inverse at `this+0x1388`, so the second has to be the first one's reciprocal on every
+                # export -- the test `frame_inverse` makes.
+                if frame_inverse(body["frames"]):
+                    st["terrain_frames"] += 1
+                # The vertex grid against the frame's own x scale, and against the grid dwords: the two
+                # places the four largest terrains differ from the other 62.
+                step = vertex_step(native_bytes, body["verts_at"], body["verts"], body["frames"][0][3])
+                if step is not None:
+                    st["terrain_steps"].append("%.2f" % step)
+                if body["dims"][0] * 2 == side:
+                    st["terrain_half_grid"] += 1
         elif tail:
             st["padded_blocks"] += 1
         lines.append("Begin Actor Class=%s Name=%s_%d" % (cls, cls, exp["index"] + 1))
@@ -959,10 +1021,13 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         if native:
             if body is not None:
                 lines.append("   // Terrain: %d native byte(s), %s, %d sector(s) in a %dx%d grid, "
-                             "%d vertex position(s), %d per-vertex record(s)"
+                             "%d vertex position(s), %d per-vertex record(s), %dx%d grid, "
+                             "frame scale (%.4g, %.4g, %.4g)"
                              % (len(native_bytes), ("%d vertex colour(s)" % terrain_n) if terrain_n
                                 else "no vertex-colour array read", len(body["sectors"]),
-                                body["grid"][0], body["grid"][1], body["verts"], body["records"]))
+                                body["grid"][0], body["grid"][1], body["verts"], body["records"],
+                                body["dims"][0], body["dims"][1],
+                                body["frames"][0][3], body["frames"][0][7], body["frames"][0][11]))
             else:
                 lines.append("   // Terrain: %d native byte(s), %s"
                              % (len(native_bytes), ("%d vertex colour(s)" % terrain_n) if terrain_n
@@ -1095,6 +1160,16 @@ TERRAIN_COLOUR_EXPORTS = 66
 TERRAIN_BODY_EXPORTS = 66
 TERRAIN_SECTORS = 765
 TERRAIN_QUADS = 194114
+
+# The two 48-byte members after the record array are a grid->world frame and its inverse (`frame_inverse`):
+# the inverse's scale is the forward scale's reciprocal and its offset is the forward offset times that
+# scale, on **66 of 66** exports. The vertex grid's spacing against the frame's own x scale is **1.00** on
+# 65 exports and **0.50** on one (`CTF-Abydos`'s 16,384-vertex terrain, which carries two vertices per cell
+# on each axis), and **4** exports carry a vertex grid twice the grid dwords (`CTF-Abydos` 217 and 246 and
+# both `LostCity` maps).
+TERRAIN_FRAME_EXPORTS = 66
+TERRAIN_HALF_GRIDS = 4
+TERRAIN_STEPS = {"1.00": 65, "0.50": 1}
 
 
 def check(values, structs, stats, arrays=ARRAYS):
@@ -1293,6 +1368,25 @@ def check(values, structs, stats, arrays=ARRAYS):
         if spanned != TERRAIN_BODY_EXPORTS:
             problems.append("%s: %d terrain tail(s) equal the sector list's furthest edge, expected %d"
                             % (stats, spanned, TERRAIN_BODY_EXPORTS))
+        # The two 48-byte members: an export whose second frame is not the first one's inverse is a
+        # payload whose frame pair stopped being readable, and the vertex spacing and the grid dwords are
+        # the two measurements that separate the four large terrains from the other 62.
+        frames = sum(int(r.get("terrain_frames") or 0) for r in crows)
+        if frames != TERRAIN_FRAME_EXPORTS:
+            problems.append("%s: %d terrain export(s) carry a frame and its inverse, expected %d"
+                            % (stats, frames, TERRAIN_FRAME_EXPORTS))
+        half = sum(int(r.get("terrain_half_grid") or 0) for r in crows)
+        if half != TERRAIN_HALF_GRIDS:
+            problems.append("%s: %d terrain export(s) whose vertex grid is twice the grid dwords, expected %d"
+                            % (stats, half, TERRAIN_HALF_GRIDS))
+        steps = {}
+        for r in crows:
+            for token in (r.get("terrain_steps") or "").split(";"):
+                if token:
+                    steps[token] = steps.get(token, 0) + 1
+        if steps != TERRAIN_STEPS:
+            problems.append("%s: vertex spacing / frame scale %s, expected %s"
+                            % (stats, sorted(steps.items()), sorted(TERRAIN_STEPS.items())))
         payloads = sum(int(r.get("sector_payloads") or 0) for r in crows)
         sector_named = sum(int(r.get("sector_named") or 0) for r in crows)
         if payloads != TERRAIN_SECTORS or sector_named != TERRAIN_SECTORS:
@@ -1448,15 +1542,24 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("terrain_colours counts a colour whose alpha is not 0xff")
     if terrain_colours(b"\x00", ps) is not None:
         problems.append("terrain_colours reads a tail with no colours")
-    # The terrain body: one sector reference, two vertices, a 1x1 sector grid, two 24-byte records, two
-    # fixed records and a tail whose ints are 2. Every count that disagrees -- the positions not being the
-    # colours, a grid that does not count the sectors, a record list of the wrong length, tail ints that
-    # differ from each other, or a body one byte short -- has to be refused, not read as a shorter body.
-    def _tbody(nref=1, verts=2, grid=(1, 1), recs=2, dims=(2, 2), cut=0):
+    # The terrain body: one sector reference, two vertices, a 1x1 sector grid, two 24-byte records, a frame
+    # and its inverse (48 bytes each, twelve floats) and the grid dwords (2, 2). Every count that disagrees
+    # -- the positions not being the colours, a grid that does not count the sectors, a record list of the
+    # wrong length, grid dwords that differ from each other, or a body one byte short -- has to be refused,
+    # not read as a shorter body.
+    def _frame(scale=(1.0, 2.0, 4.0), offset=(0.5, 0.25, 0.125), inverse=False):
+        if inverse:
+            return struct.pack(
+                "<12f", -offset[0] * scale[0], -offset[1] * scale[1], -offset[2] * scale[2],
+                1.0 / scale[0], 0.0, 0.0, 0.0, 1.0 / scale[1], 0.0, 0.0, 0.0, 1.0 / scale[2])
+        return struct.pack("<12f", offset[0], offset[1], offset[2], scale[0], 0.0, 0.0, 0.0,
+                           scale[1], 0.0, 0.0, 0.0, scale[2])
+
+    def _tbody(nref=1, verts=2, grid=(1, 1), recs=2, dims=(2, 2), cut=0, inverse=True):
         return (bytes([nref]) + b"\x04" * nref if nref else b"\x00") + bytes([verts]) + \
             b"\x00" * (12 * verts) + struct.pack("<ii", *grid) + bytes([recs]) + \
-            b"\x00" * (24 * recs) + b"\x00" * 80 + b"\x00" * 12 + \
-            struct.pack("<f", 1.0) + struct.pack("<ii", *dims) + b"\x02" + \
+            b"\x00" * (24 * recs) + _frame() + _frame(inverse=inverse) + \
+            struct.pack("<ii", *dims) + b"\x02" + \
             b"\x01\x02\x03\xff" * 2 + b"\x00" * cut
     good = _tbody()
     body_ok = terrain_body(good, ps, 2)
@@ -1472,6 +1575,27 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("terrain_body accepts a body one byte past the colours")
     if terrain_body(_tbody()[:-9], ps, 2) is not None:
         problems.append("terrain_body accepts a body that stops before its colours")
+    # The two 48-byte members are a frame and its inverse: the inverse's scale is the reciprocal of the
+    # forward one and its offset is the forward offset times that scale. A pair that breaks either relation
+    # is not an inverse, and the spacing test reads the vertex grid the frames sit beside.
+    if not frame_inverse(terrain_body(good, ps, 2)["frames"]):
+        problems.append("frame_inverse rejects the body's own frame pair")
+    if frame_inverse(terrain_body(_tbody(inverse=False), ps, 2)["frames"]):
+        problems.append("frame_inverse accepts a second frame that is not the first one's inverse")
+    flipped = terrain_body(_tbody(inverse=False), ps, 2)["frames"]
+    if frame_inverse((flipped[0], flipped[0])):
+        problems.append("frame_inverse accepts a frame paired with itself")
+    def _row(xs):
+        return b"\x00" + b"".join(struct.pack("<3f", x, 0.0, 0.0) for x in xs)
+    grid_x = [float(v) for v in (0, 10, 20, 0, 10, 20, 0, 10, 20)]
+    if vertex_step(_row(grid_x), 1, 9, 10.0) != 1.0:
+        problems.append("vertex_step does not read a grid whose spacing is the frame's own scale")
+    if vertex_step(_row([v / 2 for v in grid_x]), 1, 9, 10.0) != 0.5:
+        problems.append("vertex_step does not read a grid at half the frame's scale")
+    if vertex_step(_row(grid_x), 1, 9, 0.0) is not None:
+        problems.append("vertex_step divides by a zero scale")
+    if vertex_step(_row([0.0, 10.0, 21.0] * 3), 1, 9, 10.0) is not None:
+        problems.append("vertex_step reads a grid whose spacing is not even")
     # A sector's header names its terrain and gives its size and origin in quads: 8, 16 or 32, with the
     # origin a multiple of eight. A payload that opens another way is not a sector record.
     sector = b"\x00\x04" + struct.pack("<4i", 16, 15, 0, 48) + b"\x00" * 8
@@ -1759,7 +1883,9 @@ def main():
                      got["values"]["terrain_sector_refs"], got["values"]["terrain_verts"],
                      got["values"]["terrain_records"], got["values"]["terrain_span"],
                      got["values"]["sector_payloads"], got["values"]["sector_named"],
-                     got["values"]["sector_quads"], got["values"]["terrain_grids"]))
+                     got["values"]["sector_quads"], got["values"]["terrain_grids"],
+                     got["values"]["terrain_frames"], got["values"]["terrain_half_grid"],
+                     ";".join(got["values"]["terrain_steps"])))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -1801,9 +1927,10 @@ def main():
                      "level_actors,level_strings,level_tail_bytes,level_unwritten,native_tails,"
                      "terrain_bytes,terrain_colours,terrain_colour_exports,"
                      "terrain_body,terrain_sectors,terrain_sector_refs,terrain_verts,terrain_records,"
-                     "terrain_span,sector_payloads,sector_named,sector_quads,terrain_grids\n")
+                     "terrain_span,sector_payloads,sector_named,sector_quads,terrain_grids,"
+                     "terrain_frames,terrain_half_grid,terrain_steps\n")
             for row in rows:
-                fh.write(("%s" + ",%d" * 36 + ",%s\n") % row)
+                fh.write(("%s" + ",%d" * 36 + ",%s" + ",%d,%d,%s\n") % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"
