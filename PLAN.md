@@ -14776,3 +14776,34 @@ sequence.
   agree; `make t3d` reproduces 121,250 actors, 1,149,471 properties and 54,957,213 T3D bytes.
 - **Not in this PR.** The head dword's reader (bounded to per-level renderer state), and the `TerrainInfo`
   payload's own interior beyond what `U33` read.
+
+### Execution notes (2026-11-19, the palette record is a class object and its dword is read through an accessor)
+
+- **Task.** `U32`'s last route: the reader of `UStaticMeshInstance+0x4c`. Both routes the entry named were taken --
+  the writer (`FUN_0024f160`) and a base-register-aware sweep -- and the dword's *place* is now settled while its
+  name is not.
+- **The dword is a member of a 0x1c-byte class object.** `0x001f7620` constructs it: `+0x00` vtable `0x5181a8`,
+  `+0x04` a `TArray<FColor>`, `+0x10` a QWORD id seeded from a global counter, `+0x18` one dword. The vtable's nine
+  slots are accessors -- `0x1f24a0` returns the id, **`0x1f24b0` returns the dword**, `0x1f24c0` returns
+  `count << 2`, `0x1f24d0` returns 4, `0x1f24e0` writes the element shape, `0x1f4400` copies the colours out,
+  `0x1f4430` returns an element's address -- so the consumer reads the dword through slot 1, not at `+0x4c`.
+- **`UStaticMeshInstance::Serialize`'s three shapes.** Below `0x70` an array of these records (`FUN_0024f160`,
+  stride 0x1c); `0x70` and above the one record embedded at `this+0x34` (`FUN_001f7680`); `0x6e` and above also the
+  20-byte record array at `this+0x28`. So the payload is `[instance record][record list]`, and **206 payloads carry
+  no record and still carry the head** -- the byte-level control on the split, now a column (`palette_empty`) with
+  a gate at 206.
+- **`FUN_001f7680` chains two writers.** `FUN_001f7df0` (the colour array; four byte writes per colour in `+2, +1,
+  +0, +3` order) then `FUN_00037110` (four raw bytes on `record+0x18`); the `record+0x18` push is the second call's
+  argument, not a third argument of the first.
+- **The sweep, with the base register.** `FieldReaders.java` (new) records base and access kind: 50,176 accesses in
+  5,122 functions over the nine offsets; 3,447 accesses to `+0x4c` (1,838 `MOV`, 610 `MOVSS`, 454 `LEA`, 97 `FLD`,
+  70 `CMP`/`TEST`); object bases only and a second member on the same register: still 374 functions. The sweep
+  route is measured dead, which is why the entry's next route is a vtable-slot caller search.
+- **Files.** `tools/ghidra/ghidra_scripts/FieldReaders.java` (new instrument), `tools/map-to-t3d.py`
+  (`palette_empty`, its gate, the `smi_tail` docstring), `inventory/t3d_coverage.csv` (73 rows, 56 -> 57 columns),
+  `docs/T3D.md` (a new section and two bullets corrected), `docs/UNKNOWNS.md` U32, `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `--check` green from the committed census with no dump; `--write-doc`/`--check-doc`
+  agree; `make t3d` reproduces 121,250 actors, 1,149,471 properties and 54,957,213 T3D bytes.
+- **Not in this PR.** What the dword means -- the next instrument is a search for `call [reg + 4]` with `reg` loaded
+  from `[obj + 0x34]`.

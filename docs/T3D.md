@@ -57,10 +57,11 @@ they spawn. The doc now says that instead.
 * Class defaults, above.
 * The palette record's head dword, 2..10 on all 33,509 payloads. It is not the colour count (0 of 33,509), not
   the record count (they agree only where both are 2, 2,706 payloads), not the number of lights over one colour
-  (225 of 1,200 sampled), not the masks' byte total and not the flag-0 count -- see the last section. Naming it
-  is a read of `UStaticMeshInstance+0x4c`'s consumer, and the displacement sweep that found the terrain's
-  readers cannot isolate that one: 40,474 instructions in 5,280 functions carry one of `+0x28`, `+0x2c`, `+0x34`,
-  `+0x38`, `+0x3c`, `+0x4c`, and 1,231 functions read `+0x4c` alone.
+  (225 of 1,200 sampled), not the masks' byte total and not the flag-0 count -- see the last section. Its *place*
+  is settled: it is `+0x18` of the 0x1c-byte instance record the object embeds at `+0x34`, and that record's
+  vtable exposes it through slot 1, so the consumer calls `[vtable + 4]` and no displacement names the read (the
+  base-register sweep still leaves 374 functions reading `+0x4c` and a second member). What is left is the
+  accessor's callers.
 * The `Level` trailer's last 24 bytes after the float: 18 of them are zero on 72 maps (17 of 18 on `Entry`), so
   what is left to name is a two-byte value (883..21,101) and the zero run itself.
 * ~~The `Level` export's script sequence.~~ **Settled** (2026-11-19): there is no script in any map
@@ -835,6 +836,58 @@ references, the largest mask or the bits any mask uses -- measured over every pa
 coincide (`records`, `distinct`, and a `ceil(colours/8)` mask) still fail on 30,803, 30,803 and 32,523 of them. So the dword is a mark the bake wrote per map, re-written for the payloads it
 re-baked; its reader is the renderer's per-level state, which is why a per-payload byte test never reaches it.
 
+## The palette record is a class object, and its dword is the inline member (measured 2026-11-19)
+
+The refutations above bound the head dword's *value*; this section bounds its *place*, and the place is what tells
+the reader where to look. A palette record is one 0x1c-byte class object, `0x001f7620` constructs it, and its
+members are these:
+
+| offset | member | serialised |
+|---|---|---|
+| `+0x00` | vtable `0x5181a8` (nine slots) | no |
+| `+0x04` | `TArray<FColor>` (12 bytes) | **yes** -- a compact count, then each colour's four bytes in `+2, +1, +0, +3` order |
+| `+0x10` | QWORD id, seeded from a global counter (`counter * 0x100 + 0xe1`) | no |
+| `+0x18` | one dword -- **the head** | **yes** -- four raw bytes through `FUN_00037110` |
+
+**`UStaticMeshInstance::Serialize` (`0x0024b5f0`) writes that record in one of three shapes.** A package version
+below `0x70` writes an *array* of them (`FUN_0024f160`: preload `count * 0x1c`, construct each with `0x001f7620`,
+serialize each with `FUN_001f7680`); `0x70` and above write the single record the object embeds at `this+0x34`
+(`FUN_001f7680`); and `0x6e` and above then write the 20-byte record array the object holds at `this+0x28`. The
+payload is therefore `[instance record][record list]`, and the head belongs to the first member, not to the second:
+**206 of the 33,509 payloads carry an empty record list and every one of them still carries a head** (196 read 2),
+which `palette_empty` and its gate pin.
+
+**`FUN_001f7680` is literally a two-member writer.** It chains the array writer `FUN_001f7df0` and the four-byte
+writer `FUN_00037110` on `record+0x18`; the compiled form pushes `record+0x18` before calling the array writer and
+leaves it on the stack as the *next* call's argument, which is why an earlier reading saw a third argument that the
+array writer never reads.
+
+**The dword is read through an accessor, which is why a displacement sweep cannot find its reader.** The record's
+nine vtable slots are `0x1f24a0` (returns the QWORD id), **`0x1f24b0` (returns the head dword)**, `0x1f24c0`
+(`count << 2`), `0x1f24d0` (4), `0x1f24e0` (writes the element shape `(4, 2)`), `0x1f4400` (copies the colours out)
+and `0x1f4430` (an element's address), with two shared script-walk slots at `0x171c0`. A consumer reaches the dword
+by loading the record's vtable and calling slot 1 (`mov eax, [ecx]; call [eax + 4]`), so no instruction in that
+consumer carries `+0x4c` at all.
+
+**The sweep, measured with the base register this time.** `FieldReaders.java` records the base register and the
+access kind beside every displacement: over `+0x28`, `+0x2c`, `+0x34`, `+0x38`, `+0x3c`, `+0x40`, `+0x44`, `+0x48`
+and `+0x4c` it finds **50,176 accesses in 5,122 functions**. `+0x4c` alone is **3,447 accesses** (1,838 `MOV`, 610
+`MOVSS`, 454 `LEA`, 97 `FLD`, 70 `CMP`/`TEST`), and keeping only object bases -- dropping `[ESP+disp]` and
+`[EBP+disp]` frame slots -- still leaves **374 functions** that read `+0x4c` and one of the array members on the
+same register. An offset that generic is not class evidence.
+
+**Files.** `tools/ghidra/ghidra_scripts/FieldReaders.java` (the instrument), `tools/map-to-t3d.py` (`palette_empty`,
+its gate, the `smi_tail` docstring), `inventory/t3d_coverage.csv` (73 rows, 56 -> 57 columns),
+`docs/UNKNOWNS.md` U32, this page.
+
+**Gates.** `make ci` green; `--check` green from the committed census with no dump, and it fails when the
+empty-list count stops being 206; `--write-doc`/`--check-doc` agree; `make t3d` reproduces 121,250 actors,
+1,149,471 properties and 54,957,213 T3D bytes.
+
+**Not in this PR.** What the dword *means*: its reader is an indirect call through the record's slot 1, so the next
+instrument is a caller search for `call [reg + 4]` where `reg` was loaded from `[obj + 0x34]`, not another
+displacement sweep.
+
 ## 423 palette references name a navigation actor, not a light (measured 2026-11-19)
 
 A record's first field is an export index and the class it names is the actor whose light the record bakes: of the
@@ -897,6 +950,7 @@ moves, when a fourth class appears among the non-light references, or when a map
 its tail count; `--write-doc`/`--check-doc` agree; `make t3d` still reproduces 121,250 actors, 1,149,471 properties
 and 54,957,213 T3D bytes.
 
-**Not in this PR.** The head dword's reader: the bytes now bound it to one value per map (59 of 73 single-valued,
-nine values, re-written per payload in 13 maps), so the reader is per-level renderer state rather than a field any
-payload's own counts can name.
+**Not in this PR.** What the head dword *means*. It is one value per map (59 of 73 single-valued, nine values,
+re-written per payload in 13 maps), it is `+0x18` of the inline instance record, and its reader is an indirect call
+through that record's vtable (`+4`), so the remaining instrument is a caller search for `call [reg + 4]` with `reg`
+loaded from `[obj + 0x34]` -- not another displacement sweep, which the base-register count above measures dead.

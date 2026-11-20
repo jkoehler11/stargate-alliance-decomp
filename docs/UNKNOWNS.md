@@ -5213,14 +5213,24 @@ then 4 on 899, 10 on 728, 6 on 620, 3 on 606, 7 on 132, 9 on 41, 8 on 28, 5 on 5
 scatter it through the export table in 1..112 runs (never one block), and `M00` alone carries 6, 7, 8, 9 and 10.
 Every count a payload carries was already refuted (records, colours, mask bytes, non-empty masks, distinct lights,
 the largest mask, the bits masks use, flag-0 records) and a value constant across a map cannot be any of them, so
-the dword is a mark the bake wrote per map and re-wrote for the payloads it re-baked. Its *name* therefore lives in
-the renderer's per-level state (`UStaticMeshInstance+0x4c`), not in a per-payload field, and the displacement sweep
-cannot isolate that reader (`+0x4c` is read by 1,231 functions).
+the dword is a mark the bake wrote per map and re-wrote for the payloads it re-baked.
 
-**Routes for what is left.** A reader that combines `+0x4c` with a *second* known `UStaticMeshInstance` offset in
-one function (the sweep returns each displacement separately and has no intersection filter), or the same field in
-a package this build wrote: `FUN_0024f160` (`0x24f160`, the version-0x70 branch) writes the record for older
-packages, so a payload saved by this image would show what the writer puts there.
+**Its place is settled (2026-11-19).** The dword is `+0x18` of a 0x1c-byte class object -- `[+0x00 vtable
+0x5181a8][+0x04 TArray<FColor>][+0x10 QWORD id][+0x18 dword]`, constructed by `0x001f7620` -- which
+`UStaticMeshInstance::Serialize` (`0x0024b5f0`) writes at `this+0x34` for a package version of 0x70 or more, ahead
+of the 20-byte record array at `this+0x28`. 206 payloads carry no record at all and still carry the dword, so the
+two members are separable in the bytes and the census pins it (`palette_empty`). **The old-version writer route is
+answered, and it cannot name the field:** `FUN_0024f160` writes an *array* of the same 0x1c-byte records
+(`count * 0x1c`, element constructor `0x001f7620`, element writer `FUN_001f7680`), so a payload this image wrote
+would put the member in exactly the same place. **The sweep route is measured dead:** `FieldReaders.java` records
+the base register, and of 3,447 accesses to `+0x4c` in 1,229 functions, keeping only object bases and requiring a
+second class member on the same register still leaves 374 functions -- that offset is generic UObject ground, not
+class evidence.
+
+**Route for what is left.** The record's vtable exposes the dword as slot 1 (`0x001f24b0`, `return *(int *)(this +
+0x18)`), so its consumer is an indirect call -- `mov eax, [ecx]; call [eax + 4]` with `ecx` the record's address
+(`obj + 0x34`). The instrument that would settle the name is a caller search on that shape, not another
+displacement sweep.
 
 ## U33. The terrain body's members are named -- answered
 
