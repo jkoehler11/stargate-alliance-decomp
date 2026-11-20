@@ -1,0 +1,50 @@
+address,method,args,size,callees,callee_classes,strings
+0x0049820b,FindInnermostItem,AAEJAAVToken@12@AAPBD@Z,83,,,
+0x0049825e,FindNumber,AAEJAAVToken@12@00AAPBD@Z,338,,,
+0x004983b0,FindDirective,AAEPBDAAVBuffer@2@@Z,61,Buffer::GetText; Buffer::GetTextEnd,,
+0x004983ed,SkipWS,CGJAAPBD@Z,41,,,
+0x00498416,GetToken,CGJAAVToken@12@AAPBD_N@Z,262,PreProcessor::SkipWS,,
+0x0049851c,GetDefineMacroArgToken,CGJAAVToken@12@AAPBD@Z,120,PreProcessor::SkipWS,,
+0x00498594,GetMacroArgToken,CGJAAVToken@12@AAPBD@Z,110,PreProcessor::SkipWS,,
+0x00498602,GetIncDecArgList,CGJAAVToken@12@AAPBD@Z,132,PreProcessor::SkipWS,,
+0x00498686,Error,AAAX_NKPBDZZ,88,__vsnprintf,,
+0x00498819,MoreWorkToDo,AAEJAA_N@Z,85,PreProcessor::Error,,Expected an #endif
+0x0049886e,CheckForEnum,AAEJAAVBuffer@2@PA_N@Z,88,Buffer::GetText; PreProcessor::GetToken; Token::IsEqual,,enum
+0x004988c6,ProcessIncDec,AAEJAAVBuffer@2@AAPBDAAVMap@12@H@Z,579,__ehhandler$?ProcessIncDec; __EH_prolog; PreProcessor::GetIncDecArgList; XGRAPHICS::?0Buffer; Buffer::Initialize; PreProcessor::Error; Buffer::Append; Buffer::GetText; PreProcessor::ProcessMacroBody; XGRAPHICS::?1Buffer; PreProcessor::FindNumber; _atoi; __itoa; PreProcessor::FindInnermostItem,,Expected parenthesized expression.; Couldn't find object to increment/decrement
+0x00498b09,DoIf,AAEJPBD@Z,49,PreProcessor::Error; InputBuffer::PushActiveLevel,,#if is not supported.
+0x00498b3a,DoElif,AAEJPBD@Z,32,PreProcessor::Error,,#elif is not supported.
+0x00498b5a,DoElse,AAEJPBD@Z,43,InputBuffer::ElseActiveLevel; PreProcessor::Error,,Unexpected #else
+0x00498b85,DoEndif,AAEJPBD@Z,43,InputBuffer::PopActiveLevel; PreProcessor::Error,,Unexpected #endif
+0x00498bb0,DoError,AAEJPBD@Z,25,PreProcessor::Error,,
+0x00498bc9,GetFilePath,AAEJPBDPADKPAH@Z,177,PreProcessor::Error,,"Expected file name; Include file name too long.; File names have to be quoted with <...> or ""..."""
+0x00498c7a,Output2,AAEJPBD@Z,34,Buffer::Append,,
+0x00498c9c,WarnIfInOneLineComment,AAEXXZ,31,PreProcessor::Error,,single-line comment ends with the line-continuation character (\). The next line will be treated as a continuation of th
+0x00498df2,CheckLegalIncDecUse,AAEJAAVMap@12@AAPBDPA_N@Z,213,PreProcessor::GetIncDecArgList; PreProcessor::GetToken; Token::IsEqual; Map::Lookup; PreProcessor::Error,,Expected macro parameter; Expected an argument enclosed in parentheses
+0x00498ec7,ProcessMacroBody,AAEJAAVBuffer@2@AAPBDAAVMap@12@@Z,253,PreProcessor::GetToken; Token::IsEqual; PreProcessor::Error; Buffer::Append; PreProcessor::ProcessIncDec; Map::Lookup,,Expected macro parameter.
+0x00498fc4,DoIfdef,AAEJPBD_N@Z,144,PreProcessor::GetToken; PreProcessor::Error; Map::Lookup; InputBuffer::PushActiveLevel,,symbol expected; Too many nested levels of #ifdef/#ifndef in this file.
+0x00499054,ProcessDefineMacroBody,AAEJAAVBuffer@2@AAPBDAAVMap@12@@Z,87,PreProcessor::GetToken; Map::Lookup; Buffer::Append,,
+0x004990ab,OutputF,AAAJPBDZZ,57,__vsnprintf; PreProcessor::Output2,,
+0x004991ae,?1InputBuffer,QAE@XZ,28,InputBuffer::Close; _XMemFree,,
+0x00499255,Output,AAEJAAVBuffer@2@@Z,373,_strncpy; PreProcessor::OutputF; Buffer::GetText; Buffer::Append; PreProcessor::Output2,,
+0x004993ca,FilteredGetC,AAEHXZ,68,InputBuffer::GuessC; PreProcessor::WarnIfInOneLineComment; InputBuffer::GetC,,
+0x0049940e,FilteredGuessC,AAE_NH@Z,36,PreProcessor::FilteredGetC; InputBuffer::UnGetC,,
+0x00499432,SkipToEndOfOneLineComment,AAEXXZ,54,PreProcessor::FilteredGetC; PreProcessor::FilteredGuessC,,
+0x004995e9,Initialize,QAEJPBDP6GJPAXH00PADKPAPAUXGBuffer@@@Z1PAU3@3PAUXD3DXErrorLog@2@@Z,160,Map::Initialize; Buffer::Initialize; _strncpy; InputBuffer::Initialize,,
+0x00499689,DoEnumLine,AAEJAAVBuffer@2@@Z,327,Buffer::GetText; PreProcessor::GetToken; Token::IsEqual; _atoi; PreProcessor::Error; _sprintf; Map::Add,,Missing open brace in enum.; Syntax error in enum.
+0x004997d0,DoUndef2,AAEJPBDK@Z,24,Map::Remove,,
+0x004997e8,FindSingleLine,AAEJAAVBuffer@2@@Z,242,PreProcessor::FilteredGetC; InputBuffer::UnGetC; Buffer::Append; PreProcessor::FilteredGuessC; PreProcessor::SkipToEndOfOneLineComment; PreProcessor::Error; InputBuffer::GuessC,,"Un-terminated C-style comment. Expected ""*/"".; Source line too long."
+0x004999c2,IsLegalDefineArgList,AAEJPBDPA_N@Z,321,__ehhandler$?IsLegalDefineArgList; __EH_prolog; Map::Initialize; PreProcessor::Error; PreProcessor::GetToken; Map::Lookup; Map::Add; Token::IsEqual; Map::Cleanup,,"Expected '('.; Expected ',' or ')'.; Duplicate argument name.; Expected argument name."
+0x00499b03,IsLegalMacroDeclaration,AAEJPBD0PA_N@Z,483,__ehhandler$?IsLegalMacroDeclaration; __EH_prolog; Map::Initialize; PreProcessor::GetToken; Map::Lookup; Map::Add; Token::IsEqual; PreProcessor::CheckLegalIncDecUse; PreProcessor::Error; Map::Cleanup,,Expected comma.; Duplicate argument name.; Expected argument name.; Expected macro parameter name.; Expected macro parameter.
+0x00499ce6,DoDefine,AAEJPBD@Z,496,__ehhandler$?DoDefine; __EH_prolog; PreProcessor::GetToken; PreProcessor::Error; Map::Lookup; PreProcessor::DoUndef2; XGRAPHICS::?0Buffer; Buffer::Initialize; Token::IsEqual; Buffer::Append; PreProcessor::SkipWS; Buffer::GetText; PreProcessor::IsLegalDefineArgList; Buffer::GetUsed; Map::Add; XGRAPHICS::?1Buffer,,symbol expected; This symbol is already defined; Expected ')'.
+0x00499ed6,DoUndef,AAEJPBD@Z,85,PreProcessor::GetToken; PreProcessor::Error; PreProcessor::DoUndef2,,symbol expected
+0x00499f2b,ExpandDefineMacroWithArgs,AAEJAAPBDAAVBuffer@2@PBD@Z,441,__ehhandler$?ExpandDefineMacroWithArgs; __EH_prolog; Map::Initialize; PreProcessor::GetToken; Token::IsEqual; PreProcessor::Error; PreProcessor::GetDefineMacroArgToken; Map::Add; Buffer::Clear; PreProcessor::ProcessDefineMacroBody; Map::Cleanup,,Expected '('; Too many arguments; Too few arguments; Expected a comma or a close paren.; Unexpected symbol.
+0x0049a0e4,FindLine,AAEJAAVBuffer@2@@Z,50,Buffer::Clear; PreProcessor::FindSingleLine,,
+0x0049a13a,CheckForMacroDeclaration,AAEJAAVBuffer@2@PA_N@Z,634,__ehhandler$?CheckForMacroDeclaration; __EH_prolog; Buffer::GetText; PreProcessor::GetToken; _strncmp; Map::Lookup; PreProcessor::Error; Map::Remove; XGRAPHICS::?0Buffer; Buffer::Initialize; PreProcessor::SkipWS; PreProcessor::IsLegalMacroDeclaration; Buffer::Append; PreProcessor::FindLine; Token::IsEqual; Buffer::GetUsed; Map::Add; XGRAPHICS::?1Buffer,,macro; This macro is already defined; endm; Expected endm before end of file.
+0x0049a3b4,MacroExpand,AAEJAAVBuffer@2@AAVMap@12@@Z,600,__ehhandler$?MacroExpand; __EH_prolog; XGRAPHICS::?0Buffer; Buffer::GetUsed; Buffer::Initialize; Buffer::GetText; PreProcessor::GetToken; Token::IsEqual; Map::Lookup; Map::Add; Buffer::Clear; Buffer::Append; PreProcessor::ExpandDefineMacroWithArgs; PreProcessor::MacroExpand; Map::Remove; PreProcessor::Error; XGRAPHICS::?1Buffer,,Expanded macro too long.
+0x0049a60c,MacroExpand,AAEJAAVBuffer@2@@Z,90,__ehhandler$?MacroExpand; __EH_prolog; Map::Initialize; PreProcessor::MacroExpand; Map::Cleanup,,
+0x0049a666,CheckForMacroUse,AAEJAAVBuffer@2@@Z,417,__ehhandler$?CheckForMacroUse; __EH_prolog; Buffer::GetText; PreProcessor::GetToken; Map::Lookup; Map::Initialize; PreProcessor::GetMacroArgToken; Map::Add; PreProcessor::Error; Buffer::Clear; PreProcessor::ProcessMacroBody; PreProcessor::MacroExpand; Map::Cleanup,,Too many arguments; Too few arguments; Expected a comma.; Unexpected symbol.
+0x0049a807,DoPragma,AAEJPBD@Z,30,PreProcessor::MacroExpand; PreProcessor::Output,,
+0x0049a825,DoInclude,AAEJPBD@Z,341,__ehhandler$?DoInclude; __EH_prolog; PreProcessor::Error; XGRAPHICS::?0Buffer; Buffer::Initialize; Buffer::Append; PreProcessor::MacroExpand; Buffer::GetText; PreProcessor::GetFilePath; InputBuffer::Initialize; _XGBuffer_Release; XGRAPHICS::?1Buffer,,Too many levels of include directives. Maximum of %d levels allowed.; Can't process #include because no resolver object was supplied to preprocessor function; Couldn't open include file.
+0x0049a97a,DoDirective,AAEJPBD@Z,832,PreProcessor::GetToken; PreProcessor::Error; _strncmp; PreProcessor::DoInclude; PreProcessor::DoDefine; PreProcessor::DoPragma; PreProcessor::DoUndef; PreProcessor::DoError; PreProcessor::DoIf; PreProcessor::DoEndif; PreProcessor::DoIfdef; PreProcessor::DoElif; PreProcessor::DoElse,,define; pragma; undef; error; include; ifdef; ifndef; else; elif; endif; Unknown preprocessor directive
+0x0049acba,DoLine,AAEJPAD@Z,468,__ehhandler$?DoLine; __EH_prolog; Buffer::Clear; Buffer::Append; PreProcessor::FindLine; PreProcessor::FindDirective; PreProcessor::DoDirective; PreProcessor::CheckForMacroDeclaration; XGRAPHICS::?0Buffer; Buffer::Initialize; PreProcessor::MacroExpand; PreProcessor::CheckForMacroUse; Buffer::GetText; PreProcessor::DoEnumLine; PreProcessor::CheckForEnum; PreProcessor::Output; PreProcessor::DoLine; XGRAPHICS::?1Buffer,,
+0x0049ae8e,Preprocess,QAEJXZ,72,PreProcessor::MoreWorkToDo; PreProcessor::DoLine; XGRAPHICS::XGBufferCreateFromBuffer,,

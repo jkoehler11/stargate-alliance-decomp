@@ -69,6 +69,19 @@ the 73 `.unr` maps all reassemble byte for byte through the same writer (`make p
 only joined it once the save package's export entry was read — an export whose serial size is 0 writes no serial
 offset, which is 316 of the 1,776 save exports and a byte lost at each of them (`docs/formats/sgs-checkpoint.md`).
 
+## The shader compiles are part of the rebuild
+
+The image carries 63 shader programs as assembly source — `vs.1.1` 22, `ps.1.1` 22, `ps.1.4` 19 — plus
+`#pragma screenspace`, one `#include` and two `#define`, and the SDK's own `// Xbox Shader Assembler %s`
+banner (`docs/NATIVE_NOTES.md`, "The shader toolchain"). They are not in any package: the title compiles them
+at runtime through `PreProcessor` → `d3dxasm_parse` → `XGRAPHICS::D3DTokensToUCode` → the
+`VS_GRAPH_OPTIMIZER::Instruction` graph pass.
+
+That makes shaders the one part of the script/toolchain surface a rebuild cannot skip by reusing shipped
+assets: either the compile path is reproduced, or the microcode for those 63 programs is produced once and
+shipped in their place. `tools/build.sh` does neither today, and the difference is invisible in a script-only
+check — the packages would verify and the first draw would fail.
+
 ## What the script does not do
 
 * **It never writes into the repository.** Everything lands under `build/` (git-ignored) or `$WORK`.
