@@ -387,7 +387,7 @@ data — and the assembler's own banner, `// Xbox Shader Assembler %s`.
 So the title compiles its shaders at runtime from embedded assembly through this toolchain, and that is why
 `PreProcessor` is in the image at all. For Phase 6 it is a requirement rather than an open question: a
 rebuild either reproduces the compile path (preprocessor, yacc parser, `D3DTokensToUCode`, the `Instruction`
-optimiser) or bakes the 63 programs' microcode once and ships it. **And all 45 are used.** Each program is referenced by an immediate whose value is its address: 41 by a
+optimiser) or bakes the 45 programs' microcode once and ships it. **And all 45 are used.** Each program is referenced by an immediate whose value is its address: 41 by a
 `push` inside a tiny per-program wrapper — 15 wrappers of 41 bytes for the `vs.1.1` programs, 26 of 28 bytes
 for the pixel ones — and 4 `vs.1.1` programs by `mov` immediates inside one function at `0x002b4600`. Every
 push wrapper then calls one of two dispatchers, and the split follows the program's type exactly:

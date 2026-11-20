@@ -80,7 +80,7 @@ wrappers that call `ShaderCompileVertex` or `ShaderCompilePixel`, 4 from one fun
 (`inventory/shader_programs.csv`).
 
 That makes shaders the one part of the script/toolchain surface a rebuild cannot skip by reusing shipped
-assets: either the compile path is reproduced, or the microcode for those 63 programs is produced once and
+assets: either the compile path is reproduced, or the microcode for those 45 programs is produced once and
 shipped in their place. `tools/build.sh` does neither today, and the difference is invisible in a script-only
 check — the packages would verify and the first draw would fail.
 
