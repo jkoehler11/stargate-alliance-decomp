@@ -413,20 +413,42 @@ def palette_record(data, ps):
     return count, alphas.count(0), len(data) - off - 4 * count
 
 
+def level_trailer(tail):
+    """A `Level` trailer's bytes after its strings -> `(port, valid, prefix, seconds, zero bytes)`.
+
+    **The 32 bytes are a URL and one 4-byte float.** The first eight are `7777` and `1` on all 73 maps -- a
+    `FURL`'s `Port` and `Valid`, which is what the five strings in front of them are (`"unreal"`, three empty,
+    `"Index.unr"`). After them the second dword is a float at bytes 2..5 of the remaining 24 that equals the map's
+    own `LevelInfo.TimeSeconds` on **73 of 73** maps (compared with the actor's property as the same pass reads
+    it), so the trailer is a saved URL plus the level's saved time.
+
+    Bytes 0..1 hold a small value (243..20309 as a little-endian u16 on 72 maps; one byte on `Entry`, whose float
+    then sits one byte earlier and still equals its `TimeSeconds`), and bytes 6..23 are zero on 72 maps and 17 of
+    18 on `Entry` -- so 20 of the 24 bytes are one two-byte field and a run of zeros.
+    """
+    if len(tail) < 14:
+        return None
+    port, valid = struct.unpack("<II", tail[:8])
+    prefix = struct.unpack("<H", tail[8:10])[0]
+    # The field ahead of the float is one byte wide in one map (`Entry`), so both alignments are handed back
+    # and the caller takes the one that equals that map's own `LevelInfo.TimeSeconds`.
+    return (port, valid, prefix, struct.unpack("<f", tail[10:14])[0],
+            struct.unpack("<f", tail[9:13])[0], sum(1 for b in tail[14:] if b == 0))
+
+
 def level_record(data, pkg, ps):
-    """A `Level` export's payload -> `(actor count, {export indices}, strings, tail bytes)`.
+    """A `Level` export's payload -> `(actor count, {export indices}, strings, tail bytes, trailer)`.
 
     The `Level` object is not an actor and carries no property block. Its payload is
     `[0x00][u32 count][u32 count][count x compact export index][trailer]`: the leading zero is the empty
     property block's `None` terminator, the two dwords are the same number (the level's own actor count),
     and every index lands in this package's export table.
 
-    The trailer is **not** a run of compact values: it begins with four length-prefixed strings of an ordinary
-    `FString` shape (each length counts the terminating NUL), `"unreal"`, an empty one, `"Index.unr"` and
-    another empty one, in all 73 maps, and the rest -- 32 bytes here, 31 in the one map whose trailer is a byte
-    shorter -- is counted rather than named. Reading those bytes as compact indices is what an earlier version
-    did; it answered "41 to 43 values" because a compact index is any byte the sign rule accepts, and ASCII is
-    full of them.
+    The trailer is **not** a run of compact values: it begins with five length-prefixed strings of an ordinary
+    `FString` shape (each length counts the terminating NUL), `"unreal"`, three empty ones and `"Index.unr"`, in
+    all 73 maps, and then 32 bytes (31 in one map) that `level_trailer` reads. Reading those bytes as compact
+    indices is what an earlier version did; it answered "41 to 43 values" because a compact index is any byte the
+    sign rule accepts, and ASCII is full of them.
     """
     if len(data) < 10 or data[0] != 0:
         return None
@@ -458,11 +480,12 @@ def level_record(data, pkg, ps):
                 break
         strings += 1
         off = nxt + size
-    return count, idx, strings, len(data) - off
+    return count, idx, strings, len(data) - off, level_trailer(data[off:])
 
 
-def smi_tail(tail, ps):
-    """A `StaticMeshInstance` payload's tail -> `(head dword, records, closes, flag-0 records, first fields)`.
+def smi_tail(tail, ps, colours=None):
+    """A `StaticMeshInstance` payload's tail -> `(head, records, closes, flag-0, first fields, masks, mask bytes,
+    masks that are not `ceil(colours/8)` bytes, masks with a set bit in the last byte's spare bits)`.
 
     `UStaticMeshInstance::Serialize` (`0x0024b5f0`) runs only on load, writes the class's instance record (a
     `TArray<FColor>` -- the colour table above -- and one dword) and then, when the package version is at least
@@ -481,6 +504,12 @@ def smi_tail(tail, ps):
 
     The first field is an export index into the level's own package and names the actor whose light the record
     bakes; the census counts how many of them resolve (`palette_refs`) and how many name a light (`palette_ref_light`).
+
+    **The middle member is a bitmask over the colour table.** Measured on all 466,858 records of all 33,509
+    payloads: the `TArray<BYTE>`'s length is `ceil(colours/8)` on every one, i.e. one bit per colour entry, so a
+    record is "this light bakes these colours". The last byte's spare high bits are padding and are set on 43,126
+    records, which is why the test is the *length* and not "no bit past the last colour". The census counts the masks (`palette_masks`), their bytes (`palette_mask_bytes`) and any record whose
+    mask is the wrong length (`palette_mask_bad`), which is a gate at zero.
     """
     if len(tail) < 5:
         return None
@@ -491,23 +520,32 @@ def smi_tail(tail, ps):
         return None
     if count < 0:
         return None
+    want = None if colours is None else -(-colours // 8)
     flags0, refs = 0, []
+    masks = mask_bad = pad_bits = 0
     for _ in range(count):
         try:
             first, off = ps.read_index(tail, off)
             size, off = ps.read_index(tail, off)
         except IndexError:
-            return head, count, False, flags0, refs
+            return head, count, False, flags0, refs, masks, 0, 0
         if size < 0 or off + size + 4 > len(tail):
-            return head, count, False, flags0, refs
+            return head, count, False, flags0, refs, masks, 0, 0
+        mask = tail[off:off + size]
         off += size
         flag = struct.unpack("<I", tail[off:off + 4])[0]
         if flag not in (0, 1):
-            return head, count, False, flags0, refs
+            return head, count, False, flags0, refs, masks, 0, 0
+        masks += size
+        if want is not None:
+            if size != want:
+                mask_bad += 1
+            elif want and colours % 8 and mask[-1] >> (colours % 8):
+                pad_bits += 1
         flags0 += flag == 0
         off += 4
         refs.append(first)
-    return head, count, off == len(tail), flags0, refs
+    return head, count, off == len(tail), flags0, refs, masks, mask_bad, pad_bits
 
 
 def terrain_colours(tail, ps):
@@ -780,10 +818,14 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "terrain_colour_exports": 0, "terrain_grids": "", "terrain_body": 0,
           "terrain_sectors": 0, "terrain_sector_refs": 0, "terrain_verts": 0, "terrain_records": 0,
           "terrain_span": 0, "sector_payloads": 0, "sector_named": 0, "sector_quads": 0,
-          "terrain_frames": 0, "terrain_half_grid": 0, "terrain_steps": []}
+          "terrain_frames": 0, "terrain_half_grid": 0, "terrain_steps": [],
+          "palette_masks": 0, "palette_mask_bytes": 0, "palette_mask_bad": 0, "palette_pad_bits": 0,
+          "level_tail_port": 0, "level_tail_prefix": 0, "level_tail_zero": 0, "level_seconds_match": 0,
+          "level_seconds_off": 0}
     structs, arrays = {}, {}
     terrain_grid_set = set()
     written, level_idx = set(), set()
+    level_seconds = levelinfo_seconds = None
     # A `TerrainInfo` counts its sectors and each sector names its terrain, so the two records are read as
     # one table: the sector headers are collected first, then the terrain body's tail ints are held to the
     # furthest edge in the list it carries (`terrain_span`).
@@ -804,6 +846,13 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
             if level is not None:
                 st["level_actors"], level_idx = level[0], level[1]
                 st["level_strings"], st["level_tail_bytes"] = level[2], level[3]
+                # The 32 bytes after the strings are a `FURL` (`7777`, `1`) and one float, which is the
+                # level's own `TimeSeconds`: it is held against the `LevelInfo` actor's property below.
+                if level[4] is not None:
+                    port, _valid, prefix, seconds, alt_seconds, zero = level[4]
+                    st["level_tail_port"], st["level_tail_prefix"] = port, prefix
+                    st["level_tail_zero"] = zero
+                    level_seconds = (seconds, alt_seconds)
             continue
         if cls == "TerrainSector":
             # A sector's payload is its native record (`sector_record`): no property block, a header that
@@ -833,9 +882,13 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                     st["palette_tails"] += 1
                     if data[-palette[2]:4 - palette[2]] == b"\x02\x00\x00\x00":
                         st["palette_head2"] += 1
-                tail = smi_tail(data[len(data) - palette[2]:], ps)
+                tail = smi_tail(data[len(data) - palette[2]:], ps, palette[0])
                 if tail is not None:
                     st["palette_records"] += tail[1]
+                    st["palette_masks"] += tail[1]
+                    st["palette_mask_bytes"] += tail[5]
+                    st["palette_mask_bad"] += tail[6]
+                    st["palette_pad_bits"] += tail[7]
                     st["palette_records_flag0"] += tail[3]
                     if tail[2]:
                         st["palette_closed"] += 1
@@ -860,6 +913,12 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         if not found:
             continue
         _count, start, props, tail, native = found
+        if cls == "LevelInfo":
+            # The level's saved time, as the actor carries it: the `Level` trailer's float is held to this.
+            for prop in props or ():
+                if prop.get("name") == "TimeSeconds" and isinstance(prop.get("value"), (int, float)):
+                    levelinfo_seconds = float(prop["value"])
+                    break
         native_bytes = data[start + (len(data) - start - tail):] if native else b""
         terrain_n = None
         body = None
@@ -1041,6 +1100,13 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                      % (st["level_actors"], st["level_unwritten"]))
         lines.insert(3, "")
     st["terrain_grids"] = ";".join(str(n) for n in sorted(terrain_grid_set))
+    if level_seconds and levelinfo_seconds is not None:
+        # Two-byte field first, then the one-byte alignment `Entry` uses; the offset is carried so the
+        # census can say which of the two a map took rather than only that it matched.
+        for shift, candidate in ((2, level_seconds[0]), (1, level_seconds[1])):
+            if abs(candidate - levelinfo_seconds) <= 1e-4 * max(1.0, abs(levelinfo_seconds)):
+                st["level_seconds_match"], st["level_seconds_off"] = 1, shift
+                break
     text = "\n".join(lines)
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, name + ".t3d"), "w") as f:
@@ -1134,6 +1200,21 @@ NATIVE_TAIL_PIN = 66
 # that order -- followed by 32 bytes (31 in `DM-WorstCaseScenario`). The count is pinned so a trailer that
 # starts with something else is a failure rather than a shorter reading.
 LEVEL_STRINGS = 5
+
+# The 32 bytes after those strings are a `FURL` and one float: `7777` (`Port`) and `1` (`Valid`) on all 73
+# maps, then a float that equals the map's own `LevelInfo.TimeSeconds` on 73 of 73. What follows the float is
+# zero: 18 bytes on 72 maps and 17 of 18 on `Entry`, whose two-byte field ahead of the float is one byte wide.
+LEVEL_TAIL_PORT = 7777
+LEVEL_SECONDS_MATCH = 73
+LEVEL_SECONDS_SHIFTS = {2: 72, 1: 1}
+LEVEL_TAIL_ZERO = 1313
+
+# A palette record's middle member is a bitmask over the payload's colour table: its length is `ceil(colours/8)`
+# on **466,858 of 466,858** records, so a record is one light and the colours it bakes. The last byte's spare
+# bits are padding and are set on 43,126 records. `palette_mask_bad` is the gate: a record whose mask is the
+# wrong length is a record whose grammar moved.
+PALETTE_MASKS = 466858
+PALETTE_PAD_BITS = 43126
 
 # Classes whose name does not carry "Light" but which are lights: an `Emitter` declares its own light in UE2, and
 # the palette records name it after the `Light`/`Sunlight`/`Spotlight` families.
@@ -1286,6 +1367,45 @@ def check(values, structs, stats, arrays=ARRAYS):
                             % (stats, closed, payloads))
         if sum(int(r.get("palette_records_flag0") or 0) for r in crows) > records:
             problems.append("%s: more flag-0 records than records" % stats)
+        # A record's middle member is a bitmask over the payload's colour table: `ceil(colours/8)` bytes on
+        # every record of the corpus. A mask of another length is a record read against the wrong count, so
+        # the gate is zero and the two controls are the total and the padded last bytes.
+        masks = sum(int(r.get("palette_masks") or 0) for r in crows)
+        bad_masks = sum(int(r.get("palette_mask_bad") or 0) for r in crows)
+        if bad_masks:
+            problems.append("%s: %d palette record(s) whose mask is not ceil(colours/8) bytes"
+                            % (stats, bad_masks))
+        if masks != PALETTE_MASKS:
+            problems.append("%s: %d palette record mask(s), expected %d" % (stats, masks, PALETTE_MASKS))
+        if masks != records:
+            problems.append("%s: %d masks for %d records" % (stats, masks, records))
+        if sum(int(r.get("palette_mask_bytes") or 0) for r in crows) <= masks:
+            problems.append("%s: mask bytes do not average one per record" % stats)
+        if sum(int(r.get("palette_pad_bits") or 0) for r in crows) > masks:
+            problems.append("%s: more padded masks than masks" % stats)
+        # The `Level` trailer is a `FURL` and the level's saved time: `7777`/`1` on every map and a float that
+        # equals that map's own `LevelInfo.TimeSeconds`. A map that stops agreeing is a trailer read off the
+        # wrong byte, not a map saved at another time.
+        ports = [r["map"] for r in crows if int(r.get("level_tail_port") or 0) != LEVEL_TAIL_PORT]
+        if ports:
+            problems.append("%s: %d map(s) whose Level trailer is not the URL frame: %s"
+                            % (stats, len(ports), ", ".join(ports[:6])))
+        matched = sum(int(r.get("level_seconds_match") or 0) for r in crows)
+        if matched != LEVEL_SECONDS_MATCH:
+            problems.append("%s: the Level trailer's float equals LevelInfo.TimeSeconds on %d maps, expected %d"
+                            % (stats, matched, LEVEL_SECONDS_MATCH))
+        zeros = sum(int(r.get("level_tail_zero") or 0) for r in crows)
+        if zeros != LEVEL_TAIL_ZERO:
+            problems.append("%s: %d zero bytes after the Level trailer's float, expected %d"
+                            % (stats, zeros, LEVEL_TAIL_ZERO))
+        shifts = {}
+        for r in crows:
+            off = int(r.get("level_seconds_off") or 0)
+            if off:
+                shifts[off] = shifts.get(off, 0) + 1
+        if shifts != LEVEL_SECONDS_SHIFTS:
+            problems.append("%s: the Level trailer's float sits at %s, expected %s"
+                            % (stats, shifts or "no offset", LEVEL_SECONDS_SHIFTS))
         # A record's first field is an export index: it has to land in the package's export table, and the class
         # it names is the actor whose light the record bakes. `palette_ref_other` is the control -- it is not
         # asserted zero, because an `InterpolationPoint`/`PathNode` is an actor too, only that it stays small.
@@ -1482,26 +1602,50 @@ def check(values, structs, stats, arrays=ARRAYS):
     good_tail = (struct.pack("<I", 2) + b"\x02"
                  + b"\x03\x00" + b"\x01\x00\x00\x00"
                  + b"\x04\x01\xff" + b"\x01\x00\x00\x00")
-    if smi_tail(good_tail, ps) != (2, 2, True, 0, [3, 4]):
+    if smi_tail(good_tail, ps) != (2, 2, True, 0, [3, 4], 1, 0, 0):
         problems.append("smi_tail does not read two records")
     zero_flag = good_tail[:-4] + b"\x00\x00\x00\x00"
-    if smi_tail(zero_flag, ps) != (2, 2, True, 1, [3, 4]):
+    if smi_tail(zero_flag, ps) != (2, 2, True, 1, [3, 4], 1, 0, 0):
         problems.append("smi_tail refuses a record whose flag dword is 0")
-    if smi_tail(good_tail[:-4] + b"\x02\x00\x00\x00", ps) != (2, 2, False, 0, [3]):
+    if smi_tail(good_tail[:-4] + b"\x02\x00\x00\x00", ps) != (2, 2, False, 0, [3], 0, 0, 0):
         problems.append("smi_tail accepts a record flag that is neither 0 nor 1")
-    if smi_tail(good_tail[:-4], ps) != (2, 2, False, 0, [3]):
+    if smi_tail(good_tail[:-4], ps) != (2, 2, False, 0, [3], 0, 0, 0):
         problems.append("smi_tail closes a tail whose last record has no terminator")
+    # The middle member is a bitmask over the colour table: its length is `ceil(colours/8)` bytes for the
+    # payload's colour count, so the same tail against 8, 9 and 16 colours is a right mask, a right mask, and
+    # a wrong one. The spare bits of the last byte are padding: a mask that sets them is still a right mask.
+    mask_tail = (struct.pack("<I", 2) + b"\x02"
+                 + b"\x03\x01\x00" + b"\x01\x00\x00\x00"
+                 + b"\x04\x01\xff" + b"\x01\x00\x00\x00")
+    if smi_tail(mask_tail, ps, 8) != (2, 2, True, 0, [3, 4], 2, 0, 0):
+        problems.append("smi_tail does not accept one-byte masks for eight colours")
+    if smi_tail(mask_tail, ps) != (2, 2, True, 0, [3, 4], 2, 0, 0):
+        problems.append("smi_tail measures masks without a colour count")
+    if smi_tail(mask_tail, ps, 17) != (2, 2, True, 0, [3, 4], 2, 2, 0):
+        problems.append("smi_tail counts 17 colours' masks as one byte")
+    if smi_tail(mask_tail, ps, 4) != (2, 2, True, 0, [3, 4], 2, 0, 1):
+        problems.append("smi_tail does not count a mask whose padding bits are set")
     if smi_tail(b"\x00\x00", ps) is not None:
         problems.append("smi_tail accepts a tail too short to read")
     # The `Level` payload's frame: an empty property block, the same count twice, that many export indices,
     # then a trailer. An index past the export table is a misread count, so it refuses.
     level = b"\x00" + struct.pack("<II", 2, 2) + b"\x01\x02" + b"\x05\x06"
-    if level_record(level, _Pkg(2), ps) != (2, {1, 2}, 0, 2):
+    if level_record(level, _Pkg(2), ps) != (2, {1, 2}, 0, 2, None):
         problems.append("level_record does not read two actors and a two-byte trailer")
     # A trailer that begins with a string is read as one: the length counts the terminating NUL, and what
     # follows a length the payload cannot hold is the tail, not a string.
-    if level_record(level[:-2] + b"\x02a\x00\x07\x00\x00", _Pkg(2), ps) != (2, {1, 2}, 1, 3):
+    if level_record(level[:-2] + b"\x02a\x00\x07\x00\x00", _Pkg(2), ps) != (2, {1, 2}, 1, 3, None):
         problems.append("level_record does not read a length-prefixed trailer string")
+    # The trailer's 32 bytes: a `FURL` (`7777`, `1`), a two-byte value, a float and a zero run. The float is
+    # the level's `TimeSeconds`; the reader has to hand back all four so the census can hold them.
+    tail32 = struct.pack("<IIHf", 7777, 1, 985, 59.005) + b"\x00" * 18
+    if level_trailer(tail32) != (7777, 1, 985, struct.unpack("<f", struct.pack("<f", 59.005))[0],
+                                 struct.unpack("<f", tail32[9:13])[0], 18):
+        problems.append("level_trailer does not read the URL frame, the float and the zero run")
+    if level_trailer(tail32[:13]) is not None:
+        problems.append("level_trailer accepts a trailer too short to hold the float")
+    if level_trailer(tail32)[3] != struct.unpack("<f", tail32[10:14])[0]:
+        problems.append("level_trailer reads its float off the wrong byte")
     if level_record(b"\x00" + struct.pack("<II", 2, 3) + b"\x01\x02", _Pkg(2), ps) is not None:
         problems.append("level_record accepts a count its second dword disagrees with")
     if level_record(b"\x00" + struct.pack("<II", 2, 2) + b"\x01\x07", _Pkg(2), ps) is not None:
@@ -1697,7 +1841,9 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
             ("palette_payloads", "palette_colours", "palette_clear", "palette_refused",
              "palette_tail_bytes", "palette_tails", "palette_head2", "palette_records",
              "palette_records_flag0", "palette_refs", "palette_ref_light", "palette_ref_other",
-             "palette_closed", "level_actors", "level_strings", "level_tail_bytes", "level_unwritten",
+             "palette_closed", "palette_masks", "palette_mask_bytes", "palette_mask_bad",
+             "palette_pad_bits", "level_actors", "level_strings", "level_tail_bytes", "level_unwritten",
+             "level_tail_port", "level_seconds_match", "level_seconds_off", "level_tail_zero",
              "native_tails", "terrain_bytes", "terrain_colours", "terrain_colour_exports",
              "terrain_body", "terrain_sectors", "terrain_sector_refs", "terrain_verts",
              "terrain_records", "terrain_span", "sector_payloads", "sector_named", "sector_quads")}
@@ -1741,11 +1887,23 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
                % (ptot["palette_ref_light"], ptot["palette_ref_other"]))
     out.append("| tails whose record list closes exactly | **%d** of %d |"
                % (ptot["palette_closed"], ptot["palette_payloads"]))
+    out.append("| -- records whose mask is `ceil(colours/8)` bytes | **%d** of %d |"
+               % (ptot["palette_masks"] - ptot["palette_mask_bad"], ptot["palette_masks"]))
+    out.append("| -- mask bytes inside them | **%d** |" % ptot["palette_mask_bytes"])
+    out.append("| -- masks with a set bit in the last byte's padding | %d |" % ptot["palette_pad_bits"])
     out.append("| `Level` exports read | **%d** |" % len(crows))
     out.append("| actors the `Level` exports name | **%d** |" % ptot["level_actors"])
     out.append("| strings in the `Level` trailer | **%d** over %d maps |"
                % (ptot["level_strings"], len(crows)))
     out.append("| bytes after them | %d |" % ptot["level_tail_bytes"])
+    out.append("| -- of those, the `FURL` frame (`7777` and `1`) | **%d** maps |"
+               % sum(1 for r in crows if int(r.get("level_tail_port") or 0) == LEVEL_TAIL_PORT))
+    out.append("| -- the trailer float equals `LevelInfo.TimeSeconds` | **%d** of %d maps |"
+               % (ptot["level_seconds_match"], len(crows)))
+    out.append("| -- at the two-byte field's end / one byte earlier | **%d** / %d |"
+               % (sum(1 for r in crows if int(r.get("level_seconds_off") or 0) == 2),
+                  sum(1 for r in crows if int(r.get("level_seconds_off") or 0) == 1)))
+    out.append("| -- zero bytes after the float | %d |" % ptot["level_tail_zero"])
     out.append("| actors a `Level` names that the writer does not write | **%d** |" % ptot["level_unwritten"])
     out.append("| native terrain record bytes after a `TerrainInfo` block | **%d** |" % ptot["terrain_bytes"])
     out.append("| -- exports whose record ends on a vertex-colour array | **%d** of %d |"
@@ -1885,7 +2043,12 @@ def main():
                      got["values"]["sector_payloads"], got["values"]["sector_named"],
                      got["values"]["sector_quads"], got["values"]["terrain_grids"],
                      got["values"]["terrain_frames"], got["values"]["terrain_half_grid"],
-                     ";".join(got["values"]["terrain_steps"])))
+                     ";".join(got["values"]["terrain_steps"]),
+                     got["values"]["palette_masks"], got["values"]["palette_mask_bytes"],
+                     got["values"]["palette_mask_bad"], got["values"]["palette_pad_bits"],
+                     got["values"]["level_tail_port"], got["values"]["level_tail_prefix"],
+                     got["values"]["level_tail_zero"], got["values"]["level_seconds_match"],
+                     got["values"]["level_seconds_off"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -1928,9 +2091,12 @@ def main():
                      "terrain_bytes,terrain_colours,terrain_colour_exports,"
                      "terrain_body,terrain_sectors,terrain_sector_refs,terrain_verts,terrain_records,"
                      "terrain_span,sector_payloads,sector_named,sector_quads,terrain_grids,"
-                     "terrain_frames,terrain_half_grid,terrain_steps\n")
+                     "terrain_frames,terrain_half_grid,terrain_steps,"
+                     "palette_masks,palette_mask_bytes,palette_mask_bad,palette_pad_bits,"
+                     "level_tail_port,level_tail_prefix,level_tail_zero,level_seconds_match,"
+                     "level_seconds_off\n")
             for row in rows:
-                fh.write(("%s" + ",%d" * 36 + ",%s" + ",%d,%d,%s\n") % row)
+                fh.write(("%s" + ",%d" * 36 + ",%s" + ",%d,%d,%s" + ",%d" * 9 + "\n") % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"

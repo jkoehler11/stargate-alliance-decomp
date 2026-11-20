@@ -5171,38 +5171,39 @@ returns the record count, the flag-0 count and every reference; `inventory/t3d_c
 `--check` fails when a payload stops closing, when a record's first field leaves the export table, or when the
 non-light share passes one percent. `docs/T3D.md` has the section.
 
-## U32. Two fields this page's records carry are counted, not named
+## U32. The palette record's head dword is open; the `Level` trailer's tail is a URL and a time
 
-**Question.** Two runs of bytes are read to their extent and not to their meaning. *(Half answered 2026-11-19: see "Measured" below -- the terrain tail is answered too, in `docs/T3D.md`.)* (1) Every `StaticMeshInstance`
-palette tail opens with a dword in **2..10** (30,450 of the 33,509 read 2) before the record count; it is not a
-count of the records or of the colours and it does not divide the remainder. (2) The `Level` export's trailer is
-five `FString`s (`"unreal"`, three empty, `"Index.unr"`) followed by **32 bytes** (31 in `DM-WorstCaseScenario`),
-whose first eight are `61 1e 00 00 01 00 00 00` and whose last six differ per map.
+**Question.** Two runs of bytes were read to their extent and not to their meaning: (1) the `StaticMeshInstance`
+instance record's dword, in **2..10** on all 33,509 payloads (30,450 read 2), after the colour array; (2) the
+`Level` export's trailer, five `FString`s and **32 bytes** (31 in one map).
 
-**Measured 2026-11-19, and the premise was half wrong.** Both bodies were read from the kept Ghidra project
-(`tools/ghidra/run-serialize.sh`; `ExportNew.java`, added this run, exports an address that is not yet a
-function).
+**Answered 2026-11-19 (the trailer, and the record's middle member).** *(2) is a `FURL` and the level's saved
+time.* `7777` and `1` are the same pair on all 73 maps (`Port`, `Valid`), and the float at bytes 2..5 of the 24
+that follow equals that map's own `LevelInfo.TimeSeconds` on **73 of 73** -- 59.005 on `M02A`, 391.213 on
+`CTF-LostCity`, 1,605.09 on `DM-LostCity`. One map (`Entry`) carries a one-byte field ahead of the float instead
+of two, so its `TimeSeconds` sits one byte earlier; both alignments close. What is left of the 24 bytes is that
+one-or-two-byte value (883..21,101) and 18 zero bytes on 72 maps (17 of 18 on `Entry`, 1,313 in total).
 
-(1) **The palette dword is the colour record's last member, not a head.** `UStaticMeshInstance::Serialize`
-(`0x0024b5f0`) calls `FUN_001f7680(Ar, this+0x34)` before it calls the 20-byte record array's writer, and
-`FUN_001f7680` is `Ar << TArray<FColor>` followed by `FUN_00037110(Ar, rec+0x18)` -- a `Serialize(ptr, 4)`. The
-array writer (`FUN_001f7df0`) keeps the count in the array, so the dword is a second member. Measured over the
-33,509 payloads: it is never the colour count (0 of 33,509) and equals the record count only where both are 2
-(2,706). What it *means* is still open -- its reader is what would settle it, not another read of the path
-below (`0x24f160`, the version-0x70 branch, writes the same record for older packages and agrees with this one
-on the field order).
+**The record's middle member is named too, and it is not part of U32's question but its answer's neighbour.** The
+`TArray<BYTE>` between a record's light index and its flag is a bitmask over the payload's colour table: its length
+is `ceil(colours/8)` on **466,858 of 466,858** records (13,989,855 mask bytes), one bit per colour entry, and the
+last byte's spare bits are padding set on 43,126 records. `docs/T3D.md` has both sections and
+`inventory/t3d_coverage.csv` carries the columns; `--check` gates them.
 
-(2) **The `Level` trailer is not written by this image.** `ULevel::Serialize` (`0x00161b70`) decompiles to
-`Super::Serialize`, a 12-byte member at `this+0x94`, a `FString`-shaped local, a dword at `this+0xf8`, sixteen
-dwords at `this+0x98` and a `TArray` of 0x1c-byte elements at `this+0xe0` -- none of which is the export's
-`[count][count][indices][five strings][24-32 bytes]` frame. The shipped maps were written by the editor that is
-not in `default.xbe`, so these bytes will not fall to a body read at all; the remaining question is what the
-last 24 bytes mean, and the only routes left are the editor's own writer (not in this image) or a reader that
-consumes them (`ULevel`'s `FURL`-shaped members are the five strings, whose values -- `"unreal"`, `""`,
-`"Index.unr"`, `""`, `""` -- and the `7777`/`1` pair after them are measured on all 73 maps).
+**(1) stays open, and five readings of the dword are refuted.** Measured against the masks the same walk reads:
+it is not the colour count (0 of 33,509), not the record count (they agree only where both are 2, 2,706 payloads),
+not the largest number of lights over one colour (225 of 1,200 sampled), not the masks' byte total, not the number
+of non-empty masks, and not the flag-0 count. It is the instance record's own member -- `rec+0x18`, the four-byte
+write `FUN_00037110` makes after `FUN_001f7df0` serialises the colour array, both inside `FUN_001f7680`, which
+`UStaticMeshInstance::Serialize` (`0x0024b5f0`) calls with `this+0x34` -- so its name is in the code that reads
+`UStaticMeshInstance+0x4c`.
 
-(3) **The terrain record's tail is settled** (`docs/T3D.md`): it ends with the terrain's own `TArray<FColor>`,
-counted as a vertex grid on 66 of 66 exports.
+**Routes for what is left.** (a) A reader of `+0x4c` that is *known* to take a `UStaticMeshInstance`; the
+displacement sweep cannot supply one (`OffsetReaders.java` over `+0x28`, `+0x2c`, `+0x34`, `+0x38`, `+0x3c`,
+`+0x4c` returns 40,474 instructions in 5,280 functions, 1,231 of them reading `+0x4c` alone), so the sweep has to
+start from a function whose argument is the class -- the renderer's static-mesh pass or the class's registration.
+(b) The same field in a package this build wrote: `FUN_0024f160` (`0x24f160`, the version-0x70 branch) writes the
+record for older packages, and a payload saved by this image would show what the writer puts there.
 
 ## U33. The terrain body's members are named -- answered
 
