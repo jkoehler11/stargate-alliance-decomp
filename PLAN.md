@@ -15548,3 +15548,55 @@ sequence.
   block from the dump in 13 s.
 - **Not in this bundle.** The `add`s (2,194 of them, each with its creation row and the whole downstream
   cascade), the fill-less boundary split, and the naming of the 600-body stub family at `0x004100c8`.
+
+### Execution notes (2026-11-20, the gap bodies become rows: 537 adds, 172 splits, one 600-stub block)
+
+- **Task.** The previous note's three "not in this bundle" items -- the adds and their cascade, the fill-less
+  boundary split, and the naming of the 600-body stub family -- done as one thread, in that order, because
+  the split has to be right before an add's size can be.
+- **The fill-less boundary is a branch question, and the rule settled it.** A terminator with code behind it
+  was walked past; the code is an early `return` when one of the run's own relative branches lands on it
+  (`E9`/`EB`/`jcc`/`loop`/`jcxz`/`0F 8x`, read from the bytes) and a neighbour's start when none does. **172
+  bodies now end at a split**, 169 openings stay merged (the `0x00046330` early-return shape), and
+  `0x00418c30` resolves from one 131-byte run into the five 21-byte bodies it holds. The same test over the
+  map's own rows finds **59 rows whose declared span holds a second body** (decode-to-size 10,995 -> 10,936 of
+  11,784) -- a defect a `resize` plus an `add` repairs, and the next bundle.
+- **The 600-body block is one translation unit's static initialisation, not 600 findings.** Two shapes, read
+  from the instructions: **590 register-once thunks** (`push <&item>; push 0xff; call FUN_00046c60; add esp,8;
+  mov <flag>,al; ret`, 466 of 21 bytes and 124 of 24, each with its own 4-aligned `.data` item -- 590 distinct
+  in `0x5c29e0`..`0x5c667c` -- and its own flag byte) and **5 `_atexit` destructor registrations**. The helper
+  is a 92-byte body the map already has: it seeds 4,096 dwords at `0x6313e8` with `0x404a0` and refuses a
+  second call. `family` is a column, so the block is one story with one naming rule.
+- **537 of the 814 slot-named bodies are rows now.** The criterion is the evidence: the pointer lands in a
+  slot of a table whose class a registration names, and the decode closes. That is 537 bodies over **224
+  classes** (`SkeletalMeshInstance` 27, `VertMeshInstance` 16, `GameEngine` 15, `Canvas` 11), **159,539 bytes**,
+  median 93, largest `SpriteEmitter_vt40` at 7,160, 32 one-instruction islands. Named `<Class>_vt<slot>` -- the
+  slot is the evidence, an address would not be -- with the `xbe_overrides.csv` creation row each needs. Two
+  of the 537 are also called from one site each and one is jumped to; the map had made none of them a row.
+- **The cascade was five regenerators, not a rewrite.** `make boundaries` + `make-symbols.py` (15,241 ->
+  15,778 functions, 4,018,068 -> 4,177,607 bytes), `native-summary` (`docs/NATIVE.md`,
+  `inventory/xbe_functions_by_module.csv`), `module-attribution` + `make module-split`
+  (`function_modules.csv`, `module_export_plan.csv`, `function_module_attribution.csv`), `status` (README
+  block and badges), then `inventory-index` and `artifact-hashes`. All 537 land in `(other named)` in the
+  module table: the rule keys on a name prefix it knows, and `<Class>_vt<slot>` is not one -- the class's
+  package is the evidence that would settle it, and that is a module-attribution change, not a naming one.
+- **The census shrank by exactly what it added**: 2,677 heads / 2,339 bodies / 377,410 bytes before, 2,140 /
+  1,850 / 217,871 after, and `--check` now refuses a head inside a map row. The pointer base rate over a map
+  row's start moved 24.1% -> 27.4%, which is the adds showing up in the control.
+- **Files.** `tools/gap-heads.py` (the branch-target split and the `split`/`after-ret` vocabulary, `family_of`
+  and the `family` column, `slot_table`/`slot_unclassed`/`tables_unclassed` in the census, `--emit-adds` /
+  `--apply-adds` with `--add-population slot|family|all`, four new `--check` invariants, five new selftest
+  cases), `inventory/gap_heads.csv`, `symbols/xbe_boundaries.csv` (+537 `add`), `symbols/xbe_overrides.csv`
+  (+537 creation rows), `symbols/xbox_functions.csv`, `symbols/xbox.map`, `docs/SYMBOLS.md` (the section
+  rewritten and the block regenerated), `docs/UNKNOWNS.md` (U40 rewritten as answered-in-part),
+  `docs/NATIVE.md`, `docs/STATUS.md`, `README.md`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`,
+  `inventory/function_modules.csv`, `inventory/module_export_plan.csv`,
+  `inventory/function_module_attribution.csv`, `inventory/xbe_functions_by_module.csv`, this note.
+- **Gates.** `make ci` green (two runs: after the split/family increment, and after the adds and every
+  regenerator); `gap-heads --check` re-derives the gaps from the committed map, reconciles the census with the
+  rows, requires every `after-ret` head to abut a `split` row, and refuses an unknown family or boundary;
+  `--check-doc` matches; `--selftest` 15 assertions; `symbol-boundaries --check` proves every one of the 537
+  adds has its creation row and no overlap.
+- **Not in this bundle.** The 59 rows the split rule reads as two bodies (each needs a `resize` plus an `add`),
+  the class of the 250 tables no registration names (269 bodies sit in their slots), the 408 bodies no channel
+  names, the 595 generated stubs' own rows, and the module attribution of `<Class>_vt<slot>` names.

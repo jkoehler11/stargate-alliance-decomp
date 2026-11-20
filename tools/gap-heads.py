@@ -537,6 +537,8 @@ def measure(args):
     meta["base_row"], meta["base_row_n"] = ctl["base_row"], ctl["base_row_n"]
     meta["tables"] = len(spans)
     meta["slot_classes"] = len({r["slot_class"] for r in rows if r["slot_class"]})
+    meta["slot_unclassed"] = sum(1 for r in rows if int(r["slots"]) and not r["slot_class"])
+    meta["tables_unclassed"] = sum(1 for t_va, _n, _k in spans if not names.get(t_va))
     rows.append({"row": "census", "census": ";".join("%s=%s" % (k, v) for k, v in meta.items())})
     assert len(rows) == len(heads) + 1, (len(rows), len(heads))
     print("heads %d: %d bodies, %d islands, %d no-close, %d undecoded; %d body bytes (%d%% of the gaps)"
@@ -598,11 +600,17 @@ def add_evidence(r):
         who = ("a dword in the class table %s at slot %s" % (r["slot_table"], r["slot_index"]))
     pad = ("%d bytes of pad" % int(r["boundary"].split(":")[1])) if r["boundary"].startswith("pad") \
         else "a split boundary"
+    calls, jumps = int(r["calls"] or 0), int(r["jumps"] or 0)
+    if calls or jumps:
+        reach = ("the image's only references to it are %d call site(s) and %d jump(s), and the map "
+                 "turned neither into a row" % (calls, jumps))
+    else:
+        reach = ("no `E8` and no pointer outside a table names it, so the call graph that builds this "
+                 "map can never make it a function")
     return ("the body in the gap %s..%s: %s; %s in front, an MSVC %s prologue, and a linear decode "
-            "closing on `%s` at 0x%08x. No `E8` and no pointer outside a table names it, so the call "
-            "graph that builds this map cannot make it a function and only this row can"
+            "closing on `%s` at 0x%08x; %s"
             % (r["gap_lo"], r["gap_hi"], who, pad, r["prologue"], r["close"],
-               int(r["head_va"], 16) + int(r["size"])))
+               int(r["head_va"], 16) + int(r["size"]), reach))
 
 
 def emit_adds(args):
@@ -698,7 +706,7 @@ def render(rows):
             "| bodies in a generated family (`register-once` / `_atexit`) | %d / %d |"
             % (m["family_register_once"], m["family_atexit"]),
             "| named by a dword outside `.text` | %d |" % m["named_pointer"],
-            "| ...of those, in a class-table slot (%d bodies, %d tables, %d named classes) | %d |"
+            "| ...of those, in a class-table slot (%d bodies; %d tables, %d of them class-named) | %d |"
             % (m["slot_named"], m["tables"], m["slot_classes"], m["named_slot"]),
             "| named by an `E8`/`E9` branch | %d |" % m["named_branch"],
             "| named by a `68` push | %d |" % m["named_imm"],
@@ -723,9 +731,11 @@ def render(rows):
             lines.append("| `%s`..`%s` | %d | %d | `%s` |" % (row[0]["gap_lo"], row[0]["gap_hi"], n, nb,
                                                              min(r["head_va"] for r in row)))
     if m:
-        lines += ["", "%d of the %d bodies are the body of a class-table slot the map already names, and %d "
-                  "are named by no channel at all: nothing calls them, nothing points at them, and the map "
-                  "has no row for them." % (m["named_slot"], m["bodies"], m["unnamed"])]
+        lines += ["", "%d of the %d bodies sit in a class-table slot; %d of those are in the %d tables no "
+                  "registration names, and %d are named by no channel at all: nothing calls them, nothing "
+                  "points at them, and the map has no row for them."
+                  % (m["slot_named"], m["bodies"], m["slot_unclassed"], m["tables_unclassed"],
+                     m["unnamed"])]
     return "\n".join(lines)
 
 
@@ -878,7 +888,7 @@ def selftest():
             dict(blank, row="census", census="text_lo=0x1000;text_hi=0x2000;gaps=1;gap_bytes=16;gaps_under_8=0;"
                  "heads=1;bodies=1;islands=0;no_close=0;undecoded=0;body_bytes=7;body_bytes_pct=44;"
                  "inner_starts=0;bodies_with_inner=0;splits=0;family_register_once=0;family_atexit=0;"
-                 "slot_named=1;named_pointer=1;named_slot=1;named_branch=0;named_imm=0;"
+                 "slot_named=1;slot_unclassed=0;tables_unclassed=0;named_pointer=1;named_slot=1;named_branch=0;named_imm=0;"
                  "named_any=1;unnamed=0;map_rows=10;map_rows_head=8;map_rows_pad_only=1;map_rows_prologue_only=1;"
                  "map_rows_decode=9;null_heads_rdata=212;null_bodies_rdata=0;base_gap=22;base_gap_n=2000;"
                  "base_row=481;base_row_n=2000;tables=724;slot_classes=1")]
