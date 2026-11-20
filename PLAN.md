@@ -712,17 +712,22 @@ other 38 rows.
 
 - [x] 5.1 umodel/UEViewer export pass over `.ukx`/`.usx`/`.utx`/`.uax` with the UE2 profile; build
       `inventory/assets.csv`.
-      **Done 2026-11-19** (`tools/asset-export.py`, `make assets`, `docs/ASSETS.md`): **399 packages, 326 clean and
-      73 refused, 12,071 objects exported into 17,628 files / 1,479 MB** under `$WORK/extracted/assets`, with
-      `inventory/assets.csv` (per package, with the refusal's own message) and `inventory/asset_classes.csv`
-      (13 classes) committed. The geometry criterion holds wherever umodel can read the package: **89 of 91
-      `.usx` and 68 of 82 `.ukx`** export (StaticMesh 3,440 + SkeletalMesh 158 + VertMesh 4 objects), and textures
-      are **167 of 171 `.utx`** (6,474 `Texture` + 1,465 `Shader` objects). Two limits are measured rather than
-      assumed: **`-nostat` means *do not load StaticMesh*** in this build (the first pass exported 0 objects for 81
-      of 91 mesh packages and looked like a package problem), and **umodel cannot read this build's `USound`** —
-      53 of 55 `.uax` leave unread bytes or a negative `LazyArray`, so sounds stay with the project's own reader
-      (5.3, 3,287 WAVs indexed). Build recipe and the `umodel` version note are in `tools/versions.lock`; run the
-      export against a **local** copy of the dump, because six umodel scans over NFS v3 fall to ~2 packages/minute.
+      **Done 2026-11-19** (`tools/asset-export.py`, `make assets`, `docs/ASSETS.md`): **399 packages, 339 clean and
+      60 refused, 12,306 objects exported into 17,988 files / 1,541 MB** under `$WORK/extracted/assets`, with
+      `inventory/assets.csv` (per package, with the refusal's own message and the flag set that worked) and
+      `inventory/asset_classes.csv` (13 classes) committed. The geometry criterion holds wherever umodel can read
+      the package: **89 of 91 `.usx` and 81 of 82 `.ukx`** export (StaticMesh 3,440 + SkeletalMesh 227 + VertMesh 4
+      objects), and textures are **167 of 171 `.utx`** (6,584 `Texture` + 1,505 `Shader` objects). Three limits are
+      measured rather than assumed: **`-nostat` means *do not load StaticMesh*** in this build (the first pass
+      exported 0 objects for 81 of 91 mesh packages and looked like a package problem); a `.ukx` whose animations
+      umodel cannot finish parsing still has meshes, so the driver carries a **retry ladder** (`-noanim` second)
+      that recovered 13 animation packages and 69 skeletal meshes; and **umodel cannot read this build's `USound`**
+      — 53 of 55 `.uax` leave unread bytes or a negative `LazyArray`, so sounds stay with the project's own reader
+      (5.3, 3,287 WAVs indexed). The residue is 4 texture packages (`UPalette::Serialize`, three
+      `Colors.Num() == 256`, and one package stamped engine version `127/221` rather than this build's `128/4`),
+      2 mesh packages (`KMeshProps` unknown class and a broken import index), and the 53 sound packages. Build
+      recipe and the `umodel` version note are in `tools/versions.lock`; run the export against a **local** copy of
+      the dump, because six umodel scans over NFS v3 fall to ~2 packages/minute.
 - [x] 5.2 T3D-dump every `.unr` (actors, properties, level script) into `extracted/maps/*.t3d`; index mission structure.
       **Done for actors and properties, not for the level script.** All 73 maps written to `$WORK/extracted/maps`
       (27 MB, **121,225 actors**, 112,000 with a `Location`), and the writer's actor count equals the independently

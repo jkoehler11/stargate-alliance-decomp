@@ -24,7 +24,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/archive_slots.csv` | 24 | 12 | `make archive-slots` |
 | `inventory/artifact_hashes.csv` | 303 | 3 | `make artifact-hashes` |
 | `inventory/asset_classes.csv` | 13 | 2 | `make assets` |
-| `inventory/assets.csv` | 399 | 10 | `make help` |
+| `inventory/assets.csv` | 399 | 11 | `make help` |
 | `inventory/body_names.csv` | 6063 | 11 | `make body-name` |
 | `inventory/break_sites.csv` | 1003 | 12 | `make break-sites` |
 | `inventory/campaign_matrix.csv` | 18 | 9 | `make campaign-matrix` |
