@@ -4286,13 +4286,24 @@ binds. The explicit form does:
 answers `eip 0x8006b290` -- a kernel address, which is correct that early and is the reminder that arming before
 the guest is in-image does nothing (`bp-args.py --arm-after`).
 
-**What is not done yet.** The stub is not threaded through `tools/xemu/drive.py`, which is what `missions.sh`
-uses to boot and press, so no breakpoint has been armed across a map load yet. The integration is three known
-pieces rather than research: pass `-gdb tcp::<port>` in `drive.py`'s xemu arguments, arm `Z0` at
-`ShaderCompileVertex` (`0x002c01e0`) and `ShaderCompilePixel` (`0x002c0910`) once `--arm-after` sees in-image
-context, then let the press sequence load a mission (`missions.sh --name M00` is the shortest path). The expected
-stop is the one-shot work the EIP sampler could not see, and the argument to read off the stack is the shader
-program pointer -- printable at that address as `vs.1.1` + assembly text.
+**`drive.py` already has the flag, and needs X11.** `--gdb PORT` is an existing option that appends
+`-gdb tcp::PORT`; the invocation was simply never written down. `drive.py` also refuses without `DISPLAY` (its
+screenshots go through `xdotool`), and with `WAYLAND_DISPLAY` set xemu renders Wayland-native and the window check
+fails as `no xemu window on :0`. The working environment is
+`DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_*` with `WAYLAND_DISPLAY` unset.
+
+**The arms that work, measured 2026-11-19.** `--arm-after N` sleeps N seconds and then samples three times, so it
+arms only if the guest happens to be in-image at that moment; `--wait-user SECS` is the patience loop that samples
+until `EIP` is inside the image (first in-image sample here: 10.3 s) and is what a boot needs. The run that caught
+the shader compile:
+
+    python3 tools/xemu/drive.py --iso=... --bios=... --hdd=... --out=... --gdb 12345 \
+        --step=wait=150 --step=pad=down (x10) --step=pad=a --step=wait=120
+    python3 tools/xemu/bp-args.py --port 12345 --wait-user 300 --break 0x2c01e0 --break 0x2c0910 \
+        --window 500 --stops 3 --json bp.json
+
+Three stops at `ShaderCompileVertex`, caller `FUN_002ae4e0` (`docs/NATIVE_NOTES.md`, "The shader compile, caught
+at a map load").
 
 ## The console's `checkpointload`, and the crop that cannot see the console line (measured 2026-11-12)
 
