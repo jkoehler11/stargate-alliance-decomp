@@ -1099,6 +1099,42 @@ never looked at — `DeadCodeStripper` (`IsMacMovRegNOP`, `RemoveNullMoves`), `R
 (`StartNewInstruction`), `TLEngineSim` (`MacOpType`) and a `_D3DVsInstruction` type threaded through them. That is
 the vertex optimiser's interior, and it is a static reading with no boot needed.
 
+## Inside the assembler: an optimising compiler, 50 classes (2026-11-19)
+
+`XGRAPHICS` is not one class — the census puts the namespace at **50 classes, 464 methods, 84,387 bytes**, and the
+biggest of them say what the suite is. `PreProcessor` (49) and `CD3DXAssembler` (15, 9,957 B) are the front end;
+`Instruction` (49), `InstructionGraph` (18, 6,893 B), `Register` (37) and `RegSet` (11) are the IR; `Renamer` (15),
+`Swizzle` (15), `DeadCodeStripper` (20) and `VS_GRAPH_OPTIMIZER` (29) are the passes; `PixelShaderAssembler` (18,
+6,066 B) and `TLEngineSim` (19) are the back end.
+
+**The front end is lexer, parser and encoder in one class.** `CD3DXAssembler::Production` is 3,262 B — a grammar
+switch — and it drives a `XAsmCD3DXDwStack` (push/pop) beside `DecodeOpcode` (1,720 B, comparing opcode names with
+`_lstrcmpiA`) and `DecodeRegister` (1,435 B, `isalpha`/`isdigit`/`atoi`). `Token` (1,422 B) is the lexer and
+`Assemble` (504 B) is the entry that calls `d3dxasm_parse` and `_XGBufferCreate`. So the yacc parser found earlier
+is this class's, and its tables are compiled in.
+
+**The dead-code pass works on component masks, not opcodes.** `CalcInputMasks` (588 B) → `UnswizzleMask` +
+`CalcInputReg`, `CalcOutputMasks` (236 B), `NarrowOutputMasks`, then `ProcessInstruction` (235 B) with `IsNOP`
+(167 B) dispatching to `IsMacMovRegNOP`, `IsMacMovConstNOP` and the `Ilu` equivalents — the pass tracks which
+components are read and written and drops the moves that write nothing read.
+
+**The graph optimiser schedules and allocates registers.** `InstructionGraph::ReduceInstruction` (2,373 B) and
+`Schedule` (1,699 B) over an STL `set`, `WillHaveTempIndex` (430 B) and `AllocateTempIndexAgressively` (428 B) for
+temps, `ReduceRegisters` (379 B) → `Register::MoveReadersToPrev`/`RemoveRedundant`, `RemoveUnusedOps` (338 B), and
+`RegScoreboard::StartNewInstruction` for latency. That is instruction scheduling with register allocation — a
+compiler backend, not an assembler.
+
+**Why this matters for Phase 6 more than the encoding does.** The microcode an Xbox D3D8 driver receives is the
+*output of these passes*, so "reproduce the compile path" means reproducing dead-code stripping, renaming, swizzle
+optimisation, scheduling and temp allocation — not just parsing text and encoding opcodes. That weights the
+choice between the two options the shader page sets out: for the seven programs a mission compiles, **baking the
+optimised microcode is the lower-risk path**, and re-running the assembler in a rebuild is the one that would need
+this interior to behave identically.
+
+**Limit.** Class sizes and callee edges are the evidence here; no body in this section was decompiled, so the
+*manner* of each pass (the scheduling policy, the renaming rule) is unknown. The 50-class census and the three
+per-method artifacts are the map, not the reading.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
