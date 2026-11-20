@@ -368,9 +368,11 @@ shader-assembly helpers, the largest single group in the graphics sections after
 
 **The pipeline is live, and the shaders are in the image.** A scan of the dump finds these tokens in
 `default.xbe` and in no package, and the bytes around them are source, not a keyword table. The count is
-**45 programs — 19 `vs.1.1`, 9 `ps.1.1`, 17 `ps.1.4`** (`inventory/shader_programs.csv`,
-`make shader-programs`); an earlier count of 63 in this page was a substring count that included `#define`
-lines *containing* the token, and the artifact is the authority.
+**60 programs — 19 `vs.1.1`, 3 `xvs.1.1`, 9 `ps.1.1`, 12 `xps.1.1`, 17 `ps.1.4`** (`inventory/shader_programs.csv`,
+`make shader-programs`). Two earlier figures in this page were wrong in opposite directions: 63 was a substring
+count that included `#define` lines *containing* the token, and 45 was the same scan with an anchor that required
+the version token at the start of the string — which silently dropped the fifteen `x`-prefixed variants. A runtime
+stop at `_XGAssembleShader` was handed `0x00524d18`, whose bytes are `xps.1.1`, and that is what exposed it.
 
     vs.1.1
     m4x4 oPos, v0, c0
@@ -387,15 +389,16 @@ data — and the assembler's own banner, `// Xbox Shader Assembler %s`.
 So the title compiles its shaders at runtime from embedded assembly through this toolchain, and that is why
 `PreProcessor` is in the image at all. For Phase 6 it is a requirement rather than an open question: a
 rebuild either reproduces the compile path (preprocessor, yacc parser, `D3DTokensToUCode`, the `Instruction`
-optimiser) or bakes the 45 programs' microcode once and ships it. **And all 45 are used.** Each program is referenced by an immediate whose value is its address: 41 by a
-`push` inside a tiny per-program wrapper — 15 wrappers of 41 bytes for the `vs.1.1` programs, 26 of 28 bytes
-for the pixel ones — and 4 `vs.1.1` programs by `mov` immediates inside one function at `0x002b4600`. Every
-push wrapper then calls one of two dispatchers, and the split follows the program's type exactly:
+optimiser) or bakes the 60 programs' microcode once and ships it. **And all 60 are used.** Each program is referenced by an immediate whose value is its address: 56 by a
+`push` inside a tiny per-program wrapper, 4 by `mov` immediates inside one function at `0x002b4600`. Every push
+wrapper calls one of two dispatchers, and the split follows the program's type — and its `x` variant: 17 through
+`ShaderCompileVertex` (15 `vs.1.1`, 2 `xvs.1.1`) and 38 through `ShaderCompilePixel` (9 `ps.1.1`, 12 `xps.1.1`,
+17 `ps.1.4`), so the prefix does not change which dispatcher a program reaches:
 
 | dispatcher | programs | calls | now named |
 |---|---:|---|---|
-| `0x002c01e0` | 15 `vs.1.1` | `_XGAssembleShader@44`, `_D3DDevice_CreateVertexShader@16` | `ShaderCompileVertex` |
-| `0x002c0910` | 26 `ps.1.1`/`ps.1.4` | `_XGAssembleShader@44`, `_D3DDevice_CreatePixelShader@8`, plus `_CreateFileA`/`_ReadFile`/`_CloseHandle` and `_GlobalMemoryStatus` | `ShaderCompilePixel` |
+| `0x002c01e0` | 17 — 15 `vs.1.1`, 2 `xvs.1.1` | `_XGAssembleShader@44`, `_D3DDevice_CreateVertexShader@16` | `ShaderCompileVertex` |
+| `0x002c0910` | 38 — 9 `ps.1.1`, 12 `xps.1.1`, 17 `ps.1.4` | `_XGAssembleShader@44`, `_D3DDevice_CreatePixelShader@8`, plus `_CreateFileA`/`_ReadFile`/`_CloseHandle` and `_GlobalMemoryStatus` | `ShaderCompilePixel` |
 
 So the runtime path is: per-program wrapper → `ShaderCompileVertex`/`ShaderCompilePixel` → `_XGAssembleShader`
 → `Create*Shader`. Both dispatchers were `FUN_*` until this reading, and naming them is the one place 4.9 has
@@ -1015,11 +1018,19 @@ what was missing was nobody having written the invocation down. And `drive.py` n
 `DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_*` with `WAYLAND_DISPLAY` unset, while the bare sampler is happy on
 either.
 
+**A longer run, with the assembler armed.** Fourteen stops (the run's cap) across three breakpoints: **10 at
+`ShaderCompileVertex`, 2 at `ShaderCompilePixel`, 2 at `_XGAssembleShader@44`**. The assembler stops are the ones
+that name their argument — `edx = 0x00524d18`, which the stack walk resolves to `xps.1.1`, with `0x5a` (90) beside
+it as the program length, and the return address `0x002c09ff` inside `ShaderCompilePixel`. The vertex dispatcher's
+stop carries `0x00524b00`, an `vs.1.1` program of 217 bytes. So the dispatcher passes (program pointer, length) to
+the assembler, and both are readable off the frame.
+
 **What this settles and what it does not.** Settled: the shaders are compiled during a map load, through
-`FUN_002ae4e0` and the per-program wrappers, on a heap object, and `ShaderCompileVertex` is reached at least three
-times in one load. Not settled: how many of the 45 programs a single map compiles (three stops is the count the run
-asked for), and what `edi` means — a breakpoint on `_XGAssembleShader@44` with the same argument capture, or a
-larger `--stops`, is the next measurement rather than a guess.
+`FUN_002ae4e0` and the per-program wrappers, on a heap object; the assembler receives the program pointer and its
+length; and a single map load reaches the vertex dispatcher at least ten times. Not settled: which of the 60
+programs a map compiles in total — the cap truncated that — and what the `x` prefix means (it does not change the
+dispatcher, and the assembler accepts the string as given). A `--stops 60` run would count the rest, and the
+`x`-prefixed text itself is the evidence for what the prefix is: compare one against its un-prefixed twin.
 
 ## What this means for Phase 4
 

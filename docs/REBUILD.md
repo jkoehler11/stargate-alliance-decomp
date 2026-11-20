@@ -71,11 +71,12 @@ offset, which is 316 of the 1,776 save exports and a byte lost at each of them (
 
 ## The shader compiles are part of the rebuild
 
-The image carries 45 shader programs as assembly source — 19 `vs.1.1`, 9 `ps.1.1`, 17 `ps.1.4` — plus
+The image carries 60 shader programs as assembly source — 19 `vs.1.1`, 3 `xvs.1.1`, 9 `ps.1.1`,
+12 `xps.1.1`, 17 `ps.1.4` — plus
 `#pragma screenspace`, one `#include` and two `#define`, and the SDK's own `// Xbox Shader Assembler %s`
 banner (`docs/NATIVE_NOTES.md`, "The shader toolchain"). They are not in any package: the title compiles them
 at runtime through `PreProcessor` → `d3dxasm_parse` → `XGRAPHICS::D3DTokensToUCode` → the
-`VS_GRAPH_OPTIMIZER::Instruction` graph pass, and **every one of the 45 is referenced** — 41 from per-program
+`VS_GRAPH_OPTIMIZER::Instruction` graph pass, and **every one of the 60 is referenced** — 56 from per-program
 wrappers that call `ShaderCompileVertex` or `ShaderCompilePixel`, 4 from one function's `mov` immediates
 (`inventory/shader_programs.csv`). The compile is **not** in the boot window: 1,200 EIP samples across the first
 102 s, with rendering active, hit neither dispatcher nor `_XGAssembleShader` (`docs/NATIVE_NOTES.md`, "Runtime
