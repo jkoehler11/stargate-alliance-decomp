@@ -1176,6 +1176,60 @@ Three things follow:
    this page has held all along, and a breakpoint on `_D3DDevice_SetRenderState_Simple` (its first callee) with the
    same capture is what would carry the first one across it.
 
+## `SetRenderState_Simple` is a push-buffer append, not a device setter (2026-11-19)
+
+Reading the arguments of `@D3DDevice_SetRenderState_Simple@8` (`0x004525a0`, 39 bytes) from the stack produced
+nonsense — pointer-sized "state" values that are not D3D render-state numbers. The body says why, and says something
+larger about the render path:
+
+```
+mov  eax,[0x460ef0]     ; write pointer
+add  eax,8
+cmp  eax,[0x460ef4]     ; buffer limit
+jnc  0x4525bc           ; no room -> flush and retry
+mov  [0x460ef0],eax
+mov  [eax-8],ecx        ; first word
+mov  [eax-4],edx        ; second word
+ret
+```
+
+**The arguments arrive in `ecx` and `edx`, not on the stack.** So a stack read of this function reports the caller's
+frame, which is exactly the trap this reading fell into first. It also means the `@8` in the decorated name is the
+stack-argument count (zero) plus `this`-style register parameters, not two pushed dwords.
+
+**It appends an eight-byte record to a buffer that grows until `[0x460ef4]`.** State is therefore *deferred*: what the
+engine calls "setting a render state" writes a record that something else walks later, and `0x457ed0` is the
+make-room/flush path it takes when the buffer is full.
+
+**The records are XMETAL commands, and the callers prove it — fifteen at a time.** `FUN_002bbb60` (`0x002bbb60`,
+1,917 B) has **15 call sites** to `0x4525a0`, and each loads a distinct command word into `ecx` immediately before:
+
+| call site | `ecx` | call site | `ecx` | call site | `ecx` |
+|---|---|---|---|---|---|
+| `0x2bbbAD` | `0x0004035c` | `0x2bbc20` | `0x00040348` | `0x2bbd54` | `0x00040374` |
+| `0x2bbbCA` | `0x00040358` | `0x2bbc49` | `0x00040354` | `0x2bbd6c` | `0x00040378` |
+| `0x2bbbEE` | `0x00040300` | `0x2bbc61` | `0x00040340` | `0x2bbd89` | `0x00040364` |
+| `0x2bbc08` | `0x00040344` | `0x2bbc7e` | `0x0004033c` | `0x2bbda1` | `0x00040368` |
+| | | `0x2bbc96` | `0x00040304` | `0x2bbdbe` | `0x0004036c` |
+| | | | | `0x2bbdd6` | `0x00040360` |
+
+Fifteen distinct words in the contiguous band `0x00040300`–`0x00040378`: the command word is `0x0004_00NN` with `NN`
+a state index, and this function emits a block of them. One of the payloads is an immediate in the caller's own
+prologue — `mov ecx,0x00040358` with `edx = edi = 0x01010101`, a four-channel colour-write mask for RGBA — while the
+rest arrive in `edx` as computed values. That matches the `_XMETAL_Push*` family and `DbgRecordPushStart` already
+named in `D3D`/`CMiniport`: the D3D8 device in this build is a front end that emits a command stream into a buffer,
+and the Metal layer consumes it.
+
+**What this changes.** A rebuild cannot model "set render state" as a device call that takes effect immediately; it has
+to reproduce the buffer and its walker, because ordering and batching live in the buffer, not in the call. It also
+explains why sampling the driver shows so much time in small bodies: the hot work is command emission, and the
+`FUN_002bc350` state block is a burst of these appends.
+
+**Limits.** The buffer addresses (`0x460ef0`, `0x460ef4`) are read as a write pointer and a limit from these 39 bytes,
+and the consumer of the buffer was not read here. The `0x0004_00NN` form is inferred from fifteen command words in one
+contiguous band emitted by one function — fifteen records from one caller is a block, not the encoding of the whole
+command space, and a second state-emitting function with a different band is what would generalise it.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
