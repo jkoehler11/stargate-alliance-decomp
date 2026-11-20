@@ -15710,3 +15710,33 @@ sequence.
   decode (it fails three ways).
 - **Not in this bundle.** The member tables' slot names (a per-class naming pass), the 175 plain-only
   tables' constructors, and the 399 bodies.
+
+### Execution notes (2026-11-20, the member tables are interface vtables, and five shapes repeat)
+
+- **The 49 member tables are read at their addresses, and their slot 0 settles what they are not.**
+  `tools/class-member-tables.py` resolves every slot through `symbols/xbox_functions.csv` and classifies the
+  body (`__purecall`, a stub of 8 bytes or less, or an implementation). The class table is the control: all
+  492 class tables the class-map census covers share one slot-0 body (`0x00062650`) and **no member table
+  carries it** -- 36 distinct slot-0 bodies across the 49 -- so a member table is not a class's dispatch
+  table by its contents, which is the half the store's form could not settle.
+- **The slots are mostly empty and heavily shared.** 292 slots, 115 distinct bodies: 111 stubs of 8 bytes or
+  less, 24 `__purecall`, 82 slots outside the symbol map, 12 with a real name. A 3-byte stub fills 33 slots
+  and `__purecall` 24, so an interface's default implementation is the common case.
+- **25 of the 49 tables fall into 7 families**, under one rule each part of which is checked: identical slot
+  vectors are the same table twice, one table *subsumes* another when it implements exactly the slots the
+  other leaves `__purecall`, and two tables of four slots or more that agree on more than half their slots
+  are one interface with per-class overrides. The 22-slot `0x004c7860` is the four Linker classes' `[+0xb8]`
+  interface (also written at `[reg]` by 21 unnamed bodies), and within it **`LinkerLoad` and `LinkerLoadGame`
+  differ at exactly one slot (0), as do `LinkerSave` and `LinkerSaveGame`**: one implementation, one
+  per-class entry. The 8-slot `0x004fc35c` family is a four-rung ladder (8, 7, 6, 0 `__purecall`) whose
+  implemented slots resolve to `6=Engine_UnPenLev` and `7=FUN_0015ce70`. `PackageMapLevel`,
+  `TcpipConnection`, `TcpipConnectionXbox` and `DemoRecConnection` write the same one- and two-slot tables at
+  `[+0x2c]` and `[+0x28]`.
+- **Files.** `tools/class-member-tables.py`, `inventory/class_member_tables.csv`,
+  `docs/systems/CLASS_REGISTRATION.md` (the new section, its block and the regenerating paragraph),
+  `docs/UNKNOWNS.md` (U40), `Makefile`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `--check` is a synthetic set of slot vectors (a `__purecall` rung, the rung
+  above it, a table that agrees on half its slots, a stranger) with no dump, and `--check-doc` rebuilds the
+  block from the committed CSV.
+- **Not in this bundle.** The member's *type* (the interface object's class is not registered anywhere), the
+  175 plain-only tables' constructors, and the 399 bodies no channel names.

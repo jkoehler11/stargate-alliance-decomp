@@ -5635,6 +5635,25 @@ only for the 12 bounded tables that have a `[reg]` store (3 slot-only, 9 both). 
 are a member's methods rather than 269 class virtual methods; and the naming half of the 49 is a member
 name with a known owner, not a class-table question.
 
+**Answered since (2026-11-20, what the member tables hold).** `tools/class-member-tables.py` reads the 49
+tables the member stores point at and censuses their slots (`inventory/class_member_tables.csv`). The
+control is the class table: **all 492 class tables the class-map census covers share one slot-0 body**
+(`0x00062650`) and **none of the 49 member tables carries it** -- their 49 slot-0 values are 36 distinct
+bodies -- so a member table is not a class's dispatch table by its contents, not only by its store's form.
+**292 slots resolve to 115 distinct bodies: 111 are stubs of 8 bytes or less, 24 are `__purecall`, 82 land
+on bodies the function map does not cover and only 12 carry a real name**, so the methods of these
+interfaces are mostly the compiler's default implementation. **25 of the 49 fall into 7 families**, and the
+widest is the one the interface's slots describe: the 22-slot table `0x004c7860` -- written at `[reg]` by 21
+bodies no class names, and at `[+0xb8]` by `LinkerLoad`, `LinkerSave`, `LinkerLoadGame` and `LinkerSaveGame`,
+whose four tables differ from it in 8 or 10 slots but whose **Load pair and Save pair each differ from their
+sibling at exactly one slot (0)**. The 8-slot family `0x004fc35c` (6 tables, `DemoPlayPendingLevel`,
+`Level`, `NetPendingLevel`) is a **four-rung implementation ladder**: 8, 7, 6 and 0 `__purecall` slots, each
+rung implementing exactly the slots the one below leaves abstract, and the implemented slots resolve to
+`6=Engine_UnPenLev` and `7=FUN_0015ce70`. `PackageMapLevel`, `TcpipConnection`, `TcpipConnectionXbox` and
+`DemoRecConnection` embed the *same* one- and two-slot tables at `[+0x2c]` and `[+0x28]`. So the 269 gap
+bodies that sit in a member table's slot are an interface object's methods: they are named from the member
+(the owner class and the field offset, both known) and never as a class's virtual method.
+
 **What would settle the rest.** For the 175 plain-only tables written at `[reg]` the class is the class
 whose constructor the store body is, so that body has to be named -- from a registration literal, a
 shipped `.u` class with that constructor, or the class record's constructor field -- one body at a time.
