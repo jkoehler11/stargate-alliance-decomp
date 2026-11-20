@@ -1178,3 +1178,29 @@ blocks above and on `docs/systems/CLASS_REGISTRATION.md`, `docs/STATUS.md` and t
 **Next measurement:** the 18 that remain need a name the stores do not carry —
 `tools/xemu/class-tables-live.py` on a level with the renderer and net-driver packages loaded (one
 boot; U8's runtime route), or an engine-side class list.
+
+## The audio slot's receivers, typed (2026-11-20)
+
+U8's instrument reads a displacement's register; the audio module's census already lists its own sites, so
+`tools/vcall-receiver.py --from-census inventory/xboxaudio_chain.csv --census-kind slot31` writes
+`inventory/audio_slot_receivers.csv` (115 rows: 106 calls, 9 pattern hits inside another instruction) without a
+second decoder. `tools/audio-slot-typing.py` then joins each row to the class tables read out of the image
+(`inventory/audio_slot_typing.csv`):
+
+| measurement | value |
+|---|---|
+| `call [reg+0x7c]` sites in `.text` | 115 |
+| of those, real calls (two decoders agree) | **106** |
+| receiver is the function's own `this` (typed through the holder's table) | **24** |
+| of those, the holder's slot 31 is the device body | **0** |
+| tables long enough to have a slot 31 | 403 of 492 |
+| distinct pointers in slot 31 across them | 112 |
+| tables installing the device body (`0x0002fd70`) anywhere | **1** (`XBoxAudioSubsystem`, slot 31) |
+| tables installing the pump body (`0x0002feb0`) anywhere | **1** (same table, slot 34) |
+
+The control is the base class: `AudioSubsystem`'s own table installs `0x000e3e30` at slot 31 and
+`Engine_UnAudio` at slot 34, so both slots are overridden by the fork rather than inherited, and a dispatch
+through an `AudioSubsystem` vtable reaches the fork's device. What types the *field* is the script:
+`inventory/audio_owner_declarations.csv` records the three subsystem-typed variables in the 2,319 class texts of
+the 18 packages, all in `Engine` (`Audio : audiosubsystem`, `GS : GSSubsystem`, `Voice : voicesubsystem`). The
+offsets those variables live at are not in the packages, which is why the 31 field-origin sites stay untyped.

@@ -322,7 +322,44 @@ is engine code and the receiver's type at those 17 is still open (U34). The call
 themselves are counted: 11 sites, in `inventory/xdk_entry_callers.csv`, and every one of them is either a
 voice mode or a virtual of `XBoxAudioSubsystem`.
 
-## What this means for the rebuild
+
+## The slot's receivers, typed (2026-11-20)
+
+`inventory/audio_slot_receivers.csv` reads the register each of the 115 `call [reg+0x7c]` sites dispatches
+through with the instrument U8 built for slots 19/20 (`tools/vcall-receiver.py --from-census`), and
+`inventory/audio_slot_typing.csv` (`tools/audio-slot-typing.py`) joins each row to the class tables in the image.
+What the two artifacts say:
+
+* **106 of the 115 are calls.** Nine are byte-pattern hits inside another instruction's displacement, which the
+  two decoders agree on (`not-a-boundary`); the rest are `call DWORD PTR [reg+0x7c]` with the register's own
+  loader recorded. Origins: `this` 25, a field 31, an object head 11, a stack slot 16, a call's return 9, an
+  argument 4, an absolute global 1 and 5 the decoder could not attribute.
+* **24 sites are typed, and not one of them can be the device.** When the receiver is the function's own `this`,
+  the dispatch goes through the vtable of the class whose table holds that body, so the class is known and its
+  slot 31 can be read: every one of the 24 installs a different body. The device body is installed at **one**
+  slot entry in the whole image — `XBoxAudioSubsystem` slot 31 — and the pump at one, slot 34 of the same table.
+* **The fork overrides both slots.** `AudioSubsystem`'s own table (`0x004d1f88`, 55 slots) installs
+  `0x000e3e30` at slot 31 and `Engine_UnAudio` at slot 34, so the base class's device and pump are stock engine
+  code and `XBoxAudioSubsystem` replaces them. Slot 31 holds 112 distinct pointers over the 403 tables that are
+  long enough; the shared one-byte `ret` (`FUN_00020f00`) is there in exactly one table, `GameEngine`'s.
+* **The field is named by the script, not by a layout.** A walk of the 2,319 class texts in the 18 packages
+  (`inventory/audio_owner_declarations.csv`) finds three subsystem-typed variables in the whole corpus, all in
+  `Engine` (`Engine.u` lines 13, 17, 21): `Audio` of type `audiosubsystem`, `GS` of type `GSSubsystem` and
+  `Voice` of type `voicesubsystem`. So an `Engine` body that reads its audio pointer holds a declared
+  `AudioSubsystem`, whose run-time class in this build is `XBoxAudioSubsystem` — which is why the dispatch is
+  `+0x7c` and why the body it reaches is the fork's device, not `UEngine`'s.
+* **The `+0x88` sibling is not evidence.** 17 sites also dispatch `+0x88` from the same body, but 9 of those sit
+  in `GameEngine` bodies whose own slot 31 is the shared `ret` stub: a body dispatching two displacements is not
+  a body dispatching the audio subsystem. The sibling is worth reading only once the receiver is typed.
+
+The remaining 78 sites are untyped and the reason is the same one U8 met: the object arrives as an argument, a
+stack slot, a call's return, or a field whose offset the packages do not carry. The field group is the useful
+half — 18 of those sites sit in a body a class table names (`GameEngine` 4, `GUITabControl` 3, `Level` 3), and
+their offsets are `+0x268` (5), `+0x11c` (3), `+0x4` (3), `+0x264` (2), `+0x3c` (2), `+0x40` (2) and seven
+singletons — but which of those offsets is `Engine.Audio`'s needs the field's offset, and neither the property
+stream nor the class text carries one.
+
+
 
 1. **Speech and music are safe to rebuild** — loose WAVs plus script-only classes (except `IMusic*`'s 3
    natives).
