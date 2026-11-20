@@ -15084,3 +15084,43 @@ sequence.
 - **Not in this PR.** Which of the two `Core` registry bodies adds to a counter entry (registry code, read
   only as far as its references); the 78 untyped `[reg+0x7c]` receivers; and the four `xvoice` voice-mode
   classes behind the device poll, which are library code this module calls rather than module code.
+
+### Execution notes (2026-11-20, the voice-mode family, and the counters that are registered rather than incremented)
+
+- **Task.** The two items the audio-chain bundle listed as "not in this PR": the four `xvoice` voice-mode
+  classes behind the device poll, and which of the two `Core` registry bodies increments each of the eight
+  audio counters.
+- **The modes are read, and they are singletons with a real vtable.** Four new readings complete the family —
+  `CVoiceMailMode` 12 methods, `CLoopbackMode` 4, `CBaseMode` 4, `CInactiveMode` 1, **21 methods** on top of
+  chat's 23 — so **44** voice-mode methods are measured, each with its `xvoice.lib` object
+  (`voicemailmode.obj`, `loopbackmode.obj`, `inactivemode.obj`). `LIBRARY_READINGS` carries all four, so
+  `make native-method-notes` regenerates the set and `--check` validates 36 artifacts.
+- **One instrument reads the tables.** `tools/xvoice-modes.py` scans `.rdata` for runs of code pointers and
+  attributes a table to the class whose `ValidateSet` it installs — the one rule that separates a base table
+  from a derived one, because a table of inherited bodies would otherwise be credited to the base class. Result:
+  four **27-slot** tables at `0x00540570` / `0x005405e0` / `0x00540658` / `0x005406c8`, **34 of 108 slots
+  inherited from the inactive table's same slot**, and each table's address appearing exactly once in the image
+  — in `.data`, as the first dword of a zero-filled singleton of the mode's own size (20 / 160 / 264 bytes), so
+  the modes are statically constructed and never allocated by the engine.
+- **`DSoundInitialize` is the non-virtual one.** Declared `QAE`, it is absent from all four tables and is called
+  by each mode's own `AdditionalInitialize` (`0x00345828`, `0x00344f62`, `0x003460b2`), which is the device
+  creation path: the engine switches mode, not boot. The artifact records the pushes before each
+  `_DirectSoundCreate`: mailbox and loopback pass a null GUID and store the device at `+0x10`, chat stores at
+  `+0x24` and calls `_IDirectSound_SetMixBinHeadroom(0)` before `InitializeVoiceChatMode`.
+- **The eight counters are registrations, and the two `Core` bodies are the registry's initializers.** New
+  `tools/stat-registry.py` reads every `mov ecx,0x7b5dd8` body: `0x00253950` (10,539 B) makes **145**
+  registrations over **22 groups** (`Game` 28, `Net` 21, `StaticMesh` 15, `Karma` 10, `LIPSinc` 9, ...),
+  `0x002b0770` (4,294 B) makes **59**, all in `Hardware`, and the audio body makes **8** in `Audio`, at the
+  fields the page lists. Each registration is two wide literals, two `FString`s and a call to `0x2530f0` with
+  the handle stored in a field; **none of the three bodies performs any `add`/`inc`/`sub` on a `[reg+disp]` stat
+  field**, so the previous note's "the increment is registry code (the two `Core` bodies)" is refuted. What
+  remains is which method adds to a handle, not which `Core` body.
+- **Files.** `tools/xvoice-modes.py` (new), `tools/stat-registry.py` (new), `tools/native-method-notes.py`
+  (four readings), `Makefile` (`xvoice-modes`, `stat-registry`, help), four new `inventory/*_mode_methods.csv`,
+  `inventory/xvoice_mode_vtables.csv`, `inventory/stat_registry.csv`, `docs/systems/AUDIO.md` (the mode
+  section and the counter paragraph corrected), `docs/NATIVE_NOTES.md` (the mode subsection),
+  `docs/UNKNOWNS.md` U34, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `xvoice-modes.py --check` and `stat-registry.py --check` both run without the
+  dump and write nothing; both artifacts regenerate from the dump.
+- **Not in this PR.** Which method increments an audio handle (the registry's own math, reached with a handle);
+  the 34 inherited slot targets that stay unnamed in the map; and the 78 untyped `[reg+0x7c]` receivers.

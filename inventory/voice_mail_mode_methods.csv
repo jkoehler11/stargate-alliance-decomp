@@ -1,0 +1,13 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x00344f0d,IsCallbackScheduled,QAEHW4XHVOpCode@2@PAX@Z,52,xvoice,obj\i386\voicemailmode.obj,,,
+0x00344f41,ValidateSet,UAEJXZ,33,xvoice,obj\i386\voicemailmode.obj,CXHVEngine::GetProcessingMode,CXHVEngine,
+0x00344f62,DSoundInitialize,QAEJXZ,218,xvoice,obj\i386\voicemailmode.obj,_DirectSoundCreate; CXHVEngine::GetEffectMap; XHVNamespace::XHVSysAlloc; XHVNamespace::?0CRemoteTalker; ??_H@YGXPAXIHP6EPAX0@Z@Z; CRemoteTalker::InitializeVoiceMailMode,CRemoteTalker; CXHVEngine; XHVNamespace,
+0x0034518b,AddLocalTalker,UAEXPAVCLocalTalker@2@@Z,22,xvoice,obj\i386\voicemailmode.obj,CBaseMode::AddLocalTalker,CBaseMode,
+0x003451e2,VoiceMailPlay,UAEJPAVCLocalTalker@2@KPBEH@Z,75,xvoice,obj\i386\voicemailmode.obj,CRemoteTalker::EndPlaying; CRemoteTalker::VoiceMailPlay,CRemoteTalker,
+0x0034522d,ScheduleVoiceMailStoppedCallback,QAEXK@Z,62,xvoice,obj\i386\voicemailmode.obj,CVoiceMailMode::IsCallbackScheduled,CVoiceMailMode,
+0x0034526b,ScheduleVoiceMailDataReady,QAEXPAVCLocalTalker@2@@Z,62,xvoice,obj\i386\voicemailmode.obj,CVoiceMailMode::IsCallbackScheduled,CVoiceMailMode,
+0x003452a9,AdditionalInitialize,UAEJXZ,76,xvoice,obj\i386\voicemailmode.obj,CBaseMode::AdditionalInitialize; CVoiceMailMode::DSoundInitialize,CBaseMode; CVoiceMailMode,
+0x003452f5,ScheduleEncoding,QAEXPAVCLocalTalker@2@@Z,70,xvoice,obj\i386\voicemailmode.obj,CLocalTalker::IncrementVoiceMailDuration; CLocalTalker::VoiceMailStop; CVoiceMailMode::ScheduleVoiceMailDataReady,CLocalTalker; CVoiceMailMode,
+0x0034533b,ScheduleVoiceMailStoppedCallback,QAEXPAVCLocalTalker@2@@Z,117,xvoice,obj\i386\voicemailmode.obj,CVoiceMailMode::IsCallbackScheduled; CVoiceMailMode::ScheduleVoiceMailDataReady,CVoiceMailMode,
+0x003453e2,VoiceMailStop,UAEJPAVCLocalTalker@2@H@Z,82,xvoice,obj\i386\voicemailmode.obj,CVoiceMailMode::ScheduleVoiceMailStoppedCallback; CLocalTalker::VoiceMailStop; CRemoteTalker::VoiceMailStop,CLocalTalker; CRemoteTalker; CVoiceMailMode,
+0x00345434,ProcessFrame,UAEXXZ,81,xvoice,obj\i386\voicemailmode.obj,CLocalTalker::VoiceMailModeProcessFrame; CVoiceMailMode::ScheduleEncoding; CVoiceMailMode::ScheduleVoiceMailStoppedCallback,CLocalTalker; CVoiceMailMode,
