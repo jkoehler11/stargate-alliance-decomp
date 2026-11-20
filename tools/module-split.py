@@ -33,13 +33,40 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FUN = re.compile(r"^(FUN|sub|thunk_FUN|LAB)_([0-9a-fA-F]+)$")
 NATIVE_SLOT = re.compile(r"^Native_\d+$")
+# `<Class>_vt<slot>` names come from the gap census, and the class's own package is the module
+# evidence (`inventory/classes.csv`). Same rule, same case-insensitive package match, as
+# `tools/native-summary.py` -- the two artifacts reconcile by module, so the rules cannot drift.
+CLASS_VT = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)_vt\d+$")
 KNOWN_MODULES = {"Engine", "Core", "IpDrv", "Gui", "D3DDrv", "XboxDrv", "XboxAudio", "XboxLive",
                  "Gameplay", "Fire", "stargategame", "stargatevehicles"}
 COLUMNS = ["address", "name", "size", "module", "attributed_by", "run"]
 PLAN_COLUMNS = ["module", "functions", "asserted", "propagated", "bytes", "runs", "first", "last"]
 
 
-def load(symbols, overrides):
+def class_packages(path="inventory/classes.csv"):
+    """{class_lower: package} from the class census; absent file is an empty map, not an error."""
+    out = {}
+    if os.path.isfile(path):
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("class") and r.get("package"):
+                    out[r["class"].lower()] = r["package"]
+    return out
+
+
+def class_module(name, packages):
+    """The module a `<Class>_vt<slot>` name resolves to through its class's package, or ""."""
+    m = CLASS_VT.match(name)
+    if not m:
+        return ""
+    pkg = packages.get(m.group(1).lower(), "")
+    for module in KNOWN_MODULES:
+        if module.lower() == pkg.lower():
+            return module
+    return ""
+
+
+def load(symbols, overrides, packages=None):
     over = {}
     if overrides and os.path.isfile(overrides):
         with open(overrides, newline="", encoding="utf-8") as fh:
@@ -51,6 +78,9 @@ def load(symbols, overrides):
             prefix = name.split("_", 1)[0]
             unknown = bool(FUN.match(name))
             module, how = (prefix, "name prefix") if (not unknown and prefix in KNOWN_MODULES) else ("", "")
+            if not module:
+                module = class_module(name, packages or {})
+                how = "class package" if module else ""
             o = over.get(row["address"].lower())
             if o and o.get("module") in KNOWN_MODULES:
                 module, how = o["module"], "override"
@@ -213,6 +243,8 @@ def main():
     ap.add_argument("--attribution", default=os.path.join(ROOT, "inventory", "function_module_attribution.csv"),
                     help="the locality attribution the lists add to the assert rule ('' to use the asserts only)")
     ap.add_argument("-o", "--out", default=os.path.join(ROOT, "inventory"))
+    ap.add_argument("--classes", default=os.path.join(ROOT, "inventory", "classes.csv"),
+                    help="class -> package, for the `<Class>_vt<slot>` names' module evidence")
     ap.add_argument("--plan", help="write the per-module export plan here (the committed artifact)")
     ap.add_argument("--lists", help="directory for per-module address lists (use $WORK, never the repo)")
     ap.add_argument("--check", action="store_true")
@@ -221,7 +253,7 @@ def main():
     plan_path = args.plan or os.path.join(args.out, "module_export_plan.csv")
     if args.check:
         return check(path, args.rollup, plan_path, args.attribution)
-    rows = load(args.symbols, args.overrides)
+    rows = load(args.symbols, args.overrides, class_packages(args.classes))
     os.makedirs(args.out, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=COLUMNS, lineterminator="\n")

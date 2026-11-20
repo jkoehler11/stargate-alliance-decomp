@@ -185,19 +185,18 @@ each). **U39's second-repair residual is settled and needed no exception**: `0x0
 a single `int3` separates it from a stray three-byte `ret 4`, and the decode stops at the `int3` -- the 95 → 99
 reading walked through the pad.
 
-## The map's gaps: 537 virtual methods became rows, 172 merges split, and one block is 600 stubs
+## The map's gaps: 595 generated stubs became rows, and the split rule learned the jump table
 
-The map covered **3,445,170** of `.text`'s 4,227,324 bytes when this census started. The 537 bodies a
-class-table slot names are rows now, so it covers **3,603,373** (85.2%) and what is left is **10,475 gaps
-holding 623,951 bytes** -- 14.8% of the code section. `tools/gap-heads.py` reads them in three passes this
-section measures in order: the head rule, the split rule that ends a merged run, and the reference channels
-that decide whether a body can be named at all.
+The map covers **3,616,192** of `.text`'s 4,227,324 bytes (85.5%), so **11,070 gaps hold 611,132 bytes** --
+14.5% of the code section. `tools/gap-heads.py` reads them in three passes this section measures in order:
+the head rule, the split rule that ends a merged run, and the reference channels that decide whether a body
+can be named at all.
 
 A **head** is an address in a gap with a run of `0xCC`/`0x90` fill in front of it and one of the MSVC
 prologue shapes `native-census` classifies the 883 registration bodies with. It is a **body** when a linear
 decode from it closes on an unconditional terminator *with a tail behind it* -- the same `sweep_body` the
-registration census uses -- and an **island** when that close is one or two instructions. **2,140 heads are
-left, 2,060 of them decoding (1,850 bodies, 210 islands)**, covering **217,871 bytes** of the 623,951. The
+registration census uses -- and an **island** when that close is one or two instructions. **1,527 heads are
+left, 1,451 of them decoding (1,249 bodies, 202 islands)**, covering **205,901 bytes** of the 611,132. The
 rule is a **floor**, not a ceiling: it does not find U38's `sinh` stub, which opens `ba da d3 5c 00`
 (`mov edx,<entry>`) and not on a named prologue.
 
@@ -206,69 +205,80 @@ Three controls ride in the same run, because a count of decodes is not evidence:
 * **the null population.** The same rule over **3.3 MB** of the image's data (`.rdata` 860,876 bytes,
   `.data` 2,255,828, XNET 77,016, DSOUND 124,556) finds 233 pad-before prologue-shaped byte runs and **no
   body at all**.
-* **recall on bodies that are known to be bodies.** Over the 12,321 rows the map now places, the two tests
-  pass on **8,623 (70.0%)** and those rows decode to their declared size on **11,473 (93.1%)**.
-* **the naming channel's base rate.** A dword outside `.text` names a *random* gap byte 1.6% of the time
-  (32 of 2,000) and a map row's start **27.4%** (547 of 2,000) -- up from 24.1% before the adds, because the
-  rows this bundle added are exactly the pointer-named ones. The pointer rate below is evidence only
-  against those numbers.
+* **recall on bodies that are known to be bodies.** Over the 12,917 rows the map now places, the two tests
+  pass on **9,218 (71.4%)** and those rows decode to their declared size on **12,120 (93.8%)**.
+* **the naming channel's base rate.** A dword outside `.text` names a *random* gap byte 1.4% of the time
+  (29 of 2,000) and a map row's start **30.4%** (607 of 2,000) -- up from 27.4% before this bundle, because
+  the 595 rows it added are the pointer-named stubs. The pointer rate below is evidence only against those
+  numbers.
 
-**A terminator with code behind it is a boundary when no branch reaches that code.** The head rule used to
-walk past every such terminator, so two bodies with no fill between them read as one run: `0x00418c30` was
-**five 21-byte bodies in a 131-byte run**, and its neighbour `0x00418c45` had no row at all. The walk now
+**A terminator with code behind it is a boundary when nothing names that code -- and a `switch`'s case
+blocks are named by its jump table.** The head rule used to walk past every terminator, so two bodies with no
+fill between them read as one run: `0x00418c30` was **five 21-byte bodies in a 131-byte run**. The walk now
 reads every relative branch in the run -- `E9`, `EB`, each `jcc`, `loop`, `jcxz` and the `0F 8x` long forms --
 and splits where a terminator's successor is a strong opening (`mov r,imm32`, `push imm32`, a call, a
-prologue) that nothing in the run targets. An opening a branch *does* target stays inside the body: that is
-the `0x00046330` shape (`execEqualEqual_ObjectObject` returns early and its own `jcc` rejoins the tail), and
-**169 openings** are still that shape. **172 bodies now end at a split** rather than at a tail, and the rule
-is not specific to gaps: over the map's own 11,784 rows before the adds it finds **59 rows whose declared
-span holds a second body** (decode-to-size 10,995 -> 10,936), which is the same defect a `resize` plus an
-`add` repairs.
+prologue) that nothing in the run targets: **154 bodies now end at a split** rather than at a tail, and
+**215 openings** stay inside the body because a branch rejoins them (the `0x00046330` shape,
+`execEqualEqual_ObjectObject` returns early into its own tail). An opening a branch *does* target stays
+merged; so does one a **jump table** names.
 
-**One gap is a generated block, not missed code.** `0x004100c8`..`0x00418cc0` holds **600 bodies** in two
-compiler shapes, and the `family` column names them: **590 register-once thunks** -- `push <&item>; push
-0xff; call FUN_00046c60; add esp,8; mov <flag>,al; ret`, 466 of 21 bytes and 124 of 24, each with its own
-4-aligned `.data` item (`0x5c29e0`..`0x5c667c`, 590 distinct) and its own flag byte (590 distinct, in
-`.data`) -- and **5 `_atexit` destructor registrations** (`push <dtor>; call _atexit; pop ecx; ret`). The
-helper is a 92-byte body the map already has: it seeds 4,096 dwords at `0x6313e8` with `0x404a0` and
-refuses a second call, which is what makes the block a translation unit's static initialisation rather than
-600 unrelated functions. **It is one story with one naming rule**, and the census can say so because the
-column is measured from the instructions, not asserted.
+That second channel is this bundle's correction. A `switch` compiles to `jmp [reg*4+<table>]`, an *indirect*
+branch no relative read sees, and MSVC 2005 lays the table out inline in `.text` as consecutive absolute
+addresses: **144 such runs hold 1,510 entries**. The previous bundle applied the relative rule to the map's
+own 12,321 rows and read **59 of them as two bodies**, calling that the same defect a `resize` plus an `add`
+repairs. It is not the same defect: **348 of the 59 rows' 385 openings (90%) are entries of a `.text` jump
+table**, so those rows are `switch` dispatches and a `resize` would cut a function at its own case block. The
+rule consults the table now. Over the gap population the same channel names **0 of its 154 split heads**,
+which is what makes those splits bodies; the 13 it did name merged back (172 splits / 2,140 heads before the
+adds, 159 / 2,127 after them).
 
-**537 of the 814 bodies a table slot names are rows now.** The criterion is the evidence: the pointer has to
-land in a slot of a table whose class a registration names (`inventory/xbe_class_table_names.csv`), and the
-body has to decode to a close. That is 537 bodies over **224 classes** -- `SkeletalMeshInstance` 27,
-`VertMeshInstance` 16, `GameEngine` 15, `Canvas` 11, `DelegateProperty` 10, `D3DRenderDevice` 9 -- totalling
-**159,539 bytes** at a median of 93 (the largest is `SpriteEmitter_vt40`, 7,160 bytes), 32 of them
-one-instruction islands. Each row is named after the slot that names it, `<Class>_vt<slot>`, because that is
-the evidence and an address would not be; each carries its `xbe_overrides.csv` creation row, so a fresh
-import keeps the body. Two of the 537 are also reached by one call site each and one by a jump, and the map
-had turned none of them into a row.
+**Nine rows were still cut once the table was read, and the difference between them is the evidence.** Eight
+open on something no channel names -- no call, no jump, no pointer, no table entry -- so they stay whole:
+"nothing names it" is not evidence that it is a body. The ninth was a body: `0x0014c260` is a 3-byte `ret 4`
+that `IMusicActor`'s class table names at slot 123, and the row `0x0014c1b0` had been *extended* to 179 bytes
+by an earlier bundle whose walk ran through the row's own `ret 8` into the stub behind it. The repair resizes
+the row to 176 bytes and adds `IMusicActor_vt123`, and its evidence says that it replaces the earlier resize
+rather than quietly dropping it.
+
+**One gap is a generated block, not missed code, and it is 595 rows now.** `0x004100c8`..`0x00418cc0` holds
+**590 register-once thunks** -- `push <&item>; push 0xff; call FUN_00046c60; add esp,8; mov <flag>,al; ret`,
+466 of 21 bytes and 124 of 24, each with its own 4-aligned `.data` item (`0x5c29e0`..`0x5c667c`) and its own
+flag byte -- and **5 `_atexit` destructor registrations** (`push <dtor>; call _atexit; pop ecx; ret`). The
+helper is a 92-byte body the map already has: it seeds 4,096 dwords at `0x6313e8` with `0x404a0` and refuses
+a second call, which is what makes the block a translation unit's static initialisation rather than 600
+unrelated functions. Every one of the 595 is a row now, named from the only thing it names:
+`static_init_<item>` for the 590 (the `.data` object the thunk registers) and `dtor_<destructor>` for the 5,
+each with its `xbe_overrides.csv` creation row. They leave the census because they are rows -- 2,127 heads to
+1,527, 1,850 bodies to 1,249 -- and take the map from **15,778 to 16,374 functions** (4,177,607 to 4,190,426
+bytes of code).
 
 <!-- generated:gap-heads -->
 | measure | value |
 |---|---|
 | `.text` | `0x00011000`..`0x004190fc` (4227324 bytes) |
-| gaps between map rows / bytes they cover | 10475 / 623951 (3514 gaps under 8 bytes) |
-| heads the pad-before + prologue rule finds | 2140 |
-| ...decode to a body / are a 1-2 instruction island | 1850 / 210 |
-| ...refused (`no-close` / `undecoded`) | 36 / 44 |
-| bytes the bodies cover | 217871 (35.0% of the gap bytes) |
-| runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 169 in 111 runs |
-| bodies a split ends (a terminator no branch in the run targets) | 172 |
-| bodies in a generated family (`register-once` / `_atexit`) | 590 / 5 |
-| named by a dword outside `.text` | 969 |
+| gaps between map rows / bytes they cover | 11070 / 611132 (3516 gaps under 8 bytes) |
+| heads the pad-before + prologue rule finds | 1527 |
+| ...decode to a body / are a 1-2 instruction island | 1249 / 202 |
+| ...refused (`no-close` / `undecoded`) | 34 / 42 |
+| bytes the bodies cover | 205901 (34.0% of the gap bytes) |
+| runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 215 in 115 runs |
+| bodies a split ends (a terminator no branch in the run targets) | 154 |
+| bodies in a generated family (`register-once` / `_atexit`) | 0 / 0 |
+| named by a dword outside `.text` | 369 |
 | ...of those, in a class-table slot (277 bodies; 724 tables, 7 of them class-named) | 277 |
 | named by an `E8`/`E9` branch | 46 |
 | named by a `68` push | 651 |
-| named by any channel / by none | 1652 / 408 |
-| control: map rows passing the head rule / decoding to their size | 8623 of 12321 / 11473 |
+| named by any channel / by none | 1052 / 399 |
+| control: map rows passing the head rule / decoding to their size | 9218 of 12917 / 12120 |
+| ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | 58 / 8 |
+| ...split points that reading means / of those, entries of a `.text` jump table | 384 / 348 |
+| ...of the rows still cut, a class-table slot names the opening / nothing names it | 0 / 8 |
+| inline jump tables in `.text` (aligned runs of >=3 code addresses) / entries | 144 / 1510 |
 | control: the same rule over `.rdata`, `.data`, XNET, DSOUND (233 head-shaped runs, 3.3 MB of data) | 0 / 0 / 0 / 0 bodies |
-| base rate: a dword outside `.text` names a random gap byte / a map row's start | 32 of 2000 (1.6%) / 547 of 2000 (27.4%) |
+| base rate: a dword outside `.text` names a random gap byte / a map row's start | 29 of 2000 (1.4%) / 607 of 2000 (30.4%) |
 
 | gap | heads | bodies | first head |
 |---|---:|---:|---|
-| `0x004100c8`..`0x00418cc0` | 605 | 605 | `0x00413c40` |
 | `0x003f28b8`..`0x003f6d70` | 86 | 86 | `0x003f28b8` |
 | `0x000e031f`..`0x000e06a0` | 56 | 56 | `0x000e0320` |
 | `0x00025b3d`..`0x00025d50` | 33 | 33 | `0x00025b40` |
@@ -276,34 +286,37 @@ had turned none of them into a row.
 | `0x000dff86`..`0x000e0100` | 23 | 23 | `0x000dff90` |
 | `0x00170ab9`..`0x00170c20` | 22 | 22 | `0x00170ac0` |
 | `0x003fc208`..`0x00400340` | 19 | 19 | `0x003fc208` |
+| `0x001bd8cf`..`0x001bd9c0` | 15 | 15 | `0x001bd8d0` |
 
-277 of the 1850 bodies sit in a class-table slot; 269 of those are in the 250 tables no registration names, and 408 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+277 of the 1249 bodies sit in a class-table slot; 269 of those are in the 250 tables no registration names, and 399 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+
+The split rule does not hold on the map's own rows the way it holds on the gaps: 58 rows read as two bodies with relative branches alone, and **348 of their 384 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 154 split heads**, which is what makes the 154 splits bodies rather than case blocks.
 <!-- /generated:gap-heads -->
 
-**The census shrank by exactly what it added.** Before the adds it read 2,677 heads, 2,339 bodies, 377,410
-bytes, 1,506 named by a pointer and 408 by nothing; after them, 2,140 heads, 1,850 bodies, 217,871 bytes --
-the 537 rows left the census because they are rows now, and `--check` fails if a head is inside a map row.
-The function count moved **15,241 -> 15,778** (4,018,068 -> 4,177,607 bytes of code) and took
-`inventory/function_modules.csv` and the module split, `docs/NATIVE.md`, `docs/STATUS.md`, the README badges
-and the artifact hashes with it, which is the cascade U40 named.
-
 **What is left is what no channel names.** 277 bodies still sit in a table slot -- **269 of them in the 250
-tables no registration names**, so there is no class to build a name from -- and **408 are named by no
+tables no registration names**, so there is no class to build a name from -- and **399 are named by no
 channel at all**: nothing calls them, nothing points at them, and the map has no row for them. The pointer
-channel names 969 of 1,850, a `68` push 651, a branch 46.
+channel names 369 of 1,451, a `68` push 651, a branch 46.
 
-**One consequence, named rather than hidden.** All 537 rows land in `(other named)` in
-`inventory/function_module_attribution.csv`: the module rule keys on a name prefix it knows, and
-`<Class>_vt<slot>` is not one. The class's package (224 classes, both `Engine` and `GamePlay`) is the
-evidence that would settle it, and it is a module-attribution change, not a naming one.
+**The `<Class>_vt<slot>` names carry their class's module now, and the residue is the native classes.** 265 of
+the 538 `<Class>_vt<slot>` rows resolve to a module through the package their class is declared in
+(`inventory/classes.csv`, matched case-insensitively because the assert labels and the package names differ:
+`StargateGame` / `stargategame`): `Engine` 156, `stargategame` 40, `Gui` 24, `stargatevehicles` 17, `Fire` 16,
+`Gameplay` 10, `IpDrv` 2. The other **273** name classes -- `XboxViewport`, `XboxClient`, `TcpipConnection`,
+`XBoxAudioSubsystem`, `XHVVoiceSubsystem` -- that no shipped package declares (they live in the native
+`XboxDrv`/`IpDrv`/`XboxAudio`/`XboxLive` packages, which ship no `.u`), so `classes.csv` has no package for them
+and they stay `(other named)`. The route to those is the native class list the installer registers, not a
+naming rule.
 
 `gap-heads --check` is dump-free: it re-derives the gaps from the committed map, reconciles the census row
-against the rows it carries, requires every split to abut the row it split from, and refuses a family or a
-boundary it does not define. `--selftest` covers 15 cases (the head, the island, the refusal, the split, the
-rejoined early return, five abutting bodies, both families, the gap bounds, the census round trip and the
-marker refusal). `--emit-adds` prints the rows a population earns and `--apply-adds` writes them with their
-creation rows, refusing an address that is already a row.
-
+against the rows it carries, requires every split to abut the row it split from, refuses a family or a
+boundary it does not define, holds the map-row control's four buckets to the row count, and **refuses a cut
+row whose opening a class-table slot names** (that one has to be repaired and re-measured, not shipped).
+`--selftest` covers 18 cases (the head, the island, the refusal, the split, the rejoined early return, five
+abutting bodies, both families, the `switch`'s case blocks and the table index, the gap bounds, the census
+round trip and the marker refusal). `--emit-adds`/`--apply-adds` write a population's rows with their creation
+rows, and `--emit-repairs`/`--apply-repairs` write a cut row's `resize` + `add` pair, replacing an earlier
+resize instead of refusing it.
 
 ## Jump thunks: what each one jumps to, and the name that follows
 

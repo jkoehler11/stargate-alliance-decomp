@@ -15600,3 +15600,56 @@ sequence.
 - **Not in this bundle.** The 59 rows the split rule reads as two bodies (each needs a `resize` plus an `add`),
   the class of the 250 tables no registration names (269 bodies sit in their slots), the 408 bodies no channel
   names, the 595 generated stubs' own rows, and the module attribution of `<Class>_vt<slot>` names.
+
+### Execution notes (2026-11-20, the split rule reads the jump table, and the 595 generated stubs become rows)
+
+- **Task.** The previous note's three "not in this bundle" items from the gap thread -- the 59 rows the split
+  rule reads as two bodies, the 595 generated stubs' own rows, and the module attribution of
+  `<Class>_vt<slot>` names -- in one branch, because the first decides whether the second's rows are right and
+  the third is what the second's names need to be usable.
+- **The 59 rows were not a two-body defect, and the rule was missing a channel.** A `switch` compiles to
+  `jmp [reg*4+<table>]` and MSVC 2005 puts the table inline in `.text` as consecutive absolute addresses, so
+  the case blocks behind a dispatch are reached by a branch `branch_target` cannot read -- every one looks like
+  "a terminator whose successor nothing targets". Indexing the tables (**144 runs, 1,510 entries**, aligned
+  runs of three or more addresses into `.text`) and treating an opening they name as a case block of the body
+  above it: of the 59 rows' **385** split points, **348 (90%) are table entries**. The 59 are one body each;
+  a `resize` would have cut 50 functions at their own case blocks. The channel also merged **13** gap split
+  heads back (172 -> 159 splits, 2,140 -> 2,127 heads) and names **0** of the remaining 154, which is what
+  keeps the two populations different rather than a matter of taste.
+- **Nine rows were still cut, and the difference between them is the evidence.** Eight open on something no
+  channel names (no call, jump, pointer or table entry) and stay whole. The ninth, `0x0014c260`, is a 3-byte
+  `ret 4` that `IMusicActor`'s class table names at slot 123, and the row `0x0014c1b0` had been *extended* to
+  179 bytes by an earlier bundle whose walk ran through the row's own `ret 8` into the stub behind it. The
+  repair resizes the row to **176** and adds `IMusicActor_vt123`, and `--apply-repairs` **replaces** the earlier
+  resize with an evidence sentence that says so instead of quietly dropping the row.
+- **The 595 generated stubs are rows now.** `family_item` is a measured column: the `.data` object a
+  register-once thunk registers (`0x5c29e0`..`0x5c667c`, 590 distinct) or the destructor an `_atexit`
+  registration installs. The names follow from the only thing each body names -- `static_init_<item>` (590) and
+  `dtor_<destructor>` (5) -- and each carries its `xbe_overrides.csv` creation row. The map goes **15,778 ->
+  16,374 functions** (4,177,607 -> 4,190,426 bytes), and the census shrinks by exactly what the adds took:
+  **2,127 -> 1,527 heads / 1,850 -> 1,249 bodies / 217,871 -> 205,901 bytes**. The pointer channel's base rate
+  over a map row's start moves 27.4% -> 30.4%, which is the adds showing up in the control that judges them.
+- **265 of the 538 `<Class>_vt<slot>` rows carry their class's module** through `inventory/classes.csv`, matched
+  case-insensitively because the assert labels and package names differ (`stargategame` / `StargateGame`):
+  `Engine` 156, `stargategame` 40, `Gui` 24, `stargatevehicles` 17, `Fire` 16, `Gameplay` 10, `IpDrv` 2. The
+  rule lives in `tools/module-split.py` *and* `tools/native-summary.py` with the same code, because those two
+  artifacts reconcile per module -- `module-split --check` would catch a drift. The other **273** name classes
+  (`XboxViewport`, `XboxClient`, `TcpipConnection`, `XBoxAudioSubsystem`) that no shipped package declares; the
+  native packages' class list is the route, and it is named in U40 rather than guessed at.
+- **Files.** `tools/gap-heads.py` (`text_tables` and the table channel in `walk`/`scan`, the map-row control
+  with its four buckets, `split_points`, `row_slot`, `row_repairs`, `--emit-repairs`/`--apply-repairs`,
+  `family_of` returning `(family, item)` with the `family_item` column, the family names, five new `--check`
+  invariants, three new selftest cases), `inventory/gap_heads.csv`, `symbols/xbe_boundaries.csv` (+1 resize
+  replaced, +1 add, +595 adds), `symbols/xbe_overrides.csv` (+596 creation rows),
+  `symbols/xbox_functions.csv`, `symbols/xbox.map`, `symbols/xbox.sym.s`, `tools/module-split.py`,
+  `tools/native-summary.py`, `docs/SYMBOLS.md` (the section rewritten, the block regenerated),
+  `docs/UNKNOWNS.md` (U40 rewritten), `docs/NATIVE.md`, `docs/STATUS.md`, `README.md`, `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, `inventory/function_modules.csv`, `inventory/module_export_plan.csv`,
+  `inventory/function_module_attribution.csv`, `inventory/xbe_functions_by_module.csv`, this note.
+- **Gates.** `make ci` green; `gap-heads --check` holds the map-row control's buckets to the row count, refuses
+  a cut row whose opening a class-table slot names, and refuses a repair row that is not a class-table name;
+  `--check-doc` matches; `--selftest` 18 assertions; `symbol-boundaries --check` proves the 596 new rows and the
+  replaced resize overlap nothing and carry their creation rows.
+- **Not in this bundle.** The 8 rows nothing names (they stay whole, and no channel says otherwise), the class
+  of the 250 tables no registration names (269 bodies sit in their slots), the 399 bodies no channel names, and
+  the native packages' class list that would attribute the remaining 273 `<Class>_vt<slot>` rows.

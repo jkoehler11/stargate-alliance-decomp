@@ -5571,35 +5571,46 @@ stopped at 677. Nothing in the image calls it -- no `E8`, no dword reference at 
 creation row, both printed by `native-census --gap-add 0x002b7aa0 --name FUN_002b7aa0`.
 
 
-## U40. The map's `.text` gaps hold 2,060 decodable bodies, and 408 of them nothing names
+## U40. The map's `.text` gaps hold 1,451 decodable bodies, and 399 of them nothing names
 
 **Observed.** `tools/gap-heads.py` (`inventory/gap_heads.csv`) censuses every gap in
-`symbols/xbox_functions.csv`'s coverage of `.text`. After this bundle's adds the gaps are **10,475 holding
-623,951 bytes** (14.8% of the section) and the rule finds **2,140 heads, 2,060 decoding (1,850 bodies, 210
-islands)** covering 217,871 bytes. The controls are in the same artifact: the same rule finds **0 bodies** in
-3.3 MB of data sections, passes on 8,623 of the map's own 12,321 rows (70.0%), and the pointer channel's base
-rate is 1.6% for a random gap byte against 27.4% for a map row's start, so it is a floor. A dword outside
-`.text` names **969** of them, **277** in a class-table slot (269 of those in the 250 tables no registration
-names), a `68` push 651, a branch 46; **408** are named by nothing.
+`symbols/xbox_functions.csv`'s coverage of `.text`. After this bundle's 595 adds the gaps are **11,070
+holding 611,132 bytes** (14.5% of the section) and the rule finds **1,527 heads, 1,451 decoding (1,249
+bodies, 202 islands)** covering 205,901 bytes. The controls are in the same artifact: the same rule finds
+**0 bodies** in 3.3 MB of data sections, passes on 9,218 of the map's own 12,917 rows (71.4%), and the
+pointer channel's base rate is 1.4% for a random gap byte against 30.4% for a map row's start, so it is a
+floor. A dword outside `.text` names **369** of them, **277** in a class-table slot (269 of those in the
+250 tables no registration names), a `68` push 651, a branch 46; **399** are named by nothing.
 
-**Answered since the first entry (2026-11-20).** Both blockers the entry named are settled in the bundle that
-follows it. *The fill-less boundary*: a run now reads its own relative branches, so a terminator whose
-successor no branch targets is a boundary -- **172 bodies end at a split**, 169 openings stay merged because
-a branch rejoins them (the `0x00046330` shape), and `0x00418c30` resolves from one 131-byte run into five
-21-byte bodies. The same rule finds **59 of the map's own rows holding a second body** (decode-to-size
-10,995 -> 10,936 over 11,784 rows). *The 600-body block*: the `family` column names it -- **590 register-once
-thunks** with one `.data` item and one flag byte each, and **5 `_atexit` destructor registrations** -- so it is
-one translation unit's static initialisation and gets one naming rule, not 600 bodies of evidence. *The adds*:
-**537 of the 814 slot-named bodies became rows** (`<Class>_vt<slot>`, 224 classes, 159,539 bytes, each with its
-creation row), taking the map from 15,241 to 15,778 functions and the cascade with it.
+**Answered since the first entry (2026-11-20).** *The fill-less boundary*: a run reads its own relative
+branches, so a terminator whose successor no branch targets is a boundary -- **154 bodies end at a split**
+and 215 openings stay merged because a branch rejoins them. *The split rule needed the jump table*: a
+`switch` reaches its case blocks through `jmp [reg*4+<table>]`, which no relative read sees, and the table is
+inline in `.text` as consecutive addresses (**144 runs, 1,510 entries**). Over the map's own rows the relative
+rule read **59 rows as two bodies**, and **348 of their 385 openings (90%) are table entries** -- so the
+previous entry's "a `resize` plus an `add` repairs them" was wrong for 58 of the 59: they are one body each,
+and a `resize` would cut a function at its own case block. The same channel names **0 of the gap population's
+154 split heads**, which is what makes those splits bodies; the 13 it did name merged back (172 -> 159 splits
+before the adds). Of the 9 rows still cut once the table is read, **8 open on something nothing names** and
+stay whole; the ninth, `0x0014c260`, is a 3-byte `ret 4` that `IMusicActor`'s table names at slot 123, and the
+row was resized around it (`IMusicActor_vt123`), replacing an earlier resize that had extended the row to 179
+bytes through its own `ret 8`. *The 600-body block*: `family` names it -- 590 register-once thunks and 5
+`_atexit` registrations -- and **all 595 are rows now**, named `static_init_<item>` / `dtor_<destructor>` from
+the only thing each names. *The adds*: 537 slot-named bodies plus these 595 take the map from 15,241 to
+**16,374 functions**. *The module attribution*: 265 of the 538 `<Class>_vt<slot>` rows now carry their class's
+module (`Engine` 156, `stargategame` 40, `Gui` 24, ...) through `inventory/classes.csv`; the other 273 name
+classes no shipped package declares.
 
 **Why it matters.** U38's `sinh` stub is one member of what is left, and its "no `E8`/`E9` and no dword names
-it" is the shape of the 408, not an exception. 277 of the bodies sit in a table slot the map still has no row
+it" is the shape of the 399, not an exception. 277 of the bodies sit in a table slot the map still has no row
 for, and 269 of those are in tables no registration names -- so a debugger cannot break on them and no name
-can be built for them yet.
+can be built for them yet. The reading rules themselves are now measured rather than assumed: a boundary
+needs a channel that does *not* name it, and the channels include the `.text` jump tables.
 
-**What would settle it.** For the 59 two-body rows, a `resize` plus an `add` per row from the split rule the
-same tool now measures. For the 269 bodies in unnamed tables, the class of each of the 250 tables (the
-installer's own call sites are the route `class-table-parents` uses). For the 408, a naming channel that is
-not a pointer or a call -- their literals, or the CRT/XDK signature the block around them matches -- which is
-one body at a time, not a census.
+**What would settle it.** For the 269 bodies in unnamed tables, the class of each of the 250 tables (the
+installer's own call sites are the route `class-table-parents` uses). For the 273 `<Class>_vt<slot>` rows still
+unattributed, the native package each class belongs to (`XboxViewport`, `XboxClient`, `TcpipConnection`,
+`XBoxAudioSubsystem` live in the native `XboxDrv`/`IpDrv`/`XboxAudio` packages, which ship no `.u`, so
+`classes.csv` has no package for them) -- the installer's class-registration list is the route. For the 399,
+a naming channel that is not a pointer, a call or a table: their literals, or the CRT/XDK signature the block
+around them matches -- one body at a time, not a census.

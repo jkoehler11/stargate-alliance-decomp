@@ -753,15 +753,27 @@ def check(args):
     # The repair file and this census cannot drift apart: a row that falls outside every function is an
     # `add` symbols/xbe_boundaries.csv has not written, and a row whose decode closes past its declared
     # size is a `resize` it has not written. Both are visible in the committed table, so this needs no dump.
-    drift = []
+    drift, split = [], 0
+    row_starts = set(starts)
     for r in rows:
         if r["census"] == "outside":
             drift.append("%s falls outside every row -- the repair file has no add" % r["body_va"])
         elif r["sweep"] and int(r["sweep"]) > declared[int(r["body_va"], 16)]:
-            drift.append("%s decodes to %s bytes on a declared %d -- the repair file has no resize"
-                         % (r["body_va"], r["sweep"], declared[int(r["body_va"], 16)]))
+            # A sweep that runs past the row's end into a body that *starts exactly there* is not a row
+            # that stops short: the walk went through the row's own terminator into the neighbour, which
+            # is the case `gap-heads`' split rule resolves with an `add` (0x0014c1b0 / IMusicActor_vt123).
+            # A resize is the missing repair only when nothing begins where the row ends.
+            end = int(r["body_va"], 16) + declared[int(r["body_va"], 16)]
+            if end in row_starts:
+                split += 1
+            else:
+                drift.append("%s decodes to %s bytes on a declared %d -- the repair file has no resize"
+                             % (r["body_va"], r["sweep"], declared[int(r["body_va"], 16)]))
     if drift:
         sys.exit("native-census: --check: " + "; ".join(drift[:6]))
+    if split:
+        print("ok   native-census: %d sweep(s) run into a body that begins exactly at the row's end (the "
+              "split rule's case, not a missing resize)" % split)
     census = collections.Counter(r["census"] for r in rows)
     verdict = collections.Counter(r["disassembler"] for r in rows if r["census"] == "outside")
     swept = collections.Counter()
