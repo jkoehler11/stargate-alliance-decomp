@@ -1505,14 +1505,16 @@ native-class-packages:
 # in, CSV out -- no dump.
 class-table-installers:
 	@$(PYTHON) tools/class-table-installers.py -o inventory
-	@$(PYTHON) tools/class-table-installers.py --write-doc docs/systems/CLASS_REGISTRATION.md
+	@$(PYTHON) tools/class-table-installers.py --write-doc
 
 # Where the 250's stores write: the object's own slot, a member field, a stack slot or a global (U40).
 # Reads the image for the store operands; CSV and page block out.
 class-table-store-fields:
 	@$(PYTHON) tools/class-table-store-fields.py \
 	    --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
-	@$(PYTHON) tools/class-table-store-fields.py --write-doc docs/systems/CLASS_REGISTRATION.md
+	@$(PYTHON) tools/class-table-store-fields.py \
+	    --xbe "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" \
+	    --write-doc docs/systems/CLASS_REGISTRATION.md
 
 # What the member tables hold: the slots of the 49 tables a class ctor writes into a member field.
 # Reads the image for the table contents; CSV and page block out.

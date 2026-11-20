@@ -1,5 +1,5 @@
 table_va,slots,installers,named_bodies,bound,family,verdict,evidence
-0x004c7800,21,4,,,,plain-only,"plain 4; stores by 4 bodies (Core_UnObjBas, FUN_000191d0, FUN_00027c10, FUN_0002a1b0); shared family - (0)"
+0x004c7800,21,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00027c10, FUN_0002a1b0); shared family - (0)"
 0x004c7854,2,3,FUN_000669e0|ctor_ControlChannel,at-least-TextBuffer,,at-least,"ctor 1, installer 1, plain 1; stores by 3 bodies (FUN_000669e0, FUN_001be140, ctor_ControlChannel); shared family - (0)"
 0x004c7860,22,36,FUN_00052870|FUN_00053190|ctor_LinkerLoad|ctor_LinkerSave|dtor_LinkerLoad|dtor_LinkerSave,at-least-LinkerLoad,,at-least,"ctor 4, installer 2, plain 30; stores by 36 bodies (Core_UnClass, Core_UnClass, Core_UnClass, Core_UnObj); shared family - (0)"
 0x004c78b8,1,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00017050); shared family - (0)
@@ -38,8 +38,8 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004d0de8,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00026b50, FUN_00026cd0); shared family - (0)"
 0x004d0ec8,21,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00027c10, FUN_0002a1b0); shared family - (0)"
 0x004d1430,2,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0002bff0, FUN_0002c2a0, FUN_0002c3b0); shared family - (0)"
-0x004d1438,2,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0002c340, FUN_0002c3b0, FUN_003e547f); shared family - (0)"
-0x004d1468,35,3,,,,plain-only,"plain 3; stores by 3 bodies (Core_UnClass, FUN_0002c8a0, FUN_00038d70); shared family -"
+0x004d1438,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0002c340, FUN_003e547f); shared family - (0)"
+0x004d1468,35,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0002c8a0, FUN_00038d70); shared family -"
 0x004d17a8,53,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_00031830, FUN_0007b0c0, FUN_0007b0f0); shared family -"
 0x004d2400,37,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000321f0); shared family -
 0x004d2abc,6,2,ctor_XHVVoiceSubsystem|dtor_XHVVoiceSubsystem,at-least-XHVVoiceSubsystem,,at-least,"ctor 2; stores by 2 bodies (ctor_XHVVoiceSubsystem, dtor_XHVVoiceSubsystem); shared family - (0)"
@@ -69,11 +69,11 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004e3520,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0008b280); shared family - (0)
 0x004eaea8,47,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000bd030); shared family -
 0x004eaf68,62,1,ctor_NullRenderDevice,at-least-NullRenderDevice,,at-least,ctor 1; stores by 1 bod (ctor_NullRenderDevice); shared family - (0)
-0x004eb914,12,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_000c1ae0, FUN_000c37b0, FUN_00186c60); shared family - (0)"
+0x004eb914,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000c37b0, FUN_00186c60); shared family - (0)"
 0x004ebb00,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000c3650, FUN_000c37b0); shared family - (0)"
-0x004ebf54,6,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_000dbdf0, FUN_00309ef0, Gui_UnUIXInteraction); shared family - (0)"
+0x004ebf54,6,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000dbdf0, Gui_UnUIXInteraction); shared family - (0)"
 0x004f7070,12,1,,,,plain-only,plain 1; stores by 1 bod (AudioSubsystem_vt36); shared family - (0)
-0x004f70a0,2,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000e1630); shared family - (0)
+0x004f70a0,2,0,,,,no-store,no store; stores by 0 bodies (-); shared family - (0)
 0x004f7690,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000ea6a0); shared family - (0)
 0x004f7868,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000eab70, FUN_0010d370); shared family - (0)"
 0x004fa390,37,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00107d60, FUN_00108010); shared family -"
@@ -97,12 +97,12 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x00510e90,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00179990); shared family - (0)
 0x00510eb8,18,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00179a10); shared family - (0)
 0x00510f00,16,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00179ab0, FUN_001ea3a0); shared family - (0)"
-0x00510f78,18,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0017a780, FUN_001ea3a0); shared family - (0)"
-0x00511380,12,4,dtor_Movie,at-least-Movie,,at-least,"ctor 1, plain 3; stores by 4 bodies (FUN_0017c5f0, FUN_0017c650, FUN_0017cd20, dtor_Movie); shared family - (0)"
+0x00510f78,18,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0017a780); shared family - (0)
+0x00511380,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0017c650, FUN_0017cd20); shared family - (0)"
 0x005113b0,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0017c650, FUN_0017cd90); shared family - (0)"
 0x005124a4,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00186740, FUN_00186c60); shared family - (0)"
 0x005139f4,8,3,FUN_001a57f0|ctor_NetPendingLevel|dtor_NetPendingLevel,at-least-NetPendingLevel,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_001a57f0, ctor_NetPendingLevel, dtor_NetPendingLevel); shared family - (0)"
-0x00516fa8,10,6,,,,plain-only,"plain 6; stores by 6 bodies (FUN_001d3ec0, FUN_001d3f70, FUN_001d4070, FUN_001d4cf0); shared family - (0)"
+0x00516fa8,10,5,,,,plain-only,"plain 5; stores by 5 bodies (FUN_001d3f70, FUN_001d4070, FUN_001d4cf0, FUN_001d4d10); shared family - (0)"
 0x00516fd4,14,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001d47f0, FUN_001d48b0); shared family - (0)"
 0x0051700c,14,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001d5050); shared family - (0)
 0x00517044,14,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001d50d0); shared family - (0)
@@ -115,7 +115,7 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x00517238,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001df140); shared family - (0)
 0x0051724c,5,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001de030, FUN_001df420); shared family - (0)"
 0x00517260,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001de090); shared family - (0)
-0x005172ec,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001df420); shared family - (0)
+0x005172ec,5,0,,,,no-store,no store; stores by 0 bodies (-); shared family - (0)
 0x00517428,2,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001e2110); shared family - (0)
 0x00517430,5,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001dfde0, FUN_001e1140); shared family - (0)"
 0x00517444,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001dfe60); shared family - (0)
@@ -136,11 +136,11 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x00518160,9,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_001f7050, FUN_001f70c0, FUN_001f76b0); shared family - (0)"
 0x00518184,9,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001f7120, FUN_001f75c0); shared family - (0)"
 0x005181a8,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001f7620); shared family - (0)
-0x005181d0,3,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001f8090, FUN_002004c0); shared family - (0)"
+0x005181d0,3,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002004c0); shared family - (0)
 0x005181dc,3,0,,,,no-store,no store; stores by 0 bodies (-); shared family - (0)
 0x0051a27c,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021aa80); shared family - (0)
 0x0051a3c4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021ab90); shared family - (0)
-0x0051a810,61,3,,,,plain-only,"plain 3; stores by 3 bodies (Engine_UnShadowProjector, FUN_0021e478, FUN_0021ed80); shared family - (0)"
+0x0051a810,61,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0021e478, FUN_0021ed80); shared family - (0)"
 0x0051a9e4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021ee40); shared family - (0)
 0x0051b0cc,6,5,,,,plain-only,"plain 5; stores by 5 bodies (Core_UnTemplate, FUN_00238020, FUN_0023a8f0, FUN_0023c110); shared family - (0)"
 0x0051b0e4,6,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0023a8f0); shared family - (0)

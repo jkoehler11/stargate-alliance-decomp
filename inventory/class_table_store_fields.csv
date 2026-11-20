@@ -404,7 +404,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x00510fc8,39,Model,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
 0x005110c8,125,Mover,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x00511308,30,Movie,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x00511380,12,,bounded,4,4,,0,0,0,,vtable-slot,4 store site(s): slot=4
+0x00511380,12,,plain-only,4,4,,0,0,0,,vtable-slot,4 store site(s): slot=4
 0x005113b0,12,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x00511538,59,MovieTexture,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x005124a4,12,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2

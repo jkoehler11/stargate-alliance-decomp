@@ -32,6 +32,11 @@ already proposes the six names the tree can carry, and inventing the rest is the
     tools/class-table-installers.py --check         # synthetic, no dump, writes nothing
 
 CSV in, CSV out: the population is committed, so this needs no dump and no boot.
+
+**The symbol map's `size` column is a byte count in decimal, not hex.** Read as hex, a 66-byte body
+becomes 0x66 = 102 and a 407-byte body 0x407 = 1,031, so the previous body's span runs past its own end
+and a store site in the next body is credited to it: the census counted installers that are the body
+next door. The selftest's fourth table pins it -- a site past a short body's decimal end is nobody's.
 """
 import argparse
 import bisect
@@ -65,7 +70,7 @@ def body_index(path):
     for r in read(path):
         try:
             a = int(r["address"], 16)
-            s = int(r["size"] or "0", 16)
+            s = int(r["size"] or "0")                # the map's size column is a byte count in DECIMAL
         except (KeyError, ValueError):
             continue
         out.append((a, a + s if s else a, r.get("name", "")))
@@ -224,25 +229,29 @@ def selftest():
         ["0x6000", "2", "", "0x3010"],            # stored only by a plain body
         ["0x7000", "2", "Known", "0x1010"],       # already named: not this population
         ["0x8000", "1", "", ""],                  # no store at all
+        ["0x9000", "1", "", "0x400e"],            # past the decimal end of the body at 0x4000
     ])
     wr("shared.csv", ["table_va", "best_class", "family"], [["0x5000", "Object", "prefix"]])
     wr("names.csv", ["table_va", "class"], [["0x7000", "Known"]])
     wr("ctors.csv", ["function_va", "function_name", "class", "form", "table_va"], [
         ["0x1000", "ctor_Foo", "Foo", "ctor", "0x9fff"],])
     wr("map.csv", ["address", "name", "size"], [
-        ["0x1000", "ctor_Foo", "0x100"], ["0x2000", "FUN_00002000", "0x100"],
-        ["0x3000", "FUN_00003000", "0x100"], ["0x9000", "FUN_00009000", "0x1000"]])
+        ["0x1000", "ctor_Foo", "256"], ["0x2000", "FUN_00002000", "256"],
+        ["0x3000", "FUN_00003000", "256"], ["0x9000", "FUN_00009000", "4096"],
+        ["0x4000", "FUN_00004000", "10"], ["0x4010", "FUN_00004010", "100"]])
     rows = build(os.path.join(d, "reach.csv"), os.path.join(d, "shared.csv"),
                  os.path.join(d, "names.csv"), os.path.join(d, "ctors.csv"), os.path.join(d, "map.csv"))
     by = {r["table_va"]: r for r in rows}
     cases = [
-        ("a named table is not in the population", "0x7000" not in by and len(rows) == 3),
+        ("a named table is not in the population", "0x7000" not in by and len(rows) == 4),
         ("a constructor's store bounds the table to an ancestor, and does not name it",
          by["0x5000"]["verdict"] == "at-least" and by["0x5000"]["bound"] == "at-least-Foo"
          and by["0x5000"]["family"] == "Object"),
         ("a body no class names leaves the table unbounded", by["0x6000"]["verdict"] == "plain-only"
          and by["0x6000"]["bound"] == ""),
         ("a table with no store is its own verdict", by["0x8000"]["verdict"] == "no-store"),
+        ("a site past a short body's decimal end belongs to no body",
+         by["0x9000"]["verdict"] == "no-store" and int(by["0x9000"]["installers"]) == 0),
     ]
     bad = [n for n, ok in cases if not ok]
     for n, ok in cases:
@@ -271,8 +280,8 @@ def main():
         return 0
     summary(rows)
     if args.out_dir:
-        os.makedirs(os.path.join(args.out_dir, "inventory"), exist_ok=True)
-        write_csv(os.path.join(args.out_dir, OUT), rows)
+        os.makedirs(args.out_dir, exist_ok=True)
+        write_csv(os.path.join(args.out_dir, os.path.basename(OUT)), rows)
     return 0
 
 

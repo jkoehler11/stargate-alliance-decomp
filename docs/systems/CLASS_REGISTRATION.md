@@ -402,7 +402,7 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 **40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 106 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 0 calls from no map body at all; 2 bodies have no inbound edge.
 <!-- /generated:class-orphan-tables -->
 
-## The 250 tables no registration reaches: 39 a constructor bounds, 209 only unnamed bodies store
+## The 250 tables no registration reaches: 38 a constructor bounds, 208 only unnamed bodies store
 
 `docs/UNKNOWNS.md` U40 counts 277 gap bodies a class-table slot names and 269 of them in tables nothing
 registers. The full population is **250**: the 232 tables `inventory/native_vtable_shared.csv` pairs with
@@ -413,20 +413,25 @@ call site is the route the entry names, and `tools/class-table-installers.py` wa
 **A constructor's store bounds a table; it does not name one.** A constructor installs its parent's table
 before its own (this page's `base-store-ancestor` rule), so a table a single `ctor_FireTexture` stores is
 one of `FireTexture`'s **ancestors'** tables -- the table is at least as deep as that class and never the
-class itself. 39 tables carry that bound; the other 209 are stored only by bodies no class names, and 2 by
-no store at all. So the U40 route answers the *reachability* half of its question and not the naming half,
+class itself. 38 tables carry that bound; the other 208 are stored only by bodies no class names, and 4 by
+no store at all. The symbol map's `size` column is a **byte count in decimal**, and this census read it as hex
+until 2026-11-20: a short body's span then ran past its own end and the store of the body next door was
+credited to it, which is where the 39/209/2 this section used to quote came from. Read at the right base the
+same rule moves 12 rows' installer sets and three verdicts, and every mangled C++ name the evidence carried
+(the UIX screen constructors, `Core_UnObjBas`, `dtor_Movie`) disappears -- none of the 250 is installed by a
+body with a C++ symbol. So the U40 route answers the *reachability* half of its question and not the naming half,
 which is why no name is written from it: the six names the tree can carry are already proposed on this
 page's own join.
 
 <!-- generated:class-table-installers -->
 | the tables no name reaches | tables |
 | --- | --- |
-| stored by a class constructor (so an ancestor of that class) | 39 |
-| stored only by bodies no class names | 209 |
-| stored by nothing | 2 |
+| stored by a class constructor (so an ancestor of that class) | 38 |
+| stored only by bodies no class names | 208 |
+| stored by nothing | 4 |
 | **total** | **250** |
 
-The constructor-stored tables carry a bound, not a name: 25 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
+The constructor-stored tables carry a bound, not a name: 24 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
 
 | class whose constructor stores it | tables it bounds |
 | --- | --- |
@@ -452,12 +457,11 @@ The constructor-stored tables carry a bound, not a name: 25 distinct classes, an
 | `Engine` | 1 |
 | `Input` | 1 |
 | `Level` | 1 |
-| `Movie` | 1 |
 | `NetPendingLevel` | 1 |
 | `D3DRenderDevice` | 1 |
 <!-- /generated:class-table-installers -->
 
-## Where the 250's stores write: a class table is `[reg]`, and 36 of the 39 are a member's table
+## Where the 250's stores write: a class table is `[reg]`, and 36 of the 38 are a member's table
 
 `tools/class-table-installers.py` calls every `mov [reg(+disp)], <imm32>` an install, which is what the
 store is and not what it writes: the previous section's populations are populations of *stores*, and the
@@ -471,8 +475,8 @@ class whose constructor writes it.
 | population | tables | object slot | slot and member | member only | frame only | global only | no `C7` store |
 |---|---|---|---|---|---|---|---|
 | named by the registration path (control) | 474 | 474 | -- | -- | -- | -- | -- |
-| nameless: a class ctor stores it | 39 | 3 | 9 | 27 | -- | -- | -- |
-| nameless: only bodies no class names store it | 211 | 175 | 2 | 11 | 20 | -- | 3 |
+| nameless: a class ctor stores it | 38 | 2 | 9 | 27 | -- | -- | -- |
+| nameless: only bodies no class names store it | 212 | 176 | 2 | 11 | 20 | -- | 3 |
 
 **The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled and installed nowhere, and 3 into nothing a `C7 /0` store carries.
 
@@ -480,7 +484,7 @@ class whose constructor writes it.
 
 **38 of the 49 member tables have a class whose own constructor stores the field** (SkeletalMesh (5), ControlChannel (2), TextBuffer (2), XboxViewport (2), PackageMapLevel (2), TcpipConnection (2)), so the member's owner is known even though the table's class is not: these are `<Class>`'s field, and the name the map lacks is the member's, not a class's.
 
-**What this settles for U40.** 36 of the 39 tables a class constructor stores are member tables (27 only a member, 9 the object slot as well), so the `at-least-<base>` bound those tables carry is a bound on the *owner* of a member, not on a class's dispatch table; the reading that a ctor's table is its own or its base's holds only for the 3 that write `[reg]` at all. And 175 of the 211 plain-only tables are written into the object slot by a body no class names, which is the shape of a constructor the map has not named rather than of a table nothing installs.
+**What this settles for U40.** 36 of the 38 tables a class constructor stores are member tables (27 only a member, 9 the object slot as well), so the `at-least-<base>` bound those tables carry is a bound on the *owner* of a member, not on a class's dispatch table; the reading that a ctor's table is its own or its base's holds only for the 2 that write `[reg]` at all. And 176 of the 212 plain-only tables are written into the object slot by a body no class names, which is the shape of a constructor the map has not named rather than of a table nothing installs.
 <!-- /generated:class-table-store-fields -->
 
 Three readings follow, and each corrects the section above rather than restating it:
