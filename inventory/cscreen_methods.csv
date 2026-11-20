@@ -1,0 +1,9 @@
+address,method,args,size,callees,callee_classes,strings
+0x003300f0,CreateScreen,UAEJXZ,41,CSkinFile::Load,,
+0x00330119,CreateObject,IAEXW4_UIX_OBJECT_TYPE@@KPAK@Z,35,,,
+0x0033013c,Destroy,IAEXXZ,49,CSkinFile::Unload,,
+0x0033016d,SetText,IAEXKW4_UIX_RES_STRING_ENUM@@@Z,86,CSkinFile::GetString; CLiveEngine::SeparateTextAndIcons,,
+0x003301c3,SetTextWithData,IAEXKPBG@Z,44,,,
+0x003301ef,AddListItem,IAEXKPBGKPBU_UIX_SKIN_ICON_INFO@@@Z,68,,,
+0x00330233,AddGreyListItem,IAEXKPBGKPBU_UIX_SKIN_ICON_INFO@@@Z,84,,,
+0x00330287,ClearList,IAEXKH@Z,25,,,
