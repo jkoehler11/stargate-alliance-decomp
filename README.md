@@ -63,8 +63,8 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Script | default properties rendered | 15,834 | 15,834 | `████████████████████████` 100.00% | 🟩 |
 | Script | subobject defaults rendered | 17,081 | 17,089 | `████████████████████████` 99.95% | 🟩 |
 | Content | classes the shipped content reaches | 1,145 | 2,319 | `████████████░░░░░░░░░░░░` 49.37% | 🟧 |
-| Native | functions carrying a name | 7,191 | 14,973 | `████████████░░░░░░░░░░░░` 48.03% | 🟧 |
-| Native | functions attributed to a module | 6,150 | 14,973 | `██████████░░░░░░░░░░░░░░` 41.07% | 🟧 |
+| Native | functions carrying a name | 7,193 | 14,976 | `████████████░░░░░░░░░░░░` 48.03% | 🟧 |
+| Native | functions attributed to a module | 6,160 | 14,976 | `██████████░░░░░░░░░░░░░░` 41.13% | 🟧 |
 | Native | class tables named | 474 | 492 | `███████████████████████░` 96.34% | 🟩 |
 | Native | native declarations reconciled | 683 | 685 | `████████████████████████` 99.71% | 🟩 |
 | Native | property classes measured | 15 | 15 | `████████████████████████` 100.00% | 🟩 |

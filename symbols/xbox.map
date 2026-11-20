@@ -4193,6 +4193,7 @@
 0x00159720 Engine_UnLevAct                              1579 
 0x00159d50 Engine_UnLevAct                              1189 
 0x0015a200 FUN_0015a200                                 1109 
+0x0015a660 ULevel_MultiLineCheck                        2095 
 0x0015ae90 FUN_0015ae90                                  437 
 0x0015b050 FUN_0015b050                                  557 
 0x0015b280 FUN_0015b280                                  407 
@@ -5475,6 +5476,7 @@
 0x001e7400 FUN_001e7400                                  420 
 0x001e75b0 Engine_UnRenderLight                         9260 
 0x001e9a30 FUN_001e9a30                                 2075 
+0x001ea250 FUN_001ea250                                   63 
 0x001ea290 Engine_UnRenderLight                          103 
 0x001ea31e Engine_UnRenderLight                           55 
 0x001ea360 FUN_001ea360                                   51 
@@ -11237,6 +11239,7 @@
 0x003e98c1 FID_conflict:@x64toa@20                       109 
 0x003e992e __i64toa                                       49 
 0x003e995f __ui64toa                                      27 
+0x003e9994 _sinh                                          10 
 0x003e99b0 __aullrem                                     117 
 0x003e9a2c thunk__exp                                      2 
 0x003e9a38 _exp                                           10 

@@ -576,23 +576,23 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0002c2a0,FUN_0002c2a0,95,(unnamed),(unnamed),none,,,,,
 0x0002c300,FUN_0002c300,57,(unnamed),(unnamed),none,,,,,
 0x0002c340,FUN_0002c340,105,(unnamed),(unnamed),none,,,,,
-0x0002c3b0,FUN_0002c3b0,101,(unnamed),(unnamed),none,,,,,
-0x0002c440,FUN_0002c440,668,(unnamed),(unnamed),none,,,,,
-0x0002c700,FUN_0002c700,103,(unnamed),(unnamed),none,,,,,
-0x0002c770,FUN_0002c770,127,(unnamed),(unnamed),none,,,,,
-0x0002c7f0,FUN_0002c7f0,7,(unnamed),(unnamed),none,,,,,
-0x0002c800,FUN_0002c800,112,(unnamed),(unnamed),none,,,,,
-0x0002c870,FUN_0002c870,38,(unnamed),(unnamed),none,,,,,
-0x0002c8a0,FUN_0002c8a0,79,(unnamed),(unnamed),none,,,,,
-0x0002c8f0,FUN_0002c8f0,33,(unnamed),(unnamed),none,,,,,
-0x0002c920,FUN_0002c920,94,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
-0x0002c980,FUN_0002c980,94,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
-0x0002c9e0,FUN_0002c9e0,94,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
-0x0002ca40,FUN_0002ca40,27,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
-0x0002ca60,FUN_0002ca60,32,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
-0x0002ca80,FUN_0002ca80,264,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
-0x0002cbb0,FUN_0002cbb0,56,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
-0x0002cc10,FUN_0002cc10,79,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
+0x0002c3b0,FUN_0002c3b0,101,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c440,FUN_0002c440,668,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c700,FUN_0002c700,103,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c770,FUN_0002c770,127,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c7f0,FUN_0002c7f0,7,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c800,FUN_0002c800,112,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c870,FUN_0002c870,38,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c8a0,FUN_0002c8a0,79,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c8f0,FUN_0002c8f0,33,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c920,FUN_0002c920,94,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c980,FUN_0002c980,94,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002c9e0,FUN_0002c9e0,94,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002ca40,FUN_0002ca40,27,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002ca60,FUN_0002ca60,32,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002ca80,FUN_0002ca80,264,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
+0x0002cbb0,UXBoxAudioSubsystem_ShutdownAfterError,56,XboxAudio,XboxAudio,assert,,0,,,
+0x0002cc10,FUN_0002cc10,79,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002cbb0
 0x0002cfd0,FUN_0002cfd0,234,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d120
 0x0002d120,XboxAudio_FindFreeableSource,364,XboxAudio,XboxAudio,assert,,0,,,
 0x0002d380,FUN_0002d380,97,(unnamed),XboxAudio,propagated,locality,1,2.00,1.000,0x0002d3f0
@@ -761,14 +761,14 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00036c30,FUN_00036c30,43,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036c60,FUN_00036c60,37,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036c90,FUN_00036c90,29,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036cb0,thunk_FUN_003e67ed,5,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
+0x00036cb0,thunk__wcslen,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036cc0,_wcsstr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036cd0,_wcschr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036ce0,_wcscat,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036cf0,_wcscmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036d00,__wcsicmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d10,thunk_FUN_003e68ad,5,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d20,thunk_FUN_003e6983,5,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
+0x00036d10,thunk__wcscpy,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
+0x00036d20,thunk___wcsupr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036d30,__wtol,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036d50,FUN_00036d50,49,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036d90,__wtof,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
@@ -4190,6 +4190,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00159720,Engine_UnLevAct,1579,Engine,Engine,assert,,0,,,
 0x00159d50,Engine_UnLevAct,1189,Engine,Engine,assert,,0,,,
 0x0015a200,FUN_0015a200,1109,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00159d50
+0x0015a660,ULevel_MultiLineCheck,2095,(other named),(other named),none,,,,,
 0x0015ae90,FUN_0015ae90,437,(unnamed),(unnamed),none,,,,,
 0x0015b050,FUN_0015b050,557,(unnamed),(unnamed),none,,,,,
 0x0015b280,FUN_0015b280,407,(unnamed),(unnamed),none,,,,,
@@ -5472,6 +5473,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001e7400,FUN_001e7400,420,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001e75b0
 0x001e75b0,Engine_UnRenderLight,9260,Engine,Engine,assert,,0,,,
 0x001e9a30,FUN_001e9a30,2075,(unnamed),(unnamed),none,,,,,
+0x001ea250,FUN_001ea250,63,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001ea290
 0x001ea290,Engine_UnRenderLight,103,Engine,Engine,assert,,0,,,
 0x001ea31e,Engine_UnRenderLight,55,Engine,Engine,assert,,0,,,
 0x001ea360,FUN_001ea360,51,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x001ea31e
@@ -6813,8 +6815,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00290e60,FUN_00290e60,130,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00290ef0
 0x00290ef0,USpline_execInitSplinePath,905,Engine,Engine,assert,,0,,,
 0x00291280,USpline_execInitSplineRot,885,Engine,Engine,assert,,0,,,
-0x00291600,FUN_00291600,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00291280
-0x00291710,FUN_00291710,1338,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00291280
+0x00291600,FUN_00291600,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00291710
+0x00291710,USpline_execNextSplinePos,1338,Engine,Engine,assert,,0,,,
 0x00291c50,USpline_execNextSplineRot,1473,Engine,Engine,assert,,0,,,
 0x00292220,Engine_USpline,182,Engine,Engine,assert,,0,,,
 0x002922f0,dtor_StreamBase,79,(other named),Engine,propagated,locality,1,2.00,1.000,0x00292220
@@ -8374,9 +8376,9 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00328450,XboxLive_XboxLiveMatchMaking,996,XboxLive,XboxLive,assert,,0,,,
 0x00328840,FUN_00328840,71,(unnamed),XboxLive,propagated,locality,1,2.00,1.000,0x00328af0
 0x00328af0,StatsEnumerateTask_Finished,754,XboxLive,XboxLive,assert,,0,,,
-0x00328e00,FUN_00328e00,864,(unnamed),XboxLive,propagated,locality,1,1.00,0.500,0x00328af0
-0x00329160,FUN_00329160,311,(unnamed),Core,propagated,locality,1,1.00,0.500,0x00329520
-0x003292a0,FUN_003292a0,634,(unnamed),Core,propagated,locality,1,1.00,0.500,0x00329520
+0x00328e00,XBoxLiveManager_ConnectTo,864,XboxLive,XboxLive,assert,,0,,,
+0x00329160,XboxLiveManager_StartStatsQuery,311,Core,Core,assert,,0,,,
+0x003292a0,XboxLiveManager_StartNewSession,634,Core,Core,assert,,0,,,
 0x00329520,SessionQueryTask_Finshed,257,Core,Core,assert,,0,,,
 0x00329630,FUN_00329630,615,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00329520
 0x00329960,XboxLiveManager_StartStatsLadderRead,331,Core,Core,assert,,0,,,
@@ -8516,12 +8518,12 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00330685,?Pump@CVoiceMailMsg@UIXNamespace@@QAEJXZ,535,(other named),(other named),none,,,,,
 0x0033089c,?RetrieveVoiceMail@CVoiceMailMsg@UIXNamespace@@QAEJKU_XUID@@KKKPAXPAK2@Z,75,(other named),(other named),none,,,,,
 0x003308e7,?HasVoiceMail@CVoiceMailMsg@UIXNamespace@@QAEHKU_XUID@@K@Z,127,(other named),(other named),none,,,,,
-0x00330966,thunk_FUN_0032fb8c,5,(unnamed),(unnamed),none,,,,,
-0x0033096b,thunk_FUN_0032fc13,5,(unnamed),(unnamed),none,,,,,
-0x00330970,thunk_FUN_0032fc9b,5,(unnamed),(unnamed),none,,,,,
-0x00330975,thunk_FUN_0032fbe3,5,(unnamed),(unnamed),none,,,,,
-0x0033097a,thunk_FUN_0032fd02,5,(unnamed),(unnamed),none,,,,,
-0x0033097f,thunk_FUN_0032fc2f,5,(unnamed),(unnamed),none,,,,,
+0x00330966,thunk_?Render@CLiveEngine@UIXNamespace@@QAGJPAUD3DSurface@@@Z,5,(other named),(other named),none,,,,,
+0x0033096b,thunk_?SetInput@CLiveEngine@UIXNamespace@@QAGJKPBU_XINPUT_STATE@@@Z,5,(other named),(other named),none,,,,,
+0x00330970,thunk_?GetNotifications@CLiveEngine@UIXNamespace@@QAGJKW4_UIX_NOTIFICATION_PURPOSE@@PAK@Z,5,(other named),(other named),none,,,,,
+0x00330975,thunk_?GetExitInfo@CLiveEngine@UIXNamespace@@QAGJPAU_UIX_EXIT_INFO@@@Z,5,(other named),(other named),none,,,,,
+0x0033097a,thunk_?Reboot@CLiveEngine@UIXNamespace@@QAGJK@Z,5,(other named),(other named),none,,,,,
+0x0033097f,thunk_?LogOff@CLiveEngine@UIXNamespace@@QAGJXZ,5,(other named),(other named),none,,,,,
 0x00330984,thunk_FUN_0032fc55,5,(unnamed),(unnamed),none,,,,,
 0x00330989,_PluginSupport_GetLayout@16,34,(other named),(other named),none,,,,,
 0x003309ab,_PluginSupport_GetImage@12,30,(other named),(other named),none,,,,,
@@ -8556,11 +8558,11 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0033120a,?CanAcceptNotifications@CAlertFeature@UIXNamespace@@QAEHXZ,32,(other named),(other named),none,,,,,
 0x0033122a,?CanRecordVoiceMailForPort@CFeatureContext@UIXNamespace@@UAGHK@Z,36,(other named),(other named),none,,,,,
 0x0033124e,?CanPlayVoiceMailForPort@CFeatureContext@UIXNamespace@@UAGHK@Z,55,(other named),(other named),none,,,,,
-0x00331285,thunk_FUN_00330cb5,5,(unnamed),(unnamed),none,,,,,
-0x0033128a,thunk_FUN_00330c83,5,(unnamed),(unnamed),none,,,,,
-0x0033128f,thunk_FUN_00330e41,5,(unnamed),(unnamed),none,,,,,
+0x00331285,thunk_?DoWork@CLiveEngine@UIXNamespace@@QAGJPAK@Z,5,(other named),(other named),none,,,,,
+0x0033128a,thunk_?SetUIPlugin@CLiveEngine@UIXNamespace@@QAGJPAUITitleUIPlugin@@@Z,5,(other named),(other named),none,,,,,
+0x0033128f,thunk_?EnableFeature@CLiveEngine@UIXNamespace@@QAGJPAX@Z,5,(other named),(other named),none,,,,,
 0x00331294,_LiveEngine_NotificationSetState@28,33,(other named),(other named),none,,,,,
-0x003312b5,thunk_FUN_00330d7f,5,(unnamed),(unnamed),none,,,,,
+0x003312b5,thunk_?EndFeature@CLiveEngine@UIXNamespace@@QAGJXZ,5,(other named),(other named),none,,,,,
 0x003312ba,FUN_003312ba,18,(unnamed),(unnamed),none,,,,,
 0x003312cc,_PluginSupport_GetWordLength@12,30,(other named),(other named),none,,,,,
 0x003312fc,FUN_003312fc,8,(unnamed),(unnamed),none,,,,,
@@ -8582,17 +8584,17 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00331800,?ReceiveMessage@CAlertFeature@UIXNamespace@@UAGJKPBXPAXPAUIUIXFeature@@@Z,223,(other named),(other named),none,,,,,
 0x003318df,?DisplayRecordedMessage@CAlertFeature@UIXNamespace@@AAEXK@Z,167,(other named),(other named),none,,,,,
 0x00331986,?ShowVoiceMailScreen@CFeatureContext@UIXNamespace@@UAGJKU_XUID@@PBG1HKKPAE@Z,113,(other named),(other named),none,,,,,
-0x003319f7,thunk_FUN_003316c5,5,(unnamed),(unnamed),none,,,,,
+0x003319f7,thunk_?Release@CLiveEngine@UIXNamespace@@QAGKXZ,5,(other named),(other named),none,,,,,
 0x003319fc,_UIXCreateLiveEngine@12,135,(other named),(other named),none,,,,,
 0x00331a83,?SetProperty@CLiveEngine@UIXNamespace@@QAGJW4_UIX_PROPERTY_TYPE@@K@Z,309,(other named),(other named),none,,,,,
 0x00331bb8,?SendFeatureMessage@CLiveEngine@UIXNamespace@@QAEXKPBXPAUIUIXFeature@@@Z,83,(other named),(other named),none,,,,,
 0x00331c0b,?DisplayPopup@CAlertFeature@UIXNamespace@@QAEHW4_UIX_MESSAGE_TYPE@2@PAXPBGK2W4_UIX_RES_STRING_ENUM@@33@Z,390,(other named),(other named),none,,,,,
 0x00331d91,?HideMessageScreen@CAlertFeature@UIXNamespace@@QAEHW4_UIX_MESSAGE_TYPE@2@@Z,172,(other named),(other named),none,,,,,
 0x00331e3d,?ShowPopup@CFeatureContext@UIXNamespace@@UAGJPBGKKK0@Z,77,(other named),(other named),none,,,,,
-0x00331e8a,thunk_FUN_00331a83,5,(unnamed),(unnamed),none,,,,,
+0x00331e8a,thunk_?SetProperty@CLiveEngine@UIXNamespace@@QAGJW4_UIX_PROPERTY_TYPE@@K@Z,5,(other named),(other named),none,,,,,
 0x00331eae,?StartFeature@CLiveEngine@UIXNamespace@@QAGJPAXPBX@Z,206,(other named),(other named),none,,,,,
 0x00331f7c,?Input@CPopupScreen@UIXNamespace@@UAEXKW4_UIX_INPUT_TYPE@@@Z,361,(other named),(other named),none,,,,,
-0x003320e5,thunk_FUN_00331eae,5,(unnamed),(unnamed),none,,,,,
+0x003320e5,thunk_?StartFeature@CLiveEngine@UIXNamespace@@QAGJPAXPBX@Z,5,(other named),(other named),none,,,,,
 0x003320ea,?SetSpinnerText@CVoiceMailScreen@UIXNamespace@@QAEXXZ,162,(other named),(other named),none,,,,,
 0x0033218c,?SetProgressBarText@CVoiceMailScreen@UIXNamespace@@QAEXXZ,191,(other named),(other named),none,,,,,
 0x0033224b,?DestroyFeedbackScreen@CVoiceMailScreen@UIXNamespace@@QAEXXZ,24,(other named),(other named),none,,,,,
@@ -8713,7 +8715,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00337099,?ReceiveMessage@CFriendsFeature@UIXNamespace@@UAGJKPBXPAXPAUIUIXFeature@@@Z,521,(other named),(other named),none,,,,,
 0x003372a2,?Release@CFriendsList@UIXNamespace@@QAGKXZ,30,(other named),(other named),none,,,,,
 0x003372c0,FUN_003372c0,348,(unnamed),(unnamed),none,,,,,
-0x0033741c,thunk_FUN_003372a2,5,(unnamed),(unnamed),none,,,,,
+0x0033741c,thunk_?Release@CFriendsList@UIXNamespace@@QAGKXZ,5,(other named),(other named),none,,,,,
 0x00337421,FUN_00337421,24,(unnamed),(unnamed),none,,,,,
 0x003374ee,FUN_003374ee,28,(unnamed),(unnamed),none,,,,,
 0x0033754a,?HandleUserExit@CLogonFeature@UIXNamespace@@QAEXXZ,36,(other named),(other named),none,,,,,
@@ -8865,7 +8867,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0033cf15,_XcspComputeSectionDigest@8,52,(other named),(other named),none,,,,,
 0x0033cf49,_XcspWriteFileSection@8,304,(other named),(other named),none,,,,,
 0x0033d079,_XcsWriteSignatureFile@0,741,(other named),(other named),none,,,,,
-0x0033d35e,thunk_FUN_0033c6bf,5,(unnamed),(unnamed),none,,,,,
+0x0033d35e,thunk__XcspFreeEverything@0,5,(other named),(other named),none,,,,,
 0x0033d363,FUN_0033d363,160,(unnamed),(unnamed),none,,,,,
 0x0033d403,FUN_0033d403,26,(unnamed),(unnamed),none,,,,,
 0x0033d41d,FUN_0033d41d,26,(unnamed),(unnamed),none,,,,,
@@ -8970,7 +8972,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0033ffee,_XapipLaunchNewImageInternal@16,385,(other named),(other named),none,,,,,
 0x0034016f,_XapipUpdateRebootIfNecessary@0,357,(other named),(other named),none,,,,,
 0x003402d4,_XShaHmacInitialize@12,98,(other named),(other named),none,,,,,
-0x00340336,thunk_FUN_00343f96,5,(unnamed),(unnamed),none,,,,,
+0x00340336,thunk__XcSHAUpdate@12,5,(other named),(other named),none,,,,,
 0x0034033b,_XShaHmacComputeFinal@16,114,(other named),(other named),none,,,,,
 0x003403ad,_XapiConvertSignatureToNonRoamable@12,117,(other named),(other named),none,,,,,
 0x00340422,_XapipCalculateSaveGameSignatureBegin@8,128,(other named),(other named),none,,,,,
@@ -9089,13 +9091,13 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0034491a,?VoiceMailPlay@CXHVEngine@XHVNamespace@@QAGJKKPBEH@Z,61,(other named),(other named),none,,,,,
 0x00344957,?VoiceMailStop@CXHVEngine@XHVNamespace@@QAGJK@Z,52,(other named),(other named),none,,,,,
 0x0034498b,_XHVEngine_AddRef@4,28,(other named),(other named),none,,,,,
-0x003449a7,thunk_FUN_00344370,5,(unnamed),(unnamed),none,,,,,
+0x003449a7,thunk_?EnableProcessingMode@CXHVEngine@XHVNamespace@@QAGJPAX@Z,5,(other named),(other named),none,,,,,
 0x003449ac,FUN_003449ac,15,(unnamed),(unnamed),none,,,,,
 0x003449bb,FUN_003449bb,17,(unnamed),(unnamed),none,,,,,
-0x003449cc,thunk_FUN_00344413,5,(unnamed),(unnamed),none,,,,,
+0x003449cc,thunk_?RegisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z,5,(other named),(other named),none,,,,,
 0x003449d1,thunk_FUN_00344480,5,(unnamed),(unnamed),none,,,,,
-0x003449d6,thunk_FUN_003444a3,5,(unnamed),(unnamed),none,,,,,
-0x003449db,thunk_FUN_003444e1,5,(unnamed),(unnamed),none,,,,,
+0x003449d6,thunk_?GetProcessingMode@CXHVEngine@XHVNamespace@@QAGJKPAPAX@Z,5,(other named),(other named),none,,,,,
+0x003449db,thunk_?SetVoiceMask@CXHVEngine@XHVNamespace@@QAGJKPBU_XHV_VOICE_MASK@@@Z,5,(other named),(other named),none,,,,,
 0x003449e0,thunk_FUN_0034451b,5,(unnamed),(unnamed),none,,,,,
 0x003449e5,FUN_003449e5,28,(unnamed),(unnamed),none,,,,,
 0x00344a01,FUN_00344a01,28,(unnamed),(unnamed),none,,,,,
@@ -9103,18 +9105,18 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00344a41,FUN_00344a41,28,(unnamed),(unnamed),none,,,,,
 0x00344a5d,FUN_00344a5d,36,(unnamed),(unnamed),none,,,,,
 0x00344a81,FUN_00344a81,36,(unnamed),(unnamed),none,,,,,
-0x00344aa5,thunk_FUN_00344658,5,(unnamed),(unnamed),none,,,,,
+0x00344aa5,thunk_?SetMaxPlaybackStreamsCount@CXHVEngine@XHVNamespace@@QAGJK@Z,5,(other named),(other named),none,,,,,
 0x00344aaa,_XHVEngine_VoiceMailRecord@20,9,(other named),(other named),none,,,,,
 0x00344ab3,_XHVEngine_VoiceMailPlay@20,9,(other named),(other named),none,,,,,
-0x00344abc,thunk_FUN_00344957,5,(unnamed),(unnamed),none,,,,,
+0x00344abc,thunk_?VoiceMailStop@CXHVEngine@XHVNamespace@@QAGJK@Z,5,(other named),(other named),none,,,,,
 0x00344ac1,?DoWork@CXHVEngine@XHVNamespace@@QAGJXZ,44,(other named),(other named),none,,,,,
 0x00344aed,?DoDPCWork@CXHVEngine@XHVNamespace@@QAEJXZ,58,(other named),(other named),none,,,,,
-0x00344b27,thunk_FUN_00344ac1,5,(unnamed),(unnamed),none,,,,,
+0x00344b27,thunk_?DoWork@CXHVEngine@XHVNamespace@@QAGJXZ,5,(other named),(other named),none,,,,,
 0x00344b2c,??_GCXHVEngine@XHVNamespace@@QAEPAXI@Z,32,(other named),(other named),none,,,,,
 0x00344b67,?InitEngine@CXHVEngine@XHVNamespace@@QAEJPAU_XHV_RUNTIME_PARAMS@@@Z,238,(other named),(other named),none,,,,,
 0x00344c55,_XHVEngineCreate@8,112,(other named),(other named),none,,,,,
 0x00344cc5,?Release@CXHVEngine@XHVNamespace@@QAGKXZ,51,(other named),(other named),none,,,,,
-0x00344cf8,thunk_FUN_00344cc5,5,(unnamed),(unnamed),none,,,,,
+0x00344cf8,thunk_?Release@CXHVEngine@XHVNamespace@@QAGKXZ,5,(other named),(other named),none,,,,,
 0x00344d05,FUN_00344d05,8,(unnamed),(unnamed),none,,,,,
 0x00344d0d,FUN_00344d0d,3,(unnamed),(unnamed),none,,,,,
 0x00344d10,FUN_00344d10,8,(unnamed),(unnamed),none,,,,,
@@ -9515,7 +9517,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00355745,_prvUpdatePRNGSeed,22,(other named),(other named),none,,,,,
 0x0035575b,_prvExEBlockSynthSpch,768,(other named),(other named),none,,,,,
 0x00355a5b,_convolve,339,(other named),(other named),none,,,,,
-0x00355bae,thunk_FUN_00355a5b,5,(unnamed),(unnamed),none,,,,,
+0x00355bae,thunk__convolve,5,(other named),(other named),none,,,,,
 0x00355bb3,_SpType_sum_norm,32,(other named),(other named),none,,,,,
 0x00355bd3,_SpType_max,56,(other named),(other named),none,,,,,
 0x00355c0b,_LPCType_max,57,(other named),(other named),none,,,,,
@@ -9526,7 +9528,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00355d4f,_short_copy,37,(other named),(other named),none,,,,,
 0x00355d74,_compute_sdev,81,(other named),(other named),none,,,,,
 0x00355dc5,_x_corr,160,(other named),(other named),none,,,,,
-0x00355e65,thunk_FUN_00355dc5,5,(unnamed),(unnamed),none,,,,,
+0x00355e65,thunk__x_corr,5,(other named),(other named),none,,,,,
 0x00355e6a,_SpType_copy_WMSP,35,(other named),(other named),none,,,,,
 0x00355e8d,_LPCQ16Type_add,45,(other named),(other named),none,,,,,
 0x00355eba,FUN_00355eba,38,(unnamed),(unnamed),none,,,,,
@@ -9594,7 +9596,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0035b6b0,_NellyMSVQDecPred,479,(other named),(other named),none,,,,,
 0x0035b890,_NellyQuanPitchSC3,83,(other named),(other named),none,,,,,
 0x0035b8f0,_NellyUnQuanPitchSC3,39,(other named),(other named),none,,,,,
-0x0035b920,thunk_FUN_0035d8c0,5,(unnamed),(unnamed),none,,,,,
+0x0035b920,thunk__MidEstPitch,5,(other named),(other named),none,,,,,
 0x0035b930,_QuanPvSC3,80,(other named),(other named),none,,,,,
 0x0035b980,_UnQuanPvSC3,61,(other named),(other named),none,,,,,
 0x0035b9c0,_ippNellyRealFft,256,(other named),(other named),none,,,,,
@@ -11234,9 +11236,10 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x003e98c1,FID_conflict:@x64toa@20,109,(other named),(other named),none,,,,,
 0x003e992e,__i64toa,49,(other named),(other named),none,,,,,
 0x003e995f,__ui64toa,27,(other named),(other named),none,,,,,
+0x003e9994,_sinh,10,(other named),(other named),none,,,,,
 0x003e99b0,__aullrem,117,(other named),(other named),none,,,,,
-0x003e9a2c,thunk_FUN_003e9a38,2,(unnamed),(unnamed),none,,,,,
-0x003e9a38,FUN_003e9a38,10,(unnamed),(unnamed),none,,,,,
+0x003e9a2c,thunk__exp,2,(other named),(other named),none,,,,,
+0x003e9a38,_exp,10,(other named),(other named),none,,,,,
 0x003e9a42,_realloc,163,(other named),(other named),none,,,,,
 0x003e9ae5,_abort,24,(other named),(other named),none,,,,,
 0x003e9b90,_strrchr,45,(other named),(other named),none,,,,,
@@ -11568,7 +11571,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x004196a5,_WSACleanup@0,13,(other named),(other named),none,,,,,
 0x004196b2,?SockCountSendTotal@CXnSock@@CGIPAU_WSABUF@@I@Z,25,(other named),(other named),none,,,,,
 0x004196cb,?SockReadWsaBufs@CXnSock@@CGXPAU_WSABUF@@IIPAEI@Z,106,(other named),(other named),none,,,,,
-0x00419735,thunk_FUN_0033e458,5,(unnamed),(unnamed),none,,,,,
+0x00419735,thunk__GetLastError@0,5,(other named),(other named),none,,,,,
 0x0041973a,___WSAFDIsSet@8,43,(other named),(other named),none,,,,,
 0x00419765,?Lock@CSocket@@SGPAV1@I@Z,88,(other named),(other named),none,,,,,
 0x004197bd,?SockInit@CXnSock@@QAEJPAUXNetInitParams@@@Z,71,(other named),(other named),none,,,,,
@@ -12063,8 +12066,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0043052f,_XOnlineMessageCreate@32,42,(other named),(other named),none,,,,,
 0x00430559,_XOnlineMessageSetProperty@20,15,(other named),(other named),none,,,,,
 0x00430568,?MessagingCleanupUserInfo@CXo@@IAEXKPAUXMESSAGING_USER_INFO@@@Z,93,(other named),(other named),none,,,,,
-0x004305c5,thunk_FUN_0042fbc8,5,(unnamed),(unnamed),none,,,,,
-0x004305ca,thunk_FUN_0042fc61,5,(unnamed),(unnamed),none,,,,,
+0x004305c5,thunk_?MessagingClose@CXo@@IAEXPAUXONLINETASK_HANDLE__@@@Z,5,(other named),(other named),none,,,,,
+0x004305ca,thunk_?MessagingSendContinue@CXo@@IAEJPAUXONLINETASK_HANDLE__@@@Z,5,(other named),(other named),none,,,,,
 0x004305cf,?MessagingIsSummarySafeForTitle@CXo@@QAEHPBUQ_MESSAGE_SUMMARY@@PAH@Z,96,(other named),(other named),none,,,,,
 0x0043062f,?MessagingCreateContext@CXo@@IAEJHKKKKP81@AEJPAUXONLINETASK_HANDLE__@@@ZPAXPAPAUXMESSAGING_EXTENDED_HANDLE@@PAPAUBASE_MSG_HEADER@@PAPAE@Z,115,(other named),(other named),none,,,,,
 0x004306a2,?MessagingDetailsContinue@CXo@@IAEJPAUXONLINETASK_HANDLE__@@@Z,247,(other named),(other named),none,,,,,
@@ -12122,7 +12125,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x004344e2,?XkerbGetInfo@CXo@@IAEPAUXOKERBINFO@@K@Z,64,(other named),(other named),none,,,,,
 0x00434522,?XkerbBuildApReq@CXo@@IAEJKPAT_LARGE_INTEGER@@PAEI1PAI@Z,83,(other named),(other named),none,,,,,
 0x00434575,?XkerbCrackApRep@CXo@@IAEJKPAT_LARGE_INTEGER@@IPAEI1I@Z,86,(other named),(other named),none,,,,,
-0x004345cb,thunk_FUN_004344e2,5,(unnamed),(unnamed),none,,,,,
+0x004345cb,thunk_?XkerbGetInfo@CXo@@IAEPAUXOKERBINFO@@K@Z,5,(other named),(other named),none,,,,,
 0x004345d0,?XoKerbBuildApReq@CXoBase@@QAEHKPAT_LARGE_INTEGER@@PAEI1PAI@Z,39,(other named),(other named),none,,,,,
 0x004345f7,?XoKerbCrackApRep@CXoBase@@QAEHKPAT_LARGE_INTEGER@@IPAEI1I@Z,42,(other named),(other named),none,,,,,
 0x00434621,FUN_00434621,5422,(unnamed),(unnamed),none,,,,,
@@ -12432,9 +12435,9 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00444c23,?XRL_MainClose@CXo@@IAEXPAUXONLINETASK_HANDLE__@@@Z,43,(other named),(other named),none,,,,,
 0x00444c4e,?XoSysAlloc@@YGPAXIK@Z,22,(other named),(other named),none,,,,,
 0x00444c64,?XoSysFree@@YGXPAXK@Z,40,(other named),(other named),none,,,,,
-0x00444c8c,thunk_FUN_00444c4e,5,(unnamed),(unnamed),none,,,,,
+0x00444c8c,thunk_?XoSysAlloc@@YGPAXIK@Z,5,(other named),(other named),none,,,,,
 0x00444c91,?SysAllocZ@CXo@@IAEPAXIK@Z,50,(other named),(other named),none,,,,,
-0x00444cc3,thunk_FUN_00444c64,5,(unnamed),(unnamed),none,,,,,
+0x00444cc3,thunk_?XoSysFree@@YGXPAXK@Z,5,(other named),(other named),none,,,,,
 0x00444cc8,?SysFree@CXo@@IAEXPAX@Z,14,(other named),(other named),none,,,,,
 0x00444cd6,?PoolAlloc@CXo@@IAEPAXIK@Z,20,(other named),(other named),none,,,,,
 0x00444cea,?PoolAllocZ@CXo@@IAEPAXIK@Z,20,(other named),(other named),none,,,,,
@@ -12609,7 +12612,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0044dc7d,?ASN1BERDecOctetString@@YGHPAUASN1decoding_s@@KPAUtagASN1octetstring_t@@@Z,22,(other named),(other named),none,,,,,
 0x0044dc93,?ASN1BEREncExplicitTag@@YGHPAUASN1encoding_s@@KPAK@Z,87,(other named),(other named),none,,,,,
 0x0044dcea,?ASN1BEREncEndOfContents@@YGHPAUASN1encoding_s@@K@Z,153,(other named),(other named),none,,,,,
-0x0044dd83,thunk_FUN_0044d043,5,(unnamed),(unnamed),none,,,,,
+0x0044dd83,thunk_?DecMemAlloc@@YGPAXPAUASN1decoding_s@@K@Z,5,(other named),(other named),none,,,,,
 0x0044dd88,?ASN1_Encode@@YG?AW4tagASN1error_e@@PAUASN1encoding_s@@PAXKKPAEK@Z,314,(other named),(other named),none,,,,,
 0x0044dec2,?ASN1BERDecGeneralizedTime@@YGHPAUASN1decoding_s@@KPAUtagASN1generalizedtime_t@@@Z,66,(other named),(other named),none,,,,,
 0x0044df04,?ASN1BEREncCharString@@YGHPAUASN1encoding_s@@KKPAD@Z,75,(other named),(other named),none,,,,,
@@ -12641,7 +12644,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0044f310,_D3DDevice_GetViewport@4,51,(other named),(other named),none,,,,,
 0x0044f350,_D3DDevice_SetMaterial@4,48,(other named),(other named),none,,,,,
 0x0044f380,_D3DDevice_Release@0,55,(other named),(other named),none,,,,,
-0x0044f3c0,thunk_FUN_00457f30,5,(unnamed),(unnamed),none,,,,,
+0x0044f3c0,thunk_?KickOffAndWaitForIdle@D3D@@YGXXZ,5,(other named),(other named),none,,,,,
 0x0044f3d0,_D3DDevice_BlockUntilVerticalBlank@0,36,(other named),(other named),none,,,,,
 0x0044f400,_D3DDevice_GetScissors@12,81,(other named),(other named),none,,,,,
 0x0044f460,_D3DDevice_SetFlickerFilter@4,66,(other named),(other named),none,,,,,
@@ -12787,11 +12790,11 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00455730,FUN_00455730,702,(unnamed),(unnamed),none,,,,,
 0x00455a00,_D3DDevice_CreateTexture2@28,176,(other named),(other named),none,,,,,
 0x00455ab0,_D3DBaseTexture_GetLevelCount@4,14,(other named),(other named),none,,,,,
-0x00455ac0,thunk_FUN_004584e0,5,(unnamed),(unnamed),none,,,,,
+0x00455ac0,thunk_?Get2DSurfaceDesc@PixelJar@D3D@@YGXPAUD3DPixelContainer@@IPAU_D3DSURFACE_DESC@@@Z,5,(other named),(other named),none,,,,,
 0x00455ad0,_D3DTexture_GetSurfaceLevel2@8,74,(other named),(other named),none,,,,,
 0x00455b20,FUN_00455b20,35,(unnamed),(unnamed),none,,,,,
 0x00455b50,_D3DCubeTexture_GetCubeMapSurface2@12,77,(other named),(other named),none,,,,,
-0x00455ba0,thunk_FUN_004587d0,5,(unnamed),(unnamed),none,,,,,
+0x00455ba0,thunk_?Lock2DSurface@PixelJar@D3D@@YGXPAUD3DPixelContainer@@W4_D3DCUBEMAP_FACES@@IPAU_D3DLOCKED_RECT@@PBUtagRECT@@K@Z,5,(other named),(other named),none,,,,,
 0x00455bb0,_D3DDevice_CreateIndexBuffer2@4,52,(other named),(other named),none,,,,,
 0x00455bf0,_D3DDevice_CreateVertexBuffer2@4,75,(other named),(other named),none,,,,,
 0x00455c40,_D3DVertexBuffer_Lock2@8,75,(other named),(other named),none,,,,,
@@ -12994,7 +12997,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0046931a,??0CD3DXFile@@QAE@XZ,10,(other named),(other named),none,,,,,
 0x00469324,?Open@CD3DXFile@@QAEJPBXH@Z,201,(other named),(other named),none,,,,,
 0x004693ed,?Close@CD3DXFile@@QAEJXZ,31,(other named),(other named),none,,,,,
-0x0046940c,thunk_FUN_004693ed,5,(unnamed),(unnamed),none,,,,,
+0x0046940c,thunk_?Close@CD3DXFile@@QAEJXZ,5,(other named),(other named),none,,,,,
 0x00469414,?Decode@CD3DXCodec_V8U8@@UAEXIIPAUD3DXCOLOR@@@Z,105,(other named),(other named),none,,,,,
 0x0046947d,?Decode@CD3DXCodec_L6V5U5@@UAEXIIPAUD3DXCOLOR@@@Z,150,(other named),(other named),none,,,,,
 0x00469513,?Decode@CD3DXCodec_Q8W8V8U8@@UAEXIIPAUD3DXCOLOR@@@Z,126,(other named),(other named),none,,,,,
@@ -13069,7 +13072,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0046c105,_png_chunk_error,35,(other named),(other named),none,,,,,
 0x0046c128,_png_chunk_warning,37,(other named),(other named),none,,,,,
 0x0046c14d,_jpeg_CreateDecompress,192,(other named),(other named),none,,,,,
-0x0046c20d,thunk_FUN_0047209a,5,(unnamed),(unnamed),none,,,,,
+0x0046c20d,thunk__jpeg_destroy,5,(other named),(other named),none,,,,,
 0x0046c212,?default_decompress_parms@D3DX@@YAXPAUjpeg_decompress_struct@1@@Z,371,(other named),(other named),none,,,,,
 0x0046c385,_jpeg_consume_input,154,(other named),(other named),none,,,,,
 0x0046c41f,_jpeg_finish_decompress,167,(other named),(other named),none,,,,,
@@ -13138,7 +13141,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00470200,_png_set_read_fn,63,(other named),(other named),none,,,,,
 0x0047023f,_png_sig_cmp,72,(other named),(other named),none,,,,,
 0x00470287,_png_zalloc,83,(other named),(other named),none,,,,,
-0x004702da,thunk_FUN_0047277d,5,(unnamed),(unnamed),none,,,,,
+0x004702da,thunk__png_free,5,(other named),(other named),none,,,,,
 0x004702df,_png_reset_crc,24,(other named),(other named),none,,,,,
 0x004702f7,_png_calculate_crc,63,(other named),(other named),none,,,,,
 0x00470336,_png_info_destroy,14,(other named),(other named),none,,,,,
@@ -13980,7 +13983,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0049f64c,_IDirectSoundBuffer_Release@4,22,(other named),(other named),none,,,,,
 0x0049f662,FUN_0049f662,31,(unnamed),(unnamed),none,,,,,
 0x0049f681,_XAudioCalculatePitch@4,74,(other named),(other named),none,,,,,
-0x0049f6cb,thunk_FUN_004a22e0,5,(unnamed),(unnamed),none,,,,,
+0x0049f6cb,thunk_?CreatePcmFormat@WaveFormat@DirectSound@@YGXGKGPAUtWAVEFORMATEX@@@Z,5,(other named),(other named),none,,,,,
 0x0049f6d0,?SetEffectImageLocations@CDirectSoundSettings@DirectSound@@QAEXPBU_DSEFFECTIMAGELOC@@@Z,34,(other named),(other named),none,,,,,
 0x0049f6f2,??0CDirectSound@DirectSound@@QAE@XZ,29,(other named),(other named),none,,,,,
 0x0049f70f,??1CDirectSound@DirectSound@@UAE@XZ,58,(other named),(other named),none,,,,,
@@ -14405,7 +14408,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x004becfa,_XInputGetState@8,115,(other named),(other named),none,,,,,
 0x004bed6d,_XdReportDeviceInsertionRemoval@12,34,(other named),(other named),none,,,,,
 0x004bed8f,_XPeekDevices@12,60,(other named),(other named),none,,,,,
-0x004bedcb,thunk_FUN_004be0ef,5,(unnamed),(unnamed),none,,,,,
+0x004bedcb,thunk__USBD_Init@8,5,(other named),(other named),none,,,,,
 0x004bedd0,_XGetDevices@4,34,(other named),(other named),none,,,,,
 0x004bedf2,_XGetDeviceChanges@12,109,(other named),(other named),none,,,,,
 0x004bee5f,?GetTypeInformation@@YIPAU_XID_TYPE_INFORMATION@@EPAE@Z,55,(other named),(other named),none,,,,,
@@ -14497,7 +14500,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x004c1638,?DecrementBusyHubCount@IUsbDevice@@SGXXZ,7,(other named),(other named),none,,,,,
 0x004c163f,_USBD_DeviceConnected@8,21,(other named),(other named),none,,,,,
 0x004c1654,?USBD_DeviceEnumStage0@@YGXXZ,98,(other named),(other named),none,,,,,
-0x004c16b6,thunk_FUN_004c1550,5,(unnamed),(unnamed),none,,,,,
+0x004c16b6,thunk_?USBD_DeviceEnumStagePre1@@YGXJPAX@Z,5,(other named),(other named),none,,,,,
 0x004c16bb,?RemoveComplete@IUsbDevice@@QAEXXZ,118,(other named),(other named),none,,,,,
 0x004c1731,?USBD_CompleteDeviceDisconnected@@YGXPAVIUsbDevice@@@Z,82,(other named),(other named),none,,,,,
 0x004c1783,?USBD_DeviceEnumNextPending@@YGXPAT_URB@@PAVIUsbDevice@@@Z,175,(other named),(other named),none,,,,,
