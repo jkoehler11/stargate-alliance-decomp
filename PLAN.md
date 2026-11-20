@@ -15321,3 +15321,39 @@ sequence.
   `thunk-targets --selftest` covers the seven shapes beside the five encodings.
 - **Not in this PR.** The `sinh` stub's map row (a boundary `add`, which moves the function count); the 21 unnamed
   targets that are real bodies, which wait on a breakpoint or a library match rather than on a thunk read.
+
+### Execution notes (2026-11-20, the registration table's 274 bodies become rows, and the extent column measures both directions)
+
+- **Task.** The boundary thread's next item after the three gap bodies: `native-census` had said since 2026-11-10
+  that 274 of the registration table's 883 body addresses fall outside every map row, and no bundle had ever made
+  them rows. A native has no caller, so the call graph that builds the map can never see one.
+- **The third reading a repair needs is the extent, and the image gives it.** `tools/native-census.py` now reads
+  how far each of the 883 bodies runs: Ghidra's `body_bytes` where the bytes there close on a terminator (269 of
+  the 274 outside addresses do, all but five on a `ret imm16`) and otherwise the body's own end at the first
+  `cc cc` run (five). `extent`, `extent_source` and `extent_closes` are committed columns, and `--check` refuses a
+  table where the three are not filled together or where an extent is shorter than the body the disassembler
+  accepted.
+- **The rows are emitted, not typed.** `--emit-boundaries` prints the `add` row for every outside body that fits
+  between the rows it sits between and `--emit-creations` the `xbe_overrides.csv` row `XbePost.java` needs
+  (`function_size` included), so the file that measured the body is the file that wrote the row. **268 landed**:
+  the map goes 14,976 → **15,244 functions** and 3,972,849 → **4,015,693 bytes**, 877 of 883 registration bodies
+  are rows, and the named share moves 48.03% → 47.19% because 268 unnamed bodies joined the denominator.
+- **Six are refused by name, not truncated.** Each has a map row starting inside the native body — five are the
+  three-push `appAssertFailed` block U36 folded out of the audio body, one is a fragment — and folding them needs
+  an `add` that may claim rows the same file drops (U39).
+- **The same column measures the other direction, and that is the next population.** Of the 877 registration
+  bodies that are rows, 827 close at their declared size, 40 close only at the body's own bound (the U36 "stops
+  short" defect, at 40 rows rather than eleven) and 10 close nowhere before the next padding run. U39 records it.
+- **Files.** `tools/native-census.py` (the extent columns, `--emit-boundaries`, `--emit-creations`, the selftest
+  case), `inventory/native_census.csv` (883 rows, three new columns), `symbols/xbe_boundaries.csv` (+268 adds),
+  `symbols/xbe_overrides.csv` (+268 creation rows), `symbols/xbox_functions.csv`, `symbols/xbox.map`,
+  `inventory/function_module_attribution.csv`, `inventory/function_modules.csv`,
+  `inventory/module_export_plan.csv`, `inventory/xbe_functions_by_module.csv`, `docs/NATIVE.md`,
+  `docs/SYMBOLS.md` (the repair census and the new section), `docs/UNKNOWNS.md` (U39), `docs/STATUS.md`,
+  `README.md`, `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `native-census --check` re-derives the census column from the two committed tables
+  and now validates the extent columns; `--selftest` covers `ret`/`ret imm16`/neither, the island bound and the
+  fallback order; `symbol-boundaries --check` proves the 268 adds are what the map carries.
+- **Not in this bundle.** The six refused bodies (U39's pairing verb), the 40 rows whose size stops short, the ten
+  that close nowhere, and `0x002b7aa0` — U36's third gap body, which turns out to be a jump-table dispatch whose
+  case table sits inside its own span, so the `cc cc` bound cannot close it and a linear decode has to.

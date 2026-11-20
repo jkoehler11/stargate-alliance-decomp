@@ -16,16 +16,16 @@ into its own section, calls that leave it, and calls that land on no known body.
 <!-- generated:library-bodies -->
 | section | functions | named | `thunk_` | bytes | any literal | `push` literal | source path | wide | calls | into the section | leaves it | no known body |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `XNET` | 413 | 382 | 1 | 74962 | 12 | 1 | 0 | 8 | 1304 | 1061 | 111 | 5 |
-| `XONLINE` | 704 | 661 | 6 | 139914 | 61 | 39 | 0 | 5 | 3123 | 2859 | 690 | 19 |
-| `D3D` | 302 | 276 | 3 | 59686 | 6 | 1 | 0 | 9 | 917 | 655 | 58 | 6 |
-| `D3DX` | 379 | 353 | 3 | 94959 | 26 | 21 | 0 | 5 | 1223 | 814 | 212 | 30 |
+| `XNET` | 413 | 383 | 0 | 74962 | 12 | 1 | 0 | 8 | 1304 | 1061 | 111 | 5 |
+| `XONLINE` | 704 | 667 | 0 | 139914 | 61 | 39 | 0 | 5 | 3123 | 2859 | 690 | 19 |
+| `D3D` | 302 | 279 | 0 | 59686 | 6 | 1 | 0 | 9 | 917 | 655 | 58 | 6 |
+| `D3DX` | 379 | 356 | 0 | 94959 | 26 | 21 | 0 | 5 | 1223 | 814 | 212 | 30 |
 | `XGRPH` | 642 | 583 | 0 | 118059 | 52 | 44 | 0 | 4 | 3306 | 2752 | 340 | 42 |
-| `DSOUND` | 427 | 369 | 6 | 44802 | 6 | 0 | 0 | 6 | 1042 | 929 | 38 | 7 |
-| `XPP` | 242 | 231 | 2 | 32775 | 6 | 1 | 0 | 1 | 564 | 481 | 14 | 5 |
-| **all library sections** | **3109** | **2855** | **21** | **565157** | **169** | **107** | **0** | **38** | **11479** | **9551** | **1463** | **114** |
+| `DSOUND` | 427 | 370 | 5 | 44802 | 6 | 0 | 0 | 6 | 1042 | 929 | 38 | 7 |
+| `XPP` | 242 | 233 | 0 | 32775 | 6 | 1 | 0 | 1 | 564 | 481 | 14 | 5 |
+| **all library sections** | **3109** | **2871** | **5** | **565157** | **169** | **107** | **0** | **38** | **11479** | **9551** | **1463** | **114** |
 
-Of the **2876** names the map carries in these sections, **21** are `thunk_` jump stubs and **2855** are real C++ names, so **2855** of the 3109 bodies are semantically named.
+Of the **2876** names the map carries in these sections, **5** are `thunk_` jump stubs and **2871** are real C++ names, so **2871** of the 3109 bodies are semantically named.
 
 **169 of 3109** library bodies reference any string at all (**107** through a `push imm32`, **62** only through a data-table dword), **0** reference a build-tree source path, and **38** reference a wide literal. Direct calls resolve to a known body 9551 times, 1463 of them from a body in another section.
 

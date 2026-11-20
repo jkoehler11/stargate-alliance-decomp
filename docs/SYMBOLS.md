@@ -63,13 +63,13 @@ resolves, not a live attach.
 ## What the map does and does not claim
 
 - **Every address is inside the image.** `make symbols` passes `--xbe` and the tool fails if a symbol
-  falls outside the section table: measured **15,447 of 15,447 inside, 0 outside**.
+  falls outside the section table: measured **15,718 of 15,718 inside, 0 outside**.
 - **Names are file-level, not unique.** 131 names are used by more than one function — the assert
   attribution names a function by its source file, so `Core_UnTemplate` covers 309 of them,
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
   gives every duplicate an `_<address>` suffix (1,299 symbols affected) so a debugger can address
   them separately, and the count is printed on every run.
-- **7,788 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
+- **8,051 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
   without a name — and they are the engine bodies with no naming evidence (`docs/NAMING.md`), not a gap in
   this file. The library sections are named from a locally supplied XDK 5849.17 set (`make xdk-lib-names`,
   `make xdk-call-names`, `make xdk-lib-residue`, PLAN 4.2): **2,855 of the 3,109** bodies there, the rest of
@@ -99,13 +99,13 @@ make symbols           # then regenerate the map and the assembler form
 | `add` | a body the map has no row for; `target` carries its name | may not land inside any row, and needs a matching `xbe_overrides.csv` row — that file is what creates the function |
 | `rename` | the name this row's own instruction settles; `target` carries it | the map must have the row; moves no edge, so it cannot join an overlap |
 
-Fifty-seven rows are in the file: eleven body repairs and the 46 thunk renames measured below. Each is one measured
-thing: the `Core_UnTemplate` row at `0x0002f820` folded
-into the audio body it belongs to (`0x0002f13c`, 2,282 bytes), the pump at `0x0002feb0` given its real end
-(`0x3137f`), the body at `0x0002fa30` — slot 33 of `XBoxAudioSubsystem`'s table, which calls
-`XboxAudio_FlushSounds` over `[this+0xd8]` — added, and eight other rows that stopped inside the slot load or the
-`rdtsc` pair of a scope close resized to their own closing `ret`. The counts do not move: **14,973 functions and
-3,970,681 bytes**, because the fold and the add cancel.
+**335 rows** are in the file: 272 `add`s, 53 `rename`s, 9 `resize`s and one `drop`. Each is one measured thing:
+the `Core_UnTemplate` row at `0x0002f820` folded into the audio body it belongs to (`0x0002f13c`, 2,282 bytes),
+the pump at `0x0002feb0` given its real end (`0x3137f`), the body at `0x0002fa30` — slot 33 of
+`XBoxAudioSubsystem`'s table, which calls `XboxAudio_FlushSounds` over `[this+0xd8]` — added, eight other rows
+that stopped inside the slot load or the `rdtsc` pair of a scope close resized to their own closing `ret`, the
+CRT's `sinh` stub added with `ULevel::MultiLineCheck` and one 63-byte BSP getter, and the registration table's
+268 native bodies (below). The map is **15,244 functions and 4,015,693 bytes**.
 
 `--check` runs in `make ci` through the tool contract: it re-applies the file to the committed csv in memory and
 fails if the bytes differ, so a Ghidra re-import that undoes a repair is red instead of silently reverting the map.
@@ -113,6 +113,29 @@ It also refuses a boundary row whose `function_size` in `symbols/xbe_overrides.c
 column was written by the registration pass and read by nothing — and refuses an `add` with no row in that file,
 because `XbePost.java` builds a function from an override row and an `add` alone is a body the next import cannot
 see (U37).
+
+## The bodies no call graph can see: the registration table's 883
+
+A native function has no caller. Its only reference is its row in the registration table, so a disassembly that
+builds functions from call edges never makes one — and `symbols/xbox_functions.csv` is that disassembly.
+`tools/native-census.py` (PLAN 3.9) has measured the gap since 2026-11-10: of the **883** distinct body addresses
+`inventory/native_targets.csv` names, **274** fell outside every row of the map. All 274 were independently
+accepted as function starts — each follows a `0xcc`, zero or `ret` boundary, opens on an MSVC prologue, and the
+disassembler created a body at it that ends on a flow terminator — and none of them ever became a row.
+
+They are rows now. `native-census.py` gained the third reading a repair needs — **how far each body runs in the
+image** — and the two emitters that write it out: `--emit-boundaries` prints the `add` row and
+`--emit-creations` the `xbe_overrides.csv` row that `XbePost.java` builds a function from, so a fresh import
+keeps the body instead of reporting it missing. The extent is the image's, not a guess: Ghidra's `body_bytes`
+where the bytes there close on a terminator (269 of the 274, all but five on a `ret imm16`), otherwise the body's
+own end at the first `cc cc` run (5 more). **268 of the 274 are in the file**, and **877 of the 883 registration
+bodies are map rows** now; the six the file refuses are U39, refused by name rather than truncated to fit.
+
+The same three columns measure the other direction, and it is the next bundle's population: of the 877
+registration bodies that are rows, **827** close on a terminator at the size their row declares, **40** do not
+close at that size but do at the body's own `cc cc` bound (the declared size stops inside a fragment), and
+**10** close nowhere before the next padding run. That is U36's "stops short" defect counted over a population
+of 877 rather than the eleven rows the audio thread happened to walk.
 
 ## Jump thunks: what each one jumps to, and the name that follows
 
