@@ -5412,3 +5412,37 @@ from their own closing `ret`. Eleven rows in total. What it did **not** settle: 
 row (the `0x0002fa30` body this repair adds, and `0x0015a660`, `0x001ea250`, `0x002b7aa0` are three more inside the
 gaps it walked), and `0x0002fa30` still has no name: it is slot 33 of `XBoxAudioSubsystem`'s table `0x004d21f8`,
 between `SetSoundDevice` and the pump, and it walks the `[this+0xd8]` array calling `XboxAudio_FlushSounds`.
+
+## U37. The map's 75 jump thunks spelled their target by address -- answered: the row's own instruction names it
+
+**Observed.** 75 rows of `symbols/xbox_functions.csv` are 2, 5 or 6 bytes -- a transfer of control, not a body --
+and every one of them was named `thunk_FUN_<address>`: the target *by address*. That name survives only as long as
+the target has no name of its own, and by 2026-11-20 46 of those targets did (`_wcslen`, `?Render@CLiveEngine@...`,
+`_XcSHAUpdate@12`, ...), so the map was spelling a number where the build had a name. `module-export-census --check`
+had been reporting exactly that symptom for three rows (`rethunked`: the export header says `_wcslen`, the map says
+`thunk_FUN_003e67ed`) and the census note carried it as "a naming pass (4.2), not a census edit".
+
+**Why it matters.** The map is the project's naming evidence: every census that buckets names by prefix
+(`docs/MODULE_CENSUS.md` counts `thunk_*`, `docs/LIBRARIES.md` counts them per library section) reads these 75 rows,
+and a debugger loading `symbols/xbox.sym.o` sees `thunk_FUN_003e67ed` where the function is `_wcslen`. It is also
+the one class of row where the name is *derivable* from the code, with no naming evidence to gather.
+
+**Answered 2026-11-20: `tools/thunk-targets.py` decodes the row and the rule follows.** `inventory/thunk_targets.csv`
+(75 rows) reads each row's first instruction -- `e9 rel32` (72), `eb rel8` (2) or `ff 25 disp32` (1) -- resolves the
+pointer slot of the indirect one, follows a chain of thunks to its terminal hop, and records the name the target
+already has. **46 land on a named body** (34 C++-mangled XDK methods: 14 `UIXNamespace`, 8 `XHVNamespace`, 3 `CXo`,
+3 `D3D`; 3 `_X…`/`_x…`; 9 CRT/other) and are renamed `thunk_<target>` -- a `rename` verb in
+`symbols/xbe_boundaries.csv`, which is where a map repair lives that must survive a re-import. The other 29 keep
+`thunk_FUN_<address>` because their target is still `FUN_*`: carrying the name across the jump is what a thunk
+tells you, and inventing one for the target is not.
+
+**What the bytes corrected on the way.** One row is a chain, not a jump to a body: `0x0007e4f0` is `jmp 0x0033e788`,
+which is `jmp 0x00343fae`, which is `jmp dword ptr [0x004c6cc4]` -- the artifact records the terminal hop and the hop
+count, so the chain resolves instead of pointing at another stub. And `0x003978d0` is not a direct jump at all: it
+is `jmp dword ptr [0x005ccae8]`, an entry in the image's own pointer table, whose four neighbours
+(`0x003d8db0`, `0x003d8e50`, `0x003d8dc0`, `0x003d8e70`) are four more entries -- the image has no import list
+(`docs/IMPORTS.md`), so this is the closest thing it has to one.
+
+**What would settle the rest.** Nothing in this entry: the 29 rows that still carry an address are waiting on the
+target, not on the thunk. Naming a `FUN_*` target renames its thunks on the next `make thunk-targets`, and
+`--check` fails until it does, which is what keeps the two in step.

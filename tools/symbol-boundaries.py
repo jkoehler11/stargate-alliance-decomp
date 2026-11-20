@@ -23,11 +23,14 @@ repairs (so an import that undoes one fails CI instead of silently reverting it)
     python3 tools/symbol-boundaries.py --check       # no dump: does the committed map carry the repairs?
     python3 tools/symbol-boundaries.py --selftest    # synthetic map, every verb and every refusal
 
-The verbs are `resize` (a measured end), `drop` (interior code of the row a `target` names) and `add` (a
-body the map has no row for). Each is validated against the map, not trusted: a `drop` must land strictly
-inside its target's repaired span, a repair may not create an overlap with a neighbouring row, and an `add`
-may not land inside any row. Every row in `xbe_overrides.csv` that records a `function_size` must agree with
-the repaired map, so the reviewed evidence and the map cannot drift apart.
+The verbs are `resize` (a measured end), `drop` (interior code of the row a `target` names), `add` (a body
+the map has no row for) and `rename` (a name the row's own instruction settles -- a jump thunk that spells its
+target by address while the target has a name). Each is validated against the map, not trusted: a `drop` must
+land strictly inside its target's repaired span, a repair may not create an overlap with a neighbouring row,
+an `add` may not land inside any row, and a `rename` must name a row the map has. Every row in
+`xbe_overrides.csv` that records a `function_size` must agree with the repaired map, and every `add` must have
+one -- that file is what `XbePost.java` builds a function from, so an `add` without it is a row a fresh import
+cannot see. The reviewed evidence and the map cannot drift apart, then, in either direction.
 """
 import argparse
 import csv
@@ -42,7 +45,7 @@ BOUNDARIES = os.path.join(ROOT, "symbols", "xbe_boundaries.csv")
 OVERRIDES = os.path.join(ROOT, "symbols", "xbe_overrides.csv")
 HEADER = ["address", "name", "size", "module"]
 COLUMNS = ["address", "action", "target", "size", "evidence"]
-VERBS = ("resize", "drop", "add")
+VERBS = ("resize", "drop", "add", "rename")
 
 
 class Refusal(Exception):
@@ -119,6 +122,17 @@ def apply_repairs(rows, boundaries, override_sizes):
             # --apply is idempotent, so a resize the map already carries is not an error: it is what
             # --check compares against, and re-applying after a Ghidra import must be a no-op.
             by_addr[a]["size"] = int(b["size"])
+        elif b["action"] == "rename":
+            if a not in by_addr:
+                raise Refusal("line %d: rename %#010x, but the map has no row there" % (b["line"], a))
+            if not b["target"]:
+                raise Refusal("line %d: rename %#010x needs the new name in the target column"
+                              % (b["line"], a))
+            if b["size"]:
+                raise Refusal("line %d: rename %#010x carries a size; a rename moves no edge"
+                              % (b["line"], a))
+            # Idempotent: a rename the map already carries is what --check compares against.
+            by_addr[a]["name"] = b["target"]
         elif b["action"] == "drop":
             try:
                 target = int(b["target"], 16)
@@ -162,7 +176,7 @@ def apply_repairs(rows, boundaries, override_sizes):
 
     # A repair may not run into the row after it. The map already holds rows whose Ghidra body overlaps the
     # next start (15 of them); those are not this file's business, but a row it touches must not join them.
-    touched = set(b["address"] for b in boundaries) | set(dropped.values())
+    touched = set(b["address"] for b in boundaries if b["action"] != "rename") | set(dropped.values())
     for i, r in enumerate(out):
         if r["address"] in touched and i + 1 < len(out):
             if r["address"] + r["size"] > out[i + 1]["address"]:
@@ -176,6 +190,20 @@ def apply_repairs(rows, boundaries, override_sizes):
                 continue
             if o["address"] <= r["address"] < o["address"] + o["size"]:
                 raise Refusal("add %#010x lands inside %#010x (%s)" % (r["address"], o["address"], o["name"]))
+
+    # An `add` is a body a fresh import cannot see, so the repair has to be paired with the row that
+    # creates it: `XbePost.java` builds a function from `xbe_overrides.csv`, and an `add` without one is
+    # a row the exporter reports as missing on every round (U37).
+    for b in boundaries:
+        if b["action"] != "add":
+            continue
+        got = override_sizes.get(b["address"])
+        if got is None:
+            raise Refusal("line %d: add %#010x has no row in xbe_overrides.csv, so a fresh import holds no "
+                          "function there (the override row is what creates it)" % (b["line"], b["address"]))
+        if got[0] != int(b["size"]) or got[1] != b["target"]:
+            raise Refusal("line %d: add %#010x (%s/%s) and xbe_overrides.csv (%s/%s) disagree"
+                          % (b["line"], b["address"], b["target"], b["size"], got[1], got[0]))
 
     # The reviewed evidence and the map agree, or the file that records the size is decoration.
     for addr, (size, name) in sorted(override_sizes.items()):
@@ -206,6 +234,9 @@ def report(old, new, boundaries):
                            (a, before[a]["name"], before[a]["size"], t["name"], t["size"]))
             else:
                 out.append("drop   %#010x %-32s already folded into %s" % (a, "(no row)", t["name"]))
+        elif b["action"] == "rename":
+            o, n = before[a], after[a]
+            out.append("rename %#010x %-32s -> %s" % (a, o["name"], n["name"]))
         else:
             n = after[a]
             out.append("add    %#010x %-32s %5d bytes (no row before)" % (a, n["name"], n["size"]))
@@ -241,6 +272,7 @@ def cmd_check():
     if committed != render(new):
         # Find the first repair the committed map does not carry, rather than diffing 15k lines.
         have = {r["address"]: r["size"] for r in rows}
+        have_names = {r["address"]: r["name"] for r in rows}
         for b in boundaries:
             if b["action"] == "add" and b["address"] not in have:
                 print("FAIL symbol-boundaries: the map has no row for %#010x (%s) -- run --apply"
@@ -252,6 +284,10 @@ def cmd_check():
                 return 1
             if b["action"] == "drop" and b["address"] in have:
                 print("FAIL symbol-boundaries: %#010x is still a separate row -- run --apply" % b["address"])
+                return 1
+            if b["action"] == "rename" and have_names.get(b["address"]) != b["target"]:
+                print("FAIL symbol-boundaries: %#010x is %s, the rename says %s -- run --apply"
+                      % (b["address"], have_names.get(b["address"]), b["target"]))
                 return 1
         print("FAIL symbol-boundaries: symbols/xbox_functions.csv is not byte-identical to the repaired map")
         return 1
@@ -284,14 +320,33 @@ def cmd_selftest():
         if not ok:
             failures.append(label + ": accepted, but is illegal")
 
-    # the three verbs, together: 0x1100 folds into a grown 0x1000, 0x1200 is a body with no row, and
-    # 0x1120 stays a body of its own -- the repair moves one edge, it does not absorb what follows
+    # the four verbs, together: 0x1100 folds into a grown 0x1000, 0x1200 is a body with no row, 0x2000 is
+    # renamed, and 0x1120 stays a body of its own -- the repair moves one edge, it does not absorb what follows
     good = [b("resize", 0x1000, size="288"), b("drop", 0x1100, target="0x1000"),
-            b("add", 0x1200, target="FUN_00001200", size="24")]
+            b("add", 0x1200, target="FUN_00001200", size="24"),
+            b("rename", 0x2000, target="thunk_Body_C")]
     got = apply_repairs([dict(r) for r in base], good, {0x1200: (24, "FUN_00001200")})
-    want = [(0x1000, "Body_A", 288), (0x1120, "Body_B", 64), (0x1200, "FUN_00001200", 24), (0x2000, "Body_C", 16)]
+    want = [(0x1000, "Body_A", 288), (0x1120, "Body_B", 64), (0x1200, "FUN_00001200", 24),
+            (0x2000, "thunk_Body_C", 16)]
     if [(r["address"], r["name"], r["size"]) for r in got] != want:
-        failures.append("verbs: got %r" % [(r["address"], r["size"]) for r in got])
+        failures.append("verbs: got %r" % [(r["address"], r["name"], r["size"]) for r in got])
+
+    # a rename the map already carries is what --check compares against, so it is legal to re-apply
+    expect("rename already applied", lambda: apply_repairs(
+        [dict(r) for r in base], [b("rename", 0x2000, target="thunk_Body_C")], {}), True)
+    expect("rename to the same name", lambda: apply_repairs(
+        [dict(r) for r in base], [b("rename", 0x2000, target="Body_C")], {}), True)
+    expect("rename a row that is not there", lambda: apply_repairs(
+        [dict(r) for r in base], [b("rename", 0x1500, target="Gone")], {}), False)
+    expect("rename with no name", lambda: apply_repairs(
+        [dict(r) for r in base], [b("rename", 0x2000, target="")], {}), False)
+    expect("rename that carries a size", lambda: apply_repairs(
+        [dict(r) for r in base], [b("rename", 0x2000, target="X", size="16")], {}), False)
+    expect("add with no override row", lambda: apply_repairs(
+        [dict(r) for r in base], [b("add", 0x1200, target="FUN_00001200", size="24")], {}), False)
+    expect("add whose override row disagrees", lambda: apply_repairs(
+        [dict(r) for r in base], [b("add", 0x1200, target="FUN_00001200", size="24")],
+        {0x1200: (32, "FUN_00001200")}), False)
 
     expect("drop outside its target", lambda: apply_repairs(
         [dict(r) for r in base], [b("drop", 0x1120, target="0x1000")], {}), False)
@@ -300,7 +355,8 @@ def cmd_selftest():
     expect("add where a row already is, with another shape", lambda: apply_repairs(
         [dict(r) for r in base], [b("add", 0x1100, target="FUN_00001100", size="8")], {}), False)
     expect("add already applied", lambda: apply_repairs(
-        [dict(r) for r in base], [b("add", 0x1120, target="Body_B", size="64")], {}), True)
+        [dict(r) for r in base], [b("add", 0x1120, target="Body_B", size="64")],
+        {0x1120: (64, "Body_B")}), True)
     expect("drop a row that is not there", lambda: apply_repairs(
         [dict(r) for r in base], [b("drop", 0x1500, target="0x1000")], {}), False)
     expect("unknown verb", lambda: apply_repairs(
@@ -330,7 +386,7 @@ def cmd_selftest():
         for f in failures:
             print("FAIL symbol-boundaries: %s" % f)
         return 1
-    print("ok   symbol-boundaries: 3 verbs, 8 refusals, idempotent apply, render round trip")
+    print("ok   symbol-boundaries: 4 verbs, 14 refusals, idempotent apply, render round trip")
     return 0
 
 

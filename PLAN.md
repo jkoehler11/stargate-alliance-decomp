@@ -15231,3 +15231,44 @@ sequence.
   dump and write nothing; both artifacts regenerate from the dump.
 - **Not in this PR.** Which method increments an audio handle (the registry's own math, reached with a handle);
   the 34 inherited slot targets that stay unnamed in the map; and the 78 untyped `[reg+0x7c]` receivers.
+
+### Execution notes (2026-11-20, the map's jump thunks are named from their own instruction, and one of them is a chain)
+
+- **Task.** The first item the module-census bundle left as "not in this bundle": the map's `thunk_FUN_*` names,
+  which spelled their target by address, plus the `rethunked` disagreement the census had been reporting rather
+  than failing on.
+- **The name is derivable, so no evidence had to be gathered.** 75 map rows are 2, 5 or 6 bytes that transfer
+  control. `tools/thunk-targets.py` reads each row's first instruction -- `e9 rel32` (72), `eb rel8` (2), `ff 25
+  disp32` (1) -- resolves the pointer slot of the indirect one, and follows chains: **46 targets carry a name**
+  (34 C++-mangled XDK methods: 14 `UIXNamespace`, 8 `XHVNamespace`, 3 `CXo`, 3 `D3D`; 3 `_X…`/`_x…`; 9 CRT/other),
+  and those rows become `thunk_<target>`. The other 29 targets are still `FUN_*`, so their rows keep
+  `thunk_FUN_<address>`. `inventory/thunk_targets.csv` is the artifact; `--check` reconciles it with the map and
+  with the rule without the dump, `--selftest` covers the five decodings, four refusals and the chain.
+- **The bytes corrected two rows, and both were wrong in a way a name cannot show.** `0x0007e4f0` is not a jump to
+  a body: it is `jmp 0x0033e788`, which is `jmp 0x00343fae`, which is `jmp dword ptr [0x004c6cc4]` -- one chain,
+  two hops, recorded as such. `0x003978d0` is `jmp dword ptr [0x005ccae8]`, and that slot holds `0x003d8db0`;
+  the four dwords after it are four more entries, which is the closest thing this image has to an import list
+  (`docs/IMPORTS.md`: no thunk list, no ordinal list).
+- **A rename is a map repair, so it lives where the repairs live.** `tools/symbol-boundaries.py` gained a fourth
+  verb, `rename` (the row must exist, the name comes from the `target` column, and a rename that carries a size is
+  refused because it moves no edge). The 46 rows are appended to `symbols/xbe_boundaries.csv`, emitted by
+  `--emit-boundaries` rather than typed, so the tool that measured the name is the tool that wrote the row. The
+  file is now 57 rows: eleven body repairs and 46 renames, and the map still reads **14,973 functions and 3,970,681
+  bytes**.
+- **The census now recognises both spellings.** `module-export-census --check` compared a map name of
+  `thunk_FUN_<hex>` with the export header's bare target name; after the rename the map says `thunk_<name>`, so the
+  rule strips the prefix and compares that. It reports 3 `rethunked` rows for the 3 that are in an exported module
+  list -- the disagreement it used to report is now the rule's expected output, not drift.
+- **Files.** `tools/thunk-targets.py` (new: five decodings, the chain, the naming rule, `--check`, `--emit-boundaries`,
+  `--selftest`), `inventory/thunk_targets.csv` (new, 75 rows), `tools/symbol-boundaries.py` (the `rename` verb, and
+  an `add` now needs a matching `xbe_overrides.csv` row -- that file is what creates the function), `symbols/
+  xbe_boundaries.csv` (+46 renames), `symbols/xbox_functions.csv` (renamed, 46 rows), `symbols/xbox.map`,
+  `tools/module-export-census.py` (the prefix rule), `Makefile` (`thunk-targets`, help, `.PHONY`, the `make ci`
+  line), `docs/SYMBOLS.md` (the thunk section, the `rename` verb, `add`'s pairing), `docs/UNKNOWNS.md` (U37),
+  `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `thunk-targets --check` passes without the dump and names the row when one is
+  corrupted; `--selftest` covers both `rel8` forms, the indirect slot and the chain; `symbol-boundaries --selftest`
+  now covers 4 verbs and 14 refusals; the artifact regenerates from the dump in under a second.
+- **Not in this PR.** The three attributed bodies a fresh import holds no function for (the override-row creation
+  route is now checked, and the rows land next); the 29 thunks whose targets are still `FUN_*`, which wait on
+  naming the target, not on the thunk.

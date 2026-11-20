@@ -94,9 +94,11 @@ make symbols           # then regenerate the map and the assembler form
 |---|---|---|
 | `resize` | this row ends at the address the evidence measured, not at Ghidra's edge | positive; may not run into the next row |
 | `drop` | this address is not a body, it is interior code of the row named in `target` | must land strictly inside that row's repaired span |
-| `add` | a body the map has no row for; `target` carries its name | may not land inside any row |
+| `add` | a body the map has no row for; `target` carries its name | may not land inside any row, and needs a matching `xbe_overrides.csv` row — that file is what creates the function |
+| `rename` | the name this row's own instruction settles; `target` carries it | the map must have the row; moves no edge, so it cannot join an overlap |
 
-Eleven repairs are in the file, and each is one measured thing: the `Core_UnTemplate` row at `0x0002f820` folded
+Fifty-seven rows are in the file: eleven body repairs and the 46 thunk renames measured below. Each is one measured
+thing: the `Core_UnTemplate` row at `0x0002f820` folded
 into the audio body it belongs to (`0x0002f13c`, 2,282 bytes), the pump at `0x0002feb0` given its real end
 (`0x3137f`), the body at `0x0002fa30` — slot 33 of `XBoxAudioSubsystem`'s table, which calls
 `XboxAudio_FlushSounds` over `[this+0xd8]` — added, and eight other rows that stopped inside the slot load or the
@@ -106,7 +108,42 @@ into the audio body it belongs to (`0x0002f13c`, 2,282 bytes), the pump at `0x00
 `--check` runs in `make ci` through the tool contract: it re-applies the file to the committed csv in memory and
 fails if the bytes differ, so a Ghidra re-import that undoes a repair is red instead of silently reverting the map.
 It also refuses a boundary row whose `function_size` in `symbols/xbe_overrides.csv` disagrees with the map — that
-column was written by the registration pass and read by nothing.
+column was written by the registration pass and read by nothing — and refuses an `add` with no row in that file,
+because `XbePost.java` builds a function from an override row and an `add` alone is a body the next import cannot
+see (U37).
+
+## Jump thunks: what each one jumps to, and the name that follows
+
+Seventy-five rows of the map are not bodies. They are 2, 5 or 6 bytes that transfer control, and the map named each
+one after its target **by address** — `thunk_FUN_003e67ed` — which is a name that stops being true the moment the
+target earns a name of its own. `tools/thunk-targets.py` (`make thunk-targets`,
+`inventory/thunk_targets.csv`) decodes each row's own instruction and settles it:
+
+| encoding | bytes | rows | what it is |
+|---|---:|---:|---|
+| `e9 rel32` | 5 | 72 | near jump |
+| `eb rel8` | 2 | 2 | short jump — `0x003e7b74` is `eb 00`, a hotpatch slot that jumps onto the next instruction; `0x003e9a2c` is `eb 0a`, onto the body ten bytes on |
+| `ff 25 disp32` | 6 | 1 | `0x003978d0` is `jmp dword ptr [0x005ccae8]`, and that slot holds `0x003d8db0` — an entry in the image's own pointer table, not a direct jump |
+
+**46 of the 75 land on a body that has a name**: 34 C++-mangled XDK methods (14 `UIXNamespace` — `CLiveEngine`'s
+`Render`, `SetInput`, `GetNotifications`, `Reboot`; 8 `XHVNamespace` — `CXHVEngine`'s `EnableProcessingMode`,
+`RegisterLocalTalker`, `VoiceMailStop`; 3 `CXo`, 3 `D3D`), three `_X…`/`_x…` entries (`_XcspFreeEverything@0`,
+`_XcSHAUpdate@12`, `_x_corr`) and nine CRT/other (`_wcslen`, `_wcscpy`, `__wcsupr`, `_convolve`, `_jpeg_destroy`,
+`_png_free`, `_MidEstPitch`, `_USBD_Init@8`, `?…`), and the rule carries that name across the jump: `0x00036cb0`
+becomes `thunk__wcslen`. The other 29 land on a body that is still `FUN_*` and keep `thunk_FUN_<address>`, because
+inventing a name for the target is not what a thunk tells you.
+
+One row is a **chain**: `0x0007e4f0` is `jmp 0x0033e788`, which is `jmp 0x00343fae`, which is `jmp dword ptr
+[0x004c6cc4]`. The artifact records the terminal hop and the hop count (2), so the chain resolves to a body instead
+of to another stub. Each row's rename is a `rename` row in `symbols/xbe_boundaries.csv` (`--emit-boundaries` prints
+them), so the map carries it without a Ghidra round and `--check` stays the thing that catches a re-import undoing
+it; after the rename pass the map has **29** `thunk_FUN_*` rows left, all of them on unnamed targets.
+
+`--check` needs no dump: it reconciles every row with the map (every `thunk_*` map row has a row in the artifact and
+no others do), with the rule (the name is `thunk_<target>` or `thunk_FUN_<terminal>`), and with the encodings
+(3-byte bodies are not a thunk, a 5-byte row is not an indirect jump). `--selftest` decodes synthetic bodies: a
+forward and a backward `rel32`, both `rel8` forms, the indirect slot, a `call` and a bare `ret` refused, a truncated
+`rel32` refused, and the three-hop chain. The artifact regenerates from the dump in under a second.
 
 ## Per-module address lists, and why there are no module ranges
 

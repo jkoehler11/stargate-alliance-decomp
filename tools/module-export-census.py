@@ -38,11 +38,12 @@ against the exporter's round summary in `inventory/` (each module's exported cou
 game-derived and stay under `$WORK` -- only this census, which carries addresses and counts, is
 committed.
 
-Two readings on that reconciliation are reported rather than failed. A body the map names
-`thunk_FUN_<target>` is a five-byte `jmp`, and an analysis that has the target's own name (an XDK
-library name, say) names the thunk after it -- so the export header says `_wcslen` where the map
-still spells `thunk_FUN_003e67ed`. The census keeps the header's name as its independent read and
-lists those addresses as `rethunked`. And an address the current analysis holds no function for (a
+Two readings on that reconciliation are reported rather than failed. A thunk body is named from the
+body it jumps to: `thunk_FUN_<address>` where that target is still `FUN_*`, and `thunk_<target name>`
+after the rename pass in `symbols/xbe_boundaries.csv` (`tools/thunk-targets.py` measures it). An
+analysis that has the target's own name (an XDK library name, say) names the thunk bare -- so the
+export header says `_wcslen` where the map says `thunk__wcslen`. The census keeps the header's name
+as its independent read and lists those addresses as `rethunked`. And an address the current analysis holds no function for (a
 gap body nothing xrefs) is exported by no round: the round summary's `missing` column is the count,
 and the check prints it instead of pretending the population is whole.
 """
@@ -370,9 +371,15 @@ def check(path=CSV_PATH):
             # target's own name names the thunk after it. The export header keeps its own read; the
             # disagreement is a rename the map has not caught up with, not a stale census row -- so
             # report it, unless the export's name is something else entirely.
+            # A thunk row is named from the body it jumps to: `thunk_FUN_<address>` before the rename pass
+            # that `symbols/xbe_boundaries.csv` carries, `thunk_<target name>` after it. The export header
+            # names the thunk after the target it can see, so compare the map's name with the prefix removed
+            # -- and, for the address form, resolve that address through the map before comparing.
             m = THUNK.match(k["name"])
             tgt = known.get("0x%s" % m.group(1)) if m else None
-            if m and tgt and tgt["name"] == r["name"]:
+            if k["name"].startswith("thunk_") and k["name"][len("thunk_"):] == r["name"]:
+                rethunked.append(r["address"])
+            elif m and tgt and tgt["name"] == r["name"]:
                 rethunked.append(r["address"])
             else:
                 bad.append("%s: name %r != function_modules.csv %r"
