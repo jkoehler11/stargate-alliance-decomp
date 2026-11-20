@@ -88,6 +88,29 @@ assets: either the compile path is reproduced, or the microcode for the programs
 shipped in their place. `tools/build.sh` does neither today, and the difference is invisible in a script-only
 check — the packages would verify and the first draw would fail.
 
+## Bake or reproduce: the two costs, with the numbers in hand
+
+The requirement is settled — a mission compiles seven of the 60 programs, through a 50-class assembler-and-optimiser
+suite (`docs/NATIVE_NOTES.md`, "How many of the 60 programs a map compiles" and "Inside the assembler"). What is not
+settled is which side a rebuilt build takes, and the two sides are not close in size:
+
+| | bake the microcode | reproduce the compile path |
+|---|---|---|
+| what it takes | one instrumented campaign run (`missions.sh --all` with the `_XGAssembleShader` breakpoint) to get the union of programs any mission compiles, then a table of program → microcode | reimplementing `PreProcessor`, the yacc grammar in `CD3DXAssembler`, the encoder, `DeadCodeStripper`, `Renamer`, `Swizzle`, `InstructionGraph`'s scheduler and temp allocator, `PixelShaderAssembler`, `TLEngineSim` |
+| size | N programs × a few hundred bytes of microcode | **50 classes, 464 methods, 84,387 bytes** of assembler and optimiser |
+| pass criterion | the blobs equal what the original driver received | byte-identical microcode from a re-implementation |
+| main risk | a mission outside the measured set needs a program the table lacks — mitigated by logging an unknown program at runtime instead of failing | any policy difference (scheduling order, renaming choice, swizzle preference) changes the output, and the pass criterion is exact |
+| unblocked after | the union run, which is one automated campaign | a faithful backend, which is the largest single item in Phase 6 |
+
+**The recommendation this measurement supports is bake-first.** The set a mission needs is small and enumerable,
+the alternative is a compiler backend whose output must match byte for byte, and nothing in `PLAN.md` requires the
+rebuilt build to compile shaders the original did not ship — which is the only case that would demand the
+reimplementation. Reproducing the path remains the right answer if that requirement ever appears, and the interior
+mapping above is what that work would start from.
+
+This is a project decision rather than a technical one, so it belongs here as a costed pair rather than as a
+unilateral choice: the next session should run the union measurement, and the decision is James's once N is known.
+
 ## What the script does not do
 
 * **It never writes into the repository.** Everything lands under `build/` (git-ignored) or `$WORK`.
