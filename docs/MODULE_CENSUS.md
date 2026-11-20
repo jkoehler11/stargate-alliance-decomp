@@ -1,24 +1,24 @@
-# What the 6,063 exported bodies are (PLAN 4.8's native half)
+# What the 6,150 exported bodies are (PLAN 4.8's native half)
 
 Status: **measured** — the export's population is classified four ways, and the module attribution is
 independently checked against each body's own `__FILE__` path: **848 of 858 bodies that name a `.cpp`
 name the module they were attributed to** (2026-11-20).
-Artifact: `inventory/module_export_census.csv` (6,147 rows, one per exported body; three attributed
-bodies the analysis holds no function for are named below).
+Artifact: `inventory/module_export_census.csv` (6,150 rows, one per exported body; **every attributed
+body is now in the set** — the three the analysis used to hold no function for are exported, below).
 Tools: `tools/module-export-census.py` (`make module-census`; `--check` in `make ci`).
 Input: the 12 exporter rounds from `tools/ghidra/export-module.sh` (`docs/MODULE_SPLIT.md`), which
 leave 18.8 MB of decompiled C under `$WORK/module-export`.
 
 ## The question, and why the answer is a classifier
 
-4.5 paid for the export and 4.8 is left with its output: 6,147 decompiled bodies. The plan line asks
+4.5 paid for the export and 4.8 is left with its output: 6,150 decompiled bodies. The plan line asks
 what Perception changed against stock UE2.5 — renderer, memory, compiler behaviour — and the note
 before this one put the open half plainly: *whether `Core`/`Engine` are mostly library code is settled
 by a classifier over the exported bodies (section, call fan-in, string refs), not by another pass*.
 
-So this is four independent reads of the same 6,147 files, none of which trusts the decompiler's prose:
+So this is four independent reads of the same 6,150 files, none of which trusts the decompiler's prose:
 
-* **section** — the XBE section the address falls in. All **6,147** are in `.text`; not one is an
+* **section** — the XBE section the address falls in. All **6,150** are in `.text`; not one is an
   attributed address that actually points into data.
 * **callers** — direct `E8 rel32` call sites across the whole image, counted in one pass and tallied
   per target. A dword scan cannot see a direct call (it stores a relative offset, not the address),
@@ -35,45 +35,45 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 <!-- generated:module-census -->
 | module | bodies | failed | ret-stub | src | asset | config | format | text | silent |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `Core` | 3220 | 2 | 102 | 563 | 3 | 9 | 116 | 322 | 2103 |
-| `Engine` | 2111 | 0 | 25 | 562 | 5 | 13 | 98 | 366 | 1042 |
+| `Core` | 3221 | 2 | 102 | 563 | 3 | 9 | 116 | 323 | 2103 |
+| `Engine` | 2112 | 0 | 25 | 562 | 5 | 13 | 98 | 367 | 1042 |
 | `IpDrv` | 159 | 0 | 4 | 22 | 0 | 0 | 23 | 15 | 95 |
 | `Gui` | 155 | 0 | 1 | 54 | 1 | 0 | 9 | 27 | 63 |
 | `D3DDrv` | 129 | 0 | 0 | 22 | 0 | 2 | 4 | 53 | 48 |
-| `XboxAudio` | 114 | 0 | 0 | 9 | 0 | 1 | 7 | 11 | 86 |
+| `XboxAudio` | 115 | 0 | 0 | 9 | 0 | 1 | 7 | 12 | 86 |
 | `stargategame` | 88 | 0 | 0 | 31 | 0 | 0 | 1 | 26 | 30 |
 | `stargatevehicles` | 52 | 0 | 1 | 12 | 0 | 0 | 0 | 14 | 25 |
 | `Fire` | 41 | 0 | 0 | 9 | 0 | 0 | 1 | 5 | 26 |
 | `XboxLive` | 32 | 0 | 0 | 11 | 0 | 0 | 11 | 4 | 6 |
 | `Gameplay` | 24 | 0 | 0 | 9 | 0 | 0 | 0 | 10 | 5 |
 | `XboxDrv` | 22 | 0 | 0 | 5 | 0 | 0 | 1 | 4 | 12 |
-| **total** | **6147** | **2** | **133** | **1309** | **9** | **25** | **271** | **857** | **3541** |
+| **total** | **6150** | **2** | **133** | **1309** | **9** | **25** | **271** | **860** | **3541** |
 
 | measurement | bodies | share |
 |---|---:|---:|
-| direct call sites into the set | 41009 sites | |
-| at least one caller | 4295 | 69.9% |
-| in a vtable or data table | 1436 | 23.4% |
-| no caller and no data reference | 535 | 8.7% |
+| direct call sites into the set | 41011 sites | |
+| at least one caller | 4296 | 69.9% |
+| in a vtable or data table | 1437 | 23.4% |
+| no caller and no data reference | 536 | 8.7% |
 | carry a source path (TU-attributed) | 1309 | 21.3% |
 | carry no literal at all | 3541 | 57.6% |
 | decompile failed | 2 | 0.0% |
 
 | attributed module | bodies | a `.cpp` path names it | a `.cpp` names another | header path only | none |
 |---|---:|---:|---:|---:|---:|
-| `Core` | 3220 | 114 | 10 | 439 | 2657 |
-| `Engine` | 2111 | 551 | 0 | 11 | 1549 |
+| `Core` | 3221 | 114 | 10 | 439 | 2658 |
+| `Engine` | 2112 | 551 | 0 | 11 | 1550 |
 | `IpDrv` | 159 | 22 | 0 | 0 | 137 |
 | `Gui` | 155 | 54 | 0 | 0 | 101 |
 | `D3DDrv` | 129 | 21 | 0 | 1 | 107 |
-| `XboxAudio` | 114 | 9 | 0 | 0 | 105 |
+| `XboxAudio` | 115 | 9 | 0 | 0 | 106 |
 | `stargategame` | 88 | 31 | 0 | 0 | 57 |
 | `stargatevehicles` | 52 | 12 | 0 | 0 | 40 |
 | `Fire` | 41 | 9 | 0 | 0 | 32 |
 | `XboxLive` | 32 | 11 | 0 | 0 | 21 |
 | `Gameplay` | 24 | 9 | 0 | 0 | 15 |
 | `XboxDrv` | 22 | 5 | 0 | 0 | 17 |
-| **total** | **6147** | **848** | **10** | **451** | **4838** |
+| **total** | **6150** | **848** | **10** | **451** | **4841** |
 
 Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2
 
@@ -90,7 +90,7 @@ Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2
 | `0x002c1bc0` | `Core_UnTemplate` | `Core` | `IpDrv` | 2674 |
 | `0x002d4950` | `Core_UnClass` | `Core` | `IpDrv` | 300 |
 
-Names: `FUN_*` **4006**, module-prefixed **1328**, `ucpp_*` **40**, `Native_*` **26**, `thunk_*` **14**, other **733** of 6147.
+Names: `FUN_*` **4004**, module-prefixed **1328**, `ucpp_*` **40**, `Native_*` **26**, `thunk_*` **17**, other **735** of 6150.
 <!-- /generated:module-census -->
 
 ## `Core` is not mostly library code by the evidence the bodies carry
@@ -98,7 +98,7 @@ Names: `FUN_*` **4006**, module-prefixed **1328**, `ucpp_*` **40**, `Native_*` *
 The one question 4.8 asked of this pass. `Core`'s 3,220 bodies split as **563 that declare their own
 source path**, **102 `ret`-only slots**, **2 failed decompiles**, **3 asset references**, and **2,103
 that carry no literal at all**. `Engine` reads better: 562 of 2,111 carry a source path and 1,042 carry
-none. Across all twelve modules 3,541 of 6,147 (57.6%) carry no literal whatsoever.
+none. Across all twelve modules 3,541 of 6,150 (57.6%) carry no literal whatsoever.
 
 That is the shape of a static link — the libraries assert nothing — but it is not a label, and calling
 those 3,541 "library" would be a guess: a UE2 engine function without an assert has exactly the same
@@ -117,7 +117,7 @@ point one way: every one is a body attributed `Core` whose own `.cpp` is `Engine
 `UnClass.cpp` and `UnTemplate.cpp` compile under `Engine` in this build's tree, so the `Core_` prefix
 on those bodies is the weaker of the two labels.
 
-Ten of 6,147 is 0.16%, and the check is worth having anyway: it is the first time the locality rule
+Ten of 6,150 is 0.16%, and the check is worth having anyway: it is the first time the locality rule
 has been scored against evidence inside the bodies rather than against held-out asserts (89.9%,
 `docs/MODULE_ATTRIBUTION.md`). Reconciling the ten is an address-level correction to
 `function_modules.csv`/`function_module_attribution.csv` (4.5's artifacts, `--check`-gated against
@@ -135,26 +135,31 @@ names and moved six -- `0x0012ea70`, `0x0012eb30`, `0x001c4e60`, `0x001c4f30` `C
 when an asserted module and the round disagree, or when the generated block, `module_export_rounds.csv` or
 `function_modules.csv` drift.
 
-**147 of the 6,147 are not analysis targets.** 133 are `ret`-only slots (median 5 bytes — a native
+**147 of the 6,150 are not analysis targets.** 133 are `ret`-only slots (median 5 bytes — a native
 registration whose C++ side does nothing) and 14 are jump thunks (`thunk_FUN_*`). So the native half's
 work list is **6,000 bodies**, of which **1,309** can be tied to a translation unit today and
-**4,838** cannot. 535 of the 6,147 are reached by neither a direct call nor a data reference.
+**4,838** cannot. 535 of the 6,150 are reached by neither a direct call nor a data reference.
 
-**The population moved because the lists were stale, not because the map did.** `make module-lists`
-used to return before writing its lists, so every round from 2026-11-10 onwards read the 6,063
-addresses of one early write while the attribution kept growing (6,092 on `main`, 6,150 here after the
-boundary repairs). The re-export runs the lists the plan now writes: **6,147 of 6,150 exported**, 0
-inside another function. The three that did not are bodies the analysis holds no function for — no row
-in `symbols/xbe_overrides.csv` or `xbe_dispatch.csv`, which is what the importer builds a function
-from, and nothing xrefs them — `0x0003bd30` (133 bytes), `0x0024af30` (809) and `0x0002fa30` (87, the
-slot-33 audio body U36 added). They are the residue this census cannot classify, so they are named
-here instead of dropped: the rounds' `missing` column is the count `--check` prints.
+**The population moved because the lists were stale, and the second re-export finished the job.**
+`make module-lists` used to return before writing its lists, so every round from 2026-11-10 onwards read
+the 6,063 addresses of one early write while the attribution kept growing (6,092 on `main`, 6,150 after
+the boundary repairs). The re-export then ran the lists the plan writes, and three attributed bodies were
+still left out: the analysis held **no function** for `0x0003bd30` (133 bytes), `0x0024af30` (809) and
+`0x0002fa30` (87, the slot-33 audio body U36 added) — no row in `symbols/xbe_overrides.csv` or
+`xbe_dispatch.csv`, which is what the importer builds a function from, and nothing xrefs them.
 
-Three thunks are named after their targets now. `0x00036cb0` is five bytes, `jmp 0x003e67ed`, and an
-analysis that knows the XDK name for `0x003e67ed` calls the thunk `_wcslen`; the map still spells it
-`thunk_FUN_003e67ed`, so the export header and `function_modules.csv` disagree on the name alone. The
-census keeps the header's read and `--check` reports the three as `rethunked` — the map's thunk rows
-still spell their target by address, which is a naming pass (4.2), not a census edit.
+The symbols bundle (2026-11-20) gave each of them a creation row, and this pass proves it: the rounds
+run again with those rows imported, and the census reads **6,150 of 6,150 exported, 0 inside another
+function, 0 attributed bodies the analysis holds no function for**. The three are ordinary rows now —
+`0x0002fa30` is a `ret`-stub with 0 callers, `0x0024af30` is a 809-byte `silent` body, `0x0003bd30` a
+133-byte `silent` one — and the rounds' `missing` column is 0 in all twelve modules.
+
+**The name column no longer disagrees with the map.** Two things used to make the export header and
+`function_modules.csv` spell a row differently: a thunk named after a target the map spelled by address,
+and a rename that lives in `symbols/xbe_boundaries.csv` rather than `xbe_overrides.csv`. Both are now the
+census's input — it reads the override file *and* the boundary renames — so the 47 thunks the map names
+and the rename rows land in the census under the map's spelling, and `--check` reports **0 `rethunked`**
+where it used to report 3.
 
 ## The renderer half, sized
 
@@ -182,7 +187,7 @@ bodies, not in the strings they carry.
 
 * **Library versus engine per body.** No signature database (U9), so `silent` is a population, not a
   label. 4.2 owns it.
-* **4,020 `FUN_*` names.** The census says which bodies are worth naming first — the ones with ≥ 1
+* **4,004 `FUN_*` names.** The census says which bodies are worth naming first — the ones with ≥ 1
   caller and a literal — not what they are called.
 * **Stock-versus-fork diffs.** Without a stock UE2.5 image of this compiler there is nothing to diff
   against; the fork surface stays an argument from the fork packages (`docs/systems/FORK_SURFACE.md`)
@@ -192,7 +197,7 @@ bodies, not in the strings they carry.
 
     export SG1_DUMP=$HOME/nfs/sg1-dump/Stargate_SG-1_-_The_Alliance-2005-12-15 WORK=$HOME/sg1/work
     tools/ghidra/export-module.sh $SG1_DUMP $GHIDRA_HOME Core,Engine,...     # once, 262 s
-    make module-census                                                       # 0.8 s over 6,147 files
+    make module-census                                                       # 0.8 s over 6,150 files
     python3 tools/module-export-census.py --report                           # the tables
     python3 tools/module-export-census.py --check                            # dump-free, in `make ci`
 

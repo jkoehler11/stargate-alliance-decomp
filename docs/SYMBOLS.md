@@ -22,6 +22,8 @@ The names are the build's own, from the same places the native track measured th
   shipped package declares;
 - **dispatch and override names** derived from the build's data (`ucpp_Register_<Class>`, 40
   registrations, plus `appAssertFailed` and `appMallocBeforeInit` named from the strings they log);
+- **`_exp`**, a CRT intrinsic stub named from the dispatch entry it hands `__cintrindisp1`
+  (`tools/crt-dispatch-names.py`; the entry's own length-prefixed name is the evidence);
 - **`Vtbl_<Class>`** for the 466 class tables named by the class registrations (`docs/NATIVE_CLASSES.md`);
 - **`ctor_<Class>` / `dtor_<Class>`** (463 + 465) for the functions that install one of those tables with a
   constructor's or a destructor's shape (`tools/class-ctors.py`, `docs/NATIVE_CLASSES.md`); the 8 stores
@@ -125,25 +127,107 @@ target earns a name of its own. `tools/thunk-targets.py` (`make thunk-targets`,
 | `eb rel8` | 2 | 2 | short jump — `0x003e7b74` is `eb 00`, a hotpatch slot that jumps onto the next instruction; `0x003e9a2c` is `eb 0a`, onto the body ten bytes on |
 | `ff 25 disp32` | 6 | 1 | `0x003978d0` is `jmp dword ptr [0x005ccae8]`, and that slot holds `0x003d8db0` — an entry in the image's own pointer table, not a direct jump |
 
-**46 of the 75 land on a body that has a name**: 34 C++-mangled XDK methods (14 `UIXNamespace` — `CLiveEngine`'s
+**47 of the 75 land on a body that has a name**: 34 C++-mangled XDK methods (14 `UIXNamespace` — `CLiveEngine`'s
 `Render`, `SetInput`, `GetNotifications`, `Reboot`; 8 `XHVNamespace` — `CXHVEngine`'s `EnableProcessingMode`,
 `RegisterLocalTalker`, `VoiceMailStop`; 3 `CXo`, 3 `D3D`), three `_X…`/`_x…` entries (`_XcspFreeEverything@0`,
-`_XcSHAUpdate@12`, `_x_corr`) and nine CRT/other (`_wcslen`, `_wcscpy`, `__wcsupr`, `_convolve`, `_jpeg_destroy`,
-`_png_free`, `_MidEstPitch`, `_USBD_Init@8`, `?…`), and the rule carries that name across the jump: `0x00036cb0`
-becomes `thunk__wcslen`. The other 29 land on a body that is still `FUN_*` and keep `thunk_FUN_<address>`, because
-inventing a name for the target is not what a thunk tells you.
+`_XcSHAUpdate@12`, `_x_corr`), nine CRT/other (`_wcslen`, `_wcscpy`, `__wcsupr`, `_convolve`, `_jpeg_destroy`,
+`_png_free`, `_MidEstPitch`, `_USBD_Init@8`, `?…`) and `_exp` (the CRT dispatch stub below), and the rule carries
+that name across the jump: `0x00036cb0` becomes `thunk__wcslen`. The other 28 land on a body that is still `FUN_*`
+and keep `thunk_FUN_<address>`, because inventing a name for the target is not what a thunk tells you.
 
 One row is a **chain**: `0x0007e4f0` is `jmp 0x0033e788`, which is `jmp 0x00343fae`, which is `jmp dword ptr
 [0x004c6cc4]`. The artifact records the terminal hop and the hop count (2), so the chain resolves to a body instead
 of to another stub. Each row's rename is a `rename` row in `symbols/xbe_boundaries.csv` (`--emit-boundaries` prints
 them), so the map carries it without a Ghidra round and `--check` stays the thing that catches a re-import undoing
-it; after the rename pass the map has **29** `thunk_FUN_*` rows left, all of them on unnamed targets.
+it; after the rename pass the map has **28** `thunk_FUN_*` rows left, all of them on unnamed targets.
+
+### The 26 unnamed targets, by the shape their own bytes show
+
+"Where does this go" is only half an answer when the destination has no name, and the other half is a fact the
+bytes carry: what *kind* of thing the target is. The artifact therefore records a `target_kind` and the instruction
+it was read from, and `--report` prints the table below. Only a target's own edges are read — its first
+instruction, and for a forwarder the operation immediately before its `ret` — because a byte scan for a virtual
+call finds the one a real body makes in its middle as readily as a stub's only work (measured 2026-11-20: a
+`ff 53 08` in the argument setup of a 101-byte SEH body read as a forwarder until the rule was anchored to the
+return).
+
+<!-- generated:thunk-targets -->
+| terminal target | thunks that reach it | shape the target's first instruction shows |
+|---|---:|---|
+| `0x0001b310` | 2 | body |
+| `0x000624f0` | 1 | vdispatch: `mov eax, [ecx]; jmp [eax+0x20]` |
+| `0x00064f00` | 1 | body |
+| `0x00075c30` | 1 | body |
+| `0x000c4dc0` | 1 | body |
+| `0x000ef1a0` | 1 | body |
+| `0x0017a250` | 1 | body |
+| `0x00195150` | 1 | body |
+| `0x001ca680` | 1 | body |
+| `0x001d4d10` | 1 | body |
+| `0x00278780` | 1 | body |
+| `0x002c4ee0` | 1 | body |
+| `0x0032fc55` | 1 | vcall: `call [reg+0x24]`, then return |
+| `0x00343fae` | 2 | chain-jump: `jmp dword ptr [0x004c6cc4]` |
+| `0x00344480` | 1 | body |
+| `0x0034451b` | 1 | body |
+| `0x003830f0` | 1 | body |
+| `0x00398b50` | 1 | adjustor: reads `this` from the stack, replaces it, and tail-jumps |
+| `0x003d8db0` | 1 | call-forward: one `call` and no other work, then return |
+| `0x003da760` | 1 | body |
+| `0x003e7b76` | 1 | body |
+| `0x0049ff29` | 1 | body |
+| `0x004a0372` | 1 | body |
+| `0x004a03c4` | 1 | body |
+| `0x004a0416` | 1 | body |
+| `0x004a0e0a` | 1 | body |
+
+**26 distinct targets** behind the 28 unnamed thunk rows: body 21, chain-jump 1, vdispatch 1, vcall 1, adjustor 1, call-forward 1.
+<!-- /generated:thunk-targets -->
+
+The five non-`body` shapes are **compiler furniture that never had a name in the source**: a chain hop
+(`0x00343fae` is itself an indirect jump), a virtual-dispatch trampoline, a `this`-adjustor, a vtable installer and
+a one-call forwarder. Naming those means naming the shape, not the body, so the map keeps `FUN_*` and this page
+says which is which. The 21 `body` targets are where a naming pass has something to work with — and the biggest
+family among them is a *negative* result worth recording: five 82-byte bodies in the `DSOUND` section
+(`0x0049ff29`, `0x004a0372`, `0x004a03c4`, `0x004a0416`, `0x004a0e0a`) share one shape — a call to
+`?DirectSoundEnterCriticalSection@@YGHXZ`, a test of `[0x004bd190]`, one more call, then a critical-section exit —
+and all five are listed in `inventory/xdk_lib_residue.csv` as `no counterpart` in `dsound.lib`. They are the fork's
+own API layer compiled into the DirectSound segment, so no library name exists to match and each one's identity
+lives in the callee it wraps, not in its own bytes.
 
 `--check` needs no dump: it reconciles every row with the map (every `thunk_*` map row has a row in the artifact and
-no others do), with the rule (the name is `thunk_<target>` or `thunk_FUN_<terminal>`), and with the encodings
-(3-byte bodies are not a thunk, a 5-byte row is not an indirect jump). `--selftest` decodes synthetic bodies: a
-forward and a backward `rel32`, both `rel8` forms, the indirect slot, a `call` and a bare `ret` refused, a truncated
-`rel32` refused, and the three-hop chain. The artifact regenerates from the dump in under a second.
+no others do), with the rule (the name is `thunk_<target>` or `thunk_FUN_<terminal>`), with the encodings
+(3-byte bodies are not a thunk, a 5-byte row is not an indirect jump) and with the shapes (`target_kind` is in the
+fixed vocabulary, and a `body` never carries evidence or a furniture kind none). It also refuses a page whose
+generated block has drifted from the csv. `--selftest` decodes synthetic bodies: a forward and a backward `rel32`,
+both `rel8` forms, the indirect slot, a `call` and a bare `ret` refused, a truncated `rel32` refused, the three-hop
+chain, and the seven target shapes. The artifact regenerates from the dump in under a second.
+
+## CRT dispatch stubs: `exp`, and the `sinh` nobody calls
+
+Two rows of the image are ten bytes that hand a table entry to `__cintrindisp1`:
+
+```
+ba ac d3 5c 00     mov edx, 0x005cd3ac     ; the entry at 0x005cd3ac is 03 "exp", flags, four code pointers
+e9 38 47 00 00     jmp 0x003ee17a          ; __cintrindisp1
+```
+
+That is how MSVC compiles a single-argument transcendental intrinsic when the CRT keeps its own implementation:
+the *entry* carries the name, the stub only supplies it. `tools/crt-dispatch-names.py` (`make crt-dispatch-names`,
+`inventory/crt_dispatch_stubs.csv`) finds both stubs, reads the length-prefixed name out of the entry each one
+passes, and reports the map row it has:
+
+| stub | entry | name | map row | thunk onto it |
+|---|---|---|---|---|
+| `0x003e9994` | `0x005cd3da` | `sinh` | **none** | none |
+| `0x003e9a38` | `0x005cd3ac` | `exp` | yes (was `FUN_003e9a38`) | `0x003e9a2c`, an `eb 0a` hotpatch slot |
+
+So the map gains **`_exp`** — a name from the build's own data, not from the shape — and its hotpatch thunk
+becomes `thunk__exp`. The `sinh` stub at `0x003e9994` sits in the 54-byte gap between `__ui64toa` (ends
+`0x003e997a`) and `__aullrem` (`0x003e99b0`), and nothing in the image jumps or calls it: it is a body the
+analysis never created, and creating one moves the map's function count, which is the boundary thread's work
+(U36), not a rename. It is recorded in the artifact as `in_map = no` so the next session starts from the address
+rather than from the observation.
 
 ## Per-module address lists, and why there are no module ranges
 

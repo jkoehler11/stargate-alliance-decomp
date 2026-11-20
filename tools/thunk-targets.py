@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Decode the map's jump thunks: what each one jumps to, and the name that follows from it.
+"""Decode the map's jump thunks: what each one jumps to, the name that follows, and what the target is.
 
 75 rows of `symbols/xbox_functions.csv` are not bodies -- they are 2, 5 or 6 bytes that transfer
-control somewhere else, and the map names each one after its target *by address*
+control somewhere else, and the map named each one after its target *by address*
 (`thunk_FUN_003e67ed`). That name does not survive the next naming pass: once the target has a name
 of its own, the row still spells a number, and a reader cannot tell `0x00036cb0` from any other
 five-byte stub without disassembling it.
@@ -24,10 +24,22 @@ The rule the artifact records is the one `docs/SYMBOLS.md` states: a thunk whose
 a name is `thunk_<target>`, and one whose target is still `FUN_*` keeps `thunk_FUN_<target address>`
 -- a name is not invented for the target here, only carried across the jump.
 
+**The target's own shape is the second half of the read.** When the terminal target is still
+`FUN_*`, "where does this go" is only half an answer: the target's first instruction says what kind
+of thing it is, and that is a fact the bytes carry whether or not a name does. `--report` (and the
+generated block in `docs/SYMBOLS.md`) lists each unnamed target with the shape it was measured to
+have -- a virtual-dispatch trampoline, a `this`-adjustor, a vtable installer, a CRT dispatch stub, a
+`call` forwarder, a chain hop, or a plain body. The shape is not a name and the map is not edited on
+one; it is what tells the next session which targets are worth naming and which are compiler
+furniture that never had a name in the source.
+
     python3 tools/thunk-targets.py --xbe <dump>/default.xbe -o inventory
     python3 tools/thunk-targets.py --check                    # no dump, no writes
-    python3 tools/thunk-targets.py --emit-boundaries          # the `rename` rows for xbe_boundaries.csv
-    python3 tools/thunk-targets.py --selftest                 # synthetic rows, every encoding and refusal
+    python3 tools/thunk-targets.py --report                    # the artifact as a table
+    python3 tools/thunk-targets.py --write-doc docs/SYMBOLS.md # regenerate the generated block
+    python3 tools/thunk-targets.py --check-doc docs/SYMBOLS.md # no dump: the block matches the csv
+    python3 tools/thunk-targets.py --emit-boundaries           # the `rename` rows for xbe_boundaries.csv
+    python3 tools/thunk-targets.py --selftest                  # synthetic rows, every encoding and refusal
 
 `--check` reconciles the committed csv against the map without the dump: every `thunk_*` map row has
 a row here, every row's name is the one its encoding and target imply, and the encodings are the
@@ -37,15 +49,23 @@ applied by `tools/symbol-boundaries.py` -- this tool measures, it does not edit 
 import argparse
 import csv
 import os
+import struct
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAP = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 CSV_PATH = os.path.join(ROOT, "inventory", "thunk_targets.csv")
+DOC_START = "<!-- generated:thunk-targets -->"
+DOC_END = "<!-- /generated:thunk-targets -->"
 COLUMNS = ["address", "name", "size", "encoding", "terminal", "target", "slot", "target_name",
-           "hops"]
+           "hops", "target_kind", "target_evidence"]
 ENCODINGS = ("jmp-rel32", "jmp-rel8", "jmp-indirect")
 THUNK_PREFIX = "thunk_"
+# The shapes a terminal target's own bytes can be. `body` is the honest default: nothing about the
+# first instruction says the target is furniture, so the row says nothing either.
+KINDS = ("body", "chain-jump", "crt-dispatch", "vdispatch", "vcall", "adjustor", "vtbl-install",
+         "call-forward")
+HELPER = "__cintrindisp1"
 
 
 def read_map(path=MAP):
@@ -89,6 +109,53 @@ def rule_name(target, target_name):
     if target is not None:
         return "%sFUN_%08x" % (THUNK_PREFIX, target)
     return ""
+
+
+def target_kind(body, rows, va):
+    """(kind, evidence) from the terminal target's own instruction. Never a name, only a shape.
+
+    Only what the bytes spell at the target's own edges is used: its first instruction and, for the
+    forwarders, the operation immediately before its `ret`. A byte scan for `FF 5x` anywhere in a body
+    finds the virtual call a *real* body makes in its middle as readily as a stub's only work, so the
+    vcall rule is anchored to the return -- measured 2026-11-20, when the loose scan called a 101-byte
+    SEH body with a `ff 53 08` in its argument setup a forwarder.
+    """
+    if not body:
+        return "body", ""
+    got = decode(body, va)
+    if got is not None:
+        if got[0] == "jmp-indirect":
+            return "chain-jump", "`jmp dword ptr [0x%08x]`" % got[2]
+        return "chain-jump", "`jmp 0x%08x`" % got[1]
+    if len(body) >= 10 and body[0] == 0xBA and body[5] == 0xE9:
+        table = struct.unpack_from("<I", body, 1)[0]
+        tail = va + 10 + struct.unpack_from("<i", body, 6)[0]
+        if rows.get(tail, ("", 0))[0] == HELPER:
+            return "crt-dispatch", "`mov edx, 0x%08x; jmp %s`" % (table, HELPER)
+    if len(body) >= 5 and body[:2] == b"\x8b\x01" and body[2] == 0xFF and body[3] == 0x60:
+        return "vdispatch", "`mov eax, [ecx]; jmp [eax+0x%02x]`" % body[4]
+    if body[:4] == b"\x8b\x54\x24\x04" and b"\x89\x44\x24\x04\xe9" in body[:16]:
+        return "adjustor", "reads `this` from the stack, replaces it, and tail-jumps"
+    if body[:2] == b"\xc7\x01" and len(body) == 7 and body[6] == 0xC3:
+        return "vtbl-install", "`mov dword ptr [ecx], 0x%08x; ret`" % \
+            struct.unpack_from("<I", body, 2)[0]
+    # the operation immediately before the return, for a body that is nothing but a call
+    tail = body[-3:]
+    if tail[0] == 0xC2 and tail[2] == 0x00:
+        before = body[-6:-3]
+    elif body[-1:] == b"\xc3":
+        before = body[-4:-1]
+    else:
+        before = b""
+    if len(before) == 3 and before[0] == 0xFF:
+        if 0x50 <= before[1] <= 0x57:
+            return "vcall", "`call [reg+0x%02x]`, then return" % before[2]
+        if 0x90 <= before[1] <= 0x97:
+            return "vcall", "`call [reg+0x%08x]`, then return" % struct.unpack_from("<I", body, -5)[0]
+    calls = sum(1 for i in range(len(body) - 4) if body[i] == 0xE8)
+    if calls == 1 and len(body) <= 16:
+        return "call-forward", "one `call` and no other work, then return"
+    return "body", ""
 
 
 def resolve(rows, body_at, va):
@@ -141,11 +208,17 @@ def measure(xbe_path):
             raise SystemExit("%#010x %s: %s bytes that are not a jump" % (va, name, size))
         first, encoding, target, slot, hops = got
         target_name = rows.get(target, ("", 0))[0] if target is not None else ""
+        kind, evidence = "body", ""
+        if target is not None:
+            tsize = rows.get(target, ("", 0))[1] or 32
+            kind, evidence = target_kind(xbe.read_va(target, min(max(tsize, 16), 64)) or b"",
+                                         rows, target)
         out.append({"address": "0x%08x" % va, "name": name, "size": str(size),
                     "encoding": first, "terminal": encoding,
                     "target": "0x%08x" % target if target is not None else "",
                     "slot": "0x%08x" % slot if slot is not None else "",
-                    "target_name": target_name, "hops": str(hops)})
+                    "target_name": target_name, "hops": str(hops),
+                    "target_kind": kind, "target_evidence": evidence})
     return out
 
 
@@ -200,6 +273,13 @@ def check(path=CSV_PATH):
         if size != encoding_width(r["encoding"]):
             bad.append("%s: %s body is %d bytes, the encoding is %d"
                        % (r["address"], r["encoding"], size, encoding_width(r["encoding"])))
+        if r["target_kind"] not in KINDS:
+            bad.append("%s: target_kind %r outside %s" % (r["address"], r["target_kind"], KINDS))
+        if r["target_kind"] == "body" and r["target_evidence"]:
+            bad.append("%s: a `body` kind carries evidence, which is a contradiction"
+                       % r["address"])
+        if r["target_kind"] != "body" and not r["target_evidence"]:
+            bad.append("%s: kind %r with no evidence" % (r["address"], r["target_kind"]))
         try:
             hops = int(r["hops"])
         except ValueError:
@@ -237,6 +317,13 @@ def check(path=CSV_PATH):
     absent = sorted(thunks - seen)
     if absent:
         bad.append("%d map thunk(s) missing here, first %#010x" % (len(absent), absent[0]))
+    doc = os.path.join(ROOT, "docs", "SYMBOLS.md")
+    if os.path.exists(doc):
+        text = open(doc, encoding="utf-8").read()
+        if DOC_START in text and DOC_END in text:
+            if text.split(DOC_START, 1)[1].split(DOC_END, 1)[0].strip("\n") != report(rows):
+                bad.append("docs/SYMBOLS.md: the generated block differs from the csv "
+                           "(run --write-doc docs/SYMBOLS.md)")
     if bad:
         for b in bad[:12]:
             print("FAIL thunk-targets: %s" % b)
@@ -250,6 +337,47 @@ def check(path=CSV_PATH):
     print("ok   thunk-targets: %d thunk(s) (%s), %d named after their target, %d still FUN_* targets"
           % (len(rows), ", ".join("%s %d" % (k, enc[k]) for k in ENCODINGS if k in enc), named,
              len(rows) - named))
+    return 0
+
+
+def report(rows):
+    """The unnamed targets, one row each, with the shape their own bytes were measured to have."""
+    unnamed = {}
+    for r in rows:
+        if not r["target"] or not r["target_name"].startswith("FUN_"):
+            continue
+        got = unnamed.setdefault(r["target"], {"kind": r["target_kind"],
+                                               "evidence": r["target_evidence"], "thunks": []})
+        got["thunks"].append(r["address"])
+        if r["target_kind"] != "body":  # one shape per target; the first non-body read wins
+            got["kind"], got["evidence"] = r["target_kind"], r["target_evidence"]
+    out = []
+    counts = {}
+    for t in sorted(unnamed):
+        counts[unnamed[t]["kind"]] = counts.get(unnamed[t]["kind"], 0) + 1
+    out.append("| terminal target | thunks that reach it | shape the target's first instruction shows |")
+    out.append("|---|---:|---|")
+    for t in sorted(unnamed):
+        g = unnamed[t]
+        out.append("| `%s` | %d | %s%s |" % (t, len(g["thunks"]), g["kind"],
+                                            (": " + g["evidence"]) if g["evidence"] else ""))
+    out.append("")
+    out.append("**%d distinct targets** behind the %d unnamed thunk rows: %s."
+               % (len(unnamed), sum(len(g["thunks"]) for g in unnamed.values()),
+                  ", ".join("%s %d" % (k, counts[k]) for k in KINDS if k in counts)))
+    return "\n".join(out)
+
+
+def write_doc(path, rows):
+    text = open(path, encoding="utf-8").read()
+    if DOC_START not in text or DOC_END not in text:
+        raise SystemExit("%s: no %s ... %s block" % (path, DOC_START, DOC_END))
+    head, rest = text.split(DOC_START, 1)
+    _, tail = rest.split(DOC_END, 1)
+    new = head + DOC_START + "\n" + report(rows) + "\n" + DOC_END + tail
+    if new != text:
+        open(path, "w", encoding="utf-8").write(new)
+        return 1
     return 0
 
 
@@ -324,11 +452,28 @@ def selftest():
     if encoding_width("jmp-rel8") != 2 or encoding_width("jmp-indirect") != 6:
         failures.append("encoding widths")
 
+    # the shapes, on the bytes the image actually carries
+    names = {0x3EE17A: ("__cintrindisp1", 100)}
+    shapes = [
+        ("crt-dispatch", bytes.fromhex("baacd35c00") + bytes.fromhex("e938470000"), 0x3E9A38),
+        ("vdispatch", bytes.fromhex("8b01ff6020"), 0x624F0),
+        ("vtbl-install", bytes.fromhex("c701a86f5100c3"), 0x1D4D10),
+        ("adjustor", bytes.fromhex("8b5424048b422c89442404e980b10400"), 0x398B50),
+        ("call-forward", bytes.fromhex("8b44240450e86dfc000059c20400"), 0x3D8DB0),
+        ("vcall", bytes.fromhex("ff7424108b44240cff7424108b0850ff5124c21000"), 0x32FC55),
+        ("chain-jump", bytes.fromhex("ff25c46c4c00"), 0x343FAE),
+        ("body", bytes.fromhex("6aff6818293f0064a10000000050"), 0x1B310),
+    ]
+    for want, data, va in shapes:
+        kind, _ev = target_kind(data, names, va)
+        if kind != want:
+            failures.append("shape %#x: got %r, want %r" % (va, kind, want))
+
     if failures:
         for f in failures:
             print("FAIL thunk-targets: %s" % f)
         return 1
-    print("ok   thunk-targets: 3 encodings, 5 refusals, 3 rule cases")
+    print("ok   thunk-targets: 3 encodings, 5 refusals, 3 rule cases, 7 target shapes")
     return 0
 
 
@@ -337,6 +482,9 @@ def main():
     ap.add_argument("--xbe", help="the image, for the thunk bytes (write mode)")
     ap.add_argument("-o", "--out", default="inventory", help="where thunk_targets.csv goes")
     ap.add_argument("--check", action="store_true", help="reconcile the csv with the map, no dump")
+    ap.add_argument("--report", action="store_true", help="print the unnamed targets as a table")
+    ap.add_argument("--write-doc", help="regenerate a generated block in this page")
+    ap.add_argument("--check-doc", help="no dump: does the page's block match the csv?")
     ap.add_argument("--emit-boundaries", action="store_true",
                     help="print the `rename` rows for symbols/xbe_boundaries.csv")
     ap.add_argument("--selftest", action="store_true", help="decode synthetic bodies, no dump")
@@ -345,6 +493,19 @@ def main():
         return selftest()
     if args.check:
         return check()
+    if args.check_doc:
+        text = open(args.check_doc, encoding="utf-8").read()
+        if DOC_START not in text or DOC_END not in text:
+            raise SystemExit("%s: no %s ... %s block" % (args.check_doc, DOC_START, DOC_END))
+        got = text.split(DOC_START, 1)[1].split(DOC_END, 1)[0].strip("\n")
+        if got != report(read_csv()):
+            print("FAIL thunk-targets: %s: the generated block differs from the csv "
+                  "(run --write-doc %s)" % (args.check_doc, args.check_doc))
+            return 1
+        return 0
+    if args.report:
+        print(report(read_csv()))
+        return 0
     if args.emit_boundaries:
         emit_boundaries(read_csv())
         return 0
@@ -352,6 +513,8 @@ def main():
         ap.error("--xbe is required to measure (or use --check/--selftest)")
     rows = measure(args.xbe)
     write_csv(os.path.join(args.out, "thunk_targets.csv"), rows)
+    if args.write_doc:
+        write_doc(args.write_doc, rows)
     named = sum(1 for r in rows if r["target_name"] and not r["target_name"].startswith("FUN_"))
     print("wrote %s/thunk_targets.csv: %d thunks, %d named targets, %d FUN_* targets"
           % (args.out, len(rows), named, len(rows) - named))

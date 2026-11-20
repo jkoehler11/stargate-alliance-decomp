@@ -92,11 +92,24 @@ FORMAT = re.compile(r"%[-+ #0-9.]*(?:[diouxXeEfgGcspr]|l[dsux])")
 
 
 def read_overrides(path=os.path.join(ROOT, "symbols", "xbe_overrides.csv")):
-    """address -> name: the evidence names applied to a body the export snapshot predates."""
-    if not os.path.exists(path):
-        return {}
-    with open(path, newline="", encoding="utf-8") as fh:
-        return {r["address"].lower(): r["name"] for r in csv.DictReader(fh) if r["name"]}
+    """address -> name: every name the map carries that the export snapshot predates.
+
+    Two files can carry one: `xbe_overrides.csv` holds the evidence names a later import reproduces, and
+    `xbe_boundaries.csv` holds the `rename` rows (`crt-dispatch-names`, `thunk-targets`) that a repair pass
+    applies afterwards. Both are the map's current name for the address, so both are read -- a rename that
+    only the boundary file carries used to read here as a stale census row and failed the check.
+    """
+    out = {}
+    if os.path.exists(path):
+        with open(path, newline="", encoding="utf-8") as fh:
+            out = {r["address"].lower(): r["name"] for r in csv.DictReader(fh) if r["name"]}
+    bounds = os.path.join(ROOT, "symbols", "xbe_boundaries.csv")
+    if os.path.exists(bounds):
+        with open(bounds, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("action") == "rename" and r.get("target"):
+                    out[r["address"].lower()] = r["target"]
+    return out
 
 
 def die(msg):
@@ -339,7 +352,13 @@ def check(path=CSV_PATH):
     per_module = {}
     for r in rows:
         per_module[r["module"]] = per_module.get(r["module"], 0) + 1
-    rounds = {r["module"]: int(r["exported"]) for r in read_csv(ROUNDS)}
+    # One row per round, and a re-export appends its rounds after the pass it replaces: the *last* row for
+    # a module is the pass this census was taken from, so both the exported count and the `missing` column
+    # are read from there.
+    latest = {}
+    for r in read_csv(ROUNDS):
+        latest[r["module"]] = r
+    rounds = {m: int(r["exported"]) for m, r in latest.items()}
     for m, n in rounds.items():
         if per_module.get(m, 0) != n:
             bad.append("%s: census has %d rows, %s says %d exported"
@@ -415,7 +434,7 @@ def check(path=CSV_PATH):
         if len(bad) > 12:
             sys.stderr.write("FAIL ... and %d more\n" % (len(bad) - 12))
         return 1
-    unexported = sum(int(r.get("missing") or 0) for r in read_csv(ROUNDS))
+    unexported = sum(int(r.get("missing") or 0) for r in latest.values())
     print("module-export-census: %d rows reconcile with %s (%d modules), function_modules.csv and "
           "themselves; %d propagated label(s) moved since the export round%s; %d thunk(s) named "
           "after their target; %d size extent(s) differ; %d attributed body(ies) the analysis holds "
