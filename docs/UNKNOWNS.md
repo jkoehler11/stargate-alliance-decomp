@@ -5607,6 +5607,17 @@ for, and 269 of those are in tables no registration names -- so a debugger canno
 can be built for them yet. The reading rules themselves are now measured rather than assumed: a boundary
 needs a channel that does *not* name it, and the channels include the `.text` jump tables.
 
+**Answered since (2026-11-20, the class-side half).** The 250 tables no registration names are now counted
+whole -- the 232 `inventory/native_vtable_shared.csv` prefixes plus the 18 mapped tables the class map leaves
+proposed -- and their installer's own call sites are read (`tools/class-table-installers.py`): **39** are
+stored by a class constructor, which *bounds* each to an ancestor of that class and cannot name it (a ctor
+installs its parent's table before its own), **209** are stored only by bodies no class names, and **2** by no
+store at all. The 273 `<Class>_vt<slot>` rows are attributed: all **68** classes no shipped `.u` declares have a
+registration site, every class's sites agree, and the body that carries the site is one translation unit of
+`Engine` (39), `Core` (19), `IpDrv` (5), `XboxAudio` (2), `XboxDrv` (2) or `D3DDrv` (1) --
+`inventory/native_class_packages.csv`, read by `tools/module-split.py` and `tools/native-summary.py`. What is
+left of this entry is the naming half for the 39 bounded and 209 plain-only tables, and the 399 bodies.
+
 **What would settle it.** For the 269 bodies in unnamed tables, the class of each of the 250 tables (the
 installer's own call sites are the route `class-table-parents` uses). For the 273 `<Class>_vt<slot>` rows still
 unattributed, the native package each class belongs to (`XboxViewport`, `XboxClient`, `TcpipConnection`,

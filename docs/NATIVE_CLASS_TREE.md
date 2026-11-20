@@ -407,6 +407,35 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 * **Two have no named caller at all** (`0x004c9348`, `0x004cfd78`): the class objects behind them are
   constructed from unnamed code, so this edge is silent rather than negative.
 
+## The 68 classes no shipped `.u` declares are six native packages (2026-11-20)
+
+A `<Class>_vt<slot>` name is built from a class, and `tools/module-split.py` turns it into a module through
+the class's package in `inventory/classes.csv`. **273 of the 538 such rows name one of 68 classes no
+shipped package declares** -- `BoolProperty`, `ActorChannel`, `ControlChannel`, `D3DRenderDevice`,
+`TcpipConnection`, the mesh and vertex-stream classes -- because this build links those packages in rather
+than shipping their `.u`, so the class census has no row to read.
+
+`tools/native-class-packages.py` reads the edge that survives: `inventory/registration_sites.csv` resolves
+all 493 `Class`-constructor call sites to a class literal, every one of the 68 classes has a site, and the
+body holding that site is one translation unit of exactly one native package. Every class's sites agree --
+68 of 68 unanimous, each through an assert the body carries, none through address locality alone -- and the
+packages are the six the image links: `Engine` 39, `Core` 19, `IpDrv` 5, `XboxAudio` 2, `XboxDrv` 2,
+`D3DDrv` 1. `inventory/function_modules.csv` now names a module for all 538 `<Class>_vt<slot>` rows.
+
+<!-- generated:native-class-packages -->
+| the 68 native classes' package | classes | `<Class>_vt<slot>` rows |
+| --- | --- | --- |
+| `Engine` | 39 | 134 |
+| `Core` | 19 | 98 |
+| `IpDrv` | 5 | 15 |
+| `XboxAudio` | 2 | 4 |
+| `XboxDrv` | 2 | 13 |
+| `D3DDrv` | 1 | 9 |
+| **total** | **68** | **273** |
+
+68 class(es) resolve, 0 conflict, 0 land in no attributed body, 0 have no site. The rule is the registration site's body, and unanimity across a class's sites is the check.
+<!-- /generated:native-class-packages -->
+
 ## Status
 
 The constructor tree is a real second instrument (376/392 agreement) and it confirms four of the 24

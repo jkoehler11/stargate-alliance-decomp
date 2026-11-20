@@ -15653,3 +15653,29 @@ sequence.
 - **Not in this bundle.** The 8 rows nothing names (they stay whole, and no channel says otherwise), the class
   of the 250 tables no registration names (269 bodies sit in their slots), the 399 bodies no channel names, and
   the native packages' class list that would attribute the remaining 273 `<Class>_vt<slot>` rows.
+
+### Execution notes (2026-11-20, the native packages are a registration site's body, and the 250 tables are a bound)
+
+- **The 273 unattributed `<Class>_vt<slot>` rows are attributed, and the rule is one hop.** `tools/native-class-packages.py`
+  walks class -> its registration site (`inventory/registration_sites.csv`) -> the body holding the site
+  (`symbols/xbox_functions.csv`) -> that body's module (`inventory/function_module_attribution.csv`). All **68**
+  classes have a site, all 68 are **unanimous**, and every one resolves through the `__FILE__` assert the body
+  carries, not through address locality: `Engine` 39, `Core` 19, `IpDrv` 5, `XboxAudio` 2, `XboxDrv` 2, `D3DDrv` 1.
+  `tools/module-split.py` and `tools/native-summary.py` read the artifact as a second class->package source beside
+  `inventory/classes.csv`, so `inventory/function_modules.csv` now carries a module on **538 of 538** `<Class>_vt<slot>`
+  rows (was 265) and `docs/NATIVE.md`'s rollup moves the same 273.
+- **The 250 tables no registration names are counted, and the installer's call site is a bound rather than a name.**
+  `tools/class-table-installers.py` reads the population (232 shared prefixes + 18 proposed mapped tables):
+  **39** are stored by a class constructor, **209** only by bodies no class names, **2** by no store. A constructor
+  installs its parent's table before its own, so a table a single `ctor_FireTexture` stores is one of `FireTexture`'s
+  ancestors' -- the row records `at-least-<class>` and writes no name, which is why U40's route answers reachability
+  and not naming.
+- **Files.** `tools/native-class-packages.py`, `tools/class-table-installers.py`, `inventory/native_class_packages.csv`,
+  `inventory/class_table_installers.csv`, `tools/module-split.py`, `tools/native-summary.py`,
+  `inventory/function_modules.csv`, `inventory/module_export_plan.csv`, `inventory/xbe_functions_by_module.csv`,
+  `docs/NATIVE.md`, `docs/NATIVE_CLASS_TREE.md`, `docs/systems/CLASS_REGISTRATION.md`, `docs/UNKNOWNS.md` (U40),
+  `docs/STATUS.md`, `README.md`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, `Makefile`, this note.
+- **Gates.** `make ci` green; both tools answer `--check` (synthetic, no dump) and `--check-doc`; `ci.py` collects
+  every tool that answers `--check` and holds it to writing nothing in the tree.
+- **Not in this bundle.** The naming half of the 39 bounded and 209 plain-only tables, the 399 bodies no channel
+  names, and the 595-family split repairs.

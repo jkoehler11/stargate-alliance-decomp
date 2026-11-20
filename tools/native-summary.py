@@ -26,9 +26,19 @@ KNOWN_MODULES = {"Engine", "Core", "IpDrv", "Gui", "D3DDrv", "XboxDrv", "XboxAud
                  "Gameplay", "Fire", "stargategame", "stargatevehicles"}
 
 
-def class_packages(path="inventory/classes.csv"):
-    """{class_lower: package} from the class census; absent file is an empty map, not an error."""
+def class_packages(path="inventory/classes.csv", native="inventory/native_class_packages.csv"):
+    """{class_lower: package} from the class census; absent file is an empty map, not an error.
+
+    `inventory/native_class_packages.csv` (`tools/native-class-packages.py`) adds the classes no
+    shipped `.u` declares -- the engine's and the native drivers' -- with the package their registration
+    site's body compiles from, which is the only edge that reaches them.
+    """
     out = {}
+    if os.path.isfile(native):
+        with open(native, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("class") and r.get("package"):
+                    out[r["class"].lower()] = r["package"]
     if os.path.isfile(path):
         with open(path, newline="", encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
@@ -79,7 +89,11 @@ def main():
             module = prefix if (not unknown and prefix in KNOWN_MODULES) else ""
             how = "prefix" if module else ""
             if not module:
-                module, how = class_module(name, packages), ("class-package" if module else "")
+                # Two steps on purpose: the tuple form read the *old* `module` when it picked the label, so
+                # every class-package attribution was counted as unattributed-by-label (the report's
+                # "0 by the package a class is declared in" line).
+                module = class_module(name, packages)
+                how = "class-package" if module else ""
             override = overrides.get(row["address"].lower())
             if override and override["module"] in KNOWN_MODULES:
                 module, how = override["module"], "override"
