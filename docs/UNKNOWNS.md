@@ -5446,3 +5446,53 @@ is `jmp dword ptr [0x005ccae8]`, an entry in the image's own pointer table, whos
 **What would settle the rest.** Nothing in this entry: the 29 rows that still carry an address are waiting on the
 target, not on the thunk. Naming a `FUN_*` target renames its thunks on the next `make thunk-targets`, and
 `--check` fails until it does, which is what keeps the two in step.
+
+### U37, second pass (2026-11-20): 28 rows are left, one target got a name, and the other 26 are classified
+
+The 29 rows that kept `thunk_FUN_<address>` are now 28, because `0x003e9a38` turned out to be the CRT's `exp`
+dispatch stub and earned `_exp` from the entry it hands `__cintrindisp1` (see **U38** for its `sinh` sibling).
+
+For the rest, "the target has no name" is now a *measured* statement about the target and not a lack of effort:
+`inventory/thunk_targets.csv` records a `target_kind` and the instruction it was read from, and
+`docs/SYMBOLS.md` prints the table. Of the 26 distinct targets, **21 are real bodies** and five are compiler
+furniture that never had a name in the source:
+
+| shape | target | why it cannot be named |
+|---|---|---|
+| chain hop | `0x00343fae` | it is itself `jmp dword ptr [0x004c6cc4]`; the chain's terminal is the body |
+| virtual-dispatch trampoline | `0x000624f0` | `mov eax,[ecx]; jmp [eax+0x20]` — the slot, not the function |
+| `this`-adjustor | `0x00398b50` | it rewrites `this` and tail-jumps; the body it reaches is `FUN_003e3ce0` |
+| vtable installer | `0x001d4d10` | `mov dword ptr [ecx], 0x516fa8; ret` — a constructor with nothing else in it |
+| one-call forwarder | `0x003d8db0` | `push arg; call 0x003c8a22; pop; ret 4` — the callee is where the identity is |
+
+The 21 bodies include the five 82-byte `DSOUND` wrappers (`0x0049ff29`, `0x004a0372`, `0x004a03c4`, `0x004a0416`,
+`0x004a0e0a`): all five call `?DirectSoundEnterCriticalSection@@YGHXZ`, test `[0x004bd190]`, make one more call
+and exit, and all five are `no counterpart` in `dsound.lib` in `inventory/xdk_lib_residue.csv`. **What would settle
+them** is a different instrument than this entry's: a breakpoint on `[0x004bd190]` (or a stack capture at the
+inner call) that names the API each one wraps, since no library name exists to match.
+
+**What this corrected.** A byte scan for `FF 5x` anywhere in a body calls a real body a forwarder whenever it makes
+a virtual call in its middle; the rule now reads the operation immediately before the `ret`, which finds the one
+real forwarder and nothing else. The artifact's `--check` refuses a furniture kind with no evidence and a `body`
+with evidence, so the classification cannot rot silently.
+
+## U38. The CRT's `sinh` stub is in the image and the map has no row for it -- measured: 0x003e9994, ten bytes, inside a 54-byte gap
+
+**Observed.** `tools/crt-dispatch-names.py` finds **two** `mov edx, <entry>; jmp __cintrindisp1` stubs in `.text`,
+not one. `0x003e9a38` passes the entry whose length-prefixed name is `exp` and is a map row (`_exp` after this
+bundle); `0x003e9994` passes the entry named `sinh` and **no map row starts at it**. The bytes say it is a body:
+`ba da d3 5c 00` (`mov edx, 0x005cd3da`) then `e9 <rel32>` onto `__cintrindisp1`, ten bytes exactly, and the row
+before it (`__ui64toa`, `0x003e995f`, 27 bytes) ends at `0x003e997a` while the row after (`__aullrem`,
+`0x003e99b0`) starts 54 bytes later.
+
+**Why it matters.** The map is the project's function census: every count that reads it (`docs/STATUS.md`'s
+naming percentage, `inventory/xbe_functions_by_module.csv`, the module split) is short by this body, and a
+debugger cannot break on a `sinh` call site. It is also the one place where the *reason* a row is missing is
+fully measured — the body is not a boundary error, not an interior block, just a function nothing references:
+no `E8`/`E9` in the image targets it and no data section holds its address.
+
+**What would settle it.** An `add` row in `symbols/xbe_boundaries.csv` paired with a creation row in
+`symbols/xbe_overrides.csv` (`_sinh`, 10 bytes, evidence: the dispatch entry `0x005cd3da` carries
+`04 "sinh"`), then a fresh import and a re-export to prove the census still reconciles. It is deliberately not
+in the symbols bundle that measured it: an `add` moves the map's function count from 14,973 and every artifact
+downstream of it, which is the boundary thread's (U36) work, while a `rename` moves no edge.

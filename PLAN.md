@@ -15274,3 +15274,50 @@ sequence.
 - **Not in this PR.** The three attributed bodies a fresh import holds no function for (the override-row creation
   route is now checked, and the rows land next); the 29 thunks whose targets are still `FUN_*`, which wait on
   naming the target, not on the thunk.
+
+### Execution notes (2026-11-20, the unnamed thunk targets are classified, the CRT `exp` stub is named, and the re-export closes the census at 6,150 of 6,150)
+
+- **Task.** The three items #739 left: the three creation rows were in the map but nothing had proved the importer
+  builds them; the 29 thunks whose targets are still `FUN_*`; and the `rethunked` report the census kept printing.
+- **The creation rows work, and the census says so.** The exporter ran again with `xbe_overrides.csv`'s three
+  creation rows imported (`0x0003bd30`, `0x0024af30`, `0x0002fa30`) and `inventory/module_export_census.csv` now
+  reads **6,150 of 6,150 exported, 0 inside another function, 0 attributed bodies the analysis holds no function
+  for**. Two things had to be fixed to get a clean census rather than a near one: the 5 renames that landed between
+  the two export passes left a stale `<addr>_FUN_*.c` beside the new `<addr>_<name>.c` (removed — the export tree
+  is derived), and `module-export-census` now reads the **last** round per module, because `module_export_rounds.csv`
+  keeps one row per round and a re-export appends.
+- **A name the map never carried.** Five override rows added by the body-name pass (`0x0002cbb0`, `0x00291710`,
+  `0x00328e00`, `0x00329160`, `0x003292a0`) had never reached `symbols/xbox_functions.csv`, so the map, the module
+  split and the export census each spelled them differently. They are `rename` rows now, evidence pointing at the
+  override row they come from; the five are the only override rows in 5,250 that the map lacked, so the drift is
+  closed rather than patched.
+- **`_exp` is a name from the build's data.** `tools/crt-dispatch-names.py` finds the two `mov edx, <entry>; jmp
+  __cintrindisp1` stubs and reads the length-prefixed name out of the entry each one passes: `0x003e9a38` is `exp`
+  and becomes `_exp` (its `eb 0a` hotpatch thunk becoming `thunk__exp`); `0x003e9994` is `sinh` and has **no map
+  row** — it sits in the 54-byte gap between `__ui64toa` and `__aullrem` and nothing xrefs it. That is a boundary
+  gap (U36's thread), so the artifact records `in_map = no` and this bundle does not create the row.
+- **The 26 unnamed targets are classified by shape, and the shapes are compiler furniture.** `thunk_targets.csv`
+  gains `target_kind` + `target_evidence` and `docs/SYMBOLS.md` carries the generated table: 21 bodies, plus a chain
+  hop (`0x00343fae`), a virtual-dispatch trampoline (`0x000624f0`), a `this`-adjustor (`0x00398b50`), a vtable
+  installer (`0x001d4d10`) and a one-call forwarder (`0x003d8db0`). None of the five can be named, because a shape
+  is not a name; naming them would name the compiler's output, not the source.
+- **The rule that reads the shape had to be measured, not guessed.** A scan for `FF 5x` anywhere in a body called
+  four real bodies forwarders — a 101-byte SEH body with a virtual call in its argument setup, a 59-byte DSound
+  helper, a 79-byte template body — so the vcall rule is anchored to the operation immediately before the `ret`.
+  Anchored, it finds exactly the one real forwarder (`0x0032fc55`, `call [ecx+0x24]; ret 0x10`).
+- **The five 82-byte DSOUND bodies are a negative result, measured twice.** They share one shape (call
+  `?DirectSoundEnterCriticalSection@@YGHXZ`, test `[0x004bd190]`, one more call, exit) and all five are
+  `no counterpart` in `dsound.lib` in `inventory/xdk_lib_residue.csv`: the fork's own API layer compiled into the
+  DirectSound segment, so there is no library member to match and their identity lives in the callee each wraps.
+- **Files.** `tools/crt-dispatch-names.py` (new: the stub scan, the entry-name read, `--check`, `--emit-boundaries`,
+  `--selftest`), `inventory/crt_dispatch_stubs.csv` (new, 2 rows), `tools/thunk-targets.py` (the shape read, the
+  generated block, `--report`/`--write-doc`/`--check-doc`), `tools/module-export-census.py` (last-round read,
+  boundary renames as names), `inventory/thunk_targets.csv` (2 columns), `inventory/module_export_census.csv`
+  (6,150), `inventory/module_export_rounds.csv` (24 rows: two passes), `symbols/xbe_boundaries.csv` (64 rows),
+  the map and its two rollups, `docs/SYMBOLS.md`, `docs/MODULE_CENSUS.md`, `docs/NATIVE.md`, `docs/STATUS.md`,
+  `README.md`, `Makefile`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`.
+- **Gates.** `make ci` green (0 FAIL); both new `--check`s answer without the dump and write nothing, so the
+  contract sweep covers them; `crt-dispatch-names --selftest` covers two decodings and two refusals;
+  `thunk-targets --selftest` covers the seven shapes beside the five encodings.
+- **Not in this PR.** The `sinh` stub's map row (a boundary `add`, which moves the function count); the 21 unnamed
+  targets that are real bodies, which wait on a breakpoint or a library match rather than on a thunk read.
