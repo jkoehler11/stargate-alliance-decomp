@@ -42,3 +42,5 @@ __pycache__/
 ci.log
 *.ci.log
 ci*.log
+# a tool that logs to the working directory must not ride a bundle in
+notify.log
