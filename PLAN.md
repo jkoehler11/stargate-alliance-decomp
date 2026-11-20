@@ -15366,6 +15366,16 @@ sequence.
   sweep shorter than the declaration; `--selftest` covers the single-`int3` pad, the pad boundary (code behind a
   pad), the `align` and `table` tails, the two-entry non-table, the conditional jump and the
   declared-end-is-a-close guard; `symbol-boundaries --check` re-applies all 398 repairs to the committed csv.
+- **The census is re-taken, and the exporter now keeps a round's directory equal to the round.** `ExportAt` only
+  writes the files it exports, so a body a `resize` folded into its neighbour -- or one the attribution moved to
+  another module -- left its old `.c` in `$WORK/module-export/Core`, and the census reads the directory rather than
+  the round: it counted 35 bodies nothing exports (`--check` named two of them, and 33 duplicate a body another
+  module's round owns). `export-module.sh` now unlinks a `.c` whose address the round's list does not name and
+  prints the count; the Core round re-ran against the repaired map (**3,211 exported, 0 missing, 0 inside another
+  function, 2,165 still `FUN_*`, 2 failed, 193 s**), `module_export_rounds.csv` takes the new row, and the census
+  reads **6,206 rows** (was 6,239, the stale-file count) with `Core` 3,211 of them. Every prose count on the page
+  was re-read against the artifact: `Core` 556 `src` / 2,111 `silent`, 147 non-targets (130 `ret`-stub, 17 thunks),
+  a 6,059-body work list.
 - **Not in this bundle.** U36's `0x002b7aa0` (a body in a map gap whose `switch` ends in a case table -- the `add`
   needs a name and a creation row), the `extent`/`sweep` unification (re-emitting 268 creation rows), and the one
   row the sweep reads three bytes shorter than its declaration.

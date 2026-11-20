@@ -81,6 +81,18 @@ for m in $(echo "$modules" | tr ',' ' '); do
         -postScript ExportAt.java "@$list" "$out" "$PWD/symbols/xbox_functions.csv" > "$log" 2>&1 \
         || { echo "round for $name failed, see $log" >&2; tail -5 "$log" >&2; exit 2; }
     t1=$(date +%s)
+    # A round replaces the module's body set, but ExportAt only writes the files it exports: a body a
+    # boundary repair merged into its neighbour, or one the attribution moved to another module, leaves
+    # its old .c behind. The census walks this directory, so a stale file is a row nothing exports --
+    # keep the directory equal to the round.
+    stale=$(python3 -c 'import os, sys
+want = {l.strip().lower() for l in open(sys.argv[1]) if l.strip()}
+n = 0
+for f in os.listdir(sys.argv[2]):
+    if f.endswith(".c") and "0x" + f.split("_", 1)[0].lower() not in want:
+        os.unlink(os.path.join(sys.argv[2], f))
+        n += 1
+print(n)' "$list" "$out")
     # Headless prefixes script output with "INFO  ExportAt.java> ", so match the message, not the line.
     exported=$(grep -c 'ExportAt.java> wrote ' "$log" || true)
     inside=$(grep -c 'ExportAt.java> .*: inside ' "$log" || true)
@@ -91,6 +103,6 @@ for m in $(echo "$modules" | tr ',' ' '); do
     failed=$(grep -l 'decompile failed' "$out"/*.c 2>/dev/null | wc -l || true)
     bytes=$(cat "$out"/*.c 2>/dev/null | wc -c || true)
     echo "$name,$addresses,$((t1 - t0)),$exported,$inside,$missing,$unnamed,$failed,$bytes" >> "$summary"
-    echo "$name: $exported exported, $inside inside another function, $missing missing of $addresses in $((t1 - t0))s -> $out"
+    echo "$name: $exported exported, $inside inside another function, $missing missing of $addresses in $((t1 - t0))s, $stale stale removed -> $out"
 done
 echo "summary: $summary"

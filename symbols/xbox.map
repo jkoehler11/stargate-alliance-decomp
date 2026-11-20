@@ -1041,8 +1041,7 @@
 0x00041bd0 execGreaterGreater_IntInt                     125 
 0x00041c50 execLess_IntInt                               130 
 0x00041ce0 execGreater_IntInt                            130 
-0x00041d70 execLessEqual_IntInt                           32 
-0x00041d90 FUN_00041d90                                   98 
+0x00041d70 execLessEqual_IntInt                          130 
 0x00041e00 execGreaterEqual_IntInt                       130 
 0x00041e90 execEqualEqual_IntInt                         130 
 0x00041f20 execNotEqual_IntInt                           130 
@@ -1189,8 +1188,7 @@
 0x00046f80 Native_0                                      114 
 0x00047000 Native_1                                      109 
 0x00047070 Native_2                                       79 
-0x000470c0 Native_18                                     235 
-0x00047109 Core_UnClass                                   58 
+0x000470c0 Native_18                                     293 
 0x000471f0 Native_26                                     230 
 0x000472e0 Native_16                                     295 
 0x00047410 Native_64                                     298 
@@ -5385,8 +5383,7 @@
 0x001c63d0 FUN_001c63d0                                  464 
 0x001c65d0 FUN_001c65d0                                  282 
 0x001c66f0 execAddClass                                  592 
-0x001c6940 execPopClass                                  181 
-0x001c6996 Core_UnTemplate                                55 
+0x001c6940 execPopClass                                  236 
 0x001c6a30 execAddSetting                               4737 
 0x001c7cc0 execFindIndex                                 794 
 0x001c7fe0 execSort                                      112 
@@ -5999,8 +5996,7 @@
 0x0020fc10 execDestroy                                    62 
 0x0020fc50 execSetTimer                                  161 
 0x0020fd00 execWarp                                      512 
-0x0020ff00 execUnWarp                                    371 
-0x00210073 FUN_00210073                                   83 
+0x0020ff00 execUnWarp                                    454 
 0x002100d0 FUN_002100d0                                   98 
 0x00210140 FUN_00210140                                  411 
 0x002102e0 execMultiply_ColorFloat                       194 
@@ -6046,7 +6042,7 @@
 0x002141e0 execTouchingActors                            487 
 0x002143d0 execTraceActors                               846 
 0x00214720 execRadiusActors                              773 
-0x00214a30 execVisibleActors                             872 
+0x00214a30 execVisibleActors                             879 
 0x00214da0 execVisibleCollidingActors                    870 
 0x00215110 execCollidingActors                           622 
 0x00215380 execZoneActors                                519 
@@ -6123,8 +6119,8 @@
 0x0021ab90 FUN_0021ab90                                  112 
 0x0021ac40 FUN_0021ac40                                   75 
 0x0021ac90 FUN_0021ac90                                  264 
-0x0021ada0 FUN_0021ada0                                 2088 
-0x0021b5f0 FUN_0021b5f0                                 3900 
+0x0021ada0 FUN_0021ada0                                 2091 
+0x0021b5f0 FUN_0021b5f0                                 3903 
 0x0021c550 Engine_UnSecurity                             180 
 0x0021c610 Core_UnObjBas                                  87 
 0x0021c670 FUN_0021c670                                  197 
@@ -8163,7 +8159,7 @@
 0x002fe400 FUN_002fe400                                  101 
 0x002fe470 Gui_UnGUICore                                 180 
 0x002fe530 Gui_UnGUICore                                 180 
-0x002fe5f0 FUN_002fe5f0                                 1256 
+0x002fe5f0 FUN_002fe5f0                                 1263 
 0x002feae0 FUN_002feae0                                  264 
 0x002febf0 FUN_002febf0                                 1175 
 0x002ff090 execAllObjectProperties                       579 
