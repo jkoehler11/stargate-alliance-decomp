@@ -402,7 +402,7 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 **40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 106 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 0 calls from no map body at all; 2 bodies have no inbound edge.
 <!-- /generated:class-orphan-tables -->
 
-## The 250 tables no registration reaches: 39 a constructor bounds, 209 only unnamed bodies store
+## The 250 tables no registration reaches: 38 a constructor bounds, 208 only unnamed bodies store
 
 `docs/UNKNOWNS.md` U40 counts 277 gap bodies a class-table slot names and 269 of them in tables nothing
 registers. The full population is **250**: the 232 tables `inventory/native_vtable_shared.csv` pairs with
@@ -413,20 +413,25 @@ call site is the route the entry names, and `tools/class-table-installers.py` wa
 **A constructor's store bounds a table; it does not name one.** A constructor installs its parent's table
 before its own (this page's `base-store-ancestor` rule), so a table a single `ctor_FireTexture` stores is
 one of `FireTexture`'s **ancestors'** tables -- the table is at least as deep as that class and never the
-class itself. 39 tables carry that bound; the other 209 are stored only by bodies no class names, and 2 by
-no store at all. So the U40 route answers the *reachability* half of its question and not the naming half,
+class itself. 38 tables carry that bound; the other 208 are stored only by bodies no class names, and 4 by
+no store at all. The symbol map's `size` column is a **byte count in decimal**, and this census read it as hex
+until 2026-11-20: a short body's span then ran past its own end and the store of the body next door was
+credited to it, which is where the 39/209/2 this section used to quote came from. Read at the right base the
+same rule moves 12 rows' installer sets and three verdicts, and every mangled C++ name the evidence carried
+(the UIX screen constructors, `Core_UnObjBas`, `dtor_Movie`) disappears -- none of the 250 is installed by a
+body with a C++ symbol. So the U40 route answers the *reachability* half of its question and not the naming half,
 which is why no name is written from it: the six names the tree can carry are already proposed on this
 page's own join.
 
 <!-- generated:class-table-installers -->
 | the tables no name reaches | tables |
 | --- | --- |
-| stored by a class constructor (so an ancestor of that class) | 39 |
-| stored only by bodies no class names | 209 |
-| stored by nothing | 2 |
+| stored by a class constructor (so an ancestor of that class) | 38 |
+| stored only by bodies no class names | 208 |
+| stored by nothing | 4 |
 | **total** | **250** |
 
-The constructor-stored tables carry a bound, not a name: 25 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
+The constructor-stored tables carry a bound, not a name: 24 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
 
 | class whose constructor stores it | tables it bounds |
 | --- | --- |
@@ -452,12 +457,11 @@ The constructor-stored tables carry a bound, not a name: 25 distinct classes, an
 | `Engine` | 1 |
 | `Input` | 1 |
 | `Level` | 1 |
-| `Movie` | 1 |
 | `NetPendingLevel` | 1 |
 | `D3DRenderDevice` | 1 |
 <!-- /generated:class-table-installers -->
 
-## Where the 250's stores write: a class table is `[reg]`, and 36 of the 39 are a member's table
+## Where the 250's stores write: a class table is `[reg]`, and 36 of the 38 are a member's table
 
 `tools/class-table-installers.py` calls every `mov [reg(+disp)], <imm32>` an install, which is what the
 store is and not what it writes: the previous section's populations are populations of *stores*, and the
@@ -471,8 +475,8 @@ class whose constructor writes it.
 | population | tables | object slot | slot and member | member only | frame only | global only | no `C7` store |
 |---|---|---|---|---|---|---|---|
 | named by the registration path (control) | 474 | 474 | -- | -- | -- | -- | -- |
-| nameless: a class ctor stores it | 39 | 3 | 9 | 27 | -- | -- | -- |
-| nameless: only bodies no class names store it | 211 | 175 | 2 | 11 | 20 | -- | 3 |
+| nameless: a class ctor stores it | 38 | 2 | 9 | 27 | -- | -- | -- |
+| nameless: only bodies no class names store it | 212 | 176 | 2 | 11 | 20 | -- | 3 |
 
 **The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled and installed nowhere, and 3 into nothing a `C7 /0` store carries.
 
@@ -480,7 +484,7 @@ class whose constructor writes it.
 
 **38 of the 49 member tables have a class whose own constructor stores the field** (SkeletalMesh (5), ControlChannel (2), TextBuffer (2), XboxViewport (2), PackageMapLevel (2), TcpipConnection (2)), so the member's owner is known even though the table's class is not: these are `<Class>`'s field, and the name the map lacks is the member's, not a class's.
 
-**What this settles for U40.** 36 of the 39 tables a class constructor stores are member tables (27 only a member, 9 the object slot as well), so the `at-least-<base>` bound those tables carry is a bound on the *owner* of a member, not on a class's dispatch table; the reading that a ctor's table is its own or its base's holds only for the 3 that write `[reg]` at all. And 175 of the 211 plain-only tables are written into the object slot by a body no class names, which is the shape of a constructor the map has not named rather than of a table nothing installs.
+**What this settles for U40.** 36 of the 38 tables a class constructor stores are member tables (27 only a member, 9 the object slot as well), so the `at-least-<base>` bound those tables carry is a bound on the *owner* of a member, not on a class's dispatch table; the reading that a ctor's table is its own or its base's holds only for the 2 that write `[reg]` at all. And 176 of the 212 plain-only tables are written into the object slot by a body no class names, which is the shape of a constructor the map has not named rather than of a table nothing installs.
 <!-- /generated:class-table-store-fields -->
 
 Three readings follow, and each corrects the section above rather than restating it:
@@ -551,7 +555,14 @@ overrides. The families read as interfaces embedded by several classes:
 What this does not say: the *type* of the member. The owner class is known from its constructor and the
 field offset is read from the store, but the interface object's class is not registered anywhere, so the
 name a slot would carry is a member's, and reading one interface's slots as a class's virtual methods is
-the reading the slot-0 control refuses. Nor does a slot's body size date it: a 3-byte stub in a table is
+the reading the slot-0 control refuses. What the field itself can be called is now measured: the artifact
+carries `declared_in` / `layout` / `member_name`, and **32 of the 49 tables have a label of the form
+`<Class>_member_<field>`** -- 34 are a single owner's field, one is declared in a shared ancestor
+(`Linker_member_0xb8`, written by both `LinkerLoad` and `LinkerSave`), one has owners in no common chain
+(the same offset is two layouts) and 13 have no owner at all. The four rows whose store reports two field
+offsets keep no label, because the store does not pair an offset with its owner. A declared *property name*
+is not available for any of them: the assert-derived member map covers four classes and names **0 of the 53
+owner/offset pairs** behind these tables. Nor does a slot's body size date it: a 3-byte stub in a table is
 the interface's default, not an unimplemented slot.
 
 <!-- generated:class-member-tables -->
@@ -564,6 +575,8 @@ the interface's default, not an unimplemented slot.
 | `0x004c7854` | 2 | 2 | ControlChannel, TextBuffer | -- |
 | `0x004c93c8` | 2 | 2 | XboxViewport | -- |
 | `0x004d0314` | 2 | 1 | TcpNetDriver | -- |
+
+**32 of the 49 tables carry a label of the form `<Class>_member_<field>`, and the class is the one that declares the field.** 34 are a single owner's field, 1 are declared in a shared ancestor of every owner (`Linker_member_0xb8`), 1 have owners in no common chain -- where the same offset is two different layouts, not one field -- and 13 have no owner at all. A table whose row carries more than one field offset keeps no label: the store does not pair the offset with its owner, and naming one of them would pick.
 | 24 table(s) in no family | 24 | -- | -- | -- |
 
 **The 49 member tables are interface vtables, and their slot 0 is not a class slot.** All 492 class tables the class-map census covers (474 of them named by the registration path) share one slot-0 body, `0x00062650`; none of the 49 member tables carry it, and their slot-0 values are 36 distinct bodies. A class dispatch table starts with the entry every class table starts with; an interface object's table starts with its own first method, which is why no slot here can be named `<Class>_vt<slot>`.
@@ -677,6 +690,40 @@ kind rather than a partition of the hole. `make native-island` regenerates the a
 synthetic self-test (19 assertions, no dump) and `--check-doc` rebuilds the block from
 `inventory/native_island.csv` -- including the hole's bounds and the tail-jump split, which travel in the
 artifact's own `census` row so a page rendered from the CSV cannot disagree with the measurement.
+
+## What installs a nameless table: the body's shape, not only its store
+
+The store says a table is written at `[reg]`; it does not say whether the body that writes it is the
+object's constructor. `tools/class-table-installer-shape.py` runs the two signatures
+`tools/class-ctors.py` uses -- a constructor installs the table and returns `this`, a destructor
+installs it before any call and returns nothing -- over **every body that installs one of the 724
+tables**, so the nameless population is read by the same rule that named the map's own `ctor_`/
+`dtor_` rows. The control is the 474 tables the registration path already names: 982 of their 990
+installer bodies carry a `ctor_<Class>`/`dtor_<Class>` symbol, and the shape rule lands on the same
+class for **978 of them (99.6%)**, so it is a measured reading and not an assumption about the 208.
+
+<!-- generated:class-table-installer-shapes -->
+| population | tables | installer bodies | returns `this` (ctor) | installs before any call (dtor) | neither | ends in a tail `jmp` | names one table only |
+|---|---|---|---|---|---|---|---|
+| named | 474 | 990 | 507 | 475 | 8 | 0 | 923 |
+| plain-only | 208 | 347 | 192 | 106 | 49 | 1 | 226 |
+| no-store | 4 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+**The control is the population the registration path already names.** Of the 990 installer bodies behind the 474 named tables, 982 carry a `ctor_<Class>`/`dtor_<Class>` symbol and the shape rule agrees with that class on 978; 507 bodies return `this`, 475 install the table before any call and 8 read as neither.
+
+**Of the 208 plain-only tables, 192 installer bodies return `this`, 106 install before any call and 49 read as neither; 226 of the bodies install exactly one table, which is a self-install.** 97 tables are installed only by a body that returns `this`, 29 only by a destructor-shaped body, 56 by both, 26 by bodies the rule reads as neither and 0 name no installer body at all.
+
+**A destructor never returns `this`, and the class-ctors signature only matches `mov eax, <reg>`.** Its second form is a load from the frame (`mov eax,[esp+N]` / `[ebp+N]`): 2 of the 106 dtor-shaped installer bodies behind the plain-only tables return `this` that way; the other 104 carry the destructor shape, which an initializer that installs the table into an object it was handed -- and returns something other than `this` -- has as well. That is why the verdict is a reading and not a proof: 29 tables have only such installers, and the artifact names them one body at a time instead of sweeping them into a constructor count.
+<!-- /generated:class-table-installer-shapes -->
+
+The plain-only tables split three ways, and each split is a different question. A body that
+installs exactly one table and returns `this` is that object's constructor, so the table is an
+object's own dispatch table inside a class no shipped package registers -- the naming channel for
+those is the body, not the class map. A table whose only installer is destructor-shaped has no
+constructor site in the sweep; the shape rule reads a tail-jumped epilogue the same way, so the
+artifact names each such table rather than claiming the constructor is absent. And the tables whose
+installer reads as neither are the residue the two signatures do not describe -- the population U40
+names as the 399 bodies nothing names, met here from the table's side.
 
 ## What this measurement does not say
 

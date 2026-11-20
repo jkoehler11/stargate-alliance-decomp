@@ -44,13 +44,16 @@ STORE = os.path.join(ROOT, "inventory", "class_table_store_fields.csv")
 CLASS_SLOTS = os.path.join(ROOT, "inventory", "xbe_class_table_slots.csv")
 GAPS = os.path.join(ROOT, "inventory", "gap_heads.csv")
 SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
+PARENTS = os.path.join(ROOT, "inventory", "class_table_parent_edges.csv")
+CLASSES = os.path.join(ROOT, "inventory", "classes.csv")
 SRC = os.path.join(ROOT, "inventory", "class_member_tables.csv")
 PAGE = os.path.join("docs", "systems", "CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-member-tables -->"
 DOC_END = "<!-- /generated:class-member-tables -->"
-FIELDS = ("table_va", "slots", "owners", "fields", "shape", "family", "family_tables", "family_diff",
-          "diff_slots", "purecall", "stubs", "in_map", "named", "outside_map", "real_names",
-          "purecall_slots", "slot_bodies", "gap_heads", "slot0", "verdict")
+FIELDS = ("table_va", "slots", "owners", "fields", "declared_in", "layout", "member_name", "shape",
+          "family", "family_tables", "family_diff", "diff_slots", "purecall", "stubs", "in_map",
+          "named", "outside_map", "real_names", "purecall_slots", "slot_bodies", "gap_heads", "slot0",
+          "verdict")
 STUB_BYTES = 8
 
 
@@ -158,11 +161,53 @@ def families(tables, pure):
 
 
 # --------------------------------------------------------------------------- rows
-def harvest(tables, owners, fields, names, sizes, gaps=None):
+def super_map():
+    """{lowercased class: lowercased super}, from the class tables' parent edges and the script tree."""
+    sup = {}
+    for r in read_csv(PARENTS):
+        cls, par = (r.get("class") or "").strip(), (r.get("parent_class") or "").strip()
+        if cls and par:
+            sup.setdefault(cls.lower(), par)
+    for r in read_csv(CLASSES):
+        cls, par = (r.get("class") or "").strip(), (r.get("super") or "").strip()
+        if cls and par:
+            sup.setdefault(cls.lower(), par)
+    return sup
+
+
+def declares(owners, sup):
+    """(class, layout) for a member's owner set: one class, a shared ancestor, or a coincident layout."""
+    names = [o for o in owners if o]
+    if not names:
+        return "", "unowned"
+    if len(names) == 1:
+        return names[0], "single"
+    def ancestors(cls):
+        out, seen = [], set()
+        cur = cls.lower()
+        while cur and cur not in seen:
+            seen.add(cur)
+            par = sup.get(cur, "")
+            if not par:
+                break
+            out.append(par)
+            cur = par.lower()
+        return out
+    chains = [set(a.lower() for a in ancestors(n)) for n in names]
+    common = set.intersection(*chains)
+    if common:
+        for anc in ancestors(names[0]):          # nearest first: the deepest shared ancestor
+            if anc.lower() in common:
+                return anc, "ancestor"
+    return "", "coincident"
+
+
+def harvest(tables, owners, fields, names, sizes, gaps=None, sup=None):
     """`tables` is {table_va: slots}, `owners`/`fields` are the store-field row's columns, and `gaps`
     is {body_va: name} for the bodies `inventory/gap_heads.csv` decodes out of the map's `.text` gaps
     (U40's population: bodies no map row covers)."""
     gaps = gaps or {}
+    sup = sup or {}
     pure = lambda va: names.get(va) == "__purecall"
     fam = families(tables, pure)
     rows = []
@@ -176,6 +221,9 @@ def harvest(tables, owners, fields, names, sizes, gaps=None):
             "slots": str(len(slots)),
             "owners": owners.get(tva, ""),
             "fields": fields.get(tva, ""),
+            "declared_in": "",
+            "layout": "",
+            "member_name": "",
             "shape": shape_of(slots),
             "family": f"{fam[tva]:#010x}",
             "family_tables": str(len(members)),
@@ -194,6 +242,14 @@ def harvest(tables, owners, fields, names, sizes, gaps=None):
             "slot0": f"{slots[0]:#010x}" if slots else "",
             "verdict": "abstract" if slots and all(pure(s) for s in slots) else "interface",
         })
+    for row in rows:
+        own = [o for o in row["owners"].split(";") if o]
+        decl, layout = declares(own, sup)
+        row["declared_in"] = decl
+        row["layout"] = layout
+        offs = row["fields"].split()
+        if decl and len(offs) == 1:
+            row["member_name"] = "%s_member_%s" % (decl, offs[0])
     return rows
 
 
@@ -271,6 +327,19 @@ def render(rows, control):
         lines.append("| `%s` | %d | %d | %s | %s |" % (
             f["family"], len(f["tables"]), f["slots"], names,
             ", ".join(str(k) for k in f["diff"]) or "--"))
+    labelled = [r for r in rows if r.get("member_name")]
+    by_layout = collections.Counter(r.get("layout") or "" for r in rows)
+    shared = [r for r in rows if r.get("layout") == "ancestor"]
+    lines.append("")
+    lines.append("**%d of the %d tables carry a label of the form `<Class>_member_<field>`, and the class is the "
+                 "one that declares the field.** %d are a single owner's field, %d are declared in a shared "
+                 "ancestor of every owner (%s), %d have owners in no common chain -- where the same offset is two "
+                 "different layouts, not one field -- and %d have no owner at all. A table whose row carries more "
+                 "than one field offset keeps no label: the store does not pair the offset with its owner, and "
+                 "naming one of them would pick."
+                 % (len(labelled), len(rows), by_layout["single"], by_layout["ancestor"],
+                    ", ".join("`%s`" % r["member_name"] for r in shared[:4]) or "none",
+                    by_layout["coincident"], by_layout["unowned"]))
     singles = sum(1 for r in rows if int(r["family_tables"]) == 1)
     lines.append("| %d table(s) in no family | %d | -- | -- | -- |" % (singles, singles))
     lines.append("")
@@ -492,7 +561,7 @@ def main():
     for row in read_csv(GAPS):
         if row.get("verdict") == "body" and row.get("head_va"):
             gaps[int(row["head_va"], 16)] = row.get("name", "")
-    rows = harvest(tables, owners, fields, names, sizes, gaps)
+    rows = harvest(tables, owners, fields, names, sizes, gaps, super_map())
     if args.out:
         write_artifact(rows, os.path.join(args.out, os.path.basename(OUT)))
     if args.write_doc:
