@@ -67,7 +67,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00041bd0,intUObjectexecGreaterGreater_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,125,43,true,125,ghidra,ret-imm,125,ret-imm pad,
 0x00041c50,intUObjectexecLess_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,130,ret-imm pad,
 0x00041ce0,intUObjectexecGreater_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,130,ret-imm pad,
-0x00041d70,intUObjectexecLessEqual_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00041d70,intUObjectexecLessEqual_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,130,ret-imm pad,
 0x00041e00,intUObjectexecGreaterEqual_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,33,12,false,130,island,ret-imm,130,ret-imm pad,
 0x00041e90,intUObjectexecEqualEqual_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,130,ret-imm pad,
 0x00041f20,intUObjectexecNotEqual_IntInt,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,130,ret-imm pad,
@@ -105,13 +105,13 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00043210,intUObjectexecCos,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,88,33,true,88,ghidra,ret-imm,88,ret-imm pad,
 0x00043270,intUObjectexecAcos,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,91,33,true,91,ghidra,ret-imm,91,ret-imm pad,
 0x000432d0,intUObjectexecTan,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,90,34,true,90,ghidra,ret-imm,90,ret-imm pad,
-0x00043330,intUObjectexecAtan,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,127,45,true,127,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00043330,intUObjectexecAtan,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,127,45,true,127,ghidra,ret-imm,127,ret-imm pad,
 0x000433b0,intUObjectexecExp,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,108,43,true,108,ghidra,ret-imm,108,ret-imm pad,
 0x00043420,intUObjectexecLoge,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,92,35,true,92,ghidra,ret-imm,92,ret-imm pad,
 0x00043480,intUObjectexecSqrt,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,88,33,true,88,ghidra,ret-imm,88,ret-imm pad,
 0x000434e0,intUObjectexecFRand,1,Object,.text,census-start,int3,arg-load,8b4424048b480c41,accepted,60,18,true,60,ghidra,ret-imm,60,ret-imm pad,
 0x00043520,intUObjectexecSmerp,1,Object,.text,census-start,int3,alloc,83ec080f57c0568b,existing,222,-1,,222,ghidra,ret-imm,222,ret-imm pad,
-0x00043600,intUObjectexecCeil,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,111,38,true,111,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00043600,intUObjectexecCeil,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,111,38,true,111,ghidra,ret-imm,111,ret-imm pad,
 0x00043670,intUObjectexecRound,1,Object,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,117,39,true,117,ghidra,ret-imm,117,ret-imm pad,
 0x000436f0,intUObjectexecRotationConst,1,Object,.text,census-start,int3,arg-load,8b4424048b480c8b,accepted,54,20,true,54,ghidra,ret-imm,54,ret-imm pad,
 0x00043730,intUObjectexecVectorConst,1,Object,.text,census-start,int3,arg-load,8b4424048b480c8b,accepted,36,13,true,36,ghidra,ret-imm,36,ret-imm pad,
@@ -122,10 +122,10 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00043950,intUObjectexecSubtract_PreVector,1,Object,.text,census-start,int3,alloc,83ec18568b742420,existing,140,-1,,140,ghidra,ret-imm,140,ret-imm pad,
 0x000439e0,intUObjectexecMultiply_VectorFloat,1,Object,.text,census-start,int3,alloc,83ec18568b742420,existing,184,-1,,184,ghidra,ret-imm,184,ret-imm pad,
 0x00043aa0,intUObjectexecMultiply_FloatVector,1,Object,.text,census-start,int3,alloc,83ec1c0f57c0568b,existing,184,-1,,184,ghidra,ret-imm,184,ret-imm pad,
-0x00043b60,intUObjectexecMultiply_VectorVector,1,Object,.text,census-start,int3,alloc,83ec24568b74242c,existing,175,-1,,175,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00043b60,intUObjectexecMultiply_VectorVector,1,Object,.text,census-start,int3,alloc,83ec24568b74242c,existing,175,-1,,175,ghidra,ret-imm,175,ret-imm pad,
 0x00043c10,intUObjectexecDivide_VectorFloat,1,Object,.text,census-start,int3,alloc,83ec18568b742420,accepted,188,55,true,188,ghidra,ret-imm,188,ret-imm pad,
-0x00043cd0,intUObjectexecAdd_VectorVector,1,Object,.text,census-start,int3,alloc,83ec24568b74242c,existing,175,-1,,175,ghidra,ret-imm,,,no-terminator-before-the-next-row
-0x00043d80,intUObjectexecSubtract_VectorVector,1,Object,.text,census-start,int3,alloc,83ec24568b74242c,accepted,175,52,true,175,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00043cd0,intUObjectexecAdd_VectorVector,1,Object,.text,census-start,int3,alloc,83ec24568b74242c,existing,175,-1,,175,ghidra,ret-imm,175,ret-imm pad,
+0x00043d80,intUObjectexecSubtract_VectorVector,1,Object,.text,census-start,int3,alloc,83ec24568b74242c,accepted,175,52,true,175,ghidra,ret-imm,175,ret-imm pad,
 0x00043e30,intUObjectexecLessLess_VectorRotator,1,Object,.text,census-start,int3,alloc,81ec84000000568b,accepted,201,65,true,201,ghidra,ret-imm,201,ret-imm pad,
 0x00043f00,intUObjectexecGreaterGreater_VectorRotator,1,Object,.text,census-start,int3,alloc,81ec84000000568b,accepted,201,65,true,201,ghidra,ret-imm,201,ret-imm pad,
 0x00043fd0,intUObjectexecEqualEqual_VectorVector,1,Object,.text,census-start,int3,alloc,83ec18568b742420,existing,173,-1,,173,ghidra,ret-imm,173,ret-imm pad,
@@ -160,16 +160,16 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00045900,intUObjectexecSpiderOrthoRotation,1,Object,.text,census-start,int3,alloc,83ec60568b742468,existing,274,-1,,274,ghidra,ret-imm,274,ret-imm pad,
 0x00045a20,intUObjectexecNormalize,1,Object,.text,census-start,int3,alloc,83ec0c568b742414,existing,152,-1,,152,ghidra,ret-imm,152,ret-imm pad,
 0x00045ac0,intUObjectexecQuatProduct,1,Object,.text,census-start,int3,alloc,83ec20568b742428,existing,356,-1,,356,ghidra,ret-imm,356,ret-imm pad,
-0x00045c30,intUObjectexecQuatInvert,1,Object,.text,census-start,int3,alloc,83ec20568b742428,existing,159,-1,,159,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00045c30,intUObjectexecQuatInvert,1,Object,.text,census-start,int3,alloc,83ec20568b742428,existing,159,-1,,159,ghidra,ret-imm,159,ret-imm pad,
 0x00045cd0,intUObjectexecQuatRotateVector,1,Object,.text,census-start,int3,alloc,83ec28568b742430,accepted,156,55,true,156,ghidra,ret-imm,156,ret-imm pad,
 0x00045d70,intUObjectexecQuatFindBetween,1,Object,.text,census-start,int3,alloc,83ec2c568b742434,existing,441,-1,,441,ghidra,ret-imm,441,ret-imm pad,
 0x00045f30,intUObjectexecQuatFromAxisAndAngle,1,Object,.text,census-start,int3,alloc,83ec20568b742428,existing,318,-1,,318,ghidra,ret-imm,318,ret-imm pad,
-0x00046070,intUObjectexecQuatFromRotator,1,Object,.text,census-start,int3,alloc,83ec1c568b742424,existing,111,-1,,111,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00046070,intUObjectexecQuatFromRotator,1,Object,.text,census-start,int3,alloc,83ec1c568b742424,existing,111,-1,,111,ghidra,ret-imm,111,ret-imm pad,
 0x000460e0,intUObjectexecQuatToRotator,1,Object,.text,census-start,int3,alloc,83ec1c568b742424,accepted,105,38,true,105,ghidra,ret-imm,105,ret-imm pad,
 0x00046150,intUObjectexecQuatSlerp,1,Object,.text,census-start,int3,alloc,83ec30568b742438,existing,186,-1,,186,ghidra,ret-imm,186,ret-imm pad,
 0x00046210,intUObjectexecEqualEqual_NameName,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,130,ret-imm pad,
 0x000462a0,intUObjectexecNotEqual_NameName,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,130,45,true,130,ghidra,ret-imm,130,ret-imm pad,
-0x00046330,intUObjectexecEqualEqual_ObjectObject,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,111,38,false,387,island,ret-imm,,,no-terminator-before-the-next-row
+0x00046330,intUObjectexecEqualEqual_ObjectObject,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,111,38,false,387,island,ret-imm,,,close-inside-the-extension
 0x000463f0,intUObjectexecNotEqual_ObjectObject,1,Object,.text,census-start,zero,push-reg,51568b74240c8b46,accepted,175,62,false,195,island,ret-imm,192,ret-imm edge,
 0x000464b0,intUObjectexecListLogFilters,1,Object,.text,census-start,zero,empty-return,c20800cccccccccc,accepted,3,1,true,3,ghidra,ret-imm,3,ret-imm pad,
 0x000464c0,intUObjectexecSetLogFilter,1,Object,.text,census-start,int3,empty-return,c20800cccccccccc,accepted,3,1,true,3,ghidra,ret-imm,3,ret-imm pad,
@@ -193,7 +193,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x000467c0,intUObjectexecHighNative15,1,Object,.text,census-start,int3,arg-load,8b4424048b500c56,accepted,38,15,true,38,ghidra,ret-imm,38,ret-imm pad,
 0x000467f0,intUObjectexecSaveConfig,1,Object,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,53,20,true,53,ghidra,ret-imm,53,ret-imm pad,
 0x00046830,intUObjectexecIsInState,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,136,50,true,136,ghidra,ret-imm,136,ret-imm pad,
-0x000468c0,intUObjectexecGetStateName,1,Object,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,95,34,true,95,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x000468c0,intUObjectexecGetStateName,1,Object,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,95,34,true,95,ghidra,ret-imm,95,ret-imm pad,
 0x00046920,intUObjectexecIsA,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,114,45,true,114,ghidra,ret-imm,114,ret-imm pad,
 0x000469a0,intUObjectexecIterator,1,Object,.text,census-start,int3,empty-return,c20800cccccccccc,accepted,3,1,true,3,ghidra,ret-imm,3,ret-imm pad,
 0x000469b0,intUObjectexecStopWatch,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,241,67,true,241,ghidra,ret-imm,241,ret-imm pad,
@@ -207,8 +207,8 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00046dc0,intUObjectexecDeleteObject,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,99,36,true,99,ghidra,ret-imm,99,ret-imm pad,
 0x00046f80,intUObjectexecLocalVariable,1,Object,.text,census-start,int3,arg-load,8b5424048b420c8b,accepted,114,36,true,114,ghidra,ret-imm,114,ret-imm pad,
 0x00047000,intUObjectexecInstanceVariable,1,Object,.text,census-start,int3,push-reg,568b7424088b460c,existing,109,-1,,109,ghidra,ret-imm,109,ret-imm pad,
-0x00047070,intUObjectexecDefaultVariable,1,Object,.text,census-start,int3,push-reg,568b7424088b560c,existing,79,-1,,79,ghidra,ret-imm,,,no-terminator-before-the-next-row
-0x000470c0,intUObjectexecClassContext,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,293,96,true,293,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00047070,intUObjectexecDefaultVariable,1,Object,.text,census-start,int3,push-reg,568b7424088b560c,existing,79,-1,,79,ghidra,ret-imm,79,ret-imm pad,
+0x000470c0,intUObjectexecClassContext,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,293,96,true,293,ghidra,ret-imm,293,ret-imm pad,
 0x000471f0,intUObjectexecArrayElement,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,230,78,true,230,ghidra,ret-imm,230,ret-imm pad,
 0x000472e0,intUObjectexecDynArrayElement,1,Object,.text,census-start,int3,push-reg,5155568b7424108b,accepted,295,110,true,295,ghidra,ret-imm,295,ret-imm pad,
 0x00047410,intUObjectexecDynArrayInsert,1,Object,.text,census-start,int3,push-reg,5153568b74241089,accepted,298,102,true,298,ghidra,ret-imm,298,ret-imm pad,
@@ -216,7 +216,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x000476e0,intUObjectexecJump,1,Object,.text,census-start,int3,other,813df05363008c94,accepted,189,54,true,189,ghidra,ret-imm,189,ret-imm pad,
 0x000477a0,intUObjectexecJumpIfNot,1,Object,.text,census-start,int3,other,a1f0536300403d80,accepted,167,52,true,167,ghidra,ret-imm,167,ret-imm pad,
 0x00047850,intUObjectexecGotoLabel,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,101,36,true,101,ghidra,ret-imm,101,ret-imm pad,
-0x000478c0,intUObjectexecLet,1,Object,.text,census-start,int3,push-reg,53568b74240cc705,accepted,431,144,true,431,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x000478c0,intUObjectexecLet,1,Object,.text,census-start,int3,push-reg,53568b74240cc705,accepted,431,144,true,431,ghidra,ret-imm,431,ret-imm pad,
 0x00047a70,intUObjectexecContext,1,Object,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,256,88,true,256,ghidra,ret-imm,256,ret-imm edge,
 0x00047b70,intUObjectexecLetDelegate,1,Object,.text,census-start,zero,alloc,83ec08568b742410,existing,119,-1,,119,ghidra,ret-imm,119,ret-imm pad,
 0x00047bf0,intUObjectexecStringConst,1,Object,.text,census-start,int3,push-reg,568b7424088b460c,existing,69,-1,,69,ghidra,ret-imm,69,ret-imm pad,
@@ -262,7 +262,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00049e10,intUObjectexecConcat_StringString,1,Object,.text,census-start,int3,push-imm,6aff68f4543f0064,existing,318,-1,,318,ghidra,ret-imm,318,ret-imm pad,
 0x00049f50,intUObjectexecConcatEqual_StringString,1,Object,.text,census-start,int3,push-imm,6aff681e553f0064,existing,323,-1,,323,ghidra,ret-imm,323,ret-imm pad,
 0x0004a0a0,intUObjectexecAt_StringString,1,Object,.text,census-start,int3,push-imm,6aff6868553f0064,existing,378,-1,,378,ghidra,ret-imm,378,ret-imm pad,
-0x0004a220,intUObjectexecAtEqual_StringString,1,Object,.text,census-start,int3,push-imm,6aff68a2553f0064,existing,399,-1,,399,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0004a220,intUObjectexecAtEqual_StringString,1,Object,.text,census-start,int3,push-imm,6aff68a2553f0064,existing,399,-1,,399,ghidra,ret-imm,399,ret-imm pad,
 0x0004a3b0,intUObjectexecLess_StringString,1,Object,.text,census-start,int3,push-imm,6aff68cc553f0064,existing,299,-1,,299,ghidra,ret-imm,299,ret-imm pad,
 0x0004a4e0,intUObjectexecGreater_StringString,1,Object,.text,census-start,int3,push-imm,6aff68f6553f0064,existing,299,-1,,299,ghidra,ret-imm,299,ret-imm pad,
 0x0004a610,intUObjectexecLessEqual_StringString,1,Object,.text,census-start,int3,push-imm,6aff6820563f0064,existing,299,-1,,299,ghidra,ret-imm,299,ret-imm pad,
@@ -276,7 +276,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x0004aef0,intUObjectexecCaps,1,Object,.text,census-start,int3,push-imm,6aff6860573f0064,existing,232,-1,,232,ghidra,ret-imm,232,ret-imm pad,
 0x0004afe0,intUObjectexecLocs,1,Object,.text,census-start,int3,push-imm,6aff688a573f0064,existing,232,-1,,232,ghidra,ret-imm,232,ret-imm pad,
 0x0004b0d0,intUObjectexecStrCmp,1,Object,.text,census-start,int3,push-imm,6aff68b4573f0064,existing,502,-1,,502,ghidra,ret-imm,502,ret-imm pad,
-0x0004b2d0,intUObjectexecEval,1,Object,.text,census-start,int3,push-imm,6aff68de573f0064,existing,303,-1,,303,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0004b2d0,intUObjectexecEval,1,Object,.text,census-start,int3,push-imm,6aff68de573f0064,existing,303,-1,,303,ghidra,ret-imm,303,ret-imm pad,
 0x0004b400,intUObjectexecAsc,1,Object,.text,census-start,int3,push-imm,6aff68f8573f0064,existing,190,-1,,190,ghidra,ret-imm,190,ret-imm pad,
 0x0004b4c0,intUObjectexecRemoveWhitespace,1,Object,.text,census-start,int3,push-imm,6aff6822583f0064,existing,232,-1,,232,ghidra,ret-imm,232,ret-imm pad,
 0x0004b5b0,intUObjectexecWarn,1,Object,.text,census-start,int3,push-imm,6aff683c583f0064,existing,201,-1,,201,ghidra,ret-imm,201,ret-imm pad,
@@ -369,7 +369,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x000f4a60,intUCacheManagerexecInitCache,1,CacheManager,.text,census-start,int3,arg-load,8b4424048b480c83,accepted,109,32,true,109,ghidra,ret-imm,109,ret-imm pad,
 0x000f4ad0,intUCacheManagerexecGetGameTypeList,1,CacheManager,.text,census-start,int3,push-imm,6aff6806c03f0064,existing,347,-1,,347,ghidra,ret-imm,347,ret-imm pad,
 0x000f4c30,intUCacheManagerexecGetMutatorList,1,CacheManager,.text,census-start,int3,push-imm,6aff6818c03f0064,existing,355,-1,,355,ghidra,ret-imm,355,ret-imm pad,
-0x000f4da0,intUCacheManagerexecGetMapList,1,CacheManager,.text,census-start,int3,push-imm,6aff683ac03f0064,existing,607,-1,,607,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x000f4da0,intUCacheManagerexecGetMapList,1,CacheManager,.text,census-start,int3,push-imm,6aff683ac03f0064,existing,607,-1,,607,ghidra,ret-imm,607,ret-imm pad,
 0x000f5000,intUCacheManagerexecGetWeaponList,1,CacheManager,.text,census-start,int3,push-imm,6aff684cc03f0064,existing,357,-1,,357,ghidra,ret-imm,357,ret-imm pad,
 0x000f5170,intUCacheManagerexecGetVehicleList,1,CacheManager,.text,census-start,int3,push-imm,6aff685ec03f0064,existing,355,-1,,355,ghidra,ret-imm,355,ret-imm pad,
 0x000f52e0,intUCacheManagerexecGetCrosshairList,1,CacheManager,.text,census-start,int3,push-imm,6aff6870c03f0064,existing,368,-1,,368,ghidra,ret-imm,368,ret-imm edge,
@@ -384,7 +384,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x000fec40,intUCanvasexecGetTextWinDimensions,1,Canvas,.text,census-start,int3,alloc,83ec180f57c05355,existing,429,-1,,429,ghidra,ret-imm,429,ret-imm pad,
 0x000fedf0,intUCanvasexecSetTextWinMaterials,1,Canvas,.text,census-start,int3,alloc,83ec0853568b7424,existing,181,-1,,181,ghidra,ret-imm,181,ret-imm pad,
 0x000feeb0,intUCanvasexecSetTextWinScroll,1,Canvas,.text,census-start,int3,alloc,83ec080f57c05356,existing,241,-1,,241,ghidra,ret-imm,241,ret-imm pad,
-0x000fefb0,intUCanvasexecSetTextWinCursor,1,Canvas,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,143,47,true,143,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x000fefb0,intUCanvasexecSetTextWinCursor,1,Canvas,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,143,47,true,143,ghidra,ret-imm,143,ret-imm pad,
 0x000ff040,intUCanvasexecGetTextWinCursor,1,Canvas,.text,census-start,int3,alloc,83ec080f57c05356,accepted,388,105,true,388,ghidra,ret-imm,388,ret-imm pad,
 0x000ff1d0,intUCanvasexecDrawTextWindow,1,Canvas,.text,census-start,int3,arg-load,8b4424048b500c42,accepted,469,120,true,469,ghidra,ret-imm,469,ret-imm pad,
 0x000ff3b0,intUCanvasexecScrollTextWindow,1,Canvas,.text,census-start,int3,alloc,83ec080f57c05356,existing,404,-1,,404,ghidra,ret-imm,404,ret-imm pad,
@@ -421,7 +421,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00111e00,intAPickupexecAddToNavigation,1,Pickup,.text,census-start,int3,frame,558bec83e4f881ec,existing,554,-1,,562,island,ret-imm,562,ret-imm pad,
 0x00112040,intAPickupexecRemoveFromNavigation,1,Pickup,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,67,22,true,67,ghidra,ret-imm,67,ret-imm pad,
 0x00112090,intAControllerexecStopWaiting,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,67,21,true,67,ghidra,ret-imm,67,ret-imm pad,
-0x001120e0,intAControllerexecAddController,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,20,true,63,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x001120e0,intAControllerexecAddController,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,20,true,63,ghidra,ret-imm,63,ret-imm pad,
 0x00112120,intAControllerexecRemoveController,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,109,37,true,116,island,ret-imm,116,ret-imm pad,
 0x001121a0,intAControllerexecWaitForLanding,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,84,25,true,84,ghidra,ret-imm,84,ret-imm pad,
 0x00112270,intAActorexecSuggestFallVelocity,1,Actor,.text,census-start,int3,alloc,83ec28568b742430,existing,266,-1,,266,ghidra,ret-imm,266,ret-imm pad,
@@ -429,12 +429,12 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00112480,intAAIControllerexecWaitToSeeEnemy,1,AIController,.text,census-start,int3,alloc,83ec10568b742418,existing,185,-1,,185,ghidra,ret-imm,185,ret-imm pad,
 0x001125b0,intAControllerexecMoveTo,1,Controller,.text,census-start,int3,alloc,83ec205355568b74,existing,554,-1,,554,ghidra,ret-imm,554,ret-imm pad,
 0x001127e0,intAControllerexecInLatentExecution,1,Controller,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,102,39,true,102,ghidra,ret-imm,102,ret-imm pad,
-0x001128d0,intAControllerexecFinishRotation,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,22,true,63,ghidra,ret-imm,,,no-terminator-before-the-next-row
-0x00112940,intAControllerexecStopMoving,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,22,true,63,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x001128d0,intAControllerexecFinishRotation,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,22,true,63,ghidra,ret-imm,63,ret-imm pad,
+0x00112940,intAControllerexecStopMoving,1,Controller,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,22,true,63,ghidra,ret-imm,63,ret-imm pad,
 0x00113500,intAPlayerControllerexecSetNetSpeed,1,PlayerController,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,153,53,true,153,ghidra,ret-imm,153,ret-imm pad,
 0x001135a0,intAPlayerControllerexecGetEntryLevel,1,PlayerController,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,212,59,true,212,ghidra,ret-imm,212,ret-imm pad,
-0x00113680,intAPlayerControllerexecSetViewTarget,1,PlayerController,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,159,49,true,159,ghidra,ret-imm,,,no-terminator-before-the-next-row
-0x00113720,intAPlayerControllerexecResetKeyboard,1,PlayerController,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,79,30,true,79,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00113680,intAPlayerControllerexecSetViewTarget,1,PlayerController,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,159,49,true,159,ghidra,ret-imm,159,ret-imm pad,
+0x00113720,intAPlayerControllerexecResetKeyboard,1,PlayerController,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,79,30,true,79,ghidra,ret-imm,79,ret-imm pad,
 0x00113770,intAPlayerControllerexecResetInput,1,PlayerController,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,75,28,true,75,ghidra,ret-imm,75,ret-imm pad,
 0x001137c0,intAControllerexecFindBestInventoryPath,1,Controller,.text,census-start,int3,alloc,83ec100f57c05355,existing,536,-1,,536,ghidra,ret-imm,536,ret-imm pad,
 0x00113a10,intAControllerexecPickTarget,1,Controller,.text,census-start,int3,alloc,81ecf40000000f57,accepted,1941,438,true,1941,ghidra,ret-imm,1941,ret-imm pad,
@@ -451,7 +451,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00115e60,intAControllerexecEndClimbLadder,1,Controller,.text,census-start,return,arg-load,8b442404568bf18b,accepted,171,57,true,171,ghidra,ret-imm,171,ret-imm pad,
 0x00115f10,intAControllerexecCanMakePathTo,1,Controller,.text,census-start,int3,alloc,83ec4c5355568b74,existing,882,-1,,882,ghidra,ret-imm,882,ret-imm pad,
 0x00116290,intAControllerexecMoveToward,1,Controller,.text,census-start,int3,alloc,83ec745355568bb4,existing,3015,-1,,3015,ghidra,ret-imm,3015,ret-imm pad,
-0x001188d0,intAControllerexecPickAnyTarget,1,Controller,.text,census-start,int3,alloc,83ec2c0f57c05355,existing,639,-1,,639,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x001188d0,intAControllerexecPickAnyTarget,1,Controller,.text,census-start,int3,alloc,83ec2c0f57c05355,existing,639,-1,,639,ghidra,ret-imm,639,ret-imm pad,
 0x00118b50,intAControllerexecLineOfSightTo,1,Controller,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,99,38,true,99,ghidra,ret-imm,99,ret-imm pad,
 0x00119330,intAPlayerControllerexecGetPlayerIDHash,1,PlayerController,.text,census-start,int3,seh,64a1000000006aff,accepted,686,191,true,686,ghidra,ret-imm,686,ret-imm pad,
 0x001196a0,intAPlayerControllerexecConsoleCommand,1,PlayerController,.text,census-start,int3,push-imm,6aff6839d43f0064,existing,493,-1,,493,ghidra,ret-imm,493,ret-imm pad,
@@ -514,7 +514,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x001c0c30,intUPlayerStatsexecPrintTable,1,PlayerStats,.text,census-start,int3,push-imm,6aff68c319400064,existing,189,-1,,189,ghidra,ret-imm,189,ret-imm pad,
 0x001c0f60,intUPlayerStatsexecGetIntStat,1,PlayerStats,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,114,46,true,114,ghidra,ret-imm,114,ret-imm pad,
 0x001c0fe0,intUPlayerStatsexecSetIntStat,1,PlayerStats,.text,census-start,int3,alloc,83ec08568b742410,existing,213,-1,,213,ghidra,ret-imm,213,ret-imm pad,
-0x001c10c0,intUPlayerStatsexecResetValues,1,PlayerStats,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,79,26,true,79,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x001c10c0,intUPlayerStatsexecResetValues,1,PlayerStats,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,79,26,true,79,ghidra,ret-imm,79,ret-imm pad,
 0x001c1500,intUPlayerStatCacheexecGetQueriedStats,1,PlayerStatCache,.text,census-start,int3,push-imm,6aff68e519400064,existing,788,-1,,788,ghidra,ret-imm,788,ret-imm pad,
 0x001c3490,intUPlayerStatsexecGetFloatStatByMap,1,PlayerStats,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,134,49,true,134,ghidra,ret-imm,134,ret-imm pad,
 0x001c3520,intUPlayerStatsexecSetFloatStatByMap,1,PlayerStats,.text,census-start,int3,alloc,83ec0c568b742414,existing,238,-1,,238,ghidra,ret-imm,238,ret-imm pad,
@@ -536,7 +536,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x001c45f0,intUStatsWriteexecAddUser,1,StatsWrite,.text,census-start,int3,push-reg,5153568b7424108b,accepted,150,52,true,150,ghidra,ret-imm,150,ret-imm pad,
 0x001c4c40,intUPlayerStatsexecInitialize,1,PlayerStats,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,46,18,true,46,ghidra,ret-imm,46,ret-imm pad,
 0x001c66f0,intUPlayInfoexecAddClass,1,PlayInfo,.text,census-start,int3,push-imm,6aff68e01b400064,existing,592,-1,,592,ghidra,ret-imm,592,ret-imm edge,
-0x001c6940,intUPlayInfoexecPopClass,1,PlayInfo,.text,census-start,zero,seh,64a1000000006aff,accepted,236,67,true,236,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x001c6940,intUPlayInfoexecPopClass,1,PlayInfo,.text,census-start,zero,seh,64a1000000006aff,accepted,236,67,true,236,ghidra,ret-imm,236,ret-imm pad,
 0x001c6a30,intUPlayInfoexecAddSetting,1,PlayInfo,.text,census-start,int3,push-imm,6aff68191d400064,existing,4728,-1,,4737,island,ret-imm,4737,ret-imm pad,
 0x001c7cc0,intUPlayInfoexecFindIndex,1,PlayInfo,.text,census-start,int3,push-imm,6aff68731d400064,existing,794,-1,,794,island,other,794,jmp pad,
 0x001c7fe0,intUPlayInfoexecSort,1,PlayInfo,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,112,42,true,112,ghidra,ret-imm,112,ret-imm edge,
@@ -544,8 +544,8 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x001c82e0,intUPlayInfoexecRemoveClass,1,PlayInfo,.text,census-start,int3,push-imm,6aff68971d400064,existing,817,-1,,817,ghidra,ret-imm,817,ret-imm pad,
 0x001c8700,intUPlayInfoexecSaveSettings,1,PlayInfo,.text,census-start,int3,push-imm,6aff68b91d400064,existing,774,-1,,780,island,other,780,jmp pad,
 0x001c8a10,intUPlayInfoexecGetSettings,1,PlayInfo,.text,census-start,int3,push-imm,6aff68db1d400064,existing,292,-1,,292,ghidra,ret-imm,292,ret-imm pad,
-0x001c9570,intUPlayInfoexecStoreSetting,1,PlayInfo,.text,census-start,int3,push-imm,6aff68141f400064,existing,812,-1,,812,ghidra,ret-imm,,,undecoded
-0x001cba40,intAProjectorexecAttachProjector,1,Projector,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,95,37,true,95,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x001c9570,intUPlayInfoexecStoreSetting,1,PlayInfo,.text,census-start,int3,push-imm,6aff68141f400064,existing,812,-1,,812,ghidra,ret-imm,812,ret-imm table+pad,
+0x001cba40,intAProjectorexecAttachProjector,1,Projector,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,95,37,true,95,ghidra,ret-imm,95,ret-imm pad,
 0x001cbaa0,intAProjectorexecDetachProjector,1,Projector,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,94,36,true,94,ghidra,ret-imm,94,ret-imm pad,
 0x001cbb00,intAProjectorexecAbandonProjector,1,Projector,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,138,47,true,138,ghidra,ret-imm,138,ret-imm pad,
 0x001ce1d0,intAProjectorexecDetachActor,1,Projector,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,183,68,true,183,ghidra,ret-imm,183,ret-imm pad,
@@ -563,13 +563,13 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x0020c620,intAPlayerControllerexecClientHearSound,1,PlayerController,.text,census-start,int3,alloc,83ec305355568b74,existing,528,-1,,528,ghidra,ret-imm,528,ret-imm edge,
 0x0020c830,intAActorexecSleep,1,Actor,.text,census-start,zero,push-reg,510f57c0568b7424,accepted,104,36,true,104,ghidra,ret-imm,104,ret-imm pad,
 0x0020c8a0,intAActorexecFinishAnim,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,103,36,true,103,ghidra,ret-imm,103,ret-imm pad,
-0x0020cb30,intAActorexecFinishInterpolation,1,Actor,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,22,true,63,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0020cb30,intAActorexecFinishInterpolation,1,Actor,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,63,22,true,63,ghidra,ret-imm,63,ret-imm pad,
 0x0020cc10,intAActorexecPlayAnim,1,Actor,.text,census-start,int3,alloc,83ec0c568b742414,existing,230,-1,,230,ghidra,ret-imm,230,ret-imm pad,
 0x0020cd00,intAActorexecLoopAnim,1,Actor,.text,census-start,int3,alloc,83ec0c568b742414,existing,230,-1,,230,ghidra,ret-imm,230,ret-imm pad,
 0x0020cdf0,intAActorexecTweenAnim,1,Actor,.text,census-start,int3,alloc,83ec08568b742410,existing,187,-1,,187,ghidra,ret-imm,187,ret-imm pad,
 0x0020ceb0,intAActorexecIsAnimating,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,97,37,true,97,ghidra,ret-imm,97,ret-imm pad,
 0x0020cf20,intAActorexecAnimStopLooping,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,119,43,true,119,ghidra,ret-imm,119,ret-imm pad,
-0x0020cfa0,intAActorexecFreezeAnimAt,1,Actor,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,159,56,true,159,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0020cfa0,intAActorexecFreezeAnimAt,1,Actor,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,159,56,true,159,ghidra,ret-imm,159,ret-imm pad,
 0x0020d040,intAActorexecSetAnimFrame,1,Actor,.text,census-start,int3,alloc,83ec080f57c0568b,accepted,202,68,true,202,ghidra,ret-imm,202,ret-imm pad,
 0x0020d110,intAActorexecIsTweening,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,137,49,true,137,ghidra,ret-imm,137,ret-imm pad,
 0x0020d1a0,intAActorexecHasAnim,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,151,56,true,151,ghidra,ret-imm,151,ret-imm pad,
@@ -595,7 +595,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x0020e6c0,intAActorexecSetCollision,1,Actor,.text,census-start,int3,alloc,83ec08568b742410,existing,200,-1,,200,ghidra,ret-imm,200,ret-imm pad,
 0x0020e790,intAActorexecOnlyAffectPawns,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,169,61,true,169,ghidra,ret-imm,169,ret-imm pad,
 0x0020e840,intAActorexecSetCollisionSize,1,Actor,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,153,56,true,153,ghidra,ret-imm,153,ret-imm pad,
-0x0020e8e0,intAActorexecSetBase,1,Actor,.text,census-start,int3,alloc,83ec10568b742418,existing,191,-1,,191,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0020e8e0,intAActorexecSetBase,1,Actor,.text,census-start,int3,alloc,83ec10568b742418,existing,191,-1,,191,ghidra,ret-imm,191,ret-imm pad,
 0x0020e9a0,intAActorexecIsJoinedTo,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,97,38,true,97,ghidra,ret-imm,97,ret-imm pad,
 0x0020ea10,intAActorexecSetDrawScale,1,Actor,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,103,41,true,103,ghidra,ret-imm,103,ret-imm pad,
 0x0020ea80,intAActorexecSetStaticMesh,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,91,35,true,91,ghidra,ret-imm,91,ret-imm pad,
@@ -611,7 +611,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x0020ef50,intAActorexecPauseStream,1,Actor,.text,census-start,zero,push-reg,51568b74240c8b46,accepted,132,49,true,132,ghidra,ret-imm,132,ret-imm pad,
 0x0020efe0,intAActorexecAdjustVolume,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,170,61,true,170,ghidra,ret-imm,170,ret-imm pad,
 0x0020f090,intAActorexecGetSoundDuration,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,112,40,true,112,ghidra,ret-imm,112,ret-imm edge,
-0x0020f100,intAActorexecMove,1,Actor,.text,census-start,zero,alloc,83ec3c53568b7424,existing,239,-1,,239,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0020f100,intAActorexecMove,1,Actor,.text,census-start,zero,alloc,83ec3c53568b7424,existing,239,-1,,239,ghidra,ret-imm,239,ret-imm pad,
 0x0020f1f0,intAActorexecSetLocation,1,Actor,.text,census-start,int3,alloc,83ec0c568b742414,accepted,138,52,true,138,ghidra,ret-imm,138,ret-imm pad,
 0x0020f280,intAActorexecSetLocationNoCollision,1,Actor,.text,census-start,int3,alloc,83ec0c568b742414,existing,138,-1,,138,ghidra,ret-imm,138,ret-imm pad,
 0x0020f310,intAActorexecSetRelativeLocation,1,Actor,.text,census-start,int3,alloc,83ec7c5355568bb4,existing,724,-1,,724,ghidra,ret-imm,724,ret-imm pad,
@@ -624,7 +624,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x0020fc10,intAActorexecDestroy,1,Actor,.text,census-start,zero,arg-load,8b442404568bf18b,accepted,62,23,true,62,ghidra,ret-imm,62,ret-imm pad,
 0x0020fc50,intAActorexecSetTimer,1,Actor,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,161,54,true,161,ghidra,ret-imm,161,ret-imm pad,
 0x0020fd00,intAWarpZoneInfoexecWarp,1,WarpZoneInfo,.text,census-start,int3,alloc,81ec240100005355,accepted,512,162,true,512,ghidra,ret-imm,512,ret-imm edge,
-0x0020ff00,intAWarpZoneInfoexecUnWarp,1,WarpZoneInfo,.text,census-start,zero,alloc,81ecc80000005355,accepted,454,146,true,454,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0020ff00,intAWarpZoneInfoexecUnWarp,1,WarpZoneInfo,.text,census-start,zero,alloc,81ecc80000005355,accepted,454,146,true,454,ghidra,ret-imm,454,ret-imm pad,
 0x002102e0,intAActorexecMultiply_ColorFloat,1,Actor,.text,census-start,int3,alloc,83ec08568b742410,existing,194,-1,,194,ghidra,ret-imm,194,ret-imm pad,
 0x002103b0,intAActorexecMultiply_FloatColor,1,Actor,.text,census-start,int3,alloc,83ec080f57c0568b,existing,194,-1,,194,ghidra,ret-imm,194,ret-imm pad,
 0x00210480,intAActorexecAdd_ColorColor,1,Actor,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,141,50,true,141,ghidra,ret-imm,141,ret-imm pad,
@@ -661,15 +661,15 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x002141e0,intAActorexecTouchingActors,1,Actor,.text,census-start,int3,alloc,83ec3455568b7424,existing,487,-1,,487,ghidra,ret-imm,487,ret-imm pad,
 0x002143d0,intAActorexecTraceActors,1,Actor,.text,census-start,int3,alloc,81ec800000005355,accepted,846,274,true,846,ghidra,ret-imm,846,ret-imm pad,
 0x00214720,intAActorexecRadiusActors,1,Actor,.text,census-start,int3,alloc,83ec4c5355568b74,existing,761,-1,,773,island,ret-imm,773,ret-imm pad,
-0x00214a30,intAActorexecVisibleActors,1,Actor,.text,census-start,int3,alloc,81ec840000005355,accepted,872,258,true,1750,island,ret-imm,,,no-terminator-before-the-next-row
+0x00214a30,intAActorexecVisibleActors,1,Actor,.text,census-start,int3,alloc,81ec840000005355,accepted,872,258,true,1750,island,ret-imm,879,ret-imm pad,
 0x00214da0,intAActorexecVisibleCollidingActors,1,Actor,.text,census-start,int3,alloc,81ec940000005355,accepted,870,268,true,870,ghidra,ret-imm,870,ret-imm pad,
 0x00215110,intAActorexecCollidingActors,1,Actor,.text,census-start,int3,alloc,83ec4853568b7424,existing,622,-1,,622,ghidra,ret-imm,622,ret-imm pad,
 0x00215380,intAZoneInfoexecZoneActors,1,ZoneInfo,.text,census-start,int3,alloc,83ec3455568b7424,existing,519,-1,,519,ghidra,ret-imm,519,ret-imm pad,
-0x00215590,intAHUDexecDraw3DLine,1,HUD,.text,census-start,int3,seh,64a1000000006aff,accepted,303,95,true,303,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00215590,intAHUDexecDraw3DLine,1,HUD,.text,census-start,int3,seh,64a1000000006aff,accepted,303,95,true,303,ghidra,ret-imm,303,ret-imm pad,
 0x002156c0,intAHUDexecDraw3DArrow,1,HUD,.text,census-start,int3,push-imm,6aff687a31400064,existing,348,-1,,348,ghidra,ret-imm,348,ret-imm pad,
 0x00215820,intAHUDexecDraw3DCircle,1,HUD,.text,census-start,int3,push-imm,6aff688c31400064,existing,444,-1,,444,ghidra,ret-imm,444,ret-imm pad,
 0x002159e0,intAHUDexecDrawCanvasLine,1,HUD,.text,census-start,int3,push-imm,6aff68a131400064,existing,379,-1,,379,ghidra,ret-imm,379,ret-imm pad,
-0x00215b60,intAHUDexecDraw3DBox,1,HUD,.text,census-start,int3,seh,64a1000000006aff,accepted,239,75,true,239,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00215b60,intAHUDexecDraw3DBox,1,HUD,.text,census-start,int3,seh,64a1000000006aff,accepted,239,75,true,239,ghidra,ret-imm,239,ret-imm pad,
 0x00215c50,intAActorexecGetRenderBoundingSphere,1,Actor,.text,census-start,int3,arg-load,8b44240481eca000,accepted,201,71,true,201,ghidra,ret-imm,201,ret-imm pad,
 0x00215d20,intAActorexecAddToPackageMap,1,Actor,.text,census-start,int3,push-imm,6aff68c531400064,existing,598,-1,,598,ghidra,ret-imm,598,ret-imm pad,
 0x00215f80,intAActorexecCopyObjectToClipboard,1,Actor,.text,census-start,int3,push-imm,6aff68d731400064,existing,635,-1,,635,ghidra,ret-imm,635,ret-imm pad,
@@ -701,7 +701,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00217ca0,intAActorexecPlayFeedbackEffect,1,Actor,.text,census-start,int3,frame,558bec6aff681734,existing,274,-1,,274,ghidra,ret-imm,274,ret-imm pad,
 0x00217dc0,intAActorexecStopFeedbackEffect,1,Actor,.text,census-start,int3,frame,558bec6aff683134,existing,378,-1,,378,ghidra,ret-imm,378,ret-imm pad,
 0x00217f40,intAActorexecChangeSpringFeedbackEffect,1,Actor,.text,census-start,int3,frame,558bec6aff684b34,existing,379,-1,,379,ghidra,ret-imm,379,ret-imm pad,
-0x002180c0,intAActorexecChangeBaseParamsFeedbackEffect,1,Actor,.text,census-start,int3,frame,558bec6aff686534,existing,447,-1,,447,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x002180c0,intAActorexecChangeBaseParamsFeedbackEffect,1,Actor,.text,census-start,int3,frame,558bec6aff686534,existing,447,-1,,447,ghidra,ret-imm,447,ret-imm pad,
 0x00218280,intAPlayerControllerexecServerValidationResponse,1,PlayerController,.text,census-start,int3,push-imm,6aff687f34400064,existing,205,-1,,205,ghidra,ret-imm,205,ret-imm pad,
 0x00218350,intAActorexecResetSkins,1,Actor,.text,census-start,int3,arg-load,8b44240456578b78,accepted,393,119,true,401,island,ret-imm,401,ret-imm pad,
 0x002184f0,intAActorexecConsoleCommand,1,Actor,.text,census-start,int3,push-imm,6aff68a934400064,existing,396,-1,,396,ghidra,ret-imm,396,ret-imm pad,
@@ -712,12 +712,12 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x00219b90,intUScriptedTextureexecSetSize,1,ScriptedTexture,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,161,57,true,161,ghidra,ret-imm,161,ret-imm pad,
 0x00219c40,intUScriptedTextureexecDrawTile,1,ScriptedTexture,.text,census-start,int3,push-imm,6aff683b36400064,existing,615,-1,,615,ghidra,ret-imm,615,ret-imm pad,
 0x0021a1e0,intUScriptedTextureexecDrawText,1,ScriptedTexture,.text,census-start,int3,push-imm,6aff688536400064,existing,421,-1,,421,ghidra,ret-imm,421,ret-imm pad,
-0x0021a390,intUScriptedTextureexecTextSize,1,ScriptedTexture,.text,census-start,int3,push-imm,6aff68a536400064,existing,511,-1,,511,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x0021a390,intUScriptedTextureexecTextSize,1,ScriptedTexture,.text,census-start,int3,push-imm,6aff68a536400064,existing,511,-1,,511,ghidra,ret-imm,511,ret-imm pad,
 0x0021a590,intUScriptedTextureexecDrawPortal,1,ScriptedTexture,.text,census-start,int3,push-imm,6aff68d336400064,existing,1259,-1,,1259,ghidra,ret-imm,1259,ret-imm pad,
-0x0021ada0,intASecurityexecNativePerform,1,Security,.text,census-start,int3,push-imm,6aff68f637400064,existing,2088,-1,,2120,island,other,,,undecoded
-0x0021b5f0,intASecurityexecLocalPerform,1,Security,.text,census-start,int3,push-imm,6aff684f39400064,existing,3900,-1,,4116,island,ret,,,undecoded
+0x0021ada0,intASecurityexecNativePerform,1,Security,.text,census-start,int3,push-imm,6aff68f637400064,existing,2088,-1,,2120,island,other,2091,jmp align+table+pad,
+0x0021b5f0,intASecurityexecLocalPerform,1,Security,.text,census-start,int3,push-imm,6aff684f39400064,existing,3900,-1,,4116,island,ret,3903,jmp align+table,
 0x0021dbb0,intAShadowProjectorexecUpdateShadow,1,ShadowProjector,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,92,36,true,92,ghidra,ret-imm,92,ret-imm pad,
-0x00260aa0,intASVehicleexecUpdateVehicle,1,SVehicle,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,95,37,true,95,ghidra,ret-imm,99,ret-imm pad,
+0x00260aa0,intASVehicleexecUpdateVehicle,1,SVehicle,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,95,37,true,95,ghidra,ret-imm,95,ret-imm pad,
 0x00261770,intASVehicleexecGraphData,1,SVehicle,.text,census-start,int3,push-imm,6aff68605f400064,existing,363,-1,,363,ghidra,ret-imm,363,ret-imm pad,
 0x00270db0,intATerrainInfoexecPokeTerrain,1,TerrainInfo,.text,census-start,int3,frame,558bec83e4f883ec,existing,808,-1,,808,ghidra,ret-imm,808,ret-imm pad,
 0x002837b0,intUTrailEmitterexecResetTrail,1,TrailEmitter,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,46,18,true,46,ghidra,ret-imm,46,ret-imm pad,
@@ -741,7 +741,7 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x002950e0,intUStreamTagexecDumpTag,1,StreamTag,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,167,57,true,167,ghidra,ret-imm,167,ret-imm pad,
 0x002957e0,intUStreamexecLoadID3Tag,1,Stream,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,52,20,true,52,ghidra,ret-imm,52,ret-imm pad,
 0x00295820,intUStreamexecSaveID3Tag,1,Stream,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,92,29,true,92,ghidra,ret-imm,92,ret-imm pad,
-0x00295880,intUStreamInterfaceexecCreateStream,1,StreamInterface,.text,census-start,int3,push-imm,6aff684a70400064,existing,223,-1,,223,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x00295880,intUStreamInterfaceexecCreateStream,1,StreamInterface,.text,census-start,int3,push-imm,6aff684a70400064,existing,223,-1,,223,ghidra,ret-imm,223,ret-imm pad,
 0x00298630,intAGameInfoexecCreateDataObject,1,GameInfo,.text,census-start,int3,push-imm,6aff687076400064,existing,364,-1,,364,ghidra,ret-imm,364,ret-imm pad,
 0x002987a0,intAGameInfoexecDeleteDataObject,1,GameInfo,.text,census-start,int3,push-imm,6aff688a76400064,existing,231,-1,,231,ghidra,ret-imm,231,ret-imm pad,
 0x00298890,intAGameInfoexecLoadDataObject,1,GameInfo,.text,census-start,int3,push-imm,6aff68a476400064,existing,231,-1,,231,ghidra,ret-imm,231,ret-imm pad,
@@ -774,16 +774,16 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x002d0940,intATcpLinkexecOpen,1,TcpLink,.text,census-start,int3,alloc,83ec18568b742420,existing,266,-1,,266,ghidra,ret-imm,266,ret-imm pad,
 0x002d0b30,intATcpLinkexecSendBinary,1,TcpLink,.text,census-start,int3,alloc,81ec040100005355,accepted,310,104,true,310,ghidra,ret-imm,310,ret-imm pad,
 0x002d0c70,intATcpLinkexecReadText,1,TcpLink,.text,census-start,int3,frame,558bec6aff680898,existing,467,-1,,467,ghidra,ret-imm,467,ret-imm pad,
-0x002d0e50,intATcpLinkexecSendText,1,TcpLink,.text,census-start,int3,frame,558bec6aff681a98,existing,450,-1,,450,ghidra,ret-imm,,,pad-not-after-a-terminator
+0x002d0e50,intATcpLinkexecSendText,1,TcpLink,.text,census-start,int3,frame,558bec6aff681a98,existing,450,-1,,450,ghidra,ret-imm,450,ret-imm align+table+pad,
 0x002d6f70,intAUdpLinkexecSendBinary,1,UdpLink,.text,census-start,int3,alloc,81ec1c0100005556,accepted,321,100,true,321,ghidra,ret-imm,321,ret-imm pad,
 0x002d7130,intAUdpLinkexecBindPort,1,UdpLink,.text,census-start,int3,alloc,83ec1c5355568b74,existing,472,-1,,472,ghidra,ret-imm,472,ret-imm pad,
 0x002d7310,intAUdpLinkexecReadBinary,1,UdpLink,.text,census-start,int3,alloc,81ec240100005556,accepted,440,134,true,440,ghidra,ret-imm,440,ret-imm pad,
-0x002d74d0,intAUdpLinkexecSendText,1,UdpLink,.text,census-start,int3,push-imm,6aff68e89d400064,existing,382,-1,,382,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x002d74d0,intAUdpLinkexecSendText,1,UdpLink,.text,census-start,int3,push-imm,6aff68e89d400064,existing,382,-1,,382,ghidra,ret-imm,382,ret-imm align+table,
 0x002d7660,intAUdpLinkexecReadText,1,UdpLink,.text,census-start,zero,push-imm,6aff68fd9d400064,accepted,481,144,true,481,ghidra,ret-imm,481,ret-imm pad,
 0x002ec180,intUGUIPageexecSleep,1,GUIPage,.text,census-start,int3,push-reg,510f57c0568b7424,accepted,104,36,true,104,ghidra,ret-imm,104,ret-imm pad,
 0x002ec240,intUGUIPageexecInitExecution,1,GUIPage,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,46,19,true,46,ghidra,ret-imm,46,ret-imm pad,
 0x002ec9e0,intUGUIScrollingPanelexecRender,1,GUIScrollingPanel,.text,census-start,return,push-reg,51568b74240c8b46,accepted,146,53,true,146,ghidra,ret-imm,146,ret-imm pad,
-0x002f2bf0,intUGUIMenuOptionexecPreDraw,1,GUIMenuOption,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,191,74,true,191,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x002f2bf0,intUGUIMenuOptionexecPreDraw,1,GUIMenuOption,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,191,74,true,191,ghidra,ret-imm,191,ret-imm pad,
 0x002f2cb0,intUGUIMenuOptionexecDraw,1,GUIMenuOption,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,186,73,true,186,ghidra,ret-imm,186,ret-imm pad,
 0x002f5fc0,intUGUIControllerexecFindControllerPortIndex,1,GUIController,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,92,36,true,92,ghidra,ret-imm,92,ret-imm pad,
 0x002f6110,intUGUIControllerexecResetInput,1,GUIController,.text,census-start,int3,arg-load,8b442404568bf18b,accepted,49,19,true,49,ghidra,ret-imm,49,ret-imm pad,
@@ -811,22 +811,22 @@ body_va,names,records,classes,section,census,boundary,prologue,first_bytes,disas
 0x002f9400,intUGUIControllerexecGetBuildStamp,1,GUIController,.text,census-start,int3,frame,558bec6aff6859a8,existing,324,-1,,324,ghidra,ret-imm,324,ret-imm pad,
 0x002f9550,intUGUIControllerexecGetMenuFont,1,GUIController,.text,census-start,int3,push-imm,6aff687ba8400064,existing,330,-1,,339,island,other,339,jmp pad,
 0x002f96b0,intUGUIControllerexecGetStyle,1,GUIController,.text,census-start,int3,push-imm,6aff689da8400064,existing,330,-1,,339,island,other,339,jmp pad,
-0x002f9920,intUGUIStylesexecDraw,1,GUIStyles,.text,census-start,int3,alloc,83ec14568b74241c,existing,303,-1,,303,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x002f9920,intUGUIStylesexecDraw,1,GUIStyles,.text,census-start,int3,alloc,83ec14568b74241c,existing,303,-1,,303,ghidra,ret-imm,303,ret-imm pad,
 0x002f9a50,intUGUIStylesexecDrawImage,1,GUIStyles,.text,census-start,int3,push-imm,6aff68b7a8400064,existing,513,-1,,513,ghidra,ret-imm,513,ret-imm pad,
 0x002f9c60,intUGUIStylesexecTextSize,1,GUIStyles,.text,census-start,int3,push-imm,6aff68d1a8400064,existing,433,-1,,433,ghidra,ret-imm,433,ret-imm pad,
-0x002fa620,intUGUIComponentexecGetMenuPath,1,GUIComponent,.text,census-start,int3,arg-load,8b442404568b700c,accepted,127,44,true,127,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x002fa620,intUGUIComponentexecGetMenuPath,1,GUIComponent,.text,census-start,int3,arg-load,8b442404568b700c,accepted,127,44,true,127,ghidra,ret-imm,127,ret-imm pad,
 0x002fa6a0,intUGUIComponentexecSetTimer,1,GUIComponent,.text,census-start,int3,alloc,83ec080f57c0568b,accepted,290,89,true,290,ghidra,ret-imm,290,ret-imm pad,
 0x002fa7d0,intUGUIComponentexecGetProfileCharacterName,1,GUIComponent,.text,census-start,int3,push-imm,6aff68eba8400064,existing,166,-1,,166,ghidra,ret-imm,166,ret-imm pad,
 0x002faa90,intUGUIComponentexecSafeDelete,1,GUIComponent,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,121,46,true,121,ghidra,ret-imm,121,ret-imm pad,
 0x002fb120,intUGUIComponentexecGetReferencedObjects,1,GUIComponent,.text,census-start,int3,push-imm,6aff6821a9400064,existing,215,-1,,215,ghidra,ret-imm,215,ret-imm pad,
 0x002fe400,intUGUIControllerexecSetMoveControl,1,GUIController,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,101,38,true,101,ghidra,ret-imm,101,ret-imm pad,
-0x002fe5f0,intUGUIControllerexecGetMapList,1,GUIController,.text,census-start,int3,frame,558bec83e4f86aff,existing,1256,-1,,1528,island,ret,,,no-terminator-before-the-next-row
+0x002fe5f0,intUGUIControllerexecGetMapList,1,GUIController,.text,census-start,int3,frame,558bec83e4f86aff,existing,1256,-1,,1528,island,ret,1263,ret-imm pad,
 0x002ff090,intUGUIexecAllObjectProperties,1,GUI,.text,census-start,int3,frame,558bec83e4f883ec,existing,579,-1,,579,ghidra,ret-imm,579,ret-imm pad,
 0x002ff2e0,intUGUIComponentexecAllInnerObjects,1,GUIComponent,.text,census-start,int3,alloc,83ec345355568b74,existing,439,-1,,446,island,ret-imm,446,ret-imm pad,
-0x002ffa80,intUGUIStylesexecDrawText,1,GUIStyles,.text,census-start,int3,push-imm,6aff6874aa400064,existing,591,-1,,591,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x002ffa80,intUGUIStylesexecDrawText,1,GUIStyles,.text,census-start,int3,push-imm,6aff6874aa400064,existing,591,-1,,591,ghidra,ret-imm,591,ret-imm pad,
 0x00302fa0,intUGUIMultiColumnListexecGetListIndex,1,GUIMultiColumnList,.text,census-start,int3,push-reg,51568b74240c8b46,accepted,137,53,true,137,ghidra,ret-imm,137,ret-imm pad,
 0x003030b0,intUGUIMultiColumnListexecAddedItem,1,GUIMultiColumnList,.text,census-start,int3,push-imm,6aff6812ae400064,existing,483,-1,,483,ghidra,ret-imm,483,ret-imm pad,
-0x003032a0,intUGUIMultiColumnListexecUpdatedItem,1,GUIMultiColumnList,.text,census-start,int3,push-imm,6aff6824ae400064,existing,287,-1,,287,ghidra,ret-imm,,,no-terminator-before-the-next-row
+0x003032a0,intUGUIMultiColumnListexecUpdatedItem,1,GUIMultiColumnList,.text,census-start,int3,push-imm,6aff6824ae400064,existing,287,-1,,287,ghidra,ret-imm,287,ret-imm pad,
 0x003033c0,intUGUIMultiColumnListexecChangeSortOrder,1,GUIMultiColumnList,.text,census-start,int3,seh,64a1000000006aff,accepted,327,103,true,327,ghidra,ret-imm,327,ret-imm pad,
 0x00303840,intUGUIScrollTextexecGetWordUnderCursor,1,GUIScrollText,.text,census-start,int3,seh,64a1000000006aff,accepted,620,170,true,620,ghidra,ret-imm,620,ret-imm pad,
 0x00303e60,intUGUIListBaseexecSortList,1,GUIListBase,.text,census-start,int3,arg-load,8b442404538b580c,accepted,139,48,true,139,ghidra,ret-imm,139,ret-imm pad,

@@ -99,14 +99,15 @@ make symbols           # then regenerate the map and the assembler form
 | `add` | a body the map has no row for; `target` carries its name | may not land inside any row, and needs a matching `xbe_overrides.csv` row — that file is what creates the function |
 | `rename` | the name this row's own instruction settles; `target` carries it | the map must have the row; moves no edge, so it cannot join an overlap |
 
-**387 rows** are in the file: 278 `add`s, 53 `rename`s, 48 `resize`s and 7 `drop`s. Each is one measured thing:
+**398 rows** are in the file: 278 `add`s, 53 `rename`s, 56 `resize`s and 11 `drop`s. Each is one measured thing:
 the `Core_UnTemplate` row at `0x0002f820` folded into the audio body it belongs to (`0x0002f13c`, 2,282 bytes),
-the pump at `0x0002feb0` given its real end (`0x3137f`), the body at `0x0002fa30` — slot 33 of
-`XBoxAudioSubsystem`'s table, which calls `XboxAudio_FlushSounds` over `[this+0xd8]` — added, eight other rows
+the pump at `0x0002feb0` given its real end (`0x3137f`), the body at `0x0002fa30` -- slot 33 of
+`XBoxAudioSubsystem`'s table, which calls `XboxAudio_FlushSounds` over `[this+0xd8]` -- added, eight other rows
 that stopped inside the slot load or the `rdtsc` pair of a scope close resized to their own closing `ret`, the
-CRT's `sinh` stub added with `ULevel::MultiLineCheck` and one 63-byte BSP getter, and the registration table's
-268 native bodies and the six a false split sat inside (below). The map is **15,244 functions and
-4,017,403 bytes**.
+CRT's `sinh` stub added with `ULevel::MultiLineCheck` and one 63-byte BSP getter, the registration table's 268
+native bodies and the six a false split sat inside, four more false splits the sweep found from a row the map
+already had (a `resize` plus the `drop` of the fragment inside it), and four rows that stopped short. The map is
+**15,240 functions and 4,017,423 bytes**.
 
 `--check` runs in `make ci` through the tool contract: it re-applies the file to the committed csv in memory and
 fails if the bytes differ, so a Ghidra re-import that undoes a repair is red instead of silently reverting the map.
@@ -135,19 +136,32 @@ is an assert block the body inlined and an `add` alone would overlap it. Sizes a
 92 bytes.
 
 The same rows answer the other direction, and the answer is a decode rather than the walk. `sweep`,
-`sweep_closes` and `sweep_refused` are a **linear decode from each body's start** that accepts an end only
-where a complete instruction closes on an unconditional terminator: at the `cc cc` pad (`pad`), or exactly at
-the next row (`edge`). It reproduces the map's own size to the byte on **789 of the 877** rows, finds **40**
-whose declared size stops short of the body's own close, and refuses **48** with a reason — 44 reach the next
-row without a terminator ending at it, 3 hit an opcode the shared decoder will not read, and one pad follows
-something that is not a terminator. The walk it replaces could read a *neighbour's* close: `0x00041000`
-declares 33 bytes on a 144-byte body, the island said 437, and the decode says 144.
+`sweep_closes` and `sweep_refused` are a **linear decode from each body's start** that accepts an end only where a
+complete instruction closes on an unconditional terminator *and* the bytes to the next map row are a tail rather
+than code. There are four tails, and they are the population the earlier rule could not read: `pad` (`0xcc` fill
+of any length -- a single `int3` in front of the next row is padding the map's own start corroborates), `edge`
+(nothing), `align` (MSVC's `8b ff` hotpatch slot, `90`, `0f 1f..`) and `table` (a `switch`'s case table: dwords
+that all name an offset inside the body), or a concatenation of those. A `0xcc` run also *ends* the reading,
+because what follows a pad is another body: 22 rows sit in a map gap whose next row starts hundreds of bytes
+later.
 
-**39** of the 40 are `resize` rows. The 40th (`0x00260aa0`, 95 → 99) already carries an `add` from the first
-bundle and the file allows one repair per address, so it is U39's residual rather than a second row. Growth is
-withheld where a complete close already sits between the declaration and the body's own end, because the bytes
-past the declaration would then be a block of their own; that count is **0** on this population, and
-`0x00046330` is the one row the rule withholds, because it shares its 192-byte tail with `0x000463f0`.
+Read against the repaired map it reproduces the declared size to the byte on **882 of the 883** rows --
+**838** close on a pad, **39** exactly at the next row, **1** on a table behind its pad and **4** on an
+`align` + `table` tail (the two `execNativePerform`/`execLocalPerform` dispatchers among them) -- and **1** is
+refused: `0x00046330`, which shares its 192-byte tail with `0x000463f0`. The walk the sweep replaces could read a *neighbour's*
+close: `0x00041000` declares 33 bytes on a 144-byte body, the island said 437, and the decode says 144.
+
+The 48 refusals the earlier rule reported were **not** 48 unreadable bodies: 39 of them close on the single
+`int3` a two-byte pad rule walked through, and the shape is what settles them. The growth rule keeps the rest
+honest -- a row grows only when its declaration was cut mid-instruction, never over a declaration that already
+ends on a terminator, which is what stops ten rows from swallowing the body behind them. Eight rows are `resize`
+rows and four of those are a false split rather than a short row: `0x00041d70` (32 → 130), `0x000470c0`
+(235 → 293), `0x001c6940` (181 → 236) and `0x0020ff00` (371 → 454) each enclose a map row -- two assert blocks and
+two starts in the middle of an instruction pair -- so each repair is the resize plus the `drop` of the fragment
+inside it. The other four are short rows: `0x00214a30` and `0x002fe5f0` (+7 each) and the two dispatchers (+3
+each). **U39's second-repair residual is settled and needed no exception**: `0x00260aa0`'s own `ret 8` ends at 95,
+a single `int3` separates it from a stray three-byte `ret 4`, and the decode stops at the `int3` -- the 95 → 99
+reading walked through the pad.
 
 ## Jump thunks: what each one jumps to, and the name that follows
 

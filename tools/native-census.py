@@ -49,9 +49,11 @@ the map already has is emitted with the `drop` that folds that row: an `add` on 
 the map, and the fragment inside is what U39's pairing names.
 
 The `sweep`/`sweep_closes` columns are the fourth reading, and the one the resize population needs:
-a **linear decode from the body's start** to the first instruction that ends exactly where a `cc cc`
-run begins (or where the next map row begins), refused unless that instruction is an unconditional
-terminator. It is a measurement of the row's own bytes, not of a walk's end: the island fallback above
+a **linear decode from the body's start** to the first unconditional terminator whose bytes to the next
+map row are a *tail* rather than code -- `edge` (nothing), `pad` (`0xcc` fill of any length), `align`
+(MSVC's `8b ff` hotpatch slot, `90`, `0f 1f..`) or `table` (a `switch`'s case table: dwords that all name
+an offset inside the body), or a concatenation of those. The tail is what makes a refusal a measurement:
+the old rule wanted a two-byte `cc cc` run and so walked through the single `int3` that 38 rows end on. It is a measurement of the row's own bytes, not of a walk's end: the island fallback above
 stops at the first `cc cc` and so can read the *neighbour's* close (`0x00041000` declares 33 bytes and
 the island ran 437), while a decode that must land on a terminator settles the same row at 144. The
 columns reproduce the map's own size on 784 of the 877 registration rows and disagree on 36 -- the rows
@@ -63,6 +65,7 @@ import collections
 import csv
 import importlib.util
 import os
+import struct
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -79,7 +82,8 @@ COLS = ["body_va", "names", "records", "classes", "section", "census", "boundary
         "extent", "extent_source", "extent_closes", "sweep", "sweep_closes", "sweep_refused"]
 
 SWEEP_REFUSALS = ("pad-not-after-a-terminator", "no-terminator-before-the-next-row", "undecoded",
-                  "no-section", "unreadable", "close-inside-the-extension")
+                  "no-section", "unreadable", "close-inside-the-extension",
+                  "declared-end-is-a-close")
 
 # MSVC 7.1 openings seen at this build's real entries, longest first: the order is the classifier.
 PROLOGUES = (
@@ -169,42 +173,111 @@ def terminator_kind(data, start, text):
     return "jmp-ind" if text.startswith("group5 /4") else None
 
 
-def sweep_body(decode, data, limit=None, floor=None):
+# What a body's bytes can run into after its closing terminator. A body's code cannot continue past an
+# unconditional transfer, so whatever sits between that instruction and the next map row is one of these.
+TAIL_SHAPES = ("edge", "pad", "align", "table")
+
+
+def _align_at(tail, i):
+    """The length of an alignment idiom at `tail[i]`, or 0. `8b ff` is MSVC's hotpatch slot."""
+    for idiom in (b"\x8b\xff", b"\x66\x90", b"\x0f\x1f\x44\x00\x00", b"\x0f\x1f\x40\x00", b"\x0f\x1f\x00",
+                  b"\x0f\x1f\x84\x00\x00\x00\x00\x00", b"\x90"):
+        if tail.startswith(idiom, i):
+            return len(idiom)
+    return 0
+
+
+def _table_at(tail, i, va, span):
+    """The byte count of a case table at `tail[i]`, or 0: dwords that all name an offset inside the body.
+
+    The table is the one structure that reads as code and is not, and it is what a `switch` compiles its
+    dispatch to. `span` is the body's fixed window (its start to the next map row), so the test does not
+    depend on the end being measured. Three entries is the floor: two dwords that happen to land in the
+    body are not a table.
+    """
+    n = 0
+    while i + 4 * (n + 1) <= len(tail):
+        d = struct.unpack("<I", tail[i + 4 * n:i + 4 * (n + 1)])[0]
+        if not (va <= d < va + span):
+            break
+        n += 1
+    return 4 * n if n >= 3 else 0
+
+
+def tail_shape(data, p, limit, va):
+    """What follows a body's closing terminator, by name, or None when the bytes are code.
+
+    Every row the sweep used to refuse ends on one of these rather than on nothing: 38 close on a
+    `ret`/`ret imm16` followed by a single `0xcc` (the old two-byte pad rule walked straight through it),
+    two dispatchers run into their own case tables, two more end in the `8b ff` slot in front of a table,
+    and three continue into the row the map split them from. Naming the shape is what turns a refusal
+    into a measurement -- the body's end is the terminator either way.
+    """
+    tail = data[p:limit]
+    if not tail:
+        return "edge"
+    parts, i = [], 0
+    while i < len(tail):
+        if tail[i] == 0xCC:
+            # A `0xcc` run *is* the boundary the image draws between bodies: what follows it belongs to
+            # another body (22 rows here sit in a map gap whose next row starts hundreds of bytes later,
+            # so a rule that had to consume the whole tail walked into the next body's code and refused).
+            parts.append("pad")
+            return "+".join(parts)
+        elif _align_at(tail, i):
+            i += _align_at(tail, i)
+            shape = "align"
+        else:
+            n = _table_at(tail, i, va, limit)
+            if not n:
+                return None
+            i += n
+            shape = "table"
+        if not parts or parts[-1] != shape:
+            parts.append(shape)
+    return "+".join(parts)
+
+
+def sweep_body(decode, data, limit=None, floor=None, va=0):
     """(extent, closes, why): the body's end by linear decode, or why the decode will not claim one.
 
-    A body's last instruction is an unconditional terminator, so the sweep accepts an end only where one
-    ends: at the start of a `cc cc` pad (`pad`), or exactly where the next map row begins (`edge`). A pad
-    that follows anything else is a `0xcc` *inside* the body -- one byte between two bodies is not
-    padding -- so the sweep refuses the row rather than resizing it to a neighbour's close.
+    A body's last instruction is an unconditional terminator, so the sweep takes an end only where one
+    ends and the bytes to the next map row are a *tail* rather than code (`tail_shape`). A terminator with
+    code behind it is a jump inside the body -- a `switch` case, an early `ret` -- so the walk goes on,
+    which is why the first close is not the body's end.
+
+    `va` is the body's start: the case-table test needs it, because the entries name offsets inside the body.
 
     `floor` is the row's declared end, and it makes the reading safe for a *resize*: when a complete
     close already sits between it and the body's own end, the bytes past the declaration are a block of
-    their own (a cold tail or an uncreated body), not code the declaration cut in half, so the row is
-    refused instead of grown over it. Every one of this image's 41 short rows has no such close.
+    its own (a cold tail or an uncreated body), not code the declaration cut in half, so the row is
+    refused instead of grown over it.
     """
     i, prev, prev_start, closes = 0, None, None, []
     while i < len(data):
-        if i + 1 < len(data) and data[i] == 0xCC and data[i + 1] == 0xCC:
-            kind = terminator_kind(data, prev_start, prev) if prev is not None else None
-            if not kind:
-                return None, None, "pad-not-after-a-terminator"
-            return (None, None, "close-inside-the-extension") if _inner(closes, floor, i) \
-                else (i, kind, "pad")
         ins = decode(data, i)
         if ins is None or ins.length <= 0:
             return None, None, "undecoded"
         prev_start = i
         i += ins.length
         prev = ins.text
-        if terminator_kind(data, prev_start, prev):
+        kind = terminator_kind(data, prev_start, prev)
+        if kind:
             closes.append(i)
+            shape = tail_shape(data, i, limit if limit is not None else len(data), va)
+            # A pad cannot end a body *inside* the size the disassembler gave it: the body is longer than
+            # this close, so the `0xcc` is an `int3` within the code and the walk goes on past it.
+            if shape and not (floor is not None and i < floor and shape.split("+")[0] == "pad"):
+                if _inner(closes, floor, i):
+                    return None, None, "close-inside-the-extension"
+                # A row whose own declaration already ends on a terminator does not grow over the body
+                # that follows it: the code after an unconditional transfer is somebody else's, and a
+                # later close with a pad behind it is the neighbour's end (10 rows here). Growth is only
+                # sound where the declaration was cut mid-instruction.
+                if floor is not None and i > floor and closes_with(data, floor) != "other":
+                    return None, None, "declared-end-is-a-close"
+                return i, kind, shape
         if limit is not None and i >= limit:
-            # The next row's own start is the hard bound: an instruction that crosses it cannot be this
-            # body's, and an instruction that ends exactly on it settles the body as an `edge`.
-            if i == limit:
-                kind = terminator_kind(data, prev_start, prev)
-                if kind and not _inner(closes, floor, i):
-                    return i, kind, "edge"
             return None, None, "no-terminator-before-the-next-row"
     if limit is not None and i == limit and prev is not None:
         kind = terminator_kind(data, prev_start, prev)
@@ -334,11 +407,24 @@ def build(bodies, table, starts, xbe, verdicts):
             row["extent_closes"] = closes
             # The sweep reads the same window but stops at a terminator, and it is bounded by the next
             # row the map already has: an island end past that row is the neighbour's close, not a body.
+            # A map row that starts *inside* the body the disassembler measured is a fragment of this
+            # body, not its neighbour (four rows here), so the bound is the first row at or past the body's
+            # declared end and `--emit-boundaries` turns the pair into a resize plus the fragment's drop.
             i = bisect.bisect_right(starts, va)
             limit = (starts[i] - va) if i < len(starts) else None
+            # A row that starts inside the body the disassembler measured is a fragment of it, not its
+            # neighbour. The strict window is tried first, so a row a neighbour merely overlaps keeps its
+            # own reading; where that window holds no terminator at all, the bound is the first row at or
+            # past the declared end and `--emit-boundaries` turns the pair into a resize plus a drop.
+            wide = limit
+            if body_bytes:
+                j = bisect.bisect_left(starts, va + body_bytes)
+                wide = (starts[j] - va) if j < len(starts) else None
             wanted = table[bisect.bisect_right(starts, va) - 1]
             floor = (wanted[1] - wanted[0]) if wanted[0] == va else None
-            swept, swept_close, why = sweep_body(decode, data, limit, floor)
+            swept, swept_close, why = sweep_body(decode, data, limit, floor, va)
+            if why == "no-terminator-before-the-next-row" and wide and wide > (limit or 0):
+                swept, swept_close, why = sweep_body(decode, data, wide, floor, va)
             if swept is None:
                 row["sweep"] = row["sweep_closes"] = ""
                 row["sweep_refused"] = why
@@ -395,7 +481,8 @@ def sweep_evidence(r, size):
     """The one sentence a `resize` row carries: what the row's own bytes say its end is."""
     va = int(r["body_va"], 16)
     close, anchor = r["sweep_closes"].rsplit(" ", 1)
-    where = "the `cc cc` pad that follows it" if anchor == "pad" else "the next row"
+    where = {"pad": "the `0xcc` pad that follows it",
+             "edge": "the next row"}.get(anchor, "the `%s` bytes that follow it" % anchor)
     return ("the declared size ends at 0x%08x, which is not where the body's code stops: a linear decode "
             "from 0x%08x reaches a `%s` at 0x%08x and %s begins there, so the row stops %d byte(s) short "
             "of its own close. The `extent` column read the end as %s (%s), which is the fallback walk's "
@@ -482,8 +569,23 @@ def emit(args):
                         "", "", "", "", "", "", size])
     for r in resizes:
         va = int(r["body_va"], 16)
+        size = int(r["sweep"])
+        # A row that starts inside the body this resize declares, and ends inside it too, is a fragment of
+        # that body -- the same defect the `add` pairing folds, measured from the row the map already has.
+        inside = [(a, n, b - a) for a, b, n in table if va < a < va + size and b <= va + size]
         if args.emit_boundaries:
-            w.writerow([r["body_va"], "resize", "", r["sweep"], sweep_evidence(r, declared[va])])
+            ev = sweep_evidence(r, declared[va])
+            if inside:
+                ev += ("; and the row(s) %s start inside the body and end inside it, which is what makes "
+                       "the declared size a split rather than a short row: each is dropped with this "
+                       "resize as its target"
+                       % ", ".join("%#010x (%s, %d bytes)" % (a, n, s) for a, n, s in inside))
+            w.writerow([r["body_va"], "resize", "", r["sweep"], ev])
+            for a, n, s in inside:
+                w.writerow(["0x%08x" % a, "drop", r["body_va"], "",
+                            "interior code of the body resized at %#010x: the enclosing body's own decode "
+                            "runs straight through this start into it, and no call in the image reaches it, "
+                            "so the row is a split of that body and not a body" % va])
     print("native-census: %d add(s), %d drop(s), %d resize(s) emitted, %d add(s) refused"
           % (len(ok), sum(len(i) for _r, _s, i in ok), len(resizes), len(refused)), file=sys.stderr)
     for r, size, why in refused:
@@ -581,9 +683,12 @@ def check(args):
                 bad.append("%s: the sweep (%s) is shorter than the row the map declares (%d)"
                            % (r["body_va"], swept, declared[va]))
             close = (r.get("sweep_closes") or "").rsplit(" ", 1)
-            if len(close) != 2 or not close[0] or close[1] not in ("pad", "edge"):
-                bad.append("%s: sweep_closes %r is not `<terminator> pad|edge`"
+            if len(close) != 2 or not close[0]:
+                bad.append("%s: sweep_closes %r is not `<terminator> <tail>`"
                            % (r["body_va"], r.get("sweep_closes")))
+            elif not close[1] or any(p not in TAIL_SHAPES for p in close[1].split("+")):
+                bad.append("%s: sweep_closes %r names a tail that is not one of %s"
+                           % (r["body_va"], r.get("sweep_closes"), "|".join(TAIL_SHAPES)))
             elif close[0] not in ("ret", "ret-imm", "jmp", "jmp-ind"):
                 bad.append("%s: sweep_closes names %r, which is not a terminator this build ends on"
                            % (r["body_va"], close[0]))
@@ -667,11 +772,35 @@ def selftest():
     # the row without a terminator is refused rather than cut.
     decode = _decoder()
     assert sweep_body(decode, b"\x55\x8b\xec\xc2\x08\x00\xcc\xcc") == (6, "ret-imm", "pad")
-    assert sweep_body(decode, b"\x90\x74\x00\xcc\xcc") == (None, None, "pad-not-after-a-terminator")
+    # One `int3` between a body and the next row is padding the map's own start corroborates: 38 rows end
+    # on exactly that, and refusing them was the old rule's two-byte requirement, not a body's shape.
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3\xcc", 5) == (4, "ret", "pad")
     assert sweep_body(decode, b"\x55\x8b\xec\xc3", 4) == (4, "ret", "edge")
     assert sweep_body(decode, b"\x90\x90\x90\x90", 4) == (None, None, "no-terminator-before-the-next-row")
+    # A conditional jump falls through and cannot end a body, and a `cc` behind code is not padding.
+    assert sweep_body(decode, b"\x74\x02\x90\x90\xcc\xcc") == (None, None,
+                                                                   "no-terminator-before-the-next-row")
     assert sweep_body(decode, b"\x55\x8b\xec\xeb\x02\xcc\xcc") == (5, "jmp", "pad")
     assert sweep_body(decode, b"\xff\x24\x85\x00\x00\x00\x00\xcc\xcc") == (7, "jmp-ind", "pad")
+    # The tail shapes the 48 refused rows actually end on: MSVC's `8b ff` slot, and a switch's case table
+    # (dwords that name offsets inside the body), alone and in front of a pad.
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3\x8b\xff\xcc\xcc", 8) == (4, "ret", "align+pad")
+    # A pad ends the reading: code after it is the next body's, not this one's (the 22 rows in map gaps).
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3\xcc\xcc\x55\x8b\xec\xc3", 10) == (4, "ret", "pad")
+    table = b"\x55\x8b\xec\xc3" + struct.pack("<3I", 0x1000, 0x1002, 0x1004) + b"\xcc"
+    assert sweep_body(decode, table, len(table), None, 0x1000) == (4, "ret", "table+pad")
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3" + struct.pack("<2I", 0x1000, 0x1002), 12,
+                      None, 0x1000) == (None, None, "no-terminator-before-the-next-row")
+    # A row whose own end already closes on a terminator does not grow over the body after it, even when
+    # a later close has a pad behind it; one cut mid-instruction (no close at its declared end) does.
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3\x55\x8b\xec\xc3\xcc", 9, 4,
+                      0) == (None, None, "declared-end-is-a-close")
+    assert sweep_body(decode, b"\x55\x8b\xec\x8b\xff\xc3\xcc", 7, 3, 0) == (6, "ret", "pad")
+    # A `0xcc` inside the declared size is an `int3` in the code, not the body's end: the walk goes on and
+    # settles the row at its own close.
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3\xcc\x90\xc3\xcc", 8, 7) == (7, "ret", "pad")
+    # A close that sits inside the extension is what the resize rule refuses to grow over.
+    assert sweep_body(decode, b"\xc3\x90\xc3\xcc", 4, 0) == (None, None, "close-inside-the-extension")
     cases += 1
     print("native-census: selftest passed (%d cases)" % cases)
     return 0
