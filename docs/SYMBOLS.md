@@ -95,17 +95,18 @@ make symbols           # then regenerate the map and the assembler form
 | verb | what the row says | validation |
 |---|---|---|
 | `resize` | this row ends at the address the evidence measured, not at Ghidra's edge | positive; may not run into the next row |
-| `drop` | this address is not a body, it is interior code of the row named in `target` | must land strictly inside that row's repaired span |
+| `drop` | this address is not a body, it is interior code of the row named in `target` | must land strictly inside that row's repaired span — which may be an `add` in this same file, the pairing a body split at an assert block needs |
 | `add` | a body the map has no row for; `target` carries its name | may not land inside any row, and needs a matching `xbe_overrides.csv` row — that file is what creates the function |
 | `rename` | the name this row's own instruction settles; `target` carries it | the map must have the row; moves no edge, so it cannot join an overlap |
 
-**335 rows** are in the file: 272 `add`s, 53 `rename`s, 9 `resize`s and one `drop`. Each is one measured thing:
+**387 rows** are in the file: 278 `add`s, 53 `rename`s, 48 `resize`s and 7 `drop`s. Each is one measured thing:
 the `Core_UnTemplate` row at `0x0002f820` folded into the audio body it belongs to (`0x0002f13c`, 2,282 bytes),
 the pump at `0x0002feb0` given its real end (`0x3137f`), the body at `0x0002fa30` — slot 33 of
 `XBoxAudioSubsystem`'s table, which calls `XboxAudio_FlushSounds` over `[this+0xd8]` — added, eight other rows
 that stopped inside the slot load or the `rdtsc` pair of a scope close resized to their own closing `ret`, the
 CRT's `sinh` stub added with `ULevel::MultiLineCheck` and one 63-byte BSP getter, and the registration table's
-268 native bodies (below). The map is **15,244 functions and 4,015,693 bytes**.
+268 native bodies and the six a false split sat inside (below). The map is **15,244 functions and
+4,017,403 bytes**.
 
 `--check` runs in `make ci` through the tool contract: it re-applies the file to the committed csv in memory and
 fails if the bytes differ, so a Ghidra re-import that undoes a repair is red instead of silently reverting the map.
@@ -128,14 +129,25 @@ image** — and the two emitters that write it out: `--emit-boundaries` prints t
 `--emit-creations` the `xbe_overrides.csv` row that `XbePost.java` builds a function from, so a fresh import
 keeps the body instead of reporting it missing. The extent is the image's, not a guess: Ghidra's `body_bytes`
 where the bytes there close on a terminator (269 of the 274, all but five on a `ret imm16`), otherwise the body's
-own end at the first `cc cc` run (5 more). **268 of the 274 are in the file**, and **877 of the 883 registration
-bodies are map rows** now; the six the file refuses are U39, refused by name rather than truncated to fit.
+own end at the first `cc cc` run (5 more). **274 of the 274 are in the file**, and **883 of the 883 registration bodies are map rows**: the six
+U39 refused are written as an `add` plus the `drop` that folds the fragment inside them, because the fragment
+is an assert block the body inlined and an `add` alone would overlap it. Sizes are 107, 274, 197, 212, 401 and
+92 bytes.
 
-The same three columns measure the other direction, and it is the next bundle's population: of the 877
-registration bodies that are rows, **827** close on a terminator at the size their row declares, **40** do not
-close at that size but do at the body's own `cc cc` bound (the declared size stops inside a fragment), and
-**10** close nowhere before the next padding run. That is U36's "stops short" defect counted over a population
-of 877 rather than the eleven rows the audio thread happened to walk.
+The same rows answer the other direction, and the answer is a decode rather than the walk. `sweep`,
+`sweep_closes` and `sweep_refused` are a **linear decode from each body's start** that accepts an end only
+where a complete instruction closes on an unconditional terminator: at the `cc cc` pad (`pad`), or exactly at
+the next row (`edge`). It reproduces the map's own size to the byte on **789 of the 877** rows, finds **40**
+whose declared size stops short of the body's own close, and refuses **48** with a reason — 44 reach the next
+row without a terminator ending at it, 3 hit an opcode the shared decoder will not read, and one pad follows
+something that is not a terminator. The walk it replaces could read a *neighbour's* close: `0x00041000`
+declares 33 bytes on a 144-byte body, the island said 437, and the decode says 144.
+
+**39** of the 40 are `resize` rows. The 40th (`0x00260aa0`, 95 → 99) already carries an `add` from the first
+bundle and the file allows one repair per address, so it is U39's residual rather than a second row. Growth is
+withheld where a complete close already sits between the declaration and the body's own end, because the bytes
+past the declaration would then be a block of their own; that count is **0** on this population, and
+`0x00046330` is the one row the rule withholds, because it shares its 192-byte tail with `0x000463f0`.
 
 ## Jump thunks: what each one jumps to, and the name that follows
 

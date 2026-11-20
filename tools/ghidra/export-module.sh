@@ -76,7 +76,7 @@ for m in $(echo "$modules" | tr ',' ' '); do
     log="$outroot/$name.log"
     addresses=$(grep -c . "$list" || true)
     t0=$(date +%s)
-    "$headless" "$proj" sg1 -process default.xbe -noanalysis \
+    "$headless" "$proj" sg1 -process "*" -noanalysis \
         -scriptPath "$PWD/tools/ghidra/ghidra_scripts" \
         -postScript ExportAt.java "@$list" "$out" "$PWD/symbols/xbox_functions.csv" > "$log" 2>&1 \
         || { echo "round for $name failed, see $log" >&2; tail -5 "$log" >&2; exit 2; }

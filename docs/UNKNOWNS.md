@@ -5497,42 +5497,47 @@ no `E8`/`E9` in the image targets it and no data section holds its address.
 in the symbols bundle that measured it: an `add` moves the map's function count from 14,973 and every artifact
 downstream of it, which is the boundary thread's (U36) work, while a `rename` moves no edge.
 
-## U39. Six native bodies have a false split inside them, and an `add` cannot claim the row it sits on
+## U39. The rows that stop short are resized, and the six split natives are rows — with three residuals
 
-**Observed.** `tools/native-census.py --emit-boundaries` writes the repair row for every registration body the map
-lacks; it refused **six** of the 274, and every refusal is the defect U36 folded out of the audio body: a map row
-starts *inside* the extent the disassembler accepted for the native's body, so an `add` there would overlap it.
+**Observed.** `tools/native-census.py --emit-boundaries` wrote the repair row for every registration body the
+map lacked, and refused **six** of the 274: a map row starts *inside* the extent the disassembler accepted for
+the native's body, so an `add` there would overlap it. Every one is the defect U36 folded out of the audio body.
 
-| native body | extent in the image | the row inside it | that row's bytes |
+| native body | size the `add` carries | the row inside it | that row's bytes |
 |---|---|---|---|
 | `0x00048ab0` | 107 → `0x48b1b` | `0x48aed` `Core_UnClass`, 46 | `push 0x235; push 0x4d3198; push 0x4d3170; call appAssertFailed` |
 | `0x000a6570` | 274 → `0xa6682` | `0xa661e` `Engine_KScript`, 89 | `push 0x3ae; push 0x4e7828; push 0x4e8514; call` |
 | `0x000a6690` | 197 → `0xa6755` | `0xa6732` `FUN_000a6732`, 35 | not an assert: `mov ecx,edx; mov edx,[esp+0x10]; shl edx,4` |
 | `0x001135a0` | 212 → `0x113674` | `0x1135cd` `Engine_UnController`, 167 | `push 0x174; push 0x4fbcb8; push 0x4fbd94; call` |
 | `0x00218350` | 401 → `0x2184e1` | `0x21848b` `Core_UnClass`, 177 | `push 0x235; push 0x4d3198; push 0x4d3170; call` |
-| `0x00295820` | 348 → `0x29587c` | `0x29584b` `Engine_UStreamInterface`, 36 | `push 0x1bb; push 0x5220c0; push 0x523180; call` |
+| `0x00295820` | **92** → `0x29587c` | `0x29584b` `Engine_UStreamInterface`, 36 | `push 0x1bb; push 0x5220c0; push 0x523180; call` |
 
-**Why it matters.** The map is short by six bodies — the registrations `intUObjectexecStaticSaveConfig`,
-`intAActorexecKRemoveAllBoneLifters`, `intAActorexecKSetStayUpright`, `intAPlayerControllerexecGetEntryLevel`,
-`intAActorexecResetSkins` and `intUStreamexecSaveID3Tag` — and the rows it carries instead are named after a
-template header (`Core_UnClass`), a controller (`Engine_UnController`) or a stream interface, so every census that
-buckets by name reads a native's first instructions as engine code. `0x000a6690` is the one that is not an assert
-block at all: the row inside it is a fragment, which is the "stops short" defect rather than the "split" one.
+**Settled: the pairing is a verb, and all six are rows.** `tools/symbol-boundaries.py` resolves `drop` after
+every `add`, so a drop's target may be an `add` in the same file (validated strictly inside the added span), and
+an `add` may enclose a row the same file drops. The file now carries six `add`/`drop` pairs and the map has
+**883 of 883** registration bodies. The last row's earlier reading of 348 was the `extent` column beside an end
+address that says 92 (`0x29587c - 0x295820`); the add carries the 92 its own close measures.
 
-**What would settle it.** An `add` whose span may claim rows the same file drops. The row is already emittable;
-what the file lacks is the pairing — `add` at the native body with its measured size plus a `drop` naming that
-added address as `target`, and a validation change so a drop's target may be an `add` in the same file (`apply_repairs`
-looks its target up in the map only). `--selftest` needs both orders and the refusal when the drop is not strictly
-inside the added span.
+**Settled: the 40 rows that stop short are a decode, and 39 of them are resized.** The `extent` column's
+fallback stopped at the first `cc cc` and could read a *neighbour's* close — `0x00041000` declares 33 bytes on
+a 144-byte body and the island said 437. `native_census.csv` now carries `sweep`/`sweep_closes`/`sweep_refused`:
+a linear decode from the body's start that accepts an end only where a complete instruction closes on an
+unconditional terminator, at the `cc cc` pad or exactly at the next row. It reproduces the map's own size on
+**789** of the 877 rows, finds **40** that stop short, and refuses **48** with a reason. Growth is refused when a
+complete close already sits between the declaration and the body's own end, so the 39 resizes are code the
+declaration cut rather than a cold tail adopted — that count is 0 on this population, and `0x00046330` (which
+shares its tail with `0x000463f0`) is the one row the rule withholds.
 
-### U39, second reading: the same columns say 40 of the 877 rows stop short
+**Residual 1: one resize is a second repair of an address.** `0x00260aa0` declares 95 bytes and its own
+`ret imm16` ends at 99, but it already carries an `add` row from the 274 bundle and the file allows one repair
+per address. Settling it needs the file to carry two readings of one row (or the `add`'s size corrected in
+place), not another measurement.
 
-`inventory/native_census.csv`'s `extent`/`extent_source`/`extent_closes` columns read every one of the 883
-addresses in the image, and over the map rows they answer a second question: does the row's declared size reach
-the body's close? **827** do (the bytes at `address + size` close on a `ret` or `ret imm16`), **40** stop short of
-the body's own `cc cc` bound, and **10** close nowhere before the next padding run at all. The 40 are the
-population U36 resized eleven rows of; a `resize` batch over them is the next item of this thread, and two
-caveats come before it ships. A single `0xcc` between two bodies does not stop the island walk, so an island end
-can be the *neighbour's* close (`0x0041000` declares 33 bytes where the island runs to 437, which is a read before
-it is a resize). And ten rows close nowhere at all, which is a measurement this column cannot settle by itself.
+**Residual 2: 48 rows the decode refuses.** 44 reach the next row without a terminator ending at it, 3 hit an
+opcode the shared decoder (`tools/vcall-receiver.py`) will not read, and 1 (`0x00040be0`, 28 bytes) has a pad
+that follows something other than a terminator. Settling them needs a decoder for the shapes those bodies use,
+not a wider window — the walk already reads 200 KB past every start.
 
+**Residual 3: the extent column still has the walk's answer.** The `extent`/`extent_source` columns are what the
+268 original adds carry, and they are left as measured; `sweep` is the reading a resize uses. Unifying them
+means re-emitting the 268 creation rows with the decode's sizes, which is a bundle of its own.

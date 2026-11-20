@@ -35,8 +35,8 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 <!-- generated:module-census -->
 | module | bodies | failed | ret-stub | src | asset | config | format | text | silent |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `Core` | 3221 | 2 | 102 | 563 | 3 | 9 | 116 | 323 | 2103 |
-| `Engine` | 2112 | 0 | 25 | 562 | 5 | 13 | 98 | 367 | 1042 |
+| `Core` | 3246 | 2 | 102 | 562 | 3 | 9 | 117 | 324 | 2127 |
+| `Engine` | 2178 | 0 | 25 | 562 | 5 | 13 | 101 | 372 | 1100 |
 | `IpDrv` | 159 | 0 | 4 | 22 | 0 | 0 | 23 | 15 | 95 |
 | `Gui` | 155 | 0 | 1 | 54 | 1 | 0 | 9 | 27 | 63 |
 | `D3DDrv` | 129 | 0 | 0 | 22 | 0 | 2 | 4 | 53 | 48 |
@@ -47,22 +47,22 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 | `XboxLive` | 32 | 0 | 0 | 11 | 0 | 0 | 11 | 4 | 6 |
 | `Gameplay` | 24 | 0 | 0 | 9 | 0 | 0 | 0 | 10 | 5 |
 | `XboxDrv` | 22 | 0 | 0 | 5 | 0 | 0 | 1 | 4 | 12 |
-| **total** | **6150** | **2** | **133** | **1309** | **9** | **25** | **271** | **860** | **3541** |
+| **total** | **6241** | **2** | **133** | **1308** | **9** | **25** | **275** | **866** | **3623** |
 
 | measurement | bodies | share |
 |---|---:|---:|
-| direct call sites into the set | 41011 sites | |
-| at least one caller | 4296 | 69.9% |
-| in a vtable or data table | 1437 | 23.4% |
-| no caller and no data reference | 536 | 8.7% |
-| carry a source path (TU-attributed) | 1309 | 21.3% |
-| carry no literal at all | 3541 | 57.6% |
+| direct call sites into the set | 40947 sites | |
+| at least one caller | 4290 | 68.7% |
+| in a vtable or data table | 1542 | 24.7% |
+| no caller and no data reference | 528 | 8.5% |
+| carry a source path (TU-attributed) | 1308 | 21.0% |
+| carry no literal at all | 3623 | 58.1% |
 | decompile failed | 2 | 0.0% |
 
 | attributed module | bodies | a `.cpp` path names it | a `.cpp` names another | header path only | none |
 |---|---:|---:|---:|---:|---:|
-| `Core` | 3221 | 114 | 10 | 439 | 2658 |
-| `Engine` | 2112 | 551 | 0 | 11 | 1550 |
+| `Core` | 3246 | 114 | 10 | 438 | 2684 |
+| `Engine` | 2178 | 551 | 0 | 11 | 1616 |
 | `IpDrv` | 159 | 22 | 0 | 0 | 137 |
 | `Gui` | 155 | 54 | 0 | 0 | 101 |
 | `D3DDrv` | 129 | 21 | 0 | 1 | 107 |
@@ -73,7 +73,7 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 | `XboxLive` | 32 | 11 | 0 | 0 | 21 |
 | `Gameplay` | 24 | 9 | 0 | 0 | 15 |
 | `XboxDrv` | 22 | 5 | 0 | 0 | 17 |
-| **total** | **6150** | **848** | **10** | **451** | **4841** |
+| **total** | **6241** | **848** | **10** | **450** | **4933** |
 
 Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2
 
@@ -90,7 +90,7 @@ Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2
 | `0x002c1bc0` | `Core_UnTemplate` | `Core` | `IpDrv` | 2674 |
 | `0x002d4950` | `Core_UnClass` | `Core` | `IpDrv` | 300 |
 
-Names: `FUN_*` **4004**, module-prefixed **1328**, `ucpp_*` **40**, `Native_*` **26**, `thunk_*` **17**, other **735** of 6150.
+Names: `FUN_*` **4111**, module-prefixed **1323**, `ucpp_*` **40**, `Native_*` **26**, `thunk_*` **17**, other **724** of 6241.
 <!-- /generated:module-census -->
 
 ## `Core` is not mostly library code by the evidence the bodies carry

@@ -27,7 +27,10 @@ The verbs are `resize` (a measured end), `drop` (interior code of the row a `tar
 the map has no row for) and `rename` (a name the row's own instruction settles -- a jump thunk that spells its
 target by address while the target has a name). Each is validated against the map, not trusted: a `drop` must
 land strictly inside its target's repaired span, a repair may not create an overlap with a neighbouring row,
-an `add` may not land inside any row, and a `rename` must name a row the map has. Every row in
+an `add` may not land inside any row the file leaves standing, and a `rename` must name a row the map has.
+A `drop` may name an `add` in this same file, and an `add` may enclose a row the same file drops: that is the
+pairing a body Ghidra split at an assert block needs, and it is what lets six registration bodies become rows
+instead of being refused for overlapping the fragment inside them (U39). Every row in
 `xbe_overrides.csv` that records a `function_size` must agree with the repaired map, and every `add` must have
 one -- that file is what `XbePost.java` builds a function from, so an `add` without it is a row a fresh import
 cannot see. The reviewed evidence and the map cannot drift apart, then, in either direction.
@@ -133,18 +136,7 @@ def apply_repairs(rows, boundaries, override_sizes):
                               % (b["line"], a))
             # Idempotent: a rename the map already carries is what --check compares against.
             by_addr[a]["name"] = b["target"]
-        elif b["action"] == "drop":
-            try:
-                target = int(b["target"], 16)
-            except ValueError:
-                raise Refusal("line %d: drop %#010x needs the target body it is interior to" % (b["line"], a))
-            if target not in by_addr:
-                raise Refusal("line %d: drop target %#010x is not a map row" % (b["line"], target))
-            # A drop the map has already taken is not an error: --apply folds it once and stays idempotent,
-            # and the containment test below still has to hold against the target's repaired span.
-            if a in by_addr:
-                dropped[a] = target
-        else:  # add: the target column carries the name, since an added body has no map row to name it
+        elif b["action"] == "add":
             if a in by_addr:
                 # present: either this repair has already been applied, or the map disagreed with it
                 have = by_addr[a]
@@ -157,16 +149,36 @@ def apply_repairs(rows, boundaries, override_sizes):
             if not b["target"]:
                 raise Refusal("line %d: add %#010x needs a name in the target column" % (b["line"], a))
             added.append({"address": a, "name": b["target"], "size": int(b["size"]), "module": ""})
+        # `drop` is resolved after every `add`, because it may name one: a body Ghidra split at an
+        # assert block that the same table adds needs the add and its fold in one file (U39).
+
+    added_by = {r["address"]: r for r in added}
+    for b in boundaries:
+        if b["action"] != "drop":
+            continue
+        try:
+            target = int(b["target"], 16)
+        except ValueError:
+            raise Refusal("line %d: drop %#010x needs the target body it is interior to" % (b["line"], b["address"]))
+        a = b["address"]
+        # A drop the map has already taken is not an error: --apply folds it once and stays idempotent,
+        # and the containment test below still has to hold against the target's repaired span.
+        if a in by_addr:
+            dropped[a] = target
+        if target not in by_addr and target not in added_by:
+            raise Refusal("line %d: drop target %#010x is not a map row and not an `add` in this file"
+                          % (b["line"], target))
 
     # Every drop -- taken now or taken by an earlier apply -- must land strictly inside the span the target
-    # repair gives it, so a fold can never delete bytes the target does not claim.
+    # repair gives it, so a fold can never delete bytes the target does not claim. The span may be an
+    # `add` in this same file: that is the pairing a body split at an assert block needs.
     for b in boundaries:
         if b["action"] != "drop":
             continue
         a, target = b["address"], int(b["target"], 16)
         if target in dropped:
             raise Refusal("drop %#010x names %#010x, which is itself dropped" % (a, target))
-        t = by_addr[target]
+        t = by_addr[target] if target in by_addr else added_by[target]
         if not (t["address"] < a < t["address"] + t["size"]):
             raise Refusal("drop %#010x does not land inside %#010x's repaired span (%#010x..%#010x)"
                           % (a, target, t["address"], t["address"] + t["size"]))
@@ -183,10 +195,11 @@ def apply_repairs(rows, boundaries, override_sizes):
                 raise Refusal("%#010x (%s) now runs to %#010x, past the next row at %#010x"
                               % (r["address"], r["name"], r["address"] + r["size"], out[i + 1]["address"]))
 
-    # An added body must not sit inside one that is already there.
+    # An added body must not sit inside one that is already there -- unless the same file drops that
+    # row: a body Ghidra split at an assert block encloses the fragment by construction.
     for r in added:
         for o in out:
-            if o is r:
+            if o is r or o["address"] in dropped:
                 continue
             if o["address"] <= r["address"] < o["address"] + o["size"]:
                 raise Refusal("add %#010x lands inside %#010x (%s)" % (r["address"], o["address"], o["name"]))
@@ -368,6 +381,29 @@ def cmd_selftest():
     expect("a size row the map does not place", lambda: apply_repairs(
         [dict(r) for r in base], [], {0x9000: (16, "Ghost")}), False)
 
+    # The pairing: an `add` whose span encloses a row the same file drops. Both orders are legal,
+    # because the drop is resolved after every add; a drop naming the add's own start or a point past
+    # its end is not, and an add that encloses a row nothing drops is not either.
+    split = [row(0x3000, "Assert_Inner", 0x20), row(0x3100, "Body_Next", 0x10)]
+    pair_add = b("add", 0x2FF0, target="FUN_00002ff0", size="64")
+    pair_drop = b("drop", 0x3000, target="0x2ff0")
+    sizes = {0x2FF0: (64, "FUN_00002ff0")}
+    got_pair = apply_repairs([dict(r) for r in split], [pair_add, pair_drop], sizes)
+    if [(r["address"], r["name"], r["size"]) for r in got_pair] != [(0x2FF0, "FUN_00002ff0", 64),
+                                                                     (0x3100, "Body_Next", 16)]:
+        failures.append("pairing: got %r" % [(r["address"], r["name"], r["size"]) for r in got_pair])
+    got_pair = apply_repairs([dict(r) for r in split], [pair_drop, pair_add], sizes)
+    if len(got_pair) != 2 or got_pair[0]["address"] != 0x2FF0:
+        failures.append("pairing, drop listed first: got %r" % [r["address"] for r in got_pair])
+    expect("a drop naming the add's own start", lambda: apply_repairs(
+        [dict(r) for r in split], [pair_add, b("drop", 0x2FF0, target="0x2ff0")], sizes), False)
+    expect("a drop past the add's end", lambda: apply_repairs(
+        [dict(r) for r in split], [pair_add, b("drop", 0x3100, target="0x2ff0")], sizes), False)
+    expect("an add enclosing a row nothing drops", lambda: apply_repairs(
+        [dict(r) for r in split], [pair_add], sizes), False)
+    expect("a drop naming an add that is not in the file", lambda: apply_repairs(
+        [dict(r) for r in split], [b("drop", 0x3000, target="0x2ff0")], {}), False)
+
     # the render round-trips through the reader, CRLF and all
     tmp = tempfile.mkdtemp()
     try:
@@ -386,7 +422,8 @@ def cmd_selftest():
         for f in failures:
             print("FAIL symbol-boundaries: %s" % f)
         return 1
-    print("ok   symbol-boundaries: 4 verbs, 14 refusals, idempotent apply, render round trip")
+    print("ok   symbol-boundaries: 4 verbs, the add/drop pairing, 18 refusals, idempotent apply, "
+          "render round trip")
     return 0
 
 
