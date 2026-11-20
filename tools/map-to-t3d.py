@@ -510,6 +510,43 @@ def smi_tail(tail, ps):
     return head, count, off == len(tail), flags0, refs
 
 
+def terrain_colours(tail, ps):
+    """A `TerrainInfo`'s native terrain record -> the vertex-colour count of the array it ends with.
+
+    `ATerrainInfo::Serialize` (`0x00273e80`, decompiled from the kept Ghidra project) ends, for a package
+    version above `0x74`, with `FUN_001f7df0(Ar, this+0x1404)` -- the **same** `TArray<FColor>` writer
+    `UStaticMeshInstance`'s colour record uses (`[compact count][4 bytes per colour]`, each colour read and
+    written one byte at a time). So the terrain record's last member is the terrain's own per-vertex colour
+    array, and its count sits immediately before the colours.
+
+    The run is found from the end: every colour in the corpus has alpha `0xff`, so the trailing records are
+    the ones whose fourth byte is `0xff`. The count is then the compact index that ends exactly where the
+    colours begin and equals their number -- a candidate that only closes when both hold, which is why a
+    payload whose last colour is not opaque answers `None` rather than a shorter array.
+
+    The counts this measures are squares (`16x16` .. `256x256`), the terrain's vertex grid: `256`, `1024`,
+    `4096`, `16384`, `65536`. `inventory/t3d_coverage.csv` carries them and `--check` holds every one to a
+    perfect square.
+    """
+    end = len(tail)
+    start = end
+    while start - 4 >= 0 and tail[start - 1] == 0xFF:
+        start -= 4
+    count = (end - start) // 4
+    if count < 1:
+        return None
+    for width in (1, 2, 3, 4, 5):
+        if start - width < 0:
+            break
+        try:
+            value, after = ps.read_index(tail, start - width)
+        except IndexError:
+            continue
+        if after == start and value == count:
+            return count
+    return None
+
+
 def locate(data, pkg, ps, preferred=None, cls=None):
     """The actor's property block, located by the reader's own value test.
 
@@ -567,8 +604,10 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "palette_records": 0, "palette_records_flag0": 0, "palette_refs": 0, "palette_ref_light": 0,
           "palette_ref_other": 0, "palette_closed": 0, "level_actors": 0, "level_strings": 0,
           "level_tail_bytes": 0, "level_unwritten": 0, "native_tails": 0, "struct_element_arrays": 0,
-          "struct_element_records": 0}
+          "struct_element_records": 0, "terrain_bytes": 0, "terrain_colours": 0,
+          "terrain_colour_exports": 0, "terrain_grids": ""}
     structs, arrays = {}, {}
+    terrain_grid_set = set()
     written, level_idx = set(), set()
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
@@ -625,8 +664,20 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         if not found:
             continue
         _count, start, props, tail, native = found
+        native_bytes = data[start + (len(data) - start - tail):] if native else b""
+        terrain_n = None
         if native:
             st["native_tails"] += 1
+            # The record's last member is the terrain's own vertex-colour array (`terrain_colours`): its
+            # count is what this class reads back, so it is counted here rather than left as "10 KB to
+            # 2.6 MB of terrain record". The grids are carried per map so `--check` can hold every count
+            # to a square without the tool re-reading the dump.
+            st["terrain_bytes"] += len(native_bytes)
+            terrain_n = terrain_colours(native_bytes, ps)
+            if terrain_n:
+                st["terrain_colours"] += terrain_n
+                st["terrain_colour_exports"] += 1
+                terrain_grid_set.add(terrain_n)
         elif tail:
             st["padded_blocks"] += 1
         lines.append("Begin Actor Class=%s Name=%s_%d" % (cls, cls, exp["index"] + 1))
@@ -742,6 +793,10 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                 continue
             lines.append("   %s=%s" % (p["name"], fmt(value)))
         props_total += len(props)
+        if native:
+            lines.append("   // Terrain: %d native byte(s), %s"
+                         % (len(native_bytes), ("%d vertex colour(s)" % terrain_n) if terrain_n
+                            else "no vertex-colour array read"))
         lines.append("End Actor")
         lines.append("")
         actors += 1
@@ -750,6 +805,7 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         lines.insert(2, "// Level: %d actor(s) named by the level's own list, %d not written"
                      % (st["level_actors"], st["level_unwritten"]))
         lines.insert(3, "")
+    st["terrain_grids"] = ";".join(str(n) for n in sorted(terrain_grid_set))
     text = "\n".join(lines)
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, name + ".t3d"), "w") as f:
@@ -852,6 +908,13 @@ LIGHT_FAMILY = {"Emitter"}
 # class a `Level` named and no T3D held, because its block was only searched for at the export's end. It is
 # written now, so the residue is empty and this gate fails if a class stops being written.
 LEVEL_UNWRITTEN = 0
+
+# The terrain record's tail is the terrain's own vertex-colour array (`terrain_colours`): a square count,
+# `16x16` .. `256x256`, because the record is a vertex grid. `TERRAIN_GRIDS` is every count the corpus holds
+# and `TERRAIN_COLOUR_EXPORTS` is how many `TerrainInfo` exports close on it -- the gate fails when a payload
+# stops closing, when a count is not a square, or when the record is too short to hold the colours it names.
+TERRAIN_GRIDS = {256, 1024, 4096, 16384, 65536}
+TERRAIN_COLOUR_EXPORTS = 66
 
 
 def check(values, structs, stats, arrays=ARRAYS):
@@ -995,6 +1058,38 @@ def check(values, structs, stats, arrays=ARRAYS):
             problems.append("%s: the Level exports name %d actor(s) the writer does not write, expected %d "
                             "(`TerrainInfo` is written from its block at the prefix record's end)"
                             % (stats, unwritten, LEVEL_UNWRITTEN))
+        # The terrain record ends with the terrain's vertex-colour array, so a `TerrainInfo` that has a native
+        # tail and no colour array is a payload whose tail stopped being read. Every count is a square -- the
+        # grid -- and the colours have to fit inside the record they were read from.
+        closes = sum(int(r.get("terrain_colour_exports") or 0) for r in crows)
+        if closes != TERRAIN_COLOUR_EXPORTS:
+            problems.append("%s: %d export(s) close on the terrain vertex-colour array, expected %d"
+                            % (stats, closes, TERRAIN_COLOUR_EXPORTS))
+        short = [r["map"] for r in crows
+                 if int(r.get("native_tails") or 0) and not int(r.get("terrain_colour_exports") or 0)]
+        if short:
+            problems.append("%s: %d map(s) with a native terrain tail and no colour array: %s"
+                            % (stats, len(short), ", ".join(short[:6])))
+        grids, stray = set(), set()
+        for r in crows:
+            for token in (r.get("terrain_grids") or "").split(";"):
+                if not token:
+                    continue
+                n = int(token)
+                grids.add(n)
+                if int(n ** 0.5) ** 2 != n:
+                    stray.add(n)
+        if stray:
+            problems.append("%s: terrain colour counts that are not a square grid: %s"
+                            % (stats, ", ".join(str(n) for n in sorted(stray))))
+        if grids != TERRAIN_GRIDS:
+            problems.append("%s: terrain colour grids %s, expected %s"
+                            % (stats, sorted(grids), sorted(TERRAIN_GRIDS)))
+        room = [r["map"] for r in crows
+                if int(r.get("terrain_bytes") or 0) < 4 * int(r.get("terrain_colours") or 0)]
+        if room:
+            problems.append("%s: %d map(s) whose terrain record is shorter than its colours: %s"
+                            % (stats, len(room), ", ".join(room[:6])))
     # The element-type census partitions the refused arrays the values census counts: every refused array is
     # either unshaped or has a (count, width) layout and therefore one row here.
     arows = read_csv(arrays)
@@ -1128,6 +1223,20 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("palette_record counts a record whose alpha is not 0xff")
     if palette_record(b"\x00\x40" + b"\x00" * 8, ps) is not None:
         problems.append("palette_record accepts a count that runs past the payload")
+    # The terrain record's tail: a compact count immediately before the vertex colours, whose alpha is 0xff
+    # in every one of the 66 payloads. The count has to end where the colours start and equal their number,
+    # so the same colours behind a different count are refused rather than read as a shorter array.
+    colours = b"\x10\x20\x30\xff" * 3
+    if terrain_colours(b"\x03" + colours, ps) != 3:
+        problems.append("terrain_colours does not read three vertex colours behind their count")
+    if terrain_colours(b"\x04" + colours, ps) is not None:
+        problems.append("terrain_colours accepts a count that disagrees with the colours after it")
+    if terrain_colours(colours, ps) is not None:
+        problems.append("terrain_colours accepts a colour run with no count in front of it")
+    if terrain_colours(colours[:-1] + b"\x00", ps) is not None:
+        problems.append("terrain_colours counts a colour whose alpha is not 0xff")
+    if terrain_colours(b"\x00", ps) is not None:
+        problems.append("terrain_colours reads a tail with no colours")
     if fmt_struct([{"name": "Zone", "type": "Object", "value": "LevelInfo'LevelInfo0'"},
                    {"name": "iLeaf", "type": "Int", "value": -1}]) != "(Zone=\"LevelInfo'LevelInfo0'\",iLeaf=-1)":
         problems.append("fmt_struct does not spell a tagged struct's fields")
@@ -1213,7 +1322,7 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
              "palette_tail_bytes", "palette_tails", "palette_head2", "palette_records",
              "palette_records_flag0", "palette_refs", "palette_ref_light", "palette_ref_other",
              "palette_closed", "level_actors", "level_strings", "level_tail_bytes", "level_unwritten",
-             "native_tails")}
+             "native_tails", "terrain_bytes", "terrain_colours", "terrain_colour_exports")}
     out = []
     out.append("| measure | value |")
     out.append("|---|---:|")
@@ -1260,6 +1369,10 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
                % (ptot["level_strings"], len(crows)))
     out.append("| bytes after them | %d |" % ptot["level_tail_bytes"])
     out.append("| actors a `Level` names that the writer does not write | **%d** |" % ptot["level_unwritten"])
+    out.append("| native terrain record bytes after a `TerrainInfo` block | **%d** |" % ptot["terrain_bytes"])
+    out.append("| -- exports whose record ends on a vertex-colour array | **%d** of %d |"
+               % (ptot["terrain_colour_exports"], ptot["native_tails"]))
+    out.append("| -- vertex colours inside them | **%d** |" % ptot["terrain_colours"])
     out.append("")
     out.append("| struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |")
     out.append("|---|---:|---:|---:|---:|---|---|")
@@ -1375,7 +1488,9 @@ def main():
                      got["values"]["palette_ref_other"], got["values"]["palette_closed"],
                      got["values"]["level_actors"], got["values"]["level_strings"],
                      got["values"]["level_tail_bytes"], got["values"]["level_unwritten"],
-                     got["values"]["native_tails"]))
+                     got["values"]["native_tails"], got["values"]["terrain_bytes"],
+                     got["values"]["terrain_colours"], got["values"]["terrain_colour_exports"],
+                     got["values"]["terrain_grids"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -1414,9 +1529,10 @@ def main():
                      "palette_payloads,palette_colours,palette_clear,palette_refused,palette_tail_bytes,"
                      "palette_tails,palette_head2,palette_records,palette_records_flag0,"
                      "palette_refs,palette_ref_light,palette_ref_other,palette_closed,"
-                     "level_actors,level_strings,level_tail_bytes,level_unwritten,native_tails\n")
+                     "level_actors,level_strings,level_tail_bytes,level_unwritten,native_tails,"
+                     "terrain_bytes,terrain_colours,terrain_colour_exports,terrain_grids\n")
             for row in rows:
-                fh.write(("%s" + ",%d" * 24 + "\n") % row)
+                fh.write(("%s" + ",%d" * 27 + ",%s\n") % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"

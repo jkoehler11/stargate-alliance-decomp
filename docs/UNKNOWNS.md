@@ -5173,16 +5173,33 @@ non-light share passes one percent. `docs/T3D.md` has the section.
 
 ## U32. Two fields this page's records carry are counted, not named
 
-**Question.** Two runs of bytes are read to their extent and not to their meaning. (1) Every `StaticMeshInstance`
+**Question.** Two runs of bytes are read to their extent and not to their meaning. *(Half answered 2026-11-19: see "Measured" below -- the terrain tail is answered too, in `docs/T3D.md`.)* (1) Every `StaticMeshInstance`
 palette tail opens with a dword in **2..10** (30,450 of the 33,509 read 2) before the record count; it is not a
 count of the records or of the colours and it does not divide the remainder. (2) The `Level` export's trailer is
 five `FString`s (`"unreal"`, three empty, `"Index.unr"`) followed by **32 bytes** (31 in `DM-WorstCaseScenario`),
 whose first eight are `61 1e 00 00 01 00 00 00` and whose last six differ per map.
 
-**What would settle it.** Both are members written by a serialiser this project has already located: the head
-dword belongs to the instance record `UStaticMeshInstance::Serialize` writes before the array (the 28-byte
-`0x24f160` path is the version-0x70 branch and has not been read against the 0x82 packages), and the 32 trailer
-bytes are whatever `ULevel::Serialize` (`0x00161b70`, whose tail is past the part this project decompiled) writes
-after the actor array. Read those two bodies at the offsets that write them -- a disassembly of the window plus
-the class's own declaration -- rather than parsing more payloads, which is what produced the "41 to 43 compact
-values" this page has now withdrawn.
+**Measured 2026-11-19, and the premise was half wrong.** Both bodies were read from the kept Ghidra project
+(`tools/ghidra/run-serialize.sh`; `ExportNew.java`, added this run, exports an address that is not yet a
+function).
+
+(1) **The palette dword is the colour record's last member, not a head.** `UStaticMeshInstance::Serialize`
+(`0x0024b5f0`) calls `FUN_001f7680(Ar, this+0x34)` before it calls the 20-byte record array's writer, and
+`FUN_001f7680` is `Ar << TArray<FColor>` followed by `FUN_00037110(Ar, rec+0x18)` -- a `Serialize(ptr, 4)`. The
+array writer (`FUN_001f7df0`) keeps the count in the array, so the dword is a second member. Measured over the
+33,509 payloads: it is never the colour count (0 of 33,509) and equals the record count only where both are 2
+(2,706). What it *means* is still open -- its reader is what would settle it, not another read of the path
+below (`0x24f160`, the version-0x70 branch, writes the same record for older packages and agrees with this one
+on the field order).
+
+(2) **The `Level` trailer is not written by this image.** `ULevel::Serialize` (`0x00161b70`) decompiles to
+`Super::Serialize`, a 12-byte member at `this+0x94`, a `FString`-shaped local, a dword at `this+0xf8`, sixteen
+dwords at `this+0x98` and a `TArray` of 0x1c-byte elements at `this+0xe0` -- none of which is the export's
+`[count][count][indices][five strings][24-32 bytes]` frame. The shipped maps were written by the editor that is
+not in `default.xbe`, so these bytes will not fall to a body read at all; the remaining question is what the
+last 24 bytes mean, and the only routes left are the editor's own writer (not in this image) or a reader that
+consumes them (`ULevel`'s `FURL`-shaped members are the five strings, whose values -- `"unreal"`, `""`,
+`"Index.unr"`, `""`, `""` -- and the `7777`/`1` pair after them are measured on all 73 maps).
+
+(3) **The terrain record's tail is settled** (`docs/T3D.md`): it ends with the terrain's own `TArray<FColor>`,
+counted as a vertex grid on 66 of 66 exports.
