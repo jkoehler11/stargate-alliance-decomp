@@ -11693,9 +11693,15 @@ and a deliberate one-line script break is caught by the boot test.
       artifacts (so two releases diff and a stale figure fails rather than misleads). Cutting the tag is a maintainer
       action after merge; B stays partial because the oracle only agrees on 204 of 291 classes, and C–F have not
       started.
-- [ ] 8.5 **Blocked on a decision, not on code**: publishing the tooling separately means a new repository and a
-      licence/ownership call. Publish tooling separately (package scripts, native-symbol generator) as generally useful
-      UE2/Xbox RE tools.
+- [x] 8.5 Publish the tooling separately as generally useful UE2/Xbox RE tools.
+      **Done 2026-11-19** — [`jkoehler11/xbox-ue2-re-tools`](https://github.com/jkoehler11/xbox-ue2-re-tools), MIT:
+      the XBE reader (`xbox_re.xbe`, `xbe-info`) and the COFF masked-body matcher (`xbox_re.coff` +
+      `xbox_re.match`, `lib-match`), packaged so `pipx install git+https://github.com/jkoehler11/xbox-ue2-re-tools`
+      gives both commands. Its 13 unit tests build their own COFF archive and a synthetic XBE, so the package runs
+      on a machine with no game data; against this project's dump it reproduces the same 3,700 names at 99.82%
+      call-edge agreement, which is how the extraction was checked rather than asserted. Deliberately **not**
+      published: the census tools (they read this project's artifacts) and anything vendoring the UELib patch
+      (GPL-derived, which would change the licence).
 
 ---
 

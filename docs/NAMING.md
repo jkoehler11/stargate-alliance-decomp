@@ -138,6 +138,10 @@ Three rules keep it honest, and each came from a wrong answer:
   names Ghidra's FID already carried: 173 of the 176 the matcher could resolve reproduce (98.3%), and all 3
   misses are bodies under 12 bytes.
 
+The matcher is published separately as [`xbox-ue2-re-tools`](https://github.com/jkoehler11/xbox-ue2-re-tools)
+(MIT, `lib-match`), which is the same code with this project's paths and CSV defaults taken out; the copy in
+`tools/` is the one wired to this repo's artifacts and gates.
+
 `--apply` writes the names into `symbols/xbe_overrides.csv` (append-only, evidence = the member) so a later
 Ghidra import reproduces them, and applies them to `symbols/xbox_functions.csv` names-only — 3,700 renamed, 0
 addresses, sizes or modules moved. The libraries are never committed: `--libs` is a path argument, and the
