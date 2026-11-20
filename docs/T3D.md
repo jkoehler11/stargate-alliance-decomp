@@ -176,10 +176,17 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | -- records whose first field is an export index | **466858** of 466858 |
 | -- of those, naming a light actor | **466435** (423 other) |
 | tails whose record list closes exactly | **33509** of 33509 |
+| -- records whose mask is `ceil(colours/8)` bytes | **466858** of 466858 |
+| -- mask bytes inside them | **13989855** |
+| -- masks with a set bit in the last byte's padding | 43126 |
 | `Level` exports read | **73** |
 | actors the `Level` exports name | **79063** |
 | strings in the `Level` trailer | **365** over 73 maps |
 | bytes after them | 2335 |
+| -- of those, the `FURL` frame (`7777` and `1`) | **73** maps |
+| -- the trailer float equals `LevelInfo.TimeSeconds` | **73** of 73 maps |
+| -- at the two-byte field's end / one byte earlier | **72** / 1 |
+| -- zero bytes after the float | 1313 |
 | actors a `Level` names that the writer does not write | **0** |
 | native terrain record bytes after a `TerrainInfo` block | **12543159** |
 | -- exports whose record ends on a vertex-colour array | **66** of 66 |
