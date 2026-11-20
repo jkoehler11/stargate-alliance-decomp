@@ -507,6 +507,12 @@ def smi_tail(tail, ps, colours=None):
     corpus -- the dword is not a constant, and the 790 payloads an earlier reading counted as a residue are
     payloads whose records carry 0. Every payload closes on this grammar (33,509 of 33,509).
 
+    The head dword is the *inline instance record's* own member, not a field of the record list: the record
+    itself is a class object (`[+0x00 vtable 0x5181a8][+0x04 TArray<FColor>][+0x10 QWORD id][+0x18 dword]`,
+    constructed by `0x001f7620`), `UStaticMeshInstance::Serialize` writes it at `this+0x34` for a package version
+    of 0x70 or more, and only the array at `this+0x28` follows. A payload with no record still carries the dword
+    (`palette_empty`), which is the byte-level control on that split.
+
     The first field is an export index into the level's own package and names the actor whose light the record
     bakes; the census counts how many of them resolve (`palette_refs`) and how many name a light (`palette_ref_light`).
 
@@ -817,7 +823,7 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "padded_blocks": 0, "palette_payloads": 0, "palette_refused": 0, "palette_colours": 0,
           "palette_clear": 0, "palette_tail": 0, "palette_tails": 0, "palette_head2": 0,
           "palette_records": 0, "palette_records_flag0": 0, "palette_refs": 0, "palette_ref_light": 0,
-          "palette_ref_other": 0, "palette_closed": 0, "level_actors": 0, "level_strings": 0,
+          "palette_ref_other": 0, "palette_closed": 0, "palette_empty": 0, "level_actors": 0, "level_strings": 0,
           "level_tail_bytes": 0, "level_unwritten": 0, "native_tails": 0, "struct_element_arrays": 0,
           "struct_element_records": 0, "terrain_bytes": 0, "terrain_colours": 0,
           "terrain_colour_exports": 0, "terrain_grids": "", "terrain_body": 0,
@@ -913,6 +919,11 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                     st["palette_records_flag0"] += tail[3]
                     if tail[2]:
                         st["palette_closed"] += 1
+                    # A payload whose record list is empty still carries the head dword, because the dword is
+                    # the inline instance record's own member and the array is a second member: 206 payloads
+                    # read 0 records and every one of them still has a head (196 of them 2).
+                    if tail[1] == 0:
+                        st["palette_empty"] += 1
                     for ref in tail[4]:
                         st["palette_refs"] += 1
                         if 1 <= ref <= len(pkg.exports):
@@ -1257,6 +1268,10 @@ PALETTE_OTHER_CLASSES = {"InterpolationPoint": 292, "PathNode": 96, "LookTarget"
 PALETTE_MASKS = 466858
 PALETTE_PAD_BITS = 43126
 
+# The dword is the inline record's member, not the array's: **206** payloads carry no record at all and every
+# one of them still carries a head (196 read 2), so the dword's presence does not depend on the list after it.
+PALETTE_EMPTY = 206
+
 # Classes whose name does not carry "Light" but which are lights: an `Emitter` declares its own light in UE2, and
 # the palette records name it after the `Light`/`Sunlight`/`Spotlight` families.
 LIGHT_FAMILY = {"Emitter"}
@@ -1406,6 +1421,10 @@ def check(values, structs, stats, arrays=ARRAYS):
         if closed != payloads:
             problems.append("%s: %d of %d palette tails close on the record grammar, expected every one"
                             % (stats, closed, payloads))
+        empty = sum(int(r.get("palette_empty") or 0) for r in crows)
+        if empty != PALETTE_EMPTY:
+            problems.append("%s: %d palette payload(s) carry no record, expected %d"
+                            % (stats, empty, PALETTE_EMPTY))
         if sum(int(r.get("palette_records_flag0") or 0) for r in crows) > records:
             problems.append("%s: more flag-0 records than records" % stats)
         # A record's middle member is a bitmask over the payload's colour table: `ceil(colours/8)` bytes on
@@ -1715,6 +1734,8 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("smi_tail counts 17 colours' masks as one byte")
     if smi_tail(mask_tail, ps, 4) != (2, 2, True, 0, [3, 4], 2, 0, 1):
         problems.append("smi_tail does not count a mask whose padding bits are set")
+    if smi_tail(struct.pack("<I", 2) + b"\x00", ps) != (2, 0, True, 0, [], 0, 0, 0):
+        problems.append("smi_tail does not read a tail whose record list is empty")
     if smi_tail(b"\x00\x00", ps) is not None:
         problems.append("smi_tail accepts a tail too short to read")
     # The `Level` payload's frame: an empty property block, the same count twice, that many export indices,
@@ -1938,7 +1959,7 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
             ("palette_payloads", "palette_colours", "palette_clear", "palette_refused",
              "palette_tail_bytes", "palette_tails", "palette_head2", "palette_records",
              "palette_records_flag0", "palette_refs", "palette_ref_light", "palette_ref_other",
-             "palette_closed", "palette_masks", "palette_mask_bytes", "palette_mask_bad",
+             "palette_closed", "palette_empty", "palette_masks", "palette_mask_bytes", "palette_mask_bad",
              "palette_pad_bits", "level_actors", "level_strings", "level_tail_bytes", "level_unwritten",
              "level_tail_port", "level_seconds_match", "level_seconds_off", "level_tail_zero",
              "native_tails", "terrain_bytes", "terrain_colours", "terrain_colour_exports",
@@ -2001,6 +2022,8 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
                % (ptot["palette_ref_light"], ptot["palette_ref_other"]))
     out.append("| tails whose record list closes exactly | **%d** of %d |"
                % (ptot["palette_closed"], ptot["palette_payloads"]))
+    out.append("| -- payloads whose record list is empty (head dword still present) | **%d** |"
+               % ptot["palette_empty"])
     out.append("| -- records whose mask is `ceil(colours/8)` bytes | **%d** of %d |"
                % (ptot["palette_masks"] - ptot["palette_mask_bad"], ptot["palette_masks"]))
     out.append("| -- mask bytes inside them | **%d** |" % ptot["palette_mask_bytes"])
@@ -2175,7 +2198,8 @@ def main():
                      ";".join("%d:%d" % (h, n) for h, n in sorted(got["values"]["palette_heads"].items())),
                      ";".join("%s:%d" % (c, n) for c, n in sorted(got["values"]["palette_other"].items())),
                      len(got["values"]["palette_heads"]), got["values"]["level_model_class"],
-                     got["values"]["level_model_biggest"], got["values"]["level_model_width"]))
+                     got["values"]["level_model_biggest"], got["values"]["level_model_width"],
+                     got["values"]["palette_empty"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -2222,9 +2246,9 @@ def main():
                      "palette_masks,palette_mask_bytes,palette_mask_bad,palette_pad_bits,"
                      "level_tail_port,level_tail_prefix,level_tail_zero,level_seconds_match,"
                      "level_seconds_off,palette_heads,palette_other_classes,palette_head_values,"
-                     "level_model_class,level_model_biggest,level_model_width\n")
+                     "level_model_class,level_model_biggest,level_model_width,palette_empty\n")
             for row in rows:
-                fh.write(("%s" + ",%d" * 36 + ",%s" + ",%d,%d,%s" + ",%d" * 9 + ",%s,%s,%d,%s,%d,%d\n")
+                fh.write(("%s" + ",%d" * 36 + ",%s" + ",%d,%d,%s" + ",%d" * 9 + ",%s,%s,%d,%s,%d,%d,%d\n")
                          % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
