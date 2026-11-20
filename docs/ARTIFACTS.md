@@ -22,7 +22,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/ai_state_bodies.csv` | 165 | 26 | `make help` |
 | `inventory/ai_states.csv` | 165 | 20 | `make help` |
 | `inventory/archive_slots.csv` | 24 | 12 | `make archive-slots` |
-| `inventory/artifact_hashes.csv` | 317 | 3 | `make artifact-hashes` |
+| `inventory/artifact_hashes.csv` | 331 | 3 | `make artifact-hashes` |
 | `inventory/asset_classes.csv` | 13 | 2 | `make assets` |
 | `inventory/assets.csv` | 399 | 11 | `make help` |
 | `inventory/body_names.csv` | 6063 | 11 | `make body-name` |
@@ -109,14 +109,14 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/console_commands.csv` | 494 | 8 | `make console-commands` |
 | `inventory/content_census.csv` | 73 | 4 | `make content-census` |
 | `inventory/continue_sites.csv` | 105 | 11 | `make continue-sites` |
-| `inventory/cxn_base_methods.csv` | 15 | 7 | **no generator** |
-| `inventory/cxn_enet_methods.csv` | 16 | 7 | **no generator** |
-| `inventory/cxn_ip_methods.csv` | 144 | 7 | `make native-method-notes` |
-| `inventory/cxn_nic_methods.csv` | 17 | 7 | **no generator** |
-| `inventory/cxn_sock_methods.csv` | 90 | 7 | **no generator** |
-| `inventory/cxo_base_methods.csv` | 14 | 7 | **no generator** |
-| `inventory/cxo_methods.csv` | 377 | 7 | **no generator** |
-| `inventory/d3_dx_methods.csv` | 143 | 7 | **no generator** |
+| `inventory/cxn_base_methods.csv` | 15 | 9 | **no generator** |
+| `inventory/cxn_enet_methods.csv` | 16 | 9 | **no generator** |
+| `inventory/cxn_ip_methods.csv` | 144 | 9 | `make native-method-notes` |
+| `inventory/cxn_nic_methods.csv` | 17 | 9 | **no generator** |
+| `inventory/cxn_sock_methods.csv` | 90 | 9 | **no generator** |
+| `inventory/cxo_base_methods.csv` | 14 | 9 | **no generator** |
+| `inventory/cxo_methods.csv` | 377 | 9 | **no generator** |
+| `inventory/d3_dx_methods.csv` | 143 | 9 | **no generator** |
 | `inventory/d3ddrv_bodies.csv` | 129 | 17 | `make body-read` |
 | `inventory/decompile_coverage.csv` | 2319 | 5 | `make release-notes` |
 | `inventory/decompiler_gaps.csv` | 2319 | 8 | `make decompiler-gaps` |
@@ -131,6 +131,9 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/delegate_value_census.csv` | 55 | 17 | **delegate-value-census.py (no target runs it)** |
 | `inventory/dialogue_by_mission.csv` | 16 | 5 | `make dialogue-index` |
 | `inventory/directories.csv` | 12 | 3 | `make artifact-hashes` |
+| `inventory/dsound_methods.csv` | 35 | 9 | **no generator** |
+| `inventory/dsound_object_methods.csv` | 14 | 9 | **no generator** |
+| `inventory/dsound_voice_methods.csv` | 10 | 9 | **no generator** |
 | `inventory/event_targets.csv` | 148 | 18 | `make ci` |
 | `inventory/event_wiring.csv` | 182 | 22 | `make ci` |
 | `inventory/extensions.csv` | 29 | 3 | `make assets` |
@@ -155,9 +158,11 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/gnatives_stubs.csv` | 123 | 8 | `make gnatives-mission` |
 | `inventory/gnatives_table.csv` | 1 | 5 | `make natives` |
 | `inventory/gnatives_write_sites.csv` | 233 | 7 | `make gnatives-writes` |
+| `inventory/hrtf_source_methods.csv` | 10 | 9 | **no generator** |
 | `inventory/hud_console_font.csv` | 15 | 3 | `make hud-console-font` |
 | `inventory/hud_console_link.csv` | 1 | 10 | `make hud-link` |
-| `inventory/instruction_methods.csv` | 49 | 7 | **no generator** |
+| `inventory/i3dl2_listener_methods.csv` | 12 | 9 | **no generator** |
+| `inventory/instruction_methods.csv` | 49 | 9 | **no generator** |
 | `inventory/interaction_setup.csv` | 7 | 7 | `make interaction-setup` |
 | `inventory/jump_branches.csv` | 23776 | 11 | `make jump-branches` |
 | `inventory/jump_census.csv` | 6149 | 14 | `make jump-census` |
@@ -185,6 +190,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/lipsinc_weights.csv` | 2231 | 11 | `make lipsinc-weights` |
 | `inventory/live_class_tables.csv` | 312 | 3 | `make live-class-tables` |
 | `inventory/live_class_tables_m00.csv` | 376 | 3 | `make live-class-tables-m00` |
+| `inventory/local_talker_methods.csv` | 32 | 9 | **no generator** |
 | `inventory/map_actors.csv` | 6658 | 3 | `make class-graph` |
 | `inventory/map_export_classes.csv` | 6658 | 3 | `make ci` |
 | `inventory/map_frames.csv` | 72 | 7 | `make help` |
@@ -195,6 +201,11 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/map_script.csv` | 156 | 12 | `make ci` |
 | `inventory/maps.csv` | 73 | 6 | `make help` |
 | `inventory/matching_baseline.csv` | 18 | 13 | `make matching-baseline` |
+| `inventory/mcpx_apu_methods.csv` | 26 | 9 | **no generator** |
+| `inventory/mcpx_buffer_methods.csv` | 23 | 9 | **no generator** |
+| `inventory/mcpx_core_methods.csv` | 18 | 9 | **no generator** |
+| `inventory/mcpx_stream_methods.csv` | 24 | 9 | **no generator** |
+| `inventory/mcpx_voice_client_methods.csv` | 27 | 9 | **no generator** |
 | `inventory/member_access_census.csv` | 217 | 19 | `make member-access-census` |
 | `inventory/member_assert_names.csv` | 34 | 8 | `make member-assert-names` |
 | `inventory/menu_flow.csv` | 614 | 11 | `make ci` |
@@ -245,7 +256,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/package_script_text.csv` | 18 | 4 | `make compile-readiness` |
 | `inventory/packages.csv` | 18 | 18 | `make help` |
 | `inventory/path_literals.csv` | 137 | 5 | `make path-literals` |
-| `inventory/pre_processor_methods.csv` | 49 | 7 | **no generator** |
+| `inventory/pre_processor_methods.csv` | 49 | 9 | **no generator** |
 | `inventory/property_classes.csv` | 15 | 8 | `make property-types` |
 | `inventory/property_serialisers.csv` | 42 | 11 | `make property-serialisers` |
 | `inventory/property_types.csv` | 17 | 4 | `make property-types` |
@@ -253,6 +264,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/registration_arguments.csv` | 493 | 12 | `make class-table-residual` |
 | `inventory/registration_ctor_arguments.csv` | 493 | 17 | `make class-table-residual` |
 | `inventory/registration_sites.csv` | 493 | 6 | `make registration-sites` |
+| `inventory/remote_talker_methods.csv` | 23 | 9 | **no generator** |
 | `inventory/save_path_compose.csv` | 63 | 4 | `make save-path-compose` |
 | `inventory/savegame_paths.csv` | 16 | 7 | `make savegame-paths` |
 | `inventory/script_call_census.csv` | 38 | 2 | `make ci` |
@@ -296,6 +308,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/vcall_field_owners.csv` | 28 | 27 | `make vcall-field-owner` |
 | `inventory/vcall_receiver_sites.csv` | 106 | 20 | `make vcall-field-owner` |
 | `inventory/vehicle_seats.csv` | 25 | 7 | `make help` |
+| `inventory/voice_chat_mode_methods.csv` | 23 | 9 | **no generator** |
 | `inventory/voice_descs.csv` | 25 | 21 | `make help` |
 | `inventory/voice_packs.csv` | 61 | 5 | `make help` |
 | `inventory/voice_sets.csv` | 25 | 11 | `make help` |
@@ -317,12 +330,13 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/xdk_call_names.csv` | 482 | 5 | `make xdk-call-names` |
 | `inventory/xdk_lib_names.csv` | 3700 | 6 | `make xdk-lib-names` |
 | `inventory/xdk_lib_residue.csv` | 250 | 8 | **xdk-lib-residue.py (no target runs it)** |
-| `inventory/xgraphics_methods.csv` | 98 | 7 | **no generator** |
+| `inventory/xgraphics_methods.csv` | 98 | 9 | **no generator** |
+| `inventory/xhv_engine_methods.csv` | 26 | 9 | **no generator** |
 | `symbols/xbe_dispatch.csv` | 356 | 3 | `make natives` |
 | `symbols/xbe_overrides.csv` | 5208 | 10 | `make xdk-lib-names` |
 | `symbols/xbox_functions.csv` | 14973 | 4 | `make assert-residual` |
 
-315 artifacts, 345956 rows in total. 11 with no generator.
+329 artifacts, 346273 rows in total. 25 with no generator.
 
 ## Not regenerated by any target
 
@@ -333,8 +347,22 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 * `inventory/cxo_base_methods.csv` (14 rows)
 * `inventory/cxo_methods.csv` (377 rows)
 * `inventory/d3_dx_methods.csv` (143 rows)
+* `inventory/dsound_methods.csv` (35 rows)
+* `inventory/dsound_object_methods.csv` (14 rows)
+* `inventory/dsound_voice_methods.csv` (10 rows)
+* `inventory/hrtf_source_methods.csv` (10 rows)
+* `inventory/i3dl2_listener_methods.csv` (12 rows)
 * `inventory/instruction_methods.csv` (49 rows)
+* `inventory/local_talker_methods.csv` (32 rows)
+* `inventory/mcpx_apu_methods.csv` (26 rows)
+* `inventory/mcpx_buffer_methods.csv` (23 rows)
+* `inventory/mcpx_core_methods.csv` (18 rows)
+* `inventory/mcpx_stream_methods.csv` (24 rows)
+* `inventory/mcpx_voice_client_methods.csv` (27 rows)
 * `inventory/module_export_rounds.csv` (12 rows)
 * `inventory/pre_processor_methods.csv` (49 rows)
+* `inventory/remote_talker_methods.csv` (23 rows)
+* `inventory/voice_chat_mode_methods.csv` (23 rows)
 * `inventory/xgraphics_methods.csv` (98 rows)
+* `inventory/xhv_engine_methods.csv` (26 rows)
 

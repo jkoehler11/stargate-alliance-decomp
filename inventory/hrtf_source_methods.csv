@@ -1,0 +1,11 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x004a307e,CalcNormPos,SGXKABU_D3DVECTOR@@0PAU3@PAM@Z,73,dsound,obj\i386\hrtf.obj,Math::NormalizeVector3,Math,
+0x004a30c7,CalcPolarCoords,SGXKABU_D3DVECTOR@@000MPAM1@Z,355,dsound,obj\i386\hrtf.obj,,,
+0x004a322a,CalcConeAngle,SGXABU_D3DVECTOR@@0PAM@Z,150,dsound,obj\i386\hrtf.obj,Math::MagnitudeVector3,Math,
+0x004a32c0,CalcRelativeVelocity,SGXKABU_D3DVECTOR@@00PAM@Z,75,dsound,obj\i386\hrtf.obj,,,
+0x004a330b,GetDistanceVolume,SGXMMMPBMKMHPAJ@Z,273,dsound,obj\i386\hrtf.obj,__ftol2; Math::AmplitudeToVolume; Math::MetersToVolume,Math,
+0x004a341c,GetConeVolume,SGXKKJMPAJ@Z,144,dsound,obj\i386\hrtf.obj,Math::FloatToLong,Math,
+0x004a34ac,GetFrontRearVolume,SGXMMMMHPAJ0@Z,207,dsound,obj\i386\hrtf.obj,Math::PowerToVolume,Math,
+0x004a357b,GetCenterVolume,SGXMMPAJ0@Z,162,dsound,obj\i386\hrtf.obj,Math::FloatToLong; Math::AmplitudeToVolume,Math,
+0x004a361d,GetDopplerPitch,SGXMMMPAJ@Z,121,dsound,obj\i386\hrtf.obj,Math::RatioToPitch,Math,
+0x004a3696,GetFilterPair,SGXMMHPAUHRTFFILTERPAIR@@@Z,284,dsound,obj\i386\hrtf.obj,Math::FloatToLong,Math,
