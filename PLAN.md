@@ -15721,7 +15721,10 @@ sequence.
   table by its contents, which is the half the store's form could not settle.
 - **The slots are mostly empty and heavily shared.** 292 slots, 115 distinct bodies: 111 stubs of 8 bytes or
   less, 24 `__purecall`, 82 slots outside the symbol map, 12 with a real name. A 3-byte stub fills 33 slots
-  and `__purecall` 24, so an interface's default implementation is the common case.
+  and `__purecall` 24, so an interface's default implementation is the common case. The 82 slots outside
+  the map also split U40's own population: **32 of them are gap bodies the padding rule decodes**, so 32 of
+  U40's 269 table-slot gap bodies sit in these 49 member tables and the other 237 in the plain-only ones;
+  the remaining 50 are bodies neither the map nor the gap rule reaches.
 - **25 of the 49 tables fall into 7 families**, under one rule each part of which is checked: identical slot
   vectors are the same table twice, one table *subsumes* another when it implements exactly the slots the
   other leaves `__purecall`, and two tables of four slots or more that agree on more than half their slots

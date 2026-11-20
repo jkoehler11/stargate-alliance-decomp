@@ -68,7 +68,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_group_stop.csv` | 1883 | 16 | `make class-group-after-scan` |
 | `inventory/class_member_dtors.csv` | 199 | 6 | `make class-member-map` |
 | `inventory/class_member_map.csv` | 3418 | 7 | `make class-member-map` |
-| `inventory/class_member_tables.csv` | 49 | 19 | `make ci` |
+| `inventory/class_member_tables.csv` | 49 | 20 | `make ci` |
 | `inventory/class_orphan_tables.csv` | 44 | 14 | `make ci` |
 | `inventory/class_overshoot_stream.csv` | 95 | 19 | `make class-overshoot-stream` |
 | `inventory/class_prefixes.csv` | 2319 | 18 | `make class-prefix` |

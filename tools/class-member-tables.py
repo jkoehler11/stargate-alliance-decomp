@@ -42,6 +42,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 OUT = os.path.join("inventory", "class_member_tables.csv")
 STORE = os.path.join(ROOT, "inventory", "class_table_store_fields.csv")
 CLASS_SLOTS = os.path.join(ROOT, "inventory", "xbe_class_table_slots.csv")
+GAPS = os.path.join(ROOT, "inventory", "gap_heads.csv")
 SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 SRC = os.path.join(ROOT, "inventory", "class_member_tables.csv")
 PAGE = os.path.join("docs", "systems", "CLASS_REGISTRATION.md")
@@ -49,7 +50,7 @@ DOC_START = "<!-- generated:class-member-tables -->"
 DOC_END = "<!-- /generated:class-member-tables -->"
 FIELDS = ("table_va", "slots", "owners", "fields", "shape", "family", "family_tables", "family_diff",
           "diff_slots", "purecall", "stubs", "in_map", "named", "outside_map", "real_names",
-          "purecall_slots", "slot_bodies", "slot0", "verdict")
+          "purecall_slots", "slot_bodies", "gap_heads", "slot0", "verdict")
 STUB_BYTES = 8
 
 
@@ -157,8 +158,11 @@ def families(tables, pure):
 
 
 # --------------------------------------------------------------------------- rows
-def harvest(tables, owners, fields, names, sizes):
-    """`tables` is {table_va: slots}, `owners`/`fields` are the store-field row's columns."""
+def harvest(tables, owners, fields, names, sizes, gaps=None):
+    """`tables` is {table_va: slots}, `owners`/`fields` are the store-field row's columns, and `gaps`
+    is {body_va: name} for the bodies `inventory/gap_heads.csv` decodes out of the map's `.text` gaps
+    (U40's population: bodies no map row covers)."""
+    gaps = gaps or {}
     pure = lambda va: names.get(va) == "__purecall"
     fam = families(tables, pure)
     rows = []
@@ -186,6 +190,7 @@ def harvest(tables, owners, fields, names, sizes):
                                    if s in names and real_name(names[s])),
             "purecall_slots": " ".join(str(k) for k, s in enumerate(slots) if pure(s)),
             "slot_bodies": " ".join("%#010x" % s for s in slots),
+            "gap_heads": str(sum(1 for s in slots if s not in sizes and s in gaps)),
             "slot0": f"{slots[0]:#010x}" if slots else "",
             "verdict": "abstract" if slots and all(pure(s) for s in slots) else "interface",
         })
@@ -287,7 +292,15 @@ def render(rows, control):
                  "default implementations of an interface whose real work is elsewhere), %d carry a real name "
                  "in the map rather than a `FUN_` row, and %d are `FUN_` rows the map covers."
                  % (slots, len(bodies), outside, pure, stubs, STUB_BYTES, named, inmap - named))
-    lines.append("")
+    gaph = sum(int(r["gap_heads"]) for r in rows)
+    if outside:
+        lines.append("**%d of the %d slots outside the map are bodies U40's gap rule decodes** -- that is, "
+                     "**%d of the 269 gap bodies U40 counts in an unnamed table's slot are in these 49 "
+                     "member tables** and the rest are in the plain-only ones -- and the remaining %d slots "
+                     "outside the map are bodies neither the map nor the padding rule reaches, so those "
+                     "interface methods are code nothing has decoded yet."
+                     % (gaph, outside, gaph, outside - gaph))
+        lines.append("")
 
     if fams:
         big = max(fams, key=lambda f: (f["slots"], len(f["tables"])))
@@ -475,7 +488,11 @@ def main():
         owners[tva] = row["member_of"]
         fields[tva] = row["member_fields"]
 
-    rows = harvest(tables, owners, fields, names, sizes)
+    gaps = {}
+    for row in read_csv(GAPS):
+        if row.get("verdict") == "body" and row.get("head_va"):
+            gaps[int(row["head_va"], 16)] = row.get("name", "")
+    rows = harvest(tables, owners, fields, names, sizes, gaps)
     if args.out:
         write_artifact(rows, os.path.join(args.out, os.path.basename(OUT)))
     if args.write_doc:

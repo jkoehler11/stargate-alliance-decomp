@@ -524,7 +524,10 @@ The slots are mostly empty. Of 292 slots over the 49 tables, **111 are stubs of 
 `__purecall`**, so a third of every interface here is its default do-nothing implementation; 82 slots land
 on bodies the function map does not cover and 198 are `FUN_` rows it does, which is why the map's coverage
 of an interface method is the exception and not the rule. The 115 distinct bodies are shared hard: the
-most-referenced is a 3-byte stub that fills 33 slots.
+most-referenced is a 3-byte stub that fills 33 slots. The 82 slots outside the map also split the one
+population U40 counts: **32 of them are gap bodies the padding rule decodes**, so 32 of U40's 269 gap
+bodies in an unnamed table's slot are in these 49 member tables and the other 237 are in the plain-only
+ones; the remaining 50 are bodies neither the map nor the gap rule reaches.
 
 What repeats is more informative than what is unique. **25 of the 49 fall into 7 families** under a rule
 stated once -- identical slot vectors are the same table emitted twice; one table *subsumes* another when
@@ -566,6 +569,7 @@ the interface's default, not an unimplemented slot.
 **The 49 member tables are interface vtables, and their slot 0 is not a class slot.** All 492 class tables the class-map census covers (474 of them named by the registration path) share one slot-0 body, `0x00062650`; none of the 49 member tables carry it, and their slot-0 values are 36 distinct bodies. A class dispatch table starts with the entry every class table starts with; an interface object's table starts with its own first method, which is why no slot here can be named `<Class>_vt<slot>`.
 
 **292 slots resolve to 115 distinct bodies, and 82 slots land outside the symbol map.** 24 slots are `__purecall`, 111 are stubs of 8 bytes or less (`ret`, `xor eax,eax; ret` -- the default implementations of an interface whose real work is elsewhere), 12 carry a real name in the map rather than a `FUN_` row, and 198 are `FUN_` rows the map covers.
+**32 of the 82 slots outside the map are bodies U40's gap rule decodes** -- that is, **32 of the 269 gap bodies U40 counts in an unnamed table's slot are in these 49 member tables** and the rest are in the plain-only ones -- and the remaining 50 slots outside the map are bodies neither the map nor the padding rule reaches, so those interface methods are code nothing has decoded yet.
 
 **25 of the 49 tables fall into 7 families, and the widest is the 22-slot one.** `0x004fc35c`: 6 tables at 8 slots, varying 0, 1, 2, 3, 4, 5, 6, 7. `0x004c7860`: 5 tables at 22 slots, varying 0, 1, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17. `0x004d03b8`: 4 tables at 1 slot, varying nothing. `0x004d03bc`: 4 tables at 2 slots, varying nothing. `0x004c7854`: 2 tables at 2 slots, varying nothing. `0x004c93c8`: 2 tables at 2 slots, varying nothing. `0x004d0314`: 2 tables at 1 slot, varying nothing.
 
