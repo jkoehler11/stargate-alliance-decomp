@@ -1496,6 +1496,41 @@ measured as the gap between limit and end, not explained; the fixup entry layout
 body touches, and one entry's later fields are not decoded. The `3` written at `[base]` is a first command of unknown
 kind.
 
+### All sixty programs are live, and they split by stage at two dispatchers (2026-11-19)
+
+The earlier reading left the other 53 programs as "other maps or passes, plausibly unused content". Two static checks
+replace that with structure.
+
+**Every program is called.** Each of the 60 addresses is referenced by exactly one wrapper, and every one of those
+wrappers has a direct `call` — **60 of 60**, none indirect-only, none unreferenced. So "unused" is not available as an
+explanation for the 53 a mission never compiles.
+
+**The wrappers are called from three places.** Resolving every caller gives two engine functions and one assembler
+member, and the two engine functions split cleanly by stage:
+
+| caller | programs | versions |
+|---|---:|---|
+| `FUN_002ae4e0` | 21 | `vs.1.1` 19, `xvs.1.1` 2 |
+| `FUN_002af230` | 41 | `ps.1.1` 9, `xps.1.1` 15, `ps.1.4` 17 |
+| `?CompileVertexShaderToUCode@Assembler@XGRAPHICS@@…` | 1 | `xvs.1.1` (the `XGRPH` preamble string) |
+
+Not one vertex program is dispatched by the pixel function, and not one pixel program by the vertex function: these are
+the **stage dispatchers**, one per shader type, and the seven a mission compiles are selected from them.
+
+**The method matters, because the first attempt inverted the answer.** An absolute-value xref scan reported 0 of 60
+callers — the entire shader library as dead code. It sees `push imm32` (how a program pointer is passed) but not `call
+rel32` (how a wrapper is reached), so every function looks uncalled. Counting call and jump displacements across the code
+sections (15,052 distinct targets) gives the real answer. A liveness result of "nothing is called" indicts the scan.
+
+**What this changes.** Seven is what a mission needs, but the other 53 are reachable code — from menus, effects, other
+levels or later-game content, selected by the same two dispatchers. A bake table built only from mission loads could
+therefore be incomplete for a path nobody exercised, and the fix is the same instrument twice: `missions.sh --all --gdb`
+for the campaign, and a run that sits in the front-end menus with the assembler armed.
+
+**Limits.** "Called" is a direct `call`/`jmp` displacement counted statically, so a wrapper reached only through a
+function pointer would be missed — 60 is a floor for liveness, as the D3D8 census is a floor for the render surface. The
+two dispatchers are unnamed, and their selection logic (which program for which material) was not read.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
