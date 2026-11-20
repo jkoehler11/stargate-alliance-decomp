@@ -5571,23 +5571,35 @@ stopped at 677. Nothing in the image calls it -- no `E8`, no dword reference at 
 creation row, both printed by `native-census --gap-add 0x002b7aa0 --name FUN_002b7aa0`.
 
 
-## U40. The map's `.text` gaps hold 2,414 decodable bodies, and 383 of them nothing names
+## U40. The map's `.text` gaps hold 2,060 decodable bodies, and 408 of them nothing names
 
 **Observed.** `tools/gap-heads.py` (`inventory/gap_heads.csv`) censuses every gap in
-`symbols/xbox_functions.csv`'s coverage of `.text`: 9,987 gaps, 783,490 bytes, 18.5% of the section. A head --
-a pad-before plus an MSVC prologue -- becomes a body when a linear decode closes on a terminator with a tail:
-**2,490 heads, 2,194 bodies, 220 islands**, 378,369 bytes. The controls are in the same artifact: the rule
-finds **0 bodies** in 3.3 MB of data sections, and passes on 8,119 of the map's own 11,784 `.text` rows
-(68.9%), so it is a floor. A dword outside `.text` names **1,441** of them, **777** in a class-table slot over
-224 classes, a `68` push 558, a branch only 47; **383** are named by nothing.
+`symbols/xbox_functions.csv`'s coverage of `.text`. After this bundle's adds the gaps are **10,475 holding
+623,951 bytes** (14.8% of the section) and the rule finds **2,140 heads, 2,060 decoding (1,850 bodies, 210
+islands)** covering 217,871 bytes. The controls are in the same artifact: the same rule finds **0 bodies** in
+3.3 MB of data sections, passes on 8,623 of the map's own 12,321 rows (70.0%), and the pointer channel's base
+rate is 1.6% for a random gap byte against 27.4% for a map row's start, so it is a floor. A dword outside
+`.text` names **969** of them, **277** in a class-table slot (269 of those in the 250 tables no registration
+names), a `68` push 651, a branch 46; **408** are named by nothing.
 
-**Why it matters.** U38's `sinh` stub is one member of this population, and its "no `E8`/`E9` and no dword
-names it" is the shape of the 383, not an exception. The map's function count is short by 2,194 bodies in
-`.text` alone (14.4% of 15,241), and 1,441 of them are pointer-reachable, so a debugger cannot break on them
-either.
+**Answered since the first entry (2026-11-20).** Both blockers the entry named are settled in the bundle that
+follows it. *The fill-less boundary*: a run now reads its own relative branches, so a terminator whose
+successor no branch targets is a boundary -- **172 bodies end at a split**, 169 openings stay merged because
+a branch rejoins them (the `0x00046330` shape), and `0x00418c30` resolves from one 131-byte run into five
+21-byte bodies. The same rule finds **59 of the map's own rows holding a second body** (decode-to-size
+10,995 -> 10,936 over 11,784 rows). *The 600-body block*: the `family` column names it -- **590 register-once
+thunks** with one `.data` item and one flag byte each, and **5 `_atexit` destructor registrations** -- so it is
+one translation unit's static initialisation and gets one naming rule, not 600 bodies of evidence. *The adds*:
+**537 of the 814 slot-named bodies became rows** (`<Class>_vt<slot>`, 224 classes, 159,539 bytes, each with its
+creation row), taking the map from 15,241 to 15,778 functions and the cascade with it.
 
-**What would settle it.** An `add` per body plus its `xbe_overrides.csv` creation row, emitted by the tool
-that measured it (`native-census --emit-creations`'s route), and the downstream cascade: `function_modules`,
-the module split, `docs/NATIVE.md`, `docs/STATUS.md`, the README badge, the index/hashes loop. Two rules have
-to be settled first: the fill-less boundary (515 inner strong openings in 260 runs merge two or more bodies
-into one) and the naming of the 600-body generated stub family at `0x004100c8`.
+**Why it matters.** U38's `sinh` stub is one member of what is left, and its "no `E8`/`E9` and no dword names
+it" is the shape of the 408, not an exception. 277 of the bodies sit in a table slot the map still has no row
+for, and 269 of those are in tables no registration names -- so a debugger cannot break on them and no name
+can be built for them yet.
+
+**What would settle it.** For the 59 two-body rows, a `resize` plus an `add` per row from the split rule the
+same tool now measures. For the 269 bodies in unnamed tables, the class of each of the 250 tables (the
+installer's own call sites are the route `class-table-parents` uses). For the 408, a naming channel that is
+not a pointer or a call -- their literals, or the CRT/XDK signature the block around them matches -- which is
+one body at a time, not a census.
