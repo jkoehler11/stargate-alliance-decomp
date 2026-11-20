@@ -182,6 +182,7 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | -- records whose first field is an export index | **466858** of 466858 |
 | -- of those, naming a light actor | **466435** (423 other) |
 | tails whose record list closes exactly | **33509** of 33509 |
+| -- payloads whose record list is empty (head dword still present) | **206** |
 | -- records whose mask is `ceil(colours/8)` bytes | **466858** of 466858 |
 | -- mask bytes inside them | **13989855** |
 | -- masks with a set bit in the last byte's padding | 43126 |
