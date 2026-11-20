@@ -945,6 +945,40 @@ Four things this establishes:
 Ghidra-merged bodies and some are the `FUN_*` gaps the map itself marks; either way that fraction is a measure of
 the map's runtime coverage, and it is the next thing to push down rather than a defect in the sampler.
 
+## The four hottest unnamed bodies (2026-11-19)
+
+The sampler ranked them; `tools/native-body-notes.py` reads them from the image (no library, so no
+relocations — a byte scan for calls, import jumps and immediates, with out-of-section targets dropped because
+inside an instruction's encoding an `E8` is not a call). None of these is named: the evidence says what they
+*contain*, and a name would be a claim about behaviour that the bytes do not make.
+
+| body | bytes | what the bytes show |
+|---|---:|---|
+| `FUN_00463864` | 909 | `55 8B EC 83 EC 54` prologue, then dense x87 (`D9`, `D8`, `DC`) and one call to `FUN_003e8542` (21 B) |
+| `FUN_002b5c20` | 1,676 | `0F 31` (**RDTSC**) early in the body; calls `FUN_002af230` (2,711 B) twice plus 13–15-byte helpers |
+| `FUN_00229390` | 7,428 | MSVC SEH prologue (`6A FF`, `64 A1 00 00 00 00`), a second `0F 31`, and repeated calls to `FUN_000574d0` (112 B), `FUN_002419e0` (229 B), `FUN_00055ed0` (37 B) |
+| `FUN_002bc350` | 5,000 | D3D state calls: `_D3DDevice_SetRenderState_FillMode`, `_ZEnable`, `_CullMode`, and `@D3DDevice_SetRenderState_Simple` many times |
+
+Four readings:
+
+1. **`FUN_00463864` is floating-point work, and that is all that can be said.** 909 bytes of x87 with a single
+   call is a numeric routine — the hot 5% during rendering fits per-vertex or per-matrix math, but the bytes do
+   not say which, and the one callee is 21 bytes.
+2. **Three of the four read the timestamp counter.** `0F 31` appears within the first 48 bytes of
+   `FUN_002b5c20`, `FUN_00229390` and `FUN_002bc350` (and may appear later in the fourth, which the shown
+   window does not cover), so the engine instruments timing in the hot path — worth knowing before treating the
+   sampler's own numbers as pure workload.
+3. **`FUN_00229390` is the largest body the map leaves unnamed** (7,428 B) and it has an SEH frame, so it is not a
+   helper: something with a `__try` around a loop that calls three small functions repeatedly.
+4. **`FUN_002bc350` is render-state setup**, and its callees make that certain rather than plausible: four
+   distinct `SetRenderState_*` entry points in the first two hundred bytes.
+
+**Why none is renamed.** The project's naming rule is that a name comes from evidence the build itself provides —
+an assert string, a native table slot, a class registration, a library body. "It does x87 maths" is not that, and
+`FUN_002bc350` being render-state setup narrows the field without distinguishing *which* state block it owns.
+The bodies are documented, ranked and located; naming them stays open, and a breakpoint that captures their
+arguments is the instrument that would close it.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
