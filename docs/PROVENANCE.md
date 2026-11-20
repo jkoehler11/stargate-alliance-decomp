@@ -41,6 +41,13 @@ controllers. Full tables in `inventory/extensions.csv` and `inventory/directorie
 File timestamps in the tree range 2019-2023 and reflect when the debug kit's HDD was copied, not the
 build date; they carry no information and are not part of the manifest.
 
+A read-only copy of these roots lives outside the repository (`make pristine-dump SG1_DUMP=…
+PRISTINE_DUMP=…`): it copies `README.txt` and the release folder, `chmod -R a-w`s the tree, and then
+runs `verify-dump` against the copy — a tree nobody can write to cannot drift, and verifying after the
+copy proves it holds the same bytes the manifest was made from. Verified 2026-11-19: 4,006 files, 0
+mismatched, 0 missing. The physical half of PLAN 1.5 (a second copy on read-only media) is not
+something this repository can hold.
+
 ## Build fingerprint
 
 - `default.xbe`: 6,209,536 bytes, image base `0x00010000`, entry `0x00010184`, 15 sections
