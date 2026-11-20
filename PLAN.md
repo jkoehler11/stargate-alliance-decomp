@@ -728,9 +728,9 @@ other 38 rows.
       104 to `xvoice.lib`**, every artifact row naming its COFF member. What remains is the rest of the
       library sections and the game modules' own subsystems.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
-      Done: **15,422 symbols** (14,956 functions + 466 class tables), every address inside the image's
+      Done: **15,447 symbols**, every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
-      (`docs/SYMBOLS.md`). 8,320 stay `FUN_*` — the engine bodies with no naming evidence, not a gap in
+      (`docs/SYMBOLS.md`). 7,819 stay `FUN_*` — the engine bodies with no naming evidence, not a gap in
       the file; the library sections are named from a supplied XDK 5849.17 set (4.2, `make xdk-lib-names`). 127 names are file-level and therefore shared by more than one function; the assembled
       form suffixes duplicates with their address.
 

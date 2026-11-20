@@ -367,8 +367,10 @@ the graph → encode.
 shader-assembly helpers, the largest single group in the graphics sections after the C functions.
 
 **The pipeline is live, and the shaders are in the image.** A scan of the dump finds these tokens in
-`default.xbe` and in no package: `vs.1.1` 22 times, `ps.1.1` 22, `ps.1.4` 19 — 63 programs — and the bytes
-around them are source, not a keyword table:
+`default.xbe` and in no package, and the bytes around them are source, not a keyword table. The count is
+**45 programs — 19 `vs.1.1`, 9 `ps.1.1`, 17 `ps.1.4`** (`inventory/shader_programs.csv`,
+`make shader-programs`); an earlier count of 63 in this page was a substring count that included `#define`
+lines *containing* the token, and the artifact is the authority.
 
     vs.1.1
     m4x4 oPos, v0, c0
@@ -385,9 +387,20 @@ data — and the assembler's own banner, `// Xbox Shader Assembler %s`.
 So the title compiles its shaders at runtime from embedded assembly through this toolchain, and that is why
 `PreProcessor` is in the image at all. For Phase 6 it is a requirement rather than an open question: a
 rebuild either reproduces the compile path (preprocessor, yacc parser, `D3DTokensToUCode`, the `Instruction`
-optimiser) or bakes the 63 programs' microcode once and ships it. **What this reading still does not prove** is
-which of the 63 are reachable — a version token in `.rdata` is a string the code may index by table, so the
-count is programs *present*, not programs *used*.
+optimiser) or bakes the 45 programs' microcode once and ships it. **And all 45 are used.** Each program is referenced by an immediate whose value is its address: 41 by a
+`push` inside a tiny per-program wrapper — 15 wrappers of 41 bytes for the `vs.1.1` programs, 26 of 28 bytes
+for the pixel ones — and 4 `vs.1.1` programs by `mov` immediates inside one function at `0x002b4600`. Every
+push wrapper then calls one of two dispatchers, and the split follows the program's type exactly:
+
+| dispatcher | programs | calls | now named |
+|---|---:|---|---|
+| `0x002c01e0` | 15 `vs.1.1` | `_XGAssembleShader@44`, `_D3DDevice_CreateVertexShader@16` | `ShaderCompileVertex` |
+| `0x002c0910` | 26 `ps.1.1`/`ps.1.4` | `_XGAssembleShader@44`, `_D3DDevice_CreatePixelShader@8`, plus `_CreateFileA`/`_ReadFile`/`_CloseHandle` and `_GlobalMemoryStatus` | `ShaderCompilePixel` |
+
+So the runtime path is: per-program wrapper → `ShaderCompileVertex`/`ShaderCompilePixel` → `_XGAssembleShader`
+→ `Create*Shader`. Both dispatchers were `FUN_*` until this reading, and naming them is the one place 4.9 has
+produced names rather than prose. The pixel path also touches a file and the memory status, which reads as a
+shader cache; that is observed, not explained.
 
 ## The audio stack: `DirectSound`, the MCPX, and Xbox Live voice (2026-11-19)
 

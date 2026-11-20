@@ -67,11 +67,13 @@ resolves, not a live attach.
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
   gives every duplicate an `_<address>` suffix (1,167 symbols affected) so a debugger can address
   them separately, and the count is printed on every run.
-- **8,320 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
+- **7,819 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
   without a name — and they are the engine bodies with no naming evidence (`docs/NAMING.md`), not a gap in
   this file. The library sections are named from a locally supplied XDK 5849.17 set (`make xdk-lib-names`,
-  PLAN 4.2): 2,532 of the 3,109 bodies there, plus 1,169 in `.text`. The class-construction pass took the
-  remainder from 12,935: 915 functions carry the class whose object they build.
+  `make xdk-call-names`, `make xdk-lib-residue`, PLAN 4.2): **2,855 of the 3,109** bodies there, the rest of
+  the library names landing in `.text` (`inventory/xdk_lib_names.csv` records the section per row). The
+  class-construction pass took the remainder from 12,935: 915 functions carry the class whose object they
+  build.
 - **No types, no variables, no source lines.** The map carries code addresses and class-table
   addresses only; there is no debug information in this build (`RSDS` absent, PLAN §0).
 
