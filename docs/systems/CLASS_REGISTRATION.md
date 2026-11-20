@@ -371,14 +371,14 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 | table | slots | proposed class | store sites | installing bodies | registration thunk | callers | verdict | named classes whose constructor calls it |
 |---|---|---|---|---|---|---|---|---|
 | `0x004c78c0` | 31 | -- | 1 | 1 | no | 17 | dtor+wrapper+stub | table:0x004d0318, AudioSubsystem, table:0x004d2400, new +3 |
-| `0x004c7958` | 46 | Material | 2 | 2 | no | 40 | ctor, dtor+wrapper+stub | table:0x004c7a10, Modifier, Combiner, MultiPassMaterial +32 |
-| `0x004c7a10` | 46 | RenderedMaterial | 1 | 1 | no | 17 | dtor+wrapper+stub | table:0x004c7ac8, ConstantMaterial, TexCoordMaterial, VertexColor +5 |
+| `0x004c7958` | 46 | Material | 2 | 2 | no | 40 | ctor, dtor+wrapper+stub | RenderedMaterial, Modifier, Combiner, MultiPassMaterial +32 |
+| `0x004c7a10` | 46 | RenderedMaterial | 1 | 1 | no | 17 | dtor+wrapper+stub | BitmapMaterial, ConstantMaterial, TexCoordMaterial, VertexColor +5 |
 | `0x004c7ac8` | 46 | BitmapMaterial | 1 | 1 | no | 10 | dtor+wrapper+stub | Texture, ProxyBitmapMaterial, ScriptedTexture, ShadowBitmapMaterial |
 | `0x004c7c78` | 34 | CameraEffect | 1 | 1 | no | 16 | dtor+wrapper+stub | SGScreenSniperOverlay, SGScreenMenuPause, SGScreenBlur, SGScreenDOF +6 |
 | `0x004c9348` | 30 | -- | 2 | 2 | no | 11 | ctor, dtor+wrapper+stub | table:0x004c93d0, table:0x004d03c8 |
 | `0x004c93d0` | 35 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | XboxViewport |
 | `0x004c94b0` | 30 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | XboxClient |
-| `0x004cfe68` | 59 | WaterTexture | 2 | 2 | no | 8 | ctor, dtor+unmapped+stub | WaveTexture, FluidTexture, WetTexture |
+| `0x004cfe68` | 59 | WaterTexture | 2 | 2 | no | 8 | ctor, dtor+code+stub | WaveTexture, FluidTexture, WetTexture |
 | `0x004d0318` | 31 | -- | 2 | 2 | no | 11 | ctor, dtor+wrapper+stub | TcpNetDriver, TcpNetDriverXbox, DemoRecDriver |
 | `0x004d03c8` | 31 | -- | 3 | 3 | no | 15 | ctor, dtor+wrapper+stub | TcpipConnection, TcpipConnectionXbox, DemoRecConnection |
 | `0x004d1468` | 35 | -- | 4 | 2 | no | 28 | ctor, dtor+wrapper+stub, no-body | table:0x004d17a8, Struct, Const, Enum +13 |
@@ -399,7 +399,7 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 
 **6 of the 24 tables carry a name from the caller rule**, the join in the `proposed class` column and not this sweep's measurement; the rest are that tool's `constrained` verdict (a caller set whose common ancestor is not one class), its name-clash case, or a table with no named caller at all.
 
-**40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 103 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 1 call from no map body at all; 2 bodies have no inbound edge.
+**40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 106 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 0 calls from no map body at all; 2 bodies have no inbound edge.
 <!-- /generated:class-orphan-tables -->
 
 ## The 250 tables no registration reaches: 39 a constructor bounds, 209 only unnamed bodies store
@@ -456,6 +456,58 @@ The constructor-stored tables carry a bound, not a name: 25 distinct classes, an
 | `NetPendingLevel` | 1 |
 | `D3DRenderDevice` | 1 |
 <!-- /generated:class-table-installers -->
+
+## Where the 250's stores write: a class table is `[reg]`, and 36 of the 39 are a member's table
+
+`tools/class-table-installers.py` calls every `mov [reg(+disp)], <imm32>` an install, which is what the
+store is and not what it writes: the previous section's populations are populations of *stores*, and the
+question behind them is whether the table is the class's own dispatch table or something else the object
+holds. `tools/class-table-store-fields.py` decodes the operand instead -- base register, displacement,
+and whether the form is a register slot, a member field, a stack slot, a global or a SIB with a scaled
+index -- over all 724 tables `inventory/native_vtable_reach.csv` censuses, and joins a member store to the
+class whose constructor writes it.
+
+<!-- generated:class-table-store-fields -->
+| population | tables | object slot | slot and member | member only | frame only | global only | no `C7` store |
+|---|---|---|---|---|---|---|---|
+| named by the registration path (control) | 474 | 474 | -- | -- | -- | -- | -- |
+| nameless: a class ctor stores it | 39 | 3 | 9 | 27 | -- | -- | -- |
+| nameless: only bodies no class names store it | 211 | 175 | 2 | 11 | 20 | -- | 3 |
+
+**The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled and installed nowhere, and 3 into nothing a `C7 /0` store carries.
+
+**The member offsets are a class's own layout, not a shared constant**: `0x8` in 2 tables, `0x28` in 24 tables, `0x2c` in 8 tables, `0x38` in 1 table, `0x64` in 2 tables, `0xb8` in 6 tables, `0xc0` in 1 table, `0xd8` in 1 table, `0xf0` in 1 table, `0x108` in 1 table, `0x134` in 1 table, `0x14c` in 2 tables, `0x164` in 1 table, `0x17c` in 1 table, `0x194` in 1 table.** A field that holds a table pointer is a member of the class whose constructor stores it, so the table is that member's dispatch table and its slots are methods of the member, not of the class -- naming it `<Class>_vt<slot>` would claim a class slot the image does not have.
+
+**38 of the 49 member tables have a class whose own constructor stores the field** (SkeletalMesh (5), ControlChannel (2), TextBuffer (2), XboxViewport (2), PackageMapLevel (2), TcpipConnection (2)), so the member's owner is known even though the table's class is not: these are `<Class>`'s field, and the name the map lacks is the member's, not a class's.
+
+**What this settles for U40.** 36 of the 39 tables a class constructor stores are member tables (27 only a member, 9 the object slot as well), so the `at-least-<base>` bound those tables carry is a bound on the *owner* of a member, not on a class's dispatch table; the reading that a ctor's table is its own or its base's holds only for the 3 that write `[reg]` at all. And 175 of the 211 plain-only tables are written into the object slot by a body no class names, which is the shape of a constructor the map has not named rather than of a table nothing installs.
+<!-- /generated:class-table-store-fields -->
+
+Three readings follow, and each corrects the section above rather than restating it:
+
+- **The `at-least` bound is a bound on a member's owner.** A constructor that writes a table into a field
+  is not installing a class table at all: `ctor_ControlChannel` writes `0x004fa5b0` at `[esi]` -- its own
+  dispatch table -- and then `0x004c7854` and `0x004fa5a8` at `[esi+0x64]`, a member that holds a two-slot
+  table. The `base-store-ancestor` rule says which of a constructor's `[reg]` stores is its own; it says
+  nothing about the field stores, so for the 36 bounded tables what is bounded is the class that owns the
+  member, not a class whose dispatch table this is.
+- **A member table's slots are not class slots.** `0x004fa5a8`'s two slots are `FUN_0010a2e0` (250 bytes)
+  and `0x00020f00` (a one-byte body), and `0x004c7854`'s are `__purecall` and that same one-byte body: a
+  member's table, so a `<Class>_vt<slot>` name would claim a slot in a class table that does not hold
+  them. The 38 member tables whose owner's constructor is known name their slots' *owner* once the member
+  is named, which is a naming pass of its own, one class at a time.
+- **`install` counts a stack slot.** Twenty of the 250 are written only at `[esp+disp]`/`[ebp+disp]`, where
+  the address is spilled or passed and nothing owns it, so `tools/native-vtable.py`'s `installs` column is
+  an upper bound on installations and the previous section's "2 stored by nothing" is 23 in this reading
+  (20 stack-only, 3 with no `C7 /0` store at all). The gap between the two counts is the addressing bytes:
+  `mov [reg+disp32],imm32` is ten bytes, and `tools/class-orphan-tables.py` read its immediate one byte
+  short until this bundle -- which is why the twelve `mov [esi+0xb8],<index table>` stores of the
+  LinkerLoad/LinkerSave family were invisible to it.
+
+What this does not say: the partition is the form of the store, not a proof about `this` -- a `[reg+0x28]`
+store whose base is an argument rather than the object would read the same. The named population is what
+makes it evidence, and it is the part that cannot be argued with: 474 of the 474 class tables the
+registration path names are written at `[reg]`, and not one of them only into a member.
 
 ## The hole between `FUN_003f28b0` and `FUN_003f6d70` is a thunk pool
 
@@ -721,3 +773,13 @@ population rather than a new pass over the image:
 `--check` is a synthetic image -- a `C7 /0` store with a displacement, a SIB form that must be skipped, a
 caller of each kind, a tail jump, and a store outside every body -- and `--check-doc` rebuilds its block
 from `inventory/class_orphan_tables.csv` with no dump. Both run in `make ci`.
+
+The store-field partition is the same population read one operand deeper:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-table-store-fields.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-table-store-fields.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic image -- a slot store, a `disp8` and a `disp32` member store, a stack store, a
+global, an indexed SIB and a table no store carries -- and `--check-doc` rebuilds its block from
+`inventory/class_table_store_fields.csv` with no dump; both run in `make ci`.

@@ -5618,8 +5618,33 @@ registration site, every class's sites agree, and the body that carries the site
 `inventory/native_class_packages.csv`, read by `tools/module-split.py` and `tools/native-summary.py`. What is
 left of this entry is the naming half for the 39 bounded and 209 plain-only tables, and the 399 bodies.
 
+**Answered since (2026-11-20, where those stores write).** The installer census's `install` is a
+`mov [reg(+disp)], <imm32>`, which says what the store is and nothing about the field it writes, so
+`tools/class-table-store-fields.py` decodes the operand over all 724 tables
+`inventory/native_vtable_reach.csv` censuses. The 474 tables the registration path names are **all**
+written at `[reg]` and none only into a member, which is the control the rest is read against; of the 250
+nothing names, **189 are written into an object slot at least once, 49 into a member field** (`+0x28` in
+24, `+0x2c` in 8, `+0xb8` in 6, `+0x64` in 2, and nine more offsets) **and 23 have no object-field store
+at all** -- 20 only at `[esp+disp]`/`[ebp+disp]`, 3 into nothing a `C7 /0` store carries. So **36 of the
+39 constructor-bounded tables are a member's table and not a class's**: the `at-least-<base>` bound is a
+bound on the class that owns the member, and for 38 of the 49 member tables a constructor names that owner
+(`SkeletalMesh` 5, `ControlChannel` 2, `XboxViewport` 2, `TextBuffer` 2, `PackageMapLevel` 2,
+`TcpipConnection` 2, ...). The `base-store-ancestor` reading of a constructor's stores therefore holds
+only for the 12 bounded tables that have a `[reg]` store (3 slot-only, 9 both). Two consequences: U40's
+"269 gap bodies in a class-table slot" is a count of slots *in these tables*, and a member table's slots
+are a member's methods rather than 269 class virtual methods; and the naming half of the 49 is a member
+name with a known owner, not a class-table question.
+
+**What would settle the rest.** For the 175 plain-only tables written at `[reg]` the class is the class
+whose constructor the store body is, so that body has to be named -- from a registration literal, a
+shipped `.u` class with that constructor, or the class record's constructor field -- one body at a time.
+For the 23 with no object-field store the table has no installer, and the 3 with no `C7` store need the
+other addressing forms read (`mov [reg+index*4]` is an array slot, not a field). For the 399 bodies
+nothing changes except that the ones sitting in a member table's slots are named from the member.
+
 **What would settle it.** For the 269 bodies in unnamed tables, the class of each of the 250 tables (the
-installer's own call sites are the route `class-table-parents` uses). For the 273 `<Class>_vt<slot>` rows still
+installer's own call sites are the route `class-table-parents` uses) -- now answered for the 49
+member tables as far as their owner, and not for the rest. For the 273 `<Class>_vt<slot>` rows still
 unattributed, the native package each class belongs to (`XboxViewport`, `XboxClient`, `TcpipConnection`,
 `XBoxAudioSubsystem` live in the native `XboxDrv`/`IpDrv`/`XboxAudio` packages, which ship no `.u`, so
 `classes.csv` has no package for them) -- the installer's class-registration list is the route. For the 399,

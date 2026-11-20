@@ -1,8 +1,8 @@
 table_va,slots,proposed,store_va,store_kind,body_va,body_name,body_form,registration_thunk,callers,caller_kinds,stub_unmapped,caller_classes,verdict
-0x004c78c0,31,,0x0001706d,reg,0x00017050,FUN_00017050,dtor,no,17,"dtor=7,wrapper=1,stub=9",9,table:0x004d0318;AudioSubsystem;table:0x004d2400;new;table:0x004eaea8;table:0x005040d0;Input,dtor+wrapper+stub
-0x004c7958,46,Material,0x0001715d,reg,0x00017140,FUN_00017140,dtor,no,8,"dtor=4,wrapper=1,stub=3",3,table:0x004c7a10;Modifier;Combiner;MultiPassMaterial,dtor+wrapper+stub
+0x004c78c0,31,,0x0001706d,reg,0x00017050,FUN_00017050,dtor,no,17,"dtor=7,wrapper=1,stub=9",9,table:0x004d0318;AudioSubsystem;table:0x004d2400;new;table:0x004eaea8;Engine;Input,dtor+wrapper+stub
+0x004c7958,46,Material,0x0001715d,reg,0x00017140,FUN_00017140,dtor,no,8,"dtor=4,wrapper=1,stub=3",3,RenderedMaterial;Modifier;Combiner;MultiPassMaterial,dtor+wrapper+stub
 0x004c7958,46,Material,0x00169988,reg,0x00169980,FUN_00169980,ctor,no,32,ctor=32,0,ParticleMaterial;PixelShaderMaterial;PSShieldMaterial;PSReplicatorVision;PSDistortionBaseMaterial;PSBlendedDistortionMaterial;PSSubtractiveDistortion;PSAdditiveDistortion;PSModulatedDistortionMaterial;PSDistortionMaterial;PSSimple;PSEmissiveShader;PSEmissiveConstColor;PSBackBufferEffect;PSBlurMaterial;PSUseTexIndexMaterial;PSLuminanceTexIndexMaterial;PSBloomSelectMaterial;PSWater;PSMotionBlurMaterial;PSBump;PSDepthOfFieldMaterial;PSRefractionMaterial;PSBumpSpecular;PSVDM;PSBumpSpecularBSP;PSBumpBSP;ProjectorMaterial;ScriptedTexture;ShadowBitmapMaterial;TerrainMaterial;Texture,ctor
-0x004c7a10,46,RenderedMaterial,0x0001723d,reg,0x00017220,FUN_00017220,dtor,no,17,"dtor=9,wrapper=1,stub=7",7,table:0x004c7ac8;ConstantMaterial;TexCoordMaterial;VertexColor;Shader;ParticleMaterial;PixelShaderMaterial;ProjectorMaterial;TerrainMaterial,dtor+wrapper+stub
+0x004c7a10,46,RenderedMaterial,0x0001723d,reg,0x00017220,FUN_00017220,dtor,no,17,"dtor=9,wrapper=1,stub=7",7,BitmapMaterial;ConstantMaterial;TexCoordMaterial;VertexColor;Shader;ParticleMaterial;PixelShaderMaterial;ProjectorMaterial;TerrainMaterial,dtor+wrapper+stub
 0x004c7ac8,46,BitmapMaterial,0x000172bd,reg,0x000172a0,FUN_000172a0,dtor,no,10,"dtor=4,wrapper=1,stub=5",5,Texture;ProxyBitmapMaterial;ScriptedTexture;ShadowBitmapMaterial,dtor+wrapper+stub
 0x004c7c78,34,CameraEffect,0x00017f8d,reg,0x00017f70,FUN_00017f70,dtor,no,16,"dtor=10,wrapper=1,stub=5",5,SGScreenSniperOverlay;SGScreenMenuPause;SGScreenBlur;SGScreenDOF;SGScreenMotionBlur;SGScreenRadialBlur;SGScreenEmissiveWithBloom;SGScreenEmissive;CameraOverlay;MotionBlur,dtor+wrapper+stub
 0x004c9348,30,,0x0001cb8d,reg,0x0001cb70,FUN_0001cb70,dtor,no,8,"dtor=2,wrapper=1,stub=5",5,table:0x004c93d0;table:0x004d03c8,dtor+wrapper+stub
@@ -11,7 +11,7 @@ table_va,slots,proposed,store_va,store_kind,body_va,body_name,body_form,registra
 0x004c93d0,35,,0x000f9d14,reg,0x000f9ce0,FUN_000f9ce0,ctor,no,1,ctor=1,0,XboxViewport,ctor
 0x004c94b0,30,,0x0001cd2d,reg,0x0001cd10,FUN_0001cd10,dtor,no,3,"dtor=1,wrapper=1,stub=1",1,XboxClient,dtor+wrapper+stub
 0x004c94b0,30,,0x000fd9b8,reg,0x000fd9b0,FUN_000fd9b0,ctor,no,1,ctor=1,0,XboxClient,ctor
-0x004cfe68,59,WaterTexture,0x000257ed,reg,0x000257d0,FUN_000257d0,dtor,no,5,"dtor=3,unmapped=1,stub=1",1,WaveTexture;FluidTexture;WetTexture,dtor+unmapped+stub
+0x004cfe68,59,WaterTexture,0x000257ed,reg,0x000257d0,FUN_000257d0,dtor,no,5,"dtor=3,code=1,stub=1",1,WaveTexture;FluidTexture;WetTexture,dtor+code+stub
 0x004cfe68,59,WaterTexture,0x002e82a0,reg,0x002e8260,FUN_002e8260,ctor,no,3,ctor=3,0,WaveTexture;FluidTexture;WetTexture,ctor
 0x004d0318,31,,0x00025f4d,reg,0x00025f30,FUN_00025f30,dtor,no,8,"dtor=3,wrapper=1,stub=4",4,TcpNetDriver;TcpNetDriverXbox;DemoRecDriver,dtor+wrapper+stub
 0x004d0318,31,,0x0018375f,reg,0x00183730,FUN_00183730,ctor,no,3,ctor=3,0,TcpNetDriver;TcpNetDriverXbox;DemoRecDriver,ctor

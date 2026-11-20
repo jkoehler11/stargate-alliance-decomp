@@ -15679,3 +15679,34 @@ sequence.
   every tool that answers `--check` and holds it to writing nothing in the tree.
 - **Not in this bundle.** The naming half of the 39 bounded and 209 plain-only tables, the 399 bodies no channel
   names, and the 595-family split repairs.
+
+### Execution notes (2026-11-20, the stores write into a member, and a disp32 store was read short)
+
+- **The 250 tables' stores are read one operand deeper, and it splits the population.** `install` is a
+  `mov [reg(+disp)], <imm32>`, so `tools/class-table-store-fields.py` decodes the base register, the
+  displacement and the addressing form for all 724 tables of `inventory/native_vtable_reach.csv`:
+  **474 of 474 named tables are written at `[reg]`** (the control), and of the 250 nothing names **189
+  write an object slot, 49 a member field, 23 no object field at all** (20 into a stack slot, 3 into
+  nothing a `C7 /0` store carries). `inventory/class_table_store_fields.csv` carries the partition.
+- **The bounded 39 are 36 member tables.** `ctor_ControlChannel` writes `0x004fa5b0` at `[esi]` and
+  `0x004c7854`/`0x004fa5a8` at `[esi+0x64]`, whose two slots are `{__purecall, 0x00020f00}` and
+  `{FUN_0010a2e0, 0x00020f00}`: the at-least bound is on the member's owner, not on a class's dispatch
+  table, and 38 of the 49 member tables have a constructor that names the owner. This is why the previous
+  note's "a ctor's table is its base's" holds only for the 12 bounded tables with a `[reg]` store.
+- **`tools/class-orphan-tables.py` read `mov [reg+disp32],imm32` one byte short** -- the form is ten bytes
+  (opcode, modrm, disp32, imm32) and it read the immediate five bytes in and resumed inside it, so the
+  twelve `mov [esi+0xb8],<index table>` stores of the LinkerLoad/LinkerSave family were invisible; its
+  self-test now carries a disp32 store and fails on the old decode. Regenerating its artifact also picked
+  up caller-class labels the committed CSV had missed (103 -> 106 named classes, `unmapped` -> `code` for
+  `WaterTexture`), because no gate holds that CSV against its inputs beyond the page block.
+- **Files.** `tools/class-table-store-fields.py`, `inventory/class_table_store_fields.csv`,
+  `tools/class-orphan-tables.py`, `inventory/class_orphan_tables.csv`,
+  `docs/systems/CLASS_REGISTRATION.md` (the new section, its block, the correction, the regenerating
+  paragraph, the orphan block regenerated), `docs/UNKNOWNS.md` (U40 rewritten), `Makefile`,
+  `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `--check` is a synthetic image (slot, disp8 and disp32 member stores, a
+  stack store, a global, an indexed SIB, an unstored table) and `--check-doc` rebuilds the block from the
+  committed CSV with no dump; the orphan tool's disp32 assertion was proved to bite by restoring the old
+  decode (it fails three ways).
+- **Not in this bundle.** The member tables' slot names (a per-class naming pass), the 175 plain-only
+  tables' constructors, and the 399 bodies.
