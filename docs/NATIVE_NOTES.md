@@ -1309,6 +1309,42 @@ above — by absolute reference — is the stronger of the two and is the one th
 **Limits.** The buffer addresses (`0x460ef0`, `0x460ef4`) are read as a write pointer and a limit from these 39 bytes,
 and the consumer of the buffer was not read here.
 
+## The D3D8 surface this build links: 110 entry points (2026-11-19)
+
+Because the library matcher names what the link actually contains, the `_D3DDevice_*` and `_Direct3D_*` symbols are a
+census rather than a guess — and a rebuild has to supply exactly this much:
+
+| group | entry points | bytes |
+|---|---:|---:|
+| `Set…` (non-state setters) | 26 | 6,453 |
+| `SetRenderState_*` specialisations | 31 | 2,359 |
+| `Get…` | 22 | 1,537 |
+| `Draw…` | 3 | 1,104 |
+| `Create…` | 7 | 1,001 |
+| `SetVertexShaderConstant*` | 3 | 330 |
+| everything else | 18 | 3,160 |
+| **total** | **110** | **15,944** |
+
+The eight largest are state and transfer work, not drawing: `CopyRects@20` 797, `SetScissors@12` 768, `Clear@24` 713,
+`SetLight@8` 691, `SetRenderTarget@8` 628, `DrawIndexedVertices@12` 599, `SetViewport@4` 546, `SetPixelShader@4` 499.
+
+Three readings:
+
+1. **Drawing is three functions.** `DrawVertices`, `DrawIndexedVertices` and `DrawVerticesUP` are the entire draw
+   surface, and together they are 1,104 bytes — less than `CopyRects` plus `SetScissors`. Whatever a rebuilt renderer
+   does, it reaches the GPU through those three.
+2. **The state path is specialised per state.** 31 separate `SetRenderState_*` bodies (CullMode, FillMode, EdgeAntiAlias,
+   ShadowFunc, BackFillMode, Dxt1NoiseEnable…) all funnel into the same push-buffer append, which is why they are 60–120
+   bytes each while the shared emitter is 39.
+3. **Absence is evidence.** The map is a linked-set census, so what is missing was never called: no
+   `SetPixelShaderConstant*` (closed in the previous section — the mode flag routes the vertex path), and no
+   `SetStreamSource` beyond what appears, which matches the draw calls taking their streams explicitly.
+
+**Limit.** These are the functions the matcher could name from library bodies; a D3D8 entry point that the build
+contains but whose body did not match would appear as `FUN_*` and be missing from this table. The 110 is therefore a
+floor for "what the link contains", and the four-user push-buffer census in the previous section is the check that the
+render-path subset is complete.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
