@@ -979,6 +979,48 @@ an assert string, a native table slot, a class registration, a library body. "It
 The bodies are documented, ranked and located; naming them stays open, and a breakpoint that captures their
 arguments is the instrument that would close it.
 
+## The shader compile, caught at a map load (2026-11-19)
+
+The EIP sampler could not see the shader compile and the page above says why: it is one-shot work. A breakpoint
+sees it, and now has. The run: `drive.py` with `--gdb 12345` boots the title and presses ten d-pad steps plus `A`
+to load `M00`; `bp-args.py --wait-user 300 --break 0x2c01e0 --break 0x2c0910 --window 500` samples the CPU until
+it is inside the image, arms, then holds the window open across the load.
+
+**Three stops, all at the armed body:**
+
+| stop | `this` (`ecx`/`esi`) | `edi` | return address | stack after the frame |
+|---:|---|---:|---|---|
+| 0 | `0x03cab900` | 1 | `0x002aedb7` | `0x02380000`, `0x02387948` |
+| 1 | `0x03cab900` | 1 | `0x002aedb7` | same |
+| 2 | `0x03cab400` | 4 | `0x002aedb7` | `0x02380000`, `0x023865d0`, `0x03334f80` |
+
+**The caller is `FUN_002ae4e0`** (2,301 B) — `0x002aedb7` lands inside it — and that function is the one
+`FUN_002b5c20`, the sampler's second-hottest body (and an RDTSC reader), calls. So the runtime chain is:
+
+    FUN_002b5c20 (hot, timed)
+      -> FUN_002ae4e0 (2,301 B)
+        -> 41-byte per-program wrappers (FUN_002b3f60, FUN_002b3fd0, ...)
+          -> ShaderCompileVertex (0x002c01e0)
+            -> _XGAssembleShader@44 -> _D3DDevice_CreateVertexShader@16
+
+which is the static chain from the shader reading, with the middle link named by a stop instead of inferred from a
+`push`. The `this` pointers are **heap** addresses (`0x03cab9xx`, above every section), so the dispatcher is working
+on a runtime object, not on static state, and `edi` varies (1, 1, 4) — a count or a shader-kind argument, not a
+constant.
+
+**Two corrections to the previous page.** `drive.py` already accepts `--gdb PORT` (`docs/XEMU.md` said it did not) —
+what was missing was nobody having written the invocation down. And `drive.py` needs **X11**: with
+`WAYLAND_DISPLAY` set, xemu renders Wayland-native and `drive.py`'s `xdotool` window check fails with
+`no xemu window on :0`, which terminates the guest mid-run. The working environment is
+`DISPLAY=:0 XAUTHORITY=/run/user/1000/xauth_*` with `WAYLAND_DISPLAY` unset, while the bare sampler is happy on
+either.
+
+**What this settles and what it does not.** Settled: the shaders are compiled during a map load, through
+`FUN_002ae4e0` and the per-program wrappers, on a heap object, and `ShaderCompileVertex` is reached at least three
+times in one load. Not settled: how many of the 45 programs a single map compiles (three stops is the count the run
+asked for), and what `edi` means — a breakpoint on `_XGAssembleShader@44` with the same argument capture, or a
+larger `--stops`, is the next measurement rather than a guess.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
