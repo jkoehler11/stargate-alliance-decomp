@@ -1063,9 +1063,25 @@ Three readings:
    the repeats, and a breakpoint on the cache-lookup path (`_CreateFileA`/`_ReadFile` in `ShaderCompilePixel`'s
    callees) is what would say which.
 
-**Limits.** This is one mission on one load. A campaign pass (`missions.sh --all`) with the same breakpoint would
-say whether any map needs a program outside this set, and that is the measurement that would make a baked table
-safe. Nothing here says what the `x` prefix *means*, only that the game prefers those strings.
+**Three missions compile the same seven.** The same measurement on `M04B` (index 15) and `M12F` (index 31)
+gives 8 and 10 stops and **the same program set** — `M04B` a subset of five, `M12F` all seven, and nothing exclusive
+to any mission:
+
+| mission | stops | programs | exclusive |
+|---|---:|---:|---|
+| `M00` | 10 | 7 | none |
+| `M04B` | 8 | 5 | none |
+| `M12F` | 10 | 7 | none |
+
+So the set is **global, not per-map**: the game compiles one fixed set of seven programs on the render path, and the
+other 53 of the 60 are unused in normal play — plausibly editor, debug or unused-content strings. That is the
+measurement a baked table needed, and it makes the requirement concrete: bake seven programs, not sixty, not "the
+programs each map selects".
+
+**Limits.** Three missions, one load each — the campaign is 63 entries and `missions.sh --all` with the same
+breakpoint (`--gdb` now forwards to `drive.py` without `--sink-read`) would settle it. `M04B` compiling five rather
+than seven is unexplained: a shorter settle, or a genuinely smaller set for that level. And nothing here says what
+the `x` prefix *means*, only that the game prefers those strings.
 
 ## What the `x` in `xps.1.1` marks (2026-11-19)
 

@@ -167,7 +167,9 @@ for index in $indices; do
   args="--iso=$iso --bios=$bios --hdd=$dir/hdd.qcow2 --out=$dir --eeprom=$eeprom"
   args="$args --fuzz=10 --seconds=$boot --crop=480x520+760+210"
   if [ -n "$pad_hold" ]; then args="$args --pad-hold=$pad_hold"; fi
-  if [ "$sink_read" = 1 ]; then args="$args --gdb=$gdb --linger=$linger"; fi
+  # --gdb is useful without --sink-read: the shader-union reading attaches bp-args to each boot's stub.
+  if [ -n "$gdb" ]; then args="$args --gdb=$gdb"; fi
+  if [ "$sink_read" = 1 ]; then args="$args --linger=$linger"; fi
   set -- --step=shot=00-title --step=noise=3 --step=pad=a --step=wait=4
   i=0
   while [ "$i" -lt "$index" ]; do
