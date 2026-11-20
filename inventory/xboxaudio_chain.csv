@@ -1,0 +1,404 @@
+kind,body,body_name,body_size,module,note,site,form,target,target_name,target_kind,extra
+body,0x0002ae00,FUN_0002ae00,210,,seed: calls _XVoiceQueueCreateMediaObject@8,,,,,,callers=2 refs=1 stdcall 12 args bytes
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae27,call,0x003441eb,_XVoiceQueueCreateMediaObject@8,call,(other named)
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae38,call,0x0034429a,_XVoiceCreateOneToOneDecoder@4,call,(other named)
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae52,call,0x004a2127,_DirectSoundCreateStream@8,call,(other named)
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae61,call,0x004a052b,thunk_FUN_004a03c4,call,
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae6a,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae87,ret,0x0000000c,stdcall 12 args bytes,width,
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002aeab,call,0x0002a9b0,FUN_0002a9b0,call,
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002aebd,vcall,0x00000010, +0x10 of [ecx],vcall,
+edge,0x0002ae00,FUN_0002ae00,210,,,0x0002aecf,ret,0x0000000c,stdcall 12 args bytes,width,
+body,0x0002a250,FUN_0002a250,89,,seed: calls _XVoiceCreateOneToOneEncoder@4,,,,,,callers=1 refs=0 stdcall 4 args bytes
+edge,0x0002a250,FUN_0002a250,89,,,0x0002a25f,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002a250,FUN_0002a250,89,,,0x0002a277,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002a250,FUN_0002a250,89,,,0x0002a28a,call,0x00344246,_XVoiceCreateOneToOneEncoder@4,call,(other named)
+edge,0x0002a250,FUN_0002a250,89,,,0x0002a299,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002a250,FUN_0002a250,89,,,0x0002a2a6,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002d3f0,FUN_0002d3f0,167,,seed: calls _IDirectSoundBuffer_Release@4,,,,,,callers=11 refs=0 stdcall 4 args bytes
+edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d431,literal,0x004d1754,wide 'SF_StreamingMo',data,
+edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d437,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d44a,call,0x004a04f2,_IDirectSoundBuffer_Stop@4,call,(other named)
+edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d45a,call,0x0049f64c,_IDirectSoundBuffer_Release@4,call,(other named)
+edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d494,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002b8c0,FUN_0002b8c0,640,,seed: calls _IDirectSound_SetMixBinHeadroom@12,,,,,,callers=0 refs=0 stdcall 4 args bytes
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002b94a,call,0x0002a250,FUN_0002a250,call,
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002b981,call,0x004a0492,_IDirectSound_SetMixBinHeadroom@12,call,(other named)
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002ba43,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002ba72,call,0x0002ae00,FUN_0002ae00,call,
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002ba93,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002badc,call,0x0002ae00,FUN_0002ae00,call,
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002baf9,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002bb16,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002bb2f,call,0x0002b5c0,FUN_0002b5c0,call,
+edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002bb3d,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002fd70,FUN_0002fd70,272,,seed: calls _XAudioDownloadEffectsImage@16,,,,,,callers=0 refs=1 cdecl XBoxAudioSubsystem +0x7c (slot 31 of 55)
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fd90,call,0x004a20e0,_DirectSoundCreate@12,call,(other named)
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fda6,literal,0x004d2314,ascii 'd:\\xbox.binStoppedBuffers(iBuff',data,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdbb,call,0x004a057b,_XAudioDownloadEffectsImage@16,call,(other named)
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdc5,call,0x0002cfd0,FUN_0002cfd0,call,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdd4,ret,0x00000000,cdecl,width,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdf6,call,0x00055ed0,FUN_00055ed0,call,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe10,call,0x0002c800,FUN_0002c800,call,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe1f,call,0x00032040,FUN_00032040,call,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe2a,call,0x0002c800,FUN_0002c800,call,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe51,call,0x0002e900,FUN_0002e900,call,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe5b,literal,0x004d22d0,wide 'XBoxAudio: subsy',data,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe6c,call,0x00057440,FUN_00057440,call,
+edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe7f,ret,0x00000000,cdecl,width,
+body,0x0002dff0,FUN_0002dff0,531,,seed: calls _XWaveFileCreateMediaObject@12,,,,,,callers=0 refs=1 stdcall 16 args bytes XBoxAudioSubsystem +0xd0 (slot 52 of 55)
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002dff5,literal,0x003f4904,bytes b8 60 90 57 00 e9 90 0c,data,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e01c,literal,0x004d1d94,wide 'SetNextStream: h',data,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e027,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e03e,literal,0x004c85ac,bytes 00 00 00 00 a0 8f 01 00,data,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e044,call,0x00036d00,__wcsicmp,call,(other named)
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e088,call,0x00055ed0,FUN_00055ed0,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e097,call,0x0001a920,Core_UnTemplate,call,Core
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0b1,ret,0x00000010,stdcall 16 args bytes,width,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0db,literal,0x004d1d30,wide 'New Pending File',data,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0e1,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0f9,call,0x0007e160,FUN_0007e160,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e107,jmp,0x0002e134,FUN_0002dff0+0x144,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e119,call,0x0007e160,FUN_0007e160,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e12d,call,0x003e54c0,__chkstk,call,(other named)
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e140,jmp,0x0002e149,FUN_0002dff0+0x159,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e15c,call,0x0007e160,FUN_0007e160,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e164,call,0x0007e120,FUN_0007e120,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e16d,call,0x004a077d,_XWaveFileCreateMediaObject@12,call,(other named)
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e17b,literal,0x004d1cf0,"wide ""Couldn't create """,data,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e181,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1a4,call,0x0001b310,FUN_0001b310,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1a9,jmp,0x0002e09c,FUN_0002dff0+0xac,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1c2,vcall,0x00000020, +0x20 of [ecx],vcall,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1f4,call,0x0001b310,FUN_0001b310,call,
+edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1fe,jmp,0x0002e09e,FUN_0002dff0+0xae,call,
+body,0x0002a2f0,FUN_0002a2f0,104,,seed: calls _XVoiceCreateMediaObjectEx@28,,,,,,callers=1 refs=0 stdcall 4 args bytes
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a2fe,literal,0x0002a2d0,bytes 8b 44 24 04 8b 50 04 8b,data,
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a30a,literal,0x004bdd74,bytes 00 00 00 00 00 00 00 00,data,
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a312,call,0x004c689a,_XVoiceCreateMediaObjectEx@28,call,(other named)
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a321,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a32e,literal,0x0002a2b0,bytes 8b 44 24 04 8b 50 04 8b,data,
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a33a,literal,0x004bdd68,bytes 00 00 00 00 00 00 00 00,data,
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a33f,call,0x004c689a,_XVoiceCreateMediaObjectEx@28,call,(other named)
+edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a355,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002a9b0,FUN_0002a9b0,80,,callee of 0x0002ae00,,,,,,callers=1 refs=0 stdcall 12 args bytes
+edge,0x0002a9b0,FUN_0002a9b0,80,,,0x0002a9fd,ret,0x0000000c,stdcall 12 args bytes,width,
+body,0x0002db10,FUN_0002db10,198,,caller of 0x0002d3f0,,,,,,callers=3 refs=0 
+edge,0x0002db10,FUN_0002db10,198,,,0x0002db28,jmp,0x0002db30,FUN_0002db10+0x20,call,
+edge,0x0002db10,FUN_0002db10,198,,,0x0002db3e,call,0x0002d3f0,FUN_0002d3f0,call,
+edge,0x0002db10,FUN_0002db10,198,,,0x0002db66,literal,0x004d1c54,wide 'Sound Data Freed',data,
+edge,0x0002db10,FUN_0002db10,198,,,0x0002db6c,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002db10,FUN_0002db10,198,,,0x0002db8e,literal,0x004d1c18,wide 'UnRegSoundBytesA',data,
+edge,0x0002db10,FUN_0002db10,198,,,0x0002db94,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002db10,FUN_0002db10,198,,,0x0002dba2,vcall,0x00000004, +0x4 of [edx],vcall,
+body,0x0002fa90,FUN_0002fa90,278,,caller of 0x0002d3f0,,,,,,callers=0 refs=1  XBoxAudioSubsystem +0x80 (slot 32 of 55)
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002faa6,jmp,0x0002fab0,FUN_0002fa90+0x20,call,
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fac9,call,0x0002d3f0,FUN_0002d3f0,call,
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb36,call,0x004a1e1e,FUN_004a1e1e,call,
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb49,call,0x004a1ec1,FUN_004a1ec1,call,
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb4e,call,0x0049f662,FUN_0049f662,call,
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb6b,call,0x00031ce0,Core_UnObjBas,call,Core
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb8c,call,0x0002eee0,XboxAudio_XboxAudioSubsystem,call,XboxAudio
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb95,call,0x00019320,FUN_00019320,call,
+body,0x0002b5c0,FUN_0002b5c0,358,,callee of 0x0002b8c0,,,,,,callers=1 refs=0 cdecl
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b5c6,call,0x0002b500,FUN_0002b500,call,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b5f4,vcall,0x00000004, +0x4 of [ecx],vcall,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b60b,vcall,0x00000004, +0x4 of [ecx],vcall,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b622,vcall,0x00000004, +0x4 of [ecx],vcall,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b631,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b648,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b672,vcall,0x00000004, +0x4 of [edx],vcall,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b689,vcall,0x00000004, +0x4 of [ecx],vcall,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b6a0,vcall,0x00000004, +0x4 of [ecx],vcall,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b6af,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b6c6,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b6e2,call,0x0002a410,FUN_0002a410,call,
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b6f8,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b711,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002b5c0,FUN_0002b5c0,358,,,0x0002b725,ret,0x00000000,cdecl,width,
+body,0x00032040,FUN_00032040,65,,callee of 0x0002fd70,,,,,,callers=1 refs=1 stdcall 4 args bytes
+edge,0x00032040,FUN_00032040,65,,,0x00032054,call,0x00031df0,FUN_00031df0,call,
+edge,0x00032040,FUN_00032040,65,,,0x00032077,call,0x00055ed0,FUN_00055ed0,call,
+edge,0x00032040,FUN_00032040,65,,,0x0003207e,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002e900,FUN_0002e900,691,,callee of 0x0002fd70,,,,,,callers=1 refs=0 cdecl
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e908,literal,0x003f4970,bytes b8 f0 90 57 00 e9 24 0c,data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e96c,ret,0x00000000,cdecl,width,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e978,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e97d,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e98b,literal,0x004d1f60,wide 'PlaySoundAudio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e998,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e9ad,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e9bd,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e9c5,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e9d3,literal,0x004d1f60,wide 'PlaySoundAudio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e9e0,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002e9f2,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea02,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea0a,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea18,literal,0x004d1f4c,wide 'OcclusionPlaySo',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea25,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea37,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea47,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea4f,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea5d,literal,0x004d1f4c,wide 'OcclusionPlaySo',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea6a,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea7c,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea8f,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ea94,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eaa2,literal,0x004d1f3c,wide 'UpdateOcclusio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eaaf,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eac1,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ead1,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ead9,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eae7,literal,0x004d1f28,wide 'StreamingUpdate',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eaf4,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb06,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb16,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb1e,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb2c,literal,0x004d1f18,wide 'RegularStreamin',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb39,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb4b,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb5b,literal,0x004d1f74,wide 'Audio',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb63,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb71,literal,0x004d1efc,wide 'StoppedSoundsRe',data,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb7e,call,0x0001b260,FUN_0001b260,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002eb90,call,0x002530f0,FUN_002530f0,call,
+edge,0x0002e900,FUN_0002e900,691,,,0x0002ebb2,ret,0x00000000,cdecl,width,
+body,0x0002a6f0,FUN_0002a6f0,112,,caller of 0x0002a2f0,,,,,,callers=1 refs=0 stdcall 4 args bytes
+edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a704,call,0x0002a2f0,FUN_0002a2f0,call,
+edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a711,call,0x0002a500,FUN_0002a500,call,
+edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a71e,call,0x0002a480,FUN_0002a480,call,
+edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a741,vcall,0x0000001c, +0x1c of [edi],vcall,
+edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a74d,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a752,call,0x0002a360,FUN_0002a360,call,
+edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a75d,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002ed20,FUN_0002ed20,137,,caller of 0x0002db10,,,,,,callers=3 refs=0 stdcall 4 args bytes
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed3d,literal,0x004d20ec,wide '[RA] : Flushing ',data,
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed43,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed62,call,0x0002d120,FUN_0002d120,call,
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed6c,call,0x0002db10,FUN_0002db10,call,
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed8c,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed94,literal,0x004d20a0,"wide ""Warning: can't f""",data,
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed9a,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002ed20,FUN_0002ed20,137,,,0x0002eda6,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002b500,FUN_0002b500,91,,callee of 0x0002b5c0,,,,,,callers=1 refs=0 
+edge,0x0002b500,FUN_0002b500,91,,,0x0002b517,jmp,0x0002b520,FUN_0002b500+0x20,call,
+edge,0x0002b500,FUN_0002b500,91,,,0x0002b547,call,0x0002b320,FUN_0002b320,call,
+body,0x0002a410,FUN_0002a410,97,,callee of 0x0002b5c0,,,,,,callers=1 refs=0 cdecl
+edge,0x0002a410,FUN_0002a410,97,,,0x0002a420,vcall,0x00000004, +0x4 of [ecx],vcall,
+edge,0x0002a410,FUN_0002a410,97,,,0x0002a430,vcall,0x00000004, +0x4 of [edx],vcall,
+edge,0x0002a410,FUN_0002a410,97,,,0x0002a43e,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002a410,FUN_0002a410,97,,,0x0002a451,call,0x00016ea0,??3@YAXPAX@Z,call,(other named)
+edge,0x0002a410,FUN_0002a410,97,,,0x0002a466,vcall,0x00000004, +0x4 of [ecx],vcall,
+edge,0x0002a410,FUN_0002a410,97,,,0x0002a470,ret,0x00000000,cdecl,width,
+body,0x0002a500,FUN_0002a500,152,,callee of 0x0002a6f0,,,,,,callers=1 refs=0 cdecl
+edge,0x0002a500,FUN_0002a500,152,,,0x0002a517,call,0x0002ac50,FUN_0002ac50,call,
+edge,0x0002a500,FUN_0002a500,152,,,0x0002a576,vcall,0x00000010, +0x10 of [ecx],vcall,
+edge,0x0002a500,FUN_0002a500,152,,,0x0002a58b,ret,0x00000000,cdecl,width,
+edge,0x0002a500,FUN_0002a500,152,,,0x0002a597,ret,0x00000000,cdecl,width,
+body,0x0002a480,FUN_0002a480,115,,callee of 0x0002a6f0,,,,,,callers=1 refs=0 cdecl
+edge,0x0002a480,FUN_0002a480,115,,,0x0002a4d3,vcall,0x00000010, +0x10 of [ecx],vcall,
+edge,0x0002a480,FUN_0002a480,115,,,0x0002a4e7,ret,0x00000000,cdecl,width,
+edge,0x0002a480,FUN_0002a480,115,,,0x0002a4f2,ret,0x00000000,cdecl,width,
+body,0x0002b730,FUN_0002b730,178,,caller of 0x0002a6f0,,,,,,callers=1 refs=0 cdecl
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b743,literal,0x004bdd68,bytes 00 00 00 00 00 00 00 00,data,
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b748,call,0x004bedf2,_XGetDeviceChanges@12,call,(other named)
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b757,literal,0x004bdd74,bytes 00 00 00 00 00 00 00 00,data,
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b75c,call,0x004bedf2,_XGetDeviceChanges@12,call,(other named)
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b7b3,call,0x0002b410,FUN_0002b410,call,
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b7cf,call,0x0002a6f0,FUN_0002a6f0,call,
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b7e1,ret,0x00000000,cdecl,width,
+body,0x0002d120,FUN_0002d120,364,,callee of 0x0002ed20,,,,,,callers=1 refs=0 cdecl
+edge,0x0002d120,FUN_0002d120,364,,,0x0002d28b,ret,0x00000000,cdecl,width,
+body,0x0002edb0,FUN_0002edb0,301,,caller of 0x0002ed20,,,,,,callers=1 refs=0 cdecl
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edc3,call,0x0002ed20,FUN_0002ed20,call,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edd4,ret,0x00000000,cdecl,width,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edd7,call,0x0002d790,FUN_0002d790,call,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002ede2,call,0x003e5ac0,_sprintf,call,(other named)
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edf0,call,0x00062d90,FUN_00062d90,call,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edfc,literal,0x004d2120,wide 'Read %s from har',data,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002ee02,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002ee21,call,0x0033e2cd,_CreateFileA@28,call,(other named)
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002ee48,call,0x0033d924,_CreateEventA@16,call,(other named)
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002ee88,call,0x00055ed0,FUN_00055ed0,call,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002eea2,call,0x0033d6c2,_SetFilePointer@16,call,(other named)
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002eec9,call,0x0033d47b,_ReadFile@20,call,(other named)
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002eedc,ret,0x00000000,cdecl,width,
+body,0x0002b320,FUN_0002b320,230,,callee of 0x0002b500,,,,,,callers=1 refs=0 stdcall 12 args bytes
+edge,0x0002b320,FUN_0002b320,230,,,0x0002b354,call,0x0002aef0,FUN_0002aef0,call,
+edge,0x0002b320,FUN_0002b320,230,,,0x0002b371,call,0x0002b140,FUN_0002b140,call,
+edge,0x0002b320,FUN_0002b320,230,,,0x0002b38a,call,0x0002af50,FUN_0002af50,call,
+edge,0x0002b320,FUN_0002b320,230,,,0x0002b3a7,call,0x0002b230,FUN_0002b230,call,
+edge,0x0002b320,FUN_0002b320,230,,,0x0002b3cb,call,0x0002a770,FUN_0002a770,call,
+edge,0x0002b320,FUN_0002b320,230,,,0x0002b3df,vcall,0x00000018, +0x18 of [edx],vcall,
+edge,0x0002b320,FUN_0002b320,230,,,0x0002b403,ret,0x0000000c,stdcall 12 args bytes,width,
+body,0x0002ac50,FUN_0002ac50,67,,callee of 0x0002a500,,,,,,callers=1 refs=0 stdcall 16 args bytes
+edge,0x0002ac50,FUN_0002ac50,67,,,0x0002ac90,ret,0x00000010,stdcall 16 args bytes,width,
+body,0x0002b410,FUN_0002b410,229,,callee of 0x0002b730,,,,,,callers=2 refs=0 stdcall 4 args bytes
+edge,0x0002b410,FUN_0002b410,229,,,0x0002b434,call,0x0002a360,FUN_0002a360,call,
+edge,0x0002b410,FUN_0002b410,229,,,0x0002b440,vcall,0x0000001c, +0x1c of [esi],vcall,
+edge,0x0002b410,FUN_0002b410,229,,,0x0002b455,vcall,0x00000018, +0x18 of [ecx],vcall,
+edge,0x0002b410,FUN_0002b410,229,,,0x0002b49a,call,0x0002b140,FUN_0002b140,call,
+edge,0x0002b410,FUN_0002b410,229,,,0x0002b4da,call,0x0002b230,FUN_0002b230,call,
+edge,0x0002b410,FUN_0002b410,229,,,0x0002b4f2,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002fbb0,FUN_0002fbb0,203,,caller of 0x0002edb0,,,,,,callers=1 refs=0 cdecl
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fbbe,call,0x0002edb0,FUN_0002edb0,call,
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fbe0,call,0x0033e4c5,_GetOverlappedResult@16,call,(other named)
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fc13,call,0x0033d437,_CloseHandle@4,call,(other named)
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fc29,call,0x0033d437,_CloseHandle@4,call,(other named)
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fc5b,call,0x0002eee0,XboxAudio_XboxAudioSubsystem,call,XboxAudio
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fc67,call,0x0002dbe0,Core_UnTemplate,call,Core
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fc72,call,0x0001afc0,Core_UnTemplate,call,Core
+edge,0x0002fbb0,FUN_0002fbb0,203,,,0x0002fc7a,ret,0x00000000,cdecl,width,
+body,0x0002b140,FUN_0002b140,228,,callee of 0x0002b320,,,,,,callers=2 refs=0 stdcall 16 args bytes
+edge,0x0002b140,FUN_0002b140,228,,,0x0002b18b,jmp,0x0002b1cd,FUN_0002b140+0x8d,call,
+edge,0x0002b140,FUN_0002b140,228,,,0x0002b1e9,call,0x0002af50,FUN_0002af50,call,
+edge,0x0002b140,FUN_0002b140,228,,,0x0002b207,call,0x0002a770,FUN_0002a770,call,
+edge,0x0002b140,FUN_0002b140,228,,,0x0002b215,call,0x0002a7c0,FUN_0002a7c0,call,
+edge,0x0002b140,FUN_0002b140,228,,,0x0002b221,ret,0x00000010,stdcall 16 args bytes,width,
+body,0x0002af50,FUN_0002af50,89,,callee of 0x0002b320,,,,,,callers=3 refs=0 stdcall 16 args bytes
+edge,0x0002af50,FUN_0002af50,89,,,0x0002af9b,ret,0x00000010,stdcall 16 args bytes,width,
+edge,0x0002af50,FUN_0002af50,89,,,0x0002afa6,ret,0x00000010,stdcall 16 args bytes,width,
+body,0x0002b230,FUN_0002b230,228,,callee of 0x0002b320,,,,,,callers=2 refs=0 stdcall 16 args bytes
+edge,0x0002b230,FUN_0002b230,228,,,0x0002b27b,jmp,0x0002b2bd,FUN_0002b230+0x8d,call,
+edge,0x0002b230,FUN_0002b230,228,,,0x0002b2d9,call,0x0002aef0,FUN_0002aef0,call,
+edge,0x0002b230,FUN_0002b230,228,,,0x0002b2f7,call,0x0002a770,FUN_0002a770,call,
+edge,0x0002b230,FUN_0002b230,228,,,0x0002b305,call,0x0002a7c0,FUN_0002a7c0,call,
+edge,0x0002b230,FUN_0002b230,228,,,0x0002b311,ret,0x00000010,stdcall 16 args bytes,width,
+body,0x0002a770,FUN_0002a770,72,,callee of 0x0002b320,,,,,,callers=8 refs=0 stdcall 12 args bytes
+edge,0x0002a770,FUN_0002a770,72,,,0x0002a7b5,ret,0x0000000c,stdcall 12 args bytes,width,
+body,0x0002a7c0,FUN_0002a7c0,165,,callee of 0x0002b140,,,,,,callers=6 refs=0 stdcall 12 args bytes
+edge,0x0002a7c0,FUN_0002a7c0,165,,,0x0002a857,call,0x004a0530,thunk_FUN_004a0416,call,
+edge,0x0002a7c0,FUN_0002a7c0,165,,,0x0002a862,ret,0x0000000c,stdcall 12 args bytes,width,
+stop,0x00019320,FUN_00019320,60,,"callee of 0x0002fa90, 62 callers outside the chain",,,,,,
+stop,0x0001b260,FUN_0001b260,84,,"callee of 0x0002e900, 142 callers outside the chain",,,,,,
+stop,0x0001b310,FUN_0001b310,79,,"callee of 0x0002dff0, 441 callers outside the chain",,,,,,
+stop,0x0002a360,FUN_0002a360,47,,"callee of 0x0002a6f0, 1 callers outside the chain",,,,,,
+stop,0x0002aef0,FUN_0002aef0,89,,"callee of 0x0002b320, 1 callers outside the chain",,,,,,
+stop,0x0002c800,FUN_0002c800,112,,"callee of 0x0002fd70, 85 callers outside the chain",,,,,,
+stop,0x0002cfd0,FUN_0002cfd0,234,,"callee of 0x0002fd70, 1 callers outside the chain",,,,,,
+stop,0x0002d790,FUN_0002d790,253,,"callee of 0x0002edb0, 1 callers outside the chain",,,,,,
+stop,0x00031df0,FUN_00031df0,8,,"callee of 0x00032040, 1 callers outside the chain",,,,,,
+stop,0x00055ed0,FUN_00055ed0,37,,"callee of 0x0002fd70, 1078 callers outside the chain",,,,,,
+stop,0x00057440,FUN_00057440,135,,"callee of 0x0002fd70, 265 callers outside the chain",,,,,,
+stop,0x000574d0,FUN_000574d0,112,,"callee of 0x0002d3f0, 424 callers outside the chain",,,,,,
+stop,0x00062d90,FUN_00062d90,144,,"callee of 0x0002edb0, 58 callers outside the chain",,,,,,
+stop,0x0007e120,FUN_0007e120,49,,"callee of 0x0002dff0, 21 callers outside the chain",,,,,,
+stop,0x0007e160,FUN_0007e160,25,,"callee of 0x0002dff0, 21 callers outside the chain",,,,,,
+stop,0x002530f0,FUN_002530f0,893,,"callee of 0x0002e900, 3 callers outside the chain",,,,,,
+slot31,0x00034f40,Core_UExporter,189,Core,.text,0x00034feb,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000360b0,Core_UFactory,1614,Core,.text,0x000365d2,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00072b70,Core_UnObj,1519,Core,.text,0x000730f6,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00078680,FUN_00078680,30,,.text,0x00078697,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0007d670,FUN_0007d670,112,,.text,0x0007d689,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0008b420,FUN_0008b420,1159,,.text,0x0008b87f,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0008bd5c,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0008c97d,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000a9840,Engine_KSkeletal,2659,Engine,.text,0x000aa05e,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000c2670,Engine_UnActCol,930,Engine,.text,0x000c2831,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000c2d06,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000c32c2,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000c62a0,FUN_000c62a0,1267,,.text,0x000c6315,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000c62a0,FUN_000c62a0,1267,,.text,0x000c6326,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000d41e0,FUN_000d41e0,505,,.text,0x000d431c,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000dbef0,FUN_000dbef0,171,,.text,0x000dbf79,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000dbfd7,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000e1aa2,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1ac0,Engine_UnAudio,50,Engine,.text,0x000e1ac5,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1b00,Engine_UnAudio,60,Engine,.text,0x000e1b05,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1b40,Engine_UnAudio,50,Engine,.text,0x000e1b45,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1b80,Engine_UnAudio,50,Engine,.text,0x000e1b85,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1bc0,FUN_000e1bc0,31,,.text,0x000e1bc5,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1be0,FUN_000e1be0,31,,.text,0x000e1be5,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1c00,Engine_UnAudio,50,Engine,.text,0x000e1c05,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1c40,Engine_UnAudio,50,Engine,.text,0x000e1c45,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1c80,FUN_000e1c80,50,,.text,0x000e1c85,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1cc0,FUN_000e1cc0,35,,.text,0x000e1cc5,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1cf0,FUN_000e1cf0,35,,.text,0x000e1cf5,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1d20,FUN_000e1d20,31,,.text,0x000e1d25,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e1d50,FUN_000e1d50,29,,.text,0x000e1d55,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000e1e8e,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000e2df6,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x000e6800,FUN_000e6800,75,,.text,0x000e680c,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000ea99a,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x000eaa3d,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00109b40,Engine_UnChan,519,Engine,.text,0x00109bb3,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00109fa0,Engine_UnChan,831,Engine,.text,0x0010a2a9,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0010e010,Engine_UnConn,302,Engine,.text,0x0010e134,call [edi+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0010e330,Engine_UnConn,362,Engine,.text,0x0010e356,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0010e4a0,Core_UnClass,1920,Core,.text,0x0010eae2,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00116290,execMoveToward,3015,(dispatch: declared),.text,0x00116a62,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00121350,FUN_00121350,316,,.text,0x001213c4,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0012a753,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0013243b,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0013244b,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00133250,FUN_00133250,4429,,.text,0x0013352e,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00133250,FUN_00133250,4429,,.text,0x0013389e,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00133250,FUN_00133250,4429,,.text,0x00133a31,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00136e60,Engine_UnGame,2410,Engine,.text,0x001375b5,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00139030,Engine_UnGame,3348,Engine,.text,0x00139174,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00139030,Engine_UnGame,3348,Engine,.text,0x00139b3c,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x0013bffb,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x0013c59f,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x0013c8f0,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x001466f8,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00150180,FUN_00150180,410,,.text,0x00150240,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00156ee0,Engine_UnLevAct,5582,Engine,.text,0x001583ce,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001584d0,Engine_UnLevAct,2428,Engine,.text,0x00158720,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001584d0,Engine_UnLevAct,2428,Engine,.text,0x00158da3,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0015a913,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0015df40,Engine_UnLevel,245,Engine,.text,0x0015dfa5,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00160190,Engine_UnLevel,5692,Engine,.text,0x00160b82,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00160190,Engine_UnLevel,5692,Engine,.text,0x00160d1c,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00160190,Engine_UnLevel,5692,Engine,.text,0x00161263,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00165c30,Engine_UnLevTic,3648,Engine,.text,0x00166267,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00173360,FUN_00173360,31,,.text,0x0017336c,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00182c80,FUN_00182c80,79,,.text,0x00182cb3,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00184270,FUN_00184270,1614,,.text,0x001843b6,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001848e0,FUN_001848e0,735,,.text,0x00184a32,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00184bd0,FUN_00184bd0,605,,.text,0x00184c10,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00187cc0,FUN_00187cc0,16,,.text,0x00187cc5,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00188150,FUN_00188150,183,,.text,0x0018816e,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0018f3ef,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001a7660,FUN_001a7660,511,,.text,0x001a7799,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001daed0,Engine_UnRender,4081,Engine,.text,0x001dafa8,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001daed0,Engine_UnRender,4081,Engine,.text,0x001db1f8,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001df140,FUN_001df140,520,,.text,0x001df27c,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x001ee690,Core_UnTemplate,10114,Core,.text,0x001f001e,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x001ee690,Core_UnTemplate,10114,Core,.text,0x001f029f,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x001ee690,Core_UnTemplate,10114,Core,.text,0x001f0331,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x00000000,,0,,.text,0x0020e9f2,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0020fa10,FUN_0020fa10,512,,.text,0x0020fbba,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x002165a8,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x0021665f,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00231a10,Core_UnObjBas,21654,Core,.text,0x00232be1,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,"also dispatches +0x88,+0xc8"
+slot31,0x00231a10,Core_UnObjBas,21654,Core,.text,0x00233690,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,"also dispatches +0x88,+0xc8"
+slot31,0x0023dbe0,Engine_UnSkeletalMeshCollision,1825,Engine,.text,0x0023dcbd,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0023dbe0,Engine_UnSkeletalMeshCollision,1825,Engine,.text,0x0023df80,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00244c20,FUN_00244c20,31,,.text,0x00244c2c,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002459e0,FUN_002459e0,31,,.text,0x002459ec,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x002520b1,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002836a0,FUN_002836a0,112,,.text,0x002836fd,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002cf1b0,FUN_002cf1b0,217,,.text,0x002cf1f4,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002cf970,FUN_002cf970,349,,.text,0x002cfa2e,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002cfc20,FUN_002cfc20,1163,,.text,0x002cfc91,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x002eca56,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002ecfb0,FUN_002ecfb0,545,,.text,0x002ed14b,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002ecfb0,FUN_002ecfb0,545,,.text,0x002ed1a7,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002ecfb0,FUN_002ecfb0,545,,.text,0x002ed1c5,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x002f2d55,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002f6020,FUN_002f6020,40,,.text,0x002f6033,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002f6050,FUN_002f6050,65,,.text,0x002f6061,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002f60c0,FUN_002f60c0,71,,.text,0x002f60d1,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002f7360,FUN_002f7360,232,,.text,0x002f73de,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x002f7cc1,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x002f98c0,FUN_002f98c0,81,,.text,0x002f98ef,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00000000,,0,,.text,0x002fded0,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x003077c0,FUN_003077c0,222,,.text,0x0030787b,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00308cc0,Gui_UnUIXInteraction,701,Gui,.text,0x00308f53,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00317b40,FUN_00317b40,92,,.text,0x00317b66,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00317b40,FUN_00317b40,92,,.text,0x00317b93,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x003197a0,FUN_003197a0,79,,.text,0x003197d3,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x003197a0,FUN_003197a0,79,,.text,0x003197dd,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x0032d6c0,XboxDrv_XboxViewport,207,XboxDrv,.text,0x0032d715,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+census,,chain,6741,,,,,,api=26 bodies=31 edges=240 library_edges=12 stops=16 slot31_sites=115 slot31_in_module=0 slot31_multi=17 closed,,
