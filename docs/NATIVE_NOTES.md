@@ -1430,6 +1430,37 @@ words `0x00100b80` / `0x00300b80` inside constant records. Three emitters, three
 layout beyond `0x41808` is unread; and the meaning of the `0x40001810` bits in the batch word is not established — it is
 measured as a constant the driver adds, not decoded as flags.
 
+## The assembler names itself, and `x` is its own prefix (2026-11-19)
+
+The shader programs live in `.rdata`, but one `xvs.1.1` occurrence sits in the **`XGRPH`** section (`0x47dc00`–`0x49f348`,
+137,032 bytes) — and that section holds the assembler's own strings rather than game data:
+
+| address | string |
+|---|---|
+| `0x0049c410` | `#pragma fragment` |
+| `0x0049c424` | `xvsw.1.1` + `#pragma screenspace` |
+| `0x0049c444` | `xvss.1.1` |
+| `0x0049c450` | `xvs.1.1` + `#pragma screenspace` |
+| `0x0049c470` | `// instructions: %d` |
+| `0x0049c4b0` | **`// Xbox Shader Assembler %s`** |
+
+Three readings:
+
+1. **The tool is the *Xbox* Shader Assembler**, and it composes shader text with `x`-prefixed version lines. That settles
+   what the prefix is: not a stray byte in the game's data, but the toolchain's own form for the Xbox dialect — the same
+   dialect whose opcodes (`xfc`, `xmma_x2`) appear only under `x`-prefixed programs, which is why the two earlier
+   findings line up.
+2. **Two variants exist that no shipped program uses.** `xvsw.1.1` and `xvss.1.1` appear beside `xvs.1.1`; the 60
+   programs use `xvs.1.1` three times and neither of the others. So the tool's version space is larger than the game's
+   usage, and "the 60 programs" remains a statement about the game, not about the assembler.
+3. **The pragmas are part of the emitted text.** `#pragma screenspace` travels with `xvsw` and `xvs` but not `xvss`, and
+   `#pragma fragment` appears separately, so a shader's identity here is a version line plus pragmas — which is what the
+   yacc grammar parses and what a rebuild would have to accept.
+
+**Limit.** These strings are read as the assembler's own vocabulary from their content and neighbours; which function
+formats them (`CD3DXAssembler::Production` is the obvious candidate at 3,262 bytes, but no body was read here) is not
+established. The meanings of the `w` and `s` suffixes in `xvsw`/`xvss` are unknown.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
