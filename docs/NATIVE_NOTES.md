@@ -122,6 +122,56 @@ Every one of the 43 functions calls `FUN_00058a30`, and 40 call `FUN_000340c0`/`
 the 523 index-less declarations in U1 — so none of them is bound through a dispatch index. Their bodies are in
 these modules or the engine, bound outside the dispatch table, which is the thread PLAN 4.7 picks up.
 
+## The library code, by C++ class (2026-11-19)
+
+The masked-body and call-edge passes named 2,855 bodies in the seven library sections, and nearly all of
+them are MSVC-mangled members, so the name carries the class. `tools/native-code-classes.py`
+(`make native-code-classes`, `inventory/native_code_classes.csv`) collects them: **205 groups, 3,971
+methods**, 196 groups with library evidence and 9 that carry only an assert-pass name.
+
+| namespace | class | methods | bytes | library |
+|---|---|---:|---:|---|
+| - | (C functions) | 1,291 | 275,088 | thirteen |
+| - | `CXo` | 377 | 91,019 | xonline |
+| - | `CXnIp` | 144 | 41,060 | xnet/xonline |
+| - | `D3DX` | 143 | 40,941 | d3dx8 |
+| - | `XGRAPHICS` | 98 | 23,932 | xgraphics |
+| - | `CXnSock` | 90 | 18,881 | xnet/xonline |
+| - | `D3D` | 82 | 18,216 | d3d8 |
+| D3D | `CMiniport` | 52 | 11,855 | d3d8 |
+| XGRAPHICS | `PreProcessor` | 49 | 9,847 | xgraphics |
+| XGRAPHICS::VS_GRAPH_OPTIMIZER | `Instruction` | 49 | 9,661 | xgraphics |
+| UIXNamespace | `CLiveEngine` | 42 | 3,315 | uix |
+| - | `CXnNic` | 17 | 3,049 | xnet |
+| - | `CXnEnet` | 16 | 2,474 | xnet/xonline |
+| - | `CXnBase` | 15 | 1,717 | xnet |
+| UIXNamespace | `CSkinFile` | 14 | 1,903 | uix |
+| UIXNamespace | `CScreen` | 8 | 432 | uix |
+
+Six readings the census supports:
+
+1. **The networking stack is layered the way the SDK names it.** `CXnBase` (15 methods) is the base
+   object; `CXnIp` (144), `CXnSock` (90), `CXnNic` (17) and `CXnEnet` (16) are the IP, socket, NIC and
+   Ethernet layers above it — 282 methods of Kerberos-era Xbox Live plumbing, all from `xnet`/`xonline`.
+2. **`CXo` is XOnline's object layer**, 377 methods and 91 KB, the single largest C++ class here. Its
+   method names (`Cxo...`, property and enumeration helpers) are the COM-shaped surface the Live
+   services are exposed through.
+3. **The UIX front-end is small and self-contained**: `CLiveEngine` (42 methods, 3.3 KB), `CSkinFile`
+   (14) and `CScreen` (8) in `uix` — a dashboard-style renderer, not a game UI framework.
+4. **The graphics side carries its toolchain.** `PreProcessor` (49) and `VS_GRAPH_OPTIMIZER::Instruction`
+   (49) in `xgraphics` are the shader assembler's lexer and instruction table; `D3DX` (143) is the
+   helper library, `CMiniport` (52) the D3D miniport interface.
+5. **The C functions are the biggest group and the least informative**: 1,291 functions, 275 KB, spread
+   across thirteen libraries — CRT, XAPI entry points and each DLL's flat C API. They are named, and
+   they are not one system.
+6. **What the census does not say.** A class census is an index of *names*, not behaviour: `CXnIp` has
+   144 methods and this table tells nobody what any of them do. PLAN 4.9's per-subsystem reading is
+   still the work; this is what tells a reader which subsystem to read first.
+
+The nine name-only groups (`?$set`, `?$basic_string`, `CIrql`, `PixelShaderVerifier`,
+`VCWaveFileMediaObject`, and four more) come from the assert pass and carry no library attribution —
+recorded as `evidence=name only` rather than guessed into a library.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented

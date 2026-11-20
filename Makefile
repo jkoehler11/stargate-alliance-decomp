@@ -628,6 +628,10 @@ xdk-lib-names:
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
 	@echo "wrote inventory/xdk_lib_names.csv and the names it earned"
 
+# Group the named library code by C++ class, from the mangled names (PLAN 4.9)
+native-code-classes:
+	@$(PYTHON) tools/native-code-classes.py -o inventory/native_code_classes.csv
+
 # Name what the masked-body pass cannot reach: a matched function's calls name their targets
 # (PLAN 4.2). --apply folds the names into the override file and the function map.
 xdk-call-names:
