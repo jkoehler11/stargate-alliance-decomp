@@ -14987,3 +14987,45 @@ sequence.
   regenerates byte-identically; both new artifacts regenerate from committed inputs.
 - **Not in this PR.** The 78 untyped sites: which of the 31 field reads is `Engine.Audio` needs the field's byte
   offset, which is a guest read; and the 21 audio-chain bodies that stay `FUN_*` are the naming thread.
+
+### Execution notes (2026-11-20, the audio subsystem's runtime half, and the field the engine writes)
+
+- **Task.** The prose the init bundle left, plus the two questions it named as its remainder: what the
+  subsystem does per frame, and what the device body's own callees do. Both turned out to be one shape --
+  a body whose work is gated by fields of the object it was handed.
+- **The dispatcher has a name now.** `Engine_UnEngine_InitAudio` (`0x00121350`, 316 B) reads
+  `ini:Engine.Engine.AudioDevice`, resolves it to `XboxAudio.XboxAudioSubsystem` through `Default.ini`
+  (a name the image itself does not hold), builds it, stores it at **`Engine.Audio` = `+0x34`** and
+  dispatches slot 31 (`+0x7c`) on the new object; the voice subsystem follows at `+0x3c` with slot 32.
+  The two callers read `+0x34` back for slot 32. **None of the 115 `call [reg+0x7c]` sites loads its
+  receiver from `+0x34`**, so U34's "which field-origin site is the engine's audio pointer" is answered
+  negative without a guest pass, and the 31 untyped sites are not this field at all.
+- **`inventory/audio_engine_init.csv` gets its target.** The index flagged the artifact as one no recipe
+  produces; `make audio-engine-init` now runs it, and it regenerates byte-identically.
+- **The pump is the output path, and it is three gates wide.** Slot 34 (`0x0002feb0`, 5,277 B, 1,466
+  insns, 46 direct calls -- 14 into the SDK's import band -- 10 indirect, three literals `SF_Streaming`,
+  `---Stream Swap Notify---`, `Streaming`): `+0x98` null skips the body, `+0x16c` gates a 262-byte
+  overlapped read completion over a 260-byte `_CreateFileA`/`_SetFilePointer` opener, `+0x160` gates the
+  streaming completion (`0x0002fbb0`) over `0x0002edb0` (`_ReadFile@20`, literal `Read %s from hard disk`).
+  It opens a cycle counter first: `rdtsc`, `[0x007b5dfc + [this+0x18c]*4] -= timestamp`.
+- **Eight counters registered at device creation, and the registration shape is the finding.** The device
+  body's callee `FUN_0002e900` (691 B) pushes the group `Audio` and a name, eight times, into `0x2530f0` on
+  the engine's counter block `0x7b5dd8`: `PlaySound` twice, `Occlusion` twice, `Update`, `Streaming`,
+  `Regular`, `StoppedSounds`, six distinct names over eight fields (`+0x04`..`+0x20`). It runs once --
+  guard flag `0x7b5df4`, cached ids at `0x7b5ec8`/`0x7b5ecc` for the second instance. No string in the body
+  says "stat", so the artifact carries the shape and the page calls it a registration, not a sample.
+- **A literal reader that ignored the pool's NUL joined two names.** `inventory/xboxaudio_chain.csv`
+  quoted `PlaySoundAudio`, `OcclusionPlaySo`, `RegularStreamin` for rows where the module pushes
+  `PlaySound`, `Occlusion`, `Regular`: the wide pool packs `PlaySound\0Audio\0`, so stripping
+  non-printables from a run of units reads across the boundary. `tools/xboxaudio-chain.py` stops at the
+  first NUL unit (self-test on a two-string blob); the artifact regenerated with **18 lines changed, all of
+  them that column**, 31 bodies / 240 edges / 115 sites byte-identical.
+- **Files.** `tools/xboxaudio-runtime.py` (new), `tools/xboxaudio-chain.py` (the literal reader), `Makefile`
+  (`audio-engine-init`, `audio-runtime`), `inventory/audio_runtime.csv` (new),
+  `inventory/xboxaudio_chain.csv` (nine rows' literal column), `docs/systems/AUDIO.md` (three sections and
+  the corrected dispatcher sentence), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; both tools answer `--check` without the dump and write nothing; the new
+  artifact regenerates byte-identically from the dump and from committed inputs.
+- **Not in this PR.** `docs/NATIVE_NOTES.md`'s audio section and U34's own status paragraph still carry the
+  old "the receiver's type is open" wording (the page and this note are corrected); which body increments
+  each of the eight counters is engine stat code, not module code, and is not read.

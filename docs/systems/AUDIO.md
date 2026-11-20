@@ -316,11 +316,11 @@ Three things this settles for the audio work:
    their edges — is `docs/NATIVE_NOTES.md`'s last section and `inventory/xboxaudio_chain.csv`.
 
 What is *not* measured: no method in this stack carries a string (0 of 345), so none is confirmed by its own
-message; and the device virtual has a **slot** but no dispatcher inside its own module — of the 115
-`call [reg+0x7c]` sites, **none** sits in an `XboxAudio` body and 17 dispatch the pump slot too, so the caller
-is engine code and the receiver's type at those 17 is still open (U34). The callers of the three entry points
-themselves are counted: 11 sites, in `inventory/xdk_entry_callers.csv`, and every one of them is either a
-voice mode or a virtual of `XBoxAudioSubsystem`.
+message. The device virtual does have a dispatcher, and it is engine code: `Engine_UnEngine_InitAudio`
+dispatches slot 31 on the object it has just built and stored (below), and **no** `call [reg+0x7c]` site in the
+image loads its receiver from that field. The callers of the three entry points themselves are counted: 11
+sites, in `inventory/xdk_entry_callers.csv`, and every one of them is either a voice mode or a virtual of
+`XBoxAudioSubsystem`.
 
 
 ## The slot's receivers, typed (2026-11-20)
@@ -360,6 +360,96 @@ singletons — but which of those offsets is `Engine.Audio`'s needs the field's 
 stream nor the class text carries one.
 
 
+
+## The engine's own audio init, and the field it fills (2026-11-20)
+
+`XBoxAudioSubsystem` is the run-time class; the body that *creates* it is the engine's.
+`Engine_UnEngine_InitAudio` (`0x00121350`, 316 B, no class table installs it, so it is a plain member
+function reached by `call`) is the whole path from a config key to a live device:
+
+| what | where |
+|---|---|
+| the key | `ini:Engine.Engine.AudioDevice` — UE2 condenses a lookup into one literal, and this one is pushed at `0x00121393` |
+| the class | `Default.ini`'s `[Engine.Engine] AudioDevice` names `XboxAudio.XboxAudioSubsystem`; the image holds **no such string**, so a string search cannot find this path at all |
+| the store | the subsystem is built by `Core_UnObjBas` (`0x001272e0`) and stored at **`+0x34`** of the engine (`0x001213ba`) |
+| the device | immediately after the store, slot 31 (`+0x7c`) is dispatched **on the new object** (`0x001213c4`) -> `XboxAudio_CreateDevice` |
+| the voice subsystem | second `Core_UnObjBas` (`0x00127370`) from `XboxAudio.XHVVoiceSubsystem` at `0x0012144a`, stored at **`+0x3c`**, slot 32 (`+0x80`) dispatched on it |
+| the failure path | `Audio initialization failed.` (twice), the `NOSOUND` literal, `+0x34` cleared, slot 3 (`+0xc`) dispatched |
+
+So the answer to U34's last question is a field offset, and it is read off the body that writes it rather than
+inferred: **`Engine.Audio` is `+0x34`**, the engine's own vtable-typed pointer to a declared
+`AudioSubsystem` whose run-time class is the fork's. `tools/audio-engine-init.py` reads the body structurally
+(objdump instruction boundaries, each literal resolved by the address the code pushes) into
+`inventory/audio_engine_init.csv` (`make audio-engine-init`).
+
+Two controls make that an answer rather than a reading. The body is **not virtual** — no class table in the
+image installs it — so the offset cannot be a vtable slot in disguise. And the two callers
+(`Engine_UnGame` at `0x00139ac5`, the console dispatcher `FUN_00139d50` at `0x0013abfe`) read the same offset
+back off the same object and dispatch **slot 32** on it, which is what makes `+0x34` the subsystem pointer and
+not a coincidence of two adjacent writes.
+
+The negative that closes U34's typing thread: of the **115** `call [reg+0x7c]` sites in the image
+(`inventory/xboxaudio_chain.csv`), **none** loads its receiver from a field at `+0x34`. The device is created
+once, on the object the init has in hand, and never dispatched through the engine's field again — so the 31
+field-origin sites that stayed untyped after the receiver census are not the engine's audio pointer at all,
+and no guest pass is needed to say so.
+
+## What the subsystem does per frame (2026-11-20)
+
+Slot 34 (`+0x88`) of the same table is the per-frame pump `0x0002feb0`: **5,277 bytes, 1,466
+instructions, 46 direct calls** — 14 of them into the DirectSound/XAudio import band
+(`0x0049f000`–`0x004a3000`, 5 resolved by name) — 10 indirect dispatches and three wide literals
+(`SF_Streaming`, `---Stream Swap Notify---`, `Streaming`). Its work is gated by three fields of the object it
+was handed:
+
+| gate | what a null skips |
+|---|---|
+| `+0x98` | the whole body — it is the "is there a device" test |
+| `+0x16c` | `0x0002d9a0`, a 262-byte body that closes an overlapped read (`_GetOverlappedResult@16`, `_CloseHandle@4`) over a file opened by `0x0002d890` (`_CreateFileA@28`, `_SetFilePointer@16`, `_CreateEventA@16`) |
+| `+0x160` | `0x0002fbb0` (203 B), the same completion for the *streaming* path, over `0x0002edb0` (301 B, `_ReadFile@20` and the literal `Read %s from hard disk`) |
+
+It also opens a cycle counter before any of that: `rdtsc`, then `[0x007b5dfc + [this+0x18c]*4] -= timestamp`
+— a per-object slot in an engine-wide array. That array is the other half of a block the device body
+registers when it is created, which is the one thing here that is bookkeeping rather than audio.
+
+## Eight named counters registered at device creation (2026-11-20)
+
+`XboxAudio_CreateDevice` calls `FUN_0002e900` (691 B) near the end of its bring-up. That body is a
+registration block: eight times it pushes a wide literal, builds an `FString` from it, pushes a second wide
+literal, builds a second `FString`, and calls `0x2530f0` on the engine's counter block (`0x7b5dd8`). The first
+literal is the same every time — `Audio` — and the second differs:
+
+| name | return kept at | | name | return kept at |
+|---|---|---|---|---|
+| `PlaySound` | `+0x10` | | `Streaming` | `+0x18` |
+| `PlaySound` | `+0x04` | | `Regular` | `+0x1c` |
+| `Occlusion` | `+0x14` | | `StoppedSounds` | `+0x20` |
+| `Occlusion` | `+0x0c` | | `Update` | `+0x08` |
+
+Eight registrations over **six distinct names** — `PlaySound` and `Occlusion` are registered twice each, at
+two different fields — and the block runs **once** in the process: a global flag (`0x7b5df4`) is tested at the
+top and set at the end, and the second-instance path copies the cached ids out of a global array
+(`0x7b5ec8`, count `0x7b5ecc`) instead of registering again. The shape is a named-counter registration — a
+group, a name, and a per-instance handle — and the counter array the pump's `rdtsc` bookkeeping indexes is
+the one those handles index into. **No string in the body says "stat"**, so this page states the shape and
+the evidence (group, names, store offsets, the guard flag) rather than a class name, and names the reading a
+registration rather than a sample.
+
+The nine names together are the audio module's own instrumentation, and they read as the output path's
+outline: what is played, what is occluded, what is streamed, what is regular streaming, what was stopped, and
+the per-frame update that drives all of it. `tools/xboxaudio-runtime.py` reads all of it into
+`inventory/audio_runtime.csv` (`make audio-runtime`), which also carries a correction worth knowing when
+reading the older artifact beside it.
+
+**The wide string pool packs its names back to back, and a reader that ignores the NUL joins two of them.**
+`inventory/xboxaudio_chain.csv`'s literal column read `PlaySoundAudio`, `OcclusionPlaySo`, `RegularStreamin`
+… for six of the nine rows above; the pool holds `PlaySound\0Audio\0`, so those are two names, not one, and
+the module pushes `PlaySound`. `tools/xboxaudio-chain.py` now stops the literal at the first NUL unit (with a
+self-test on a two-string blob), and the artifact regenerated with **18 lines changed, all of them that
+column** — the 31 bodies, 240 edges and 115 sites are byte-identical, which is what makes the fix a reader
+fix rather than a re-measurement.
+
+## What this means for a rebuild
 
 1. **Speech and music are safe to rebuild** — loose WAVs plus script-only classes (except `IMusic*`'s 3
    natives).

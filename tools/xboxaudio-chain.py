@@ -234,6 +234,25 @@ def disasm(xbe, va, size):
     return insns
 
 
+def _wide_name(raw):
+    """The wide literal at the start of `raw`, stopping at the first NUL unit.
+
+    The image's wide pool packs its strings back to back (`PlaySound\0Audio\0`), so stripping
+    non-printables from a run of units joins two names into one -- this column read
+    `PlaySoundAudio` for a body that pushes `PlaySound`, and the two names are separate entries.
+    """
+    units = []
+    for i in range(0, len(raw) - 1, 2):
+        unit = raw[i] | (raw[i + 1] << 8)
+        if unit == 0:
+            break
+        if not 31 < unit < 127:
+            return ""
+        units.append(chr(unit))
+    text = "".join(units)
+    return text if len(text) >= 4 else ""
+
+
 def describe_literal(xbe, va):
     """What a pushed value is, when it lands in a data section."""
     if not any(s.contains(va) for s in xbe.sections):
@@ -243,9 +262,8 @@ def describe_literal(xbe, va):
     except (KeyError, IndexError):
         return ""
     if len(raw) >= 8:
-        wide = raw.decode("utf-16-le", "ignore")
-        wide = "".join(ch for ch in wide if 32 <= ord(ch) < 127)
-        if len(wide) >= 4:
+        wide = _wide_name(raw)
+        if wide:
             return "wide %r" % wide
     printable = "".join(chr(b) for b in raw if 32 <= b < 127)
     if len(printable) >= 4 and 32 <= raw[0] < 127:
@@ -622,6 +640,7 @@ def apply_overrides(overrides, symbols):
 
 
 def selftest():
+    """The literal reader stops at the pool's NUL: two adjacent strings are two names."""
     vr = helpers()[1]
     blob = bytes.fromhex("558bec83ec10e8f5ffffff")     # push ebp; mov ebp,esp; sub esp,0x10; call
     assert _chain(blob, 9, vr) is True
@@ -632,7 +651,12 @@ def selftest():
     assert not AUDIO_API.match("FUN_0002ae00")
     assert not AUDIO_API.match("_CreateThread@24")
     assert FUN.match("FUN_0002ae00") and not FUN.match("XboxAudio_CreateDevice")
-    print("selftest ok: chain boundary test, audio API matcher, unnamed-body matcher")
+    pool = "PlaySound".encode("utf-16-le") + b"\x00\x00" + "Audio".encode("utf-16-le") + b"\x00\x00"
+    assert _wide_name(pool) == "PlaySound", _wide_name(pool)
+    assert _wide_name(pool[20:]) == "Audio"
+    assert _wide_name(b"\x00" * 8) == ""
+    print("selftest ok: chain boundary test, audio API matcher, unnamed-body matcher, "
+          "pool-NUL literal reader")
 
 
 def main():
