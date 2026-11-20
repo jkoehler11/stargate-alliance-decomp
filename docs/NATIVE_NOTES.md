@@ -448,9 +448,9 @@ is the busiest at 17 sites), with 89 sites inside `.text` functions that have no
 is **linked and internally live, with the title's own entry point not yet identified** — this reading does not
 show game or engine code opening a UIX screen, and it does not show that none does.
 
-**What this is not.** No strings in any of these four artifacts (release build), no decompiled bodies, and the
-plug-in seam (`CUIPlugin`) is named but not read — who registers a plug-in, and whether the title registers one,
-is the next question this subsystem raises.
+**What this is not.** No strings in any of these four artifacts (release build) and no decompiled bodies. The
+plug-in seam was the open question this section raised; the reading below answers it — UIX is reached through one
+native, `UIXInteraction.InitUIX`, and no shipped script calls it.
 
 ## The audio stack: `DirectSound`, the MCPX, and Xbox Live voice (2026-11-19)
 
@@ -589,6 +589,46 @@ arithmetic in user code and the APU receives parameters, not geometry.
 - **The media decoders are next, not here.** `CWaveFile` (11), `CQueueXMO` (18) and `XHawkMediaObject` (13)
   — RIFF/AIFF parsing, the XMO timestamp queue and the USB media object — read 42 more methods; they were
   measured with the same tool and left out of this bundle.
+
+## The UIX entry point: a native that nothing calls (2026-11-19)
+
+The UIX reading ended with a question — who opens a Live screen — and the answer is a chain with exactly
+one link at each step:
+
+    UUIXInteraction_InitUIX   0x00307cd0   652 B   the script-callable native
+      -> _UIXCreateLiveEngine@12   0x003319fc       C-linkage entry, 1 call site in the image
+        -> CLiveEngine::CreateEngine  0x003315d4    1 call site, the one above
+
+`UUIXInteraction_InitUIX` is the body for a `native` function, and the script tree says which: `GUI` declares
+**`UIXInteraction`** (`native`, `Transient|NoExport`, super `Engine.AbstractUIXInteraction`) with `InitUIX` as
+`Native; Public` (`inventory/class_table_*.csv`, `inventory/function_flags.csv`). So the dashboard is reachable
+from UnrealScript by exactly one door, and the door is named.
+
+**No shipped script goes through it.** A UE2 package that calls a function from another package imports the
+function's *name*, so the name table answers "who calls this" without disassembling a byte:
+
+| token | packages whose name table holds it |
+|---|---|
+| `InitUIX` | 2 — `Engine.u`, `GUI.u` (the two that declare it) |
+| `UIXInteraction` | 4 — those two plus **`StargateGame.u`, `StargateMenus.u`** |
+| `ConsoleCommand` (control) | 11 |
+| `ClientMessage` (control) | 4 |
+
+The controls are what make the shape meaningful: a widely used native appears in eleven packages and a
+moderately used one in four, so a token found in only its two declaring packages is not being called from
+outside. The game's own packages name the *class* but never the *method* — and there is no game subclass of
+`UIXInteraction` in `inventory/classes.csv`, only the two SDK rows.
+
+**So the dashboard is present, internally live, and never opened in this build.** For Phase 6 that is a
+simplification rather than a task: a rebuild can stub the UIX classes, because nothing in the shipped script
+reaches them. It also explains the usage scan that found 408 call sites all inside UIX's own code — the
+subsystem is self-consistent and unreferenced from above.
+
+**What this does not prove.** A call from inside `GUI.u` itself needs no import and would leave no trace in
+another package's name table; this check cannot rule that out. A native called through the `GNatives` index
+rather than by name is a different case — but for a native declared in *another* package the compiler must
+still import it, which is what makes the absence meaningful here. The bytecode of `GUI.u`'s own classes is the
+place to close the gap, and `tools/uscript-dis.py --resolve` is the tool for it.
 
 ## What this means for Phase 4
 

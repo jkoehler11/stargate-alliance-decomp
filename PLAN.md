@@ -725,7 +725,8 @@ other 38 rows.
       the shader toolchain (339) shows the assembler pipeline and led to 45 shipped programs, all compiled at
       runtime through two now-named dispatchers; and the UIX front-end (286 across 27 classes) is the Live
       dashboard — logon, players, friends, voice mail — linked into `.text` and internally live. What remains is
-      the rest of the library sections, `CUIPlugin`'s registration path, and the game modules' own subsystems.
+      the rest of the library sections and the game modules' own subsystems (`CUIPlugin`'s registration path is
+      answered: the only door is `UIXInteraction.InitUIX`, and no shipped script takes it).
       **The audio stack is read** (2026-11-19,
       `docs/NATIVE_NOTES.md`): 303 methods over 14 classes -- `DirectSound`/`CDirectSound`/
       `CDirectSoundVoice`, `CMcpxAPU`/`CMcpxCore`, `CMcpxVoiceClient`/`CMcpxBuffer`/`CMcpxStream`, the
