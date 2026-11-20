@@ -5569,3 +5569,25 @@ ran on into `0x2b7d50` (a VM state-stack body, `PopState stack underflow`) measu
 stopped at 677. Nothing in the image calls it -- no `E8`, no dword reference at any alignment -- so the name is
 `FUN_002b7aa0`: the literals name the D3D errors it reports, not a caller. The repair is the `add` plus the
 creation row, both printed by `native-census --gap-add 0x002b7aa0 --name FUN_002b7aa0`.
+
+
+## U40. The map's `.text` gaps hold 2,414 decodable bodies, and 383 of them nothing names
+
+**Observed.** `tools/gap-heads.py` (`inventory/gap_heads.csv`) censuses every gap in
+`symbols/xbox_functions.csv`'s coverage of `.text`: 9,987 gaps, 783,490 bytes, 18.5% of the section. A head --
+a pad-before plus an MSVC prologue -- becomes a body when a linear decode closes on a terminator with a tail:
+**2,490 heads, 2,194 bodies, 220 islands**, 378,369 bytes. The controls are in the same artifact: the rule
+finds **0 bodies** in 3.3 MB of data sections, and passes on 8,119 of the map's own 11,784 `.text` rows
+(68.9%), so it is a floor. A dword outside `.text` names **1,441** of them, **777** in a class-table slot over
+224 classes, a `68` push 558, a branch only 47; **383** are named by nothing.
+
+**Why it matters.** U38's `sinh` stub is one member of this population, and its "no `E8`/`E9` and no dword
+names it" is the shape of the 383, not an exception. The map's function count is short by 2,194 bodies in
+`.text` alone (14.4% of 15,241), and 1,441 of them are pointer-reachable, so a debugger cannot break on them
+either.
+
+**What would settle it.** An `add` per body plus its `xbe_overrides.csv` creation row, emitted by the tool
+that measured it (`native-census --emit-creations`'s route), and the downstream cascade: `function_modules`,
+the module split, `docs/NATIVE.md`, `docs/STATUS.md`, the README badge, the index/hashes loop. Two rules have
+to be settled first: the fill-less boundary (515 inner strong openings in 260 runs merge two or more bodies
+into one) and the naming of the 600-body generated stub family at `0x004100c8`.
