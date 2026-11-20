@@ -1306,6 +1306,47 @@ Three readings:
 above — by absolute reference — is the stronger of the two and is the one the four-user claim rests on. Whether the
 28-byte record carries a register index plus four floats is not read here; the step is measured, the layout is not.
 
+### Where the pixel constants go: the same entry points, a mode flag (2026-11-19)
+
+The open question — 26 of 60 programs read a `c#` register, yet nothing named `PixelShaderConstant` is linked — closes in
+three bodies, all read here:
+
+**The 28-byte record, field by field.** `@D3DDevice_SetVertexShaderConstant1Fast@8` (`0x00454300`, 73 bytes) builds:
+
+| offset | value |
+|---|---|
+| `-0x1c` | `0x00041ea4` — command word |
+| `-0x18` | `ecx` — the register index, as passed |
+| `-0x14` | `0x00100b80` — a flag word |
+| `-0x10 … -0x4` | four dwords copied from `[edx]` — the constant, `D3DXVECTOR4` |
+
+**The runtime capture agrees, and it is the check the stack read missed.** The 24 stops taken at `0x004525a0`
+carry the arguments in registers exactly as the body reads them — stop 22 `ecx = 0x0004035c`, `edx = 1`; stop 23
+`ecx = 0x00040300`, `edx = 0x01010101` — so the command word and its payload are visible at the breakpoint once one
+knows to look in `ecx`/`edx` rather than on the stack.
+
+**The out-of-line path checks a mode flag.** `@D3DDevice_SetVertexShaderConstantNotInline@12` (`0x00454430`, 49 bytes)
+opens with `test byte [0x460ef8],0x10`; when the bit is clear it copies the constant into a **shadow array at
+`0x45fe30`**, 16 bytes per register (`shl edi,4; add edi,0x45fe30`), and then always emits through
+`0x00454350`. So the same entry point keeps a CPU-side copy for one mode and not the other.
+
+**The mode switch sets that bit and emits its own record.** `_D3DDevice_SetShaderConstantMode@4` (`0x00454630`, 280
+bytes) loads the device from `[0x460ee8]`, sets or clears **bit `0x200` in `[dev+8]`** according to `test al,0x10`,
+stores the mode at `[dev+0x1928]`, and — when the mode changed — appends a **60-byte** record with the *same* command
+`0x00041ea4`, a length field `0x3c` and a flag word `0x300b80` (one bit different from the fast path's `0x100b80`),
+followed by twelve dwords copied from `0x45ecc0`.
+
+**Conclusion.** Pixel constants are not set by a pixel-specific function: the Xbox constant file is unified and one mode
+flag routes the same emitters, which is why the 26 programs that read `c#` need no `SetPixelShaderConstant` symbol. It
+also settles the earlier band question differently than expected — `0x00041ea4` **is** a second command word, outside
+`0x00040300`–`0x0004037c`, and it is emitted inline by these bodies rather than through `SetRenderState_Simple`. So the
+band scan was right that other command words exist and right that they do not go through that function; what it could
+not see is that they are built by hand in the constant path.
+
+**Limits.** The flag bit `0x10` at `[0x460ef8]` is read as the constant-mode flag from this one test; which mode is
+which (vertex vs pixel) rests on `test al,0x10` in the mode function and the D3D8 mode constants, not on a captured
+runtime value. The shadow array's purpose (restore on mode switch, or a source for re-emission) is not read.
+
 **Limits.** The buffer addresses (`0x460ef0`, `0x460ef4`) are read as a write pointer and a limit from these 39 bytes,
 and the consumer of the buffer was not read here.
 
