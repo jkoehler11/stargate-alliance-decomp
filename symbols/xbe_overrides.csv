@@ -5209,3 +5209,34 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x004a7e7a,??1CMcpxBuffer@DirectSound@@UAE@XZ,masked body equals dsound.lib minus 4 trailing bytes,,,,,,,
 0x002c01e0,ShaderCompileVertex,"calls _XGAssembleShader@44 then _D3DDevice_CreateVertexShader@16; called by 15 41-byte wrappers that each push one shipped vs.1.1 program, and no pixel program reaches it",,,,,,,
 0x002c0910,ShaderCompilePixel,calls _XGAssembleShader@44 then _D3DDevice_CreatePixelShader@8 plus a file cache; called by 26 28-byte wrappers that each push one shipped ps.1.1 or ps.1.4 program,,,,,,,
+0x0002ae00,XboxAudio_CreateVoiceStream,"audio chain: calls _XVoiceQueueCreateMediaObject@8, _XVoiceCreateOneToOneDecoder@4 and _DirectSoundCreateStream@8, then fills this+0x3c-byte buffers",,,,,XboxAudio,,210
+0x0002a250,XboxAudio_CreateVoiceEncoder,audio chain: allocates and calls _XVoiceCreateOneToOneEncoder@4; its only caller is in the slot-init path,,,,,XboxAudio,,89
+0x0002d3f0,XboxAudio_StopStreamingSound,"audio chain: its own literal SF_StreamingMode, then _IDirectSoundBuffer_Stop@4 and _IDirectSoundBuffer_Release@4",,,,,XboxAudio,,167
+0x0002b8c0,XboxAudio_SetUpVoiceStreams,"audio chain: derives buffer geometry from this+0x0 (sample rate /48000, /10), sets _IDirectSound_SetMixBinHeadroom@12 per bin, then calls CreateVoiceStream twice",,,,,XboxAudio,,640
+0x0002fd70,XboxAudio_CreateDevice,"audio chain: slot 31 of XBoxAudioSubsystem's table (+0x7c) and no direct caller; calls _DirectSoundCreate@12 then _XAudioDownloadEffectsImage@16, then six bring-up bodies",,,,,XboxAudio,,272
+0x0002dff0,XboxAudio_SetNextStream,"audio chain: XBoxAudioSubsystem +0xd0 (slot 52) and no direct caller; its own literal SetNextStream, and it calls _XWaveFileCreateMediaObject@12",,,,,XboxAudio,,531
+0x0002a2f0,XboxAudio_CreateVoiceCodecs,audio chain: two _XVoiceCreateMediaObjectEx@28 calls with two callbacks into one slot object,,,,,XboxAudio,,104
+0x0002a9b0,FUN_0002a9b0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,80
+0x0002db10,XboxAudio_UnregisterSoundBytes,audio chain: its own literals Sound Data Freed and UnRegSoundBytesAlloc; calls the streaming stop first,,,,,XboxAudio,,198
+0x0002fa90,FUN_0002fa90,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,278
+0x0002b5c0,FUN_0002b5c0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,358
+0x00032040,FUN_00032040,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,65
+0x0002e900,FUN_0002e900,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,691
+0x0002a6f0,XboxAudio_InitVoiceSlot,"audio chain: per index (this+2*index+0x74): CreateVoiceCodecs then the two slot stages, sets a bit in this+0x60",,,,,XboxAudio,,112
+0x0002ed20,XboxAudio_FlushSounds,"audio chain: its own literal [RA] : Flushing, then calls the flush body and the sound-byte unregisterer",,,,,XboxAudio,,137
+0x0002b500,FUN_0002b500,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,91
+0x0002a410,FUN_0002a410,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,97
+0x0002a500,FUN_0002a500,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,152
+0x0002a480,FUN_0002a480,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,115
+0x0002b730,FUN_0002b730,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,178
+0x0002d120,FUN_0002d120,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,364
+0x0002edb0,FUN_0002edb0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,301
+0x0002b320,FUN_0002b320,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,230
+0x0002ac50,FUN_0002ac50,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,67
+0x0002b410,FUN_0002b410,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,229
+0x0002fbb0,FUN_0002fbb0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,203
+0x0002b140,FUN_0002b140,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,228
+0x0002af50,FUN_0002af50,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,89
+0x0002b230,FUN_0002b230,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,228
+0x0002a770,FUN_0002a770,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,72
+0x0002a7c0,FUN_0002a7c0,"audio chain member (inventory/xboxaudio_chain.csv): unnamed, and every caller of it lies in the chain",,,,,XboxAudio,,165

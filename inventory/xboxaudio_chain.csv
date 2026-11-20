@@ -1,99 +1,99 @@
 kind,body,body_name,body_size,module,note,site,form,target,target_name,target_kind,extra
-body,0x0002ae00,FUN_0002ae00,210,,seed: calls _XVoiceQueueCreateMediaObject@8,,,,,,callers=2 refs=1 stdcall 12 args bytes
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae27,call,0x003441eb,_XVoiceQueueCreateMediaObject@8,call,(other named)
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae38,call,0x0034429a,_XVoiceCreateOneToOneDecoder@4,call,(other named)
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae52,call,0x004a2127,_DirectSoundCreateStream@8,call,(other named)
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae61,call,0x004a052b,thunk_FUN_004a03c4,call,
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae6a,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002ae87,ret,0x0000000c,stdcall 12 args bytes,width,
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002aeab,call,0x0002a9b0,FUN_0002a9b0,call,
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002aebd,vcall,0x00000010, +0x10 of [ecx],vcall,
-edge,0x0002ae00,FUN_0002ae00,210,,,0x0002aecf,ret,0x0000000c,stdcall 12 args bytes,width,
-body,0x0002a250,FUN_0002a250,89,,seed: calls _XVoiceCreateOneToOneEncoder@4,,,,,,callers=1 refs=0 stdcall 4 args bytes
-edge,0x0002a250,FUN_0002a250,89,,,0x0002a25f,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
-edge,0x0002a250,FUN_0002a250,89,,,0x0002a277,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
-edge,0x0002a250,FUN_0002a250,89,,,0x0002a28a,call,0x00344246,_XVoiceCreateOneToOneEncoder@4,call,(other named)
-edge,0x0002a250,FUN_0002a250,89,,,0x0002a299,ret,0x00000004,stdcall 4 args bytes,width,
-edge,0x0002a250,FUN_0002a250,89,,,0x0002a2a6,ret,0x00000004,stdcall 4 args bytes,width,
-body,0x0002d3f0,FUN_0002d3f0,167,,seed: calls _IDirectSoundBuffer_Release@4,,,,,,callers=11 refs=0 stdcall 4 args bytes
-edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d431,literal,0x004d1754,wide 'SF_StreamingMo',data,
-edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d437,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d44a,call,0x004a04f2,_IDirectSoundBuffer_Stop@4,call,(other named)
-edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d45a,call,0x0049f64c,_IDirectSoundBuffer_Release@4,call,(other named)
-edge,0x0002d3f0,FUN_0002d3f0,167,,,0x0002d494,ret,0x00000004,stdcall 4 args bytes,width,
-body,0x0002b8c0,FUN_0002b8c0,640,,seed: calls _IDirectSound_SetMixBinHeadroom@12,,,,,,callers=0 refs=0 stdcall 4 args bytes
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002b94a,call,0x0002a250,FUN_0002a250,call,
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002b981,call,0x004a0492,_IDirectSound_SetMixBinHeadroom@12,call,(other named)
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002ba43,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002ba72,call,0x0002ae00,FUN_0002ae00,call,
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002ba93,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002badc,call,0x0002ae00,FUN_0002ae00,call,
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002baf9,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002bb16,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002bb2f,call,0x0002b5c0,FUN_0002b5c0,call,
-edge,0x0002b8c0,FUN_0002b8c0,640,,,0x0002bb3d,ret,0x00000004,stdcall 4 args bytes,width,
-body,0x0002fd70,FUN_0002fd70,272,,seed: calls _XAudioDownloadEffectsImage@16,,,,,,callers=0 refs=1 cdecl XBoxAudioSubsystem +0x7c (slot 31 of 55)
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fd90,call,0x004a20e0,_DirectSoundCreate@12,call,(other named)
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fda6,literal,0x004d2314,ascii 'd:\\xbox.binStoppedBuffers(iBuff',data,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdbb,call,0x004a057b,_XAudioDownloadEffectsImage@16,call,(other named)
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdc5,call,0x0002cfd0,FUN_0002cfd0,call,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdd4,ret,0x00000000,cdecl,width,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fdf6,call,0x00055ed0,FUN_00055ed0,call,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe10,call,0x0002c800,FUN_0002c800,call,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe1f,call,0x00032040,FUN_00032040,call,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe2a,call,0x0002c800,FUN_0002c800,call,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe51,call,0x0002e900,FUN_0002e900,call,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe5b,literal,0x004d22d0,wide 'XBoxAudio: subsy',data,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe6c,call,0x00057440,FUN_00057440,call,
-edge,0x0002fd70,FUN_0002fd70,272,,,0x0002fe7f,ret,0x00000000,cdecl,width,
-body,0x0002dff0,FUN_0002dff0,531,,seed: calls _XWaveFileCreateMediaObject@12,,,,,,callers=0 refs=1 stdcall 16 args bytes XBoxAudioSubsystem +0xd0 (slot 52 of 55)
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002dff5,literal,0x003f4904,bytes b8 60 90 57 00 e9 90 0c,data,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e01c,literal,0x004d1d94,wide 'SetNextStream: h',data,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e027,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e03e,literal,0x004c85ac,bytes 00 00 00 00 a0 8f 01 00,data,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e044,call,0x00036d00,__wcsicmp,call,(other named)
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e088,call,0x00055ed0,FUN_00055ed0,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e097,call,0x0001a920,Core_UnTemplate,call,Core
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0b1,ret,0x00000010,stdcall 16 args bytes,width,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0db,literal,0x004d1d30,wide 'New Pending File',data,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0e1,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e0f9,call,0x0007e160,FUN_0007e160,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e107,jmp,0x0002e134,FUN_0002dff0+0x144,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e119,call,0x0007e160,FUN_0007e160,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e12d,call,0x003e54c0,__chkstk,call,(other named)
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e140,jmp,0x0002e149,FUN_0002dff0+0x159,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e15c,call,0x0007e160,FUN_0007e160,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e164,call,0x0007e120,FUN_0007e120,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e16d,call,0x004a077d,_XWaveFileCreateMediaObject@12,call,(other named)
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e17b,literal,0x004d1cf0,"wide ""Couldn't create """,data,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e181,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1a4,call,0x0001b310,FUN_0001b310,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1a9,jmp,0x0002e09c,FUN_0002dff0+0xac,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1c2,vcall,0x00000020, +0x20 of [ecx],vcall,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1f4,call,0x0001b310,FUN_0001b310,call,
-edge,0x0002dff0,FUN_0002dff0,531,,,0x0002e1fe,jmp,0x0002e09e,FUN_0002dff0+0xae,call,
-body,0x0002a2f0,FUN_0002a2f0,104,,seed: calls _XVoiceCreateMediaObjectEx@28,,,,,,callers=1 refs=0 stdcall 4 args bytes
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a2fe,literal,0x0002a2d0,bytes 8b 44 24 04 8b 50 04 8b,data,
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a30a,literal,0x004bdd74,bytes 00 00 00 00 00 00 00 00,data,
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a312,call,0x004c689a,_XVoiceCreateMediaObjectEx@28,call,(other named)
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a321,ret,0x00000004,stdcall 4 args bytes,width,
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a32e,literal,0x0002a2b0,bytes 8b 44 24 04 8b 50 04 8b,data,
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a33a,literal,0x004bdd68,bytes 00 00 00 00 00 00 00 00,data,
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a33f,call,0x004c689a,_XVoiceCreateMediaObjectEx@28,call,(other named)
-edge,0x0002a2f0,FUN_0002a2f0,104,,,0x0002a355,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002ae00,XboxAudio_CreateVoiceStream,210,,seed: calls _XVoiceQueueCreateMediaObject@8,,,,,,callers=2 refs=1 stdcall 12 args bytes
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002ae27,call,0x003441eb,_XVoiceQueueCreateMediaObject@8,call,(other named)
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002ae38,call,0x0034429a,_XVoiceCreateOneToOneDecoder@4,call,(other named)
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002ae52,call,0x004a2127,_DirectSoundCreateStream@8,call,(other named)
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002ae61,call,0x004a052b,thunk_FUN_004a03c4,call,
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002ae6a,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002ae87,ret,0x0000000c,stdcall 12 args bytes,width,
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002aeab,call,0x0002a9b0,FUN_0002a9b0,call,
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002aebd,vcall,0x00000010, +0x10 of [ecx],vcall,
+edge,0x0002ae00,XboxAudio_CreateVoiceStream,210,,,0x0002aecf,ret,0x0000000c,stdcall 12 args bytes,width,
+body,0x0002a250,XboxAudio_CreateVoiceEncoder,89,,seed: calls _XVoiceCreateOneToOneEncoder@4,,,,,,callers=1 refs=0 stdcall 4 args bytes
+edge,0x0002a250,XboxAudio_CreateVoiceEncoder,89,,,0x0002a25f,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002a250,XboxAudio_CreateVoiceEncoder,89,,,0x0002a277,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002a250,XboxAudio_CreateVoiceEncoder,89,,,0x0002a28a,call,0x00344246,_XVoiceCreateOneToOneEncoder@4,call,(other named)
+edge,0x0002a250,XboxAudio_CreateVoiceEncoder,89,,,0x0002a299,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002a250,XboxAudio_CreateVoiceEncoder,89,,,0x0002a2a6,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002d3f0,XboxAudio_StopStreamingSound,167,,seed: calls _IDirectSoundBuffer_Release@4,,,,,,callers=11 refs=0 stdcall 4 args bytes
+edge,0x0002d3f0,XboxAudio_StopStreamingSound,167,,,0x0002d431,literal,0x004d1754,wide 'SF_StreamingMo',data,
+edge,0x0002d3f0,XboxAudio_StopStreamingSound,167,,,0x0002d437,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002d3f0,XboxAudio_StopStreamingSound,167,,,0x0002d44a,call,0x004a04f2,_IDirectSoundBuffer_Stop@4,call,(other named)
+edge,0x0002d3f0,XboxAudio_StopStreamingSound,167,,,0x0002d45a,call,0x0049f64c,_IDirectSoundBuffer_Release@4,call,(other named)
+edge,0x0002d3f0,XboxAudio_StopStreamingSound,167,,,0x0002d494,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,seed: calls _IDirectSound_SetMixBinHeadroom@12,,,,,,callers=0 refs=0 stdcall 4 args bytes
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002b94a,call,0x0002a250,XboxAudio_CreateVoiceEncoder,call,
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002b981,call,0x004a0492,_IDirectSound_SetMixBinHeadroom@12,call,(other named)
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002ba43,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002ba72,call,0x0002ae00,XboxAudio_CreateVoiceStream,call,
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002ba93,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002badc,call,0x0002ae00,XboxAudio_CreateVoiceStream,call,
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002baf9,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002bb16,call,0x00016e80,??2@YAPAXI@Z,call,(other named)
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002bb2f,call,0x0002b5c0,FUN_0002b5c0,call,
+edge,0x0002b8c0,XboxAudio_SetUpVoiceStreams,640,,,0x0002bb3d,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002fd70,XboxAudio_CreateDevice,272,,seed: calls _XAudioDownloadEffectsImage@16,,,,,,callers=0 refs=1 cdecl XBoxAudioSubsystem +0x7c (slot 31 of 55)
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fd90,call,0x004a20e0,_DirectSoundCreate@12,call,(other named)
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fda6,literal,0x004d2314,ascii 'd:\\xbox.binStoppedBuffers(iBuff',data,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fdbb,call,0x004a057b,_XAudioDownloadEffectsImage@16,call,(other named)
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fdc5,call,0x0002cfd0,FUN_0002cfd0,call,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fdd4,ret,0x00000000,cdecl,width,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fdf6,call,0x00055ed0,FUN_00055ed0,call,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fe10,call,0x0002c800,FUN_0002c800,call,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fe1f,call,0x00032040,FUN_00032040,call,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fe2a,call,0x0002c800,FUN_0002c800,call,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fe51,call,0x0002e900,FUN_0002e900,call,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fe5b,literal,0x004d22d0,wide 'XBoxAudio: subsy',data,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fe6c,call,0x00057440,FUN_00057440,call,
+edge,0x0002fd70,XboxAudio_CreateDevice,272,,,0x0002fe7f,ret,0x00000000,cdecl,width,
+body,0x0002dff0,XboxAudio_SetNextStream,531,,seed: calls _XWaveFileCreateMediaObject@12,,,,,,callers=0 refs=1 stdcall 16 args bytes XBoxAudioSubsystem +0xd0 (slot 52 of 55)
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002dff5,literal,0x003f4904,bytes b8 60 90 57 00 e9 90 0c,data,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e01c,literal,0x004d1d94,wide 'SetNextStream: h',data,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e027,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e03e,literal,0x004c85ac,bytes 00 00 00 00 a0 8f 01 00,data,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e044,call,0x00036d00,__wcsicmp,call,(other named)
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e088,call,0x00055ed0,FUN_00055ed0,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e097,call,0x0001a920,Core_UnTemplate,call,Core
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e0b1,ret,0x00000010,stdcall 16 args bytes,width,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e0db,literal,0x004d1d30,wide 'New Pending File',data,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e0e1,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e0f9,call,0x0007e160,FUN_0007e160,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e107,jmp,0x0002e134,XboxAudio_SetNextStream+0x144,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e119,call,0x0007e160,FUN_0007e160,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e12d,call,0x003e54c0,__chkstk,call,(other named)
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e140,jmp,0x0002e149,XboxAudio_SetNextStream+0x159,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e15c,call,0x0007e160,FUN_0007e160,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e164,call,0x0007e120,FUN_0007e120,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e16d,call,0x004a077d,_XWaveFileCreateMediaObject@12,call,(other named)
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e17b,literal,0x004d1cf0,"wide ""Couldn't create """,data,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e181,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e1a4,call,0x0001b310,FUN_0001b310,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e1a9,jmp,0x0002e09c,XboxAudio_SetNextStream+0xac,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e1c2,vcall,0x00000020, +0x20 of [ecx],vcall,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e1f4,call,0x0001b310,FUN_0001b310,call,
+edge,0x0002dff0,XboxAudio_SetNextStream,531,,,0x0002e1fe,jmp,0x0002e09e,XboxAudio_SetNextStream+0xae,call,
+body,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,seed: calls _XVoiceCreateMediaObjectEx@28,,,,,,callers=1 refs=0 stdcall 4 args bytes
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a2fe,literal,0x0002a2d0,bytes 8b 44 24 04 8b 50 04 8b,data,
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a30a,literal,0x004bdd74,bytes 00 00 00 00 00 00 00 00,data,
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a312,call,0x004c689a,_XVoiceCreateMediaObjectEx@28,call,(other named)
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a321,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a32e,literal,0x0002a2b0,bytes 8b 44 24 04 8b 50 04 8b,data,
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a33a,literal,0x004bdd68,bytes 00 00 00 00 00 00 00 00,data,
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a33f,call,0x004c689a,_XVoiceCreateMediaObjectEx@28,call,(other named)
+edge,0x0002a2f0,XboxAudio_CreateVoiceCodecs,104,,,0x0002a355,ret,0x00000004,stdcall 4 args bytes,width,
 body,0x0002a9b0,FUN_0002a9b0,80,,callee of 0x0002ae00,,,,,,callers=1 refs=0 stdcall 12 args bytes
 edge,0x0002a9b0,FUN_0002a9b0,80,,,0x0002a9fd,ret,0x0000000c,stdcall 12 args bytes,width,
-body,0x0002db10,FUN_0002db10,198,,caller of 0x0002d3f0,,,,,,callers=3 refs=0 
-edge,0x0002db10,FUN_0002db10,198,,,0x0002db28,jmp,0x0002db30,FUN_0002db10+0x20,call,
-edge,0x0002db10,FUN_0002db10,198,,,0x0002db3e,call,0x0002d3f0,FUN_0002d3f0,call,
-edge,0x0002db10,FUN_0002db10,198,,,0x0002db66,literal,0x004d1c54,wide 'Sound Data Freed',data,
-edge,0x0002db10,FUN_0002db10,198,,,0x0002db6c,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002db10,FUN_0002db10,198,,,0x0002db8e,literal,0x004d1c18,wide 'UnRegSoundBytesA',data,
-edge,0x0002db10,FUN_0002db10,198,,,0x0002db94,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002db10,FUN_0002db10,198,,,0x0002dba2,vcall,0x00000004, +0x4 of [edx],vcall,
+body,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,caller of 0x0002d3f0,,,,,,callers=3 refs=0 
+edge,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,,0x0002db28,jmp,0x0002db30,XboxAudio_UnregisterSoundBytes+0x20,call,
+edge,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,,0x0002db3e,call,0x0002d3f0,XboxAudio_StopStreamingSound,call,
+edge,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,,0x0002db66,literal,0x004d1c54,wide 'Sound Data Freed',data,
+edge,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,,0x0002db6c,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,,0x0002db8e,literal,0x004d1c18,wide 'UnRegSoundBytesA',data,
+edge,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,,0x0002db94,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002db10,XboxAudio_UnregisterSoundBytes,198,,,0x0002dba2,vcall,0x00000004, +0x4 of [edx],vcall,
 body,0x0002fa90,FUN_0002fa90,278,,caller of 0x0002d3f0,,,,,,callers=0 refs=1  XBoxAudioSubsystem +0x80 (slot 32 of 55)
 edge,0x0002fa90,FUN_0002fa90,278,,,0x0002faa6,jmp,0x0002fab0,FUN_0002fa90+0x20,call,
-edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fac9,call,0x0002d3f0,FUN_0002d3f0,call,
+edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fac9,call,0x0002d3f0,XboxAudio_StopStreamingSound,call,
 edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb36,call,0x004a1e1e,FUN_004a1e1e,call,
 edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb49,call,0x004a1ec1,FUN_004a1ec1,call,
 edge,0x0002fa90,FUN_0002fa90,278,,,0x0002fb4e,call,0x0049f662,FUN_0049f662,call,
@@ -164,23 +164,23 @@ edge,0x0002e900,FUN_0002e900,691,,,0x0002eb71,literal,0x004d1efc,wide 'StoppedSo
 edge,0x0002e900,FUN_0002e900,691,,,0x0002eb7e,call,0x0001b260,FUN_0001b260,call,
 edge,0x0002e900,FUN_0002e900,691,,,0x0002eb90,call,0x002530f0,FUN_002530f0,call,
 edge,0x0002e900,FUN_0002e900,691,,,0x0002ebb2,ret,0x00000000,cdecl,width,
-body,0x0002a6f0,FUN_0002a6f0,112,,caller of 0x0002a2f0,,,,,,callers=1 refs=0 stdcall 4 args bytes
-edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a704,call,0x0002a2f0,FUN_0002a2f0,call,
-edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a711,call,0x0002a500,FUN_0002a500,call,
-edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a71e,call,0x0002a480,FUN_0002a480,call,
-edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a741,vcall,0x0000001c, +0x1c of [edi],vcall,
-edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a74d,ret,0x00000004,stdcall 4 args bytes,width,
-edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a752,call,0x0002a360,FUN_0002a360,call,
-edge,0x0002a6f0,FUN_0002a6f0,112,,,0x0002a75d,ret,0x00000004,stdcall 4 args bytes,width,
-body,0x0002ed20,FUN_0002ed20,137,,caller of 0x0002db10,,,,,,callers=3 refs=0 stdcall 4 args bytes
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed3d,literal,0x004d20ec,wide '[RA] : Flushing ',data,
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed43,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed62,call,0x0002d120,FUN_0002d120,call,
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed6c,call,0x0002db10,FUN_0002db10,call,
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed8c,ret,0x00000004,stdcall 4 args bytes,width,
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed94,literal,0x004d20a0,"wide ""Warning: can't f""",data,
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002ed9a,call,0x000574d0,FUN_000574d0,call,
-edge,0x0002ed20,FUN_0002ed20,137,,,0x0002eda6,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,caller of 0x0002a2f0,,,,,,callers=1 refs=0 stdcall 4 args bytes
+edge,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,,0x0002a704,call,0x0002a2f0,XboxAudio_CreateVoiceCodecs,call,
+edge,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,,0x0002a711,call,0x0002a500,FUN_0002a500,call,
+edge,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,,0x0002a71e,call,0x0002a480,FUN_0002a480,call,
+edge,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,,0x0002a741,vcall,0x0000001c, +0x1c of [edi],vcall,
+edge,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,,0x0002a74d,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,,0x0002a752,call,0x0002a360,FUN_0002a360,call,
+edge,0x0002a6f0,XboxAudio_InitVoiceSlot,112,,,0x0002a75d,ret,0x00000004,stdcall 4 args bytes,width,
+body,0x0002ed20,XboxAudio_FlushSounds,137,,caller of 0x0002db10,,,,,,callers=3 refs=0 stdcall 4 args bytes
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002ed3d,literal,0x004d20ec,wide '[RA] : Flushing ',data,
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002ed43,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002ed62,call,0x0002d120,FUN_0002d120,call,
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002ed6c,call,0x0002db10,XboxAudio_UnregisterSoundBytes,call,
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002ed8c,ret,0x00000004,stdcall 4 args bytes,width,
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002ed94,literal,0x004d20a0,"wide ""Warning: can't f""",data,
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002ed9a,call,0x000574d0,FUN_000574d0,call,
+edge,0x0002ed20,XboxAudio_FlushSounds,137,,,0x0002eda6,ret,0x00000004,stdcall 4 args bytes,width,
 body,0x0002b500,FUN_0002b500,91,,callee of 0x0002b5c0,,,,,,callers=1 refs=0 
 edge,0x0002b500,FUN_0002b500,91,,,0x0002b517,jmp,0x0002b520,FUN_0002b500+0x20,call,
 edge,0x0002b500,FUN_0002b500,91,,,0x0002b547,call,0x0002b320,FUN_0002b320,call,
@@ -206,12 +206,12 @@ edge,0x0002b730,FUN_0002b730,178,,,0x0002b748,call,0x004bedf2,_XGetDeviceChanges
 edge,0x0002b730,FUN_0002b730,178,,,0x0002b757,literal,0x004bdd74,bytes 00 00 00 00 00 00 00 00,data,
 edge,0x0002b730,FUN_0002b730,178,,,0x0002b75c,call,0x004bedf2,_XGetDeviceChanges@12,call,(other named)
 edge,0x0002b730,FUN_0002b730,178,,,0x0002b7b3,call,0x0002b410,FUN_0002b410,call,
-edge,0x0002b730,FUN_0002b730,178,,,0x0002b7cf,call,0x0002a6f0,FUN_0002a6f0,call,
+edge,0x0002b730,FUN_0002b730,178,,,0x0002b7cf,call,0x0002a6f0,XboxAudio_InitVoiceSlot,call,
 edge,0x0002b730,FUN_0002b730,178,,,0x0002b7e1,ret,0x00000000,cdecl,width,
 body,0x0002d120,FUN_0002d120,364,,callee of 0x0002ed20,,,,,,callers=1 refs=0 cdecl
 edge,0x0002d120,FUN_0002d120,364,,,0x0002d28b,ret,0x00000000,cdecl,width,
 body,0x0002edb0,FUN_0002edb0,301,,caller of 0x0002ed20,,,,,,callers=1 refs=0 cdecl
-edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edc3,call,0x0002ed20,FUN_0002ed20,call,
+edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edc3,call,0x0002ed20,XboxAudio_FlushSounds,call,
 edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edd4,ret,0x00000000,cdecl,width,
 edge,0x0002edb0,FUN_0002edb0,301,,,0x0002edd7,call,0x0002d790,FUN_0002d790,call,
 edge,0x0002edb0,FUN_0002edb0,301,,,0x0002ede2,call,0x003e5ac0,_sprintf,call,(other named)

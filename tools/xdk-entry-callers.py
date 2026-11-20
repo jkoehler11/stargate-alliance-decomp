@@ -228,7 +228,8 @@ def report(rows):
     for (name, entry), group in by_entry.items():
         print("%s (%s): %d call site(s)" % (name, entry, len(group)))
         for r in group:
-            how = r["caller_slot"] or ("%d direct caller(s)" % r["calls_in"] if r["calls_in"] else "no caller found")
+            calls_in = int(r["calls_in"] or 0)
+            how = r["caller_slot"] or ("%d direct caller(s)" % calls_in if calls_in else "no caller found")
             print("  0x%s  %-46s %-9s via %s" % (r["site"][2:], r["caller_name"][:46],
                                                  r["module"] or "-", how))
 
