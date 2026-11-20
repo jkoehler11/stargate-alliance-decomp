@@ -1595,9 +1595,12 @@ Three readings:
 
 1. **Most ids are one program, twelve are two.** Forty-one calls land on twenty-nine ids, and exactly twelve ids compile
    a pair — id 14 compiles an `xps.1.1` and a `ps.1.4` from one case body, through two different wrappers.
-2. **Two of the thirty-one handled ids resolve to nothing.** Their case bodies reach no wrapper by a direct `call`, which
-   means a second level of dispatch (or an indirect call) that this scan does not follow — the same blind spot the
-   liveness pass had, and recorded rather than papered over.
+2. **The two unresolved ids are not missed dispatches — they construct an object.** Ids 1 and 2 do not call a program
+   wrapper at all: each calls `??2@YAPAXI@Z` (`operator new`) with `0x18`, stores a count of 0 or 2 in the new object, and
+   then calls a 28-byte constructor at `0x002b3da0` or `0x002b3dc0`. So they are a different kind of entry in the same
+   switch — an allocated 24-byte shader *object* rather than a compiled program — and calling that gap a blind spot in
+   the scan would have been the wrong description. The scan follows direct `call`s and those two ids simply do not make
+   one to a wrapper; the remaining gap is the three of the 41 pixel programs no case reaches.
 3. **The table is a committed artifact, not a paragraph.** `make pixel-shader-ids` regenerates it from the dump;
    `--check` validates it without one, and CI treats a missing dump as "needs the dump" rather than a failure.
 
