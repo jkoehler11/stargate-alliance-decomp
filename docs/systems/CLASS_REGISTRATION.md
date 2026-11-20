@@ -555,7 +555,14 @@ overrides. The families read as interfaces embedded by several classes:
 What this does not say: the *type* of the member. The owner class is known from its constructor and the
 field offset is read from the store, but the interface object's class is not registered anywhere, so the
 name a slot would carry is a member's, and reading one interface's slots as a class's virtual methods is
-the reading the slot-0 control refuses. Nor does a slot's body size date it: a 3-byte stub in a table is
+the reading the slot-0 control refuses. What the field itself can be called is now measured: the artifact
+carries `declared_in` / `layout` / `member_name`, and **32 of the 49 tables have a label of the form
+`<Class>_member_<field>`** -- 34 are a single owner's field, one is declared in a shared ancestor
+(`Linker_member_0xb8`, written by both `LinkerLoad` and `LinkerSave`), one has owners in no common chain
+(the same offset is two layouts) and 13 have no owner at all. The four rows whose store reports two field
+offsets keep no label, because the store does not pair an offset with its owner. A declared *property name*
+is not available for any of them: the assert-derived member map covers four classes and names **0 of the 53
+owner/offset pairs** behind these tables. Nor does a slot's body size date it: a 3-byte stub in a table is
 the interface's default, not an unimplemented slot.
 
 <!-- generated:class-member-tables -->
@@ -568,6 +575,8 @@ the interface's default, not an unimplemented slot.
 | `0x004c7854` | 2 | 2 | ControlChannel, TextBuffer | -- |
 | `0x004c93c8` | 2 | 2 | XboxViewport | -- |
 | `0x004d0314` | 2 | 1 | TcpNetDriver | -- |
+
+**32 of the 49 tables carry a label of the form `<Class>_member_<field>`, and the class is the one that declares the field.** 34 are a single owner's field, 1 are declared in a shared ancestor of every owner (`Linker_member_0xb8`), 1 have owners in no common chain -- where the same offset is two different layouts, not one field -- and 13 have no owner at all. A table whose row carries more than one field offset keeps no label: the store does not pair the offset with its owner, and naming one of them would pick.
 | 24 table(s) in no family | 24 | -- | -- | -- |
 
 **The 49 member tables are interface vtables, and their slot 0 is not a class slot.** All 492 class tables the class-map census covers (474 of them named by the registration path) share one slot-0 body, `0x00062650`; none of the 49 member tables carry it, and their slot-0 values are 36 distinct bodies. A class dispatch table starts with the entry every class table starts with; an interface object's table starts with its own first method, which is why no slot here can be named `<Class>_vt<slot>`.
@@ -681,6 +690,40 @@ kind rather than a partition of the hole. `make native-island` regenerates the a
 synthetic self-test (19 assertions, no dump) and `--check-doc` rebuilds the block from
 `inventory/native_island.csv` -- including the hole's bounds and the tail-jump split, which travel in the
 artifact's own `census` row so a page rendered from the CSV cannot disagree with the measurement.
+
+## What installs a nameless table: the body's shape, not only its store
+
+The store says a table is written at `[reg]`; it does not say whether the body that writes it is the
+object's constructor. `tools/class-table-installer-shape.py` runs the two signatures
+`tools/class-ctors.py` uses -- a constructor installs the table and returns `this`, a destructor
+installs it before any call and returns nothing -- over **every body that installs one of the 724
+tables**, so the nameless population is read by the same rule that named the map's own `ctor_`/
+`dtor_` rows. The control is the 474 tables the registration path already names: 982 of their 990
+installer bodies carry a `ctor_<Class>`/`dtor_<Class>` symbol, and the shape rule lands on the same
+class for **978 of them (99.6%)**, so it is a measured reading and not an assumption about the 208.
+
+<!-- generated:class-table-installer-shapes -->
+| population | tables | installer bodies | returns `this` (ctor) | installs before any call (dtor) | neither | ends in a tail `jmp` | names one table only |
+|---|---|---|---|---|---|---|---|
+| named | 474 | 990 | 507 | 475 | 8 | 0 | 923 |
+| plain-only | 208 | 347 | 192 | 106 | 49 | 1 | 226 |
+| no-store | 4 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+**The control is the population the registration path already names.** Of the 990 installer bodies behind the 474 named tables, 982 carry a `ctor_<Class>`/`dtor_<Class>` symbol and the shape rule agrees with that class on 978; 507 bodies return `this`, 475 install the table before any call and 8 read as neither.
+
+**Of the 208 plain-only tables, 192 installer bodies return `this`, 106 install before any call and 49 read as neither; 226 of the bodies install exactly one table, which is a self-install.** 97 tables are installed only by a body that returns `this`, 29 only by a destructor-shaped body, 56 by both, 26 by bodies the rule reads as neither and 0 name no installer body at all.
+
+**A destructor never returns `this`, and the class-ctors signature only matches `mov eax, <reg>`.** Its second form is a load from the frame (`mov eax,[esp+N]` / `[ebp+N]`): 2 of the 106 dtor-shaped installer bodies behind the plain-only tables return `this` that way; the other 104 carry the destructor shape, which an initializer that installs the table into an object it was handed -- and returns something other than `this` -- has as well. That is why the verdict is a reading and not a proof: 29 tables have only such installers, and the artifact names them one body at a time instead of sweeping them into a constructor count.
+<!-- /generated:class-table-installer-shapes -->
+
+The plain-only tables split three ways, and each split is a different question. A body that
+installs exactly one table and returns `this` is that object's constructor, so the table is an
+object's own dispatch table inside a class no shipped package registers -- the naming channel for
+those is the body, not the class map. A table whose only installer is destructor-shaped has no
+constructor site in the sweep; the shape rule reads a tail-jumped epilogue the same way, so the
+artifact names each such table rather than claiming the constructor is absent. And the tables whose
+installer reads as neither are the residue the two signatures do not describe -- the population U40
+names as the 399 bodies nothing names, met here from the table's side.
 
 ## What this measurement does not say
 

@@ -5654,9 +5654,29 @@ rung implementing exactly the slots the one below leaves abstract, and the imple
 bodies that sit in a member table's slot are an interface object's methods: they are named from the member
 (the owner class and the field offset, both known) and never as a class's virtual method.
 
-**What would settle the rest.** For the 175 plain-only tables written at `[reg]` the class is the class
+**Answered since (2026-11-20, the installer census and the installer's shape).** The installer census read
+`symbols/xbox_functions.csv`'s size column as hex, and it is a byte count in decimal: a short body's span
+then ran past its own end and the store of the body next door was credited to it. Read at the right base
+**12 rows lose an installer and three verdicts move -- 39/209/2 becomes 38/208/4** -- and all **42 mangled
+C++ names** the evidence carried (the UIX screen constructors, `Core_UnObjBas`, `dtor_Movie`) disappear:
+none of the 250 is installed by a body with a C++ symbol. `tools/class-table-installer-shape.py` then reads
+every installer body with the ctor/dtor signatures `tools/class-ctors.py` uses. The control is the named
+population: 982 of its 990 installer bodies carry a `ctor_`/`dtor_` symbol and the shape rule agrees with
+that class on **978 (99.6%)**. Of the 208 plain-only tables, 347 installer bodies split **192 return `this`
+/ 106 install before any call / 49 neither**, and **226 of the bodies install exactly one table** (a
+self-install: the table is that object's own dispatch table inside a class no package registers). By table:
+**97 are installed only by a constructor-shaped body, 29 only by a destructor-shaped one, 56 by both and 26
+by bodies the rule reads as neither**. The destructor shape is a shape, not a proof: of its 106 bodies only
+2 return `this` through a frame slot, so 104 carry the shape an initializer that installs the table into an
+object it was handed also has -- the artifact names them rather than calling their tables destructor-only
+truths. The 49 member tables are labelled in the same pass (32 of 49 `<Class>_member_<field>`, one declared
+in a shared ancestor).
+
+**What would settle the rest.** For the 176 plain-only tables written at `[reg]` the class is the class
 whose constructor the store body is, so that body has to be named -- from a registration literal, a
-shipped `.u` class with that constructor, or the class record's constructor field -- one body at a time.
+shipped `.u` class with that constructor, or the class record's constructor field -- one body at a time;
+the shape census now says which 97 of them are installed by a body that returns `this`, so that pass has a
+population. The 29 destructor-shaped and 26 unclassified tables need a per-body read rather than a rule.
 For the 23 with no object-field store the table has no installer, and the 3 with no `C7` store need the
 other addressing forms read (`mov [reg+index*4]` is an array slot, not a field). For the 399 bodies
 nothing changes except that the ones sitting in a member table's slots are named from the member.

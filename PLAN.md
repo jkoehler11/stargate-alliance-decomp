@@ -15743,3 +15743,40 @@ sequence.
   block from the committed CSV.
 - **Not in this bundle.** The member's *type* (the interface object's class is not registered anywhere), the
   175 plain-only tables' constructors, and the 399 bodies no channel names.
+
+### Execution notes (2026-11-20, the installer census read a decimal size as hex, and the installer's shape)
+
+- **The installer census read `symbols/xbox_functions.csv`'s size column as hex, and it is decimal.** A
+  short body's span then ran past its own end and the store of the body next door was credited to it:
+  **12 of the 250 rows lose an installer and three verdicts move (39/209/2 -> 38/208/4)**, and all **42
+  mangled C++ names** in the evidence (UXI screen constructors, `Core_UnObjBas`, `dtor_Movie`) vanish --
+  none of the 250 is installed by a body with a C++ symbol. The selftest's fifth table pins the rule: a
+  store past a short body's decimal end belongs to no body, and it FAILs against the hex line.
+- **The three Makefile targets this section regenerates did not run at all**: `class-table-installers`
+  wrote to `inventory/inventory/` and passed a path to a flag that takes none, and
+  `class-table-store-fields` needs `--xbe` on its doc pass. All three now run.
+- **The installer body's shape is measured.** `tools/class-table-installer-shape.py` runs the ctor/dtor
+  signatures over **990 installer bodies behind the 474 named tables** -- 982 are named, the rule agrees
+  with the class on **978 (99.6%)**, which is the base rate the 208 plain-only tables are read against. Of
+  those, **192 bodies return `this`, 106 install before any call, 49 neither; 226 install exactly one
+  table (self-install)**. By table: **97 installed only by a constructor-shaped body, 29 only by a
+  destructor-shaped one, 56 by both, 26 by neither**. Of the 106 destructor-shaped bodies only 2 return
+  `this` through a frame slot, so 104 carry a shape an initializer has too -- the verdict is a reading,
+  and the artifact names the 29 tables.
+- **The 49 member tables now carry a field label.** `declared_in`/`layout`/`member_name` are joined from
+  `class_table_parent_edges.csv` + `classes.csv`: **32 labelled**, 34 single-owner fields, **one shared
+  ancestor (`Linker_member_0xb8` for both LinkerLoad and LinkerSave)**, one coincident layout, 13 unowned,
+  and 4 rows with two field offsets keep no label because the store does not pair offset with owner.
+- **Files.** `tools/class-table-installers.py`, `tools/class-table-installer-shape.py`,
+  `tools/class-member-tables.py`, `inventory/class_table_installers.csv`,
+  `inventory/class_table_installer_shapes.csv`, `inventory/class_table_store_fields.csv`,
+  `inventory/class_member_tables.csv`, `docs/systems/CLASS_REGISTRATION.md` (the corrected counts, a new
+  section and block, the member-type paragraph), `docs/UNKNOWNS.md` (U40), `Makefile`, `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; the installer selftest's fifth case fails on the old size read; the shape
+  tool's `--check` drives a ctor body, a dtor body and a body with a call before its store; `--check-doc`
+  rebuilds both new blocks from the committed CSVs with no dump.
+- **Not in this bundle.** Naming the 97 constructor-installed plain tables one body at a time (their
+  literals are the channel), the 29 destructor-shaped and 26 unclassified tables, and the 4 tables nothing
+  stores.
+
