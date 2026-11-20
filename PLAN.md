@@ -717,6 +717,12 @@ other 38 rows.
       the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
       addresses and what each body does (4.6 did this for the four real game-module bodies). The C itself stays under
       `$WORK` on the machine that produced it. Engine internals: name + document, decompile only where script-reachable.
+      **Progress:** four readings done from membership evidence rather than impressions — the class census
+      (`inventory/native_code_classes.csv`), `CXnIp` (144 methods), `CXo` (377) and `CXoBase` (14), each with its
+      per-method callee artifact. `CXnIp` establishes the logon state machine and the receive-path verify-then-decrypt
+      order; `CXo` establishes the Kerberos AS/TGS/AP triad, the three ticket caches and a second transport that
+      bypasses `CXnIp`; `CXoBase` is a veneer of 11-byte forwarders onto `CXnIp`. What remains is the rest of the
+      library sections and the game modules' own subsystems.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
       Done: **15,422 symbols** (14,956 functions + 466 class tables), every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`

@@ -226,6 +226,58 @@ accessors and the entry points the image calls directly — and the strings that
 not in a release build. The next reading is `CXo` (377 methods), where the Kerberos bodies these calls
 reach actually live.
 
+## `CXo` and `CXoBase`: the Live API surface and its Kerberos core (2026-11-19)
+
+`CXo` is the largest class in the binary — **377 methods, 91,019 bytes**, 320 of them with at least one
+named callee (`inventory/cxo_methods.csv`, `make native-method-notes CLASS=CXo`). The prefix census says
+what it is: 75 methods begin `XOnline`, 33 `Messaging`, 15 `Cache`, 10 `Configure`, 9 `Stats`, 9 `Xkerb`,
+6 each `Match` and `Presence`. It is the whole Xbox Live client API, and 35 of its methods — 13,108 bytes,
+14.4% of the class — are the Kerberos ticket machine.
+
+**The Kerberos exchange is a triad of build/verify pairs, and it is linked in, not an OS service.**
+
+| request | bytes | verify | bytes |
+|---|---:|---|---:|
+| `XkerbBuildAsRequest` | 826 | `XkerbVerifyAsReply` | 902 |
+| `XkerbBuildTgsRequest` | 880 | `XkerbVerifyTgsReply` | 1148 |
+| `XkerbBuildApRequest` | 273 | `XkerbVerifyApReply` | 364 |
+
+They call a Kerberos implementation that the naming passes have already named inside the image —
+`?KerbUnpackData@@YGJPAVCScratchMemoryAllocator@@PAEKKPAPAX@Z` sits at `0x004485b8` (104 bytes), and with it
+`KerbConvertGeneralizedTimeToLargeInt`, `KerbUpdateCurrentTime`, `KerbGetCurrentTime`,
+`KerbComputeCompoundIdentityKey`, `KerbAddCompoundIdentityPreAuth`, `KerbCreateApRequest` and
+`KerbDecryptDataEx`. The AS request signs with a compound-identity key and adds pre-authentication: this is
+the Xbox Live variant, not plain RFC 1510.
+
+**Ticket acquisition reuses one async task model for three caches.** `GetSingleTicket` (640 B) drives the AS
+exchange, `GetServiceTicket` (640 B, 2,003 B in its `Continue`) drives the TGS one — with `DNSLookupContinue`
+/ `DNSLookupGetResults` ahead of it — and `GetCombinedTicket` (1,678 B in `Continue`) chains both. Each ends in
+a cache with an identical 61-byte closer (`CloseSingle`/`CloseService`/`CloseCombinedTicketCache` →
+`XOnlineTaskClose` + `CacheClose` → `CLocalCache::Delete`), plus `CloseLogonTimeCache` for ticket lifetimes.
+`CacheOpen` (253 B) initialises `CLocalCache`, and the `CCacheTask` family (`DoIndexFlushBegin`,
+`DoRetrieveBegin`, `DoUpdateMRUList…`) does the work as tasks, not as blocking calls: 34 methods of
+`XOnlineTaskContinue` / `XOnlineTaskClose` / `SendRecvBegin` / `GetSendRecvResults` machinery.
+
+**Two transports, and the split is the finding.** `CXo`'s own ticket requests send with raw Winsock —
+`GetSingleTicketSendAsRequest` and `GetServiceTicketSendTgsRequest` both call `_WSASendTo`, and
+`SendRecvBegin` (125 B) calls `_WSASend`/`_WSARecv`; 12 methods touch Winsock directly. That is *not* the
+path `CXnIp` uses for its own key exchange, where `IpXmitKeyExXbToTs`/`XbToSg`/`XbToXb` reach
+`CXoBase::XoKerbBuildApReq` and transmit through `CXnEnet::EnetXmit`. Both routes exist in the image.
+
+**`CXoBase` is a 14-method veneer over `CXnIp`.** Fourteen methods, every one 11–15 bytes:
+`XnLogonGetQFlags`, `XnLogonGetQVals`, `XnLogonSetQVals`, `XnLogonSetQEvent`, `XnLogonClearQEvent`,
+`XnLogonNoteSystemTime`, `XnLogonSetPState` are one-call forwarders to the matching `CXnIp::IpLogon*`
+(eleven bytes each, `XnLogonSetPState` fifteen — a `jmp` and its padding), `XnLogonGetStatus` (54 B) adds
+`_XNetUpdateConfigParams`, and `XnConfigAtLogon` (55 B) is `_XNetLoadConfigParams` +
+`_XNetConfig`. So the public `Xn*` API does not contain the logon state machine — `CXnIp` does, exactly
+as its own reading showed, and `CXoBase` is the ABI-stable face of it.
+
+**What this is not.** The `Kerb*` names prove a Kerberos implementation is linked and give its call shape;
+they say nothing about the wire encoding of a ticket, the crypto inside `KerbDecryptDataEx`, or which
+pre-authentication types the server accepts. And the two-transport split is *observed*, not explained:
+nothing in the call graph says why ticket exchange bypasses the `CXnIp` path, and a later reader should
+not assume either route is dead.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
