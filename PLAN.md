@@ -549,9 +549,11 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `inventory/xdk_call_names.csv`): every `REL32` to a function symbol in a matched function is a
       resolved call whose target the library names, which adds **482** addresses — 256 confirmed by
       more than one caller, the busiest XAPI stub by 124 — and takes the seven library sections from
-      2,531 to **2,838 of 3,109 (91.3%)** and the map from 44.4% to **47.65%**. Callers that disagree
-      (14 addresses) are left `FUN_*`; two names on two addresses are COMDAT copies and are reported
-      rather than refused, because each copy has its own callers. Both artifacts' shapes are gated in
+      2,532 to **2,838 of 3,109 (91.3%)** and the map from 44.43% to **47.65%**. A name needs a strict
+      majority of the callers that reach the address (a tie between the top two is refused), and the
+      losing names are kept in the artifact's `other_names` column -- non-empty on 14 of the 482 rows.
+      Two names on two addresses are COMDAT copies and are reported rather than refused, because each
+      copy has its own callers. Both artifacts' shapes are gated in
       `make ci`; the generators need the libraries and the dump, so they are named in the CI output
       like `map-census`. What a supplied MSVC signature database would still add is the residue.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,

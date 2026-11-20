@@ -76,13 +76,16 @@ target. `tools/xdk-call-names.py` (`make xdk-call-names`) reads exactly that fro
 caller — the XAPI stubs run to 124 callers from one target. The seven library sections go from
 2,532 to **2,838 of 3,109** named, and the map from 44.5% to 47.65%.
 
-Two rules, both recorded in the artifact (`inventory/xdk_call_names.csv`): a name is taken only
-when every caller that reaches the address agrees on it, and the vote count travels with the row,
-so a single-caller name is distinguishable from one four callers confirm. 14 addresses had
-disagreeing callers and stay `FUN_*`. Two names land on two addresses each — COMDAT copies of
-`operator new` and D3DX's `process_restart` — which is evidence rather than ambiguity, since each
-copy has its own callers, so the duplicate is reported instead of refused (the body matcher
-refuses duplicates for the opposite reason: there a shared body is a shared guess).
+Two rules, both visible in the artifact (`inventory/xdk_call_names.csv`): a name is taken only on a
+**strict majority** of the callers that reach the address -- a tie between the top two names is
+refused and the address stays `FUN_*` -- and the vote count travels with the row, so a
+single-caller name is distinguishable from one 124 callers confirm. Dissent is recorded rather than
+dropped: `other_names` lists every losing name with its votes, and it is non-empty on **14 of the
+482 rows**, all of them majority wins that a minority reading disagrees with. Two names land on two
+addresses each -- COMDAT copies of `operator new` and D3DX's `process_restart` -- which is evidence
+rather than ambiguity, since each copy has its own callers, so the duplicate is reported instead of
+refused (the body matcher refuses duplicates for the opposite reason: there a shared body is a
+shared guess).
 
 ## What the number means
 
