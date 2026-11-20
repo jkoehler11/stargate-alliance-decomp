@@ -449,8 +449,14 @@ is **linked and internally live, with the title's own entry point not yet identi
 show game or engine code opening a UIX screen, and it does not show that none does.
 
 **What this is not.** No strings in any of these four artifacts (release build) and no decompiled bodies. The
-plug-in seam was the open question this section raised; the reading below answers it — UIX is reached through one
+open question this section raised — how a Live screen ever opens — is answered below: UIX is reached through one
 native, `UIXInteraction.InitUIX`, and no shipped script calls it.
+
+`CUIPlugin` is *not* that seam, which the class's own callees settle (10 methods, 5 with callees,
+`inventory/cuiplugin_methods.csv`): `CreateObject` (236 B) calls `CArray::Append`, `_PluginSupport_GetLayout` and
+`CUIObject::Create`; `InsertItem` (134 B) adds `CArray::Insert` and its own `GetLBItemHeight`; `SetPluginSupport`
+(53 B) calls `StdImage::Retrieve`; and it carries font helpers (`FontDrawText`, `FontGetTextSize`). It is a list
+widget whose layout comes from a `PluginSupport` module — "plug-in" names the layout, not a registration API.
 
 ## The audio stack: `DirectSound`, the MCPX, and Xbox Live voice (2026-11-19)
 
