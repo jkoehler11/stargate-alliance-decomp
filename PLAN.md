@@ -553,7 +553,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       (14 addresses) are left `FUN_*`; two names on two addresses are COMDAT copies and are reported
       rather than refused, because each copy has its own callers. Both artifacts' shapes are gated in
       `make ci`; the generators need the libraries and the dump, so they are named in the CI output
-      like `map-census`. What a supplied MSVC signature database would still add is the residue.
+      like `map-census`. **And the residue is measured rather than assumed** (`tools/xdk-lib-residue.py`,
+      `make xdk-lib-residue`, `inventory/xdk_lib_residue.csv`): of the 250 library-section bodies left,
+      **17** are named by a trim rule (the image body equals a library function plus 4 bytes past its
+      `ret`, so Ghidra's body runs long) and **233** have no counterpart in the 60 supplied archives at
+      any start offset 0-24 under the same quality rules — section names follow the linker's
+      contribution, so those are code the libraries never contained. What a supplied MSVC signature
+      database would still add is that third population, not the libraries' own bodies.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
       Table **located** at `0x006313e8` with `EX_Max` 4096, in the uninitialised part of `.data`; the image
