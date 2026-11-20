@@ -46,7 +46,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_config_pair_census.csv` | 554 | 19 | `make class-config-pair` |
 | `inventory/class_constructors.csv` | 1028 | 12 | `make class-ctors` |
 | `inventory/class_ctor_bases.csv` | 522 | 19 | `make ci` |
-| `inventory/class_ctor_evidence.csv` | 724 | 25 | `make ci` |
+| `inventory/class_ctor_evidence.csv` | 724 | 26 | `make ci` |
 | `inventory/class_ctor_receivers.csv` | 7 | 12 | `make class-ctor-receivers` |
 | `inventory/class_defaults_contradictions.csv` | 6 | 16 | `make class-defaults-contradictions` |
 | `inventory/class_defaults_coverage.csv` | 18 | 6 | `make defaults-coverage` |

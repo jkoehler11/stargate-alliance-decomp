@@ -52,7 +52,7 @@ MAP = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 PAGE = os.path.join("docs", "systems", "CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-ctor-evidence -->"
 DOC_END = "<!-- /generated:class-ctor-evidence -->"
-FIELDS = ("table_va", "slots", "population", "class", "script_super", "installers", "literals",
+FIELDS = ("table_va", "slots", "population", "shape", "class", "script_super", "installers", "literals",
           "literal_count", "ini_sections", "ini_classes", "class_literals", "own_class_literal",
           "named_calls", "named_call_count", "signature", "family_size", "parent_va",
           "parent_class", "parent_route", "parent_vs_script", "chain_root", "chain_depth",
@@ -268,10 +268,11 @@ def harvest(image, index, reach, shapes, names, classes, text_range):
             tables[int(r["table_va"], 16)] = int(r.get("table_slots") or 0)
         except ValueError:
             continue
-    pop = {}
+    pop, shape_of = {}, {}
     for r in shapes:
         try:
             pop[int(r["table_va"], 16)] = r["population"]
+            shape_of[int(r["table_va"], 16)] = r.get("verdict", "")
         except (KeyError, ValueError):
             continue
     cls = {}
@@ -358,6 +359,7 @@ def harvest(image, index, reach, shapes, names, classes, text_range):
             "run": run,
             "table_va": hex(tva), "slots": tables[tva],
             "population": pop.get(tva, "named" if tva in cls else ""),
+            "shape": shape_of.get(tva, ""),
             "class": cls.get(tva, ""), "script_super": supers.get(cls.get(tva, ""), ""),
             "installers": len(bodies),
             "literals": "|".join(lits[:MAX_LIT]), "literal_count": len(lits),
@@ -504,6 +506,25 @@ def render(rows):
                    % (pop, d["tables"], d["installers"], d["literal"], d["ini"], d["classlit"],
                       d["own"], d["callee"], d["edge"]))
     out.append("")
+    shapes = collections.OrderedDict((k, collections.Counter()) for k in
+                                     ("installed-by-ctor", "dtor-only", "ctor-and-dtor", "unclassified"))
+    for r in rows:
+        if r["population"] != "plain-only" or r["shape"] not in shapes:
+            continue
+        d = shapes[r["shape"]]
+        d["tables"] += 1
+        d["literal"] += int(bool(r["literal_count"]))
+        d["callee"] += int(bool(r["named_call_count"]))
+        d["edge"] += int(r["parent_route"] != "none")
+    if any(d["tables"] for d in shapes.values()):
+        out.append("| the 208 plain-only tables, by what installs them | tables | a printable literal "
+                   "| a named callee | a base-caller edge |")
+        out.append("|---|---|---|---|---|")
+        for k, d in shapes.items():
+            if d["tables"]:
+                out.append("| %s | %d | %d | %d | %d |"
+                           % (k, d["tables"], d["literal"], d["callee"], d["edge"]))
+        out.append("")
     tally = collections.Counter(r["parent_vs_script"] for r in rows if r["parent_vs_script"])
     out.append("**The control answers what a constructor literal is, and it is not a name.** %d of "
                "the %d installer bodies behind the %d named tables push a printable UTF-16 literal; "

@@ -719,7 +719,8 @@ class for **978 of them (99.6%)**, so it is a measured reading and not an assump
 The plain-only tables split three ways, and each split is a different question. A body that
 installs exactly one table and returns `this` is that object's constructor, so the table is an
 object's own dispatch table inside a class no shipped package registers -- the naming channel for
-those is the body, not the class map. A table whose only installer is destructor-shaped has no
+those is the body, not the class map. The next section reads those bodies, and the channel they
+carry is a field layout and a subsystem call rather than a name. A table whose only installer is destructor-shaped has no
 constructor site in the sweep; the shape rule reads a tail-jumped epilogue the same way, so the
 artifact names each such table rather than claiming the constructor is absent. And the tables whose
 installer reads as neither are the residue the two signatures do not describe -- the population U40
@@ -742,6 +743,13 @@ population's split and the literal, callee, parent and chain columns.
 | plain-only | 208 | 347 | 57 | 3 | 17 | 0 | 138 | 54 |
 | no-store | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
+| the 208 plain-only tables, by what installs them | tables | a printable literal | a named callee | a base-caller edge |
+|---|---|---|---|---|
+| installed-by-ctor | 97 | 20 | 55 | 28 |
+| dtor-only | 29 | 4 | 16 | 7 |
+| ctor-and-dtor | 56 | 15 | 49 | 17 |
+| unclassified | 26 | 18 | 18 | 2 |
+
 **The control answers what a constructor literal is, and it is not a name.** 26 of the 990 installer bodies behind the 474 named tables push a printable UTF-16 literal; 16 of those tables push a literal that is a class name, and **none of the 474 pushes its own class**. The 2 `ini:` literals name the class that *declares* the config property -- `DemoPlayPendingLevel` pushes `ini:Engine.Engine.DemoRecordingDevice` and `NetPendingLevel` `ini:Engine.Engine.NetworkDevice` -- so a literal is a field default or a config section, and the class it can name is the declaring one.
 
 **Of the 246 nameless tables -- 208 plain-only and 38 whose table a constructor bounds -- 70 push a printable literal and 169 call a named function.** 5 push an `ini:` section, and that form does name a class: `0x4c93c4` (`ini:Engine.Engine.Canvas`, `ini:Engine.Engine.Input`); `0x4c93c8` (`ini:Engine.Engine.Canvas`, `ini:Engine.Engine.Input`); `0x4c93d0` (`ini:Engine.Engine.Canvas`, `ini:Engine.Engine.Input`); `0x4fc610` (`ini:Engine.Engine.DemoRecordingDevice`); `0x5139f4` (`ini:Engine.Engine.NetworkDevice`). The other 65 are field defaults and data addresses -- the commonest are `Engine` (21), `new` (15), `XboxLiveOnlineTask` (15), `Core` (9), `Official.ini` (5), `SavePackagesAsOfficial` (5) -- and 22 of the 246 push a class name (a package, or a class they register), never their own. So the literal channel places 5 of the 246 by config class and describes the fields of the rest, and names none of them.
@@ -752,6 +760,11 @@ population's split and the literal, callee, parent and chain columns.
 
 **The 4 tables with no installer body are not tables: each is a window into a dword run, or a run the census cut short.** The store site each records lies in no body of the map, and the run of address-like dwords around it is tiled by tables the census already lists: `0x4f70a0` (2 slots) dword run 0x004f6ff8+44; this address at offset 42; 3 listed table(s) in the run, 2 with an installer body; the recorded store site 0x000e1706 lies in no body of the map; `0x5172ec` (5 slots) dword run 0x005172ec+27; this address at offset 0; 1 listed table(s) in the run, 0 with an installer body; the recorded store site 0x001df51e lies in no body of the map; `0x5181dc` (3 slots) dword run 0x005181d0+6; this address at offset 3; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x00200606 lies in no body of the map; `0x53f7c4` (5 slots) dword run 0x0053f770+31; this address at offset 21; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x003313ce lies in no body of the map; 4 of 5 slots are not 4-aligned, so they are in-function offsets.
 <!-- /generated:class-ctor-evidence -->
+
+The 97 tables a constructor alone installs -- the population the previous read left -- are the
+`installed-by-ctor` row of the second table: 20 of them push a literal, 55 call a named body and 28 have a
+base edge, so the channel is thinner there than in the population as a whole and still says nothing about a
+name. What it does say is in the artifact, one table at a time.
 
 **The literal channel is closed by its own control, and closed in a specific way.** A constructor literal is
 a field default or a config section, and the class it can name is the class that *declares* the property,
