@@ -25,6 +25,17 @@ window that decodes to nothing is `unread` and keeps its bytes, so a silent deco
     python3 tools/vcall-receiver.py --xbe DUMP/default.xbe -o inventory/vcall_receiver_sites.csv
     python3 tools/vcall-receiver.py --check       # synthetic bytes, no dump, writes nothing
 
+**A site list can come from another census.** The audio module's slot-31 census
+(`inventory/xboxaudio_chain.csv`, `kind=slot31`) already lists its `call [reg+0x7c]` sites with the body
+and the register, so `--from-census` reads those rows instead of `--sites`:
+
+    python3 tools/vcall-receiver.py --xbe DUMP/default.xbe \\
+        --from-census inventory/xboxaudio_chain.csv --census-kind slot31 \\
+        -o inventory/audio_slot_receivers.csv
+
+The read is the same instrument either way -- a displacement is not a type, and the question ("what loads
+the receiver?") does not depend on which table the offset belongs to.
+
 **A second, independent decoder decides the boundary.** The narrow decoder below matches the byte pattern
 with its own instruction lengths, and an instruction that *ends* at the site is not proof: at `0x2d113c`
 the bytes `ff 51 50` are the tail of a `lea ecx,[ebp-0x15c]` displacement, and a wrong-length decode of
@@ -681,6 +692,31 @@ def class_tables(path):
     return out
 
 
+def census_sites(path, kind="slot31"):
+    """Site rows from a census that already lists its dispatch sites (`inventory/xboxaudio_chain.csv`).
+
+    The audio module's slot-31 census records `call [reg+0x7c]` rows with the body, the site and the
+    register in a `call [reg+disp]` form string. The receiver read does not care which census produced
+    a site, only that the row names the site, the register and the containing body, so this adapter is
+    what lets one instrument read both the `+0x4c`/`+0x50` pair and the audio module's slots.
+    """
+    rows = []
+    if not path or not os.path.isfile(path):
+        return rows
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if (r.get("kind") or "") != kind:
+                continue
+            m = re.search(r"\[([a-z]+)\+0x([0-9a-f]+)\]", r.get("form") or "")
+            if not m:
+                continue
+            rows.append({"site_va": r.get("site") or "", "section": (r.get("note") or ".text") or ".text",
+                         "slot": "31", "disp": "0x" + m.group(2), "reg": m.group(1),
+                         "function_va": r.get("body") or "", "function": r.get("body_name") or "",
+                         "sibling": r.get("extra") or ""})
+    return rows
+
+
 def global_kind(xbe, tables, va):
     """What an absolute operand points at: a class table, a pointer to one, or plain data."""
     if va in tables:
@@ -919,6 +955,25 @@ def selftest():
                   oracle=("agree", field_insns, "call   DWORD PTR [eax+0x4c]"))
     if row["origin"] != "field" or row["origin_va"] != "0x%08x" % base:
         bad.append("field-origin read as %s %s" % (row["origin"], row["origin_va"]))
+
+    # the census adapter: `call [edx+0x88]` rows become sites with the body and the register, and any
+    # other `kind` in the same file stays out of the population
+    census_text = ("kind,body,body_name,body_size,module,note,site,form,target,target_name,target_kind,extra\n"
+                   "slot31,0x000360b0,Core_UFactory,1614,Core,.text,0x000365d2,call [eax+0x7c],0x004d2274,"
+                   "name,outside,also dispatches +0x88\n"
+                   "edge,0x000360b0,Core_UFactory,1614,Core,,0x000360c0,call,0x003441eb,name,call,\n")
+    fd, census_path = tempfile.mkstemp(suffix=".csv")
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(census_text)
+    try:
+        got = [(r["site_va"], r["function_va"], r["reg"], r["disp"], r["sibling"], r["slot"])
+               for r in census_sites(census_path, "slot31")]
+    finally:
+        os.remove(census_path)
+    if got != [("0x000365d2", "0x000360b0", "eax", "0x7c", "also dispatches +0x88", "31")]:
+        bad.append("census rows read as %r" % (got,))
+    if census_sites("/nonexistent/census.csv"):
+        bad.append("a missing census produced rows")
     for line in bad:
         print("FAIL " + line)
     if bad:
@@ -937,6 +992,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--xbe")
     ap.add_argument("--sites", default=SITES)
+    ap.add_argument("--from-census", metavar="PATH",
+                    help="read the site list from a census that already lists its dispatch sites "
+                         "(`inventory/xboxaudio_chain.csv`) instead of `--sites`")
+    ap.add_argument("--census-kind", default="slot31",
+                    help="which `kind` column value of that census is the dispatch population (default slot31)")
     ap.add_argument("--tables", default=TABLES)
     ap.add_argument("-o", "--out", default=OUT)
     ap.add_argument("--oracle", metavar="PATH",
@@ -959,26 +1019,33 @@ def main():
     xbe = Xbe(args.xbe)
     tables = class_tables(args.tables)
     rows = []
-    with open(args.sites, newline="", encoding="utf-8") as fh:
-        for site in csv.DictReader(fh):
-            if site["section"] != ".text":
-                continue
-            va = int(site["site_va"], 16)
-            section = next((s for s in xbe.sections if s.contains(va)), None)
-            if section is None:
-                continue
-            blob = xbe.read_va(section.va, section.vsize)
-            fn_va = int(site["function_va"], 16) if site.get("function_va") else None
-            oracle = None
-            if exe:
-                lo = (fn_va - section.va) if fn_va is not None and fn_va < va \
-                    else max(0, va - section.va - 0x600)
-                oracle = objdump_read(exe, blob, section.va, lo, va - section.va, va)
-            row = analyse(xbe, tables, blob, section.va, va, site["reg"], fn_va=fn_va,
-                          oracle=oracle)
-            row["slot"] = site["slot"]
-            row["function"] = site["function"]
-            rows.append(row)
+    if args.from_census:
+        site_rows = census_sites(args.from_census, args.census_kind)
+        if not site_rows:
+            print("no %r rows in %s" % (args.census_kind, args.from_census), file=sys.stderr)
+            return 2
+    else:
+        with open(args.sites, newline="", encoding="utf-8") as fh:
+            site_rows = list(csv.DictReader(fh))
+    for site in site_rows:
+        if site["section"] != ".text":
+            continue
+        va = int(site["site_va"], 16)
+        section = next((s for s in xbe.sections if s.contains(va)), None)
+        if section is None:
+            continue
+        blob = xbe.read_va(section.va, section.vsize)
+        fn_va = int(site["function_va"], 16) if site.get("function_va") else None
+        oracle = None
+        if exe:
+            lo = (fn_va - section.va) if fn_va is not None and fn_va < va \
+                else max(0, va - section.va - 0x600)
+            oracle = objdump_read(exe, blob, section.va, lo, va - section.va, va)
+        row = analyse(xbe, tables, blob, section.va, va, site["reg"], fn_va=fn_va,
+                      oracle=oracle)
+        row["slot"] = site["slot"]
+        row["function"] = site["function"]
+        rows.append(row)
     rows.sort(key=lambda r: (r["slot"], r["site_va"]))
     if not args.summary:
         with open(args.out, "w", newline="", encoding="utf-8") as fh:
