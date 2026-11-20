@@ -66,6 +66,24 @@ Two kinds of evidence are readable without a database or a decompiler, and this 
 | `0x0032aa20` | `Core` | `FUN_0032aa20` | `XboxLiveManager_UpdateTask` | own method literal | `XboxLiveManager` |
 <!-- /generated:body-name -->
 
+## Names from call sites (2026-11-19)
+
+The masked-body pass leaves targets it cannot match: import thunks, bodies whose Ghidra boundary
+differs, functions inlined at some call sites and not others. But a matched function's `REL32`
+relocations to *function* symbols are resolved calls, and the library's own symbol table names the
+target. `tools/xdk-call-names.py` (`make xdk-call-names`) reads exactly that from
+`inventory/xdk_lib_names.csv`: **482 addresses** are named this way, 256 of them by more than one
+caller — the XAPI stubs run to 124 callers from one target. The seven library sections go from
+2,532 to **2,838 of 3,109** named, and the map from 44.5% to 47.65%.
+
+Two rules, both recorded in the artifact (`inventory/xdk_call_names.csv`): a name is taken only
+when every caller that reaches the address agrees on it, and the vote count travels with the row,
+so a single-caller name is distinguishable from one four callers confirm. 14 addresses had
+disagreeing callers and stay `FUN_*`. Two names land on two addresses each — COMDAT copies of
+`operator new` and D3DX's `process_restart` — which is evidence rather than ambiguity, since each
+copy has its own callers, so the duplicate is reported instead of refused (the body matcher
+refuses duplicates for the opposite reason: there a shared body is a shared guess).
+
 ## What the number means
 
 The method route is real but tiny: it names **27** bodies out of the corpus's unnamed ones, and those 27

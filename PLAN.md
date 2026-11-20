@@ -544,9 +544,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `DSOUND` 327, `XPP` 211 — `docs/LIBRARIES.md`'s table reads 2,532 because one name there predates this
       pass) and 1,169 in `.text` (`xvoice` 643, `uix` 304, `xapilib` 310, the CRT).
       Two controls: 98.3% agreement with the names Ghidra's FID already carried, and 99.82% of the
-      libraries' own call edges landing on the function they name. The artifact's shape is gated in
-      `make ci`; the generator needs the libraries and the dump, so it is named in the CI output like
-      `map-census`. What a supplied MSVC signature database would still add is the residue.
+      libraries' own call edges landing on the function they name. **And the call edges name what the
+      bodies could not** (`tools/xdk-call-names.py`, `make xdk-call-names`,
+      `inventory/xdk_call_names.csv`): every `REL32` to a function symbol in a matched function is a
+      resolved call whose target the library names, which adds **482** addresses — 256 confirmed by
+      more than one caller, the busiest XAPI stub by 124 — and takes the seven library sections from
+      2,531 to **2,838 of 3,109 (91.3%)** and the map from 44.4% to **47.65%**. Callers that disagree
+      (14 addresses) are left `FUN_*`; two names on two addresses are COMDAT copies and are reported
+      rather than refused, because each copy has its own callers. Both artifacts' shapes are gated in
+      `make ci`; the generators need the libraries and the dump, so they are named in the CI output
+      like `map-census`. What a supplied MSVC signature database would still add is the residue.
 - [~] 4.3 Locate the UnrealScript VM core in the XBE: `GNatives`/exec opcode dispatch table, `UObject` layout,
       `ProcessEvent`, `ProcessInternal`, property/`GPropPointers` tables. Document in `docs/NATIVE_VM.md`.
       Table **located** at `0x006313e8` with `EX_Max` 4096, in the uninitialised part of `.data`; the image
