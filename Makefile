@@ -14,6 +14,9 @@ MAPS_DIR   ?= $(GAME_DIR)/Maps
 WORK     ?= $(HOME)/sg1/work
 # The XDK static libraries a supplied set brings (PLAN 4.2, U9). Never committed: it is a path, not an input.
 XDK_LIBS ?= $(HOME)/sg1/work/xdk/libs-all
+# UE Viewer (PLAN 5.1). Built from source: the project's prebuilt Linux archive is a 404 and its
+# committed binary is 32-bit, so `make assets` takes the binary built from tag ue4.27.
+UMODEL   ?= $(HOME)/tools/umodel/umodel
 GHIDRA_HOME ?= $(HOME)/tools/ghidra/ghidra_12.2_PUBLIC
 PYTHON   ?= python3
 VA       ?= 0x53f770
@@ -624,6 +627,15 @@ xdk-lib-names:
 	@$(PYTHON) tools/native-summary.py --symbols symbols/xbox_functions.csv --overrides symbols/xbe_overrides.csv -o inventory/
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
 	@echo "wrote inventory/xdk_lib_names.csv and the names it earned"
+
+# The asset export (PLAN 5.1): umodel over every shipped .utx/.usx/.ukx/.uax package. The exported
+# data is game data and lands under $WORK; what is committed is the census (inventory/assets.csv,
+# inventory/asset_classes.csv) and docs/ASSETS.md, which is generated from it.
+assets:
+	@test -d "$(GAME_DIR)" || { echo "no game directory at $(GAME_DIR)"; exit 2; }
+	@test -x "$(UMODEL)" || { echo "no umodel at $(UMODEL) -- build it from UEViewer tag ue4.27"; exit 2; }
+	@$(PYTHON) tools/asset-export.py --dump "$(GAME_DIR)" --out "$(WORK)/extracted/assets" \
+		--umodel "$(UMODEL)" -o inventory --doc docs/ASSETS.md
 
 # The libraries the image was linked against (PLAN 2.6, docs/IMPORTS.md). Reads the header only.
 libraries:
