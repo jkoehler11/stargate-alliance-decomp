@@ -636,6 +636,46 @@ rather than by name is a different case — but for a native declared in *anothe
 still import it, which is what makes the absence meaningful here. The bytecode of `GUI.u`'s own classes is the
 place to close the gap, and `tools/uscript-dis.py --resolve` is the tool for it.
 
+## The D3D8 driver and its miniport: state, push buffer, FIFO (2026-11-19)
+
+`D3D` (82 methods, 18,216 B) and `CMiniport` (52, 11,855 B) are not a helper library — they are the Xbox's
+**D3D8 driver** inside the image, and the callee graph makes its shape plain
+(`inventory/d3_d_methods.csv`, `cminiport_methods.csv`):
+
+| method | bytes | calls |
+|---|---:|---|
+| `CMiniport::HalGrInit3d` | 2,527 | the graphics HAL's init — largest method in either class, and a leaf here |
+| `D3D::Inverse4x4` | 1,348 | `D3D::JBInvSqrt` |
+| `D3D::LazySetTextureTransform` | 896 | `_D3DDevice_MakeSpace`, `D3D::DbgRecordPushStart`, `_XMETAL_Push1`, `CDevice::EndPush` |
+| `D3D::LazySetShaderStageProgram` | 892 | `D3D::ValidTextureModes`, `_D3DDevice_MakeSpace` |
+| `D3D::CommonSetMultiSampleModeAndScale` | 853 | `FloatToLong`, `DXGRIP`, `_D3DDevice_MakeSpace`, `_XMETAL_Push…` |
+| `D3D::LazySetLights` | 846 | `_D3DDevice_MakeSpace`, `SetSpecularParameters`, `_XMETAL_Push…` |
+| `CMiniport::HalGrControlLoad` | 629 | `HalGrIdle`, `HalGrLoadChannelContext` |
+| `CMiniport::SetVideoMode` | 613 | `MapToLinearD3DFORMAT`, `VideoBitsPerPixelOfD3DFORMAT` |
+
+1. **State is lazy and the buffer is the interface.** Every `LazySet*` takes `_D3DDevice_MakeSpace` before it
+   writes, and writes through `_XMETAL_Push*` — a command stream, not registers. `LazySetTransform` additionally
+   composes (`MatrixProduct4x4`, `PushMatrix`), so a transform set is deferred and then multiplied into the
+   buffer. `DbgRecordPushStart` in the setters is a debug-record hook: the shipping driver still carries the
+   instrumentation the debug build used.
+2. **There is a software path beside the hardware one.** `CMiniport::SoftwareMethod` (511 B) calls `GetTime`,
+   `ServiceQueuedFlips`, `D3D::FixupPushBuffer` and `D3D::FlushWC` — the same command stream, built and flushed
+   without the GPU consuming it. It exists in the retail image.
+3. **The HAL is a real miniport.** `HalGrInit3d` (2,527 B), `HalGrControlLoad`/`HalGrLoadChannelContext` (channel
+   context switching), `HalFifoContextSwitch` (509 B), `HalFifoAllocDMA` (397 B), `CreateTile` → `TilingUpdateIdle`
+   (tile memory), and `ShutdownEngines` → `DestroyTile`, `ServiceFifoInterrupt`, `ServiceGrInterrupt`. Push-buffer
+   FIFO, DMA allocation, tiles and interrupts — the pieces a driver owns and a game never sees.
+4. **Surfaces are swapped by copying here.** `SwapCopy` (485 B) → `SwapSaveSurfaces`, `_D3DDevice_SetRenderTarget`,
+   `_D3DDevice_SetTexture`; `CommonSetViewport` (485 B) → `GetViewportOffsetAndScale` + `_XMETAL_Push4f`/`Push2f`.
+   Presentation is a copy the driver performs, which is why frame timing on this title is what it is under xemu.
+
+**Why this is documentation and not a task.** Unlike UIX (present and unreachable) and the shader toolchain (used
+by the title and required by a rebuild), the driver is **platform code the rebuild gets back by linking the same
+D3D8 libraries**: the game calls the D3D8 API, the API is this driver, and on xemu the driver talks to an emulated
+NV2A. Nothing here needs rewriting — but the *semantics* matter to anyone reasoning about the rebuilt build's
+behaviour: state only reaches the GPU when the buffer is pushed, presentation is a copy, and the software path is
+live in retail, so "the driver did it" is a possible explanation for a frame that looks wrong in an emulator.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
