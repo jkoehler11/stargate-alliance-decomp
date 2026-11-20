@@ -1,0 +1,9 @@
+file,asset,graphic,scale,geometries,primitives,joints,bodies
+HaakenRagdolls.ka,HaakenGrunt,haaken_grunt.PSK,0.02,37,38,18,19
+HaakenRagdolls.ka,HaakenWarrior,haaken_warrior.PSK,0.02,36,37,18,19
+SG1CrewRagdolls.ka,SG1Crew,sg1_crew_oneill.PSK,0.02,36,37,17,18
+SG1CrewRagdolls.ka,SG1CrewOld,sg1_crew_jackson.PSK,0.02,38,38,16,17
+SG1CrewRagdolls.ka,SG1CrewRagdoll,sg1_crew_oneill.PSK,0.02,36,36,15,16
+StargateRagdolls.ka,HumanRagdoll,goa_jaffa_proto.PSK,0.02,14,14,14,15
+StargateRagdolls.ka,JaffaLight,jaffa_jackal_light.PSK,0.02,36,37,17,18
+StargateRagdolls.ka,JaffaMedium,jaffa_jackal_medium.PSK,0.02,18,19,18,19
