@@ -1067,6 +1067,38 @@ Three readings:
 say whether any map needs a program outside this set, and that is the measurement that would make a baked table
 safe. Nothing here says what the `x` prefix *means*, only that the game prefers those strings.
 
+## What the `x` in `xps.1.1` marks (2026-11-19)
+
+Fifteen of the 60 programs carry an `x` before their version token, and five of the seven `M00` compiles are
+among them, so the prefix is on the hot path and deserves an answer rather than a note. Two checks settle most of
+it.
+
+**They are not marked copies.** Comparing each prefixed program's text against every un-prefixed one with the
+leading `x` removed: **0 of 15 has a twin**. They are distinct shaders, so the prefix is not a flag on a shared
+body.
+
+**The prefixed set is where Xbox extension opcodes live.** Scanning each program's instruction words for an
+opcode beginning `x`:
+
+| set | programs | using an `x` opcode | opcodes seen |
+|---|---:|---:|---|
+| `x`-prefixed | 15 | 6 | `xfc` ×6, `xmma_x2` ×1 |
+| plain | 45 | **0** | — |
+
+None of the 45 un-prefixed programs uses one, and the image names both — `xmma` appears 3 times and `xfc` 7 times
+in `default.xbe`, which is the assembler's own tables accepting them. `xmma_x2` is a matrix multiply-accumulate the
+standard `ps.1.1` grammar does not have, so a program using it could not be assembled as plain `ps.1.1` at all.
+
+**What is still open.** Six of the fifteen use an extension and nine do not, so the prefix *permits* extensions
+without implying one — the nine are distinct programs that use no `x` opcode, and whatever else marks them (a
+revision, a build flag, a later edit) is not visible in the text. The honest statement is the one-directional
+one: an `x` opcode appears only under an `x` prefix, and never in the plain set.
+
+**The next reading this opens.** `XGRAPHICS` carries 239 opcode- and assembler-named functions the shader survey
+never looked at — `DeadCodeStripper` (`IsMacMovRegNOP`, `RemoveNullMoves`), `RegScoreboard`
+(`StartNewInstruction`), `TLEngineSim` (`MacOpType`) and a `_D3DVsInstruction` type threaded through them. That is
+the vertex optimiser's interior, and it is a static reading with no boot needed.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
