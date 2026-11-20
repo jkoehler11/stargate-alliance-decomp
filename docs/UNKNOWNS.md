@@ -5297,9 +5297,30 @@ The `call [reg+0x7c]` census (`tools/xboxaudio-chain.py`, boundary-validated, `i
 is **115 sites and none of them is inside the `XboxAudio` module**: 27 in `Engine`, 13 in `Core`, one each in
 `XboxDrv` (`XboxDrv_XboxViewport`) and `Gui`, and 72 in bodies the map does not name. **17** of the 115
 dispatch the per-frame pump (`+0x88`) from the same body, which is the set a device-creation caller would be
-in. So the device virtual is reached from engine code, not from the module. What would settle *which* body:
-the receiver's type at those 17 sites — a `push`-back trace from the `call [reg+disp]` to the
-`mov reg,[obj+off]` that loaded it (the U9 instrument).
+in. So the device virtual is reached from engine code, not from the module. The `push`-back trace that
+sentence asked for is measured below.
+
+**Measured 2026-11-20, the receivers are read and the field is named by the script.** The 115 sites go through
+U8's receiver instrument (`tools/vcall-receiver.py --from-census`, `inventory/audio_slot_receivers.csv`) and a
+typing join (`tools/audio-slot-typing.py`, `inventory/audio_slot_typing.csv`): **106 are calls** and 9 are
+displacement bytes of another instruction. Where the receiver is the function's own `this`, the dispatch goes
+through the vtable of the class whose table holds that body, which types **24** sites — and **0** of the 24
+installs the device body at slot 31. The device (`0x0002fd70`) is installed at exactly one slot entry in the
+image, `XBoxAudioSubsystem` slot 31, and the pump (`0x0002feb0`) at one, slot 34 of the same table;
+`AudioSubsystem`'s own table installs `0x000e3e30` and `Engine_UnAudio` there, so both are fork overrides. The
+two-displacement coincidence is not evidence: 9 of the 17 `+0x88` siblings sit in `GameEngine` bodies whose own
+slot 31 is the shared one-byte `ret`.
+
+**What types the field is the script.** The corpus's 2,319 class texts hold three subsystem-typed variables, all
+in `Engine` (`Engine.u` 13, 17, 21): `Audio : audiosubsystem`, `GS : GSSubsystem`, `Voice : voicesubsystem`
+(`inventory/audio_owner_declarations.csv`). So the pointer the engine dispatches the device through is a declared
+`AudioSubsystem` whose run-time class is `XBoxAudioSubsystem`, which is why the displacement is `+0x7c` and why
+the body it reaches is the fork's and not `UEngine`'s.
+
+**What is left.** Which of the 31 field-origin sites reads that pointer: the field's byte offset is in neither
+the property stream nor the class text (the script names the variable, never its offset). Settling it is one
+guest pass — read `[this+D]` at those sites in a booted level and match the object's vtable against
+`XBoxAudioSubsystem`'s table — on the instrument `tools/xemu/field-objects.py` already drives.
 
 **Status.** `tools/xdk-entry-callers.py` and `inventory/xdk_entry_callers.csv` (11 sites over the three
 `_DirectSound*` entry points); the account is `docs/NATIVE_NOTES.md`, "Who calls the three audio entry

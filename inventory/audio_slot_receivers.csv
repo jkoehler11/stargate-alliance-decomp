@@ -1,0 +1,116 @@
+site_va,slot,reg,function,defining_va,bytes,form,source,base,disp,value,value_kind,candidates,walk,aligned,oracle,oracle_form,origin,origin_va,origin_chain
+0x00034feb,31,edx,Core_UExporter,0x00034fe3,8b 16,"mov edx,[esi]",object-head,esi,,,,0,69,yes,agree,call   DWORD PTR [edx+0x7c],stack,0x00034f9d,esi
+0x000365d2,31,eax,Core_UFactory,0x000365cb,8b 44 24 30,"mov eax,[esp+0x30]",stack,esp,+0x30,,,0,413,yes,agree,call   DWORD PTR [eax+0x7c],frame,,esp
+0x000730f6,31,edx,Core_UnObj,0x000730e3,8b 10,"mov edx,[eax]",object-head,eax,,,,0,455,yes,agree,call   DWORD PTR [edx+0x7c],zero,0x000730de,eax
+0x00078697,31,edx,FUN_00078680,0x0007868e,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,10,yes,agree,call   DWORD PTR [edx+0x7c],stack,0x0007868a,ecx
+0x0007d689,31,eax,FUN_0007d670,0x0007d684,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,11,yes,agree,call   DWORD PTR [eax+0x7c],field,0x0007d67f,ecx
+0x0008b87f,31,edx,FUN_0008b420,0x0008b877,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,268,yes,agree,call   DWORD PTR [edx+0x7c],field,0x0008b871,ecx
+0x0008bd5c,31,edx,,0x0008bd58,68 8b 11 50 ff,push 0xff50118b,not-a-boundary,,,,,0,0,no,none,,,,
+0x0008c97d,31,eax,,0x0008c97a,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,0,no,none,,,,
+0x000aa05e,31,edx,Engine_KSkeletal,0x000a9fc7,8b 55 00,"mov edx,[ebp]",stack,ebp,+0x0,,,0,567,yes,agree,call   DWORD PTR [edx+0x7c],frame,,ebp
+0x000c2831,31,eax,Engine_UnActCol,0x000c282e,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,116,yes,agree,call   DWORD PTR [eax+0x7c],stack,0x000c2810,ecx
+0x000c2d06,31,edx,,,00 00 00 53 51 8b 8c 24 e0 00 00 00 51 8b 4d 00 51 8d 4c 24 78 51 8b c8,,not-a-boundary,,,,,0,0,no,none,,,,
+0x000c32c2,31,edx,,,e0 00 00 00 51 8b 8c 24 e0 00 00 00 51 8b 4d 00 51 8d 4c 24 78 51 8b c8,,not-a-boundary,,,,,0,0,no,none,,,,
+0x000c6315,31,eax,FUN_000c62a0,0x000c6310,8b 03,"mov eax,[ebx]",object-head,ebx,,,,0,36,yes,agree,call   DWORD PTR [eax+0x7c],this,,ebx<-ecx
+0x000c6326,31,edx,FUN_000c62a0,0x000c6320,8b 55 00,"mov edx,[ebp]",stack,ebp,+0x0,,,0,42,yes,agree,call   DWORD PTR [edx+0x7c],frame,,ebp
+0x000d431c,31,edx,FUN_000d41e0,0x000d4319,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,105,yes,agree,call   DWORD PTR [edx+0x7c],field,0x000d4310,ecx<-eax
+0x000dbf79,31,edx,FUN_000dbef0,0x000dbf72,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,51,yes,agree,call   DWORD PTR [edx+0x7c],global,0x000dbf6c,ecx
+0x000dbfd7,31,eax,,0x000dbfd2,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,0,no,none,,,,
+0x000e1aa2,31,eax,,0x000e1a9d,11 8b c8 8b 01 ff,"adc ecx,[ebx-0xfe7438]",not-a-boundary,,,,,0,0,no,none,,,,
+0x000e1ac5,31,eax,Engine_UnAudio,0x000e1ac3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1b05,31,eax,Engine_UnAudio,0x000e1b03,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1b45,31,eax,Engine_UnAudio,0x000e1b43,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1b85,31,eax,Engine_UnAudio,0x000e1b83,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1bc5,31,eax,FUN_000e1bc0,0x000e1bc3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1be5,31,eax,FUN_000e1be0,0x000e1be3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1c05,31,eax,Engine_UnAudio,0x000e1c03,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1c45,31,eax,Engine_UnAudio,0x000e1c43,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1c85,31,eax,FUN_000e1c80,0x000e1c83,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1cc5,31,eax,FUN_000e1cc0,0x000e1cc3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1cf5,31,eax,FUN_000e1cf0,0x000e1cf3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1d25,31,eax,FUN_000e1d20,0x000e1d23,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1d55,31,eax,FUN_000e1d50,0x000e1d53,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000e1e8e,31,eax,,0x000e1e89,11 8b c8 8b 01 ff,"adc ecx,[ebx-0xfe7438]",not-a-boundary,,,,,0,0,no,none,,,,
+0x000e2df6,31,eax,,0x000e2df4,8b 06,"mov eax,[esi]",object-head,esi,,,,0,0,no,none,,,,
+0x000e680c,31,eax,FUN_000e6800,0x000e6808,8b 06,"mov eax,[esi]",object-head,esi,,,,0,5,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x000ea99a,31,edx,,,ff 8b 46 64 8b 88 c0 00 00 00 8b 44 24 08 8b 11 50 a1 54 21 6c 00 50 56,,not-a-boundary,,,,,0,0,no,none,,,,
+0x000eaa3d,31,edx,,,60 8b 48 28 8b 44 24 08 8b 89 c0 00 00 00 8b 11 50 a1 54 21 6c 00 50 56,,unread,,,,,0,0,no,none,,,,
+0x00109bb3,31,edx,Engine_UnChan,0x00109baf,8b 16,"mov edx,[esi]",object-head,esi,,,,0,31,yes,agree,call   DWORD PTR [edx+0x7c],this,,esi<-ecx
+0x0010a2a9,31,edx,Engine_UnChan,0x0010a2a5,8b 16,"mov edx,[esi]",object-head,esi,,,,0,213,yes,agree,call   DWORD PTR [edx+0x7c],this,,esi<-ecx
+0x0010e134,31,edi,Engine_UnConn,0x0010e12b,8b 38,"mov edi,[eax]",object-head,eax,,,,0,91,yes,agree,call   DWORD PTR [edi+0x7c],call-result,0x0010e101,eax
+0x0010e356,31,eax,Engine_UnConn,0x0010e34d,8b 06,"mov eax,[esi]",object-head,esi,,,,0,14,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x0010eae2,31,edx,Core_UnClass,0x0010ead4,8b 17,"mov edx,[edi]",object-head,edi,,,,0,484,yes,agree,call   DWORD PTR [edx+0x7c],stack,0x0010eac2,edi
+0x00116a62,31,edx,execMoveToward,0x00116a5d,8b 10,"mov edx,[eax]",object-head,eax,,,,0,536,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x00116a2a,eax
+0x001213c4,31,edx,FUN_00121350,0x001213bd,8b 10,"mov edx,[eax]",object-head,eax,,,,0,37,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x001213b5,eax
+0x0012a753,31,edx,,,68 f3 0f 11 44 24 5c f3 0f 11 44 24 60 f3 0f 11 44 24 64 8b 10 51 8b c8,,not-a-boundary,,,,,0,0,no,none,,,,
+0x0013243b,31,edx,,0x0013242b,8b 16,"mov edx,[esi]",object-head,esi,,,,0,0,no,none,,,,
+0x0013244b,31,eax,,0x00132449,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,0,no,none,,,,
+0x0013352e,31,edx,FUN_00133250,0x00133527,8b 55 00,"mov edx,[ebp]",stack,ebp,+0x0,,,0,214,yes,agree,call   DWORD PTR [edx+0x7c],frame,,ebp
+0x0013389e,31,edx,FUN_00133250,0x00133897,8b 55 00,"mov edx,[ebp]",stack,ebp,+0x0,,,0,444,yes,agree,call   DWORD PTR [edx+0x7c],frame,,ebp
+0x00133a31,31,edx,FUN_00133250,0x00133a2a,8b 55 00,"mov edx,[ebp]",stack,ebp,+0x0,,,0,548,yes,agree,call   DWORD PTR [edx+0x7c],frame,,ebp
+0x001375b5,31,edx,Engine_UnGame,0x001375b1,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,491,yes,agree,call   DWORD PTR [edx+0x7c],field,0x0013759c,ecx
+0x00139174,31,edx,Engine_UnGame,0x0013916d,8b 10,"mov edx,[eax]",object-head,eax,,,,0,101,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x00139165,eax
+0x00139b3c,31,edx,Engine_UnGame,0x00139b39,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,812,yes,agree,call   DWORD PTR [edx+0x7c],field,0x00139b36,ecx
+0x0013bffb,31,edx,Core_UnClass,0x0013bff7,8b 17,"mov edx,[edi]",object-head,edi,,,,0,121,yes,agree,call   DWORD PTR [edx+0x7c],argument,0x0013bfeb,edi
+0x0013c59f,31,edx,Core_UnClass,0x0013c59a,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,568,yes,agree,call   DWORD PTR [edx+0x7c],field,0x0013c58a,ecx
+0x0013c8f0,31,edx,Core_UnClass,0x0013c8e4,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,820,yes,agree,call   DWORD PTR [edx+0x7c],argument,0x0013c8e1,ecx
+0x001466f8,31,edx,Core_UnClass,0x001466f2,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,10810,yes,agree,call   DWORD PTR [edx+0x7c],field,0x001466ec,ecx
+0x00150240,31,edx,FUN_00150180,0x00150238,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,60,yes,agree,call   DWORD PTR [edx+0x7c],field,0x00150226,ecx
+0x001583ce,31,edx,Engine_UnLevAct,0x001583c9,8b 13,"mov edx,[ebx]",object-head,ebx,,,,0,1223,yes,agree,call   DWORD PTR [edx+0x7c],unknown,0x0015836a,ebx
+0x00158720,31,edx,Engine_UnLevAct,0x0015871d,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,156,yes,agree,call   DWORD PTR [edx+0x7c],field,0x00158705,ecx<-eax
+0x00158da3,31,edx,Engine_UnLevAct,0x00158da0,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,583,yes,agree,call   DWORD PTR [edx+0x7c],field,0x00158d97,ecx<-eax
+0x0015a913,31,edx,,,00 00 8b 11 50 6a 00 53 57 8d 44 24 34 50 6a 00 8d 84 24 8c 00 00 00 50,,unread,,,,,0,0,no,none,,,,
+0x0015dfa5,31,edx,Engine_UnLevel,0x0015df9e,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,29,yes,agree,call   DWORD PTR [edx+0x7c],stack,0x0015df9a,ecx
+0x00160b82,31,edx,Engine_UnLevel,0x00160b71,8b 16,"mov edx,[esi]",object-head,esi,,,,0,720,yes,agree,call   DWORD PTR [edx+0x7c],argument,0x001609d9,esi
+0x00160d1c,31,eax,Engine_UnLevel,0x00160d13,8b 06,"mov eax,[esi]",object-head,esi,,,,0,828,yes,agree,call   DWORD PTR [eax+0x7c],stack,0x00160d0b,esi
+0x00161263,31,eax,Engine_UnLevel,0x00161252,8b 06,"mov eax,[esi]",object-head,esi,,,,0,1191,yes,agree,call   DWORD PTR [eax+0x7c],stack,0x00160e90,esi
+0x00166267,31,eax,Engine_UnLevTic,0x00166264,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,396,yes,agree,call   DWORD PTR [eax+0x7c],field,0x00166233,ecx
+0x0017336c,31,eax,FUN_00173360,0x00173368,8b 06,"mov eax,[esi]",object-head,esi,,,,0,5,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x00182cb3,31,eax,FUN_00182c80,0x00182caf,8b 06,"mov eax,[esi]",object-head,esi,,,,0,23,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x001843b6,31,edx,FUN_00184270,0x0018439b,8b 10,"mov edx,[eax]",object-head,eax,,,,0,93,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x00184392,eax
+0x00184a32,31,edx,FUN_001848e0,0x00184a17,8b 10,"mov edx,[eax]",object-head,eax,,,,0,92,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x00184a0e,eax
+0x00184c10,31,eax,FUN_00184bd0,0x00184c0b,8b 06,"mov eax,[esi]",object-head,esi,,,,0,23,yes,agree,call   DWORD PTR [eax+0x7c],field,0x00184bf6,esi
+0x00187cc5,31,eax,FUN_00187cc0,0x00187cc3,8b 06,"mov eax,[esi]",object-head,esi,,,,0,3,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x0018816e,31,edx,FUN_00188150,0x0018816a,8b 16,"mov edx,[esi]",object-head,esi,,,,0,11,yes,agree,call   DWORD PTR [edx+0x7c],this,,esi<-ecx
+0x0018f3ef,31,edx,,0x0018f3ea,8b 10,"mov edx,[eax]",object-head,eax,,,,0,0,no,none,,,,
+0x001a7799,31,edx,FUN_001a7660,0x001a7791,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,69,yes,agree,call   DWORD PTR [edx+0x7c],field,0x001a778b,ecx
+0x001dafa8,31,edx,Engine_UnRender,0x001dafa6,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,74,yes,agree,call   DWORD PTR [edx+0x7c],field,0x001dafa3,ecx
+0x001db1f8,31,eax,Engine_UnRender,0x001db1f4,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,249,yes,agree,call   DWORD PTR [eax+0x7c],field,0x001db1e7,ecx
+0x001df27c,31,edx,FUN_001df140,0x001df276,8b 16,"mov edx,[esi]",object-head,esi,,,,0,94,yes,agree,call   DWORD PTR [edx+0x7c],stack,0x001df1ed,esi
+0x001f001e,31,eax,Core_UnTemplate,0x001f0018,8b 03,"mov eax,[ebx]",object-head,ebx,,,,0,1906,yes,agree,call   DWORD PTR [eax+0x7c],unknown,0x001efbba,ebx
+0x001f029f,31,edx,Core_UnTemplate,0x001f0299,8b 13,"mov edx,[ebx]",object-head,ebx,,,,0,2082,yes,agree,call   DWORD PTR [edx+0x7c],unknown,0x001efbba,ebx
+0x001f0331,31,edx,Core_UnTemplate,0x001f032b,8b 13,"mov edx,[ebx]",object-head,ebx,,,,0,2122,yes,agree,call   DWORD PTR [edx+0x7c],unknown,0x001efbba,ebx
+0x0020e9f2,31,edx,,0x0020e9ed,8b 17,"mov edx,[edi]",object-head,edi,,,,0,0,no,none,,,,
+0x0020fbba,31,edx,FUN_0020fa10,0x0020fb43,8b 10,"mov edx,[eax]",object-head,eax,,,,0,126,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x0020fb32,eax
+0x002165a8,31,edx,,,94 c0 85 c0 74 4a 51 e8 e4 a9 e6 ff 8b 10 83 c4 04 8d 4c 24 04 51 8b c8,,not-a-boundary,,,,,0,0,no,none,,,,
+0x0021665f,31,eax,,0x0021665a,01 8d 14 24 52 ff,"add ecx,[ebp-0xaddbec]",not-a-boundary,,,,,0,0,no,none,,,,
+0x00232be1,31,eax,Core_UnObjBas,0x00232bdb,8b 03,"mov eax,[ebx]",object-head,ebx,,,,0,1219,yes,agree,call   DWORD PTR [eax+0x7c],argument,0x00232166,ebx
+0x00233690,31,eax,Core_UnObjBas,0x0023368a,8b 03,"mov eax,[ebx]",object-head,ebx,,,,0,1919,yes,agree,call   DWORD PTR [eax+0x7c],unknown,0x0023343a,ebx
+0x0023dcbd,31,edx,Engine_UnSkeletalMeshCollision,0x0023dcb8,8b 17,"mov edx,[edi]",object-head,edi,,,,0,57,yes,agree,call   DWORD PTR [edx+0x7c],field,0x0023dcad,edi
+0x0023df80,31,edx,Engine_UnSkeletalMeshCollision,0x0023df50,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,244,yes,agree,call   DWORD PTR [edx+0x7c],stack,0x0023defe,ecx
+0x00244c2c,31,eax,FUN_00244c20,0x00244c28,8b 06,"mov eax,[esi]",object-head,esi,,,,0,5,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x002459ec,31,eax,FUN_002459e0,0x002459e8,8b 06,"mov eax,[esi]",object-head,esi,,,,0,5,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x002520b1,31,eax,,0x002520a9,03 00,"add eax,[eax]",object-head,eax,,,,0,0,no,none,,,,
+0x002836fd,31,eax,FUN_002836a0,0x002836f1,8b 06,"mov eax,[esi]",object-head,esi,,,,0,22,yes,agree,call   DWORD PTR [eax+0x7c],this,,esi<-ecx
+0x002cf1f4,31,eax,FUN_002cf1b0,0x002cf1ed,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,25,yes,agree,call   DWORD PTR [eax+0x7c],field,0x002cf1ea,ecx
+0x002cfa2e,31,edx,FUN_002cf970,0x002cfa27,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,61,yes,agree,call   DWORD PTR [edx+0x7c],field,0x002cfa1a,ecx
+0x002cfc91,31,edx,FUN_002cfc20,0x002cfc8a,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,34,yes,agree,call   DWORD PTR [edx+0x7c],field,0x002cfc87,ecx
+0x002eca56,31,edx,,0x002eca51,8b 17,"mov edx,[edi]",object-head,edi,,,,0,0,no,none,,,,
+0x002ed14b,31,edx,FUN_002ecfb0,0x002ed148,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,128,yes,agree,call   DWORD PTR [edx+0x7c],field,0x002ed145,ecx
+0x002ed1a7,31,edx,FUN_002ecfb0,0x002ed1a4,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,156,yes,agree,call   DWORD PTR [edx+0x7c],field,0x002ed19e,ecx
+0x002ed1c5,31,edx,FUN_002ecfb0,0x002ed1c2,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,164,yes,agree,call   DWORD PTR [edx+0x7c],field,0x002ed1bc,ecx
+0x002f2d55,31,eax,,0x002f2d50,8b 07,"mov eax,[edi]",object-head,edi,,,,0,0,no,none,,,,
+0x002f6033,31,eax,FUN_002f6020,0x002f602f,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,8,yes,agree,call   DWORD PTR [eax+0x7c],field,0x002f6023,ecx<-eax
+0x002f6061,31,eax,FUN_002f6050,0x002f605d,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,7,yes,agree,call   DWORD PTR [eax+0x7c],field,0x002f6053,ecx
+0x002f60d1,31,eax,FUN_002f60c0,0x002f60cd,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,7,yes,agree,call   DWORD PTR [eax+0x7c],field,0x002f60c3,ecx
+0x002f73de,31,eax,FUN_002f7360,0x002f73d9,8b 06,"mov eax,[esi]",object-head,esi,,,,0,38,yes,agree,call   DWORD PTR [eax+0x7c],stack,0x002f736e,esi
+0x002f7cc1,31,eax,,,8b 48 08 50 ff 15 f0 14 63 00 8b 8e 68 02 00 00 85 c9 74 28 8b 01 6a 00,,unread,,,,,0,0,no,none,,,,
+0x002f98ef,31,eax,FUN_002f98c0,0x002f98e2,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,17,yes,agree,call   DWORD PTR [eax+0x7c],field,0x002f98d2,ecx
+0x002fded0,31,edx,,0x002fdecb,8b 17,"mov edx,[edi]",object-head,edi,,,,0,0,no,none,,,,
+0x0030787b,31,eax,FUN_003077c0,0x00307877,8b 07,"mov eax,[edi]",object-head,edi,,,,0,72,yes,agree,call   DWORD PTR [eax+0x7c],call-result,0x00307869,edi<-eax
+0x00308f53,31,edx,Gui_UnUIXInteraction,0x00308f4f,8b 16,"mov edx,[esi]",object-head,esi,,,,0,216,yes,agree,call   DWORD PTR [edx+0x7c],call-result,0x00308f33,esi<-eax
+0x00317b66,31,eax,FUN_00317b40,0x00317b62,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,17,yes,agree,call   DWORD PTR [eax+0x7c],field,0x00317b5f,ecx
+0x00317b93,31,edx,FUN_00317b40,0x00317b8f,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,36,yes,agree,call   DWORD PTR [edx+0x7c],field,0x00317b86,ecx<-eax
+0x003197d3,31,edx,FUN_003197a0,0x003197cf,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,19,yes,agree,call   DWORD PTR [edx+0x7c],field,0x003197cc,ecx
+0x003197dd,31,eax,FUN_003197a0,0x003197d9,8b 01,"mov eax,[ecx]",object-head,ecx,,,,0,24,yes,agree,call   DWORD PTR [eax+0x7c],field,0x003197d6,ecx
+0x0032d715,31,edx,XboxDrv_XboxViewport,0x0032d713,8b 11,"mov edx,[ecx]",object-head,ecx,,,,0,26,yes,agree,call   DWORD PTR [edx+0x7c],field,0x0032d710,ecx

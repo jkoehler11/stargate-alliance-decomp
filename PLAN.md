@@ -14951,3 +14951,39 @@ sequence.
 - **Not in this PR.** The receiver's type at the 17 two-slot sites (the `push`-back trace U9 asks for) — the
   census names the candidates, not the type; and the 21 chain members that stay `FUN_*` because their own
   edges carry no name to borrow.
+
+### Execution notes (2026-11-20, the audio slot's receivers are typed, and the engine names its own audio field)
+
+- **Task.** The two items the audio-module bundle left: the receiver's type at the `+0x7c` sites (U34's
+  `push`-back trace) and the 17 sites that also dispatch the pump. U8's instrument already reads a register
+  loader, so the work was the join to the class tables, not a second decoder.
+- **One instrument, two censuses.** `tools/vcall-receiver.py` gains `--from-census`/`--census-kind`, which build
+  the site list from a census that already lists its dispatch rows, with a selftest case that the adapter reads
+  the register out of the `call [reg+disp]` form and keeps the other `kind`s out. The pair's artifact regenerates
+  **byte-identically** (106 rows, empty diff), so the older read did not move.
+- **106 of 115 are calls, 24 are typed, 0 are the device.** `inventory/audio_slot_receivers.csv` (115 rows): 9
+  hits are displacement bytes (`not-a-boundary`, the two decoders agree), and the origins are `this` 25, a field
+  31, an object head 11, a stack slot 16, a call's return 9, an argument 4, a global 1 and 5 unattributed.
+  `tools/audio-slot-typing.py` reads all 492 tables out of the image: 403 have a slot 31 (112 distinct
+  pointers), the device body `0x0002fd70` is installed at **one** slot entry and the pump `0x0002feb0` at **one**;
+  `AudioSubsystem`'s own table installs `0x000e3e30` / `Engine_UnAudio` there, so both are fork overrides.
+  Where the receiver is the function's own `this`, the holder's table types the site — **24 sites, and every one
+  installs a different body at slot 31**.
+- **The script names the field.** `--declarations` walks the 18 packages' 2,319 class texts and writes
+  `inventory/audio_owner_declarations.csv`: three subsystem-typed variables in the whole corpus, all in `Engine`
+  (`Engine.u` 13, 17, 21) — `Audio : audiosubsystem`, `GS : GSSubsystem`, `Voice : voicesubsystem`. So the pointer
+  the engine dispatches the device through is a declared `AudioSubsystem` whose run-time class is
+  `XBoxAudioSubsystem`. Its offset is in neither the property stream nor the class text, which is why the 31
+  field-origin sites stay untyped and are this bundle's remainder.
+- **The `+0x88` sibling was not evidence.** 17 sites dispatch the pump's displacement from the same body, but 9 sit
+  in `GameEngine` bodies whose own slot 31 is the shared one-byte `ret`; the corrected rule is stated in
+  `docs/systems/AUDIO.md` and in U34 rather than left in the earlier bundle's body.
+- **Files.** `tools/vcall-receiver.py` (the census adapter and its selftest), `tools/audio-slot-typing.py` (new:
+  the join, the declaration walk, two selftests), `Makefile` (`audio-slot-receivers`, `audio-slot-typing`),
+  `inventory/audio_slot_receivers.csv`, `inventory/audio_slot_typing.csv`,
+  `inventory/audio_owner_declarations.csv`, `docs/systems/AUDIO.md`, `docs/NATIVE_CLASS_TREE.md`,
+  `docs/UNKNOWNS.md` U34, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; both tools answer `--check` without the dump and write nothing; the pair's artifact
+  regenerates byte-identically; both new artifacts regenerate from committed inputs.
+- **Not in this PR.** The 78 untyped sites: which of the 31 field reads is `Engine.Audio` needs the field's byte
+  offset, which is a guest read; and the 21 audio-chain bodies that stay `FUN_*` are the naming thread.

@@ -1,0 +1,4 @@
+package,class,line,var,type,declaration
+Engine.u,Engine,13,Audio,audiosubsystem,var audiosubsystem Audio
+Engine.u,Engine,17,GS,GSSubsystem,var GSSubsystem GS
+Engine.u,Engine,21,Voice,voicesubsystem,var voicesubsystem Voice
