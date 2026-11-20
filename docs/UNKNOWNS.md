@@ -5349,28 +5349,53 @@ device), 32 (`+0x80`, device setter), 34 (`+0x88`, pump), 50 (`+0xc8`, file stre
 next stream) of `XBoxAudioSubsystem`'s table `0x004d21f8`; the `+0x80` site in the init goes to a *different*
 class's table (`XHVVoiceSubsystem`, `0x004d2ad8`), which is why a displacement never types a call.
 
-## U35. Three of the eight audio counters are never indexed, and one scope has no open (2026-11-20)
+## U35. The three idle audio counters and the missing `PlaySound` open were one scan filter — answered (2026-11-20)
 
-**Observed.** `inventory/stat_scope_uses.csv` (`tools/stat-scope-uses.py`) classifies every site that indexes
-the engine's cycle-scope array `0x7b5dfc` by the source of its index. Counting the audio ids by their block
-offset (`+0x184` of `XBoxAudioSubsystem`, read from the device body's `lea ecx,[esi+0x184]`):
+**Question.** `inventory/stat_scope_uses.csv` classified every site that indexes the engine's cycle-scope array
+(`0x7b5dfc`) by the source of its index, and three of `XBoxAudioSubsystem`'s eight registered ids (`+0x194`,
+`+0x198`, `+0x1a4`) were indexed by nothing in the image, while the `PlaySound` scope had a close at
+`0x0002f9f4` and no open anywhere in the census.
 
-- **five are used** — `Update` (`+0x18c`, one `sub tsc`), `Occlusion` (`+0x190`, one open and two closes),
-  `PlaySound` (`+0x188`, one close), `Streaming` (`+0x19c`) and `Regular` (`+0x1a0`, both `inc` by 1);
-- **three index nothing in the image** — the *first* id of the `PlaySound` pair (`+0x194`), the *first* id of
-  the `Occlusion` pair (`+0x198`) and `StoppedSounds` (`+0x1a4`).
+**Answer: the census read a quarter of the references, and the quarter was its alignment filter.** The scan kept
+only 4-byte-aligned dwords; the `A1`/`A3` form of `mov eax,ds:<abs>` writes its immediate one byte past the
+opcode, so of the **410** references the code sections hold, exactly **106** were candidates — the committed
+artifact to the site. With every byte offset a candidate, each one proved against an instruction boundary and the
+inline operand form (`inc DWORD PTR [eax+ecx*4]`) taught to the index reader, the module's own sites come back:
 
-**Why this is a gap and not a negative.** `PlaySound` and `Occlusion` are each registered twice with identical
-arguments (same group `Audio`, same name, same flag pushes) and the two ids differ only in the field they land
-in, so the pair is deliberate; a count/time pair is the obvious reading, but nothing in the image reads the
-first member, and `StoppedSounds` — registered with the same shape — is read nowhere either. The `PlaySound`
-scope is also lopsided: its close (`0x0002f9f4`, `add tsc - 12`) exists and its open does not appear in the
-106-site census, so either the open is reached through a slot copied out of the block (a register carried
-across a call, which the census reads as `no resolved index source` at 22 sites) or the scope is opened by a
-body outside the module.
+- `PlaySound`'s scope is opened at `0x0002f1d9` and closed twice, on mutually exclusive exits: `0x0002f447` is
+  the not-found exit (`cmp ebp,0xffffffff; jne 0x2f476` skips it) and `0x0002f9f4` the normal one;
+- `+0x194` is `PlaySound`'s **count**, `inc` by 1 at `0x0002f205`, two instructions after the close of its cycle
+  partner — so the duplicated name is a (cycles, count) pair, and the same holds for `Occlusion`;
+- `+0x198` is `Occlusion`'s count (`inc` by 1 at `0x00030eb2`);
+- `+0x1a4` is `StoppedSounds`, `inc` by 1 at `0x0002d415` in `XboxAudio_StopStreamingSound`.
 
-**What would settle it.** A guest pass: break at `0x0002530f0` with the eight registrations outstanding and
-watch which ids the `sub tsc` side writes; or trace `0x7b5dfc`'s slots at run time for one sound and see which
-of the eight change. On the static side, the 22 unresolved sites are the population to type first —
-`inventory/stat_scope_uses.csv` names every one of them (`index_source=unread`), and a `push`-back trace from
-each would either find the missing open or close the question.
+All eight ids are used. The census now reports 409 sites over 97 bodies, 69 of them in a map gap, one candidate
+reported `not-a-boundary` (`0x002b8497`) rather than counted, and 24 sites with no resolved index source.
+
+**What would settle the remainder.** The 24 unread sites are the residue, and they are a different population
+from the one this entry named: their index arrives in a register written before a `call` (so the trace stops by
+design) or through a stack slot the frame reuses. Typing them needs the callee's clobber set at each site, not a
+wider window — and none of them can be an audio id, because every audio id is a field of the subsystem and all
+eight are accounted for above.
+
+
+## U36. Two symbol-map rows around the audio play path are wrong (2026-11-20)
+
+**Observed.** The `PlaySound` scope close at `0x0002f9f4` is attributed to a row named `Core_UnTemplate` with
+module `Core`, at `0x0002f820`, 518 bytes. That row is a slice of the body the map starts at `0x0002f13c`
+(`XboxAudio_XboxAudioSubsystem`, 1,764 bytes, ending exactly at `0x0002f820`), which continues to `ret 0x30` at
+`0x0002fa23`: `0x0002f820` is the function's **assert block** (`push 0x287; push 0x4fa478; push 0x4fa83c; call
+0x58a30`), reached by fall-through from `jge 0x2f837`, and the split gives it a name and a module that belong to
+nothing. Second, the pump's row (`0x0002feb0`, slot 34, 5,277 bytes) **stops 19 bytes short of its own closing
+store** at `0x00031360`: a reader that disassembles exactly the row's size sees `add edx,eax` (the timestamp) and
+never the `mov DWORD PTR [ecx],edx`, which is why `Update`'s close first read as `read only`.
+
+**Why it matters.** Any per-body census inherits both: the split puts audio code in `Core` (the module census
+counts it there), and a short size silently truncates the last instructions of a body — this census now reads 48
+bytes past every declared size to work around it, which is a workaround, not a repair.
+
+**What would settle it.** A boundary-repair path that `symbols/xbe_overrides.csv` can express and a tool applies
+to `symbols/xbox_functions.csv` in its own right (today only the Ghidra import folds an override in, and the map
+has no size-override column): merge `0x0002f820` into `0x0002f13c` with size 2,282, and give `0x0002feb0` its
+real end. It then cascades: `function_modules.csv`, `native-summary`, `module-census` and `STATUS.md` all quote
+the split (see `references/autonomy.md`'s regeneration order).
