@@ -1,9 +1,9 @@
 entry_name,entry,site,caller,caller_name,caller_size,module,calls_in,caller_slot,caller_refs
-_DirectSoundCreate@12,0x004a20e0,0x0002fd90,0x0002fd70,FUN_0002fd70,272,,0,XBoxAudioSubsystem +0x7c (slot 31 of 55),0x004d2274
+_DirectSoundCreate@12,0x004a20e0,0x0002fd90,0x0002fd70,XboxAudio_CreateDevice,272,XboxAudio,0,XBoxAudioSubsystem +0x7c (slot 31 of 55),0x004d2274
 _DirectSoundCreate@12,0x004a20e0,0x00344f81,0x00344f62,?DSoundInitialize@CVoiceMailMode@XHVNamespace@@QAEJXZ,218,(other named),0,,
 _DirectSoundCreate@12,0x004a20e0,0x00345848,0x00345828,?DSoundInitialize@CVoiceChatMode@XHVNamespace@@QAEJXZ,213,(other named),0,,
 _DirectSoundCreate@12,0x004a20e0,0x003460d1,0x003460b2,?DSoundInitialize@CLoopbackMode@XHVNamespace@@QAEJXZ,218,(other named),0,,
-_DirectSoundCreateStream@8,0x004a2127,0x0002ae52,0x0002ae00,FUN_0002ae00,210,,0,,0x0005e5f4
+_DirectSoundCreateStream@8,0x004a2127,0x0002ae52,0x0002ae00,XboxAudio_CreateVoiceStream,210,XboxAudio,0,,0x0005e5f4
 _DirectSoundCreateStream@8,0x004a2127,0x0002e44e,0x0002e210,XboxAudio_XboxAudioSubsystem,815,XboxAudio,0,XBoxAudioSubsystem +0xc8 (slot 50 of 55),0x004d22c0
 _DirectSoundCreateStream@8,0x004a2127,0x00348da5,0x00348c82,?InitializeStream@CRemoteTalker@XHVNamespace@@QAEJPAU_DSMIXBINS@@KK@Z,320,(other named),0,,
 _DirectSoundDoWork@0,0x004a0552,0x0002ff22,0x0002feb0,XboxAudio_XboxAudioSubsystem,5277,XboxAudio,0,XBoxAudioSubsystem +0x88 (slot 34 of 55),0x004d2280

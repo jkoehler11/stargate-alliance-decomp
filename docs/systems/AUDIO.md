@@ -306,18 +306,21 @@ Three things this settles for the audio work:
    (`CIrql::Raise`/`Lower`): 14 in the driver, 26 in the voice path, and one in a heap constructor nested
    inside the `DirectSound` namespace — **none** in `CDirectSound`, `CDirectSoundVoice`, voice chat or the
    3D maths. Everything above the MCPX is user-mode by comparison.
-4. **The game's device is a virtual of its audio subsystem.** `_DirectSoundCreate` has four call sites: the
-   three voice modes' own `DSoundInitialize` virtuals, and `FUN_0002fd70` — a body nothing calls directly,
-   stored only in `XBoxAudioSubsystem`'s class table at **slot 31 of 55** (`+0x7c`), whose 272 bytes call
-   `_DirectSoundCreate` and then `_XAudioDownloadEffectsImage`. The stream (`+0xc8`) and per-frame pump
-   (`+0x88`) are two more slots of the same table, so a rebuild supplies those three virtuals, not a UE2
-   native.
+4. **The game's device is a virtual of its audio subsystem, and the module chain is named.**
+   `_DirectSoundCreate` has four call sites: the three voice modes' own `DSoundInitialize` virtuals, and
+   `XboxAudio_CreateDevice` (`0x0002fd70`) — a body nothing calls directly, stored only in
+   `XBoxAudioSubsystem`'s class table at **slot 31 of 55** (`+0x7c`), whose 272 bytes call
+   `_DirectSoundCreate` and then `_XAudioDownloadEffectsImage`. The stream (`+0xc8`), the per-frame pump
+   (`+0x88`) and the next-stream setter (`+0xd0`) are three more slots of the same table, so a rebuild
+   supplies those four virtuals, not a UE2 native. The module's own 31-body chain — ten of them named from
+   their edges — is `docs/NATIVE_NOTES.md`'s last section and `inventory/xboxaudio_chain.csv`.
 
 What is *not* measured: no method in this stack carries a string (0 of 345), so none is confirmed by its own
-message; and the device virtual has a **slot** but no dispatcher — `call [reg+0x7c]` is an offset that 115
-bodies share, so which body reaches the class's slot 31 is still open (U34). The callers of the three entry
-points themselves are now counted: 11 sites, in `inventory/xdk_entry_callers.csv`, and every one of them is
-either a voice mode or a virtual of `XBoxAudioSubsystem`.
+message; and the device virtual has a **slot** but no dispatcher inside its own module — of the 115
+`call [reg+0x7c]` sites, **none** sits in an `XboxAudio` body and 17 dispatch the pump slot too, so the caller
+is engine code and the receiver's type at those 17 is still open (U34). The callers of the three entry points
+themselves are counted: 11 sites, in `inventory/xdk_entry_callers.csv`, and every one of them is either a
+voice mode or a virtual of `XBoxAudioSubsystem`.
 
 ## What this means for the rebuild
 
