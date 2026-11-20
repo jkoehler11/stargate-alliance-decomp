@@ -1386,6 +1386,221 @@ contains but whose body did not match would appear as `FUN_*` and be missing fro
 floor for "what the link contains", and the four-user push-buffer census in the previous section is the check that the
 render-path subset is complete.
 
+### The draw commands, and what `0x460ef0` actually is (2026-11-19)
+
+`_D3DDevice_DrawVertices@12` is 148 bytes and reads end to end, which makes it the best look yet at what the buffer
+carries:
+
+```
+mov  ebx,[0x460ee8]          ; device
+...
+mov  edi,[esp+0x18]          ; vertex count
+lea  esi,[edi-1] / shr esi,8 / inc esi    ; ceil(count / 256) batches
+lea  eax,[esi+5] / call 0x457ee0          ; reserve (batches + 5) dwords
+mov  dword [eax],0x000417fc               ; command
+mov  [eax+4],ecx                          ; vertex buffer address
+shl  esi,0x12 / add esi,0x40001810
+mov  [eax+8],esi
+...                                       ; per-batch word: addr | ((count-1) << 24)
+mov  dword [eax+0x10],0x000417fc           ; command again, closing
+mov  dword [eax+0x14],0
+add  eax,0x18 / mov [ebx],eax             ; 24-byte record, cursor written back
+```
+
+Three things fall out:
+
+1. **The draw command is `0x000417fc`, and its record is 24 bytes** — command, vertex-buffer address, a word carrying
+   `batches << 18 | 0x40001810`, one word per 256-vertex batch with the batch's count in the top byte, then the command
+   again with a zero. `DrawIndexedVertices@12` adds **`0x00041808`** and `DrawVerticesUP@16` uses `0x000417fc` alone, so
+   the draw band is these two opcode-shaped values, not a dense index range.
+2. **Each draw is one record however many vertices.** Batching is inside the record: `(count-1) >> 8` is how the driver
+   splits a 1,000-vertex call into four batch words without extra commands. A rebuild that emits one command per draw
+   has the same shape; one that emits one per 256 vertices does not.
+3. **`0x460ef0` is the device, not just a cursor.** `_Direct3D_CreateDevice@24` does `mov edi,0x460ef0; mov
+   [0x460ee8],edi`, so the pointer the driver keeps at `0x460ee8` *is* the address of this block: `+0` write pointer,
+   `+4` limit, `+8` flags (bit `0x10`, the pixel-constant mode read by `SetVertexShaderConstantNotInline`). Every earlier
+   section's "globals `0x460ef0`/`0x460ef4`/`0x460ef8`" are fields of one static control block, and the draw path
+   writes the cursor to `[dev+0]` — the same word the state and constant emitters bump.
+
+**The vocabulary so far.** States `0x00040300`–`0x0004037c` (17 words, appended by `SetRenderState_Simple`), shader
+constants `0x00041ea4` (28- and 60-byte records, emitted inline), draws `0x000417fc` and `0x00041808`, plus the flag
+words `0x00100b80` / `0x00300b80` inside constant records. Three emitters, three bands, one control block.
+
+**Limits.** `DrawIndexedVertices`' 599 bytes were scanned for command immediates, not read line by line, so its record
+layout beyond `0x41808` is unread; and the meaning of the `0x40001810` bits in the batch word is not established — it is
+measured as a constant the driver adds, not decoded as flags.
+
+## The assembler names itself, and `x` is its own prefix (2026-11-19)
+
+The shader programs live in `.rdata`, but one `xvs.1.1` occurrence sits in the **`XGRPH`** section (`0x47dc00`–`0x49f348`,
+137,032 bytes) — and that section holds the assembler's own strings rather than game data:
+
+| address | string |
+|---|---|
+| `0x0049c410` | `#pragma fragment` |
+| `0x0049c424` | `xvsw.1.1` + `#pragma screenspace` |
+| `0x0049c444` | `xvss.1.1` |
+| `0x0049c450` | `xvs.1.1` + `#pragma screenspace` |
+| `0x0049c470` | `// instructions: %d` |
+| `0x0049c4b0` | **`// Xbox Shader Assembler %s`** |
+
+Three readings:
+
+1. **The tool is the *Xbox* Shader Assembler**, and it composes shader text with `x`-prefixed version lines. That settles
+   what the prefix is: not a stray byte in the game's data, but the toolchain's own form for the Xbox dialect — the same
+   dialect whose opcodes (`xfc`, `xmma_x2`) appear only under `x`-prefixed programs, which is why the two earlier
+   findings line up.
+2. **Two variants exist that no shipped program uses.** `xvsw.1.1` and `xvss.1.1` appear beside `xvs.1.1`; the 60
+   programs use `xvs.1.1` three times and neither of the others. So the tool's version space is larger than the game's
+   usage, and "the 60 programs" remains a statement about the game, not about the assembler.
+3. **The pragmas are part of the emitted text.** `#pragma screenspace` travels with `xvsw` and `xvs` but not `xvss`, and
+   `#pragma fragment` appears separately, so a shader's identity here is a version line plus pragmas — which is what the
+   yacc grammar parses and what a rebuild would have to accept.
+
+**Limit.** These strings are read as the assembler's own vocabulary from their content and neighbours; which function
+formats them (`CD3DXAssembler::Production` is the obvious candidate at 3,262 bytes, but no body was read here) is not
+established. The meanings of the `w` and `s` suffixes in `xvsw`/`xvss` are unknown.
+
+### The push buffer is a ring, and flushing patches it (2026-11-19)
+
+Two more bodies finish the picture, and both change what a rebuild has to do.
+
+**`?InitializePushBuffer@CDevice@D3D@@QAEJXZ`** (`0x00457740`, 160 bytes) allocates the buffer and lays out the block:
+
+| store | value |
+|---|---|
+| `[dev+0x24]` | the allocation |
+| `[dev+0]` | base |
+| `[dev+4]` | `base + (size/4)*4 - 0x204` — the limit, with 516 bytes kept back |
+| `[dev+0x2c]` | `5` |
+| `[base]` | `3` — a first command written before anything else |
+| `[dev+0x38]` | `pages - 1`, a mask, where `pages` is the next power of two above `size / [0x463680]` |
+| `[dev+0x48]` | an allocation of `pages * 8` bytes — a page table |
+
+Mask plus a per-page table is what a **ring** looks like: the buffer wraps, and something has to know which pages hold
+live records. The limit being `end - 0x204` rather than `end` means the final 516 bytes are never written.
+
+**`?FixupPushBuffer@D3D@@YGXPAUPushBufferFixup@1@@Z`** (`0x0045c810`, 145 bytes) walks a chain of fixup records and
+rewrites the buffer in place: at `[entry+8]` it stores `(len & 0x0fffffff) + 1` from `[entry]`; when bit `0x20000000` is
+set it walks a list of (length, offset) pairs from `[entry+0xc]`, copying bytes from a source and adding the base in
+`[entry+0x10]`; it clears bit `0x40000000` and marks the chain finished with `next = -1`.
+
+**What this changes for a rebuild.** The records an emitter builds are not final: lengths and address-bearing ranges are
+patched at flush time, and the buffer they live in wraps. So intercepting or reproducing the render path means
+reproducing the *fixup pass* as well as the emitters — the bytes the GPU sees are not the bytes the emitters wrote. It
+also explains why the emitters store addresses in records at all (`DrawVertices` puts a vertex-buffer address in its
+record): those addresses are the things a fixup has to adjust.
+
+**Limits.** The page-size source at `[0x463680]` and the meaning of the `5` at `[dev+0x2c]` are unread; `0x204` is
+measured as the gap between limit and end, not explained; the fixup entry layout above is read from the offsets the
+body touches, and one entry's later fields are not decoded. The `3` written at `[base]` is a first command of unknown
+kind.
+
+### All sixty programs are live, and they split by stage at two dispatchers (2026-11-19)
+
+The earlier reading left the other 53 programs as "other maps or passes, plausibly unused content". Two static checks
+replace that with structure.
+
+**Every program is called.** Each of the 60 addresses is referenced by exactly one wrapper, and every one of those
+wrappers has a direct `call` — **60 of 60**, none indirect-only, none unreferenced. So "unused" is not available as an
+explanation for the 53 a mission never compiles.
+
+**The wrappers are called from three places.** Resolving every caller gives two engine functions and one assembler
+member, and the two engine functions split cleanly by stage:
+
+| caller | programs | versions |
+|---|---:|---|
+| `FUN_002ae4e0` | 21 | `vs.1.1` 19, `xvs.1.1` 2 |
+| `FUN_002af230` | 41 | `ps.1.1` 9, `xps.1.1` 15, `ps.1.4` 17 |
+| `?CompileVertexShaderToUCode@Assembler@XGRAPHICS@@…` | 1 | `xvs.1.1` (the `XGRPH` preamble string) |
+
+Not one vertex program is dispatched by the pixel function, and not one pixel program by the vertex function: these are
+the **stage dispatchers**, one per shader type, and the seven a mission compiles are selected from them.
+
+**The method matters, because the first attempt inverted the answer.** An absolute-value xref scan reported 0 of 60
+callers — the entire shader library as dead code. It sees `push imm32` (how a program pointer is passed) but not `call
+rel32` (how a wrapper is reached), so every function looks uncalled. Counting call and jump displacements across the code
+sections (15,052 distinct targets) gives the real answer. A liveness result of "nothing is called" indicts the scan.
+
+**What this changes.** Seven is what a mission needs, but the other 53 are reachable code — from menus, effects, other
+levels or later-game content, selected by the same two dispatchers. A bake table built only from mission loads could
+therefore be incomplete for a path nobody exercised, and the fix is the same instrument twice: `missions.sh --all --gdb`
+for the campaign, and a run that sits in the front-end menus with the assembler armed.
+
+**Limits.** "Called" is a direct `call`/`jmp` displacement counted statically, so a wrapper reached only through a
+function pointer would be missed — 60 is a floor for liveness, as the D3D8 census is a floor for the render surface. The
+two dispatchers are unnamed, and their selection logic (which program for which material) was not read.
+
+### How a shader is selected: an id switch for pixel, a two-key list for vertex (2026-11-19)
+
+The two dispatchers found by the call structure do different things, and both are readable in their prologues.
+
+**Pixel (`FUN_002af230`, 2,711 bytes) switches on an id with a per-id cache.**
+
+```
+mov  eax,[esi+0x40c4]        ; cache array
+mov  eax,[eax+ecx*4]         ; cache[id]
+test eax,eax / jnz ...       ; hit -> reuse
+lea  eax,[ecx-1] / cmp eax,0x48 / ja ...   ; ids 1..0x49 only
+movzx ecx,byte [eax+0x2afd48]              ; id-1 -> case
+jmp  dword near [ecx*4+0x2afcc8]           ; 32-entry jump table
+```
+
+Reading the two tables: **73 ids, 31 handled cases — one id per case — and 42 ids that fall to the default case.** So
+more than half the id space is unhandled in this build, and each handled id has exactly one code block.
+
+**Vertex (`FUN_002ae4e0`, 2,301 bytes) searches a linked list keyed by two dwords.**
+
+```
+mov  ecx,[ecx+0x40c0]        ; list head
+loop: mov eax,[ecx]          ; key 0
+      cmp eax,[esp+0x78]     ; vs argument 0
+      jnz next
+      mov edx,[ecx+4]        ; key 1
+      cmp edx,[esp+0x7c]     ; vs argument 1
+```
+
+So a vertex shader is cached by a **pair** of values (plausibly program id and declaration), while a pixel shader is
+cached by a single id in a flat array.
+
+**What this means for a rebuild.** The 60 programs are the *compiled artifacts*; the thing the engine actually passes
+around is an **id** (pixel) or an **(id, declaration) pair** (vertex). Selection logic therefore lives in these two
+functions, and reproducing it means reproducing the tables — the byte index table at `0x2afd48` and the jump table at
+`0x2afcc8` are literal data a rebuild could carry rather than re-derive.
+
+**Limits.** The 31 case bodies were not read, so which of the 41 pixel programs each case compiles is unmapped; the
+vertex list's entry layout beyond its two keys is unread; and the two-key comparison is described by what it compares
+(arguments against a list entry), not by what the keys mean.
+
+### The pixel-shader id table, as an artifact (2026-11-19)
+
+`tools/pixel-shader-ids.py` reads that switch out of the dispatcher's own prologue — the `movzx`/`jmp` pair gives it
+both table addresses, so a build whose bytes differ fails loudly instead of reading the wrong data — and follows each
+case body's first `call` to the per-program wrapper. Output: `inventory/pixel_shader_ids.csv`, **41 rows over 29 ids**,
+reaching **38 distinct programs**.
+
+| id | case | wrapper | program | version |
+|---:|---:|---|---|---|
+| 3 | 2 | `0x002b3e40` | `0x00524be0` | `xps.1.1` |
+| 5 | 3 | `0x002b3f00` | `0x00524e88` | `ps.1.1` |
+| 9 | 6 | `0x002b3e80` | `0x00524d18` | `xps.1.1` |
+| 14 | 9 | `0x002b4000` and `0x002b4020` | `0x00525220`, `0x00525280` | `xps.1.1`, `ps.1.4` |
+| 44 | 13 | `0x002b3e60` | `0x00524c50` | `xps.1.1` |
+
+Three readings:
+
+1. **Most ids are one program, twelve are two.** Forty-one calls land on twenty-nine ids, and exactly twelve ids compile
+   a pair — id 14 compiles an `xps.1.1` and a `ps.1.4` from one case body, through two different wrappers.
+2. **Two of the thirty-one handled ids resolve to nothing.** Their case bodies reach no wrapper by a direct `call`, which
+   means a second level of dispatch (or an indirect call) that this scan does not follow — the same blind spot the
+   liveness pass had, and recorded rather than papered over.
+3. **The table is a committed artifact, not a paragraph.** `make pixel-shader-ids` regenerates it from the dump;
+   `--check` validates it without one, and CI treats a missing dump as "needs the dump" rather than a failure.
+
+**Limits.** These are direct `call` edges from each case body; an indirect dispatch inside a case is invisible, and the
+three of the 41 pixel programs not reached here may be exactly that. The ids are numbers with no names attached — which
+material each represents is still unknown.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented

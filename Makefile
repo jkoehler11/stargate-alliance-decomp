@@ -700,6 +700,11 @@ shader-programs:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
 	@$(PYTHON) tools/shader-program-refs.py --xbe "$(GAME_DIR)/default.xbe" -o inventory/shader_programs.csv
 
+# The pixel dispatcher's id -> shader table, read from its own switch tables (Phase 6).
+pixel-shader-ids:
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@$(PYTHON) tools/pixel-shader-ids.py --xbe "$(GAME_DIR)/default.xbe" -o inventory/pixel_shader_ids.csv
+
 # Per-method evidence: callees from REL32, literals from DIR32, library attribution from the
 # archive member (PLAN 4.9). Needs the libraries and the dump. With no CLASS it regenerates every
 # reading the tool knows, which is what the committed artifacts are.
