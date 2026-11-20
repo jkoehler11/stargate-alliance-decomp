@@ -34,6 +34,19 @@ refreshes the cheap half without pretending the expensive half was re-measured.
 `inventory/native_census.csv` holds one row per distinct body address. `--check` re-derives the census
 column from the two committed tables (the third column of evidence needs the image, which CI does not
 have) and refuses a table whose rows or split no longer reproduce.
+
+The `extent` columns are the third reading: how far each body runs in the image. Ghidra's `body_bytes` is
+the function its import created, and the image settles it -- 269 of the 274 bodies the census calls
+`outside` close on a `ret imm16` at exactly that offset. Where the extent stops short of a terminator,
+the body's own end (the first `cc cc` run) is the measured bound instead, and `extent_source` records
+which of the two answered.
+
+`--emit-boundaries` and `--emit-creations` print the repair rows that population earns -- one `add` in
+`symbols/xbe_boundaries.csv` and the creation row in `symbols/xbe_overrides.csv` that `XbePost.java`
+needs -- from the committed table alone (no dump, no image). They print rather than append: the two
+files carry every other repair, so the rows are a reviewed append. A body whose extent runs past the
+next row is refused by name: a false split sitting inside a native body needs a verb this file does
+not have yet.
 """
 import argparse
 import bisect
@@ -53,7 +66,8 @@ BODIES = os.path.join(ROOT, "inventory", "native_bodies.csv")
 OUT = os.path.join(ROOT, "inventory", "native_census.csv")
 
 COLS = ["body_va", "names", "records", "classes", "section", "census", "boundary", "prologue",
-        "first_bytes", "disassembler", "body_bytes", "instructions", "ends_terminal"]
+        "first_bytes", "disassembler", "body_bytes", "instructions", "ends_terminal",
+        "extent", "extent_source", "extent_closes"]
 
 # MSVC 7.1 openings seen at this build's real entries, longest first: the order is the classifier.
 PROLOGUES = (
@@ -90,6 +104,48 @@ def prologue(first):
 def boundary(byte):
     """What the byte before an address says about it: padding, a `ret`, or data."""
     return BOUNDARIES.get(byte, "data") if byte is not None else "unreadable"
+
+
+def closes_with(data, end):
+    """How the byte(s) at `end` close an instruction stream, read from the image."""
+    if end <= 0 or end > len(data):
+        return "unreadable"
+    if end >= 3 and data[end - 3] == 0xC2:
+        return "ret-imm"                       # c2 imm16 is this build's commonest close
+    if data[end - 1] == 0xC3:
+        return "ret"
+    if data[end - 1] in (0xE9, 0xEB):
+        return "jmp"
+    if end >= 2 and data[end - 2] == 0xFF and data[end - 1] == 0x25:
+        return "jmp-ind"
+    return "other"
+
+
+def island_end(data, start=1):
+    """The offset of the first run of two or more `0xcc` -- where the body's code stops."""
+    for i in range(start, len(data) - 1):
+        if data[i] == 0xCC and data[i + 1] == 0xCC:
+            return i
+    return None
+
+
+def body_extent(data, body_bytes):
+    """(extent, source, closes): the disassembler's extent where the image closes it, else the island's.
+
+    Ghidra's `body_bytes` is the function that import created; 269 of the 274 bodies this table calls
+    `outside` end on a `ret imm16` at exactly that offset. Where the extent does not close on a
+    terminator it stopped short, and the body's own end is the first `cc cc` run -- used only as the
+    fallback, because one `0xcc` between two bodies is not padding and the island end can then be the
+    neighbour's.
+    """
+    if body_bytes and 0 < body_bytes <= len(data):
+        kind = closes_with(data, body_bytes)
+        if kind != "other":
+            return body_bytes, "ghidra", kind
+    end = island_end(data)
+    if end:
+        return end, "island", closes_with(data, end)
+    return None, "", "unreadable"
 
 
 def census_table(rows, funcs):
@@ -170,6 +226,20 @@ def build(bodies, table, starts, xbe, verdicts):
         row["body_bytes"] = v.get("body_bytes", "")
         row["instructions"] = v.get("instructions", "")
         row["ends_terminal"] = v.get("ends_terminal", "")
+        if xbe is not None:
+            sec = xbe.section_for(va)
+            span = min(65536, sec.va + sec.vsize - va) if sec else 0
+            try:
+                data = xbe.read_va(va, span) if span > 0 else b""
+            except Exception:                    # a page hole: the extent stays unmeasured
+                data = b""
+            body_bytes = int(v["body_bytes"]) if (v.get("body_bytes") or "").isdigit() else 0
+            extent, source, closes = body_extent(data, body_bytes)
+            row["extent"] = extent or ""
+            row["extent_source"] = source
+            row["extent_closes"] = closes
+        else:
+            row["extent"] = row["extent_source"] = row["extent_closes"] = ""
         rows.append(row)
     return rows
 
@@ -197,6 +267,77 @@ def summarise(rows):
               % (", ".join("ends-terminator=%s %d" % kv for kv in term.most_common()),
                  sizes[len(sizes) // 2] if sizes else -1, insn[len(insn) // 2] if insn else -1))
     return census, verdict
+
+
+def gap_adds(rows, table):
+    """[(row, size, refusal)] -- the `add` each outside native body earns, or why it earns none.
+
+    The extent must close on a terminator (a body, not a fragment), and it may not run past the next
+    row the map already has: a body a false split sits inside needs a repair this verb cannot express
+    yet, so it is refused by name rather than truncated to fit.
+    """
+    starts = [t[0] for t in table]
+    out = []
+    for r in rows:
+        if r["census"] != "outside":
+            continue
+        va = int(r["body_va"], 16)
+        size = int(r["extent"] or 0)
+        if r["disassembler"] != "accepted":
+            out.append((r, 0, "the disassembler never accepted a body here"))
+            continue
+        if not size or r["extent_closes"] in ("other", "unreadable"):
+            out.append((r, 0, "the extent does not close on a terminator"))
+            continue
+        i = bisect.bisect_right(starts, va)
+        nxt = table[i][0] if i < len(table) else None
+        if nxt is not None and va + size > nxt:
+            out.append((r, size, "the extent runs to %#010x, past the next row at %#010x"
+                        % (va + size, nxt)))
+            continue
+        out.append((r, size, None))
+    return out
+
+
+def evidence_text(r, size, row_name):
+    """The one sentence a repair row carries: what measured this body, and why the map lacked it."""
+    first = (r["names"] or "(unnamed)").split(" ")[0]
+    va = int(r["body_va"], 16)
+    return ("the body of the native %s (%s registration record(s), classes %s) in "
+            "inventory/native_targets.csv; the byte before it is %s, it opens on an MSVC %s prologue, and "
+            "the disassembler accepted a %d-byte function closing on `%s` at 0x%08x. A native's only "
+            "reference is the registration table -- no call in the image reaches it -- so only this row "
+            "can create the function"
+            % (first, r["records"], r["classes"], r["boundary"], r["prologue"], size,
+               r["extent_closes"], va + size))
+
+
+def emit(args):
+    """Print the rows `--emit-boundaries` / `--emit-creations` earn; nothing is written to the tree."""
+    if not os.path.isfile(OUT):
+        sys.exit("native-census: %s is missing" % os.path.relpath(OUT, ROOT))
+    with open(OUT, newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    with open(FUNCTIONS, newline="") as fh:
+        table = census_table(None, list(csv.DictReader(fh)))
+    adds = gap_adds(rows, table)
+    ok = [(r, size) for r, size, why in adds if why is None]
+    refused = [(r, size, why) for r, size, why in adds if why is not None]
+    w = csv.writer(sys.stdout, lineterminator="\n")
+    for r, size in ok:
+        va = int(r["body_va"], 16)
+        name = "FUN_%08x" % va
+        ev = evidence_text(r, size, name)
+        if args.emit_boundaries:
+            w.writerow(["0x%08x" % va, "add", name, size, ev])
+        else:
+            w.writerow(["0x%08x" % va, name, "added to the map by symbols/xbe_boundaries.csv: " + ev,
+                        "", "", "", "", "", "", size])
+    print("native-census: %d row(s) emitted, %d refused" % (len(ok), len(refused)), file=sys.stderr)
+    for r, size, why in refused:
+        print("  refused %s (%s): %s" % (r["body_va"], (r["names"] or "").split(" ")[0], why),
+              file=sys.stderr)
+    return 0
 
 
 def run(args):
@@ -265,6 +406,13 @@ def check(args):
         # column is the failure to catch, not an empty one.
         if bool(r["boundary"]) != bool(r["prologue"]):
             bad.append("%s: one image-side column is filled and the other is not" % r["body_va"])
+        if r["extent_source"] and r["extent_source"] not in ("ghidra", "island"):
+            bad.append("%s: unknown extent source %r" % (r["body_va"], r["extent_source"]))
+        if bool(r["extent"]) != bool(r["extent_source"]) or bool(r["extent"]) != bool(r["extent_closes"]):
+            bad.append("%s: the three extent columns are not filled together" % r["body_va"])
+        if r["extent"] and r["body_bytes"].isdigit() and int(r["extent"]) < int(r["body_bytes"]):
+            bad.append("%s: extent %s is shorter than the body the disassembler accepted (%s)"
+                       % (r["body_va"], r["extent"], r["body_bytes"]))
         if r["disassembler"] and r["disassembler"] not in ("accepted", "existing", "inside", "rejected"):
             bad.append("%s: unknown disassembler verdict %r" % (r["body_va"], r["disassembler"]))
     if bad:
@@ -315,6 +463,15 @@ def selftest():
     assert bodies[0x401000]["records"] == 2 and len(bodies[0x401000]["names"]) == 2, bodies
     os.unlink(path)
     cases += 1
+    # The extent rule: a `ret imm16` closes, a fragment does not, and the island is only the fallback.
+    body = b"\x55\x8b\xec\xc2\x08\x00\xcc\xcc\x8b\x44\x24\x04\xc3\xcc\xcc"
+    assert closes_with(body, 6) == "ret-imm"
+    assert closes_with(body, 13) == "ret"
+    assert closes_with(body, 4) == "other"
+    assert island_end(body) == 6
+    assert body_extent(body, 6) == (6, "ghidra", "ret-imm")
+    assert body_extent(body, 1) == (6, "island", "ret-imm")
+    cases += 1
     print("native-census: selftest passed (%d cases)" % cases)
     return 0
 
@@ -328,6 +485,10 @@ def main(argv=None):
     ap.add_argument("--verdicts", help="NativeCensus.java's CSV")
     ap.add_argument("-o", "--out", default=None, help="write native_census.csv here")
     ap.add_argument("--walk", action="store_true", help="print the outside addresses")
+    ap.add_argument("--emit-boundaries", action="store_true",
+                    help="print the symbols/xbe_boundaries.csv rows the outside population earns")
+    ap.add_argument("--emit-creations", action="store_true",
+                    help="print the symbols/xbe_overrides.csv creation rows those adds need")
     ap.add_argument("--check", action="store_true", help="the committed table, no dump")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args(argv)
@@ -335,6 +496,8 @@ def main(argv=None):
         return selftest()
     if args.check:
         return check(args)
+    if args.emit_boundaries or args.emit_creations:
+        return emit(args)
     if not args.xbe and args.dump:
         args.xbe = os.path.join(args.dump, "Stargate_SG-1_-_The_Alliance-2005-12-15", "default.xbe")
     if args.xbe and not os.path.isfile(args.xbe):

@@ -5496,3 +5496,43 @@ no `E8`/`E9` in the image targets it and no data section holds its address.
 `04 "sinh"`), then a fresh import and a re-export to prove the census still reconciles. It is deliberately not
 in the symbols bundle that measured it: an `add` moves the map's function count from 14,973 and every artifact
 downstream of it, which is the boundary thread's (U36) work, while a `rename` moves no edge.
+
+## U39. Six native bodies have a false split inside them, and an `add` cannot claim the row it sits on
+
+**Observed.** `tools/native-census.py --emit-boundaries` writes the repair row for every registration body the map
+lacks; it refused **six** of the 274, and every refusal is the defect U36 folded out of the audio body: a map row
+starts *inside* the extent the disassembler accepted for the native's body, so an `add` there would overlap it.
+
+| native body | extent in the image | the row inside it | that row's bytes |
+|---|---|---|---|
+| `0x00048ab0` | 107 → `0x48b1b` | `0x48aed` `Core_UnClass`, 46 | `push 0x235; push 0x4d3198; push 0x4d3170; call appAssertFailed` |
+| `0x000a6570` | 274 → `0xa6682` | `0xa661e` `Engine_KScript`, 89 | `push 0x3ae; push 0x4e7828; push 0x4e8514; call` |
+| `0x000a6690` | 197 → `0xa6755` | `0xa6732` `FUN_000a6732`, 35 | not an assert: `mov ecx,edx; mov edx,[esp+0x10]; shl edx,4` |
+| `0x001135a0` | 212 → `0x113674` | `0x1135cd` `Engine_UnController`, 167 | `push 0x174; push 0x4fbcb8; push 0x4fbd94; call` |
+| `0x00218350` | 401 → `0x2184e1` | `0x21848b` `Core_UnClass`, 177 | `push 0x235; push 0x4d3198; push 0x4d3170; call` |
+| `0x00295820` | 348 → `0x29587c` | `0x29584b` `Engine_UStreamInterface`, 36 | `push 0x1bb; push 0x5220c0; push 0x523180; call` |
+
+**Why it matters.** The map is short by six bodies — the registrations `intUObjectexecStaticSaveConfig`,
+`intAActorexecKRemoveAllBoneLifters`, `intAActorexecKSetStayUpright`, `intAPlayerControllerexecGetEntryLevel`,
+`intAActorexecResetSkins` and `intUStreamexecSaveID3Tag` — and the rows it carries instead are named after a
+template header (`Core_UnClass`), a controller (`Engine_UnController`) or a stream interface, so every census that
+buckets by name reads a native's first instructions as engine code. `0x000a6690` is the one that is not an assert
+block at all: the row inside it is a fragment, which is the "stops short" defect rather than the "split" one.
+
+**What would settle it.** An `add` whose span may claim rows the same file drops. The row is already emittable;
+what the file lacks is the pairing — `add` at the native body with its measured size plus a `drop` naming that
+added address as `target`, and a validation change so a drop's target may be an `add` in the same file (`apply_repairs`
+looks its target up in the map only). `--selftest` needs both orders and the refusal when the drop is not strictly
+inside the added span.
+
+### U39, second reading: the same columns say 40 of the 877 rows stop short
+
+`inventory/native_census.csv`'s `extent`/`extent_source`/`extent_closes` columns read every one of the 883
+addresses in the image, and over the map rows they answer a second question: does the row's declared size reach
+the body's close? **827** do (the bytes at `address + size` close on a `ret` or `ret imm16`), **40** stop short of
+the body's own `cc cc` bound, and **10** close nowhere before the next padding run at all. The 40 are the
+population U36 resized eleven rows of; a `resize` batch over them is the next item of this thread, and two
+caveats come before it ships. A single `0xcc` between two bodies does not stop the island walk, so an island end
+can be the *neighbour's* close (`0x0041000` declares 33 bytes where the island runs to 437, which is a read before
+it is a resize). And ten rows close nowhere at all, which is a measurement this column cannot settle by itself.
+
