@@ -722,6 +722,8 @@ other 38 rows.
       machine and verify-then-decrypt receive order; `CXo` (377) the Kerberos AS/TGS/AP triad, three ticket caches
       and the transport split; `CXoBase` (14) is 11-byte forwarders onto `CXnIp`; the four layers below (138:
       `CXnBase`/`CXnNic`/`CXnEnet`/`CXnSock`) show an interrupt-driven stack whose Winsock ABI is `CXnSock` itself;
+      the four hottest unnamed bodies are measured, read and documented but deliberately not renamed (no
+      build-provided evidence for a name);
       the shader toolchain (339) shows the assembler pipeline and led to 45 shipped programs, all compiled at
       runtime through two now-named dispatchers; and the UIX front-end (286 across 27 classes) is the Live
       dashboard — logon, players, friends, voice mail — linked into `.text` and internally live. What remains is
