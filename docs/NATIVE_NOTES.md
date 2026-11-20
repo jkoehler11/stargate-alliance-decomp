@@ -1151,6 +1151,31 @@ this interior to behave identically.
 *manner* of each pass (the scheduling policy, the renaming rule) is unknown. The 50-class census and the three
 per-method artifacts are the map, not the reading.
 
+## The hot bodies' call sites, and what their arguments are (2026-11-19)
+
+A breakpoint does for these two what the byte scan could not: it names the caller and shows the frame.
+
+| body | caller | frame |
+|---|---|---|
+| `FUN_002bc350` (5,000 B, render state) | **`D3DDrv_D3DRenderInterface`** (`0x002b7560`, 1,334 B) — return `0x002b769a`, five stops, always the same | `esi = 0x02384754` every time, `edi = 2` every time, `ebp` cycling 0, 6, 0xc; stack words `0x024844e0`, `0x03f3f5e0` |
+| `FUN_00463864` (909 B, x87) | `0x002b55c6`, inside **no map row** — an unnamed body | `esi = 0x005c2918`, `ebp = 0x005c28d8` (both `.data`), `edx = 0x400`, `eax = 0x023d3cc8` |
+
+Three things follow:
+
+1. **The render-state body is on the engine's own render path.** `D3DDrv_D3DRenderInterface` is named from an assert
+   and is the Unreal render-driver entry; it calls `FUN_002bc350` with the same device pointer (`esi`) and the same
+   second argument (`edi = 2`) every time, while `ebp` steps through 0, 6 and 0xc. So the block is the render driver's
+   per-scene state setup, and the varying word is a pass or state index, not a pointer.
+2. **The x87 body takes global float state.** Its two pointer arguments land in `.data`: `0x005c2918` reads
+   `80 00 00 00` and `0x005c28d8` reads `00 00 80 3f` — **1.0f**. A routine called with a float constant and a mask
+   out of static data is operating on engine globals, which is consistent with a transform or projection helper and
+   inconsistent with a pure matrix multiply on caller-supplied buffers.
+3. **Neither is renamed**, and now for a sharper reason than before. The first has a caller and a frame; a name would
+   still have to say *which* state block it owns, and `edi = 2` is not identified. The second's caller is anonymous, so
+   even its role in the call graph is a gap. The evidence narrows both and does not name either — which is the line
+   this page has held all along, and a breakpoint on `_D3DDevice_SetRenderState_Simple` (its first callee) with the
+   same capture is what would carry the first one across it.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
