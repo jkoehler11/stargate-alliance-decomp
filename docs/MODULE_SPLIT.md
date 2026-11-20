@@ -1,7 +1,8 @@
 # Per-module work: the address lists, and what a pass over them costs (PLAN 4.5)
 
-Status: **measured end to end** — the import plus twelve exporter rounds decompile all 6,063 attributed functions
-in 268 s of rounds (2026-11-10, twice: 266 s and 268 s, byte-identical output).
+Status: **measured end to end** — the import plus twelve exporter rounds decompile 6,147 of the 6,150 attributed
+functions in 262 s of rounds (2026-11-20; the first pass, 2026-11-10, ran the same twelve rounds in 266 s and
+268 s over a stale 6,063-address list set).
 Artifacts: `inventory/function_modules.csv` (14,973 rows), `inventory/module_export_plan.csv` (12 rows),
 `inventory/module_export_rounds.csv` (12 rounds, one per module).
 Tools: `tools/module-split.py` (`make module-split`, `make module-lists`; `--check` in `make ci`),
@@ -13,10 +14,10 @@ PLAN 4.5 asks for the XBE split into per-module Ghidra projects "using the asser
 per *function*: `inventory/function_modules.csv` attributes each function by the `__FILE__` assert its own body
 carries (plus the evidence overrides), and `inventory/function_module_attribution.csv` adds the functions whose
 module came from address locality (89.9% on held-out asserts; 95.7% where both neighbours agree, `docs/MODULE_ATTRIBUTION.md`). The union is
-**6,092 of 14,973 functions (40.69%) in 12 modules**.
+**6,150 of 14,973 functions (41.07%) in 12 modules**.
 
-Their addresses are nowhere near contiguous: the 12 modules' 6,092 functions occupy **5,854 contiguous runs**, a
-mean of **1.04 functions per run**, and `Core` is 3,244 functions in 3,131 runs across a 3.2 MB span. That is the
+Their addresses are nowhere near contiguous: the 12 modules' 6,150 functions occupy **5,909 contiguous runs**, a
+mean of **1.04 functions per run**, and `Core` is 3,221 functions in 3,109 runs across a 3.2 MB span. That is the
 same property the `run` column has measured since `function_modules.csv` landed — this build orders code per
 translation unit, and the compiler emits each function of a TU together, so a module is a *scatter of individual
 bodies*, not a region. There is no range to cut, and therefore no project boundary to draw.
@@ -29,26 +30,30 @@ if a row differs):
 
 | module | functions | asserted | propagated | runs | bytes | first | last |
 |---|---:|---:|---:|---:|---:|---|---|
-| `Core` | 3,244 | 581 | 2,663 | 3,131 | 843,158 | `0x00012110` | `0x0032b210` |
-| `Engine` | 2,104 | 593 | 1,511 | 2,011 | 711,533 | `0x00033060` | `0x00298890` |
+| `Core` | 3221 | 582 | 2639 | 3109 | 838,560 | `0x00012110` | `0x0032b210` |
+| `Engine` | 2112 | 595 | 1517 | 2019 | 713,194 | `0x00033060` | `0x00298890` |
 | `IpDrv` | 159 | 24 | 135 | 153 | 35,469 | `0x002c3b70` | `0x002d8cc0` |
 | `Gui` | 155 | 59 | 96 | 151 | 46,411 | `0x002ec180` | `0x0030b750` |
-| `D3DDrv` | 129 | 22 | 107 | 127 | 37,786 | `0x002aa300` | `0x002c0c50` |
+| `D3DDrv` | 129 | 22 | 107 | 127 | 37,796 | `0x002aa300` | `0x002c0c50` |
+| `XboxAudio` | 115 | 41 | 74 | 109 | 26,010 | `0x00029c00` | `0x00033d20` |
 | `stargategame` | 88 | 32 | 56 | 82 | 20,271 | `0x003165b0` | `0x003237a0` |
 | `stargatevehicles` | 52 | 12 | 40 | 48 | 13,318 | `0x0030c2e0` | `0x003164a0` |
-| `XboxAudio` | 42 | 9 | 33 | 40 | 14,938 | `0x0002dee0` | `0x00033d20` |
 | `Fire` | 41 | 9 | 32 | 39 | 10,188 | `0x002e1130` | `0x002e91f0` |
-| `XboxLive` | 32 | 20 | 12 | 31 | 13,027 | `0x00325b24` | `0x00328e00` |
+| `XboxLive` | 32 | 21 | 11 | 31 | 13,027 | `0x00325b24` | `0x00328e00` |
 | `Gameplay` | 24 | 9 | 15 | 20 | 7,300 | `0x003238b0` | `0x00324d60` |
 | `XboxDrv` | 22 | 5 | 17 | 21 | 4,349 | `0x0032c010` | `0x0032dff0` |
+| **total** | **6150** | **1411** | **4739** | **5909** | **1,765,893** | | |
 
-`asserted` is a name prefix or an evidence override; `propagated` is the locality label. The 8,881 functions no
+`asserted` is a name prefix or an evidence override; `propagated` is the locality label. The 8,823 functions no
 rule reaches are CRT start-up, the statically linked libraries (whose sections carry almost no asserts) and bodies
-whose translation unit has no assert within 2 KB.
+whose translation unit has no assert within 2 KB. `XboxAudio`'s 115 is the row the boundary repair and the assert
+rule moved: 41 of them are asserted, and the old plan carried 42 because the lists had not been rewritten from it.
+Five of the 1,411 `asserted` are evidence overrides `make body-name` wrote for a body whose own class literal names its
+method (`UXBoxAudioSubsystem::ShutdownAfterError` and four like it), not `__FILE__` asserts; the rollup counts both.
 
 ## The lists
 
-`make module-lists` writes one file per module into `$WORK/module-lists` — 12 files, 6,092 addresses (6,063 of them in the round measured below), ascending,
+`make module-lists` writes one file per module into `$WORK/module-lists` — 12 files, 6,150 addresses, all of them in the round measured below, ascending,
 which is what `ExportAt.java @<file>` takes (address lists are derived work, so they stay out of git; `--lists`
 refuses to be pointed at `inventory/`, by convention rather than by code, because an address list of game code is
 not something to commit).
@@ -64,50 +69,54 @@ drives the real shape: it imports `default.xbe` with the same recipe as `tools/g
 
 | module | addresses | exported | inside | missing | unnamed | failed | seconds | C bytes |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `Core` | 3,238 | 3,238 | 0 | 0 | 2,593 | 2 | 179 | 9,314,551 |
-| `Engine` | 2,094 | 2,094 | 0 | 0 | 1,493 | 0 | 36 | 7,681,115 |
-| `IpDrv` | 157 | 157 | 0 | 0 | 135 | 0 | 6 | 455,126 |
-| `Gui` | 145 | 145 | 0 | 0 | 86 | 0 | 6 | 555,576 |
-| `D3DDrv` | 129 | 129 | 0 | 0 | 107 | 0 | 6 | 409,026 |
-| `stargategame` | 88 | 88 | 0 | 0 | 56 | 0 | 5 | 275,155 |
-| `stargatevehicles` | 52 | 52 | 0 | 0 | 40 | 0 | 5 | 172,420 |
-| `XboxAudio` | 42 | 42 | 0 | 0 | 33 | 0 | 6 | 164,468 |
-| `Fire` | 41 | 41 | 0 | 0 | 32 | 0 | 5 | 130,088 |
-| `XboxLive` | 31 | 31 | 0 | 0 | 18 | 0 | 5 | 153,145 |
-| `Gameplay` | 24 | 24 | 0 | 0 | 15 | 0 | 5 | 82,422 |
-| `XboxDrv` | 22 | 22 | 0 | 0 | 17 | 0 | 4 | 60,917 |
-| **total** | **6,063** | **6,063** | **0** | **0** | **4,625** | **2** | **268** | **19,454,009** |
+| `Core` | 3221 | 3220 | 0 | 1 | 2148 | 2 | 174 | 9,253,723 |
+| `Engine` | 2112 | 2111 | 0 | 1 | 1326 | 0 | 34 | 7,745,395 |
+| `IpDrv` | 159 | 159 | 0 | 0 | 120 | 0 | 6 | 461,460 |
+| `Gui` | 155 | 155 | 0 | 0 | 90 | 0 | 6 | 582,094 |
+| `D3DDrv` | 129 | 129 | 0 | 0 | 104 | 0 | 6 | 413,422 |
+| `XboxAudio` | 115 | 114 | 0 | 1 | 72 | 0 | 5 | 339,971 |
+| `stargategame` | 88 | 88 | 0 | 0 | 51 | 0 | 5 | 275,285 |
+| `stargatevehicles` | 52 | 52 | 0 | 0 | 40 | 0 | 6 | 172,409 |
+| `Fire` | 41 | 41 | 0 | 0 | 27 | 0 | 5 | 130,089 |
+| `XboxLive` | 32 | 32 | 0 | 0 | 12 | 0 | 6 | 160,918 |
+| `Gameplay` | 24 | 24 | 0 | 0 | 15 | 0 | 4 | 82,414 |
+| `XboxDrv` | 22 | 22 | 0 | 0 | 15 | 0 | 5 | 61,098 |
+| **total** | **6150** | **6147** | **0** | **3** | **4020** | **2** | **262** | **19,678,278** |
 
 Four things the table settles.
 
-- **Every attributed address is a function start.** 6,063 of 6,063 exported at their own address — no address fell
-  inside another function and none was missing. The lists can be handed to `ExportAt.java` unedited, and the
-  attribution's address set is consistent with the function census `XbePost` names from.
-- **The cost is decompile time, not process startup.** Per-body cost tracks body size: `Engine`'s 2,094 bodies cost
-  36 s (17 ms each) while `Core`'s 3,238 cost 179 s (55 ms each), because Core carries the large CRT and engine
-  bodies. A short round (22–145 addresses) is 4–6 s, which is the round's fixed cost (JVM, project open, the 12,962
-  symbol names it applies); the mean over the pass is **44 ms per body**.
-- **The output is deterministic.** Two runs of all twelve rounds, minutes apart, produced the same 6,063 files with
-  identical byte counts per module (266 s and 268 s), so a re-run after a tool change is a clean diff.
-- **The residue is naming, not decompilation.** Two decompile failures (both in `Core`, out of 6,063) and 4,625
+- **Every address the analysis holds a function for exports at its own address.** 6,147 of 6,150, and not one fell
+  inside another function. The three that did not are bodies the analysis never made a function of — `0x0003bd30`,
+  `0x0024af30` and `0x0002fa30`, the last the slot-33 audio body U36 added — each a gap body with no row in
+  `symbols/xbe_overrides.csv` or `xbe_dispatch.csv` (which are what the importer builds a function from) and
+  nothing xref. `--check` prints the rounds' `missing` column rather than pretending the set is whole.
+- **The cost is decompile time, not process startup.** Per-body cost tracks body size: `Engine`'s 2,111 bodies cost
+  34 s (16 ms each) while `Core`'s 3,220 cost 174 s (54 ms each), because Core carries the large CRT and engine
+  bodies. A short round (22–159 addresses) is 4–6 s, which is the round's fixed cost (JVM, project open, the map's
+  names applied); the mean over the pass is **43 ms per body**.
+- **A pass is a snapshot of the analysis, so a second import is a new read, not a re-run.** The 2026-11-10 pass ran
+  twice and reproduced its 6,063 files byte for byte (266 s, 268 s); this pass imports a fresh project (the earlier
+  one is git-ignored and gone after a sync), so its file set is 6,147 and its per-module byte counts differ. The
+  numbers above are one run; the determinism claim belongs to a re-run of the same project.
+- **The residue is naming, not decompilation.** Two decompile failures (both in `Core`, out of 6,147) and 4,020
   bodies still named `FUN_*`: the pass exports the code, it cannot name it. That is 4.2/4.9's work, and the unnamed
-  count per module is the honest measure of how much naming each module still needs — `Core` 2,593 of 3,238 (80%),
-  `Engine` 1,493 of 2,094 (71%), `IpDrv` 135 of 157 (86%), `Gui` 86 of 145 (59%), and the game-specific/Xbox
-  modules 58-79% (lowest `XboxLive` 18 of 31, highest `XboxAudio` 33 of 42).
+  count per module is the honest measure of how much naming each module still needs — `Core` 2,148 of 3,220 (67%),
+  `Engine` 1,326 of 2,111 (63%), `IpDrv` 120 of 159 (75%), `Gui` 90 of 155 (58%), `D3DDrv` 104 of 129 (81%), and
+  the game-specific/Xbox modules 38-77% (lowest `XboxLive` 12 of 32, highest `stargatevehicles` 40 of 52).
 
-Re-priced: 5,854 contiguous runs remains the right shape for *reading* work — a run is what a human takes on at a
+Re-priced: 5,909 contiguous runs remains the right shape for *reading* work — a run is what a human takes on at a
 time — but it is not the cost of the pass. The pass is 12 rounds and under five minutes of them, on one kept
 project. A per-module Ghidra project still buys nothing.
 
 ## Not measured
 
-- **Whether 6,063 is the right population for 4.8.** The pass answers what the bodies cost and how much is still
+- **Whether 6,150 is the right population for 4.8.** The pass answers what the bodies cost and how much is still
   unnamed; it does not answer what they are. `Core` and `Engine` are 88% of the covered functions and may be mostly
   library code — that needs a classifier over the exported bodies (section, call fan-in, string refs), not another
   pass.
-- **The 8,881 unreached functions.** They have no module and no plan row; a pass over them needs a different rule
+- **The 8,823 unreached functions.** They have no module and no plan row; a pass over them needs a different rule
   (the library sections are the obvious place to start). The pass is cheap enough to run speculatively now that it
-  is priced at 44 ms a body, but there is still no list to run it over.
+  is priced at 43 ms a body, but there is still no list to run it over.
 
 ## Reproduction
 

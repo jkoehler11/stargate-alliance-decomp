@@ -643,13 +643,15 @@ leaves unnamed push one shared pointer** (`0x00034650`, a thunk to `0x00062ce0`)
       1.0–1.1 for every module. There is no module range to split; a module is a set of addresses, so
       `--lists $WORK/export` emits `<module>.txt` for `ExportAt.java @<file>` and per-module work is one exporter pass
       per list. **That input is now measured**: the lists are the union of the assert rule and the locality rule
-      (`inventory/function_module_attribution.csv`), 6,063 of 14,957 functions, and `inventory/module_export_plan.csv`
+      (`inventory/function_module_attribution.csv`), 6,150 of 14,973 functions, and `inventory/module_export_plan.csv`
       (`make module-split`) prices them per module at **5,826 contiguous runs, mean 1.04 functions per run** — 3,125
       runs for `Core` alone. So the exporter pass is per *address list*, not per project: there is no region to cut,
       and a per-module Ghidra project would save nothing over one project plus a list (`docs/MODULE_SPLIT.md`).
       **The pass is paid (2026-11-10).** `tools/ghidra/export-module.sh` imports once and runs one round per module
-      list: **12 rounds for all 6,063 bodies in 268 s**, 6,063 exported at their own address (0 inside, 0 missing),
-      4,625 still `FUN_*`, 2 aborted decompiles, 19.5 MB of C under `$WORK` (`inventory/module_export_rounds.csv`).
+      list: **12 rounds in 262 s**, 6,147 of the 6,150 listed bodies exported at their own address (0 inside another
+      function, 3 the analysis holds no function for), 4,020 still `FUN_*`, 2 aborted decompiles, 18.8 MB of C under
+      `$WORK` (`inventory/module_export_rounds.csv`; the 2026-11-10 pass read a stale 6,063-address list and is the
+      268 s row in `docs/MODULE_SPLIT.md`).
       So the split's deliverable is complete as *lists plus a driver* — there is no per-module project to build, and
       4.2/4.9 own the naming that remains.
 - [~] 4.6 Decompile + document `stargategame` and `stargatevehicles` first (small, 10 files, highest game-specific
@@ -681,11 +683,12 @@ other 38 rows.
       the behavioural surface is 237 classes and only **6** carry ucpp natives (`SGOrder` 4, `Electrocutor` 2,
       `FarClipChange` 2, `SGFontInfo` 1, `ShadowManager` 1, `StargateHUD` 1). Remaining: the native half (renderer,
       memory, compiler behaviour). **The export's population is now classified** (`docs/MODULE_CENSUS.md`,
-      `inventory/module_export_census.csv`, `make module-census`): all 6,063 attributed bodies are function entries in
-      `.text`, 1,428 sit in a vtable or data table, **150 are not analysis targets** (133 `ret`-only slots, 17 thunks),
-      1,310 declare their own source path and **837 of the 848 whose path is a `.cpp` name the module they were
-      attributed to** — so the lists are the right populations and the work list is **5,913 bodies**. `Core` is not
-      mostly library *by evidence*: 564 of its 3,238 declare a source path and 2,110 carry no literal at all, so the
+      `inventory/module_export_census.csv`, `make module-census`): 6,147 of the 6,150 attributed bodies are exported
+      and every one is a function entry in `.text`, 1,436 sit in a vtable or data table, **147 are not analysis
+      targets** (133 `ret`-only slots, 14 thunks), 1,309 declare their own source path and **848 of the 858 whose path
+      is a `.cpp` name the module they were attributed to** — so the lists are the right populations and the work
+      list is **6,000 bodies**. `Core` is not
+      mostly library *by evidence*: 563 of its 3,220 declare a source path and 2,103 carry no literal at all, so the
       library population is located rather than named (4.2's signatures, U9).
       **Renderer half now read** (`docs/systems/RENDERER.md`, `inventory/d3ddrv_bodies.csv`, `make body-read`):
       the 22 bodies that name their own file are **five engine translation units** — `D3DRenderDevice`,
@@ -15155,6 +15158,39 @@ sequence.
   nothing; `--selftest` covers the index-source and shape parsers; the artifact regenerates from the dump.
 - **Not in this PR.** The 22 unresolved index sources (U35's population), the function-boundary repair at
   `0x0002f820`, and the 78 untyped `[reg+0x7c]` receivers that the audio-slot bundle also left.
+
+### Execution notes (2026-11-20, the export population was 87 short, and the boundary repairs are why it is 3 short now)
+
+- **Task.** Finish the boundary-repair bundle (U36) whose gate was red: `module-export-census --check` was holding a
+  census generated from an export tree the repair had moved under it. Paying that gate honestly meant re-exporting
+  all twelve modules against a fresh analysis, not editing the CSV.
+- **What the gate named, and why.** A census row for `0x0002f820`, which the repair folded into `0x0002f13c`; six
+  audio bodies the census still bucketed as `Core` where the attribution says `XboxAudio`; one Engine body likewise.
+  All three are one cause: the census records the round a body was *exported* in, and the repair moved bodies between
+  the modules after that round was paid for.
+- **The lists were stale, and that is a defect of its own.** `make module-lists` returned before writing its lists, so
+  every round from 2026-11-10 onwards read a single early write of 6,063 addresses while the attribution had grown to
+  6,092 (`main`) and 6,150 (here: 1,375 → 1,411 `assert`, 4,717 → 4,739 `propagated`; five of the new asserts are
+  evidence overrides `make body-name` recorded from a class's own method literal, the rest moved with the repaired
+  boundaries). The fix
+  is in this bundle, and the re-export is **6,147 of 6,150** — the 87 bodies the stale lists never carried are the
+  population difference, not a new measurement.
+- **Three attributed bodies are still not exported, and the census names them instead of dropping them**:
+  `0x0003bd30` (133 bytes), `0x0024af30` (809) and `0x0002fa30` (87, the slot-33 audio body this bundle added). Each
+  has no row in `symbols/xbe_overrides.csv` or `xbe_dispatch.csv`, which are what `XbePost` builds a function from, so
+  a fresh analysis holds no function at the address. The rounds' `missing` column is the count `--check` prints.
+- **Six Ghidra extents differ from the map's size, and they are exactly the rows `make boundaries` resized**
+  (`0x0002f13c` 1,764 vs 2,282, `0x0002feb0` 5,277 vs 5,327, and four more): the export reads the analysis's extent and
+  the repair writes the map only, so `--check` counts the drift rather than gating on it. The one address the page used
+  to name (`0x000816e0`, 128 vs 72) agrees on a fresh analysis.
+- **Three thunks are named after their targets** — `0x00036cb0` is five bytes, `jmp 0x003e67ed`, and an analysis that
+  knows `0x003e67ed` as `_wcslen` calls the thunk `_wcslen`, where the map still spells `thunk_FUN_003e67ed`. The
+  census keeps the header's read and `--check` reports the three as `rethunked`; renaming the map's thunk rows is a
+  naming pass (4.2), not a census edit.
+- **Numbers.** 6,147 rows; 848 of the 858 `.cpp`-naming bodies agree with their module; 3,541 carry no literal; 4,020
+  still `FUN_*`; 41,009 direct call sites; 23,831 dword references into 1,436 bodies; 262 s of rounds for 18.8 MB.
+- **Not in this bundle.** A function-creation route for the three gap bodies (the override file is the one that
+  exists), and the map's `thunk_FUN_*` names, which still spell their target by address.
 
 ### Execution notes (2026-11-20, the voice-mode family, and the counters that are registered rather than incremented)
 

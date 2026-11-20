@@ -5241,3 +5241,8 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x0002a770,XboxAudio_FindSlotByKey,audio chain: scans the count at +0x4 entries of the 0x34-byte slot table at +0x54 for a 12-byte key whose third dword is masked to two bits; returns the index or the count,,,,,XboxAudio,,72
 0x0002a7c0,XboxAudio_ApplyBufferParams,"audio chain: stores the key at rec[index*4+0x20], builds a seven-dword parameter block (four floats floored at -10000 centibels) and hands it to the import at 0x4a0530",,,,,XboxAudio,,165
 0x00121350,Engine_UnEngine_InitAudio,"audio init: pushes ini:Engine.Engine.AudioDevice, constructs the class that key names and stores it at this+0x34, then dispatches slot 31 (+0x7c) on the new object (XboxAudio_CreateDevice); builds the voice subsystem at this+0x3c from the hardcoded XboxAudio.XHVVoiceSubsystem; its only callers are Engine_UnGame and 0x00139d50; no class table installs it, so it is not virtual",,0,0,,Engine,,316
+0x0002cbb0,UXBoxAudioSubsystem_ShutdownAfterError,own method literal UXBoxAudioSubsystem::ShutdownAfterError,UXBoxAudioSubsystem,,,,XboxAudio,,56
+0x00291710,USpline_execNextSplinePos,own method literal USpline::execNextSplinePos,USpline,,,,Engine,,1338
+0x00328e00,XBoxLiveManager_ConnectTo,own method literal XBoxLiveManager::ConnectTo,XBoxLiveManager,,,,XboxLive,,864
+0x00329160,XboxLiveManager_StartStatsQuery,own method literal XboxLiveManager::StartStatsQuery,XboxLiveManager,,,,Core,XboxLive.h,311
+0x003292a0,XboxLiveManager_StartNewSession,own method literal XboxLiveManager::StartNewSession,XboxLiveManager,,,,Core,XboxLive.h,634

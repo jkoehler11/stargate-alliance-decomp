@@ -37,6 +37,14 @@ against the exporter's round summary in `inventory/` (each module's exported cou
 (unique, ascending addresses; every class from the fixed vocabulary). The bodies themselves are
 game-derived and stay under `$WORK` -- only this census, which carries addresses and counts, is
 committed.
+
+Two readings on that reconciliation are reported rather than failed. A body the map names
+`thunk_FUN_<target>` is a five-byte `jmp`, and an analysis that has the target's own name (an XDK
+library name, say) names the thunk after it -- so the export header says `_wcslen` where the map
+still spells `thunk_FUN_003e67ed`. The census keeps the header's name as its independent read and
+lists those addresses as `rethunked`. And an address the current analysis holds no function for (a
+gap body nothing xrefs) is exported by no round: the round summary's `missing` column is the count,
+and the check prints it instead of pretending the population is whole.
 """
 import argparse
 import csv
@@ -70,6 +78,7 @@ CLASSES = ["failed", "ret-stub", "src", "asset", "config", "format", "text", "si
 HEADER = re.compile(r"^// (\S+) @ 0x([0-9a-fA-F]+)\s+size=(\d+)")
 LITERAL = re.compile(r'L?"((?:[^"\\]|\\.)*)"')
 FUN_CALL = re.compile(r"\bFUN_([0-9a-f]{8})\b")
+THUNK = re.compile(r"^thunk_FUN_([0-9a-f]{8})$")
 HEXNAME = re.compile(r"\b(?:FUN|Native|LAB|DAT|UNK|SUB)_[0-9a-fA-F]{3,8}\b")
 SRC_PATH = re.compile(r"[A-Za-z]:\\[^\"\n]*?\\[A-Za-z0-9_.]+\\(?:Src|Inc)\\[^\"\n]*?\.(?:cpp|cxx|c|h|hpp)\b"
                       r"|\\[A-Za-z0-9_.]+\\Src\\[^\"\n]*?\.(?:cpp|cxx|c)\b", re.IGNORECASE)
@@ -346,6 +355,8 @@ def check(path=CSV_PATH):
             union[r["address"]] = r["module"]
             method[r["address"]] = r["method"]
     moved = []
+    rethunked = []
+    sized = []
     missing = [r["address"] for r in rows if r["address"] not in known]
     if missing:
         bad.append("%d address(es) not in function_modules.csv, e.g. %s"
@@ -355,10 +366,22 @@ def check(path=CSV_PATH):
         if not k:
             continue
         if k["name"] != r["name"]:
-            bad.append("%s: name %r != function_modules.csv %r" % (r["address"], r["name"], k["name"]))
+            # A `thunk_FUN_<target>` row is a five-byte `jmp`, and an analysis that knows the
+            # target's own name names the thunk after it. The export header keeps its own read; the
+            # disagreement is a rename the map has not caught up with, not a stale census row -- so
+            # report it, unless the export's name is something else entirely.
+            m = THUNK.match(k["name"])
+            tgt = known.get("0x%s" % m.group(1)) if m else None
+            if m and tgt and tgt["name"] == r["name"]:
+                rethunked.append(r["address"])
+            else:
+                bad.append("%s: name %r != function_modules.csv %r"
+                           % (r["address"], r["name"], k["name"]))
         # Sizes are not compared: `size` here is the function *extent* Ghidra reports (which can run
         # to the next aligned boundary), while `function_modules.csv` carries the census size. The
-        # two disagree on one address of 6,063 (0x000816e0: 128 vs 72) and agree everywhere else.
+        # drift is counted in the success line rather than failed on.
+        if k["size"] != r["size"]:
+            sized.append(r["address"])
         want = union.get(r["address"], k["module"])
         if want != r["module"]:
             # Only an `assert` is a claim this file can be held to. This artifact records the round a body was
@@ -385,10 +408,14 @@ def check(path=CSV_PATH):
         if len(bad) > 12:
             sys.stderr.write("FAIL ... and %d more\n" % (len(bad) - 12))
         return 1
+    unexported = sum(int(r.get("missing") or 0) for r in read_csv(ROUNDS))
     print("module-export-census: %d rows reconcile with %s (%d modules), function_modules.csv and "
-          "themselves; %d propagated label(s) moved since the export round%s"
+          "themselves; %d propagated label(s) moved since the export round%s; %d thunk(s) named "
+          "after their target; %d size extent(s) differ; %d attributed body(ies) the analysis holds "
+          "no function for"
           % (len(rows), os.path.basename(ROUNDS), len(per_module), len(moved),
-             (" (" + ", ".join(moved[:6]) + (", ..." if len(moved) > 6 else "") + ")") if moved else ""))
+             (" (" + ", ".join(moved[:6]) + (", ..." if len(moved) > 6 else "") + ")") if moved else "",
+             len(rethunked), len(sized), unexported))
     return 0
 
 

@@ -55,7 +55,7 @@ Two negatives, both from the same rows:
 * **No body calls into `XboxDrv`.** The cross-module callee table is `Core` and `Engine` only; not one of the
   129 bodies makes a resolved call into the module that carries the console's own D3D pieces. Whatever the
   fork changed on the console side, it is not spliced into the render device's call graph at this level.
-* **No body names an asset.** `docs/MODULE_CENSUS.md` counted 9 of 6,063 bodies export-wide that reference an
+* **No body names an asset.** `docs/MODULE_CENSUS.md` counted 9 of 6,147 bodies export-wide that reference an
   asset path and 25 that reference a config string; none of the asset ones is in `D3DDrv`. The renderer gets
   its material state from the engine's objects, not from file names.
 
