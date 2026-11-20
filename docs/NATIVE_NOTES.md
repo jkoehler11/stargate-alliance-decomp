@@ -676,6 +676,47 @@ NV2A. Nothing here needs rewriting — but the *semantics* matter to anyone reas
 behaviour: state only reaches the GPU when the buffer is pushed, presentation is a copy, and the software path is
 live in retail, so "the driver did it" is a possible explanation for a frame that looks wrong in an emulator.
 
+## The C libraries: a heap, a FAT driver, a speech codec and two image codecs (2026-11-19)
+
+The class readings leave one population untouched: **939 C-linkage functions**, the flat APIs inside `xapilib`,
+`xvoice`, `d3dx8`, `libc` and the D3D entry points. They do not group by class, so the survey is a prefix census
+over `inventory/xdk_lib_names.csv` — crude, and enough to see what the clusters are.
+
+| library | C functions | bytes | what the largest bodies are |
+|---|---:|---:|---|
+| `xvoice` | 382 | 137,457 | `_SearchTrackTwoPulsesSearchSignsIn` (5,742), `_wmavencInit` (3,758), `_prvLSPQuantization` (3,304), `_prvExEBlockHypProcess` (2,953), `_prvExcDecSpeechFrame` (2,701) |
+| `xapilib` | 205 | 31,953 | `_RtlpGrowBlockInPlace` (1,022), `_XapiMapLetterToDirectory` (820), `_XapiFormatFATVolumeEx` (804), `@OHCD_fProgramTransfer` (766) |
+| `libc` | 90 | 18,114 | `__woutput` (1,956), `__output` (1,895), `___strgtold12` (1,095) |
+| `d3dx8` | 89 | 19,471 | `_png_read_row` (935), `_D3DXCreateTextureFromFileInMemory` (924), `_png_do_expand` (854), `_png_build_gamma_table` (779) |
+
+Four readings:
+
+1. **`xapilib` is a filesystem and storage stack, not a shim.** A heap allocator (`_RtlpGrowBlockInPlace`,
+   `_RtlpDeCommitFreeBlock`), a FAT formatter (`_XapiFormatFATVolumeEx`), drive-letter mapping
+   (`_XapiMapLetterToDirectory`) and a USB host-controller driver (`OHCD`/`HCD`/`USBD`/`MU` prefixes — OHCI
+   programming, memory units). The title's saves and its HDD layout run through this, which is why savegame
+   formats in this project have been readable at all.
+2. **`xvoice` is a speech codec, and the largest named C cluster in the image** (137 KB): an encoder
+   (`_wmavencInit`), LSP quantisation (`_prvLSPQuantization`), excitation processing
+   (`_prvExEBlockHypProcess`, `_prvExcDecSpeechFrame`) and a two-pulse search
+   (`_SearchTrackTwoPulsesSearchSignsIn`, the single largest C body here at 5,742 B). Xbox Live voice chat is
+   WMA-encoded, and this is the implementation.
+3. **`d3dx8` embeds libpng and libjpeg** — 65 `png*` and 12 `jpeg*` symbols beside
+   `_D3DXCreateTextureFromFileInMemory`. Textures can be loaded from PNG/JPEG at runtime, which is worth knowing
+   before assuming every texture in the dump is a `.utx` DXT surface.
+4. **`libc` is the CRT's formatting and float-parsing core** (`__output`, `__woutput`, `___strgtold12`) — the part
+   that `printf`-style code in the game reaches.
+
+**Bucket: platform — reuse.** All four clusters are code a rebuild links again from the same libraries, and none
+of them is a reproduction task. The one conditional is `xvoice`: if a rebuild ships voice chat it links it, and if
+it does not, the 137 KB is dead weight a stub can replace. That is the same decision UIX got, for the opposite
+reason — UIX is unreachable from script; `xvoice` is reachable from anywhere with a socket.
+
+**Limit.** The grouping is by symbol prefix, so a cluster can hide a second one (the `MU`/`USBD` split inside
+xapilib is a guess from four and six names), and the byte totals are the body-match sizes rather than the
+libs' own. It is a survey, not a reading; the four clusters that matter are named, and no conclusion here rests
+on a prefix that the artifact does not show.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
