@@ -44,10 +44,24 @@ outside `.text` (with its class-table slot resolved when the ref lands in one, m
     tools/gap-heads.py --check                             # dump-free gate (in `make ci`)
     tools/gap-heads.py --selftest                          # synthetic bodies, no dump
 
-**A body that abuts its neighbour with no fill merges into it**, and that is measured rather than hidden:
-`inner_starts` counts the terminators inside a run that the next instruction follows with a strong body
-opening (`mov r,imm32`, `push imm32`, a call, a prologue). `0x00418c30` is five 21-byte bodies the decode
-reads as one 131-byte run, so the run count is a floor.
+**A body that abuts its neighbour with no fill merges into it, and the split rule undoes that.** A
+terminator with code behind it used to be walked past: the code could be an early `return` in the same
+body or the neighbour's start with no fill between them, and only a branch *to* that code can tell them
+apart. `branch_target` reads every relative branch in the run, so a terminator whose next instruction no
+branch targets is a **boundary** (`tail=split`, `boundary=after-ret`) and the walk starts a new body
+there; one the run's own branches reach stays merged and is counted in `inner_starts` (`0x00046330`'s
+`execEqualEqual_ObjectObject` returns early and is rejoined by the `jcc` above it). `0x00418c30` is
+five 21-byte bodies that decode as one 131-byte run without the rule.
+
+**One gap is a generated family, not missed code.** `0x004100c8`..`0x00418cc0` holds 600 bodies in two
+compiler shapes: a **register-once thunk** (`push <&item>; push 0xff; call 0x46c60; add esp,8; mov
+<flag>,al; ret`, one distinct `.data` item and one distinct `al` flag byte each) and an **`_atexit`
+destructor registration** (`push <dtor>; call _atexit; pop ecx; ret`). The `family` column names the
+shape so the block is one story with one naming rule, not 600 unrelated bodies.
+
+`--emit-adds` prints the `add` rows (`symbols/xbe_boundaries.csv`) the population earns and
+`--apply-adds` writes them plus the `xbe_overrides.csv` creation row each needs, named
+`<Class>_vt<slot>` from the slot that names it -- never an address, because that is the evidence.
 
 The dump is never committed; the artifact and the page are. Addresses and counts only.
 """
@@ -67,6 +81,8 @@ sys.path.insert(0, HERE)
 ARTIFACT = os.path.join(ROOT, "inventory", "gap_heads.csv")
 FUNCTIONS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 NAMES = os.path.join(ROOT, "inventory", "xbe_class_table_names.csv")
+BOUNDARIES = os.path.join(ROOT, "symbols", "xbe_boundaries.csv")
+OVERRIDES = os.path.join(ROOT, "symbols", "xbe_overrides.csv")
 DOC = os.path.join(ROOT, "docs", "SYMBOLS.md")
 DOC_START = "<!-- generated:gap-heads -->"
 DOC_END = "<!-- /generated:gap-heads -->"
@@ -74,10 +90,13 @@ GAME = "Stargate_SG-1_-_The_Alliance-2005-12-15"
 
 COLS = ["row", "head_va", "gap_lo", "gap_hi", "gap_size", "boundary", "prologue", "verdict", "size",
         "insns", "close", "tail", "inner_starts", "calls", "jumps", "imms", "pointers", "slots",
-        "slot_class", "slot_index", "census"]
+        "slot_table", "slot_class", "slot_index", "family", "census"]
 
 # A tail shape's name as `native-census.tail_shape` writes it; the five kinds, concatenated with `+`.
-TAILS = ("edge", "pad", "align", "table", "bytes")
+# `split` is this tool's own: the bytes behind the terminator are the next body, not a tail.
+TAILS = ("edge", "pad", "align", "table", "bytes", "split")
+# The two generated shapes one gap holds, named by the instruction pattern that opens the body.
+FAMILIES = ("register-once", "atexit")
 
 
 _MODS = {}
@@ -123,28 +142,95 @@ def gaps_of(table, lo, hi):
 
 
 # --------------------------------------------------------------------------- the head rule
+# The prefix bytes the decoder accepts in front of an opcode; `branch_target` skips them to find it.
+PREFIXES = (0x66, 0x67, 0xF0, 0xF2, 0xF3, 0x2E, 0x36, 0x3E, 0x26, 0x64, 0x65)
+LOOPS = (0xE0, 0xE1, 0xE2, 0xE3)
+
+
+def sx8(v):
+    return v - 0x100 if v >= 0x80 else v
+
+
+def branch_target(blob, i, length):
+    """The offset in `blob` a *relative* branch at `i` targets, or None.
+
+    A run's own branches are the only evidence that separates an early `return` from a neighbour's
+    start: the code behind a terminator is reachable -- same body -- when one of the run's jumps lands
+    on it, and is a body of its own when nothing does. `E9`/`EB`/every `jcc`/`loop`/`jcxz` carry a
+    displacement in their last byte(s), which is all this reads; everything else returns None.
+    """
+    if i < 0 or i + length > len(blob) or length < 2:
+        return None
+    k = i
+    while k < len(blob) and blob[k] in PREFIXES:
+        k += 1
+    if k >= len(blob):
+        return None
+    op = blob[k]
+    end = i + length
+    if 0x70 <= op <= 0x7F or op in LOOPS:
+        return end + sx8(blob[end - 1])
+    if op == 0x0F and k + 1 < len(blob) and 0x80 <= blob[k + 1] <= 0x8F:
+        return end + struct.unpack_from("<i", blob, end - 4)[0]
+    if op in (0xE9, 0xEB):
+        return end + (sx8(blob[end - 1]) if op == 0xEB else struct.unpack_from("<i", blob, end - 4)[0])
+    return None
+
+
 def walk(decode, tail_shape, terminator_kind, pro, blob, limit, va):
-    """(size, insns, close, tail, inner_starts) for the run at `blob[0]`, or (None, insns, why, None, inner)."""
-    i, n, inner, prev, start0 = 0, 0, 0, None, None
+    """(size, insns, close, tail, inner, split) for the body at `blob[0]`, or a refusal.
+
+    The run is decoded twice: once to its close (the same close-with-a-tail the registration census
+    takes) or to the region's end, collecting every instruction and every relative branch target;
+    then once over the terminators *inside* it, where the first one whose successor no branch targets
+    and which opens a body (`strong_opening`) is a split point. An opening a branch does target is an
+    early `return` rejoined by its own code, counted in `inner` and walked past.
+    """
+    insns, targets, i, close, shape, close_start, close_len = [], set(), 0, None, None, None, None
+    refused = False
     while i < limit:
         ins = decode(blob[i:limit], 0)
         if ins is None or ins.length <= 0:
-            return None, n, "undecoded", None, inner
-        start0 = i
+            refused = True
+            break
+        insns.append((i, ins.length, ins.text))
+        t = branch_target(blob, i, ins.length)
+        if t is not None:
+            targets.add(t)
+        kind = terminator_kind(blob, i, ins.text)
         i += ins.length
-        n += 1
-        prev = ins.text
-        kind = terminator_kind(blob, start0, prev)
         if kind:
-            shape = tail_shape(blob, i, limit, va)
-            if shape:
-                return i, n, kind, shape, inner
-            # A terminator with code behind it is walked past -- either an early return inside this
-            # body or the neighbour's start with no fill between them. Only the second is a body the
-            # head rule cannot see, and a strong opening at the next instruction is what separates them.
-            if i < limit and strong_opening(pro, blob, i):
+            sh = tail_shape(blob, i, limit, va)
+            if sh:
+                close, shape, close_start, close_len = kind, sh, i - ins.length, ins.length
+                break
+    # The split: a terminator behind which a body opens and to which nothing in the run branches.
+    split, inner, split_close = None, 0, None
+    for start, length, text in insns:
+        if close_start is not None and start >= close_start:
+            break
+        kind = terminator_kind(blob, start, text)
+        if not kind:
+            continue
+        nxt = start + length
+        if nxt >= limit:
+            continue
+        if nxt in targets:
+            if strong_opening(pro, blob, nxt):
                 inner += 1
-    return None, n, "no-close", None, inner
+            continue
+        if strong_opening(pro, blob, nxt):
+            split, split_close = nxt, kind
+            break
+    # A split is only read inside a run that closes on a *tail* somewhere: that close is the
+    # structural evidence the region is code, and without it a decode through data would "close" at
+    # the first `ret`-shaped byte in front of a `mov` -- the control that keeps this rule honest
+    # (0 bodies in 3.3 MB of data) depends on it.
+    if split is not None and close is not None:
+        return split, sum(1 for s, _l, _t in insns if s < split), split_close, "split", inner, split
+    if close is not None:
+        return close_start + close_len, sum(1 for s, _l, _t in insns if s <= close_start), close, shape, inner, None
+    return None, len(insns), "undecoded" if refused else "no-close", None, inner, None
 
 
 def strong_opening(pro, blob, i):
@@ -159,22 +245,30 @@ def strong_opening(pro, blob, i):
 
 def scan(decode, nc, lo, hi, blob):
     """Every head in `blob` between `lo` and `hi`: heads, walked from the region's first byte."""
-    out, off, first = [], 0, True
+    out, off, first, forced = [], 0, True, set()
     while off < len(blob):
-        preceded = first or (off >= 1 and blob[off - 1] in (0xCC, 0x90))
+        pad = 0
+        k = off - 1
+        while k >= 0 and blob[k] in (0xCC, 0x90):
+            pad += 1
+            k -= 1
+        preceded = first or off in forced or (off >= 1 and blob[off - 1] in (0xCC, 0x90))
         if preceded:
             pr = nc.prologue(blob[off:off + 8])
-            if pr != "other":
-                size, n, close, tail, inner = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
-                                                    blob[off:], len(blob) - off, lo + off)
-                pad = 0
-                k = off - 1
-                while k >= 0 and blob[k] in (0xCC, 0x90):
-                    pad += 1
-                    k -= 1
-                out.append({"head_va": lo + off, "boundary": "start" if first and not pad else "pad:%d" % pad,
+            # A split point is a body even when its opening is not one of the named prologues: the
+            # terminator in front of it and the absence of a branch into it are the evidence.
+            if pr != "other" or off in forced:
+                size, n, close, tail, inner, split = walk(decode, nc.tail_shape, nc.terminator_kind,
+                                                          nc.prologue, blob[off:], len(blob) - off, lo + off)
+                if off in forced:
+                    boundary = "after-ret"
+                else:
+                    boundary = "start" if first and not pad else "pad:%d" % pad
+                out.append({"head_va": lo + off, "boundary": boundary,
                             "prologue": pr, "size": size, "insns": n, "close": close, "tail": tail,
                             "inner_starts": inner})
+                if split is not None:
+                    forced.add(off + split)
                 off += (size if size else 1)
                 first = False
                 continue
@@ -225,7 +319,7 @@ def channels(xbe, raw, secs, blobs, tva, heads, spans, names):
             refs.append(pos)
             pos = outside.find(pat, pos + 1)
         h["pointers"] = len(refs)
-        h["slots"], h["slot_class"], h["slot_index"] = 0, "", ""
+        h["slots"], h["slot_table"], h["slot_class"], h["slot_index"] = 0, "", "", ""
         for o in refs:
             ref = off_to_va(secs, o)
             i = bisect.bisect_right(starts, ref) - 1
@@ -235,9 +329,9 @@ def channels(xbe, raw, secs, blobs, tva, heads, spans, names):
             if tva_ <= ref < tva_ + 4 * sn:
                 h["slots"] += 1
                 if slot is None:
-                    slot = (names.get(tva_, ""), (ref - tva_) // 4, kind)
+                    slot = ("0x%08x" % tva_, names.get(tva_, ""), (ref - tva_) // 4)
         if slot:
-            h["slot_class"], h["slot_index"] = slot[0], slot[1]
+            h["slot_table"], h["slot_class"], h["slot_index"] = slot
         count["pointer"] += 1 if refs else 0
         count["slot"] += 1 if h["slots"] else 0
         count["branch"] += 1 if (h["calls"] or h["jumps"]) else 0
@@ -279,6 +373,51 @@ def table_spans():
     return spans, names
 
 
+def family_of(decode, data, size, atexit_va, va=0):
+    """The generated-stub family a body opens in, or "" -- the shape, read off its own instructions.
+
+    Two shapes recur in the one gap that holds 600 bodies. A **register-once thunk** is
+    `push <&item>; push 0xff; call <helper>; add esp,8; mov <flag>,al; ret`: a distinct `.data` item
+    and a distinct flag byte each, so it is a per-item registration, not spill. An **`_atexit`
+    destructor registration** is `push <dtor>; call _atexit; pop ecx; ret`, the static destructor of a
+    global object. Neither is named by a call -- `_atexit` is the only callee, and the helper is
+    reached by every member of the first family -- which is why the block reads as one family.
+    """
+    if not size or size < 6:
+        return ""
+    ins, i = [], 0
+    while i < min(size, len(data)):
+        x = decode(data, i)
+        if x is None or x.length <= 0:
+            break
+        ins.append((i, x))
+        i += x.length
+    if len(ins) < 2:
+        return ""
+    s0, i0 = ins[0]
+    if data[s0] != 0x68 or i0.text.split()[0] != "push":
+        return ""
+    # the destructor shape: one argument, and a call to the CRT's registration helper
+    if data[ins[1][0]] == 0xE8:
+        target = va + ins[1][0] + 5 + struct.unpack_from("<i", data, ins[1][0] + 1)[0]
+        return "atexit" if atexit_va and target == atexit_va else ""
+    if len(ins) < 3:
+        return ""
+    s1, i1 = ins[1]
+    s2, i2 = ins[2]
+    if data[s1] not in (0x68, 0x6A) or i1.text.split()[0] != "push":
+        return ""
+    if data[s2] != 0xE8:
+        return ""
+    target = va + s2 + 5 + struct.unpack_from("<i", data, s2 + 1)[0]
+    if atexit_va and target == atexit_va:
+        return "atexit"
+    for s, _x in ins[3:]:
+        if data[s] == 0xA2:                          # `mov ds:<abs32>, al`: the flag the thunk writes
+            return "register-once"
+    return ""
+
+
 # --------------------------------------------------------------------------- the measurement
 def measure(args):
     xbe = _load("xbe")
@@ -308,6 +447,14 @@ def measure(args):
     for name in secs:
         _RAW[name], _SECVA[name] = blobs[name], [s for s in X.sections if s.name == name][0].va
     ch = channels(xbe, raw, [s for s in secs if s != ".text"], blobs, tva, heads, spans, names)
+    atexit_va = next((a for a, _b, n in table if n == "_atexit"), 0)
+    for h in heads:
+        if not h["size"]:
+            h["family"] = ""
+            continue
+        room = max(1, min(h["gap_hi"] - h["head_va"], h["size"] + 16, 128))
+        h["family"] = family_of(decode, X.read_va(h["head_va"], room), h["size"], atexit_va,
+                                h["head_va"])
 
     # the controls: the same two tests over the rows the map already places
     ctl = collections.Counter()
@@ -315,8 +462,8 @@ def measure(args):
         pad = a > lo and text[a - 1 - lo] in (0xCC, 0x90)
         pr = nc.prologue(text[a - lo:a - lo + 8])
         ctl["both" if (pad and pr != "other") else ("pad" if pad else ("prologue" if pr != "other" else "neither"))] += 1
-        size, n, close, tail, _i = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
-                                        text[a - lo:b - lo], b - a, a)
+        size, n, close, tail, _i, _sp = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
+                                             text[a - lo:b - lo], b - a, a)
         ctl["decode" if size == b - a else ("short" if size else "noclose")] += 1
     # the null population: pad-before prologue-shaped bytes in the data sections
     for name in (".rdata", ".data", "XNET", "DSOUND"):
@@ -349,7 +496,8 @@ def measure(args):
                      "close": h["close"] or "", "tail": h["tail"] or "",
                      "inner_starts": h["inner_starts"], "calls": h["calls"], "jumps": h["jumps"],
                      "imms": h["imms"], "pointers": h["pointers"], "slots": h["slots"],
-                     "slot_class": h["slot_class"], "slot_index": h["slot_index"]})
+                     "slot_table": h["slot_table"], "slot_class": h["slot_class"],
+                     "slot_index": h["slot_index"], "family": h["family"]})
     vc = collections.Counter(r["verdict"] for r in rows)
     bodies = [r for r in rows if r["verdict"] in ("body", "island")]
     meta = collections.OrderedDict()
@@ -366,6 +514,10 @@ def measure(args):
     meta["body_bytes_pct"] = int(round(100.0 * meta["body_bytes"] / max(meta["gap_bytes"], 1)))
     meta["inner_starts"] = sum(int(r["inner_starts"]) for r in rows)
     meta["bodies_with_inner"] = sum(1 for r in rows if int(r["inner_starts"]))
+    meta["splits"] = sum(1 for r in rows if r["boundary"] == "after-ret")
+    meta["family_register_once"] = sum(1 for r in rows if r["family"] == "register-once")
+    meta["family_atexit"] = sum(1 for r in rows if r["family"] == "atexit")
+    meta["slot_named"] = sum(1 for r in rows if int(r["slots"]))
     meta["named_pointer"] = ch["pointer"]
     meta["named_slot"] = ch["slot"]
     meta["named_branch"] = ch["branch"]
@@ -393,12 +545,115 @@ def measure(args):
     print("named: pointer %d, table slot %d, branch %d, push %d; any %d, none %d"
           % (meta["named_pointer"], meta["named_slot"], meta["named_branch"], meta["named_imm"],
              meta["named_any"], meta["unnamed"]))
+    print("split %d bodies out of merged runs (%d openings stay merged); families: %d register-once, %d atexit"
+          % (meta["splits"], meta["inner_starts"], meta["family_register_once"], meta["family_atexit"]))
     print("controls: map rows head-rule %d of %d; decode-to-size %d; null bodies %s; base %.1f%% gap vs %.1f%% rows"
           % (meta["map_rows_head"], meta["map_rows"], meta["map_rows_decode"],
              {k: v for k, v in meta.items() if k.startswith("null_bodies_")},
              100.0 * meta["base_gap"] / max(meta["base_gap_n"], 1),
              100.0 * meta["base_row"] / max(meta["base_row_n"], 1)))
     return rows, meta
+
+
+# --------------------------------------------------------------------------- the rows the population earns
+POPULATIONS = ("slot", "family", "all")
+
+
+def add_candidates(rows, population):
+    """[(head row, name)] -- the bodies whose own evidence is strong enough to create a map row.
+
+    The population is the point: a body nothing calls is added only when something *else* names it,
+    and a class-table slot is the strongest channel this census has (59.7% of the population against
+    a 1.6% base rate). `slot` takes the bodies whose slot also resolves a class, because that is what
+    a name can be built from; `family` takes the generated block; `all` takes every decodable body.
+    """
+    out, taken = [], set()
+    for r in rows:
+        if r.get("row") != "head" or r["verdict"] not in ("body", "island"):
+            continue
+        if not r["size"] or r["close"] not in ("ret", "ret-imm", "jmp", "jmp-ind"):
+            continue
+        if population == "slot" and not r["slot_class"]:
+            continue
+        if population == "family" and not r["family"]:
+            continue
+        if r["slot_class"]:
+            name = "%s_vt%s" % (r["slot_class"], r["slot_index"])
+        elif r["family"] == "atexit":
+            name = "dtor_%s" % r["head_va"][2:]
+        else:
+            name = "FUN_%s" % r["head_va"][2:]
+        if name in taken:
+            name += "_b"
+        taken.add(name)
+        out.append((r, name))
+    return out
+
+
+def add_evidence(r):
+    """The one sentence an `add` row carries: what names this body, and why the map has no row."""
+    who = ("a dword in the class table %s at slot %s, which that table's class (%s) declares"
+           % (r["slot_table"], r["slot_index"], r["slot_class"]))
+    if not r["slot_class"]:
+        who = ("a dword in the class table %s at slot %s" % (r["slot_table"], r["slot_index"]))
+    pad = ("%d bytes of pad" % int(r["boundary"].split(":")[1])) if r["boundary"].startswith("pad") \
+        else "a split boundary"
+    return ("the body in the gap %s..%s: %s; %s in front, an MSVC %s prologue, and a linear decode "
+            "closing on `%s` at 0x%08x. No `E8` and no pointer outside a table names it, so the call "
+            "graph that builds this map cannot make it a function and only this row can"
+            % (r["gap_lo"], r["gap_hi"], who, pad, r["prologue"], r["close"],
+               int(r["head_va"], 16) + int(r["size"])))
+
+
+def emit_adds(args):
+    rows = _art()
+    cand = add_candidates(rows, args.add_population)
+    w = csv.writer(sys.stdout, lineterminator="\n")
+    for r, name in cand:
+        w.writerow([r["head_va"], "add", name, r["size"], add_evidence(r)])
+    print("gap-heads: %d add(s) for population %r" % (len(cand), args.add_population), file=sys.stderr)
+    return 0
+
+
+def apply_adds(args):
+    """Append the population's `add` rows and the creation row each needs, refusing any duplicate.
+
+    An `add` with no `xbe_overrides.csv` row is invisible to a fresh import (`XbePost.java` builds the
+    function from that file), so the two rows are written together or not at all.
+    """
+    rows = _art()
+    cand = add_candidates(rows, args.add_population)
+    with open(BOUNDARIES, newline="") as fh:
+        b_rows = list(csv.DictReader(fh))
+    with open(OVERRIDES, newline="") as fh:
+        o_rows = list(csv.DictReader(fh))
+    have = {int(r["address"], 16) for r in b_rows} | {int(r["address"], 16) for r in o_rows}
+    dup = [r["head_va"] for r, _n in cand if int(r["head_va"], 16) in have]
+    if dup:
+        sys.exit("gap-heads: --apply-adds: %d of the population is already a row (%s); regenerate the "
+                 "census after a repair instead of re-adding it" % (len(dup), ", ".join(dup[:4])))
+    for r, name in cand:
+        ev = add_evidence(r)
+        b_rows.append({"address": r["head_va"], "action": "add", "target": name, "size": r["size"],
+                       "evidence": ev})
+        o_rows.append({"address": r["head_va"], "name": name,
+                       "evidence": "added to the map by symbols/xbe_boundaries.csv: " + ev,
+                       "class": "", "outer": "", "object_size": "", "assert_line": "", "module": "",
+                       "source_file": "", "function_size": r["size"]})
+    with open(BOUNDARIES, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "action", "target", "size", "evidence"],
+                           lineterminator="\n")
+        w.writeheader()
+        w.writerows(b_rows)
+    with open(OVERRIDES, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "name", "evidence", "class", "outer",
+                                           "object_size", "assert_line", "module", "source_file",
+                                           "function_size"], lineterminator="\r\n")
+        w.writeheader()
+        w.writerows(o_rows)
+    print("gap-heads: %d add(s) and %d creation row(s) written for population %r"
+          % (len(cand), len(cand), args.add_population))
+    return 0
 
 
 # --------------------------------------------------------------------------- the artifact and the page
@@ -437,11 +692,14 @@ def render(rows):
             "| ...decode to a body / are a 1-2 instruction island | %d / %d |" % (m["bodies"], m["islands"]),
             "| ...refused (`no-close` / `undecoded`) | %d / %d |" % (m["no_close"], m["undecoded"]),
             "| bytes the bodies cover | %d (%.1f%% of the gap bytes) |" % (m["body_bytes"], m["body_bytes_pct"]),
-            "| runs holding an inner strong opening (a merged neighbour) | %d in %d runs |"
+            "| runs holding an inner strong opening (a branch rejoins it, so it stays merged) | %d in %d runs |"
             % (m["inner_starts"], m["bodies_with_inner"]),
+            "| bodies a split ends (a terminator no branch in the run targets) | %d |" % m["splits"],
+            "| bodies in a generated family (`register-once` / `_atexit`) | %d / %d |"
+            % (m["family_register_once"], m["family_atexit"]),
             "| named by a dword outside `.text` | %d |" % m["named_pointer"],
-            "| ...of those, in a class-table slot (%d tables, %d named classes) | %d |"
-            % (m["tables"], m["slot_classes"], m["named_slot"]),
+            "| ...of those, in a class-table slot (%d bodies, %d tables, %d named classes) | %d |"
+            % (m["slot_named"], m["tables"], m["slot_classes"], m["named_slot"]),
             "| named by an `E8`/`E9` branch | %d |" % m["named_branch"],
             "| named by a `68` push | %d |" % m["named_imm"],
             "| named by any channel / by none | %d / %d |" % (m["named_any"], m["unnamed"]),
@@ -489,7 +747,8 @@ def check():
     if list(rows[0].keys()) != COLS:
         sys.exit("gap-heads: --check: the table's columns are %r, the tool writes %r" % (list(rows[0].keys()), COLS))
     m = census_of(rows)
-    for key in ("text_lo", "text_hi", "gaps", "heads", "bodies", "islands", "no_close", "undecoded"):
+    for key in ("text_lo", "text_hi", "gaps", "heads", "bodies", "islands", "no_close", "undecoded",
+                "splits", "family_register_once", "family_atexit", "slot_named"):
         if key not in m:
             sys.exit("gap-heads: --check: the census row carries no %s" % key)
     heads = [r for r in rows if r["row"] == "head"]
@@ -506,6 +765,17 @@ def check():
     total = sum(int(r["size"]) for r in heads if r["size"])
     if total != m["body_bytes"]:
         bad.append("the rows' sizes sum to %d, the census says %d" % (total, m["body_bytes"]))
+    for key, field, want in (("splits", "boundary", "after-ret"),):
+        got = sum(1 for r in heads if r[field] == want)
+        if got != m[key]:
+            bad.append("census says %s %d, the rows hold %d" % (key, m[key], got))
+    for key, fam in (("family_register_once", "register-once"), ("family_atexit", "atexit")):
+        got = sum(1 for r in heads if r["family"] == fam)
+        if got != m[key]:
+            bad.append("census says %s %d, the rows hold %d" % (key, m[key], got))
+    got = sum(1 for r in heads if int(r["slots"]))
+    if got != m["slot_named"]:
+        bad.append("census says slot_named %d, the rows hold %d" % (m["slot_named"], got))
     if len(gaps) != m["gaps"]:
         bad.append("the map holds %d gaps in .text, the census says %d" % (len(gaps), m["gaps"]))
     starts = [t[0] for t in table]
@@ -517,10 +787,16 @@ def check():
         i = bisect.bisect_right(starts, va) - 1
         if i >= 0 and table[i][0] <= va < table[i][1]:
             bad.append("%s is inside the map row %s" % (r["head_va"], table[i][2]))
-        if not r["boundary"].startswith("pad") and r["boundary"] != "start":
-            bad.append("%s: boundary %r is not a pad or the gap's start" % (r["head_va"], r["boundary"]))
+        if not r["boundary"].startswith("pad") and r["boundary"] not in ("start", "after-ret"):
+            bad.append("%s: boundary %r is not a pad, the gap's start or a split" % (r["head_va"], r["boundary"]))
         v = r["verdict"]
         size = int(r["size"] or 0)
+        if r["family"] and r["family"] not in FAMILIES:
+            bad.append("%s: family %r is not one of %s" % (r["head_va"], r["family"], "|".join(FAMILIES)))
+        if r["boundary"] == "after-ret":
+            prev = next((p for p in heads if int(p["head_va"], 16) + int(p["size"] or 0) == va), None)
+            if prev is None or prev["tail"] != "split":
+                bad.append("%s: a split head that no split row abuts" % r["head_va"])
         if v in ("body", "island"):
             if not size or r["close"] not in ("ret", "ret-imm", "jmp", "jmp-ind"):
                 bad.append("%s: %s with no close" % (r["head_va"], v))
@@ -531,6 +807,13 @@ def check():
                 bad.append("%s: %s on %s bytes / %s instructions" % (r["head_va"], v, r["size"], r["insns"]))
         elif size:
             bad.append("%s: %s carries a size" % (r["head_va"], v))
+    by_va = {int(r["head_va"], 16): r for r in heads}
+    for r in heads:
+        if r["tail"] != "split":
+            continue
+        nxt = by_va.get(int(r["head_va"], 16) + int(r["size"] or 0))
+        if nxt is None or nxt["boundary"] != "after-ret":
+            bad.append("%s: a split whose successor is not the next head" % r["head_va"])
     if bad:
         sys.exit("gap-heads: --check: " + "; ".join(bad[:6]))
     print("gap-heads: %d heads in %d gaps -- %d bodies, %d islands, %d no-close, %d undecoded"
@@ -558,11 +841,31 @@ def selftest():
     junk = b"\x90\x90" + b"\x55\x8b\xec" + b"\x90" * 40
     j = scan(decode, nc, 0x2000, 0x2000 + len(junk), junk)
     assert j and verdict(j[0]) == "no-close", j
-    # an abutting neighbour: a `ret` then `mov ecx,imm32` is a body boundary with no fill, and the run
-    # must say so -- `0x00418c30` is five 21-byte bodies the decode reads as one 131-byte run.
+    # an abutting neighbour: a `ret` then `mov ecx,imm32` is a body boundary with no fill -- nothing
+    # in the run branches to it -- and the walk must split there rather than merge the two bodies
     abut = b"\x55\x8b\xec\xc3" + b"\xb9" + struct.pack("<I", 0x7b9ba8) + b"\xc3" + b"\xcc"
     a = scan(decode, nc, 0x3000, 0x3000 + len(abut), abut)
-    assert len(a) == 1 and a[0]["inner_starts"] == 1 and a[0]["size"] == 10, a
+    assert len(a) == 2 and a[0]["size"] == 4 and a[0]["tail"] == "split", a
+    assert a[1]["boundary"] == "after-ret" and a[1]["size"] == 6, a
+    # `0x00418c30` is five abutting bodies: five heads, each 6 bytes, one pad and four splits
+    five = b"\xcc\xcc" + (b"\xb8" + struct.pack("<I", 0x401000) + b"\xc3") * 5 + b"\xcc"
+    f = scan(decode, nc, 0x4000, 0x4000 + len(five), five)
+    assert len(f) == 5 and {h["size"] for h in f} == {6}, f
+    assert [h["boundary"] for h in f] == ["pad:2"] + ["after-ret"] * 4, f
+    # an early `return` the run's own branch rejoins stays inside the body: `je` over the `ret` onto
+    # the `mov` below it is the `0x00046330` shape, and it must not split
+    early = b"\x55\x8b\xec" + b"\x74\x01" + b"\xc3" + b"\xb8" + struct.pack("<I", 1) + b"\xc3" + b"\xcc"
+    e = scan(decode, nc, 0x5000, 0x5000 + len(early), early)
+    assert len(e) == 1 and e[0]["inner_starts"] == 1 and e[0]["tail"] == "pad", e
+    # the two generated families, from their own instructions
+    thunk = b"\x68" + struct.pack("<I", 0x5c29e0) + b"\x68\xff\x00\x00\x00" + b"\xe8" + \
+        struct.pack("<i", 0x46c60 - 0x500a - 5) + b"\x83\xc4\x08" + b"\xa2" + \
+        struct.pack("<I", 0x6c21ac) + b"\xc3"
+    assert family_of(decode, thunk, len(thunk), 0x3e66a3, 0x5000) == "register-once", thunk
+    dtor = b"\x68" + struct.pack("<I", 0x418cf0) + b"\xe8" + struct.pack("<i", 0x3e66a3 - 0x500a) + \
+        b"\x59\xc3"
+    assert family_of(decode, dtor, len(dtor), 0x3e66a3, 0x5000) == "atexit", dtor
+    assert family_of(decode, b"\x55\x8b\xec\xc3", 4, 0x3e66a3, 0x5000) == ""
     # the gaps: a placed row splits its neighbours, and an overlap does not open one
     table = [(0x1000, 0x1010, "a"), (0x1020, 0x1030, "b"), (0x1030, 0x1040, "c"), (0x1050, 0x1060, "d")]
     assert gaps_of(table, 0x1000, 0x1060) == [(0x1010, 0x1020), (0x1040, 0x1050)], gaps_of(table, 0x1000, 0x1060)
@@ -571,10 +874,11 @@ def selftest():
     fake = [dict(blank, row="head", head_va="0x1007", gap_lo="0x1000", gap_hi="0x1010", gap_size="16",
                  boundary="pad:2", prologue="frame", verdict="body", size="7", insns="4", close="ret",
                  tail="pad", inner_starts="0", calls="0", jumps="0", imms="0", pointers="2", slots="1",
-                 slot_class="Camera", slot_index="7"),
+                 slot_table="0x004c78c0", slot_class="Camera", slot_index="7", family=""),
             dict(blank, row="census", census="text_lo=0x1000;text_hi=0x2000;gaps=1;gap_bytes=16;gaps_under_8=0;"
                  "heads=1;bodies=1;islands=0;no_close=0;undecoded=0;body_bytes=7;body_bytes_pct=44;"
-                 "inner_starts=0;bodies_with_inner=0;named_pointer=1;named_slot=1;named_branch=0;named_imm=0;"
+                 "inner_starts=0;bodies_with_inner=0;splits=0;family_register_once=0;family_atexit=0;"
+                 "slot_named=1;named_pointer=1;named_slot=1;named_branch=0;named_imm=0;"
                  "named_any=1;unnamed=0;map_rows=10;map_rows_head=8;map_rows_pad_only=1;map_rows_prologue_only=1;"
                  "map_rows_decode=9;null_heads_rdata=212;null_bodies_rdata=0;base_gap=22;base_gap_n=2000;"
                  "base_row=481;base_row_n=2000;tables=724;slot_classes=1")]
@@ -584,8 +888,8 @@ def selftest():
     assert "| heads the pad-before + prologue rule finds | 1 |" in page, page
     assert "| `0x1000`..`0x1010` | 1 | 1 | `0x1007` |" in page, page
     assert splice(os.path.join(ROOT, "Makefile"), "x") is None   # no markers: refused, not echoed
-    print("ok   gap-heads: 9 assertions (head rule, island, refusal, merged neighbour, gaps, census round trip, "
-          "marker refusal)")
+    print("ok   gap-heads: 15 assertions (head rule, island, refusal, split, merged early return, five "
+          "abutting bodies, both families, gaps, census round trip, marker refusal)")
     return 0
 
 
@@ -600,11 +904,21 @@ def main():
     ap.add_argument("--check-doc", nargs="?", const=DOC, default=None)
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--emit-adds", action="store_true",
+                    help="print the `add` rows the population earns (symbols/xbe_boundaries.csv)")
+    ap.add_argument("--apply-adds", action="store_true",
+                    help="write those rows, and the xbe_overrides.csv creation row each needs")
+    ap.add_argument("--add-population", choices=POPULATIONS, default="slot",
+                    help="which bodies to add: `slot` (class-named, the default), `family`, or `all`")
     args = ap.parse_args()
     if args.selftest:
         return selftest()
     if args.check:
         return check()
+    if args.emit_adds:
+        return emit_adds(args)
+    if args.apply_adds:
+        return apply_adds(args)
     if args.report or args.write_doc or args.check_doc:
         rows = _art()
     else:
