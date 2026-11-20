@@ -438,9 +438,10 @@ shape and the evidence (group, names, store offsets, the guard flag) rather than
 reading a registration rather than a sample.
 
 **The eight values are slot indices into that array, and the census says so (2026-11-20).**
-`tools/stat-scope-uses.py` (`inventory/stat_scope_uses.csv`, `make stat-scope-uses`) reads every absolute
-reference to `0x7b5dfc` — **106 sites, 90 inside a body the map covers, over 52 bodies** — and classifies the
-register that indexes the slot: `field +0xNN of <base>`, a global, an immediate or a stack slot. Two readings
+`tools/stat-scope-uses.py` (`inventory/stat_scope_uses.csv`, `make stat-scope-uses`) reads every reference
+to `0x7b5dfc` — **410 in the code sections: 409 are an instruction's operand, 340 of those sit in a body the map
+covers (97 bodies) and 69 in a map gap, and one candidate is a displacement byte** — and classifies the register
+that indexes the slot: `field +0xNN of <base>`, a global, an immediate or a stack slot. Two readings
 follow from it. First, the registry object and the array are one mechanism: `0x7b5dfc` is `0x7b5dd8 + 0x24`,
 the pointer to the slot array, and what `0x2530f0` returns is the index of the slot it appended — which is why
 the second-instance path can copy the cached ids straight back into the object. Second, the block that holds
@@ -448,33 +449,53 @@ them is not the object: `XboxAudio_CreateDevice` hands the registration body its
 `lea ecx,[esi+0x184]`, and the constructor memsets those `0x24` bytes (`0x0002fc80`: `push 0x24; lea
 eax,[esi+0x184]`), so the eight values live at `+0x188`..`+0x1a4` of the *subsystem*.
 
-**Five of the eight index a slot; three index nothing.** The shapes are the compiler's two idioms for a
-profiled counter — read the slot into a register, `add`/`sub` a `rdtsc` value (the scope form, with a fixed
-`-12` on the close), or `inc` it (a plain counter) — and the census names the one each site uses:
+**The first version of this census read a quarter of the population, and the quarter was the scan's.** The
+aligned-dword scan (a `dword_refs()` that kept only 4-byte-aligned hits, on the theory that an absolute operand
+is aligned) dropped every reference whose immediate lands one byte past its opcode — the `A1`/`A3` form of
+`mov eax,ds:<abs>`, which is what this compiler emits when the array base goes into `eax`. Of the 410
+references the image holds, **exactly 106 are aligned**: the committed artifact to the site. What that hid was
+not a sample of the same shape. The audio module's own code is `A1`-heavy, so the missing three quarters held
+the `PlaySound` scope's **open** (`0x0002f447` closes it), the increments of the two ids this page called idle,
+and a shape the classifier had never seen: `add DWORD PTR [eax+ecx*4],<a byte count>`, an accumulate by a
+measured value that the old reader reported as `read only` (62 sites now carry `add delta`). Every byte offset
+is a candidate now, and a candidate is a site only when an instruction contains it — a linear sweep of the body
+it lands in — so a displacement byte that happens to spell the address is reported `not-a-boundary`
+(`0x002b8497`) instead of counted. Two readers also had to learn the inline operand form
+(`inc DWORD PTR [eax+ecx*4]`, the shape 24 sites use): the index is the `*4` register that is not the array
+base, and its writer is traced back through pushes, stopping at a `call` for a volatile register.
 
-| id (subsystem offset) | name | sites | shape |
+**All eight index a slot, and each duplicate name is a pair: one id accumulates cycles, the other counts
+events.** The shapes are the compiler's idioms for a profiled counter — read the slot into a register, `add`
+or `sub` a `rdtsc` value (the scope form, with a fixed `-12` on the close), `inc` it, or `add` a measured value
+that is not a timestamp — and the census names the one each site uses:
+
+| id (subsystem offset) | name | sites | shapes |
 |---|---|---|---|
-| `+0x188` | `PlaySound` (second of the pair) | 1 | closed: `ord=0x0002f9f4`, `add tsc - 12` into the slot |
-| `+0x18c` | `Update` | 1 | opened: `ord=0x0002fee4`, `sub tsc` out of the slot |
-| `+0x190` | `Occlusion` (second of the pair) | 3 | opened at `0x0002f524`, closed at `0x0002f360` and `0x00030ef0` |
-| `+0x19c` | `Streaming` | 1 | `inc` by 1 (`0x00030b4c`) |
-| `+0x1a0` | `Regular` | 1 | `inc` by 1 (`0x00030b60`), the same merged tail as `Streaming` |
-| `+0x194` | `PlaySound` (first of the pair) | 0 | registered, never indexed anywhere in the image |
-| `+0x198` | `Occlusion` (first of the pair) | 0 | registered, never indexed |
-| `+0x1a4` | `StoppedSounds` | 0 | registered, never indexed |
+| `+0x188` | `PlaySound` (cycles) | 3 | opened `0x0002f1d9`, closed `0x0002f9f4`, with an early-out close `0x0002f447` |
+| `+0x18c` | `Update` | 2 | opened at the pump's head `0x0002fee4`, closed at its tail `0x0003133d` |
+| `+0x190` | `Occlusion` (cycles) | 8 | four opens (`0x2f287`, `0x2f524`, `0x30477`, `0x30dba`), four closes (`0x2f360`, `0x2f62b`, `0x30546`, `0x30ef0`) |
+| `+0x194` | `PlaySound` (count) | 1 | `inc` by 1 at `0x0002f205` |
+| `+0x198` | `Occlusion` (count) | 1 | `inc` by 1 at `0x00030eb2` |
+| `+0x19c` | `Streaming` | 1 | `inc` by 1 at `0x00030b4c` |
+| `+0x1a0` | `Regular` | 1 | `inc` by 1 at `0x00030b60`, the same merged tail as `Streaming` |
+| `+0x1a4` | `StoppedSounds` | 1 | `inc` by 1 at `0x0002d415`, in `XboxAudio_StopStreamingSound` |
 
-So **which method increments an audio counter is answered: the module's own code, and not a registry method**
-— and three of the eight registrations are idle. The `Streaming`/`Regular` pair is one branch on
-`test BYTE PTR [eax+0x44],0x4` that picks the slot and jumps into a shared `inc` tail, which is why the census
-records both ids at sites two instructions apart. `U35` carries what is left: who opens the `PlaySound` scope
-that `0x0002f9f4` closes, and what the first id of each pair is for.
+So **which method increments an audio counter is answered: the module's own code, and not a registry method** —
+and the two closes over one `PlaySound` open are not a double count: `0x0002f43a` tests the sound id it
+resolved (`cmp ebp,0xffffffff; jne 0x2f476`) and the close at `0x0002f447` is the **not-found exit**, while
+`0x0002f9f4` is the normal one, so every path out of the function closes the scope once. The registration order
+is the pair order — the count id is stored before its cycle partner (`+0x194` before `+0x188`, `+0x198` before
+`+0x190`) — which is why the store offsets interleave. `U35` is closed by this: the missing open was the scan's,
+and the three ids it called idle are `PlaySound`'s count, `Occlusion`'s count and `StoppedSounds`.
 
-**The `PlaySound` close sits in a body the map splits at an assert block.** The site `0x0002f9f4` belongs to a
-function that starts before `0x0002f7b1` and ends at `0x0002fa23` (`ret 0x30`); the map's `Core_UnTemplate`
-entry at `0x0002f820` is the *assert block* at `0x0002f820` (`push 0x287; push ...; call 0x58a30`), reached by
-the fall-through of `jge 0x2f837`. That row's `Core` module is therefore an artefact of the split — the code
-around it is the audio module's play path (`_DirectSound` setters on the device, then the `PlaySound` scope
-close) — and the split itself is a map-quality item, not a second module's code.
+**Two symbol-map rows around the play path are wrong, and both cost this census a site.** The site
+`0x0002f9f4` belongs to the body the map starts at `0x0002f13c` (1,764 bytes, ending at `0x0002f820`), which
+continues to `ret 0x30` at `0x0002fa23`: the row at `0x0002f820` is a 518-byte slice of *that* body — the assert
+block (`push 0x287; push ...; call 0x58a30`) reached by fall-through — so its `Core_UnTemplate` name and `Core`
+module are artefacts of the split. And the pump's own row (`0x0002feb0`, 5,277 bytes) stops 19 bytes short of
+its closing store at `0x00031360`, so a reader that disassembles exactly the row's size sees the `add` of the
+timestamp and not the store and calls `Update`'s close `read only`. The census now reads 48 bytes past each
+body's declared size; the two rows themselves are a map repair and are carried as `U36`.
 
 The block is an engine **stat registry**, and the two `Core` bodies that reference it are initializers, not
 increments. `tools/stat-registry.py` reads all three bodies that register into it (`inventory/stat_registry.csv`,
@@ -489,7 +510,7 @@ the audio module. **Zero `add`, `inc` or `sub` on any `[reg+disp]` stat field ap
 bodies**, so the answer to "which `Core` body increments each of the eight counters" is neither: they are the
 engine's and the renderer's registration tables, and the increment is not among them. Following the returned
 values answers where it is: they are slot indices into the array at `0x7b5dfc`, and the audio module
-accumulates into five of the eight itself (the table above; `inventory/stat_scope_uses.csv`).
+accumulates into all eight of them itself (the table above; `inventory/stat_scope_uses.csv`).
 
 The nine names together are the audio module's own instrumentation, and they read as the output path's
 outline: what is played, what is occluded, what is streamed, what is regular streaming, what was stopped, and

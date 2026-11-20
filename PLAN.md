@@ -15085,6 +15085,46 @@ sequence.
   only as far as its references); the 78 untyped `[reg+0x7c]` receivers; and the four `xvoice` voice-mode
   classes behind the device poll, which are library code this module calls rather than module code.
 
+### Execution notes (2026-11-20, the scope census was a quarter of the references, and all eight counters are used)
+
+- **Task.** The one item the counter bundle left as its remainder: U35's population — the 22 sites with no
+  resolved index source — plus the missing `PlaySound` open that entry named.
+- **The population was the scan's, not the image's.** `dword_refs()` kept only 4-byte-aligned dwords, and the
+  `A1`/`A3` form of `mov eax,ds:<abs>` writes its immediate one byte past the opcode: of the **410** references
+  the code sections hold, **exactly 106** are aligned — the committed artifact to the site, which is the control
+  for this bundle rather than a coincidence. Every byte offset is a candidate now and a candidate is a site only
+  when an instruction contains it, so the one that does not (`0x002b8497`, a displacement byte that spells the
+  address) is a `not-a-boundary` row instead of a counted site. 409 sites over 97 bodies, 69 in a map gap
+  (decoded from a local window and typed), 24 with no resolved index source.
+- **Two readings learned the shapes this compiler actually emits.** `inc DWORD PTR [eax+ecx*4]` has no `lea`,
+  so the index has to come out of the operand (the `*4` register that is not the array base): 24 sites. And the
+  op classifier needed a bounded window — to the next array load, a `ret` or a jump — because the slot register
+  is reused by the very next scope, which read an `add tsc` close as a `sub tsc` open. It also gained
+  `add delta`: `add DWORD PTR [slot],<a byte count>` is an accumulate by a measured value, and the old reader
+  called 62 of those `read only`.
+- **All eight ids are used, and each duplicate name is a (cycles, count) pair.** `PlaySound`'s open is
+  `0x0002f1d9`; it closes twice on mutually exclusive exits — `0x0002f447` behind `cmp ebp,0xffffffff; jne
+  0x2f476` (the not-found exit) and `0x0002f9f4` on the normal one. `+0x194` is `PlaySound`'s count (`inc` at
+  `0x0002f205`, two instructions after its partner's close), `+0x198` `Occlusion`'s count (`0x00030eb2`), and
+  `StoppedSounds` is `inc` at `0x0002d415` in `XboxAudio_StopStreamingSound`. `Update` is open at the pump's
+  head and closed at its tail (`0x0002fee4` / `0x0003133d`).
+- **One close was invisible for a second reason: a symbol size that stops short.** The pump's row (5,277 bytes)
+  ends 19 bytes before its own closing store at `0x00031360`, so a reader that disassembles exactly the row sees
+  the `add` and not the store. The census now reads 48 bytes past every declared size. That, and the
+  `0x0002f820` row that slices the play path's assert block out as `Core_UnTemplate`, are recorded as `U36` —
+  they are a map repair, not a census change, and the repair path they need (a size override the map tool
+  applies) does not exist yet.
+- **Files.** `tools/stat-scope-uses.py` (the reference population, the inline index form, the writer trace, the
+  bounded op window and `add delta`, seven selftest cases), `inventory/stat_scope_uses.csv` (regenerated:
+  90 -> 409 sites, `insn` column added), `docs/systems/AUDIO.md` (the count, the alignment, the id table and the
+  map-row paragraph rewritten in place), `docs/UNKNOWNS.md` (U35 answered, U36 added), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `stat-scope-uses.py --check` passes without the dump and bites when one id row is
+  corrupted (`id 0x1a4: 1 site rows, id row says 0`); `--selftest` covers the aligned/un-aligned boundary test
+  and the inline form; the artifact regenerates from the dump in 2 s.
+- **Not in this PR.** The 24 sites whose index arrives in a register written before a `call` (typing them needs
+  the callee's clobber set, not a wider window); U36's two map rows; the 78 untyped `[reg+0x7c]` receivers.
+
 ### Execution notes (2026-11-20, the eight audio counters are slots in the engine's cycle array)
 
 - **Task.** The one item the voice-mode bundle left as its remainder: which method increments each of the eight
