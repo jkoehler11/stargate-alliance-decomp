@@ -643,6 +643,11 @@ xdk-lib-names:
 	@$(PYTHON) tools/make-symbols.py $(if $(SG1_DUMP),--xbe "$(GAME_DIR)/default.xbe") -o symbols
 	@echo "wrote inventory/xdk_lib_names.csv and the names it earned"
 
+# Which shipped shader programs are referenced, and through which wrapper/dispatcher (Phase 6).
+shader-programs:
+	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
+	@$(PYTHON) tools/shader-program-refs.py --xbe "$(GAME_DIR)/default.xbe" -o inventory/shader_programs.csv
+
 # Per-method evidence for one class: callees from REL32, literals from DIR32 (PLAN 4.9).
 # Needs the libraries and the dump. CLASS is the demangled class name.
 native-method-notes:

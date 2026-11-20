@@ -71,11 +71,13 @@ offset, which is 316 of the 1,776 save exports and a byte lost at each of them (
 
 ## The shader compiles are part of the rebuild
 
-The image carries 63 shader programs as assembly source — `vs.1.1` 22, `ps.1.1` 22, `ps.1.4` 19 — plus
+The image carries 45 shader programs as assembly source — 19 `vs.1.1`, 9 `ps.1.1`, 17 `ps.1.4` — plus
 `#pragma screenspace`, one `#include` and two `#define`, and the SDK's own `// Xbox Shader Assembler %s`
 banner (`docs/NATIVE_NOTES.md`, "The shader toolchain"). They are not in any package: the title compiles them
 at runtime through `PreProcessor` → `d3dxasm_parse` → `XGRAPHICS::D3DTokensToUCode` → the
-`VS_GRAPH_OPTIMIZER::Instruction` graph pass.
+`VS_GRAPH_OPTIMIZER::Instruction` graph pass, and **every one of the 45 is referenced** — 41 from per-program
+wrappers that call `ShaderCompileVertex` or `ShaderCompilePixel`, 4 from one function's `mov` immediates
+(`inventory/shader_programs.csv`).
 
 That makes shaders the one part of the script/toolchain surface a rebuild cannot skip by reusing shipped
 assets: either the compile path is reproduced, or the microcode for those 63 programs is produced once and

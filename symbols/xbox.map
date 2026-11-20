@@ -7153,14 +7153,14 @@
 0x002bfaf0 FUN_002bfaf0                                  208 
 0x002bfbc0 D3DDrv_D3DResource                            733 
 0x002bfed0 FUN_002bfed0                                  781 
-0x002c01e0 FUN_002c01e0                                  541 
+0x002c01e0 ShaderCompileVertex                           541 
 0x002c0400 FUN_002c0400                                  190 
 0x002c04d0 FUN_002c04d0                                   44 
 0x002c0500 FUN_002c0500                                   37 
 0x002c0530 D3DDrv_D3DResource                            279 
 0x002c0650 D3DDrv_D3DResource                            239 
 0x002c0740 D3DDrv_D3DResource                            409 
-0x002c0910 FUN_002c0910                                  617 
+0x002c0910 ShaderCompilePixel                            617 
 0x002c0b80 FUN_002c0b80                                  195 
 0x002c0c50 FUN_002c0c50                                 1081 
 0x002c1090 FUN_002c1090                                  103 
