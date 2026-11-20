@@ -4269,6 +4269,31 @@ where the message pointer is a **UTF-16 string**, not an `FString` struct, so re
 `utf-16-le`; and the create call (`0x2b2dcd`) is reached within seconds of the title starting, so a probe that
 attaches at the menu has already missed it -- arm at launch and let the breakpoint stop the boot.
 
+## The gdb stub listens on `-gdb tcp::12345`, not on `-s` (measured 2026-11-19)
+
+`bp-args.py` has driven a stub on port 12345 since November, but the launch shape was never written down and
+`-s` -- QEMU's shorthand for the same thing -- does **not** work with this AppImage: xemu forwards the flag to
+`AppRun`, the log's `Created QEMU launch parameters` line shows `-s` at the end of the command, and nothing ever
+binds. The explicit form does:
+
+    XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 APPIMAGE_EXTRACT_AND_RUN=1 \
+      ~/tools/xemu.AppImage -config_path xemu.toml -serial file:serial.log -gdb tcp::12345 &
+
+`ss -ltn | grep 12345` shows both `0.0.0.0:12345` and `[::]:12345` inside **8 s**, and
+
+    gdb -batch -ex "set architecture i386" -ex "target remote :12345" -ex "info registers eip"
+
+answers `eip 0x8006b290` -- a kernel address, which is correct that early and is the reminder that arming before
+the guest is in-image does nothing (`bp-args.py --arm-after`).
+
+**What is not done yet.** The stub is not threaded through `tools/xemu/drive.py`, which is what `missions.sh`
+uses to boot and press, so no breakpoint has been armed across a map load yet. The integration is three known
+pieces rather than research: pass `-gdb tcp::<port>` in `drive.py`'s xemu arguments, arm `Z0` at
+`ShaderCompileVertex` (`0x002c01e0`) and `ShaderCompilePixel` (`0x002c0910`) once `--arm-after` sees in-image
+context, then let the press sequence load a mission (`missions.sh --name M00` is the shortest path). The expected
+stop is the one-shot work the EIP sampler could not see, and the argument to read off the stack is the shader
+program pointer -- printable at that address as `vs.1.1` + assembly text.
+
 ## The console's `checkpointload`, and the crop that cannot see the console line (measured 2026-11-12)
 
 - **`checkpointload <file>` is an exec function, and it runs.** `Engine/PlayerController.uc:3663` declares
