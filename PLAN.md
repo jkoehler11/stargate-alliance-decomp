@@ -15322,6 +15322,54 @@ sequence.
 - **Not in this PR.** The `sinh` stub's map row (a boundary `add`, which moves the function count); the 21 unnamed
   targets that are real bodies, which wait on a breakpoint or a library match rather than on a thunk read.
 
+### Execution notes (2026-11-20, the sweep resizes 39 rows that stopped short, and the six split natives become rows)
+
+- **Task.** The boundary thread's remainder, U39: the six registration bodies a false split sits inside, and
+  the rows whose declared size stops short of the body's own close.
+- **The reading a resize needs is a decode, not a walk.** The `extent` column's fallback stops at the first
+  `cc cc`, so it can read a *neighbour's* close (`0x00041000` declares 33 bytes on a 144-byte body and the
+  island said 437). `tools/native-census.py` now sweeps every registration body with a linear decode — the
+  decoder `tools/vcall-receiver.py` already carries, imported rather than copied — and accepts an end only where
+  a complete instruction closes on an unconditional terminator: at the pad (`pad`) or exactly at the next row
+  (`edge`). The opcode byte at the instruction's own start decides `E9`/`EB`, because the decoder renders a
+  `jcc` and a `jmp` the same way.
+- **It is a census of the map, and the map passes it 789 times.** On the 877 rows the map places, the sweep
+  reproduces the declared size to the byte on **789**, finds **40** that stop short and refuses **48** with a
+  reason (44 reach the next row without a terminator ending at it, 3 hit an opcode the decoder refuses, 1 has a
+  pad behind something that is not a terminator).
+- **Growth is refused where a close already sits inside the extension.** A row is only grown when no complete
+  close lies between its declared end and the body's own end, because a close there means the bytes past the
+  declaration are a block of their own rather than code the declaration cut. That count is **0** on this
+  population — the 39 resizes are all straight-line continuations — and the rule withholds one row, `0x00046330`,
+  which shares its tail with `0x000463f0` (itself resized to 192).
+- **39 resize rows land; the 40th is a residual.** `0x00260aa0` (95 → 99) already carries an `add` row from the
+  274 bundle and the file allows one repair per address, so U39 records it instead. With the six adds and folds
+  the map moves 15,244 functions / 4,015,693 bytes → **15,244 / 4,017,403**.
+- **The pairing is a verb.** `tools/symbol-boundaries.py` resolves `drop` after every `add`, so a drop's target
+  may be an `add` in the same file (validated strictly inside the added span) and an add may enclose a row the
+  same file drops. `--emit-boundaries` writes the pair: six bodies (107, 274, 197, 212, 401, 92 bytes) and the
+  one fragment inside each. **877 → 883 of 883** registration bodies are map rows, and `symbols/xbe_boundaries.csv`
+  goes 335 → **387 rows** (278 `add`, 48 `resize`, 53 `rename`, 7 `drop`).
+- **A carried-over column was being blanked, and the gate now bites.** Regenerating with `--dump` alone read
+  `verdict` out of the carried table while the committed column is named `disassembler`, so a `--dump`-only run
+  blanked all 883 verdicts (measured this run, before the fix). `--check` now refuses a table that carries
+  image-side rows with no verdict — the gate that would have caught it.
+- **Files.** `tools/native-census.py` (the sweep, three columns, the pairing emitter, the verdict fix,
+  `--selftest` covering pad/edge/`jcc`/indirect-jump), `tools/symbol-boundaries.py` (the post-`add` drop
+  resolution, four selftest refusals, both listing orders), `inventory/native_census.csv` (883 rows, three new
+  columns), `symbols/xbe_boundaries.csv` (+51), `symbols/xbe_overrides.csv` (+6 creation rows),
+  `symbols/xbox_functions.csv`, `symbols/xbox.map`, `inventory/function_module_attribution.csv`,
+  `inventory/function_modules.csv`, `inventory/module_export_plan.csv`, `inventory/xbe_functions_by_module.csv`,
+  `inventory/module_export_census.csv` + `docs/MODULE_CENSUS.md` (a Core/Engine round after the folds),
+  `inventory/opcode_band_high.csv`, `docs/NATIVE.md`, `docs/SYMBOLS.md`, `docs/UNKNOWNS.md` (U39 rewritten),
+  `docs/STATUS.md`, `README.md`, `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `native-census --check` re-derives the census column and validates the sweep's
+  three columns together (and now the verdict); `--selftest` covers the pad, the edge, the `jcc` that is not a
+  terminator and the indirect jump; `symbol-boundaries --selftest` covers the pairing in both listing orders and
+  refuses a drop on the add's own start, past its end, and an add enclosing a row nothing drops.
+- **Not in this bundle.** The 48 refused rows (a decoder for the shapes they use), `0x00260aa0`'s second repair,
+  and U36's `0x002b7aa0` — the jump-table dispatch whose case table sits inside its own span.
+
 ### Execution notes (2026-11-20, the registration table's 274 bodies become rows, and the extent column measures both directions)
 
 - **Task.** The boundary thread's next item after the three gap bodies: `native-census` had said since 2026-11-10
