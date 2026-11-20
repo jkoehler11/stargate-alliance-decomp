@@ -260,9 +260,12 @@ a cache with an identical 61-byte closer (`CloseSingle`/`CloseService`/`CloseCom
 
 **Two transports, and the split is the finding.** `CXo`'s own ticket requests send with raw Winsock —
 `GetSingleTicketSendAsRequest` and `GetServiceTicketSendTgsRequest` both call `_WSASendTo`, and
-`SendRecvBegin` (125 B) calls `_WSASend`/`_WSARecv`; 12 methods touch Winsock directly. That is *not* the
-path `CXnIp` uses for its own key exchange, where `IpXmitKeyExXbToTs`/`XbToSg`/`XbToXb` reach
-`CXoBase::XoKerbBuildApReq` and transmit through `CXnEnet::EnetXmit`. Both routes exist in the image.
+`SendRecvBegin` (125 B) calls `_WSASend`/`_WSARecv`; 12 methods touch Winsock directly. That is a different
+*entry point* from `CXnIp`'s own key exchange, where `IpXmitKeyExXbToTs`/`XbToSg`/`XbToXb` reach
+`CXoBase::XoKerbBuildApReq` and transmit through `CXnEnet::EnetXmit` — but not a different stack:
+`_WSASendTo@36` is a 15-byte import thunk at `0x00419355` into `?WSASendTo@CXnSock@@` (275 B), so the ticket
+route travels `CXnSock` → `CXnIp::IpFillAndXmit` → `CXnEnet` while the key-exchange route enters at the
+Ethernet layer. See the stack reading below.
 
 **`CXoBase` is a 14-method veneer over `CXnIp`.** Fourteen methods, every one 11–15 bytes:
 `XnLogonGetQFlags`, `XnLogonGetQVals`, `XnLogonSetQVals`, `XnLogonSetQEvent`, `XnLogonClearQEvent`,
@@ -277,6 +280,53 @@ they say nothing about the wire encoding of a ticket, the crypto inside `KerbDec
 pre-authentication types the server accepts. And the two-transport split is *observed*, not explained:
 nothing in the call graph says why ticket exchange bypasses the `CXnIp` path, and a later reader should
 not assume either route is dead.
+
+## The stack below `CXnIp`, end to end (2026-11-19)
+
+Four readings close the layer `CXnIp` sits on: `CXnBase` (15 methods, 1,717 B), `CXnNic` (17, 3,049 B),
+`CXnEnet` (16, 2,474 B) and `CXnSock` (90, 18,881 B) — `inventory/cxn_{base,nic,enet,sock}_methods.csv`.
+Together with `CXnIp`'s 144 methods, the whole network stack is now accounted for by call edges.
+
+**It is interrupt-driven from the bottom.** `CXnNic::NicRecvInterrupt` (345 B) calls `CXnEnet::EnetRecv`;
+transmit does not: `NicXmit` (301 B) only fills a queue (`CPacketQueue::InsertTail`), and the queue is
+drained from the interrupt side (`NicXmitInterrupt` 205 B → `RemoveHead` → `CXnEnet::EnetPush` → `NicXmit`
+again). `NicInit` (992 B) — the largest method in these four classes — calls `CXnBase::BaseInit`,
+`CXnHal::SetInitFlag` and `CXnNic::HalShutdownNotification`, so the NIC registers its own shutdown
+notification at init.
+
+**`CXnEnet` is a demultiplexer.** `EnetRecv` (206 B) dispatches to `CXnIp::IpRecv`, `CXnIp::IpRecvPppoe` and
+its own `ArpRecv` (462 B); `ArpRecv` resolves through `ArpLookup` (232 B, `TimerSetRelative` + `ArpXmit`) and
+hands ARP payloads to `CXnIp::IpRecvArp`. `EnetCapture` (234 B) exists beside them — a capture hook in the
+receive path.
+
+**`CXnSock` is a complete TCP/UDP stack, not a shim.** 90 methods, 18.9 KB: `TcpConnect` (585 B →
+`SockBind`, `TcpEmitSYN`, `TcpTimer`, `SockClose`), `TcpRecv` (756 B), `TcpRecvData` (741 B),
+`TcpUpdateSndUna` (637 B → `TcpUpdateRTO`, `SockReleaseSendBuf`), `UdpSend` (633 B → `CXnIp::IpFillAndXmit`,
+`SockReadWsaBufs`, `CPacket::GetCbBpp`), and `select` (903 B → `SockLockSelectSockets`,
+`SockCheckSelectEvents`). RTO computation, send-buffer release and a select lock: this is a socket layer with
+its own timer and buffer discipline.
+
+**The Winsock ABI is `CXnSock` itself.** `_WSASend@28` (`0x00419337`), `_WSASendTo@36` (`0x00419355`) and
+`_WSARecv@28` (`0x0041930e`) are **15-byte import thunks** — a `jmp` through the import table — and what they
+reach is `?WSASend@CXnSock@@` (155 B), `?WSASendTo@CXnSock@@` (275 B) and `?WSARecv@CXnSock@@` (157 B), all
+in `xonline/obj\i386\sock.obj`, section `XNET`. So the socket API the title calls and the private stack are
+the same code, and `_select@20` (`0x004192da`) is the same pattern.
+
+**Which corrects the previous reading.** `CXo`'s ticket requests call `_WSASendTo` and `CXnIp`'s key exchange
+calls `CXnEnet::EnetXmit` directly — two *entry* points, one stack: the socket route travels
+`CXnSock` → `CXnIp::IpFillAndXmit` → `CXnEnet`, while `IpXmitKeyEx*` enters at the Ethernet layer and never
+touches a socket. The earlier note said the ticket path was "not the path `CXnIp` uses"; measured now, the
+difference is the entry point and whether the socket layer is traversed, not two implementations.
+
+**Supporting cast.** `CXnBase` carries the pool (`PoolAlloc` 259 B, `PoolFree` 182 B, `PacketAlloc` 239 B),
+the timer wheel (`TimerSet` 101 B, `TimerPush` 94 B → `NicTimer`, `SecRegProbe`, `IpConfigProbe`) and the
+RNG: `RandInit` (115 B) seeds from `CXnHal::HalRandGather` and runs `XnSha` + `_XcRC4Key`/`_XcRC4Crypt`, so
+the random stream is RC4 keyed by hashed hardware entropy.
+
+**What this is not.** Ordering and demultiplexing are established; the wire behaviour is not. `TcpUpdateRTO`
+proves an RTO computation exists, not which algorithm; `EnetCapture` proves a hook, not what consumes it; and
+none of these bodies has been decompiled, so window handling, retransmission policy and the PPPoE branch
+remain unread.
 
 ## What this means for Phase 4
 

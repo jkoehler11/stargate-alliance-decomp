@@ -712,7 +712,7 @@ other 38 rows.
       19 byte-identical groups hold 330 unnamed bodies and none of them has a named member, so twin
       propagation adds nothing yet. The name source the image offers is therefore exhausted: the rest is
       U9's supplied database, not another pass.
-- [ ] 4.9 **Re-scoped: the committable half is documentation, and it exists.** Writing reconstructed C into
+- [~] 4.9 **Re-scoped: the committable half is documentation, and it exists.** Writing reconstructed C into
       `src/Native/` would put decompiled game code in the repository, which the hard rule in `AGENTS.md` forbids — so
       the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
       addresses and what each body does (4.6 did this for the four real game-module bodies). The C itself stays under
