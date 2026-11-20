@@ -509,6 +509,86 @@ store whose base is an argument rather than the object would read the same. The 
 makes it evidence, and it is the part that cannot be argued with: 474 of the 474 class tables the
 registration path names are written at `[reg]`, and not one of them only into a member.
 
+## What a member table holds: an interface vtable, and five shapes that repeat
+
+The store-field partition leaves **49 tables whose stores write a member field**, and the reading that
+follows from the store's form -- a field that holds a table pointer holds an interface object's table --
+is settled by the tables themselves rather than by the store. `tools/class-member-tables.py` reads each of
+the 49 at its address and censuses the slots: every slot is a dword into `.text`, so it resolves to a row
+of `symbols/xbox_functions.csv` and its body's size says whether the slot is an implementation (a body
+longer than 8 bytes), a stub (`ret`, `xor eax,eax; ret`) or `__purecall`. The control is the class table:
+**all 492 tables the class-map census covers -- the 474 the registration path names among them -- share one
+slot-0 body**, so a table whose slot 0 is something else is not a class's dispatch table at all.
+
+The slots are mostly empty. Of 292 slots over the 49 tables, **111 are stubs of 8 bytes or less and 24 are
+`__purecall`**, so a third of every interface here is its default do-nothing implementation; 82 slots land
+on bodies the function map does not cover and 198 are `FUN_` rows it does, which is why the map's coverage
+of an interface method is the exception and not the rule. The 115 distinct bodies are shared hard: the
+most-referenced is a 3-byte stub that fills 33 slots. The 82 slots outside the map also split the one
+population U40 counts: **32 of them are gap bodies the padding rule decodes**, so 32 of U40's 269 gap
+bodies in an unnamed table's slot are in these 49 member tables and the other 237 are in the plain-only
+ones; the remaining 50 are bodies neither the map nor the gap rule reaches.
+
+What repeats is more informative than what is unique. **25 of the 49 fall into 7 families** under a rule
+stated once -- identical slot vectors are the same table emitted twice; one table *subsumes* another when
+it implements exactly the slots the other leaves `__purecall` (an implementation ladder); and two tables
+of four slots or more that agree on *more than half* their slots are one interface with per-class
+overrides. The families read as interfaces embedded by several classes:
+
+- **`0x004c7860`, 22 slots, five tables** -- the one the four Linker classes write at `[+0xb8]`. The base
+  table is also written at `[reg]` by 21 bodies no class names, so it is an object's own dispatch table,
+  and the four per-class tables differ from it in 8 or 10 slots. Within the family the **Load pair differ
+  at exactly one slot (0) and the Save pair at exactly one slot (0)**, so the interface is one
+  implementation with a single per-class entry, not four implementations.
+- **`0x004fc35c`, 8 slots, six tables** -- a **four-rung implementation ladder**: the rungs carry 8, 7, 6
+  and 0 `__purecall` slots, each implements exactly the slots the one below leaves abstract, and the slots
+  that get implemented resolve to `6=Engine_UnPenLev` and `7=FUN_0015ce70`. `DemoPlayPendingLevel`,
+  `Level` and `NetPendingLevel` own the two 0-purecall rungs at `[+0x28]`.
+- **`0x004d03b8` (1 slot) and `0x004d03bc` (2 slots), four identical tables each** -- `PackageMapLevel`,
+  `TcpipConnection`, `TcpipConnectionXbox` and `DemoRecConnection` write the same two tables at `[+0x2c]`
+  and `[+0x28]`, so those four classes embed the same pair of one- and two-slot interface objects.
+
+What this does not say: the *type* of the member. The owner class is known from its constructor and the
+field offset is read from the store, but the interface object's class is not registered anywhere, so the
+name a slot would carry is a member's, and reading one interface's slots as a class's virtual methods is
+the reading the slot-0 control refuses. Nor does a slot's body size date it: a 3-byte stub in a table is
+the interface's default, not an unimplemented slot.
+
+<!-- generated:class-member-tables -->
+| family | tables | slots | owners | slots the family varies |
+|---|---|---|---|---|
+| `0x004fc35c` | 6 | 8 | DemoPlayPendingLevel, Level, NetPendingLevel | 0, 1, 2, 3, 4, 5, 6, 7 |
+| `0x004c7860` | 5 | 22 | LinkerLoad, LinkerLoadGame, LinkerSave, LinkerSaveGame | 0, 1, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17 |
+| `0x004d03b8` | 4 | 1 | DemoRecConnection, PackageMapLevel, TcpipConnection, TcpipConnectionXbox | -- |
+| `0x004d03bc` | 4 | 2 | DemoRecConnection, PackageMapLevel, TcpipConnection, TcpipConnectionXbox | -- |
+| `0x004c7854` | 2 | 2 | ControlChannel, TextBuffer | -- |
+| `0x004c93c8` | 2 | 2 | XboxViewport | -- |
+| `0x004d0314` | 2 | 1 | TcpNetDriver | -- |
+| 24 table(s) in no family | 24 | -- | -- | -- |
+
+**The 49 member tables are interface vtables, and their slot 0 is not a class slot.** All 492 class tables the class-map census covers (474 of them named by the registration path) share one slot-0 body, `0x00062650`; none of the 49 member tables carry it, and their slot-0 values are 36 distinct bodies. A class dispatch table starts with the entry every class table starts with; an interface object's table starts with its own first method, which is why no slot here can be named `<Class>_vt<slot>`.
+
+**292 slots resolve to 115 distinct bodies, and 82 slots land outside the symbol map.** 24 slots are `__purecall`, 111 are stubs of 8 bytes or less (`ret`, `xor eax,eax; ret` -- the default implementations of an interface whose real work is elsewhere), 12 carry a real name in the map rather than a `FUN_` row, and 198 are `FUN_` rows the map covers.
+**32 of the 82 slots outside the map are bodies U40's gap rule decodes** -- that is, **32 of the 269 gap bodies U40 counts in an unnamed table's slot are in these 49 member tables** and the rest are in the plain-only ones -- and the remaining 50 slots outside the map are bodies neither the map nor the padding rule reaches, so those interface methods are code nothing has decoded yet.
+
+**25 of the 49 tables fall into 7 families, and the widest is the 22-slot one.** `0x004fc35c`: 6 tables at 8 slots, varying 0, 1, 2, 3, 4, 5, 6, 7. `0x004c7860`: 5 tables at 22 slots, varying 0, 1, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17. `0x004d03b8`: 4 tables at 1 slot, varying nothing. `0x004d03bc`: 4 tables at 2 slots, varying nothing. `0x004c7854`: 2 tables at 2 slots, varying nothing. `0x004c93c8`: 2 tables at 2 slots, varying nothing. `0x004d0314`: 2 tables at 1 slot, varying nothing.
+
+**In the `0x004fc35c` family the 6 tables are `0x004fc35c`, `0x004fc4cc`, `0x004fc568`, `0x004fc610`, `0x0050e88c`, `0x005139f4`.** They carry 8, 7, 6, 0 `__purecall` slots over 8 slots. 4 of them form a subsumption chain -- each rung implements exactly the slots the one below leaves `__purecall`, and the slots it implements resolve to 6=Engine_UnPenLev.
+
+**In the `0x004c7860` family the 5 tables are `0x004c7860`, `0x004da720`, `0x004da850`, `0x004da970`, `0x004daa48`.** They carry 0 `__purecall` slots over 22 slots.
+
+**In the `0x004d03b8` family the 4 tables are `0x004d03b8`, `0x004d0470`, `0x004d05d0`, `0x004fcc08`.** They carry 0 `__purecall` slots over 1 slot.
+
+**In the `0x004d03bc` family the 4 tables are `0x004d03bc`, `0x004d0474`, `0x004d05d4`, `0x004fcc0c`.** They carry 0 `__purecall` slots over 2 slots.
+
+**In the `0x004c7854` family the 2 tables are `0x004c7854`, `0x004c933c`.** They carry 1 `__purecall` slots over 2 slots.
+
+**In the `0x004c93c8` family the 2 tables are `0x004c93c8`, `0x004c9610`.** They carry 0 `__purecall` slots over 2 slots.
+
+**In the `0x004d0314` family the 2 tables are `0x004d0314`, `0x004d0528`.** They carry 0 `__purecall` slots over 1 slot.
+
+<!-- /generated:class-member-tables -->
+
 ## The hole between `FUN_003f28b0` and `FUN_003f6d70` is a thunk pool
 
 The `stub` edges above come from code the symbol map does not cover, and the map has one large hole
@@ -783,3 +863,13 @@ The store-field partition is the same population read one operand deeper:
 `--check` is a synthetic image -- a slot store, a `disp8` and a `disp32` member store, a stack store, a
 global, an indexed SIB and a table no store carries -- and `--check-doc` rebuilds its block from
 `inventory/class_table_store_fields.csv` with no dump; both run in `make ci`.
+
+The member tables' slots are the same population read one level deeper still:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-member-tables.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-member-tables.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic set of slot vectors -- a `__purecall` rung, the rung above it, a table that only
+agrees on half its slots and a stranger -- and `--check-doc` rebuilds its block from
+`inventory/class_member_tables.csv` with no dump; both run in `make ci`.
