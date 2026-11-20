@@ -19,51 +19,29 @@ Two kinds of evidence are readable without a database or a decompiler, and this 
 <!-- generated:body-name -->
 | module | bodies | unnamed | named by a literal | ambiguous | source file only | no evidence |
 |---|---:|---:|---:|---:|---:|---:|
-| `Core` | 3238 | 2593 | 7 | 0 | 17 | 2569 |
-| `Engine` | 2094 | 1493 | 7 | 0 | 0 | 1486 |
-| `IpDrv` | 157 | 135 | 2 | 0 | 0 | 133 |
-| `Gui` | 145 | 86 | 4 | 0 | 1 | 81 |
-| `D3DDrv` | 129 | 107 | 0 | 0 | 0 | 107 |
-| `stargategame` | 88 | 56 | 0 | 0 | 0 | 56 |
+| `Core` | 3220 | 2148 | 2 | 0 | 17 | 2129 |
+| `Engine` | 2111 | 1326 | 1 | 0 | 0 | 1325 |
+| `IpDrv` | 159 | 120 | 0 | 0 | 0 | 120 |
+| `Gui` | 155 | 90 | 0 | 0 | 2 | 88 |
+| `D3DDrv` | 129 | 104 | 0 | 0 | 0 | 104 |
+| `XboxAudio` | 114 | 72 | 1 | 0 | 0 | 71 |
+| `stargategame` | 88 | 51 | 0 | 0 | 0 | 51 |
 | `stargatevehicles` | 52 | 40 | 0 | 0 | 0 | 40 |
-| `XboxAudio` | 42 | 33 | 0 | 0 | 0 | 33 |
-| `Fire` | 41 | 32 | 0 | 0 | 0 | 32 |
-| `XboxLive` | 31 | 18 | 7 | 0 | 4 | 7 |
+| `Fire` | 41 | 27 | 0 | 0 | 0 | 27 |
+| `XboxLive` | 32 | 12 | 1 | 0 | 4 | 7 |
 | `Gameplay` | 24 | 15 | 0 | 0 | 1 | 14 |
-| `XboxDrv` | 22 | 17 | 0 | 0 | 0 | 17 |
-| **all modules** | **6063** | **4625** | **27** | **0** | **23** | **4575** |
+| `XboxDrv` | 22 | 15 | 0 | 0 | 0 | 15 |
+| **all modules** | **6147** | **4020** | **5** | **0** | **24** | **3991** |
 
-**27 of 4625** unnamed bodies are named by their own text, **0** name more than one method and are refused, **23** name a source file but no method, and **4575** carry no naming evidence at all.
+**5 of 4020** unnamed bodies are named by their own text, **0** name more than one method and are refused, **24** name a source file but no method, and **3991** carry no naming evidence at all.
 
 | address | module | was | named | evidence | class/method |
 |---|---|---|---|---|---|
-| `0x000341a0` | `Core` | `FUN_000341a0` | `FFileManagerError_CreateFileReader` | own method literal | `FFileManagerError` |
-| `0x000341c0` | `Core` | `FUN_000341c0` | `FFileManagerError_CreateFileWriter` | own method literal | `FFileManagerError` |
-| `0x00063410` | `Core` | `FUN_00063410` | `UObject_StaticShutdownAfterError` | own method literal | `UObject` |
-| `0x000e5a70` | `Engine` | `FUN_000e5a70` | `USoundGroup_RefreshGroup` | own method literal | `USoundGroup` |
-| `0x0012ed30` | `Engine` | `FUN_0012ed30` | `FPoly_Fix` | own method literal | `FPoly` |
-| `0x001c4bc0` | `Engine` | `FUN_001c4bc0` | `UPlayerStats_Initialize` | own method literal | `UPlayerStats` |
-| `0x00261310` | `Engine` | `FUN_00261310` | `ASVehicle_physKarma` | own method literal | `ASVehicle` |
-| `0x00290ef0` | `Engine` | `FUN_00290ef0` | `USpline_execInitSplinePath` | own method literal | `USpline` |
-| `0x00291280` | `Engine` | `FUN_00291280` | `USpline_execInitSplineRot` | own method literal | `USpline` |
-| `0x00291c50` | `Engine` | `FUN_00291c50` | `USpline_execNextSplineRot` | own method literal | `USpline` |
-| `0x002c4f10` | `IpDrv` | `FUN_002c4f10` | `FUdpLink_BindPort` | own method literal | `FUdpLink` |
-| `0x002c4f1c` | `IpDrv` | `FUN_002c4f1c` | `FUdpLink_BindPort` | own method literal | `FUdpLink` |
-| `0x00307150` | `Gui` | `FUN_00307150` | `UUIXInteraction_InitUIXVoiceSupport` | own method literal | `UUIXInteraction` |
-| `0x003072e0` | `Gui` | `FUN_003072e0` | `UUIXInteraction_VoiceCommunicatorUpdate` | own method literal | `UUIXInteraction` |
-| `0x00307cd0` | `Gui` | `FUN_00307cd0` | `UUIXInteraction_InitUIX` | own method literal | `UUIXInteraction` |
-| `0x00308a60` | `Core` | `FUN_00308a60` | `UIXInteraction_StartSignIn` | own method literal | `UIXInteraction` |
-| `0x003090a0` | `Gui` | `FUN_003090a0` | `UUIXInteraction_RegisterPlayer` | own method literal | `UUIXInteraction` |
-| `0x00325da0` | `XboxLive` | `FUN_00325da0` | `StatsReadTask_Finished` | own method literal | `StatsReadTask` |
-| `0x00327600` | `XboxLive` | `FUN_00327600` | `XboxLiveManager_StartStatsWrite` | own method literal | `XboxLiveManager` |
-| `0x003276e0` | `XboxLive` | `FUN_003276e0` | `XboxLiveManager_StartStatsRead` | own method literal | `XboxLiveManager` |
-| `0x003277c0` | `XboxLive` | `FUN_003277c0` | `XboxLiveManager_StartStatsEnumerate` | own method literal | `XboxLiveManager` |
-| `0x003278b0` | `XboxLive` | `FUN_003278b0` | `XboxLiveManager_StartStatsReset` | own method literal | `XboxLiveManager` |
-| `0x003279a0` | `XboxLive` | `FUN_003279a0` | `XboxLiveManager_StartStatsLadderWrite` | own method literal | `XboxLiveManager` |
-| `0x00328af0` | `XboxLive` | `FUN_00328af0` | `StatsEnumerateTask_Finished` | own method literal | `StatsEnumerateTask` |
-| `0x00329520` | `Core` | `FUN_00329520` | `SessionQueryTask_Finshed` | own method literal | `SessionQueryTask` |
-| `0x00329960` | `Core` | `FUN_00329960` | `XboxLiveManager_StartStatsLadderRead` | own method literal | `XboxLiveManager` |
-| `0x0032aa20` | `Core` | `FUN_0032aa20` | `XboxLiveManager_UpdateTask` | own method literal | `XboxLiveManager` |
+| `0x0002cbb0` | `XboxAudio` | `FUN_0002cbb0` | `UXBoxAudioSubsystem_ShutdownAfterError` | own method literal | `UXBoxAudioSubsystem` |
+| `0x00291710` | `Engine` | `FUN_00291710` | `USpline_execNextSplinePos` | own method literal | `USpline` |
+| `0x00328e00` | `XboxLive` | `FUN_00328e00` | `XBoxLiveManager_ConnectTo` | own method literal | `XBoxLiveManager` |
+| `0x00329160` | `Core` | `FUN_00329160` | `XboxLiveManager_StartStatsQuery` | own method literal | `XboxLiveManager` |
+| `0x003292a0` | `Core` | `FUN_003292a0` | `XboxLiveManager_StartNewSession` | own method literal | `XboxLiveManager` |
 <!-- /generated:body-name -->
 
 ## Names from call sites (2026-11-19)

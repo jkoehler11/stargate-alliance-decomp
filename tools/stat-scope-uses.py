@@ -61,7 +61,6 @@ AUDIO_BODY = 0x0002e900      # XboxAudio_RegisterCounters
 DEVICE_BODY = 0x0002fd70     # XboxAudio_CreateDevice, which passes the block's address in ecx
 BLOCK_FALLBACK = 0x184       # `lea ecx,[esi+0x184]` before the registration call
 CODE_COVER = 0.1             # a section is code when the map's bodies cover this much of it
-PAD = 48                     # bytes read past a body's declared size, for a size that stops short
 
 HEADER = ["kind", "site", "insn", "body", "body_name", "module", "index_source", "audio_id", "op", "note"]
 
@@ -475,10 +474,11 @@ def build(args):
 
     for k in sorted(body_of):
         base, name, size, _m = funcs[k]
-        # read past the declared size: a symbol row can stop short of its own last store (the pump at
-        # 0x0002feb0 is 5,277 bytes and its closing store ends at 0x00031360), and a window that ends
-        # with the row then loses the store and calls the close `read only`.
-        insns = disasm(xbe, base, size + PAD)
+        # exactly the row's declared size, no widening: the one row this path had to read past -- the
+        # pump, whose 5,277-byte row stopped inside its own `rdtsc` save pair and so lost the closing
+        # `mov [ecx],edx` -- is repaired in `symbols/xbox_functions.csv` (`make boundaries`, U36), so a
+        # window that ends with the row is again a window over the body.
+        insns = disasm(xbe, base, size)
         sp = spans(insns)
         for cand in sorted(body_of[k]):
             i = contains(insns, sp, cand)

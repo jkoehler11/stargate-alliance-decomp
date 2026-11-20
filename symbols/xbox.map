@@ -620,14 +620,14 @@
 0x0002ed20 XboxAudio_FlushSounds                         137 
 0x0002edb0 XboxAudio_OpenStreamRead                      301 
 0x0002eee0 XboxAudio_XboxAudioSubsystem                  571 
-0x0002f13c XboxAudio_XboxAudioSubsystem                 1764 
-0x0002f820 Core_UnTemplate                               518 
+0x0002f13c XboxAudio_XboxAudioSubsystem                 2282 
+0x0002fa30 FUN_0002fa30                                   87 
 0x0002fa90 XboxAudio_SetSoundDevice                      278 
 0x0002fbb0 XboxAudio_CompleteStreamRead                  203 
 0x0002fc80 ctor_XBoxAudioSubsystem                       235 
 0x0002fd70 XboxAudio_CreateDevice                        272 
 0x0002fe80 FUN_0002fe80                                   38 
-0x0002feb0 XboxAudio_XboxAudioSubsystem                 5277 
+0x0002feb0 XboxAudio_XboxAudioSubsystem                 5327 
 0x00031380 XboxAudio_XboxAudioSubsystem                  180 
 0x00031440 FUN_00031440                                   53 
 0x00031480 FUN_00031480                                   34 
@@ -3897,7 +3897,7 @@
 0x0012c5b0 Engine_UnFluidSurface                         180 
 0x0012c670 FUN_0012c670                                  276 
 0x0012c790 FUN_0012c790                                  185 
-0x0012c850 FUN_0012c850                                 2425 
+0x0012c850 FUN_0012c850                                 2451 
 0x0012d1f0 FUN_0012d1f0                                  343 
 0x0012d440 FUN_0012d440                                  559 
 0x0012d670 ctor_FluidSurfacePrimitive                     18 
@@ -4192,7 +4192,7 @@
 0x00159610 FUN_00159610                                   86 
 0x00159720 Engine_UnLevAct                              1579 
 0x00159d50 Engine_UnLevAct                              1189 
-0x0015a200 FUN_0015a200                                 1094 
+0x0015a200 FUN_0015a200                                 1109 
 0x0015ae90 FUN_0015ae90                                  437 
 0x0015b050 FUN_0015b050                                  557 
 0x0015b280 FUN_0015b280                                  407 
@@ -4884,7 +4884,7 @@
 0x001992b0 FUN_001992b0                                   62 
 0x001992f0 FUN_001992f0                                   31 
 0x00199310 FUN_00199310                                   59 
-0x00199350 FUN_00199350                                  182 
+0x00199350 FUN_00199350                                  191 
 0x00199410 FUN_00199410                                  355 
 0x00199580 execMakeNoise                                 270 
 0x00199690 FUN_00199690                                  284 
@@ -5474,7 +5474,7 @@
 0x001e70c0 FUN_001e70c0                                  825 
 0x001e7400 FUN_001e7400                                  420 
 0x001e75b0 Engine_UnRenderLight                         9260 
-0x001e9a30 FUN_001e9a30                                 2053 
+0x001e9a30 FUN_001e9a30                                 2075 
 0x001ea290 Engine_UnRenderLight                          103 
 0x001ea31e Engine_UnRenderLight                           55 
 0x001ea360 FUN_001ea360                                   51 
@@ -5562,7 +5562,7 @@
 0x001ed510 FUN_001ed510                                 1302 
 0x001eda30 FUN_001eda30                                 1705 
 0x001ee0e0 FUN_001ee0e0                                 1453 
-0x001ee690 Core_UnTemplate                             10114 
+0x001ee690 Core_UnTemplate                             10145 
 0x001f0e60 Core_UnObjBas                                 131 
 0x001f0ef0 FUN_001f0ef0                                  573 
 0x001f1130 FUN_001f1130                                  619 
@@ -7093,7 +7093,7 @@
 0x002b5c20 FUN_002b5c20                                 1676 
 0x002b6b20 FUN_002b6b20                                  310 
 0x002b71e0 FUN_002b71e0                                  445 
-0x002b7560 D3DDrv_D3DRenderInterface                    1324 
+0x002b7560 D3DDrv_D3DRenderInterface                    1334 
 0x002b8505 D3DDrv_D3DRenderInterface                     615 
 0x002b8780 D3DDrv_D3DRenderInterface                     829 
 0x002b8ad0 FUN_002b8ad0                                  325 
@@ -7128,7 +7128,7 @@
 0x002bb8c0 FUN_002bb8c0                                  658 
 0x002bbb60 FUN_002bbb60                                 1917 
 0x002bc2f0 FUN_002bc2f0                                   93 
-0x002bc350 FUN_002bc350                                 5000 
+0x002bc350 FUN_002bc350                                 5022 
 0x002bd6f0 D3DDrv_D3DRenderState                         713 
 0x002bd9c0 FUN_002bd9c0                                   94 
 0x002bdcd0 FUN_002bdcd0                                   62 

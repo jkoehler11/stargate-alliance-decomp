@@ -62,12 +62,12 @@ resolves, not a live attach.
 
 - **Every address is inside the image.** `make symbols` passes `--xbe` and the tool fails if a symbol
   falls outside the section table: measured **15,447 of 15,447 inside, 0 outside**.
-- **Names are file-level, not unique.** 128 names are used by more than one function — the assert
-  attribution names a function by its source file, so `Core_UnTemplate` covers 310 of them,
+- **Names are file-level, not unique.** 131 names are used by more than one function — the assert
+  attribution names a function by its source file, so `Core_UnTemplate` covers 309 of them,
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
-  gives every duplicate an `_<address>` suffix (1,167 symbols affected) so a debugger can address
+  gives every duplicate an `_<address>` suffix (1,299 symbols affected) so a debugger can address
   them separately, and the count is printed on every run.
-- **7,819 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
+- **7,788 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
   without a name — and they are the engine bodies with no naming evidence (`docs/NAMING.md`), not a gap in
   this file. The library sections are named from a locally supplied XDK 5849.17 set (`make xdk-lib-names`,
   `make xdk-call-names`, `make xdk-lib-residue`, PLAN 4.2): **2,855 of the 3,109** bodies there, the rest of
@@ -76,6 +76,37 @@ resolves, not a live attach.
   build.
 - **No types, no variables, no source lines.** The map carries code addresses and class-table
   addresses only; there is no debug information in this build (`RSDS` absent, PLAN §0).
+
+## Body boundaries: the repairs, and the file that carries them
+
+Ghidra infers where a function ends, and its inference is wrong in three ways that a census reads as fact: a body
+**split** at an assert block that nothing calls, a body that **stops short** of its own last store, and a body it
+**never made** because nothing calls it. `symbols/xbe_boundaries.csv` is the reviewed list of those repairs — one
+row per repair, with the instructions that settle it — and `tools/symbol-boundaries.py` applies them to
+`symbols/xbox_functions.csv` in its own right:
+
+```
+make boundaries        # apply symbols/xbe_boundaries.csv to symbols/xbox_functions.csv (no dump, no Ghidra)
+make symbols           # then regenerate the map and the assembler form
+```
+
+| verb | what the row says | validation |
+|---|---|---|
+| `resize` | this row ends at the address the evidence measured, not at Ghidra's edge | positive; may not run into the next row |
+| `drop` | this address is not a body, it is interior code of the row named in `target` | must land strictly inside that row's repaired span |
+| `add` | a body the map has no row for; `target` carries its name | may not land inside any row |
+
+Eleven repairs are in the file, and each is one measured thing: the `Core_UnTemplate` row at `0x0002f820` folded
+into the audio body it belongs to (`0x0002f13c`, 2,282 bytes), the pump at `0x0002feb0` given its real end
+(`0x3137f`), the body at `0x0002fa30` — slot 33 of `XBoxAudioSubsystem`'s table, which calls
+`XboxAudio_FlushSounds` over `[this+0xd8]` — added, and eight other rows that stopped inside the slot load or the
+`rdtsc` pair of a scope close resized to their own closing `ret`. The counts do not move: **14,973 functions and
+3,970,681 bytes**, because the fold and the add cancel.
+
+`--check` runs in `make ci` through the tool contract: it re-applies the file to the committed csv in memory and
+fails if the bytes differ, so a Ghidra re-import that undoes a repair is red instead of silently reverting the map.
+It also refuses a boundary row whose `function_size` in `symbols/xbe_overrides.csv` disagrees with the map — that
+column was written by the registration pass and read by nothing.
 
 ## Per-module address lists, and why there are no module ranges
 

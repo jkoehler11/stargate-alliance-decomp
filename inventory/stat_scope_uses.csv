@@ -9,7 +9,7 @@ scope-site,0x0002f360,0x0002f35e,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAud
 scope-site,0x0002f447,0x0002f445,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x188 of esi,PlaySound (+0x188),add tsc,
 scope-site,0x0002f524,0x0002f522,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of esi,Occlusion (+0x190),sub tsc,
 scope-site,0x0002f62b,0x0002f629,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of esi,Occlusion (+0x190),add tsc,
-scope-site,0x0002f9f4,0x0002f9f3,0x0002f820,Core_UnTemplate,Core,field 0x188 of esi,PlaySound (+0x188),add tsc,
+scope-site,0x0002f9f4,0x0002f9f3,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x188 of esi,PlaySound (+0x188),add tsc,
 scope-site,0x0002fee4,0x0002fee2,0x0002feb0,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x18c of ebp,Update (+0x18c),sub tsc,
 scope-site,0x00030477,0x00030475,0x0002feb0,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of ebp,Occlusion (+0x190),sub tsc,
 scope-site,0x00030546,0x00030545,0x0002feb0,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of ebp,Occlusion (+0x190),add tsc,
@@ -417,4 +417,4 @@ id,0x00000198,,,Occlusion,,1 site(s),Occlusion,used,
 id,0x0000019c,,,Streaming,,1 site(s),Streaming,used,
 id,0x000001a0,,,Regular,,1 site(s),Regular,used,
 id,0x000001a4,,,StoppedSounds,,1 site(s),StoppedSounds,used,
-census,0x007b5dfc,,,409 site(s) over 97 bodies,,8 id(s) used of 8,,,"410 reference(s) total, 69 outside every map body, 1 not-a-boundary, 24 with no resolved index source; block base +0x184 read from the device body"
+census,0x007b5dfc,,,409 site(s) over 96 bodies,,8 id(s) used of 8,,,"410 reference(s) total, 69 outside every map body, 1 not-a-boundary, 24 with no resolved index source; block base +0x184 read from the device body"

@@ -5379,7 +5379,7 @@ wider window — and none of them can be an audio id, because every audio id is 
 eight are accounted for above.
 
 
-## U36. Two symbol-map rows around the audio play path are wrong (2026-11-20)
+## U36. Two symbol-map rows around the audio play path were wrong -- answered: the map has a boundary-repair path
 
 **Observed.** The `PlaySound` scope close at `0x0002f9f4` is attributed to a row named `Core_UnTemplate` with
 module `Core`, at `0x0002f820`, 518 bytes. That row is a slice of the body the map starts at `0x0002f13c`
@@ -5394,8 +5394,21 @@ never the `mov DWORD PTR [ecx],edx`, which is why `Update`'s close first read as
 counts it there), and a short size silently truncates the last instructions of a body — this census now reads 48
 bytes past every declared size to work around it, which is a workaround, not a repair.
 
-**What would settle it.** A boundary-repair path that `symbols/xbe_overrides.csv` can express and a tool applies
-to `symbols/xbox_functions.csv` in its own right (today only the Ghidra import folds an override in, and the map
-has no size-override column): merge `0x0002f820` into `0x0002f13c` with size 2,282, and give `0x0002feb0` its
-real end. It then cascades: `function_modules.csv`, `native-summary`, `module-census` and `STATUS.md` all quote
-the split (see `references/autonomy.md`'s regeneration order).
+**Answered 2026-11-20: the map has a boundary-repair path of its own.** `symbols/xbe_boundaries.csv` holds
+one reviewed row per repair and `tools/symbol-boundaries.py` applies it to `symbols/xbox_functions.csv` without a
+Ghidra round (`make boundaries`; `--check` runs in `make ci` through the tool contract, so a re-import that undoes
+a repair is red). Three verbs: `resize` (a measured end), `drop` (interior code of the row the `target` names) and
+`add` (a body the map has no row for). Each is validated against the map — a `drop` must land strictly inside its
+target's repaired span, a repair may not create an overlap with the next row, an `add` may not land inside a row —
+and every `function_size` in `symbols/xbe_overrides.csv` must agree with the repaired map, which is the column
+that file carried and nothing read.
+
+The two rows this entry named are repaired there (fold `0x0002f820` into `0x0002f13c`, 2,282 bytes; resize
+`0x0002feb0` to 5,327, end `0x3137f`), the split `Core_UnTemplate` row is gone from the `Core` census bucket, and
+the audio census reads each body's declared size again. **Removing its 48-byte workaround found nine more rows of
+the same class** — eight ended inside the array load or `rdtsc` pair of a scope close (`0x0012c850`,
+`0x0015a200`, `0x00199350`, `0x001e9a30`, `0x001ee690`, `0x002b7560`, `0x002bc350` and the pump) — all resized
+from their own closing `ret`. Eleven rows in total. What it did **not** settle: the map still has bodies with no
+row (the `0x0002fa30` body this repair adds, and `0x0015a660`, `0x001ea250`, `0x002b7aa0` are three more inside the
+gaps it walked), and `0x0002fa30` still has no name: it is slot 33 of `XBoxAudioSubsystem`'s table `0x004d21f8`,
+between `SetSoundDevice` and the pump, and it walks the `[this+0xd8]` array calling `XboxAudio_FlushSounds`.

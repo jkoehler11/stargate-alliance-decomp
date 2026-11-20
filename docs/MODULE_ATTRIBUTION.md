@@ -122,7 +122,8 @@ run), and `--check` fails on any row that carries a real `asserted_module` but i
 invariant that would have caught it, and which answers
 `0x0001afc0 carries the asserted module Core but is labelled propagated` against the shipped version. The corrected
 artifact moves **632 module labels** (430 rows gain one, 202 change) and **784 methods** (354 `propagated` →
-`assert`, 430 `none` → `propagated`); labelled 5,633 → 6,063.
+`assert`, 430 `none` → `propagated`); labelled 5,633 → 6,063. On the repaired map the same run labels
+**6,150** of 14,973 (1,411 `assert`, 4,739 `propagated`), and 6,147 of those are exported (`docs/MODULE_SPLIT.md`).
 
 ## Limits — what a module label is not
 
