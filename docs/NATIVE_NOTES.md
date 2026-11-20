@@ -328,6 +328,67 @@ proves an RTO computation exists, not which algorithm; `EnetCapture` proves a ho
 none of these bodies has been decompiled, so window handling, retransmission policy and the PPPoE branch
 remain unread.
 
+## The shader toolchain: `XGRAPHICS`, `PreProcessor`, `Instruction`, `D3DX` (2026-11-19)
+
+Four readings, 339 methods: `XGRAPHICS` (98, 23,932 B), `D3DX` (143, 40,941 B), and the two classes the
+shader assembler is built from, `PreProcessor` (49, 9,847 B) and `VS_GRAPH_OPTIMIZER::Instruction`
+(49, 9,661 B) — `inventory/xgraphics_methods.csv`, `d3_dx_methods.csv`, `pre_processor_methods.csv`,
+`instruction_methods.csv`. This is the one reading in which **the strings do most of the work**: 24 of the
+49 preprocessor methods carry a literal, and they are a grammar.
+
+**`PreProcessor` is a C preprocessor written for shader assembly.** Its `DoDirective` compares the word
+after `#` against `define`, `undef`, `include`, `ifdef`, `ifndef`, `else`, `elif`, `endif`, `pragma`, `error`
+and reports `Unknown preprocessor directive` otherwise — plus the non-standard `macro` … `endm` form
+(`CheckForMacroDeclaration` requires `endm` "before end of file"). Two limits are stated by the code itself:
+**`#if` is not supported** and **`#elif` is not supported**, and `#include` needs a resolver object
+("Can't process #include because no resolver object was supplied"). Nesting is bounded — "Too many nested
+levels of #ifdef/#ifndef in this file", "Too many levels of include directives" — and so is expansion
+("Expanded macro too long"). Comments and line continuation are handled deliberately, including the
+warning that a single-line comment ending in `\` continues onto the next line.
+
+**`d3dxasm_parse` is yacc output.** 1,160 bytes calling `CD3DXAssembler::Token`, `CD3DXAssembler::Production`
+and `CD3DXAssembler::YYError` — a generated parser driving a lexer object, so the grammar is a table rather
+than readable code.
+
+**`XGRAPHICS` turns tokens into microcode and optimises them.** `D3DTokensToUCode` (2,874 B, the largest
+method in these four classes), `CompilePixelShaderToUCode` (1,693 B → `_XGBufferCreate`,
+`_XGBuffer_GetBufferPointer`, `_XGBuffer_GetBufferSize`), `PrintPixelShaderDef` (2,321 and 2,243 B, two
+overloads) and `InputOutputDependency` (868 B) sit above `PairableMulAdd` (804 B → `NullSwizzle`, `UsesVA`,
+`UsesCA`) — the register-class tests a vertex-shader optimiser needs.
+
+**`Instruction` is a graph optimiser, not an encoder.** `Combine` (836 B → `Combinable`, `ReadsInput`,
+`Reader::SetSource`), `UnPair` (728 B), `NormalizeMove` (643 B → `IsSimpleMove`), `SwapResultComps` (470 B →
+`MACReadsC`), `RedundantResults` (427 B) and `GetAllDependants` (396 B → `?$set::insert`, `find_node`) — the
+dependency set is an STL `set`, and `GetUCode` (883 B → `GetA0x`, `GetSwizzle`, `CleanCompNones`) is the only
+method that emits. So the pipeline is: preprocess → parse → tokenise to microcode → combine/unpair/normalise
+the graph → encode.
+
+**`D3DX` is the helper library around it** (143 methods, 67 with callees, 1 string): texture, mesh, math and
+shader-assembly helpers, the largest single group in the graphics sections after the C functions.
+
+**The pipeline is live, and the shaders are in the image.** A scan of the dump finds these tokens in
+`default.xbe` and in no package: `vs.1.1` 22 times, `ps.1.1` 22, `ps.1.4` 19 — 63 programs — and the bytes
+around them are source, not a keyword table:
+
+    vs.1.1
+    m4x4 oPos, v0, c0
+    mov oT0, v9
+    dp4 oT0.x, v9.xyww, c24
+    ...
+    ps.1.4
+    texld r0, t0
+    texcrd r2.rgb, t0
+
+with `#pragma screenspace` (3), one `#include` and two `#define` — the preprocessor above, used on shipped
+data — and the assembler's own banner, `// Xbox Shader Assembler %s`.
+
+So the title compiles its shaders at runtime from embedded assembly through this toolchain, and that is why
+`PreProcessor` is in the image at all. For Phase 6 it is a requirement rather than an open question: a
+rebuild either reproduces the compile path (preprocessor, yacc parser, `D3DTokensToUCode`, the `Instruction`
+optimiser) or bakes the 63 programs' microcode once and ships it. **What this reading still does not prove** is
+which of the 63 are reachable — a version token in `.rdata` is a string the code may index by table, so the
+count is programs *present*, not programs *used*.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
