@@ -87,6 +87,27 @@ rather than ambiguity, since each copy has its own callers, so the duplicate is 
 refused (the body matcher refuses duplicates for the opposite reason: there a shared body is a
 shared guess).
 
+## What the libraries cannot reach (2026-11-19)
+
+After both naming passes, 250 library-section bodies remain `FUN_*` (plus the 21 `thunk_` stubs the
+symbol map already names). `tools/xdk-lib-residue.py` (`make xdk-lib-residue`,
+`inventory/xdk_lib_residue.csv`) asks each one the only question that matters: is it in the supplied
+libraries at all?
+
+* **17 are, and were named.** A prefix of the image body equals a library function byte for byte
+  with the operands masked, and the leftover is 4 bytes past the `ret` — Ghidra's body runs long, not
+  the library's. `?IpTerm@CXnIp` is the clearest case: 189 bytes identical over 22 masked operands.
+* **233 are not.** No library body matches at any start offset 0–24 under the same quality rules,
+  so these bodies did not come from the 60 supplied archives. That is not a contradiction: XBE section
+  names follow the linker's *contribution*, and a section named `XNET` can hold code no `xnet.lib`
+  member produced.
+* **0 are boundary-shifted in the other direction.** A suffix match (Ghidra starting the function
+  late) held for one body before the quality rules, and for none after; the rule is what makes the
+  count trustworthy.
+
+The residue is therefore an answer, not a gap: the libraries are exhausted, and what remains in these
+sections is code the libraries never contained.
+
 ## What the number means
 
 The method route is real but tiny: it names **27** bodies out of the corpus's unnamed ones, and those 27
