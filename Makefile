@@ -32,6 +32,7 @@ TOOL     := tools/Sg1Tool/bin/Release/net10.0/Sg1Tool.dll
 help:
 	@echo "targets:"
 	@echo "  verify-dump   check the dump against inventory/manifest.sha256"
+	@echo "  pristine-dump make a read-only copy of the dump and verify the copy"
 	@echo "  manifest      regenerate inventory/manifest.sha256"
 	@echo "  inventory     regenerate every inventory/*.csv from the dump"
 	@echo "  decompile     reconstruct UnrealScript into $(WORK)/UnrealScript (never committed)"
@@ -290,6 +291,20 @@ verify-dump:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
 	@$(PYTHON) tools/make-manifest.py "$(SG1_DUMP)" \
 		-o inventory/manifest.sha256 --check
+
+# PLAN 1.5's software half: copy the manifest's roots to a read-only tree and verify the copy. The
+# chmod is the point -- a tree nobody can write to cannot drift, and verify-dump after the copy proves
+# the copy is of the same bytes the manifest was made from.
+PRISTINE_DUMP ?= $(HOME)/sg1/dump-pristine
+pristine-dump:
+	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }
+	@mkdir -p "$(PRISTINE_DUMP)"
+	@chmod -R u+w "$(PRISTINE_DUMP)" 2>/dev/null || true
+	@rsync -a --delete "$(SG1_DUMP)/README.txt" "$(PRISTINE_DUMP)/"
+	@rsync -a --delete "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15" "$(PRISTINE_DUMP)/"
+	@chmod -R a-w "$(PRISTINE_DUMP)"
+	@$(MAKE) --no-print-directory verify-dump SG1_DUMP="$(PRISTINE_DUMP)"
+	@echo "pristine copy at $(PRISTINE_DUMP): read-only, verified against inventory/manifest.sha256"
 
 manifest:
 	@test -d "$(SG1_DUMP)" || { echo "SG1_DUMP not found: $(SG1_DUMP)"; exit 2; }

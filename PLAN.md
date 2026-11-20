@@ -110,9 +110,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       the 18 shipped `.u` files' digests appears in it under four candidate hash schemes. Recorded in
       `inventory/package_check.csv` with `recovered_from=absent` and in `docs/PACKAGE_CHECK.md`, which states what
       6.2 now has to reproduce instead of assuming `md5(file)` is the check.
-- [ ] 1.5 Archive a pristine, read-only copy of the dump; all later work happens on copies.
-      **Blocked on a physical action, not on work**: this needs a second copy of the dump and read-only media, which
-      whoever holds the dump does. Everything in Phases 2–7 has run against copies under `$WORK` regardless.
+- [~] 1.5 **Re-scoped: the software half is done and verified.** `make pristine-dump` copies the manifest's
+      roots (`README.txt` + the release folder) to `$PRISTINE_DUMP`, makes the tree read-only and then runs
+      `verify-dump` against the copy — 4,006 files, 0 mismatched, 0 missing (2026-11-19). Work still happens on
+      `$WORK` copies as before; what remains is the physical half, a second copy on read-only media, which is
+      whoever holds the dump's action rather than this repo's. The full-tree check is also recorded: the source
+      tree verifies clean (`checked 4010 files: 0 mismatched/unlisted, 0 missing`, the four `bios/` files
+      correctly ignored as outside the dump).
 - [x] 1.6 Write `docs/PROVENANCE.md`: build date, dump method (Xbox Neighborhood), release group, cross-reference
       to the public preservation listings for the same release (no copy is kept in this repo).
 
