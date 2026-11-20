@@ -81,7 +81,12 @@ def stores(text, text_va, tables):
             imm, ln = struct.unpack_from("<I", text, i + 3)[0], 7
             kind = "frame" if rm == 5 else "reg"
         elif mod == 2:
-            imm, ln = struct.unpack_from("<I", text, i + 5)[0], 9
+            # `C7 /0` + disp32 + imm32 is **ten** bytes: reading the immediate five bytes in lands
+            # on the displacement's last byte, so every `mov [reg+disp32],imm32` store was dropped
+            # and the scan resumed inside the immediate (measured 2026-11-20: the twelve
+            # `mov [esi+0xb8],<index table>` stores of the LinkerLoad/LinkerSave family were invisible,
+            # four tables with three sites each -- `tools/class-table-store-fields.py` counts them).
+            imm, ln = struct.unpack_from("<I", text, i + 6)[0], 10
             kind = "frame" if rm == 5 else "reg"
         else:
             i += 1
@@ -344,6 +349,8 @@ def self_check():
     text[0x30:0x36] = b"\xc7\x04\x24" + struct.pack("<I", 0x9000)
     # 0x1040: c7 00 <not a table>
     text[0x40:0x46] = b"\xc7\x00" + struct.pack("<I", 0x1234)
+    # 0x1a0: c7 86 b8 00 00 00 <table 0x9200>  the disp32 form, ten bytes
+    text[0x1A0:0x1AA] = b"\xc7\x86\xb8\x00\x00\x00" + struct.pack("<I", 0x9200)
     # 0x1e0: a store outside every map entry
     text[0x1E0:0x1E6] = b"\xc7\x00" + struct.pack("<I", 0x9000)
     # 0x1100 and 0x1200 call the installing body at 0x1000; 0x1300 tail-jumps to 0x1050
@@ -351,11 +358,13 @@ def self_check():
     text[0x200:0x205] = b"\xe8" + struct.pack("<i", 0x1000 - 0x1205)
     text[0x300:0x305] = b"\xe9" + struct.pack("<i", 0x1050 - 0x1305)
 
-    hits = stores(bytes(text), text_va, {0x9000, 0x9100})
-    if sorted(h[0] for h in hits) != [0x1010, 0x1020, 0x11e0]:
-        bad.append("stores: expected the three non-SIB sites, got %r" % (hits,))
-    if [h[2] for h in hits] != ["reg", "reg", "reg"]:
+    hits = stores(bytes(text), text_va, {0x9000, 0x9100, 0x9200})
+    if sorted(h[0] for h in hits) != [0x1010, 0x1020, 0x11a0, 0x11e0]:
+        bad.append("stores: expected the four non-SIB sites, got %r" % (hits,))
+    if [h[2] for h in hits] != ["reg", "reg", "reg", "reg"]:
         bad.append("stores: displacement form misread %r" % (hits,))
+    if [h[1] for h in hits if h[0] == 0x11A0] != [0x9200]:
+        bad.append("stores: a disp32 store is one byte short of its immediate %r" % (hits,))
 
     inbound = edges(bytes(text), text_va)
     if [k for _, k in inbound.get(0x1000, [])] != ["call", "call"]:
