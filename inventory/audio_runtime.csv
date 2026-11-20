@@ -1,0 +1,24 @@
+kind,address,value,detail
+pump,0x0002feb0,"XboxAudio_XboxAudioSubsystem (5277 bytes, 1466 insns)","slot 34 (+0x88) of XBoxAudioSubsystem's table 0x004d21f8: the per-frame path; 46 direct calls (14 into the SDK's import band 0x0049f000-0x004a3000, 5 of them named), 10 indirect, 3 wide literals"
+guard,0x0002fecc,+0x98,a null at [this+0x98] skips the rest of the body
+guard,0x0002ff00,+0x16c,"a null at [this+0x16c] skips 0x0002d9a0, which the map names Core_UnTemplate"
+guard,0x0002ff11,+0x160,"a null at [this+0x160] skips 0x0002fbb0, which the map names FUN_0002fbb0"
+counter,0x0002feeb,rdtsc,"cycle bookkeeping: 0x007b5dfc + [this+0x18c]*4 is a counter slot, and the timestamp is subtracted into it (`sub    DWORD PTR [ecx],edx`)"
+literal,0x00030393,SF_Streaming,"wide literal at 0x004d1754, pushed by the pump"
+literal,0x00030968,---Stream Swap Notify---,"wide literal at 0x004d2380, pushed by the pump"
+literal,0x00030b39,Streaming,"wide literal at 0x004d1f28, pushed by the pump"
+file,0x0002d9a0,Core_UnTemplate (262 bytes),called at 0x0002ff0c by the pump; the map names it Core_UnTemplate; file API: _GetOverlappedResult@16
+file,0x0002fbb0,FUN_0002fbb0 (203 bytes),called at 0x0002ff1d by the pump; the map names it FUN_0002fbb0; file API: _GetOverlappedResult@16
+file,0x0002d890,FUN_0002d890 (260 bytes),"called at 0x0002d9ae by 0x0002d9a0; the map names it FUN_0002d890; file API: _CreateEventA@16, _CreateFileA@28, _SetFilePointer@16"
+file,0x0002edb0,FUN_0002edb0 (301 bytes),"called at 0x0002fbbe by 0x0002fbb0; the map names it FUN_0002edb0; file API: _CreateEventA@16, _CreateFileA@28, _ReadFile@20, _SetFilePointer@16"
+register,0x0002e9ad,Audio/PlaySound,the group and the name are pushed as wide literals in that order; the return is stored at +0x10 (0x0002e9c2)
+register,0x0002e9f2,Audio/PlaySound,the group and the name are pushed as wide literals in that order; the return is stored at +0x04 (0x0002ea07)
+register,0x0002ea37,Audio/Occlusion,the group and the name are pushed as wide literals in that order; the return is stored at +0x14 (0x0002ea4c)
+register,0x0002ea7c,Audio/Occlusion,the group and the name are pushed as wide literals in that order; the return is stored at +0x0c (0x0002ea86)
+register,0x0002eac1,Audio/Update,the group and the name are pushed as wide literals in that order; the return is stored at +0x08 (0x0002ead6)
+register,0x0002eb06,Audio/Streaming,the group and the name are pushed as wide literals in that order; the return is stored at +0x18 (0x0002eb1b)
+register,0x0002eb4b,Audio/Regular,the group and the name are pushed as wide literals in that order; the return is stored at +0x1c (0x0002eb60)
+register,0x0002eb90,Audio/StoppedSounds,the group and the name are pushed as wide literals in that order; the return is stored at +0x20 (0x0002eb95)
+register-body,0x0002e900,FUN_0002e900 (691 bytes),"8 registrations, two literals each; counter block 0x007b5dd8"
+cache,0x007b5df4,"0x007b5df4, 0x007b5ec8, 0x007b5ecc","the .data globals the body reads in its own right: the once-only flag, and on the second-instance path the cached ids and their count"
+census,,pump,pump=1466 insns 46 direct 14 sdk-band 10 indirect 3 literals; guards=3; file=4; registrations=8; registers=6
