@@ -14669,3 +14669,44 @@ sequence.
   121,250 actors, 1,149,471 properties and 54,954,428 T3D bytes. No boot.
 - **Not in this PR.** The meaning of the two 40-byte members, the 24-byte per-vertex record's two vectors and
   the tail float (`U33`); why the four largest terrains carry twice as many positions per sector vertex.
+
+### Execution notes (2026-11-19, the two 48-byte frames are a pair and the per-vertex record is two normals)
+
+- **Task.** `U33`'s four leftovers: the two members between the terrain's per-vertex records and the tail, the
+  24-byte record's two vectors, the tail float, and the "twice as many positions per sector vertex" reading.
+- **Framing error, then four answers.** There is no 24-byte tail: the stretch is **48 + 48 + 8**. `FUN_00264220`
+  builds a grid→world frame from `this+0x154/0x158/0x15c` and `this+0x3ec/0x3f0/0x3f4` and copies
+  `FUN_000541f0`'s inverse beside it, and the inverse holds on **66 of 66** exports (reciprocal scale, `-t·s`
+  offset). `FUN_00277ec0`/`FUN_00263c10` write the per-vertex array as six floats, and `FUN_0026bda0` stores the
+  normalised cross product of the vertex's two triangle neighbourhoods there -- two normals per vertex. The
+  "tail float" is the inverse frame's z scale and the tail proper is `this+0x1334`/`+0x1338`, the vertex grid's
+  width and height. The four large terrains do not share one doubling: one halves the cell, two double the vertex
+  grid, one does neither.
+- **Files.** `tools/map-to-t3d.py` (`frame_inverse`, `vertex_step`, three census columns, four synthetic cases),
+  `tools/ghidra/ghidra_scripts/OffsetReaders.java` (the new instrument), `inventory/t3d_coverage.csv`,
+  `docs/T3D.md` (the member table corrected and two sections), `docs/UNKNOWNS.md` U33.
+- **Gates.** `make ci` green; `--check` green from the committed census with no dump; 121,250 actors, 1,149,471
+  properties, 54,957,213 T3D bytes reproduced.
+- **Not in this PR.** The palette dword's reader and the `Level` trailer's 24 bytes (`U32`).
+
+### Execution notes (2026-11-19, a palette record is one light and the colours it bakes, and the Level trailer is a URL and a time)
+
+- **Task.** `U32`'s two fields, walked from their records: the `StaticMeshInstance` record's middle member and
+  head dword, and the `Level` export's 24 unnamed bytes.
+- **The middle member is a bitmask.** Across all 33,509 payloads and **466,858** records, a record's `TArray<BYTE>`
+  is exactly `ceil(colours/8)` bytes -- one bit per colour entry of the payload's own colour table -- and the last
+  byte's spare bits are padding, set on 43,126 records. So a record is one light and the colours it bakes.
+- **The trailer's float is the level's saved time.** `7777`/`1` are a `FURL`'s `Port`/`Valid` on all 73 maps, and
+  the float after them equals that map's own `LevelInfo.TimeSeconds` on **73 of 73** (read in the same pass as the
+  actor's property; `Entry`'s field ahead of the float is one byte wide, so its float sits one byte earlier).
+  What is left of the 24 bytes is a 2-byte value (883..21,101) and 18 zero bytes (17 of 18 on `Entry`).
+- **The head dword stays open, with five refutations.** It is not the colour count, the record count, the largest
+  number of lights over one colour, the mask byte total, the non-empty-mask count or the flag-0 count. Its name is
+  in the reader of `UStaticMeshInstance+0x4c`; the displacement sweep over six SMI offsets returns 40,474
+  instructions in 5,280 functions and 1,231 readers of `+0x4c`, which is not a filter.
+- **Files.** `tools/map-to-t3d.py` (`smi_tail`'s mask rule, `level_trailer`, nine census columns, four gates, five
+  synthetic cases), `inventory/t3d_coverage.csv` (73 rows, 41 -> 50 columns), `docs/T3D.md` (two sections and the
+  open-items list), `docs/UNKNOWNS.md` U32, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`.
+- **Gates.** `make ci` green; `--check` green from the committed census with no dump; `--write-doc`/`--check-doc`
+  agree; `make t3d` reproduces 121,250 actors, 1,149,471 properties and 54,957,213 T3D bytes.
+- **Not in this PR.** The head dword's reader, and the two bytes ahead of the trailer's float.

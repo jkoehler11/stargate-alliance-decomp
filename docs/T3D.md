@@ -55,8 +55,14 @@ they spawn. The doc now says that instead.
   one locator rule -- the T3D now has none. The old hypothesis, that they point at imports the reader does not
   index, is wrong: both were reads that stopped one test short. See "the three values that fell through".
 * Class defaults, above.
-* The palette's tail after the colour table: 17,183,118 bytes on all 33,509 payloads, whose first field is a
-  dword in 2..10 and whose remainder is not a tagged block (both measured at the end of this page).
+* The palette record's head dword, 2..10 on all 33,509 payloads. It is not the colour count (0 of 33,509), not
+  the record count (they agree only where both are 2, 2,706 payloads), not the number of lights over one colour
+  (225 of 1,200 sampled), not the masks' byte total and not the flag-0 count -- see the last section. Naming it
+  is a read of `UStaticMeshInstance+0x4c`'s consumer, and the displacement sweep that found the terrain's
+  readers cannot isolate that one: 40,474 instructions in 5,280 functions carry one of `+0x28`, `+0x2c`, `+0x34`,
+  `+0x38`, `+0x3c`, `+0x4c`, and 1,231 functions read `+0x4c` alone.
+* The `Level` trailer's last 24 bytes after the float: 18 of them are zero on 72 maps (17 of 18 on `Entry`), so
+  what is left to name is a two-byte value (883..21,101) and the zero run itself.
 * ~~The `Level` export's script sequence.~~ **Settled** (2026-11-19): there is no script in any map
   (`docs/MAP_SCRIPTS.md`), and the export's payload is the level's own actor list (the section at the end of
   this page). The `ACTION_*` ordering the old bullet pointed at is `docs/MAP_ACTION_ORDER.md`.
@@ -783,3 +789,64 @@ frame's scale and at half of it, a grid whose spacing is uneven, and a zero scal
 
 **Not in this PR.** The palette dword's reader (what consumes `rec+0x18`, `U32`) and the `Level` trailer's 24
 bytes (`U32`) stay counted, not named.
+
+## A palette record is one light and the colours it bakes (measured 2026-11-19)
+
+The record after the colour table was read to its extent last time; its **middle member is a bitmask over that
+table**, and the length is the test. `UStaticMeshInstance::Serialize` writes each record's `TArray<BYTE>` through
+`FUN_0001aed0`, and on **466,858 of 466,858** records the array is exactly `ceil(colours/8)` bytes, `colours`
+being the payload's own colour count: one bit per colour entry, so a record is "this light bakes these colours".
+
+| measure | value |
+|---|---:|
+| records | **466,858** |
+| masks of `ceil(colours/8)` bytes | **466,858** |
+| mask bytes | **13,989,855** |
+| masks with a set bit in the last byte's padding | 43,126 |
+
+**The padding is why the test is the length and not the bit range.** A payload of 457 colours has a 58-byte mask,
+464 bits for 457 entries, and the seven spare bits are set on 43,126 records (`0xfe` in the last byte is the
+common shape), so "no bit past the last colour" would refuse 9.2% of the corpus while the length holds on every
+one. `smi_tail(tail, ps, colours)` is that rule, `inventory/t3d_coverage.csv` carries `palette_masks`,
+`palette_mask_bytes`, `palette_mask_bad` and `palette_pad_bits`, and `--check` gates the bad count at zero and the
+mask total at 466,858.
+
+**The head dword is what is left, and five readings of it are refuted.** It is in 2..10 (30,450 read 2), and
+against the masks it is not: the record count (the two agree on 2,706 payloads, all where both are 2), the colour
+count (0 of 33,509), the largest number of lights over one colour (225 of 1,200 sampled, and 2 where the column
+maximum is 11), the masks' byte total, the number of non-empty masks, or the flag-0 count. It is the instance
+record's own member (`rec+0x18`, written by `FUN_00037110` after the colour array in `FUN_001f7680`), so its name
+lives in the code that reads `UStaticMeshInstance+0x4c` -- which the displacement sweep cannot isolate:
+`+0x28`, `+0x2c`, `+0x34`, `+0x38`, `+0x3c` and `+0x4c` are displacements 40,474 instructions in 5,280 functions
+carry, and 1,231 functions read `+0x4c`.
+
+## The `Level` trailer is a URL and the level's saved time (measured 2026-11-19)
+
+The 32 bytes after the five strings are a `FURL` and one float. `7777` and `1` are the same pair on all 73 maps
+(`Port` and `Valid`), and the float at bytes 2..5 of the 24 that follow is the map's **own `LevelInfo.TimeSeconds`**
+-- 59.005 on `M02A`, 391.213 on `CTF-LostCity`, 1,605.09 on `DM-LostCity` -- equal on **73 of 73** maps when it
+is read in the same pass as the actor's property.
+
+| measure | value |
+|---|---:|
+| `Level` exports whose trailer is the `FURL` frame | **73** |
+| -- whose float equals `LevelInfo.TimeSeconds` | **73** |
+| -- at the two-byte field's end / one byte earlier | **72** / 1 |
+
+**One map's field ahead of the float is one byte wide.** `Entry` carries `1b` where the other 72 carry two bytes,
+and its `TimeSeconds` (248.649) then sits at byte 1 of the 24, which is why the reader hands back both alignments
+and the census counts which one a map took (`level_seconds_off`). The two-byte value is 883..21,101 and is not the
+actor count; 18 bytes after the float are zero on 72 maps and 17 of 18 on `Entry` (`level_tail_zero` totals 1,313,
+which `--check` pins).
+
+**Files.** `tools/map-to-t3d.py` (`level_trailer`, `level_record`'s fifth field, `smi_tail`'s mask rule, the nine
+census columns, four gates and five synthetic cases), `inventory/t3d_coverage.csv` (73 rows regenerated),
+`docs/UNKNOWNS.md` U32 and this page's generated block.
+
+**Gates.** `make ci` green; `--check` reads the committed census with no dump and fails when a mask stops being
+`ceil(colours/8)`, when the trailer stops being `7777`, when a map's float stops equalling its `TimeSeconds`, or
+when the zero run moves; `--write-doc`/`--check-doc` agree; `make t3d` still reproduces 121,250 actors, 1,149,471
+properties and 54,957,213 T3D bytes.
+
+**Not in this PR.** The head dword's reader (the five refutations above are what the bytes can say), and the two
+bytes ahead of the trailer's float.
