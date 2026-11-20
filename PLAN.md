@@ -14643,3 +14643,29 @@ sequence.
   dump, and the 73-map write reproduces its own totals. No boot.
 - **Not in this PR.** The palette tail's head dword (2..10) and the `Level` trailer's 32 bytes are counted, not
   named (`U32`); the terrain record after the block is untouched.
+### Execution notes (2026-11-19, the terrain record's body, and the sectors that name it back)
+
+- **Task.** The three items the previous note listed as "not in this PR", for the terrain half: the record's
+  *body* between the property block and the colour array; plus the class that body counts -- `TerrainSector` --
+  whose 765 payloads had never been read past their size. The palette dword's reader is `U32` and is still open.
+- **The body is a member chain.** `terrain_body` reads it as: sector list (compact count + compact references),
+  positions (compact count + 12 bytes each), the two-int sector grid, records (compact count + 24 bytes each),
+  two 40-byte members, a 24-byte tail `[0][0][0][float][int][int]`, then the colours. **66 of 66** exports close
+  exactly where the colours' own count begins; positions, records and colours are each **313,344**; every one of
+  the **765** sector references names a `TerrainSector` export; the grid's product is the sector count on 66.
+- **The sectors name their terrain.** `TerrainSector` has no property block, so its payload is its native record:
+  `[0x00][compact TerrainInfo index][quads x][quads y][origin x][origin y]`. All **765** open that way, all 765
+  name the `TerrainInfo` of their own map, quads are 8/16/32 with the far edge one short and origins are multiples
+  of eight, and they cover **194,114** quads. The terrain's tail ints are one more than the furthest
+  `origin + quads` in its own sector list on 66 of 66, so the two records are one table.
+- **One behaviour kept.** `DM-WorstCaseScenario` has one `TerrainSector` whose payload does carry a tagged block;
+  the census counts the header but the export still goes through the writer's locator, so actor and property
+  totals are unchanged (121,250 / 1,149,471) and the T3D bytes move only by the longer comment line.
+- **Files.** `tools/map-to-t3d.py` (`terrain_body`, `terrain_span`, `sector_record`, `compact_width`, nine census
+  columns, six gates, ten synthetic cases, the terrain comment line), `inventory/t3d_coverage.csv` (73 rows),
+  `docs/T3D.md` (the new section, and the previous section's "not in this PR" sentence corrected in place),
+  `docs/UNKNOWNS.md` U33, this note.
+- **Gates.** `make ci` green; `--check` green from the committed census with no dump; `make t3d` reproduces
+  121,250 actors, 1,149,471 properties and 54,954,428 T3D bytes. No boot.
+- **Not in this PR.** The meaning of the two 40-byte members, the 24-byte per-vertex record's two vectors and
+  the tail float (`U33`); why the four largest terrains carry twice as many positions per sector vertex.
