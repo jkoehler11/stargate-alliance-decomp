@@ -15322,6 +15322,54 @@ sequence.
 - **Not in this PR.** The `sinh` stub's map row (a boundary `add`, which moves the function count); the 21 unnamed
   targets that are real bodies, which wait on a breakpoint or a library match rather than on a thunk read.
 
+### Execution notes (2026-11-20, the sweep's tail shapes settle 47 of 48 refusals, and four false splits become resizes)
+
+- **Task.** The boundary thread's U39 residuals: the 48 rows the sweep refuses, the four rows whose declared body
+  runs over the next row's start, and `0x00260aa0`'s second repair.
+- **The refusal was a rule about the pad, not 48 unreadable bodies.** A body's last instruction is a terminator and
+  what follows it to the next map row is a *tail*: `0xcc` fill (`pad`, one byte or many), nothing (`edge`), MSVC's
+  `8b ff`/`90`/`0f 1f..` slot (`align`), or a `switch`'s case table -- dwords that all name an offset inside the
+  body (`table`) -- or a concatenation. `native-census.py` now names the tail instead of requiring a two-byte
+  `cc cc` run: 39 of the 46 no-terminator refusals close on a single `int3`, the two `execNativePerform`/
+  `execLocalPerform` dispatchers run into their own case tables, and two more end in an alignment slot in front of
+  one. A `0xcc` run also *ends* the reading: 22 rows sit in a map gap whose next row starts hundreds of bytes
+  later, and a rule that had to consume the whole tail walked into the next body's code and refused.
+- **The population is 882 / 1 against the repaired map.** On the 883 rows the map places: 882 reproduce the
+  declared size (838 `pad`, 39 `edge`, 4 `align+table`, 1 `table+pad`, 1 `align+table+pad`), and 1 is refused --
+  `0x00046330`, which shares its 192-byte tail with `0x000463f0`. Before the eight resizes landed the same reading
+  was 873 / 8, and one row (`0x0014c1b0`) read three bytes *shorter* than its declaration until the pair below
+  settled it.
+- **Growth is refused over a declaration that already closes.** Ten rows would have grown by 5 to 81 bytes into the
+  body behind them; every one already ends on its own terminator, and the code after an unconditional transfer is
+  somebody else's, so the guard names them `declared-end-is-a-close` and they keep their size. What finds the
+  eight real resizes is the two-pass bound: the strict window (the next map row) is tried first, and only where it
+  holds no terminator at all is the bound widened past a row that starts inside the declared body.
+- **Four of the eight are false splits, not short rows.** `0x00041d70` (32 → 130), `0x000470c0` (235 → 293),
+  `0x001c6940` (181 → 236) and `0x0020ff00` (371 → 454) each enclose a map row that starts inside the body the
+  dispatcher measured -- two assert blocks (`Core_UnClass` at `0x00047109`, `Core_UnTemplate` at `0x001c6996`) and
+  two starts in the middle of an instruction pair (`0x00041d90` opens on the `push esi` of a call's own argument
+  setup, `0x00210073` on a second 12-dword `rep movsd`). `--emit-boundaries` now writes the `drop` for a fragment
+  inside a *resize* the way it already did for an `add`, so each repair is one resize plus its fold.
+- **`0x00260aa0` needed no second repair, and that is the residual's answer.** Its own `ret 8` ends at 95, a single
+  `int3` separates it from a stray three-byte `ret 4`, and the decode stops at the `int3`: the 95 → 99 reading
+  walked through the pad. No exception to the one-repair-per-address rule was needed, and the `add`'s 95 stands.
+- **The map moves 15,244 / 4,017,403 → 15,240 / 4,017,423** (four `drop`s, eight `resize`s: +314 bytes of body,
+  −294 of fragments), `symbols/xbe_boundaries.csv` goes 387 → **399 rows** (278 `add`, 56 `resize`, 53 `rename`,
+  11 `drop`), and the function count falls only by the four folds.
+- **Files.** `tools/native-census.py` (four tail shapes, the pad boundary, the two-pass bound, the growth guard,
+  the paired drops in `--emit-boundaries`, `TAIL_SHAPES` in `--check`, six selftest cases),
+  `inventory/native_census.csv` (883 rows), `symbols/xbe_boundaries.csv` (+12), `symbols/xbox_functions.csv`,
+  `symbols/xbox.map`, `inventory/function_modules.csv`, `inventory/module_export_plan.csv`,
+  `inventory/xbe_functions_by_module.csv`, `docs/NATIVE.md`, `docs/SYMBOLS.md`, `docs/UNKNOWNS.md` (U39 rewritten),
+  `docs/STATUS.md`, `README.md`, `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `native-census --check` validates a tail against `TAIL_SHAPES` and still refuses a
+  sweep shorter than the declaration; `--selftest` covers the single-`int3` pad, the pad boundary (code behind a
+  pad), the `align` and `table` tails, the two-entry non-table, the conditional jump and the
+  declared-end-is-a-close guard; `symbol-boundaries --check` re-applies all 398 repairs to the committed csv.
+- **Not in this bundle.** U36's `0x002b7aa0` (a body in a map gap whose `switch` ends in a case table -- the `add`
+  needs a name and a creation row), the `extent`/`sweep` unification (re-emitting 268 creation rows), and the one
+  row the sweep reads three bytes shorter than its declaration.
+
 ### Execution notes (2026-11-20, the sweep resizes 39 rows that stopped short, and the six split natives become rows)
 
 - **Task.** The boundary thread's remainder, U39: the six registration bodies a false split sits inside, and

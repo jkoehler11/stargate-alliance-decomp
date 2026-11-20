@@ -5528,16 +5528,30 @@ complete close already sits between the declaration and the body's own end, so t
 declaration cut rather than a cold tail adopted — that count is 0 on this population, and `0x00046330` (which
 shares its tail with `0x000463f0`) is the one row the rule withholds.
 
-**Residual 1: one resize is a second repair of an address.** `0x00260aa0` declares 95 bytes and its own
-`ret imm16` ends at 99, but it already carries an `add` row from the 274 bundle and the file allows one repair
-per address. Settling it needs the file to carry two readings of one row (or the `add`'s size corrected in
-place), not another measurement.
+**Residual 1 (settled): `0x00260aa0` needed no second repair.** Its own `ret 8` ends at 95 and a single `0xcc`
+separates it from a stray three-byte `ret 4`, so the 99-byte reading walked through padding. The sweep now stops
+at the `int3` and the row agrees with its own declaration -- a file that allows one repair per address needed no
+exception, and the `add`'s 95 was right.
 
-**Residual 2: 48 rows the decode refuses.** 44 reach the next row without a terminator ending at it, 3 hit an
-opcode the shared decoder (`tools/vcall-receiver.py`) will not read, and 1 (`0x00040be0`, 28 bytes) has a pad
-that follows something other than a terminator. Settling them needs a decoder for the shapes those bodies use,
-not a wider window — the walk already reads 200 KB past every start.
+**Residual 2 (settled): the 48 refusals were four *tail* shapes, not 48 unreadable bodies.** A body's closing
+terminator is followed by something, and what it is decides the end: `pad` (`0xcc` fill of any length, and the
+pad **ends** the reading because what follows it is another body), `edge`, `align` (`8b ff`, `90`, `0f 1f..`) or
+`table` (dwords that all name an offset inside the body -- a `switch`'s case table), or a concatenation. The old
+rule required a two-byte `cc cc` run, so it walked through the single `int3` that 39 rows end on and desynchronised
+in the two dispatchers whose case tables sit behind their closing jump. The population is now **882** agreeing and **1** refused
+(`0x00046330`, sharing its tail with `0x000463f0`). Growth is refused where the declaration already ends on a
+terminator (ten rows, 5 to 81 bytes each), so the eight resizes are rows whose declaration was cut
+mid-instruction. **Four of them are false splits and are rows plus folds now**: `0x00041d70` (32 → 130, dropping
+`0x00041d90`), `0x000470c0` (235 → 293, dropping the `Core_UnClass` assert block at `0x00047109`), `0x001c6940`
+(181 → 236, dropping `Core_UnTemplate` at `0x001c6996`) and `0x0020ff00` (371 → 454, dropping `0x00210073`),
+whose start is a second 12-dword `rep movsd` inside the same body.
 
-**Residual 3: the extent column still has the walk's answer.** The `extent`/`extent_source` columns are what the
+**Residual 3: the `extent` column still has the walk's answer.** The `extent`/`extent_source` columns are what the
 268 original adds carry, and they are left as measured; `sweep` is the reading a resize uses. Unifying them
 means re-emitting the 268 creation rows with the decode's sizes, which is a bundle of its own.
+
+**Residual 4: U36's `0x002b7aa0` is still a body with no row.** It sits in the gap after `0x002b7560` (whose row
+ends at `0x2b7a96`) and is a `switch` over D3D error codes (`0x88760826`, `0x8876081c`, ...) that pushes a message
+per case -- the shape whose case table the sweep can now read, so the extent is one run away. The repair is an
+`add` plus the creation row `XbePost.java` needs, which means a name; nothing calls it, so the name would be
+`FUN_002b7aa0` unless the pushed literals name the caller.

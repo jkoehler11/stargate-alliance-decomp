@@ -35,7 +35,7 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 <!-- generated:module-census -->
 | module | bodies | failed | ret-stub | src | asset | config | format | text | silent |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `Core` | 3246 | 2 | 102 | 562 | 3 | 9 | 117 | 324 | 2127 |
+| `Core` | 3244 | 2 | 102 | 560 | 3 | 9 | 117 | 324 | 2127 |
 | `Engine` | 2178 | 0 | 25 | 562 | 5 | 13 | 101 | 372 | 1100 |
 | `IpDrv` | 159 | 0 | 4 | 22 | 0 | 0 | 23 | 15 | 95 |
 | `Gui` | 155 | 0 | 1 | 54 | 1 | 0 | 9 | 27 | 63 |
@@ -47,21 +47,21 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 | `XboxLive` | 32 | 0 | 0 | 11 | 0 | 0 | 11 | 4 | 6 |
 | `Gameplay` | 24 | 0 | 0 | 9 | 0 | 0 | 0 | 10 | 5 |
 | `XboxDrv` | 22 | 0 | 0 | 5 | 0 | 0 | 1 | 4 | 12 |
-| **total** | **6241** | **2** | **133** | **1308** | **9** | **25** | **275** | **866** | **3623** |
+| **total** | **6239** | **2** | **133** | **1306** | **9** | **25** | **275** | **866** | **3623** |
 
 | measurement | bodies | share |
 |---|---:|---:|
 | direct call sites into the set | 40947 sites | |
-| at least one caller | 4290 | 68.7% |
+| at least one caller | 4290 | 68.8% |
 | in a vtable or data table | 1542 | 24.7% |
-| no caller and no data reference | 528 | 8.5% |
-| carry a source path (TU-attributed) | 1308 | 21.0% |
+| no caller and no data reference | 526 | 8.4% |
+| carry a source path (TU-attributed) | 1306 | 20.9% |
 | carry no literal at all | 3623 | 58.1% |
 | decompile failed | 2 | 0.0% |
 
 | attributed module | bodies | a `.cpp` path names it | a `.cpp` names another | header path only | none |
 |---|---:|---:|---:|---:|---:|
-| `Core` | 3246 | 114 | 10 | 438 | 2684 |
+| `Core` | 3244 | 114 | 10 | 436 | 2684 |
 | `Engine` | 2178 | 551 | 0 | 11 | 1616 |
 | `IpDrv` | 159 | 22 | 0 | 0 | 137 |
 | `Gui` | 155 | 54 | 0 | 0 | 101 |
@@ -73,7 +73,7 @@ identity: `src` means "this body asserts with a build-tree path", not "this is e
 | `XboxLive` | 32 | 11 | 0 | 0 | 21 |
 | `Gameplay` | 24 | 9 | 0 | 0 | 15 |
 | `XboxDrv` | 22 | 5 | 0 | 0 | 17 |
-| **total** | **6241** | **848** | **10** | **450** | **4933** |
+| **total** | **6239** | **848** | **10** | **448** | **4933** |
 
 Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2
 
@@ -90,7 +90,7 @@ Disagreements (`attributed` -> `its own .cpp`): Core->Engine 8, Core->IpDrv 2
 | `0x002c1bc0` | `Core_UnTemplate` | `Core` | `IpDrv` | 2674 |
 | `0x002d4950` | `Core_UnClass` | `Core` | `IpDrv` | 300 |
 
-Names: `FUN_*` **4111**, module-prefixed **1323**, `ucpp_*` **40**, `Native_*` **26**, `thunk_*` **17**, other **724** of 6241.
+Names: `FUN_*` **4111**, module-prefixed **1321**, `ucpp_*` **40**, `Native_*` **26**, `thunk_*` **17**, other **724** of 6239.
 <!-- /generated:module-census -->
 
 ## `Core` is not mostly library code by the evidence the bodies carry
