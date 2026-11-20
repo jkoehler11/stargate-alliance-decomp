@@ -1,0 +1,725 @@
+table_va,slots,population,class,script_super,installers,literals,literal_count,ini_sections,ini_classes,class_literals,own_class_literal,named_calls,named_call_count,signature,family_size,parent_va,parent_class,parent_route,parent_vs_script,chain_root,chain_depth,verdict,run,evidence
+0x4c7800,21,plain-only,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4c7854,2,at-least,,,3,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
+0x4c7860,22,at-least,,,36,Core|OpenFailed|Official.ini|SavePackagesAsOfficial,29,,,2,no,??_M@YGXPAXIHP6EX0@Z@Z|Core_UnLinker|Core_UnName|Core_UnObj|Core_UnObjBas|Core_UnProp|Core_UnTemplate|Engine_UnChan,19,e15bd171,1,0x4c9738,,unnamed,,,0,class-literal,,2 literal(s) are class names; 29 field literal(s); 19 named callee(s); unnamed parent
+0x4c78b8,1,plain-only,,,1,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,,,none,,,0,subsystem,,1 named callee(s)
+0x4c78c0,31,plain-only,,,1,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,,,none,,,0,subsystem,,1 named callee(s)
+0x4c7958,46,named,Material,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4c7a10,46,named,RenderedMaterial,Material,1,,0,,,0,no,,0,,0,0x4c7958,Material,named,agree,Material,1,nothing,,named parent; chains to Material at depth 1
+0x4c7ac8,48,named,BitmapMaterial,RenderedMaterial,1,,0,,,0,no,,0,,0,0x4c7a10,RenderedMaterial,named,agree,RenderedMaterial,1,nothing,,named parent; chains to RenderedMaterial at depth 1
+0x4c7b88,30,named,Order,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4c7c00,30,named,MatObject,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4c7c78,33,named,CameraEffect,Object,1,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,0x4dd2a8,Object,named,agree,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4c7d98,32,named,SGScreenSniperOverlay,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4c7e18,32,named,SGScreenMenuPause,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4c7e98,32,named,SGScreenBlur,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4c7f18,33,named,SGScreenDOF,CameraEffect,2,Engine,1,,,1,no,Core_UnObjBas|Engine_UnPixelShaderMaterial|appAssertFailed|ctor_Object,4,650423da,1,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,class-literal,,1 literal(s) are class names; 1 field literal(s); 4 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4c7fa0,33,named,SGScreenMotionBlur,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4c8028,32,named,SGScreenRadialBlur,CameraEffect,2,Engine,1,,,1,no,Core_UnObjBas|Engine_UnPixelShaderMaterial|ctor_Object,3,83bcd611,1,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,class-literal,,1 literal(s) are class names; 1 field literal(s); 3 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4c80a8,33,named,SGScreenEmissiveWithBloom,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4c8410,22,plain-only,,,2,,0,,,0,no,_CloseHandle@4,1,78a4a045,2,,,none,,,0,subsystem,,1 named callee(s)
+0x4c84d0,22,plain-only,,,2,new,1,,,0,no,_CloseHandle@4,1,78a4a045,2,,,none,,,0,subsystem,,1 field literal(s); 1 named callee(s)
+0x4c85b0,25,plain-only,,,1,m05c|m08|.unr|.lin,4,,,0,no,_XGetLaunchInfo@8|_XSetFileCacheSize@4|__chkstk|_wcscat|_wcsstr|thunk__wcscpy,6,52b95f49,1,,,none,,,0,subsystem,,4 field literal(s); 6 named callee(s)
+0x4c8db8,26,plain-only,,,1,D:\|Z:\Cache|Z:\Help|Z:\Maps,9,,,0,no,_CreateDirectoryA@8|__chkstk|thunk__wcscpy,3,8a54c65f,1,,,none,,,0,subsystem,,9 field literal(s); 3 named callee(s)
+0x4c8f28,33,named,MatSubAction,MatObject,2,,0,,,0,no,ctor_Object|dtor_MatObject,2,9bc6dc21,1,0x4c7c00,MatObject,named,agree,MatObject,1,subsystem,,2 named callee(s); named parent; chains to MatObject at depth 1
+0x4c8fb0,33,named,SubActionCameraEffect,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4c8f28,MatSubAction,named,agree,MatSubAction,1,subsystem,,2 named callee(s); named parent; chains to MatSubAction at depth 1
+0x4c9038,22,plain-only,,,2,,0,,,0,no,,0,,0,0x4c7860,,unnamed,,,0,nothing,,unnamed parent
+0x4c9090,30,named,ScriptedAction,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4c9108,30,named,ACTION_TriggerEvent,ScriptedAction,2,,0,,,0,no,ctor_Object|dtor_ScriptedAction,2,413b5025,2,0x4c9090,ScriptedAction,named,agree,ScriptedAction,1,subsystem,,2 named callee(s); named parent; chains to ScriptedAction at depth 1
+0x4c9180,30,named,LatentScriptedAction,ScriptedAction,2,,0,,,0,no,ctor_Object|dtor_ScriptedAction,2,413b5025,2,0x4c9090,ScriptedAction,named,agree,ScriptedAction,1,subsystem,,2 named callee(s); named parent; chains to ScriptedAction at depth 1
+0x4c91f8,30,named,ACTION_WaitForEvent,LatentScriptedAction,2,,0,,,0,no,ctor_Object|dtor_LatentScriptedAction,2,cf88a9cf,1,0x4c9180,LatentScriptedAction,named,agree,LatentScriptedAction,1,subsystem,,2 named callee(s); named parent; chains to LatentScriptedAction at depth 1
+0x4c9270,33,named,SubActionDepthOfField,SubActionCameraEffect,2,,0,,,0,no,ctor_Object|dtor_SubActionCameraEffect,2,d9a13cf8,1,0x4c8fb0,SubActionCameraEffect,named,agree,SubActionCameraEffect,1,subsystem,,2 named callee(s); named parent; chains to SubActionCameraEffect at depth 1
+0x4c9338,1,plain-only,,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,,,none,,,0,subsystem,,3 named callee(s)
+0x4c933c,2,plain-only,,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,,,none,,,0,subsystem,,3 named callee(s)
+0x4c9348,31,plain-only,,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,,,none,,,0,subsystem,,3 named callee(s)
+0x4c93c4,1,plain-only,,,2,Engine|ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,3,ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,Engine,1,no,Core_UnObj|Core_UnTemplate|Engine_UnCanvas|Engine_UnIn,4,7d3a9c64,3,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 4 named callee(s)
+0x4c93c8,2,plain-only,,,2,Engine|ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,3,ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,Engine,1,no,Core_UnObj|Core_UnTemplate|Engine_UnCanvas|Engine_UnIn,4,7d3a9c64,3,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 4 named callee(s)
+0x4c93d0,56,plain-only,,,2,Engine|ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,3,ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,Engine,1,no,Core_UnObj|Core_UnTemplate|Engine_UnCanvas|Engine_UnIn,4,7d3a9c64,3,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 4 named callee(s)
+0x4c94b0,43,plain-only,,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4c9560,43,named,XboxClient,,2,,0,,,0,no,,0,,0,0x4c94b0,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x4c960c,1,at-least,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4c9610,2,at-least,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4c9618,57,named,XboxViewport,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4c96fc,15,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x4c9738,22,plain-only,,,3,,0,,,0,no,,0,,0,0x4c9038,,unnamed,,,0,nothing,,unnamed parent
+0x4c9858,22,plain-only,,,2,D:\,1,,,0,no,_CreateFileA@28|_SetFileAttributesA@8|__chkstk,3,877cacce,1,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
+0x4c9a98,22,plain-only,,,1,,0,,,0,no,Core_UnTemplate|thunk__wcslen,2,2f0eee10,1,,,none,,,0,subsystem,,2 named callee(s)
+0x4c9b50,22,plain-only,,,2,,0,,,0,no,Core_UnTemplate|appAssertFailed,2,31c279d8,1,,,none,,,0,subsystem,,2 named callee(s)
+0x4c9c60,123,named,Actor,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4c9e58,124,named,Keypoint,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4ca048,124,named,AIScript,Keypoint,2,,0,,,0,no,ctor_Object|dtor_Keypoint,2,02dee5af,6,0x4c9e58,Keypoint,named,agree,Keypoint,1,subsystem,,2 named callee(s); named parent; chains to Keypoint at depth 1
+0x4ca238,123,named,Info,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4ca428,123,named,ReplicationInfo,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4ca238,Info,named,agree,Info,1,subsystem,,2 named callee(s); named parent; chains to Info at depth 1
+0x4ca618,134,named,Pawn,Actor,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_Object|dtor_Actor,5,801ab1e6,1,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,5 named callee(s); named parent; chains to Actor at depth 1
+0x4ca830,136,named,Vehicle,Pawn,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_Pawn|dtor_Pawn,5,7403bc31,1,0x4ca618,Pawn,named,agree,Pawn,1,subsystem,,5 named callee(s); named parent; chains to Pawn at depth 1
+0x4caa50,140,named,SVehicle,Vehicle,2,,0,,,0,no,Core_UnTemplate|ctor_Vehicle|dtor_Vehicle,3,50aa6a4f,1,0x4ca830,Vehicle,named,agree,Vehicle,1,subsystem,,3 named callee(s); named parent; chains to Vehicle at depth 1
+0x4cac80,126,named,Emitter,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,3 named callee(s); named parent; chains to Actor at depth 1
+0x4cae78,138,named,NavigationPoint,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,3 named callee(s); named parent; chains to Actor at depth 1
+0x4cb0a0,123,named,Triggers,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4cb290,133,named,Controller,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4cb4a8,133,named,AIController,Controller,2,,0,,,0,no,ctor_Object|dtor_Controller,2,29996507,1,0x4cb290,Controller,named,agree,Controller,1,subsystem,,2 named callee(s); named parent; chains to Controller at depth 1
+0x4cb6c0,123,named,HUD,Actor,2,Engine,1,,,1,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnObjBas|Core_UnTemplate|Engine_UnMovie|ctor_Object|dtor_Actor,7,ca4aa15a,1,0x4c9c60,Actor,named,agree,Actor,1,class-literal,,1 literal(s) are class names; 1 field literal(s); 7 named callee(s); named parent; chains to Actor at depth 1
+0x4cb8b0,124,named,ScriptedSequence,AIScript,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_AIScript,3,288b93c7,1,0x4ca048,AIScript,named,agree,AIScript,1,subsystem,,3 named callee(s); named parent; chains to AIScript at depth 1
+0x4cbaa0,123,named,AmbushInfo,Info,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Info,3,77e49eb1,6,0x4ca238,Info,named,agree,Info,1,subsystem,,3 named callee(s); named parent; chains to Info at depth 1
+0x4cbc90,138,named,Ambushpoint,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4cae78,NavigationPoint,named,agree,NavigationPoint,1,subsystem,,2 named callee(s); named parent; chains to NavigationPoint at depth 1
+0x4cbeb8,123,named,TriggeredCondition,Triggers,2,,0,,,0,no,ctor_Object|dtor_Triggers,2,4ed8cc58,5,0x4cb0a0,Triggers,named,agree,Triggers,1,subsystem,,2 named callee(s); named parent; chains to Triggers at depth 1
+0x4cc0a8,133,named,ScriptedController,AIController,2,,0,,,0,no,ctor_Object|dtor_AIController,2,e7a2bdbe,1,0x4cb4a8,AIController,named,agree,AIController,1,subsystem,,2 named callee(s); named parent; chains to AIController at depth 1
+0x4cc2c0,30,named,SGOrder,Order,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Order,3,3e777ebb,1,0x4c7b88,Order,named,agree,Order,1,subsystem,,3 named callee(s); named parent; chains to Order at depth 1
+0x4cc338,124,named,UnrealScriptedSequence,ScriptedSequence,2,,0,,,0,no,ctor_Object|dtor_ScriptedSequence,2,c9f41a54,1,0x4cb8b0,ScriptedSequence,named,agree,ScriptedSequence,1,subsystem,,2 named callee(s); named parent; chains to ScriptedSequence at depth 1
+0x4cc528,123,named,SquadAIBasic,ReplicationInfo,2,,0,,,0,no,ctor_Object|dtor_ReplicationInfo,2,21cd943e,3,0x4ca428,ReplicationInfo,named,agree,ReplicationInfo,1,subsystem,,2 named callee(s); named parent; chains to ReplicationInfo at depth 1
+0x4cc718,123,named,CoverInfo,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4ca238,Info,named,agree,Info,1,subsystem,,2 named callee(s); named parent; chains to Info at depth 1
+0x4cc908,123,named,SGFontInfo,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4ca238,Info,named,agree,Info,1,subsystem,,2 named callee(s); named parent; chains to Info at depth 1
+0x4ccaf8,140,named,StargateVehicle,SVehicle,2,,0,,,0,no,Core_UnTemplate|ctor_Vehicle|dtor_SVehicle,3,a9d9cdef,1,0x4caa50,SVehicle,named,agree,SVehicle,1,subsystem,,3 named callee(s); named parent; chains to SVehicle at depth 1
+0x4ccd28,126,named,BeamArc,Emitter,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Emitter,3,47f43463,2,0x4cac80,Emitter,named,agree,Emitter,1,subsystem,,3 named callee(s); named parent; chains to Emitter at depth 1
+0x4ccf20,126,named,Electrocutor,Emitter,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Emitter,3,47f43463,2,0x4cac80,Emitter,named,agree,Emitter,1,subsystem,,3 named callee(s); named parent; chains to Emitter at depth 1
+0x4cd118,123,named,SGTriggeredCondition,TriggeredCondition,2,,0,,,0,no,ctor_Object|dtor_TriggeredCondition,2,5eb87e49,1,0x4cbeb8,TriggeredCondition,named,agree,TriggeredCondition,1,subsystem,,2 named callee(s); named parent; chains to TriggeredCondition at depth 1
+0x4cd308,133,named,BotBase,ScriptedController,2,,0,,,0,no,ctor_Object|dtor_ScriptedController,2,5f06ff48,1,0x4cc0a8,ScriptedController,named,agree,ScriptedController,1,subsystem,,2 named callee(s); named parent; chains to ScriptedController at depth 1
+0x4cd520,133,named,BotEnemy,BotBase,2,,0,,,0,no,ctor_Object|dtor_BotBase,2,52de2940,2,0x4cd308,BotBase,named,agree,BotBase,1,subsystem,,2 named callee(s); named parent; chains to BotBase at depth 1
+0x4cd738,123,named,StargateHUD,HUD,2,,0,,,0,no,Core_UnTemplate|ctor_HUD|dtor_HUD,3,1a030410,1,0x4cb6c0,HUD,named,agree,HUD,1,subsystem,,3 named callee(s); named parent; chains to HUD at depth 1
+0x4cd928,123,named,ShadowManager,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,3 named callee(s); named parent; chains to Actor at depth 1
+0x4cdb18,123,named,IntelligentSpawner,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4cdd08,123,named,FarClipChange,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4cdef8,123,named,SGLevel,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,3 named callee(s); named parent; chains to Actor at depth 1
+0x4ce0e8,123,named,SGGenericOrderActor,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4ce2d8,33,named,SGScreenEmissive,CameraEffect,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,2 named callee(s); named parent; chains to CameraEffect at depth 1
+0x4ce360,33,named,SGScreenBloom,SGScreenEmissive,3,Engine,1,,,1,no,Core_UnObjBas|Engine_UnPixelShaderMaterial|ctor_Object|dtor_SGScreenEmissive,4,49f9e575,1,0x4ce2d8,SGScreenEmissive,named,agree,SGScreenEmissive,1,class-literal,,1 literal(s) are class names; 1 field literal(s); 4 named callee(s); named parent; chains to SGScreenEmissive at depth 1
+0x4ce3e8,124,named,AlkeshLandingZone,Keypoint,2,,0,,,0,no,ctor_Object|dtor_Keypoint,2,02dee5af,6,0x4c9e58,Keypoint,named,agree,Keypoint,1,subsystem,,2 named callee(s); named parent; chains to Keypoint at depth 1
+0x4ce5d8,141,named,StargateCopter,StargateVehicle,2,,0,,,0,no,ctor_Vehicle|dtor_StargateVehicle,2,802a1efd,3,0x4ccaf8,StargateVehicle,named,agree,StargateVehicle,1,subsystem,,2 named callee(s); named parent; chains to StargateVehicle at depth 1
+0x4ce810,141,named,Teltak,StargateCopter,2,,0,,,0,no,ctor_Vehicle|dtor_StargateCopter,2,50039145,2,0x4ce5d8,StargateCopter,named,agree,StargateCopter,1,subsystem,,2 named callee(s); named parent; chains to StargateCopter at depth 1
+0x4cea48,141,named,AlkeshBomber,StargateCopter,2,,0,,,0,no,ctor_Vehicle|dtor_StargateCopter,2,50039145,2,0x4ce5d8,StargateCopter,named,agree,StargateCopter,1,subsystem,,2 named callee(s); named parent; chains to StargateCopter at depth 1
+0x4cec80,142,named,StargateHover,StargateVehicle,2,,0,,,0,no,ctor_Vehicle|dtor_StargateVehicle,2,802a1efd,3,0x4ccaf8,StargateVehicle,named,agree,StargateVehicle,1,subsystem,,2 named callee(s); named parent; chains to StargateVehicle at depth 1
+0x4ceeb8,143,named,StargateCar,StargateVehicle,2,,0,,,0,no,Core_UnTemplate|ctor_Vehicle|dtor_StargateVehicle,3,f966657c,1,0x4ccaf8,StargateVehicle,named,agree,StargateVehicle,1,subsystem,,3 named callee(s); named parent; chains to StargateVehicle at depth 1
+0x4cf0f8,142,named,DeathGlider,StargateVehicle,2,,0,,,0,no,ctor_Vehicle|dtor_StargateVehicle,2,802a1efd,3,0x4ccaf8,StargateVehicle,named,agree,StargateVehicle,1,subsystem,,2 named callee(s); named parent; chains to StargateVehicle at depth 1
+0x4cf330,134,named,GoauldDrone,Pawn,2,,0,,,0,no,ctor_Pawn|dtor_Pawn,2,f6186f6c,2,0x4ca618,Pawn,named,agree,Pawn,1,subsystem,,2 named callee(s); named parent; chains to Pawn at depth 1
+0x4cf548,133,named,TeltakBot,BotBase,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_BotBase,3,a0c85f4c,2,0x4cd308,BotBase,named,agree,BotBase,1,subsystem,,3 named callee(s); named parent; chains to BotBase at depth 1
+0x4cf760,133,named,DeathGliderBot,BotBase,2,,0,,,0,no,ctor_Object|dtor_BotBase,2,52de2940,2,0x4cd308,BotBase,named,agree,BotBase,1,subsystem,,2 named callee(s); named parent; chains to BotBase at depth 1
+0x4cf978,133,named,AlkeshBomberBot,BotBase,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_BotBase,3,a0c85f4c,2,0x4cd308,BotBase,named,agree,BotBase,1,subsystem,,3 named callee(s); named parent; chains to BotBase at depth 1
+0x4cfba0,58,named,Texture,BitmapMaterial,2,new,1,,,0,no,,0,,0,0x4c7ac8,BitmapMaterial,named,agree,BitmapMaterial,1,field-literal,,1 field literal(s); named parent; chains to BitmapMaterial at depth 1
+0x4cfc88,59,named,FractalTexture,Texture,5,,0,,,0,no,ctor_Texture|dtor_Texture,2,5a566011,5,0x4cfba0,Texture,named,agree,Texture,1,subsystem,,2 named callee(s); named parent; chains to Texture at depth 1
+0x4cfd78,59,named,FireTexture,FractalTexture,2,,0,,,0,no,Core_UnTemplate|ctor_Texture|dtor_FractalTexture,3,6660d529,1,0x4cfc88,FractalTexture,named,agree,FractalTexture,1,subsystem,,3 named callee(s); named parent; chains to FractalTexture at depth 1
+0x4cfe68,59,named,WaterTexture,FractalTexture,2,,0,,,0,no,ctor_Texture|dtor_FractalTexture,2,8be06d11,2,0x4cfc88,FractalTexture,named,agree,FractalTexture,1,subsystem,,2 named callee(s); named parent; chains to FractalTexture at depth 1
+0x4cff58,59,named,WaveTexture,WaterTexture,2,,0,,,0,no,,0,,0,0x4cfe68,WaterTexture,named,agree,WaterTexture,1,nothing,,named parent; chains to WaterTexture at depth 1
+0x4d0048,59,named,FluidTexture,WaterTexture,2,,0,,,0,no,,0,,0,0x4cfe68,WaterTexture,named,agree,WaterTexture,1,nothing,,named parent; chains to WaterTexture at depth 1
+0x4d0138,59,named,WetTexture,WaterTexture,2,,0,,,0,no,,0,,0,0x4cfe68,WaterTexture,named,agree,WaterTexture,1,nothing,,named parent; chains to WaterTexture at depth 1
+0x4d0228,59,named,IceTexture,FractalTexture,2,,0,,,0,no,ctor_Texture|dtor_FractalTexture,2,8be06d11,2,0x4cfc88,FractalTexture,named,agree,FractalTexture,1,subsystem,,2 named callee(s); named parent; chains to FractalTexture at depth 1
+0x4d0314,1,plain-only,,,2,Engine|Core|Role|RemoteRole,5,,,1,no,Core_UnCoreNet|Core_UnObj|Core_UnProp|Core_UnTemplate|Engine_UnActor|ctor_Object|ctor_PackageMap,7,c00dd239,2,,,none,,,0,class-literal,,1 literal(s) are class names; 5 field literal(s); 7 named callee(s)
+0x4d0318,40,plain-only,,,2,Engine|Core|Role|RemoteRole,5,,,1,no,Core_UnCoreNet|Core_UnObj|Core_UnProp|Core_UnTemplate|Engine_UnActor|ctor_Object|ctor_PackageMap,7,c00dd239,2,,,none,,,0,class-literal,,1 literal(s) are class names; 5 field literal(s); 7 named callee(s)
+0x4d03b8,1,at-least,,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,6 field literal(s); 1 named callee(s)
+0x4d03bc,2,at-least,,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,6 field literal(s); 1 named callee(s)
+0x4d03c8,42,at-least,,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,6 field literal(s); 1 named callee(s)
+0x4d0470,1,at-least,,,3,new,1,,,0,no,_inet_addr@4|_wcschr,2,a6bfeb44,3,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
+0x4d0474,2,at-least,,,3,new,1,,,0,no,_inet_addr@4|_wcschr,2,a6bfeb44,3,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
+0x4d0480,42,named,TcpipConnection,,3,new,1,,,0,no,_inet_addr@4|_wcschr,2,a6bfeb44,3,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
+0x4d0528,1,at-least,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d0530,40,named,TcpNetDriver,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d05d0,1,at-least,,,3,new,1,,,0,no,Core_UnTemplate|_inet_addr@4|_wcschr,3,4bb283b1,3,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
+0x4d05d4,2,at-least,,,3,new,1,,,0,no,Core_UnTemplate|_inet_addr@4|_wcschr,3,4bb283b1,3,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
+0x4d05e0,42,named,TcpipConnectionXbox,,3,new,1,,,0,no,Core_UnTemplate|_inet_addr@4|_wcschr,3,4bb283b1,3,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
+0x4d0688,1,at-least,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d0690,41,named,TcpNetDriverXbox,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d0738,134,named,PlayerController,Controller,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_Object|dtor_Controller,5,53daf78d,1,0x4cb290,Controller,named,agree,Controller,1,subsystem,,5 named callee(s); named parent; chains to Controller at depth 1
+0x4d0950,134,named,UnrealPlayer,PlayerController,2,,0,,,0,no,ctor_PlayerController|dtor_PlayerController,2,2f0d54b9,2,0x4d0738,PlayerController,named,agree,PlayerController,1,subsystem,,2 named callee(s); named parent; chains to PlayerController at depth 1
+0x4d0b68,134,named,StargatePlayer,UnrealPlayer,2,,0,,,0,no,Core_UnTemplate|ctor_PlayerController|dtor_UnrealPlayer,3,a952d6e0,1,0x4d0950,UnrealPlayer,named,agree,UnrealPlayer,1,subsystem,,3 named callee(s); named parent; chains to UnrealPlayer at depth 1
+0x4d0d80,25,plain-only,,,1,Source file not specified|==================================================| Unpacking [%s] ...|new,6,,,0,no,Core_UnTemplate|__wcsicmp,2,18f26550,1,,,none,,,0,subsystem,,6 field literal(s); 2 named callee(s)
+0x4d0de8,22,plain-only,,,2,new,1,,,0,no,,0,,0,0x4c7860,,unnamed,,,0,field-literal,,1 field literal(s); unnamed parent
+0x4d0ec8,21,plain-only,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d1430,2,plain-only,,,3,,0,,,0,no,??0exception@@QAE@ABV0@@Z|??3@YAXPAX@Z,2,9176df44,1,0x57534c,,unnamed,,,0,subsystem,,2 named callee(s); unnamed parent
+0x4d1438,2,plain-only,,,2,,0,,,0,no,__EH_prolog,1,da865535,1,0x4d1430,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x4d1468,35,plain-only,,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4d17a8,53,plain-only,,,3,,0,,,0,no,Core_UnName,1,5ebf6e1f,1,0x4d1468,,unnamed,,Object,2,subsystem,,1 named callee(s); unnamed parent; chains to Object at depth 2
+0x4d1880,53,named,IntProperty,,3,,0,,,0,no,,0,,0,0x4d17a8,,unnamed,parent-unnamed,Object,3,nothing,,unnamed parent; chains to Object at depth 3
+0x4d1958,53,named,BoolProperty,,4,UseSimpleLineCollision|UseSimpleBoxCollision|UseSimpleKarmaCollision|UseVertexColor,9,,,2,no,Engine_UnMaterial,1,b05183c8,3,0x4d17a8,,unnamed,parent-unnamed,Object,3,class-literal,,2 literal(s) are class names; 9 field literal(s); 1 named callee(s); unnamed parent; chains to Object at depth 3
+0x4d1a30,53,named,FloatProperty,,3,,0,,,0,no,,0,,0,0x4d17a8,,unnamed,parent-unnamed,Object,3,nothing,,unnamed parent; chains to Object at depth 3
+0x4d1f88,54,named,AudioSubsystem,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4c78c0,,unnamed,parent-unnamed,,0,subsystem,,2 named callee(s); unnamed parent
+0x4d21f8,54,named,XBoxAudioSubsystem,,2,,0,,,0,no,Core_UnTemplate|ctor_AudioSubsystem|dtor_AudioSubsystem,3,3105ed3c,1,0x4d1f88,AudioSubsystem,named,no-script-chain,AudioSubsystem,1,subsystem,,3 named callee(s); named parent; chains to AudioSubsystem at depth 1
+0x4d2400,37,plain-only,,,1,,0,,,0,no,,0,,0,0x4c78c0,,unnamed,,,0,nothing,,unnamed parent
+0x4d2abc,6,at-least,,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,,,none,,,0,subsystem,,2 named callee(s)
+0x4d2ad4,1,at-least,,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,,,none,,,0,subsystem,,2 named callee(s)
+0x4d2ad8,37,named,XHVVoiceSubsystem,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,,,none,,,0,subsystem,,2 named callee(s)
+0x4d2e58,29,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d3118,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d3248,22,plain-only,,,1,No %s exporter found for %s|Not replacing %s because identical|Core|Overwrite,10,,,0,no,Core_UExporter|Core_UnTemplate|_wcscmp|appAssertFailed,4,e1580fb5,1,,,none,,,0,subsystem,,10 field literal(s); 4 named callee(s)
+0x4d32a0,53,named,StrProperty,,4,Engine|Alias|Command|Aliases,7,,,1,no,Core_UnName|Core_UnObj|Core_UnProp|Engine_UnIn|Engine_UnInteractionMaster,5,724598f1,2,0x4d17a8,,unnamed,parent-unnamed,Object,3,class-literal,,1 literal(s) are class names; 7 field literal(s); 5 named callee(s); unnamed parent; chains to Object at depth 3
+0x4d3378,53,named,ArrayProperty,,4,UseSimpleLineCollision|UseSimpleBoxCollision|UseSimpleKarmaCollision|UseVertexColor,9,,,2,no,Engine_UnMaterial,1,b05183c8,3,0x4d17a8,,unnamed,parent-unnamed,Object,3,class-literal,,2 literal(s) are class names; 9 field literal(s); 1 named callee(s); unnamed parent; chains to Object at depth 3
+0x4d34d8,32,plain-only,,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4d3828,32,named,ObjectExporterT3D,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4d3af0,33,plain-only,,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4d3ba0,22,plain-only,,,2,,0,,,0,no,,0,,0,0x4c7860,,unnamed,,,0,nothing,,unnamed parent
+0x4d40d0,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4d4418,43,named,Struct,,4,Core,1,,,0,no,Core_UnClass|Core_UnObj|Core_UnTemplate|ctor_Object,4,f294583c,1,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 field literal(s); 4 named callee(s); named parent; chains to Object at depth 1
+0x4d44c8,42,named,Function,,2,,0,,,0,no,ctor_Object|dtor_Struct,2,6fbbe467,2,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4d4570,42,named,State,,3,,0,,,0,no,ctor_Object|dtor_Struct,2,6fbbe467,2,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4d4618,35,named,Const,,3,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4d4870,42,named,Class,,4,Core,1,,,0,no,Core_UnClass|Core_UnObj|Core_UnTemplate|ctor_Object|dtor_State,5,98969663,1,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 field literal(s); 5 named callee(s); named parent; chains to Object at depth 1
+0x4d9238,40,named,PackageMap,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4da500,31,named,Linker,,3,,0,,,0,no,Core_UnObj|Core_UnTemplate|appAssertFailed|ctor_Object,4,87c1386d,1,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x4da720,22,at-least,,,3,,0,,,0,no,Core_UnLinker|Core_UnTemplate|ctor_Linker|dtor_Linker,4,65002c11,4,,,none,,,0,subsystem,,4 named callee(s)
+0x4da778,32,named,LinkerLoad,,3,,0,,,0,no,Core_UnLinker|Core_UnTemplate|ctor_Linker|dtor_Linker,4,65002c11,4,,,none,,,0,subsystem,,4 named callee(s)
+0x4da850,22,at-least,,,3,Core|OpenFailed,2,,,0,no,Core_UnLinker|Core_UnTemplate|ctor_Linker|dtor_Linker,4,65002c11,4,,,none,,,0,subsystem,,2 field literal(s); 4 named callee(s)
+0x4da8a8,31,named,LinkerSave,,3,Core|OpenFailed,2,,,0,no,Core_UnLinker|Core_UnTemplate|ctor_Linker|dtor_Linker,4,65002c11,4,,,none,,,0,subsystem,,2 field literal(s); 4 named callee(s)
+0x4da970,22,at-least,,,3,,0,,,0,no,ctor_LinkerSave|dtor_LinkerSave,2,3e9d55d5,2,,,none,,,0,subsystem,,2 named callee(s)
+0x4da9c8,31,named,LinkerSaveGame,,3,,0,,,0,no,ctor_LinkerSave|dtor_LinkerSave,2,3e9d55d5,2,,,none,,,0,subsystem,,2 named callee(s)
+0x4daa48,22,at-least,,,3,,0,,,0,no,ctor_LinkerLoad|dtor_LinkerLoad,2,c9efd222,2,,,none,,,0,subsystem,,2 named callee(s)
+0x4daaa0,32,named,LinkerLoadGame,,3,,0,,,0,no,ctor_LinkerLoad|dtor_LinkerLoad,2,c9efd222,2,,,none,,,0,subsystem,,2 named callee(s)
+0x4dd250,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4dd2a8,30,named,Object,,5,%s |Attempt to copy-construct %s from %s|Core,3,,,0,no,Core_UnObj|appAssertFailed|thunk__wcslen,3,85e1fc24,1,,,none,,,0,subsystem,,3 field literal(s); 3 named callee(s)
+0x4dd488,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4dd4e0,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4dd538,22,plain-only,,,1,Official.ini|SavePackagesAsOfficial|Packages|Save.tmp,6,,,0,no,Core_UnObj|_wcscat|appAssertFailed|thunk__wcslen,4,2927ca0a,4,,,none,,,0,subsystem,,6 field literal(s); 4 named callee(s)
+0x4dd590,22,plain-only,,,1,Official.ini|SavePackagesAsOfficial|Packages|Save.tmp,6,,,0,no,Core_UnObj|_wcscat|appAssertFailed|thunk__wcslen,4,2927ca0a,4,,,none,,,0,subsystem,,6 field literal(s); 4 named callee(s)
+0x4dd5e8,22,plain-only,,,1,Official.ini|SavePackagesAsOfficial|Packages|Save.tmp,6,,,0,no,Core_UnObj|_wcscat|appAssertFailed|thunk__wcslen,4,2927ca0a,4,,,none,,,0,subsystem,,6 field literal(s); 4 named callee(s)
+0x4dd640,22,plain-only,,,1,Official.ini|SavePackagesAsOfficial|Packages|Save.tmp,6,,,0,no,Core_UnObj|_wcscat|appAssertFailed|thunk__wcslen,4,2927ca0a,4,,,none,,,0,subsystem,,6 field literal(s); 4 named callee(s)
+0x4ddd50,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4ddf70,2,at-least,,,2,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,,,none,,,0,subsystem,,1 named callee(s)
+0x4ddf78,30,named,TextBuffer,,2,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,,,none,,,0,subsystem,,1 named callee(s)
+0x4de008,31,named,Commandlet,Object,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnObj,3,7dc9ea45,1,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4de088,30,named,Package,,3,CONFLICTS|NOGC|Core,3,,,0,no,Core_UnClass|Core_UnObj|Core_UnProp|Core_UnVcWin32,4,9e43b8e9,1,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 field literal(s); 4 named callee(s); named parent; chains to Object at depth 1
+0x4de118,36,named,Enum,,3,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x4d1468,,unnamed,parent-unnamed,Object,2,subsystem,,1 named callee(s); unnamed parent; chains to Object at depth 2
+0x4de3c0,22,plain-only,,,1,Core,1,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|Core_UnObj|appAssertFailed,3,5367938e,1,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
+0x4de558,22,plain-only,,,1,Core,1,,,0,no,Core_UnObj|Core_UnObjBas|appAssertFailed,3,ef5840f6,1,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
+0x4de7a0,33,named,TextBufferFactory,,2,,0,,,0,no,,0,,0,0x4d3af0,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x4e0b40,53,named,ObjectProperty,,3,UseSimpleLineCollision|UseSimpleBoxCollision|UseSimpleKarmaCollision|UseVertexColor,9,,,2,no,Engine_UnMaterial,1,b05183c8,3,0x4d17a8,,unnamed,parent-unnamed,Object,3,class-literal,,2 literal(s) are class names; 9 field literal(s); 1 named callee(s); unnamed parent; chains to Object at depth 3
+0x4e10c0,53,named,ByteProperty,,3,,0,,,0,no,,0,,0,0x4d1468,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x4e1198,53,named,PointerProperty,,2,,0,,,0,no,,0,,0,0x4d1468,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x4e1270,53,named,ClassProperty,,2,,0,,,0,no,dtor_ObjectProperty,1,b1e89c0f,1,0x4d1468,,unnamed,parent-unnamed,Object,2,subsystem,,1 named callee(s); unnamed parent; chains to Object at depth 2
+0x4e1348,53,named,NameProperty,,3,Engine|Alias|Command|Aliases,7,,,1,no,Core_UnName|Core_UnObj|Core_UnProp|Engine_UnIn|Engine_UnInteractionMaster,5,724598f1,2,0x4d1468,,unnamed,parent-unnamed,Object,2,class-literal,,1 literal(s) are class names; 7 field literal(s); 5 named callee(s); unnamed parent; chains to Object at depth 2
+0x4e1420,53,named,FixedArrayProperty,,2,,0,,,0,no,,0,,0,0x4d1468,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x4e14f8,53,named,MapProperty,,2,,0,,,0,no,,0,,0,0x4d1468,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x4e15d0,53,named,StructProperty,,4,Engine|Alias|Command|Aliases,15,,,2,no,Core_UnName|Core_UnObj|Core_UnProp|Engine_UnIn|Engine_UnInteractionMaster|Engine_UnMaterial,6,c4a1e7b1,1,0x4d1468,,unnamed,parent-unnamed,Object,2,class-literal,,2 literal(s) are class names; 15 field literal(s); 6 named callee(s); unnamed parent; chains to Object at depth 2
+0x4e16a8,53,named,DelegateProperty,,2,,0,,,0,no,,0,,0,0x4d1468,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x4e1ce8,32,named,new,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e24a8,123,named,FileLog,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e2720,123,named,GameStats,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e2978,123,named,SceneSubtitles,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e2d28,123,named,xEmitter,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e2fc0,123,named,xPickUpBase,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e3258,123,named,xProcMesh,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4e3520,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x4e3568,123,named,xWeatherEffect,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4e50c8,123,named,KActor,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,3 named callee(s); named parent; chains to Actor at depth 1
+0x4e52b8,125,named,KConstraint,KActor,2,,0,,,0,no,ctor_Object|dtor_KActor,2,1a9f48b0,2,0x4e50c8,KActor,named,agree,KActor,1,subsystem,,2 named callee(s); named parent; chains to KActor at depth 1
+0x4e54b0,125,named,KCarWheelJoint,KConstraint,2,,0,,,0,no,ctor_Object|dtor_KConstraint,2,2a5be0d4,4,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e56a8,125,named,KConeLimit,KConstraint,2,,0,,,0,no,ctor_Object|dtor_KConstraint,2,2a5be0d4,4,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e58a0,125,named,KHinge,KConstraint,2,,0,,,0,no,ctor_Object|dtor_KConstraint,2,2a5be0d4,4,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e5a98,125,named,KBSJoint,KConstraint,2,,0,,,0,no,ctor_Object|dtor_KConstraint,2,2a5be0d4,4,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e77b0,30,named,KarmaParamsCollision,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e7a18,136,named,KVehicle,Vehicle,2,,0,,,0,no,ctor_Vehicle|dtor_Vehicle,2,6a52ec2f,1,0x4ca830,Vehicle,named,agree,Vehicle,1,subsystem,,2 named callee(s); named parent; chains to Vehicle at depth 1
+0x4e7c38,123,named,KRepulsor,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e7e28,123,named,KTire,KActor,2,,0,,,0,no,ctor_Object|dtor_KActor,2,1a9f48b0,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e8018,30,named,KarmaParams,KarmaParamsCollision,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_KarmaParamsCollision,3,848e35aa,1,0x4e77b0,KarmaParamsCollision,named,agree,KarmaParamsCollision,1,subsystem,,3 named callee(s); named parent; chains to KarmaParamsCollision at depth 1
+0x4e8090,30,named,KarmaParamsSkel,KarmaParams,2,,0,,,0,no,ctor_Object|dtor_KarmaParams,2,bb68cc05,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e8108,30,named,KarmaParamsRBFull,KarmaParams,2,,0,,,0,no,ctor_Object|dtor_KarmaParams,2,bb68cc05,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e8440,30,named,KMeshProps,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4eaea8,47,plain-only,,,1,,0,,,0,no,,0,,0,0x4c78c0,,unnamed,,,0,nothing,,unnamed parent
+0x4eaf68,62,at-least,,,1,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
+0x4eb0a8,48,named,NullRenderDevice,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4eaea8,,unnamed,parent-unnamed,,0,subsystem,,2 named callee(s); unnamed parent
+0x4eb2b0,58,named,TextureEditable,Texture,2,,0,,,0,no,ctor_Texture|dtor_Texture,2,5a566011,5,0x4cfba0,Texture,named,agree,Texture,1,subsystem,,2 named callee(s); named parent; chains to Texture at depth 1
+0x4eb420,31,named,ExportCacheCommandlet,,2,,0,,,0,no,ctor_Commandlet|dtor_Commandlet,2,60261839,5,0x4de008,Commandlet,named,no-script-chain,Commandlet,1,subsystem,,2 named callee(s); named parent; chains to Commandlet at depth 1
+0x4eb914,12,plain-only,,,2,,0,,,0,no,Core_UnTemplate|Engine_UnOctree,2,9e6517ec,1,,,none,,,0,subsystem,,2 named callee(s)
+0x4ebb00,12,plain-only,,,2,,0,,,0,no,Core_UnTemplate|_rand,2,bdb95b89,1,,,none,,,0,subsystem,,2 named callee(s)
+0x4ebb38,30,named,ReachSpec,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ebdd0,30,named,LogEntry,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ebe48,30,named,LevelSummary,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ebf54,6,plain-only,,,2,Registering new player (%s) with userID (0x%016I64X - 0x%08X)|UUIXInteraction::AddPlayerItem - Matched existing SGPlayerItem t|new|RegisterPlayer failed with code 0x%x,4,,,0,no,appAssertFailed|thunk_FUN_0032fc55,2,ffaf1e68,1,,,none,,,0,subsystem,,4 field literal(s); 2 named callee(s)
+0x4ebfd8,124,named,InterpolationPoint,Keypoint,2,,0,,,0,no,ctor_Object|dtor_Keypoint,2,02dee5af,6,0x4c9e58,Keypoint,named,agree,Keypoint,1,subsystem,,2 named callee(s); named parent; chains to Keypoint at depth 1
+0x4ec1c8,124,named,MapVolumeViewPoint,InterpolationPoint,2,,0,,,0,no,ctor_Object|dtor_InterpolationPoint,2,bbb6f3af,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ec3b8,124,named,AmbientSound,Keypoint,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Keypoint,3,7e3ed67e,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4ec5a8,124,named,PolyMarker,Keypoint,2,,0,,,0,no,ctor_Object|dtor_Keypoint,2,02dee5af,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ec798,124,named,ClipMarker,Keypoint,2,,0,,,0,no,ctor_Object|dtor_Keypoint,2,02dee5af,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ec988,123,named,TeamInfo,ReplicationInfo,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|ctor_Object|dtor_ReplicationInfo,4,658fe5ac,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x4ecb78,123,named,GameReplicationInfo,ReplicationInfo,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_Object|dtor_ReplicationInfo,5,83bb20b9,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,5 named callee(s); named parent; chains to Object at depth 1
+0x4ecd68,123,named,SceneReplicationInfo,ReplicationInfo,2,,0,,,0,no,ctor_Object|dtor_ReplicationInfo,2,21cd943e,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ecf58,123,named,LinkedReplicationInfo,ReplicationInfo,2,,0,,,0,no,ctor_Object|dtor_ReplicationInfo,2,21cd943e,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ed148,124,named,PlayerReplicationInfo,ReplicationInfo,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_ReplicationInfo,3,fb6d10b9,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4ed338,123,named,AnnouncerVoice,Info,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Info,3,77e49eb1,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4ed528,123,named,Mutator,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ed718,123,named,PotentialClimbWatcher,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ed908,123,named,InternetInfo,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4edaf8,123,named,SavedMove,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4edce8,123,named,ZoneInfo,Info,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Info,3,77e49eb1,6,0x4ca238,Info,named,agree,Info,1,subsystem,,3 named callee(s); named parent; chains to Info at depth 1
+0x4eded8,123,named,WarpZoneInfo,ZoneInfo,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|ctor_Object|dtor_ZoneInfo,4,dd7ac1aa,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x4ee0c8,123,named,SkyZoneInfo,ZoneInfo,2,,0,,,0,no,ctor_Object|dtor_ZoneInfo,2,6ba166bd,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ee2b8,123,named,GameInfo,Info,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|ctor_Object,3,1baebb4f,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4ee4a8,134,named,Scout,Pawn,2,,0,,,0,no,ctor_Pawn|dtor_Pawn,2,f6186f6c,2,0x4ca618,Pawn,named,agree,Pawn,1,subsystem,,2 named callee(s); named parent; chains to Pawn at depth 1
+0x4ee6c0,125,named,Brush,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4ee910,125,named,Volume,Brush,2,,0,,,0,no,ctor_Object|dtor_Brush,2,22391a5b,1,0x4ee6c0,Brush,named,agree,Brush,1,subsystem,,2 named callee(s); named parent; chains to Brush at depth 1
+0x4eeb08,125,named,MapVolume,Volume,2,,0,,,0,no,ctor_Object|dtor_Volume,2,f068d224,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4eed00,125,named,BlockingVolume,Volume,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Volume,3,c40e0f06,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4eeef8,125,named,PhysicsVolume,Volume,2,,0,,,0,no,ctor_Object|dtor_Volume,2,f068d224,2,0x4ee910,Volume,named,agree,Volume,1,subsystem,,2 named callee(s); named parent; chains to Volume at depth 1
+0x4ef0f0,125,named,LadderVolume,PhysicsVolume,2,,0,,,0,no,ctor_Object|dtor_PhysicsVolume,2,9fa69d63,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ef2e8,125,named,DefaultPhysicsVolume,PhysicsVolume,2,,0,,,0,no,ctor_Object|dtor_PhysicsVolume,2,9fa69d63,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ef4e0,138,named,PathNode,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4cae78,NavigationPoint,named,agree,NavigationPoint,1,subsystem,,2 named callee(s); named parent; chains to NavigationPoint at depth 1
+0x4ef708,138,named,RoadPathNode,PathNode,2,,0,,,0,no,ctor_Object|dtor_PathNode,2,a08c58df,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4ef930,138,named,FlyingPathNode,PathNode,2,,0,,,0,no,ctor_Object|dtor_PathNode,2,a08c58df,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4efb58,138,named,ReplicatorPathNode,PathNode,2,,0,,,0,no,ctor_Object|dtor_PathNode,2,a08c58df,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4efd80,138,named,SmallNavigationPoint,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4cae78,NavigationPoint,named,agree,NavigationPoint,1,subsystem,,2 named callee(s); named parent; chains to NavigationPoint at depth 1
+0x4effa8,138,named,LevelLoadingView,SmallNavigationPoint,2,,0,,,0,no,ctor_Object|dtor_SmallNavigationPoint,2,85a3b820,7,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f01d0,138,named,Ladder,SmallNavigationPoint,2,,0,,,0,no,ctor_Object|dtor_SmallNavigationPoint,2,85a3b820,7,0x4efd80,SmallNavigationPoint,named,agree,SmallNavigationPoint,1,subsystem,,2 named callee(s); named parent; chains to SmallNavigationPoint at depth 1
+0x4f03f8,138,named,AutoLadder,Ladder,2,,0,,,0,no,ctor_Object|dtor_Ladder,2,b035cb8b,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f0620,138,named,WarpZoneMarker,SmallNavigationPoint,2,,0,,,0,no,ctor_Object|dtor_SmallNavigationPoint,2,85a3b820,7,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f0848,138,named,AIMarker,SmallNavigationPoint,2,,0,,,0,no,ctor_Object|dtor_SmallNavigationPoint,2,85a3b820,7,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f0a70,138,named,InventorySpot,SmallNavigationPoint,2,,0,,,0,no,ctor_Object|dtor_SmallNavigationPoint,2,85a3b820,7,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f0c98,138,named,PlayerStart,SmallNavigationPoint,2,,0,,,0,no,ctor_Object|dtor_SmallNavigationPoint,2,85a3b820,7,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f0ec0,138,named,Teleporter,SmallNavigationPoint,2,,0,,,0,no,ctor_Object|dtor_SmallNavigationPoint,2,85a3b820,7,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f10e8,138,named,JumpDest,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f1310,138,named,JumpPad,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f1538,138,named,Door,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4cae78,NavigationPoint,named,agree,NavigationPoint,1,subsystem,,2 named callee(s); named parent; chains to NavigationPoint at depth 1
+0x4f1760,138,named,AutoDoor,Door,2,,0,,,0,no,ctor_Object|dtor_Door,2,19bab226,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f1988,138,named,LiftExit,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f1bb0,138,named,LiftCenter,NavigationPoint,2,,0,,,0,no,ctor_Object|dtor_NavigationPoint,2,a729a6ea,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f1dd8,123,named,AvoidMarker,Triggers,2,,0,,,0,no,ctor_Object|dtor_Triggers,2,4ed8cc58,5,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f1fc8,123,named,LineOfSightTrigger,Triggers,2,,0,,,0,no,ctor_Object|dtor_Triggers,2,4ed8cc58,5,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f21b8,123,named,SVehicleTrigger,Triggers,2,,0,,,0,no,ctor_Object|dtor_Triggers,2,4ed8cc58,5,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f23a8,123,named,Trigger,Triggers,2,,0,,,0,no,ctor_Object|dtor_Triggers,2,4ed8cc58,5,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f2598,123,named,Pickup,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4f2788,123,named,StationaryWeapons,Pickup,2,,0,,,0,no,ctor_Object|dtor_Pickup,2,6b644b47,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f2978,123,named,Ammo,Pickup,2,,0,,,0,no,ctor_Object|dtor_Pickup,2,6b644b47,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f2b68,123,named,AntiPortalActor,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f2d58,123,named,InventoryAttachment,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4f2f48,123,named,WeaponAttachment,InventoryAttachment,2,,0,,,0,no,ctor_Object|dtor_InventoryAttachment,2,e278dfe2,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f3138,123,named,DamageType,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4f3328,123,named,SVehicleFactory,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f3518,123,named,VehiclePart,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f3708,123,named,Inventory,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4c9c60,Actor,named,agree,Actor,1,subsystem,,2 named callee(s); named parent; chains to Actor at depth 1
+0x4f38f8,123,named,Ammunition,Inventory,2,,0,,,0,no,ctor_Object|dtor_Inventory,2,68f7ea96,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f3ae8,123,named,Powerups,Inventory,2,,0,,,0,no,ctor_Object|dtor_Inventory,2,68f7ea96,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f3cd8,123,named,Weapon,Inventory,2,,0,,,0,no,ctor_Object|dtor_Inventory,2,68f7ea96,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f3ec8,123,named,Projectile,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f40b8,123,named,Decoration,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f42a8,123,named,AvoidanceWaypoint,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f4498,123,named,Vignette,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f4688,123,named,Note,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f4878,123,named,Light,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f4a68,123,named,LevelInfo,ZoneInfo,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_ZoneInfo,3,7a32d7ed,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4f4c58,30,named,GameProfile,Object,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnObj|ctor_Object,4,83e612c9,1,0x4dd2a8,Object,named,agree,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x4f4cd0,31,named,Manifest,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f6188,135,named,Camera,PlayerController,2,,0,,,0,no,ctor_PlayerController|dtor_PlayerController,2,2f0d54b9,2,0x4d0738,PlayerController,named,agree,PlayerController,1,subsystem,,2 named callee(s); named parent; chains to PlayerController at depth 1
+0x4f6d38,30,named,TextToSpeechAlias,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f6dd8,127,named,IMusicActor,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4f6ff8,30,named,I3DL2Listener,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f7070,12,plain-only,,,1,[SDS_PLAYSOUND] Sound: %s %d|new,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x4f70a0,2,no-store,,,0,,0,,,0,no,,0,,0,,,none,,,0,window,"dword run 0x004f6ff8+44; this address at offset 42; 3 listed table(s) in the run, 2 with an installer body; the recorded store site 0x000e1706 lies in no body of the map","dword run 0x004f6ff8+44; this address at offset 42; 3 listed table(s) in the run, 2 with an installer body; the recorded store site 0x000e1706 lies in no body of the map"
+0x4f72a0,46,named,Sound,Object,4,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f7380,46,named,ProceduralSound,Sound,2,,0,,,0,no,ctor_Sound|dtor_Sound,2,e107486d,1,0x4f72a0,Sound,named,agree,Sound,1,subsystem,,2 named callee(s); named parent; chains to Sound at depth 1
+0x4f7468,47,named,SoundGroup,Sound,2,,0,,,0,no,Core_UnTemplate|ctor_Sound|dtor_Sound,3,b09d1b1d,1,0x4f72a0,Sound,named,agree,Sound,1,subsystem,,3 named callee(s); named parent; chains to Sound at depth 1
+0x4f7690,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x4f76b8,40,named,ParticleEmitter,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4f7758,42,named,BeamEmitter,ParticleEmitter,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_ParticleEmitter,3,ddfcdd3a,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4f7868,22,plain-only,,,2,,0,,,0,no,,0,,0,0x4d3ba0,,unnamed,,,0,nothing,,unnamed parent
+0x4f8960,30,named,CacheManager,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f9618,32,named,CameraOverlay,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4f9728,32,named,MotionBlur,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4fa110,51,named,Canvas,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fa390,37,plain-only,,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fa5a8,2,at-least,,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
+0x4fa5b0,37,named,ControlChannel,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
+0x4fa650,37,named,FileChannel,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4fa6f0,37,named,VoiceChannel,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4fa958,37,named,ActorChannel,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fb9b8,40,named,PackageMapLevel,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,ctor_PackageMap|dtor_PackageMap,2,6b78b135,1,0x4d9238,PackageMap,named,no-script-chain,PackageMap,1,subsystem,,6 field literal(s); 2 named callee(s); named parent; chains to PackageMap at depth 1
+0x4fbb30,30,named,PlayerInput,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fbba8,30,named,CheatManager,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fc060,30,named,AdminBase,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fc0f8,30,named,AIMsgManager,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x4fc1b0,39,named,Primitive,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fc250,39,named,ConvexVolume,,2,,0,,,0,no,Core_UnTemplate|ctor_Primitive|dtor_Primitive,3,3abfde25,3,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,3 named callee(s); named parent; chains to Primitive at depth 1
+0x4fc35c,8,plain-only,,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
+0x4fc4cc,8,plain-only,,,3,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,,,none,,,0,subsystem,,3 named callee(s)
+0x4fc4f0,30,plain-only,,,3,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,,,none,,,0,subsystem,,3 named callee(s)
+0x4fc568,8,plain-only,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4fc588,34,plain-only,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4fc610,8,at-least,,,3,Engine|ini:Engine.Engine.DemoRecordingDevice,2,ini:Engine.Engine.DemoRecordingDevice,Engine,1,no,Core_UnObj|Core_UnObjBas|Engine_UnDemoRec,3,5e9376cf,2,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 2 field literal(s); 3 named callee(s)
+0x4fc630,34,named,DemoPlayPendingLevel,,3,Engine|ini:Engine.Engine.DemoRecordingDevice,2,ini:Engine.Engine.DemoRecordingDevice,Engine,1,no,Core_UnObj|Core_UnObjBas|Engine_UnDemoRec,3,5e9376cf,2,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 2 field literal(s); 3 named callee(s)
+0x4fcc08,1,at-least,,,3,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4fcc0c,2,at-least,,,3,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4fcc18,42,named,DemoRecConnection,,3,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4fccc0,1,at-least,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4fccc8,40,named,DemoRecDriver,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x4fcfe0,36,plain-only,,,1,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,0x4dd2a8,Object,named,,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4fd070,36,named,ChannelDownload,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x5040cc,1,at-least,,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
+0x5040d0,56,named,Engine,Subsystem,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
+0x504560,31,named,ServerCommandlet,,2,,0,,,0,no,ctor_Commandlet|dtor_Commandlet,2,60261839,5,0x4de008,Commandlet,named,no-script-chain,Commandlet,1,subsystem,,2 named callee(s); named parent; chains to Commandlet at depth 1
+0x5045e0,31,named,UModUnpackCommandlet,,2,,0,,,0,no,ctor_Commandlet|dtor_Commandlet,2,60261839,5,0x4de008,Commandlet,named,no-script-chain,Commandlet,1,subsystem,,2 named callee(s); named parent; chains to Commandlet at depth 1
+0x504660,31,named,MasterMD5Commandlet,,2,,0,,,0,no,Core_UnTemplate|ctor_Commandlet|dtor_Commandlet,3,8a0d3bee,1,0x4de008,Commandlet,named,no-script-chain,Commandlet,1,subsystem,,3 named callee(s); named parent; chains to Commandlet at depth 1
+0x5046e0,30,named,GlobalTempObjects,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x507bb8,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x507be0,39,named,FluidSurfacePrimitive,,2,,0,,,0,no,ctor_Primitive|dtor_Primitive,2,b670b6ad,5,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,2 named callee(s); named parent; chains to Primitive at depth 1
+0x507c7c,5,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x507da0,123,named,FluidSurfaceOscillator,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x507f90,123,named,FluidSurfaceInfo,Info,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Info,3,77e49eb1,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5081d8,30,named,Font,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5085d8,30,named,Polys,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x509010,123,named,MaplistManagerBase,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x509200,123,named,PrecacheHack,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x509438,66,named,GameEngine,Engine,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x5040d0,Engine,named,agree,Engine,1,subsystem,,1 named callee(s); named parent; chains to Engine at depth 1
+0x50a808,30,named,CrosshairPack,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50c314,1,at-least,,,2,Engine|Core|EInputKey,3,,,1,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnObj|Engine_UnInteractionMaster|ctor_Object,5,fd7d92d3,2,,,none,,,0,class-literal,,1 literal(s) are class names; 3 field literal(s); 5 named callee(s)
+0x50c318,45,named,Input,,2,Engine|Core|EInputKey,3,,,1,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnObj|Engine_UnInteractionMaster|ctor_Object,5,fd7d92d3,2,,,none,,,0,class-literal,,1 literal(s) are class names; 3 field literal(s); 5 named callee(s)
+0x50c808,30,named,Interactions,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50c880,36,named,Interaction,Interactions,2,,0,,,0,no,ctor_Object|dtor_Interactions,2,377d0a03,1,0x50c808,Interactions,named,agree,Interactions,1,subsystem,,2 named callee(s); named parent; chains to Interactions at depth 1
+0x50c910,37,named,AbstractUIXInteraction,Interaction,2,,0,,,0,no,ctor_Object|dtor_Interaction,2,e72e56eb,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50ca30,39,named,BaseGUIController,Interaction,2,,0,,,0,no,ctor_Object|dtor_Interaction,2,e72e56eb,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50cb80,36,named,Console,Interaction,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|ctor_Object|dtor_Interaction,4,2ea559c6,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x50cc68,30,named,InteractionMaster,Interactions,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Interactions,3,e62d6c73,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x50e88c,8,at-least,,,3,Engine|Brush,2,,,2,no,Core_UnObj|Core_UnTemplate|Engine_UnActor|Engine_UnLevAct|Engine_UnModel|appAssertFailed,6,6721bcbe,2,,,none,,,0,class-literal,,2 literal(s) are class names; 2 field literal(s); 6 named callee(s)
+0x50e8b0,71,named,Level,,3,Engine|Brush,2,,,2,no,Core_UnObj|Core_UnTemplate|Engine_UnActor|Engine_UnLevAct|Engine_UnModel|appAssertFailed,6,6721bcbe,2,,,none,,,0,class-literal,,2 literal(s) are class names; 2 field literal(s); 6 named callee(s)
+0x50ec30,42,named,Mesh,,2,,0,,,0,no,ctor_Primitive|dtor_Primitive,2,b670b6ad,5,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,2 named callee(s); named parent; chains to Primitive at depth 1
+0x50ecd8,91,named,MeshInstance,,2,,0,,,0,no,ctor_Primitive|dtor_Primitive,2,b670b6ad,5,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,2 named callee(s); named parent; chains to Primitive at depth 1
+0x50ee48,92,named,LodMeshInstance,,2,,0,,,0,no,ctor_Primitive|dtor_MeshInstance,2,b71524a8,1,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,2 named callee(s); named parent; chains to Primitive at depth 1
+0x50f020,45,named,LodMesh,,2,,0,,,0,no,Core_UnTemplate|ctor_Primitive|dtor_Mesh,3,469dd37d,1,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,3 named callee(s); named parent; chains to Primitive at depth 1
+0x50f178,47,named,ConstantMaterial,RenderedMaterial,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7a10,RenderedMaterial,named,agree,RenderedMaterial,1,subsystem,,1 named callee(s); named parent; chains to RenderedMaterial at depth 1
+0x50f238,46,named,Modifier,Material,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7958,Material,named,agree,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x50f2f0,47,named,TexModifier,Modifier,2,,0,,,0,no,ctor_Object|dtor_Modifier,2,d95bbd8b,4,0x50f238,Modifier,named,agree,Modifier,1,subsystem,,2 named callee(s); named parent; chains to Modifier at depth 1
+0x50f3b0,47,named,TexOscillator,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x50f2f0,TexModifier,named,agree,TexModifier,1,subsystem,,2 named callee(s); named parent; chains to TexModifier at depth 1
+0x50f470,47,named,TexPanner,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x50f2f0,TexModifier,named,agree,TexModifier,1,subsystem,,2 named callee(s); named parent; chains to TexModifier at depth 1
+0x50f618,46,named,TexCoordMaterial,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x50f6d0,46,named,VertexColor,RenderedMaterial,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x50f788,47,named,FadeColor,ConstantMaterial,2,,0,,,0,no,ctor_Object|dtor_ConstantMaterial,2,db16e680,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50f848,47,named,ConstantColor,ConstantMaterial,2,,0,,,0,no,ctor_Object|dtor_ConstantMaterial,2,db16e680,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50f908,46,named,Shader,RenderedMaterial,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x50f9c0,46,named,OpacityModifier,Modifier,2,,0,,,0,no,ctor_Object|dtor_Modifier,2,d95bbd8b,4,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50fa78,46,named,FinalBlend,Modifier,2,,0,,,0,no,ctor_Object|dtor_Modifier,2,d95bbd8b,4,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50fb30,47,named,TexCoordSource,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50fbf0,47,named,TexMatrix,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50fcb0,47,named,TexEnvMap,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50fd70,47,named,TexOscillatorTriggered,TexOscillator,2,,0,,,0,no,ctor_Object|dtor_TexOscillator,2,08754c2c,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50fe30,47,named,TexRotator,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50fef0,47,named,TexScaler,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x50ffb0,47,named,VariableTexPanner,TexModifier,2,,0,,,0,no,ctor_Object|dtor_TexModifier,2,5912d92c,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x510070,47,named,TexPannerTriggered,TexPanner,2,,0,,,0,no,ctor_Object|dtor_TexPanner,2,9f34d9a3,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x510130,46,named,ColorModifier,Modifier,2,,0,,,0,no,ctor_Object|dtor_Modifier,2,d95bbd8b,4,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5101e8,46,named,Combiner,Material,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x5104a8,48,named,ProxyBitmapMaterial,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x510568,46,named,MaterialSequence,Modifier,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Modifier,3,86ef0b3b,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x510620,46,named,MaterialSwitch,Modifier,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Modifier,3,86ef0b3b,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5106d8,46,named,MultiPassMaterial,Material,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5107c0,58,named,BackBufferTexture,Texture,2,,0,,,0,no,ctor_Texture|dtor_Texture,2,5a566011,5,0x4cfba0,Texture,named,agree,Texture,1,subsystem,,2 named callee(s); named parent; chains to Texture at depth 1
+0x510cf0,40,named,MeshEmitter,ParticleEmitter,2,,0,,,0,no,ctor_Object|dtor_ParticleEmitter,2,7ea0896e,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x510e6c,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x510e90,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x510eb8,18,plain-only,,,1,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|__allmul,2,959bde7a,1,,,none,,,0,subsystem,,2 named callee(s)
+0x510f00,16,plain-only,,,2,,0,,,0,no,__allmul,1,e06435d6,33,0x510eb8,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x510f78,18,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x510fc8,39,named,Model,,3,,0,,,0,no,Core_UnTemplate|ctor_Primitive|dtor_Primitive,3,3abfde25,3,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,3 named callee(s); named parent; chains to Primitive at depth 1
+0x5110c8,125,named,Mover,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x511308,30,named,Movie,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x511380,12,plain-only,,,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,1 named callee(s)
+0x5113b0,12,plain-only,,,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x511380,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x511538,59,named,MovieTexture,Texture,2,,0,,,0,no,ctor_Texture|dtor_Texture,2,5a566011,5,0x4cfba0,Texture,named,agree,Texture,1,subsystem,,2 named callee(s); named parent; chains to Texture at depth 1
+0x5124a4,12,plain-only,,,2,FCollisionOctree RootNode,1,,,0,no,Engine_UnOctree,1,7e67ba1a,1,,,none,,,0,subsystem,,1 field literal(s); 1 named callee(s)
+0x512798,31,named,PackageCheckInfo,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x512938,46,named,ParticleMaterial,RenderedMaterial,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z,2,98d298f1,1,0x4c7958,Material,named,ancestor,Material,1,subsystem,,2 named callee(s); named parent; chains to Material at depth 1
+0x5139f4,8,at-least,,,3,Engine|ini:Engine.Engine.NetworkDevice|HELLO REVISION=0 MINVER=%i VER=%i,3,ini:Engine.Engine.NetworkDevice,Engine,1,no,Core_UnObj|Core_UnObjBas|Engine_UnNetDrv,3,480ec979,2,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 3 named callee(s)
+0x513a18,34,named,NetPendingLevel,,3,Engine|ini:Engine.Engine.NetworkDevice|HELLO REVISION=0 MINVER=%i VER=%i,3,ini:Engine.Engine.NetworkDevice,Engine,1,no,Core_UnObj|Core_UnObjBas|Engine_UnNetDrv,3,480ec979,2,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 3 named callee(s)
+0x513fd0,47,named,PixelShaderMaterial,RenderedMaterial,2,,0,,,0,no,,0,,0,0x4c7a10,RenderedMaterial,named,agree,RenderedMaterial,1,nothing,,named parent; chains to RenderedMaterial at depth 1
+0x514090,47,named,PSShieldMaterial,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514150,47,named,PSReplicatorVision,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514210,47,named,PSBump,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x513fd0,PixelShaderMaterial,named,agree,PixelShaderMaterial,1,subsystem,,1 named callee(s); named parent; chains to PixelShaderMaterial at depth 1
+0x5142d0,47,named,PSBumpSpecular,PSBump,2,,0,,,0,no,dtor_PSBump,1,26aeb8bf,2,0x514210,PSBump,named,agree,PSBump,1,subsystem,,1 named callee(s); named parent; chains to PSBump at depth 1
+0x514390,47,named,PSDistortionBaseMaterial,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x513fd0,PixelShaderMaterial,named,agree,PixelShaderMaterial,1,subsystem,,1 named callee(s); named parent; chains to PixelShaderMaterial at depth 1
+0x514450,47,named,PSBlendedDistortionMaterial,PSDistortionBaseMaterial,2,,0,,,0,no,dtor_PSDistortionBaseMaterial,1,9f7585d6,2,0x514390,PSDistortionBaseMaterial,named,agree,PSDistortionBaseMaterial,1,subsystem,,1 named callee(s); named parent; chains to PSDistortionBaseMaterial at depth 1
+0x514510,47,named,PSSubtractiveDistortion,PSBlendedDistortionMaterial,2,,0,,,0,no,dtor_PSBlendedDistortionMaterial,1,75b009fd,3,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x5145d0,47,named,PSAdditiveDistortion,PSBlendedDistortionMaterial,2,,0,,,0,no,dtor_PSBlendedDistortionMaterial,1,75b009fd,3,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514690,47,named,PSModulatedDistortionMaterial,PSBlendedDistortionMaterial,2,,0,,,0,no,dtor_PSBlendedDistortionMaterial,1,75b009fd,3,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514750,47,named,PSDistortionMaterial,PSDistortionBaseMaterial,2,,0,,,0,no,dtor_PSDistortionBaseMaterial,1,9f7585d6,2,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514810,47,named,PSSimple,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x5148d0,47,named,PSEmissiveShader,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514990,47,named,PSEmissiveConstColor,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514a50,47,named,PSBackBufferEffect,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514b10,47,named,PSBlurMaterial,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514bd0,47,named,PSUseTexIndexMaterial,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514c90,47,named,PSLuminanceTexIndexMaterial,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514d50,47,named,PSBloomSelectMaterial,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514e10,47,named,PSWater,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514ed0,47,named,PSMotionBlurMaterial,PixelShaderMaterial,2,,0,,,0,no,dtor_PixelShaderMaterial,1,b938e578,14,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x514f90,47,named,PSVDM,PSBumpSpecular,2,,0,,,0,no,dtor_PSBumpSpecular,1,8f9d2969,2,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x515050,47,named,PSBumpSpecularBSP,PSBumpSpecular,2,,0,,,0,no,dtor_PSBumpSpecular,1,8f9d2969,2,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x515110,47,named,PSBumpBSP,PSBump,2,,0,,,0,no,dtor_PSBump,1,26aeb8bf,2,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x515220,47,named,PSDepthOfFieldMaterial,PixelShaderMaterial,2,Engine,1,,,1,no,Core_UnObjBas|Engine_UnTex|dtor_PixelShaderMaterial,3,f1b63d39,1,0x4c7958,Material,named,ancestor,Material,1,class-literal,,1 literal(s) are class names; 1 field literal(s); 3 named callee(s); named parent; chains to Material at depth 1
+0x5152e0,47,named,PSRefractionMaterial,PixelShaderMaterial,2,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial|dtor_PixelShaderMaterial,3,903d611f,1,0x4c7958,Material,named,ancestor,Material,1,class-literal,,1 literal(s) are class names; 1 field literal(s); 3 named callee(s); named parent; chains to Material at depth 1
+0x5153a0,123,named,WaterSceneManager,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5155d8,30,named,PlayerProfile,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x515bd0,30,named,PlayerStats,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x515c48,30,named,StatsQuery,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x515cc0,30,named,StatsWrite,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x515d38,30,named,PlayerStatCache,PlayerStats,2,,0,,,0,no,ctor_Object|dtor_PlayerStats,2,52885326,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x516808,30,named,PlayInfo,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5169b0,46,named,ProjectorMaterial,RenderedMaterial,2,,0,,,0,no,,0,,0,0x4c7958,Material,named,ancestor,Material,1,nothing,,named parent; chains to Material at depth 1
+0x516ac8,39,named,ProjectorPrimitive,,2,,0,,,0,no,ctor_Primitive|dtor_Primitive,2,b670b6ad,5,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,2 named callee(s); named parent; chains to Primitive at depth 1
+0x516be8,128,named,Projector,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x516fa8,10,plain-only,,,5,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x516fd4,14,plain-only,,,2,,0,,,0,no,Core_UnClass,1,6de980ff,1,0x516fa8,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x51700c,14,plain-only,,,1,,0,,,0,no,,0,,0,0x516fd4,,unnamed,,,0,nothing,,unnamed parent
+0x517044,14,plain-only,,,1,,0,,,0,no,,0,,0,0x516fd4,,unnamed,,,0,nothing,,unnamed parent
+0x51707c,9,plain-only,,,2,Engine,1,,,1,no,Engine_UnActor|__allmul,2,ebaa3dc4,1,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x5170a8,14,plain-only,,,1,,0,,,0,no,,0,,0,0x516fd4,,unnamed,,,0,nothing,,unnamed parent
+0x5170f4,15,plain-only,,,1,,0,,,0,no,Engine_UnTrace,1,7005bfe2,1,0x516fd4,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x517134,15,plain-only,,,1,,0,,,0,no,,0,,0,0x5170f4,,unnamed,,,0,nothing,,unnamed parent
+0x5171b4,15,plain-only,,,1,,0,,,0,no,,0,,0,0x5170f4,,unnamed,,,0,nothing,,unnamed parent
+0x517214,9,plain-only,,,1,Engine,1,,,1,no,Core_UnObjBas|Engine_UnProjector,2,46fa9c3c,2,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x517238,5,plain-only,,,1,Engine,1,,,1,no,Core_UnObjBas|Engine_UnProjector,2,46fa9c3c,2,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x51724c,5,plain-only,,,2,,0,,,0,no,__allmul,1,e06435d6,33,0x517260,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x517260,9,plain-only,,,1,Engine,1,,,1,no,Engine_UnPixelShaderMaterial|__allmul,2,6dd07ba2,1,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x5172ec,5,no-store,,,0,,0,,,0,no,,0,,0,,,none,,,0,run-start,"dword run 0x005172ec+27; this address at offset 0; 1 listed table(s) in the run, 0 with an installer body; the recorded store site 0x001df51e lies in no body of the map","dword run 0x005172ec+27; this address at offset 0; 1 listed table(s) in the run, 0 with an installer body; the recorded store site 0x001df51e lies in no body of the map"
+0x517428,2,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x517430,5,plain-only,,,2,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x517444,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x517468,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51748c,2,plain-only,,,4,Engine,1,,,1,no,Core_UnObjBas|Core_UnTemplate|Engine_UnMaterial|appAssertFailed,4,b549b181,1,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 4 named callee(s)
+0x5174a0,2,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x5174a8,18,plain-only,,,2,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial|__allmul,3,ab185ae3,2,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 3 named callee(s)
+0x517588,18,plain-only,,,2,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial|__allmul,3,ab185ae3,2,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 3 named callee(s)
+0x517778,9,plain-only,,,4,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x517860,30,plain-only,,,1,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,0x4dd2a8,Object,named,,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x5178d8,32,plain-only,,,1,,0,,,0,no,,0,,0,0x517860,,unnamed,,Object,2,nothing,,unnamed parent; chains to Object at depth 2
+0x517a18,30,named,IndexBuffer,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x517a90,32,named,VertexBuffer,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x517b10,32,named,VertexStreamVECTOR,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x517b90,32,named,VertexStreamCOLOR,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x517c10,32,named,VertexStreamUV,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x517c90,32,named,VertexStreamPosNormTex,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x517d10,30,named,SkinVertexBuffer,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x517e88,5,plain-only,,,2,Engine,1,,,1,no,Engine_UnMaterial|appAssertFailed,2,4d9d3892,1,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x517ff0,9,plain-only,,,5,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial|appAssertFailed,3,06a551d5,1,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 3 named callee(s)
+0x518080,18,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x5180c8,15,plain-only,,,2,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x518104,7,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x518120,5,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x518160,9,plain-only,,,3,,0,,,0,no,Core_UnTemplate|__allmul,2,bc25984b,1,,,none,,,0,subsystem,,2 named callee(s)
+0x518184,9,plain-only,,,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,1 named callee(s)
+0x5181a8,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x5181d0,3,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x5181dc,3,no-store,,,0,,0,,,0,no,,0,,0,,,none,,,0,window,"dword run 0x005181d0+6; this address at offset 3; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x00200606 lies in no body of the map","dword run 0x005181d0+6; this address at offset 3; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x00200606 lies in no body of the map"
+0x518468,30,named,MeshObject,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x518530,33,named,SubActionPlayMovie,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5185b8,33,named,SubActionShowText,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x518640,33,named,SubActionSubTitle,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5186c8,33,named,SubActionSceneSpeed,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x518750,33,named,SubActionGameSpeed,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5187d8,33,named,SubActionOrientation,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x518860,33,named,SubActionCameraShake,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5188e8,33,named,SubActionFOV,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x518970,33,named,SubActionTrigger,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5189f8,33,named,SubActionFade,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x518c30,30,named,MatAction,MatObject,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_MatObject,3,8ce9507c,1,0x4c7c00,MatObject,named,agree,MatObject,1,subsystem,,3 named callee(s); named parent; chains to MatObject at depth 1
+0x518ca8,31,named,ActionPause,MatAction,2,,0,,,0,no,ctor_Object|dtor_MatAction,2,f956494f,2,0x518c30,MatAction,named,agree,MatAction,1,subsystem,,2 named callee(s); named parent; chains to MatAction at depth 1
+0x518ef8,124,named,LookTarget,Keypoint,2,,0,,,0,no,ctor_Object|dtor_Keypoint,2,02dee5af,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5190e8,123,named,SceneManager,Info,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Info,3,77e49eb1,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5192d8,123,named,MatDemoActor,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5194c8,31,named,MatActionWaitForEvent,ActionPause,2,,0,,,0,no,ctor_Object|dtor_ActionPause,2,7e088bbb,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x519548,30,named,ActionMoveCamera,MatAction,2,,0,,,0,no,ctor_Object|dtor_MatAction,2,f956494f,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51a27c,15,plain-only,,,1,,0,,,0,no,,0,,0,0x5170f4,,unnamed,,,0,nothing,,unnamed parent
+0x51a2b8,48,named,ScriptedTexture,BitmapMaterial,2,,0,,,0,no,,0,,0,0x4c7958,Material,named,ancestor,Material,1,nothing,,named parent; chains to Material at depth 1
+0x51a3c4,15,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51a5b0,123,named,Security,Info,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|ctor_Object|dtor_Info,4,919b7169,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x51a810,61,plain-only,,,2,New shadow texture %d x %d GlobalMem: %d/%d,1,,,0,no,Core_UnObjBas,1,942433a1,1,,,none,,,0,subsystem,,1 field literal(s); 1 named callee(s)
+0x51a908,48,named,ShadowBitmapMaterial,BitmapMaterial,2,,0,,,0,no,,0,,0,0x4c7958,Material,named,ancestor,Material,1,nothing,,named parent; chains to Material at depth 1
+0x51a9e4,15,plain-only,,,1,,0,,,0,no,,0,,0,0x5171b4,,unnamed,,,0,nothing,,unnamed parent
+0x51ab38,128,named,ShadowProjector,Projector,2,,0,,,0,no,ctor_Object|dtor_Projector,2,ac60547b,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51ad50,31,named,AnimNotify,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51add0,31,named,AnimNotify_MatSubAction,AnimNotify,2,,0,,,0,no,ctor_Object|dtor_AnimNotify,2,28a280e7,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51ae50,31,named,AnimNotify_Scripted,AnimNotify,2,,0,,,0,no,ctor_Object|dtor_AnimNotify,2,28a280e7,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51aed0,31,named,AnimNotify_Script,AnimNotify,2,,0,,,0,no,ctor_Object|dtor_AnimNotify,2,28a280e7,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51af50,31,named,AnimNotify_LIPSinc,AnimNotify,2,,0,,,0,no,ctor_Object|dtor_AnimNotify,2,28a280e7,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51afd0,31,named,AnimNotify_DestroyEffect,AnimNotify,2,,0,,,0,no,ctor_Object|dtor_AnimNotify,2,28a280e7,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51b050,31,named,AnimNotify_Effect,AnimNotify,2,,0,,,0,no,ctor_Object|dtor_AnimNotify,2,28a280e7,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51b0cc,6,plain-only,,,5,new,1,,,0,no,appAssertFailed,1,4b76c2e8,2,0x51bca0,,unnamed,,,0,subsystem,,1 field literal(s); 1 named callee(s); unnamed parent
+0x51b0e4,6,plain-only,,,1,new,1,,,0,no,,0,,0,,,none,,,0,field-literal,,1 field literal(s)
+0x51b100,30,named,Animation,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51b178,9,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x51bc08,2,at-least,,,3,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|Core_UnTemplate|ctor_LodMesh,3,d0449d01,5,,,none,,,0,subsystem,,3 named callee(s)
+0x51bc10,2,at-least,,,3,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|Core_UnTemplate|ctor_LodMesh,3,d0449d01,5,,,none,,,0,subsystem,,3 named callee(s)
+0x51bc18,2,plain-only,,,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,1 named callee(s)
+0x51bc20,11,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51bc4c,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51bc70,6,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x51bc88,6,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x51bca0,6,plain-only,,,1,new,1,,,0,no,,0,,0,,,none,,,0,field-literal,,1 field literal(s)
+0x51bf18,2,at-least,,,3,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|Core_UnTemplate|ctor_LodMesh,3,d0449d01,5,,,none,,,0,subsystem,,3 named callee(s)
+0x51bf20,2,at-least,,,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|Core_UnTemplate|ctor_LodMesh,3,d0449d01,5,,,none,,,0,subsystem,,3 named callee(s)
+0x51bf28,2,at-least,,,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|Core_UnTemplate|ctor_LodMesh,3,d0449d01,5,,,none,,,0,subsystem,,3 named callee(s)
+0x51bf30,31,named,AnimNotify_Sound,AnimNotify,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_AnimNotify,3,f33ff09e,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x51c040,39,named,MeshAnimation,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x51c188,98,named,SkeletalMeshInstance,,2,,0,,,0,no,Core_UnTemplate|ctor_Primitive|dtor_LodMeshInstance,3,322a11d5,2,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,3 named callee(s); named parent; chains to Primitive at depth 1
+0x51c310,45,named,SkeletalMesh,,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_LodMesh|dtor_LodMesh,5,2bc73a71,2,0x51bf18,,unnamed,parent-unnamed,,0,subsystem,,5 named callee(s); unnamed parent
+0x51d238,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51d260,40,named,SparkEmitter,ParticleEmitter,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_ParticleEmitter,3,ddfcdd3a,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x51d300,9,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x51d37c,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51d3a0,41,named,SpriteEmitter,ParticleEmitter,2,,0,,,0,no,ctor_Object|dtor_ParticleEmitter,2,7ea0896e,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51d444,9,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x51d7c4,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51d7e8,9,plain-only,,,2,(%s) Building,1,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 field literal(s); 1 named callee(s)
+0x51d80c,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51d830,9,at-least,,,1,,0,,,0,no,ctor_Primitive,1,c59c1024,1,,,none,,,0,subsystem,,1 named callee(s)
+0x51d854,2,at-least,,,2,,0,,,0,no,Core_UnTemplate|ctor_Primitive,2,86b0d1dd,1,,,none,,,0,subsystem,,2 named callee(s)
+0x51d860,123,named,DecoCollideActor,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51da50,123,named,StaticMeshActor,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x51dc40,30,named,StaticMeshInstance,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x51dd28,40,named,StaticMesh,,2,,0,,,0,no,Core_UnTemplate|ctor_Primitive|dtor_Primitive,3,3abfde25,3,0x51d854,,unnamed,parent-unnamed,,0,subsystem,,3 named callee(s); unnamed parent
+0x51ec98,23,plain-only,,,1,Core,1,,,0,no,Core_UnObj|appAssertFailed,2,6f1d9c2a,1,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
+0x51f650,30,named,SVehicleWheel,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x51f6d8,5,plain-only,,,1,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial,2,7406b337,3,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x51f6ec,5,plain-only,,,1,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial,2,7406b337,3,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x51f700,5,plain-only,,,1,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial,2,7406b337,3,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
+0x51f720,39,named,TerrainPrimitive,,3,,0,,,0,no,ctor_Primitive|dtor_Primitive,2,b670b6ad,5,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,2 named callee(s); named parent; chains to Primitive at depth 1
+0x51fa7c,9,plain-only,,,1,new,1,,,0,no,__allmul|_rand,2,d9be39d2,1,0x518104,,unnamed,,,0,subsystem,,1 field literal(s); 2 named callee(s); unnamed parent
+0x51faa0,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x51fc18,46,named,TerrainMaterial,RenderedMaterial,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x4c7958,Material,named,ancestor,Material,1,subsystem,,1 named callee(s); named parent; chains to Material at depth 1
+0x51fcd0,30,named,TerrainSector,,3,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x51fda8,123,named,TerrainInfo,Info,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_Object|dtor_Info,5,e1320da8,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,5 named callee(s); named parent; chains to Object at depth 1
+0x51ffd8,18,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x520248,15,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x520288,30,named,Palette,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5205c8,58,named,Cubemap,Texture,2,new,1,,,0,no,ctor_Texture|dtor_Texture,2,5a566011,5,0x4cfba0,Texture,named,agree,Texture,1,subsystem,,1 field literal(s); 2 named callee(s); named parent; chains to Texture at depth 1
+0x52075c,5,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x5207a4,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x5207c8,41,named,TrailEmitter,ParticleEmitter,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_ParticleEmitter,3,ddfcdd3a,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x52086c,9,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x520ca0,92,named,VertMeshInstance,,2,,0,,,0,no,Core_UnTemplate|ctor_Primitive|dtor_LodMeshInstance,3,322a11d5,2,0x4fc1b0,Primitive,named,no-script-chain,Primitive,1,subsystem,,3 named callee(s); named parent; chains to Primitive at depth 1
+0x520fd8,45,named,VertMesh,,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_LodMesh|dtor_LodMesh,5,2bc73a71,2,0x50f020,LodMesh,named,no-script-chain,LodMesh,1,subsystem,,5 named callee(s); named parent; chains to LodMesh at depth 1
+0x5210a8,123,named,PlayerChatManager,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x521298,123,named,VoiceChatRoom,Info,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Info,3,77e49eb1,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5214d0,123,named,VoiceChatReplicationInfo,ReplicationInfo,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_Object|dtor_ReplicationInfo,5,83bb20b9,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,5 named callee(s); named parent; chains to Object at depth 1
+0x5216c0,123,named,DecoVolumeObject,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5218b0,124,named,DecorationList,Keypoint,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Keypoint,3,7e3ed67e,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x521b30,30,named,Spline,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x521f80,30,named,StreamBase,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x521ff8,3,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x522110,31,named,StreamInterface,StreamBase,2,,0,,,0,no,ctor_Object|dtor_StreamBase,2,fa6b5549,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x522190,37,named,StreamInteraction,Interaction,2,,0,,,0,no,ctor_Object|dtor_Interaction,2,e72e56eb,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x522e88,30,named,Stream,StreamBase,2,,0,,,0,no,ctor_Object|dtor_StreamBase,2,fa6b5549,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x522f90,30,named,StreamTag,StreamBase,2,,0,,,0,no,ctor_Object|dtor_StreamBase,2,fa6b5549,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x523008,3,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x523340,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x523394,9,plain-only,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
+0x52352c,16,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52b45c,1,at-least,,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,,,none,,,0,subsystem,,2 named callee(s)
+0x52b460,50,named,D3DRenderDevice,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,,,none,,,0,subsystem,,2 named callee(s)
+0x52bbf8,65,plain-only,,,1,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z,1,85803bc7,1,,,none,,,0,subsystem,,1 named callee(s)
+0x52bdb8,16,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52be38,12,plain-only,,,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x5113b0,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52be68,5,plain-only,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52be7c,5,plain-only,,,2,,0,,,0,no,Core_UnTemplate|_D3DResource_Release@4,2,7da9b8df,1,0x52be68,,unnamed,,,0,subsystem,,2 named callee(s); unnamed parent
+0x52c2b8,5,plain-only,,,3,,0,,,0,no,_D3DResource_Release@4,1,e4fcf50b,2,0x52be68,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52c498,5,plain-only,,,3,,0,,,0,no,_D3DResource_Release@4,1,e4fcf50b,2,0x52be68,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52c76c,5,plain-only,,,1,,0,,,0,no,,0,,0,0x52be68,,unnamed,,,0,nothing,,unnamed parent
+0x52c780,5,plain-only,,,1,,0,,,0,no,D3DDrv_D3DResource,1,b2c3be3a,1,0x52be68,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52cb00,36,named,HTTPDownload,,2,,0,,,0,no,Core_UnTemplate|IpDrv_UnSocket,2,65f03664,1,0x4fcfe0,,unnamed,parent-unnamed,Object,2,subsystem,,2 named callee(s); unnamed parent; chains to Object at depth 2
+0x52cc50,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52cefc,7,plain-only,,,4,,0,,,0,no,Core_UnTemplate|IpDrv_UnSocket|_closesocket@4,3,e854c8b3,1,,,none,,,0,subsystem,,3 named callee(s)
+0x52d1a0,23,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52d3e8,25,plain-only,,,2,,0,,,0,no,Core_UnTemplate|IpDrv_UnSocket|__ftol2|_closesocket@4,4,8f5b80cb,1,,,none,,,0,subsystem,,4 named callee(s)
+0x52d498,22,plain-only,,,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x52cc50,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52d528,22,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52d5c8,123,named,InternetLink,InternetInfo,2,,0,,,0,no,Core_UnTemplate|IpDrv_UnSocket|ctor_Object|dtor_InternetInfo,4,1b8f8528,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x52d7d0,24,plain-only,,,1,,0,,,0,no,,0,,0,0x52cc50,,unnamed,,,0,nothing,,unnamed parent
+0x52e0c8,25,plain-only,,,1,,0,,,0,no,,0,,0,0x52d3e8,,unnamed,,,0,nothing,,unnamed parent
+0x52e298,124,named,MasterServerLink,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4ca238,Info,named,agree,Info,1,subsystem,,2 named callee(s); named parent; chains to Info at depth 1
+0x52e488,124,named,ServerQueryClient,MasterServerLink,2,,0,,,0,no,ctor_Object|dtor_MasterServerLink,2,9f3f25ea,1,0x52e298,MasterServerLink,named,agree,MasterServerLink,1,subsystem,,2 named callee(s); named parent; chains to MasterServerLink at depth 1
+0x52e678,124,named,MasterServerClient,ServerQueryClient,2,,0,,,0,no,ctor_Object|dtor_ServerQueryClient,2,a3414845,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x52eb78,7,plain-only,,,1,,0,,,0,no,FUdpLink_BindPort,1,6834cc9b,2,0x52cefc,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52ef14,8,plain-only,,,1,,0,,,0,no,,0,,0,0x52cefc,,unnamed,,,0,nothing,,unnamed parent
+0x52ef34,8,plain-only,,,1,,0,,,0,no,FUdpLink_BindPort,1,6834cc9b,2,0x52cefc,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52ef54,8,plain-only,,,1,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x52ef34,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x52ef78,123,named,MasterServerGameStats,GameStats,2,,0,,,0,no,ctor_Object|dtor_GameStats,2,f03ab4f0,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x52f1c0,25,plain-only,,,2,new,1,,,0,no,appAssertFailed,1,4b76c2e8,2,0x52d3e8,,unnamed,,,0,subsystem,,1 field literal(s); 1 named callee(s); unnamed parent
+0x52f4a0,124,named,MasterServerUplink,MasterServerLink,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|ctor_Object|dtor_MasterServerLink,4,08b1f114,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x530000,123,named,TcpLink,InternetLink,2,,0,,,0,no,Core_UnTemplate|ctor_InternetLink|dtor_InternetLink,3,b0e6ad5a,1,0x52d5c8,InternetLink,named,agree,InternetLink,1,subsystem,,3 named callee(s); named parent; chains to InternetLink at depth 1
+0x531710,31,named,CompressCommandlet,,2,,0,,,0,no,ctor_Commandlet|dtor_Commandlet,2,60261839,5,0x4de008,Commandlet,named,no-script-chain,Commandlet,1,subsystem,,2 named callee(s); named parent; chains to Commandlet at depth 1
+0x531790,31,named,DecompressCommandlet,,2,,0,,,0,no,ctor_Commandlet|dtor_Commandlet,2,60261839,5,0x4de008,Commandlet,named,no-script-chain,Commandlet,1,subsystem,,2 named callee(s); named parent; chains to Commandlet at depth 1
+0x531c40,123,named,UdpLink,InternetLink,2,,0,,,0,no,ctor_InternetLink|dtor_InternetLink,2,9c130d79,1,0x52d5c8,InternetLink,named,agree,InternetLink,1,subsystem,,2 named callee(s); named parent; chains to InternetLink at depth 1
+0x536370,30,named,GUI,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5363e8,30,named,StatsManager,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x536460,38,named,PropertyManagerBase,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x536590,30,named,GUIStyles,GUI,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|ctor_Object|dtor_GUI,4,be82de50,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
+0x536648,58,named,GUIComponent,GUI,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_GUI,3,131d1dfb,2,0x536370,GUI,named,agree,GUI,1,subsystem,,3 named callee(s); named parent; chains to GUI at depth 1
+0x536730,63,named,GUIMultiComponent,GUIComponent,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_GUIComponent,3,e718ea30,1,0x536648,GUIComponent,named,agree,GUIComponent,1,subsystem,,3 named callee(s); named parent; chains to GUIComponent at depth 1
+0x536830,63,named,GUIPanel,GUIMultiComponent,2,,0,,,0,no,ctor_Object|dtor_GUIMultiComponent,2,fa952080,6,0x536730,GUIMultiComponent,named,agree,GUIMultiComponent,1,subsystem,,2 named callee(s); named parent; chains to GUIMultiComponent at depth 1
+0x536930,63,named,GUIScrollingPanel,GUIPanel,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_GUIPanel,3,71b3a41e,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x536a30,63,named,GUITabPanel,GUIPanel,2,,0,,,0,no,ctor_Object|dtor_GUIPanel,2,13f1756d,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x536b30,63,named,GUIPage,GUIPanel,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_GUIPanel,3,71b3a41e,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x536c30,63,named,GUIMenuOption,GUIMultiComponent,2,,0,,,0,no,ctor_Object|dtor_GUIMultiComponent,2,fa952080,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x536d30,63,named,GUIComboBox,GUIMultiComponent,2,,0,,,0,no,ctor_Object|dtor_GUIMultiComponent,2,fa952080,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x536e30,63,named,GUITabControl,GUIMultiComponent,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_GUIMultiComponent,3,94781331,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x536f30,63,named,GUIScrollBarBase,GUIMultiComponent,2,,0,,,0,no,ctor_Object|dtor_GUIMultiComponent,2,fa952080,6,0x536730,GUIMultiComponent,named,agree,GUIMultiComponent,1,subsystem,,2 named callee(s); named parent; chains to GUIMultiComponent at depth 1
+0x537030,63,named,GUIHorzScrollBar,GUIScrollBarBase,2,,0,,,0,no,ctor_Object|dtor_GUIScrollBarBase,2,b8124ffc,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537130,63,named,GUIVertScrollBar,GUIScrollBarBase,2,,0,,,0,no,ctor_Object|dtor_GUIScrollBarBase,2,b8124ffc,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537230,63,named,GUINumericEdit,GUIMultiComponent,2,,0,,,0,no,ctor_Object|dtor_GUIMultiComponent,2,fa952080,6,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537330,58,named,GUIProgressBar,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537418,58,named,GUITitleBar,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537500,58,named,GUIButton,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x536648,GUIComponent,named,agree,GUIComponent,1,subsystem,,2 named callee(s); named parent; chains to GUIComponent at depth 1
+0x5375e8,58,named,GUITabButton,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5376d0,58,named,GUIHorzGripButton,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5377b8,58,named,GUIHorzScrollButton,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5378a0,58,named,GUIVertGripButton,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537988,58,named,GUIVertScrollButton,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x537500,GUIButton,named,agree,GUIButton,1,subsystem,,2 named callee(s); named parent; chains to GUIButton at depth 1
+0x537a70,58,named,GUIComboButton,GUIVertScrollButton,2,,0,,,0,no,ctor_Object|dtor_GUIVertScrollButton,2,75ce8178,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537b58,58,named,GUIEditBox,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537c40,58,named,GUICheckBoxButton,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537d28,58,named,GUISpinnerButton,GUIButton,2,,0,,,0,no,ctor_Object|dtor_GUIButton,2,5a286f1f,8,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537e10,58,named,GUIHorzScrollZone,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537ef8,58,named,GUIVertScrollZone,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x537fe0,58,named,GUILabel,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5380c8,58,named,GUIImage,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5381b0,30,named,GUIFont,GUI,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_GUI,3,131d1dfb,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5385a8,30,named,GameStartInfo,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x538d50,42,named,GUIController,BaseGUIController,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnTemplate|ctor_Object|dtor_BaseGUIController,5,7ba914ef,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,5 named callee(s); named parent; chains to Object at depth 1
+0x538e28,58,named,GUIMultiColumnListHeader,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x538f10,63,named,GUIListBoxBase,GUIMultiComponent,2,,0,,,0,no,ctor_Object|dtor_GUIMultiComponent,2,fa952080,6,0x536730,GUIMultiComponent,named,agree,GUIMultiComponent,1,subsystem,,2 named callee(s); named parent; chains to GUIMultiComponent at depth 1
+0x539010,63,named,GUIScrollTextBox,GUIListBoxBase,2,,0,,,0,no,ctor_Object|dtor_GUIListBoxBase,2,57ed24dd,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x539110,63,named,GUIListBox,GUIListBoxBase,2,,0,,,0,no,ctor_Object|dtor_GUIListBoxBase,2,57ed24dd,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5392e8,59,named,GUIListBase,GUIComponent,2,,0,,,0,no,ctor_Object|dtor_GUIComponent,2,259c0945,9,0x536648,GUIComponent,named,agree,GUIComponent,1,subsystem,,2 named callee(s); named parent; chains to GUIComponent at depth 1
+0x5393d8,59,named,GUIVertList,GUIListBase,2,,0,,,0,no,ctor_Object|dtor_GUIListBase,2,2b920b0a,2,0x5392e8,GUIListBase,named,agree,GUIListBase,1,subsystem,,2 named callee(s); named parent; chains to GUIListBase at depth 1
+0x5394c8,59,named,GUIScrollText,GUIVertList,2,,0,,,0,no,ctor_Object|dtor_GUIVertList,2,0681ffac,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5395b8,59,named,GUIHorzList,GUIListBase,2,,0,,,0,no,ctor_Object|dtor_GUIListBase,2,2b920b0a,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x5396c8,59,named,GUIMultiColumnList,GUIVertList,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_GUIVertList,3,a03e453a,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
+0x5397b8,63,named,GUIMultiColumnListBox,GUIListBoxBase,2,,0,,,0,no,ctor_Object|dtor_GUIListBoxBase,2,57ed24dd,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x539988,37,named,UIXInteraction,AbstractUIXInteraction,2,,0,,,0,no,ctor_Object|dtor_AbstractUIXInteraction,2,b0b47569,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x53a194,5,plain-only,,,1,UUIXInteraction::InitUIX()|new|[VL:XBOXLIVEINIT]: Startup Online|XOnlineStartup failed (0x%x),10,,,0,no,_UIXCreateLiveEngine@12|_UIXCreateUIPlugin@8|_XGetLanguage@0|_XNetGetEthernetLinkStatus@0|_XOnlineStartup@4|thunk_?EnableFeature@CLiveEngine@UIXNamespace@@QAGJPAX@Z|thunk_?SetProperty@CLiveEngine@UIXNamespace@@QAGJW4_UIX_PROPERTY_TYPE@@K@Z|thunk_?SetUIPlugin@CLiveEngine@UIXNamespace@@QAGJPAUITitleUIPlugin@@@Z,8,8c0b82e2,1,,,none,,,0,subsystem,,10 field literal(s); 8 named callee(s)
+0x53b168,30,named,XboxLiveInterface,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x53d58c,1,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x53d590,4,plain-only,,,18,XboxLiveOnlineTask|SessionQueryTask|SessionStartTask|SessionEndTask,15,,,0,no,Core_UnTemplate|_XOnlineTaskClose@4,2,a99c536f,3,,,none,,,0,subsystem,,15 field literal(s); 2 named callee(s)
+0x53d5c8,4,plain-only,,,1,XboxLiveOnlineTask|SessionQueryTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d5fc,4,plain-only,,,1,XboxLiveOnlineTask|SessionStartTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d630,4,plain-only,,,1,XboxLiveOnlineTask|SessionEndTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d660,4,plain-only,,,1,XboxLiveOnlineTask|QuickMatchQueryTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d698,4,plain-only,,,1,XboxLiveOnlineTask|OptiMatchQueryTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d6fc,4,plain-only,,,1,XboxLiveOnlineTask|RetrieveExtraInfoTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d70c,4,plain-only,,,1,XboxLiveOnlineTask|StatsWriteTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d73c,4,plain-only,,,1,XboxLiveOnlineTask|StatsReadTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d768,4,plain-only,,,1,XboxLiveOnlineTask|StatsEnumerateTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d7a0,4,plain-only,,,1,XboxLiveOnlineTask|StatsResetTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53d7fc,4,plain-only,,,2,XboxLiveOnlineTask|StatsLadderWriteTask,2,,,0,no,Core_UnTemplate|_XOnlineTaskClose@4,2,a99c536f,3,,,none,,,0,subsystem,,2 field literal(s); 2 named callee(s)
+0x53d80c,4,plain-only,,,1,XboxLiveOnlineTask|MuteListQueryTask,2,,,0,no,,0,,0,,,none,,,0,field-literal,,2 field literal(s)
+0x53e3dc,4,plain-only,,,2,XboxLiveOnlineTask|StatsQueryTask,2,,,0,no,Core_UnTemplate|_XOnlineTaskClose@4,2,a99c536f,3,,,none,,,0,subsystem,,2 field literal(s); 2 named callee(s)
+0x53ec54,4,plain-only,,,2,XboxLiveOnlineTask|StatsLadderReadTask,2,,,0,no,_XOnlineTaskClose@4,1,f770f3bf,1,,,none,,,0,subsystem,,2 field literal(s); 1 named callee(s)
+0x53f6d8,5,plain-only,,,7,,0,,,0,no,??1CPopupScreen@UIXNamespace@@UAE@XZ|??3@YAXPAX@Z|?Destroy@CScreen@UIXNamespace@@IAEXXZ|?DestroyTask@CTask@UIXNamespace@@QAEXXZ|?Free@CArray@UIXNamespace@@QAEXXZ|?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z|thunk_?Release@CFriendsList@UIXNamespace@@QAGKXZ,7,160e4da0,1,0x53f6ec,,unnamed,,,0,subsystem,,7 named callee(s); unnamed parent
+0x53f6ec,5,plain-only,,,3,,0,,,0,no,?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,1,8ac961ac,1,,,none,,,0,subsystem,,1 named callee(s)
+0x53f700,5,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x53f718,21,plain-only,,,3,,0,,,0,no,??3@YAXPAX@Z|?DestroyFeature@CAlertFeature@UIXNamespace@@UAGXXZ,2,e502ab59,1,,,none,,,0,subsystem,,2 named callee(s)
+0x53f770,21,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x53f7c4,5,no-store,,,0,,0,,,0,no,,0,,0,,,none,,,0,window,"dword run 0x0053f770+31; this address at offset 21; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x003313ce lies in no body of the map; 4 of 5 slots are not 4-aligned, so they are in-function offsets","dword run 0x0053f770+31; this address at offset 21; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x003313ce lies in no body of the map; 4 of 5 slots are not 4-aligned, so they are in-function offsets"
+0x53f7f0,6,plain-only,,,3,,0,,,0,no,?DestroyFeature@CVoiceMailPseudoFeature@UIXNamespace@@UAGXXZ,1,d11e2469,2,,,none,,,0,subsystem,,1 named callee(s)
+0x53f808,21,plain-only,,,3,,0,,,0,no,?DestroyFeature@CVoiceMailPseudoFeature@UIXNamespace@@UAGXXZ,1,d11e2469,2,,,none,,,0,subsystem,,1 named callee(s)
+0x53f85c,5,plain-only,,,2,,0,,,0,no,??0CPopupScreen@UIXNamespace@@QAE@K@Z|?DestroyFeedbackScreen@CVoiceMailScreen@UIXNamespace@@QAEXXZ|?DestroyTask@CTask@UIXNamespace@@QAEXXZ,3,16f1039b,1,0x53f6ec,,unnamed,,,0,subsystem,,3 named callee(s); unnamed parent
+0x53f874,5,plain-only,,,1,,0,,,0,no,??0CPopupScreen@UIXNamespace@@QAE@K@Z,1,8d7e52ce,1,0x53f6ec,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x53f888,5,plain-only,,,2,,0,,,0,no,?DestroyFeature@CPlayersFeature@UIXNamespace@@UAGXXZ|?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,2,53447f7b,2,,,none,,,0,subsystem,,2 named callee(s)
+0x53f8a0,21,plain-only,,,2,,0,,,0,no,?DestroyFeature@CPlayersFeature@UIXNamespace@@UAGXXZ|?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,2,53447f7b,2,,,none,,,0,subsystem,,2 named callee(s)
+0x53f8f4,5,plain-only,,,2,,0,,,0,no,??0CPlayersContextScreen@CPlayersScreen@UIXNamespace@@QAE@K@Z|??1CPopupScreen@UIXNamespace@@UAE@XZ|?DestroyTask@CTask@UIXNamespace@@QAEXXZ|?Free@CArray@UIXNamespace@@QAEXXZ|?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z|?Initialize@CArray@UIXNamespace@@QAEHKKGW4UIX_PTAG_ENUM@2@@Z|thunk_?Release@CFriendsList@UIXNamespace@@QAGKXZ,7,796deafc,1,0x53f874,,unnamed,,,0,subsystem,,7 named callee(s); unnamed parent
+0x53f90c,5,plain-only,,,1,,0,,,0,no,??0CPopupScreen@UIXNamespace@@QAE@XZ,1,615e5cc6,1,0x53f6ec,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
+0x53f920,21,plain-only,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x53f978,1,plain-only,,,1,,0,,,0,no,?DestroyFeature@CLogonFeature@UIXNamespace@@UAGXXZ,1,9dbbeeea,1,,,none,,,0,subsystem,,1 named callee(s)
+0x53f97c,5,plain-only,,,1,,0,,,0,no,??_H@YGXPAXIHP6EPAX0@Z@Z,1,beebd365,1,,,none,,,0,subsystem,,1 named callee(s)
+0x53f990,1,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x53f998,21,plain-only,,,2,,0,,,0,no,??0CNotificationTask@UIXNamespace@@QAE@XZ|?DestroyFeature@CLogonFeature@UIXNamespace@@UAGXXZ,2,b144b34f,1,0x53f990,,unnamed,,,0,subsystem,,2 named callee(s); unnamed parent
+0x53f9ec,15,plain-only,,,2,,0,,,0,no,?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z|?Initialize@CArray@UIXNamespace@@QAEHKKGW4UIX_PTAG_ENUM@2@@Z,2,d0a3de62,1,,,none,,,0,subsystem,,2 named callee(s)
+0x540464,8,plain-only,,,2,,0,,,0,no,?Cleanup@CQueueXMO@@IAEXXZ|?XVoiceSysFree@@YGXPAXK@Z,2,114a3407,1,,,none,,,0,subsystem,,2 named callee(s)
+0x540484,14,plain-only,,,2,,0,,,0,no,??_GCCodecWrapper@@QAEPAXI@Z|?XVoiceSysFree@@YGXPAXK@Z,2,08a9eb15,2,,,none,,,0,subsystem,,2 named callee(s)
+0x5404bc,14,plain-only,,,2,,0,,,0,no,??0CEncoderXMO@@QAE@XZ|??1CEncoderXMO@@UAE@XZ|?XVoiceSysFree@@YGXPAXK@Z,3,d37591bd,1,0x540484,,unnamed,,,0,subsystem,,3 named callee(s); unnamed parent
+0x5404f4,11,plain-only,,,2,,0,,,0,no,??_GCCodecWrapper@@QAEPAXI@Z|?XVoiceSysFree@@YGXPAXK@Z,2,08a9eb15,2,,,none,,,0,subsystem,,2 named callee(s)
+0x540520,11,plain-only,,,2,,0,,,0,no,??0CDecoderXMO@@QAE@XZ|??1CDecoderXMO@@UAE@XZ|?XVoiceSysFree@@YGXPAXK@Z,3,3f359628,1,0x5404f4,,unnamed,,,0,subsystem,,3 named callee(s); unnamed parent
+0x564da4,6,plain-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x564dbc,9,plain-only,,,3,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x57534c,2,plain-only,,,3,,0,,,0,no,_free|_malloc,2,f81e9de2,1,,,none,,,0,subsystem,,2 named callee(s)

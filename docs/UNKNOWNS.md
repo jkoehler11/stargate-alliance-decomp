@@ -5672,7 +5672,38 @@ object it was handed also has -- the artifact names them rather than calling the
 truths. The 49 member tables are labelled in the same pass (32 of 49 `<Class>_member_<field>`, one declared
 in a shared ancestor).
 
+**Answered since (2026-11-20, what the constructors carry).** `tools/class-ctor-evidence.py` reads the
+installer bodies once more and records the three channels a constructor offers beside its store
+(`inventory/class_ctor_evidence.csv`, one row per table of the 724). *Literals*: 26 of the 990 bodies
+behind the 474 named tables push a printable UTF-16 string, 16 of those tables push a class name and
+**none pushes its own class**; the two `ini:` literals name the class that declares the config property
+(`DemoPlayPendingLevel` -> `ini:Engine.Engine.DemoRecordingDevice`), so the channel is closed for naming
+and open for layout -- 70 of the 246 nameless tables push a literal, 5 of them an `ini:` section that does
+name a class (`0x004c93c4`, `0x004c93c8` and `0x004c93d0` are the two objects the `Canvas`/`Input` sections
+belong to, `0x004fc610` the demo recording device's table, `0x005139f4` the network device's) and the rest
+are field defaults (`Z:\Cache`, `D:\`, `new`, `Official.ini`). *Callees*: 169 of the 246 call a named
+`Core_*`/`Engine_*` body and 31 signatures are shared by two or more tables -- the widest, 33 tables, call
+only `__allmul` -- so a signature places a table in a subsystem and never names it. *Parents*: a table's own
+installer is the body whose last store is that table, and its first call through the null-check thunk is the
+parent's constructor; on the named population that is the script `super` 167 times, a further ancestor 211
+times and a class with no script chain 53 times, **never a stranger**, and only 55 of the 246 nameless tables
+get an edge (9 of them climb to a named class). The 4 tables with no installer body are not tables:
+`0x004f70a0` is 2 dwords at the tail of the 44-dword run `I3DL2Listener`'s table heads, `0x005181dc` 3 dwords
+into a 6-dword interface table, `0x0053f7c4` 21 dwords into a run of 2-mod-4 in-function offsets (an
+exception-scope table, not a vtable) and `0x005172ec` a 27-dword run after the UTF-16 string `mesh!!`; none
+has a store site inside a body of the map.
+
 **What would settle the rest.** For the 176 plain-only tables written at `[reg]` the class is the class
+whose constructor the store body is, so that body has to be named -- and the read above says what the body
+carries: a field layout and a subsystem call, not a class name. The shape census says which 97 are installed
+by a body that returns `this`, so the route left is outside the image's own literals: the class record's
+constructor field for a class no shipped package declares, or the native package's registration list, one
+body at a time. The 29 destructor-shaped and 26 unclassified tables need a per-body read rather than a rule.
+For the 23 with no object-field store the table has no installer, and the 3 with no `C7` store need the other
+addressing forms read (`mov [reg+index*4]` is an array slot, not a field). For the 399 bodies nothing changes
+except that the ones sitting in a member table's slots are named from the member.
+
+**What would settle the rest (superseded by the paragraph above).** For the 176 plain-only tables written at `[reg]` the class is the class
 whose constructor the store body is, so that body has to be named -- from a registration literal, a
 shipped `.u` class with that constructor, or the class record's constructor field -- one body at a time;
 the shape census now says which 97 of them are installed by a body that returns `this`, so that pass has a

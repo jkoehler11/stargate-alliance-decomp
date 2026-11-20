@@ -15780,3 +15780,44 @@ sequence.
   literals are the channel), the 29 destructor-shaped and 26 unclassified tables, and the 4 tables nothing
   stores.
 
+
+### Execution notes (2026-11-20, what the nameless tables' constructors carry)
+
+- **The constructor's literal channel is closed by its own control.** `tools/class-ctor-evidence.py` reads
+  every installer body once and records the literals it pushes, the map's own names among the bodies it
+  calls, and the parent its first call reaches (`inventory/class_ctor_evidence.csv`, 724 rows). Of the 990
+  bodies behind the 474 named tables **26 push a printable UTF-16 literal, 16 of those tables push a class
+  name and none pushes its own class**; the two `ini:` literals name the class that *declares* the config
+  property (`DemoPlayPendingLevel` -> `ini:Engine.Engine.DemoRecordingDevice`). So the literal a constructor
+  carries is a field default or a config section, and naming the 97 constructor-installed plain tables from
+  it does not work -- the channel answers object layout instead.
+- **What it does answer: 5 of the 246 nameless tables get a config class, 70 a field reading.** The three
+  adjacent tables `0x004c93c4`, `0x004c93c8` and `0x004c93d0` push `ini:Engine.Engine.Canvas`/`.Input` and
+  call `Engine_UnCanvas`/`Engine_UnIn`; `0x004fc610` (demo recording device) and `0x005139f4` (network
+  device) name theirs; the rest are defaults (`Z:\Cache`, `Z:\Help`, `Z:\Maps`, `D:\` on the file manager
+  `0x004c8db8`, which then calls `_CreateDirectoryA@8`). 169 of the 246 call a named body and 31 signatures
+  are shared by two or more -- the widest is 33 tables whose only callee is `__allmul` -- so a signature
+  places a table in a subsystem and never names it.
+- **The parent edge reproduces the class tree and then gives up on it.** A table's own installer is the body
+  whose last store is that table, and its first call through the null-check thunk is the parent's
+  constructor: on the named population the parent is the script `super` 167 times, a further ancestor 211
+  times (a script-only class installs its table from a body that calls its nearest native base), and the
+  class has no script chain 53 times -- **0 contradictions**. Only 55 of the 246 nameless tables get an
+  edge and 9 of those climb to a named class, so the tree says which native ancestor's constructor they
+  run, not what they are called.
+- **The 4 tables with no installer body are not tables.** `0x004f70a0` is 2 dwords at the tail of the
+  44-dword run that `I3DL2Listener`'s 30-slot table and a 12-slot table head; `0x005181dc` is 3 dwords into
+  a 6-dword table whose head holds two `__purecall` entries; `0x0053f7c4` is 21 dwords into a run whose
+  entries are 2-mod-4 in-function offsets, an exception-scope table and not a vtable; `0x005172ec` starts a
+  27-dword run immediately after the UTF-16 string `mesh!!`. Each one's recorded store site lies in no body
+  of the map, which is why the census listed it.
+- **Files.** `tools/class-ctor-evidence.py`, `inventory/class_ctor_evidence.csv`,
+  `docs/systems/CLASS_REGISTRATION.md` (the new section, its block and the regenerating paragraph),
+  `docs/UNKNOWNS.md` (U40), `Makefile`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `--check` is a synthetic image (a UTF-16 literal that must decode, an ASCII blob
+  and a small integer that must not, an `ini:` section, a call that resolves through the map, a thunk into the
+  parent's store, a body installing two tables that must yield no edge, an absolute store that is not an
+  install) and writes nothing; `--check-doc` rebuilds the block from the committed CSV with no dump; the
+  artifact reproduces byte for byte on a second run.
+- **Not in this bundle.** The class record's constructor field for the 97 (the route the literals do not
+  give), the 29 destructor-shaped and 26 unclassified tables' per-body read, and the 399 bodies nothing names.
