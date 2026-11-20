@@ -45,7 +45,7 @@ site_va,body,function,module,source,root,receiver,field_disp,holder_class,holder
 0x00232be1,0x00231a10,Core_UnObjBas,Core,object-head,argument,"mov eax,[ebx]",+0x18,SkeletalMeshInstance,0x0051c188,0x00167f90,,,,receiver-argument,yes
 0x0010e134,0x0010e010,Engine_UnConn,Engine,object-head,call-result,"mov edi,[eax]",,,,,,,,receiver-call-result,
 0x00116a62,0x00116290,execMoveToward,(dispatch: declared),object-head,call-result,"mov edx,[eax]",+0xd8,,,,,,,receiver-call-result,
-0x001213c4,0x00121350,FUN_00121350,(unnamed),object-head,call-result,"mov edx,[eax]",,,,,,,,receiver-call-result,
+0x001213c4,0x00121350,Engine_UnEngine_InitAudio,Engine,object-head,call-result,"mov edx,[eax]",,,,,,,,receiver-call-result,
 0x00139174,0x00139030,Engine_UnGame,Engine,object-head,call-result,"mov edx,[eax]",,GameEngine,0x00509438,0x00020f00,FUN_00020f00,yes,,receiver-call-result,yes
 0x001843b6,0x00184270,FUN_00184270,(unnamed),object-head,call-result,"mov edx,[eax]",+0xd8,,,,,,,receiver-call-result,
 0x00184a32,0x001848e0,FUN_001848e0,(unnamed),object-head,call-result,"mov edx,[eax]",+0xd8,,,,,,,receiver-call-result,

@@ -2622,7 +2622,7 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x001210c0,FUN_001210c0,Core,.text,264,5,2,0,5,0,0,0,0,5,text,,
 0x001211d0,FUN_001211d0,Core,.text,264,4,2,0,5,0,0,0,0,5,text,,
 0x001212e0,FUN_001212e0,Core,.text,49,2,1,0,0,0,0,0,0,0,silent,,
-0x00121350,FUN_00121350,Core,.text,316,6,2,0,6,0,0,0,0,6,text,,
+0x00121350,Engine_UnEngine_InitAudio,Core,.text,316,6,2,0,6,0,0,0,0,6,text,,
 0x00121490,Core_UnObjBas,Core,.text,670,4,1,0,13,1,0,0,5,7,src,Core,h
 0x00121730,Core_UnObjBas,Core,.text,479,4,1,0,13,1,0,0,2,10,src,Core,h
 0x00121910,Engine_UnEngine,Engine,.text,180,1,11,0,4,1,0,0,0,3,src,Engine,cpp
