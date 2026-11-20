@@ -488,14 +488,20 @@ is the pair order — the count id is stored before its cycle partner (`+0x194` 
 `+0x190`) — which is why the store offsets interleave. `U35` is closed by this: the missing open was the scan's,
 and the three ids it called idle are `PlaySound`'s count, `Occlusion`'s count and `StoppedSounds`.
 
-**Two symbol-map rows around the play path are wrong, and both cost this census a site.** The site
-`0x0002f9f4` belongs to the body the map starts at `0x0002f13c` (1,764 bytes, ending at `0x0002f820`), which
-continues to `ret 0x30` at `0x0002fa23`: the row at `0x0002f820` is a 518-byte slice of *that* body — the assert
-block (`push 0x287; push ...; call 0x58a30`) reached by fall-through — so its `Core_UnTemplate` name and `Core`
-module are artefacts of the split. And the pump's own row (`0x0002feb0`, 5,277 bytes) stops 19 bytes short of
-its closing store at `0x00031360`, so a reader that disassembles exactly the row's size sees the `add` of the
-timestamp and not the store and calls `Update`'s close `read only`. The census now reads 48 bytes past each
-body's declared size; the two rows themselves are a map repair and are carried as `U36`.
+**Two symbol-map rows around the play path were wrong, and the map now repairs them.** The site
+`0x0002f9f4` belongs to the body the map starts at `0x0002f13c`, which continues to `ret 0x30` at `0x0002fa23`:
+the row at `0x0002f820` was a 518-byte slice of *that* body — the inlined `UnTemplate` assert block
+(`push 0x287; push 0x4c87e8; push 0x4c87cc; call 0x58a30`, `Index<=ArrayNum`), reached by fall-through — whose
+`Core_UnTemplate` name and `Core` module were artefacts of the split. And the pump's row (`0x0002feb0`, 5,277
+bytes) stopped at `0x3134d`, inside its own `rdtsc` save pair, so a reader that disassembled exactly the row
+never reached the closing `mov [ecx],edx` at `0x3135d` and called `Update`'s close `read only`.
+
+Both are repaired in `symbols/xbe_boundaries.csv` (`make boundaries`, U36): `0x0002f820` is folded into
+`0x0002f13c`, which is resized to 2,282 bytes, and the pump's row is resized to 5,327. **This census no longer
+widens its window** — it disassembles each body's declared size — and the close at `0x0002f9f4` is now the audio
+body's own (`add tsc`), not a `Core` body's. Removing the 48-byte workaround surfaced eight more rows of the same
+class in other modules (each ending inside the array load or the `rdtsc` pair of a scope close); they are in the
+same file, and the population is unchanged at 409 sites over 96 bodies.
 
 The block is an engine **stat registry**, and the two `Core` bodies that reference it are initializers, not
 increments. `tools/stat-registry.py` reads all three bodies that register into it (`inventory/stat_registry.csv`,
