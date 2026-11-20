@@ -30,12 +30,20 @@ EXTENSIONS = {".utx": [], ".usx": [], ".ukx": [], ".uax": ["-sounds"]}
 # for 81 of the 91 mesh packages.
 COMMON_FLAGS = ["-export", "-png", "-gltf"]
 
+# The retry ladder, in order. A .ukx that carries animations umodel cannot finish parsing
+# ("MeshAnimation::Serialize: N unread bytes") still has meshes and textures worth having, and
+# `-noanim` skips that class: 14 animation packages exported nothing until this rung existed.
+FLAG_SETS = [
+    ([], ""),
+    (["-noanim"], "-noanim"),
+]
+
 EXPORTED = re.compile(r"Exported (\d+)/(\d+) objects")
 EXPORTING = re.compile(r"^Exporting (\w+) (.+?) to (.+)$")
 WARNING = re.compile(r"^(?:\*\*\* )?(WARNING|ERROR): (.+)$")
 
 PACKAGE_COLUMNS = ["dir", "package", "bytes", "objects", "exported", "files",
-                   "out_bytes", "seconds", "status", "error"]
+                   "out_bytes", "seconds", "status", "flags", "error"]
 CLASS_COLUMNS = ["class", "objects"]
 
 
@@ -70,19 +78,28 @@ def tree_files(path):
 def run_one(umodel, dump, out_root, entry):
     rel, package, path, ext = entry
     dest = os.path.join(out_root, package)
-    cmd = [umodel, "-path=%s" % dump, "-game=ue2"] + COMMON_FLAGS + EXTENSIONS[ext]
-    cmd += ["-out=%s" % dest, package]
     started = time.time()
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800,
-                           env=dict(os.environ, SDL_VIDEODRIVER="dummy"))
-        rc, out, err = r.returncode, r.stdout, r.stderr
-    except subprocess.TimeoutExpired:
-        rc, out, err = 124, "", "timeout"
+    used_flags, first_failure = "", ""
+    for extra, label in FLAG_SETS:
+        cmd = [umodel, "-path=%s" % dump, "-game=ue2"] + COMMON_FLAGS + extra + EXTENSIONS[ext]
+        cmd += ["-out=%s" % dest, package]
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800,
+                               env=dict(os.environ, SDL_VIDEODRIVER="dummy"))
+            rc, out, err = r.returncode, r.stdout, r.stderr
+        except subprocess.TimeoutExpired:
+            rc, out, err = 124, "", "timeout"
+        log = out + "\n" + err
+        m = EXPORTED.search(log)
+        files, _size = tree_files(dest)
+        if rc == 0 and m and (files > 0 or int(m.group(2)) == 0):
+            used_flags = label
+            break
+        if not first_failure:
+            wm = WARNING.search(log)
+            first_failure = wm.group(2)[:80] if wm else ("exit %d" % rc)
     seconds = time.time() - started
-    log = out + "\n" + err
 
-    m = EXPORTED.search(log)
     objects = int(m.group(2)) if m else 0
     exported = int(m.group(1)) if m else 0
     classes = collections.Counter()
@@ -102,7 +119,7 @@ def run_one(umodel, dump, out_root, entry):
     row = {"dir": rel, "package": package, "bytes": os.path.getsize(path),
            "objects": objects, "exported": exported, "files": files,
            "out_bytes": size, "seconds": round(seconds, 1), "status": status,
-           "error": first_error}
+           "flags": used_flags, "error": first_error}
     return row, classes, errors, (rc, log[-400:] if status in ("fail", "partial") else "")
 
 
@@ -195,7 +212,10 @@ def write_doc(path, rows, classes, failures):
               " 53 of 55 packages failed), so sounds stay with this project's own reader (`docs/DIALOGUE.md`,"
               " PLAN 5.3, 3,287 WAVs indexed) |", "",
               "`-nostat` is **not** a quiet flag in this umodel: it means *do not load StaticMesh* and it",
-              "silently exported 0 objects for 81 of the 91 mesh packages in the first pass.", "",
+              "silently exported 0 objects for 81 of the 91 mesh packages in the first pass. The driver",
+              "therefore carries a retry ladder: a package that fails is retried with `-noanim`, which skips",
+              "the `MeshAnimation` class umodel cannot finish parsing and still exports that package's meshes",
+              "and textures. The `flags` column records which rung produced the row.", "",
               "## By object class", "",
               "The class is what umodel announced as it wrote the object, so this table is measured, not",
               "declared. It is the list PLAN 5.1's acceptance asks to have a documented path for.",
