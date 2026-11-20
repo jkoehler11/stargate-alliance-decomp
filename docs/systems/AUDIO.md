@@ -275,13 +275,15 @@ indexing: the effects live inside packages and pulling them out as WAVs is the e
 
 ## The native audio stack, read end to end (measured 2026-11-19)
 
-The script half of audio is above; this is the code underneath it. Five readings, **303 methods, 34,328
-bytes**, all matched to the XDK's own libraries by COFF member — 199 from `dsound.lib` (14 objects) and 104
-from `xvoice.lib` (5). The full account, with every method name and the call edges, is
+The script half of audio is above; this is the code underneath it. Eight readings, **345 methods, 41,923
+bytes**, all matched to the XDK's own libraries by COFF member — 210 from `dsound.lib` (15 objects) and 135
+from `xvoice.lib` (7). The full account, with every method name and the call edges, is
 `docs/NATIVE_NOTES.md` ("The audio stack"); the artifacts are `inventory/dsound*_methods.csv`,
 `inventory/mcpx_*_methods.csv`, `inventory/xhv_engine_methods.csv`,
 `inventory/voice_chat_mode_methods.csv`, `inventory/{local,remote}_talker_methods.csv`,
-`inventory/i3dl2_listener_methods.csv` and `inventory/hrtf_source_methods.csv`.
+`inventory/i3dl2_listener_methods.csv`, `inventory/hrtf_source_methods.csv`, `inventory/wave_file_methods.csv`,
+`inventory/queue_xmo_methods.csv`, `inventory/hawk_media_object_methods.csv`, and the caller census
+`inventory/xdk_entry_callers.csv`.
 
 | layer | what it is | methods |
 |---|---|---:|
@@ -290,6 +292,7 @@ from `xvoice.lib` (5). The full account, with every method name and the call edg
 | `CMcpxVoiceClient` / `CMcpxBuffer` / `CMcpxStream` | one voice object; a static buffer or an XMO packet queue drives it through its scatter-gather list | 74 |
 | `CXHVEngine` / `CVoiceChatMode` / `CLocalTalker` / `CRemoteTalker` | Xbox Live voice chat: WMA encode of the microphone, one DirectSound stream per remote speaker, mix-bin routing | 104 |
 | `CI3DL2Listener` / `CFullHRTFSource` | positional audio: an I3DL2 parameter set per listener, an HRTF filter pair and distance/cone/doppler gain per source | 22 |
+| `CWaveFile` / `CQueueXMO` / `XHawkMediaObject` | the media decoders: a WAV/AIFF reader, a millisecond-paced packet queue, and a USB isochronous endpoint | 42 |
 
 Three things this settles for the audio work:
 
@@ -303,11 +306,18 @@ Three things this settles for the audio work:
    (`CIrql::Raise`/`Lower`): 14 in the driver, 26 in the voice path, and one in a heap constructor nested
    inside the `DirectSound` namespace — **none** in `CDirectSound`, `CDirectSoundVoice`, voice chat or the
    3D maths. Everything above the MCPX is user-mode by comparison.
+4. **The game's device is a virtual of its audio subsystem.** `_DirectSoundCreate` has four call sites: the
+   three voice modes' own `DSoundInitialize` virtuals, and `FUN_0002fd70` — a body nothing calls directly,
+   stored only in `XBoxAudioSubsystem`'s class table at **slot 31 of 55** (`+0x7c`), whose 272 bytes call
+   `_DirectSoundCreate` and then `_XAudioDownloadEffectsImage`. The stream (`+0xc8`) and per-frame pump
+   (`+0x88`) are two more slots of the same table, so a rebuild supplies those three virtuals, not a UE2
+   native.
 
-What is *not* measured: no method in this stack carries a string (0 of 303), so none is confirmed by its own
-message; and the **callers** are not counted — `inventory/module_export_census.csv` covers UE2 exports, so
-which engine body creates the game's own DirectSound object is still open. The media decoders
-(`CWaveFile`, `CQueueXMO`, `XHawkMediaObject`, 42 methods) are read and not yet written up.
+What is *not* measured: no method in this stack carries a string (0 of 345), so none is confirmed by its own
+message; and the device virtual has a **slot** but no dispatcher — `call [reg+0x7c]` is an offset that 115
+bodies share, so which body reaches the class's slot 31 is still open (U34). The callers of the three entry
+points themselves are now counted: 11 sites, in `inventory/xdk_entry_callers.csv`, and every one of them is
+either a voice mode or a virtual of `XBoxAudioSubsystem`.
 
 ## What this means for the rebuild
 

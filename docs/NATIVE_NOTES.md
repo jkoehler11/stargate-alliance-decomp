@@ -460,8 +460,9 @@ widget whose layout comes from a `PluginSupport` module — "plug-in" names the 
 
 ## The audio stack: `DirectSound`, the MCPX, and Xbox Live voice (2026-11-19)
 
-Five readings, **303 methods, 34,328 bytes**: the DirectSound API object (59), the MCPX APU driver (44),
-the voice path under it (74), Xbox Live voice chat (104) and the positional layer (22) —
+Five readings of the API stack, **303 methods, 34,328 bytes**, plus the three media decoders below --
+**345 methods, 41,923 bytes** in all: the DirectSound API object (59), the MCPX APU driver (44), the voice
+path under it (74), Xbox Live voice chat (104), the positional layer (22) and the decoders (42) --
 `inventory/dsound_methods.csv`, `dsound_object_methods.csv`, `dsound_voice_methods.csv`,
 `mcpx_apu_methods.csv`, `mcpx_core_methods.csv`, `mcpx_buffer_methods.csv`, `mcpx_stream_methods.csv`,
 `mcpx_voice_client_methods.csv`, `xhv_engine_methods.csv`, `voice_chat_mode_methods.csv`,
@@ -584,17 +585,86 @@ gain reductions `GetDistanceVolume`, `GetFrontRearVolume`, `GetCenterVolume`, `G
 `GetDopplerPitch`. Both sit on the SDK's shared `Math::` helpers (17 methods here), so the 3D path is float
 arithmetic in user code and the APU receives parameters, not geometry.
 
+### The media decoders: the SDK's WAV/AIFF reader, a timed queue, and a USB endpoint
+
+Three more readings, **42 methods, 7,595 bytes**: `WaveLoaderFoo::CWaveFile` (11, 2,098 B — `dsound.lib`,
+`dscommon.obj`), `CQueueXMO` (18, 2,705 B — `xvoice.lib`, `queuexmo.obj`) and `XHawkMediaObject` (13,
+2,792 B — `xvoice.lib`, `hawk2.obj`). With them the stack is **345 methods, 41,923 bytes: 210 from
+`dsound.lib` (15 objects), 135 from `xvoice.lib` (7)**, and `make native-method-notes` regenerates all 28
+readings in one pass (`--check` validates 1,357 methods, 1,357 attributed). None of the 42 carries a string,
+the same zero as the other 303.
+
+**`CWaveFile` is the file reader, and it decodes two containers.** `Open` (520 B) is the whole sniff: a
+`CStdFileStream::Open`, then a `CRiffChunk::Read`, then `GetWaveFormat` (142 B) or `GetAiffFormat` (341 B) —
+so RIFF/WAV and AIFF are both accepted, the second through the `EndianSwapWord`/`EndianSwapDword` calls that
+`ConvertAiffPcm` (two overloads, 60 + 24 B) and `ReadSample` (73 B) apply on the way out. Each container has
+its own loop-region reader (`GetWaveDLSLoopRegion` 158 B, `GetWaveMIDILoopRegion` 155 B,
+`GetAiffLoopRegion` 463 B), joined by `GetLoopRegion` (135 B); `Close` gives the buffers back to
+`CMemoryManager`. The reader is the library's, not the game's: `_XWaveFileCreateMediaObject@12` wraps it, and
+the body that calls that is the audio subsystem's own stream virtual (`0x0002e3dd`, below).
+
+**`CQueueXMO` paces packets on a millisecond clock, and its own time source is the performance counter.**
+`GetTickCount` (57 B) is `_QueryPerformanceCounter` with `__allmul`/`__alldiv`, not the Win32 call of the same
+name; `SetActivationTime` (48 B) and `GetRealOutputTime` (100 B) convert between a packet's own timestamp and
+that clock; `GetTimestamp` (160 B) answers a `StateOfPacket` for a packet time, with `IsTimeStampInList` (57 B)
+as its membership half; `RecomputeQueueParameters` (419 B) recomputes the queue window from those stamps. The
+buffers are two lists — `AddFreeBuffer` (26 B), `AddInUseBuffer` (145 B), `IsHWMReached` (44 B) as the
+high-water-mark test and `GetOutputWorkingBuffer` (80 B) as the buffer under the mark. Both ends are
+`XMEDIAPACKET` calls that end by signalling an event (`_SetEvent`): `InputProcess` (382 B) and `OutputProcess`
+(275 B), which is what makes the queue the producer/consumer boundary of a stream. `Initialize` (513 B) sizes
+the buffers through `XVoiceSysAlloc` and builds a nested `BackupBuffer` (30 + 22 B).
+
+**`XHawkMediaObject` is a USB isochronous endpoint, so the microphone path is not an APU voice.**
+`ProgramTransfer` (562 B) submits one URB per queued packet through `IUsbDevice::SubmitRequest`;
+`TransferComplete` (486 B) takes a `_USBD_ISOCH_TRANSFER_STATUS`, re-queues the packet and calls
+`ProgramTransfer` again; `AllocateStreamingResources` (338 B) / `FreeStreamingResources` (199 B) open and
+close the pipe; `CloseEndpoint` (91 B) and `CloseEndpointComplete` (124 B) tear it down; `AbortMediaPackets`
+(129 B) drains what is in flight. Format is two control requests, `SetSampleRate` (271 B) and `SetAGC`
+(261 B) — `SubmitRequest` → `SetExtension` → `RemoveComplete` in both. `Process` (149 B) is the XMO entry:
+`XMOAcceptPacket` → `CHawkPacketQueue::InsertTail` → `ProgramTransfer`. The queue's single constructor
+caller confirms the arrangement: `CQueueXMO::Initialize` has exactly one, `_XVoiceQueueCreateMediaObject@8`
+(inside `xvoice.lib`), and `CQueueXMO::Process` has none because it is a virtual.
+
+### Who calls the three audio entry points
+
+The image exports **three** `_DirectSound*` entry points, not four, and a direct call is `E8 rel32` — invisible
+to a dword scan, which is why `module_export_census.csv` could hold none of them. `tools/xdk-entry-callers.py`
+(new) scans every executable section for a call to each, keeps a site only where a forward decode lands
+exactly on it (the same boundary rule as `tools/record-writer-calls.py`), names the containing body from
+`symbols/xbox_functions.csv`, and then says how that body is itself reached: a class-table slot, a dword
+reference, or its own direct callers. **11 sites** (`inventory/xdk_entry_callers.csv`):
+
+| entry point | sites | caller, and how that caller is reached |
+|---|---:|---|
+| `_DirectSoundCreate@12` `0x004a20e0` | 4 | `FUN_0002fd70` (`XBoxAudioSubsystem` +0x7c, slot 31 of 55); `CVoiceMailMode::DSoundInitialize`, `CVoiceChatMode::DSoundInitialize`, `CLoopbackMode::DSoundInitialize` |
+| `_DirectSoundCreateStream@8` `0x004a2127` | 3 | `FUN_0002ae00` (the voice stream factory); `XboxAudio_XboxAudioSubsystem` `0x0002e210` (+0xc8, slot 50); `CRemoteTalker::InitializeStream` |
+| `_DirectSoundDoWork@0` `0x004a0552` | 4 | `XboxAudio_XboxAudioSubsystem` `0x0002feb0` (+0x88, slot 34); `CRemoteTalker::StartStream` twice and `ShutdownStream` once |
+
+**The game's own device is `FUN_0002fd70`, and nothing calls it directly.** Its address appears once in the
+image — `0x004d2274`, inside `XBoxAudioSubsystem`'s class table `0x004d21f8`, **slot 31 of 55** (dispatch
+offset `+0x7c`) — so device creation is a virtual method of the game's audio subsystem: not a UE2 export, not
+one of the 345 library methods, and not findable by scanning for a stored address. Its 272 bytes are
+`_DirectSoundCreate`, then `_XAudioDownloadEffectsImage`, then seven XboxAudio bodies
+(`0x0002cfd0`, `0x0002c800` twice, `0x00032040`, `0x0002e900`, `0x00057440`, `0x00055ed0`) — bring-up, not a
+getter. The other three sites are the voice modes, each creating its own device, so the image holds more than
+one `CDirectSound` by design (which is what the voice-chat reading predicted).
+
+**The stream half is two more virtuals of the same class.** `0x0002e210` (+0xc8, slot 50) is the file stream:
+`_XWaveFileCreateMediaObject@12`, then `_DirectSoundCreateStream@8`, then `_CreateThread` — a WAV played on
+its own thread, which is how music and voice mail arrive. `0x0002feb0` (+0x88, slot 34, 5,277 B) is the
+per-frame pump: it calls `_DirectSoundDoWork`. And `FUN_0002ae00` (210 B) is the voice stream factory, called
+twice from `FUN_0002b8c0`: `_XVoiceQueueCreateMediaObject@8`, `_XVoiceCreateOneToOneDecoder@4`,
+`_DirectSoundCreateStream@8`. Its sibling `FUN_0002a2f0` calls `_XVoiceCreateMediaObjectEx@28` twice from
+`FUN_0002a6f0`. Those four bodies are unnamed and the module census places none of them (they call only
+unnamed bodies), so the voice factory chain is the naming work the audio module has left.
+
 ### What this reading does not say
 
-- **Callers.** `inventory/module_export_census.csv` indexes UE2 exports, and **0 of these 303 addresses has
-  a row in it** — so which engine or game body calls `_DirectSoundCreate` first, and whether the game's own
-  device is a `CDirectSound` at all, is not measured here. The next instrument is a caller census on the
-  four `_DirectSound*` entry points, not another class read.
 - **Ordering.** Every claim above is a call edge. The APU's register writes are inside bodies that have not
   been decompiled, so "the ISR runs before the DPC" is the SDK's structure, not this build's timing.
-- **The media decoders are next, not here.** `CWaveFile` (11), `CQueueXMO` (18) and `XHawkMediaObject` (13)
-  — RIFF/AIFF parsing, the XMO timestamp queue and the USB media object — read 42 more methods; they were
-  measured with the same tool and left out of this bundle.
+- **The device virtual's dispatcher.** The class table says *what* creates the device (slot 31), not *who*
+  dispatches it: `call [reg+0x7c]` carries an offset, and 115 bodies call that offset for some class or
+  other. Naming the caller needs the receiver's type at the site — the `push`-back trace U9 asks for.
 
 ## The UIX entry point: a native that nothing calls (2026-11-19)
 

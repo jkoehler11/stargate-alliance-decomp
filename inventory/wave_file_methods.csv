@@ -1,0 +1,12 @@
+address,method,args,size,lib,object,callees,callee_classes,strings
+0x004a26d7,GetWaveFormat,IAEJPAUtWAVEFORMATEX@@KPAK@Z,142,dsound,obj\i386\dscommon.obj,CRiffChunk::Open; CRiffChunk::Read,CRiffChunk,
+0x004a2765,GetAiffFormat,IAEJPAUtWAVEFORMATEX@@KPAK@Z,341,dsound,obj\i386\dscommon.obj,CRiffChunk::Open; CRiffChunk::Read; EndianSwapWord; EndianSwapDword; _XAudioCreatePcmFormat,CRiffChunk,
+0x004a28ba,GetWaveDLSLoopRegion,IAEJPAK0@Z,158,dsound,obj\i386\dscommon.obj,CRiffChunk::Open; CRiffChunk::Read,CRiffChunk,
+0x004a2958,GetWaveMIDILoopRegion,IAEJPAK0@Z,155,dsound,obj\i386\dscommon.obj,CRiffChunk::Open; CRiffChunk::Read,CRiffChunk,
+0x004a29f3,GetAiffLoopRegion,IAEJPAK0@Z,463,dsound,obj\i386\dscommon.obj,CRiffChunk::Open; CRiffChunk::Read; EndianSwapWord; CMemoryManager::MemAlloc; EndianSwapDword; CMemoryManager::MemFree,CMemoryManager; CRiffChunk,
+0x004a2bc2,Close,QAEXXZ,27,dsound,obj\i386\dscommon.obj,CStdFileStream::Close; CMemoryManager::MemFree,CMemoryManager; CStdFileStream,
+0x004a2bdd,ConvertAiffPcm,SGXPAXKK@Z,60,dsound,obj\i386\dscommon.obj,EndianSwapWord,,
+0x004a2c94,Open,IAEJPBDPAX@Z,520,dsound,obj\i386\dscommon.obj,CWaveFile::Close; CStdFileStream::Open; CRiffChunk::Open; CRiffChunk::Read; CWaveFile::GetWaveFormat; CWaveFile::GetAiffFormat; CMemoryManager::MemAlloc,CMemoryManager; CRiffChunk; CStdFileStream; CWaveFile,
+0x004a2e9c,GetLoopRegion,QAEJPAK0@Z,135,dsound,obj\i386\dscommon.obj,CWaveFile::GetWaveDLSLoopRegion; CWaveFile::GetWaveMIDILoopRegion; CWaveFile::GetAiffLoopRegion,CWaveFile,
+0x004a2f23,ConvertAiffPcm,QAEXPAXK@Z,24,dsound,obj\i386\dscommon.obj,CWaveFile::ConvertAiffPcm,CWaveFile,
+0x004a2f3b,ReadSample,QAEJKPAXKPAK@Z,73,dsound,obj\i386\dscommon.obj,CRiffChunk::Read; CWaveFile::ConvertAiffPcm,CRiffChunk; CWaveFile,

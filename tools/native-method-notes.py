@@ -49,6 +49,7 @@ LIBRARY_READINGS = [
     ("CXHVEngine", "xhv_engine"), ("CVoiceChatMode", "voice_chat_mode"),
     ("CLocalTalker", "local_talker"), ("CRemoteTalker", "remote_talker"),
     ("CI3DL2Listener", "i3dl2_listener"), ("CFullHRTFSource", "hrtf_source"),
+    ("CWaveFile", "wave_file"), ("CQueueXMO", "queue_xmo"), ("XHawkMediaObject", "hawk_media_object"),
 ]
 NAMES = os.path.join("symbols", "xbox_functions.csv")
 IMAGE_REL_I386_REL32 = 0x20
@@ -244,7 +245,12 @@ def main():
     ap.add_argument("--xbe")
     ap.add_argument("-o", "--out")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--list-artifacts", action="store_true",
+                    help="print the artifact files this tool writes, one per line (tool index can credit them)")
     args = ap.parse_args()
+    if args.list_artifacts:
+        print("\n".join("%s_methods.csv" % stem for _cls, stem in LIBRARY_READINGS))
+        return 0
     if args.check:
         return check(args)
     if not args.target and not args.out:
