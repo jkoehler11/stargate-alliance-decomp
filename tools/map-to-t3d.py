@@ -547,6 +547,130 @@ def terrain_colours(tail, ps):
     return None
 
 
+def compact_width(value):
+    """Width of the compact index that encodes `value` (bit 7 sign, bit 6 continuation, 6 + 7 bits)."""
+    if value < 0:
+        value = -value
+    for width in (1, 2, 3, 4, 5):
+        if value < (1 << (6 + 7 * (width - 1))):
+            return width
+    return 5
+
+
+def terrain_body(tail, ps, colours):
+    """A `TerrainInfo`'s native terrain record -> its members up to the vertex colours.
+
+    `ATerrainInfo::Serialize` (`0x00273e80`) writes, for a package version above `0x74`:
+    `Super::Serialize`, a list of sectors, one 12-byte member per vertex, two dwords, one 24-byte member per
+    vertex, two 40-byte members, a 24-byte tail, then the `TArray<FColor>` `terrain_colours` reads:
+
+        [compact count][that many compact object references]      the terrain's sectors
+        [compact count][count * 12 bytes]                         one FVector per vertex (its position)
+        [int][int]                                                the sector grid, x and y
+        [compact count][count * 24 bytes]                         two vectors per vertex
+        [40 bytes][40 bytes]                                      two fixed records
+        [0][0][0][float][int][int]                                the tail, whose two ints are the
+                                                                  sector grid's vertex side
+        [compact count][count * 4 bytes]                          the vertex colours
+
+    Every one of the 66 exports closes exactly on this frame when `colours` is the count
+    `terrain_colours` read, and the counts agree: positions and records both equal the vertex colours
+    (**313,344** each), and every reference names a `TerrainSector` export. A frame that does not end where
+    the colours' own count begins is refused, so a body this rule cannot read is a `None` rather than a
+    shorter reading.
+    """
+    if not tail or not colours:
+        return None
+    end = len(tail) - 4 * colours - compact_width(colours)
+    if end < 4:
+        return None
+    off = 0
+    try:
+        count, off = ps.read_index(tail, off)
+        if count < 0 or count > 4096:
+            return None
+        refs = []
+        for _ in range(count):
+            ref, off = ps.read_index(tail, off)
+            refs.append(ref)
+        verts, off = ps.read_index(tail, off)
+        if verts < 1 or verts > 65536:
+            return None
+        verts_at = off
+        off += 12 * verts
+        if off + 8 + 24 > end:
+            return None
+        grid = struct.unpack_from("<ii", tail, off)
+        off += 8
+        records, off = ps.read_index(tail, off)
+        if records < 0 or records > 65536:
+            return None
+        records_at = off
+        off += 24 * records
+        off += 80
+        dims = struct.unpack_from("<ii", tail, off + 16)
+        off += 24
+    except (IndexError, struct.error):
+        return None
+    if off != end:
+        return None
+    if verts != colours or records != colours:
+        return None
+    if grid[0] < 1 or grid[1] < 1 or grid[0] * grid[1] != len(refs):
+        return None
+    if dims[0] != dims[1] or dims[0] < 2:
+        return None
+    return dict(sectors=refs, verts=verts, verts_at=verts_at, grid=grid, records=records,
+                records_at=records_at, dims=dims)
+
+
+def terrain_span(refs, sectors):
+    """The furthest sector edge in the terrain's sector list, one per axis, or `None`.
+
+    A `TerrainSector` payload opens `[0x00][compact index of its TerrainInfo][quads x][quads y]
+    [origin x][origin y]`, and its quads are 8, 16 or 32 with the far edge one short (15 to avoid
+    duplicating the shared boundary). The terrain body's own tail ints are one more than the furthest
+    edge on every export, which is what ties the two records together: the header names the terrain, and
+    the terrain's size counts its sectors.
+    """
+    edge = [0, 0]
+    seen = 0
+    for ref in refs:
+        row = sectors.get(ref)
+        if row is None:
+            continue
+        seen += 1
+        edge[0] = max(edge[0], row[3] + row[1])
+        edge[1] = max(edge[1], row[4] + row[2])
+    if not seen:
+        return None
+    return edge[0] + 1, edge[1] + 1
+
+
+def sector_record(data, ps):
+    """A `TerrainSector` payload -> (terrain export index, quads x, quads y, origin x, origin y).
+
+    The class has no property block (`class-prefix` reads no tagged record in its payload), so its
+    payload is its native instance record: a zero byte, a compact index naming the `TerrainInfo` it
+    belongs to, and four ints. The two sizes are 8, 16 or 32 quads and the two origins are multiples of
+    eight; a payload that does not open this way is refused rather than read as a sector.
+    """
+    if len(data) < 19 or data[0] != 0:
+        return None
+    try:
+        ref, off = ps.read_index(data, 1)
+    except IndexError:
+        return None
+    if off + 16 > len(data):
+        return None
+    qx, qy, ox, oy = struct.unpack_from("<4i", data, off)
+    if not (1 <= qx <= 32 and 1 <= qy <= 32):
+        return None
+    if ox < 0 or oy < 0 or ox % 8 or oy % 8:
+        return None
+    return ref, qx, qy, ox, oy
+
+
 def locate(data, pkg, ps, preferred=None, cls=None):
     """The actor's property block, located by the reader's own value test.
 
@@ -605,10 +729,21 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
           "palette_ref_other": 0, "palette_closed": 0, "level_actors": 0, "level_strings": 0,
           "level_tail_bytes": 0, "level_unwritten": 0, "native_tails": 0, "struct_element_arrays": 0,
           "struct_element_records": 0, "terrain_bytes": 0, "terrain_colours": 0,
-          "terrain_colour_exports": 0, "terrain_grids": ""}
+          "terrain_colour_exports": 0, "terrain_grids": "", "terrain_body": 0,
+          "terrain_sectors": 0, "terrain_sector_refs": 0, "terrain_verts": 0, "terrain_records": 0,
+          "terrain_span": 0, "sector_payloads": 0, "sector_named": 0, "sector_quads": 0}
     structs, arrays = {}, {}
     terrain_grid_set = set()
     written, level_idx = set(), set()
+    # A `TerrainInfo` counts its sectors and each sector names its terrain, so the two records are read as
+    # one table: the sector headers are collected first, then the terrain body's tail ints are held to the
+    # furthest edge in the list it carries (`terrain_span`).
+    sector_rows = {}
+    for exp in pkg.exports:
+        if pkg.class_name_of(exp) == "TerrainSector":
+            row = sector_record(pkg.data[exp["offset"]:exp["offset"] + exp["size"]], ps)
+            if row is not None:
+                sector_rows[exp["index"] + 1] = row
     for exp in pkg.exports:
         data = pkg.data[exp["offset"]:exp["offset"] + exp["size"]]
         cls = pkg.class_name_of(exp)
@@ -621,6 +756,18 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                 st["level_actors"], level_idx = level[0], level[1]
                 st["level_strings"], st["level_tail_bytes"] = level[2], level[3]
             continue
+        if cls == "TerrainSector":
+            # A sector's payload is its native record (`sector_record`): no property block, a header that
+            # names the `TerrainInfo` it belongs to and gives its size and origin in quads. Counted here;
+            # the export still goes through the writer's own locator below, which writes the one sector in
+            # `DM-WorstCaseScenario` that does carry a tagged block and skips the rest as it always has.
+            row = sector_rows.get(exp["index"] + 1)
+            if row is not None:
+                ref, qx, qy, _ox, _oy = row
+                st["sector_payloads"] += 1
+                st["sector_quads"] += qx * qy
+                if 1 <= ref <= len(pkg.exports) and pkg.class_name_of(pkg.exports[ref - 1]) == "TerrainInfo":
+                    st["sector_named"] += 1
         if cls == "StaticMeshInstance":
             # No property block at all: the payload is the instance's native record, whose first half is a
             # packed colour table (`palette_record`). Counted here rather than written as an actor -- there
@@ -666,6 +813,7 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
         _count, start, props, tail, native = found
         native_bytes = data[start + (len(data) - start - tail):] if native else b""
         terrain_n = None
+        body = None
         if native:
             st["native_tails"] += 1
             # The record's last member is the terrain's own vertex-colour array (`terrain_colours`): its
@@ -678,6 +826,21 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
                 st["terrain_colours"] += terrain_n
                 st["terrain_colour_exports"] += 1
                 terrain_grid_set.add(terrain_n)
+            # The body between the block and the colours: its sector list, its per-vertex members, its
+            # sector grid and its tail (`terrain_body`). Counted against the colours it ends on, and its
+            # tail held to the furthest edge in the sector list it carries.
+            body = terrain_body(native_bytes, ps, terrain_n)
+            if body is not None:
+                st["terrain_body"] += 1
+                st["terrain_sectors"] += len(body["sectors"])
+                st["terrain_verts"] += body["verts"]
+                st["terrain_records"] += body["records"]
+                for ref in body["sectors"]:
+                    if 1 <= ref <= len(pkg.exports) and pkg.class_name_of(pkg.exports[ref - 1]) == "TerrainSector":
+                        st["terrain_sector_refs"] += 1
+                span = terrain_span(body["sectors"], sector_rows)
+                if span == body["dims"]:
+                    st["terrain_span"] += 1
         elif tail:
             st["padded_blocks"] += 1
         lines.append("Begin Actor Class=%s Name=%s_%d" % (cls, cls, exp["index"] + 1))
@@ -794,9 +957,16 @@ def drive_map(path, outdir, ps, parent=None, types=None, verbose=False, prec=Non
             lines.append("   %s=%s" % (p["name"], fmt(value)))
         props_total += len(props)
         if native:
-            lines.append("   // Terrain: %d native byte(s), %s"
-                         % (len(native_bytes), ("%d vertex colour(s)" % terrain_n) if terrain_n
-                            else "no vertex-colour array read"))
+            if body is not None:
+                lines.append("   // Terrain: %d native byte(s), %s, %d sector(s) in a %dx%d grid, "
+                             "%d vertex position(s), %d per-vertex record(s)"
+                             % (len(native_bytes), ("%d vertex colour(s)" % terrain_n) if terrain_n
+                                else "no vertex-colour array read", len(body["sectors"]),
+                                body["grid"][0], body["grid"][1], body["verts"], body["records"]))
+            else:
+                lines.append("   // Terrain: %d native byte(s), %s"
+                             % (len(native_bytes), ("%d vertex colour(s)" % terrain_n) if terrain_n
+                                else "no vertex-colour array read"))
         lines.append("End Actor")
         lines.append("")
         actors += 1
@@ -915,6 +1085,16 @@ LEVEL_UNWRITTEN = 0
 # stops closing, when a count is not a square, or when the record is too short to hold the colours it names.
 TERRAIN_GRIDS = {256, 1024, 4096, 16384, 65536}
 TERRAIN_COLOUR_EXPORTS = 66
+
+# The terrain record's body between the property block and the colours is a member chain
+# (`terrain_body`): every one of the 66 exports closes on it, and its three per-vertex counts agree with
+# the colours it ends on -- **313,344** positions, **313,344** 24-byte records, **313,344** colours. Its
+# sector list names **765** `TerrainSector` exports, and those payloads in turn name their terrain, so the
+# two records are one table: the sector headers (`sector_record`) are the terrain's own sector grid, and
+# their quads add up to `TERRAIN_QUADS`.
+TERRAIN_BODY_EXPORTS = 66
+TERRAIN_SECTORS = 765
+TERRAIN_QUADS = 194114
 
 
 def check(values, structs, stats, arrays=ARRAYS):
@@ -1090,6 +1270,37 @@ def check(values, structs, stats, arrays=ARRAYS):
         if room:
             problems.append("%s: %d map(s) whose terrain record is shorter than its colours: %s"
                             % (stats, len(room), ", ".join(room[:6])))
+        # The body between the block and the colours is a member chain (`terrain_body`), so every record
+        # with a native tail has to close on it, its three per-vertex counts have to be the colours' count,
+        # its sector list has to name only `TerrainSector` exports, and its tail ints have to be one more
+        # than the furthest sector edge (`terrain_span`).
+        closed = sum(int(r.get("terrain_body") or 0) for r in crows)
+        if closed != TERRAIN_BODY_EXPORTS:
+            problems.append("%s: %d terrain record(s) close on the body's member chain, expected %d"
+                            % (stats, closed, TERRAIN_BODY_EXPORTS))
+        verts = sum(int(r.get("terrain_verts") or 0) for r in crows)
+        records = sum(int(r.get("terrain_records") or 0) for r in crows)
+        tot_colours = sum(int(r.get("terrain_colours") or 0) for r in crows)
+        if not verts == records == tot_colours:
+            problems.append("%s: %d terrain positions, %d per-vertex records, %d vertex colours -- expected "
+                            "the same count three times" % (stats, verts, records, tot_colours))
+        sectors = sum(int(r.get("terrain_sectors") or 0) for r in crows)
+        named = sum(int(r.get("terrain_sector_refs") or 0) for r in crows)
+        if sectors != TERRAIN_SECTORS or named != TERRAIN_SECTORS:
+            problems.append("%s: %d sector reference(s) (%d naming a TerrainSector), expected %d"
+                            % (stats, sectors, named, TERRAIN_SECTORS))
+        spanned = sum(int(r.get("terrain_span") or 0) for r in crows)
+        if spanned != TERRAIN_BODY_EXPORTS:
+            problems.append("%s: %d terrain tail(s) equal the sector list's furthest edge, expected %d"
+                            % (stats, spanned, TERRAIN_BODY_EXPORTS))
+        payloads = sum(int(r.get("sector_payloads") or 0) for r in crows)
+        sector_named = sum(int(r.get("sector_named") or 0) for r in crows)
+        if payloads != TERRAIN_SECTORS or sector_named != TERRAIN_SECTORS:
+            problems.append("%s: %d sector payload(s) read (%d naming a TerrainInfo), expected %d"
+                            % (stats, payloads, sector_named, TERRAIN_SECTORS))
+        quads = sum(int(r.get("sector_quads") or 0) for r in crows)
+        if quads != TERRAIN_QUADS:
+            problems.append("%s: the sector records cover %d quads, expected %d" % (stats, quads, TERRAIN_QUADS))
     # The element-type census partitions the refused arrays the values census counts: every refused array is
     # either unshaped or has a (count, width) layout and therefore one row here.
     arows = read_csv(arrays)
@@ -1237,6 +1448,47 @@ def check(values, structs, stats, arrays=ARRAYS):
         problems.append("terrain_colours counts a colour whose alpha is not 0xff")
     if terrain_colours(b"\x00", ps) is not None:
         problems.append("terrain_colours reads a tail with no colours")
+    # The terrain body: one sector reference, two vertices, a 1x1 sector grid, two 24-byte records, two
+    # fixed records and a tail whose ints are 2. Every count that disagrees -- the positions not being the
+    # colours, a grid that does not count the sectors, a record list of the wrong length, tail ints that
+    # differ from each other, or a body one byte short -- has to be refused, not read as a shorter body.
+    def _tbody(nref=1, verts=2, grid=(1, 1), recs=2, dims=(2, 2), cut=0):
+        return (bytes([nref]) + b"\x04" * nref if nref else b"\x00") + bytes([verts]) + \
+            b"\x00" * (12 * verts) + struct.pack("<ii", *grid) + bytes([recs]) + \
+            b"\x00" * (24 * recs) + b"\x00" * 80 + b"\x00" * 12 + \
+            struct.pack("<f", 1.0) + struct.pack("<ii", *dims) + b"\x02" + \
+            b"\x01\x02\x03\xff" * 2 + b"\x00" * cut
+    good = _tbody()
+    body_ok = terrain_body(good, ps, 2)
+    if body_ok is None or body_ok["verts"] != 2 or body_ok["grid"] != (1, 1) or body_ok["sectors"] != [4]:
+        problems.append("terrain_body does not read a one-sector, two-vertex body: %s" % (body_ok,))
+    if terrain_body(_tbody(verts=2, recs=1), ps, 2) is not None:
+        problems.append("terrain_body accepts a record list shorter than the colours")
+    if terrain_body(_tbody(grid=(2, 1)), ps, 2) is not None:
+        problems.append("terrain_body accepts a sector grid that does not count its sectors")
+    if terrain_body(_tbody(dims=(2, 3)), ps, 2) is not None:
+        problems.append("terrain_body accepts tail ints that differ from each other")
+    if terrain_body(good + b"\x00", ps, 2) is not None:
+        problems.append("terrain_body accepts a body one byte past the colours")
+    if terrain_body(_tbody()[:-9], ps, 2) is not None:
+        problems.append("terrain_body accepts a body that stops before its colours")
+    # A sector's header names its terrain and gives its size and origin in quads: 8, 16 or 32, with the
+    # origin a multiple of eight. A payload that opens another way is not a sector record.
+    sector = b"\x00\x04" + struct.pack("<4i", 16, 15, 0, 48) + b"\x00" * 8
+    if sector_record(sector, ps) != (4, 16, 15, 0, 48):
+        problems.append("sector_record does not read a sector header")
+    if sector_record(b"\x01" + sector[1:], ps) is not None:
+        problems.append("sector_record accepts a payload that does not open on a zero")
+    if sector_record(b"\x00\x04" + struct.pack("<4i", 33, 16, 0, 0) + b"\x00" * 8, ps) is not None:
+        problems.append("sector_record accepts more quads than a sector can hold")
+    if sector_record(b"\x00\x04" + struct.pack("<4i", 16, 16, 7, 0) + b"\x00" * 8, ps) is not None:
+        problems.append("sector_record accepts an origin that is not a multiple of eight")
+    # The tail ints are one more than the furthest sector edge, which is how the terrain body and the
+    # sector headers agree with each other.
+    if terrain_span([1, 2], {1: (1, 16, 16, 0, 0), 2: (1, 15, 15, 16, 16)}) != (32, 32):
+        problems.append("terrain_span does not take the furthest sector edge and add one")
+    if terrain_span([3], {1: (1, 16, 16, 0, 0)}) is not None:
+        problems.append("terrain_span reads a span for a sector list it does not know")
     if fmt_struct([{"name": "Zone", "type": "Object", "value": "LevelInfo'LevelInfo0'"},
                    {"name": "iLeaf", "type": "Int", "value": -1}]) != "(Zone=\"LevelInfo'LevelInfo0'\",iLeaf=-1)":
         problems.append("fmt_struct does not spell a tagged struct's fields")
@@ -1322,7 +1574,9 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
              "palette_tail_bytes", "palette_tails", "palette_head2", "palette_records",
              "palette_records_flag0", "palette_refs", "palette_ref_light", "palette_ref_other",
              "palette_closed", "level_actors", "level_strings", "level_tail_bytes", "level_unwritten",
-             "native_tails", "terrain_bytes", "terrain_colours", "terrain_colour_exports")}
+             "native_tails", "terrain_bytes", "terrain_colours", "terrain_colour_exports",
+             "terrain_body", "terrain_sectors", "terrain_sector_refs", "terrain_verts",
+             "terrain_records", "terrain_span", "sector_payloads", "sector_named", "sector_quads")}
     out = []
     out.append("| measure | value |")
     out.append("|---|---:|")
@@ -1373,6 +1627,17 @@ def render_doc(values, structs, arrays=ARRAYS, stats=COVERAGE):
     out.append("| -- exports whose record ends on a vertex-colour array | **%d** of %d |"
                % (ptot["terrain_colour_exports"], ptot["native_tails"]))
     out.append("| -- vertex colours inside them | **%d** |" % ptot["terrain_colours"])
+    out.append("| terrain records read member by member | **%d** of %d |"
+               % (ptot["terrain_body"], ptot["native_tails"]))
+    out.append("| -- sector references, all naming a `TerrainSector` | **%d** (%d) |"
+               % (ptot["terrain_sectors"], ptot["terrain_sector_refs"]))
+    out.append("| -- vertex positions (12 bytes each) | **%d** |" % ptot["terrain_verts"])
+    out.append("| -- per-vertex records (24 bytes each) | **%d** |" % ptot["terrain_records"])
+    out.append("| -- records whose tail ints are the sector list's furthest edge | **%d** of %d |"
+               % (ptot["terrain_span"], ptot["terrain_body"]))
+    out.append("| `TerrainSector` payloads read | **%d** |" % ptot["sector_payloads"])
+    out.append("| -- naming their `TerrainInfo` | **%d** |" % ptot["sector_named"])
+    out.append("| -- quads they cover | **%d** |" % ptot["sector_quads"])
     out.append("")
     out.append("| struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |")
     out.append("|---|---:|---:|---:|---:|---|---|")
@@ -1490,7 +1755,11 @@ def main():
                      got["values"]["level_tail_bytes"], got["values"]["level_unwritten"],
                      got["values"]["native_tails"], got["values"]["terrain_bytes"],
                      got["values"]["terrain_colours"], got["values"]["terrain_colour_exports"],
-                     got["values"]["terrain_grids"]))
+                     got["values"]["terrain_body"], got["values"]["terrain_sectors"],
+                     got["values"]["terrain_sector_refs"], got["values"]["terrain_verts"],
+                     got["values"]["terrain_records"], got["values"]["terrain_span"],
+                     got["values"]["sector_payloads"], got["values"]["sector_named"],
+                     got["values"]["sector_quads"], got["values"]["terrain_grids"]))
         v = got["values"]
         vrows.append((got["map"], v["arrays"], v["object_arrays"], v["object_elements"],
                       v["struct_arrays"] + v["unshaped"], v["struct_arrays"], v["struct_records"],
@@ -1530,9 +1799,11 @@ def main():
                      "palette_tails,palette_head2,palette_records,palette_records_flag0,"
                      "palette_refs,palette_ref_light,palette_ref_other,palette_closed,"
                      "level_actors,level_strings,level_tail_bytes,level_unwritten,native_tails,"
-                     "terrain_bytes,terrain_colours,terrain_colour_exports,terrain_grids\n")
+                     "terrain_bytes,terrain_colours,terrain_colour_exports,"
+                     "terrain_body,terrain_sectors,terrain_sector_refs,terrain_verts,terrain_records,"
+                     "terrain_span,sector_payloads,sector_named,sector_quads,terrain_grids\n")
             for row in rows:
-                fh.write(("%s" + ",%d" * 27 + ",%s\n") % row)
+                fh.write(("%s" + ",%d" * 36 + ",%s\n") % row)
         print("stats: %s (%d rows)" % (args.stats, len(rows)))
     with open(args.values, "w", encoding="utf-8", newline="") as fh:
         fh.write("map,arrays,object_arrays,object_elements,arrays_refused,struct_arrays,"

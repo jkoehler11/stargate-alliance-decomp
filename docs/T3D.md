@@ -184,6 +184,14 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | native terrain record bytes after a `TerrainInfo` block | **12543159** |
 | -- exports whose record ends on a vertex-colour array | **66** of 66 |
 | -- vertex colours inside them | **313344** |
+| terrain records read member by member | **66** of 66 |
+| -- sector references, all naming a `TerrainSector` | **765** (765) |
+| -- vertex positions (12 bytes each) | **313344** |
+| -- per-vertex records (24 bytes each) | **313344** |
+| -- records whose tail ints are the sector list's furthest edge | **66** of 66 |
+| `TerrainSector` payloads read | **765** |
+| -- naming their `TerrainInfo` | **765** |
+| -- quads they cover | **194114** |
 
 | struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |
 |---|---:|---:|---:|---:|---|---|
@@ -650,6 +658,52 @@ four census columns, `TERRAIN_GRIDS`/`TERRAIN_COLOUR_EXPORTS` and four gates), `
 `docs/T3D.md` (this section, and the palette sentence above corrected in place),
 `tools/ghidra/ghidra_scripts/ExportNew.java`.
 
-**Not in this PR.** The terrain record's *body* between the property block and the colour array -- heights,
-sectors, layers, the 10 KB to 2.6 MB -- is still counted only as `terrain_bytes`; the palette dword's reader
-(what consumes `rec+0x18`) is not located; the `Level` trailer's 24 bytes stay counted, not named.
+**Not in this PR.** ~~The terrain record's *body* between the property block and the colour array -- heights,
+sectors, layers, the 10 KB to 2.6 MB -- is still counted only as `terrain_bytes`~~ (read member by member in
+the next section); the palette dword's reader (what consumes `rec+0x18`) is not located; the `Level`
+trailer's 24 bytes stay counted, not named.
+
+## The terrain record's body is a member chain, and its sectors name it back (measured 2026-11-19)
+
+The last section left "the terrain record's body between the property block and the colour array" as counted
+bytes. `ATerrainInfo::Serialize` (`0x00273e80`, the same decompilation) writes that body as a short chain of
+members, and the exported payloads close on it exactly:
+
+| member | shape | what it is |
+|---|---|---|
+| sectors | compact count + that many compact references | 765 over 66 exports, **every one a `TerrainSector` export** |
+| positions | compact count + 12 bytes each | one `FVector` per vertex: **313,344** |
+| sector grid | two int32 | x and y of the sector grid; their product is the sector count on 66 of 66 |
+| records | compact count + 24 bytes each | two vectors per vertex: **313,344** records |
+| bounds | 40 bytes + 40 bytes | two fixed ten-dword members (`FUN_0021f140`, called twice) |
+| tail | `[0][0][0][float][int][int]` | the two ints are equal on 66 of 66 and one more than the furthest sector edge |
+| colours | compact count + 4 bytes each | the `TArray<FColor>` the previous section measured |
+
+**Three counts that are one number.** The positions, the 24-byte records and the vertex colours are each
+**313,344** over the corpus, and `terrain_body` refuses a body whose counts disagree, so the record's three
+per-vertex members are the same grid by measurement rather than by resemblance. The positions are the terrain's
+vertex grid, not a byte count: they step regularly along both axes and the tail's two ints are the side of the
+sector grid, which is `sqrt(colours)` on 62 of the 66 exports and half of it on the four largest (the 16,384-
+and 65,536-colour terrain maps: `CTF-Abydos` 217, both `LostCity` maps and `DM-WorstCaseScenario`) -- those four
+carry twice as many positions per sector vertex as the rest, so the colour grid and the sector grid are not the
+same grid there. What the two 40-byte members and the 24-byte records' two vectors *mean* is not named here;
+their widths and counts are.
+
+**A `TerrainSector` names its terrain, and its terrain's size counts its sectors.** The class has no property
+block, so its payload is its native instance record: `[0x00][compact index of its TerrainInfo][quads x]
+[quads y][origin x][origin y]`. All **765** sector payloads open this way, all 765 name the `TerrainInfo` in
+their own map, and their quads are 8, 16 or 32 with the far edge one short (15 for 16, to avoid duplicating the
+shared boundary) on origins that are multiples of eight. So the two records read each other: the terrain's
+sector list names the sectors, and the terrain's tail ints equal the furthest `origin + quads` in that list plus
+one, on 66 of 66. The sectors cover **194,114** quads.
+
+**Files.** `tools/map-to-t3d.py` (`terrain_body`, `terrain_span`, `sector_record`, `compact_width`, nine new
+census columns, six new gates, ten synthetic cases, the T3D comment line under each terrain actor),
+`inventory/t3d_coverage.csv` (73 rows regenerated), this section, `docs/UNKNOWNS.md` U33, the execution note in
+`PLAN.md`.
+
+**Gates.** `make ci` green; `--check` reads the committed census with no dump; the 73-map write reproduces its
+own totals (121,250 actors, 1,149,471 properties, 54,954,428 T3D bytes); `--write-doc`/`--check-doc` agree.
+
+**Not in this PR.** The meaning of the two 40-byte members, of the 24-byte records' two vectors, and of the
+tail's float (`U33`); the palette dword's reader and the `Level` trailer's 24 bytes stay counted (`U32`).

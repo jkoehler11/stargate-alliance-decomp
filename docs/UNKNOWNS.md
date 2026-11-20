@@ -5203,3 +5203,24 @@ consumes them (`ULevel`'s `FURL`-shaped members are the five strings, whose valu
 
 (3) **The terrain record's tail is settled** (`docs/T3D.md`): it ends with the terrain's own `TArray<FColor>`,
 counted as a vertex grid on 66 of 66 exports.
+
+## U33. The terrain body's shapes are read; three of its members are not named
+
+**Question.** `docs/T3D.md`'s terrain section now reads a `TerrainInfo`'s record member by member -- its sector
+list, one `FVector` per vertex, a 12-byte member per vertex, its sector grid, two ten-dword members, a 24-byte
+tail and the vertex colours -- and every one of the 66 exports closes on that frame (`terrain_body`,
+`terrain_span`, `sector_record`). What is still counted and not named: (1) the two 40-byte members between the
+per-vertex records and the tail; (2) the 24-byte per-vertex record's two three-float vectors (the first is
+`(0,0,1)` on a flat `M02A` vertex, so at least one of them is a normal, but which and what the second is is open);
+(3) the float in the tail, which is `4.0` on `M02A`, `4.571` on `CTF-Abydos` and `2.667` on `LostCity` and is
+not `1/spacing`.
+
+**Routes.** The three are read by `ATerrainInfo::Serialize`'s own callees: `FUN_0021f140` (the 40-byte member,
+called twice at `this+0x1358` and `this+0x1388`), `FUN_00263c10` (one 24-byte element, six raw dwords) and the
+inline write of the tail. Naming them is a matter of what reads those members elsewhere in the image -- the
+renderer that consumes the terrain's per-vertex records, or `ATerrainInfo`'s own accessors -- which no pass has
+walked yet.
+
+**Also open in this area.** The colour grid and the sector grid disagree on the four largest terrains (16,384
+and 65,536 colours): those carry twice as many positions per sector vertex as the other 62, and the reason (a
+different height-field resolution per quad, or two vertices per quad) is not measured.
