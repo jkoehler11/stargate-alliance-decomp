@@ -649,14 +649,48 @@ one of the 345 library methods, and not findable by scanning for a stored addres
 getter. The other three sites are the voice modes, each creating its own device, so the image holds more than
 one `CDirectSound` by design (which is what the voice-chat reading predicted).
 
-**The stream half is two more virtuals of the same class.** `0x0002e210` (+0xc8, slot 50) is the file stream:
-`_XWaveFileCreateMediaObject@12`, then `_DirectSoundCreateStream@8`, then `_CreateThread` — a WAV played on
-its own thread, which is how music and voice mail arrive. `0x0002feb0` (+0x88, slot 34, 5,277 B) is the
-per-frame pump: it calls `_DirectSoundDoWork`. And `FUN_0002ae00` (210 B) is the voice stream factory, called
-twice from `FUN_0002b8c0`: `_XVoiceQueueCreateMediaObject@8`, `_XVoiceCreateOneToOneDecoder@4`,
-`_DirectSoundCreateStream@8`. Its sibling `FUN_0002a2f0` calls `_XVoiceCreateMediaObjectEx@28` twice from
-`FUN_0002a6f0`. Those four bodies are unnamed and the module census places none of them (they call only
-unnamed bodies), so the voice factory chain is the naming work the audio module has left.
+**The stream half is three more virtuals of the same class, and the voice factory chain is named.**
+`0x0002e210` (+0xc8, slot 50) is the file stream: `_XWaveFileCreateMediaObject@12`, then
+`_DirectSoundCreateStream@8`, then `_CreateThread` — a WAV played on its own thread, which is how music and
+voice mail arrive. `0x0002feb0` (+0x88, slot 34, 5,277 B) is the per-frame pump: it calls
+`_DirectSoundDoWork`. `0x0002dff0` (+0xd0, slot 52) sets the next stream — its own `SetNextStream` and
+`New Pending File` literals beside `_XWaveFileCreateMediaObject@12` — and `FUN_0002ae00` (210 B) is the voice
+stream factory, called twice from `FUN_0002b8c0`. The chain those bodies belong to is the next subsection: 31
+unnamed bodies, ten of them named from their own edges.
+
+### The module chain: 31 unnamed bodies, ten named from their own edges (2026-11-19)
+
+The entry-point census ended with "the module census places none of the bodies around them because they call
+only unnamed bodies". That is a population defined by calls, so it can be walked: `tools/xboxaudio-chain.py`
+seeds from every unnamed `.text` body with a direct call into the audio SDK (26 such names — `_DirectSound*`,
+`_IDirectSound*`, `_XVoice*`, `_XAudio*`, `_XWave*`, `_XMedia*`, `_XHV*`), follows unnamed callers and callees
+to a fixpoint, and stops at a callee any body outside the chain also calls. **31 bodies, 240 call edges, 12
+library edges, 16 stops** (`inventory/xboxaudio_chain.csv`), each decoded by `objdump`, so a call site is an
+instruction boundary and not a byte pattern.
+
+| body | name | size | what the edges say |
+|---|---|---:|---|
+| `0x0002fd70` | `XboxAudio_CreateDevice` | 272 | slot 31 (`+0x7c`), no direct caller; `_DirectSoundCreate@12`, `_XAudioDownloadEffectsImage@16`, six bring-up calls |
+| `0x0002dff0` | `XboxAudio_SetNextStream` | 531 | slot 52 (`+0xd0`); its literal `SetNextStream`, `_XWaveFileCreateMediaObject@12` |
+| `0x0002d3f0` | `XboxAudio_StopStreamingSound` | 167 | literal `SF_StreamingMode`; `_IDirectSoundBuffer_Stop@4`, `_Release@4` |
+| `0x0002db10` | `XboxAudio_UnregisterSoundBytes` | 198 | literals `Sound Data Freed`, `UnRegSoundBytesAlloc`; calls the stop above |
+| `0x0002ed20` | `XboxAudio_FlushSounds` | 137 | literal `[RA] : Flushing`; calls the flush body and the unregisterer |
+| `0x0002ae00` | `XboxAudio_CreateVoiceStream` | 210 | `_XVoiceQueueCreateMediaObject@8`, `_XVoiceCreateOneToOneDecoder@4`, `_DirectSoundCreateStream@8`, then `this+0x3c`-byte buffers |
+| `0x0002a2f0` | `XboxAudio_CreateVoiceCodecs` | 104 | two `_XVoiceCreateMediaObjectEx@28` with two callbacks into one slot object |
+| `0x0002a250` | `XboxAudio_CreateVoiceEncoder` | 89 | `operator new` twice and `_XVoiceCreateOneToOneEncoder@4` |
+| `0x0002b8c0` | `XboxAudio_SetUpVoiceStreams` | 640 | buffer geometry from the sample rate (/48000, /10), `_IDirectSound_SetMixBinHeadroom@12` per bin, two `CreateVoiceStream` calls |
+| `0x0002a6f0` | `XboxAudio_InitVoiceSlot` | 112 | per index (`this+2*index+0x74`): codecs, the two slot stages, a bit in `this+0x60` |
+
+The other 21 members stay `FUN_*`: their edges call only unnamed bodies. All 31 are placed in the `XboxAudio`
+module by `symbols/xbe_overrides.csv`, which is what the census could not do — **31 rows leave `(unnamed)`**
+and `inventory/function_modules.csv` holds 40 `XboxAudio` bodies.
+
+**The slot-31 census, and why the dispatcher is not module code.** Every `call [reg+0x7c]` in an executable
+section, boundary-validated, is **115 sites**: 27 in `Engine`, 13 in `Core`, one each in `XboxDrv`
+(`XboxDrv_XboxViewport`) and `Gui`, and 72 in bodies the symbol map does not name — **none in `XboxAudio`**.
+**17** of the 115 dispatch a second audio-subsystem slot (`+0x88`, the pump) from the same body. So a rebuild
+supplies the four virtuals (device, stream, pump, next stream) and engine code calls them: the module never
+dispatches its own device virtual. What stays open is the receiver's *type* at those 17 sites (U34).
 
 ### What this reading does not say
 

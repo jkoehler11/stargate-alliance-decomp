@@ -5292,12 +5292,17 @@ stream thread), and `+0x88` (slot 34, `0x0002feb0`) is the per-frame pump that c
 So the device is a virtual method of the game's audio subsystem — not a UE2 export, not one of the library
 methods, and not findable by a dword scan for the create call.
 
-**Residual.** The slot is not a name: `call [reg+0x7c]` carries an offset, and **115** bodies in the image
-make that call for some class or other, so *which* body dispatches the device creation is not measured.
-What would settle it: the receiver's type at the site — a `push`-back trace from the `call [reg+disp]` to
-the `mov reg,[obj+off]` that loaded it (the U9 instrument), restricted to the sites inside the XboxAudio
-module.
+**Residual, narrowed 2026-11-19.** The slot is not a name, but the module no longer holds the candidates.
+The `call [reg+0x7c]` census (`tools/xboxaudio-chain.py`, boundary-validated, `inventory/xboxaudio_chain.csv`)
+is **115 sites and none of them is inside the `XboxAudio` module**: 27 in `Engine`, 13 in `Core`, one each in
+`XboxDrv` (`XboxDrv_XboxViewport`) and `Gui`, and 72 in bodies the map does not name. **17** of the 115
+dispatch the per-frame pump (`+0x88`) from the same body, which is the set a device-creation caller would be
+in. So the device virtual is reached from engine code, not from the module. What would settle *which* body:
+the receiver's type at those 17 sites — a `push`-back trace from the `call [reg+disp]` to the
+`mov reg,[obj+off]` that loaded it (the U9 instrument).
 
 **Status.** `tools/xdk-entry-callers.py` and `inventory/xdk_entry_callers.csv` (11 sites over the three
 `_DirectSound*` entry points); the account is `docs/NATIVE_NOTES.md`, "Who calls the three audio entry
-points", and the counts moved in `docs/systems/AUDIO.md`.
+points", and the counts moved in `docs/systems/AUDIO.md`. The module's own chain is
+`tools/xboxaudio-chain.py` / `inventory/xboxaudio_chain.csv` (31 bodies, ten named from their edges, all 31
+placed in `XboxAudio`) — `docs/NATIVE_NOTES.md`, "The module chain".

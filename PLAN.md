@@ -732,7 +732,9 @@ other 38 rows.
       `docs/NATIVE_NOTES.md`): 303 methods over 14 classes -- `DirectSound`/`CDirectSound`/
       `CDirectSoundVoice`, `CMcpxAPU`/`CMcpxCore`, `CMcpxVoiceClient`/`CMcpxBuffer`/`CMcpxStream`, the
       four `xvoice` voice-chat classes and the two 3D classes -- **199 attributed to `dsound.lib` and
-      104 to `xvoice.lib`**, every artifact row naming its COFF member.
+      104 to `xvoice.lib`**, every artifact row naming its COFF member. The module chain is named too
+      (last note of this section, 2026-11-19): 31 bodies, ten named from their edges, all 31 placed in
+      `XboxAudio`, and none of the 115 `call [reg+0x7c]` sites inside the module.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
       Done: **15,447 symbols**, every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
@@ -14901,3 +14903,51 @@ sequence.
 - **Not in this PR.** Which body dispatches `+0x7c` — the slot is an offset, and the receiver's type at the
   site is the U9 instrument. And the four unnamed XboxAudio bodies on the voice factory chain
   (`0x0002a6f0`, `0x0002a2f0`, `0x0002b8c0`, `0x0002ae00`) are still `FUN_*`.
+
+### Execution notes (2026-11-19, the audio module's chain: ten bodies named, and no module code dispatches its own device slot)
+
+- **Task.** The two items the media-decoder bundle left: which body dispatches `XBoxAudioSubsystem`'s slot 31
+  (`+0x7c`), and the four unnamed bodies on the voice factory chain — taken as the rest of the module's
+  unnamed surface, because a chain is the unit that can be named.
+- **The population is the calls, not a module range.** New tool `tools/xboxaudio-chain.py`
+  (`make xboxaudio-chain`) seeds from every unnamed `.text` body with a direct call into the audio SDK
+  (`_DirectSound*`, `_IDirectSound*`, `_XVoice*`, `_XAudio*`, `_XWave*`, `_XMedia*`, `_XHV*` — 26 such names),
+  walks unnamed callers and callees to a fixpoint, and stops at a callee any body outside the chain also
+  calls (a shared helper: `FUN_00057440`, the `vswprintf` assert wrapper, has 685 callers). Result:
+  **31 bodies, 240 call edges, 12 library edges, 16 stops**, each body decoded by `objdump` so a call site is
+  a boundary and not a byte pattern, and every target joined to the symbol map —
+  `inventory/xboxaudio_chain.csv`.
+- **Ten of them name themselves.** `XboxAudio_CreateDevice` (`0x0002fd70`, slot 31: `_DirectSoundCreate@12`
+  then `_XAudioDownloadEffectsImage@16`), `XboxAudio_SetNextStream` (`0x0002dff0`, slot 52, its own
+  `SetNextStream` literal), `XboxAudio_StopStreamingSound` (`0x0002d3f0`: `SF_StreamingMode`, then
+  `_IDirectSoundBuffer_Stop@4`/`_Release@4`), `XboxAudio_UnregisterSoundBytes` (`0x0002db10`: `Sound Data
+  Freed`, `UnRegSoundBytesAlloc`), `XboxAudio_FlushSounds` (`0x0002ed20`: `[RA] : Flushing`),
+  `XboxAudio_CreateVoiceStream` (`0x0002ae00`), `XboxAudio_CreateVoiceCodecs` (`0x0002a2f0`),
+  `XboxAudio_CreateVoiceEncoder` (`0x0002a250`), `XboxAudio_SetUpVoiceStreams` (`0x0002b8c0`) and
+  `XboxAudio_InitVoiceSlot` (`0x0002a6f0`). The last four are the chain's "naming work left"; the evidence is
+  the SDK call each makes — the queue create plus one-to-one decoder plus `_DirectSoundCreateStream`, the
+  encoder/decoder media-object pair, the mix-bin headroom loop that calls the stream factory twice, and the
+  per-index slot init.
+- **All 31 are placed in `XboxAudio`.** The chain is the locality evidence the module census lacked ("they
+  call only unnamed bodies"), so `symbols/xbe_overrides.csv` carries `module=XboxAudio` for every member and
+  the census moves **31 rows out of `(unnamed)`**: `inventory/function_modules.csv` now holds 40 `XboxAudio`
+  bodies (9 named + 31 attributed).
+- **No body in the audio module dispatches its own slot 31.** The `call [reg+0x7c]` census,
+  boundary-validated, is **115 sites**: 27 in `Engine`, 13 in `Core`, one each in `XboxDrv`
+  (`XboxDrv_XboxViewport`) and `Gui`, 72 in bodies the map does not name — **0 in `XboxAudio`** — and **17**
+  dispatch the per-frame pump (`+0x88`) from the same body. The device virtual is reached from engine code,
+  not from the module: that is U34's residual, narrowed from 115 sites to 17.
+- **Files.** `tools/xboxaudio-chain.py` (new), `tools/xdk-entry-callers.py` (its `--report` read `calls_in`
+  from the CSV as a string and died on `%d`, so the make target had never finished), `Makefile`
+  (`xboxaudio-chain`), `inventory/xboxaudio_chain.csv` (new), `symbols/xbe_overrides.csv` (31 rows),
+  `symbols/xbox_functions.csv` (10 renames), and the cascade
+  `inventory/{function_modules,module_export_plan,module_export_census,xbe_functions_by_module}.csv`,
+  `inventory/xdk_entry_callers.csv`, `symbols/xbox.map`, `docs/{NATIVE,MODULE_CENSUS,STATUS}.md`, `README.md`,
+  `docs/NATIVE_NOTES.md`, `docs/systems/AUDIO.md`, `docs/UNKNOWNS.md` U34, `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `xboxaudio-chain.py --check` green without the dump (body size and name against
+  the map, every call edge's target name, the census row against its own rows); the artifact regenerates from
+  the committed inputs; `make xdk-entry-callers` now finishes.
+- **Not in this PR.** The receiver's type at the 17 two-slot sites (the `push`-back trace U9 asks for) — the
+  census names the candidates, not the type; and the 21 chain members that stay `FUN_*` because their own
+  edges carry no name to borrow.
