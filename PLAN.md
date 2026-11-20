@@ -14749,3 +14749,30 @@ sequence.
 - **Gates.** `make ci` green; `--check` green from the committed census with no dump; `--write-doc`/`--check-doc`
   agree; `make t3d` reproduces 121,250 actors, 1,149,471 properties and 54,957,213 T3D bytes.
 - **Not in this PR.** The head dword's reader, and the two bytes ahead of the trailer's float.
+
+### Execution notes (2026-11-19, the Level trailer names its Model, and the palette head is one value per map)
+
+- **Task.** `U32`'s two survivors: the `Level` trailer's field before the float, and the palette head dword; plus
+  the 423 palette references that name something other than a light.
+- **The trailer's field is a compact index and it names the level's `Model`.** `read_index` resolves it to an
+  export on 73 of 73 maps, that export's class is `Model` on 73 of 73, and it is the package's **largest** `Model`
+  export on 73 of 73 -- a random `Model` would satisfy neither. As a u16 it read 883..21,101 and matched nothing;
+  the u16 misreading also produced the "two field widths" story: 64 and over encode in two bytes, 63 and under in
+  one, and `Entry`'s reference is **27**, which is why its trailer is 31 bytes and its float sits at byte 9. The
+  18 zero bytes after the float hold on **73 of 73** (`level_tail_zero` 1,314), so the trailer is
+  `[five strings][7777][1][compact Model][float TimeSeconds][18 x 0]`.
+- **423 references that are not lights are three classes.** `InterpolationPoint` 292, `PathNode` 96,
+  `LookTarget` 35 -- all invisible navigation actors, none of which renders, so the residue is 0.09% of 466,858
+  records and confined to a class triple `--check` now pins.
+- **The head dword is one value per map.** 59 of 73 maps carry a single value; the corpus takes nine values (2 on
+  30,450 of 33,509); the 13 mixed maps scatter their second value in 1..112 runs, and `M00` alone carries five
+  values. Every per-payload count was already refuted and a map-wide constant cannot be one of them, so the dword
+  is a bake-time mark and its reader is per-level renderer state -- `U32` stays open with that narrowing.
+- **Files.** `tools/map-to-t3d.py` (`level_trailer`'s compact decode and float offset, the reference's resolution
+  in `drive_map`, `palette_heads` and `palette_other_classes`, six census columns, five gates, two synthetic
+  cases), `inventory/t3d_coverage.csv` (73 rows, 50 -> 56 columns), `docs/T3D.md` (two sections, one new),
+  `docs/UNKNOWNS.md` U32, this note.
+- **Gates.** `make ci` green; `--check` green from the committed census with no dump; `--write-doc`/`--check-doc`
+  agree; `make t3d` reproduces 121,250 actors, 1,149,471 properties and 54,957,213 T3D bytes.
+- **Not in this PR.** The head dword's reader (bounded to per-level renderer state), and the `TerrainInfo`
+  payload's own interior beyond what `U33` read.
