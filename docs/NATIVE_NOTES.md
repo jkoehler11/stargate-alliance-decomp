@@ -402,6 +402,56 @@ So the runtime path is: per-program wrapper → `ShaderCompileVertex`/`ShaderCom
 produced names rather than prose. The pixel path also touches a file and the memory status, which reads as a
 shader cache; that is observed, not explained.
 
+## The UIX front-end: 27 classes, 286 methods (2026-11-19)
+
+The class census put `CLiveEngine`/`CSkinFile`/`CScreen` at 42/14/8 methods; the namespace they live in is
+much larger — **27 classes, 286 methods, 40,880 bytes** in `uix` — and it is the Xbox Live dashboard: logon,
+players, friends, voice mail and popups, with each area built as a *feature* that owns *screens*.
+
+| class | methods | bytes | what the calls say |
+|---|---:|---:|---|
+| `CLiveEngine` | 42 | 3,315 | `CreateEngine` → `CSkinFile::Initialize`, `CArray::Initialize`, `UpdateLocalUserList`; `DoWork` → `GetTopScreenWithInput`, `CInput::GetInput`, `CFeatureContext::DoWork` |
+| `CLogonFeature` | 28 | 3,777 | the logon feature, largest after the engine |
+| `CPlayersScreen` | 22 | 5,302 | largest single screen |
+| `CUIObject` | 16 | 2,639 | base object for the widget tree |
+| `CLogonPane` | 15 | 3,139 | `Input` (the logon pane takes `_UIX_INPUT_TYPE`), `UpdateUsersList`, `SetState` |
+| `CFriendsScreen` | 15 | 3,231 | `CreateScreen` (17 call sites), `UpdateStatusBox` (14) |
+| `CSkinFile` | 14 | 1,903 | `Initialize` → `CopyStringA`, `Open`, `Read`; `LoadBundlerResource`/`LoadSection` → `_D3D_AllocContiguousMemory` |
+| `CVoiceMailScreen` | 13 | 2,202 | `CreateScreen` (7 sites) |
+| `CAlertFeature` | 12 | 1,368 | `ActivateFeature`, `HideMessageScreen` |
+| `CUIPlugin` | 10 | 1,137 | the plug-in seam (`CPlugIn_*`-style entry points) |
+| `CFeatureContext` | 10 | 417 | `DoWork`, `SetVoiceMailToSpeakers`, `SetVoiceMailEngine` |
+| `CScreen` | 8 | 432 | `SetText` → `CSkinFile::GetString` + `CLiveEngine::SeparateTextAndIcons`; `CreateScreen` → `CSkinFile::Load` |
+
+Five readings the edges support:
+
+1. **The frame loop is in the engine, not in a screen.** `CLiveEngine::DoWork` (202 B) asks the engine which
+   screen has input, reads `CInput`, then calls `CFeatureContext::DoWork` — so features are pumped, screens are
+   passive, and input is routed by the engine.
+2. **Features own screens.** `StartFeature` (206 B) hides the previous top screen and activates the new
+   feature's; `CAlertFeature` does the same for message screens. That is a stack, not a state machine.
+3. **Skins are bundled resources with sections and IDs, loaded into D3D-visible memory.**
+   `CSkinFile::Load` → `Open`/`LoadSection`/`CloseHandle`, `GetResource` → `LoadedSection::GetValueForID`, and
+   `LoadBundlerResource`/`LoadSection` allocate through `_D3D_AllocContiguousMemory` — the skin's images live in
+   memory the GPU can read.
+4. **A screen is a skin section plus widgets.** `CScreen::CreateScreen` calls `CSkinFile::Load` and `Destroy`
+   calls `CSkinFile::Unload`; `SetText` pulls the string from the skin and splits it into text and icons; list
+   items come in plain and "grey" variants (`AddListItem`, `AddGreyListItem`) — enabled and disabled entries.
+5. **There is a reboot path.** `CLiveEngine::Reboot` (157 B) calls `_XOnlineCleanup`, `_XOnlineTitleUpdate` and
+   `_XLaunchNewImageA` — a Live screen can relaunch the title, which is what a dashboard does after changing a
+   Live setting.
+
+**Is it used?** Every one of the 104 methods in the four artifacts has a direct call site, and the subsystem's
+408 call sites are **all inside `.text`** — UIX is linked there, not into the `XONLINE` section its names suggest.
+But 132 distinct functions do the calling and most of them are UIX's own classes (`CFriendsScreen::CreateScreen`
+is the busiest at 17 sites), with 89 sites inside `.text` functions that have no map row. So the honest answer
+is **linked and internally live, with the title's own entry point not yet identified** — this reading does not
+show game or engine code opening a UIX screen, and it does not show that none does.
+
+**What this is not.** No strings in any of these four artifacts (release build), no decompiled bodies, and the
+plug-in seam (`CUIPlugin`) is named but not read — who registers a plug-in, and whether the title registers one,
+is the next question this subsystem raises.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented

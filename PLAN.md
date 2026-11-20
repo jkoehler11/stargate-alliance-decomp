@@ -717,12 +717,15 @@ other 38 rows.
       the deliverable is the notes, not the C: `docs/NATIVE_NOTES.md` per subsystem, with the function names, the
       addresses and what each body does (4.6 did this for the four real game-module bodies). The C itself stays under
       `$WORK` on the machine that produced it. Engine internals: name + document, decompile only where script-reachable.
-      **Progress:** four readings done from membership evidence rather than impressions — the class census
-      (`inventory/native_code_classes.csv`), `CXnIp` (144 methods), `CXo` (377) and `CXoBase` (14), each with its
-      per-method callee artifact. `CXnIp` establishes the logon state machine and the receive-path verify-then-decrypt
-      order; `CXo` establishes the Kerberos AS/TGS/AP triad, the three ticket caches and a second transport that
-      bypasses `CXnIp`; `CXoBase` is a veneer of 11-byte forwarders onto `CXnIp`. What remains is the rest of the
-      library sections and the game modules' own subsystems.
+      **Progress:** seven readings, each on its own per-method artifact, plus the class census
+      (`inventory/native_code_classes.csv`, 205 groups / 3,971 methods). `CXnIp` (144) establishes the logon state
+      machine and verify-then-decrypt receive order; `CXo` (377) the Kerberos AS/TGS/AP triad, three ticket caches
+      and the transport split; `CXoBase` (14) is 11-byte forwarders onto `CXnIp`; the four layers below (138:
+      `CXnBase`/`CXnNic`/`CXnEnet`/`CXnSock`) show an interrupt-driven stack whose Winsock ABI is `CXnSock` itself;
+      the shader toolchain (339) shows the assembler pipeline and led to 45 shipped programs, all compiled at
+      runtime through two now-named dispatchers; and the UIX front-end (286 across 27 classes) is the Live
+      dashboard — logon, players, friends, voice mail — linked into `.text` and internally live. What remains is
+      the rest of the library sections, `CUIPlugin`'s registration path, and the game modules' own subsystems.
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
       Done: **15,447 symbols**, every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
