@@ -5207,3 +5207,5 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x004a16ec,??1CDirectSoundBufferSettings@DirectSound@@UAE@XZ,masked body equals dsound.lib minus 4 trailing bytes,,,,,,,
 0x004a52aa,??1CMcpxStream@DirectSound@@UAE@XZ,masked body equals dsound.lib minus 4 trailing bytes,,,,,,,
 0x004a7e7a,??1CMcpxBuffer@DirectSound@@UAE@XZ,masked body equals dsound.lib minus 4 trailing bytes,,,,,,,
+0x002c01e0,ShaderCompileVertex,"calls _XGAssembleShader@44 then _D3DDevice_CreateVertexShader@16; called by 15 41-byte wrappers that each push one shipped vs.1.1 program, and no pixel program reaches it",,,,,,,
+0x002c0910,ShaderCompilePixel,calls _XGAssembleShader@44 then _D3DDevice_CreatePixelShader@8 plus a file cache; called by 26 28-byte wrappers that each push one shipped ps.1.1 or ps.1.4 program,,,,,,,

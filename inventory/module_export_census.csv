@@ -5143,14 +5143,14 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x002bfaf0,FUN_002bfaf0,D3DDrv,.text,208,7,2,0,1,0,0,0,1,0,format,,
 0x002bfbc0,D3DDrv_D3DResource,D3DDrv,.text,733,3,1,0,8,4,0,0,0,4,src,D3DDrv,cpp
 0x002bfed0,FUN_002bfed0,D3DDrv,.text,781,2,1,0,0,0,0,0,0,0,silent,,
-0x002c01e0,FUN_002c01e0,D3DDrv,.text,541,11,19,0,3,0,0,0,3,0,format,,
+0x002c01e0,ShaderCompileVertex,D3DDrv,.text,541,11,19,0,3,0,0,0,3,0,format,,
 0x002c0400,FUN_002c0400,D3DDrv,.text,190,2,1,0,0,0,0,0,0,0,silent,,
 0x002c04d0,FUN_002c04d0,D3DDrv,.text,44,2,1,0,0,0,0,0,0,0,silent,,
 0x002c0500,FUN_002c0500,D3DDrv,.text,37,3,1,0,0,0,0,0,0,0,silent,,
 0x002c0530,D3DDrv_D3DResource,D3DDrv,.text,279,5,1,0,2,1,0,0,1,0,src,D3DDrv,cpp
 0x002c0650,D3DDrv_D3DResource,D3DDrv,.text,239,5,2,0,3,1,0,0,2,0,src,D3DDrv,cpp
 0x002c0740,D3DDrv_D3DResource,D3DDrv,.text,409,1,1,0,2,1,0,0,0,1,src,D3DDrv,cpp
-0x002c0910,FUN_002c0910,D3DDrv,.text,617,13,44,0,6,0,0,1,5,0,config,,
+0x002c0910,ShaderCompilePixel,D3DDrv,.text,617,13,44,0,6,0,0,1,5,0,config,,
 0x002c0b80,FUN_002c0b80,D3DDrv,.text,195,3,1,0,0,0,0,0,0,0,silent,,
 0x002c0c50,FUN_002c0c50,D3DDrv,.text,1081,5,0,1,0,0,0,0,0,0,silent,,
 0x002c13d0,FUN_002c13d0,Core,.text,33,2,0,1,0,0,0,0,0,0,silent,,
