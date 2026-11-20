@@ -1,9 +1,9 @@
 module,functions,named_from_asserts,bytes,mean_size
-(unnamed),8082,0,2247444,278.1
+(unnamed),8083,0,2248008,278.1
 (other named),5398,5398,908693,168.3
 Engine,592,592,300140,507.0
 Core,578,578,388555,672.2
-(dispatch: declared),273,273,84316,308.8
+(dispatch: declared),273,273,84397,309.1
 (dispatch: slot only),83,83,9860,118.8
 Gui,59,59,14557,246.7
 XboxAudio,41,41,16921,412.7

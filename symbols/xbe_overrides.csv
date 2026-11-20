@@ -822,6 +822,7 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x00297f10,dtor_StreamTag,class table installed before any call; the body does not return this,,,,,,,
 0x002b3b30,ctor_D3DRenderDevice,class table installed after a call into the base constructor; the body returns this,,,,,,,
 0x002b4ee0,dtor_D3DRenderDevice,class table installed before any call; the body does not return this,,,,,,,
+0x002b7aa0,FUN_002b7aa0,"added to the map by symbols/xbe_boundaries.csv: the body's own bytes, in the gap after D3DDrv_D3DRenderInterface (0x002b7560 ends at 0x002b7a96) and before D3DDrv_D3DRenderInterface (0x002b8505): 10 bytes of `int3` fill, then an MSVC push-reg prologue, and a linear decode from 0x002b7aa0 closes on a `ret` at 0x002b7cd4 with table+bytes+pad between it and the next row. Nothing in the image calls it -- no `E8`, no dword reference -- so the call graph that builds this map can never make it a function, and only this row can",,,,,,,564
 0x002c3c60,dtor_HTTPDownload,class table installed before any call; the body does not return this,,,,,,,
 0x002c4f10,FUdpLink_BindPort,own method literal FUdpLink::BindPort,FUdpLink,,,,IpDrv,,12
 0x002c4f1c,FUdpLink_BindPort,own method literal FUdpLink::BindPort,FUdpLink,,,,IpDrv,,401
