@@ -649,7 +649,6 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x000486f0,execGotoState,Core,.text,518,1,0,2,5,0,0,0,4,1,format,,
 0x00048900,execEnable,Core,.text,232,1,0,2,1,0,0,0,1,0,format,,
 0x000489f0,execDisable,Core,.text,180,1,0,2,1,0,0,0,1,0,format,,
-0x00048aed,Core_UnClass,Core,.text,46,0,0,0,2,1,0,0,0,1,src,Core,h
 0x00048bf0,FUN_00048bf0,Core,.text,449,2,2,0,2,0,0,0,2,0,format,,
 0x00048dc0,Core_UnCorSc,Core,.text,132,1,1,0,2,1,0,0,0,1,src,Core,cpp
 0x00048e50,FUN_00048e50,Core,.text,58,3,1,0,0,0,0,0,0,0,silent,,
@@ -1479,8 +1478,6 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x000a6020,FUN_000a6020,Engine,.text,96,1,0,1,0,0,0,0,0,0,silent,,
 0x000a6200,FUN_000a6200,Engine,.text,264,2,0,2,0,0,0,0,0,0,silent,,
 0x000a63e0,Engine_KScript,Engine,.text,387,6,0,2,4,1,0,0,0,3,src,Engine,cpp
-0x000a661e,Engine_KScript,Engine,.text,89,4,0,0,1,1,0,0,0,0,src,Engine,cpp
-0x000a6732,FUN_000a6732,Engine,.text,35,1,0,9,0,0,0,0,0,0,silent,,
 0x000a6810,FUN_000a6810,Engine,.text,368,2,0,2,0,0,0,0,0,0,silent,,
 0x000a6980,FUN_000a6980,Engine,.text,219,2,0,2,0,0,0,0,0,0,silent,,
 0x000a6a60,FUN_000a6a60,Engine,.text,134,2,0,2,0,0,0,0,0,0,silent,,
@@ -2574,7 +2571,6 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x001130e0,FUN_001130e0,Engine,.text,308,1,0,7,0,0,0,0,0,0,silent,,
 0x00113220,FUN_00113220,Engine,.text,123,2,3,0,0,0,0,0,0,0,silent,,
 0x001132a0,FUN_001132a0,Engine,.text,595,4,0,0,0,0,0,0,0,0,silent,,
-0x001135cd,Engine_UnController,Engine,.text,167,0,0,0,8,4,0,0,0,4,src,Engine,cpp
 0x00113720,execResetKeyboard,Engine,.text,79,1,0,2,0,0,0,0,0,0,silent,,
 0x001137c0,execFindBestInventoryPath,Engine,.text,536,4,0,2,0,0,0,0,0,0,silent,,
 0x001139e0,FUN_001139e0,Engine,.text,42,2,0,13,0,0,0,0,0,0,silent,,
@@ -4255,7 +4251,6 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x00217f40,execChangeSpringFeedbackEffect,Core,.text,379,4,0,2,0,0,0,0,0,0,silent,,
 0x002180c0,execChangeBaseParamsFeedbackEffect,Core,.text,447,4,0,2,0,0,0,0,0,0,silent,,
 0x00218280,FUN_00218280,Core,.text,205,4,0,2,0,0,0,0,0,0,silent,,
-0x0021848b,Core_UnClass,Core,.text,177,2,0,0,3,1,0,0,0,2,src,Core,h
 0x002184f0,FUN_002184f0,Core,.text,396,7,0,2,0,0,0,0,0,0,silent,,
 0x00218680,FUN_00218680,Core,.text,810,9,2,0,2,0,0,0,0,2,text,,
 0x002189c0,FUN_002189c0,Core,.text,385,2,1,0,0,0,0,0,0,0,silent,,
@@ -4996,7 +4991,6 @@ address,name,module,section,size,callees,callers,data_refs,literals,src,asset,co
 0x002954b0,FUN_002954b0,Engine,.text,596,13,2,0,1,0,0,0,0,1,text,,
 0x00295540,Engine_UStreamInterface,Engine,.text,33,0,0,0,2,1,0,0,0,1,src,Engine,cpp
 0x00295570,FUN_00295570,Engine,.text,614,11,1,0,0,0,0,0,0,0,silent,,
-0x0029584b,Engine_UStreamInterface,Engine,.text,36,0,0,0,2,1,0,0,0,1,src,Engine,cpp
 0x00295880,FUN_00295880,Engine,.text,223,3,0,2,0,0,0,0,0,0,silent,,
 0x00295960,FUN_00295960,Engine,.text,61,2,1,0,0,0,0,0,0,0,silent,,
 0x002959b0,FUN_002959b0,Engine,.text,415,6,3,0,0,0,0,0,0,0,silent,,

@@ -986,10 +986,10 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00040960,Native_56,50,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x000409a0,Native_67,131,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00040a30,Native_68,35,(dispatch: slot only),(dispatch: slot only),none,,,,,
-0x00040a60,Native_29,19,(dispatch: slot only),(dispatch: slot only),none,,,,,
-0x00040a80,Native_30,21,(dispatch: slot only),(dispatch: slot only),none,,,,,
-0x00040aa0,Native_32,19,(dispatch: slot only),(dispatch: slot only),none,,,,,
-0x00040ac0,Native_33,19,(dispatch: slot only),(dispatch: slot only),none,,,,,
+0x00040a60,Native_29,24,(dispatch: slot only),(dispatch: slot only),none,,,,,
+0x00040a80,Native_30,28,(dispatch: slot only),(dispatch: slot only),none,,,,,
+0x00040aa0,Native_32,24,(dispatch: slot only),(dispatch: slot only),none,,,,,
+0x00040ac0,Native_33,24,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00040ae0,Native_36,21,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00040b00,Native_37,13,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00040b10,Native_38,13,(dispatch: slot only),(dispatch: slot only),none,,,,,
@@ -1014,39 +1014,39 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00040f20,FUN_00040f20,57,(unnamed),(unnamed),none,,,,,
 0x00040f60,FUN_00040f60,57,(unnamed),(unnamed),none,,,,,
 0x00040fa0,execNot_PreBool,92,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00041000,execEqualEqual_BoolBool,33,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00041000,execEqualEqual_BoolBool,144,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041090,execNotEqual_BoolBool,144,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041120,execAndAnd_BoolBool,149,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000411c0,execXorXor_BoolBool,139,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041250,execOrOr_BoolBool,153,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000412f0,execMultiplyEqual_ByteByte,165,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000413a0,execDivideEqual_ByteByte,188,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00041460,execAddEqual_ByteByte,27,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00041460,execAddEqual_ByteByte,166,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041510,execSubtractEqual_ByteByte,166,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000415c0,execAddAdd_PreByte,131,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00041650,execSubtractSubtract_PreByte,125,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00041650,execSubtractSubtract_PreByte,131,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000416e0,execAddAdd_Byte,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041770,execSubtractSubtract_Byte,130,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00041800,execComplement_PreInt,6,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00041800,execComplement_PreInt,87,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041860,execGreaterGreaterGreater_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000418e0,execSubtract_PreInt,87,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00041940,execMultiply_IntInt,33,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00041940,execMultiply_IntInt,124,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000419c0,execDivide_IntInt,137,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041a50,execAdd_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041ad0,execSubtract_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00041b50,execLessLess_IntInt,67,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00041b50,execLessLess_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041bd0,execGreaterGreater_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041c50,execLess_IntInt,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041ce0,execGreater_IntInt,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041d70,execLessEqual_IntInt,32,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041d90,FUN_00041d90,98,(unnamed),(unnamed),none,,,,,
-0x00041e00,execGreaterEqual_IntInt,33,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00041e00,execGreaterEqual_IntInt,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041e90,execEqualEqual_IntInt,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041f20,execNotEqual_IntInt,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00041fb0,execAnd_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00042030,execXor_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000420b0,execOr_IntInt,125,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00042130,execMultiplyEqual_IntFloat,79,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00042130,execMultiplyEqual_IntFloat,180,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000421f0,execDivideEqual_IntFloat,196,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000422c0,execAddEqual_IntInt,174,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00042370,execSubtractEqual_IntInt,174,(dispatch: declared),(dispatch: declared),none,,,,,
@@ -1142,7 +1142,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00046210,execEqualEqual_NameName,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000462a0,execNotEqual_NameName,130,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00046330,execEqualEqual_ObjectObject,111,(dispatch: declared),(dispatch: declared),none,,,,,
-0x000463f0,execNotEqual_ObjectObject,175,(dispatch: declared),(dispatch: declared),none,,,,,
+0x000463f0,execNotEqual_ObjectObject,192,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000464b0,FUN_000464b0,3,(unnamed),(unnamed),none,,,,,
 0x000464c0,FUN_000464c0,3,(unnamed),(unnamed),none,,,,,
 0x000464d0,FUN_000464d0,3,(unnamed),(unnamed),none,,,,,
@@ -1150,7 +1150,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x000464f0,Native_96,38,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00046520,Native_97,38,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00046550,Native_98,38,(dispatch: slot only),(dispatch: slot only),none,,,,,
-0x00046580,Native_99,27,(dispatch: slot only),(dispatch: slot only),none,,,,,
+0x00046580,Native_99,38,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x000465b0,Native_100,38,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x000465e0,Native_101,38,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00046610,Native_102,38,(dispatch: slot only),(dispatch: slot only),none,,,,,
@@ -1212,17 +1212,17 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00048170,execSquare,97,(dispatch: declared),(dispatch: declared),none,,,,,
 0x000481e0,execFMin,151,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00048280,execFMax,151,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00048320,execFClamp,220,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x00048400,execLerp,281,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x00048520,FUN_00048520,174,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x000485d0,execChr,106,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x00048640,execClassIsChildOf,168,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x000486f0,execGotoState,518,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x00048900,execEnable,232,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x000489f0,execDisable,180,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x00048aed,Core_UnClass,46,Core,Core,assert,,0,,,
-0x00048b20,FUN_00048b20,197,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048aed
-0x00048bf0,FUN_00048bf0,449,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048aed
+0x00048320,execFClamp,220,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00048400,execLerp,281,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00048520,FUN_00048520,174,(unnamed),(unnamed),none,,,,,
+0x000485d0,execChr,106,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048dc0
+0x00048640,execClassIsChildOf,168,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048dc0
+0x000486f0,execGotoState,518,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048dc0
+0x00048900,execEnable,232,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048dc0
+0x000489f0,execDisable,180,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x00048dc0
+0x00048ab0,FUN_00048ab0,107,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048dc0
+0x00048b20,FUN_00048b20,197,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048dc0
+0x00048bf0,FUN_00048bf0,449,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048dc0
 0x00048dc0,Core_UnCorSc,132,Core,Core,assert,,0,,,
 0x00048e50,FUN_00048e50,58,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048dc0
 0x00048e90,FUN_00048e90,578,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00048dc0
@@ -1273,7 +1273,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0004bf20,FUN_0004bf20,1390,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0004bbc0
 0x0004c4a0,FUN_0004c4a0,847,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0004c7f0
 0x0004c7f0,Core_UnCorSc,548,Core,Core,assert,,0,,,
-0x0004ca20,Native_5,348,(dispatch: slot only),Core,propagated,locality,1,2.00,1.000,0x0004c7f0
+0x0004ca20,Native_5,356,(dispatch: slot only),Core,propagated,locality,1,2.00,1.000,0x0004c7f0
 0x0004cb90,execSubtractEqual_StrStr,734,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x0004c7f0
 0x0004ce70,execMid,306,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x0004c7f0
 0x0004cfb0,execLeft,267,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x0004c7f0
@@ -1286,7 +1286,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0004e330,execAllObjects,457,(dispatch: declared),(dispatch: declared),none,,,,,
 0x0004e500,execSplit,386,(dispatch: declared),(dispatch: declared),none,,,,,
 0x0004e690,FUN_0004e690,416,(unnamed),(unnamed),none,,,,,
-0x0004e830,FUN_0004e830,415,(unnamed),(unnamed),none,,,,,
+0x0004e830,FUN_0004e830,418,(unnamed),(unnamed),none,,,,,
 0x0004e9e0,FUN_0004e9e0,192,(unnamed),(unnamed),none,,,,,
 0x0004eaa0,FUN_0004eaa0,53,(unnamed),(unnamed),none,,,,,
 0x0004eae0,FUN_0004eae0,81,(unnamed),(unnamed),none,,,,,
@@ -2274,10 +2274,10 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x000a6310,FUN_000a6310,116,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a63e0
 0x000a6390,FUN_000a6390,74,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a63e0
 0x000a63e0,Engine_KScript,387,Engine,Engine,assert,,0,,,
-0x000a661e,Engine_KScript,89,Engine,Engine,assert,,0,,,
-0x000a6732,FUN_000a6732,35,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a661e
-0x000a6760,FUN_000a6760,173,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a661e
-0x000a6810,FUN_000a6810,368,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a661e
+0x000a6570,FUN_000a6570,274,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a63e0
+0x000a6690,FUN_000a6690,197,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a63e0
+0x000a6760,FUN_000a6760,173,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a63e0
+0x000a6810,FUN_000a6810,368,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a6bb0
 0x000a6980,FUN_000a6980,219,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a6bb0
 0x000a6a60,FUN_000a6a60,134,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a6bb0
 0x000a6af0,FUN_000a6af0,188,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000a6bb0
@@ -3541,7 +3541,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001054e0,FUN_001054e0,170,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00104f40
 0x00105590,execDrawText,353,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x00104f40
 0x00105700,FUN_00105700,1959,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00104f40
-0x00105eb0,FUN_00105eb0,2022,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001066a0
+0x00105eb0,FUN_00105eb0,2025,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001066a0
 0x001066a0,Engine_UnCanvas,821,Engine,Engine,assert,,0,,,
 0x001069e0,Engine_UnCanvas,183,Engine,Engine,assert,,0,,,
 0x00106aa0,FUN_00106aa0,506,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001069e0
@@ -3706,11 +3706,11 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00111cd0,FUN_00111cd0,109,(unnamed),(unnamed),none,,,,,
 0x00111d40,FUN_00111d40,103,(unnamed),(unnamed),none,,,,,
 0x00111db0,FUN_00111db0,55,(unnamed),(unnamed),none,,,,,
-0x00111e00,FUN_00111e00,554,(unnamed),(unnamed),none,,,,,
+0x00111e00,FUN_00111e00,562,(unnamed),(unnamed),none,,,,,
 0x00112040,FUN_00112040,67,(unnamed),(unnamed),none,,,,,
 0x00112090,FUN_00112090,67,(unnamed),(unnamed),none,,,,,
 0x001120e0,execAddController,63,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00112120,execRemoveController,109,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00112120,execRemoveController,116,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001121a0,execWaitForLanding,84,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00112200,Native_528,102,(dispatch: slot only),(dispatch: slot only),none,,,,,
 0x00112270,FUN_00112270,266,(unnamed),(unnamed),none,,,,,
@@ -3736,14 +3736,14 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001130e0,FUN_001130e0,308,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00113020
 0x00113220,FUN_00113220,123,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00113020
 0x001132a0,FUN_001132a0,595,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00113020
-0x00113500,FUN_00113500,153,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001135cd
-0x001135cd,Engine_UnController,167,Engine,Engine,assert,,0,,,
-0x00113680,FUN_00113680,159,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001135cd
-0x00113720,execResetKeyboard,79,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x001135cd
-0x00113770,FUN_00113770,75,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001135cd
-0x001137c0,execFindBestInventoryPath,536,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x001135cd
-0x001139e0,FUN_001139e0,42,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001135cd
-0x00113a10,execPickTarget,1941,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x001135cd
+0x00113500,FUN_00113500,153,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00113020
+0x001135a0,FUN_001135a0,212,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00113020
+0x00113680,FUN_00113680,159,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00113020
+0x00113720,execResetKeyboard,79,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x00113020
+0x00113770,FUN_00113770,75,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00113020
+0x001137c0,execFindBestInventoryPath,536,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x00113020
+0x001139e0,FUN_001139e0,42,(unnamed),(unnamed),none,,,,,
+0x00113a10,execPickTarget,1941,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001141b0,execPickWallAdjust,280,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001142d0,execFindStairRotation,1849,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00114a10,execactorReachable,537,(dispatch: declared),(dispatch: declared),none,,,,,
@@ -3752,7 +3752,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00114f10,FUN_00114f10,535,(unnamed),(unnamed),none,,,,,
 0x00115130,execFindPathTo,117,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001151b0,execFindPathToward,273,(dispatch: declared),(dispatch: declared),none,,,,,
-0x001152d0,FUN_001152d0,941,(unnamed),(unnamed),none,,,,,
+0x001152d0,FUN_001152d0,947,(unnamed),(unnamed),none,,,,,
 0x00115690,FUN_00115690,365,(unnamed),(unnamed),none,,,,,
 0x00115800,execFindRandomDest,337,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00115960,FUN_00115960,1277,(unnamed),(unnamed),none,,,,,
@@ -3774,7 +3774,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00119330,FUN_00119330,686,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001195e0
 0x001195e0,Engine_UnController,179,Engine,Engine,assert,,0,,,
 0x001196a0,FUN_001196a0,493,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001195e0
-0x00119890,execCanSee,196,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x001195e0
+0x00119890,execCanSee,199,(dispatch: declared),Engine,propagated,locality,1,2.00,1.000,0x001195e0
 0x00119960,FUN_00119960,539,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00119b80
 0x00119b80,Engine_UnController,176,Engine,Engine,assert,,0,,,
 0x00119c30,FUN_00119c30,236,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00119b80
@@ -4118,18 +4118,18 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00149210,dtor_CrosshairPack,92,(other named),(other named),none,,,,,
 0x00149280,execGetURLMap,228,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00149370,FUN_00149370,237,(unnamed),(unnamed),none,,,,,
-0x00149460,execGetMapName,2223,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00149d20,FUN_00149d20,1102,(unnamed),(unnamed),none,,,,,
+0x00149460,execGetMapName,2237,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00149d20,FUN_00149d20,1112,(unnamed),(unnamed),none,,,,,
 0x0014a180,FUN_0014a180,476,(unnamed),(unnamed),none,,,,,
 0x0014a360,FUN_0014a360,615,(unnamed),(unnamed),none,,,,,
 0x0014a5d0,FUN_0014a5d0,826,(unnamed),(unnamed),none,,,,,
 0x0014a910,FUN_0014a910,840,(unnamed),(unnamed),none,,,,,
-0x0014ac60,execGetNextSkin,1147,(dispatch: declared),(dispatch: declared),none,,,,,
+0x0014ac60,execGetNextSkin,1154,(dispatch: declared),(dispatch: declared),none,,,,,
 0x0014b0f0,FUN_0014b0f0,828,(unnamed),(unnamed),none,,,,,
-0x0014b430,FUN_0014b430,3157,(unnamed),(unnamed),none,,,,,
+0x0014b430,FUN_0014b430,3162,(unnamed),(unnamed),none,,,,,
 0x0014c090,FUN_0014c090,142,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0014c700
 0x0014c120,FUN_0014c120,133,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0014c700
-0x0014c1b0,FUN_0014c1b0,176,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0014c700
+0x0014c1b0,FUN_0014c1b0,179,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0014c700
 0x0014c2e0,FUN_0014c2e0,94,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0014c700
 0x0014c340,FUN_0014c340,94,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0014c700
 0x0014c3a0,FUN_0014c3a0,264,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0014c700
@@ -5384,14 +5384,14 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001c66f0,execAddClass,592,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x001c6996
 0x001c6940,execPopClass,181,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x001c6996
 0x001c6996,Core_UnTemplate,55,Core,Core,assert,,0,,,
-0x001c6a30,execAddSetting,4728,(dispatch: declared),Core,propagated,locality,1,1.00,0.500,0x001c6996
+0x001c6a30,execAddSetting,4737,(dispatch: declared),Core,propagated,locality,1,1.00,0.500,0x001c6996
 0x001c7cc0,execFindIndex,794,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001c7fe0,execSort,112,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001c8050,FUN_001c8050,533,(unnamed),(unnamed),none,,,,,
 0x001c8270,execClear,102,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001c82e0,execRemoveClass,817,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001c8620,FUN_001c8620,220,(unnamed),(unnamed),none,,,,,
-0x001c8700,execSaveSettings,774,(dispatch: declared),(dispatch: declared),none,,,,,
+0x001c8700,execSaveSettings,780,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001c8a10,execGetSettings,292,(dispatch: declared),(dispatch: declared),none,,,,,
 0x001c8b40,FUN_001c8b40,2591,(unnamed),(unnamed),none,,,,,
 0x001c9570,execStoreSetting,812,(dispatch: declared),Engine,propagated,locality,1,1.00,0.500,0x001c98b0
@@ -5440,7 +5440,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001ce110,Engine_UnProjector,179,Engine,Engine,assert,,0,,,
 0x001ce1d0,FUN_001ce1d0,183,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001ce110
 0x001ce290,FUN_001ce290,662,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001ce110
-0x001ce530,FUN_001ce530,223,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001ce110
+0x001ce530,FUN_001ce530,297,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001ce110
 0x001ce660,FUN_001ce660,1611,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001ce110
 0x001cecc0,Engine_UnProjector,183,Engine,Engine,assert,,0,,,
 0x001cf120,Engine_UnProjector,3651,Engine,Engine,assert,,0,,,
@@ -6031,18 +6031,18 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00212380,FUN_00212380,485,(unnamed),(unnamed),none,,,,,
 0x00212570,FUN_00212570,377,(unnamed),(unnamed),none,,,,,
 0x002126f0,FUN_002126f0,614,(unnamed),(unnamed),none,,,,,
-0x00212960,execPlaySound,867,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00212960,execPlaySound,870,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00212cd0,FUN_00212cd0,976,(unnamed),(unnamed),none,,,,,
 0x002130a0,FUN_002130a0,936,(unnamed),(unnamed),none,,,,,
 0x00213450,execTrace,908,(dispatch: declared),(dispatch: declared),none,,,,,
 0x002137e0,execSpawn,485,(dispatch: declared),(dispatch: declared),none,,,,,
 0x002139d0,execAllActors,521,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00213be0,execDynamicActors,513,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00213be0,execDynamicActors,516,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00213df0,execChildActors,503,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00213ff0,execBasedActors,487,(dispatch: declared),(dispatch: declared),none,,,,,
 0x002141e0,execTouchingActors,487,(dispatch: declared),(dispatch: declared),none,,,,,
 0x002143d0,execTraceActors,846,(dispatch: declared),(dispatch: declared),none,,,,,
-0x00214720,execRadiusActors,761,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00214720,execRadiusActors,773,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00214a30,execVisibleActors,872,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00214da0,execVisibleCollidingActors,870,(dispatch: declared),(dispatch: declared),none,,,,,
 0x00215110,execCollidingActors,622,(dispatch: declared),(dispatch: declared),none,,,,,
@@ -6081,16 +6081,16 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00217950,FUN_00217950,98,(unnamed),(unnamed),none,,,,,
 0x002179c0,FUN_002179c0,411,(unnamed),(unnamed),none,,,,,
 0x00217b60,FUN_00217b60,309,(unnamed),(unnamed),none,,,,,
-0x00217ca0,execPlayFeedbackEffect,274,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x00217dc0,execStopFeedbackEffect,378,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x00217f40,execChangeSpringFeedbackEffect,379,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x002180c0,execChangeBaseParamsFeedbackEffect,447,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x00218280,FUN_00218280,205,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x0021848b,Core_UnClass,177,Core,Core,assert,,0,,,
-0x002184f0,FUN_002184f0,396,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x00218680,FUN_00218680,810,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x002189c0,FUN_002189c0,385,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0021848b
-0x00218b50,FUN_00218b50,1003,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0021848b
+0x00217ca0,execPlayFeedbackEffect,274,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00217dc0,execStopFeedbackEffect,378,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00217f40,execChangeSpringFeedbackEffect,379,(dispatch: declared),(dispatch: declared),none,,,,,
+0x002180c0,execChangeBaseParamsFeedbackEffect,447,(dispatch: declared),(dispatch: declared),none,,,,,
+0x00218280,FUN_00218280,205,(unnamed),(unnamed),none,,,,,
+0x00218350,FUN_00218350,401,(unnamed),(unnamed),none,,,,,
+0x002184f0,FUN_002184f0,396,(unnamed),(unnamed),none,,,,,
+0x00218680,FUN_00218680,810,(unnamed),(unnamed),none,,,,,
+0x002189c0,FUN_002189c0,385,(unnamed),(unnamed),none,,,,,
+0x00218b50,FUN_00218b50,1003,(unnamed),(unnamed),none,,,,,
 0x00218f40,FUN_00218f40,127,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00219710
 0x00218fc0,FUN_00218fc0,199,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00219710
 0x00219090,FUN_00219090,249,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00219710
@@ -7050,23 +7050,23 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00295190,FUN_00295190,229,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00295020
 0x002954b0,FUN_002954b0,596,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00295540
 0x00295540,Engine_UStreamInterface,33,Engine,Engine,assert,,0,,,
-0x00295570,FUN_00295570,614,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00295540
-0x002957e0,FUN_002957e0,52,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0029584b
-0x0029584b,Engine_UStreamInterface,36,Engine,Engine,assert,,0,,,
-0x00295880,FUN_00295880,223,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295960,FUN_00295960,61,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x002959b0,FUN_002959b0,415,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295b50,FUN_00295b50,237,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295c40,FUN_00295c40,239,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295de0,FUN_00295de0,76,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295e30,FUN_00295e30,77,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295e80,ctor_StreamInterface,18,(other named),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295ea0,FUN_00295ea0,33,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295ed0,dtor_StreamInterface,92,(other named),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295f30,ctor_StreamInteraction,18,(other named),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295f50,FUN_00295f50,33,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295f80,dtor_StreamInteraction,105,(other named),Engine,propagated,locality,1,1.00,0.500,0x0029584b
-0x00295ff0,FUN_00295ff0,149,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0029584b
+0x00295570,FUN_00295570,614,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x002957e0,FUN_002957e0,52,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x00295820,FUN_00295820,92,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x00295880,FUN_00295880,223,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x00295960,FUN_00295960,61,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x002959b0,FUN_002959b0,415,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x00295b50,FUN_00295b50,237,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x00295c40,FUN_00295c40,239,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x00295540
+0x00295de0,FUN_00295de0,76,(unnamed),(unnamed),none,,,,,
+0x00295e30,FUN_00295e30,77,(unnamed),(unnamed),none,,,,,
+0x00295e80,ctor_StreamInterface,18,(other named),(other named),none,,,,,
+0x00295ea0,FUN_00295ea0,33,(unnamed),(unnamed),none,,,,,
+0x00295ed0,dtor_StreamInterface,92,(other named),(other named),none,,,,,
+0x00295f30,ctor_StreamInteraction,18,(other named),(other named),none,,,,,
+0x00295f50,FUN_00295f50,33,(unnamed),(unnamed),none,,,,,
+0x00295f80,dtor_StreamInteraction,105,(other named),(other named),none,,,,,
+0x00295ff0,FUN_00295ff0,149,(unnamed),(unnamed),none,,,,,
 0x002960a0,FUN_002960a0,131,(unnamed),(unnamed),none,,,,,
 0x00296130,FUN_00296130,45,(unnamed),(unnamed),none,,,,,
 0x00296160,FUN_00296160,478,(unnamed),(unnamed),none,,,,,
@@ -8106,7 +8106,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x002f7b60,FUN_002f7b60,102,(unnamed),Gui,propagated,locality,1,1.00,0.500,0x002f7540
 0x002f7bd0,FUN_002f7bd0,181,(unnamed),Gui,propagated,locality,1,1.00,0.500,0x002f7540
 0x002f7c90,FUN_002f7c90,99,(unnamed),Gui,propagated,locality,1,1.00,0.500,0x002f7540
-0x002f7d00,FUN_002f7d00,255,(unnamed),Gui,propagated,locality,1,1.00,0.500,0x002f7540
+0x002f7d00,FUN_002f7d00,263,(unnamed),Gui,propagated,locality,1,1.00,0.500,0x002f7540
 0x002f7e10,FUN_002f7e10,146,(unnamed),(unnamed),none,,,,,
 0x002f7eb0,FUN_002f7eb0,168,(unnamed),(unnamed),none,,,,,
 0x002f7f60,FUN_002f7f60,146,(unnamed),(unnamed),none,,,,,
@@ -8134,8 +8134,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x002f9020,FUN_002f9020,72,(unnamed),(unnamed),none,,,,,
 0x002f92d0,FUN_002f92d0,290,(unnamed),(unnamed),none,,,,,
 0x002f9400,FUN_002f9400,324,(unnamed),(unnamed),none,,,,,
-0x002f9550,FUN_002f9550,330,(unnamed),(unnamed),none,,,,,
-0x002f96b0,FUN_002f96b0,330,(unnamed),Core,propagated,locality,1,1.00,0.500,0x002f9e20
+0x002f9550,FUN_002f9550,339,(unnamed),(unnamed),none,,,,,
+0x002f96b0,FUN_002f96b0,339,(unnamed),Core,propagated,locality,1,1.00,0.500,0x002f9e20
 0x002f9810,FUN_002f9810,176,(unnamed),Core,propagated,locality,1,1.00,0.500,0x002f9e20
 0x002f98c0,FUN_002f98c0,81,(unnamed),Core,propagated,locality,1,1.00,0.500,0x002f9e20
 0x002f9920,FUN_002f9920,303,(unnamed),Core,propagated,locality,1,1.00,0.500,0x002f9e20
@@ -8164,7 +8164,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x002feae0,FUN_002feae0,264,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x002fe530
 0x002febf0,FUN_002febf0,1175,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x002fe530
 0x002ff090,execAllObjectProperties,579,(dispatch: declared),Gui,propagated,locality,1,2.00,1.000,0x002ff6d0
-0x002ff2e0,execAllInnerObjects,439,(dispatch: declared),Gui,propagated,locality,1,2.00,1.000,0x002ff6d0
+0x002ff2e0,execAllInnerObjects,446,(dispatch: declared),Gui,propagated,locality,1,2.00,1.000,0x002ff6d0
 0x002ff4a0,FUN_002ff4a0,381,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x002ff6d0
 0x002ff620,FUN_002ff620,163,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x002ff6d0
 0x002ff6d0,Gui_UnGUICore,180,Gui,Gui,assert,,0,,,
@@ -8239,7 +8239,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00304450,FUN_00304450,264,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x00304780
 0x00304560,FUN_00304560,264,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x00304780
 0x00304670,FUN_00304670,264,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x00304780
-0x00304780,Gui_UnGUILists,421,Gui,Gui,assert,,0,,,
+0x00304780,Gui_UnGUILists,429,Gui,Gui,assert,,0,,,
 0x00304930,Gui_UnGUILists,180,Gui,Gui,assert,,0,,,
 0x003049f0,Gui_UnGUILists,180,Gui,Gui,assert,,0,,,
 0x00304ab0,Gui_UnGUILists,180,Gui,Gui,assert,,0,,,
@@ -8573,11 +8573,11 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0031fb10,FUN_0031fb10,1258,(unnamed),stargategame,propagated,locality,1,2.00,1.000,0x0031f340
 0x00320000,FUN_00320000,718,(unnamed),(unnamed),none,,,,,
 0x003202d0,FUN_003202d0,718,(unnamed),(unnamed),none,,,,,
-0x003205a0,FUN_003205a0,1009,(unnamed),(unnamed),none,,,,,
+0x003205a0,FUN_003205a0,1018,(unnamed),(unnamed),none,,,,,
 0x003209a0,FUN_003209a0,3320,(unnamed),(unnamed),none,,,,,
 0x003216a0,FUN_003216a0,120,(unnamed),(unnamed),none,,,,,
 0x00321720,FUN_00321720,1803,(unnamed),(unnamed),none,,,,,
-0x00321e30,FUN_00321e30,1799,(unnamed),(unnamed),none,,,,,
+0x00321e30,FUN_00321e30,1808,(unnamed),(unnamed),none,,,,,
 0x00322540,FUN_00322540,1924,(unnamed),stargategame,propagated,locality,1,2.00,1.000,0x00322cd0
 0x00322cd0,ucpp_Register_UnrealPlayer,180,stargategame,stargategame,assert,,0,,,
 0x00322d90,ucpp_Register_StargatePlayer,180,stargategame,stargategame,assert,,0,,,

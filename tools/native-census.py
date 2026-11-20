@@ -44,9 +44,18 @@ which of the two answered.
 `--emit-boundaries` and `--emit-creations` print the repair rows that population earns -- one `add` in
 `symbols/xbe_boundaries.csv` and the creation row in `symbols/xbe_overrides.csv` that `XbePost.java`
 needs -- from the committed table alone (no dump, no image). They print rather than append: the two
-files carry every other repair, so the rows are a reviewed append. A body whose extent runs past the
-next row is refused by name: a false split sitting inside a native body needs a verb this file does
-not have yet.
+files carry every other repair, so the rows are a reviewed append. A body whose extent encloses a row
+the map already has is emitted with the `drop` that folds that row: an `add` on its own would overlap
+the map, and the fragment inside is what U39's pairing names.
+
+The `sweep`/`sweep_closes` columns are the fourth reading, and the one the resize population needs:
+a **linear decode from the body's start** to the first instruction that ends exactly where a `cc cc`
+run begins (or where the next map row begins), refused unless that instruction is an unconditional
+terminator. It is a measurement of the row's own bytes, not of a walk's end: the island fallback above
+stops at the first `cc cc` and so can read the *neighbour's* close (`0x00041000` declares 33 bytes and
+the island ran 437), while a decode that must land on a terminator settles the same row at 144. The
+columns reproduce the map's own size on 784 of the 877 registration rows and disagree on 36 -- the rows
+that stop short -- which is what `--emit-boundaries` turns into `resize` rows.
 """
 import argparse
 import bisect
@@ -67,7 +76,10 @@ OUT = os.path.join(ROOT, "inventory", "native_census.csv")
 
 COLS = ["body_va", "names", "records", "classes", "section", "census", "boundary", "prologue",
         "first_bytes", "disassembler", "body_bytes", "instructions", "ends_terminal",
-        "extent", "extent_source", "extent_closes"]
+        "extent", "extent_source", "extent_closes", "sweep", "sweep_closes", "sweep_refused"]
+
+SWEEP_REFUSALS = ("pad-not-after-a-terminator", "no-terminator-before-the-next-row", "undecoded",
+                  "no-section", "unreadable", "close-inside-the-extension")
 
 # MSVC 7.1 openings seen at this build's real entries, longest first: the order is the classifier.
 PROLOGUES = (
@@ -127,6 +139,85 @@ def island_end(data, start=1):
         if data[i] == 0xCC and data[i + 1] == 0xCC:
             return i
     return None
+
+
+def _decoder():
+    """The instruction decoder the resize reading shares with `tools/vcall-receiver.py`.
+
+    One decoder, not two: that tool's own docstring is where the lengths this image needs were measured
+    (`0x40-0x4F` one-byte inc/dec, `F6/F7 /0` taking an immediate, `0F 31`/`0F A2` taking no modrm).
+    """
+    spec = importlib.util.spec_from_file_location("vcall_receiver", os.path.join(HERE, "vcall-receiver.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.decode
+
+
+def terminator_kind(data, start, text):
+    """The canonical name of the unconditional transfer the instruction at `start` makes, or None.
+
+    The decoder renders `E9`/`EB` and every `jcc` as `jmp/jcc`, so the opcode byte at the instruction's
+    own start decides it -- a conditional jump falls through and cannot end a body. `group5 /4` is
+    `jmp r/m32`, which the same decoder names by the group rather than the mnemonic.
+    """
+    if text == "ret":
+        return "ret"
+    if text.startswith("ret imm16"):
+        return "ret-imm"
+    if text.startswith("jmp/jcc"):
+        return "jmp" if start < len(data) and data[start] in (0xE9, 0xEB) else None
+    return "jmp-ind" if text.startswith("group5 /4") else None
+
+
+def sweep_body(decode, data, limit=None, floor=None):
+    """(extent, closes, why): the body's end by linear decode, or why the decode will not claim one.
+
+    A body's last instruction is an unconditional terminator, so the sweep accepts an end only where one
+    ends: at the start of a `cc cc` pad (`pad`), or exactly where the next map row begins (`edge`). A pad
+    that follows anything else is a `0xcc` *inside* the body -- one byte between two bodies is not
+    padding -- so the sweep refuses the row rather than resizing it to a neighbour's close.
+
+    `floor` is the row's declared end, and it makes the reading safe for a *resize*: when a complete
+    close already sits between it and the body's own end, the bytes past the declaration are a block of
+    their own (a cold tail or an uncreated body), not code the declaration cut in half, so the row is
+    refused instead of grown over it. Every one of this image's 41 short rows has no such close.
+    """
+    i, prev, prev_start, closes = 0, None, None, []
+    while i < len(data):
+        if i + 1 < len(data) and data[i] == 0xCC and data[i + 1] == 0xCC:
+            kind = terminator_kind(data, prev_start, prev) if prev is not None else None
+            if not kind:
+                return None, None, "pad-not-after-a-terminator"
+            return (None, None, "close-inside-the-extension") if _inner(closes, floor, i) \
+                else (i, kind, "pad")
+        ins = decode(data, i)
+        if ins is None or ins.length <= 0:
+            return None, None, "undecoded"
+        prev_start = i
+        i += ins.length
+        prev = ins.text
+        if terminator_kind(data, prev_start, prev):
+            closes.append(i)
+        if limit is not None and i >= limit:
+            # The next row's own start is the hard bound: an instruction that crosses it cannot be this
+            # body's, and an instruction that ends exactly on it settles the body as an `edge`.
+            if i == limit:
+                kind = terminator_kind(data, prev_start, prev)
+                if kind and not _inner(closes, floor, i):
+                    return i, kind, "edge"
+            return None, None, "no-terminator-before-the-next-row"
+    if limit is not None and i == limit and prev is not None:
+        kind = terminator_kind(data, prev_start, prev)
+        if kind and not _inner(closes, floor, i):
+            return i, kind, "edge"
+    return None, None, "no-terminator-before-the-next-row"
+
+
+def _inner(closes, floor, end):
+    """Does a complete close sit strictly between the declared end and the body's own?"""
+    if floor is None:
+        return False
+    return any(floor < c < end for c in closes)
 
 
 def body_extent(data, body_bytes):
@@ -196,6 +287,7 @@ def load_verdicts(path):
 
 def build(bodies, table, starts, xbe, verdicts):
     rows = []
+    decode = _decoder() if xbe is not None else None
     for va in sorted(bodies):
         e = bodies[va]
         first = prev = None
@@ -222,7 +314,9 @@ def build(bodies, table, starts, xbe, verdicts):
         row["boundary"] = boundary(prev) if xbe is not None else ""
         row["prologue"] = prologue(first or b"") if xbe is not None else ""
         row["first_bytes"] = (first or b"").hex()
-        row["disassembler"] = v.get("verdict", "")
+        # NativeCensus.java names the column `verdict` and the table names it `disassembler`: reading only
+        # the first blanked the committed column on a --dump-only regeneration (measured 2026-11-20).
+        row["disassembler"] = v.get("disassembler") or v.get("verdict") or ""
         row["body_bytes"] = v.get("body_bytes", "")
         row["instructions"] = v.get("instructions", "")
         row["ends_terminal"] = v.get("ends_terminal", "")
@@ -238,13 +332,27 @@ def build(bodies, table, starts, xbe, verdicts):
             row["extent"] = extent or ""
             row["extent_source"] = source
             row["extent_closes"] = closes
+            # The sweep reads the same window but stops at a terminator, and it is bounded by the next
+            # row the map already has: an island end past that row is the neighbour's close, not a body.
+            i = bisect.bisect_right(starts, va)
+            limit = (starts[i] - va) if i < len(starts) else None
+            wanted = table[bisect.bisect_right(starts, va) - 1]
+            floor = (wanted[1] - wanted[0]) if wanted[0] == va else None
+            swept, swept_close, why = sweep_body(decode, data, limit, floor)
+            if swept is None:
+                row["sweep"] = row["sweep_closes"] = ""
+                row["sweep_refused"] = why
+            else:
+                row["sweep"], row["sweep_closes"], row["sweep_refused"] = \
+                    swept, "%s %s" % (swept_close, why), ""
         else:
             row["extent"] = row["extent_source"] = row["extent_closes"] = ""
+            row["sweep"] = row["sweep_closes"] = row["sweep_refused"] = ""
         rows.append(row)
     return rows
 
 
-def summarise(rows):
+def summarise(rows, table=None):
     """The numbers a doc quotes: the split, and the evidence behind each outside address."""
     census = collections.Counter(r["census"] for r in rows)
     outside = [r for r in rows if r["census"] == "outside"]
@@ -266,15 +374,42 @@ def summarise(rows):
         print("  accepted bodies: %s; median %d bytes, median %d instructions"
               % (", ".join("ends-terminator=%s %d" % kv for kv in term.most_common()),
                  sizes[len(sizes) // 2] if sizes else -1, insn[len(insn) // 2] if insn else -1))
+    if table is not None:
+        declared = {a: (b - a) for a, b, _n in table}
+        settled = collections.Counter()
+        for r in rows:
+            if r["census"] != "census-start" or not r["sweep"]:
+                continue
+            got, want = int(r["sweep"]), declared.get(int(r["body_va"], 16))
+            settled["agrees" if got == want else ("stops-short" if got > want else "sweep-short")] += 1
+        refused = collections.Counter(r["sweep_refused"] for r in rows
+                                      if r["sweep_refused"] and r["census"] == "census-start")
+        print("  the sweep on the %d rows the map places: %s; refused %s"
+              % (census["census-start"],
+                 ", ".join("%s %d" % kv for kv in sorted(settled.items())) or "not measured",
+                 ", ".join("%s %d" % kv for kv in sorted(refused.items())) or "none"))
     return census, verdict
+
+
+def sweep_evidence(r, size):
+    """The one sentence a `resize` row carries: what the row's own bytes say its end is."""
+    va = int(r["body_va"], 16)
+    close, anchor = r["sweep_closes"].rsplit(" ", 1)
+    where = "the `cc cc` pad that follows it" if anchor == "pad" else "the next row"
+    return ("the declared size ends at 0x%08x, which is not where the body's code stops: a linear decode "
+            "from 0x%08x reaches a `%s` at 0x%08x and %s begins there, so the row stops %d byte(s) short "
+            "of its own close. The `extent` column read the end as %s (%s), which is the fallback walk's "
+            "answer -- it stops at the first `cc cc` and can read a neighbour's close -- not the decode's"
+            % (va + size, va, close, va + int(r["sweep"]), where, int(r["sweep"]) - size,
+               r["extent"] or "?", r["extent_source"] or "unmeasured"))
 
 
 def gap_adds(rows, table):
     """[(row, size, refusal)] -- the `add` each outside native body earns, or why it earns none.
 
-    The extent must close on a terminator (a body, not a fragment), and it may not run past the next
-    row the map already has: a body a false split sits inside needs a repair this verb cannot express
-    yet, so it is refused by name rather than truncated to fit.
+    The extent must close on a terminator (a body, not a fragment). A body whose extent encloses a row
+    the map already has is *not* refused any more: it is emitted with the `drop` that folds that row,
+    which is the pairing U39 names. `interior` carries those rows' addresses.
     """
     starts = [t[0] for t in table]
     out = []
@@ -284,18 +419,17 @@ def gap_adds(rows, table):
         va = int(r["body_va"], 16)
         size = int(r["extent"] or 0)
         if r["disassembler"] != "accepted":
-            out.append((r, 0, "the disassembler never accepted a body here"))
+            out.append((r, 0, "the disassembler never accepted a body here", []))
             continue
         if not size or r["extent_closes"] in ("other", "unreadable"):
-            out.append((r, 0, "the extent does not close on a terminator"))
+            out.append((r, 0, "the extent does not close on a terminator", []))
             continue
+        inside = []
         i = bisect.bisect_right(starts, va)
-        nxt = table[i][0] if i < len(table) else None
-        if nxt is not None and va + size > nxt:
-            out.append((r, size, "the extent runs to %#010x, past the next row at %#010x"
-                        % (va + size, nxt)))
-            continue
-        out.append((r, size, None))
+        while i < len(table) and table[i][0] < va + size:
+            inside.append((table[i][0], table[i][2]))
+            i += 1
+        out.append((r, size, None, inside))
     return out
 
 
@@ -320,20 +454,38 @@ def emit(args):
         rows = list(csv.DictReader(fh))
     with open(FUNCTIONS, newline="") as fh:
         table = census_table(None, list(csv.DictReader(fh)))
+    declared = {a: (b - a) for a, b, _n in table}
     adds = gap_adds(rows, table)
-    ok = [(r, size) for r, size, why in adds if why is None]
-    refused = [(r, size, why) for r, size, why in adds if why is not None]
+    ok = [(r, size, inside) for r, size, why, inside in adds if why is None]
+    refused = [(r, size, why) for r, size, why, _in in adds if why is not None]
+    resizes = [r for r in rows
+               if r["census"] == "census-start" and r["sweep"]
+               and int(r["sweep"]) > declared.get(int(r["body_va"], 16), 0)]
     w = csv.writer(sys.stdout, lineterminator="\n")
-    for r, size in ok:
+    for r, size, inside in ok:
         va = int(r["body_va"], 16)
         name = "FUN_%08x" % va
         ev = evidence_text(r, size, name)
+        if inside:
+            ev += ("; the row(s) %s start inside it and are fragments of this body -- they are the assert "
+                   "blocks it inlined, and each is dropped with this add as its target"
+                   % ", ".join("%#010x (%s)" % (a, n) for a, n in inside))
         if args.emit_boundaries:
             w.writerow(["0x%08x" % va, "add", name, size, ev])
+            for a, n in inside:
+                w.writerow(["0x%08x" % a, "drop", "0x%08x" % va, "",
+                            "interior code of the body added at %#010x, entered by fall-through and named "
+                            "after the header its assert literal comes from; nothing in the image calls it, "
+                            "so the row that carries it is a split of that body, not a body" % va])
         else:
             w.writerow(["0x%08x" % va, name, "added to the map by symbols/xbe_boundaries.csv: " + ev,
                         "", "", "", "", "", "", size])
-    print("native-census: %d row(s) emitted, %d refused" % (len(ok), len(refused)), file=sys.stderr)
+    for r in resizes:
+        va = int(r["body_va"], 16)
+        if args.emit_boundaries:
+            w.writerow([r["body_va"], "resize", "", r["sweep"], sweep_evidence(r, declared[va])])
+    print("native-census: %d add(s), %d drop(s), %d resize(s) emitted, %d add(s) refused"
+          % (len(ok), sum(len(i) for _r, _s, i in ok), len(resizes), len(refused)), file=sys.stderr)
     for r, size, why in refused:
         print("  refused %s (%s): %s" % (r["body_va"], (r["names"] or "").split(" ")[0], why),
               file=sys.stderr)
@@ -356,7 +508,7 @@ def run(args):
     # committed table already holds instead of blanking the column.
     verdicts = load_verdicts(args.verdicts or (OUT if os.path.isfile(OUT) else None))
     rows = build(bodies, table, starts, xbe, verdicts)
-    summarise(rows)
+    summarise(rows, table)
     if args.out:
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, "native_census.csv")
@@ -387,6 +539,7 @@ def check(args):
     with open(FUNCTIONS, newline="") as fh:
         table = census_table(None, list(csv.DictReader(fh)))
     starts = [t[0] for t in table]
+    declared = {a: (b - a) for a, b, _n in table}
     if len(rows) != len(bodies):
         sys.exit("native-census: --check: %d rows for %d distinct body addresses" % (len(rows), len(bodies)))
     seen = set()
@@ -406,6 +559,9 @@ def check(args):
         # column is the failure to catch, not an empty one.
         if bool(r["boundary"]) != bool(r["prologue"]):
             bad.append("%s: one image-side column is filled and the other is not" % r["body_va"])
+        if r["boundary"] and r["disassembler"] not in ("accepted", "existing", "inside", "rejected"):
+            bad.append("%s: the table was built from the image but carries no disassembler verdict (%r)"
+                       % (r["body_va"], r["disassembler"]))
         if r["extent_source"] and r["extent_source"] not in ("ghidra", "island"):
             bad.append("%s: unknown extent source %r" % (r["body_va"], r["extent_source"]))
         if bool(r["extent"]) != bool(r["extent_source"]) or bool(r["extent"]) != bool(r["extent_closes"]):
@@ -413,15 +569,49 @@ def check(args):
         if r["extent"] and r["body_bytes"].isdigit() and int(r["extent"]) < int(r["body_bytes"]):
             bad.append("%s: extent %s is shorter than the body the disassembler accepted (%s)"
                        % (r["body_va"], r["extent"], r["body_bytes"]))
+        # The sweep is one reading with one refusal: either an extent and the instruction that closes it,
+        # or a reason, never both and never neither.
+        swept = r.get("sweep") or ""
+        if swept:
+            if r.get("sweep_refused"):
+                bad.append("%s: the sweep is filled and refused at once" % r["body_va"])
+            if not swept.isdigit() or int(swept) <= 0:
+                bad.append("%s: sweep %r is not a positive size" % (r["body_va"], swept))
+            elif r["census"] == "census-start" and va in declared and int(swept) < declared[va] - 0:
+                bad.append("%s: the sweep (%s) is shorter than the row the map declares (%d)"
+                           % (r["body_va"], swept, declared[va]))
+            close = (r.get("sweep_closes") or "").rsplit(" ", 1)
+            if len(close) != 2 or not close[0] or close[1] not in ("pad", "edge"):
+                bad.append("%s: sweep_closes %r is not `<terminator> pad|edge`"
+                           % (r["body_va"], r.get("sweep_closes")))
+            elif close[0] not in ("ret", "ret-imm", "jmp", "jmp-ind"):
+                bad.append("%s: sweep_closes names %r, which is not a terminator this build ends on"
+                           % (r["body_va"], close[0]))
+        elif r.get("sweep_refused") not in SWEEP_REFUSALS:
+            bad.append("%s: no sweep and no known refusal (%r)"
+                       % (r["body_va"], r.get("sweep_refused")))
         if r["disassembler"] and r["disassembler"] not in ("accepted", "existing", "inside", "rejected"):
             bad.append("%s: unknown disassembler verdict %r" % (r["body_va"], r["disassembler"]))
     if bad:
         sys.exit("native-census: --check: " + "; ".join(bad[:6]))
     census = collections.Counter(r["census"] for r in rows)
     verdict = collections.Counter(r["disassembler"] for r in rows if r["census"] == "outside")
+    swept = collections.Counter()
+    for r in rows:
+        if r["census"] != "census-start":
+            continue
+        got = r.get("sweep") or ""
+        if not got:
+            swept["refused " + (r.get("sweep_refused") or "?")] += 1
+        elif int(got) == declared.get(int(r["body_va"], 16)):
+            swept["agrees"] += 1
+        else:
+            swept["stops short"] += 1
     print("native-census: %d body addresses, %d census starts, %d outside every function (%s)"
           % (len(rows), census["census-start"], census["outside"],
              ", ".join("%s %d" % kv for kv in sorted(verdict.items())) or "disassembler not asked"))
+    print("native-census: the sweep on the %d rows the map places: %s"
+          % (census["census-start"], ", ".join("%s %d" % kv for kv in sorted(swept.items()))))
     return 0
 
 
@@ -471,6 +661,17 @@ def selftest():
     assert island_end(body) == 6
     assert body_extent(body, 6) == (6, "ghidra", "ret-imm")
     assert body_extent(body, 1) == (6, "island", "ret-imm")
+    cases += 1
+    # The sweep: a pad after a terminator settles the end, a pad after a `jcc` does not (a conditional
+    # jump falls through), a body that ends exactly on the next row is an `edge`, and one that reaches
+    # the row without a terminator is refused rather than cut.
+    decode = _decoder()
+    assert sweep_body(decode, b"\x55\x8b\xec\xc2\x08\x00\xcc\xcc") == (6, "ret-imm", "pad")
+    assert sweep_body(decode, b"\x90\x74\x00\xcc\xcc") == (None, None, "pad-not-after-a-terminator")
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3", 4) == (4, "ret", "edge")
+    assert sweep_body(decode, b"\x90\x90\x90\x90", 4) == (None, None, "no-terminator-before-the-next-row")
+    assert sweep_body(decode, b"\x55\x8b\xec\xeb\x02\xcc\xcc") == (5, "jmp", "pad")
+    assert sweep_body(decode, b"\xff\x24\x85\x00\x00\x00\x00\xcc\xcc") == (7, "jmp-ind", "pad")
     cases += 1
     print("native-census: selftest passed (%d cases)" % cases)
     return 0
