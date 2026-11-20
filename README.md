@@ -73,7 +73,7 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Content | speech WAVs indexed | 1,364 | 1,364 | `████████████████████████` 100.00% | 🟩 |
 | Content | music WAVs indexed | 1,923 | 1,923 | `████████████████████████` 100.00% | 🟩 |
 | Deliverables | payload resizes that round-trip (6.1 writer) | 84 | 84 | `████████████████████████` 100.00% | 🟩 |
-| Deliverables | assets exported (5.1) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
+| Deliverables | asset packages exported (5.1) | 326 | 399 | `████████████████████░░░░` 81.70% | 🟨 |
 | Deliverables | bootable rebuild (6.x) | -- | -- | `░░░░░░░░░░░░░░░░░░░░░░░░` | ⬜ |
 
 <!-- status:end -->

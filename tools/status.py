@@ -161,7 +161,15 @@ def collect():
     resizes_passed = sum(int(r["passed"]) for r in relayout)
     out.append(("Deliverables", "payload resizes that round-trip (6.1 writer)", resizes_passed, resizes_tested,
                 "inventory/package_relayout.csv (passed / exports_tested)"))
-    out.append(("Deliverables", "assets exported (5.1)", None, None, "PLAN 5.1 has not started"))
+    assets = rows_of("inventory/assets.csv")
+    if assets:
+        # Package level, not object level: a package umodel refused reports 0 objects, so an object ratio
+        # would score the 73 refusals as if they held nothing (it read 100% while 18% of packages failed).
+        out.append(("Deliverables", "asset packages exported (5.1)",
+                    sum(1 for r in assets if r["status"] == "ok"), len(assets),
+                    "inventory/assets.csv (status ok / all packages; docs/ASSETS.md has the object counts)"))
+    else:
+        out.append(("Deliverables", "assets exported (5.1)", None, None, "PLAN 5.1 has not started"))
     out.append(("Deliverables", "bootable rebuild (6.x)", None, None, "PLAN 6.1 has not started"))
     return out
 
@@ -278,7 +286,7 @@ def main():
         "| | |\n|---|---|\n"
         "| \U0001f7e9 \u2265 90% | \U0001f7e8 \u2265 50% | \U0001f7e7 \u2265 10% | \U0001f7e5 < 10% | \u2b1c not measured |\n\n"
         "A row that has not been measured says `--` rather than `0.00%`: the compile loop (PLAN 3.6), the\n"
-        "asset export (5.1) and the bootable rebuild (6.x) have not started, so the honest number does not\n"
+        "bootable rebuild (6.x) has not started, so the honest number does not\n"
         "exist yet. That is different from a layer that was measured and scored badly.\n\n"
         "## Where each number comes from\n\n" + sources(rows) + "\n"
         "## Reading the native rows\n\n"
