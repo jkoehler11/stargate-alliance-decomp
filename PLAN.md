@@ -15513,3 +15513,38 @@ sequence.
 - **Not in this bundle.** The rest of the map's gaps: a head-only census with a pad-before-int3 and a prologue
   test finds ~1,800 decodable gap heads, most of which are one-`ret` islands inside data and alignment rather than
   bodies -- the head rule is the next instrument, not another `add`.
+
+### Execution notes (2026-11-20, the map's gaps are a population: 2,490 heads, 2,414 decodable, 383 unnamed)
+
+- **Task.** The boundary thread's next instrument after the last gap body: the head rule over the map's
+  remaining gaps. The previous note guessed "~1,800 decodable heads, most one-`ret` islands inside data and
+  alignment"; the task was to make the population a census instead of a hand-picked body.
+- **The gaps were never counted, and the guess was wrong in both directions.** `symbols/xbox_functions.csv`
+  covers 3,445,170 of `.text`'s 4,227,324 bytes, so 9,987 gaps hold 783,490 bytes -- 18.5% of the code
+  section, not a residue. A head rule (a `0xCC`/`0x90` run in front, an MSVC prologue shape, then
+  `sweep_body`'s close-with-a-tail) finds **2,490 heads, 2,194 bodies and 220 islands** covering 378,369
+  bytes (48% of the gap bytes) at a median 21 bytes / 6 instructions. Only **220 of 2,414** are one- or
+  two-instruction islands, 9.1% rather than "most".
+- **The rule earned its numbers from three controls, not from the decode.** The same rule over 3.3 MB of data
+  sections finds 233 pad-before prologue-shaped runs and zero bodies; over the map's own 11,784 `.text` rows
+  it passes 8,119 (68.9%), so the head count is a floor; and the pointer channel's base rate is 1.6% for a
+  random gap byte and 24.1% for a map row's start, against 59.7% for the population it names.
+- **What names a gap body is a pointer, not a call.** 1,441 have a dword outside `.text`, 777 of them in a
+  class-table slot over 224 classes; a `68` push names 558 and only 47 are branch targets (34 `E8` at 51 call
+  sites, 12 `E9`). 383 are named by nothing -- which is U38's `sinh` shape as a population, and the reason the
+  rule is a floor: `sinh` opens on `mov edx,<entry>` and no named prologue.
+- **Two shapes the page now states.** A fill-less boundary merges (515 inner strong openings in 260 runs;
+  `0x00418c30` is five 21-byte bodies read as one 131-byte run), so 2,194 counts runs. And one gap is a
+  generated family: `0x004100c8`..`0x00418cc0` holds 600 bodies, 466 of 21 bytes and 124 of 24, all `push
+  <literal>; push <line>; call 0x46c60; mov ds:<flag>,al; ret`.
+- **Files.** `tools/gap-heads.py` (new: the head rule, the run walk with `inner_starts`, the four reference
+  channels with the class-table slot resolved, the gap-bounds check, `--check`/`--selftest`/`--report`, the
+  generated page block), `inventory/gap_heads.csv` (new: 2,490 head rows + a census row), `Makefile`
+  (`gap-heads`, help, `.PHONY`, the `make ci` line), `docs/SYMBOLS.md` (the section above), `docs/UNKNOWNS.md`
+  (U40), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `gap-heads --check` re-derives the gaps from the committed map and compares the
+  census row with the rows it carries; `--selftest` covers the body, the island, the refusal, the merged
+  neighbour, the gap bounds and the census round trip; `make gap-heads` regenerates the artifact and the page
+  block from the dump in 13 s.
+- **Not in this bundle.** The `add`s (2,194 of them, each with its creation row and the whole downstream
+  cascade), the fill-less boundary split, and the naming of the 600-body stub family at `0x004100c8`.
