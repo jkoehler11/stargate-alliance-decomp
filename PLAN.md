@@ -15085,6 +15085,37 @@ sequence.
   only as far as its references); the 78 untyped `[reg+0x7c]` receivers; and the four `xvoice` voice-mode
   classes behind the device poll, which are library code this module calls rather than module code.
 
+### Execution notes (2026-11-20, the eight audio counters are slots in the engine's cycle array)
+
+- **Task.** The one item the voice-mode bundle left as its remainder: which method increments each of the eight
+  audio counters. The previous two bundles had established that the registration bodies do no arithmetic and
+  that the array the pump subtracts its timestamp into is shared with renderer/actor/level code, and had read
+  the two as separate mechanisms.
+- **They are one mechanism.** A registration returns the **index of a slot** in the array at `0x7b5dfc` (the
+  registry object's `+0x24` pointer), and the device body hands the registration body an embedded block at
+  `+0x184` of the subsystem (`lea ecx,[esi+0x184]`), whose `0x24` bytes the constructor memsets — so the eight
+  values live at `+0x188`..`+0x1a4`. New tool `tools/stat-scope-uses.py` (`make stat-scope-uses`,
+  `inventory/stat_scope_uses.csv`) reads all **106** absolute references to the array, resolves the indexing
+  register at each (field/global/immediate/stack) and names the shape: **20 `sub tsc`, 10 `add tsc`, 7 `inc by
+  1`, 53 read-only**, 22 sites with no resolved index source and 16 with no body.
+- **Five of the eight are accumulated, three are idle.** `Update` opens one scope, `Occlusion` opens one and
+  closes two, `PlaySound` closes one, and `Streaming`/`Regular` are `inc` counters behind one merged tail
+  (`test BYTE PTR [eax+0x44],0x4` picks the slot). The first ids of both `PlaySound` and `Occlusion` (`+0x194`,
+  `+0x198`) and `StoppedSounds` (`+0x1a4`) index nothing anywhere in the image — U35 records that and the
+  missing `PlaySound` open.
+- **The `PlaySound` close is inside a false map entry.** `0x0002f9f4`'s function ends at `0x0002fa23`; the row
+  the map splits out at `0x0002f820` is that function's assert block, reached by fall-through, so its `Core`
+  module is an artefact — the code around it is the audio play path. The page says so; the census is left
+  alone because the fix is a function-boundary repair, not a re-attribution.
+- **Files.** `tools/stat-scope-uses.py` (new), `Makefile` (`stat-scope-uses`, help, `.PHONY`),
+  `inventory/stat_scope_uses.csv` (new), `docs/systems/AUDIO.md` (the refuted paragraph corrected in place, the
+  id table, the false-entry note), `docs/UNKNOWNS.md` (U35), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `stat-scope-uses.py --check` validates the artifact without the dump and writes
+  nothing; `--selftest` covers the index-source and shape parsers; the artifact regenerates from the dump.
+- **Not in this PR.** The 22 unresolved index sources (U35's population), the function-boundary repair at
+  `0x0002f820`, and the 78 untyped `[reg+0x7c]` receivers that the audio-slot bundle also left.
+
 ### Execution notes (2026-11-20, the voice-mode family, and the counters that are registered rather than incremented)
 
 - **Task.** The two items the audio-chain bundle listed as "not in this PR": the four `xvoice` voice-mode

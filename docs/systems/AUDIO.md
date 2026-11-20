@@ -410,10 +410,10 @@ was handed:
 | `+0x160` | `XboxAudio_CompleteStreamRead` (203 B), the same completion for the *streaming* path, over `XboxAudio_OpenStreamRead` (301 B, `_ReadFile@20` and the literal `Read %s from hard disk`) |
 
 It also opens a cycle counter before any of that: `rdtsc`, then `[0x007b5dfc + [this+0x18c]*4] -= timestamp`
-— a per-object slot in an engine-wide array. That array is **not** one of the counters the device registers
-(below): the census in `inventory/audio_runtime.csv` finds the same array read from 106 sites in 52 bodies,
-most of them renderer, actor, spawn and level-tick code, so it is the engine's shared cycle-scope array and
-the pump is one more of its clients.
+— a per-object slot in an engine-wide array. The array is shared by the whole engine (106 sites over 52
+bodies: renderer, actor, spawn, level-tick and D3D code as well as audio), **and `+0x18c` is one of the eight
+counters the device registers**: a registration returns the *slot index* into this array, so "shared array"
+and "the audio counters" are the same mechanism. The section below carries the correction in place.
 
 ## Eight named counters registered at device creation (2026-11-20)
 
@@ -437,16 +437,44 @@ group, a name, and a per-instance handle. **No string in the body says "stat"**,
 shape and the evidence (group, names, store offsets, the guard flag) rather than a class name, and names the
 reading a registration rather than a sample.
 
-**The eight handles are not the pump's `rdtsc` array, and the census is what says so.** `0x7b5dd8` is a
-global *object* — every reference to it loads its address as `this` for one of its own methods
-(`mov ecx,0x7b5dd8`) — and only four bodies touch it: the registration body itself (2 sites), two large
-`Core` bodies (20 and 12 sites) and one `Engine` body (1). The array the pump subtracts its timestamp into,
-`0x7b5dfc` (`0x7b5dd8 + 0x24`), is a different thing again: **106 sites over 52 bodies**, only two of them in
-`XboxAudio` (the pump, and a 1,764-byte `XboxAudio_XboxAudioSubsystem` body), the rest renderer, actor,
-spawn, physics and level-tick code. So the registration is a call into an engine registry object and the
-pump's `rdtsc` block is the engine's shared cycle-scope idiom; the first reading of this section claimed they
-were the same array, and the reference census refutes it. The rows are `counter-ref` and `ref-census` in
-`inventory/audio_runtime.csv`.
+**The eight values are slot indices into that array, and the census says so (2026-11-20).**
+`tools/stat-scope-uses.py` (`inventory/stat_scope_uses.csv`, `make stat-scope-uses`) reads every absolute
+reference to `0x7b5dfc` — **106 sites, 90 inside a body the map covers, over 52 bodies** — and classifies the
+register that indexes the slot: `field +0xNN of <base>`, a global, an immediate or a stack slot. Two readings
+follow from it. First, the registry object and the array are one mechanism: `0x7b5dfc` is `0x7b5dd8 + 0x24`,
+the pointer to the slot array, and what `0x2530f0` returns is the index of the slot it appended — which is why
+the second-instance path can copy the cached ids straight back into the object. Second, the block that holds
+them is not the object: `XboxAudio_CreateDevice` hands the registration body its `this` as
+`lea ecx,[esi+0x184]`, and the constructor memsets those `0x24` bytes (`0x0002fc80`: `push 0x24; lea
+eax,[esi+0x184]`), so the eight values live at `+0x188`..`+0x1a4` of the *subsystem*.
+
+**Five of the eight index a slot; three index nothing.** The shapes are the compiler's two idioms for a
+profiled counter — read the slot into a register, `add`/`sub` a `rdtsc` value (the scope form, with a fixed
+`-12` on the close), or `inc` it (a plain counter) — and the census names the one each site uses:
+
+| id (subsystem offset) | name | sites | shape |
+|---|---|---|---|
+| `+0x188` | `PlaySound` (second of the pair) | 1 | closed: `ord=0x0002f9f4`, `add tsc - 12` into the slot |
+| `+0x18c` | `Update` | 1 | opened: `ord=0x0002fee4`, `sub tsc` out of the slot |
+| `+0x190` | `Occlusion` (second of the pair) | 3 | opened at `0x0002f524`, closed at `0x0002f360` and `0x00030ef0` |
+| `+0x19c` | `Streaming` | 1 | `inc` by 1 (`0x00030b4c`) |
+| `+0x1a0` | `Regular` | 1 | `inc` by 1 (`0x00030b60`), the same merged tail as `Streaming` |
+| `+0x194` | `PlaySound` (first of the pair) | 0 | registered, never indexed anywhere in the image |
+| `+0x198` | `Occlusion` (first of the pair) | 0 | registered, never indexed |
+| `+0x1a4` | `StoppedSounds` | 0 | registered, never indexed |
+
+So **which method increments an audio counter is answered: the module's own code, and not a registry method**
+— and three of the eight registrations are idle. The `Streaming`/`Regular` pair is one branch on
+`test BYTE PTR [eax+0x44],0x4` that picks the slot and jumps into a shared `inc` tail, which is why the census
+records both ids at sites two instructions apart. `U35` carries what is left: who opens the `PlaySound` scope
+that `0x0002f9f4` closes, and what the first id of each pair is for.
+
+**The `PlaySound` close sits in a body the map splits at an assert block.** The site `0x0002f9f4` belongs to a
+function that starts before `0x0002f7b1` and ends at `0x0002fa23` (`ret 0x30`); the map's `Core_UnTemplate`
+entry at `0x0002f820` is the *assert block* at `0x0002f820` (`push 0x287; push ...; call 0x58a30`), reached by
+the fall-through of `jge 0x2f837`. That row's `Core` module is therefore an artefact of the split — the code
+around it is the audio module's play path (`_DirectSound` setters on the device, then the `PlaySound` scope
+close) — and the split itself is a map-quality item, not a second module's code.
 
 The block is an engine **stat registry**, and the two `Core` bodies that reference it are initializers, not
 increments. `tools/stat-registry.py` reads all three bodies that register into it (`inventory/stat_registry.csv`,
@@ -459,9 +487,9 @@ of them in the single group `Hardware` (the D3D driver's own table), and the aud
 `0x2530f0` called with the registry in `ecx`, and the returned handle stored in a field — `+0x04`..`+0x20` for
 the audio module. **Zero `add`, `inc` or `sub` on any `[reg+disp]` stat field appears in any of the three
 bodies**, so the answer to "which `Core` body increments each of the eight counters" is neither: they are the
-engine's and the renderer's registration tables, and an increment is a different method on the same registry,
-reached with a handle rather than a name. Which of the eight audio handles is incremented where is therefore
-still open, but it is not a `Core` body, and the handles are what a reader would have to follow next.
+engine's and the renderer's registration tables, and the increment is not among them. Following the returned
+values answers where it is: they are slot indices into the array at `0x7b5dfc`, and the audio module
+accumulates into five of the eight itself (the table above; `inventory/stat_scope_uses.csv`).
 
 The nine names together are the audio module's own instrumentation, and they read as the output path's
 outline: what is played, what is occluded, what is streamed, what is regular streaming, what was stopped, and

@@ -5348,3 +5348,29 @@ points", and the counts moved in `docs/systems/AUDIO.md`. The module's own chain
 device), 32 (`+0x80`, device setter), 34 (`+0x88`, pump), 50 (`+0xc8`, file stream) and 52 (`+0xd0`,
 next stream) of `XBoxAudioSubsystem`'s table `0x004d21f8`; the `+0x80` site in the init goes to a *different*
 class's table (`XHVVoiceSubsystem`, `0x004d2ad8`), which is why a displacement never types a call.
+
+## U35. Three of the eight audio counters are never indexed, and one scope has no open (2026-11-20)
+
+**Observed.** `inventory/stat_scope_uses.csv` (`tools/stat-scope-uses.py`) classifies every site that indexes
+the engine's cycle-scope array `0x7b5dfc` by the source of its index. Counting the audio ids by their block
+offset (`+0x184` of `XBoxAudioSubsystem`, read from the device body's `lea ecx,[esi+0x184]`):
+
+- **five are used** — `Update` (`+0x18c`, one `sub tsc`), `Occlusion` (`+0x190`, one open and two closes),
+  `PlaySound` (`+0x188`, one close), `Streaming` (`+0x19c`) and `Regular` (`+0x1a0`, both `inc` by 1);
+- **three index nothing in the image** — the *first* id of the `PlaySound` pair (`+0x194`), the *first* id of
+  the `Occlusion` pair (`+0x198`) and `StoppedSounds` (`+0x1a4`).
+
+**Why this is a gap and not a negative.** `PlaySound` and `Occlusion` are each registered twice with identical
+arguments (same group `Audio`, same name, same flag pushes) and the two ids differ only in the field they land
+in, so the pair is deliberate; a count/time pair is the obvious reading, but nothing in the image reads the
+first member, and `StoppedSounds` — registered with the same shape — is read nowhere either. The `PlaySound`
+scope is also lopsided: its close (`0x0002f9f4`, `add tsc - 12`) exists and its open does not appear in the
+106-site census, so either the open is reached through a slot copied out of the block (a register carried
+across a call, which the census reads as `no resolved index source` at 22 sites) or the scope is opened by a
+body outside the module.
+
+**What would settle it.** A guest pass: break at `0x0002530f0` with the eight registrations outstanding and
+watch which ids the `sub tsc` side writes; or trace `0x7b5dfc`'s slots at run time for one sound and see which
+of the eight change. On the static side, the 22 unresolved sites are the population to type first —
+`inventory/stat_scope_uses.csv` names every one of them (`index_source=unread`), and a `push`-back trace from
+each would either find the missing open or close the question.
