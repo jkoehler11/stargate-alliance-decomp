@@ -14865,3 +14865,39 @@ sequence.
 - **Not in this PR.** The media decoders (`CWaveFile` 11, `CQueueXMO` 18, `XHawkMediaObject` 13 -- 42
   methods measured, not written up), and the caller side: `module_export_census.csv` holds 0 of these 303
   addresses, so the next instrument is a caller census on the `_DirectSound*` entry points.
+
+### Execution notes (2026-11-19, the media decoders and the audio entry points)
+
+- **Task.** The two items the audio bundle named as "not in this PR": the media decoders (`CWaveFile` 11,
+  `CQueueXMO` 18, `XHawkMediaObject` 13 — 42 methods, 7,595 B) and the caller census on the `_DirectSound*`
+  entry points. Plus the artifact-index drift those readings exposed.
+- **The decoders are the library's, and they close two gaps in the stack.** `CWaveFile`
+  (`dsound.lib`/`dscommon.obj`) is a RIFF/AIFF reader with per-container loop-region readers, so
+  `_XWaveFileCreateMediaObject` wraps a library reader rather than the game's; `CQueueXMO`
+  (`xvoice.lib`/`queuexmo.obj`) paces packets on a `_QueryPerformanceCounter` millisecond clock with a
+  high-water-mark buffer list, and `XHawkMediaObject` (`hawk2.obj`) is a USB isochronous endpoint driven by
+  URBs through `IUsbDevice` — so the microphone path never touches the APU. Stack total: **345 methods,
+  41,923 B; 210 from `dsound.lib` (15 objects), 135 from `xvoice.lib` (7)**.
+- **The game's own device is `XBoxAudioSubsystem` slot 31 of 55 (`+0x7c`), body `0x0002fd70`.** New tool
+  `tools/xdk-entry-callers.py` finds **11 call sites** over the three entry points (there are three, not
+  four): `_DirectSoundCreate` 4 — the unnamed virtual plus the three voice-mode `DSoundInitialize`s;
+  `_DirectSoundCreateStream` 3 — the voice stream factory, the class's `+0xc8` WAV-file stream, and
+  `CRemoteTalker::InitializeStream`; `_DirectSoundDoWork` 4 — the class's `+0x88` pump and
+  `CRemoteTalker::StartStream`/`ShutdownStream`. The unnamed body's address appears exactly once in the
+  image, in the class table, so device creation is a virtual no dword scan for the create call could find.
+- **The artifact index credited 14 regenerated artifacts to nobody.** `native-method-notes` composes its
+  file names (`<stem>_methods.csv`), so `inventory-index.py`'s name-in-the-source rule could not see them and
+  they sat in "no generator". The tool now answers `--list-artifacts`, the index reads that declaration, and
+  the page goes from 25 "no generator" to 1 (`module_export_rounds.csv`).
+- **Files.** `tools/xdk-entry-callers.py` (new), `tools/native-method-notes.py` (three readings,
+  `--list-artifacts`), `tools/inventory-index.py` (`declared()`, the credit), `Makefile`
+  (`xdk-entry-callers`, help), `inventory/{wave_file,queue_xmo,hawk_media_object}_methods.csv`,
+  `inventory/xdk_entry_callers.csv`, `docs/NATIVE_NOTES.md` (two new subsections, the "does not say"
+  rewrite), `docs/systems/AUDIO.md`, `docs/UNKNOWNS.md` U34, `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `native-method-notes.py --check` green over 28 artifacts (1,357 methods);
+  `xdk-entry-callers.py --check` green without the dump; `inventory-index.py --check` green;
+  `artifact-hashes.py --check` green.
+- **Not in this PR.** Which body dispatches `+0x7c` — the slot is an offset, and the receiver's type at the
+  site is the U9 instrument. And the four unnamed XboxAudio bodies on the voice factory chain
+  (`0x0002a6f0`, `0x0002a2f0`, `0x0002b8c0`, `0x0002ae00`) are still `FUN_*`.

@@ -5271,3 +5271,33 @@ section named, one halves the cell size, two double the vertex grid, and one doe
 
 **Routes for what is left.** None here. The neighbours of this area are `U32`'s two fields (the palette dword's
 reader and the `Level` trailer's 24 bytes), which stay counted.
+
+## U34. The game's DirectSound device is a virtual of `XBoxAudioSubsystem` — answered; its dispatcher is not
+
+**Question.** 345 methods of the SDK's audio stack are read and **0 of them carries a string**, and
+`inventory/module_export_census.csv` holds none of their addresses: which engine or game body creates the
+game's own DirectSound object, and is it a `CDirectSound` at all?
+
+**Answered 2026-11-19.** `_DirectSoundCreate@12` has exactly **four** call sites, and one of them is the
+answer. Three are the voice modes' own `DSoundInitialize` virtuals (`CVoiceMailMode`, `CVoiceChatMode`,
+`CLoopbackMode` — each mode creates its own device, so the image holds more than one `CDirectSound` by
+design). The fourth is `0x0002fd90`, in `FUN_0002fd70`, a body **nothing calls directly**: its address
+appears exactly once in the image, at `0x004d2274`, inside `XBoxAudioSubsystem`'s class table `0x004d21f8`
+at **slot 31 of 55** (dispatch offset `+0x7c`). The body's 272 bytes call `_DirectSoundCreate`, then
+`_XAudioDownloadEffectsImage@16`, then seven XboxAudio bodies (`0x0002cfd0`, `0x0002c800` twice,
+`0x00032040`, `0x0002e900`, `0x00057440`, `0x00055ed0`) — device bring-up, not a getter. Two more slots of
+the same table carry the rest of the path: `+0xc8` (slot 50, `0x0002e210`) calls
+`_XWaveFileCreateMediaObject@12`, then `_DirectSoundCreateStream@8`, then `_CreateThread` (a WAV on its own
+stream thread), and `+0x88` (slot 34, `0x0002feb0`) is the per-frame pump that calls `_DirectSoundDoWork`.
+So the device is a virtual method of the game's audio subsystem — not a UE2 export, not one of the library
+methods, and not findable by a dword scan for the create call.
+
+**Residual.** The slot is not a name: `call [reg+0x7c]` carries an offset, and **115** bodies in the image
+make that call for some class or other, so *which* body dispatches the device creation is not measured.
+What would settle it: the receiver's type at the site — a `push`-back trace from the `call [reg+disp]` to
+the `mov reg,[obj+off]` that loaded it (the U9 instrument), restricted to the sites inside the XboxAudio
+module.
+
+**Status.** `tools/xdk-entry-callers.py` and `inventory/xdk_entry_callers.csv` (11 sites over the three
+`_DirectSound*` entry points); the account is `docs/NATIVE_NOTES.md`, "Who calls the three audio entry
+points", and the counts moved in `docs/systems/AUDIO.md`.

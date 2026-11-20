@@ -19,6 +19,7 @@ import argparse
 import csv
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -84,7 +85,29 @@ def tools():
     return out
 
 
-def resolve(path, mk, tl):
+def declared(tl):
+    """artifact file name -> tool, for every tool that answers `--list-artifacts`.
+
+    A generator whose artifact name it composes at run time (`<stem>_methods.csv`) never appears in its
+    own source, so the name-in-the-source rule cannot credit it and 14 regenerated artifacts sat in
+    "no generator". A tool may declare the set instead of spelling every name; this reads it.
+    """
+    out = {}
+    for name, src in tl.items():
+        if not name.endswith(".py") or "--list-artifacts" not in src:
+            continue
+        try:
+            r = subprocess.run([sys.executable, os.path.join(ROOT, "tools", name), "--list-artifacts"],
+                               capture_output=True, text=True, timeout=120)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        for line in (r.stdout or "").splitlines():
+            if line.strip():
+                out[line.strip()] = name
+    return out
+
+
+def resolve(path, mk, tl, decl):
     """(kind, owner) for an artifact: a make target, a tool that a target runs, or nothing."""
     base = os.path.basename(path)
     stem = base[:-4] if base.endswith(".csv") else base
@@ -92,6 +115,8 @@ def resolve(path, mk, tl):
         if base in recipe or stem in recipe:
             return "target", target
     writers = [name for name, src in tl.items() if base in src or stem in src]
+    if not writers and base in decl:
+        writers = [decl[base]]
 
     def credits(w, recipe):
         """Does `recipe` run the tool `w`? A .cs file is run through Sg1Tool's verb, not by name."""
@@ -147,10 +172,11 @@ def main():
     args = ap.parse_args()
 
     mk, tl = targets(), tools()
+    decl = declared(tl)
     rows = []
     for path in artifacts():
         nrows, header = describe(path)
-        kind, owner = resolve(path, mk, tl)
+        kind, owner = resolve(path, mk, tl, decl)
         rows.append((path, nrows, header, kind, owner))
 
     text = page(rows)
