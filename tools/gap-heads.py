@@ -53,6 +53,18 @@ there; one the run's own branches reach stays merged and is counted in `inner_st
 `execEqualEqual_ObjectObject` returns early and is rejoined by the `jcc` above it). `0x00418c30` is
 five 21-byte bodies that decode as one 131-byte run without the rule.
 
+**A split can also be a jump table's case blocks, and the table is the evidence.** A `switch` compiles to
+`jmp [eax*4+<table>]` with the case blocks laid out behind it and the table inline in `.text`, so the case
+blocks are reached by an *indirect* branch that `branch_target` cannot read -- every one of them looks like
+"a terminator whose successor no branch targets". Reading the table is the missing test: a `.text` dword that
+points into `.text` and sits in a run of three or more of them is a jump-table entry, and an opening one of
+those names is a case block of the body above it, not a neighbour. **In this build there are 144 such runs
+holding 1,642 entries**; over the map's own 12,321 rows the relative rule alone reads **59 rows as two
+bodies**, and of their **385** split points **351 (91%)** are entries of a `.text` table -- so those 59 rows
+are `switch` dispatches, not two-body rows, and a `resize` would cut a function at its own case block. The
+same channel over the gap population names **0 of its 172 split heads**, which is what makes the two
+populations different rather than a matter of taste.
+
 **One gap is a generated family, not missed code.** `0x004100c8`..`0x00418cc0` holds 600 bodies in two
 compiler shapes: a **register-once thunk** (`push <&item>; push 0xff; call 0x46c60; add esp,8; mov
 <flag>,al; ret`, one distinct `.data` item and one distinct `al` flag byte each) and an **`_atexit`
@@ -90,7 +102,7 @@ GAME = "Stargate_SG-1_-_The_Alliance-2005-12-15"
 
 COLS = ["row", "head_va", "gap_lo", "gap_hi", "gap_size", "boundary", "prologue", "verdict", "size",
         "insns", "close", "tail", "inner_starts", "calls", "jumps", "imms", "pointers", "slots",
-        "slot_table", "slot_class", "slot_index", "family", "census"]
+        "slot_table", "slot_class", "slot_index", "family", "census", "name", "row_size", "family_item"]
 
 # A tail shape's name as `native-census.tail_shape` writes it; the five kinds, concatenated with `+`.
 # `split` is this tool's own: the bytes behind the terminator are the next body, not a tail.
@@ -145,6 +157,43 @@ def gaps_of(table, lo, hi):
 # The prefix bytes the decoder accepts in front of an opcode; `branch_target` skips them to find it.
 PREFIXES = (0x66, 0x67, 0xF0, 0xF2, 0xF3, 0x2E, 0x36, 0x3E, 0x26, 0x64, 0x65)
 LOOPS = (0xE0, 0xE1, 0xE2, 0xE3)
+# The inline jump tables `measure()` indexes: {"targets": set(va), "runs": {table_va: entries}}.
+# A `switch` reaches its case blocks through `jmp [reg*4+<table>]`, which no relative-branch read sees.
+_TABLE = {"targets": set(), "runs": {}}
+
+
+def text_tables(text, lo):
+    """(targets, runs) for the jump tables `.text` holds inline: aligned runs of >=3 VAs into `.text`.
+
+    `branch_target` reads relative branches only, so a `switch`'s case blocks look like code that nothing
+    reaches. MSVC 2005 lays the table out in `.text` right behind the dispatch, as consecutive 4-byte
+    addresses, so a run of three or more aligned dwords that all point into `.text` is a table and every
+    entry is a case block. The run length is what separates a table from a code immediate that happens to
+    hold an address: a single `push 0x401000` is not a run. The cost of the rule is measured, not assumed
+    -- 2 of the census's 1,892 one-body gap bodies sit in such a run, so a false entry can merge at most
+    those.
+    """
+    flags = bytearray(len(text) // 4)
+    vals = [0] * (len(text) // 4)
+    for off in range(0, len(text) - 3, 4):
+        v = struct.unpack_from("<I", text, off)[0]
+        vals[off // 4] = v
+        flags[off // 4] = 1 if lo <= v < lo + len(text) else 0
+    targets, runs, i, m = set(), {}, 0, len(flags)
+    while i < m:
+        if not flags[i]:
+            i += 1
+            continue
+        j = i
+        while j < m and flags[j]:
+            j += 1
+        if j - i >= 3:
+            runs[lo + 4 * i] = j - i
+            for k in range(i, j):
+                targets.add(vals[k])
+        i = j
+    return targets, runs
+
 
 
 def sx8(v):
@@ -177,14 +226,16 @@ def branch_target(blob, i, length):
     return None
 
 
-def walk(decode, tail_shape, terminator_kind, pro, blob, limit, va):
+def walk(decode, tail_shape, terminator_kind, pro, blob, limit, va, table=None):
     """(size, insns, close, tail, inner, split) for the body at `blob[0]`, or a refusal.
 
     The run is decoded twice: once to its close (the same close-with-a-tail the registration census
     takes) or to the region's end, collecting every instruction and every relative branch target;
     then once over the terminators *inside* it, where the first one whose successor no branch targets
     and which opens a body (`strong_opening`) is a split point. An opening a branch does target is an
-    early `return` rejoined by its own code, counted in `inner` and walked past.
+    early `return` rejoined by its own code, counted in `inner` and walked past. `table` adds the
+    channel a relative read cannot see: a jump table's entries are case blocks of the body above them,
+    so an opening one of them names rejoins the body too.
     """
     insns, targets, i, close, shape, close_start, close_len = [], set(), 0, None, None, None, None
     refused = False
@@ -215,7 +266,7 @@ def walk(decode, tail_shape, terminator_kind, pro, blob, limit, va):
         nxt = start + length
         if nxt >= limit:
             continue
-        if nxt in targets:
+        if nxt in targets or (table and (va + nxt) in table):
             if strong_opening(pro, blob, nxt):
                 inner += 1
             continue
@@ -243,7 +294,7 @@ def strong_opening(pro, blob, i):
     return pro(blob[i:i + 8]) != "other"
 
 
-def scan(decode, nc, lo, hi, blob):
+def scan(decode, nc, lo, hi, blob, table=None):
     """Every head in `blob` between `lo` and `hi`: heads, walked from the region's first byte."""
     out, off, first, forced = [], 0, True, set()
     while off < len(blob):
@@ -259,7 +310,8 @@ def scan(decode, nc, lo, hi, blob):
             # terminator in front of it and the absence of a branch into it are the evidence.
             if pr != "other" or off in forced:
                 size, n, close, tail, inner, split = walk(decode, nc.tail_shape, nc.terminator_kind,
-                                                          nc.prologue, blob[off:], len(blob) - off, lo + off)
+                                                          nc.prologue, blob[off:], len(blob) - off, lo + off,
+                                                          table)
                 if off in forced:
                     boundary = "after-ret"
                 else:
@@ -374,7 +426,7 @@ def table_spans():
 
 
 def family_of(decode, data, size, atexit_va, va=0):
-    """The generated-stub family a body opens in, or "" -- the shape, read off its own instructions.
+    """(family, item) the generated body at `va` opens in, or ("", 0) -- the shape, read off its instructions.
 
     Two shapes recur in the one gap that holds 600 bodies. A **register-once thunk** is
     `push <&item>; push 0xff; call <helper>; add esp,8; mov <flag>,al; ret`: a distinct `.data` item
@@ -382,9 +434,12 @@ def family_of(decode, data, size, atexit_va, va=0):
     destructor registration** is `push <dtor>; call _atexit; pop ecx; ret`, the static destructor of a
     global object. Neither is named by a call -- `_atexit` is the only callee, and the helper is
     reached by every member of the first family -- which is why the block reads as one family.
+
+    `item` is what the body names: the `.data` object a register-once thunk guards, or the destructor an
+    `_atexit` registration installs. It is the only name either shape carries, so it is the name.
     """
     if not size or size < 6:
-        return ""
+        return "", 0
     ins, i = [], 0
     while i < min(size, len(data)):
         x = decode(data, i)
@@ -393,29 +448,91 @@ def family_of(decode, data, size, atexit_va, va=0):
         ins.append((i, x))
         i += x.length
     if len(ins) < 2:
-        return ""
+        return "", 0
     s0, i0 = ins[0]
     if data[s0] != 0x68 or i0.text.split()[0] != "push":
-        return ""
+        return "", 0
+    item = struct.unpack_from("<I", data, s0 + 1)[0]
     # the destructor shape: one argument, and a call to the CRT's registration helper
     if data[ins[1][0]] == 0xE8:
         target = va + ins[1][0] + 5 + struct.unpack_from("<i", data, ins[1][0] + 1)[0]
-        return "atexit" if atexit_va and target == atexit_va else ""
+        return ("atexit", item) if atexit_va and target == atexit_va else ("", 0)
     if len(ins) < 3:
-        return ""
+        return "", 0
     s1, i1 = ins[1]
     s2, i2 = ins[2]
     if data[s1] not in (0x68, 0x6A) or i1.text.split()[0] != "push":
-        return ""
+        return "", 0
     if data[s2] != 0xE8:
-        return ""
+        return "", 0
     target = va + s2 + 5 + struct.unpack_from("<i", data, s2 + 1)[0]
     if atexit_va and target == atexit_va:
-        return "atexit"
+        return "atexit", item
     for s, _x in ins[3:]:
         if data[s] == 0xA2:                          # `mov ds:<abs32>, al`: the flag the thunk writes
-            return "register-once"
-    return ""
+            return "register-once", item
+    return "", 0
+
+
+def split_points(decode, nc, text, lo, a, b):
+    """The split points the relative rule alone reads inside the map row `[a, b)`, in offset order."""
+    out, cur = [], a
+    while cur < b:
+        size, _n, _c, tail, _i, split = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
+                                             text[cur - lo:b - lo], b - cur, cur)
+        if not size or tail != "split":
+            break
+        out.append(cur + size)
+        cur += size
+    return out
+
+
+def row_slot(va, secs, blobs, spans, names):
+    """(table_va, class, slot) when a data-section dword holds `va` in a class-table slot, else None."""
+    starts = [s[0] for s in spans]
+    pat = struct.pack("<I", va)
+    for name in secs:
+        blob = blobs[name]
+        pos = blob.find(pat)
+        while pos != -1:
+            ref = _SECVA[name] + pos
+            i = bisect.bisect_right(starts, ref) - 1
+            if i >= 0:
+                tva, sn, _kind = spans[i]
+                if tva <= ref < tva + 4 * sn:
+                    return (tva, names.get(tva, ""), (ref - tva) // 4)
+            pos = blob.find(pat, pos + 1)
+    return None
+
+
+def row_repairs(decode, nc, text, lo, split_rows, spans, names, data_secs, blobs):
+    """The map rows a `resize` + `add` repairs: a split whose opening a class-table slot names.
+
+    The row audit leaves 9 rows the split rule still cuts once the inline jump tables are read, and 8 of
+    their openings nothing names at all -- those stay whole, because "no channel" is not evidence. The
+    ninth is a body a slot names (the same channel that named 537 of the gap population), so the row is
+    resized to end where that body begins and the body is added with its `<Class>_vt<slot>` name.
+    """
+    out = []
+    for a, b in split_rows:
+        size, _i, _c, tail, _in, _sp = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
+                                           text[a - lo:b - lo], b - a, a, _TABLE["targets"])
+        if tail != "split" or not size:
+            continue
+        for p in split_points(decode, nc, text, lo, a, b):
+            hit = row_slot(p, data_secs, blobs, spans, names)
+            if not hit or not hit[1]:
+                continue
+            piece, _i2, close2, _t2, _in2, _sp2 = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
+                                                      text[p - lo:b - lo], b - p, p, _TABLE["targets"])
+            if not piece:
+                continue
+            out.append({"row": "repair", "head_va": "0x%08x" % p, "gap_lo": "0x%08x" % a,
+                        "gap_hi": "0x%08x" % b, "size": piece, "close": close2 or "",
+                        "slot_table": "0x%08x" % hit[0], "slot_class": hit[1], "slot_index": hit[2],
+                        "name": "%s_vt%d" % (hit[1], hit[2]),
+                        "row_size": size})
+    return out
 
 
 # --------------------------------------------------------------------------- the measurement
@@ -432,15 +549,18 @@ def measure(args):
     vsize = [s for s in X.sections if s.name == ".text"][0].vsize
     text = blobs[".text"]
     lo, hi = tva, tva + vsize
+    _TABLE["targets"], _TABLE["runs"] = text_tables(text, lo)
     gaps = gaps_of(table, lo, hi)
-    print("text %#x..%#x, %d gaps, %d gap bytes" % (lo, hi, len(gaps), sum(b - a for a, b in gaps)))
+    print("text %#x..%#x, %d gaps, %d gap bytes; %d inline jump tables, %d entries"
+          % (lo, hi, len(gaps), sum(b - a for a, b in gaps), len(_TABLE["runs"]),
+             len(_TABLE["targets"])))
 
     heads = []
     for gs, ge in gaps:
         if ge - gs < 4:
             continue
         blob = X.read_va(gs, ge - gs)
-        for h in scan(decode, nc, gs, ge, blob):
+        for h in scan(decode, nc, gs, ge, blob, _TABLE["targets"]):
             h["gap_lo"], h["gap_hi"], h["gap_size"] = gs, ge, ge - gs
             heads.append(h)
     spans, names = table_spans()
@@ -450,21 +570,41 @@ def measure(args):
     atexit_va = next((a for a, _b, n in table if n == "_atexit"), 0)
     for h in heads:
         if not h["size"]:
-            h["family"] = ""
+            h["family"], h["family_item"] = "", ""
             continue
         room = max(1, min(h["gap_hi"] - h["head_va"], h["size"] + 16, 128))
-        h["family"] = family_of(decode, X.read_va(h["head_va"], room), h["size"], atexit_va,
-                                h["head_va"])
+        fam, item = family_of(decode, X.read_va(h["head_va"], room), h["size"], atexit_va,
+                              h["head_va"])
+        h["family"] = fam
+        h["family_item"] = "0x%08x" % item if item else ""
 
     # the controls: the same two tests over the rows the map already places
     ctl = collections.Counter()
+    split_rows = []
     for a, b, _n in [t for t in table if lo <= t[0] < hi]:
         pad = a > lo and text[a - 1 - lo] in (0xCC, 0x90)
         pr = nc.prologue(text[a - lo:a - lo + 8])
         ctl["both" if (pad and pr != "other") else ("pad" if pad else ("prologue" if pr != "other" else "neither"))] += 1
         size, n, close, tail, _i, _sp = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
-                                             text[a - lo:b - lo], b - a, a)
-        ctl["decode" if size == b - a else ("short" if size else "noclose")] += 1
+                                             text[a - lo:b - lo], b - a, a, _TABLE["targets"])
+        if tail == "split":
+            ctl["split"] += 1
+            split_rows.append((a, b))
+        elif size == b - a:
+            ctl["decode"] += 1
+        elif size:
+            ctl["short"] += 1
+        else:
+            ctl["noclose"] += 1
+        # what the same rule says *without* the table channel, and how many of its openings a table names
+        size0, _n0, _c0, tail0, _i0, _sp0 = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
+                                                text[a - lo:b - lo], b - a, a)
+        if tail0 == "split":
+            ctl["split_rel"] += 1
+            for p in split_points(decode, nc, text, lo, a, b):
+                ctl["split_pts"] += 1
+                if p in _TABLE["targets"]:
+                    ctl["split_pts_table"] += 1
     # the null population: pad-before prologue-shaped bytes in the data sections
     for name in (".rdata", ".data", "XNET", "DSOUND"):
         if name not in blobs:
@@ -497,9 +637,13 @@ def measure(args):
                      "inner_starts": h["inner_starts"], "calls": h["calls"], "jumps": h["jumps"],
                      "imms": h["imms"], "pointers": h["pointers"], "slots": h["slots"],
                      "slot_table": h["slot_table"], "slot_class": h["slot_class"],
-                     "slot_index": h["slot_index"], "family": h["family"]})
-    vc = collections.Counter(r["verdict"] for r in rows)
-    bodies = [r for r in rows if r["verdict"] in ("body", "island")]
+                     "slot_index": h["slot_index"], "family": h["family"],
+                     "family_item": h.get("family_item", "")})
+    # the row audit's repairs: of the rows still cut, the one a class-table slot names is a body
+    repairs = row_repairs(decode, nc, text, lo, split_rows, spans, names,
+                          [s for s in secs if s != ".text"], blobs)
+    vc = collections.Counter(r["verdict"] for r in rows if r["row"] == "head")
+    bodies = [r for r in rows if r["row"] == "head" and r["verdict"] in ("body", "island")]
     meta = collections.OrderedDict()
     meta["text_lo"], meta["text_hi"] = lo, hi
     meta["gaps"] = len(gaps)
@@ -515,6 +659,8 @@ def measure(args):
     meta["inner_starts"] = sum(int(r["inner_starts"]) for r in rows)
     meta["bodies_with_inner"] = sum(1 for r in rows if int(r["inner_starts"]))
     meta["splits"] = sum(1 for r in rows if r["boundary"] == "after-ret")
+    meta["splits_table"] = sum(1 for r in rows if r["boundary"] == "after-ret"
+                               and int(r["head_va"], 16) in _TABLE["targets"])
     meta["family_register_once"] = sum(1 for r in rows if r["family"] == "register-once")
     meta["family_atexit"] = sum(1 for r in rows if r["family"] == "atexit")
     meta["slot_named"] = sum(1 for r in rows if int(r["slots"]))
@@ -529,6 +675,14 @@ def measure(args):
     meta["map_rows_pad_only"] = ctl["pad"]
     meta["map_rows_prologue_only"] = ctl["prologue"]
     meta["map_rows_decode"] = ctl["decode"]
+    meta["map_rows_short"] = ctl["short"]
+    meta["map_rows_noclose"] = ctl["noclose"]
+    meta["map_rows_split"] = ctl["split"]
+    meta["map_rows_split_rel"] = ctl["split_rel"]
+    meta["map_rows_split_points"] = ctl["split_pts"]
+    meta["map_rows_split_points_table"] = ctl["split_pts_table"]
+    meta["text_tables"] = len(_TABLE["runs"])
+    meta["text_table_entries"] = len(_TABLE["targets"])
     for name in (".rdata", ".data", "XNET", "DSOUND"):
         if "nullheads_" + name in ctl:
             meta["null_heads_" + name.strip(".").lower()] = ctl["nullheads_" + name]
@@ -539,8 +693,13 @@ def measure(args):
     meta["slot_classes"] = len({r["slot_class"] for r in rows if r["slot_class"]})
     meta["slot_unclassed"] = sum(1 for r in rows if int(r["slots"]) and not r["slot_class"])
     meta["tables_unclassed"] = sum(1 for t_va, _n, _k in spans if not names.get(t_va))
+    meta["map_rows_split_named"] = len(repairs)
+    meta["map_rows_split_unnamed"] = ctl["split"] - len(repairs)
+    meta["row_repairs"] = len(repairs)
+    for r in repairs:
+        rows.append(r)
     rows.append({"row": "census", "census": ";".join("%s=%s" % (k, v) for k, v in meta.items())})
-    assert len(rows) == len(heads) + 1, (len(rows), len(heads))
+    assert len(rows) == len(heads) + len(repairs) + 1, (len(rows), len(heads), len(repairs))
     print("heads %d: %d bodies, %d islands, %d no-close, %d undecoded; %d body bytes (%d%% of the gaps)"
           % (meta["heads"], meta["bodies"], meta["islands"], meta["no_close"], meta["undecoded"],
              meta["body_bytes"], meta["body_bytes_pct"]))
@@ -549,8 +708,13 @@ def measure(args):
              meta["named_any"], meta["unnamed"]))
     print("split %d bodies out of merged runs (%d openings stay merged); families: %d register-once, %d atexit"
           % (meta["splits"], meta["inner_starts"], meta["family_register_once"], meta["family_atexit"]))
-    print("controls: map rows head-rule %d of %d; decode-to-size %d; null bodies %s; base %.1f%% gap vs %.1f%% rows"
-          % (meta["map_rows_head"], meta["map_rows"], meta["map_rows_decode"],
+    print("row repairs: %d (a class-table slot names the opening; %d rows nothing names stay whole)"
+          % (len(repairs), ctl["split"] - len(repairs)))
+    print("controls: map rows head-rule %d of %d; decode-to-size %d; rows a split would cut %d (relative rule alone %d, "
+          "its %d openings %d named by an inline table); tables %d/%d; null bodies %s; base %.1f%% gap vs %.1f%% rows"
+          % (meta["map_rows_head"], meta["map_rows"], meta["map_rows_decode"], meta["map_rows_split"],
+             meta["map_rows_split_rel"], meta["map_rows_split_points"], meta["map_rows_split_points_table"],
+             meta["text_tables"], meta["text_table_entries"],
              {k: v for k, v in meta.items() if k.startswith("null_bodies_")},
              100.0 * meta["base_gap"] / max(meta["base_gap_n"], 1),
              100.0 * meta["base_row"] / max(meta["base_row_n"], 1)))
@@ -582,7 +746,9 @@ def add_candidates(rows, population):
         if r["slot_class"]:
             name = "%s_vt%s" % (r["slot_class"], r["slot_index"])
         elif r["family"] == "atexit":
-            name = "dtor_%s" % r["head_va"][2:]
+            name = "dtor_%s" % (r["family_item"][2:] if r.get("family_item") else r["head_va"][2:])
+        elif r["family"] == "register-once":
+            name = "static_init_%s" % (r["family_item"][2:] if r.get("family_item") else r["head_va"][2:])
         else:
             name = "FUN_%s" % r["head_va"][2:]
         if name in taken:
@@ -598,6 +764,12 @@ def add_evidence(r):
            % (r["slot_table"], r["slot_index"], r["slot_class"]))
     if not r["slot_class"]:
         who = ("a dword in the class table %s at slot %s" % (r["slot_table"], r["slot_index"]))
+    if r.get("family") == "register-once":
+        who = ("its own instructions: the body registers the `.data` item %s once (a flag byte each, one "
+               "`call` to the shared initialiser), so the item names it" % (r.get("family_item") or "?"))
+    elif r.get("family") == "atexit":
+        who = ("its own instructions: `push %s; call _atexit`, the static destructor registration of that "
+               "destructor" % (r.get("family_item") or "?"))
     pad = ("%d bytes of pad" % int(r["boundary"].split(":")[1])) if r["boundary"].startswith("pad") \
         else "a split boundary"
     calls, jumps = int(r["calls"] or 0), int(r["jumps"] or 0)
@@ -664,6 +836,84 @@ def apply_adds(args):
     return 0
 
 
+def repair_rows_of(rows):
+    """The `row=repair` rows: a split whose opening a class-table slot names."""
+    return [r for r in rows if r.get("row") == "repair"]
+
+
+def repair_evidence(r):
+    return ("the map row %s..%s declares %d bytes but holds a second body: the row's own decode closes on `%s` "
+            "at 0x%08x and that address is the body a dword in the class table %s slot %s names (%s), so the "
+            "row is resized to end there and the slot body is added"
+            % (r["gap_lo"], r["gap_hi"], int(r["gap_hi"], 16) - int(r["gap_lo"], 16), r.get("close") or "ret",
+               int(r["head_va"], 16), r["slot_table"], r["slot_index"], r["name"]))
+
+
+def emit_repairs(args):
+    rows = _art()
+    rep = repair_rows_of(rows)
+    w = csv.writer(sys.stdout, lineterminator="\n")
+    for r in rep:
+        w.writerow([r["gap_lo"], "resize", "", int(r["head_va"], 16) - int(r["gap_lo"], 16), repair_evidence(r)])
+        w.writerow([r["head_va"], "add", r["name"], r["size"], repair_evidence(r)])
+    print("gap-heads: %d row repair(s) -> %d boundary rows" % (len(rep), 2 * len(rep)), file=sys.stderr)
+    return 0
+
+
+def apply_repairs(args):
+    """Write the `resize` + `add` pair each split row needs, with the creation row the add requires.
+
+    A row may already carry a `resize` in the other direction -- `0x0014c1b0` was *extended* to 179 by an
+    earlier bundle because the walk ran through the row's own `ret 8` into the `ret 4` behind it. The split
+    rule resolves that merge, so the repair **replaces** that resize instead of refusing: the correction is
+    the finding, and the evidence sentence says so instead of quietly dropping the old row.
+    """
+    rows = _art()
+    rep = repair_rows_of(rows)
+    if not rep:
+        print("gap-heads: no row repairs in the artifact")
+        return 0
+    with open(BOUNDARIES, newline="") as fh:
+        b_rows = list(csv.DictReader(fh))
+    with open(OVERRIDES, newline="") as fh:
+        o_rows = list(csv.DictReader(fh))
+    have = {int(r["address"], 16) for r in b_rows} | {int(r["address"], 16) for r in o_rows}
+    dup = [r["head_va"] for r in rep if int(r["head_va"], 16) in have]
+    if dup:
+        sys.exit("gap-heads: --apply-repairs: %s is already a row; re-measure instead of re-applying"
+                 % ", ".join(dup[:4]))
+    for r in rep:
+        ev = repair_evidence(r)
+        old = [x for x in b_rows if x["action"] == "resize" and int(x["address"], 16) == int(r["gap_lo"], 16)]
+        size = int(r["head_va"], 16) - int(r["gap_lo"], 16)
+        if old:
+            was = old[0]["size"]
+            ev += ("; this replaces the earlier resize of the same row to %s, which ran through the row's own "
+                   "terminator into the body behind it" % was)
+            b_rows = [x for x in b_rows if x not in old]
+        b_rows.append({"address": r["gap_lo"], "action": "resize", "target": "", "size": size, "evidence": ev})
+        b_rows.append({"address": r["head_va"], "action": "add", "target": r["name"], "size": r["size"],
+                       "evidence": ev})
+        o_rows.append({"address": r["head_va"], "name": r["name"],
+                       "evidence": "added to the map by symbols/xbe_boundaries.csv: " + ev,
+                       "class": r["slot_class"], "outer": "", "object_size": "", "assert_line": "",
+                       "module": "", "source_file": "", "function_size": r["size"]})
+    with open(BOUNDARIES, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "action", "target", "size", "evidence"],
+                           lineterminator="\n")
+        w.writeheader()
+        w.writerows(b_rows)
+    with open(OVERRIDES, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "name", "evidence", "class", "outer", "object_size",
+                                           "assert_line", "module", "source_file", "function_size"],
+                           lineterminator="\r\n")
+        w.writeheader()
+        w.writerows(o_rows)
+    print("gap-heads: %d row repair(s) written (%d resize + %d add + %d creation row)"
+          % (len(rep), len(rep), len(rep), len(rep)))
+    return 0
+
+
 # --------------------------------------------------------------------------- the artifact and the page
 def write_artifact(rows, path):
     with open(path, "w", newline="", encoding="utf-8") as fh:
@@ -713,6 +963,14 @@ def render(rows):
             "| named by any channel / by none | %d / %d |" % (m["named_any"], m["unnamed"]),
             "| control: map rows passing the head rule / decoding to their size | %d of %d / %d |"
             % (m["map_rows_head"], m["map_rows"], m["map_rows_decode"]),
+            "| ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | %d / %d |"
+            % (m.get("map_rows_split_rel", 0), m.get("map_rows_split", 0)),
+            "| ...split points that reading means / of those, entries of a `.text` jump table | %d / %d |"
+            % (m.get("map_rows_split_points", 0), m.get("map_rows_split_points_table", 0)),
+            "| ...of the rows still cut, a class-table slot names the opening / nothing names it | %d / %d |"
+            % (m.get("map_rows_split_named", 0), m.get("map_rows_split_unnamed", 0)),
+            "| inline jump tables in `.text` (aligned runs of >=3 code addresses) / entries | %d / %d |"
+            % (m.get("text_tables", 0), m.get("text_table_entries", 0)),
             "| control: the same rule over `.rdata`, `.data`, XNET, DSOUND (%d head-shaped runs, 3.3 MB of data) | %d / %d / %d / %d bodies |"
             % (m.get("null_heads_rdata", 0) + m.get("null_heads_data", 0) + m.get("null_heads_xnet", 0)
                + m.get("null_heads_dsound", 0),
@@ -736,6 +994,16 @@ def render(rows):
                   "points at them, and the map has no row for them."
                   % (m["slot_named"], m["bodies"], m["slot_unclassed"], m["tables_unclassed"],
                      m["unnamed"])]
+        if m.get("map_rows_split_rel") is not None:
+            lines += ["", "The split rule does not hold on the map's own rows the way it holds on the gaps: "
+                      "%d rows read as two bodies with relative branches alone, and **%d of their %d openings "
+                      "are entries of the %d inline jump tables** (`switch` case blocks, reached by an indirect "
+                      "branch no relative read sees) -- so they are one body each, and the rule now consults the "
+                      "table. Over the gap population the same channel names **%d of its %d split heads**, which "
+                      "is what makes the %d splits bodies rather than case blocks."
+                      % (m.get("map_rows_split_rel", 0), m.get("map_rows_split_points_table", 0),
+                         m.get("map_rows_split_points", 0), m.get("text_tables", 0),
+                         m.get("splits_table", 0), m["splits"], m["splits"])]
     return "\n".join(lines)
 
 
@@ -761,6 +1029,29 @@ def check():
                 "splits", "family_register_once", "family_atexit", "slot_named"):
         if key not in m:
             sys.exit("gap-heads: --check: the census row carries no %s" % key)
+    # The map-row control: every row falls in exactly one bucket, and the rule no longer cuts a row once
+    # the inline jump tables are read -- that is the claim this bundle makes, so the gate holds it.
+    if "map_rows_split" in m:
+        bucket = m.get("map_rows_decode", 0) + m.get("map_rows_short", 0) + m.get("map_rows_split", 0) \
+            + m.get("map_rows_noclose", 0)
+        if bucket != m["map_rows"]:
+            sys.exit("gap-heads: --check: the map-row control buckets sum to %d, the census says %d"
+                     % (bucket, m["map_rows"]))
+        if m["map_rows_split"] != m.get("map_rows_split_named", 0) + m.get("map_rows_split_unnamed", 0):
+            sys.exit("gap-heads: --check: %d split rows are not named + unnamed (%d + %d)"
+                     % (m["map_rows_split"], m.get("map_rows_split_named", 0),
+                        m.get("map_rows_split_unnamed", 0)))
+        if m.get("map_rows_split_points_table", 0) > m.get("map_rows_split_points", 0):
+            sys.exit("gap-heads: --check: %d table-named openings of %d split points"
+                     % (m["map_rows_split_points_table"], m["map_rows_split_points"]))
+        if m.get("map_rows_split_named"):
+            sys.exit("gap-heads: --check: %d map rows are cut where a class-table slot names the opening; "
+                     "run --apply-repairs, `make boundaries` and re-measure" % m["map_rows_split_named"])
+    for r in repair_rows_of(rows):
+        want = "%s_vt%s" % (r.get("slot_class") or "", r.get("slot_index") or "")
+        if not r.get("slot_class") or not r.get("size") or r.get("name") != want:
+            sys.exit("gap-heads: --check: repair row %s carries %r, not a class-table name"
+                     % (r.get("head_va"), r.get("name")))
     heads = [r for r in rows if r["row"] == "head"]
     table = map_table(_art(FUNCTIONS))
     gaps = gaps_of(table, m["text_lo"], m["text_hi"])
@@ -871,11 +1162,30 @@ def selftest():
     thunk = b"\x68" + struct.pack("<I", 0x5c29e0) + b"\x68\xff\x00\x00\x00" + b"\xe8" + \
         struct.pack("<i", 0x46c60 - 0x500a - 5) + b"\x83\xc4\x08" + b"\xa2" + \
         struct.pack("<I", 0x6c21ac) + b"\xc3"
-    assert family_of(decode, thunk, len(thunk), 0x3e66a3, 0x5000) == "register-once", thunk
+    assert family_of(decode, thunk, len(thunk), 0x3e66a3, 0x5000) == ("register-once", 0x5c29e0), thunk
     dtor = b"\x68" + struct.pack("<I", 0x418cf0) + b"\xe8" + struct.pack("<i", 0x3e66a3 - 0x500a) + \
         b"\x59\xc3"
-    assert family_of(decode, dtor, len(dtor), 0x3e66a3, 0x5000) == "atexit", dtor
-    assert family_of(decode, b"\x55\x8b\xec\xc3", 4, 0x3e66a3, 0x5000) == ""
+    assert family_of(decode, dtor, len(dtor), 0x3e66a3, 0x5000) == ("atexit", 0x418cf0), dtor
+    assert family_of(decode, b"\x55\x8b\xec\xc3", 4, 0x3e66a3, 0x5000) == ("", 0)
+    # a `switch`: the body ends `jmp [eax*4+<table>]` and the case blocks behind it are the table's entries,
+    # so with the table read they stay one body and without it they are read as neighbours
+    cases = b"\x55\x8b\xec" + b"\x33\xc0\xff\x24\x85" + struct.pack("<I", 0x6200)
+    case1 = b"\xb8" + struct.pack("<I", 1) + b"\xeb\xf0"
+    case2 = b"\xb8" + struct.pack("<I", 2) + b"\xeb\xea"
+    tbl = struct.pack("<3I", 0x6010, 0x6017, 0x601e)
+    sw = b"\xcc\xcc" + cases + case1 + case2 + b"\xcc" * 3 + tbl + b"\xcc"
+    lo_sw = 0x6000
+    off1, off2 = 2 + len(cases), 2 + len(cases) + len(case1)
+    tset = {lo_sw + off1, lo_sw + off2}
+    one = scan(decode, nc, lo_sw, lo_sw + 2 + len(cases) + len(case1) + len(case2), sw, tset)
+    assert len(one) == 1 and one[0]["tail"] == "pad", one
+    many = scan(decode, nc, lo_sw, lo_sw + 2 + len(cases) + len(case1) + len(case2), sw)
+    assert len(many) > 1, many
+    # the table index itself: three consecutive code addresses are a table, two are not
+    texts = b"".join(struct.pack("<I", 0x7000 + 4 * i) for i in range(3)) + b"\x00" * 4 \
+        + struct.pack("<2I", 0x7004, 0x7008)
+    tg, runs = text_tables(texts, 0x7000)
+    assert tg == {0x7000, 0x7004, 0x7008} and len(runs) == 1, (tg, runs)
     # the gaps: a placed row splits its neighbours, and an overlap does not open one
     table = [(0x1000, 0x1010, "a"), (0x1020, 0x1030, "b"), (0x1030, 0x1040, "c"), (0x1050, 0x1060, "d")]
     assert gaps_of(table, 0x1000, 0x1060) == [(0x1010, 0x1020), (0x1040, 0x1050)], gaps_of(table, 0x1000, 0x1060)
@@ -898,8 +1208,9 @@ def selftest():
     assert "| heads the pad-before + prologue rule finds | 1 |" in page, page
     assert "| `0x1000`..`0x1010` | 1 | 1 | `0x1007` |" in page, page
     assert splice(os.path.join(ROOT, "Makefile"), "x") is None   # no markers: refused, not echoed
-    print("ok   gap-heads: 15 assertions (head rule, island, refusal, split, merged early return, five "
-          "abutting bodies, both families, gaps, census round trip, marker refusal)")
+    print("ok   gap-heads: 18 assertions (head rule, island, refusal, split, merged early return, five "
+          "abutting bodies, both families, the switch's case blocks and the table index, gaps, census "
+          "round trip, marker refusal)")
     return 0
 
 
@@ -918,6 +1229,10 @@ def main():
                     help="print the `add` rows the population earns (symbols/xbe_boundaries.csv)")
     ap.add_argument("--apply-adds", action="store_true",
                     help="write those rows, and the xbe_overrides.csv creation row each needs")
+    ap.add_argument("--emit-repairs", action="store_true",
+                    help="print the `resize` + `add` rows the split rows earn (symbols/xbe_boundaries.csv)")
+    ap.add_argument("--apply-repairs", action="store_true",
+                    help="write those rows, and the xbe_overrides.csv creation row each add needs")
     ap.add_argument("--add-population", choices=POPULATIONS, default="slot",
                     help="which bodies to add: `slot` (class-named, the default), `family`, or `all`")
     args = ap.parse_args()
@@ -929,6 +1244,10 @@ def main():
         return emit_adds(args)
     if args.apply_adds:
         return apply_adds(args)
+    if args.emit_repairs:
+        return emit_repairs(args)
+    if args.apply_repairs:
+        return apply_repairs(args)
     if args.report or args.write_doc or args.check_doc:
         rows = _art()
     else:

@@ -230,7 +230,7 @@ def check_docs_regenerate():
         os.makedirs(os.path.join(tmp, "inventory"))
         for f in ("xbox_functions.csv", "xbe_overrides.csv"):
             shutil.copy(repo("symbols", f), os.path.join(tmp, "symbols", f))
-        for f in ("xbe_class_table_names.csv",):
+        for f in ("xbe_class_table_names.csv", "classes.csv"):
             shutil.copy(repo("inventory", f), os.path.join(tmp, "inventory", f))
         if not run_generator(name, [sys.executable, repo("tools", "native-summary.py"),
                                     "--symbols", os.path.join(tmp, "symbols", "xbox_functions.csv"),

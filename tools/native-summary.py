@@ -15,10 +15,38 @@ from collections import Counter, defaultdict
 
 FUN = re.compile(r"^(FUN|sub|thunk_FUN|LAB)_([0-9a-fA-F]+)$")
 NATIVE_SLOT = re.compile(r"^Native_\d+$")
+# `<Class>_vt<slot>` is the name the gap census gives a body a class-table slot holds, and the class's
+# own package is the module evidence: `SpriteEmitter_vt40` is Engine because SpriteEmitter is declared
+# in Engine.package (`inventory/classes.csv`). The package names differ in case from the module labels
+# the asserts give (`StargateGame` vs `stargategame`), so the match is case-insensitive.
+CLASS_VT = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)_vt\d+$")
 # The 12 modules that assert somewhere in this binary; a name is only attributed to a module when
 # its prefix is one of these, otherwise an MSVC-mangled symbol would invent a module of its own.
 KNOWN_MODULES = {"Engine", "Core", "IpDrv", "Gui", "D3DDrv", "XboxDrv", "XboxAudio", "XboxLive",
                  "Gameplay", "Fire", "stargategame", "stargatevehicles"}
+
+
+def class_packages(path="inventory/classes.csv"):
+    """{class_lower: package} from the class census; absent file is an empty map, not an error."""
+    out = {}
+    if os.path.isfile(path):
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("class") and r.get("package"):
+                    out[r["class"].lower()] = r["package"]
+    return out
+
+
+def class_module(name, packages):
+    """The module a `<Class>_vt<slot>` name resolves to through its class's package, or ""."""
+    m = CLASS_VT.match(name)
+    if not m:
+        return ""
+    pkg = packages.get(m.group(1).lower(), "")
+    for module in KNOWN_MODULES:
+        if module.lower() == pkg.lower():
+            return module
+    return ""
 
 
 def main():
@@ -26,6 +54,8 @@ def main():
     ap.add_argument("--symbols", default="symbols/xbox_functions.csv")
     ap.add_argument("--overrides", default="symbols/xbe_overrides.csv",
                     help="evidence-based names; their module attribution joins the assert counts")
+    ap.add_argument("--classes", default="inventory/classes.csv",
+                    help="class -> package, for the `<Class>_vt<slot>` names' module evidence")
     ap.add_argument("-o", "--out", default="inventory")
     args = ap.parse_args()
     if not os.path.isfile(args.symbols):
@@ -39,6 +69,7 @@ def main():
             for row in csv.DictReader(fh):
                 overrides[row["address"].lower()] = row
 
+    packages = class_packages(args.classes)
     rows = []
     with open(args.symbols, newline="", encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
@@ -46,9 +77,12 @@ def main():
             unknown = bool(FUN.match(name))
             prefix = name.split("_", 1)[0]
             module = prefix if (not unknown and prefix in KNOWN_MODULES) else ""
+            how = "prefix" if module else ""
+            if not module:
+                module, how = class_module(name, packages), ("class-package" if module else "")
             override = overrides.get(row["address"].lower())
             if override and override["module"] in KNOWN_MODULES:
-                module = override["module"]
+                module, how = override["module"], "override"
                 kind_override = True
             else:
                 kind_override = False
@@ -61,7 +95,7 @@ def main():
             else:
                 kind = "other"
             rows.append({"address": row["address"], "name": name, "size": int(row["size"]),
-                         "module": module, "unknown": unknown, "kind": kind,
+                         "module": module, "unknown": unknown, "kind": kind, "how": how,
                          "override": kind_override})
 
     per_module = defaultdict(lambda: {"functions": 0, "bytes": 0, "named": 0})
@@ -85,7 +119,8 @@ def main():
     sizes = sorted(r["size"] for r in rows)
     total = sum(sizes)
     median = sizes[len(sizes) // 2] if sizes else 0
-    assert_named = sum(1 for r in rows if r["module"] and not r["override"])
+    assert_named = sum(1 for r in rows if r["module"] and r["how"] == "prefix")
+    class_named = sum(1 for r in rows if r["how"] == "class-package")
     override_named = sum(1 for r in rows if r["override"])
     gnative_named = sum(1 for r in rows if r["kind"] == "gnatives_declared")
     gnative_slot = sum(1 for r in rows if r["kind"] == "gnatives_slot")
@@ -106,8 +141,9 @@ def main():
              "x86:LE:32, XBE sections carved at their real virtual addresses, base `0x10000`).", "",
              f"- {len(rows):,} functions discovered, {total:,} bytes of code, median function "
              f"{median} bytes",
-             f"- {assert_named + override_named:,} functions attributed to a module "
-             f"({assert_named:,} by the assert string they reference, {override_named:,} by an evidence "
+             f"- {assert_named + class_named + override_named:,} functions attributed to a module "
+             f"({assert_named:,} by the assert string they reference, {class_named:,} by the package a "
+             f"`<Class>_vt<slot>` name's class is declared in, {override_named:,} by an evidence "
              f"override — {assert_named / len(rows):.1%} of the binary by assert); {gnative_named:,} are "
              f"named from the runtime native dispatch table (`GNatives`, PLAN 4.4) and {gnative_slot:,} "
              f"are dispatch slots no shipped package declares; {other_named:,} carry a name from Ghidra's "
