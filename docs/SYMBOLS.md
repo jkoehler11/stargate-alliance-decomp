@@ -128,9 +128,7 @@ disassembler created a body at it that ends on a flow terminator — and none of
 They are rows now. `native-census.py` gained the third reading a repair needs — **how far each body runs in the
 image** — and the two emitters that write it out: `--emit-boundaries` prints the `add` row and
 `--emit-creations` the `xbe_overrides.csv` row that `XbePost.java` builds a function from, so a fresh import
-keeps the body instead of reporting it missing. The extent is the image's, not a guess: Ghidra's `body_bytes`
-where the bytes there close on a terminator (269 of the 274, all but five on a `ret imm16`), otherwise the body's
-own end at the first `cc cc` run (5 more). **274 of the 274 are in the file**, and **883 of the 883 registration bodies are map rows**: the six
+keeps the body instead of reporting it missing. **274 of the 274 are in the file**, and **883 of the 883 registration bodies are map rows**: the six
 U39 refused are written as an `add` plus the `drop` that folds the fragment inside them, because the fragment
 is an assert block the body inlined and an `add` alone would overlap it. Sizes are 107, 274, 197, 212, 401 and
 92 bytes.
@@ -138,18 +136,42 @@ is an assert block the body inlined and an `add` alone would overlap it. Sizes a
 The same rows answer the other direction, and the answer is a decode rather than the walk. `sweep`,
 `sweep_closes` and `sweep_refused` are a **linear decode from each body's start** that accepts an end only where a
 complete instruction closes on an unconditional terminator *and* the bytes to the next map row are a tail rather
-than code. There are four tails, and they are the population the earlier rule could not read: `pad` (`0xcc` fill
+than code. There are five tails, and they are the population the earlier rule could not read: `pad` (`0xcc` fill
 of any length -- a single `int3` in front of the next row is padding the map's own start corroborates), `edge`
-(nothing), `align` (MSVC's `8b ff` hotpatch slot, `90`, `0f 1f..`) and `table` (a `switch`'s case table: dwords
-that all name an offset inside the body), or a concatenation of those. A `0xcc` run also *ends* the reading,
+(nothing), `align` (MSVC's `8b ff` hotpatch slot, `90`, `0f 1f..`), `table` (a `switch`'s dword case table: every
+entry an offset inside the body) and `bytes` (the byte-index table MSVC puts *behind* that dword table when the
+case values are dense -- small slot numbers, sixteen or more of them), or a concatenation of those. A `0xcc` run also *ends* the reading,
 because what follows a pad is another body: 22 rows sit in a map gap whose next row starts hundreds of bytes
 later.
 
-Read against the repaired map it reproduces the declared size to the byte on **882 of the 883** rows --
-**838** close on a pad, **39** exactly at the next row, **1** on a table behind its pad and **4** on an
-`align` + `table` tail (the two `execNativePerform`/`execLocalPerform` dispatchers among them) -- and **1** is
-refused: `0x00046330`, which shares its 192-byte tail with `0x000463f0`. The walk the sweep replaces could read a *neighbour's*
-close: `0x00041000` declares 33 bytes on a 144-byte body, the island said 437, and the decode says 144.
+Read against the repaired map the decode reproduces the declared size to the byte on **882 of the 883** rows --
+**838** close on a pad, **40** exactly at the next row, **1** on a table behind its pad and **4** on an
+`align` + `table` tail (the two `execNativePerform`/`execLocalPerform` dispatchers among them) -- and the 883rd
+is the row the decode closed: `0x00046330` (`execEqualEqual_ObjectObject`) declared 111 bytes in front of a
+`jcc`, and the rest of its body is a *second* path -- an early `ret imm16` on the shared-reference branch with
+code behind it, then the same 81-byte tail its `execNotEqual_ObjectObject` twin has. Counting that early return
+as a boundary is what refused the row for three bundles; only a terminator **with a tail behind it** ends a
+body, so the row is a `resize` to 192 and **883 of 883** now agree. The walk the sweep replaces could read a
+*neighbour's* close: `0x00041000` declares 33 bytes on a 144-byte body, the island said 437, and the decode
+says 144.
+
+**The decode is the only extent reading.** `native_census.csv` used to carry a second
+(`extent`/`extent_source`/`extent_closes`: Ghidra's `body_bytes` where it closed on a terminator, else the
+island walk) beside `sweep`, and the two disagreed on nine rows -- every one of them the island's answer being
+a neighbour's close. The columns are gone rather than reconciled: `sweep` is how far the body runs, and
+`body_bytes` was already the disassembler's own column. Unifying them moved no row -- all 274 `add` rows
+already carried the decode's size -- which is the control that the two readings had agreed where it mattered
+and could not both be right where they did not.
+
+A body no table names earns a row the same way. `0x002b7aa0` sits in the gap between two
+`D3DDrv_D3DRenderInterface` rows and is a `switch` over D3D error codes whose 24 cases push the code's own name
+(`D3DERR_WRONGTEXTUREFORMAT` ... `D3D_OK`, plus `%08X`) into an `FString`; **564 bytes** close on a `ret` at
+`0x2b7cd4`, and behind it sit the body's tables -- 12 dwords, then 65 bytes of slot numbers ending
+`05 05 05 03 04` -- before the 11-byte `int3` run at `0x2b7d45`. That second table is what three runs could not
+read: a reader that knew dwords desynchronised *inside* it, swallowed the pad's first byte, and ran on into the
+VM state-stack body at `0x2b7d50` for 2,151 bytes (the island walk, stopping at the first `cc cc`, said 677).
+Nothing calls it -- no `E8`, no dword reference at any alignment -- so `native-census --gap-add 0x002b7aa0
+--name FUN_002b7aa0` wrote the `add` and the creation row from its own measurement.
 
 The 48 refusals the earlier rule reported were **not** 48 unreadable bodies: 39 of them close on the single
 `int3` a two-byte pad rule walked through, and the shape is what settles them. The growth rule keeps the rest

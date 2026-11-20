@@ -11,8 +11,9 @@ So this tool classifies every address on two independent axes:
 
 * **the census**, from committed files only: does the address equal the entry point of a function in
   `symbols/xbox_functions.csv`, or fall inside one, or outside every function's `[address, address+size)`
-  range? (Measured: 609 equal an entry, 0 fall inside a range, 274 fall outside all of them, so the
-  question is not one of Ghidra having folded them into a neighbour.)
+  range? (Measured: all 883 equal an entry and none falls inside or outside a range -- the 274 that
+  used to fall outside are rows now, so the question is no longer one of Ghidra having folded them into
+  a neighbour.)
 * **the image**, from `default.xbe`: what byte sits immediately before the address (a function boundary
   in this build is `0xCC` padding or the previous body's `ret`), what the first bytes look like as a
   prologue, and which section the address is in.
@@ -35,29 +36,25 @@ refreshes the cheap half without pretending the expensive half was re-measured.
 column from the two committed tables (the third column of evidence needs the image, which CI does not
 have) and refuses a table whose rows or split no longer reproduce.
 
-The `extent` columns are the third reading: how far each body runs in the image. Ghidra's `body_bytes` is
-the function its import created, and the image settles it -- 269 of the 274 bodies the census calls
-`outside` close on a `ret imm16` at exactly that offset. Where the extent stops short of a terminator,
-the body's own end (the first `cc cc` run) is the measured bound instead, and `extent_source` records
-which of the two answered.
+How far each body runs is **one** reading, and it is `sweep`: a linear decode from the body's start to
+the first unconditional terminator whose bytes to the next map row are a *tail* rather than code --
+`edge` (nothing), `pad` (`0xcc` fill of any length), `align` (MSVC's `8b ff` hotpatch slot, `90`, `0f
+1f..`), `table` (a `switch`'s dword case table: every entry an offset inside the body), `bytes` (the
+byte-index table behind that dword table) or a concatenation of those. The tail is what makes a refusal a
+measurement: the old rule wanted a two-byte `cc cc` run and so walked through the single `int3` that 38
+rows end on, and the walk it replaced could read a *neighbour's* close (`0x00041000` declares 33 bytes on
+a 144-byte body and the island said 437). Only a terminator with a tail behind it ends a body, so an
+early `return` inside one is walked past rather than counted as a boundary. The decode reproduces the
+map's own size on **882 of the 883** registration rows and finds the one that stops short, which
+`--emit-boundaries` turns into a `resize` row.
 
 `--emit-boundaries` and `--emit-creations` print the repair rows that population earns -- one `add` in
 `symbols/xbe_boundaries.csv` and the creation row in `symbols/xbe_overrides.csv` that `XbePost.java`
 needs -- from the committed table alone (no dump, no image). They print rather than append: the two
-files carry every other repair, so the rows are a reviewed append. A body whose extent encloses a row
+files carry every other repair, so the rows are a reviewed append. A body the decode encloses with a row
 the map already has is emitted with the `drop` that folds that row: an `add` on its own would overlap
-the map, and the fragment inside is what U39's pairing names.
-
-The `sweep`/`sweep_closes` columns are the fourth reading, and the one the resize population needs:
-a **linear decode from the body's start** to the first unconditional terminator whose bytes to the next
-map row are a *tail* rather than code -- `edge` (nothing), `pad` (`0xcc` fill of any length), `align`
-(MSVC's `8b ff` hotpatch slot, `90`, `0f 1f..`) or `table` (a `switch`'s case table: dwords that all name
-an offset inside the body), or a concatenation of those. The tail is what makes a refusal a measurement:
-the old rule wanted a two-byte `cc cc` run and so walked through the single `int3` that 38 rows end on. It is a measurement of the row's own bytes, not of a walk's end: the island fallback above
-stops at the first `cc cc` and so can read the *neighbour's* close (`0x00041000` declares 33 bytes and
-the island ran 437), while a decode that must land on a terminator settles the same row at 144. The
-columns reproduce the map's own size on 784 of the 877 registration rows and disagree on 36 -- the rows
-that stop short -- which is what `--emit-boundaries` turns into `resize` rows.
+the map, and the fragment inside is what U39's pairing names. `--gap-add ADDR --name NAME` does the same
+for a body in a map gap that no registration record names, which is the only evidence such a body has.
 """
 import argparse
 import bisect
@@ -76,14 +73,16 @@ TARGETS = os.path.join(ROOT, "inventory", "native_targets.csv")
 FUNCTIONS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 BODIES = os.path.join(ROOT, "inventory", "native_bodies.csv")
 OUT = os.path.join(ROOT, "inventory", "native_census.csv")
+GAME = "Stargate_SG-1_-_The_Alliance-2005-12-15"
 
 COLS = ["body_va", "names", "records", "classes", "section", "census", "boundary", "prologue",
         "first_bytes", "disassembler", "body_bytes", "instructions", "ends_terminal",
-        "extent", "extent_source", "extent_closes", "sweep", "sweep_closes", "sweep_refused"]
+        "sweep", "sweep_closes", "sweep_refused"]
 
+# `close-inside-the-extension` is gone: it counted an early `ret` inside a body as a block of its own,
+# and the only row it ever refused (`0x00046330`) is a legal growth (U39's last residual).
 SWEEP_REFUSALS = ("pad-not-after-a-terminator", "no-terminator-before-the-next-row", "undecoded",
-                  "no-section", "unreadable", "close-inside-the-extension",
-                  "declared-end-is-a-close")
+                  "no-section", "unreadable", "declared-end-is-a-close")
 
 # MSVC 7.1 openings seen at this build's real entries, longest first: the order is the classifier.
 PROLOGUES = (
@@ -137,14 +136,6 @@ def closes_with(data, end):
     return "other"
 
 
-def island_end(data, start=1):
-    """The offset of the first run of two or more `0xcc` -- where the body's code stops."""
-    for i in range(start, len(data) - 1):
-        if data[i] == 0xCC and data[i + 1] == 0xCC:
-            return i
-    return None
-
-
 def _decoder():
     """The instruction decoder the resize reading shares with `tools/vcall-receiver.py`.
 
@@ -175,7 +166,7 @@ def terminator_kind(data, start, text):
 
 # What a body's bytes can run into after its closing terminator. A body's code cannot continue past an
 # unconditional transfer, so whatever sits between that instruction and the next map row is one of these.
-TAIL_SHAPES = ("edge", "pad", "align", "table")
+TAIL_SHAPES = ("edge", "pad", "align", "table", "bytes")
 
 
 def _align_at(tail, i):
@@ -204,6 +195,21 @@ def _table_at(tail, i, va, span):
     return 4 * n if n >= 3 else 0
 
 
+def _bytes_at(tail, i):
+    """The byte count of a byte-index table at `tail[i]`, or 0: small values that index a dword table.
+
+    MSVC compiles a dense `switch` to a dword jump table plus a byte table of slot numbers, and the
+    second table is what a reader that only knows dwords desynchronises into (`0x002b7aa0`). Every entry
+    is a slot number, so the values are small; sixteen entries is the floor, because a shorter run of
+    small values is indistinguishable from fill. Called only directly behind a dword table -- on its own
+    a run of `0x00` is zero fill and a run of tiny floats reads the same way.
+    """
+    n = 0
+    while i + n < len(tail) and n < 256 and tail[i + n] < 0x20:
+        n += 1
+    return n if n >= 16 else 0
+
+
 def tail_shape(data, p, limit, va):
     """What follows a body's closing terminator, by name, or None when the bytes are code.
 
@@ -212,6 +218,11 @@ def tail_shape(data, p, limit, va):
     two dispatchers run into their own case tables, two more end in the `8b ff` slot in front of a table,
     and three continue into the row the map split them from. Naming the shape is what turns a refusal
     into a measurement -- the body's end is the terminator either way.
+
+    A dense `switch` compiles to **two** tables: the dword jump table, then a byte-index table whose
+    entries select a slot of it (`0x002b7aa0`'s is 12 dwords followed by 65 bytes of `0x00 0x01 0x02`
+    and `0x05`). The byte table is read only directly behind a dword table, because a run of small
+    values on its own is how zero fill and float data read.
     """
     tail = data[p:limit]
     if not tail:
@@ -224,15 +235,21 @@ def tail_shape(data, p, limit, va):
             # so a rule that had to consume the whole tail walked into the next body's code and refused).
             parts.append("pad")
             return "+".join(parts)
-        elif _align_at(tail, i):
-            i += _align_at(tail, i)
+        n = _align_at(tail, i)
+        if n:
+            i += n
             shape = "align"
         else:
             n = _table_at(tail, i, va, limit)
-            if not n:
+            if n:
+                i += n
+                shape = "table"
+                m = _bytes_at(tail, i)
+                if m:
+                    i += m
+                    shape = "table+bytes"
+            else:
                 return None
-            i += n
-            shape = "table"
         if not parts or parts[-1] != shape:
             parts.append(shape)
     return "+".join(parts)
@@ -246,6 +263,11 @@ def sweep_body(decode, data, limit=None, floor=None, va=0):
     code behind it is a jump inside the body -- a `switch` case, an early `ret` -- so the walk goes on,
     which is why the first close is not the body's end.
 
+    Only a close with a **tail** behind it is a boundary, and that is also what `_inner` counts: a
+    terminator with code behind it is an early `return` in this body, not a block of its own, and counting
+    it as one refused `0x00046330` -- whose `execEqualEqual_ObjectObject` returns early on the shared-reference
+    path and then falls through to the same 192-byte tail its `execNotEqual_ObjectObject` twin has.
+
     `va` is the body's start: the case-table test needs it, because the entries name offsets inside the body.
 
     `floor` is the row's declared end, and it makes the reading safe for a *resize*: when a complete
@@ -253,7 +275,7 @@ def sweep_body(decode, data, limit=None, floor=None, va=0):
     its own (a cold tail or an uncreated body), not code the declaration cut in half, so the row is
     refused instead of grown over it.
     """
-    i, prev, prev_start, closes = 0, None, None, []
+    i, prev, prev_start = 0, None, None
     while i < len(data):
         ins = decode(data, i)
         if ins is None or ins.length <= 0:
@@ -263,13 +285,11 @@ def sweep_body(decode, data, limit=None, floor=None, va=0):
         prev = ins.text
         kind = terminator_kind(data, prev_start, prev)
         if kind:
-            closes.append(i)
             shape = tail_shape(data, i, limit if limit is not None else len(data), va)
             # A pad cannot end a body *inside* the size the disassembler gave it: the body is longer than
             # this close, so the `0xcc` is an `int3` within the code and the walk goes on past it.
-            if shape and not (floor is not None and i < floor and shape.split("+")[0] == "pad"):
-                if _inner(closes, floor, i):
-                    return None, None, "close-inside-the-extension"
+            inside_a_pad = shape and floor is not None and i < floor and shape.split("+")[0] == "pad"
+            if shape and not inside_a_pad:
                 # A row whose own declaration already ends on a terminator does not grow over the body
                 # that follows it: the code after an unconditional transfer is somebody else's, and a
                 # later close with a pad behind it is the neighbour's end (10 rows here). Growth is only
@@ -281,35 +301,9 @@ def sweep_body(decode, data, limit=None, floor=None, va=0):
             return None, None, "no-terminator-before-the-next-row"
     if limit is not None and i == limit and prev is not None:
         kind = terminator_kind(data, prev_start, prev)
-        if kind and not _inner(closes, floor, i):
+        if kind:
             return i, kind, "edge"
     return None, None, "no-terminator-before-the-next-row"
-
-
-def _inner(closes, floor, end):
-    """Does a complete close sit strictly between the declared end and the body's own?"""
-    if floor is None:
-        return False
-    return any(floor < c < end for c in closes)
-
-
-def body_extent(data, body_bytes):
-    """(extent, source, closes): the disassembler's extent where the image closes it, else the island's.
-
-    Ghidra's `body_bytes` is the function that import created; 269 of the 274 bodies this table calls
-    `outside` end on a `ret imm16` at exactly that offset. Where the extent does not close on a
-    terminator it stopped short, and the body's own end is the first `cc cc` run -- used only as the
-    fallback, because one `0xcc` between two bodies is not padding and the island end can then be the
-    neighbour's.
-    """
-    if body_bytes and 0 < body_bytes <= len(data):
-        kind = closes_with(data, body_bytes)
-        if kind != "other":
-            return body_bytes, "ghidra", kind
-    end = island_end(data)
-    if end:
-        return end, "island", closes_with(data, end)
-    return None, "", "unreadable"
 
 
 def census_table(rows, funcs):
@@ -401,10 +395,6 @@ def build(bodies, table, starts, xbe, verdicts):
             except Exception:                    # a page hole: the extent stays unmeasured
                 data = b""
             body_bytes = int(v["body_bytes"]) if (v.get("body_bytes") or "").isdigit() else 0
-            extent, source, closes = body_extent(data, body_bytes)
-            row["extent"] = extent or ""
-            row["extent_source"] = source
-            row["extent_closes"] = closes
             # The sweep reads the same window but stops at a terminator, and it is bounded by the next
             # row the map already has: an island end past that row is the neighbour's close, not a body.
             # A map row that starts *inside* the body the disassembler measured is a fragment of this
@@ -425,6 +415,10 @@ def build(bodies, table, starts, xbe, verdicts):
             swept, swept_close, why = sweep_body(decode, data, limit, floor, va)
             if why == "no-terminator-before-the-next-row" and wide and wide > (limit or 0):
                 swept, swept_close, why = sweep_body(decode, data, wide, floor, va)
+            # How far the body runs is the decode's answer, and it is the only one: the columns that
+            # carried a second reading (Ghidra's `body_bytes`, then the island walk) are gone, because the
+            # island could read a neighbour's close and `body_bytes` is already a column of its own
+            # (U39's third residual).
             if swept is None:
                 row["sweep"] = row["sweep_closes"] = ""
                 row["sweep_refused"] = why
@@ -432,7 +426,6 @@ def build(bodies, table, starts, xbe, verdicts):
                 row["sweep"], row["sweep_closes"], row["sweep_refused"] = \
                     swept, "%s %s" % (swept_close, why), ""
         else:
-            row["extent"] = row["extent_source"] = row["extent_closes"] = ""
             row["sweep"] = row["sweep_closes"] = row["sweep_refused"] = ""
         rows.append(row)
     return rows
@@ -485,18 +478,17 @@ def sweep_evidence(r, size):
              "edge": "the next row"}.get(anchor, "the `%s` bytes that follow it" % anchor)
     return ("the declared size ends at 0x%08x, which is not where the body's code stops: a linear decode "
             "from 0x%08x reaches a `%s` at 0x%08x and %s begins there, so the row stops %d byte(s) short "
-            "of its own close. The `extent` column read the end as %s (%s), which is the fallback walk's "
-            "answer -- it stops at the first `cc cc` and can read a neighbour's close -- not the decode's"
-            % (va + size, va, close, va + int(r["sweep"]), where, int(r["sweep"]) - size,
-               r["extent"] or "?", r["extent_source"] or "unmeasured"))
+            "of its own close"
+            % (va + size, va, close, va + int(r["sweep"]), where, int(r["sweep"]) - size))
 
 
 def gap_adds(rows, table):
     """[(row, size, refusal)] -- the `add` each outside native body earns, or why it earns none.
 
-    The extent must close on a terminator (a body, not a fragment). A body whose extent encloses a row
-    the map already has is *not* refused any more: it is emitted with the `drop` that folds that row,
-    which is the pairing U39 names. `interior` carries those rows' addresses.
+    The decode must close on a terminator (a body, not a fragment), and its size is the row the `add`
+    carries. A body that encloses a row the map already has is *not* refused any more: it is emitted with
+    the `drop` that folds that row, which is the pairing U39 names. `interior` carries those rows'
+    addresses.
     """
     starts = [t[0] for t in table]
     out = []
@@ -504,12 +496,12 @@ def gap_adds(rows, table):
         if r["census"] != "outside":
             continue
         va = int(r["body_va"], 16)
-        size = int(r["extent"] or 0)
+        size = int(r["sweep"] or 0)
         if r["disassembler"] != "accepted":
             out.append((r, 0, "the disassembler never accepted a body here", []))
             continue
-        if not size or r["extent_closes"] in ("other", "unreadable"):
-            out.append((r, 0, "the extent does not close on a terminator", []))
+        if not size:
+            out.append((r, 0, "the decode refuses an end (%s)" % (r.get("sweep_refused") or "?"), []))
             continue
         inside = []
         i = bisect.bisect_right(starts, va)
@@ -594,6 +586,72 @@ def emit(args):
     return 0
 
 
+def gap_add(args):
+    """Print the `add` and creation rows for a body that sits in a map gap, measured here.
+
+    The registration census covers the 883 bodies a registration record names; a body nothing references
+    at all -- `0x002b7aa0`, the `switch` that names each D3D error code -- is in neither table, and the
+    only evidence it exists is the image: a 10-byte `int3` run before it, an MSVC prologue, a decode that
+    closes on a terminator, and a tail of tables or a pad to the next row. The row it earns is written by
+    the tool that measured it rather than typed, and `--name` is required: nothing calls such a body, so
+    its name is the one its literals or its caller earn, never an address.
+    """
+    if not args.gap_add:
+        sys.exit("native-census: --gap-add needs an address")
+    va = int(args.gap_add, 16)
+    if not args.name:
+        sys.exit("native-census: --gap-add needs --name; nothing calls this body, so the name is a claim")
+    path = args.xbe or os.path.join(args.dump or "", GAME, "default.xbe")
+    if not args.dump and not args.xbe:
+        sys.exit("native-census: --gap-add needs --xbe or --dump")
+    if not os.path.isfile(path):
+        sys.exit("native-census: --gap-add: %s is not a file" % path)
+    spec = importlib.util.spec_from_file_location("xbe", os.path.join(HERE, "xbe.py"))
+    xbemod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(xbemod)
+    xbe = xbemod.Xbe(path)
+    with open(FUNCTIONS, newline="") as fh:
+        table = census_table(None, list(csv.DictReader(fh)))
+    starts = [t[0] for t in table]
+    i = bisect.bisect_right(starts, va)
+    if i and table[i - 1][0] <= va < table[i - 1][1]:
+        sys.exit("native-census: --gap-add: %#010x is inside %s, not in a gap" % (va, table[i - 1][2]))
+    if i < len(table) and table[i][0] == va:
+        sys.exit("native-census: --gap-add: the map already has a row at %#010x" % va)
+    limit = (table[i][0] - va) if i < len(table) else None
+    sec = xbe.section_for(va)
+    if sec is None:
+        sys.exit("native-census: --gap-add: %#010x is not in a section" % va)
+    data = xbe.read_va(va, min(65536, sec.va + sec.vsize - va))
+    pad = 0
+    for k in range(1, 17):
+        if xbe.read_va(va - k, 1)[0] not in (0xCC, 0x90):
+            break
+        pad = k
+    swept, close, shape = sweep_body(_decoder(), data, limit, None, va)
+    if swept is None:
+        sys.exit("native-census: --gap-add: %#010x does not decode to a close (%s)" % (va, shape))
+    fill = "no padding"
+    if pad:
+        fill = "%d bytes of `%s` fill" % (pad, "int3" if xbe.read_va(va - 1, 1)[0] == 0xCC else "nop")
+    ev = ("the body's own bytes, in the gap after %s (%#010x ends at %#010x) and before %s (%#010x): %s, "
+          "then an MSVC %s prologue, and a linear decode from %#010x closes on a `%s` at %#010x with %s "
+          "between it and the next row. Nothing in the image calls it -- no `E8`, no dword reference -- so "
+          "the call graph that builds this map can never make it a function, and only this row can"
+          % (table[i - 1][2], table[i - 1][0], table[i - 1][1],
+             table[i][2] if i < len(table) else "(the section's end)",
+             table[i][0] if i < len(table) else 0, fill, prologue(data[:8]), va, close, va + swept, shape))
+    w = csv.writer(sys.stdout, lineterminator="\n")
+    if args.emit_boundaries or not args.emit_creations:
+        w.writerow(["0x%08x" % va, "add", args.name, swept, ev])
+        print("native-census: 1 add emitted for %#010x" % va, file=sys.stderr)
+    if args.emit_creations:
+        w.writerow(["0x%08x" % va, args.name, "added to the map by symbols/xbe_boundaries.csv: " + ev,
+                    "", "", "", "", "", "", swept])
+        print("native-census: 1 creation row emitted for %#010x" % va, file=sys.stderr)
+    return 0
+
+
 def run(args):
     bodies = load_targets(args.targets)
     with open(args.functions, newline="") as fh:
@@ -664,13 +722,6 @@ def check(args):
         if r["boundary"] and r["disassembler"] not in ("accepted", "existing", "inside", "rejected"):
             bad.append("%s: the table was built from the image but carries no disassembler verdict (%r)"
                        % (r["body_va"], r["disassembler"]))
-        if r["extent_source"] and r["extent_source"] not in ("ghidra", "island"):
-            bad.append("%s: unknown extent source %r" % (r["body_va"], r["extent_source"]))
-        if bool(r["extent"]) != bool(r["extent_source"]) or bool(r["extent"]) != bool(r["extent_closes"]):
-            bad.append("%s: the three extent columns are not filled together" % r["body_va"])
-        if r["extent"] and r["body_bytes"].isdigit() and int(r["extent"]) < int(r["body_bytes"]):
-            bad.append("%s: extent %s is shorter than the body the disassembler accepted (%s)"
-                       % (r["body_va"], r["extent"], r["body_bytes"]))
         # The sweep is one reading with one refusal: either an extent and the instruction that closes it,
         # or a reason, never both and never neither.
         swept = r.get("sweep") or ""
@@ -699,6 +750,18 @@ def check(args):
             bad.append("%s: unknown disassembler verdict %r" % (r["body_va"], r["disassembler"]))
     if bad:
         sys.exit("native-census: --check: " + "; ".join(bad[:6]))
+    # The repair file and this census cannot drift apart: a row that falls outside every function is an
+    # `add` symbols/xbe_boundaries.csv has not written, and a row whose decode closes past its declared
+    # size is a `resize` it has not written. Both are visible in the committed table, so this needs no dump.
+    drift = []
+    for r in rows:
+        if r["census"] == "outside":
+            drift.append("%s falls outside every row -- the repair file has no add" % r["body_va"])
+        elif r["sweep"] and int(r["sweep"]) > declared[int(r["body_va"], 16)]:
+            drift.append("%s decodes to %s bytes on a declared %d -- the repair file has no resize"
+                         % (r["body_va"], r["sweep"], declared[int(r["body_va"], 16)]))
+    if drift:
+        sys.exit("native-census: --check: " + "; ".join(drift[:6]))
     census = collections.Counter(r["census"] for r in rows)
     verdict = collections.Counter(r["disassembler"] for r in rows if r["census"] == "outside")
     swept = collections.Counter()
@@ -758,14 +821,11 @@ def selftest():
     assert bodies[0x401000]["records"] == 2 and len(bodies[0x401000]["names"]) == 2, bodies
     os.unlink(path)
     cases += 1
-    # The extent rule: a `ret imm16` closes, a fragment does not, and the island is only the fallback.
+    # What a byte at an offset says about a close: a `ret imm16`, a `ret`, a `jmp`, or not a close.
     body = b"\x55\x8b\xec\xc2\x08\x00\xcc\xcc\x8b\x44\x24\x04\xc3\xcc\xcc"
     assert closes_with(body, 6) == "ret-imm"
     assert closes_with(body, 13) == "ret"
     assert closes_with(body, 4) == "other"
-    assert island_end(body) == 6
-    assert body_extent(body, 6) == (6, "ghidra", "ret-imm")
-    assert body_extent(body, 1) == (6, "island", "ret-imm")
     cases += 1
     # The sweep: a pad after a terminator settles the end, a pad after a `jcc` does not (a conditional
     # jump falls through), a body that ends exactly on the next row is an `edge`, and one that reaches
@@ -789,6 +849,15 @@ def selftest():
     assert sweep_body(decode, b"\x55\x8b\xec\xc3\xcc\xcc\x55\x8b\xec\xc3", 10) == (4, "ret", "pad")
     table = b"\x55\x8b\xec\xc3" + struct.pack("<3I", 0x1000, 0x1002, 0x1004) + b"\xcc"
     assert sweep_body(decode, table, len(table), None, 0x1000) == (4, "ret", "table+pad")
+    # A dense `switch`'s second table: the byte-index table behind the dword table is a tail too, and the
+    # reader that stopped at the dwords desynchronised *inside* it and swallowed the pad's first byte
+    # (`0x002b7aa0`: 12 dwords, then 65 bytes of 0x00/0x01/0x02/0x05, then the `cc` run).
+    two = (b"\x55\x8b\xec\xc3" + struct.pack("<3I", 0x1000, 0x1002, 0x1004)
+           + bytes([0, 1, 2] + [5] * 20) + b"\xcc\xcc")
+    assert sweep_body(decode, two, len(two), None, 0x1000) == (4, "ret", "table+bytes+pad")
+    assert tail_shape(two, 4, len(two), 0x1000) == "table+bytes+pad"
+    # ... and a short run of small values is not a table: the byte reader is only asked behind a dword table.
+    assert tail_shape(b"\x00" * 24, 0, 24, 0x1000) is None
     assert sweep_body(decode, b"\x55\x8b\xec\xc3" + struct.pack("<2I", 0x1000, 0x1002), 12,
                       None, 0x1000) == (None, None, "no-terminator-before-the-next-row")
     # A row whose own end already closes on a terminator does not grow over the body after it, even when
@@ -799,8 +868,11 @@ def selftest():
     # A `0xcc` inside the declared size is an `int3` in the code, not the body's end: the walk goes on and
     # settles the row at its own close.
     assert sweep_body(decode, b"\x55\x8b\xec\xc3\xcc\x90\xc3\xcc", 8, 7) == (7, "ret", "pad")
-    # A close that sits inside the extension is what the resize rule refuses to grow over.
-    assert sweep_body(decode, b"\xc3\x90\xc3\xcc", 4, 0) == (None, None, "close-inside-the-extension")
+    # An early `ret` with code behind it is a return inside this body, not a boundary: `0x00046330`
+    # (`execEqualEqual_ObjectObject`) returns on the shared-reference path and falls through to the same
+    # 192-byte tail its `execNotEqual_ObjectObject` twin has, and counting the early return as a close
+    # refused the row. The growth is legal, and the old rule's `close-inside-the-extension` is gone.
+    assert sweep_body(decode, b"\x55\x8b\xec\xc3\x90\xc3\xcc", 7, 2) == (6, "ret", "pad")
     cases += 1
     print("native-census: selftest passed (%d cases)" % cases)
     return 0
@@ -819,6 +891,9 @@ def main(argv=None):
                     help="print the symbols/xbe_boundaries.csv rows the outside population earns")
     ap.add_argument("--emit-creations", action="store_true",
                     help="print the symbols/xbe_overrides.csv creation rows those adds need")
+    ap.add_argument("--gap-add", metavar="ADDR",
+                    help="print the add + creation rows for a body that sits in a map gap (needs --xbe)")
+    ap.add_argument("--name", help="the name the gap body's own evidence earns")
     ap.add_argument("--check", action="store_true", help="the committed table, no dump")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args(argv)
@@ -826,10 +901,12 @@ def main(argv=None):
         return selftest()
     if args.check:
         return check(args)
+    if args.gap_add:
+        return gap_add(args)
     if args.emit_boundaries or args.emit_creations:
         return emit(args)
     if not args.xbe and args.dump:
-        args.xbe = os.path.join(args.dump, "Stargate_SG-1_-_The_Alliance-2005-12-15", "default.xbe")
+        args.xbe = os.path.join(args.dump, GAME, "default.xbe")
     if args.xbe and not os.path.isfile(args.xbe):
         sys.exit("native-census: required: %s is not a file (give --xbe or --dump)" % args.xbe)
     return run(args)

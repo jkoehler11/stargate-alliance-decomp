@@ -1143,7 +1143,7 @@
 0x00046150 FUN_00046150                                  186 
 0x00046210 execEqualEqual_NameName                       130 
 0x000462a0 execNotEqual_NameName                         130 
-0x00046330 execEqualEqual_ObjectObject                   111 
+0x00046330 execEqualEqual_ObjectObject                   192 
 0x000463f0 execNotEqual_ObjectObject                     192 
 0x000464b0 FUN_000464b0                                    3 
 0x000464c0 FUN_000464c0                                    3 
@@ -7285,6 +7285,7 @@
 0x002b6b20 FUN_002b6b20                                  310 
 0x002b71e0 FUN_002b71e0                                  445 
 0x002b7560 D3DDrv_D3DRenderInterface                    1334 
+0x002b7aa0 FUN_002b7aa0                                  564 
 0x002b8505 D3DDrv_D3DRenderInterface                     615 
 0x002b8780 D3DDrv_D3DRenderInterface                     829 
 0x002b8ad0 FUN_002b8ad0                                  325 

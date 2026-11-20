@@ -15463,3 +15463,53 @@ sequence.
 - **Not in this bundle.** The six refused bodies (U39's pairing verb), the 40 rows whose size stops short, the ten
   that close nowhere, and `0x002b7aa0` — U36's third gap body, which turns out to be a jump-table dispatch whose
   case table sits inside its own span, so the `cc cc` bound cannot close it and a linear decode has to.
+
+### Execution notes (2026-11-20, the last refused row is a decode rule, the last gap body is a row, and the extent column is retired)
+
+- **Task.** The boundary thread's three residuals, all named by the previous bundle: U39's refused row
+  `0x00046330`, U36's gap body `0x002b7aa0`, and the `extent`/`sweep` unification that would re-emit the 274
+  creation rows.
+- **A refusal counted an early `return` as a boundary.** `0x00046330` (`execEqualEqual_ObjectObject`) declares 111
+  bytes and the row ends in front of a `jcc`; the rest of the body is a *second* path -- the shared-reference branch
+  returns early with `ret imm16` at `0x463d5` and the code behind it continues to the same 81-byte tail its
+  `execNotEqual_ObjectObject` twin has at `0x463f0`. `sweep_body` recorded every terminator in `closes` and
+  `_inner()` then refused growth over one, so a terminator **with code behind it** was counted as a block of its
+  own. Only a terminator with a *tail* behind it ends a body, which is the rule the function's own docstring
+  states; the `close-inside-the-extension` refusal is gone with it (it fired on this one row and on nothing else).
+  `0x00046330` is a `resize` 111 -> 192 and the sweep now reproduces the map's size on **883 of 883** rows.
+- **A dense `switch` has two tables, and the second one is what desynchronised the decode.** `0x002b7aa0` -- a
+  24-case `switch` over D3D error codes that pushes `D3DERR_WRONGTEXTUREFORMAT` ... `D3D_OK` and `%08X` into an
+  `FString` -- closes on a `ret` at `0x2b7cd4` with a 12-dword jump table and then **65 bytes of slot numbers**
+  (`00 01 02` then `05` fill, ending `05 05 05 03 04`) behind it. `tail_shape` knew a dword table and nothing
+  after it, so the walk ran *into* the byte table, consumed the pad's first `0xcc` as an operand, and closed at
+  `0x2b8307` -- 2,151 bytes, which is the body at `0x2b7d50` and its neighbours. `bytes` is now a tail shape, read
+  only directly behind a dword table and only for a run of sixteen or more values under `0x20`, and the body is
+  **564 bytes**. The row is an `add` plus the creation row, both printed by a new mode,
+  `native-census --gap-add ADDR --name NAME`: nothing calls this body (no `E8`, no dword reference at any
+  alignment), so the name is `FUN_002b7aa0`.
+- **The extent column was a second reading of one question, and it is retired rather than reconciled.** `extent`
+  (Ghidra's `body_bytes` where it closed, else the island walk) and `sweep` disagreed on **9** rows, every one of
+  them the island reading a *neighbour's* close (`0x00041000` 437 on a 144-byte body, `0x00321e30` 3,732 on
+  1,808). Re-emitting the 274 creation rows first settles the residual's premise: **all 274 already carry the
+  decode's size (0 differ)**, so the unification moves no row. `extent`, `extent_source` and `extent_closes` are
+  gone; `sweep` is how far the body runs and `body_bytes` was already the disassembler's own column.
+- **The gate that keeps them from drifting.** `native-census --check` now fails when a committed row's decode
+  closes past the size the map declares (a `resize` the repair file has not written) or when a row falls outside
+  every function (an `add` it has not written). On the committed pair `--emit-boundaries` prints **0 add(s), 0
+  drop(s), 0 resize(s)**, which is the control that the file carries every repair the census earns.
+- **Files.** `tools/native-census.py` (the tail-with-a-boundary rule, the `bytes` tail, the retired extent columns,
+  `--gap-add`/`--name`, the drift gate, four selftest cases), `inventory/native_census.csv` (883 rows, 16 columns),
+  `symbols/xbe_boundaries.csv` (+2: the `0x00046330` resize, the `0x002b7aa0` add), `symbols/xbe_overrides.csv`
+  (+1 creation row), `symbols/xbox_functions.csv` (15,241 functions / 4,018,068 bytes), `symbols/xbox.map`,
+  `inventory/function_module_attribution.csv`, `inventory/function_modules.csv`,
+  `inventory/module_export_plan.csv`, `inventory/xbe_functions_by_module.csv`, `docs/NATIVE.md`,
+  `docs/SYMBOLS.md` (the decode is the extent; the fifth tail; the gap body), `docs/UNKNOWNS.md` (U39's residuals
+  3 and 4 settled, U36's gap bodies), `docs/STATUS.md`, `README.md`, `inventory/artifact_hashes.csv`,
+  `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `native-census --selftest` covers the early `ret` inside a body (the old refusal's
+  shape), the `table+bytes+pad` tail, and a bare run of small values that must *not* read as a table;
+  `symbol-boundaries --check` proves both new repairs and that the committed map is byte-identical to the repaired
+  render.
+- **Not in this bundle.** The rest of the map's gaps: a head-only census with a pad-before-int3 and a prologue
+  test finds ~1,800 decodable gap heads, most of which are one-`ret` islands inside data and alignment rather than
+  bodies -- the head rule is the next instrument, not another `add`.

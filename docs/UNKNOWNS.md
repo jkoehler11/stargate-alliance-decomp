@@ -5408,9 +5408,9 @@ The two rows this entry named are repaired there (fold `0x0002f820` into `0x0002
 the audio census reads each body's declared size again. **Removing its 48-byte workaround found nine more rows of
 the same class** — eight ended inside the array load or `rdtsc` pair of a scope close (`0x0012c850`,
 `0x0015a200`, `0x00199350`, `0x001e9a30`, `0x001ee690`, `0x002b7560`, `0x002bc350` and the pump) — all resized
-from their own closing `ret`. Eleven rows in total. What it did **not** settle: the map still has bodies with no
-row (the `0x0002fa30` body this repair adds, and `0x0015a660`, `0x001ea250`, `0x002b7aa0` are three more inside the
-gaps it walked), and `0x0002fa30` still has no name: it is slot 33 of `XBoxAudioSubsystem`'s table `0x004d21f8`,
+from their own closing `ret`. Eleven rows in total. The gaps it walked held four more bodies with no row --
+`0x0002fa30`, `0x0015a660`, `0x001ea250` (all rows now) and `0x002b7aa0`, which is a row as of U39's fourth
+residual. `0x0002fa30` still has no name: it is slot 33 of `XBoxAudioSubsystem`'s table `0x004d21f8`,
 between `SetSoundDevice` and the pump, and it walks the `[this+0xd8]` array calling `XboxAudio_FlushSounds`.
 
 ## U37. The map's 75 jump thunks spelled their target by address -- answered: the row's own instruction names it
@@ -5497,7 +5497,7 @@ no `E8`/`E9` in the image targets it and no data section holds its address.
 in the symbols bundle that measured it: an `add` moves the map's function count from 14,973 and every artifact
 downstream of it, which is the boundary thread's (U36) work, while a `rename` moves no edge.
 
-## U39. The rows that stop short are resized, and the six split natives are rows — with three residuals
+## U39. The rows that stop short are resized, and the six split natives are rows (residuals settled)
 
 **Observed.** `tools/native-census.py --emit-boundaries` wrote the repair row for every registration body the
 map lacked, and refused **six** of the 274: a map row starts *inside* the extent the disassembler accepted for
@@ -5546,12 +5546,26 @@ mid-instruction. **Four of them are false splits and are rows plus folds now**: 
 (181 → 236, dropping `Core_UnTemplate` at `0x001c6996`) and `0x0020ff00` (371 → 454, dropping `0x00210073`),
 whose start is a second 12-dword `rep movsd` inside the same body.
 
-**Residual 3: the `extent` column still has the walk's answer.** The `extent`/`extent_source` columns are what the
-268 original adds carry, and they are left as measured; `sweep` is the reading a resize uses. Unifying them
-means re-emitting the 268 creation rows with the decode's sizes, which is a bundle of its own.
+**Residual 3 (settled): the `extent` column is gone, and the decode is the only extent.** The three columns
+(`extent`, `extent_source`, `extent_closes`) carried a second reading -- Ghidra's `body_bytes` where it closed,
+else the island walk -- and they disagreed with `sweep` on nine rows, every one of them the island's answer
+being a *neighbour's* close (`0x00041000` 437 on a 144-byte body, `0x00321e30` 3,732 on 1,808). Re-emitting the
+274 creation rows settles the residual's premise before the columns are dropped: **all 274 adds already carry
+the decode's size** (0 differ), so the unification moved no row -- it retired two readings that agreed where it
+mattered and could not both have been right where they did not. `native-census --check` now refuses a committed
+row whose decode closes past its declared size, so a resize the repair file has not written is red instead of
+prose, and `--emit-boundaries` on the committed pair prints **0 add(s), 0 drop(s), 0 resize(s)** -- the control
+that the file carries every repair the census earns.
 
-**Residual 4: U36's `0x002b7aa0` is still a body with no row.** It sits in the gap after `0x002b7560` (whose row
-ends at `0x2b7a96`) and is a `switch` over D3D error codes (`0x88760826`, `0x8876081c`, ...) that pushes a message
-per case -- the shape whose case table the sweep can now read, so the extent is one run away. The repair is an
-`add` plus the creation row `XbePost.java` needs, which means a name; nothing calls it, so the name would be
-`FUN_002b7aa0` unless the pushed literals name the caller.
+**Residual 4 (settled): `0x002b7aa0` is a row.** It sits in the gap after `0x002b7560` (whose row ends at
+`0x2b7a96`) and is a `switch` over D3D error codes (`0x88760826`, `0x8876081c`, ...) that names each code: 24
+cases, each pushing a `.rdata` literal -- `D3DERR_WRONGTEXTUREFORMAT`, `D3DERR_OUTOFVIDEOMEMORY`, ...
+`D3D_OK`, `D3DERR_INVALIDCALL` and `%08X` -- and building the string through `FString`'s constructor. **564
+bytes**, closing on a `ret` at `0x2b7cd4`, with the body's own tables behind it: a 12-dword jump table (entries
+`0x2b7b69`, `0x2b7b79`, ...), then a 65-byte table of slot numbers ending `05 05 05 03 04`, then the 11-byte
+`int3` run at `0x2b7d45` that ends the body. The byte table is why three runs could not close it: the reader
+that knew dwords desynchronised *inside* the second table and swallowed the pad's first byte, so a decode that
+ran on into `0x2b7d50` (a VM state-stack body, `PopState stack underflow`) measured 2,151, and the island walk
+stopped at 677. Nothing in the image calls it -- no `E8`, no dword reference at any alignment -- so the name is
+`FUN_002b7aa0`: the literals name the D3D errors it reports, not a caller. The repair is the `add` plus the
+creation row, both printed by `native-census --gap-add 0x002b7aa0 --name FUN_002b7aa0`.
