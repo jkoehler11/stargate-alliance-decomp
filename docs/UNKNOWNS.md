@@ -5272,7 +5272,7 @@ section named, one halves the cell size, two double the vertex grid, and one doe
 **Routes for what is left.** None here. The neighbours of this area are `U32`'s two fields (the palette dword's
 reader and the `Level` trailer's 24 bytes), which stay counted.
 
-## U34. The game's DirectSound device is a virtual of `XBoxAudioSubsystem` — answered; its dispatcher is not
+## U34. The game's DirectSound device is a virtual of `XBoxAudioSubsystem` — answered (2026-11-20)
 
 **Question.** 345 methods of the SDK's audio stack are read and **0 of them carries a string**, and
 `inventory/module_export_census.csv` holds none of their addresses: which engine or game body creates the
@@ -5317,13 +5317,20 @@ in `Engine` (`Engine.u` 13, 17, 21): `Audio : audiosubsystem`, `GS : GSSubsystem
 `AudioSubsystem` whose run-time class is `XBoxAudioSubsystem`, which is why the displacement is `+0x7c` and why
 the body it reaches is the fork's and not `UEngine`'s.
 
-**What is left.** Which of the 31 field-origin sites reads that pointer: the field's byte offset is in neither
-the property stream nor the class text (the script names the variable, never its offset). Settling it is one
-guest pass — read `[this+D]` at those sites in a booted level and match the object's vtable against
-`XBoxAudioSubsystem`'s table — on the instrument `tools/xemu/field-objects.py` already drives.
+**What is left, answered 2026-11-20.** The field's byte offset is in neither the property stream nor the class
+text, but it does not need a guest pass: `audio_engine_init.csv` reads it off the body that *writes* it —
+`Engine_UnEngine_InitAudio` stores the new subsystem at **`+0x34`** of the engine (`0x001213ba`) and
+dispatches slot 31 on that object immediately (`0x001213c4`) — and the slot census then answers the negative:
+**none** of the 115 `call [reg+0x7c]` sites loads its receiver from a field at `+0x34`. So the device is
+created once, on the object the init already holds, and is never reached again through `Engine.Audio`; the 31
+field-origin sites that stayed untyped are not that pointer. `tools/xemu/field-objects.py` would still type
+them, and it is no longer on the critical path.
 
 **Status.** `tools/xdk-entry-callers.py` and `inventory/xdk_entry_callers.csv` (11 sites over the three
 `_DirectSound*` entry points); the account is `docs/NATIVE_NOTES.md`, "Who calls the three audio entry
 points", and the counts moved in `docs/systems/AUDIO.md`. The module's own chain is
-`tools/xboxaudio-chain.py` / `inventory/xboxaudio_chain.csv` (31 bodies, ten named from their edges, all 31
-placed in `XboxAudio`) — `docs/NATIVE_NOTES.md`, "The module chain".
+`tools/xboxaudio-chain.py` / `inventory/xboxaudio_chain.csv` (**31 bodies, all 31 named**, all 31 placed in
+`XboxAudio`) — `docs/NATIVE_NOTES.md`, "The module chain". The chain's five virtuals are slots 31 (`+0x7c`,
+device), 32 (`+0x80`, device setter), 34 (`+0x88`, pump), 50 (`+0xc8`, file stream) and 52 (`+0xd0`,
+next stream) of `XBoxAudioSubsystem`'s table `0x004d21f8`; the `+0x80` site in the init goes to a *different*
+class's table (`XHVVoiceSubsystem`, `0x004d2ad8`), which is why a displacement never types a call.

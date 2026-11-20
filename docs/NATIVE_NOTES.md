@@ -654,11 +654,11 @@ one `CDirectSound` by design (which is what the voice-chat reading predicted).
 `_DirectSoundCreateStream@8`, then `_CreateThread` — a WAV played on its own thread, which is how music and
 voice mail arrive. `0x0002feb0` (+0x88, slot 34, 5,277 B) is the per-frame pump: it calls
 `_DirectSoundDoWork`. `0x0002dff0` (+0xd0, slot 52) sets the next stream — its own `SetNextStream` and
-`New Pending File` literals beside `_XWaveFileCreateMediaObject@12` — and `FUN_0002ae00` (210 B) is the voice
-stream factory, called twice from `FUN_0002b8c0`. The chain those bodies belong to is the next subsection: 31
-unnamed bodies, ten of them named from their own edges.
+`New Pending File` literals beside `_XWaveFileCreateMediaObject@12` — and `0x0002ae00` (210 B) is
+`XboxAudio_CreateVoiceStream`, called twice from `XboxAudio_SetUpVoiceStreams`. The chain those bodies
+belong to is the next subsection: 31 bodies, every one named.
 
-### The module chain: 31 unnamed bodies, ten named from their own edges (2026-11-19)
+### The module chain: 31 bodies, every one named from its own bytes (2026-11-19, closed 2026-11-20)
 
 The entry-point census ended with "the module census places none of the bodies around them because they call
 only unnamed bodies". That is a population defined by calls, so it can be walked: `tools/xboxaudio-chain.py`
@@ -666,39 +666,89 @@ seeds from every unnamed `.text` body with a direct call into the audio SDK (26 
 `_IDirectSound*`, `_XVoice*`, `_XAudio*`, `_XWave*`, `_XMedia*`, `_XHV*`), follows unnamed callers and callees
 to a fixpoint, and stops at a callee any body outside the chain also calls. **31 bodies, 240 call edges, 12
 library edges, 16 stops** (`inventory/xboxaudio_chain.csv`), each decoded by `objdump`, so a call site is an
-instruction boundary and not a byte pattern.
+instruction boundary and not a byte pattern. **No member is `FUN_*` any more**: the first ten were named from
+their edges, and the other 21 were read body by body and named from their own structure — the table is the
+whole module chain in address order.
 
-| body | name | size | what the edges say |
+| body | name | size | what its own bytes say |
 |---|---|---:|---|
-| `0x0002fd70` | `XboxAudio_CreateDevice` | 272 | slot 31 (`+0x7c`), no direct caller; `_DirectSoundCreate@12`, `_XAudioDownloadEffectsImage@16`, six bring-up calls |
-| `0x0002dff0` | `XboxAudio_SetNextStream` | 531 | slot 52 (`+0xd0`); its literal `SetNextStream`, `_XWaveFileCreateMediaObject@12` |
+| `0x0002a250` | `XboxAudio_CreateVoiceEncoder` | 89 | `operator new` twice and `_XVoiceCreateOneToOneEncoder@4` |
+| `0x0002a2f0` | `XboxAudio_CreateVoiceCodecs` | 104 | two `_XVoiceCreateMediaObjectEx@28` with two callbacks into one slot object |
+| `0x0002a410` | `XboxAudio_ReleaseSlotObjects` | 97 | releases the interfaces at `+0x8`/`+0xc`/`+0x10` through vtable slot 4 and frees `+0x1c`/`+0x20` |
+| `0x0002a480` | `XboxAudio_SubmitSlotBuffers` | 115 | two 24-byte descriptors over the buffer at `+0x1c`, submitted through vtable slot 0x10 of the interface at `+0x8`; `E_FAIL` if either call fails |
+| `0x0002a500` | `XboxAudio_SubmitMixBuffers` | 152 | slot index from `+0x4`, three fields copied through `0x2ac50`, two buffers zeroed and submitted to the second interface (`+0xc`) |
+| `0x0002a6f0` | `XboxAudio_InitVoiceSlot` | 112 | per index (`this+2*index+0x74`): codecs, the two slot stages, a bit in `this+0x60` |
+| `0x0002a770` | `XboxAudio_FindSlotByKey` | 72 | scans the `+0x4` entries of the 0x34-byte table at `+0x54` for a 12-byte key (third dword masked to two bits); returns the index or the count |
+| `0x0002a7c0` | `XboxAudio_ApplyBufferParams` | 165 | writes the key at `rec[index*4+0x20]`, then a seven-dword parameter block (four floats floored at -10000 centibels) to the import at `0x4a0530` |
+| `0x0002a9b0` | `XboxAudio_InitBufferDesc` | 80 | zeroes a six-dword descriptor and fills pointer/length/index from `[this+0x38]`, then memsets the length |
+| `0x0002ac50` | `XboxAudio_GetSlotFields` | 67 | indexes the 0x20-byte records at `[this+0x14]` and writes three fields through three out-pointers |
+| `0x0002ae00` | `XboxAudio_CreateVoiceStream` | 210 | `_XVoiceQueueCreateMediaObject@8`, `_XVoiceCreateOneToOneDecoder@4`, `_DirectSoundCreateStream@8`, then `this+0x3c`-byte buffers |
+| `0x0002af50` | `XboxAudio_HasPendingKey` | 89 | membership test over the 12-byte records at `[this + channel*16 + 0x158]`; returns 0 or 1 |
+| `0x0002b140` | `XboxAudio_RemoveLiveKey` | 228 | removes a 12-byte key from the list at `[this + channel*16 + 0x118]` (shift down, count -= 12), writing it back through `0x2a7c0` when the other list does not hold it |
+| `0x0002b230` | `XboxAudio_RemovePendingKey` | 228 | the mirror removal on the `+0x158` list, writing the key back when the `+0x118` list does not hold it |
+| `0x0002b320` | `XboxAudio_StopSoundByKey` | 230 | over four channels: remove the key from both lists, find the slot, call vtable slot 0x18 on its object (stop), clear the key and the slot's `+0x18` |
+| `0x0002b410` | `XboxAudio_CloseSoundDevice` | 229 | clears the channel's bit in `+0x60`, zeroes its 0x24-byte block at `+0x74`, stops the channel's object and re-registers every key of both lists |
+| `0x0002b500` | `XboxAudio_StopAllSounds` | 91 | walks the 0x34-byte slot table (`+0x4` count, `+0x54` base) calling the keyed stop for every slot that holds a key |
+| `0x0002b5c0` | `XboxAudio_ShutdownSlots` | 358 | stops every registered sound, then eight vtable-slot-4 releases and six `operator delete` frees |
+| `0x0002b730` | `XboxAudio_PollDeviceChanges` | 178 | `_XGetDeviceChanges@12` on two masks, merged into `+0x64`/`+0x68`; per channel close on a change and initialise when the bit is present, armed at `+0x70` and not yet started in `+0x60` |
+| `0x0002b8c0` | `XboxAudio_SetUpVoiceStreams` | 640 | buffer geometry from the sample rate (/48000, /10), `_IDirectSound_SetMixBinHeadroom@12` per bin, two `CreateVoiceStream` calls |
+| `0x0002d120` | `XboxAudio_FindFreeableSource` | 364 | the source with the smallest float at `+0x84` among the 0x28-byte entries at `+0xd8`, skipping nulls and the `+0x74`/`+0x75` flags; a `1e9` seed, so the first candidate always wins |
 | `0x0002d3f0` | `XboxAudio_StopStreamingSound` | 167 | literal `SF_StreamingMode`; `_IDirectSoundBuffer_Stop@4`, `_Release@4` |
 | `0x0002db10` | `XboxAudio_UnregisterSoundBytes` | 198 | literals `Sound Data Freed`, `UnRegSoundBytesAlloc`; calls the stop above |
-| `0x0002ed20` | `XboxAudio_FlushSounds` | 137 | literal `[RA] : Flushing`; calls the flush body and the unregisterer |
-| `0x0002ae00` | `XboxAudio_CreateVoiceStream` | 210 | `_XVoiceQueueCreateMediaObject@8`, `_XVoiceCreateOneToOneDecoder@4`, `_DirectSoundCreateStream@8`, then `this+0x3c`-byte buffers |
-| `0x0002a2f0` | `XboxAudio_CreateVoiceCodecs` | 104 | two `_XVoiceCreateMediaObjectEx@28` with two callbacks into one slot object |
-| `0x0002a250` | `XboxAudio_CreateVoiceEncoder` | 89 | `operator new` twice and `_XVoiceCreateOneToOneEncoder@4` |
-| `0x0002b8c0` | `XboxAudio_SetUpVoiceStreams` | 640 | buffer geometry from the sample rate (/48000, /10), `_IDirectSound_SetMixBinHeadroom@12` per bin, two `CreateVoiceStream` calls |
-| `0x0002a6f0` | `XboxAudio_InitVoiceSlot` | 112 | per index (`this+2*index+0x74`): codecs, the two slot stages, a bit in `this+0x60` |
+| `0x0002dff0` | `XboxAudio_SetNextStream` | 531 | slot 52 (`+0xd0`); its literal `SetNextStream`, `_XWaveFileCreateMediaObject@12` |
+| `0x0002e900` | `XboxAudio_RegisterCounters` | 691 | eight group/name registrations (`Audio` + `PlaySound` twice, `Occlusion` twice, `Update`, `Streaming`, `Regular`, `StoppedSounds`), returns kept at `+0x10`–`+0x20` |
+| `0x0002ed20` | `XboxAudio_FlushSounds` | 137 | literal `[RA] : Flushing`; frees through `0x2d120`/`0x2db10` while a pending read plus `+0x180` would pass **0x700000** |
+| `0x0002edb0` | `XboxAudio_OpenStreamRead` | 301 | `Read %s from hard disk`; `_CreateFileA@28`, `_CreateEventA@16`, `_SetFilePointer@16`, `_ReadFile@20` into the overlapped block at `+0x134` |
+| `0x0002fa90` | `XboxAudio_SetSoundDevice` | 278 | slot 32 (`+0x80`); stops the old device's streaming sounds, stores the new device at `+0x98` and re-applies two mix settings |
+| `0x0002fbb0` | `XboxAudio_CompleteStreamRead` | 203 | `_GetOverlappedResult@16`, accumulates `+0x13c`, and at `+0x124` closes both handles and flags the stream (`+0x74`: -0x1000, +0x2000) |
+| `0x0002fd70` | `XboxAudio_CreateDevice` | 272 | slot 31 (`+0x7c`), no direct caller; `_DirectSoundCreate@12`, `_XAudioDownloadEffectsImage@16`, six bring-up calls |
+| `0x00032040` | `XboxAudio_ResetStreamArray` | 65 | walks the 0x50-byte records (`+0x4` count) calling `0x31df0` on each, then sets the count to 0 and reallocates one record |
 
-The other 21 members stay `FUN_*`: their edges call only unnamed bodies. All 31 are placed in the `XboxAudio`
-module by `symbols/xbe_overrides.csv`, which is what the census could not do — **31 rows leave `(unnamed)`**
-and `inventory/function_modules.csv` holds 40 `XboxAudio` bodies.
+**What the 21 readings establish is one data structure, not 21 functions.** A slot record is 0x34 bytes,
+indexed by a 12-byte key (three dwords, the third masked to two bits) in a table of `+0x4` entries at `+0x54`;
+each slot owns two keyed lists per channel — 12-byte records at `+channel*16+0x118` and at
+`+channel*16+0x158` — over **four** channels, plus an 0x24-byte block at `+0x74+channel*0x24` and a bit per
+channel in `+0x60`. The two list removers (`0x2b140`, `0x2b230`) are mirrors: each removes a key from its own
+list and writes it back through `0x2a7c0` when the *other* list does not hold it, so a key is tracked in
+exactly one of the two at a time. `0x2b410` is the device-close path and re-registers every key afterwards,
+which is what makes the pair a state machine rather than a cache.
+
+**The device poll is the one body that explains the four channels.** `0x2b730` asks `_XGetDeviceChanges@12`
+twice (two device masks, `0x4bdd68` and `0x4bdd74` — the same two globals `CreateVoiceCodecs` hands to its
+media objects), merges them into `+0x64`/`+0x68`, and then, per channel, closes it on a change and starts it
+when it is present, armed at `+0x70` and not yet started. So the four channels are four voice devices and the
+module polls for a headset being plugged in.
+
+**The streaming read is a pair, and its memory policy is a number.** `0x2edb0` opens the file named by the
+queued stream object (`Read %s from hard disk`), sets up an event and an overlapped read at `+0x134`;
+`0x2fbb0` completes it, accumulates `+0x13c` until the requested `+0x124` is in, then closes both handles and
+sets the stream's flags. `0x2ed20` (the body the pump calls when `+0x160` is set) only frees when the pending
+read plus `+0x180` would pass **7 MB**, and it frees the source with the *smallest* float at `+0x84` — a size
+cap with an oldest-or-quietest eviction, not a time-sliced stream pool.
 
 **The slot-31 census, and why the dispatcher is not module code.** Every `call [reg+0x7c]` in an executable
 section, boundary-validated, is **115 sites**: 27 in `Engine`, 13 in `Core`, one each in `XboxDrv`
 (`XboxDrv_XboxViewport`) and `Gui`, and 72 in bodies the symbol map does not name — **none in `XboxAudio`**.
 **17** of the 115 dispatch a second audio-subsystem slot (`+0x88`, the pump) from the same body. So a rebuild
-supplies the four virtuals (device, stream, pump, next stream) and engine code calls them: the module never
-dispatches its own device virtual. What stays open is the receiver's *type* at those 17 sites (U34).
+supplies the **five** virtuals the table installs from the module — device (31, `+0x7c`), set-device (32,
+`+0x80`), pump (34, `+0x88`), file stream (50, `+0xc8`) and next stream (52, `+0xd0`) — and engine code calls
+them: the module never dispatches its own device virtual. The receiver's *type* at those 17 sites was settled
+by the field rather than by a guest pass: `Engine.Audio` is `+0x34` (`audio_engine_init.csv`), and **no**
+`call [reg+0x7c]` site in the image loads its receiver from that field.
+
+**A displacement is not a type, and `+0x80` is the proof.** `Engine_UnEngine_InitAudio` dispatches `+0x80` on
+the object it built from `XboxAudio.XHVVoiceSubsystem`, and that class has its **own** table (`0x004d2ad8`,
+whose slot 32 is `0x00032480`) — a different body from `XBoxAudioSubsystem`'s slot 32 (`0x2fa90`). Two classes
+that share a displacement are two classes; only the table says which body runs.
 
 ### What this reading does not say
 
 - **Ordering.** Every claim above is a call edge. The APU's register writes are inside bodies that have not
   been decompiled, so "the ISR runs before the DPC" is the SDK's structure, not this build's timing.
-- **The device virtual's dispatcher.** The class table says *what* creates the device (slot 31), not *who*
-  dispatches it: `call [reg+0x7c]` carries an offset, and 115 bodies call that offset for some class or
-  other. Naming the caller needs the receiver's type at the site — the `push`-back trace U9 asks for.
+- **Who re-dispatches the device slot.** Answered for the creation path only: `Engine_UnEngine_InitAudio`
+  dispatches slot 31 at `0x001213c4` on the object it just built, and no site in the image loads a receiver
+  from `+0x34`, so nobody reaches the device through the engine's field again. The 78 untyped receiver sites
+  stay untyped, and the field group among them cannot be `Engine.Audio`.
 
 ## The UIX entry point: a native that nothing calls (2026-11-19)
 

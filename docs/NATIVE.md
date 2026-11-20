@@ -17,7 +17,7 @@ x86:LE:32, XBE sections carved at their real virtual addresses, base `0x10000`).
 | `(dispatch: declared)` | 273 | 273 | 83,301 | 305.1 |
 | `(dispatch: slot only)` | 83 | 83 | 9,761 | 117.6 |
 | `Gui` | 59 | 59 | 14,549 | 246.6 |
-| `XboxAudio` | 40 | 19 | 16,297 | 407.4 |
+| `XboxAudio` | 40 | 40 | 16,297 | 407.4 |
 | `stargategame` | 32 | 32 | 5,612 | 175.4 |
 | `IpDrv` | 24 | 24 | 7,956 | 331.5 |
 | `D3DDrv` | 22 | 22 | 15,540 | 706.4 |

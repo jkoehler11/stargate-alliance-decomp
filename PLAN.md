@@ -732,9 +732,13 @@ other 38 rows.
       `docs/NATIVE_NOTES.md`): 303 methods over 14 classes -- `DirectSound`/`CDirectSound`/
       `CDirectSoundVoice`, `CMcpxAPU`/`CMcpxCore`, `CMcpxVoiceClient`/`CMcpxBuffer`/`CMcpxStream`, the
       four `xvoice` voice-chat classes and the two 3D classes -- **199 attributed to `dsound.lib` and
-      104 to `xvoice.lib`**, every artifact row naming its COFF member. The module chain is named too
-      (last note of this section, 2026-11-19): 31 bodies, ten named from their edges, all 31 placed in
-      `XboxAudio`, and none of the 115 `call [reg+0x7c]` sites inside the module.
+      104 to `xvoice.lib`**, every artifact row naming its COFF member. **The module chain is named end
+      to end** (2026-11-20): 31 bodies, **all 31 named** -- the first ten from their edges, the last 21
+      from their own bytes (a 0x34-byte slot record, two keyed 12-byte lists per channel over four
+      channels, a device poll on `_XGetDeviceChanges@12`, an overlapped stream open/complete pair and a
+      7 MB free cap) -- all 31 placed in `XboxAudio`, none of the 115 `call [reg+0x7c]` sites inside the
+      module, and **five** of `XBoxAudioSubsystem`'s virtuals install module bodies (31 device, 32
+      setter, 34 pump, 50 file stream, 52 next stream).
 - [x] 4.10 Emit a symbol file (`symbols/xbox.map` / Ghidra CSV) that other tools (xemu GDB, xbdm) can consume.
       Done: **15,447 symbols**, every address inside the image's
       sections (checked by the tool), `gdb` resolves them from `symbols/xbox.sym.s` assembled with `as`
@@ -15029,3 +15033,54 @@ sequence.
 - **Not in this PR.** `docs/NATIVE_NOTES.md`'s audio section and U34's own status paragraph still carry the
   old "the receiver's type is open" wording (the page and this note are corrected); which body increments
   each of the eight counters is engine stat code, not module code, and is not read.
+
+### Execution notes (2026-11-20, the audio chain named to the end, and what the eight counters are not)
+
+- **Task.** The two items the last bundle listed as "not in this PR": the chain's 21 remaining `FUN_*`
+  bodies, and which body increments each of the eight counters the device registers.
+- **The 21 are named from their own bytes, because their edges lead nowhere.** Every callee they reach is
+  unnamed too, so each body was decoded and read: `symbols/xbe_overrides.csv` gains 21 names with the
+  evidence that earned them (import set, vtable slot and its receiver, store offsets, literal, loop
+  bound), `tools/xboxaudio-chain.py --apply-overrides` folds them into the map, and the artifact
+  regenerates with the names in place -- **240 edges and 115 sites unchanged**, which is what makes this a
+  naming pass and not a re-measurement.
+- **The readings resolve one data structure, which is the real result.** A slot record is 0x34 bytes,
+  keyed by a 12-byte key (third dword masked to two bits) in a table of `+0x4` entries at `+0x54`; each
+  slot owns two keyed 12-byte lists per channel (`+channel*16+0x118`, `+channel*16+0x158`) over **four**
+  channels, plus an 0x24-byte block at `+0x74` and a bit per channel in `+0x60`. The two list removers
+  (`0x2b140`, `0x2b230`) are mirrors that hand a key to each other, and the device-close path
+  (`0x2b410`) re-registers every key afterwards -- a state machine, not a cache. The poll
+  (`0x2b730`) asks `_XGetDeviceChanges@12` twice and starts or stops a channel, so the four channels are
+  four voice devices and the module watches for a headset.
+- **The stream path is a pair with a number in it.** `XboxAudio_OpenStreamRead` opens the file the queue
+  names (`Read %s from hard disk`) into an overlapped block at `+0x134`; `XboxAudio_CompleteStreamRead`
+  accumulates `+0x13c` against `+0x124` and closes both handles. `XboxAudio_FlushSounds` only frees when a
+  pending read plus `+0x180` would pass **0x700000** (7 MB), and it frees through
+  `XboxAudio_FindFreeableSource` -- the source with the smallest float at `+0x84` among the unflagged ones
+  -- so the policy is a size cap with an eviction, not a time-sliced pool.
+- **Slot 32 is module code too, and it is *not* the dispatch the init makes.** `XBoxAudioSubsystem`'s
+  slot 32 (`+0x80`) is `XboxAudio_SetSoundDevice`: it stops the old device's streaming sounds, stores the
+  new device at `+0x98` -- the field the pump's first gate tests -- and re-applies two mix settings. So
+  the module installs **five** virtuals, not four. The `+0x80` dispatch in `Engine_UnEngine_InitAudio`
+  happens on the object built from `XboxAudio.XHVVoiceSubsystem`, whose own table (`0x004d2ad8`) holds a
+  different body at slot 32 (`0x00032480`): a displacement never types a call.
+- **The eight counters are not the pump's cycle array, and counting the references is what shows it.** New
+  `counter-ref` / `ref-census` rows in `inventory/audio_runtime.csv` count every aligned dword that spells
+  either global: `0x007b5dfc` is read from **106 sites over 52 bodies** -- renderer, actor, spawn, physics,
+  level tick, the D3D driver, only two of them in `XboxAudio` -- so it is the engine's shared cycle-scope
+  array; `0x007b5dd8` is referenced from **35 sites over 4 bodies**, one of them audio (the registration),
+  and every reference loads its address as `this` for one of its own methods. The previous note's "the
+  counter array the pump indexes is the one those handles index into" is therefore refuted, and the
+  increment is registry code (the two `Core` bodies, 10,539 and 4,294 bytes), not module code.
+- **Files.** `symbols/xbe_overrides.csv` (21 rows renamed with their evidence), `symbols/xbox_functions.csv`
+  (the same 21 names, folded by `--apply-overrides`), `inventory/xboxaudio_chain.csv` (regenerated:
+  `body_name`/`target_name` columns), `tools/xboxaudio-runtime.py` (the reference census and its
+  self-test), `inventory/audio_runtime.csv` (regenerated), `docs/NATIVE_NOTES.md` (the module-chain
+  section rewritten, the stale dispatcher sentences answered), `docs/systems/AUDIO.md` (five virtuals, the
+  chain count, the counter correction), `docs/UNKNOWNS.md` U34 (retitled and closed), this bullet and
+  note.
+- **Gates.** `make ci` green; `xboxaudio-chain.py --check` and `xboxaudio-runtime.py --check` both run
+  without the dump and write nothing; both artifacts regenerate from the dump.
+- **Not in this PR.** Which of the two `Core` registry bodies adds to a counter entry (registry code, read
+  only as far as its references); the 78 untyped `[reg+0x7c]` receivers; and the four `xvoice` voice-mode
+  classes behind the device poll, which are library code this module calls rather than module code.
