@@ -1531,6 +1531,76 @@ for the campaign, and a run that sits in the front-end menus with the assembler 
 function pointer would be missed — 60 is a floor for liveness, as the D3D8 census is a floor for the render surface. The
 two dispatchers are unnamed, and their selection logic (which program for which material) was not read.
 
+### How a shader is selected: an id switch for pixel, a two-key list for vertex (2026-11-19)
+
+The two dispatchers found by the call structure do different things, and both are readable in their prologues.
+
+**Pixel (`FUN_002af230`, 2,711 bytes) switches on an id with a per-id cache.**
+
+```
+mov  eax,[esi+0x40c4]        ; cache array
+mov  eax,[eax+ecx*4]         ; cache[id]
+test eax,eax / jnz ...       ; hit -> reuse
+lea  eax,[ecx-1] / cmp eax,0x48 / ja ...   ; ids 1..0x49 only
+movzx ecx,byte [eax+0x2afd48]              ; id-1 -> case
+jmp  dword near [ecx*4+0x2afcc8]           ; 32-entry jump table
+```
+
+Reading the two tables: **73 ids, 31 handled cases — one id per case — and 42 ids that fall to the default case.** So
+more than half the id space is unhandled in this build, and each handled id has exactly one code block.
+
+**Vertex (`FUN_002ae4e0`, 2,301 bytes) searches a linked list keyed by two dwords.**
+
+```
+mov  ecx,[ecx+0x40c0]        ; list head
+loop: mov eax,[ecx]          ; key 0
+      cmp eax,[esp+0x78]     ; vs argument 0
+      jnz next
+      mov edx,[ecx+4]        ; key 1
+      cmp edx,[esp+0x7c]     ; vs argument 1
+```
+
+So a vertex shader is cached by a **pair** of values (plausibly program id and declaration), while a pixel shader is
+cached by a single id in a flat array.
+
+**What this means for a rebuild.** The 60 programs are the *compiled artifacts*; the thing the engine actually passes
+around is an **id** (pixel) or an **(id, declaration) pair** (vertex). Selection logic therefore lives in these two
+functions, and reproducing it means reproducing the tables — the byte index table at `0x2afd48` and the jump table at
+`0x2afcc8` are literal data a rebuild could carry rather than re-derive.
+
+**Limits.** The 31 case bodies were not read, so which of the 41 pixel programs each case compiles is unmapped; the
+vertex list's entry layout beyond its two keys is unread; and the two-key comparison is described by what it compares
+(arguments against a list entry), not by what the keys mean.
+
+### The pixel-shader id table, as an artifact (2026-11-19)
+
+`tools/pixel-shader-ids.py` reads that switch out of the dispatcher's own prologue — the `movzx`/`jmp` pair gives it
+both table addresses, so a build whose bytes differ fails loudly instead of reading the wrong data — and follows each
+case body's first `call` to the per-program wrapper. Output: `inventory/pixel_shader_ids.csv`, **41 rows over 29 ids**,
+reaching **38 distinct programs**.
+
+| id | case | wrapper | program | version |
+|---:|---:|---|---|---|
+| 3 | 2 | `0x002b3e40` | `0x00524be0` | `xps.1.1` |
+| 5 | 3 | `0x002b3f00` | `0x00524e88` | `ps.1.1` |
+| 9 | 6 | `0x002b3e80` | `0x00524d18` | `xps.1.1` |
+| 14 | 9 | `0x002b4000` and `0x002b4020` | `0x00525220`, `0x00525280` | `xps.1.1`, `ps.1.4` |
+| 44 | 13 | `0x002b3e60` | `0x00524c50` | `xps.1.1` |
+
+Three readings:
+
+1. **Most ids are one program, twelve are two.** Forty-one calls land on twenty-nine ids, and exactly twelve ids compile
+   a pair — id 14 compiles an `xps.1.1` and a `ps.1.4` from one case body, through two different wrappers.
+2. **Two of the thirty-one handled ids resolve to nothing.** Their case bodies reach no wrapper by a direct `call`, which
+   means a second level of dispatch (or an indirect call) that this scan does not follow — the same blind spot the
+   liveness pass had, and recorded rather than papered over.
+3. **The table is a committed artifact, not a paragraph.** `make pixel-shader-ids` regenerates it from the dump;
+   `--check` validates it without one, and CI treats a missing dump as "needs the dump" rather than a failure.
+
+**Limits.** These are direct `call` edges from each case body; an indirect dispatch inside a case is invisible, and the
+three of the 41 pixel programs not reached here may be exactly that. The ids are numbers with no names attached — which
+material each represents is still unknown.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
