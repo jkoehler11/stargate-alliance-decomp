@@ -1386,6 +1386,50 @@ contains but whose body did not match would appear as `FUN_*` and be missing fro
 floor for "what the link contains", and the four-user push-buffer census in the previous section is the check that the
 render-path subset is complete.
 
+### The draw commands, and what `0x460ef0` actually is (2026-11-19)
+
+`_D3DDevice_DrawVertices@12` is 148 bytes and reads end to end, which makes it the best look yet at what the buffer
+carries:
+
+```
+mov  ebx,[0x460ee8]          ; device
+...
+mov  edi,[esp+0x18]          ; vertex count
+lea  esi,[edi-1] / shr esi,8 / inc esi    ; ceil(count / 256) batches
+lea  eax,[esi+5] / call 0x457ee0          ; reserve (batches + 5) dwords
+mov  dword [eax],0x000417fc               ; command
+mov  [eax+4],ecx                          ; vertex buffer address
+shl  esi,0x12 / add esi,0x40001810
+mov  [eax+8],esi
+...                                       ; per-batch word: addr | ((count-1) << 24)
+mov  dword [eax+0x10],0x000417fc           ; command again, closing
+mov  dword [eax+0x14],0
+add  eax,0x18 / mov [ebx],eax             ; 24-byte record, cursor written back
+```
+
+Three things fall out:
+
+1. **The draw command is `0x000417fc`, and its record is 24 bytes** — command, vertex-buffer address, a word carrying
+   `batches << 18 | 0x40001810`, one word per 256-vertex batch with the batch's count in the top byte, then the command
+   again with a zero. `DrawIndexedVertices@12` adds **`0x00041808`** and `DrawVerticesUP@16` uses `0x000417fc` alone, so
+   the draw band is these two opcode-shaped values, not a dense index range.
+2. **Each draw is one record however many vertices.** Batching is inside the record: `(count-1) >> 8` is how the driver
+   splits a 1,000-vertex call into four batch words without extra commands. A rebuild that emits one command per draw
+   has the same shape; one that emits one per 256 vertices does not.
+3. **`0x460ef0` is the device, not just a cursor.** `_Direct3D_CreateDevice@24` does `mov edi,0x460ef0; mov
+   [0x460ee8],edi`, so the pointer the driver keeps at `0x460ee8` *is* the address of this block: `+0` write pointer,
+   `+4` limit, `+8` flags (bit `0x10`, the pixel-constant mode read by `SetVertexShaderConstantNotInline`). Every earlier
+   section's "globals `0x460ef0`/`0x460ef4`/`0x460ef8`" are fields of one static control block, and the draw path
+   writes the cursor to `[dev+0]` — the same word the state and constant emitters bump.
+
+**The vocabulary so far.** States `0x00040300`–`0x0004037c` (17 words, appended by `SetRenderState_Simple`), shader
+constants `0x00041ea4` (28- and 60-byte records, emitted inline), draws `0x000417fc` and `0x00041808`, plus the flag
+words `0x00100b80` / `0x00300b80` inside constant records. Three emitters, three bands, one control block.
+
+**Limits.** `DrawIndexedVertices`' 599 bytes were scanned for command immediates, not read line by line, so its record
+layout beyond `0x41808` is unread; and the meaning of the `0x40001810` bits in the batch word is not established — it is
+measured as a constant the driver adds, not decoded as flags.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented
