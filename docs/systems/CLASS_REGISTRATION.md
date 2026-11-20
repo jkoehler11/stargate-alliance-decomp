@@ -402,6 +402,61 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 **40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 103 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 1 call from no map body at all; 2 bodies have no inbound edge.
 <!-- /generated:class-orphan-tables -->
 
+## The 250 tables no registration reaches: 39 a constructor bounds, 209 only unnamed bodies store
+
+`docs/UNKNOWNS.md` U40 counts 277 gap bodies a class-table slot names and 269 of them in tables nothing
+registers. The full population is **250**: the 232 tables `inventory/native_vtable_shared.csv` pairs with
+a mapped table by prefix, plus the 18 mapped tables the class map leaves proposed. The installer's own
+call site is the route the entry names, and `tools/class-table-installers.py` walks it over every store
+`inventory/native_vtable_reach.csv` already censused.
+
+**A constructor's store bounds a table; it does not name one.** A constructor installs its parent's table
+before its own (this page's `base-store-ancestor` rule), so a table a single `ctor_FireTexture` stores is
+one of `FireTexture`'s **ancestors'** tables -- the table is at least as deep as that class and never the
+class itself. 39 tables carry that bound; the other 209 are stored only by bodies no class names, and 2 by
+no store at all. So the U40 route answers the *reachability* half of its question and not the naming half,
+which is why no name is written from it: the six names the tree can carry are already proposed on this
+page's own join.
+
+<!-- generated:class-table-installers -->
+| the tables no name reaches | tables |
+| --- | --- |
+| stored by a class constructor (so an ancestor of that class) | 39 |
+| stored only by bodies no class names | 209 |
+| stored by nothing | 2 |
+| **total** | **250** |
+
+The constructor-stored tables carry a bound, not a name: 25 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
+
+| class whose constructor stores it | tables it bounds |
+| --- | --- |
+| `SkeletalMesh` | 5 |
+| `PackageMapLevel` | 3 |
+| `TextBuffer` | 2 |
+| `LinkerLoad` | 2 |
+| `XboxViewport` | 2 |
+| `TcpipConnection` | 2 |
+| `TcpipConnectionXbox` | 2 |
+| `XHVVoiceSubsystem` | 2 |
+| `DemoRecConnection` | 2 |
+| `StaticMesh` | 2 |
+| `TcpNetDriver` | 1 |
+| `TcpNetDriverXbox` | 1 |
+| `LinkerSave` | 1 |
+| `LinkerSaveGame` | 1 |
+| `LinkerLoadGame` | 1 |
+| `NullRenderDevice` | 1 |
+| `ControlChannel` | 1 |
+| `DemoPlayPendingLevel` | 1 |
+| `DemoRecDriver` | 1 |
+| `Engine` | 1 |
+| `Input` | 1 |
+| `Level` | 1 |
+| `Movie` | 1 |
+| `NetPendingLevel` | 1 |
+| `D3DRenderDevice` | 1 |
+<!-- /generated:class-table-installers -->
+
 ## The hole between `FUN_003f28b0` and `FUN_003f6d70` is a thunk pool
 
 The `stub` edges above come from code the symbol map does not cover, and the map has one large hole

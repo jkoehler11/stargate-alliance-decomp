@@ -43,9 +43,19 @@ COLUMNS = ["address", "name", "size", "module", "attributed_by", "run"]
 PLAN_COLUMNS = ["module", "functions", "asserted", "propagated", "bytes", "runs", "first", "last"]
 
 
-def class_packages(path="inventory/classes.csv"):
-    """{class_lower: package} from the class census; absent file is an empty map, not an error."""
+def class_packages(path="inventory/classes.csv", native="inventory/native_class_packages.csv"):
+    """{class_lower: package} from the class census; absent file is an empty map, not an error.
+
+    `inventory/native_class_packages.csv` (`tools/native-class-packages.py`) adds the classes no
+    shipped `.u` declares -- the engine's and the native drivers' -- with the package their registration
+    site's body compiles from, which is the only edge that reaches them.
+    """
     out = {}
+    if os.path.isfile(native):
+        with open(native, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("class") and r.get("package"):
+                    out[r["class"].lower()] = r["package"]
     if os.path.isfile(path):
         with open(path, newline="", encoding="utf-8") as fh:
             for r in csv.DictReader(fh):

@@ -1,0 +1,251 @@
+table_va,slots,installers,named_bodies,bound,family,verdict,evidence
+0x004c7800,21,4,,,,plain-only,"plain 4; stores by 4 bodies (Core_UnObjBas, FUN_000191d0, FUN_00027c10, FUN_0002a1b0); shared family - (0)"
+0x004c7854,2,3,FUN_000669e0|ctor_ControlChannel,at-least-TextBuffer,,at-least,"ctor 1, installer 1, plain 1; stores by 3 bodies (FUN_000669e0, FUN_001be140, ctor_ControlChannel); shared family - (0)"
+0x004c7860,22,36,FUN_00052870|FUN_00053190|ctor_LinkerLoad|ctor_LinkerSave|dtor_LinkerLoad|dtor_LinkerSave,at-least-LinkerLoad,,at-least,"ctor 4, installer 2, plain 30; stores by 36 bodies (Core_UnClass, Core_UnClass, Core_UnClass, Core_UnObj); shared family - (0)"
+0x004c78b8,1,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00017050); shared family - (0)
+0x004c78c0,31,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00017050); shared family -
+0x004c8410,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00018be0, FUN_0001a120); shared family - (0)"
+0x004c84d0,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00018da0, FUN_0001a340); shared family - (0)"
+0x004c85b0,25,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x004c8db8,26,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0001a3b0); shared family - (0)
+0x004c9038,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001b770, FUN_000379b0); shared family - (0)"
+0x004c9338,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
+0x004c933c,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
+0x004c9348,31,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family -"
+0x004c93c4,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
+0x004c93c8,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
+0x004c93d0,56,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family -"
+0x004c94b0,43,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cd10, FUN_000fd9b0); shared family -"
+0x004c960c,1,2,ctor_XboxViewport|dtor_XboxViewport,at-least-XboxViewport,,at-least,"ctor 2; stores by 2 bodies (ctor_XboxViewport, dtor_XboxViewport); shared family - (0)"
+0x004c9610,2,2,ctor_XboxViewport|dtor_XboxViewport,at-least-XboxViewport,,at-least,"ctor 2; stores by 2 bodies (ctor_XboxViewport, dtor_XboxViewport); shared family - (0)"
+0x004c96fc,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000fb890); shared family - (0)
+0x004c9738,22,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0001cf20, FUN_000eaa50, FUN_000eaab0); shared family - (0)"
+0x004c9858,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001d6d0, FUN_0001dd60); shared family - (0)"
+0x004c9a98,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0001f5c0); shared family - (0)
+0x004c9b50,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001f880, FUN_0001fbc0); shared family - (0)"
+0x004d0314,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00025f30, FUN_00183730); shared family - (0)"
+0x004d0318,40,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00025f30, FUN_00183730); shared family -"
+0x004d03b8,1,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
+0x004d03bc,2,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
+0x004d03c8,42,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family -"
+0x004d0470,1,3,FUN_002d2890|ctor_TcpipConnection|dtor_TcpipConnection,at-least-TcpipConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d2890, ctor_TcpipConnection, dtor_TcpipConnection); shared family - (0)"
+0x004d0474,2,3,FUN_002d2890|ctor_TcpipConnection|dtor_TcpipConnection,at-least-TcpipConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d2890, ctor_TcpipConnection, dtor_TcpipConnection); shared family - (0)"
+0x004d0528,1,2,ctor_TcpNetDriver|dtor_TcpNetDriver,at-least-TcpNetDriver,,at-least,"ctor 2; stores by 2 bodies (ctor_TcpNetDriver, dtor_TcpNetDriver); shared family - (0)"
+0x004d05d0,1,3,FUN_002d55f0|ctor_TcpipConnectionXbox|dtor_TcpipConnectionXbox,at-least-TcpipConnectionXbox,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d55f0, ctor_TcpipConnectionXbox, dtor_TcpipConnectionXbox); shared family - (0)"
+0x004d05d4,2,3,FUN_002d55f0|ctor_TcpipConnectionXbox|dtor_TcpipConnectionXbox,at-least-TcpipConnectionXbox,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d55f0, ctor_TcpipConnectionXbox, dtor_TcpipConnectionXbox); shared family - (0)"
+0x004d0688,1,2,ctor_TcpNetDriverXbox|dtor_TcpNetDriverXbox,at-least-TcpNetDriverXbox,,at-least,"ctor 2; stores by 2 bodies (ctor_TcpNetDriverXbox, dtor_TcpNetDriverXbox); shared family - (0)"
+0x004d0d80,25,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00126b30); shared family - (0)
+0x004d0de8,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00026b50, FUN_00026cd0); shared family - (0)"
+0x004d0ec8,21,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00027c10, FUN_0002a1b0); shared family - (0)"
+0x004d1430,2,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0002bff0, FUN_0002c2a0, FUN_0002c3b0); shared family - (0)"
+0x004d1438,2,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0002c340, FUN_0002c3b0, FUN_003e547f); shared family - (0)"
+0x004d1468,35,3,,,,plain-only,"plain 3; stores by 3 bodies (Core_UnClass, FUN_0002c8a0, FUN_00038d70); shared family -"
+0x004d17a8,53,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_00031830, FUN_0007b0c0, FUN_0007b0f0); shared family -"
+0x004d2400,37,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000321f0); shared family -
+0x004d2abc,6,2,ctor_XHVVoiceSubsystem|dtor_XHVVoiceSubsystem,at-least-XHVVoiceSubsystem,,at-least,"ctor 2; stores by 2 bodies (ctor_XHVVoiceSubsystem, dtor_XHVVoiceSubsystem); shared family - (0)"
+0x004d2ad4,1,2,ctor_XHVVoiceSubsystem|dtor_XHVVoiceSubsystem,at-least-XHVVoiceSubsystem,,at-least,"ctor 2; stores by 2 bodies (ctor_XHVVoiceSubsystem, dtor_XHVVoiceSubsystem); shared family - (0)"
+0x004d2e58,29,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00034060); shared family - (0)
+0x004d3118,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000345c0); shared family - (0)
+0x004d3248,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UExporter); shared family - (0)
+0x004d34d8,32,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00034bc0, FUN_00035c70); shared family -"
+0x004d3af0,33,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00036710, FUN_00036ac0); shared family -"
+0x004d3ba0,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00037aa0, FUN_0010d1e0); shared family - (0)"
+0x004d40d0,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00038b50); shared family - (0)
+0x004da720,22,3,FUN_00052870|ctor_LinkerLoad|dtor_LinkerLoad,at-least-LinkerLoad,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_00052870, ctor_LinkerLoad, dtor_LinkerLoad); shared family - (0)"
+0x004da850,22,3,FUN_00053190|ctor_LinkerSave|dtor_LinkerSave,at-least-LinkerSave,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_00053190, ctor_LinkerSave, dtor_LinkerSave); shared family - (0)"
+0x004da970,22,3,FUN_00053370|ctor_LinkerSaveGame|dtor_LinkerSaveGame,at-least-LinkerSaveGame,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_00053370, ctor_LinkerSaveGame, dtor_LinkerSaveGame); shared family - (0)"
+0x004daa48,22,3,FUN_000533b0|ctor_LinkerLoadGame|dtor_LinkerLoadGame,at-least-LinkerLoadGame,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_000533b0, ctor_LinkerLoadGame, dtor_LinkerLoadGame); shared family - (0)"
+0x004dd250,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00062370); shared family - (0)
+0x004dd488,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00073a80); shared family - (0)
+0x004dd4e0,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00073b30); shared family - (0)
+0x004dd538,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObj); shared family - (0)
+0x004dd590,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x004dd5e8,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x004dd640,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObj); shared family - (0)
+0x004ddd50,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00074d10); shared family - (0)
+0x004ddf70,2,2,FUN_000669e0|dtor_TextBuffer,at-least-TextBuffer,,at-least,"ctor 1, installer 1; stores by 2 bodies (FUN_000669e0, dtor_TextBuffer); shared family - (0)"
+0x004de3c0,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x004de558,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x004e3520,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0008b280); shared family - (0)
+0x004eaea8,47,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000bd030); shared family -
+0x004eaf68,62,1,ctor_NullRenderDevice,at-least-NullRenderDevice,,at-least,ctor 1; stores by 1 bod (ctor_NullRenderDevice); shared family - (0)
+0x004eb914,12,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_000c1ae0, FUN_000c37b0, FUN_00186c60); shared family - (0)"
+0x004ebb00,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000c3650, FUN_000c37b0); shared family - (0)"
+0x004ebf54,6,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_000dbdf0, FUN_00309ef0, Gui_UnUIXInteraction); shared family - (0)"
+0x004f7070,12,1,,,,plain-only,plain 1; stores by 1 bod (AudioSubsystem_vt36); shared family - (0)
+0x004f70a0,2,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000e1630); shared family - (0)
+0x004f7690,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000ea6a0); shared family - (0)
+0x004f7868,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000eab70, FUN_0010d370); shared family - (0)"
+0x004fa390,37,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00107d60, FUN_00108010); shared family -"
+0x004fa5a8,2,2,ctor_ControlChannel|dtor_ControlChannel,at-least-ControlChannel,,at-least,"ctor 2; stores by 2 bodies (ctor_ControlChannel, dtor_ControlChannel); shared family - (0)"
+0x004fc35c,8,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011bf90, FUN_001617d0); shared family - (0)"
+0x004fc4cc,8,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0011bf20, FUN_0011bf90, FUN_001617d0); shared family - (0)"
+0x004fc4f0,30,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0011bf20, FUN_0011bf90, FUN_001617d0); shared family -"
+0x004fc568,8,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011c050, FUN_001a57b0); shared family - (0)"
+0x004fc588,34,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011c050, FUN_001a57b0); shared family -"
+0x004fc610,8,3,FUN_0011bce0|ctor_DemoPlayPendingLevel|dtor_DemoPlayPendingLevel,at-least-DemoPlayPendingLevel,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011bce0, ctor_DemoPlayPendingLevel, dtor_DemoPlayPendingLevel); shared family - (0)"
+0x004fcc08,1,3,FUN_0011d460|ctor_DemoRecConnection|dtor_DemoRecConnection,at-least-DemoRecConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011d460, ctor_DemoRecConnection, dtor_DemoRecConnection); shared family - (0)"
+0x004fcc0c,2,3,FUN_0011d460|ctor_DemoRecConnection|dtor_DemoRecConnection,at-least-DemoRecConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011d460, ctor_DemoRecConnection, dtor_DemoRecConnection); shared family - (0)"
+0x004fccc0,1,2,ctor_DemoRecDriver|dtor_DemoRecDriver,at-least-DemoRecDriver,,at-least,"ctor 2; stores by 2 bodies (ctor_DemoRecDriver, dtor_DemoRecDriver); shared family - (0)"
+0x004fcfe0,36,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0011f6c0); shared family -
+0x005040cc,1,2,FUN_001212e0|FUN_00127230,at-least-Engine,,at-least,"installer 2; stores by 2 bodies (FUN_001212e0, FUN_00127230); shared family - (0)"
+0x00507bb8,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00128f70); shared family - (0)
+0x00507c7c,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0012d750); shared family - (0)
+0x0050c314,1,2,ctor_Input|dtor_Input,at-least-Input,,at-least,"ctor 2; stores by 2 bodies (ctor_Input, dtor_Input); shared family - (0)"
+0x0050e88c,8,3,Engine_UnLevel|ctor_Level|dtor_Level,at-least-Level,,at-least,"ctor 2, installer 1; stores by 3 bodies (Engine_UnLevel, ctor_Level, dtor_Level); shared family - (0)"
+0x00510e6c,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00179860); shared family - (0)
+0x00510e90,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00179990); shared family - (0)
+0x00510eb8,18,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00179a10); shared family - (0)
+0x00510f00,16,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00179ab0, FUN_001ea3a0); shared family - (0)"
+0x00510f78,18,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0017a780, FUN_001ea3a0); shared family - (0)"
+0x00511380,12,4,dtor_Movie,at-least-Movie,,at-least,"ctor 1, plain 3; stores by 4 bodies (FUN_0017c5f0, FUN_0017c650, FUN_0017cd20, dtor_Movie); shared family - (0)"
+0x005113b0,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0017c650, FUN_0017cd90); shared family - (0)"
+0x005124a4,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00186740, FUN_00186c60); shared family - (0)"
+0x005139f4,8,3,FUN_001a57f0|ctor_NetPendingLevel|dtor_NetPendingLevel,at-least-NetPendingLevel,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_001a57f0, ctor_NetPendingLevel, dtor_NetPendingLevel); shared family - (0)"
+0x00516fa8,10,6,,,,plain-only,"plain 6; stores by 6 bodies (FUN_001d3ec0, FUN_001d3f70, FUN_001d4070, FUN_001d4cf0); shared family - (0)"
+0x00516fd4,14,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001d47f0, FUN_001d48b0); shared family - (0)"
+0x0051700c,14,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001d5050); shared family - (0)
+0x00517044,14,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001d50d0); shared family - (0)
+0x0051707c,9,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001d6e00, FUN_001d8200); shared family - (0)"
+0x005170a8,14,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001d6b60); shared family - (0)
+0x005170f4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001da700); shared family - (0)
+0x00517134,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001dae70); shared family - (0)
+0x005171b4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001dbed0); shared family - (0)
+0x00517214,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001df140); shared family - (0)
+0x00517238,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001df140); shared family - (0)
+0x0051724c,5,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001de030, FUN_001df420); shared family - (0)"
+0x00517260,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001de090); shared family - (0)
+0x005172ec,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001df420); shared family - (0)
+0x00517428,2,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001e2110); shared family - (0)
+0x00517430,5,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001dfde0, FUN_001e1140); shared family - (0)"
+0x00517444,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001dfe60); shared family - (0)
+0x00517468,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001dff10); shared family - (0)
+0x0051748c,2,4,,,,plain-only,"plain 4; stores by 4 bodies (Core_UnObjBas, Core_UnTemplate, FUN_001e2110, FUN_001ee0e0); shared family - (0)"
+0x005174a0,2,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001e2110); shared family - (0)
+0x005174a8,18,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001e04e0, FUN_001e0840); shared family - (0)"
+0x00517588,18,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001e04e0, FUN_001e0840); shared family - (0)"
+0x00517778,9,4,,,,plain-only,"plain 4; stores by 4 bodies (FUN_001eaa40, FUN_001eab90, FUN_001eacc0, FUN_00418e70); shared family - (0)"
+0x00517860,30,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001ead60); shared family -
+0x005178d8,32,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001eade0); shared family -
+0x00517e88,5,2,,,,plain-only,"plain 2; stores by 2 bodies (Core_UnTemplate, FUN_001ed2e0); shared family - (0)"
+0x00517ff0,9,5,,,,plain-only,"plain 5; stores by 5 bodies (Engine_UnRenderUtil, FUN_001f1f10, FUN_001f42c0, FUN_001f4330); shared family - (0)"
+0x00518080,18,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001f4450); shared family - (0)
+0x005180c8,15,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001f44b0, FUN_001f5f70); shared family - (0)"
+0x00518104,7,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001f5e50); shared family - (0)
+0x00518120,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001f5ee0); shared family - (0)
+0x00518160,9,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_001f7050, FUN_001f70c0, FUN_001f76b0); shared family - (0)"
+0x00518184,9,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001f7120, FUN_001f75c0); shared family - (0)"
+0x005181a8,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001f7620); shared family - (0)
+0x005181d0,3,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001f8090, FUN_002004c0); shared family - (0)"
+0x005181dc,3,0,,,,no-store,no store; stores by 0 bodies (-); shared family - (0)
+0x0051a27c,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021aa80); shared family - (0)
+0x0051a3c4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021ab90); shared family - (0)
+0x0051a810,61,3,,,,plain-only,"plain 3; stores by 3 bodies (Engine_UnShadowProjector, FUN_0021e478, FUN_0021ed80); shared family - (0)"
+0x0051a9e4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021ee40); shared family - (0)
+0x0051b0cc,6,5,,,,plain-only,"plain 5; stores by 5 bodies (Core_UnTemplate, FUN_00238020, FUN_0023a8f0, FUN_0023c110); shared family - (0)"
+0x0051b0e4,6,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0023a8f0); shared family - (0)
+0x0051b178,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00226820); shared family - (0)
+0x0051bc08,2,3,ctor_SkeletalMesh,at-least-SkeletalMesh,,at-least,"ctor 1, plain 2; stores by 3 bodies (FUN_002382f0, FUN_0023b700, ctor_SkeletalMesh); shared family - (0)"
+0x0051bc10,2,3,ctor_SkeletalMesh,at-least-SkeletalMesh,,at-least,"ctor 1, plain 2; stores by 3 bodies (FUN_00238380, FUN_0023b700, ctor_SkeletalMesh); shared family - (0)"
+0x0051bc18,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00239c90, FUN_0023b700); shared family - (0)"
+0x0051bc20,11,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00239e20); shared family - (0)
+0x0051bc4c,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0023a140); shared family - (0)
+0x0051bc70,6,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0023a2a0); shared family - (0)
+0x0051bc88,6,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0023a590); shared family - (0)
+0x0051bca0,6,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0023a8f0); shared family - (0)
+0x0051bf18,2,3,ctor_SkeletalMesh,at-least-SkeletalMesh,,at-least,"ctor 1, plain 2; stores by 3 bodies (FUN_0023ad50, FUN_0023b700, ctor_SkeletalMesh); shared family - (0)"
+0x0051bf20,2,2,ctor_SkeletalMesh,at-least-SkeletalMesh,,at-least,"ctor 1, plain 1; stores by 2 bodies (FUN_0023b350, ctor_SkeletalMesh); shared family - (0)"
+0x0051bf28,2,2,ctor_SkeletalMesh,at-least-SkeletalMesh,,at-least,"ctor 1, plain 1; stores by 2 bodies (FUN_0023b4a0, ctor_SkeletalMesh); shared family - (0)"
+0x0051d238,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002454c0); shared family - (0)
+0x0051d300,9,1,,,,plain-only,plain 1; stores by 1 bod (SparkEmitter_vt39); shared family - (0)
+0x0051d37c,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00247d90); shared family - (0)
+0x0051d444,9,1,,,,plain-only,plain 1; stores by 1 bod (SpriteEmitter_vt39); shared family - (0)
+0x0051d7c4,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0024e140); shared family - (0)
+0x0051d7e8,9,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0024e230, FUN_002501d0); shared family - (0)"
+0x0051d80c,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0024e330); shared family - (0)
+0x0051d830,9,1,ctor_StaticMesh,at-least-StaticMesh,,at-least,ctor 1; stores by 1 bod (ctor_StaticMesh); shared family - (0)
+0x0051d854,2,2,ctor_StaticMesh,at-least-StaticMesh,,at-least,"ctor 1, plain 1; stores by 2 bodies (FUN_0024e4d0, ctor_StaticMesh); shared family - (0)"
+0x0051ec98,23,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x0051f6d8,5,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x0051f6ec,5,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x0051f700,5,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x0051fa7c,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0026e080); shared family - (0)
+0x0051faa0,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00278450); shared family - (0)
+0x0051ffd8,18,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0027b240); shared family - (0)
+0x00520248,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0027bf00); shared family - (0)
+0x0052075c,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00283c20); shared family - (0)
+0x005207a4,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00284020); shared family - (0)
+0x0052086c,9,1,,,,plain-only,plain 1; stores by 1 bod (TrailEmitter_vt39); shared family - (0)
+0x00521ff8,3,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00295c40); shared family - (0)
+0x00523008,3,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00298000); shared family - (0)
+0x00523340,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002984e0); shared family - (0)
+0x00523394,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002a11e0); shared family - (0)
+0x0052352c,16,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002aaae0); shared family - (0)
+0x0052b45c,1,2,ctor_D3DRenderDevice|dtor_D3DRenderDevice,at-least-D3DRenderDevice,,at-least,"ctor 2; stores by 2 bodies (ctor_D3DRenderDevice, dtor_D3DRenderDevice); shared family - (0)"
+0x0052bbf8,65,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002b9bb0); shared family - (0)
+0x0052bdb8,16,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002bf8a0); shared family - (0)
+0x0052be38,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002be070, FUN_002c0b80); shared family - (0)"
+0x0052be68,5,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002be330, FUN_002be3f0); shared family - (0)"
+0x0052be7c,5,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002be490, FUN_002be4d0); shared family - (0)"
+0x0052c2b8,5,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_002bf900, FUN_002bf930, FUN_002c13a0); shared family - (0)"
+0x0052c498,5,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_002c04d0, FUN_002c0500, FUN_002c1430); shared family - (0)"
+0x0052c76c,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c1090); shared family - (0)
+0x0052c780,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c1100); shared family - (0)
+0x0052cc50,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c3d30); shared family - (0)
+0x0052cefc,7,4,,,,plain-only,"plain 4; stores by 4 bodies (FUN_002c4e90, FUN_002c4ee0, FUN_002c6500, FUN_002c7000); shared family - (0)"
+0x0052d1a0,23,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c5180); shared family - (0)
+0x0052d3e8,25,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002c60f0, FUN_002c6230); shared family - (0)"
+0x0052d498,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002c6450, FUN_002c64a0); shared family - (0)"
+0x0052d528,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c6670); shared family - (0)
+0x0052d7d0,24,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c6e90); shared family - (0)
+0x0052e0c8,25,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c83b0); shared family - (0)
+0x0052eb78,7,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002cbc80); shared family - (0)
+0x0052ef14,8,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002ccdb0); shared family - (0)
+0x0052ef34,8,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002cce10); shared family - (0)
+0x0052ef54,8,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002cd2e0); shared family - (0)
+0x0052f1c0,25,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002ce240, IpDrv_MasterServerUplink); shared family - (0)"
+0x0053a194,5,1,,,,plain-only,plain 1; stores by 1 bod (UUIXInteraction_InitUIX); shared family - (0)
+0x0053d58c,1,1,,,,plain-only,plain 1; stores by 1 bod (FUN_003265e0); shared family - (0)
+0x0053d590,4,18,,,,plain-only,"plain 18; stores by 18 bodies (FUN_00329c80, FUN_00329d10, FUN_00329d90, FUN_00329e10); shared family - (0)"
+0x0053d5c8,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00329c80); shared family - (0)
+0x0053d5fc,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00329d10); shared family - (0)
+0x0053d630,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00329d90); shared family - (0)
+0x0053d660,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00329e10); shared family - (0)
+0x0053d698,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00329eb0); shared family - (0)
+0x0053d6fc,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00329f30); shared family - (0)
+0x0053d70c,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0032a040); shared family - (0)
+0x0053d73c,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0032a0c0); shared family - (0)
+0x0053d768,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0032a170); shared family - (0)
+0x0053d7a0,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0032a230); shared family - (0)
+0x0053d7fc,4,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0032a2b0, FUN_0032a3a0); shared family - (0)"
+0x0053d80c,4,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0032a410); shared family - (0)
+0x0053e3dc,4,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0032a7b0, FUN_0032a940); shared family - (0)"
+0x0053ec54,4,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0032ad20, FUN_0032ade0); shared family - (0)"
+0x0053f6d8,5,7,,,,plain-only,"plain 7; stores by 7 bodies (??1CPlayersScreen@UIXNamespace@@UAE@XZ, ??1CPopupScreen@UIXNamespace@@UAE@XZ, ??_GCFriendsScreen@UIXNamespace@@UAEPAXI@Z, ??_GCLogonScreen@UIXNamespace@@UAEPAXI@Z); shared family - (0)"
+0x0053f6ec,5,3,,,,plain-only,"plain 3; stores by 3 bodies (??0CPopupScreen@UIXNamespace@@QAE@K@Z, ??0CPopupScreen@UIXNamespace@@QAE@XZ, ??1CPopupScreen@UIXNamespace@@UAE@XZ); shared family - (0)"
+0x0053f700,5,1,,,,plain-only,plain 1; stores by 1 bod (??0CNotificationScreen@UIXNamespace@@QAE@XZ); shared family - (0)
+0x0053f718,21,3,,,,plain-only,"plain 3; stores by 3 bodies (??0CAlertFeature@UIXNamespace@@QAE@XZ, ??_GCAlertFeature@UIXNamespace@@UAEPAXI@Z, FUN_004190aa); shared family - (0)"
+0x0053f770,21,1,,,,plain-only,plain 1; stores by 1 bod (??0CFeatureContext@UIXNamespace@@QAE@PAVCLiveEngine@1@@Z); shared family - (0)
+0x0053f7c4,5,0,,,,no-store,no store; stores by 0 bodies (-); shared family - (0)
+0x0053f7f0,6,3,,,,plain-only,"plain 3; stores by 3 bodies (??0CVoiceMailPseudoFeature@UIXNamespace@@QAE@XZ, ??1CVoiceMailPseudoFeature@UIXNamespace@@UAE@XZ, FUN_004190bf); shared family - (0)"
+0x0053f808,21,3,,,,plain-only,"plain 3; stores by 3 bodies (??0CVoiceMailPseudoFeature@UIXNamespace@@QAE@XZ, ??1CVoiceMailPseudoFeature@UIXNamespace@@UAE@XZ, FUN_004190bf); shared family - (0)"
+0x0053f85c,5,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CVoiceMailScreen@UIXNamespace@@QAE@XZ, FUN_00332e77); shared family - (0)"
+0x0053f874,5,1,,,,plain-only,plain 1; stores by 1 bod (??0CPlayersContextScreen@CPlayersScreen@UIXNamespace@@QAE@K@Z); shared family - (0)
+0x0053f888,5,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CPlayersFeature@UIXNamespace@@QAE@XZ, ??1CPlayersFeature@UIXNamespace@@UAE@XZ); shared family - (0)"
+0x0053f8a0,21,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CPlayersFeature@UIXNamespace@@QAE@XZ, ??1CPlayersFeature@UIXNamespace@@UAE@XZ); shared family - (0)"
+0x0053f8f4,5,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CPlayersScreen@UIXNamespace@@QAE@KKAAVCArray@1@0AAHHKKPAUITitlePlayersListItem@@PAVCVoiceMailMsg@1@PAEK@Z, ??1CPlayersScreen@UIXNamespace@@UAE@XZ); shared family - (0)"
+0x0053f90c,5,1,,,,plain-only,plain 1; stores by 1 bod (??0CFriendsScreen@UIXNamespace@@QAE@KKU_XUID@@H@Z); shared family - (0)
+0x0053f920,21,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CFriendsFeature@UIXNamespace@@QAE@XZ, FUN_00337421); shared family - (0)"
+0x0053f978,1,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00337ffc); shared family - (0)
+0x0053f97c,5,1,,,,plain-only,plain 1; stores by 1 bod (??0CLogonScreen@UIXNamespace@@QAE@K@Z); shared family - (0)
+0x0053f990,1,1,,,,plain-only,plain 1; stores by 1 bod (??0CNotificationTask@UIXNamespace@@QAE@XZ); shared family - (0)
+0x0053f998,21,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CLogonFeature@UIXNamespace@@QAE@XZ, FUN_00337ffc); shared family - (0)"
+0x0053f9ec,15,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CUIPlugin@UIXNamespace@@QAE@XZ, ??1CUIPlugin@UIXNamespace@@QAE@XZ); shared family - (0)"
+0x00540464,8,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CQueueXMO@@QAE@XZ, ??_GCQueueXMO@@UAEPAXI@Z); shared family - (0)"
+0x00540484,14,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CEncoderXMO@@QAE@XZ, ??1CEncoderXMO@@UAE@XZ); shared family - (0)"
+0x005404bc,14,2,,,,plain-only,"plain 2; stores by 2 bodies (??0COneToOneEncoder@@QAE@XZ, ??_GCOneToOneEncoder@@UAEPAXI@Z); shared family - (0)"
+0x005404f4,11,2,,,,plain-only,"plain 2; stores by 2 bodies (??0CDecoderXMO@@QAE@XZ, ??1CDecoderXMO@@UAE@XZ); shared family - (0)"
+0x00540520,11,2,,,,plain-only,"plain 2; stores by 2 bodies (??0COneToOneDecoder@@QAE@XZ, ??_GCOneToOneDecoder@@UAEPAXI@Z); shared family - (0)"
+0x00564da4,6,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00385690); shared family - (0)
+0x00564dbc,9,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_00385690, FUN_0038b1a0, FUN_0038b280); shared family - (0)"
+0x0057534c,2,3,,,,plain-only,"plain 3; stores by 3 bodies (??0exception@@QAE@ABV0@@Z, ??1exception@@UAE@XZ, FUN_003e6555); shared family - (0)"
