@@ -1613,6 +1613,48 @@ Three readings:
 three of the 41 pixel programs not reached here may be exactly that. The ids are numbers with no names attached — which
 material each represents is still unknown.
 
+## Karma ragdolls: `.ka` and `.kaw` are XML (PLAN 5.5)
+
+The four Karma files under `Resources/` are not binary and do not need an extractor: a `.ka` opens with
+`<?xml version="1.0"?>` and a `<KARMA ka_file_version="1.0">` root, and a `.kaw` is a `<KAT_WORKSPACE version="1.0">`.
+`tools/ragdoll-census.py` reads them and writes `inventory/ragdoll_assets.csv` — counts and identifiers only, never
+content, per `docs/LEGAL.md`.
+
+**The `.ka` schema**, from the element vocabulary across three files:
+
+| element | what it carries |
+|---|---|
+| `ASSET` | `id`, `graphic` (a `.PSK` skeletal mesh), `scale`, `mass_scale`, `length_scale` — one ragdoll per character |
+| `GEOMETRY` | `id` matching a bone name (`bip01 l calf`) |
+| `PRIMITIVE` | collision shape per geometry: `RADIUS`, `HEIGHT`, `TM` (transform) |
+| `MODEL` / `DYNAMICS` | body properties: `MASS`, `DENSITY`, `MASS_OFFSET`, `INERTIA`, `LIN_DAMP`, `ANG_DAMP`, `FAST_SPIN`, `USE_FAST_SPIN`, `PART`, `NO_COLLISION` |
+| `JOINT` | constraints: `POS1`/`POS2`, `PRIMARY_AXIS1/2`, `ORTHOGONAL_AXIS1/2`, cone (`CONE_TYPE`, `CONE_HALF_ANGLE_X/Y`, stiffness, damping), twist (`TWIST_TYPE`, `TWIST_HALF_ANGLE`, stiffness, damping), and `HIGH_LIMIT`/`LOW_LIMIT` with `LIMITED`, `MOTORIZED`, `DES_VEL`, `MAX_FORCE` |
+
+**The numbers.** Eight ragdoll assets across three `.ka` files — **251 geometries, 133 joints** — every one at
+`scale="0.02"`, which is the Unreal-units-to-metres factor this build uses for characters:
+
+| file | asset | mesh | geom | joints | bodies |
+|---|---|---|---:|---:|---:|
+| `HaakenRagdolls.ka` | `HaakenGrunt` | `haaken_grunt.PSK` | 37 | 18 | 19 |
+| `HaakenRagdolls.ka` | `HaakenWarrior` | `haaken_warrior.PSK` | 36 | 18 | 19 |
+| `SG1CrewRagdolls.ka` | `SG1Crew` | `sg1_crew_oneill.PSK` | 36 | 17 | 18 |
+| `SG1CrewRagdolls.ka` | `SG1CrewOld` | `sg1_crew_jackson.PSK` | 38 | 16 | 17 |
+| `SG1CrewRagdolls.ka` | `SG1CrewRagdoll` | `sg1_crew_oneill.PSK` | 36 | 15 | 16 |
+| `StargateRagdolls.ka` | `HumanRagdoll` | `goa_jaffa_proto.PSK` | 14 | 14 | 15 |
+| `StargateRagdolls.ka` | `JaffaLight` | `jaffa_jackal_light.PSK` | 36 | 17 | 18 |
+| `StargateRagdolls.ka` | `JaffaMedium` | `jaffa_jackal_medium.PSK` | 18 | 18 | 19 |
+
+**The `.kaw` is a workspace index with provenance.** `StargateRagdolls.kaw` lists three `<FILE>` entries, each a
+`<NAME>` (`.\HaakenRagdolls.ka`) and a `<RESOURCE_PATH>` naming the original authoring tree —
+`..\..\..\Art\Source PC\Global\Characters\Haaken\export\`. That is the only place in the shipment where an art
+source path survives, and it corroborates `docs/FORK.md`'s point that Karma is compiled into this build
+(`PHYS_Karma`, `UKarmaParams`, `XLevel->Ragdolls`) rather than being a bolt-on.
+
+**Limits.** The element vocabulary is read from the files; the *semantics* are inferred from element and attribute names
+plus the FORK reading, not from the native loader's body. `HumanRagdoll` at 14 geometries against the others' 36–38 is
+not explained — it may be a simplified proxy or an older asset — and nothing here establishes how the loader maps
+`GEOMETRY id` strings onto bone indices.
+
 ## What this means for Phase 4
 
 - The game modules are now 40/43 named from evidence; the rest are three functions with documented

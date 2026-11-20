@@ -706,6 +706,11 @@ shader-programs:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
 	@$(PYTHON) tools/shader-program-refs.py --xbe "$(GAME_DIR)/default.xbe" -o inventory/shader_programs.csv
 
+# The Karma ragdoll assets and what each one defines (PLAN 5.5; XML, counts only).
+ragdolls:
+	@test -d "$(GAME_DIR)/Resources" || { echo "no Resources/ under $(GAME_DIR)"; exit 2; }
+	@$(PYTHON) tools/ragdoll-census.py --dump "$(GAME_DIR)" -o inventory/ragdoll_assets.csv
+
 # The pixel dispatcher's id -> shader table, read from its own switch tables (Phase 6).
 pixel-shader-ids:
 	@test -f "$(GAME_DIR)/default.xbe" || { echo "no default.xbe under $(GAME_DIR)"; exit 2; }
