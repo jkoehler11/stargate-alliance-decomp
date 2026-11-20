@@ -181,6 +181,9 @@ under `--check` (which needs no dump): `tools/t3d_values.csv` per map, `inventor
 | strings in the `Level` trailer | **365** over 73 maps |
 | bytes after them | 2335 |
 | actors a `Level` names that the writer does not write | **0** |
+| native terrain record bytes after a `TerrainInfo` block | **12543159** |
+| -- exports whose record ends on a vertex-colour array | **66** of 66 |
+| -- vertex colours inside them | **313344** |
 
 | struct | properties | decoded | tagged | native | sizes (bytes:instances) | fields |
 |---|---:|---:|---:|---:|---|---|
@@ -503,7 +506,9 @@ element widths also reproduce the width census they replace (the array counts th
 they are counted per record): `ParticleColorScale` 14 bytes on 5,095 records and 17 on 411, `ParticleTimeScale`
 34/31/35/32/33 over 2,000 records, `SoundEmitter` 38/37/41/40 over 823.
 
-**The palette's tail starts with a discriminator, and it is not a tagged block.** All 33,509 payloads carry
+**The palette's tail starts with a discriminator, and it is not a tagged block.** *(The last section reads the
+serialiser: the "discriminator" is the colour record's last member, written after the colours, and the byte
+after it is the first record of the array.)* All 33,509 payloads carry
 bytes after the last colour (17,183,118, 2.4 per colour), and the first four of them are a dword in **2..10** on
 every one: 30,450 read 2, then 899 read 4, 728 read 10, 620 read 6, 606 read 3, 132 read 7, 41 read 9, 28 read 8
 and 5 read 5. The dword is not a count -- it does not divide the remainder -- and reading the tail as a tagged
@@ -601,3 +606,50 @@ trailer bytes of the `Level` export are still counted, not named; both are field
 or of whatever the level writes last, and neither has a serialiser read yet. The 1,415 `TerrainInfo` properties'
 `Layers` struct widths (206..227 bytes, tagged) are decoded field by field, but the terrain record after the
 block -- heights, sectors, the 10 KB to 2.6 MB -- is untouched.
+
+## The terrain record ends on its vertex colours, and the two unnamed fields are one read each (measured 2026-11-19)
+
+The three residues this page still counted were all fields of a serialiser, so this pass read the serialisers
+instead of the payloads. `make ghidra` keeps its project (`tools/ghidra/run-serialize.sh`), and
+`tools/ghidra/ghidra_scripts/ExportNew.java` -- added here, because `ExportAt.java` refuses an address that is
+not already a function -- disassembles, creates and exports one. Five bodies were read: `UStaticMeshInstance`'s
+`Serialize` (`0x0024b5f0`), its colour record (`0x001f7680`), the `TArray<FColor>` writer it shares with the
+terrain (`0x001f7df0`), `ATerrainInfo::Serialize` (`0x00273e80`), and `ULevel::Serialize` (`0x00161b70`).
+
+**The palette's "head" dword is the colour record's *last* member, written after the array.** `0x001f7680` is
+`Ar << TArray<FColor>` and then `FUN_00037110(Ar, rec+0x18)` -- a `Serialize(ptr, 4)` through the archive's raw
+slot. The array writer stores the count in the array itself (`arr+4`), so the dword after the colours is a
+second, separate member: it is **not** the colour count on any of the 33,509 payloads, and it equals the record
+count on 2,706 of them only where both are 2. It stays a small enum (2..10) with no reader located; what changed
+is its position in the frame, which the previous section's "starts with a discriminator" got backwards.
+
+**The `Level` trailer's five strings are the level's URL, and the rest is not written by this image.**
+`ULevel::Serialize` (`0x00161b70`) decompiles to `Super::Serialize`, one 12-byte member at `this+0x94`, a
+`FString`-shaped local, a dword at `this+0xf8`, sixteen dwords at `this+0x98`, and a `TArray` of 0x1c-byte
+elements at `this+0xe0` -- none of which is the `[count][count][indices][five strings][32 bytes]` frame the
+export carries. So the export was written by the editor that built the maps (not in `default.xbe`), and the
+32 bytes will not fall to a body read; `docs/UNKNOWNS.md` U32 now says so rather than pointing at the wrong
+function. What the strings *are* is settled by their values, identical in all 73 maps: `"unreal"`, `""`,
+`"Index.unr"`, `""`, `""` -- the five `FString`s of an `FURL` (`Protocol`, `Host`, `Portal`, `Map`, `Op`) --
+followed by the dword **7777** and the dword **1** on every map (the URL's port and its valid flag), then 24
+bytes: 16 zero bytes on all 73, and six that vary, whose middle four read as a `float` in 0..12,282.
+
+**The terrain record ends with the terrain's own vertex colours, so the class's tail is no longer untouched.**
+`ATerrainInfo::Serialize`'s last member (for a package version above `0x74`) is
+`FUN_001f7df0(Ar, this+0x1404)` -- **the same `TArray<FColor>` writer** the static-mesh colour table uses. So
+the record's last member is `[compact count][4 bytes per vertex]`, and the count is a vertex grid:
+**66 of 66** `TerrainInfo` exports close on it, **313,344** colours in total, in five grid sizes -- 16x16
+(`256`, 5 exports), 32x32 (`1024`, 21), 64x64 (`4096`, 13), 128x128 (`16384`, 1) and 256x256 (`65536`, 3). The
+writer prints the frame under each terrain actor (`// Terrain: 163,991 native byte(s), 16,384 vertex colour(s)`)
+and `inventory/t3d_coverage.csv` carries `terrain_bytes`, `terrain_colours`, `terrain_colour_exports` and the
+per-map grid list. Four gates hold it: every `TerrainInfo` closes, every count is a square, the set of grids is
+exactly the five above, and no record is shorter than the colours it names.
+
+**Files.** `tools/map-to-t3d.py` (`terrain_colours` and its five synthetic cases, the terrain comment line, the
+four census columns, `TERRAIN_GRIDS`/`TERRAIN_COLOUR_EXPORTS` and four gates), `inventory/t3d_coverage.csv`,
+`docs/T3D.md` (this section, and the palette sentence above corrected in place),
+`tools/ghidra/ghidra_scripts/ExportNew.java`.
+
+**Not in this PR.** The terrain record's *body* between the property block and the colour array -- heights,
+sectors, layers, the 10 KB to 2.6 MB -- is still counted only as `terrain_bytes`; the palette dword's reader
+(what consumes `rec+0x18`) is not located; the `Level` trailer's 24 bytes stay counted, not named.
