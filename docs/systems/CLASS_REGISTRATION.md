@@ -2265,6 +2265,83 @@ a class with no name in `inventory/xbe_class_table_names.csv` keeps its address 
 rules cannot confirm is `xEmitter`'s slot 18 (`0x00082ea0`), a body behind a jump table; the artifact
 counts it in `unconfirmed` and refuses to end a table on it.
 
+## Who declares a slot body: 212 of the 701, 423 an interface's method, and 23 bodies two classes share
+
+`inventory/gap_heads.csv` records **one** table per head: the first dword outside `.text` the read happened
+to resolve into a table slot. That is not a declaration. A class table's slot holds a pointer, and every
+descendant class that does not override the slot holds the same pointer, so a body a class declares appears
+at the same index in a whole subtree of tables -- the widest here is **489 tables for one body**. "Which
+table did the scan see first" therefore picks a table out of a subtree and calls the pick a name.
+
+`tools/class-slot-declarers.py` reads every slot of all 724 tables the project censuses (492 class tables,
+232 interface tables; `inventory/class_slot_declarers.csv`) and, for each of the 701 gap bodies that sits in
+a slot, walks the table's own class up its `extends` chain: **the declarer is the highest class whose slot
+at that index still holds the body.** A declaration is where the body enters the chain; every table below it
+is a copy. The verdicts are `declared` (the walk reaches the top), `bounded` (the walk stops at a class whose
+table the class map leaves unnamed, so the declarer is that class or one above it), `conflict` (two classes
+that are not one chain's ancestor and descendant both hold the body), `member` (a table a constructor stores
+into a member field, whose slots are the member's methods and never a class slot), `unnamed-table` (one of
+the class tables the class map leaves unnamed) and `interface` (interface tables only).
+
+**The control is the map's own names.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run
+through the same walk against its own class's table: 535 of the 538 agree. The 3 that do not are
+`GameEngine_vt33`, `GameEngine_vt54` and `GameEngine_vt55` -- Engine's table holds the same body at those
+slots, so the name belongs to a class that inherits it. The gap census's own 221 slot names are the second
+control: 206 name the declarer, and the 15 that do not are bodies the walk finds in conflict or in interface
+tables only, so they were never a declaration to name.
+
+<!-- generated:class-slot-declarers -->
+| what holds the body | bodies | share | name it earns |
+|---|---|---|---|
+| a class table, and the walk reaches the top of its chain | 205 | 29% | `<Class>_vt<slot>` |
+| a class table, and the walk stops at the unnamed class `Subsystem` | 7 | 1% | `<Class>_vt<slot>`, at or above that class |
+| two independent declarations of one body | 23 | 3% | none (a conflict) |
+| a member table (a constructor stores it into a field) | 40 | 6% | `<Class>_member_<field>_vt<slot>` |
+| a class table the class map leaves unnamed | 3 | 0% | none (no class) |
+| interface tables only | 423 | 60% | none (an interface name) |
+
+**The 701 bodies are 1565 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 919 sit-ins are class-table slots and 646 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
+
+**The control is the map's own names: 535 of 538 agree, 3 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 3 derived rows are `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
+
+**The gap census's own slot names survive the walk: 206 of 221 name the declarer, 0 name someone else, and 15 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
+
+**20 bodies sit at two or more slot indices**, which no single name can carry: `0x0001db40` (10/42), `0x0001f9b0` (10/11), `0x00033f60` (2/4), `0x00034200` (8/24), `0x0003f9b0` (1/37), `0x000bd360` (7/20/86), `0x000bd380` (6/20/91), `0x00167f50` (32/76). The index set is recorded per body; the verdict is `conflict` only when two *classes* both declare it -- an interface slot beside a class slot is one method seen through two tables, not two declarations.
+
+**The 23 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and whether the linker folded two identical functions or both were built from one stub is not decided here: `0x0001db40` at slots 10/42; `0x0003a530` at slot 39; `0x0003d520` at slot 34; `0x0003f9b0` at slots 1/37; `0x0004fb00` at slot 30; `0x000624e0` at slot 17.
+
+**What is left is a name, not a read.** 423 bodies are an interface's method -- the slot is real, the body is a method, and the interface has no name, which is the residue U40 already prices. 40 are a member's method with the owner and the field offset both known, so the name exists in the member convention and waits on the map add. 3 sit in a class table whose class the class map has not named, so the declaration is real and its class is the open question.
+
+<!-- /generated:class-slot-declarers -->
+
+**The 7 bounded bodies are Engine's slots 34, 35, 36, 37, 45, 46 and 47.** The walk holds at `Engine` and
+then stops at `Subsystem`, whose table is one of the class map's unnamed ones -- so those seven are Engine's
+or Subsystem's and no reading of the class map alone decides which. It is the same gap the rung census hit
+from the other side, where `Engine`'s own 56-slot table was the child that had been read wrong.
+
+**Six bodies the census left unnamed are a class's declared virtual.** `0x00034be0` (`ObjectExporterT3D`
+slot 11), `0x00036a80` (`TextBufferFactory` slot 31), `0x000bd380` (`LodMeshInstance` slot 91),
+`0x000fde10` (`XboxClient` slot 11), `0x001a5330` and `0x002c12a0` (`NetPendingLevel` slots 33 and 31) are
+in the 807 the gap census counts as named by nothing, because the first table a reference landed in was an
+*interface* table, which has no class to name them with. The declaration walk finds the class table that
+holds them too.
+
+**The 40 member-table bodies are an interface object's methods, and 31 of them carry a label.**
+`inventory/class_member_tables.csv` already labels 32 of the 49 member tables `<Class>_member_<field>`, and
+31 of these bodies sit in a labelled one -- `NullRenderDevice_member_0xb8` 6, `NetPendingLevel_member_0x28`
+5, `XHVVoiceSubsystem_member_0x2c` 4, and the `Linker_member_0xb8` and `Connection_member_0x28` families
+among the rest. The other 9 sit in a member table the label pass refused (no owner, or more than one field
+offset), so the method is real and its owner is the open question.
+
+**Three bodies sit in one of the class map's unnamed class tables** -- `0x00036a70` at `0x004d3af0` slot 30,
+`0x00077850` at `0x004d17a8` slot 36, `0x001eb1d0` at `0x00517860` slot 11 -- so the declaration is real and
+the class is the same unnamed-table residue the rung census reads.
+
+**What is left is a name, not a read: 423 bodies are an interface method.** The slot is real, the body is a
+method, and the interface has no name -- the residue U40 already prices with its 232 tables and their 214
+unnamed members. No map add is in this bundle: a row moves five artifacts, and the 212 declared names, the
+31 member names and the six census misses are the population that add would carry.
+
 ## Regenerating, continued
 
 The rung census and the interface families both read committed artifacts; the rung census also reads the
@@ -2274,6 +2351,10 @@ slot vectors:
         --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
     python3 tools/class-ladder-rungs.py --write-doc docs/systems/CLASS_REGISTRATION.md
 
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-slot-declarers.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-slot-declarers.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
     python3 tools/class-interface-families.py -o inventory
     python3 tools/class-interface-families.py --write-doc docs/systems/CLASS_REGISTRATION.md
 
@@ -2281,4 +2362,6 @@ slot vectors:
 copies its parent whole, a shorter child, slot 3 alone, and the control's arithmetic -- and on the families
 it is synthetic shape rows -- a named family, a member-held one, an anonymous one, a two-owner repeat and a
 singleton. `--check-doc` on both rebuilds their blocks from the committed CSVs with no dump. All four run
-in `make ci`.
+in `make ci`. `--check` on the declarer census is seven synthetic walks -- an inherited slot, an added
+slot, an override below the declarer, a sibling's own slot, an unnamed parent that stops the walk, and an
+unnamed table -- plus the artifact's own arithmetic against `gap_heads.csv` and the 538 map names.
