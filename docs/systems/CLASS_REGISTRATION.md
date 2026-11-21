@@ -476,9 +476,9 @@ class whose constructor writes it.
 |---|---|---|---|---|---|---|---|
 | named by the registration path (control) | 474 | 474 | -- | -- | -- | -- | -- |
 | nameless: a class ctor stores it | 38 | 2 | 9 | 27 | -- | -- | -- |
-| nameless: only bodies no class names store it | 212 | 176 | 2 | 11 | 20 | -- | 3 |
+| nameless: only bodies no class names store it | 212 | 176 | 2 | 11 | 20 | 3 | -- |
 
-**The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled and installed nowhere, and 3 into nothing a `C7 /0` store carries.
+**The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store of their own at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled rather than written into a field and 3 only into a global variable, where the object is a singleton in `.data`.
 
 **The member offsets are a class's own layout, not a shared constant**: `0x8` in 2 tables, `0x28` in 24 tables, `0x2c` in 8 tables, `0x38` in 1 table, `0x64` in 2 tables, `0xb8` in 6 tables, `0xc0` in 1 table, `0xd8` in 1 table, `0xf0` in 1 table, `0x108` in 1 table, `0x134` in 1 table, `0x14c` in 2 tables, `0x164` in 1 table, `0x17c` in 1 table, `0x194` in 1 table.** A field that holds a table pointer is a member of the class whose constructor stores it, so the table is that member's dispatch table and its slots are methods of the member, not of the class -- naming it `<Class>_vt<slot>` would claim a class slot the image does not have.
 

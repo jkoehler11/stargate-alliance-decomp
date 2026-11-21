@@ -82,7 +82,7 @@ def sweep_stores(text, text_va):
             sib = text[i + 2] if i + 2 < n else 0
             base_no, index = sib & 7, (sib >> 3) & 7
             if mod == 0:
-                ln = 7
+                ln = 10 if index == 4 and base_no == 5 else 7
             elif mod == 1:
                 ln = 8
             elif mod == 2:
@@ -104,7 +104,9 @@ def sweep_stores(text, text_va):
             else:
                 kind = "slot" if disp == 0 else "member"
         elif mod == 0 and rm == 5:
-            kind, base, disp, ln = "global", "", 0, 6
+            # `C7 05 <disp32> <imm32>` is ten bytes: a six-byte read takes the *displacement* for
+            # the table's address, so a store into a global is lost and its target is never a key
+            kind, base, disp, ln = "global", "", 0, 10
         elif mod == 0:
             kind, base, disp, ln = "slot", REGISTERS[rm], 0, 6
         elif mod == 1:
@@ -232,17 +234,23 @@ def render(rows):
     nameless = [r for r in rows if r["population"] in ("bounded", "plain-only", "no-installer")]
     slot = [r for r in nameless if r["verdict"] in ("vtable-slot", "vtable-slot+member")]
     mem = [r for r in nameless if r["verdict"] in ("member-field", "vtable-slot+member")]
-    dead = [r for r in nameless if r["verdict"] in ("frame-only", "no-store")]
+    dead = [r for r in nameless if r["verdict"] in ("frame-only", "no-store", "global")]
+    dead_frame = [r for r in dead if r["verdict"] == "frame-only"]
+    dead_global = [r for r in dead if r["verdict"] == "global"]
+    dead_none = [r for r in dead if r["verdict"] == "no-store"]
+    tail = ""
+    if dead_global:
+        tail += " and %d only into a global variable, where the object is a singleton in `.data`" % len(dead_global)
+    if dead_none:
+        tail += " and %d into nothing a `C7 /0` store carries" % len(dead_none)
     lines.append("**The %d named tables are the control: %d of them are written into the object's own slot "
                  "and none of them into a member.** A class's dispatch table is the pointer its installer "
                  "writes at `[reg]`. Of the %d tables no registration names, **%d are written into an "
-                 "object slot at least once, %d into a member field, and %d have no object-field store at "
-                 "all** -- %d of those only into a stack slot, where the table's address is passed or "
-                 "spilled and installed nowhere, and %d into nothing a `C7 /0` store carries."
+                 "object slot at least once, %d into a member field, and %d have no object-field store of "
+                 "their own at all** -- %d of those only into a stack slot, where the table's address is "
+                 "passed or spilled rather than written into a field%s."
                  % (len(named), sum(1 for r in named if "member" not in r["verdict"]), len(nameless),
-                    len(slot), len(mem), len(dead),
-                    sum(1 for r in dead if r["verdict"] == "frame-only"),
-                    sum(1 for r in dead if r["verdict"] == "no-store")))
+                    len(slot), len(mem), len(dead), len(dead_frame), tail))
     lines.append("")
 
     offsets = collections.defaultdict(set)
@@ -315,7 +323,7 @@ def self_check():
     text[0x90:0x9A] = b"\xc7\x86\xb8\x00\x00\x00" + struct.pack("<I", 0x9800)  # mov [esi+0xb8],0x9800
     text[0x40:0x46] = b"\xc7\x04\x24" + struct.pack("<I", 0x9300)          # mov [esp],0x9300
     text[0x50:0x57] = b"\xc7\x04\x24" + struct.pack("<I", 0x9400)          # frame only
-    text[0x60:0x66] = b"\xc7\x05" + struct.pack("<I", 0x9500)             # mov ds:0x9500
+    text[0x58:0x62] = b"\xc7\x05" + struct.pack("<I", 0x5fe168) + struct.pack("<I", 0x9500)  # mov ds:0x5fe168,0x9500
     text[0x70:0x77] = b"\xc7\x44\x24\x08" + struct.pack("<I", 0x9600)      # SIB, [esp+8]
     text[0x80:0x87] = b"\xc7\x04\xc8" + struct.pack("<I", 0x9700)          # SIB with index: indexed
     sites = sweep_stores(bytes(text), text_va)
@@ -326,6 +334,8 @@ def self_check():
             0x9600: ("frame", 8), 0x9700: ("indexed", 0)}
     if got != want:
         bad.append("the store forms are misread: %r" % (got,))
+    if 0x5fe168 in got:
+        bad.append("a global store read its displacement as the table's address")
     if classify([s for s in sites if s[1] == 0x9000])[0] != "vtable-slot":
         bad.append("a slot store is vtable-slot")
     if classify([s for s in sites if s[1] == 0x9200])[0] != "member-field":

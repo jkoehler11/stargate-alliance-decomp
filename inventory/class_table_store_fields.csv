@@ -468,8 +468,8 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x00517468,9,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0051748c,2,,plain-only,4,4,,0,0,0,,vtable-slot,4 store site(s): slot=4
 0x005174a0,2,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
-0x005174a8,18,,plain-only,0,0,,0,0,0,,no-store,0 store site(s): none
-0x00517588,18,,plain-only,0,0,,0,0,0,,no-store,0 store site(s): none
+0x005174a8,18,,plain-only,2,0,,0,2,0,,global,2 store site(s): global=2
+0x00517588,18,,plain-only,2,0,,0,2,0,,global,2 store site(s): global=2
 0x00517778,9,,plain-only,4,4,,0,0,0,,vtable-slot,4 store site(s): slot=4
 0x00517860,30,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x005178d8,32,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
@@ -677,7 +677,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x005396c8,59,GUIMultiColumnList,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x005397b8,63,GUIMultiColumnListBox,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x00539988,37,UIXInteraction,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x0053a194,5,,plain-only,0,0,,0,0,0,,no-store,0 store site(s): none
+0x0053a194,5,,plain-only,1,0,,0,1,0,,global,1 store site(s): global=1
 0x0053b168,30,XboxLiveInterface,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0053d58c,1,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0053d590,4,,plain-only,18,18,,0,0,0,,vtable-slot,18 store site(s): slot=18
@@ -698,11 +698,11 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x0053f6d8,5,,plain-only,7,7,,0,0,0,,vtable-slot,7 store site(s): slot=7
 0x0053f6ec,5,,plain-only,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
 0x0053f700,5,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
-0x0053f718,21,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x0053f718,21,,plain-only,3,2,,0,1,0,,vtable-slot,"3 store site(s): global=1, slot=2"
 0x0053f770,21,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0053f7c4,5,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
-0x0053f7f0,6,,plain-only,2,0,0x8,0,0,0,,member-field,2 store site(s): member=2
-0x0053f808,21,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x0053f7f0,6,,plain-only,3,0,0x8,0,1,0,,member-field,"3 store site(s): global=1, member=2"
+0x0053f808,21,,plain-only,3,2,,0,1,0,,vtable-slot,"3 store site(s): global=1, slot=2"
 0x0053f85c,5,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0053f874,5,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0053f888,5,,plain-only,2,0,0x8,0,0,0,,member-field,2 store site(s): member=2
