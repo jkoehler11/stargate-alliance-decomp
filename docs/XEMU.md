@@ -4384,6 +4384,14 @@ bare name, while the sound layer is *handed* an absolute, lowercase `d:\MUSIC\en
 `docs/MUSIC.md` records statically for the 1,923 streamed WAVs, now confirmed at run time from a call site inside the
 DirectSound code rather than from a literal.
 
+**A third caller, and an unresolved name.** A longer window adds one more site: `0x0002d8f2` (game code, not XAPI) asks
+for **`Z:\chevguy4.tm`**. The name has a source — `Sounds/Menu.uax` carries sound objects `chevguy1` … `chevguy7`, and the
+same identifiers appear in `Maps/MainMenu.unr` — but neither the `Z:` drive nor the `.tm` suffix is a literal anywhere in
+`default.xbe` (0 occurrences each), so the path is assembled at run time or carried in data. On Xbox `Z:` is the cache
+partition, which makes extract-to-cache-then-stream the obvious reading, and **it stays a reading**: the tracer records
+argument 1, and whether this open is a write (an extraction) or a read (a stream) is argument 2, which was not recorded.
+Naming the sound is the useful part; the direction is open.
+
 **Limits.** Arming needs a user-mode sample, so everything opened before roughly twenty seconds — the config files and the
 first packages — is outside this measurement; the trace says nothing about boot ordering. **A count here is not a rate**:
 each stop costs a step plus a re-arm, so the instrument throttles the guest it measures — 13 `.int` opens in a throttled
