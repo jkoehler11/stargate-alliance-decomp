@@ -434,15 +434,15 @@ packages are the six the image links: `Engine` 39, `Core` 19, `IpDrv` 5, `XboxAu
 <!-- generated:native-class-packages -->
 | the 68 native classes' package | classes | `<Class>_vt<slot>` rows |
 | --- | --- | --- |
-| `Engine` | 39 | 134 |
-| `Core` | 19 | 98 |
-| `IpDrv` | 5 | 15 |
-| `XboxAudio` | 2 | 4 |
-| `XboxDrv` | 2 | 13 |
+| `Engine` | 46 | 179 |
+| `Core` | 23 | 120 |
+| `IpDrv` | 5 | 16 |
+| `XboxAudio` | 2 | 7 |
+| `XboxDrv` | 2 | 24 |
 | `D3DDrv` | 1 | 9 |
-| **total** | **68** | **273** |
+| **total** | **79** | **355** |
 
-68 class(es) resolve, 0 conflict, 0 land in no attributed body, 0 have no site. The rule is the registration site's body, and unanimity across a class's sites is the check.
+79 class(es) resolve, 0 conflict, 0 land in no attributed body, 15 have no site. The rule is the registration site's body, and unanimity across a class's sites is the check.
 <!-- /generated:native-class-packages -->
 
 ## Status

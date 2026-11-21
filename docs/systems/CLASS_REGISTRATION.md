@@ -1924,64 +1924,64 @@ corroborates -- it is the same reference, one level out.
 | `0x000f9990` | 469 | Client | Client | 5 string site(s) |
 | `0x0011f0e0` | 1499 | Skipped '%s' | %s\%s-%i.uxx | 5 string site(s) |
 | `0x0002e690` | 624 | PAUSESOUNDS | PAUSESOUNDS | 4 string site(s) |
-| `0x0032cde0` | 1397 | [XBOX-MEM] %8d total KByte of virtual me | [XBOX-MEM] %8d percent of memory is in u | 4 string site(s) |
 | `0x0002d600` | 299 | XBoxAudio | MusicVolume | 3 string site(s) |
 | `0x00192730` | 836 | Reviewing Paths | This pickup should have a PickupBase | 3 string site(s) |
-| `0x00033490` | 1083 | UNMUTE | whisper | 2 string site(s) |
+| `0x0001fa30` | 154 | Arctor<BYTE>(Linear)==LINEAR_SEEK | ..\..\Core\Inc\FFileManagerLinear.h | 2 string site(s) |
 | `0x00035f10` | 222 | InContextCommand | StrProperty0 | 2 string site(s) |
-| `0x0011b8b0` | 1064 | FLAGS= | DemoFileMissing | 2 string site(s) |
+| `0x0007c02f` | 560 | %s::ImportText: Illegal or missing key n | %s::ImportText: Incomplete parenthesised | 2 string site(s) |
 | `0x0011ea30` | 605 | Receiving package '%s' | Engine | 2 string site(s) |
 | `0x001d3270` | 436 | NumItems | Config%d | 2 string site(s) |
+| `0x00295d30` | 175 |      Title: %s |      Album: %s | 2 string site(s) |
 | `0x002ce490` | 3123 | RI_AuthenticationFailed | RI_BannedClient | 2 string site(s) |
 | `0x002d26b0` | 250 | Client | LogMaxConnPerIPPerMin | 2 string site(s) |
 | `0x002d4100` | 201 | UTcpNetDriverXbox | bUseVDP | 2 string site(s) |
 | `0x003e3050` | 879 | line %d, char %d: Expected int, found %s | line %d, char %d: found garbage after da | 2 string site(s) |
+| `0x00012410` | 165 | [SDS] - Launch Main Exiting Loop | 1 string site(s) |
 | `0x0001f800` | 115 | LinearFileStillOpen | 1 string site(s) |
 | `0x00026be0` | 75 | InPos>=0 && InPos<=Size | 1 string site(s) |
-| `0x00033970` | 941 | - Communicator inserted | 1 string site(s) |
-| `0x00053920` | 94 | Bad name index when loading from file %i | 1 string site(s) |
+| `0x0007e8c0` | 49 | Aborted! | 1 string site(s) |
 | `0x000adb00` | 173 | (Karma):  | 1 string site(s) |
-| `0x0010d910` | 142 | GETLOSS | 1 string site(s) |
 | `0x00182880` | 85 | Engine | 1 string site(s) |
 | `0x00194ca0` | 85 | Engine | 1 string site(s) |
 | `0x00194d00` | 85 | Engine | 1 string site(s) |
 | `0x00194dc0` | 85 | Engine | 1 string site(s) |
-| `0x001a53a0` | 42 | RequestDenied | 1 string site(s) |
 | `0x001b1690` | 3870 | %s flew out of the world! | 1 string site(s) |
 | `0x001bff70` | 174 | Cast of %s to %s failed | 1 string site(s) |
 | `0x001d2620` | 143 | Engine | 1 string site(s) |
 | `0x00223bb0` | 107 | GetBoneRotation: Bone [%s] not found in  | 1 string site(s) |
 | `0x002b5880` | 244 | invalid stencil op | 1 string site(s) |
+| `0x002b96b0` | 160 | Engine | 1 string site(s) |
+| `0x002b9a10` | 65 | CREATING COPY TARGET - RETURNING | 1 string site(s) |
 | `0x002c1890` | 195 | Settings | 1 string site(s) |
 | `0x002c62c0` | 387 | !!Send() got SOCKET_ERROR %d for %s | 1 string site(s) |
 | `0x002d3790` | 56 | UnregisterInfo: XNetUnregisterKey(HostKe | 1 string site(s) |
 | `0x003081c0` | 239 | UnregisterPlayer failed with code 0x%x | 1 string site(s) |
 | `0x00318f90` | 879 | Engine | 1 string site(s) |
 | `0x00328890` | 606 | SessionStartTask::Finsh: ExchangeKey: %s | 1 string site(s) |
+| `0x00017630` | 38 | Engine_UnStaticMesh | a call into a named body |
 | `0x0001bf10` | 1490 | Core_UnTemplate | a call into a named body |
 | `0x0002a870` | 46 | XboxAudio_FindSlotByKey | a call into a named body |
 | `0x0002a8a0` | 49 | XboxAudio_FindSlotByKey | a call into a named body |
 | `0x0002a8e0` | 113 | XboxAudio_FindSlotByKey | a call into a named body |
 | `0x0002afb0` | 258 | XboxAudio_ApplyBufferParams XboxAudio_HasPendingKey | a call into a named body |
+| `0x0002b570` | 67 | XboxAudio_CloseSoundDevice | a call into a named body |
 | `0x0002b7f0` | 202 | XboxAudio_PollDeviceChanges | a call into a named body |
 | `0x0002bc20` | 86 | XboxAudio_FindSlotByKey XboxAudio_ApplyBufferParams | a call into a named body |
 | `0x0002bc80` | 86 | XboxAudio_FindSlotByKey XboxAudio_ApplyBufferParams | a call into a named body |
+| `0x00034a30` | 125 | Core_UnObj | a call into a named body |
 | `0x00034be0` | 43 | Core_UnObj | a call into a named body |
 | `0x00038ce0` | 65 | Core_UnObj | a call into a named body |
 | `0x00059730` | 177 | Core_UnTemplate | a call into a named body |
 | `0x000679c0` | 188 | Core_UnObjBas Core_UnObj | a call into a named body |
-| `0x0006cef0` | 54 | Core_UnObj | a call into a named body |
-| `0x00074dc0` | 70 | Core_UnClass | a call into a named body |
-| `0x000b3fa0` | 18 | Core_UnTemplate | a call into a named body |
-| `0x000b4fa0` | 349 | Core_UnTemplate | a call into a named body |
-| `0x000b9cb0` | 160 | Core_UnTemplate | a call into a named body |
-| ... | | 27 more | |
+| `0x00068a40` | 128 | Core_UnObj | a call into a named body |
+| `0x00068ac0` | 95 | Core_UnTemplate | a call into a named body |
+| ... | | 47 more | |
 
-**1450 heads decode as 1248 bodies and 202 islands; of the bodies 0 hold an assert path, 43 a printable string and 456 a call into a body the map names, and 1161 hold none of the three.**
+**2506 heads decode as 2188 bodies and 318 islands; of the bodies 0 hold an assert path, 43 a printable string and 754 a call into a body the map names, and 2081 hold none of the three.**
 
-**Control: 1337 of the map's 16375 bodies hold an assert site, and 1283 of the 1322 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 39 reference no assert path at all -- so the name is that reference read one level out.**
+**Control: 1337 of the map's 16618 bodies hold an assert site, and 1283 of the 1329 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 46 reference no assert path at all -- so the name is that reference read one level out.**
 
-**The owed interface representatives' slots hold 150 of these heads and only 109 are bodies -- 36 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 41; of the 109 bodies 0 hold an assert path, 2 a string and 61 a call into a named body, and the per-body read cannot name an interface (U40).**
+**The owed interface representatives' slots hold 150 of these heads and only 108 are bodies -- 33 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 42; of the 108 bodies 0 hold an assert path, 2 a string and 61 a call into a named body, and the per-body read cannot name an interface (U40).**
 <!-- /generated:gap-body-files -->
 
 **The one gap head the channel named is now a map row.** `0x0007e3b0` (65 bytes) holds two push sites of
@@ -2265,7 +2265,7 @@ a class with no name in `inventory/xbe_class_table_names.csv` keeps its address 
 rules cannot confirm is `xEmitter`'s slot 18 (`0x00082ea0`), a body behind a jump table; the artifact
 counts it in `unconfirmed` and refuses to end a table on it.
 
-## Who declares a slot body: 224 of the 701, 423 an interface's method, and 4 bodies two classes share
+## Who declares a slot body: 243 of the 701 are map rows now, 423 an interface's method, and 4 bodies two classes share
 
 `inventory/gap_heads.csv` records **one** table per head: the first dword outside `.text` the read happened
 to resolve into a table slot. That is not a declaration. A class table's slot holds a pointer, and every
@@ -2274,8 +2274,8 @@ at the same index in a whole subtree of tables -- the widest here is **489 table
 table did the scan see first" therefore picks a table out of a subtree and calls the pick a name.
 
 `tools/class-slot-declarers.py` reads every slot of all 724 tables the project censuses (492 class tables,
-232 interface tables; `inventory/class_slot_declarers.csv`) and, for each of the 701 gap bodies that sits in
-a slot, walks up the **measured parent edges** (`inventory/class_table_parent_edges.csv`, 493 edges):
+232 interface tables; `inventory/class_slot_declarers.csv`) and, for each gap body that sits in a slot --
+701 when this census was first taken, 459 after the add below -- walks up the **measured parent edges** (`inventory/class_table_parent_edges.csv`, 493 edges):
 **the declarer is the highest table whose slot at that index still holds the body.** A declaration is where
 the body enters the chain; every table below it is a copy. The edge is the table address, not the class name,
 and that matters twice: a parent table no registration named still has an extent, so a slot past that extent
@@ -2290,31 +2290,43 @@ reaches the sit-in) and `interface` (interface tables only).
 through the same walk against its own class's table: **531 of the 538 agree, 7 name a class that inherits the
 body**, and none is unresolved. The seven are `GameEngine_vt33`, `_vt54`, `_vt55` (Engine's table holds the
 same body at those slots), `XboxViewport_vt51` and `_vt54` (Viewport's), `TcpipConnection_vt39`
-(NetConnection's) and `StrProperty_vt41` (an unnamed table, `0x004d17a8`). The gap census's own 221 slot
-names are the second control: **219 name the declarer, 0 disagree**, and the 2 that have no declarer are a
-conflict and an unnamed table -- never a name the walk contradicts.
+(NetConnection's) and `StrProperty_vt41` (an unnamed table, `0x004d17a8`). The control excludes the
+artifact's own `add` rows -- a name this walk gave is not evidence for this walk. The gap census's own slot
+names are the second control, and after the add they read **13 of 15**: the heads an add leaves behind are
+the ones whose first-hit proposal can still be tested, and the 2 that disagree are a conflict and an unnamed
+table -- never a name the walk contradicts.
+
+**A name belongs to one address, so the 7 are recorded and not renamed.** A `<Class>_vt<slot>` row in the map
+dates from the table the pointer was found in, and where that class only inherits the body the name is a
+holder's. Renaming it to the declarer would put a second name on a name the declarer's own table already
+implies, and the map has one row per address: the ten bytes that make `GameEngine_vt33` are Engine's slot 33,
+and there is no other address for `Engine_vt33` to name. The rule this census ships is therefore directional:
+**an `add` names the declarer, a row the map already had keeps the holder's name, and `--check` refuses an
+add whose name is not the declarer's** (or, for a member body, a label the member table records). The 7 are
+a reading of the map's own convention, and the artifact carries them so the difference is visible rather
+than inferred.
 
 <!-- generated:class-slot-declarers -->
 | what holds the body | bodies | share | name it earns |
 |---|---|---|---|
-| a class table, and the walk reaches the top of its chain | 224 | 32% | `<Class>_vt<slot>` |
-| a class table no registration names, which the walk reaches by its parent edge | 7 | 1% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
+| a class table, and the walk reaches the top of its chain | 13 | 3% | `<Class>_vt<slot>` |
+| a class table no registration names, which the walk reaches by its parent edge | 7 | 2% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
 | two independent declarations of one body | 4 | 1% | none (a conflict) |
-| a member table (a constructor stores it into a field) | 40 | 6% | `<Class>_member_<field>_vt<slot>` |
-| a class table the class map leaves unnamed | 3 | 0% | none (no class) |
-| interface tables only | 423 | 60% | none (an interface name) |
+| a member table (a constructor stores it into a field) | 8 | 2% | `<Class>_member_<field>_vt<slot>` |
+| a class table the class map leaves unnamed | 3 | 1% | none (no class) |
+| interface tables only | 423 | 92% | none (an interface name) |
 
-**The 701 bodies are 1565 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 919 sit-ins are class-table slots and 646 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
+**The 458 bodies are 1122 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 541 sit-ins are class-table slots and 581 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
 
 **The control is the map's own names: 531 of 538 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
 
-**The gap census's own slot names survive the walk: 219 of 221 name the declarer, 0 name someone else, and 2 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
+**The gap census's own slot names survive the walk: 13 of 15 name the declarer, 0 name someone else, and 2 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
 
-**20 bodies sit at two or more slot indices**, which no single name can carry: `0x0001db40` (10/42), `0x0001f9b0` (10/11), `0x00033f60` (2/4), `0x00034200` (8/24), `0x0003f9b0` (1/37), `0x000bd360` (7/20/86), `0x000bd380` (6/20/91), `0x00167f50` (32/76). The index set is recorded per body; the verdict is `conflict` only when two *classes* both declare it -- an interface slot beside a class slot is one method seen through two tables, not two declarations.
+**11 bodies sit at two or more slot indices**, which no single name can carry: `0x0001f9b0` (10/11), `0x00179930` (1/2), `0x00179b00` (7/8), `0x0017a7d0` (1/7), `0x001ddf20` (2/3/8), `0x001df4e0` (1/2/3), `0x001df570` (1/2), `0x001ec800` (7/8/30). The index set is recorded per body; the verdict is `conflict` only when two *classes* both declare it -- an interface slot beside a class slot is one method seen through two tables, not two declarations.
 
 **The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and whether the linker folded two identical functions or both were built from one stub is not decided here: `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
-**What is left is a name, not a read.** 423 bodies are an interface's method -- the slot is real, the body is a method, and the interface has no name, which is the residue U40 already prices. 40 are a member's method with the owner and the field offset both known, so the name exists in the member convention and waits on the map add. 3 sit in a class table whose class the class map has not named, so the declaration is real and its class is the open question.
+**What the walk did with its names.** 243 of these bodies are map rows now -- 211 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 25433 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 13 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 423 are an interface's method, and 3 sit in a class table whose class the class map has not named.
 
 <!-- /generated:class-slot-declarers -->
 
@@ -2330,14 +2342,17 @@ the class is the unnamed-table residue the rung census reads from the other side
 (`LodMeshInstance` slot 91), `0x00167f50` (`MeshInstance` slot 76) and `0x002c12a0` (`NetPendingLevel` slot
 31) carry pointers and a slot, but their first-hit table is an *interface* or a *member* table, which has no
 class to name them with, so `gap_heads.csv` leaves `slot_class` empty. A class table holds them at the same
-index -- the first-hit channel recorded one of the tables and it was the wrong one.
+index -- the first-hit channel recorded one of the tables and it was the wrong one -- and the walk named all
+five: they are `LodMeshInstance_vt42`, `MeshInstance_vt86`, `LodMeshInstance_vt91`, `MeshInstance_vt76` and
+`NetPendingLevel_vt31` in the map now.
 
-**The 40 member-table bodies are an interface object's methods, and 31 of them carry a label.**
-`inventory/class_member_tables.csv` labels 32 of the 49 member tables `<Class>_member_<field>`, and 31 of
+**The 40 member-table bodies are an interface object's methods, and 32 of them are map rows now.**
+`inventory/class_member_tables.csv` labels 32 of the 49 member tables `<Class>_member_<field>`, and 32 of
 these bodies sit in a labelled one -- `NullRenderDevice_member_0xb8` 6, `NetPendingLevel_member_0x28` 5,
 `XHVVoiceSubsystem_member_0x2c` 4, the `Linker_member_0xb8` and `Connection_member_0x28` families among the
-rest. The other 9 sit in a member table the label pass refused (no owner, or more than one field offset), so
-the method is real and its owner is the open question.
+rest -- so each is named `<member>_vt<slot>`, which says it is that member's method and not a class's slot.
+The other 8 sit in a member table the label pass refused (no owner, or more than one field offset), so the
+method is real and its owner is the open question.
 
 **The 4 conflicts are one body two independent classes both declare**: `0x000624e0` (`Object` slot 17 and
 `GameInfo` slot 17), `0x001b9040` and `0x001b9060` (`PSDistortionBaseMaterial` and `PSBlurMaterial`, slots
@@ -2349,13 +2364,25 @@ which the artifact records per body.
 **The 701 slot bodies and the 807 bodies named by nothing do not overlap, and that is structural.** A slot
 is a dword reference, so a body in a table slot is named by the pointer channel by construction; the 807 of
 the 2,749 decoded bodies that nothing names have no reference at all (no dword outside `.text`, no `push`, no
-call or jump). The two residues are therefore separate work: this page's 224 declared names are an add the
-map's slot route could carry, and the 807 need a channel that does not exist yet.
+call or jump). The two residues are therefore separate work: 243 of the slot bodies are map rows now (below),
+and the 807 need a channel that does not exist yet.
 
-**No map add is in this bundle.** The 224 declared names (21,613 bytes), the 31 labelled member methods and
-the five census misses are the population an add would carry, and a row moves five artifacts; the 423
-interface-only bodies need an interface name first, so the 26 gap-head representatives' add is blocked on
-that name and not on a read.
+**The add is 243 rows, and the walk is what picks them.** `--apply-adds` writes one `add` row per body into
+`symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, named by its
+**declarer** and never by the first table that held the pointer: **211 declared names, 19,360 bytes over 119
+classes, plus 32 member methods, 6,073 bytes** -- 25,433 bytes in all. The map goes **16,375 -> 16,618
+functions and 4,190,491 -> 4,215,924 bytes of code**; the gap census 2,850 -> **2,607 heads**; this census 701
+-> **459 heads**, the verdicts falling to 13 declared, 8 member, 7 declared-unnamed, 4 conflict, 3
+unnamed-table and 423 interface. Each add row stays in the artifact as its receipt -- the body is no longer a
+gap head, so the row is the only record of what it was called -- and `--check` (no dump, no Ghidra) requires
+every receipt to be a map row at that address with that name, named after its declarer, and no longer a head.
+
+**What the add refuses is a measured list, not a remainder.** 13 of the 224 declared bodies earn a name the
+decode cannot carry -- every one has an empty `size` in `gap_heads.csv`, because its decode never closed on a
+`ret`, `ret imm`, `jmp` or `jmp-ind`, and an `add` with a guessed size moves every later row's address. The 4
+conflicts, the 3 unnamed-table slots and the 7 declared-unnamed bodies need a class or a linker reading first.
+So 243 of the 256 bodies this walk names are rows now, and the 13 that are not are the ones the image has not
+decoded yet.
 
 ## Regenerating, continued
 
@@ -2372,6 +2399,16 @@ slot vectors:
 
     python3 tools/class-interface-families.py -o inventory
     python3 tools/class-interface-families.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+The add is a three-step repair, because a row moves the map and every artifact that counts it:
+
+    python3 tools/class-slot-declarers.py --xbe ... --emit-adds > /tmp/adds.csv   # what it would carry
+    python3 tools/class-slot-declarers.py --xbe ... --apply-adds                 # boundaries + overrides + receipt
+    make boundaries && make symbols            # the map
+    make gap-heads && make gap-body-files      # the censuses that shrink by what the add took
+    make module-attribution && python3 tools/native-summary.py --symbols symbols/xbox_functions.csv \
+        -o inventory/ && make module-split && make native-class-packages && make status
+    make artifact-hashes && make inventory-index
 
 `--check` on the rung census is synthetic tables -- a child that replaces one slot and adds one, one that
 copies its parent whole, a shorter child, slot 3 alone, and the control's arithmetic -- and on the families

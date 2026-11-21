@@ -16688,3 +16688,45 @@ sequence.
 - **Not in this bundle.** No map rows: the 224 declared names, the 31 labelled member methods and the five
   census misses are the population an add would carry, and a row moves five artifacts. The 7 names that a
   holder carries are a naming-rule question for that add, not a rename here.
+
+### Execution notes (2026-11-21, the walk's 242 names are map rows, and an add names the declarer)
+
+- **Task.** The previous bundle's closing question: the 224 declared names, the 31 labelled member methods and
+  the five census misses were "the population an add would carry", and a row moves five artifacts. This
+  bundle lands the add, and the walk -- not the gap census's first-hit proposal -- is what picks each row.
+- **The add.** `--emit-adds` / `--apply-adds` on `tools/class-slot-declarers.py` write one `add` row per body
+  into `symbols/xbe_boundaries.csv` and the `xbe_overrides.csv` creation row `XbePost.java` needs, named
+  after the **declarer** the parent-edge walk reaches (or, for a member body, the member label the constructor
+  stored into a field): **211 declared names, 19,360 bytes over 119 classes, plus 32 member methods, 6,073
+  bytes -- 25,433 bytes**. The map goes **16,375 -> 16,618 functions, 4,190,491 -> 4,215,924 bytes of code**;
+  the gap census 2,850 -> **2,607 heads**; the declarer census 701 -> **459 heads** (13 declared, 8 member, 7
+  declared-unnamed, 4 conflict, 3 unnamed-table, 423 interface).
+- **The receipt.** A body that is added stops being a gap head, so the artifact keeps one `row=add` row per
+  body carrying the address, the name, the declarer, the slot and the evidence. `--check` (no dump) requires
+  every receipt to be a map row at that address with that name, named after its declarer, and no longer a gap
+  head -- so a Ghidra re-import that drops a row is red instead of silently reverting the add. The control
+  excludes these rows: a name this walk gave is not evidence for this walk, which is why the 538-row control
+  still reads 531 agree / 7 derived / 0 unresolved.
+- **The naming rule for the 7.** A `<Class>_vt<slot>` row the map already had dates from the table the
+  pointer was found in; where that class only inherits the body the name is a holder's (`GameEngine_vt33` is
+  Engine's slot 33, `StrProperty_vt41` an unnamed table's). Renaming them would put a second name on a name
+  the declarer's table already implies, and the map is one row per address, so the rule ships directional: an
+  `add` names the declarer, a row the map already had keeps the holder's name, and `--check` refuses an add
+  named after anybody else. The 7 stay visible in the control's `derived` verdict.
+- **What it refuses, measured.** 13 of the 224 declared bodies have an empty `size` -- their decode never
+  closes on a `ret`/`ret imm`/`jmp`/`jmp-ind` -- and an `add` with a guessed size moves every later row's
+  address; 8 member methods sit in a table the label pass refused; the 4 conflicts, 3 unnamed-table slots and
+  7 declared-unnamed bodies need a class or a linker reading first. 243 of the 256 named bodies are rows now.
+- **Files.** `tools/class-slot-declarers.py` (the emitter, the receipt carry, the control exclusion, the
+  check), `symbols/xbe_boundaries.csv` and `symbols/xbe_overrides.csv` (+242 each), `symbols/xbox.map`,
+  `symbols/xbox_functions.csv`, `inventory/class_slot_declarers.csv` (242 add rows, census fields),
+  `inventory/gap_heads.csv`, `inventory/gap_body_files.csv`, `inventory/function_modules.csv`,
+  `inventory/function_module_attribution.csv`, `inventory/module_export_plan.csv`,
+  `inventory/xbe_functions_by_module.csv`, `inventory/native_class_packages.csv`,
+  `inventory/artifact_hashes.csv`, `docs/NATIVE.md`, `docs/NATIVE_CLASS_TREE.md`, `docs/STATUS.md`,
+  `docs/SYMBOLS.md`, `docs/ARTIFACTS.md`, `README.md`, `docs/systems/CLASS_REGISTRATION.md`, this note.
+- **Gates.** `make ci` green (278 checks, 1 skipped for the absent dump); artifacts deterministic on a second
+  run; `--check` and `--check-doc` dump-free; no boot, no xemu, no Ghidra.
+- **Not in this bundle.** The 423 interface-only bodies (the name has to come from the interface, which is
+  U40's 26 gap-head representatives), the 13 undecoded declarations, the 4 conflicts' linker reading, and the
+  807 bodies no channel names.
