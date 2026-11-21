@@ -1,27 +1,27 @@
 table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_classes,caller_forms,place,depth,verdict,evidence
 0x004c7800,21,anonymous,0x004c7800,3,1,,,,,,,unnamed-holder,3 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x004c7854,2,member,0x004c7854,3,3,ControlChannel TextBuffer,0x00110120,PackageMapLevel,ctor:1,?,1,ctor-holder,3 store site(s) in 3 body(ies); holder class ControlChannel TextBuffer; caller class PackageMapLevel; ecx ?
+0x004c7854,2,member,0x004c7854,3,3,ControlChannel TextBuffer,0x000f9ce0 0x0010ffa0 0x00110120,NetConnection PackageMapLevel Viewport,ctor:3,?,1,ctor-holder,3 store site(s) in 3 body(ies); holder class ControlChannel TextBuffer; caller class NetConnection PackageMapLevel Viewport; ecx ?
 0x004c7860,22,member,0x004c7860,3,2,,,,,,,unnamed-holder,3 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x004c78b8,1,member,0x004c78b8,1,1,,0x00031e00 0x0007ffa0 0x00127230 0x0014e7f0,AudioSubsystem Engine Input new,dtor:4,,2,dtor-caller,1 store site(s) in 1 body(ies); holder class -; caller class AudioSubsystem Engine Input new; ecx -
+0x004c78b8,1,member,0x004c78b8,1,1,Subsystem,0x00025f30 0x00031e00 0x000321f0 0x0007ffa0 0x000bd030 0x00127230 0x0014e7f0,AudioSubsystem Engine Input NetDriver RenderDevice VoiceSubsystem new,dtor:7,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class Subsystem; caller class AudioSubsystem Engine Input NetDriver RenderDevice VoiceSubsystem new; ecx -
 0x004c8410,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x004c84d0,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x004c85b0,25,anonymous,0x004c85b0,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x004c8db8,25,anonymous,0x004c8db8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x004c9038,22,anonymous,0x004c7860,2,2,,0x00110120,PackageMapLevel,ctor:1,this+0x294,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class PackageMapLevel; ecx this+0x294
-0x004c9338,1,member,0x004c9338,2,2,,0x00110120,PackageMapLevel,ctor:1,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class PackageMapLevel; ecx ?
-0x004c933c,2,member,0x004c7854,2,2,,0x00110120,PackageMapLevel,ctor:1,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class PackageMapLevel; ecx ?
-0x004c93c4,1,member,0x004c93c4,2,2,,0x0001ce50 0x0032d910,XboxViewport,ctor:1 dtor:1,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class XboxViewport; ecx ?
-0x004c93c8,2,member,0x004c93c8,2,2,,0x0001ce50 0x0032d910,XboxViewport,ctor:1 dtor:1,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class XboxViewport; ecx ?
+0x004c9038,22,anonymous,0x004c7860,2,2,,0x0010ffa0 0x00110120,NetConnection PackageMapLevel,ctor:2,this+0x294,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class NetConnection PackageMapLevel; ecx this+0x294
+0x004c9338,1,member,0x004c9338,2,2,,0x0001cc10 0x00025ff0 0x000f9ce0 0x0010ffa0 0x00110120,NetConnection PackageMapLevel Viewport,ctor:3 dtor:2,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class NetConnection PackageMapLevel Viewport; ecx ?
+0x004c933c,2,member,0x004c7854,2,2,,0x0001cc10 0x00025ff0 0x000f9ce0 0x0010ffa0 0x00110120,NetConnection PackageMapLevel Viewport,ctor:3 dtor:2,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class NetConnection PackageMapLevel Viewport; ecx ?
+0x004c93c4,1,member,0x004c93c4,2,2,Viewport,0x0001ce50 0x0032d910,XboxViewport,ctor:1 dtor:1,?,1,ctor-holder,2 store site(s) in 2 body(ies); holder class Viewport; caller class XboxViewport; ecx ?
+0x004c93c8,2,member,0x004c93c8,2,2,Viewport,0x0001ce50 0x0032d910,XboxViewport,ctor:1 dtor:1,?,1,ctor-holder,2 store site(s) in 2 body(ies); holder class Viewport; caller class XboxViewport; ecx ?
 0x004c960c,1,member,0x004c960c,2,2,XboxViewport,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class XboxViewport; caller class -; ecx -
 0x004c9610,2,member,0x004c93c8,2,2,XboxViewport,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class XboxViewport; caller class -; ecx -
-0x004c96fc,15,anonymous,0x004c96fc,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x004c9738,22,anonymous,0x004c7860,3,3,,0x00110120,PackageMapLevel,ctor:1,?,2,ctor-caller,3 store site(s) in 3 body(ies); holder class -; caller class PackageMapLevel; ecx ?
+0x004c96fc,15,anonymous,0x004c96fc,1,1,,0x000f9ce0,Viewport,ctor:1,this+0xd8,2,ctor-caller,1 store site(s) in 1 body(ies); holder class -; caller class Viewport; ecx this+0xd8
+0x004c9738,22,anonymous,0x004c7860,3,3,,0x0010ffa0 0x00110120,NetConnection PackageMapLevel,ctor:2,? this+0x178,2,ctor-caller,3 store site(s) in 3 body(ies); holder class -; caller class NetConnection PackageMapLevel; ecx ? this+0x178
 0x004c9858,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x004c9a98,22,anonymous,0x004c7860,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x004c9b50,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x004d0314,1,member,0x004d0314,2,2,,0x00026280 0x000262e0 0x00026470 0x000264f0 0x0011d4b0 0x0011e5f0,DemoRecDriver TcpNetDriver TcpNetDriverXbox,ctor:3 dtor:3,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class DemoRecDriver TcpNetDriver TcpNetDriverXbox; ecx ?
-0x004d03b8,1,member,0x004d03b8,3,3,PackageMapLevel,0x000261a0 0x00026200 0x00026360 0x000263d0 0x0011d460 0x0011e510 0x0011e560 0x002d2890 0x002d55f0,DemoRecConnection TcpipConnection TcpipConnectionXbox,ctor:6 dtor:3,? this,1,ctor-holder,3 store site(s) in 3 body(ies); holder class PackageMapLevel; caller class DemoRecConnection TcpipConnection TcpipConnectionXbox; ecx ? this
-0x004d03bc,2,member,0x004d03bc,3,3,PackageMapLevel,0x000261a0 0x00026200 0x00026360 0x000263d0 0x0011d460 0x0011e510 0x0011e560 0x002d2890 0x002d55f0,DemoRecConnection TcpipConnection TcpipConnectionXbox,ctor:6 dtor:3,? this,1,ctor-holder,3 store site(s) in 3 body(ies); holder class PackageMapLevel; caller class DemoRecConnection TcpipConnection TcpipConnectionXbox; ecx ? this
+0x004d0314,1,member,0x004d0314,2,2,NetDriver,0x00026280 0x000262e0 0x00026470 0x000264f0 0x0011d4b0 0x0011e5f0,DemoRecDriver TcpNetDriver TcpNetDriverXbox,ctor:3 dtor:3,?,1,ctor-holder,2 store site(s) in 2 body(ies); holder class NetDriver; caller class DemoRecDriver TcpNetDriver TcpNetDriverXbox; ecx ?
+0x004d03b8,1,member,0x004d03b8,3,3,NetConnection PackageMapLevel,0x000261a0 0x00026200 0x00026360 0x000263d0 0x0011d460 0x0011e510 0x0011e560 0x002d2890 0x002d55f0,DemoRecConnection TcpipConnection TcpipConnectionXbox,ctor:6 dtor:3,? this,1,ctor-holder,3 store site(s) in 3 body(ies); holder class NetConnection PackageMapLevel; caller class DemoRecConnection TcpipConnection TcpipConnectionXbox; ecx ? this
+0x004d03bc,2,member,0x004d03bc,3,3,NetConnection PackageMapLevel,0x000261a0 0x00026200 0x00026360 0x000263d0 0x0011d460 0x0011e510 0x0011e560 0x002d2890 0x002d55f0,DemoRecConnection TcpipConnection TcpipConnectionXbox,ctor:6 dtor:3,? this,1,ctor-holder,3 store site(s) in 3 body(ies); holder class NetConnection PackageMapLevel; caller class DemoRecConnection TcpipConnection TcpipConnectionXbox; ecx ? this
 0x004d0470,1,member,0x004d03b8,3,3,TcpipConnection,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class TcpipConnection; caller class -; ecx -
 0x004d0474,2,member,0x004d03bc,3,3,TcpipConnection,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class TcpipConnection; caller class -; ecx -
 0x004d0528,1,member,0x004d0314,2,2,TcpNetDriver,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class TcpNetDriver; caller class -; ecx -
@@ -65,9 +65,9 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x004f7690,9,anonymous,0x004e3520,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x004f7868,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x004fa5a8,2,member,0x004fa5a8,2,2,ControlChannel,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class ControlChannel; caller class -; ecx -
-0x004fc35c,8,member,0x004fc35c,2,2,,0x0011c0f0 0x00161860 0x00162f10 0x001a57f0 0x001a6c40,DemoPlayPendingLevel Level NetPendingLevel,ctor:5,? this,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class DemoPlayPendingLevel Level NetPendingLevel; ecx ? this
-0x004fc4cc,8,member,0x004fc35c,3,3,,0x0011c0f0 0x00161860 0x00162f10 0x00163090 0x001a57f0 0x001a6c40,DemoPlayPendingLevel Level NetPendingLevel,ctor:5 dtor:1,? this,2,ctor-caller,3 store site(s) in 3 body(ies); holder class -; caller class DemoPlayPendingLevel Level NetPendingLevel; ecx ? this
-0x004fc568,8,member,0x004fc35c,2,2,,0x0011bce0 0x0011c160 0x001a6ca0,DemoPlayPendingLevel NetPendingLevel,ctor:1 dtor:2,this,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class DemoPlayPendingLevel NetPendingLevel; ecx this
+0x004fc35c,8,member,0x004fc35c,2,2,,0x0011c0f0 0x00161860 0x00162f10 0x001a57b0 0x001a57f0 0x001a6c40,DemoPlayPendingLevel Level NetPendingLevel PendingLevel,ctor:6,? this,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class DemoPlayPendingLevel Level NetPendingLevel PendingLevel; ecx ? this
+0x004fc4cc,8,member,0x004fc35c,3,3,,0x0011c050 0x0011c0f0 0x00161860 0x00162f10 0x00163090 0x001a57b0 0x001a57f0 0x001a6c40,DemoPlayPendingLevel Level NetPendingLevel PendingLevel,ctor:6 dtor:2,? this,2,ctor-caller,3 store site(s) in 3 body(ies); holder class -; caller class DemoPlayPendingLevel Level NetPendingLevel PendingLevel; ecx ? this
+0x004fc568,8,member,0x004fc35c,2,2,PendingLevel,0x0011bce0 0x0011c160 0x001a6ca0,DemoPlayPendingLevel NetPendingLevel,ctor:1 dtor:2,this,1,ctor-holder,2 store site(s) in 2 body(ies); holder class PendingLevel; caller class DemoPlayPendingLevel NetPendingLevel; ecx this
 0x004fc610,8,member,0x004fc35c,3,3,DemoPlayPendingLevel,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class DemoPlayPendingLevel; caller class -; ecx -
 0x004fcc08,1,member,0x004d03b8,3,3,DemoRecConnection,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class DemoRecConnection; caller class -; ecx -
 0x004fcc0c,2,member,0x004d03bc,3,3,DemoRecConnection,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class DemoRecConnection; caller class -; ecx -
@@ -203,32 +203,32 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x0053d80c,4,anonymous,0x0053d660,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0053e3dc,4,anonymous,0x0053e3dc,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x0053ec54,4,anonymous,0x0053ec54,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x0053f6d8,5,anonymous,0x0053f6d8,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-0x0053f6ec,5,named,0x0053f6ec,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-0x0053f700,5,named,0x0053f700,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x0053f718,21,named,0x0053f718,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-0x0053f770,21,named,0x0053f770,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
+0x0053f6d8,5,anonymous,0x0053f6d8,3,3,CNotificationScreen CPopupScreen,0x00333f44 0x00336532,CFriendsScreen CPlayersScreen,dtor:2,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CNotificationScreen CPopupScreen; caller class CFriendsScreen CPlayersScreen; ecx -
+0x0053f6ec,5,named,0x0053f6ec,3,3,CPopupScreen,0x00332dee 0x00333139 0x00333f44 0x003358a0 0x00336532,CFriendsScreen CPlayersContextScreen CPlayersScreen CVoiceMailScreen,ctor:3 dtor:2,? this+0x68,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CPopupScreen; caller class CFriendsScreen CPlayersContextScreen CPlayersScreen CVoiceMailScreen; ecx ? this+0x68
+0x0053f700,5,named,0x0053f700,1,1,CNotificationScreen,,,,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CNotificationScreen; caller class -; ecx -
+0x0053f718,21,named,0x0053f718,3,3,CAlertFeature,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CAlertFeature; caller class -; ecx -
+0x0053f770,21,named,0x0053f770,1,1,CFeatureContext,,,,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CFeatureContext; caller class -; ecx -
 0x0053f7c4,5,anonymous,0x0053f7c4,1,0,,,,,,,no-site,1 store site(s) in 0 body(ies); holder class -; caller class -; ecx -
-0x0053f7f0,6,member,0x0053f7f0,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-0x0053f808,21,named,0x0053f808,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-0x0053f85c,5,anonymous,0x0053f85c,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x0053f874,5,named,0x0053f6ec,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x0053f888,5,member,0x0053f888,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x0053f8a0,21,named,0x0053f718,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x0053f8f4,5,anonymous,0x0053f8f4,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x0053f90c,5,named,0x0053f90c,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x0053f920,21,named,0x0053f718,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
+0x0053f7f0,6,member,0x0053f7f0,3,3,CVoiceMailPseudoFeature,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CVoiceMailPseudoFeature; caller class -; ecx -
+0x0053f808,21,named,0x0053f808,3,3,CVoiceMailPseudoFeature,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CVoiceMailPseudoFeature; caller class -; ecx -
+0x0053f85c,5,anonymous,0x0053f85c,2,2,CVoiceMailScreen,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CVoiceMailScreen; caller class -; ecx -
+0x0053f874,5,named,0x0053f6ec,1,1,CPlayersContextScreen,0x00333e0a,CPlayersScreen,ctor:1,this+0x107c,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CPlayersContextScreen; caller class CPlayersScreen; ecx this+0x107c
+0x0053f888,5,member,0x0053f888,2,2,CPlayersFeature,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CPlayersFeature; caller class -; ecx -
+0x0053f8a0,21,named,0x0053f718,2,2,CPlayersFeature,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CPlayersFeature; caller class -; ecx -
+0x0053f8f4,5,anonymous,0x0053f8f4,2,2,CPlayersScreen,0x00334a78,CPlayersScreen,dtor:1,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CPlayersScreen; caller class CPlayersScreen; ecx -
+0x0053f90c,5,named,0x0053f90c,1,1,CFriendsScreen,,,,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CFriendsScreen; caller class -; ecx -
+0x0053f920,21,named,0x0053f718,2,2,CFriendsFeature,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CFriendsFeature; caller class -; ecx -
 0x0053f978,1,anonymous,0x004c78b8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x0053f97c,5,named,0x0053f97c,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x0053f990,1,named,0x0053f990,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x0053f998,21,named,0x0053f718,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x0053f9ec,15,named,0x0053f9ec,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x00540464,8,named,0x00540464,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x00540484,14,named,0x00540484,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x005404bc,14,named,0x00540484,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x005404f4,11,named,0x005404f4,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
-0x00540520,11,named,0x005404f4,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
+0x0053f97c,5,named,0x0053f97c,1,1,CLogonScreen,,,,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CLogonScreen; caller class -; ecx -
+0x0053f990,1,named,0x0053f990,1,1,CNotificationTask,0x00338553,CLogonFeature,ctor:1,this+0x234,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CNotificationTask; caller class CLogonFeature; ecx this+0x234
+0x0053f998,21,named,0x0053f718,2,2,CLogonFeature,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CLogonFeature; caller class -; ecx -
+0x0053f9ec,15,named,0x0053f9ec,2,2,CUIPlugin,0x0033a067,CUIPlugin,dtor:1,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CUIPlugin; caller class CUIPlugin; ecx -
+0x00540464,8,named,0x00540464,2,2,CQueueXMO,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CQueueXMO; caller class -; ecx -
+0x00540484,14,named,0x00540484,2,2,CEncoderXMO,0x003440c8 0x003440e8 0x00344101,CEncoderXMO COneToOneEncoder,ctor:1 dtor:2,?,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CEncoderXMO; caller class CEncoderXMO COneToOneEncoder; ecx ?
+0x005404bc,14,named,0x00540484,2,2,COneToOneEncoder,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class COneToOneEncoder; caller class -; ecx -
+0x005404f4,11,named,0x005404f4,2,2,CDecoderXMO,0x003441a7 0x003441c5,COneToOneDecoder,ctor:1 dtor:1,?,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CDecoderXMO; caller class COneToOneDecoder; ecx ?
+0x00540520,11,named,0x005404f4,2,2,COneToOneDecoder,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class COneToOneDecoder; caller class -; ecx -
 0x00564da4,6,anonymous,0x00564da4,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x00564dbc,9,anonymous,0x00564dbc,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-0x0057534c,2,anonymous,0x0057534c,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-census,2519,,,397,377,36,32,32,,,,census,"the 232 interface tables: 36 ctor-holder, 19 ctor-caller, 1 dtor-caller, 172 unnamed-holder, 4 no-site"
+0x0057534c,2,anonymous,0x0057534c,3,3,exception,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class exception; caller class -; ecx -
+census,2519,,,397,377,65,41,41,,,,census,"the 232 interface tables: 65 ctor-holder, 16 ctor-caller, 0 dtor-caller, 147 unnamed-holder, 4 no-site"

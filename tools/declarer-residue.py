@@ -567,7 +567,7 @@ def render(rows):
                    % (r["head_va"], r["size"] or "-", r["kind"], r["stop_shape"], r["stop_va"], need))
     out.append("")
     out.append("**%d bodies need a name no image-side table carries.** The %d member bodies sit in %d "
-               "member tables whose owner the label pass refused, and the %d declarations sit on %d class "
+               "member table(s) whose owner the label pass refused, and the %d declarations sit on %d class "
                "tables no registration names while the registration does name their children -- so the "
                "first needs an owner for a field and the second a class for a parent table, and neither is "
                "a read the declaration walk owes."

@@ -46,6 +46,7 @@ NAMES = os.path.join(ROOT, "inventory", "xbe_class_table_names.csv")
 INST = os.path.join(ROOT, "inventory", "class_table_installers.csv")
 CTORS = os.path.join(ROOT, "inventory", "class_constructors.csv")
 SRC = os.path.join(ROOT, "inventory", "class_table_store_fields.csv")
+SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 PAGE = os.path.join("docs", "systems", "CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-table-store-fields -->"
 DOC_END = "<!-- /generated:class-table-store-fields -->"
@@ -158,6 +159,42 @@ def classify(sites):
     return "no-store", [], forms
 
 
+CTOR_FORMS = ("??0", "??1", "??_G", "??_E")
+
+
+def mangled_class(symbol):
+    """The class an MSVC mangled constructor or destructor belongs to, or ''.
+
+    `??0CVoiceMailPseudoFeature@UIXNamespace@@QAE@XZ` is a constructor and
+    `??1CVoiceMailPseudoFeature@UIXNamespace@@UAE@XZ` a destructor; both name the class outright, which
+    is the one channel a C++ class has in this image -- `inventory/class_constructors.csv` is the
+    UnrealScript roster and a UIX/XMO class is in no package. A template (`??$`) carries no class token
+    this reader trusts and a `FUN_` body has none.
+    """
+    if not symbol or not symbol.startswith(CTOR_FORMS):
+        return ""
+    prefix = 4 if symbol.startswith(("??_G", "??_E")) else 3
+    parts = symbol[prefix:].split("@@")[0].split("@")
+    return parts[0] if parts and parts[0] else ""
+
+
+def cpp_ctors(path, forms=None):
+    """{body_va: class} for the image's C++ constructor and destructor bodies.
+
+    A store into `[this+off]` from a class's own constructor installs that class's member, so the body's
+    own symbol is a class name -- the channel the 3 member tables the label pass refused needed.
+    """
+    out = {}
+    for row in read_csv(path):
+        sym = row.get("name") or ""
+        cls = mangled_class(sym)
+        if not cls:
+            continue
+        form = "ctor" if sym.startswith("??0") else "dtor"
+        out[int(row["address"], 16)] = (cls, form, sym)
+    return out
+
+
 def harvest(tables, names, bounded, plain, reach_sites, ctor_classes, sites_by_table, body_of):
     """One row per table: which population it is in, where its stores write, and who owns a member."""
     rows = []
@@ -197,8 +234,9 @@ def harvest(tables, names, bounded, plain, reach_sites, ctor_classes, sites_by_t
             "indexed_sites": str(forms.get("indexed", 0)),
             "member_of": ";".join(sorted(owners)),
             "verdict": verdict,
-            "evidence": "%d store site(s): %s" % (
-                len(sites), ", ".join("%s=%d" % (f, forms[f]) for f in sorted(forms)) or "none"),
+            "evidence": "%d store site(s): %s%s" % (
+                len(sites), ", ".join("%s=%d" % (f, forms[f]) for f in sorted(forms)) or "none",
+                ("; holder %s" % ";".join(sorted(owners))) if owners else ""),
         })
     return rows
 
@@ -457,6 +495,8 @@ def main():
         cls = (row.get("class") or "").strip()
         if cls and row.get("function_va"):
             ctor_classes[int(row["function_va"], 16)] = cls
+    for va, (cls, _form, _sym) in sorted(cpp_ctors(SYMBOLS).items()):
+        ctor_classes.setdefault(va, cls)
     sizes = {}
     for row in read_csv(os.path.join(ROOT, "symbols", "xbox_functions.csv")):
         sizes[int(row["address"], 16)] = int(row["size"] or 0)

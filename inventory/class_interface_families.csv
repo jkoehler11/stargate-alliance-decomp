@@ -2,17 +2,17 @@ family,tables,slots,named,member,anonymous,rep_va,rep_role,rep_name,rep_slots,re
 0x004c7800,1,21,0,0,1,0x004c7800,anonymous,,21,0x30,2,4,,yes,anonymous,1 table(s) of 21 slot(s); rep 0x004c7800 anonymous
 0x004c7854,2,2,0,2,0,0x004c7854,member,"ControlChannel,TextBuffer@0x28/0x64",2,,3,3,,no,member-held,2 table(s) of 2 slot(s); rep 0x004c7854 member-held
 0x004c7860,33,22,0,5,28,0x004c7860,member,"LinkerLoad,LinkerSave@0xb8",22,0x58,32,DemoRecConnection|LinkerLoadGame|LinkerSaveGame|TcpipConnection|TcpipConnectionXbox,,no,member-held,33 table(s) of 22 slot(s); rep 0x004c7860 member-held
-0x004c78b8,2,1,0,1,1,0x004c78b8,member,unowned@0x28,1,,1,AudioSubsystem|Input|new,,no,member-held,2 table(s) of 1 slot(s); rep 0x004c78b8 member-held
+0x004c78b8,2,1,0,1,1,0x004c78b8,member,Subsystem@0x28,1,,1,AudioSubsystem|Input|new,,no,member-held,2 table(s) of 1 slot(s); rep 0x004c78b8 member-held
 0x004c85b0,2,25,0,0,2,0x004c85b0,anonymous,,25,,1,0,,yes,anonymous,2 table(s) of 25 slot(s); rep 0x004c85b0 anonymous
 0x004c8db8,1,25,0,0,1,0x004c8db8,anonymous,,25,,1,1,,yes,anonymous,1 table(s) of 25 slot(s); rep 0x004c8db8 anonymous
 0x004c9338,1,1,0,1,0,0x004c9338,member,unowned@0x2c,1,,2,6,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c9338 member-held
-0x004c93c4,1,1,0,1,0,0x004c93c4,member,unowned@0x2c,1,,2,XboxViewport,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c93c4 member-held
-0x004c93c8,2,2,0,2,0,0x004c93c8,member,unowned@0x28,2,,2,XboxViewport,,no,member-held,2 table(s) of 2 slot(s); rep 0x004c93c8 member-held
+0x004c93c4,1,1,0,1,0,0x004c93c4,member,Viewport@0x2c,1,,2,XboxViewport,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c93c4 member-held
+0x004c93c8,2,2,0,2,0,0x004c93c8,member,Viewport@0x28,2,,2,XboxViewport,,no,member-held,2 table(s) of 2 slot(s); rep 0x004c93c8 member-held
 0x004c960c,1,1,0,1,0,0x004c960c,member,XboxViewport@0x2c,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c960c member-held
 0x004c96fc,2,15,0,0,2,0x004c96fc,anonymous,,15,,1,1,,yes,anonymous,2 table(s) of 15 slot(s); rep 0x004c96fc anonymous
-0x004d0314,2,1,0,2,0,0x004d0314,member,unowned@0x28,1,,2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,,no,member-held,2 table(s) of 1 slot(s); rep 0x004d0314 member-held
-0x004d03b8,4,1,0,4,0,0x004d03b8,member,PackageMapLevel@0x2c,1,,3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,,no,member-held,4 table(s) of 1 slot(s); rep 0x004d03b8 member-held
-0x004d03bc,4,2,0,4,0,0x004d03bc,member,PackageMapLevel@0x28,2,,3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,,no,member-held,4 table(s) of 2 slot(s); rep 0x004d03bc member-held
+0x004d0314,2,1,0,2,0,0x004d0314,member,NetDriver@0x28,1,,2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,,no,member-held,2 table(s) of 1 slot(s); rep 0x004d0314 member-held
+0x004d03b8,4,1,0,4,0,0x004d03b8,member,"NetConnection,PackageMapLevel@0x2c",1,,3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,,no,member-held,4 table(s) of 1 slot(s); rep 0x004d03b8 member-held
+0x004d03bc,4,2,0,4,0,0x004d03bc,member,"NetConnection,PackageMapLevel@0x28",2,,3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,,no,member-held,4 table(s) of 2 slot(s); rep 0x004d03bc member-held
 0x004d0688,1,1,0,1,0,0x004d0688,member,TcpNetDriverXbox@0x28,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x004d0688 member-held
 0x004d0ec8,1,21,0,0,1,0x004d0ec8,anonymous,,21,0x30,2,4,,yes,anonymous,1 table(s) of 21 slot(s); rep 0x004d0ec8 anonymous
 0x004d1430,2,2,0,0,2,0x004d1430,anonymous,,2,,3,4,,yes,anonymous,2 table(s) of 2 slot(s); rep 0x004d1430 anonymous
@@ -25,7 +25,7 @@ family,tables,slots,named,member,anonymous,rep_va,rep_role,rep_name,rep_slots,re
 0x004eb914,2,12,0,0,2,0x004eb914,anonymous,,12,,2,2,,yes,anonymous,2 table(s) of 12 slot(s); rep 0x004eb914 anonymous
 0x004ebb00,1,12,0,0,1,0x004ebb00,anonymous,,12,,2,1,,yes,anonymous,1 table(s) of 12 slot(s); rep 0x004ebb00 anonymous
 0x004ebf54,1,6,0,0,1,0x004ebf54,anonymous,,6,0x30,2,3,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x004ebf54 anonymous
-0x004f7070,1,12,0,0,1,0x004f7070,anonymous,,12,,0,0,,yes,anonymous,1 table(s) of 12 slot(s); rep 0x004f7070 anonymous
+0x004f7070,1,12,0,0,1,0x004f7070,anonymous,,12,,1,0,,yes,anonymous,1 table(s) of 12 slot(s); rep 0x004f7070 anonymous
 0x004f70a0,1,2,0,0,1,0x004f70a0,anonymous,,2,,0,0,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x004f70a0 anonymous
 0x004fa5a8,1,2,0,1,0,0x004fa5a8,member,ControlChannel@0x64,2,,2,1,,no,member-held,1 table(s) of 2 slot(s); rep 0x004fa5a8 member-held
 0x004fc35c,6,8,0,6,0,0x004fc35c,member,unowned@0x28,8,,2,DemoPlayPendingLevel|Level|NetPendingLevel,,no,member-held,6 table(s) of 8 slot(s); rep 0x004fc35c member-held
@@ -109,24 +109,24 @@ family,tables,slots,named,member,anonymous,rep_va,rep_role,rep_name,rep_slots,re
 0x0053d7fc,1,4,0,0,1,0x0053d7fc,anonymous,,4,0x38,2,2,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053d7fc anonymous
 0x0053e3dc,1,4,0,0,1,0x0053e3dc,anonymous,,4,0x34,2,2,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053e3dc anonymous
 0x0053ec54,1,4,0,0,1,0x0053ec54,anonymous,,4,0x28,2,2,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053ec54 anonymous
-0x0053f6d8,1,5,0,0,1,0x0053f6d8,anonymous,,5,,2,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f6d8 anonymous
-0x0053f6ec,2,5,2,0,0,0x0053f6ec,named,CPopupScreen,5,0x5c,0,0,,no,named,2 table(s) of 5 slot(s); rep 0x0053f6ec named (CPopupScreen)
-0x0053f700,1,5,1,0,0,0x0053f700,named,CNotificationScreen,5,,0,0,,no,named,1 table(s) of 5 slot(s); rep 0x0053f700 named (CNotificationScreen)
-0x0053f718,4,21,4,0,0,0x0053f718,named,CAlertFeature,21,,1,0,,no,named,4 table(s) of 21 slot(s); rep 0x0053f718 named (CAlertFeature)
-0x0053f770,1,21,1,0,0,0x0053f770,named,CFeatureContext,21,,0,0,,no,named,1 table(s) of 21 slot(s); rep 0x0053f770 named (CFeatureContext)
+0x0053f6d8,1,5,0,0,1,0x0053f6d8,anonymous,,5,,7,4,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f6d8 anonymous
+0x0053f6ec,2,5,2,0,0,0x0053f6ec,named,CPopupScreen,5,0x5c,3,8,,no,named,2 table(s) of 5 slot(s); rep 0x0053f6ec named (CPopupScreen)
+0x0053f700,1,5,1,0,0,0x0053f700,named,CNotificationScreen,5,,1,1,,no,named,1 table(s) of 5 slot(s); rep 0x0053f700 named (CNotificationScreen)
+0x0053f718,4,21,4,0,0,0x0053f718,named,CAlertFeature,21,,3,0,,no,named,4 table(s) of 21 slot(s); rep 0x0053f718 named (CAlertFeature)
+0x0053f770,1,21,1,0,0,0x0053f770,named,CFeatureContext,21,,1,1,,no,named,1 table(s) of 21 slot(s); rep 0x0053f770 named (CFeatureContext)
 0x0053f7c4,1,5,0,0,1,0x0053f7c4,anonymous,,5,,0,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f7c4 anonymous
-0x0053f7f0,1,6,0,1,0,0x0053f7f0,member,unowned@0x8,6,,1,0,,no,member-held,1 table(s) of 6 slot(s); rep 0x0053f7f0 member-held
-0x0053f808,1,21,1,0,0,0x0053f808,named,CVoiceMailPseudoFeature,21,,1,0,,no,named,1 table(s) of 21 slot(s); rep 0x0053f808 named (CVoiceMailPseudoFeature)
-0x0053f85c,1,5,0,0,1,0x0053f85c,anonymous,,5,,1,1,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f85c anonymous
-0x0053f888,1,5,0,1,0,0x0053f888,member,unowned@0x8,5,,0,0,,no,member-held,1 table(s) of 5 slot(s); rep 0x0053f888 member-held
-0x0053f8f4,1,5,0,0,1,0x0053f8f4,anonymous,,5,0x11fc,0,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f8f4 anonymous
-0x0053f90c,1,5,1,0,0,0x0053f90c,named,CFriendsScreen,5,,0,0,,no,named,1 table(s) of 5 slot(s); rep 0x0053f90c named (CFriendsScreen)
-0x0053f97c,1,5,1,0,0,0x0053f97c,named,CLogonScreen,5,,0,0,,no,named,1 table(s) of 5 slot(s); rep 0x0053f97c named (CLogonScreen)
-0x0053f990,1,1,1,0,0,0x0053f990,named,CNotificationTask,1,,0,0,,no,named,1 table(s) of 1 slot(s); rep 0x0053f990 named (CNotificationTask)
-0x0053f9ec,1,15,1,0,0,0x0053f9ec,named,CUIPlugin,15,0x910,0,0,,no,named,1 table(s) of 15 slot(s); rep 0x0053f9ec named (CUIPlugin)
-0x00540464,1,8,1,0,0,0x00540464,named,CQueueXMO,8,,0,0,,no,named,1 table(s) of 8 slot(s); rep 0x00540464 named (CQueueXMO)
-0x00540484,2,14,2,0,0,0x00540484,named,CEncoderXMO,14,,0,0,,no,named,2 table(s) of 14 slot(s); rep 0x00540484 named (CEncoderXMO)
-0x005404f4,2,11,2,0,0,0x005404f4,named,CDecoderXMO,11,,0,0,,no,named,2 table(s) of 11 slot(s); rep 0x005404f4 named (CDecoderXMO)
+0x0053f7f0,1,6,0,1,0,0x0053f7f0,member,CVoiceMailPseudoFeature@0x8,6,,3,1,,no,member-held,1 table(s) of 6 slot(s); rep 0x0053f7f0 member-held
+0x0053f808,1,21,1,0,0,0x0053f808,named,CVoiceMailPseudoFeature,21,,3,1,,no,named,1 table(s) of 21 slot(s); rep 0x0053f808 named (CVoiceMailPseudoFeature)
+0x0053f85c,1,5,0,0,1,0x0053f85c,anonymous,,5,,2,1,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f85c anonymous
+0x0053f888,1,5,0,1,0,0x0053f888,member,CPlayersFeature@0x8,5,,2,1,,no,member-held,1 table(s) of 5 slot(s); rep 0x0053f888 member-held
+0x0053f8f4,1,5,0,0,1,0x0053f8f4,anonymous,,5,0x11fc,2,2,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f8f4 anonymous
+0x0053f90c,1,5,1,0,0,0x0053f90c,named,CFriendsScreen,5,,1,1,,no,named,1 table(s) of 5 slot(s); rep 0x0053f90c named (CFriendsScreen)
+0x0053f97c,1,5,1,0,0,0x0053f97c,named,CLogonScreen,5,,1,1,,no,named,1 table(s) of 5 slot(s); rep 0x0053f97c named (CLogonScreen)
+0x0053f990,1,1,1,0,0,0x0053f990,named,CNotificationTask,1,,1,1,,no,named,1 table(s) of 1 slot(s); rep 0x0053f990 named (CNotificationTask)
+0x0053f9ec,1,15,1,0,0,0x0053f9ec,named,CUIPlugin,15,0x910,2,2,,no,named,1 table(s) of 15 slot(s); rep 0x0053f9ec named (CUIPlugin)
+0x00540464,1,8,1,0,0,0x00540464,named,CQueueXMO,8,,2,1,,no,named,1 table(s) of 8 slot(s); rep 0x00540464 named (CQueueXMO)
+0x00540484,2,14,2,0,0,0x00540484,named,CEncoderXMO,14,,2,3,,no,named,2 table(s) of 14 slot(s); rep 0x00540484 named (CEncoderXMO)
+0x005404f4,2,11,2,0,0,0x005404f4,named,CDecoderXMO,11,,2,3,,no,named,2 table(s) of 11 slot(s); rep 0x005404f4 named (CDecoderXMO)
 0x00564da4,1,6,0,0,1,0x00564da4,anonymous,,6,,1,1,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x00564da4 anonymous
 0x00564dbc,1,9,0,0,1,0x00564dbc,anonymous,,9,,3,2,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00564dbc anonymous
-0x0057534c,1,2,0,0,1,0x0057534c,anonymous,,2,,2,2,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x0057534c anonymous
+0x0057534c,1,2,0,0,1,0x0057534c,anonymous,,2,,3,3,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x0057534c anonymous

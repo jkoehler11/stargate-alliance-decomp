@@ -5,6 +5,8 @@ ArrayProperty,Core,0x0007d069,Core_UnProp,Core,assert,1,unanimous
 AudioSubsystem,Engine,0x000e5809,Engine_UnAudio,Engine,assert,1,unanimous
 BoolProperty,Core,0x0007cb29,Core_UnProp,Core,assert,1,unanimous
 ByteProperty,Core,0x0007c829,Core_UnProp,Core,assert,1,unanimous
+CPlayersFeature_member_0x8,,,,,,0,no-site
+CVoiceMailPseudoFeature_member_0x8,,,,,,0,no-site
 Channel,Engine,0x001083c6,Engine_UnChan,Engine,assert,1,unanimous
 ChannelDownload,Engine,0x0011f099,Engine_UnDownload,Engine,assert,1,unanimous
 ClassProperty,Core,0x0007cd65,Core_UnProp,Core,assert,1,unanimous

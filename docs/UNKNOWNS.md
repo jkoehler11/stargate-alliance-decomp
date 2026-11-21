@@ -6125,5 +6125,14 @@ What is left of this entry: the 8 member bodies in three unlabelled member table
 7 class tables no registration names, the 4 linker-folded bodies, the 424 interface-only bodies and the
 807 bodies no channel names.
 
-
-
+**Answered since (2026-11-21, the member tables' owner is the class whose constructor stores them).** The two
+store censuses looked for an UnrealScript class around each store body, and the three member tables this entry
+left unowned hold UIX/XMO interfaces whose class is in no package. The storing body's own symbol is the
+channel: `??0CVoiceMailPseudoFeature@UIXNamespace@@QAE@XZ` and `??1CVoiceMailPseudoFeature@@UAE@XZ` both store
+`0x0053f7f0` at `[this+0x8]`, `??0`/`??1CPlayersFeature` store `0x0053f888` at `[this+0x8]`, so both censuses
+merge a `cpp_ctors()` map into the ctor roster and the member census labels 40 of 49 (35). The six member
+bodies those two tables held are map rows now (`<member>_vt<slot>`, 6 adds, map 16,633 -> 16,639 rows), the
+declarer residue is 12 -> 6 bodies, and the installer census reads 65 ctor-holder / 147 unnamed-holder
+(36 / 172). `0x0051724c` stays unowned with its reason measured: its two store bodies are `FUN_` bodies.
+What is left of this entry: the 2 bodies in `0x0051724c`, the 4 linker folds, the 424 interface-only bodies
+and the 807 bodies no channel names.
