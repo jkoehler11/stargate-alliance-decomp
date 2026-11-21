@@ -6046,3 +6046,29 @@ starts (17, 24 and 106 bytes, all opening `mov eax,ecx`) and one in a 73-byte `p
 24-byte one leaves the fresh-object sentinel `0xdeaddead` at `+0x5c`. What is left of this entry: the 55
 mapped representatives' *slot vectors* as an index (their bodies are read, and no channel in them names an
 interface), the 26 gap-head representatives' add, and the 398 bodies named by nothing.
+
+**Answered since (2026-11-21, who declares a slot body).** The census's slot channel records **one** table per head -- the first
+dword outside `.text` that resolved into a slot -- and a body a class declares sits at the same index in
+every descendant table that does not override it (**489 tables for the widest of the 701 bodies**), so the
+recorded table is a first hit, not a declaration. `tools/class-slot-declarers.py` reads all 724 tables (492
+class, 232 interface; `inventory/class_slot_declarers.csv`) and walks each table's class up the **measured
+parent edges** (`inventory/class_table_parent_edges.csv`): the declarer is the highest table whose slot at
+that index still holds the body. The 701 slot bodies split **224 declared exactly, 7 declared by an unnamed
+table (`0x004fcfe0` 3, `0x004d34d8`, `0x004d3af0`, `0x004c94b0`, `0x004fc588`), 4 two-independent-
+declarations, 40 a member table's method, 3 that neither a class name nor a parent edge reaches, and 423 an
+interface's method**. The declared 224 are 21,613 bytes over 129 classes. **The control is the map's own
+names: 531 of the 538 `<Class>_vt<slot>` rows agree with the walk, and 7 name a class that inherits the
+body** -- `GameEngine_vt33`/`_vt54`/`_vt55` (Engine's), `XboxViewport_vt51`/`_vt54` (Viewport's),
+`TcpipConnection_vt39` (NetConnection's) and `StrProperty_vt41` (an unnamed table's, `0x004d17a8`). Over the
+census's own 221 slot names, 219 agree and 0 disagree. **Walking the parent edge rather than the class name
+is what turned the last seven answers over**: Engine's slots 34-37 and 45-47 are past `Subsystem`'s 31-slot
+table and are Engine's own, where a name-based walk stopped at `Subsystem` and could only say "at or above
+Engine". Five bodies the pointer channel named but no class did gain a class declarer (`0x0001db40`
+`LodMeshInstance` vt42, `0x000bd360` `MeshInstance` vt86, `0x000bd380` `LodMeshInstance` vt91, `0x00167f50`
+`MeshInstance` vt76, `0x002c12a0` `NetPendingLevel` vt31); twenty bodies sit at two or more slot indices,
+which no single name carries. **The 26 gap-head representatives are in the 423** -- none is a class
+declaration, so their add is settled as blocked on an *interface* name, not on a read. And the 701 slot
+bodies are disjoint from the **807** bodies named by nothing (counted over the 2,749 decoded bodies, not the
+2,850 heads): a slot is a reference and those 807 have none, so the two residues are separate work.
+
+

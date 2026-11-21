@@ -55,6 +55,7 @@ TABLE_NAMES = os.path.join(ROOT, "inventory", "xbe_class_table_names.csv")
 INTERFACE_TABLES = os.path.join(ROOT, "inventory", "native_vtable_shared.csv")
 MEMBER_TABLES = os.path.join(ROOT, "inventory", "class_member_tables.csv")
 CLASSES = os.path.join(ROOT, "inventory", "classes.csv")
+EDGES = os.path.join(ROOT, "inventory", "class_table_parent_edges.csv")
 SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 DOC_START = "<!-- generated:class-slot-declarers -->"
 DOC_END = "<!-- /generated:class-slot-declarers -->"
@@ -81,40 +82,66 @@ def load_inventory():
         if r.get("class"):
             class_of[int(r["table_va"], 16)] = r["class"]
     member = {int(r["table_va"], 16): r for r in read_csv(MEMBER_TABLES)}
+    # the parent table of every edge the rung census measured, and the script super an edge names for
+    # a parent table no registration named -- the walk then needs no class name to reach a parent
+    parent, parent_name = {}, {}
+    for r in read_csv(EDGES):
+        if not r.get("table_va") or not r.get("parent_va"):
+            continue
+        t, pv = int(r["table_va"], 16), int(r["parent_va"], 16)
+        parent.setdefault(t, pv)
+        if r.get("script_super"):
+            parent_name.setdefault(pv, r["script_super"])
     supers = {}
     for r in read_csv(CLASSES):
         supers.setdefault(r["class"], r.get("super") or "")
     heads = [r for r in read_csv(GAPS) if r.get("row") == "head"]
     return dict(tables=tables, shared=shared, class_of=class_of, member=member, supers=supers,
-                heads=heads)
+                heads=heads, parent=parent, parent_name=parent_name)
 
 
 # --------------------------------------------------------------------------- the declaration walk
-def declarer(slot_of, tables, class_of, table_of, supers, table, index, body):
-    """The class that declares `body` at `index` of `table`.
+def declarer(slot_of, tables, class_of, table_of, supers, table, index, body, parent=None,
+             parent_name=None):
+    """The table that declares `body` at `index`, walked up the measured parent edges.
 
-    Walks from the table's own class up its `extends` chain: the declarer is the highest class whose
-    table still holds `body` at that index. Returns (class, note); note names the class whose table is
-    unknown when the walk could not finish, so an unresolved answer is attributable.
+    The parent link comes from `inventory/class_table_parent_edges.csv` (the rung census's 493 measured
+    edges), not from the class names: a parent table no registration named still has an edge and an extent,
+    so a slot beyond that extent is the child's own and the walk does not have to stop there. The class-name
+    route is the fallback for a table the edge census does not cover.
+
+    Returns (class, note). A declaring table with no class name returns ("", "unnamed-declarer:0x…"), and
+    the note names the script super the edges recorded for it when there is one.
     """
-    cls = class_of.get(table)
-    if not cls:
-        return "", "table-unnamed"
-    who, blocked = None, ""
-    seen = set()
-    cur = cls
-    while cur and cur not in seen:
+    parent = parent or {}
+    parent_name = parent_name or {}
+    cur, who, seen = table, None, set()
+    while cur is not None and cur not in seen:
         seen.add(cur)
-        xt = table_of.get(cur)
-        if xt is None:
-            blocked = cur
-            break
-        slots = slot_of(xt, tables[xt])
+        n = tables.get(cur)
+        if n is None:
+            return (who or "", "no-extent:0x%08x" % cur) if who is None else (
+                class_of.get(who, ""), "" if class_of.get(who) else
+                "unnamed-declarer:0x%08x" % who)
+        slots = slot_of(cur, n)
         if index >= len(slots) or slots[index] != body:
             break
         who = cur
-        cur = supers.get(cur, "")
-    return (who or cls), ("parent-table-unknown:%s" % blocked if blocked else "")
+        nxt = parent.get(cur)
+        if nxt is None:
+            cls = class_of.get(cur)
+            if cls:
+                return cls, ""
+            script = parent_name.get(cur, "")
+            return "", "unnamed-declarer:0x%08x%s" % (cur, (":" + script) if script else "")
+        cur = nxt
+    if who is None:
+        return "", "no-holder"
+    cls = class_of.get(who)
+    if cls:
+        return cls, ""
+    script = parent_name.get(who, "")
+    return "", "unnamed-declarer:0x%08x%s" % (who, (":" + script) if script else "")
 
 
 def index_bodies(slot_of, tables, shared):
@@ -138,6 +165,7 @@ def index_bodies(slot_of, tables, shared):
 def census_heads(inv, slot_of):
     tables, shared = inv["tables"], inv["shared"]
     class_of, member, supers = inv["class_of"], inv["member"], inv["supers"]
+    parent, parent_name = inv["parent"], inv["parent_name"]
     table_of = {}
     for t in sorted(class_of):
         table_of.setdefault(class_of[t], t)
@@ -149,48 +177,52 @@ def census_heads(inv, slot_of):
         sits = holds.get(va, [])
         if not sits:
             continue
-        exact = collections.OrderedDict()      # (declarer, slot) -> holders, walk reached the top
-        bounded = collections.OrderedDict()    # (class, slot, blocked_at) -> holders, walk blocked
-        mems, ifaces, unnamed = set(), set(), set()
+        exact = collections.OrderedDict()      # (class, slot) -> holders, the declaring table is named
+        unnamed = collections.OrderedDict()    # (table, slot, script) -> holders, the declarer has no class
+        mems, ifaces, unresolved = set(), set(), set()
         for t, i, kind in sits:
-            if kind == "class":
-                sit_class += 1
-            else:
+            if kind != "class":
                 sit_iface += 1
-            if kind == "class":
-                if class_of.get(t):
-                    d, note = declarer(slot_of, tables, class_of, table_of, supers, t, i, va)
-                    if note.startswith("parent-table-unknown:"):
-                        bounded.setdefault((d, i, note.split(":", 1)[1]), []).append(t)
-                    else:
-                        exact.setdefault((d, i), []).append(t)
+                if t in member:
+                    mems.add((t, i))
                 else:
-                    unnamed.add((t, i))
-            elif t in member:
-                mems.add((t, i))
+                    ifaces.add((t, i))
+                continue
+            sit_class += 1
+            if class_of.get(t):
+                d, note = declarer(slot_of, tables, class_of, table_of, supers, t, i, va,
+                                   parent, parent_name)
+                if not note:
+                    exact.setdefault((d, i), []).append(t)
+                elif note.startswith("unnamed-declarer:"):
+                    bits = note.split(":")[1:]
+                    unnamed.setdefault((bits[0], i, bits[1] if len(bits) > 1 else ""), []).append(t)
+                else:
+                    unresolved.add((t, i))
             else:
-                ifaces.add((t, i))
+                unresolved.add((t, i))
         if len(exact) == 1:
             (who, slot), holders = list(exact.items())[0]
             verdict, name = "declared", "%s_vt%d" % (who, slot)
-            evidence = ("the %s subtree holds it at slot %d in %d table(s) and the walk reaches the top of "
-                        "the chain: %s declares it" % (who, slot, len(holders), who))
+            evidence = ("the %s subtree holds it at slot %d in %d table(s) and the parent edges reach a "
+                        "named declarer: %s declares it" % (who, slot, len(holders), who))
         elif len(exact) > 1:
             verdict, name = "conflict", ""
             evidence = "two independent declarations: " + "; ".join(
                 "%s_vt%d (held by %d)" % (d, i, len(h)) for (d, i), h in exact.items())
-        elif bounded:
-            slots = {(d, i) for d, i, _ in bounded}
+        elif unnamed:
+            slots = {(t, i) for t, i, _ in unnamed}
             if len(slots) == 1:
-                who, slot = list(slots)[0]
-                blocked = sorted({b for _, _, b in bounded})
-                verdict, name = "bounded", "%s_vt%d" % (who, slot)
-                evidence = ("at or above %s (slot %d); the walk stops at %s, whose table the class map "
-                            "leaves unnamed" % (who, slot, ", ".join(blocked)))
+                (tbl, slot, script) = list(unnamed)[0]
+                verdict = "declared-unnamed"
+                name = "%s_vt%d" % (script, slot) if script else ""
+                evidence = ("declared by the unnamed table %s slot %d%s -- no registration names the "
+                            "table, so the name comes from the script super an edge records for it"
+                            % (tbl, slot, (" (`%s`)" % script) if script else ", and no edge names its class"))
             else:
                 verdict, name = "conflict", ""
-                evidence = "two independent declarations: " + "; ".join(
-                    "%s_vt%d (blocked at %s)" % kv for kv in bounded)
+                evidence = "two declarations on unnamed tables: " + "; ".join(
+                    "%s_vt%d" % (t, i) for t, i, _ in unnamed)
         elif mems:
             verdict = "member"
             t, i = min(mems)
@@ -198,16 +230,17 @@ def census_heads(inv, slot_of):
             name = "%s_vt%d" % (label, i) if label else ""
             evidence = ("member table 0x%08x slot %d (%s), field %s -- not a class slot"
                         % (t, i, label or "no label", member[t].get("fields") or "?"))
-        elif unnamed:
+        elif unresolved:
             verdict = "unnamed-table"
-            t, i = min(unnamed)
+            t, i = min(unresolved)
             name = ""
-            evidence = "class table 0x%08x slot %d, and the class map names no class for that table" % (t, i)
+            evidence = ("class table 0x%08x slot %d, and neither a class name nor a parent edge reaches "
+                        "it" % (t, i))
         else:
             verdict = "interface"
             name = ""
             evidence = "%d interface table(s) hold it; no class table does" % len(ifaces)
-        if verdict in ("declared", "bounded") and mems:
+        if verdict in ("declared", "declared-unnamed") and mems:
             evidence += "; also a member table's slot"
         cur = ("%s_vt%s" % (h["slot_class"], h["slot_index"])) if h.get("slot_class") else ""
         if cur and name:
@@ -216,12 +249,14 @@ def census_heads(inv, slot_of):
             agrees = "-"
         else:
             agrees = ""
+        if len(exact) == 1:
+            dec, slot = list(exact)[0]
+        elif unnamed:
+            dec, slot = list(unnamed)[0][0], str(list(unnamed)[0][1])
+        else:
+            dec, slot = "", ""
         rows.append({"row": "head", "head_va": h["head_va"], "size": h.get("size", ""),
-                     "verdict": verdict,
-                     "declarer": (list(exact)[0][0] if len(exact) == 1 else
-                                  (list(bounded)[0][0] if bounded else "")),
-                     "slot": (str(list(exact)[0][1]) if len(exact) == 1 else
-                              (str(list(bounded)[0][1]) if bounded else "")),
+                     "verdict": verdict, "declarer": dec, "slot": str(slot),
                      "name_earned": name, "current_name": cur, "current_agrees": agrees,
                      "sit_ins": str(len(sits)), "tables": str(len({t for t, _, _ in sits})),
                      "indices": " ".join(str(i) for i in sorted({i for _, i, _ in sits})),
@@ -258,14 +293,15 @@ def census_control(inv, slot_of, holds):
             rec["evidence"] = "the row is not at slot %d of %s's own table" % (slot, cls)
             rows.append(rec)
             continue
-        d, note = declarer(slot_of, tables, class_of, table_of, supers, t, slot, va)
+        d, note = declarer(slot_of, tables, class_of, table_of, supers, t, slot, va,
+                           inv["parent"], inv["parent_name"])
         rec["declarer"] = d
         if d == cls:
             rec["verdict"] = "agrees"
         else:
             rec["verdict"] = "derived"
             rec["evidence"] = ("the name's class %s does not declare it; %s does%s"
-                               % (cls, d, " (" + note + ")" if note else ""))
+                               % (cls, d or "an unnamed table", (" (" + note + ")") if note else ""))
         if note and rec["verdict"] != "derived":
             rec["evidence"] = note
         rows.append(rec)
@@ -274,7 +310,8 @@ def census_control(inv, slot_of, holds):
 
 def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0)):
     v = collections.Counter(r["verdict"] for r in head_rows)
-    m = {"heads": len(head_rows), "declared": v["declared"], "bounded": v["bounded"],
+    m = {"heads": len(head_rows), "declared": v["declared"],
+         "declared_unnamed": v["declared-unnamed"],
          "conflict": v["conflict"],
          "member": v["member"], "interface": v["interface"], "unnamed_table": v["unnamed-table"],
          "sit_ins": sum(int(r["sit_ins"]) for r in head_rows),
@@ -286,16 +323,18 @@ def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0)):
          "current_agree": sum(1 for r in head_rows if r["current_agrees"] == "yes"),
          "current_disagree": sum(1 for r in head_rows if r["current_agrees"] == "no"),
          "declarers": len({r["declarer"] for r in head_rows if r["declarer"]}),
-         "bounded_blocked": len({r["evidence"].split("stops at ")[1].split(",")[0]
-                                 for r in head_rows if r["verdict"] == "bounded"}),
-         "bounded_blocked_names": ",".join(sorted({r["evidence"].split("stops at ")[1].split(",")[0]
-                                                   for r in head_rows if r["verdict"] == "bounded"})),
+         "declared_unnamed_tables": len({r["declarer"] for r in head_rows
+                                         if r["verdict"] == "declared-unnamed"}),
+         "declared_unnamed_named": sum(1 for r in head_rows
+                                       if r["verdict"] == "declared-unnamed" and r["name_earned"]),
          "fanout_max": max([int(r["sit_ins"]) for r in head_rows] or [0]),
          "control_rows": len(ctl_rows),
          "control_agree": sum(1 for r in ctl_rows if r["verdict"] == "agrees"),
          "control_derived": sum(1 for r in ctl_rows if r["verdict"] == "derived"),
          "control_unresolved": sum(1 for r in ctl_rows if r["verdict"] == "unresolved")}
     m["class_sit_ins"], m["interface_sit_ins"] = sits
+    m["declared_bytes"] = sum(int(r["size"]) for r in head_rows
+                              if r["verdict"] in ("declared", "declared-unnamed") and r["size"])
     m["declared_tables"] = sum(int(r["tables"]) for r in head_rows if r["verdict"] == "declared")
     m["member_sit_tables"] = len({t for r in head_rows if r["verdict"] == "member"
                                  for t in r["member_tables"].split()})
@@ -323,12 +362,10 @@ def render(rows, ctl, meta):
     lines = ["| what holds the body | bodies | share | name it earns |", "|---|---|---|---|"]
     lines.append("| a class table, and the walk reaches the top of its chain | %d | %.0f%% | "
                  "`<Class>_vt<slot>` |" % (meta["declared"], 100.0 * meta["declared"] / n))
-    lines.append("| a class table, and the walk stops at the unnamed class %s | %d | %.0f%% | "
-                 "`<Class>_vt<slot>`, at or above that class |"
-                 % ("`, `".join("`%s`" % c for c in
-                                str(meta.get("bounded_blocked_names", "")).split(",") if c)
-                    if meta.get("bounded_blocked_names") else "chain",
-                    meta["bounded"], 100.0 * meta["bounded"] / n))
+    lines.append("| a class table no registration names, which the walk reaches by its parent edge | %d "
+                 "| %.0f%% | `<script>_vt<slot>` when an edge records the script super (%d), none "
+                 "otherwise |" % (meta["declared_unnamed"], 100.0 * meta["declared_unnamed"] / n,
+                                  meta["declared_unnamed_named"]))
     lines.append("| two independent declarations of one body | %d | %.0f%% | none (a conflict) |"
                  % (meta["conflict"], 100.0 * meta["conflict"] / n))
     lines.append("| a member table (a constructor stores it into a field) | %d | %.0f%% | "
@@ -408,24 +445,29 @@ def synthetic():
             0x300: [1, 2, 3, 77, 91, 92],             # a sibling that declares its own slot 3
             0x400: [1, 2, 3, 90, 91, 92, 0, 0]}       # Kid's child, overrides slot 6 with 0
     class_of = {0x100: "Base", 0x200: "Kid", 0x300: "Other", 0x400: "Lone"}
-    supers = {"Base": "", "Kid": "Base", "Other": "Base", "Lone": "Kid"}
-    table_of = {c: t for t, c in class_of.items()}
+    parent = {0x200: 0x100, 0x300: 0x100, 0x400: 0x200}
+    parent_name = {0x100: "Base"}
     slot_of = lambda t, n: grid[t][:n]  # noqa: E731
     checks = []
 
     def want(name, got, expect):
         checks.append((name, got, expect))
 
-    walk = lambda t, i, b, to=None: declarer(slot_of, tables, class_of, to or table_of, supers, t, i, b)  # noqa: E731
+    def walk(t, i, b, co=None, pa=None, pn=None):
+        return declarer(slot_of, tables, co or class_of, {}, {}, t, i, b,
+                        parent if pa is None else pa, parent_name if pn is None else pn)
+
     want("Kid inherits slot 3 from Base", walk(0x200, 3, 90), ("Base", ""))
     want("Kid's added slot 6 is Kid's", walk(0x200, 6, 77), ("Kid", ""))
     want("an override below the declarer is the child's", walk(0x400, 6, 0), ("Lone", ""))
     want("a sibling's slot is not an ancestor's", walk(0x300, 3, 77), ("Other", ""))
     want("Base's own slot is Base's", walk(0x100, 3, 90), ("Base", ""))
-    no_base = {c: t for c, t in table_of.items() if c != "Base"}
-    want("an unnamed parent stops the walk", walk(0x200, 3, 90, no_base), ("Kid", "parent-table-unknown:Base"))
-    want("an unnamed table declares nothing",
-         declarer(slot_of, tables, class_of, table_of, supers, 0x999, 0, 1), ("", "table-unnamed"))
+    want("a slot past the parent's extent is the child's own", walk(0x200, 7, 78), ("Kid", ""))
+    no_name = {0x200: "Kid", 0x300: "Other", 0x400: "Lone"}
+    want("an unnamed declarer names the script an edge records",
+         walk(0x200, 3, 90, co=no_name), ("", "unnamed-declarer:0x00000100:Base"))
+    want("an edge-less table declares nothing",
+         walk(0x900, 0, 1), ("", "no-extent:0x00000900"))
     bad = [(n, g, e) for n, g, e in checks if g != e]
     if bad:
         print("FAIL class-slot-declarers: %d synthetic walk(s) wrong: %s" % (len(bad), bad))
@@ -458,21 +500,27 @@ def self_check():
         print("FAIL class-slot-declarers: %d rows are not gap heads: %s" % (len(bad), bad[:3]))
         return 1
     v = collections.Counter(r["verdict"] for r in heads)
-    total = sum(v[k] for k in ("declared", "bounded", "conflict", "member", "interface",
+    total = sum(v[k] for k in ("declared", "declared-unnamed", "conflict", "member", "interface",
                                "unnamed-table"))
     if total != int(m["heads"]):
         print("FAIL class-slot-declarers: verdicts sum to %d, census says %s" % (total, m["heads"]))
         return 1
     if v["declared"] != int(m["declared"]) or v["member"] != int(m["member"]) \
-            or v["bounded"] != int(m["bounded"]) or v["conflict"] != int(m["conflict"]):
+            or v["declared-unnamed"] != int(m["declared_unnamed"]) \
+            or v["conflict"] != int(m["conflict"]):
         print("FAIL class-slot-declarers: census verdict counts do not match the rows")
         return 1
     for r in heads:
-        if r["verdict"] in ("declared", "bounded"):
+        if r["verdict"] == "declared":
             want = "%s_vt%s" % (r["declarer"], r["slot"])
             if r["name_earned"] != want or not r["declarer"]:
                 print("FAIL class-slot-declarers: %s earns %r, not %r"
                       % (r["head_va"], r["name_earned"], want))
+                return 1
+        if r["verdict"] == "declared-unnamed" and r["name_earned"]:
+            if not r["name_earned"].startswith(r["evidence"].split("(`")[-1].split("`")[0]):
+                print("FAIL class-slot-declarers: %s names an unnamed table from the wrong script"
+                      % r["head_va"])
                 return 1
         if r["current_agrees"] == "yes" and r["current_name"] != r["name_earned"]:
             print("FAIL class-slot-declarers: %s claims to agree but does not" % r["head_va"])
