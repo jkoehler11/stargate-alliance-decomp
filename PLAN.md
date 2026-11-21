@@ -16651,3 +16651,40 @@ sequence.
 - **Not in this bundle.** The 26 gap-head representatives' add (a map row moves five artifacts), the 2
   cross-index gap heads' dual-index row, and the 807 bodies no channel names -- the last is now larger than
   the 398 it replaced, which is the honest cost of the extension.
+
+### Execution notes (2026-11-21, the slot census's first-hit table is not a declaration, and 224 of the 701 bodies have a class that declares them)
+
+- **Task.** U40's "bodies no channel names" and the previous note's closing question (which of the new
+  slot-named bodies a class declares, and which need names) turned out to be one read: the census's
+  `slot_table` is the *first* table a reference landed in, and a class's declared body sits at the same
+  index in every descendant table that does not override it -- 489 tables for the widest of the 701.
+- **The walk.** `tools/class-slot-declarers.py` reads every slot of all 724 tables, indexes the bodies, and
+  resolves each slot body up the **measured parent edges** (`class_table_parent_edges.csv`, 493 edges) to the
+  highest table whose slot at that index still holds it. Verdicts: **224 declared exactly, 7 declared by an
+  unnamed table, 4 two independent declarations, 40 a member table's method, 3 reached by neither a class
+  name nor an edge, 423 interface-only**. The declared 224 are **21,613 bytes** over **129 classes**.
+- **The edge is not the class name, and that is the measurement.** A class-name walk stops at a parent the
+  class map leaves unnamed; the edge carries the parent's *table* and its extent, so Engine's slots 34-37
+  and 45-47 read past `Subsystem`'s 31-slot table and become Engine's own instead of "at or above Engine".
+- **Controls.** The map's own 538 `<Class>_vt<slot>` names agree on **531**; the 7 that do not name a class
+  that inherits the body (`GameEngine_vt33`/54/55 -> Engine, `XboxViewport_vt51`/54 -> Viewport,
+  `TcpipConnection_vt39` -> NetConnection, `StrProperty_vt41` -> the unnamed `0x004d17a8`). The gap census's
+  221 names agree on **219, disagree on 0**. Eight synthetic walks (`--check`, no dump) cover the inherited
+  slot, the added slot, the override below the declarer, the sibling's slot, a slot past the parent's extent,
+  the unnamed declarer an edge names, and the edge-less table.
+- **What it settles.** The 26 gap-head representatives are in the 423 interface-only bodies, so their add is
+  blocked on an interface name rather than on a read. Five bodies the pointer channel named but no class did
+  gain a class name (`LodMeshInstance` vt42/vt91, `MeshInstance` vt86/vt76, `NetPendingLevel` vt31). Twenty
+  bodies sit at two or more slot indices; the artifact records the index set per body, and the 4 conflicts
+  are one body two independent classes both point at (folding or a shared stub, not decided here). The 701
+  slot bodies are **disjoint** from the 807 bodies named by nothing: a slot is a reference and those have
+  none.
+- **Files.** `tools/class-slot-declarers.py`, `inventory/class_slot_declarers.csv` (701 head rows, 538
+  control rows, a census), `docs/systems/CLASS_REGISTRATION.md` (new section + generated block +
+  regenerating recipe), `docs/UNKNOWNS.md` (U40), `Makefile` (target, help, ci), `docs/ARTIFACTS.md`.
+- **Gates.** `make ci` green; `--check` is dump-free (the artifact against `gap_heads.csv` and the map's 538
+  names, eight synthetic walks) and `--check-doc` rebuilds the block from the committed CSV; artifacts
+  deterministic on a second run; no boot, no xemu, no Ghidra.
+- **Not in this bundle.** No map rows: the 224 declared names, the 31 labelled member methods and the five
+  census misses are the population an add would carry, and a row moves five artifacts. The 7 names that a
+  holder carries are a naming-rule question for that add, not a rename here.
