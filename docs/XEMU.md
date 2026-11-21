@@ -4348,3 +4348,31 @@ at a map load").
 - **A restart is a level load the harness can repeat for the price of one boot.** Nothing in it needs a rebuild, and
   it exercises the load path a second time in the same session -- the route `missions.sh` cannot give without
   another boot.
+
+## What the build asks the file system for: a breakpoint on the argument (2026-11-19)
+
+A static scan finds the *literals* a build can pass to an open; it cannot say which opens happen, in what order, or with
+names composed at run time. `tools/xemu/arg-string.py` closes that gap for a chosen call: break at an address, read one
+stack argument as a pointer, and decode the C string there.
+
+**First measurement.** Armed on `_CreateFileA@28` (`0x0033e2cd`) twenty-eight seconds into a boot, a 200-second window
+recorded **30 opens, every one of them `D:\System\StargateGame.int`**, arriving from two call sites inside the XAPI layer
+(`0x0001dee3` and `0x0001e083`, alternating). XAPI builds the absolute path, so the string the game hands down is the bare
+name and the `D:\System\` prefix is the layer's. The path itself lives in a **caller stack buffer**
+(`0xd0124f24` / `0xd0124f04`), not in a global, which is why reading the argument pointer is the only way to see it.
+
+**Three stub behaviours the tool has to get right**, each of which cost a boot to find:
+
+1. **Arm only from a user-mode sample.** `Z0` patches through the current MMU context, so an arm taken while the CPU idles
+   in the kernel writes into a mapping the game never executes in.
+2. **Gate on the stub's reply, not on the readback.** The byte read back is the function's own `push ebp` (`0x55`), never
+   `0xCC`, even when the arm is good. `bp-args.py` records the readback for diagnosis and gates on `OK`.
+3. **Send the single-step as a raw `$s#73` packet.** Through the generic packet helper the step times out and the guest
+   re-reports one call for the whole window — which reads as "the engine opens this file once per lookup" rather than as a
+   stalled instrument.
+
+**Limits.** Arming needs a user-mode sample, so everything opened before roughly twenty seconds — the config files and the
+first packages — is outside this measurement; the trace says nothing about boot ordering. Each stop costs a step plus a
+re-arm, so a 200-second window buys about thirty opens, and a full load's several hundred would need minutes of window.
+And the repetition above is genuinely thirty calls from two sites, but whether the engine reopens the `.int` per string
+lookup or is retrying a failed open is **not established** here — a breakpoint on the close path would separate them.
