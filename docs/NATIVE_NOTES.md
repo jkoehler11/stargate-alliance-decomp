@@ -1613,6 +1613,38 @@ Three readings:
 three of the 41 pixel programs not reached here may be exactly that. The ids are numbers with no names attached — which
 material each represents is still unknown.
 
+### The campaign sample: thirteen missions, all seven (2026-11-19)
+
+`tools/xemu/shader-union.sh` makes this a one-line measurement per mission: boot the index with the GDB stub, break on
+`_XGAssembleShader@44`, record the stops, and fold every JSON into a per-program table (`--summary`). Thirteen indices
+spanning the campaign — `10 15 20 25 30 35 40 45 50 55 60 65 70` — give **ten or eleven stops each, the same seven
+programs, and every program compiled by every mission**:
+
+| program | version | missions compiling it |
+|---|---|---|
+| `0x00524b00` | `vs.1.1` | **13 of 13** |
+| `0x00524be0` | `xps.1.1` | **13 of 13** |
+| `0x00524c50` | `xps.1.1` | **13 of 13** |
+| `0x00524d18` | `xps.1.1` | **13 of 13** |
+| `0x00526160` | `xvs.1.1` | **13 of 13** |
+| `0x00526c38` | `xps.1.1` | **13 of 13** |
+| `0x00528354` | `vs.1.1` | **13 of 13** |
+
+**A window that closes early looks exactly like a smaller shader set.** The first pass reported indices 20 and 45 as
+**five** programs, with 8 and 9 stops against the others' 10–11 — a plausible reading was "some missions need fewer
+shaders". Re-running those two alone with `SG1_WINDOW=1000` gave **eleven stops and seven programs** each, so the missing
+two were compiled after the 640-second window closed. The instrument, not the game, produced the variance, and the
+harness now takes the window as an environment variable because of it.
+
+**What this settles for Phase 6.** The bake table is those seven programs: thirteen campaign missions plus the four earlier
+loads (M00, M04B, M12F and the front end) all compile a subset of them, and none compiles an eighth. "Seven programs" is
+therefore a floor *and* the whole set for everything measured — 17 loads in total — while the campaign's remaining fifty
+indices are the only thing that could still add one.
+
+**Limits.** Thirteen of 63 indices, one load each; a mission that compiles an eighth program only on a second visit (a
+cutscene, a vehicle section) would not appear here. The harness records the stops but not which *case* of the dispatcher
+selected each program, so "which mission uses which shader for what" is still unread.
+
 ## Karma ragdolls: `.ka` and `.kaw` are XML (PLAN 5.5)
 
 The four Karma files under `Resources/` are not binary and do not need an extractor: a `.ka` opens with
