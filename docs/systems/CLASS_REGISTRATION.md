@@ -808,6 +808,73 @@ offsets, an exception-scope table and not a vtable; `0x5172ec` starts a 27-dword
 UTF-16 string `mesh!!`. None of the four has a store site inside any body of the map, which is the census's
 reason for listing it and the reason none of them is a class table.
 
+## Who calls the installer: the class below it, and the tables a class builds twice
+
+The three channels above read the body that stores a table. `tools/class-installer-callers.py` reads the
+other end of the edge -- every body that **calls** an installer -- over all **724** tables of
+`inventory/native_vtable_reach.csv`, not only the 492 the class map covers: **228 of the 246 nameless
+tables are tables the mapped census never sees**, and they are read here by the same rule.
+`tools/class-table-parents.py` already turns the callers of an unnamed installer into a parent name for the
+18 mapped tables the class map leaves open; this pass covers the other 228 and records what the callers say
+about each table instead of only naming a parent. MSVC makes every subclass's constructor and destructor
+call its parent's installer, so the direct callers of an installer are the classes just below it, and the
+deepest common ancestor of those classes over `classes.csv`'s script supers plus
+`inventory/class_table_parent_edges.csv`'s native parent edge is the class the table belongs to.
+
+<!-- generated:class-installer-callers -->
+| population | tables | installer body called directly (`E8`) | a caller class names the owner | no direct caller | no installer body |
+|---|---|---|---|---|---|
+| named | 474 | 471 | 101 | 1 | 2 |
+| at-least | 38 | 37 | 9 | 1 | 0 |
+| plain-only | 208 | 161 | 16 | 27 | 20 |
+| no-store | 4 | 0 | 0 | 0 | 4 |
+
+**The control: on the 474 named tables the callers are the derived classes, and their deepest common ancestor is the table's class on 62, one of its descendants on 39 and an unrelated class on 2.** 368 named tables are called only from bodies with no `ctor_`/`dtor_` symbol, and 1 have no direct caller at all.
+
+**Of the 246 nameless tables, 45 are built inside a class's own constructor -- 22 by a group of sibling classes, so the table is the base their constructors and destructors reset to, and 23 by a single class whose own table is a different address, a second table that class builds. 153 are called only from bodies with no class symbol and 28 are never called directly.**
+
+**Of the 58 tables whose installer is destructor-shaped or neither, 10 have callers that carry a `ctor_`/`dtor_` class symbol, and there the callers are the sibling destructors that reset the pointer to this table; 28 are called only from bodies with no class symbol, 12 are never called directly and 8 have no installer body.**
+<!-- /generated:class-installer-callers -->
+
+**The direct call is the rule, not the exception, and the control is the class's own lineage.** Of the
+474 named tables, 471 have an installer body that some `E8` in `.text` calls, and 101 of the 103 whose
+callers carry a `ctor_`/`dtor_` class symbol land the deepest common ancestor on the table's class (62) or on
+one of its descendants (39) -- **101 of 103, the two strangers being the `Material`/`RenderedMaterial`
+families whose common base has no script row.** Only two named tables have no direct caller at all, so the
+installer is reached by a call and not by a pointer except in the exception. What the 368 named tables
+called only from unnamed bodies say is the other half: their callers are real bodies the symbol map still
+has no name for, which is U40's population met from this side.
+
+**Of the 246 nameless tables, 45 are built inside a class's own constructor.** Twenty-two are called by a
+group of sibling classes -- `AudioSubsystem`/`Input`, `D3DRenderDevice`/`NullRenderDevice`,
+`ChannelDownload`/`HTTPDownload`, `IndexBuffer`/`SkinVertexBuffer`, the five `VertexStream*` classes,
+`TcpNetDriver`/`TcpNetDriverXbox`/`DemoRecDriver`, `TcpipConnection`/`TcpipConnectionXbox`/`DemoRecConnection`,
+`Level`/`NetPendingLevel`/`DemoPlayPendingLevel`, `ActorChannel`/`ControlChannel`/`FileChannel`/`VoiceChannel`
+-- so the table is the base their constructors and destructors reset to, and the group names the family
+around it. Twenty-three are called by exactly one class that **already owns a different table**: `Texture`
+(18 slots at `0x0051ffd8`, its own table `0x004cfba0`), `StaticMesh` (two 9-slot tables and its own
+`0x0051dd28`), `Cubemap` (15 against `0x005205c8`), `VertMesh` (11 against `0x00520fd8`),
+`SkeletalMeshInstance` (9 against `0x0051c188`), `SkeletalMesh` (four 2-slot tables against `0x0051c310`),
+`D3DRenderDevice` (65 against `0x0052b460`), `XboxViewport` (1, 2 and 56 slots against `0x004c9618`),
+`XboxClient`, `GameEngine`, `TextBufferFactory`, `ObjectExporterT3D`, `LinkerLoadGame`/`LinkerSaveGame` and
+`XHVVoiceSubsystem`. Those are not class tables the packages forgot: the class is named and the array is a
+second one its constructor writes -- 12 at `[reg]` and 11 into a member field at least once, so
+`inventory/class_table_store_fields.csv` is the discriminator between a second class table and a member's
+interface, and the 12 written only at `[reg]` are the residue a per-body read still has to name.
+
+**The 29 destructor-shaped and 26 unclassified tables get the per-body answer U40 asked for, and it is the
+destructor's own edge.** Ten of the 58 have named `dtor_` callers, and in every one the callers are the
+sibling destructors that reset the pointer to this table before running their own base's: `AudioSubsystem`
+and `Input` (1 and 31 slots), the material family (`ConstantMaterial`, `ParticleMaterial`,
+`PixelShaderMaterial`, `ProjectorMaterial`, `Shader`, `TerrainMaterial`, `TexCoordMaterial`, `VertexColor`,
+46 slots at `0x004c7a10`), `Texture`/`ProxyBitmapMaterial`/`ScriptedTexture`/`ShadowBitmapMaterial`
+(48 slots at `0x004c7ac8`), `CameraEffect`'s eleven screen subclasses (33 slots at `0x004c7c78`, the one
+group whose common ancestor resolves) and likewise `D3DRenderDevice`/`NullRenderDevice`, the two download
+classes, the two buffer classes and the five `VertexStream` classes. So a destructor-shaped installer is not
+a missing constructor site: it is the base's destructor, and the table it stores is the base's vtable. The
+other 48 split 28 called only from unnamed bodies, 12 never called directly and 8 with no installer body,
+which is why a shape rule alone could not classify them.
+
 ## What this measurement does not say
 
 - **It does not separate dead code from map artefacts.** A body the symbol map names at an odd
