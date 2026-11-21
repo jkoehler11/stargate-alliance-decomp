@@ -1544,8 +1544,11 @@ counts already measured for it, and whether the family is owed a read at all.
 
 The read is owed where *no* member carries a name, and the number is smaller than the table count by the
 families that already answer it: the representative is a formality for the named and member-held families,
-and for the 89 anonymous ones it is the class whose name a per-body read would have to earn. That is the
-same read the 399 unnamed bodies need, so the two populations are one work item and not two.
+and for the 89 anonymous ones it is the class whose name a per-body read would have to earn. That read is
+now costed in the section below: **56 of the 89 have a mapped body, 26 own only a gap head U40 already
+decodes, and 7 are the compiler's defaults**, so the list is 56 reads and not 89 -- and the same 257
+distinct bodies are U40's slot-named half, which makes the interface population and the map's gap work
+one list rather than two.
 
 ## The channel that named four class tables is measured shut for the interfaces
 
@@ -1595,6 +1598,98 @@ what a representative's slots do, or from a member field that holds it.
 `--check` is synthetic (a slot whose body asserts in a file, a library method's mangled name, the document
 frequency, the class-table control, the block and the artifact round trip; no dump, writes nothing) and
 `--check-doc` rebuilds the block from the committed CSV. Both run in `make ci`.
+
+## What the 89 representatives hold: 56 bodies, 26 gap heads and 7 defaults
+
+The families census bound the per-body read at 89 representatives and the token census measured the
+interface side of the assert-file channel shut; neither said how much of that list has a body to read.
+`tools/class-interface-behaviour.py` reads every slot of the 232 interface tables three ways -- the body
+census (a purecall, a stub of 8 bytes or less, a body with a map row, a body without one), the printable
+UTF-16 literals a body pushes, and the direct `E8` calls it makes -- so the read's size is a measurement
+before it is a question.
+
+<!-- generated:class-interface-behaviour -->
+| what the slot bodies are | tables | slots |
+|---|---|---|
+| `callee-file` | 40 | 526 |
+| `assert-only` | 13 | 172 |
+| `mapped-no-name` | 112 | 1253 |
+| `unmapped-only` | 48 | 486 |
+| `no-body` | 19 | 90 |
+
+**165 of the 232 interface tables hold at least one body the map decodes (657 slots), 151 call something, and 40 name the file they call; 48 tables' only body is an undecoded gap head and 19 hold no body at all.** The 342 interface slots outside the function map are 342 `tools/gap-heads.py` heads over 257 distinct bodies, so they are U40's work and not a fourth channel: 213 of the 257 sit in exactly one table and 44 in two or more -- and of the shared ones 42 sit at the same slot index in both tables and 2 at different indices, so the twin families share bodies and an add would have to name one body from two tables for those.
+
+| the 89 representatives | families |
+|---|---|
+| `callee-file` | 11 |
+| `assert-only` | 9 |
+| `mapped-no-name` | 36 |
+| `unmapped-only` | 26 |
+| `no-body` | 7 |
+
+**Of the 89 representative reads the families census owes, only 56 have a mapped body to read; 26 more own nothing but an undecoded gap head and 7 are the compiler's defaults (purecalls and stubs) and have no read at all.** 11 of the mapped ones carry a callee file.
+
+| representative | slots | the file its slots call | callee class | the slot's own token | agree |
+|---|---|---|---|---|---|
+| `0x004c8db8` | 26 | UnTemplate:21 | - | - | one-side |
+| `0x004d0ec8` | 21 | UnTemplate:2 | - | - | one-side |
+| `0x00510f78` | 18 | UnCache:2 UnRenderLight:2 | - | - | one-side |
+| `0x005124a4` | 12 | UnTemplate:2 | - | UnOctree | no |
+| `0x004f7070` | 12 | UnTrace:1 | - | - | one-side |
+| `0x00516fd4` | 14 | UnActor:2 UnMaterial:2 UnObjBas:2 UnFluidSurface:1 UnMath:1 UnParticleSystem:1 | - | - | one-side |
+| `0x005170f4` | 15 | UnActor:2 UnMaterial:2 UnObjBas:2 UnFluidSurface:1 UnParticleSystem:1 | - | - | one-side |
+| `0x0051ec98` | 23 | UnSkeletalMesh:3 UnStaticMesh:2 UnMaterial:1 | - | - | one-side |
+| `0x0052bbf8` | 65 | D3DRenderState:1 D3DResource:1 | - | D3DRenderInterface | no |
+| `0x0052ef14` | 8 | UnTemplate:1 | - | - | one-side |
+| `0x0053d58c` | 1 | UnTemplate:1 XboxLiveMatchMaking:1 | - | - | one-side |
+
+**The callee file is the helper's file, not the interface's.** 14 tables carry both a slot token and a callee file: **0 agree and 14 disagree**, and 37 carry only one of the two. A slot token is the file the interface's own method was compiled from and a callee file is the file of the code that method calls, so the call target labels what a slot does -- a template instantiation, a class helper, zlib -- and cannot stand in for the interface's name.
+
+**52 tables' slot bodies push a printable literal, and none of them is a source path.** The strings name what the slot does rather than the file it came from (`0x004c8410` zlib: uncompress failed; `0x004c84d0` ReadFile failed: Count=%i BufferCount=%i Error=%s; `0x004c85b0` ReaderSaveLinear; `0x004c8db8` D:\; `0x004c93c4` ISFULLSCREEN; `0x004c9858` Core), so a literal labels a slot's subsystem where the map has no name for its body, and the `<Module>_<File>` token is not among the pushed immediates.
+<!-- /generated:class-interface-behaviour -->
+
+**56 of the 89 representatives have a mapped body, and that is the whole per-body read.** The other 33
+split by what they own instead: **26** hold no mapped body at all but do hold a body
+`tools/gap-heads.py` already decodes -- U40's slot-named gap heads, so they are an add on the map's
+existing route rather than a read of this census -- and **7** are the compiler's defaults, purecalls and
+stubs with no body anywhere, which owe no read and cannot be named from behaviour they do not have.
+Nineteen of the 232 tables are in that no-body class and 48 are unmapped-only, so the representative
+list is representative of the table list: the same three populations in the same proportions.
+
+**The call target labels what a slot does, not which interface it is.** 40 tables' slots call a body the
+map names with a `<Module>_<File>` symbol, so the callee's file is readable, and 11 representatives carry
+one -- but **of the 14 tables that carry both a callee file and the slot's own assert token, 0 agree and
+14 disagree**. A slot token is the file the interface's own method was compiled from; a callee file is
+the file of the code that method calls, which on this population is a template instantiation
+(`UnTemplate` on 7 representatives), a class helper (`UnClass`) or a library (`zlib`, `D3DResource`). It
+is a behaviour label and the page's earlier reading of it as a "second witness" was wrong: the second
+witness for an interface's *name* has to come from a member field or a caller, not from a call target.
+
+**The literals name a subsystem and never a source path.** 52 tables' slot bodies push a printable
+UTF-16 literal and **none of them ends in `.cpp` or `.h`** -- `zlib: uncompress failed`,
+`[FCollisionHash::RemoveActor] IterateCount Over 10000!`, `ISFULLSCREEN`, `ReaderSaveLinear`. The
+`<Module>_<File>` symbol the map carries is therefore not the pushed assert path of this build, and the
+literal channel labels a slot's subsystem (`CollisionHash`, `D3D`, `zlib`, the package writer) where the
+map has no name for its body; it cannot name an interface either.
+
+**Where this leaves the naming question.** The 56 mapped representatives are now an index rather than a
+blank: each row carries its slot mix, its callees and its literals, so a later read can start from the
+`UnTemplate`/`UnClass`/`D3D*` groups instead of re-deriving them. What the artifact does not do is name
+one, and this measurement says why: an interface's own file is written in no channel its slots carry --
+not in the token that 25 of 232 tables have, not in what they call, and not in what they push. The
+remaining name channels are the ones already measured for other populations: a member field that holds
+the object (which is how the 49 member tables are named) and a caller whose class is known.
+
+The census reads every slot of the population, so its `census` row holds the totals and the distinct
+count of gap-head bodies the slots hold:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-interface-behaviour.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-interface-behaviour.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (the five categories, the two file witnesses and their four agreement answers,
+the source-path pattern, and the artifact round trip; no dump, writes nothing) and `--check-doc` rebuilds
+the block from the committed CSV with no dump. Both run in `make ci`.
 
 ## The 27 exact repeats are per-class, not per-translation-unit
 
