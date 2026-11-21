@@ -1884,3 +1884,5 @@ address,action,target,size,evidence
 0x003ebf93,add,?__CxxSetUnhandledExceptionFilter@@YAHXZ,18,"masked body equals libc.lib obj\i386\unhandld.obj; in a .text gap, so the map had no row to name"
 0x003ec153,add,__ioinit,97,"masked body equals libc.lib obj\i386\ioinit.obj; in a .text gap, so the map had no row to name"
 0x003f25f2,add,_XapiDpcForCancelIo@16,39,"masked body equals xapilib.lib obj\i386\cancelio.obj; in a .text gap, so the map had no row to name"
+0x00186420,add,??0XAsmCD3DXDwStack@XGRAPHICS@@QAE@XZ,16,"identical body to the copy at 0x0049b6c5 with every rel32 branch target equal, so it is the same code at a second address (a COMDAT copy), not a lookalike thunk; in a .text gap, so the map had no row to name"
+0x00347975,add,??0Buffer@XGRAPHICS@@QAE@XZ,13,"identical body to the copy at 0x0047dc50 with every rel32 branch target equal, so it is the same code at a second address (a COMDAT copy), not a lookalike thunk; in a .text gap, so the map had no row to name"

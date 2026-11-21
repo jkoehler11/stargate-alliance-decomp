@@ -310,33 +310,33 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | measure | value |
 |---|---|
 | `.text` | `0x00011000`..`0x004190fc` (4227324 bytes) |
-| gaps between map rows / bytes they cover | 11285 / 565248 (3654 gaps under 8 bytes) |
-| heads the pad-before + prologue rule finds | 2499 |
-| ...decode to a body / are a 1-2 instruction island | 2108 / 313 |
+| gaps between map rows / bytes they cover | 11285 / 565219 (3654 gaps under 8 bytes) |
+| heads the pad-before + prologue rule finds | 2497 |
+| ...decode to a body / are a 1-2 instruction island | 2106 / 313 |
 | ...refused (`no-close` / `undecoded`) | 36 / 42 |
-| bytes the bodies cover | 273057 (48.0% of the gap bytes) |
+| bytes the bodies cover | 273028 (48.0% of the gap bytes) |
 | runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 1130 in 946 runs |
-| bodies a split ends (a terminator no branch in the run targets) | 197 |
+| bodies a split ends (a terminator no branch in the run targets) | 196 |
 | bodies in a generated family (`register-once` / `_atexit`) | 0 / 0 |
 | named by a dword outside `.text` | 836 |
 | ...of those, in a class-table slot (391 bodies; 724 tables, 2 of them class-named) | 391 |
 | named by an `E8`/`E9` branch | 68 |
-| named by a `68` push | 719 |
-| named by any channel / by none | 1606 / 815 |
-| boundaries: the gap's start / fill / a split | 222 / 2080 / 197 |
-| heads a measured opening adds (not in the shared prologue table) / of them decode | 1031 / 1015 |
-| ...of those, named by no channel | 417 |
-| control: map rows passing the head rule / decoding to their size | 10687 of 13254 / 12506 |
-| ...the two tests apart: both / fill only (prologue miss) / opening only (boundary miss) / neither | 10687 / 322 / 2009 / 236 |
-| ...the same four cells with the shared prologue table alone | 9268 / 1741 / 1809 / 436 |
-| ...of the no-fill rows, the successor of a terminator (what the split arm reads) / of nothing | 1932 / 313 |
-| ...rows the measured openings name that the shared table refuses: behind fill / behind code | 1419 / 200 |
+| named by a `68` push | 718 |
+| named by any channel / by none | 1605 / 814 |
+| boundaries: the gap's start / fill / a split | 222 / 2079 / 196 |
+| heads a measured opening adds (not in the shared prologue table) / of them decode | 1029 / 1013 |
+| ...of those, named by no channel | 416 |
+| control: map rows passing the head rule / decoding to their size | 10688 of 13256 / 12508 |
+| ...the two tests apart: both / fill only (prologue miss) / opening only (boundary miss) / neither | 10688 / 322 / 2010 / 236 |
+| ...the same four cells with the shared prologue table alone | 9268 / 1742 / 1809 / 437 |
+| ...of the no-fill rows, the successor of a terminator (what the split arm reads) / of nothing | 1933 / 313 |
+| ...rows the measured openings name that the shared table refuses: behind fill / behind code | 1420 / 201 |
 | ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | 76 / 4 |
 | ...split points that reading means / of those, entries of a `.text` jump table | 386 / 357 |
 | ...of the rows still cut, a class-table slot names the opening / nothing names it | 0 / 4 |
 | inline jump tables in `.text` (aligned runs of >=3 code addresses) / entries | 144 / 1510 |
 | control: the same rule over `.rdata`, `.data`, XNET, DSOUND (646 head-shaped runs, 3.3 MB of data) | 0 / 0 / 0 / 403 bodies |
-| base rate: a dword outside `.text` names a random gap byte / a map row's start | 34 of 2000 (1.7%) / 642 of 2000 (32.1%) |
+| base rate: a dword outside `.text` names a random gap byte / a map row's start | 31 of 2000 (1.6%) / 638 of 2000 (31.9%) |
 
 | gap | heads | bodies | first head |
 |---|---:|---:|---|
@@ -354,7 +354,7 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | `global-load-eax` | 890 | 8 |
 | `global-load-ecx` | 78 | 0 |
 | `global-load-edx` | 23 | 0 |
-| `self-return` | 91 | 0 |
+| `self-return` | 93 | 0 |
 | `getter-disp8` | 156 | 1 |
 | `getter-disp32` | 89 | 0 |
 | `fpu-arg` | 76 | 0 |
@@ -364,9 +364,9 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | `push-arg` | 28 | 0 |
 | `bare-ret` | 30 | 4 |
 
-391 of the 2108 bodies sit in a class-table slot; 388 of those are in the 235 tables no registration names, and 815 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+391 of the 2106 bodies sit in a class-table slot; 388 of those are in the 235 tables no registration names, and 814 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
 
-The split rule does not hold on the map's own rows the way it holds on the gaps: 76 rows read as two bodies with relative branches alone, and **357 of their 386 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 197 split heads**, which is what makes the 197 splits bodies rather than case blocks.
+The split rule does not hold on the map's own rows the way it holds on the gaps: 76 rows read as two bodies with relative branches alone, and **357 of their 386 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 196 split heads**, which is what makes the 196 splits bodies rather than case blocks.
 <!-- /generated:gap-heads -->
 
 **What is left is what no channel names.** 279 bodies still sit in a table slot -- **264 of them in the 246
@@ -552,3 +552,12 @@ python3 tools/module-split.py --lists "$WORK/export"
 
 Only real modules get a list. The three `(…)` buckets are ways a function can carry a name without a module — dispatch
 names, GNatives slots and MSVC-mangled symbols — and exporting them as a "module" would be inventing one.
+
+**The COMDAT-duplicate route over the gap bodies yields 2, and the naive version of it says 10 (2026-11-21).** Asking
+whether an unnamed gap body is the same code as an already-named function is cheap: compare the bytes with the operands of
+`E8`/`E9`/`0F 8x` zeroed. Over the 2,034 gap bodies of 12 bytes or more that matches **10**. Eight of those are wrong, and
+the mask is why: two `jmp` thunks to *different* targets both reduce to `E9 00000000`, so a comparison that hides the
+operand cannot tell a copy from a lookalike. Requiring the rel32 targets to be equal as well leaves **2** --
+`??0XAsmCD3DXDwStack@XGRAPHICS@@QAE@XZ` at `0x00186420` (copy of `0x0049b6c5`) and `??0Buffer@XGRAPHICS@@QAE@XZ` at
+`0x00347975` (copy of `0x0047dc50`) -- and both are now rows. The route is exhausted at that yield: the other 2,032 gap
+bodies are code nothing names and nothing duplicates.
