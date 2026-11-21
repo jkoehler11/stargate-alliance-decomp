@@ -1507,32 +1507,32 @@ break: a derived class's table is never shorter than its parent's.
 <!-- generated:class-ladder-rungs -->
 | parent (unnamed) | slots | children | replaced | added | most slots in a child | verdicts |
 |---|---|---|---|---|---|---|
-| `0x004c78c0` | 31 | 7 | 6 | 38 | 55 | extends 3 identical 3 shorter 1 |
+| `0x004c78c0` | 31 | 7 | 7 | 93 | 56 | extends 6 identical 1 |
 | `0x004c7958` | 46 | 4 | 18 | 0 | 46 | extends 3 identical 1 |
-| `0x004c7a10` | 46 | 9 | 21 | 2 | 47 | extends 6 identical 3 |
-| `0x004c7ac8` | 46 | 4 | 9 | 18 | 58 | extends 4 |
-| `0x004c7c78` | 34 | 10 | 32 | 0 | 33 | shorter 10 |
-| `0x004c9348` | 30 | 2 | 4 | 6 | 35 | extends 2 |
-| `0x004c93d0` | 35 | 1 | 2 | 59 | 94 | extends 1 |
-| `0x004c94b0` | 30 | 1 | 3 | 16 | 46 | extends 1 |
+| `0x004c7a10` | 46 | 9 | 21 | 4 | 48 | extends 6 identical 3 |
+| `0x004c7ac8` | 48 | 4 | 16 | 10 | 58 | extends 4 |
+| `0x004c7c78` | 32 | 10 | 28 | 4 | 33 | extends 10 |
+| `0x004c9348` | 31 | 2 | 6 | 36 | 56 | extends 2 |
+| `0x004c93d0` | 56 | 1 | 14 | 1 | 57 | extends 1 |
+| `0x004c94b0` | 43 | 1 | 15 | 0 | 43 | extends 1 |
 | `0x004cfe68` | 59 | 3 | 13 | 0 | 59 | extends 3 |
-| `0x004d0318` | 31 | 3 | 0 | 31 | 43 | extends 3 |
-| `0x004d03c8` | 31 | 3 | 1 | 36 | 43 | extends 3 |
-| `0x004d1468` | 35 | 4 | 9 | 9 | 42 | extends 4 |
-| `0x004d17a8` | 37 | 13 | 28 | 208 | 53 | extends 13 |
-| `0x004d2400` | 31 | 1 | 1 | 6 | 37 | extends 1 |
+| `0x004d0318` | 40 | 3 | 16 | 1 | 41 | extends 3 |
+| `0x004d03c8` | 42 | 3 | 14 | 0 | 42 | extends 3 |
+| `0x004d1468` | 35 | 4 | 9 | 25 | 53 | extends 4 |
+| `0x004d17a8` | 53 | 13 | 157 | 0 | 53 | extends 13 |
+| `0x004d2400` | 37 | 1 | 7 | 0 | 37 | extends 1 |
 | `0x004d34d8` | 32 | 1 | 1 | 0 | 32 | extends 1 |
 | `0x004d3af0` | 33 | 1 | 1 | 0 | 33 | extends 1 |
-| `0x004eaea8` | 31 | 2 | 1 | 36 | 50 | extends 2 |
-| `0x004fa390` | 34 | 4 | 14 | 12 | 37 | extends 4 |
-| `0x004fc4f0` | 30 | 2 | 3 | 41 | 71 | extends 1 identical 1 |
-| `0x004fc588` | 30 | 2 | 0 | 10 | 36 | extends 2 |
-| `0x004fcfe0` | 36 | 2 | 9 | 1 | 37 | extends 2 |
-| `0x005040d0` | 30 | 1 | 2 | 36 | 66 | extends 1 |
-| `0x00517860` | 30 | 3 | 3 | 0 | 30 | extends 3 |
-| `0x005178d8` | 30 | 5 | 5 | 10 | 32 | extends 5 |
+| `0x004eaea8` | 47 | 2 | 30 | 4 | 50 | extends 2 |
+| `0x004fa390` | 37 | 4 | 21 | 0 | 37 | extends 4 |
+| `0x004fc4f0` | 30 | 2 | 3 | 45 | 71 | extends 2 |
+| `0x004fc588` | 34 | 2 | 7 | 0 | 34 | extends 2 |
+| `0x004fcfe0` | 36 | 2 | 9 | 0 | 36 | extends 2 |
+| `0x005040d0` | 56 | 1 | 14 | 10 | 66 | extends 1 |
+| `0x00517860` | 30 | 3 | 3 | 2 | 32 | extends 3 |
+| `0x005178d8` | 32 | 5 | 15 | 0 | 32 | extends 5 |
 
-**476 of the 490 measured parent edges read as rungs -- 353 `extends`, 123 `identical`, 14 `shorter`.** A child's table is never shorter than its parent's, so a `shorter` row is the parent link or the slot count, not the rule: the rows above carry them.
+**490 of the 490 measured parent edges read as rungs -- 362 `extends`, 128 `identical`, 0 `shorter`.** A child's table is never shorter than its parent's, so a `shorter` row is the parent link or the slot count, not the rule: none does.
 
 **88 of the 490 edges land in a parent no registration names, over 24 distinct heads**, and every one of those heads is a class with no script row, so this is the only override census the 88 edges have: the remaining 402 are the script-linked population the control is read on.
 
