@@ -6212,3 +6212,20 @@ and `COneToOneEncoder`'s tables) because one index under several classes is thei
 in the image is that base's. What is left of this entry: the 2 bodies in `0x0051724c`, the 4 linker folds,
 the **359** interface-only bodies no name reaches, the 5 inherited, and the 807 bodies no channel names.
 
+**Answered since (2026-11-21, the per-body read at instruction boundaries).** The block on
+`docs/systems/CLASS_REGISTRATION.md` read two of its three channels as a 4-byte-aligned dword in the image,
+which is how a pointer in a table looks and not how a reference in code looks, so the string channel was reading
+**41** of the gap bodies where an operand read finds **104** (41 both, 63 only at an instruction, 0 only at an
+aligned dword) and **1,744** of the map's 16,734 where it finds **3,154**. The 63 begin with the CRT's file and
+memory layer (`ReadFile beyond EOF`, `ReadFile failed`, `FMallocError::Init`, `[XBOX-EXCEPTION] Filtered!!`), so
+part of what nothing names is not game code. The assert channel is unchanged (**0** in the gaps, 1,336 of the
+map's bodies as an operand against 1,337 by any offset), and the callee channel's `E8` byte scan is measured
+exact: 688 bodies either way in the gaps, and 12,383 against 12,379 on the map. The census's 2,476 heads are
+2,088 bodies and 310 islands with **78** left (42 the decoder never closes, 36 that close on nothing), which the
+artifact now counts -- its `unclosed` column had been structurally zero because the loader dropped those rows
+first. Two name channels are measured and refused with a number: a `Class::Method` literal reaches 2 gap bodies
+and 3 of the map's 3 with a part-agreeing name but only 5 of `inventory/body_names.csv`'s 6,147 exported bodies,
+and a build path inside a literal reaches 4 gap bodies while the map's control is 10 of 36 agreeing, because a
+header path is the file the inlined code came from and not the body's own. What is left of this entry: the 2
+bodies in `0x0051724c`, the 4 linker folds, the **359** interface-only bodies no name reaches, the 5 inherited,
+and the **807** bodies no channel names.

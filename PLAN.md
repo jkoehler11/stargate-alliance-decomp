@@ -17175,3 +17175,48 @@ sequence.
 - **Not in this bundle.** `0x0051724c`'s two member bodies, the 4 linker folds, the 359 interface-only
   bodies whose tables no vote names, the 5 inherited bodies (blocked on the base's table, which the image
   does not carry), and the 807 bodies no channel names.
+
+### Execution notes (2026-11-21, the reference is the instruction's operand, and the head census had 78 heads the read never saw)
+
+- **Task.** U40's closing residue ("the 807 bodies no channel names") rests on a per-body read that counts three
+  channels over the gap population. Two of the three were read as a **4-byte-aligned dword anywhere in the
+  image** -- the shape of a pointer in a table, not of a reference in code. This bundle reads both from the
+  instruction that carries the value and takes the aligned read as the control.
+- **The alignment was doing the reading.** `tools/gap-body-files.py` now sweeps the executable sections once with
+  `objdump` (the same independent decoder `vcall-receiver.py` uses for boundaries), buckets every instruction into
+  the body that contains it, and reads the 32-bit values its operands carry. String channel: map **1,744 ->
+  3,154** of 16,734 bodies, gap **41 -> 104** -- 41 both, **63 only at an instruction**, **0 only at an aligned
+  dword**, so the aligned scan is a strict subset and a dword no instruction owns is a data word inside code.
+- **What the 63 are.** `0x00018e90` (141 bytes) `ReadFile beyond EOF`, `0x0001a1d0` (311) `ReadFile failed`,
+  `0x00018c60` (22) `Can't seek compressed file`, `0x00019ba0` (267) `Error reentered: %s`, `0x00011d80` (27)
+  `[XBOX-EXCEPTION] Filtered!!`, `0x00034140`/`0x00034160` (25) `appHeapCheck`/`FMallocError::Init` -- the CRT's
+  file and memory layer, so part of the bodies nothing names is not game code. They are placed, not named: a
+  literal names a subsystem.
+- **The other two channels, measured rather than assumed.** The assert channel does not move (gap 0 either way;
+  map 1,336 as an operand against 1,337 by any offset, and the one body is a count in the artifact rather than a
+  dropped row). The callee channel's `E8` byte scan -- which the artifact called an upper bound -- is exact at
+  instruction boundaries: **688 = 688** with 0 bodies named by either read alone in the gaps, and 12,383 against
+  12,379 on the map (five bodies gained, one lost).
+- **The head census had 78 heads the read never visited.** `load_heads` kept only heads that carry a size, so the
+  42 heads the decoder never closes and the 36 that close on no terminator were dropped before the census counted
+  them -- which is why the artifact read `heads 2,398` against the census's 2,476 and its `unclosed` column was
+  structurally 0. The columns now read **2,476 / 2,088 / 310 / 78**.
+- **Two name channels refused with a number.** A `Class::Method` literal reaches **2** gap bodies
+  (`0x00034160` `FMallocError::Init`, `0x00034180` `FMallocError::Exit`, 25 bytes each) with an exact control (3 of
+  3 map bodies carry a part-agreeing name), but `inventory/body_names.csv` names only 5 of its 6,147 exported
+  bodies the same way, so the channel is thin rather than unexploited. A build path inside a literal (this build's
+  assert text holds the file and the expression in one string) reaches **4** gap bodies -- `Core\Inc\`
+  `FFileManagerXbox.h`/`Linear`/`Arc` -- and the control refuses it: 36 map bodies push such a path and only **10**
+  push their own file, 26 another's, because a header path is the file the inlined or asserted code came from.
+- **The interface representatives move with it.** The 88 representatives' gap bodies read 4 with a string in the
+  committed artifact and **18** at instruction boundaries over the same 211 bodies (call channel unchanged at 80),
+  which is what makes the per-body route's negative a measurement.
+- **Files.** `tools/gap-body-files.py` (the sweep, the operand read, the callee boundary, the literal path, the
+  method literal, the head census, six synthetic assertions), `inventory/gap_body_files.csv`,
+  `docs/systems/CLASS_REGISTRATION.md` (the new section and its regenerated block), `docs/UNKNOWNS.md` (U40),
+  `Makefile` (the help line), `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `--check` is synthetic and writes nothing; `--check-doc` rebuilds the block from the
+  committed CSV with no dump; the artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
+- **Not in this bundle.** The 807 bodies no channel names (63 more are placed and none named: a literal names a
+  subsystem), the `Class::Method` pair as map rows (a row needs the class the method belongs to), the 4 linker
+  folds, `0x0051724c`'s two member bodies and the 359 interface-only bodies.
