@@ -73,7 +73,7 @@ resolves, not a live attach.
   `Engine_UnActor` 97, `Core_UnClass` 73. The `.map` keeps the build's own text; the assembled `.s`
   gives every duplicate an `_<address>` suffix (1,299 symbols affected) so a debugger can address
   them separately, and the count is printed on every run.
-- **8,051 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
+- **8,055 functions are still `FUN_*`.** They are in the map — a debugger needs the address even
   without a name — and they are the engine bodies with no naming evidence (`docs/NAMING.md`), not a gap in
   this file. The library sections are named from a locally supplied XDK 5849.17 set (`make xdk-lib-names`,
   `make xdk-call-names`, `make xdk-lib-residue`, PLAN 4.2): **2,855 of the 3,109** bodies there, the rest of
@@ -103,7 +103,10 @@ make symbols           # then regenerate the map and the assembler form
 | `add` | a body the map has no row for; `target` carries its name | may not land inside any row, and needs a matching `xbe_overrides.csv` row — that file is what creates the function |
 | `rename` | the name this row's own instruction settles; `target` carries it | the map must have the row; moves no edge, so it cannot join an overlap |
 
-**398 rows** are in the file: 278 `add`s, 53 `rename`s, 56 `resize`s and 11 `drop`s. Each is one measured thing:
+**1,776 rows** are in the file: 1,655 `add`s, 53 `rename`s, 57 `resize`s and 11 `drop`s. Each is one measured
+thing, and most of the adds are one family: 537 slot-named bodies, 590 register-once thunks and 5 `_atexit`
+destructor registrations, the registration table's 268 native bodies, 595 generated stubs, and the 242 the
+declaration walk named after the class that declares each slot. The rest are one at a time:
 the `Core_UnTemplate` row at `0x0002f820` folded into the audio body it belongs to (`0x0002f13c`, 2,282 bytes),
 the pump at `0x0002feb0` given its real end (`0x3137f`), the body at `0x0002fa30` -- slot 33 of
 `XBoxAudioSubsystem`'s table, which calls `XboxAudio_FlushSounds` over `[this+0xd8]` -- added, eight other rows
@@ -111,7 +114,7 @@ that stopped inside the slot load or the `rdtsc` pair of a scope close resized t
 CRT's `sinh` stub added with `ULevel::MultiLineCheck` and one 63-byte BSP getter, the registration table's 268
 native bodies and the six a false split sat inside, four more false splits the sweep found from a row the map
 already had (a `resize` plus the `drop` of the fragment inside it), and four rows that stopped short. The map is
-**15,240 functions and 4,017,423 bytes**.
+**16,617 functions and 4,215,790 bytes**, 8,055 of them still `FUN_*`.
 
 `--check` runs in `make ci` through the tool contract: it re-applies the file to the committed csv in memory and
 fails if the bytes differ, so a Ghidra re-import that undoes a repair is red instead of silently reverting the map.

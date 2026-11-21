@@ -5635,7 +5635,7 @@ bytes through its own `ret 8`. *The 600-body block*: `family` names it -- 590 re
 the only thing each names. *The adds*: 537 slot-named bodies plus these 595 take the map from 15,241 to
 **16,374 functions**. *The module attribution*: 265 of the 538 `<Class>_vt<slot>` rows now carry their class's
 module (`Engine` 156, `stargategame` 40, `Gui` 24, ...) through `inventory/classes.csv`; the other 273 name
-classes no shipped package declares.
+classes no shipped package declares. *The declaration walk's add*: the 701 slot-sitting heads are 224 declared, 40 a member's method, 423 an interface's, 7 an unnamed table's and 4 conflicts; 242 of them -- 211 declared over 119 classes, 31 member methods, 25,299 bytes -- are map rows now, each named after its declarer, and the 13 declared bodies left are the ones whose decode never closes. The gap census falls to 2,507 heads, and the artifact keeps one `add` row per body as its receipt, so the add is checked against the map with no dump.
 
 **Why it matters.** U38's `sinh` stub is one member of what is left, and its "no `E8`/`E9` and no dword names
 it" is the shape of the 399, not an exception. 277 of the bodies sit in a table slot the map still has no row
