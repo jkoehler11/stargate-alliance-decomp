@@ -14,9 +14,9 @@ such a site with the name it could not build, so a table called only from a gap 
 caller* -- which is a report about the map, not about the image. `site_split()` keeps the two apart and
 the verdict is `caller-gap`; `no-call` now means no `E8` in `.text` targets the installer at all.
 
-Two populations answer the question from opposite sides. On the 474 tables the registration path
+Two populations answer the question from opposite sides. On the 478 tables the registration path
 names, the callers are the derived classes' constructors and destructors, and the deepest common
-ancestor of those classes is the table's class -- that is the control. On the 250 tables no
+ancestor of those classes is the table's class -- that is the control. On the 246 tables no
 registration names, the same join either names the class whose C++ constructor builds the table
 (a *second* table of a class that already owns one, or a base whose own class owns none), or finds
 callers that are not constructors at all, which says the store is an inlined construction inside an

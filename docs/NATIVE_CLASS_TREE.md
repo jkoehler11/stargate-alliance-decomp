@@ -1,9 +1,11 @@
 # The class tree measured from the constructors
 
-`inventory/xbe_class_table_names.csv` names **474 of the 492** per-class tables in `.rdata`: from the
-class literal a registration site pushes (`tools/class-table-names.py`), and — where no site reaches the
-table — from the constructor tree, with `name_rule` `tree-paired`. The 18 it leaves unnamed are the
-engine's own base classes — `Player`, `RenderDevice`, `Channel`, `Download`, … — whose registration is
+`inventory/xbe_class_table_names.csv` names **478 of the 492** per-class tables in `.rdata`: from the
+class literal a registration site pushes (`tools/class-table-names.py`), from the constructor tree
+(`name_rule` `tree-paired`), and — for four tables — from the base a ladder's slots name
+(`name_rule` `slot-file-token`: `0x004c93d0` `Viewport`, `0x004d0318` `NetDriver`, `0x004d03c8`
+`NetConnection`, `0x004fa390` `Channel`, all four applied 2026-11-21). The 14 it leaves unnamed are the
+engine's own base classes — `Player`, `RenderDevice`, `Download`, … — whose registration is
 not a generated `ucpp` stub, so there is no stub body for a table store to sit in (`docs/UNKNOWNS.md`
 U8). Of the 24 tables the literal path cannot reach, six are paired by a child-super rule calibrated on
 the names the literal does carry and **applied to the map**, five carry a family hint, and the last 13
@@ -14,7 +16,7 @@ it can and cannot name. `tools/class-tree-edges.py`; it reads `inventory/class_c
 `inventory/xbe_class_table_names.csv`, `inventory/xbe_class_tables.csv` and `inventory/classes.csv`,
 so it needs no image and no boot for the tree half.
 
-    python3 tools/class-tree-edges.py                 # summary and the 18 unnamed tables
+    python3 tools/class-tree-edges.py                 # summary and the 14 unnamed tables
     python3 tools/class-tree-edges.py --xbe DUMP/.../default.xbe   # + the registration-site join
     python3 tools/class-tree-edges.py --xbe DUMP/.../default.xbe --all-sites   # ... over all 493 sites
     python3 tools/class-tree-edges.py --check         # synthetic self-test, no dump, writes nothing
@@ -376,8 +378,8 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 | `0x4fa390` | Channel | - | `parent-of-callers` | `constrained` |
 <!-- /generated:class-table-parents -->
 
-* **The installer-name edge reproduces the whole map: all 468 named tables `agrees`, 0 `adjacent`,
-  0 `differs`.** The counts are the block above, rendered from `inventory/class_table_parents.csv`;
+* **The installer-name edge reproduces the whole map it resolves: all 474 of the 478 named tables
+  `agrees`, 0 `adjacent`, 0 `differs`.** The counts are the block above, rendered from `inventory/class_table_parents.csv`;
   they read 464 / 2 / 1 for one run because three `ctor_`/`dtor_` symbols still carried the names the
   pre-#533 map gave their tables, which is the section *Three rows the rule could not reproduce were
   three constructor symbols* below. Every named table's installer is itself a `ctor_X`/`dtor_X`
@@ -1174,14 +1176,16 @@ and the committed registration census, and the decompiled bodies stay under `$WO
 tables the child-super rule pairs carry a name and say where it came from: `0x4c7958` `Material`,
 `0x4c7a10` `RenderedMaterial`, `0x4c7ac8` `BitmapMaterial`, `0x4c7c78` `CameraEffect`, `0x4cfe68`
 `WaterTexture` and `0x5040d0` `Engine`, all with `name_rule` `tree-paired` and the vote that produced
-them in `evidence`. The map reads **474 named of 492**, 18 unnamed, and every count on this page is
+them in `evidence`. The map reads **478 named of 492**, 14 unnamed, and every count on this page is
 regenerated from it — `make class-names` from the image reproduces the artifact byte for byte, because
 the pairs file is a committed input rather than a hand edit.
 
-**The second instrument closes on all 474.** `inventory/class_table_parents.csv` — the installer's
+**The second instrument closes on all 474 it resolves.** `inventory/class_table_parents.csv` — the installer's
 *callers*, which shares no input with the child supers — moves from 464 `agrees` and 6
-`unnamed->proposed` to **474 `agrees`, 0 proposed**, with the 2 `adjacent` and 1 `differs` it already
-had untouched. Six of six on the rows that were open is a check on both rules at once.
+`unnamed->proposed` to **474 `agrees`, 0 proposed** of the 478 named tables, with the 2 `adjacent` and 1
+`differs` it already had untouched; the four names the 2026-11-21 round added are its `constrained` rows,
+because a name no caller rule can derive is exactly what that rule cannot confirm. Six of six on the rows
+that were open is a check on both rules at once.
 
 **A second round is measured wrong, so the pairing is one level deep by construction.** The pair tool's
 fixpoint lets a fresh label answer its children inside one run, which makes letting the six applied

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Where a class table is stored: the object's own slot, or a member field of the object.
 
-`docs/UNKNOWNS.md` U40's class-side entry counts the **250 tables no registration and no class map
+`docs/UNKNOWNS.md` U40's class-side entry counts the **246 tables no registration and no class map
 names** and reports who installs them (`tools/class-table-installers.py`). That tool calls every
 `mov [reg(+disp)], <imm32>` an *install*, which is true of the store and says nothing about the field
 it writes. This tool reads the store's operand instead and partitions the tables by it:
@@ -16,7 +16,7 @@ it writes. This tool reads the store's operand instead and partitions the tables
   * `global` -- every store writes an absolute `[disp32]`, a global variable rather than an object;
   * `no-store` -- no `C7 /0` store carries the address.
 
-The named population is the control: **all 474 tables the registration path names are stored in the
+The named population is the control: **all 478 tables the registration path names are stored in the
 object slot and none of them only into a member**, so the reading is the store's own form rather than a
 guess about which pointer is `this`.
 

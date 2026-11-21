@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""The 250 tables no registration names are two populations: 18 class tables and 232 interfaces.
+"""The 246 tables no registration names are two populations: 14 class tables and 232 interfaces.
 
-`tools/class-table-store-fields.py` finds **250 tables no registration names** -- 38 a class constructor
-stores (the `bounded` bound), 212 only bodies no class names store (`plain-only`), 4 nothing stores.
+`tools/class-table-store-fields.py` finds **246 tables no registration names** -- 37 a class constructor
+stores (the `bounded` bound), 205 only bodies no class names store (`plain-only`), 4 nothing stores.
 U40's naming half has been read from the store's operand, the storing body's callers, the ctor's literals
 and the destructor shape, and none of those channels names the table. This tool asks a different question
 of the same population -- *what is the table?* -- because a class dispatch table and an interface object's
 table are told apart by their contents:
 
-  * the **class-table prefix**: every one of the 474 tables the registration path names starts with the
+  * the **class-table prefix**: every one of the 478 tables the registration path names starts with the
     same three bodies (`0x00062650`, `0x00062660`, `0x00062670`), and none of the 49 member tables does.
     A table that carries the same three slots is a class table by a control measured on both sides --
-    and `inventory/native_vtable_shared.csv` already partitions the same 250 the same way, because the
+    and `inventory/native_vtable_shared.csv` already partitions the same 246 the same way, because the
     232 tables it lists are the ones that share no prefix with a class table at all;
   * the **slot vocabulary**: a C++ class's vtable holds its own virtual methods, and this build's map
     carries masked-symbol matches against the shipped XDK libraries (`?Pump@CVoiceMailMsg@@...`), so a

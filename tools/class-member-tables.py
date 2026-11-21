@@ -16,7 +16,7 @@ censuses what is in it:
     interface) or when they have the same slot count and agree on at least half their slots (that is one
     interface with per-class overrides). Kin tables are joined transitively and reported as one family.
 
-The control is the class table itself. Every one of the 474 tables the registration path names has the
+The control is the class table itself. Every one of the 478 tables the registration path names has the
 *same* slot-0 body (`0x00062650`, the `UObject` dispatch entry every class table starts with), so a table
 whose slot 0 is something else is not a class table -- and no member table has it.
 

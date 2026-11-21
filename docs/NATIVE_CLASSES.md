@@ -1,8 +1,8 @@
 # The class tables and the classes that own them
 
-Status: **474 of the 492 tables** in `inventory/xbe_class_tables.csv` are named from the build's own
+Status: **478 of the 492 tables** in `inventory/xbe_class_tables.csv` are named from the build's own
 class registrations, and every class's object size comes with the name
-(`inventory/xbe_class_table_names.csv`, `tools/class-table-names.py`). The 18 that are not named are
+(`inventory/xbe_class_table_names.csv`, `tools/class-table-names.py`). The 14 that are not named are
 listed at the end; the 26 this header used to carry was the count before the tree pairing and the
 body-start extent rule named eight of them (`docs/NATIVE_CLASS_TREE.md`). This answers the "two families of table" question that `docs/NATIVE_VM.md` left
 open: the split is classes that override two virtuals against classes that keep an empty default.

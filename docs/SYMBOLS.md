@@ -1,6 +1,6 @@
 # The symbol map (`symbols/xbox.map`)
 
-Status: emitted and checked. **16,848 symbols** — 16,374 functions plus 474 class tables — every one
+Status: emitted and checked. **16,852 symbols** — 16,374 functions plus 478 class tables — every one
 inside the image's own sections, and `gdb` resolves them from the assembled form. This is PLAN 4.10.
 
 The function count is not a constant: it was 14,973 when this page was written and has grown as the map's boundary
@@ -269,7 +269,7 @@ bytes of code).
 | bodies a split ends (a terminator no branch in the run targets) | 154 |
 | bodies in a generated family (`register-once` / `_atexit`) | 0 / 0 |
 | named by a dword outside `.text` | 369 |
-| ...of those, in a class-table slot (277 bodies; 724 tables, 7 of them class-named) | 277 |
+| ...of those, in a class-table slot (279 bodies; 724 tables, 12 of them class-named) | 279 |
 | named by an `E8`/`E9` branch | 46 |
 | named by a `68` push | 651 |
 | named by any channel / by none | 1052 / 399 |
@@ -292,12 +292,12 @@ bytes of code).
 | `0x003fc208`..`0x00400340` | 19 | 19 | `0x003fc208` |
 | `0x001bd8cf`..`0x001bd9c0` | 15 | 15 | `0x001bd8d0` |
 
-277 of the 1249 bodies sit in a class-table slot; 269 of those are in the 250 tables no registration names, and 399 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+279 of the 1249 bodies sit in a class-table slot; 264 of those are in the 246 tables no registration names, and 399 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
 
 The split rule does not hold on the map's own rows the way it holds on the gaps: 58 rows read as two bodies with relative branches alone, and **348 of their 384 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 154 split heads**, which is what makes the 154 splits bodies rather than case blocks.
 <!-- /generated:gap-heads -->
 
-**What is left is what no channel names.** 277 bodies still sit in a table slot -- **269 of them in the 250
+**What is left is what no channel names.** 279 bodies still sit in a table slot -- **264 of them in the 246
 tables no registration names**, so there is no class to build a name from -- and **399 are named by no
 channel at all**: nothing calls them, nothing points at them, and the map has no row for them. The pointer
 channel names 369 of 1,451, a `68` push 651, a branch 46.

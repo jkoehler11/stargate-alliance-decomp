@@ -5971,3 +5971,19 @@ the methods they hold by 41; of the 109, 0 hold an assert path, 2 a string and 6
 per-body read therefore cannot name an interface, and what is left of this entry is the 56 mapped
 representatives' reads, the 399 bodies, and a name from a member field or a caller.
 
+
+**Answered since (2026-11-21, every page states the population the last round measured).** The registration
+population moved to **478 named of 492** and **246 unnamed** (37 a class constructor bounds, 205 stored only
+by bodies no class names, 4 with no store) when the slot-file-token ladder named `0x004c93d0` `Viewport`,
+`0x004d0318` `NetDriver`, `0x004d03c8` `NetConnection` and `0x004fa390` `Channel`; the pages that still
+quoted the pre-round 474/250/208/38 -- this page's `U40` siblings, `docs/systems/CLASS_REGISTRATION.md`'s
+hand-written paragraphs, `docs/NATIVE_CLASSES.md`, `docs/NATIVE_CLASS_TREE.md`, `docs/SYMBOLS.md` -- now
+carry the blocks' numbers, and the generated blocks agree with their prose. Four consequences the round did
+not itself state: the class tables `class-plain-tables.py` reads fall from 18 to **14** (232 interfaces
+unchanged, 214 of them unnamed); `0x0007e3b0`'s add moves five artifacts and is still not in; the
+`class-interface-behaviour` representative list is **55 mapped + 26 gap-head + 7 default** after the family
+merge (the `56` in the paragraph above is that round's 89-representative reading); and the gap-heads census,
+regenerated against the same map, moves **277 -> 279** bodies in a table slot, **269 -> 264** in the 246
+tables no registration names, and **7 -> 12** tables whose slot body carries a class name, because eight
+gap rows now sit in a slot of a table the round named. What is left of this entry is unchanged: the 55
+mapped representatives' reads, the `Core_UnVcWin32` add, and the 399 bodies nothing names.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The 232 interface tables' identity: 18 named by a slot, 49 held by a named field, 165 anonymous.
 
-`tools/class-plain-tables.py` splits the 250 tables no registration names into **18 class tables** (the
+`tools/class-plain-tables.py` splits the 246 tables no registration names into **14 class tables** (the
 class-table prefix) and **232 interface vtables** (its complement, and the same 232
 `inventory/native_vtable_shared.csv` lists). That census answers *what kind of object a table is*; this one
 asks *which tables are the same interface*, because the vtable -- not a name -- is the identity the image
