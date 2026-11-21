@@ -17033,3 +17033,67 @@ sequence.
   than their own.
 - **Files.** This note only; the tool changes and the regenerated artifacts are not in this bundle (they are
   kept in the run's work log). No boot, no xemu, no Ghidra.
+### Execution notes (2026-11-21, the class map closes at 492 of 492 in one round, because no channel votes on its own output)
+
+- **Task.** The previous note measured the fix and did not ship it: naming a table re-voted the channels
+  that named it, so the map went 489 -> 492 -> 491 over three rounds. The fix it named was to compute
+  both channels against a map blanked of the tool's own output. This bundle is that fix, the add, the
+  cascade and the artifact that reproduces.
+- **The parent edge is an equation, not a heuristic.** A class's constructor calls its parent's constructor
+  before it stores its own table, so the first table-storing call of class C stores the table of the class
+  `Super(C)` names: `table(Super(C)) = parent_va(C)`. Both sides are already read by this project (`Super`
+  is the `+0x28` store, `parent_va` the installer's store), so the channel has no free parameter and no
+  map in it. Control: of the **123** tables a child edge reaches, **120** are named by another rule and
+  the equation reproduces that name **120 of 120**, 0 disagreeing. It names the three the map did not --
+  `0x004c9348` **`Player`** (31 slots, from `NetConnection` and `Viewport`), `0x004d1468` **`Field`** (35,
+  from `Const`, `Enum`, `Property`, `Struct`) and `0x004fc4f0` **`LevelBase`** (30, from `Level`).
+- **The failure mode is measured, not excluded by hand.** `PendingLevel`'s class object says `Super =
+  Object` (table `0x004dd2a8`) and its installer still stores `0x004fc4f0`, so that call is not a base
+  call -- the class *embeds* a `LevelBase` -- and the child is reported on the row as
+  `PendingLevel(Object->0x004dd2a8)` instead of voting. That also ends
+  `class-table-lca.py`'s read of `class_table_parent_edges.csv` into its hierarchy: that census's
+  `parent_class` is a copy of the class map, so a name the tool wrote could become a hierarchy edge and
+  move the next round's vote. Dropping it changes 0 of 122 nearest-common-ancestor rows, which is what
+  makes the NCA a control rather than an input.
+- **Both channels read a blanked map.** `class-table-lca.py` blanks `name_rule=child-parent-edge` rows and
+  `class-super-edges.py` blanks `name_rule=child-super` rows before scoring. Without it the child-super
+  artifact could not be regenerated from its own inputs: a fresh `class-table-names.py` against the
+  committed map named **478** of 492 and dropped **11** rows (`Subsystem`, `Client`, `Property`,
+  `VoiceSubsystem`, `Exporter`, `Factory`, `RenderDevice`, `PendingLevel`, `Download`, `RenderResource`,
+  `VertexStreamBase`) whose map rows the join had classified `self`. Blanked, those 11 are re-derived
+  from the image on every run (102 control agreements, 0 disagreements).
+- **The add.** `class-table-names.py` gains `child-parent-edge`, reading `inventory/class_table_lca.csv`'s
+  `named-by-parent-edge` rows and filling only a row no other channel reached. **3 rows**: the map goes
+  **489 -> 492 of 492 named** and **3 -> 0 `no-registration`**; the census reads 465 unshared thunk, 2
+  hierarchy ancestor, 1 base store, 6 tree paired, 11 child super, 3 `child-parent-edge`, 4 slot-file
+  token, 0 unresolved.
+- **The cascades, and the censuses that had drifted.** `symbols/xbox.map` gains `Vtbl_Player`,
+  `Vtbl_Field` and `Vtbl_LevelBase`, each at **size 0** (a class with no script record has no size).
+  `class_table_installers.csv` 235 -> 232 rows (the three named tables stop being "unnamed"); the
+  class-tree census names 492, its child-set agreements 408 -> 411 and disagreements 23 -> 26, because the
+  three new names are native classes with no script row (`no-script-row` conflicts 17 -> 19,
+  `native-child` 1 -> 2) -- an honest cost of naming them. Regenerating the parent-edge census against the
+  named map moves it 377 agreed / 57 parent-unnamed / 56 class-outside-script -> **380 / 0 / 110**, and the
+  walk's own census `named_class_tables` 489 -> 492. The residue's duplicate population moves 105 groups
+  over 806 bodies -> **106 over 809**, because three more bodies are now two unrelated classes' identical
+  slot code.
+- **The fixpoint is measured.** The class map, the parents census, the parent-edge census, the super edges,
+  the super names and the LCA census were regenerated three times; rounds 2 and 3 are **byte-identical**,
+  and the naming census reads 492 of 492 every time.
+- **Files.** `tools/class-table-lca.py` (the equation, the member-construction exclusion,
+  `parent_edge_excluded`, the blanked map, the self-test), `tools/class-super-edges.py` (the blanked map,
+  the control split), `tools/class-table-names.py` (the `child-parent-edge` rule, its reader, its
+  self-test), `inventory/xbe_class_table_names.csv`, `inventory/class_table_lca.csv`,
+  `inventory/class_table_super_names.csv`, `inventory/class_table_parents.csv`,
+  `inventory/class_table_parent_edges.csv`, `inventory/class_super_edges.csv`,
+  `inventory/class_table_installers.csv`, `inventory/class_slot_declarers.csv`,
+  `inventory/declarer_residue.csv`, `inventory/class_plain_tables.csv`,
+  `inventory/artifact_hashes.csv`, `symbols/xbox.map`, `docs/systems/CLASS_REGISTRATION.md` (three
+  regenerated blocks, the section rewritten), `docs/NATIVE_CLASS_TREE.md`, `docs/STATUS.md`,
+  `docs/ARTIFACTS.md`, `README.md`, `docs/UNKNOWNS.md` (U40), this note.
+- **Gates.** `make ci` green; the three tools answer `--check` without the dump and write nothing; the six
+  artifacts reproduce byte for byte on a third run; the page's three blocks match their artifacts. No boot,
+  no xemu, no Ghidra.
+- **Not in this bundle.** `0x0051724c`'s two member bodies, the 4 linker folds, the 424 interface-only
+  bodies and the 807 bodies no channel names -- the class-map side has nothing left.
+

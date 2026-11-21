@@ -105,18 +105,18 @@ matching `--check-doc`, so it is the current numbers rather than the ones the fi
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named by the registration literal | 489 |
-| unnamed | 3 |
-| named tables with a measured child set | 408 |
+| named by the registration literal | 492 |
+| unnamed | 0 |
+| named tables with a measured child set | 411 |
 | … whose child set equals the class's direct subclasses in `classes.csv` | **385** |
-| … that disagree | **23** |
+| … that disagree | **26** |
 | … whose class has no subclass in the image (a leaf) | 81 |
 
 | conflict cause | tables |
 |---|---|
-| `no-script-row` | 17 |
+| `no-script-row` | 19 |
 | `descendant-edge` | 5 |
-| `native-child` | 1 |
+| `native-child` | 2 |
 | `foreign-child` | 0 |
 | `missing-only` | 0 |
 
@@ -125,7 +125,7 @@ matching `--check-doc`, so it is the current numbers rather than the ones the fi
 | named exactly by their child set | 0 |
 | ambiguous (two classes match) | 0 |
 | partly named child set | 0 |
-| unconstrained (no class's subclass set matches) | 3 |
+| unconstrained (no class's subclass set matches) | 0 |
 <!-- /generated:class-tree -->
 
 The claim this instrument is worth is the ratio of the two bold rows: the constructor call edges
@@ -360,8 +360,8 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named in `inventory/xbe_class_table_names.csv` | 489 |
-| unnamed | 3 |
+| named in `inventory/xbe_class_table_names.csv` | 492 |
+| unnamed | 0 |
 | `agrees` -- the installer's symbol names the committed class | **474** |
 | `adjacent` -- the symbol names a parent or child | 0 |
 | `differs` -- the symbol names an unrelated class | 0 |
@@ -373,16 +373,19 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 | table | committed | the rule's answer | basis | verdict |
 |---|---|---|---|---|
 | `0x4c78c0` | Subsystem | - | `parent-of-callers` | `constrained` |
+| `0x4c9348` | Player | - | `no-named-call` | `no-caller` |
 | `0x4c93d0` | Viewport | - | `parent-of-callers` | `constrained` |
 | `0x4c94b0` | Client | - | `parent-of-callers` | `constrained` |
 | `0x4d0318` | NetDriver | - | `parent-of-callers` | `constrained` |
 | `0x4d03c8` | NetConnection | - | `parent-of-callers` | `constrained` |
+| `0x4d1468` | Field | - | `parent-of-callers` | `constrained` |
 | `0x4d17a8` | Property | - | `parent-of-callers` | `constrained` |
 | `0x4d2400` | VoiceSubsystem | - | `parent-of-callers` | `constrained` |
 | `0x4d34d8` | Exporter | - | `parent-of-callers` | `constrained` |
 | `0x4d3af0` | Factory | - | `parent-of-callers` | `constrained` |
 | `0x4eaea8` | RenderDevice | - | `parent-of-callers` | `constrained` |
 | `0x4fa390` | Channel | - | `parent-of-callers` | `constrained` |
+| `0x4fc4f0` | LevelBase | - | `parent-of-callers` | `constrained` |
 | `0x4fc588` | PendingLevel | - | `parent-of-callers` | `constrained` |
 | `0x4fcfe0` | Download | - | `parent-of-callers` | `constrained` |
 | `0x517860` | RenderResource | - | `parent-of-callers` | `constrained` |

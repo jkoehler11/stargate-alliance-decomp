@@ -6153,3 +6153,21 @@ first instance field begins, so the offsets collide by layout rather than declar
 What is left of this entry: the class-map cascade for those two names (the declarer walk that names the
 bodies their slots hold), the 2 bodies in `0x0051724c`, the 4 linker folds, the 424 interface-only bodies and
 the 807 bodies no channel names.
+
+**Answered since (2026-11-21, the class map closes at 492 of 492, and the two channels stop scoring their
+own answers).** The three tables this entry left unnamed are named, and the rule that names them is an
+equation the image writes on both sides: a class's installer calls its parent's constructor before it stores
+its own table, so the first table-storing call of class C stores the table of `Super(C)`
+(`table(Super(C)) = parent_va(C)`). Over the **123** tables a child edge reaches, the **120** the map
+already named are reproduced **120 of 120** with 0 disagreements, and the three it did not are
+`0x004c9348` = **`Player`** (from `NetConnection` and `Viewport`), `0x004d1468` = **`Field`** (from `Const`,
+`Enum`, `Property`, `Struct`) and `0x004fc4f0` = **`LevelBase`** (from `Level`). `PendingLevel`'s store of
+`0x004fc4f0` is excluded, not counted: its class object says `Super = Object`, whose table is
+`0x004dd2a8`, so the call constructs a *member*. Both naming channels now read the class map with their own
+rows blanked (`name_rule=child-parent-edge`, `name_rule=child-super`), which is what makes their artifacts
+reproducible -- before it, a fresh run of the naming census named 478 of 492 and silently dropped the 11
+child-super rows -- and the six artifacts reproduce byte for byte over three rounds. Map 489 -> **492 of 492
+named, 3 -> 0 `no-registration`**; `symbols/xbox.map` gains `Vtbl_Player`, `Vtbl_Field` and
+`Vtbl_LevelBase` at size 0 (a class no package declares has no script record).
+What is left of this entry: the 2 bodies in `0x0051724c`, the 4 linker folds, the 424 interface-only bodies
+and the 807 bodies no channel names.

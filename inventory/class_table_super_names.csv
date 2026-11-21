@@ -1,5 +1,5 @@
 table_va,support,children,child_supers,class,verdict
-0x4c78c0,3,AudioSubsystem|Input|new,Subsystem|Subsystem|Subsystem,Subsystem,self
+0x4c78c0,3,AudioSubsystem|Input|new,Subsystem|Subsystem|Subsystem,Subsystem,names-the-table
 0x4c7958,35,Combiner|Modifier|MultiPassMaterial|PSAdditiveDistortion|PSBackBufferEffect|PSBlendedDistortionMaterial|PSBloomSelectMaterial|PSBlurMaterial|PSBump|PSBumpBSP|PSBumpSpecular|PSBumpSpecularBSP|PSDepthOfFieldMaterial|PSDistortionBaseMaterial|PSDistortionMaterial|PSEmissiveConstColor|PSEmissiveShader|PSLuminanceTexIndexMaterial|PSModulatedDistortionMaterial|PSMotionBlurMaterial|PSRefractionMaterial|PSReplicatorVision|PSShieldMaterial|PSSimple|PSSubtractiveDistortion|PSUseTexIndexMaterial|PSVDM|PSWater|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|ScriptedTexture|ShadowBitmapMaterial|TerrainMaterial|Texture,Material|Material|Material|PSBlendedDistortionMaterial|PixelShaderMaterial|PSDistortionBaseMaterial|PixelShaderMaterial|PixelShaderMaterial|PixelShaderMaterial|PSBump|PSBump|PSBumpSpecular|PixelShaderMaterial|PixelShaderMaterial|PSDistortionBaseMaterial|PixelShaderMaterial|PixelShaderMaterial|PixelShaderMaterial|PSBlendedDistortionMaterial|PixelShaderMaterial|PixelShaderMaterial|PixelShaderMaterial|PixelShaderMaterial|PixelShaderMaterial|PSBlendedDistortionMaterial|PixelShaderMaterial|PSBumpSpecular|PixelShaderMaterial|RenderedMaterial|RenderedMaterial|RenderedMaterial|BitmapMaterial|BitmapMaterial|RenderedMaterial|BitmapMaterial,,split
 0x4c7a10,7,ConstantMaterial|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|Shader|TerrainMaterial|TexCoordMaterial|VertexColor,RenderedMaterial|RenderedMaterial|RenderedMaterial|RenderedMaterial|RenderedMaterial|RenderedMaterial|RenderedMaterial|RenderedMaterial,RenderedMaterial,agrees
 0x4c7ac8,3,ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial|Texture,BitmapMaterial|BitmapMaterial|BitmapMaterial|BitmapMaterial,BitmapMaterial,agrees
@@ -11,7 +11,7 @@ table_va,support,children,child_supers,class,verdict
 0x4c9090,2,ACTION_TriggerEvent|LatentScriptedAction,ScriptedAction|ScriptedAction,ScriptedAction,agrees
 0x4c9180,2,ACTION_WaitForEvent,LatentScriptedAction,LatentScriptedAction,agrees
 0x4c93d0,1,XboxViewport,Viewport,Viewport,agrees
-0x4c94b0,1,XboxClient,Client,Client,self
+0x4c94b0,1,XboxClient,Client,Client,names-the-table
 0x4c9c60,2,AntiPortalActor|AvoidanceWaypoint|Brush|Controller|DamageType|DecoCollideActor|DecoVolumeObject|Decoration|Emitter|FarClipChange|FluidSurfaceOscillator|HUD|IMusicActor|Info|IntelligentSpawner|Inventory|InventoryAttachment|KActor|KRepulsor|Keypoint|Light|MatDemoActor|Mover|NavigationPoint|Note|Pawn|Pickup|PrecacheHack|Projectile|Projector|SGGenericOrderActor|SGLevel|SVehicleFactory|ShadowManager|StaticMeshActor|Triggers|VehiclePart|Vignette|xEmitter|xPickUpBase|xProcMesh|xWeatherEffect,Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor|Actor,Actor,agrees
 0x4c9e58,2,AIScript|AlkeshLandingZone|AmbientSound|ClipMarker|DecorationList|InterpolationPoint|LookTarget|PolyMarker,Keypoint|Keypoint|Keypoint|Keypoint|Keypoint|Keypoint|Keypoint|Keypoint,Keypoint,agrees
 0x4ca048,2,ScriptedSequence,AIScript,AIScript,agrees
@@ -41,11 +41,11 @@ table_va,support,children,child_supers,class,verdict
 0x4d0738,2,Camera|StargatePlayer|UnrealPlayer,PlayerController|UnrealPlayer|PlayerController,,split
 0x4d0950,2,StargatePlayer,UnrealPlayer,UnrealPlayer,agrees
 0x4d1468,16,ArrayProperty|BoolProperty|ByteProperty|ClassProperty|Const|DelegateProperty|Enum|FixedArrayProperty|FloatProperty|IntProperty|MapProperty|NameProperty|ObjectProperty|PointerProperty|Struct|StructProperty,Property|Property|Property|ObjectProperty|Field|Property|Field|Property|Property|Property|Property|Property|Property|Property|Field|Property,,split
-0x4d17a8,13,ArrayProperty|BoolProperty|ByteProperty|DelegateProperty|FixedArrayProperty|FloatProperty|IntProperty|MapProperty|NameProperty|ObjectProperty|PointerProperty|StrProperty|StructProperty,Property|Property|Property|Property|Property|Property|Property|Property|Property|Property|Property|Property|Property,Property,self
+0x4d17a8,13,ArrayProperty|BoolProperty|ByteProperty|DelegateProperty|FixedArrayProperty|FloatProperty|IntProperty|MapProperty|NameProperty|ObjectProperty|PointerProperty|StrProperty|StructProperty,Property|Property|Property|Property|Property|Property|Property|Property|Property|Property|Property|Property|Property,Property,names-the-table
 0x4d1f88,2,XBoxAudioSubsystem,AudioSubsystem,AudioSubsystem,agrees
-0x4d2400,1,XHVVoiceSubsystem,VoiceSubsystem,VoiceSubsystem,self
-0x4d34d8,1,ObjectExporterT3D,Exporter,Exporter,self
-0x4d3af0,1,TextBufferFactory,Factory,Factory,self
+0x4d2400,1,XHVVoiceSubsystem,VoiceSubsystem,VoiceSubsystem,names-the-table
+0x4d34d8,1,ObjectExporterT3D,Exporter,Exporter,names-the-table
+0x4d3af0,1,TextBufferFactory,Factory,Factory,names-the-table
 0x4d4418,2,Function|State,Struct|Struct,Struct,agrees
 0x4d4570,2,Class,State,State,agrees
 0x4d9238,2,PackageMapLevel,PackageMap,PackageMap,agrees
@@ -60,7 +60,7 @@ table_va,support,children,child_supers,class,verdict
 0x4e52b8,2,KBSJoint|KCarWheelJoint|KConeLimit|KHinge,KConstraint|KConstraint|KConstraint|KConstraint,KConstraint,agrees
 0x4e77b0,2,KarmaParams,KarmaParamsCollision,KarmaParamsCollision,agrees
 0x4e8018,2,KarmaParamsRBFull|KarmaParamsSkel,KarmaParams|KarmaParams,KarmaParams,agrees
-0x4eaea8,2,D3DRenderDevice|NullRenderDevice,RenderDevice|RenderDevice,RenderDevice,self
+0x4eaea8,2,D3DRenderDevice|NullRenderDevice,RenderDevice|RenderDevice,RenderDevice,names-the-table
 0x4ebfd8,2,MapVolumeViewPoint,InterpolationPoint,InterpolationPoint,agrees
 0x4ed908,2,InternetLink,InternetInfo,InternetInfo,agrees
 0x4edce8,2,LevelInfo|SkyZoneInfo|WarpZoneInfo,ZoneInfo|ZoneInfo|ZoneInfo,ZoneInfo,agrees
@@ -79,8 +79,8 @@ table_va,support,children,child_supers,class,verdict
 0x4fa390,4,ActorChannel|ControlChannel|FileChannel|VoiceChannel,Channel|Channel|Channel|Channel,Channel,agrees
 0x4fc1b0,2,ConvexVolume|FluidSurfacePrimitive|LodMesh|LodMeshInstance|Mesh|MeshInstance|Model|ProjectorPrimitive|SkeletalMeshInstance|StaticMesh|TerrainPrimitive|VertMeshInstance,Primitive|Primitive|Mesh|MeshInstance|Primitive|Primitive|Primitive|Primitive|LodMeshInstance|Primitive|Primitive|LodMeshInstance,,split
 0x4fc4f0,3,DemoPlayPendingLevel|Level|NetPendingLevel,PendingLevel|LevelBase|PendingLevel,,split
-0x4fc588,2,DemoPlayPendingLevel|NetPendingLevel,PendingLevel|PendingLevel,PendingLevel,self
-0x4fcfe0,2,ChannelDownload|HTTPDownload,Download|Download,Download,self
+0x4fc588,2,DemoPlayPendingLevel|NetPendingLevel,PendingLevel|PendingLevel,PendingLevel,names-the-table
+0x4fcfe0,2,ChannelDownload|HTTPDownload,Download|Download,Download,names-the-table
 0x5040d0,1,GameEngine,Engine,Engine,agrees
 0x50c808,2,Interaction|InteractionMaster,Interactions|Interactions,Interactions,agrees
 0x50c880,2,AbstractUIXInteraction|BaseGUIController|Console|StreamInteraction,Interaction|Interaction|Interaction|Interaction,Interaction,agrees
@@ -102,8 +102,8 @@ table_va,support,children,child_supers,class,verdict
 0x514450,2,PSAdditiveDistortion|PSModulatedDistortionMaterial|PSSubtractiveDistortion,PSBlendedDistortionMaterial|PSBlendedDistortionMaterial|PSBlendedDistortionMaterial,PSBlendedDistortionMaterial,agrees
 0x515bd0,2,PlayerStatCache,PlayerStats,PlayerStats,agrees
 0x516be8,2,ShadowProjector,Projector,Projector,agrees
-0x517860,2,IndexBuffer|SkinVertexBuffer,RenderResource|RenderResource,RenderResource,self
-0x5178d8,5,VertexBuffer|VertexStreamCOLOR|VertexStreamPosNormTex|VertexStreamUV|VertexStreamVECTOR,VertexStreamBase|VertexStreamBase|VertexStreamBase|VertexStreamBase|VertexStreamBase,VertexStreamBase,self
+0x517860,2,IndexBuffer|SkinVertexBuffer,RenderResource|RenderResource,RenderResource,names-the-table
+0x5178d8,5,VertexBuffer|VertexStreamCOLOR|VertexStreamPosNormTex|VertexStreamUV|VertexStreamVECTOR,VertexStreamBase|VertexStreamBase|VertexStreamBase|VertexStreamBase|VertexStreamBase,VertexStreamBase,names-the-table
 0x518c30,2,ActionMoveCamera|ActionPause,MatAction|MatAction,MatAction,agrees
 0x518ca8,2,MatActionWaitForEvent,ActionPause,ActionPause,agrees
 0x51ad50,2,AnimNotify_DestroyEffect|AnimNotify_Effect|AnimNotify_LIPSinc|AnimNotify_MatSubAction|AnimNotify_Script|AnimNotify_Scripted|AnimNotify_Sound,AnimNotify|AnimNotify|AnimNotify|AnimNotify|AnimNotify|AnimNotify|AnimNotify,AnimNotify,agrees

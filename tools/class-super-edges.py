@@ -34,6 +34,10 @@ those names is a *child* -- so the class the table belongs to is the one its chi
 agree their parent is. `inventory/class_table_super_names.csv` records that verdict per
 table, and it agrees with every table the registrations already named.
 
+A row this join names lands in the class map as `name_rule=child-super`, and this tool reads the map
+with every such row blanked: a derived name is re-voted from the image on every run, so the join's
+artifact can be regenerated from its own inputs and a name it wrote never scores as its own control.
+
     tools/class-super-edges.py DUMP/default.xbe -o inventory
     tools/class-super-edges.py --write-doc docs/systems/CLASS_REGISTRATION.md
     tools/class-super-edges.py --check-doc docs/systems/CLASS_REGISTRATION.md
@@ -62,6 +66,7 @@ ARTIFACT = os.path.join(ROOT, "inventory/class_super_edges.csv")
 NAMES = os.path.join(ROOT, "inventory/class_table_super_names.csv")
 REGISTRATIONS = os.path.join(ROOT, "inventory/class_registrations.csv")
 MAP_NAMES = os.path.join(ROOT, "inventory/xbe_class_table_names.csv")
+OWN_RULES = ("child-super",)          # rows this join writes; blanked before the control is scored
 PARENTS = os.path.join(ROOT, "inventory/class_table_parents.csv")
 DOC = os.path.join(ROOT, "docs/systems/CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-super-edges -->"
@@ -315,12 +320,14 @@ def names(edges, parents=None, map_rows=None):
             else:
                 name = uniq[0]
                 rule = map_rows.get(int(row["table_va"], 16), ("", ""))[1]
-                if committed and rule == "child-super":
-                    # this join named the row in an earlier run: it is a receipt, not a control
-                    verdict = "self"
-                else:
-                    verdict = ("agrees" if committed == name else
-                               "disagrees" if committed else "names-the-table")
+                if rule in OWN_RULES:
+                    # this join named the row in an earlier run, so the map's name is a receipt and
+                    # not a control: blanking it is what makes the artifact reproducible from its own
+                    # inputs -- the name is re-derived from the image on every run, and never scores
+                    # as this join's own answer
+                    committed = ""
+                verdict = ("agrees" if committed == name else
+                           "disagrees" if committed else "names-the-table")
             out.append({"table_va": row["table_va"], "support": row.get("support", ""),
                         "children": "|".join(kids), "child_supers": "|".join(parents),
                         "class": name, "verdict": verdict})
@@ -370,23 +377,25 @@ def render(edges, table_names):
     lines.append("")
     lines.append("### The tables the registrations cannot name, named by their children")
     lines.append("")
-    named = [r for r in table_names if r["verdict"] in ("names-the-table", "self")]
-    selfrows = [r for r in table_names if r["verdict"] == "self"]
+    named = [r for r in table_names if r["verdict"] == "names-the-table"]
+    own = {t for t, (_n, rule) in map_names().items() if rule in OWN_RULES}
+    held = [r for r in named if int(r["table_va"], 16) in own]
     agrees = [r for r in table_names if r["verdict"] == "agrees"]
     dis = [r for r in table_names if r["verdict"] == "disagrees"]
     split = [r for r in table_names if r["verdict"] == "split"]
     part = [r for r in table_names if r["verdict"] == "partial"]
     nos = [r for r in table_names if r["verdict"] == "no-child-super"]
     lines.append("**%d of the %d tables a caller edge constrains carry a name their children's `Super` "
-                 "states -- %d written by this join, %d already named -- and the control, the tables the "
-                 "registrations and the other rules name, agrees %d of %d (%d disagree).** The rule has no "
-                 "free parameter: the table is the class its calling classes say their parent is, at least "
-                 "one caller must be a class this census resolved, and every resolved caller must agree. A "
-                 "table whose callers disagree is a table those classes share higher up, not their parent, "
-                 "and it stays unnamed. The rows this join named are counted apart from the control and "
-                 "named by `name_rule=child-super` in `inventory/xbe_class_table_names.csv`, so a name this "
-                 "tool derived never votes in its next round."
-                 % (len(named), len(table_names), len(selfrows), len(agrees), len(agrees),
+                 "states -- %d of them re-derived here and already in the class map with this rule, %d "
+                 "new -- and the control, the tables the registrations and the other rules name, agrees "
+                 "%d of %d (%d disagree).** The rule has no free parameter: the table is the class its "
+                 "calling classes say their parent is, at least one caller must be a class this census "
+                 "resolved, and every resolved caller must agree. A table whose callers disagree is a "
+                 "table those classes share higher up, not their parent, and it stays unnamed. A row "
+                 "this join writes carries `name_rule=child-super`, and this join reads the map with "
+                 "every such row blanked: the name is a receipt re-voted from the image on every run, "
+                 "never a control and never the source of the next round's answer."
+                 % (len(named), len(table_names), len(held), len(named) - len(held), len(agrees),
                     len(agrees) + len(dis), len(dis)))
     lines.append("")
     lines.append("| table | callers | the children that call its installer | their `Super` | class |")
@@ -408,10 +417,9 @@ def render(edges, table_names):
                     ("All seven are in `inventory/xbe_class_table_names.csv` with `name_rule=child-super`, "
                      "so `tools/class-slot-declarers.py` names the bodies their slots hold and the map "
                      "carries `<Class>_vt<slot>` rows for them."
-                     if selfrows else
-                     "All seven, so the ten `declared-unnamed` bodies and the three `unnamed-table` bodies "
-                     "that residue counts have a declarer class, and `tools/class-table-names.py`'s "
-                     "`child-super` rule writes the names into the class map.")
+                     if len(held) == len(got) else
+                     "All seven, so `tools/class-slot-declarers.py` names the bodies their slots hold "
+                     "and the map carries `<Class>_vt<slot>` rows for them.")
                     if len(got) == len(seven) else
                     "The rest need a caller this census cannot resolve."))
     lines.append("")
@@ -586,8 +594,8 @@ def self_check():
     got, _sup = names(edges, parents, {0x5000: ("Parent", "child-super"),
                                        0x5008: ("Base", "unshared-thunk")})
     by = {r["table_va"]: r["verdict"] for r in got}
-    if by.get("0x00005000") != "self":
-        bad.append("a row this join named is still counted as a control: %r" % (by,))
+    if by.get("0x00005000") != "names-the-table":
+        bad.append("a row this join named is not re-derived with its own rule blanked: %r" % (by,))
     if by.get("0x00005008") != "agrees":
         bad.append("the control does not agree on a name another rule wrote: %r" % (by,))
     if by.get("0x00005010") != "names-the-table":

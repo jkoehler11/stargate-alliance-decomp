@@ -10,7 +10,6 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004c9038,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001b770, FUN_000379b0); shared family - (0)"
 0x004c9338,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
 0x004c933c,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
-0x004c9348,31,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family -"
 0x004c93c4,1,2,FUN_0001cc10|FUN_000f9ce0,at-least-Viewport,,at-least,"installer 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
 0x004c93c8,2,2,FUN_0001cc10|FUN_000f9ce0,at-least-Viewport,,at-least,"installer 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
 0x004c960c,1,2,ctor_XboxViewport|dtor_XboxViewport,at-least-XboxViewport,,at-least,"ctor 2; stores by 2 bodies (ctor_XboxViewport, dtor_XboxViewport); shared family - (0)"
@@ -34,7 +33,6 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004d0ec8,21,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00027c10, FUN_0002a1b0); shared family - (0)"
 0x004d1430,2,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0002bff0, FUN_0002c2a0, FUN_0002c3b0); shared family - (0)"
 0x004d1438,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0002c340, FUN_003e547f); shared family - (0)"
-0x004d1468,35,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0002c8a0, FUN_00038d70); shared family -"
 0x004d2abc,6,2,ctor_XHVVoiceSubsystem|dtor_XHVVoiceSubsystem,at-least-XHVVoiceSubsystem,,at-least,"ctor 2; stores by 2 bodies (ctor_XHVVoiceSubsystem, dtor_XHVVoiceSubsystem); shared family - (0)"
 0x004d2ad4,1,2,ctor_XHVVoiceSubsystem|dtor_XHVVoiceSubsystem,at-least-XHVVoiceSubsystem,,at-least,"ctor 2; stores by 2 bodies (ctor_XHVVoiceSubsystem, dtor_XHVVoiceSubsystem); shared family - (0)"
 0x004d2e58,29,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00034060); shared family - (0)
@@ -69,7 +67,6 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004fa5a8,2,2,ctor_ControlChannel|dtor_ControlChannel,at-least-ControlChannel,,at-least,"ctor 2; stores by 2 bodies (ctor_ControlChannel, dtor_ControlChannel); shared family - (0)"
 0x004fc35c,8,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011bf90, FUN_001617d0); shared family - (0)"
 0x004fc4cc,8,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0011bf20, FUN_0011bf90, FUN_001617d0); shared family - (0)"
-0x004fc4f0,30,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0011bf20, FUN_0011bf90, FUN_001617d0); shared family -"
 0x004fc568,8,2,FUN_0011c050|FUN_001a57b0,at-least-PendingLevel,,at-least,"installer 2; stores by 2 bodies (FUN_0011c050, FUN_001a57b0); shared family - (0)"
 0x004fc610,8,3,FUN_0011bce0|ctor_DemoPlayPendingLevel|dtor_DemoPlayPendingLevel,at-least-DemoPlayPendingLevel,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011bce0, ctor_DemoPlayPendingLevel, dtor_DemoPlayPendingLevel); shared family - (0)"
 0x004fcc08,1,3,FUN_0011d460|ctor_DemoRecConnection|dtor_DemoRecConnection,at-least-DemoRecConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011d460, ctor_DemoRecConnection, dtor_DemoRecConnection); shared family - (0)"

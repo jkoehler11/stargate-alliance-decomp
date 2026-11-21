@@ -20,7 +20,7 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4c9180,LatentScriptedAction,LatentScriptedAction,own-installer,ACTION_WaitForEvent,2,2,agrees
 0x4c91f8,ACTION_WaitForEvent,ACTION_WaitForEvent,own-installer,,1,2,agrees
 0x4c9270,SubActionDepthOfField,SubActionDepthOfField,own-installer,,1,2,agrees
-0x4c9348,,,no-named-call,,6,0,no-caller
+0x4c9348,Player,,no-named-call,,6,0,no-caller
 0x4c93d0,Viewport,,parent-of-callers,XboxViewport,3,1,constrained
 0x4c94b0,Client,,parent-of-callers,XboxClient,3,1,constrained
 0x4c9560,XboxClient,XboxClient,own-installer,,1,2,agrees
@@ -91,7 +91,7 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4d0738,PlayerController,PlayerController,own-installer,Camera|StargatePlayer|UnrealPlayer,6,2,agrees
 0x4d0950,UnrealPlayer,UnrealPlayer,own-installer,StargatePlayer,2,2,agrees
 0x4d0b68,StargatePlayer,StargatePlayer,own-installer,,1,2,agrees
-0x4d1468,,,parent-of-callers,ArrayProperty|BoolProperty|ByteProperty|ClassProperty|Const|DelegateProperty|Enum|FixedArrayProperty|FloatProperty|IntProperty|MapProperty|NameProperty|ObjectProperty|PointerProperty|Struct|StructProperty,21,16,constrained
+0x4d1468,Field,,parent-of-callers,ArrayProperty|BoolProperty|ByteProperty|ClassProperty|Const|DelegateProperty|Enum|FixedArrayProperty|FloatProperty|IntProperty|MapProperty|NameProperty|ObjectProperty|PointerProperty|Struct|StructProperty,21,16,constrained
 0x4d17a8,Property,,parent-of-callers,ArrayProperty|BoolProperty|ByteProperty|DelegateProperty|FixedArrayProperty|FloatProperty|IntProperty|MapProperty|NameProperty|ObjectProperty|PointerProperty|StrProperty|StructProperty,33,13,constrained
 0x4d1880,IntProperty,IntProperty,own-installer,,1,2,agrees
 0x4d1958,BoolProperty,BoolProperty,own-installer,,1,2,agrees
@@ -257,7 +257,7 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4fc0f8,AIMsgManager,AIMsgManager,own-installer,,1,2,agrees
 0x4fc1b0,Primitive,Primitive,own-installer,ConvexVolume|FluidSurfacePrimitive|LodMesh|LodMeshInstance|Mesh|MeshInstance|Model|ProjectorPrimitive|SkeletalMeshInstance|StaticMesh|TerrainPrimitive|VertMeshInstance,24,2,agrees
 0x4fc250,ConvexVolume,ConvexVolume,own-installer,,1,2,agrees
-0x4fc4f0,,,parent-of-callers,DemoPlayPendingLevel|Level|NetPendingLevel,9,3,constrained
+0x4fc4f0,LevelBase,,parent-of-callers,DemoPlayPendingLevel|Level|NetPendingLevel,9,3,constrained
 0x4fc588,PendingLevel,,parent-of-callers,DemoPlayPendingLevel|NetPendingLevel,4,2,constrained
 0x4fc630,DemoPlayPendingLevel,DemoPlayPendingLevel,own-installer,,3,2,agrees
 0x4fcc18,DemoRecConnection,DemoRecConnection,own-installer,,3,2,agrees
