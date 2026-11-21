@@ -16730,3 +16730,41 @@ sequence.
 - **Not in this bundle.** The 423 interface-only bodies (the name has to come from the interface, which is
   U40's 26 gap-head representatives), the 13 undecoded declarations, the 4 conflicts' linker reading, and the
   807 bodies no channel names.
+
+### Execution notes (2026-11-21, the walk's 35 residue bodies read: 4 folds, 4 check() cuts, 2 addable sizes)
+
+- **Task.** Three bundles closed on the declarer walk's residue and left it as reasons -- 13 declared bodies
+  whose decode never closes, 8 in a member table the label pass refused, 4 two classes declare, 3 in an
+  unnamed class table and 7 declared by one. This pass reads all 35 against the image with **objdump** as the
+  instruction reader, because the gap census's linear shape decoder is one of the things under test.
+- **All 13 close, and the gap census's boundary is the reason they had no size.** Four are cut by an
+  out-of-line `check()` block: the row above opens `push line; push file; push function; call 0x0058a30`
+  behind no padding and the body branches over it (`0x0002f120`, `0x00032480`, `0x00155cf0`, `0x00173700`).
+  Three close past a map row that is not a `check()` block (`0x000ffda0`, `0x0021de30`, `0x0027fe10`), four
+  cross an inline jump table first (`0x0007bc10`, `0x001b28e0`, `0x002ae3e0`, `0x002fd640`), and two close
+  before the row above: `0x00078ae0` **157 bytes** and `0x0007be00` **1,173 bytes**, neither span holding a
+  map row, so each is a row the next add can carry.
+- **The 4 conflicts are the linker's identical-code folding, and the page's open question is closed.** The
+  bodies are 1 byte (`ret`), 4 bytes (`mov eax,[ecx+0x38]; ret`) and 21 bytes (a getter pair), each at two or
+  more slot indices of classes that are neither ancestor nor descendant; the map's **105 duplicate groups
+  over 805 bodies** are the control that the build folds. `tools/class-slot-declarers.py`'s block says so now
+  instead of "not decided here".
+- **The 18 with no name split by what the name needs.** 8 member bodies sit in three member tables the label
+  pass refused (`0x0051724c` field `0x38`, `0x0053f7f0` and `0x0053f888` field `0x8`); 10 declarations sit on
+  7 class tables no registration names, whose children the registration does name. The five parents worth
+  guessing are in neither `Core.u`'s nor `Engine.u`'s `ScriptText` (`pkg-script-text.py --class Property`,
+  `ObjectExporter`, `TextBuffer`, `Download`, `PendingLevel` each answer no matching class), so the join has
+  no script row to read.
+- **Files.** `tools/declarer-residue.py` (new: the objdump reader, the four verdicts, a synthetic `--check`
+  and a dump-free `--check-doc`), `inventory/declarer_residue.csv` (35 body rows + census),
+  `docs/systems/CLASS_REGISTRATION.md` (the new section, its block, the regenerating commands, and the two
+  sentences the residue corrects), `tools/class-slot-declarers.py` (the conflict sentence points at the fold
+  read), `docs/UNKNOWNS.md` (U40's answered-since), `Makefile` (target, help, `.PHONY`, two `make ci`
+  lines), `docs/ARTIFACTS.md` and `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `--check` is synthetic (the objdump line parser, the `check()` block and two
+  refusals, the pad run and the `ret imm` width, the five verdicts, the blocker table counts, the artifact
+  round trip) and writes nothing; `--check-doc` rebuilds the block from the committed CSV with no dump; the
+  artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
+- **Not in this bundle.** The two addable rows and the five artifacts a map row moves; the boundary move the
+  4 `check()`-cut spans need; the 3 that close past an ordinary row; and the 7 unnamed class tables, whose
+  names need a class no package declares.

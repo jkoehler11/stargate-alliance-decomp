@@ -595,8 +595,9 @@ def render(rows, ctl, meta):
     conf = [r for r in rows if r["verdict"] == "conflict"]
     if conf:
         lines.append("**The %d conflicts are one body two independent classes both declare** -- the two "
-                     "tables point at the same address, and whether the linker folded two identical "
-                     "functions or both were built from one stub is not decided here: %s."
+                     "tables point at the same address, and `tools/declarer-residue.py` reads them as "
+                     "the linker's identical-code folds (one shortest shape held at two or more indices "
+                     "of classes that are neither ancestor nor descendant): %s."
                      % (len(conf), "; ".join("`%s` at slot%s %s"
                                              % (r["head_va"], "" if len(r["indices"].split()) == 1 else "s",
                                                 r["indices"].replace(" ", "/")) for r in conf[:6])))
