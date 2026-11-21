@@ -22,6 +22,11 @@ table are told apart by their contents:
     resets to; a table that is a named class's `parent_va` is that class's base level, and the children
     name the ladder.
 
+The row carries the name it earns (`class_name`, `name_rule`) and *how the table is held* (`placement`):
+a table the class's own `??0` stores is that class's dispatch table (`own`), and one another class's
+constructor stores into a field is an object of that class inside its holder (`member`) -- the same
+name, a different claim about the object.
+
     tools/class-plain-tables.py --xbe DUMP/default.xbe -o inventory
     tools/class-plain-tables.py --report
     tools/class-plain-tables.py --write-doc docs/systems/CLASS_REGISTRATION.md
@@ -55,6 +60,7 @@ DOC_END = "<!-- /generated:class-plain-tables -->"
 FIELDS = ("table_va", "slots", "slots_run", "stop", "population", "store", "signature", "slot0",
           "purecall", "stubs", "named_slots", "fun_slots", "outside_map", "vocab_class",
           "vocab_slots", "vocab_classed", "vocab_share", "installer_classes", "installer_agree",
+          "class_name", "name_rule", "placement",
           "children", "child_named", "child_classes", "verdict", "evidence")
 PREFIX = (0x00062650, 0x00062660, 0x00062670)
 STUB_BYTES = 8
@@ -224,6 +230,14 @@ def harvest(tables, names, sizes, installers, pop_of, form_of, parents, runs=Non
             agree = "yes" if top in inst else "no"
         elif inst or top:
             agree = "one-side"
+        verdict = verdict_of(signature, vocab, classed, len(vector), kids)
+        # the name the row carries, and whose constructor stores the table: the class's own `??0` means
+        # the table is that class's dispatch table (`own`), and another class's names either a derived
+        # class's table (whose named slots are the base's methods) or a member object of that class.
+        cls_name, rule, place = "", "", ""
+        if verdict == "interface-named":
+            cls_name, rule = top, "slot-vocabulary"
+            place = ("own" if top in inst else "other-ctor") if inst else "unverified"
         row = {
             "table_va": "%#010x" % tva,
             "slots": str(len(vector)),
@@ -244,10 +258,13 @@ def harvest(tables, names, sizes, installers, pop_of, form_of, parents, runs=Non
             "vocab_share": "%.2f" % share,
             "installer_classes": " ".join(inst),
             "installer_agree": agree,
+            "class_name": cls_name,
+            "name_rule": rule,
+            "placement": place,
             "children": str(len(kids)),
             "child_named": str(len([k for k in kids if not HEX.match(k)])),
             "child_classes": " ".join(kids[:8]),
-            "verdict": verdict_of(signature, vocab, classed, len(vector), kids),
+            "verdict": verdict,
             "evidence": "%d slot(s); %d outside the map; %d named; top class %s on %d of %d classed; "
                         "installer %s; %d child class(es)%s"
                         % (len(vector), kinds["outside"], kinds["named"], top or "-", top_n, classed,
@@ -414,6 +431,21 @@ def render(rows, control):
                             r["table_va"], r["vocab_class"], r["vocab_slots"], r["vocab_classed"])
                             for r in sorted(named, key=lambda r: -int(r["vocab_slots"])))))
         lines.append("")
+        own = [r for r in named if r["placement"] == "own"]
+        mem = [r for r in named if r["placement"] == "other-ctor"]
+        unv = [r for r in named if r["placement"] == "unverified"]
+        lines.append("**The name is the class whose methods the slots are, and `placement` says whose "
+                     "constructor stores the table.** %d are `own` -- the class's own `??0` stores it, so "
+                     "the table is its dispatch table. %d are `other-ctor`: %s -- a derived class's table "
+                     "whose named slots are its base's methods, or a member object of the named class "
+                     "inside its holder. %d are `unverified` (no constructor symbol at all), and the vote "
+                     "is all that names them."
+                     % (len(own), len(mem),
+                        "; ".join("`%s` = `%s` (stored by %s)" % (r["table_va"], r["class_name"],
+                                                                 r["installer_classes"])
+                                 for r in mem) or "none",
+                        len(unv)))
+        lines.append("")
         lines.append("**The same reading names %d of the %d member tables.** Their slots carry no mangled "
                      "class scope at all, so the interface object a member field holds stays unnamed by "
                      "this channel -- the member's *own* name comes from the field it is stored in, which "
@@ -516,18 +548,29 @@ def self_check():
     if not wide_text(0x00330044) or wide_text(0x003e5501) or wide_text(0x00016ed0):
         bad.append("only two printable UTF-16 characters read as wide text")
 
-    tables = {0x1000: class_table, 0x2000: interface, 0x3000: [0x9004, 0x9006, 0x9002]}
+    tables = {0x1000: class_table, 0x2000: interface, 0x3000: [0x9004, 0x9006, 0x9002],
+              0x4000: [0x9004, 0x9005], 0x5000: [0x9004, 0x9005]}
     rows = harvest(tables, names, sizes,
-                   {0x2000: ["??0CFoo@@QAE@XZ"], 0x1000: ["FUN_00001000"]},
-                   {0x1000: "plain-only", 0x2000: "bounded", 0x3000: "plain-only"},
-                   {0x1000: "vtable-slot", 0x2000: "member-field", 0x3000: "frame-only"},
+                   {0x2000: ["??0CFoo@@QAE@XZ"], 0x1000: ["FUN_00001000"],
+                    0x4000: ["??0CBar@@QAE@XZ"]},
+                   {0x1000: "plain-only", 0x2000: "bounded", 0x3000: "plain-only",
+                    0x4000: "plain-only", 0x5000: "plain-only"},
+                   {0x1000: "vtable-slot", 0x2000: "member-field", 0x3000: "frame-only",
+                    0x4000: "vtable-slot", 0x5000: "vtable-slot"},
                    {0x1000: ["XboxViewport"]}, {0x2000: (5, 0x00330044)})
     by = {int(r["table_va"], 16): r for r in rows}
     if by[0x1000]["verdict"] != "class-table-base" or by[0x1000]["child_classes"] != "XboxViewport":
         bad.append("the parent edge is carried on the row: %r" % (by[0x1000],))
     if by[0x2000]["verdict"] != "interface-named" or by[0x2000]["installer_agree"] != "yes":
         bad.append("the installer's ctor and the slot vocabulary agree: %r" % (by[0x2000],))
-    if by[0x3000]["verdict"] != "interface-unnamed":
+    if by[0x2000]["class_name"] != "CFoo" or by[0x2000]["name_rule"] != "slot-vocabulary" \
+            or by[0x2000]["placement"] != "own":
+        bad.append("the class's own constructor stores its dispatch table: %r" % (by[0x2000],))
+    if by[0x4000]["class_name"] != "CFoo" or by[0x4000]["placement"] != "other-ctor":
+        bad.append("a table another class's ctor stores is another ctor's: %r" % (by[0x4000],))
+    if by[0x5000]["class_name"] != "CFoo" or by[0x5000]["placement"] != "unverified":
+        bad.append("no constructor symbol leaves the placement unverified: %r" % (by[0x5000],))
+    if by[0x3000]["verdict"] != "interface-unnamed" or by[0x3000]["class_name"] or by[0x3000]["placement"]:
         bad.append("two classes in three slots name nothing: %r" % (by[0x3000],))
     if by[0x1000]["signature"] != "yes" or by[0x2000]["signature"] != "no":
         bad.append("the prefix column follows the vector")
@@ -540,7 +583,7 @@ def self_check():
     out = render(rows, {"tables": 3, "slot0": "0x00062650", "prefix": ["0x00062650"], "named": 3,
                         "member_named": 0, "member_tables": 1, "class_tables": 492,
                         "class_moved": 12, "class_surplus": 14})
-    for want in ("class-table prefix", "parent edge", "interfaces", "too long on 1 of the 3"):
+    for want in ("class-table prefix", "parent edge", "interfaces", "too long on 1 of the 5", "placement"):
         if want not in out:
             bad.append("render lacks %r" % (want,))
 

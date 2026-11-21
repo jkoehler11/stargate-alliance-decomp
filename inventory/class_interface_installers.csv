@@ -208,14 +208,14 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x0053f700,5,named,0x0053f700,1,1,CNotificationScreen,,,,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CNotificationScreen; caller class -; ecx -
 0x0053f718,21,named,0x0053f718,3,3,CAlertFeature,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CAlertFeature; caller class -; ecx -
 0x0053f770,21,named,0x0053f770,1,1,CFeatureContext,,,,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CFeatureContext; caller class -; ecx -
-0x0053f7c4,5,anonymous,0x0053f7c4,1,0,,,,,,,no-site,1 store site(s) in 0 body(ies); holder class -; caller class -; ecx -
+0x0053f7c4,5,anonymous,0x0053f7c4,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0053f7f0,6,member,0x0053f7f0,3,3,CVoiceMailPseudoFeature,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CVoiceMailPseudoFeature; caller class -; ecx -
 0x0053f808,21,named,0x0053f808,3,3,CVoiceMailPseudoFeature,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class CVoiceMailPseudoFeature; caller class -; ecx -
-0x0053f85c,5,anonymous,0x0053f85c,2,2,CVoiceMailScreen,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CVoiceMailScreen; caller class -; ecx -
+0x0053f85c,5,named,0x0053f85c,2,2,CVoiceMailScreen,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CVoiceMailScreen; caller class -; ecx -
 0x0053f874,5,named,0x0053f6ec,1,1,CPlayersContextScreen,0x00333e0a,CPlayersScreen,ctor:1,this+0x107c,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CPlayersContextScreen; caller class CPlayersScreen; ecx this+0x107c
 0x0053f888,5,member,0x0053f888,2,2,CPlayersFeature,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CPlayersFeature; caller class -; ecx -
 0x0053f8a0,21,named,0x0053f718,2,2,CPlayersFeature,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CPlayersFeature; caller class -; ecx -
-0x0053f8f4,5,anonymous,0x0053f8f4,2,2,CPlayersScreen,0x00334a78,CPlayersScreen,dtor:1,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CPlayersScreen; caller class CPlayersScreen; ecx -
+0x0053f8f4,5,named,0x0053f8f4,2,2,CPlayersScreen,0x00334a78,CPlayersScreen,dtor:1,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CPlayersScreen; caller class CPlayersScreen; ecx -
 0x0053f90c,5,named,0x0053f90c,1,1,CFriendsScreen,,,,,1,ctor-holder,1 store site(s) in 1 body(ies); holder class CFriendsScreen; caller class -; ecx -
 0x0053f920,21,named,0x0053f718,2,2,CFriendsFeature,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class CFriendsFeature; caller class -; ecx -
 0x0053f978,1,anonymous,0x004c78b8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
@@ -231,4 +231,4 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x00564da4,6,anonymous,0x00564da4,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x00564dbc,9,anonymous,0x00564dbc,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
 0x0057534c,2,anonymous,0x0057534c,3,3,exception,,,,,1,ctor-holder,3 store site(s) in 3 body(ies); holder class exception; caller class -; ecx -
-census,2519,,,397,377,65,41,41,,,,census,"the 232 interface tables: 65 ctor-holder, 16 ctor-caller, 0 dtor-caller, 147 unnamed-holder, 4 no-site"
+census,2519,,,397,378,65,41,41,,,,census,"the 232 interface tables: 65 ctor-holder, 16 ctor-caller, 0 dtor-caller, 148 unnamed-holder, 3 no-site"

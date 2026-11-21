@@ -880,23 +880,13 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x0053f6d8,0x0053f6d8,0,0x00330a00,FUN_00330a00,34,mapped,,no,?Destroy@CScreen@UIXNamespace@@IAEXXZ ??3@YAXPAX@Z,,,,mapped-unnamed
 0x0053f6d8,0x0053f6d8,1,0x003300f0,?CreateScreen@CScreen@UIXNamespace@@UAEJXZ,41,mapped,,yes,?Load@CSkinFile@UIXNamespace@@QAEJK@Z,,,,mapped-named
 0x0053f6d8,0x0053f6d8,2,0x003479e6,FUN_003479e6,1,stub,,,,,,,stub
-0x0053f6d8,0x0053f6d8,3,0x00343ece,,,gap,island,,,,,,gap-head
+0x0053f6d8,0x0053f6d8,3,0x00343ece,,,outside,,,,,,,outside
 0x0053f6d8,0x0053f6d8,4,0x00331304,FUN_00331304,5,stub,,,,,,,stub
 0x0053f7c4,0x0053f7c4,0,0x0033158e,FUN_0033158e,38,mapped,,no,?Destroy@CScreen@UIXNamespace@@IAEXXZ ?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,,,,mapped-unnamed
 0x0053f7c4,0x0053f7c4,1,0x003313f6,?CreateScreen@CExtFeatureScreen@UIXNamespace@@UAEJXZ,22,mapped,,yes,?CreateScreen@CScreen@UIXNamespace@@UAEJXZ,,,,mapped-named
 0x0053f7c4,0x0053f7c4,2,0x0033140c,,,gap,body,,,,,,gap-head
 0x0053f7c4,0x0053f7c4,3,0x00331416,,,gap,body,,,,,,gap-head
 0x0053f7c4,0x0053f7c4,4,0x0033142a,,,gap,body,,,,,,gap-head
-0x0053f85c,0x0053f85c,0,0x00332e57,FUN_00332e57,32,mapped,,no,FUN_00332e77 ?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,FUN,,,mapped-unnamed
-0x0053f85c,0x0053f85c,1,0x003324a7,?CreateScreen@CVoiceMailScreen@UIXNamespace@@UAEJXZ,331,mapped,,yes,?CreateScreen@CPopupScreen@UIXNamespace@@UAEJXZ ?CreateObject@CScreen@UIXNamespace@@IAEXW4_UIX_OBJECT_TYPE@@KPAK@Z ?SetText@CScreen@UIXNamespace@@IAEXKW4_UIX_RES_STRING_ENUM@@@Z ?AllocateMemoryZ@UIXNamespace@@YGPAXIW4UIX_PTAG_ENUM@1@@Z ??0CPopupScreen@UIXNamespace@@QAE@K@Z ?DestroyFeedbackScreen@CVoiceMailScreen@UIXNamespace@@QAEXXZ,,,,mapped-named
-0x0053f85c,0x0053f85c,2,0x003325f2,,,gap,body,,,,,,gap-head
-0x0053f85c,0x0053f85c,3,0x00331f7c,?Input@CPopupScreen@UIXNamespace@@UAEXKW4_UIX_INPUT_TYPE@@@Z,361,mapped,,yes,?PlaySound@CLiveEngine@UIXNamespace@@QAEJW4_UIX_RES_AUDIO_ENUM@@@Z ?HideMessageScreen@CAlertFeature@UIXNamespace@@QAEHW4_UIX_MESSAGE_TYPE@2@@Z ?HideTopScreen@CLiveEngine@UIXNamespace@@QAEJXZ,,,,mapped-named
-0x0053f85c,0x0053f85c,4,0x00332ea5,,,gap,body,,,,,,gap-head
-0x0053f8f4,0x0053f8f4,0,0x00334a78,??_GCPlayersScreen@UIXNamespace@@UAEPAXI@Z,32,mapped,,yes,??1CPlayersScreen@UIXNamespace@@UAE@XZ ?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,,,,mapped-named
-0x0053f8f4,0x0053f8f4,1,0x0033357e,,,gap,body,,,,,,gap-head
-0x0053f8f4,0x0053f8f4,2,0x0033538b,,,gap,body,,,,,,gap-head
-0x0053f8f4,0x0053f8f4,3,0x00334b9c,,,gap,body,,,,,,gap-head
-0x0053f8f4,0x0053f8f4,4,0x00335518,,,gap,body,,,,,,gap-head
 0x00564da4,0x00564da4,0,0x00386e10,,,outside,,,,,,,outside
 0x00564da4,0x00564da4,1,0x003869e0,,,outside,,,,,,,outside
 0x00564da4,0x00564da4,2,0x003867e0,,,gap,body,,,,,,gap-head
@@ -913,5 +903,5 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x00564dbc,0x00564dbc,7,0x00386710,FUN_00386710,1,stub,,,,,,,stub
 0x00564dbc,0x00564dbc,8,0x00386710,FUN_00386710,1,stub,,,,,,,stub
 0x0057534c,0x0057534c,0,0x003e65d8,FUN_003e65d8,28,mapped,,no,??1exception@@UAE@XZ ??3@YAXPAX@Z,,,,mapped-unnamed
-0x0057534c,0x0057534c,1,0x003e65cb,,,gap,body,,,,,,gap-head
-census,,915,,,,census,,,,,,143 distinct mapped body(ies); 16 held by two or more representatives,"the 88 owed representatives: gap 330, mapped 166, outside 83, pure 38, stub 298"
+0x0057534c,0x0057534c,1,0x003e65cb,?what@exception@@UBEPBDXZ,13,mapped,,yes,,,,,mapped-named
+census,,905,,,,census,,,,,,140 distinct mapped body(ies); 16 held by two or more representatives,"the 86 owed representatives: gap 322, mapped 163, outside 84, pure 38, stub 298"

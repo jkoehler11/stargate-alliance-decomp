@@ -17131,3 +17131,47 @@ sequence.
 - **Gates.** `make ci` green; `--check` is synthetic (seven symbol shapes, four vote verdicts, the control
   population, the artifact round trip) and `--check-doc` rebuilds the block from the CSV with no dump. No
   boot, no xemu, no Ghidra.
+
+### Execution notes (2026-11-21, the interface's name pays 21 bodies, and 5 are a base no table is)
+
+- **Task.** The add the previous note left: it named interface tables from the supplied libraries' symbols
+  and wrote no map row, because the vote names the class that declares the methods and a `<Class>_vt<slot>`
+  row claims the table is that class's dispatch table. This bundle settles the claim and pays it.
+- **A body's name needs less than a table's, and the row says which.** `tools/class-plain-tables.py` now
+  carries `class_name`, `name_rule` and `placement`, and `placement` is whose constructor stores the table
+  (`own` when it is the class's own `??0`, `other-ctor` when another class's is): **20 tables named, 17
+  `own` and 3 `other-ctor`**. The three are the derived/member cases measured in full -- `0x005404bc`
+  (`CEncoderXMO`'s methods, stored by `COneToOneEncoder`'s ctor at offset 0), `0x00540520` (`CDecoderXMO`'s,
+  `COneToOneDecoder`) and `0x0053f874` (`CPopupScreen`'s, `CPlayersContextScreen` at `this+0x107c`).
+- **The tool's vote is a wider population than the library artifact's.** The row's vocabulary reads
+  `symbols/xbox_functions.csv`, which carries method symbols `inventory/xdk_lib_names.csv` does not
+  (`?Release@CQueueXMO@@`, `?CustomPump@CNotificationTask@UIXNamespace@@`), so 4 tables the library channel
+  called `thin`/`split` are named here on 4-8 of their classed slots -- and all 12 of the library channel's
+  names are among the 20, so the two reads agree where they overlap.
+- **The declarer reads the interface's name.** `class-slot-declarers.py` gains `declared-interface` (one
+  index in every table that holds the body), `inherited-interface` (one index, several classes) and
+  `interface-conflict` (two indices), builds them against `class_plain_tables.csv`'s `class_name` and adds
+  the receipt rows. The self-test drives all five branches on synthetic interface tables.
+- **The add ran.** 21 rows, 450 bytes: map **16,713 -> 16,734 rows**, **4,236,236 -> 4,236,686 bytes**;
+  gap census **2,497 -> 2,476 heads**; declarer census **391 -> 370 head rows, `declared` 0** (nothing
+  pending), add receipts 262 -> **283**; native naming 51.83% -> **51.89%**; module attribution 16,734
+  rows.
+- **The 5 refusals are one finding.** `0x003312ea` (slot 7 of all five feature tables),
+  `0x00331309`/`0x00331311`/`0x0033131c` (15/16/18 of four) and `0x003472e9` (slot 3 of `CEncoderXMO`'s and
+  `COneToOneEncoder`'s) sit at one index under 2-5 classes, so the method is the classes' base's -- and no
+  table in the image is that base's, so the name is refused rather than taken from the first class read.
+- **Files.** `tools/class-plain-tables.py` (the three columns, the placement split, the synthetic member
+  and unverified cases), `tools/class-slot-declarers.py` (the interface branch, `VERDICTS`, the interface
+  self-test, the interface clause in `add_evidence`), `inventory/class_plain_tables.csv`,
+  `inventory/class_slot_declarers.csv`, `inventory/gap_heads.csv`, `inventory/declarer_residue.csv`,
+  `inventory/gap_body_files.csv`, the seven regenerated interface artifacts, `symbols/xbe_boundaries.csv`,
+  `symbols/xbe_overrides.csv`, `symbols/xbox_functions.csv`, `symbols/xbox.map`,
+  `inventory/function_modules.csv`, `inventory/module_export_plan.csv`, `inventory/xbe_functions_by_module.csv`, `docs/systems/CLASS_REGISTRATION.md` (a new section, five blocks and
+  the previous section's "what this does not do" corrected), `docs/NATIVE.md`, `docs/MODULE_CENSUS.md`,
+  `docs/SYMBOLS.md`, `docs/STATUS.md`, `README.md`, `docs/UNKNOWNS.md` (U40), this note.
+- **Gates.** `make ci` green; both readers answer `--check` without the dump and write nothing;
+  `class-plain-tables --check-doc` and `class-slot-declarers --check-doc` rebuild every block from the
+  committed CSVs; the artifact regenerates byte for byte on a second run. No boot, no xemu, no Ghidra.
+- **Not in this bundle.** `0x0051724c`'s two member bodies, the 4 linker folds, the 359 interface-only
+  bodies whose tables no vote names, the 5 inherited bodies (blocked on the base's table, which the image
+  does not carry), and the 807 bodies no channel names.

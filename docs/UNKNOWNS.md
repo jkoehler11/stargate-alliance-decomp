@@ -6194,3 +6194,21 @@ class's, which the family chain has to settle), the 2 bodies in `0x0051724c`, th
 interface-only bodies (the declarer census reads **391 heads -- 385 interface-only, 4 conflict, 2 member**,
 not the 424 this entry's earlier rounds quoted) and the 807 bodies no channel names.
 
+**Answered since (2026-11-21, the interface's name reaches the 21 bodies its slots declare).** The add the
+previous round left is made, and what settled it is that a *body*'s name needs less than a *table*'s:
+`inventory/class_plain_tables.csv` now carries the vote's class on the row (`class_name`, `name_rule`,
+`placement`), and its vocabulary reads the function map rather than the library artifact, so **20 tables are
+named where the library channel named 12** (`0x00540464` `CQueueXMO` on 5 of 5 classed slots, `0x00540484`
+`CEncoderXMO` 8 of 8, `0x0053f8f4` `CPlayersScreen` 4 of 4, `0x00540520` `CDecoderXMO` 4 of 6) -- **17
+`own`** (the class's own constructor stores the table) and **3 `other-ctor`** (`0x005404bc` `CEncoderXMO`'s
+methods under `COneToOneEncoder`'s ctor and `0x00540520` under `COneToOneDecoder`'s, a derived class's table
+at offset 0 whose named slots are its base's, and `0x0053f874` `CPopupScreen`'s stored at `this+0x107c` of
+`CPlayersContextScreen`). `tools/class-slot-declarers.py` reads that name where no class table holds the body
+and pays it when every table that holds the body holds it at the same index: **21 bodies earn
+`<Class>_vt<slot>` -- 450 bytes, map 16,713 -> 16,734 rows, gap census 2,497 -> 2,476 heads, declarer heads
+391 -> 370** -- and **5 are refused as an inherited method** (`0x003312ea` at slot 7 of all five feature
+tables, `0x00331309`/`0x00331311`/`0x0033131c` at 15/16/18 of four, `0x003472e9` at slot 3 of `CEncoderXMO`'s
+and `COneToOneEncoder`'s tables) because one index under several classes is their base's method and no table
+in the image is that base's. What is left of this entry: the 2 bodies in `0x0051724c`, the 4 linker folds,
+the **359** interface-only bodies no name reaches, the 5 inherited, and the 807 bodies no channel names.
+
