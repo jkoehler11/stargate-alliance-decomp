@@ -89,6 +89,44 @@ assets: either the compile path is reproduced, or the microcode for the programs
 shipped in their place. `tools/build.sh` does neither today, and the difference is invisible in a script-only
 check — the packages would verify and the first draw would fail.
 
+## Where files go: the game's own deploy scripts (2026-11-19)
+
+`System/` carries four `.bat` files that are not game data but the **build's deploy step**: `copybuild.bat` (69 lines),
+`copycontent.bat` (21), `copyini.bat` (27) and `copyscript.bat` (5). They drive the Xbox SDK's `xbmkdir`/`xbcp`/`xbdel`
+against `xe:\\stargate\\`, so they state the shipped layout exactly — which is what a rebuilt tree has to match.
+
+**The tree.**
+
+| path under `xe:\stargate\` | what lands there |
+|---|---|
+| `Animations/`, `Maps/`, `StaticMeshes/`, `Sounds/`, `Textures/`, `Resources/`, `Speech/` | whole directories, copied recursively |
+| `Music/` | `*.wma` **and** `*.wav`, copied as two separate patterns |
+| root | `default.xbe`, `xbox.bin`, `splash.raw` |
+| `System/` | `*.u`, `*.int`, `Default.ini`, `DefUser.ini`, `uw.ini`, `Stats.ini`, `Packages.md5` |
+| `System/tweak/` | `misc/`, `pawns/`, `vehicles/`, `weapons/`, `surfaces/`, `mp/` |
+| `System/LIPSincData/` | the `.lad`/`.dat`/`.map` set, copied recursively |
+
+**Three details that matter and are easy to miss.**
+
+1. **`Packages.md5` is part of the build, not a side file.** `copybuild.bat` and `copyscript.bat` both copy it into
+   `System/`, next to the packages it describes — so the integrity manifest ships with the game and a rebuilt package
+   must be reflected there or the shipped tree is internally inconsistent.
+2. **The deploy deletes stale config first.** `xbdel` removes `UnrealEngine2.ini`, `Uw.ini`, `user.ini` and `Stats.ini`
+   from `System/` *before* copying `Default.ini`, `DefUser.ini`, `uw.ini` and `Stats.ini` — i.e. per-user configs are
+   expected to exist at run time and are deliberately not shipped, only the defaults.
+3. **`Music` ships two formats.** The scripts copy `*.wma` and `*.wav` as separate lines rather than one wildcard, so the
+   directory legitimately holds both; a rebuild that assumes one format will silently drop half the music.
+
+**What this changes for the rebuild.** PLAN 6/7's placement question has an answer that does not need guessing: a rebuilt
+`.u` goes in `System/` beside `Packages.md5`, `default.xbe` and `xbox.bin` stay at the root, `splash.raw` stays at the root,
+and the content directories keep their names and case. `copyscript.bat` exists precisely because the script half is the
+part that gets rebuilt repeatedly — it copies only `*.u`, `*.int`, `xbox.bin` and `Packages.md5`, which is the minimum a
+script-only rebuild has to replace.
+
+**Limits.** These are the *build's* scripts, so they describe what the developers deployed to a dev kit (`xe:`) rather
+than the retail disc image; the retail layout is the same shape but the scripts do not prove the disc used it verbatim.
+Nothing here says what `xbox.bin` is (it is copied, never produced, by these files).
+
 ## Bake or reproduce: the two costs, with the numbers in hand
 
 The requirement is settled — a mission compiles seven of the 60 programs, through a 50-class assembler-and-optimiser
