@@ -273,7 +273,7 @@ help:
 	@echo "  class-slot-declarers       who declares a gap body that sits in a table slot, and the name it earns"
 	@echo "  declarer-residue           what stops the walk's 35 residue bodies: a check() block, a fold, or no name"
 	@echo "  class-interface-residue    the default bodies read, and the four tables nothing stores"
-	@echo "  gap-body-files           what a gap head says about its own file: assert path, string and callee"
+	@echo "  gap-body-files           what a gap head says about itself: assert path, string, call and name literal, at instruction boundaries"
 	@echo "  class-interface-shapes   which of the 232 interfaces are the same one, and which have a name"
 	@echo "  class-ladder-rungs       the 493 measured parent edges as rungs: what a child repeats, replaces, adds"
 	@echo "  class-interface-families one read per interface family: the representatives the per-body read owes"
