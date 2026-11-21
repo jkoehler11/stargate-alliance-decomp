@@ -1515,9 +1515,22 @@ the caps by name -- `MaxTextureBlendStages`, `MaxSimultaneousTextures`, `MaxActi
 `caps+0x94/+0x98/+0xa0/+0xb4/+0xb8/+0xbc`. The field map therefore rests on the game's own names, not only on
 the SDK's order. `tools/xemu/d3d-caps.py --fill-site` re-derives the call from the image.
 
-**Still unnamed, and why.** The two `D3DFORMAT` enumerants (30 back buffer, 42 depth) and the `MultiSampleType`
-value `0x11` stay numbers: naming them needs the Xbox D3D8 header, which neither the dump nor this repository
-carries, so a name would be a guess. That is the only question left in this entry.
+**Named 2026-11-20, from the supplied SDK's own header.** The three numbers were left as numbers because naming them
+needs the Xbox D3D8 header, which the dump does not carry — but the XDK 5849.17 archive already supplied for the library
+work does, at `setup/XDK/xbox/include/D3D8Types.h` (kept outside the repository per `AGENTS.md`; only the names below
+travel). Read out of it:
+
+| value | name | what it means |
+|---|---|---|
+| **30** (`0x1E`) | `D3DFMT_LIN_X8R8G8B8` | a **linear** 32-bit XRGB back buffer — the `LIN_` family is the Xbox's non-swizzled layout |
+| **42** (`0x2A`) | `D3DFMT_D24S8` | 24-bit depth plus 8-bit stencil, i.e. the 32-bit depth-stencil the log reported |
+| **`0x11`** | `D3DMULTISAMPLE_NONE` | no multisampling |
+
+One subtlety worth carrying: `0x1E` is a **union** in that header — `D3DFMT_LIN_X8R8G8B8` and `D3DFMT_LIN_X8L8V8U8` share the
+value, so the name is only correct because the field is a back-buffer format. Anyone quoting "30 = LIN_X8R8G8B8" as a
+global fact would be over-reading a format union.
+
+So nothing remains open in this entry: request, reported caps, fill site and now the three enumerant names.
 
 **Status.** Closed for both halves (request and report); `tools/xemu/bp-args.py` and
 `tools/xemu/d3d-caps.py` are the instruments, and the three stub behaviours `bp-args.py` works around are in
