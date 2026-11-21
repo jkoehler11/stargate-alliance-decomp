@@ -899,7 +899,8 @@ ones in the image and both are inside this function. Its shape confirms it — `
 and calls `ProcessInternal` directly (`docs/NATIVE_VM.md`).
 
 **Dispatch slot closed 2026-10-24: slot 21, byte offset `+0x54`.** The 492 pointers are 492 tables
-of code pointers in `.rdata` (`0x004c78c0`–`0x0053b168`, 30–159 slots each, packed), each with exactly
+of code pointers in `.rdata` (`0x004c78c0`–`0x0053b168`, 30–143 slots each, packed, and each extent
+pinned by a body-start rule and an interior install store -- `tools/class-tables.py`), each with exactly
 21 code slots before `0x0004bf20` and no other address at that slot; every table start is named by an
 immediate in `.text`. So the fork dispatches `ProcessEvent` as a virtual at a fixed slot through
 `[object+0x00]`, which is why nothing calls it. Measurements and the tool:
@@ -1270,8 +1271,9 @@ the one-byte `ret` stub 327 class tables hold at slots 19/20 -- so a native vtab
 function and the naming problem is not a lost hierarchy.
 
 **2026-11-14, the slot route is measured out and the 17 have a position.** `inventory/xbe_class_table_slots.csv` holds
-159 slot columns; 31 of them carry one value on all 492 tables (`0x00062650`, `0x00062660`, `0x00062670` at slots 0-2,
-`0x00046d20` at slot 5), slot 3 carries **492 distinct** values, and the rest two to 90. Every pair of tables therefore
+143 slot columns (2026-11-20: the extents were re-measured, 34,936 slots over the 492 tables); 17 of them carry one
+value on all 492 tables (`0x00062650`, `0x00062660`, `0x00062670` at slots 0-2, `0x00046d20` at slot 5), slot 3 carries
+**492 distinct** values, and the rest two to 130 (slot 30). Every pair of tables therefore
 shares a prefix that stops at slot 3 at the latest, so joining slot 0 -- or slots 1..n -- against a constructor census
 cannot name a table: the one column that differs on every table is the one no other table can match.
 

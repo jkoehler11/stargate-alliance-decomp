@@ -1490,7 +1490,7 @@ shape is one interface with several implementations, so the family is the unit a
 group whose members carry no class at all is the anonymous half of the same question rather than a
 different one.
 
-## The 18 heads' rungs: 490 edges, 14 that are not rungs, and the extents that explain them
+## The 18 heads' rungs: 490 edges, 0 that are not rungs, and the extent rule they fixed
 
 The sections above read the 250 tables nothing names as *objects*: what they contain, which bodies store
 them, which are a class's dispatch table. This one reads them as an **inheritance edge**. The 18 heads are
@@ -1507,36 +1507,30 @@ break: a derived class's table is never shorter than its parent's.
 <!-- generated:class-ladder-rungs -->
 | parent (unnamed) | slots | children | replaced | added | most slots in a child | verdicts |
 |---|---|---|---|---|---|---|
-| `0x004c78c0` | 31 | 7 | 6 | 38 | 55 | extends 3 identical 3 shorter 1 |
-| `0x004c7958` | 46 | 4 | 18 | 0 | 46 | extends 3 identical 1 |
-| `0x004c7a10` | 46 | 9 | 21 | 2 | 47 | extends 6 identical 3 |
-| `0x004c7ac8` | 46 | 4 | 9 | 18 | 58 | extends 4 |
-| `0x004c7c78` | 34 | 10 | 32 | 0 | 33 | shorter 10 |
-| `0x004c9348` | 30 | 2 | 4 | 6 | 35 | extends 2 |
-| `0x004c93d0` | 35 | 1 | 2 | 59 | 94 | extends 1 |
-| `0x004c94b0` | 30 | 1 | 3 | 16 | 46 | extends 1 |
-| `0x004cfe68` | 59 | 3 | 13 | 0 | 59 | extends 3 |
-| `0x004d0318` | 31 | 3 | 0 | 31 | 43 | extends 3 |
-| `0x004d03c8` | 31 | 3 | 1 | 36 | 43 | extends 3 |
-| `0x004d1468` | 35 | 4 | 9 | 9 | 42 | extends 4 |
-| `0x004d17a8` | 37 | 13 | 28 | 208 | 53 | extends 13 |
-| `0x004d2400` | 31 | 1 | 1 | 6 | 37 | extends 1 |
+| `0x004c78c0` | 31 | 7 | 7 | 93 | 56 | extends 6 identical 1 |
+| `0x004c9348` | 31 | 2 | 6 | 36 | 56 | extends 2 |
+| `0x004c93d0` | 56 | 1 | 14 | 1 | 57 | extends 1 |
+| `0x004c94b0` | 43 | 1 | 15 | 0 | 43 | extends 1 |
+| `0x004d0318` | 40 | 3 | 16 | 1 | 41 | extends 3 |
+| `0x004d03c8` | 42 | 3 | 14 | 0 | 42 | extends 3 |
+| `0x004d1468` | 35 | 4 | 9 | 25 | 53 | extends 4 |
+| `0x004d17a8` | 53 | 13 | 157 | 0 | 53 | extends 13 |
+| `0x004d2400` | 37 | 1 | 7 | 0 | 37 | extends 1 |
 | `0x004d34d8` | 32 | 1 | 1 | 0 | 32 | extends 1 |
 | `0x004d3af0` | 33 | 1 | 1 | 0 | 33 | extends 1 |
-| `0x004eaea8` | 31 | 2 | 1 | 36 | 50 | extends 2 |
-| `0x004fa390` | 34 | 4 | 14 | 12 | 37 | extends 4 |
-| `0x004fc4f0` | 30 | 2 | 3 | 41 | 71 | extends 1 identical 1 |
-| `0x004fc588` | 30 | 2 | 0 | 10 | 36 | extends 2 |
-| `0x004fcfe0` | 36 | 2 | 9 | 1 | 37 | extends 2 |
-| `0x005040d0` | 30 | 1 | 2 | 36 | 66 | extends 1 |
-| `0x00517860` | 30 | 3 | 3 | 0 | 30 | extends 3 |
-| `0x005178d8` | 30 | 5 | 5 | 10 | 32 | extends 5 |
+| `0x004eaea8` | 47 | 2 | 30 | 4 | 50 | extends 2 |
+| `0x004fa390` | 37 | 4 | 21 | 0 | 37 | extends 4 |
+| `0x004fc4f0` | 30 | 2 | 3 | 45 | 71 | extends 2 |
+| `0x004fc588` | 34 | 2 | 7 | 0 | 34 | extends 2 |
+| `0x004fcfe0` | 36 | 2 | 9 | 0 | 36 | extends 2 |
+| `0x00517860` | 30 | 3 | 3 | 2 | 32 | extends 3 |
+| `0x005178d8` | 32 | 5 | 15 | 0 | 32 | extends 5 |
 
-**476 of the 490 measured parent edges read as rungs -- 353 `extends`, 123 `identical`, 14 `shorter`.** A child's table is never shorter than its parent's, so a `shorter` row is the parent link or the slot count, not the rule: the rows above carry them.
+**490 of the 490 measured parent edges read as rungs -- 362 `extends`, 128 `identical`, 0 `shorter`.** A child's table is never shorter than its parent's, so a `shorter` row is the parent link or the slot count, not the rule: none does.
 
-**88 of the 490 edges land in a parent no registration names, over 24 distinct heads**, and every one of those heads is a class with no script row, so this is the only override census the 88 edges have: the remaining 402 are the script-linked population the control is read on.
+**57 of the 490 edges land in a parent no registration names, over 18 distinct heads**, and every one of those heads is a class with no script row, so this is the only override census the 88 edges have: the remaining 433 are the script-linked population the control is read on.
 
-**Control: the 372 script-linked edges this read reaches reproduce `class_virtual_overrides.csv` on 372, 0 disagreeing.** Same slot vectors and the same slot-3 exclusion, so a count on a row that has no published answer is the same measurement.
+**Control: the 377 script-linked edges this read reaches reproduce `class_virtual_overrides.csv` on 377, 0 disagreeing.** Same slot vectors and the same slot-3 exclusion, so a count on a row that has no published answer is the same measurement.
 <!-- /generated:class-ladder-rungs -->
 
 **The control is what makes the rest a measurement, and finding it wrong first was this run's third stale
@@ -1548,21 +1542,41 @@ classes read 9 overrides and 1 added slot instead of 4 and 0. Regenerated it has
 where the committed file had 302: the six tables #533 and its follow-ups named are pairs the old file never
 had.
 
-**Thirteen of the fourteen `shorter` rows are two tables whose extent is over-read, and the surplus dwords
-say so.** `0x004c7c78` is counted 34 slots and its ten children are 32 or 33; its slots 32 and 33 hold
-`0x00330044` and `0x00440044`, which are inside `CLiveEngine::SeparateTextAndIcons` and
-`ASN1Dec_KERB_AP_REPLY` rather than at their starts. `0x00521f80` is counted 34 and its three children are
-30, 31 and 32; its slots 31 and 32 hold `0x00200020`, inside `Core_UnMath`, and slot 33 holds `0x00540020`,
-past the end of `.text`. Both extents come from the packed-table rule `tools/class-tables.py` uses (a table
-ends where the next one starts) and not from a count of function entries, so **the rungs are the cheapest
-read of a table's real length**: 32 slots for `0x004c7c78`, at most 31 for `0x00521f80`. The fourteenth row
-is `Engine`'s own table (`0x005040d0`, 30 slots) against `0x004c78c0` (31) and it stays open -- `Engine`
-declares no script super, so nothing else crosses that edge.
+**The 14 `shorter` rows were the extent rule, and the dwords that made them are string data.** A table
+in this image sits in front of the build's wide-string pool: `0x004c7c78` was counted 34 slots and its slots
+32 and 33 hold `0x00330044` and `0x00440044`, which are the characters `D3` and `DD` of a UTF-16 string --
+not `CLiveEngine::SeparateTextAndIcons` and `ASN1Dec_KERB_AP_REPLY` at all, because an aligned dword in
+`.text`'s *address range* is not an instruction boundary. `0x00521f80` was counted 34 and its slots 31-33
+are two wide spaces and a `T`. **Twelve of the 492 tables ended on such a dword and 14 dwords in all were
+counted**, which is the whole over-read: the tables carry the first two characters of the string that
+follows them. The old rule was `4-aligned and inside a section flagged executable`, and every section in
+this image carries that flag (`.rdata`'s own map coverage is 0.000 against `.text`'s 0.86).
+
+**Two markers inside the tables were the second half of the error, and both are measurements.** `0x003e5501`
+is `__purecall`, an *odd* address, so the alignment test ended six tables on a genuine slot; and
+`0x00000000` ends a further 221, and where a table stops is itself a reading: `Actor`'s 123-slot table
+stops on the float `0x41c80000`, `xEmitter`'s on `0x44160000`. A slot is now a **body start** -- an exact map address at any alignment, or a
+terminator one past it -- inside a section the map's own functions cover, and a table ends on a wide-string
+dword, a null, or a dword outside code.
+
+**A run of code pointers is still not a table, and the last four over-reads prove it.** `0x004d0318` was
+read as 43 slots while its children are 40 and 41; the run holds **install stores of two other tables** at
+`+0xa0` and `+0xa4`. Clipping a table at the first interior install store (never before its own
+`ProcessEvent`) answers all four -- `0x004d0318` 43->40, `0x004d03c8` 45->42, `0x004fc588` 42->34 and
+`0x00521f80` 34->30 -- and **82 of the 492 tables are clipped this way**, which is what makes the packed
+`.rdata` region one structure per class rather than 492 runs.
+
+**`Engine` was the fourteenth row and it was the child that was wrong, not the parent.** Its own table is
+**56** slots, not 30: slot 30 is `__purecall`, and past it the table runs to 56 and stops on a wide string
+(`Se`). It now reads `extends` against `0x004c78c0` (31), 25 slots added, and its own child `GameEngine`
+(66) extends it by 10 -- a three-rung chain where the artifact had one broken edge. The other end of the
+ladder reads the same way: `StreamBase` is `Object`'s 30-slot table with slot 3 differing, `identical`,
+where it was 34.
 
 **What this does not say.** It does not re-name anything: every row is keyed by the table's own address, and
-a class with no name in `inventory/xbe_class_table_names.csv` keeps its address here. It also does not
-decide which of the two extents `class-tables.py` and this read is right -- it measures that they disagree
-and on which dwords, which is the input the extent rule needs.
+a class with no name in `inventory/xbe_class_table_names.csv` keeps its address here. The one slot the start
+rules cannot confirm is `xEmitter`'s slot 18 (`0x00082ea0`), a body behind a jump table; the artifact
+counts it in `unconfirmed` and refuses to end a table on it.
 
 ## Regenerating, continued
 

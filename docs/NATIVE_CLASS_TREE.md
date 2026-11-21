@@ -899,7 +899,7 @@ whose symbol-map size stops nine bytes short of the `jmp`) gives a parent for **
   13 property classes hang off `0x4d17a8`, whose own parent is `0x4d1468`; and `Level` hangs off
   `0x4fc4f0` while the two pending-level classes hang off `0x4fc588`, whose parent is `0x4fc4f0`.
 - **Slot 1..n is measured out, so the join the plan proposed is not the instrument.** In
-  `inventory/xbe_class_table_slots.csv`, 31 of the 159 slot columns hold one value on all 492 tables
+  `inventory/xbe_class_table_slots.csv`, 17 of the 143 slot columns hold one value on all 492 tables
   (`0x00062650`, `0x00062660`, `0x00062670` at 0-2, `0x00046d20` at 5, ...), slot 3 holds **492 distinct**
   values, and the rest hold two to 90. Every pair of tables therefore shares a prefix that stops at slot 3
   at the latest: the one column that differs on every table is the one a slot-to-slot join cannot use.

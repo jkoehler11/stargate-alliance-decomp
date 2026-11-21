@@ -16089,6 +16089,51 @@ sequence.
   representative now that the families exist), and the 18's UE2.5 ladder reading, which is still a reading
   rather than a measurement.
 
+### Execution notes (2026-11-20, the extent is a body-start rule and a run is split at its install stores)
+
+- **The 14 rungs that were not rungs were one rule, and the dwords that made them are string data.**
+  `class-tables.py` counted a slot while `4-aligned and inside a section with the executable flag` --
+  which every section of this image carries (the map's own byte coverage: `.text` 0.86, `.rdata` 0.000).
+  The tables sit in front of the build's wide-string pool, so a table's first surplus dword is the first
+  two characters of the string that follows it: `0x00330044` is `D3`, `0x00200020` is two spaces.
+  **Twelve tables ended on such a dword and 14 dwords were counted in all.** A slot is now a *body
+  start*: an exact map address at any alignment, or a terminator ending one past it, inside a section
+  the map covers at least a tenth of.
+- **The alignment test also ended six tables on `__purecall`, and that is why `Engine` was the fourteenth.**
+  `0x003e5501` is an odd address, so a map address at odd alignment is now accepted. `Engine`'s own table
+  is **56** slots (slot 30 is `__purecall`, slot 56 the wide string `Se`), not 30: it reads `extends` on
+  `0x004c78c0` (31) with 25 added, and `GameEngine` (66) extends it by 10 -- one three-rung chain in
+  place of a broken edge. `StreamBase` reads 30 and `identical` against `Object` (its slot 3 is the only
+  difference), where it was 34.
+- **A run of code pointers is still not a table, and four children proved which parents were over-read.**
+  `0x004d0318` read 43 slots while its children read 40 and 41; the run holds install stores of two other
+  tables at `+0xa0` and `+0xa4`. Clipping at the first interior install store -- never before the table's
+  own `ProcessEvent` -- answers `0x004d0318` 43->40, `0x004d03c8` 45->42, `0x004fc588` 42->34 and
+  `0x00521f80` 34->30, and **82 of the 492 tables are clipped this way**. One image-wide scan of
+  `native-vtable.py`'s `find_installs` answers all 492 in 2 s.
+- **One slot neither start rule confirms, and the artifact says so instead of guessing.** `xEmitter`'s
+  slot 18 is `0x00082ea0`, a body behind six `.text` offsets (a jump table); ending a table on it truncated
+  `0x004e2d28` from 123 slots to 18, which the ladder then read as a child shorter than its parent. The
+  `unconfirmed` column counts it (1 of 34,936 slots) and the walk does not stop on it.
+- **The control is the ladder, and it goes 14 `shorter` rows to 0.** `362 extends / 128 identical / 0
+  shorter` over the 490 measured edges, and the script-linked override control rises **372 -> 377**
+  agreeing pairs with 0 disagreeing once `class_virtual_overrides.csv` is regenerated against the new
+  extents (1,507 rows where it had 1,658: the old file carried overrides counted against over-read slots).
+- **Files.** `tools/class-tables.py` (`--check`: 6 extent cases, 5 wide-text cases, 8 terminator cases, no
+  dump), the artifact's three new columns (`stop`, `surplus`, `unconfirmed`, plus `split_at`),
+  `inventory/xbe_class_tables.csv` and `xbe_class_table_slots.csv` regenerated (143 columns, 34,936 slots,
+  30--143 slots per table), the four artifacts that copy a slot count regenerated
+  (`class_table_parent_edges.csv` 493 rows / 377 agreed, `class_table_parents.csv`,
+  `class_table_installers.csv`, `class_table_store_fields.csv`), `class_virtual_overrides.csv` (1,507) and
+  `class_ladder_rungs.csv` (490), `docs/systems/CLASS_REGISTRATION.md` (the rung section's prose and its
+  block), `docs/UNKNOWNS.md` (the dispatch-slot paragraph's 30--143 and the 143/17 slot-column sentence),
+  `docs/NATIVE_CLASS_TREE.md` and `docs/ARCHITECTURE.md` (the same two counts), this note.
+- **Gates.** `make ci` green; `--check` is synthetic and writes nothing; the artifact reproduces byte for
+  byte on a second run; the ladder's own doc block regenerates from committed CSVs with no dump.
+- **Not in this bundle.** The 89 interface family representatives' body reads, the 399 unnamed bodies, the
+  18 class tables' class-record name field, and `class_plain_tables.csv`'s own extent rule, which is a
+  separate census over the 724-table population and still counts by the old test.
+
 ### Execution notes (2026-11-20, the rungs give the 18 an override census, and the control caught a stale artifact)
 
 - **The 18 heads' override census did not exist, and closing it needed no new name channel.**
