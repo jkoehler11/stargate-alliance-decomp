@@ -6136,3 +6136,20 @@ declarer residue is 12 -> 6 bodies, and the installer census reads 65 ctor-holde
 (36 / 172). `0x0051724c` stays unowned with its reason measured: its two store bodies are `FUN_` bodies.
 What is left of this entry: the 2 bodies in `0x0051724c`, the 4 linker folds, the 424 interface-only bodies
 and the 807 bodies no channel names.
+
+**Answered since (2026-11-21, the callers' nearest common ancestor is a lower bound, and the parent edge names
+two tables).** The nine caller-split tables this entry kept as "a table those classes share higher up" are
+measured (`tools/class-table-lca.py`, `inventory/class_table_lca.csv`). The control: of the 120 split
+tables the class map already names, the callers' nearest common ancestor is that class in 77 and one of its
+descendants in 43 -- never an unrelated class -- so the NCA is a lower bound and names a table only where the
+callers span branches. The 7 named split tables all agree with the map. The two unnamed ones are
+`0x004d1468` = `Field` (35 slots; `Const`, `Enum` and `Struct` call its installer and all three say `Field`)
+and `0x004fc4f0` = `LevelBase` (30 slots, from its child `Level`). The second name also answers this entry's
+`parent-unnamed` row on `0x004fc588`: `PendingLevel`'s installer calls `LevelBase`'s, two of the three
+callers of that table are `PendingLevel`'s subclasses and cannot descend from `LevelBase`, so the store is a
+*member* construction and `PendingLevel`'s `Super` stays `Object`. The member census's two `coincident` rows
+read the same way now: their owners' only common ancestor is the root, and `+0x28` is where a subclass's
+first instance field begins, so the offsets collide by layout rather than declaring one field.
+What is left of this entry: the class-map cascade for those two names (the declarer walk that names the
+bodies their slots hold), the 2 bodies in `0x0051724c`, the 4 linker folds, the 424 interface-only bodies and
+the 807 bodies no channel names.

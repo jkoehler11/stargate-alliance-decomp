@@ -580,13 +580,13 @@ the interface's default, not an unimplemented slot.
 | `0x004c93c8` | 2 | 2 | Viewport, XboxViewport | -- |
 | `0x004d0314` | 2 | 1 | NetDriver, TcpNetDriver | -- |
 
-**37 of the 49 tables carry a label of the form `<Class>_member_<field>`, and the class is the one that declares the field.** 39 are a single owner's field, 1 are declared in a shared ancestor of every owner (`Linker_member_0xb8`), 3 have owners in no common chain -- where the same offset is two different layouts, not one field -- and 6 have no owner at all. A table whose row carries more than one field offset keeps no label: the store does not pair the offset with its owner, and naming one of them would pick.
+**37 of the 49 tables carry a label of the form `<Class>_member_<field>`, and the class is the one that declares the field.** 39 are a single owner's field, 1 are declared in a shared ancestor of every owner (`Linker_member_0xb8`), 3 have owners whose only common ancestor is the root (Object) -- `+0x28` is where a subclass's first instance field begins (a class object's `Super` sits there), so the same offset is two layouts, not one field -- and 6 have no owner at all. A table whose row carries more than one field offset keeps no label: the store does not pair the offset with its owner, and naming one of them would pick.
 | 24 table(s) in no family | 24 | -- | -- | -- |
 
 **The 49 member tables are interface vtables, and their slot 0 is not a class slot.** All 492 class tables the class-map census covers (489 of them named by the registration path) share one slot-0 body, `0x00062650`; none of the 49 member tables carry it, and their slot-0 values are 36 distinct bodies. A class dispatch table starts with the entry every class table starts with; an interface object's table starts with its own first method, which is why no slot here can be named `<Class>_vt<slot>`.
 
-**292 slots resolve to 115 distinct bodies, and 33 slots land outside the symbol map.** 24 slots are `__purecall`, 127 are stubs of 8 bytes or less (`ret`, `xor eax,eax; ret` -- the default implementations of an interface whose real work is elsewhere), 61 carry a real name in the map rather than a `FUN_` row, and 198 are `FUN_` rows the map covers.
-**7 of the 33 slots outside the map are bodies U40's gap rule decodes** -- that is, **7 of the 269 gap bodies U40 counts in an unnamed table's slot are in these 49 member tables** and the rest are in the plain-only ones -- and the remaining 26 slots outside the map are bodies neither the map nor the padding rule reaches, so those interface methods are code nothing has decoded yet.
+**292 slots resolve to 115 distinct bodies, and 27 slots land outside the symbol map.** 24 slots are `__purecall`, 127 are stubs of 8 bytes or less (`ret`, `xor eax,eax; ret` -- the default implementations of an interface whose real work is elsewhere), 67 carry a real name in the map rather than a `FUN_` row, and 198 are `FUN_` rows the map covers.
+**1 of the 27 slots outside the map are bodies U40's gap rule decodes** -- that is, **1 of the 269 gap bodies U40 counts in an unnamed table's slot are in these 49 member tables** and the rest are in the plain-only ones -- and the remaining 26 slots outside the map are bodies neither the map nor the padding rule reaches, so those interface methods are code nothing has decoded yet.
 
 **25 of the 49 tables fall into 7 families, and the widest is the 22-slot one.** `0x004fc35c`: 6 tables at 8 slots, varying 0, 1, 2, 3, 4, 5, 6, 7. `0x004c7860`: 5 tables at 22 slots, varying 0, 1, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17. `0x004d03b8`: 4 tables at 1 slot, varying nothing. `0x004d03bc`: 4 tables at 2 slots, varying nothing. `0x004c7854`: 2 tables at 2 slots, varying nothing. `0x004c93c8`: 2 tables at 2 slots, varying nothing. `0x004d0314`: 2 tables at 1 slot, varying nothing.
 
@@ -2784,7 +2784,7 @@ literals; `inventory/class_super_edges.csv` is the census.
 
 **11 of the 122 tables a caller edge constrains carry a name their children's `Super` states -- 11 written by this join, 102 already named -- and the control, the tables the registrations and the other rules name, agrees 102 of 102 (0 disagree).** The rule has no free parameter: the table is the class its calling classes say their parent is, at least one caller must be a class this census resolved, and every resolved caller must agree. A table whose callers disagree is a table those classes share higher up, not their parent, and it stays unnamed. The rows this join named are counted apart from the control and named by `name_rule=child-super` in `inventory/xbe_class_table_names.csv`, so a name this tool derived never votes in its next round.
 
-| table | slots | the children that call its installer | their `Super` | class |
+| table | callers | the children that call its installer | their `Super` | class |
 |---|---:|---|---|---|
 | `0x4c78c0` | 3 | AudioSubsystem, Input, new | Subsystem (x3) | **`Subsystem`** |
 | `0x4c94b0` | 1 | XboxClient | Client | **`Client`** |
@@ -2872,19 +2872,23 @@ the `gap`/`stub` their body now reads as. A census that only runs when its own s
 the artifacts it joins; `make class-table-store-fields` and `make class-interface-installers` are the two
 that had.
 
-**Two rows lose a label, and the nearest common ancestor is why.** `0x004d03b8` and `0x004d03bc` are stored
-at `+0x2c` and `+0x28` by both `NetConnection` and `PackageMapLevel` (three stores each, read from
-`FUN_00025ff0`/`FUN_0010ffa0` and `FUN_00110120`), so their owner set is two classes and `declares()` reads
-`coincident`. It is the honest answer for this build: `NetConnection` has no parent edge in
-`inventory/class_table_parent_edges.csv` and `PackageMapLevel` chains to `PackageMap` -> `Object`, so no
-ancestor joins them. The member census reads **40 labelled of 49** (35), **6 unowned** (13) and **3
-coincident** (1).
+**Two rows lose a label, and the shared offset is the first instance field.** `0x004d03b8` and `0x004d03bc`
+are stored at `+0x2c` and `+0x28` by both `NetConnection` and `PackageMapLevel` (three stores each, read from
+`FUN_00025ff0`/`FUN_0010ffa0` and `FUN_00110120`), so their owner set is two classes and no label is kept.
+The earlier note read `coincident` because `NetConnection` is in no package and no parent artifact held its
+edge; the image's own `+0x28` store census does (`inventory/class_super_edges.csv`: `NetConnection` ->
+`Player` -> `Object`), so the owners' nearest common ancestor is the root. That ancestor still does not
+declare the field, and the reason is measurable: `+0x28` is where a subclass's first instance field begins
+(a class object's `Super` sits there, `docs/NATIVE_PROPERTIES.md`), so two unrelated classes' first two
+fields collide at `0x28`/`0x2c` by layout. The member census keeps the two apart now: `tools/class-member-tables.py`
+reads `inventory/class_super_edges.csv` in its hierarchy join and writes the nearest common ancestor into
+`inventory/class_member_tables.csv`, so a row with no label says which case it is.
 
 **What this does not do.** `0x0051724c`'s two bodies still have no name (their stores carry no symbol), the
 4 linker-folded bodies still read one body per index, and the 424 interface-only bodies and 807 unnamed
-bodies are untouched. The 9 caller-split tables' nearest-common-ancestor reading is not in this bundle; the
-two `coincident` rows above are the case it has to solve first, and they show the census it needs (a parent
-edge for `NetConnection`).
+bodies are untouched. The 9 caller-split tables' nearest-common-ancestor reading is the next note's (below);
+the two `coincident` rows above are the case it had to solve first, and the image's own parent edge for
+`NetConnection` is what settles them.
 
 **Files.** `tools/class-table-store-fields.py` (the reader, the merge, the evidence's holder),
 `tools/class-interface-installers.py` (the same reader, `cpp_ctor_map`, the merged ctor map),
@@ -2902,3 +2906,65 @@ edge for `NetConnection`).
 dump-free synthetic reads that write nothing; the map, the gap census, the declarer walk and the residue
 reproduce byte for byte on a second run; `--apply-adds` refused to write a row the map already had. No boot,
 no xemu, no Ghidra.
+
+## What the callers share: the nearest common ancestor is a lower bound (2026-11-21)
+
+The child-super rule names a table when every class that calls its installer agrees on its `Super`. Nine
+tables are *split* -- their callers disagree -- and the previous note left them as "a table those classes
+share higher up". `tools/class-table-lca.py` reads that sentence as a measurement, over one hierarchy built
+from three sources: the parent the image writes on each class object (`inventory/class_super_edges.csv`,
+first, because it covers `NetConnection` and `LevelBase`, which no package declares), the parent each
+installer's base call gives (`inventory/class_table_parent_edges.csv`) and the script tree. Every input and
+the artifact is a committed CSV, so the census is dump-free.
+
+<!-- generated:class-table-lca -->
+**122 tables carry a caller edge, and the class map already names 120 of them. The callers' nearest common ancestor IS that class in 77, is one of its descendants in 43, and is an unrelated class in 0.** 43 of the 43 descendant rows are a table with a single named caller, where the ancestor of one class is its parent -- so the reading is a *lower bound*: a table's class is its callers' nearest common ancestor or an ancestor of it, never below it. That is why the rule can name a table only where the callers span branches, and why the unnamed tables below split into one it names twice and one it cannot.
+
+| table | slots | callers | distinct `Super` | nearest common ancestor | committed | parent edge names | verdict |
+|---|---:|---:|---:|---|---|---|---|
+| `0x004d1468` | 35 | 16 | 3 | Field | -- | `Field` | named-by-parent-edge |
+| `0x004fc4f0` | 30 | 3 | 2 | Object | -- | `LevelBase` | named-by-parent-edge |
+| `0x004c7958` | 46 | 35 | 8 | Material | `Material` | `Material` | equal |
+| `0x004ca830` | 136 | 9 | 4 | Vehicle | `Vehicle` | `Vehicle` | equal |
+| `0x004cfba0` | 58 | 7 | 2 | Texture | `Texture` | `Texture` | equal |
+| `0x004cfc88` | 59 | 5 | 2 | FractalTexture | `FractalTexture` | `FractalTexture` | equal |
+| `0x004d0738` | 134 | 3 | 2 | PlayerController | `PlayerController` | `PlayerController` | equal |
+| `0x004dd2a8` | 30 | 349 | 83 | Object | `Object` | `Object` | equal |
+| `0x004fc1b0` | 39 | 12 | 4 | Primitive | `Primitive` | `Primitive` | equal |
+
+**9 table(s) split** (their callers disagree on `Super`), and the two channels settle them: **7 of the 7 named ones have the committed name as their nearest common ancestor**. The 2 unnamed ones: `0x004d1468` has 16 callers, a nearest common ancestor of `Field` and a parent edge that names `Field`; `0x004fc4f0` has a root nearest common ancestor while the parent edge names `LevelBase` from its child `Level`.
+
+**The parent-edge join covers 122 tables and agrees with 120 of 120 names, 0 disagreeing.** It reads a class's own installer call as its parent, so a row whose `parent_va` is a table is that table's child; where every child agrees on its `Super`, the table is that class. Its one free reading is that the call is a *base* call, and 1 row(s) separate it from the NCA: `0x004fc4f0` names `LevelBase` and 2 of its 3 caller(s) are not below it (DemoPlayPendingLevel, NetPendingLevel). A caller there is not a descendant of the class its table names, so its store installs the table in a *member* rather than in the object's own slot -- which is what the `parent-unnamed` row this page carried on `0x004fc588` reads as: `0x004fc4f0` is `LevelBase`, `PendingLevel`'s installer constructs a member of that class, and `PendingLevel`'s `Super` stays `Object` as its class object says.
+
+**What the two unnamed tables are:** `0x004d1468` = Field (`named-by-parent-edge`), `0x004fc4f0` = LevelBase (`named-by-parent-edge`). Both are named by a row this tool does not write: adding them to `inventory/xbe_class_table_names.csv` is the class-map cascade the declarer walk then follows, and this bundle publishes the measurement, not the rename.
+<!-- /generated:class-table-lca -->
+
+**The second channel, and what it settles.** A class whose `parent_va` is a table calls its parent's
+installer, so the table is the class those children agree their `Super` is -- the child-super rule read from
+the children instead of the callers. It covers the same 122 tables, names the two the class map lacks and
+never disagrees with a name it has. `0x004d1468` (35 slots) is `Field`: `Const`, `Enum` and `Struct` are its
+children and all three say `Field`, and the callers' nearest common ancestor says the same from the other
+side. `0x004fc4f0` (30 slots) is `LevelBase`, from its child `Level`; that also answers the row the page
+carried as `parent-unnamed` on `0x004fc588`: `PendingLevel`'s installer calls `LevelBase`'s installer,
+`PendingLevel`'s class object says `Super = Object`, and two of `0x004fc4f0`'s three callers are
+`PendingLevel`'s own subclasses, so that store installs a *member* rather than a vtable. `PendingLevel` is
+not `LevelBase`'s child; it embeds one.
+
+**The census re-run reproduces the previous bundle's map move.** `inventory/class_member_tables.csv` had
+not been regenerated since the six member bodies the last bundle named entered the symbol map. Re-running it
+moves those six slots from `outside_map` to named (`CVoiceMailPseudoFeature_member_0x8_vt1/4/5`,
+`CPlayersFeature_member_0x8_vt2/3/4`) and the gap-head count 7 -> 1, which is the join agreeing with the map
+rather than a new measurement -- and the same drift is why two censuses in the previous note had to be
+re-run.
+
+**The super-edges table's `slots` column was the caller count.** `inventory/class_table_super_names.csv`
+carried the row's `support` under a column named `slots`, so a 31-slot table read as three. The column is
+`support` now and the header says callers; a table's slot count lives in `inventory/xbe_class_tables.csv`,
+which this page already quotes by table.
+
+**What this does not do.** The two names are in this page and in `inventory/class_table_lca.csv`, not in
+`inventory/xbe_class_table_names.csv`: adding them starts the class-map cascade (the ctor roster, the base
+call census, the registration sites, the status rows and `make-symbols`) and then the declarer walk that
+names the bodies their slots hold. That is the next increment on this thread. `0x0051724c`'s two bodies
+still have no name (its stores are `FUN_` bodies), and the 424 interface-only and 807 unnamed bodies are
+untouched.

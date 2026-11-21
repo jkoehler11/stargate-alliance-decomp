@@ -57,7 +57,7 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EDGE_FIELDS = ["target_class", "target_slot", "parent_class", "parent_slot", "body_va", "store_va",
                "verdict"]
-NAME_FIELDS = ["table_va", "slots", "children", "child_supers", "class", "verdict"]
+NAME_FIELDS = ["table_va", "support", "children", "child_supers", "class", "verdict"]
 ARTIFACT = os.path.join(ROOT, "inventory/class_super_edges.csv")
 NAMES = os.path.join(ROOT, "inventory/class_table_super_names.csv")
 REGISTRATIONS = os.path.join(ROOT, "inventory/class_registrations.csv")
@@ -321,7 +321,7 @@ def names(edges, parents=None, map_rows=None):
                 else:
                     verdict = ("agrees" if committed == name else
                                "disagrees" if committed else "names-the-table")
-            out.append({"table_va": row["table_va"], "slots": row.get("support", ""),
+            out.append({"table_va": row["table_va"], "support": row.get("support", ""),
                         "children": "|".join(kids), "child_supers": "|".join(parents),
                         "class": name, "verdict": verdict})
     return out, sup
@@ -389,7 +389,7 @@ def render(edges, table_names):
                  % (len(named), len(table_names), len(selfrows), len(agrees), len(agrees),
                     len(agrees) + len(dis), len(dis)))
     lines.append("")
-    lines.append("| table | slots | the children that call its installer | their `Super` | class |")
+    lines.append("| table | callers | the children that call its installer | their `Super` | class |")
     lines.append("|---|---:|---|---|---|")
     for r in named:
         kids = r["children"].split("|")
@@ -397,7 +397,7 @@ def render(edges, table_names):
         tally = collections.Counter(sups)
         shown = ", ".join("%s%s" % (k, "" if n == 1 else " (x%d)" % n) for k, n in tally.items())
         lines.append("| `%s` | %s | %s | %s | **`%s`** |"
-                     % (r["table_va"], r["slots"] or "-",
+                     % (r["table_va"], r["support"] or "-",
                         ", ".join(kids[:6]) + (" (+%d more)" % (len(kids) - 6) if len(kids) > 6 else ""),
                         shown, r["class"]))
     lines.append("")

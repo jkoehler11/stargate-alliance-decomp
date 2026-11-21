@@ -45,12 +45,14 @@ CLASS_SLOTS = os.path.join(ROOT, "inventory", "xbe_class_table_slots.csv")
 GAPS = os.path.join(ROOT, "inventory", "gap_heads.csv")
 SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 PARENTS = os.path.join(ROOT, "inventory", "class_table_parent_edges.csv")
+IMAGE_EDGES = os.path.join(ROOT, "inventory", "class_super_edges.csv")
 CLASSES = os.path.join(ROOT, "inventory", "classes.csv")
 SRC = os.path.join(ROOT, "inventory", "class_member_tables.csv")
 PAGE = os.path.join("docs", "systems", "CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-member-tables -->"
 DOC_END = "<!-- /generated:class-member-tables -->"
-FIELDS = ("table_va", "slots", "owners", "fields", "declared_in", "layout", "member_name", "shape",
+FIELDS = ("table_va", "slots", "owners", "fields", "declared_in", "layout", "nearest_common_ancestor",
+          "member_name", "shape",
           "family", "family_tables", "family_diff", "diff_slots", "purecall", "stubs", "in_map",
           "named", "outside_map", "real_names", "purecall_slots", "slot_bodies", "gap_heads", "slot0",
           "verdict")
@@ -162,8 +164,17 @@ def families(tables, pure):
 
 # --------------------------------------------------------------------------- rows
 def super_map():
-    """{lowercased class: lowercased super}, from the class tables' parent edges and the script tree."""
+    """{lowercased class: super}, from the image's own edges, the installer base calls and the script tree.
+
+    The image comes first because it is the only source that covers a class no package declares: the
+    `+0x28` store census writes `NetConnection`'s parent as `Player` and `LevelBase`'s as `Object`, and
+    neither class is in `inventory/classes.csv`.
+    """
     sup = {}
+    for r in read_csv(IMAGE_EDGES):
+        cls, par = (r.get("target_class") or "").strip(), (r.get("parent_class") or "").strip()
+        if cls and par and r.get("verdict") == "named":
+            sup.setdefault(cls.lower(), par)
     for r in read_csv(PARENTS):
         cls, par = (r.get("class") or "").strip(), (r.get("parent_class") or "").strip()
         if cls and par:
@@ -175,13 +186,24 @@ def super_map():
     return sup
 
 
+ROOT_CLASS = "Object"
+
+
 def declares(owners, sup):
-    """(class, layout) for a member's owner set: one class, a shared ancestor, or a coincident layout."""
+    """(class, layout, nearest common ancestor) for a member's owner set.
+
+    The layout is `single` (one owner's own field), `ancestor` (the non-root class every owner descends
+    from -- the field is inherited and the table is that class's member) or `coincident` (the only common
+    ancestor is the root, so the same offset is two layouts: `+0x28` is where a subclass's first field
+    begins, which is why unrelated classes collide there). A root ancestor is never returned as the
+    declarer: a field at `+0x28` would have to be `Object`'s, and `Object`'s class object carries `Super`
+    at that offset, not an instance field.
+    """
     names = [o for o in owners if o]
     if not names:
-        return "", "unowned"
+        return "", "unowned", ""
     if len(names) == 1:
-        return names[0], "single"
+        return names[0], "single", names[0]
     def ancestors(cls):
         out, seen = [], set()
         cur = cls.lower()
@@ -198,8 +220,10 @@ def declares(owners, sup):
     if common:
         for anc in ancestors(names[0]):          # nearest first: the deepest shared ancestor
             if anc.lower() in common:
-                return anc, "ancestor"
-    return "", "coincident"
+                if anc.lower() == ROOT_CLASS.lower():
+                    return "", "coincident", anc
+                return anc, "ancestor", anc
+    return "", "coincident", ""
 
 
 def harvest(tables, owners, fields, names, sizes, gaps=None, sup=None):
@@ -223,6 +247,7 @@ def harvest(tables, owners, fields, names, sizes, gaps=None, sup=None):
             "fields": fields.get(tva, ""),
             "declared_in": "",
             "layout": "",
+            "nearest_common_ancestor": "",
             "member_name": "",
             "shape": shape_of(slots),
             "family": f"{fam[tva]:#010x}",
@@ -244,9 +269,10 @@ def harvest(tables, owners, fields, names, sizes, gaps=None, sup=None):
         })
     for row in rows:
         own = [o for o in row["owners"].split(";") if o]
-        decl, layout = declares(own, sup)
+        decl, layout, nca = declares(own, sup)
         row["declared_in"] = decl
         row["layout"] = layout
+        row["nearest_common_ancestor"] = nca
         offs = row["fields"].split()
         if decl and len(offs) == 1:
             row["member_name"] = "%s_member_%s" % (decl, offs[0])
@@ -333,13 +359,18 @@ def render(rows, control):
     lines.append("")
     lines.append("**%d of the %d tables carry a label of the form `<Class>_member_<field>`, and the class is the "
                  "one that declares the field.** %d are a single owner's field, %d are declared in a shared "
-                 "ancestor of every owner (%s), %d have owners in no common chain -- where the same offset is two "
-                 "different layouts, not one field -- and %d have no owner at all. A table whose row carries more "
-                 "than one field offset keeps no label: the store does not pair the offset with its owner, and "
-                 "naming one of them would pick."
+                 "ancestor of every owner (%s), %d have owners whose only common ancestor is the root (%s) -- "
+                 "`+0x28` is where a subclass's first instance field begins (a class object's `Super` sits "
+                 "there), so the same offset is two layouts, not one field -- and %d have no owner at all. A "
+                 "table whose row carries more than one field offset keeps no label: the store does not pair "
+                 "the offset with its owner, and naming one of them would pick."
                  % (len(labelled), len(rows), by_layout["single"], by_layout["ancestor"],
                     ", ".join("`%s`" % r["member_name"] for r in shared[:4]) or "none",
-                    by_layout["coincident"], by_layout["unowned"]))
+                    by_layout["coincident"],
+                    ", ".join(sorted({r["nearest_common_ancestor"] for r in rows
+                                      if r["layout"] == "coincident" and r["nearest_common_ancestor"]}))
+                    or "no common ancestor",
+                    by_layout["unowned"]))
     singles = sum(1 for r in rows if int(r["family_tables"]) == 1)
     lines.append("| %d table(s) in no family | %d | -- | -- | -- |" % (singles, singles))
     lines.append("")
