@@ -4433,9 +4433,12 @@ Three readings:
 2. **`Default.ini` does not appear, and neither does `Index.unr`.** `Default.ini` is read before the arm lands, so its
    absence is an instrument limit. `Index.unr` is a different matter: the window opens before the splash, and no open of it
    occurs — the key is parsed and held in memory, and the map load it names is never attempted.
-3. **The map that *is* shown never appears either.** `MainMenu.unr` is displayed and is not in this list, so at least one
-   file is opened through a call this breakpoint does not see. The list is complete for `_CreateFileA@28` and is not a
-   complete account of the build's I/O.
+3. **No map file appears at all**, and this page's first version claimed too much from that. `MainMenu.unr` exists on the
+   disc and the front end is reached without any `.unr` in the list. Two readings survive: the front end is drawn from
+   packages rather than from a map, or map loads go through a call this breakpoint cannot see. The trace cannot separate
+   them, and until it can, "the build opens no maps" is not a conclusion this instrument supports — only "no map open is
+   visible from `_CreateFileA@28`". The same caution applies to packages: `Core.u` and `Engine.u` appear, while the
+   game-specific package whose `.int` is read in a later window never does.
 
 **Counting again.** `PlayerProfile.ini` opened 19 times where everything else opened twice is the kind of number that
 reads as a property of the engine; with a step-over per stop it is at least partly a property of the instrument, and the

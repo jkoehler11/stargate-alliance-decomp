@@ -144,7 +144,13 @@ def main():
         try:
             stop = gdb.wait_stop(wait)
         except (IOError, OSError) as exc:
-            print("no stop in %.0fs: %s" % (wait, exc))
+            # A quiet minute is not the end of the window: a load can sit silent between two opens, and breaking here
+            # turned "nothing opened yet" into "nothing opened" (measured: a 60 s timeout ended a 260 s window early).
+            if time.time() < deadline:
+                print("no stop in %.0fs (%d recorded); window still open, %.0fs left"
+                      % (wait, len(records), deadline - time.time()))
+                continue
+            print("no stop in %.0fs after %d recorded (%s)" % (wait, len(records), exc))
             break
         if stop is None:
             print("no stop in %.0fs (%d recorded so far)" % (wait, len(records)))
