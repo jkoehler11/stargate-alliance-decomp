@@ -38,7 +38,7 @@ the earlier version got wrong, both measured:
     TextBuffer's table. A body that opens with the thunk prefix, installs no table of its own, and ends in
     a direct call is followed one hop -- never more.
 
-So the name comes from one of two joins, in this order, and the `name_rule` column says which:
+So the name comes from one of these joins, in this order, and the `name_rule` column says which:
 
   * `unshared-thunk`   -- exactly one site on this table uses a thunk no other site uses; that thunk's
                           constructor installs the table for this class and no other.
@@ -60,6 +60,17 @@ So the name comes from one of two joins, in this order, and the `name_rule` colu
                           measured in `inventory/class_table_name_pairs.csv` does: the row's `paired`
                           verdict names the class those children's script supers describe. The name is
                           the tree's, not a store's, and the row says so.
+  * `slot-file-token`  -- no site, no store and no tree names the table, but the class it belongs to is a
+                          literal the build ships, and the table's own *slots* say which one: every slot
+                          body's assert inlines a source path, so a table's slots vote for a `.cpp` file,
+                          and four files are the base of a family the census already resolved
+                          (`UnNetDrv` -> `NetDriver`, `UnConn` -> `NetConnection`, `UnChan` -> `Channel`,
+                          `UnCamera` -> `Viewport`). The file-to-class step is the one thing the image does
+                          not state (`SLOT_FILE_CLASS` below), so the name is refused unless the
+                          registration census shows that literal at a site that installs no table of its
+                          own, the table carries the file, every *named* table carrying it is at least as
+                          long (a derived class's table extends its base's), and no shorter unnamed table
+                          carries it -- that one would be the better head and blocks the name.
   * `no-registration`  -- no site resolves to this table at all.
 
     tools/class-table-names.py DUMP/default.xbe -o inventory
@@ -69,7 +80,8 @@ So the name comes from one of two joins, in this order, and the `name_rule` colu
 
 The decode is objdump over each enclosing body, so it needs no capstone (the earlier version imported
 it, and its artifact therefore could not be regenerated on a host without the package). Inputs are the
-image, `inventory/xbe_class_tables.csv`, `inventory/classes.csv` and `symbols/xbox_functions.csv`.
+image, `inventory/xbe_class_tables.csv`, `inventory/classes.csv`, `symbols/xbox_functions.csv`, the
+paired-name census and `inventory/class_slot_tokens.csv`'s slot tallies.
 Output is derived measurement: names the build ships plus the addresses that link them.
 """
 import argparse
@@ -94,6 +106,19 @@ TABLES = os.path.join(ROOT, "inventory/xbe_class_tables.csv")
 CLASSES = os.path.join(ROOT, "inventory/classes.csv")
 SYMBOLS = os.path.join(ROOT, "symbols/xbox_functions.csv")
 PAIRS = os.path.join(ROOT, "inventory/class_table_name_pairs.csv")
+TOKENS = os.path.join(ROOT, "inventory/class_slot_tokens.csv")
+REGISTRATIONS = os.path.join(ROOT, "inventory/class_registrations.csv")
+# The one literal in this census: the engine's class for a source file. The image names every class below
+# (`inventory/class_registrations.csv` carries the site that pushes it), and it names no class for these
+# four files, so the file-to-class step is stated here and argued in docs/systems/CLASS_REGISTRATION.md,
+# where the slot vote and the ladder that corroborate each entry are the evidence. A token not listed here
+# names nothing, and so does a listed class the registration census does not show at a shared-thunk site.
+SLOT_FILE_CLASS = {
+    "UnNetDrv": "NetDriver",
+    "UnConn": "NetConnection",
+    "UnChan": "Channel",
+    "UnCamera": "Viewport",
+}
 THUNK_PREFIX = b"\x8b\x4c\x24\x04"          # mov ecx,[esp+4] -- a constructor thunk's first bytes
 WINDOW = 400                                # bytes read when a body is not in the symbol map
 IMM = re.compile(r"0x([0-9a-f]+)")
@@ -465,6 +490,129 @@ def apply_pairs(rows, pairs=None):
     return rows
 
 
+def slot_token_tallies(path=TOKENS):
+    """Per table: its slot count, and how many slots inline each assert-file token.
+
+    `inventory/class_slot_tokens.csv` (`tools/class-slot-tokens.py`) tallies the assert paths a table's
+    slot bodies inline, over the *same* extent rule this census uses, so the two reads cannot disagree
+    about which dwords are slots. Only the tallies are read -- never that artifact's `class` column,
+    which is this census's own output written back, and reading it would make the rule depend on its
+    previous answer.
+    """
+    out = {}
+    if not os.path.exists(path):
+        return out
+    with open(path, newline="") as fh:
+        for row in csv.DictReader(fh):
+            if not row.get("table_va"):
+                continue
+            tokens = {}
+            for item in (row.get("tokens") or "").split():
+                name, _, count = item.rpartition(":")
+                if not name:
+                    continue
+                try:
+                    tokens[name] = int(count)
+                except ValueError:
+                    continue
+            out[int(row["table_va"], 16)] = (int(row.get("slots") or 0), tokens)
+    return out
+
+
+def literal_sites(path=REGISTRATIONS):
+    """class name -> (site_va, object_size, verdict) for every class literal the image ships.
+
+    A class whose site pushes the shared default constructor installs no table of its own, so the store
+    its site reaches is the object root's -- and that is the population this rule needs: the build names
+    the class, and the class has no table a site can point at. Four of the literals are the base of a
+    family the naming census already resolved (`NetDriver` at 0x00183599, 4524 bytes, `shared-thunk`),
+    which is what lets a name the build states be attached to a table no site names.
+    """
+    out = {}
+    if not os.path.exists(path):
+        return out
+    with open(path, newline="") as fh:
+        for row in csv.DictReader(fh):
+            name = (row.get("class_literal") or "").strip()
+            if not name or not row.get("site_va"):
+                continue
+            try:
+                size = int(row.get("object_size") or 0)
+            except ValueError:
+                size = 0
+            cand = (int(row["site_va"], 16), size, (row.get("verdict") or "").strip())
+            prev = out.get(name)
+            if prev is None or cand[0] < prev[0]:
+                out[name] = cand
+    return out
+
+
+def apply_slot_tokens(rows, tallies=None, mapping=None, sites=None):
+    """Name a family's base from the file its slots assert in, where the image corroborates the name.
+
+    The class for a file is the one thing here the image does not state (`SLOT_FILE_CLASS`), so the rule
+    asks the image everything else, and refuses the name unless all of it holds: the mapped class must be
+    a literal some registration site pushes, that site must install no table of its own (a shared-thunk
+    site, so the class is exactly one the registration path cannot name), the table must carry the mapped
+    token, at least one *named* table carrying the same token must be at least as long as it, and no
+    shorter *unnamed* table carrying the token may exist -- that one would be the better head. A row only
+    ever moves from empty to named: a name the image states is never overwritten.
+    """
+    tallies = slot_token_tallies() if tallies is None else tallies
+    mapping = SLOT_FILE_CLASS if mapping is None else mapping
+    sites = literal_sites() if sites is None else sites
+    named = {int(r["table_va"], 16): r.get("class") for r in rows}
+    family = {}
+    for va, (slots, tokens) in tallies.items():
+        for token in tokens:
+            family.setdefault(token, []).append((va, slots))
+    for row in rows:
+        if row["class"]:
+            continue
+        va = int(row["table_va"], 16)
+        slots, tokens = tallies.get(va, (0, {}))
+        if not tokens:
+            continue
+        hits = []
+        for token in sorted(tokens):
+            name = mapping.get(token)
+            if not name:
+                continue
+            site = sites.get(name)
+            if not site or site[2] != "shared-thunk":
+                continue            # the build does not name that class, or names a table for it
+            kin = family.get(token, [])
+            carriers = sorted((s, v) for v, s in kin
+                              if v != va and named.get(v))
+            shorter = [v for v, s in kin if v != va and s < slots and not named.get(v)]
+            if not carriers or shorter:
+                continue
+            # a second ladder, on the object size: a base's object is no larger than every derived one
+            sized = [(sites[named[v]][1], named[v]) for s, v in carriers
+                     if named.get(v) in sites and sites[named[v]][1]]
+            if any(size < site[1] for size, _ in sized):
+                continue
+            hits.append((token, name, carriers, site, sized))
+        if len(hits) != 1:
+            continue
+        token, name, carriers, site, sized = hits[0]
+        row.update({
+            "class": name,
+            "name_rule": "slot-file-token",
+            "evidence": ("no registration names this table; its class is the literal at 0x%08x (%d "
+                         "bytes, pushes the shared default constructor, so that site installs the object "
+                         "root's table), %d of this table's %d slots inline a %s assert path, and the %d "
+                         "named table(s) carrying that file are at least as long (%s)%s"
+                         % (site[0], site[1], tokens[token], slots, token, len(carriers),
+                            ", ".join("%s %d" % (named[v], s) for s, v in carriers),
+                            (" and no smaller object (%s)"
+                             % ", ".join("%s %d" % (n, z) for z, n in sized)) if sized else "")),
+            "site_literals": ", ".join(["%s@0x%08x" % (name, site[0])] +
+                                       ["%s %d" % (named[v], s) for s, v in carriers]),
+        })
+    return rows
+
+
 def census(xbe, ctor):
     tables = load_tables(TABLES)
     hierarchy = load_hierarchy(CLASSES)
@@ -534,7 +682,7 @@ def census(xbe, ctor):
                 "site_literals": ", ".join(owners),
             })
         rows.append(row)
-    return apply_pairs(rows)
+    return apply_slot_tokens(apply_pairs(rows))
 
 
 def evidence(rule, site, group, name):
@@ -579,12 +727,14 @@ def render(rows):
     lines.append("")
     lines.append("%d tables: %d named (%d by an unshared constructor thunk, %d by the hierarchy a "
                  "shared thunk forces, %d derived from a nearest common ancestor, %d from a base store "
-                 "no registration names, %d from the tree the child supers describe), %d unresolved, "
+                 "no registration names, %d from the tree the child supers describe, %d from the assert "
+                 "file their slots inline), %d unresolved, "
                  "%d with no registration. %d tables are reached by more than one registration site, "
                  "so a write-order rule would name them by whichever site happened to be written last."
                  % (len(rows), named, rules.get("unshared-thunk", 0),
                     rules.get("hierarchy-ancestor", 0), rules.get("ancestor-derived", 0),
                     rules.get("base-store-ancestor", 0), rules.get("tree-paired", 0),
+                    rules.get("slot-file-token", 0),
                     rules.get("unresolved", 0), rules.get("no-registration", 0), len(multi)))
     return "\n".join(lines)
 
@@ -741,6 +891,45 @@ def self_check():
     if rows[1]["class"] != "Image":
         bad.append("the tree overwrote a name the image states: %r" % (rows[1],))
 
+    # the slots' assert file names a family's base -- and the guards hold
+    def tok_row(va, cls=""):
+        return {"table_va": "0x%08x" % va, "class": cls, "sites": "0", "name_rule": "no-registration",
+                "site_literals": "", "evidence": "no registration names this table"}
+    fam_site = {"Fam": (0x1800, 64, "shared-thunk")}
+    fam = {0x5000: (8, {"UnFam": 2}), 0x5008: (8, {"UnFam": 2}), 0x5010: (9, {"UnFam": 1})}
+    rows = [tok_row(0x5000), tok_row(0x5008, "Leaf")]
+    apply_slot_tokens(rows, fam, {"UnFam": "Fam"}, fam_site)
+    if (rows[0]["class"], rows[0]["name_rule"]) != ("Fam", "slot-file-token"):
+        bad.append("slot-file-token did not name the base: %r" % (rows[0],))
+    if "Leaf 8" not in rows[0]["evidence"] or "0x00001800" not in rows[0]["evidence"]:
+        bad.append("slot-file-token evidence does not carry the ladder and the literal's site: %r"
+                   % (rows[0]["evidence"],))
+    # a shorter unnamed table carrying the same file is the better head, and the only one named
+    fam = {0x5000: (8, {"UnFam": 2}), 0x5004: (6, {"UnFam": 1}), 0x5010: (9, {"UnFam": 1})}
+    rows = [tok_row(0x5000), tok_row(0x5004), tok_row(0x5010, "Leaf")]
+    apply_slot_tokens(rows, fam, {"UnFam": "Fam"}, fam_site)
+    if [r["class"] for r in rows] != ["", "Fam", "Leaf"]:
+        bad.append("slot-file-token named the head over a shorter unnamed carrier: %r"
+                   % ([r["class"] for r in rows],))
+    # a class the registration census does not ship is refused, and so is one whose own site names a table
+    for site, why in (({}, "an unshipped class"), ({"Fam": (0x1800, 64, "names-own-table")},
+                                                   "a class whose site installs its own table")):
+        rows = [tok_row(0x5000), tok_row(0x5008, "Leaf")]
+        apply_slot_tokens(rows, {0x5000: (8, {"UnFam": 2}), 0x5008: (8, {"UnFam": 2})},
+                          {"UnFam": "Fam"}, site)
+        if rows[0]["class"]:
+            bad.append("slot-file-token named a table from %s: %r" % (why, rows[0]))
+    # a token the map does not carry names nothing, and no named carrier means no family
+    rows = [tok_row(0x5000), tok_row(0x5008, "Leaf")]
+    apply_slot_tokens(rows, {0x5000: (8, {"UnOther": 2}), 0x5008: (8, {"UnOther": 2})},
+                      {"UnFam": "Fam"}, fam_site)
+    if rows[0]["class"]:
+        bad.append("slot-file-token named a table from an unmapped token: %r" % (rows[0],))
+    rows = [tok_row(0x5000)]
+    apply_slot_tokens(rows, {0x5000: (8, {"UnFam": 2})}, {"UnFam": "Fam"}, fam_site)
+    if rows[0]["class"]:
+        bad.append("slot-file-token named a table with no named carrier: %r" % (rows[0],))
+
     rows = [{"table_va": "0x00005000", "class": "Root", "object_size": "8",
              "registration_va": "0x00000010", "constructor_thunk_va": "0x00002000",
              "constructor_va": "0x00004000", "installed_at": "0x00004002",
@@ -761,8 +950,9 @@ def self_check():
         print("FAIL class-table-names: " + "; ".join(bad))
         return 1
     print("ok   class-table-names: an unshared thunk wins, a shared one falls back to the hierarchy, "
-          "a body's own table is its last store, a guarded stub is followed through its call, and a "
-          "short body does not inherit its neighbour store")
+          "a body's own table is its last store, a guarded stub is followed through its call, a "
+          "short body does not inherit its neighbour store, and a slot's assert file names only a "
+          "family's shortest unnamed head")
     return 0
 
 

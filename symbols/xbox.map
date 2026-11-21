@@ -16048,6 +16048,7 @@
 0x004c9180 Vtbl_LatentScriptedAction                      56 class table
 0x004c91f8 Vtbl_ACTION_WaitForEvent                       68 class table
 0x004c9270 Vtbl_SubActionDepthOfField                    132 class table
+0x004c93d0 Vtbl_Viewport                                   0 class table
 0x004c9560 Vtbl_XboxClient                               196 class table
 0x004c9618 Vtbl_XboxViewport                             464 class table
 0x004c9c60 Vtbl_Actor                                    908 class table
@@ -16108,6 +16109,8 @@
 0x004d0048 Vtbl_FluidTexture                            4868 class table
 0x004d0138 Vtbl_WetTexture                              4880 class table
 0x004d0228 Vtbl_IceTexture                               296 class table
+0x004d0318 Vtbl_NetDriver                                  0 class table
+0x004d03c8 Vtbl_NetConnection                              0 class table
 0x004d0480 Vtbl_TcpipConnection                        20404 class table
 0x004d0530 Vtbl_TcpNetDriver                            4564 class table
 0x004d05e0 Vtbl_TcpipConnectionXbox                    20424 class table
@@ -16265,6 +16268,7 @@
 0x004f9618 Vtbl_CameraOverlay                             68 class table
 0x004f9728 Vtbl_MotionBlur                                76 class table
 0x004fa110 Vtbl_Canvas                                  3316 class table
+0x004fa390 Vtbl_Channel                                    0 class table
 0x004fa5b0 Vtbl_ControlChannel                           104 class table
 0x004fa650 Vtbl_FileChannel                              628 class table
 0x004fa6f0 Vtbl_VoiceChannel                             104 class table

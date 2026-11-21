@@ -65,7 +65,7 @@ so the target is semantic and opcode-level equivalence, not identical bytes. Sco
 | Content | classes the shipped content reaches | 1,145 | 2,319 | `████████████░░░░░░░░░░░░` 49.37% | 🟧 |
 | Native | functions carrying a name | 8,319 | 16,374 | `████████████░░░░░░░░░░░░` 50.81% | 🟨 |
 | Native | functions attributed to a module | 6,622 | 16,374 | `██████████░░░░░░░░░░░░░░` 40.44% | 🟧 |
-| Native | class tables named | 474 | 492 | `███████████████████████░` 96.34% | 🟩 |
+| Native | class tables named | 478 | 492 | `███████████████████████░` 97.15% | 🟩 |
 | Native | native declarations reconciled | 683 | 685 | `████████████████████████` 99.71% | 🟩 |
 | Native | property classes measured | 15 | 15 | `████████████████████████` 100.00% | 🟩 |
 | Content | maps parsed | 73 | 73 | `████████████████████████` 100.00% | 🟩 |

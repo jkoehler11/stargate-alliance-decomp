@@ -284,7 +284,7 @@ from the window's `0x0007588d` store to the real one at `0x00066a14`.
 
 **A table is named from its constructor body's last store.** 3 table(s) are named from a body that installs two class tables -- the first store there is a base class's table, written by the base constructor the compiler inlined -- and 2 row(s) are read without a symbol size, bounded at the body's own `int3` padding: `0x004ddf78` (TextBuffer), `0x0052cb00` (HTTPDownload).
 
-492 tables: 474 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names, 6 from the tree the child supers describe), 0 unresolved, 18 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
+492 tables: 478 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names, 6 from the tree the child supers describe, 4 from the assert file their slots inline), 0 unresolved, 14 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
 <!-- /generated:class-table-names -->
 
 ## The site census reads the body's last store, and 2 of 493 rows move
@@ -426,20 +426,20 @@ page's own join.
 <!-- generated:class-table-installers -->
 | the tables no name reaches | tables |
 | --- | --- |
-| stored by a class constructor (so an ancestor of that class) | 38 |
-| stored only by bodies no class names | 208 |
+| stored by a class constructor (so an ancestor of that class) | 37 |
+| stored only by bodies no class names | 205 |
 | stored by nothing | 4 |
-| **total** | **250** |
+| **total** | **246** |
 
 The constructor-stored tables carry a bound, not a name: 24 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
 
 | class whose constructor stores it | tables it bounds |
 | --- | --- |
 | `SkeletalMesh` | 5 |
-| `PackageMapLevel` | 3 |
 | `TextBuffer` | 2 |
 | `LinkerLoad` | 2 |
 | `XboxViewport` | 2 |
+| `PackageMapLevel` | 2 |
 | `TcpipConnection` | 2 |
 | `TcpipConnectionXbox` | 2 |
 | `XHVVoiceSubsystem` | 2 |
@@ -1215,7 +1215,7 @@ from the committed `inventory/class_interface_shapes.csv` with no dump. Both run
 
 
 
-## What the 18 heads' slot bodies say: four files, and the ladder that names them (2026-11-20)
+## What the 18 heads' slot bodies say: four files, and the four names they earn (2026-11-20)
 
 Three name routes for the 18 class tables no registration names are measured shut: the registration
 literal (the site pushes a shared default constructor), the installer body (0 of 26 carry a string at
@@ -1235,16 +1235,9 @@ artifact about which dwords are slots) and writes `inventory/class_slot_tokens.c
 with the token counts and every token that at most 8 of the 492 tables carry.
 
 <!-- generated:class-slot-tokens -->
-**492 of the 492 class tables carry an assert-file token on at least one slot (474 of the 474 named, 18 of the 18 unnamed).**
+**492 of the 492 class tables carry an assert-file token on at least one slot (478 of the 478 named, 14 of the 14 unnamed).**
 
-| table | slots | distinctive slot tokens (count, tables carrying the token) |
-|---|---|---|
-| `0x004c93d0` | 56 | `UnCamera` 4 (2 table(s)) |
-| `0x004d0318` | 40 | `UnNetDrv` 1 (4 table(s)) |
-| `0x004d03c8` | 42 | `UnConn` 4 (4 table(s)) |
-| `0x004fa390` | 37 | `UnChan` 4 (5 table(s)) |
-
-**13 of the 474 named tables carry a token that starts with their own class name**, so a token corroborates a class family and does not name a class.
+No unnamed table carries a token that is rare across the 492.
 <!-- /generated:class-slot-tokens -->
 
 **The four are the base of a named ladder, and the ladder is the argument -- not the token.** Each of the
@@ -1266,12 +1259,37 @@ base rate -- `UnObj`, on all 492 tables -- and the property head `0x004d17a8` (5
 alone even though thirteen `*Property` classes extend it, so a token is not a property of a hierarchy's
 size.
 
-**Naming them is not in this read.** A token is a file, and the engine's class for a file is knowledge,
-not a measurement: the control is that only **13 of the 474 named tables** carry a token that starts with
-their own class name, so the channel cannot name a class on its own. Writing the four into
-`inventory/xbe_class_table_names.csv` means a token-to-class rule in `tools/class-table-names.py` whose
-`name_rule` column says `slot-file-token`, and that rule belongs in its own diff with the eight artifacts
-it regenerates.
+**Naming them is a rule, and it ships as `slot-file-token`.** A token is a file, and the engine's class
+for a file is the one step the image does not state: the control is that only **13 of the 478 named
+tables** carry a token that starts with their own class name, so the channel cannot name a class on its
+own. So the file-to-class step is a documented literal (`SLOT_FILE_CLASS` in `tools/class-table-names.py`)
+and the rule asks the image everything else -- and refuses the name unless all of it holds:
+
+* the class is a **literal the build ships**: `inventory/class_registrations.csv` carries a site that
+  pushes it (`NetDriver` at `0x00183599`, `NetConnection` at `0x0010d6a9`, `Channel` at `0x001083c6`,
+  `Viewport` at `0x000f92c9`);
+* that site installs **no table of its own** -- it pushes the shared default constructor `0x00034650`, so
+  the store it reaches is the object root's, which is exactly why no site can name these tables;
+* the table **carries the file**: `UnNetDrv` on 1 of `0x004d0318`'s 40 slots, `UnConn` on 4 of 42,
+  `UnChan` on 4 of 37, `UnCamera` on 4 of 56;
+* the **slot ladder** holds: every named table carrying the same file is at least as long (a derived
+  class's table extends its base's -- 490 of 490 measured rungs, `inventory/class_ladder_rungs.csv`), and
+  no *shorter* unnamed table carries the file, since that one would be the better head;
+* the **size ladder** holds: every named carrier's object size is at least the class's own (100 ->
+  104/104/200/628 for the channel family, 4524 -> 4564/4608/4684 for the driver, 20368 -> 20404/20424,
+  456 -> 464).
+
+A row only ever moves from empty to named, and its `evidence` column carries the literal's site, the vote
+and both ladders it was named against, so an authored file-to-class step cannot quietly name a table the
+image contradicts. The four rows that moved are `0x004d0318` `NetDriver`, `0x004d03c8` `NetConnection`,
+`0x004fa390` `Channel` and `0x004c93d0` `Viewport`; the census goes from 474 named of 492 to **478 of
+492, 14 unnamed**.
+
+**The other fourteen are not waiting on the same rule.** They carry `UnObj` and nothing else -- the token
+on all 492 tables -- so the slot route has no vote to offer them at all, and `inventory/class_slot_tokens.csv`
+records the same number one level down: **0 of the 14 unnamed still carry a distinctive token**. Of the
+two the earlier paragraphs followed by hand, `0x004c78c0` (the object root, 31 slots) and `0x004d17a8`
+(the property head, 53 slots) are the two that would need a name from somewhere other than their slots.
 
     SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-slot-tokens.py \
         --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
@@ -1410,9 +1428,12 @@ The naming census reads those bodies and writes the artifact named in the headin
     python3 tools/class-table-names.py --write-doc docs/systems/CLASS_REGISTRATION.md
 
 `--check` is a synthetic image -- an unshared thunk winning over a shared one, a shared group falling back
-to its ancestor, a two-store body whose last store is its own, a guarded stub followed through its call, an
-`int3`-bounded body that must not inherit its neighbour's store -- and `--check-doc` rebuilds the block from
-the committed artifact; both run in `make ci`.
+to its ancestor, a two-store body whose last store is its own, a guarded stub followed through its `call`, an
+`int3`-bounded body that must not inherit its neighbour's store, and the five refusals of the
+`slot-file-token` rule -- and `--check-doc` rebuilds the block from the committed artifact; both run in
+`make ci`. **This census reads the slot-token tallies, so the order is the other tool first:** the truth is
+names -> `make class-slot-tokens` -> names again, and a run that regenerates the naming census alone reads
+the previous run's vote.
 
 The registration census is the same shape, and it is the capstone-free half of `tools/class-table-names.py`:
 

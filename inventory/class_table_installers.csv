@@ -14,7 +14,6 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004c9348,31,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family -"
 0x004c93c4,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
 0x004c93c8,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
-0x004c93d0,56,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family -"
 0x004c94b0,43,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cd10, FUN_000fd9b0); shared family -"
 0x004c960c,1,2,ctor_XboxViewport|dtor_XboxViewport,at-least-XboxViewport,,at-least,"ctor 2; stores by 2 bodies (ctor_XboxViewport, dtor_XboxViewport); shared family - (0)"
 0x004c9610,2,2,ctor_XboxViewport|dtor_XboxViewport,at-least-XboxViewport,,at-least,"ctor 2; stores by 2 bodies (ctor_XboxViewport, dtor_XboxViewport); shared family - (0)"
@@ -24,10 +23,8 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004c9a98,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0001f5c0); shared family - (0)
 0x004c9b50,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001f880, FUN_0001fbc0); shared family - (0)"
 0x004d0314,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00025f30, FUN_00183730); shared family - (0)"
-0x004d0318,40,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00025f30, FUN_00183730); shared family -"
 0x004d03b8,1,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
 0x004d03bc,2,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
-0x004d03c8,42,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family -"
 0x004d0470,1,3,FUN_002d2890|ctor_TcpipConnection|dtor_TcpipConnection,at-least-TcpipConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d2890, ctor_TcpipConnection, dtor_TcpipConnection); shared family - (0)"
 0x004d0474,2,3,FUN_002d2890|ctor_TcpipConnection|dtor_TcpipConnection,at-least-TcpipConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d2890, ctor_TcpipConnection, dtor_TcpipConnection); shared family - (0)"
 0x004d0528,1,2,ctor_TcpNetDriver|dtor_TcpNetDriver,at-least-TcpNetDriver,,at-least,"ctor 2; stores by 2 bodies (ctor_TcpNetDriver, dtor_TcpNetDriver); shared family - (0)"
@@ -76,7 +73,6 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004f70a0,2,0,,,,no-store,no store; stores by 0 bodies (-); shared family - (0)
 0x004f7690,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000ea6a0); shared family - (0)
 0x004f7868,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000eab70, FUN_0010d370); shared family - (0)"
-0x004fa390,37,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00107d60, FUN_00108010); shared family -"
 0x004fa5a8,2,2,ctor_ControlChannel|dtor_ControlChannel,at-least-ControlChannel,,at-least,"ctor 2; stores by 2 bodies (ctor_ControlChannel, dtor_ControlChannel); shared family - (0)"
 0x004fc35c,8,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011bf90, FUN_001617d0); shared family - (0)"
 0x004fc4cc,8,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0011bf20, FUN_0011bf90, FUN_001617d0); shared family - (0)"
