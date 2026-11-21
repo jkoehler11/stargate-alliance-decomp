@@ -1,13 +1,13 @@
 # Module attribution beyond the asserts (PLAN 4.5)
 
 Status: **measured, with a rule that scores 89.9% on held-out labels** -- **95.7%** where both neighbours agree and **68.8%** where they disagree, which is the split a reader needs (`--holdout 400`, 2026-11-10).
-Artifact: `inventory/function_module_attribution.csv` (16,374 rows, 6,622 of them with a module).
+Artifact: `inventory/function_module_attribution.csv` (16,375 rows, 6,623 of them with a module).
 Tool: `tools/module-attribution.py` (`make module-attribution`; `--check` in `make ci`).
 
 ## The gap this closes
 
 `inventory/function_modules.csv` attributes a function to a module only when the build already named it that
-way — the name's prefix comes from the `__FILE__` literal the function's own assert passes, so **1,404 of 16,374**
+way — the name's prefix comes from the `__FILE__` literal the function's own assert passes, so **1,405 of 16,375**
 functions carry a real module (`Core`, `Engine`, `Gui`, …). The remaining 13,598 are `(unnamed)` or one of the three
 name-only buckets (`(dispatch: declared)`, `(dispatch: slot only)`, `(other named)`).
 
@@ -86,12 +86,12 @@ labels it failed to recover: with every seed in place the same bound labels **6,
 
 ## What the artifact says
 
-With the default rule and every seed present: **6,622 of 16,374 functions carry a module (40.44%), 5,218 of them
-propagated** (against 1,404 asserted). The distribution is plausible against the asserted seeds:
+With the default rule and every seed present: **6,623 of 16,375 functions carry a module (40.45%), 5,218 of them
+propagated** (against 1,405 asserted). The distribution is plausible against the asserted seeds:
 
 | module | functions | asserted |
 |---|---:|---:|
-| `Core` | 3,366 | 578 |
+| `Core` | 3,367 | 579 |
 | `Engine` | 2,335 | 592 |
 | `Gui` | 199 | 59 |
 | `IpDrv` | 177 | 24 |

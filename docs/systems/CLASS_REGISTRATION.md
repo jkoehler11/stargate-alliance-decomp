@@ -1887,12 +1887,12 @@ shape is one interface with several implementations, so the family is the unit a
 group whose members carry no class at all is the anonymous half of the same question rather than a
 different one.
 
-## What a body says about its own file: the map's names are its assert references, and 1 of the 1,249 gap heads carries one
+## What a body says about its own file: the map's names are its assert references, and the one gap head that carried one is a map row
 
 Every naming question on this page ends in the same place: a name for a body nothing names. The map's own
 `<Module>_<File>` names are the build's `__FILE__` assert paths, so the read a gap head needs is whether the
 body *holds* that reference. `tools/gap-body-files.py` reads three channels at the body instead of at the map
-row, over the 1,451 gap heads U40 decodes and over every body the map has.
+row, over the 1,450 gap heads U40 decodes and over every body the map has.
 
   * **`assert`** -- a code site holding the address of one of the image's assert-path strings. It is a *pushed
     address*, not a pushed string: the site is the `imm32` of a `68` push whose dword is the path's VA, which is
@@ -1913,7 +1913,6 @@ corroborates -- it is the same reference, one level out.
 <!-- generated:gap-body-files -->
 | gap head | size | names | the reference |
 |---|---|---|---|
-| `0x0007e3b0` | 65 | Core/UnVcWin32 | assert path at 0x0007e3be 0x0007e3dd |
 | `0x003e0a30` | 5715 | ANG_DAMP | USE_FAST_SPIN | 38 string site(s) |
 | `0x000fd030` | 2227 | UltraHigh | Normal | 14 string site(s) |
 | `0x002b0050` | 1169 | Options | UseTrilinear | 11 string site(s) |
@@ -1973,19 +1972,22 @@ corroborates -- it is the same reference, one level out.
 | `0x00074dc0` | 70 | Core_UnClass | a call into a named body |
 | `0x000b3fa0` | 18 | Core_UnTemplate | a call into a named body |
 | `0x000b4fa0` | 349 | Core_UnTemplate | a call into a named body |
-| ... | | 28 more | |
+| `0x000b9cb0` | 160 | Core_UnTemplate | a call into a named body |
+| ... | | 27 more | |
 
-**1451 heads decode as 1249 bodies and 202 islands; of the bodies 1 hold an assert path, 43 a printable string and 457 a call into a body the map names, and 1161 hold none of the three.**
+**1450 heads decode as 1248 bodies and 202 islands; of the bodies 0 hold an assert path, 43 a printable string and 456 a call into a body the map names, and 1161 hold none of the three.**
 
-**Control: 1336 of the map's 16374 bodies hold an assert site, and 1282 of the 1321 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 39 reference no assert path at all -- so the name is that reference read one level out.**
+**Control: 1337 of the map's 16375 bodies hold an assert site, and 1283 of the 1322 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 39 reference no assert path at all -- so the name is that reference read one level out.**
 
 **The owed interface representatives' slots hold 150 of these heads and only 109 are bodies -- 36 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 41; of the 109 bodies 0 hold an assert path, 2 a string and 61 a call into a named body, and the per-body read cannot name an interface (U40).**
 <!-- /generated:gap-body-files -->
 
-**The one gap head the channel names.** `0x0007e3b0` (65 bytes) holds two push sites of `UnVcWin32.cpp`, so
-the body nothing names is a `Core` translation unit's and the name it earns is `Core_UnVcWin32`. The add is
-not in this pull request: a row in `symbols/xbox_functions.csv` moves five artefacts and the map's own function
-count, and the evidence for it is what this census commits.
+**The one gap head the channel named is now a map row.** `0x0007e3b0` (65 bytes) holds two push sites of
+`UnVcWin32.cpp`, so the body nothing named was a `Core` translation unit's and the name it earned is
+`Core_UnVcWin32`. It is a row in `symbols/xbox_functions.csv` since this bundle, with the boundary and
+override rows that create it, so the census above reads 1,450 heads and **0** of them holds an assert path --
+the channel's one hit left the gap population. The four `Core_UnVcWin32` bodies in the map are
+`0x0007e360` (37 bytes), `0x0007e390` (32), `0x0007e3b0` (65) and `0x0007f4e0` (183).
 
 **The 43 that carry a string are placed in a subsystem, not named.** `0x002b5880` pushes `invalid stencil op`
 and is a D3DDrv body, `0x002bda20` pushes `D3DERR_UNSUPPORTEDALPHAOPERATION`, `0x0002d600` pushes `MusicVolume`

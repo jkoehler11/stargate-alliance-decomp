@@ -5985,5 +5985,16 @@ unchanged, 214 of them unnamed); `0x0007e3b0`'s add moves five artifacts and is 
 merge (the `56` in the paragraph above is that round's 89-representative reading); and the gap-heads census,
 regenerated against the same map, moves **277 -> 279** bodies in a table slot, **269 -> 264** in the 246
 tables no registration names, and **7 -> 12** tables whose slot body carries a class name, because eight
-gap rows now sit in a slot of a table the round named. What is left of this entry is unchanged: the 55
-mapped representatives' reads, the `Core_UnVcWin32` add, and the 399 bodies nothing names.
+gap rows now sit in a slot of a table the round named. What was left of this entry: the 55 mapped representatives' reads, the `Core_UnVcWin32` add, and the
+399 bodies nothing names.
+
+**Answered since (2026-11-21, the gap census's one assert-named body is a map row).** `0x0007e3b0` is a row:
+65 bytes, `Core_UnVcWin32`, the fourth body of that file's family in the map (`0x0007e360` 37, `0x0007e390` 32,
+`0x0007f4e0` 183), created by an `add` in `symbols/xbe_boundaries.csv` plus the `symbols/xbe_overrides.csv`
+creation row it needs. The assert path the body pushes (`UnVcWin32.cpp` at `0x0007e3be` and `0x0007e3dd`) is the
+name's evidence, not a family guess. The map is **16,375 functions / 16,853 symbols**; the gap-head census falls
+1,451 -> **1,450** heads and its assert channel 1 -> **0**, because the one hit is the row; the module plan moves
+one Core function (3,309 -> 3,310) and the status pair 8,319/16,374 -> 8,320/16,375. **The 399 bodies named by
+nothing are 398.** What is left of this entry: the 55 mapped representatives' reads and the 398 bodies.
+`inventory/native_unreachable.csv` is not regenerated in the same pass -- it still reads the map at 14,973
+bodies, 1,402 behind today's 16,375 -- so that catch-up is its own.

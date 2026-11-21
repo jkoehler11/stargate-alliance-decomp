@@ -2022,6 +2022,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0007e350,FUN_0007e350,1,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007e360
 0x0007e360,Core_UnVcWin32,37,Core,Core,assert,,0,,,
 0x0007e390,Core_UnVcWin32,32,Core,Core,assert,,0,,,
+0x0007e3b0,Core_UnVcWin32,65,Core,Core,assert,,0,,,
 0x0007e400,FUN_0007e400,70,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007e390
 0x0007e450,FUN_0007e450,75,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007e390
 0x0007e4a0,FUN_0007e4a0,73,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007e390
