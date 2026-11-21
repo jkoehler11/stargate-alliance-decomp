@@ -273,6 +273,40 @@ are the shared sets; `surfaces` (156) is footsteps and impacts by material.
 All three layers are now counted, which is what PLAN 5.3 asked for. Extraction is still separate from
 indexing: the effects live inside packages and pulling them out as WAVs is the export pass (5.1), not this.
 
+## `xbox.bin` at the disc root is the audio effects image (2026-11-19)
+
+`xbox.bin` (7,540 bytes, root of the tree) was only ever listed as a shipped file. It has a reader, and the reader names
+it: **`XboxAudio_CreateDevice`** (`0x002fd70`, 272 bytes) calls `_DirectSoundCreate@12` and then
+`_XAudioDownloadEffectsImage@16` with
+
+| argument | value |
+|---|---|
+| `pszImageName` | `"d:\\xbox.bin"` — the string at `0x004d2314`, referenced exactly once, from `0x002fda7` |
+| `pImageLoc` | a stack `DSEFFECTIMAGELOC` the body fills just before the call |
+| `dwFlags` | `0` = **`XAUDIO_DOWNLOADFX_EXTERNFILE`** (`1` is the `XBESECTION` alternative) |
+| `ppImageDesc` | `this+0x118`, where the returned descriptor is kept |
+
+So the file is not a config blob and not code: it is the **DSP effects image uploaded to the MCPX audio processor** during
+device creation, and it is loaded from an external file on the disc rather than from an XBE section — which is why it sits
+at the disc root and why `copybuild.bat` copies it there. Its bytes agree: 2,052 zero bytes, then a block-structured
+payload whose 48-byte unit repeats, which is image data rather than machine code.
+
+**What the body does next** is consistent with effects slots: it clamps a count to **`0x20`** and sets up **`0x54`-byte
+records** through `0x0055ed0` and `0x002c800` before returning.
+
+**Consequences.**
+
+1. **A rebuild must ship `xbox.bin` at the root.** It is read by absolute path (`d:` = the DVD), not by the engine's
+   package system, so placing it under `System/` does nothing.
+2. **It is data, so it can be carried as-is** — but `docs/LEGAL.md` already lists it among the files that must not enter
+   the repository, so a build script points at it rather than copying it in.
+3. **Audio failure without it would be silent and early**: `XAudioDownloadEffectsImage` returning an error means the
+   device is created with no effects, which the rest of the audio stack would simply not notice until a filter is used.
+
+**Limits.** The descriptor layout (`DSEFFECTIMAGELOC` fields the body writes) was not decoded; the 48-byte repeating unit
+inside the image is described as measured, not interpreted; and whether the game ships any *other* external DSP image is not
+established — this is the only one named in the image.
+
 ## The native audio stack, read end to end (measured 2026-11-19)
 
 The script half of audio is above; this is the code underneath it. Eight readings, **345 methods, 41,923
