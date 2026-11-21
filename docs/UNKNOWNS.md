@@ -5996,5 +5996,13 @@ name's evidence, not a family guess. The map is **16,375 functions / 16,853 symb
 1,451 -> **1,450** heads and its assert channel 1 -> **0**, because the one hit is the row; the module plan moves
 one Core function (3,309 -> 3,310) and the status pair 8,319/16,374 -> 8,320/16,375. **The 399 bodies named by
 nothing are 398.** What is left of this entry: the 55 mapped representatives' reads and the 398 bodies.
-`inventory/native_unreachable.csv` is not regenerated in the same pass -- it still reads the map at 14,973
-bodies, 1,402 behind today's 16,375 -- so that catch-up is its own.
+**Answered since (2026-11-21, the unreachable census caught up and its named count was wrong).** The census was
+1,402 map bodies and 2,599 names behind: re-run against the 16,375-body map it reads **3,773 dead of 19,617**
+(was 3,779 of 19,507) in **426 runs**, and 8 addresses leave the dead set because the map no longer has a row there
+while 2 enter (this bundle's `0x0007e3b0` and `0x003e9994` `_sinh`). Its `named` count was reading the padding
+rows' `-` as a name -- the old 799 was 673 nameless padding rows plus 126 named map bodies -- so counted over map
+rows it is **2,702**, and **2,550 of those are shipped-library symbols**, 78 `<Module>_<File>` tokens and 74 other
+identifiers: the dead population is mostly statically linked library code, not game code the linker kept. The
+attribution artifact was a one-row patch and its full re-run moves **1,968 of 16,375** rows (7,370 labelled,
+1,943 asserted, 538 new seeds); `native_class_packages.csv`, `class_interface_installers.csv` and
+`class_installer_callers.csv` re-run byte-identical, so no verdict moved with them.

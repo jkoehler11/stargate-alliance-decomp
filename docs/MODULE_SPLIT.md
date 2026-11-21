@@ -14,11 +14,11 @@ PLAN 4.5 asks for the XBE split into per-module Ghidra projects "using the asser
 per *function*: `inventory/function_modules.csv` attributes each function by the `__FILE__` assert its own body
 carries (plus the evidence overrides), and `inventory/function_module_attribution.csv` adds the functions whose
 module came from address locality (89.9% on held-out asserts; 95.7% where both neighbours agree, `docs/MODULE_ATTRIBUTION.md`). The union is
-**6,623 of 16,375 functions (40.45%) in 12 modules** (re-derived from the artifact 2026-11-20). The module count is
+**7,370 of 16,375 functions (45.01%) in 12 modules** (re-derived from the artifact 2026-11-21). The module count is
 unchanged at 12, so the growth is function splitting rather than new modules.
 
-Their addresses are nowhere near contiguous: the 12 modules' 6,150 functions occupy **5,909 contiguous runs**, a
-mean of **1.04 functions per run**, and `Core` is 3,221 functions in 3,109 runs across a 3.2 MB span. That is the
+Their addresses are nowhere near contiguous: the 12 modules' 7,370 functions occupy **7,052 contiguous runs**, a
+mean of **1.05 functions per run**, and `Core` is 3,078 functions in 2,950 runs across a 3.2 MB span. That is the
 same property the `run` column has measured since `function_modules.csv` landed — this build orders code per
 translation unit, and the compiler emits each function of a TU together, so a module is a *scatter of individual
 bodies*, not a region. There is no range to cut, and therefore no project boundary to draw.
@@ -31,30 +31,30 @@ if a row differs):
 
 | module | functions | asserted | propagated | runs | bytes | first | last |
 |---|---:|---:|---:|---:|---:|---|---|
-| `Core` | 3221 | 582 | 2639 | 3109 | 838,560 | `0x00012110` | `0x0032b210` |
-| `Engine` | 2112 | 595 | 1517 | 2019 | 713,194 | `0x00033060` | `0x00298890` |
-| `IpDrv` | 159 | 24 | 135 | 153 | 35,469 | `0x002c3b70` | `0x002d8cc0` |
-| `Gui` | 155 | 59 | 96 | 151 | 46,411 | `0x002ec180` | `0x0030b750` |
-| `D3DDrv` | 129 | 22 | 107 | 127 | 37,796 | `0x002aa300` | `0x002c0c50` |
-| `XboxAudio` | 115 | 41 | 74 | 109 | 26,010 | `0x00029c00` | `0x00033d20` |
-| `stargategame` | 88 | 32 | 56 | 82 | 20,271 | `0x003165b0` | `0x003237a0` |
-| `stargatevehicles` | 52 | 12 | 40 | 48 | 13,318 | `0x0030c2e0` | `0x003164a0` |
-| `Fire` | 41 | 9 | 32 | 39 | 10,188 | `0x002e1130` | `0x002e91f0` |
+| `Core` | 3078 | 677 | 2401 | 2950 | 806,272 | `0x00012110` | `0x0032b210` |
+| `Engine` | 2915 | 882 | 2033 | 2785 | 977,915 | `0x00033329` | `0x00298890` |
+| `Gui` | 267 | 83 | 184 | 256 | 81,082 | `0x002ebad0` | `0x0030b750` |
+| `IpDrv` | 232 | 41 | 191 | 223 | 51,795 | `0x00025ea0` | `0x002d8cc0` |
+| `stargategame` | 217 | 72 | 145 | 203 | 42,362 | `0x000182a0` | `0x00323690` |
+| `D3DDrv` | 145 | 31 | 114 | 143 | 47,611 | `0x002aa300` | `0x002c0c50` |
+| `XboxAudio` | 131 | 45 | 86 | 122 | 28,170 | `0x00029c00` | `0x00033d20` |
+| `stargatevehicles` | 97 | 29 | 68 | 91 | 23,809 | `0x00023dd0` | `0x003164a0` |
+| `XboxDrv` | 95 | 18 | 77 | 94 | 9,728 | `0x00017900` | `0x0032dff0` |
+| `Gameplay` | 81 | 19 | 62 | 77 | 11,887 | `0x0001b710` | `0x00324d60` |
+| `Fire` | 80 | 25 | 55 | 77 | 20,109 | `0x000255c0` | `0x002e91f0` |
 | `XboxLive` | 32 | 21 | 11 | 31 | 13,027 | `0x00325b24` | `0x00328e00` |
-| `Gameplay` | 24 | 9 | 15 | 20 | 7,300 | `0x003238b0` | `0x00324d60` |
-| `XboxDrv` | 22 | 5 | 17 | 21 | 4,349 | `0x0032c010` | `0x0032dff0` |
-| **total** | **6150** | **1411** | **4739** | **5909** | **1,765,893** | | |
+| **total** | **7370** | **1943** | **5427** | **7052** | **2,113,767** | | |
 
-`asserted` is a name prefix or an evidence override; `propagated` is the locality label. The 8,823 functions no
+`asserted` is a name prefix or an evidence override; `propagated` is the locality label. The 9,005 functions no
 rule reaches are CRT start-up, the statically linked libraries (whose sections carry almost no asserts) and bodies
-whose translation unit has no assert within 2 KB. `XboxAudio`'s 115 is the row the boundary repair and the assert
-rule moved: 41 of them are asserted, and the old plan carried 42 because the lists had not been rewritten from it.
-Five of the 1,411 `asserted` are evidence overrides `make body-name` wrote for a body whose own class literal names its
+whose translation unit has no assert within 2 KB. `XboxAudio`'s 131 is 45 asserted; the 2026-11-10 plan carried 115
+because its lists had not been rewritten from the artifact, and the assert seeds have landed twice since.
+Five of the 1,943 `asserted` are evidence overrides `make body-name` wrote for a body whose own class literal names its
 method (`UXBoxAudioSubsystem::ShutdownAfterError` and four like it), not `__FILE__` asserts; the rollup counts both.
 
 ## The lists
 
-`make module-lists` writes one file per module into `$WORK/module-lists` — 12 files, 6,150 addresses, all of them in the round measured below, ascending,
+`make module-lists` writes one file per module into `$WORK/module-lists` — 12 files, 7,370 addresses, ascending,
 which is what `ExportAt.java @<file>` takes (address lists are derived work, so they stay out of git; `--lists`
 refuses to be pointed at `inventory/`, by convention rather than by code, because an address list of game code is
 not something to commit).
@@ -115,7 +115,7 @@ project. A per-module Ghidra project still buys nothing.
   unnamed; it does not answer what they are. `Core` and `Engine` are 88% of the covered functions and may be mostly
   library code — that needs a classifier over the exported bodies (section, call fan-in, string refs), not another
   pass.
-- **The 8,823 unreached functions.** They have no module and no plan row; a pass over them needs a different rule
+- **The 9,005 unreached functions.** They have no module and no plan row; a pass over them needs a different rule
   (the library sections are the obvious place to start). The pass is cheap enough to run speculatively now that it
   is priced at 43 ms a body, but there is still no list to run it over.
 

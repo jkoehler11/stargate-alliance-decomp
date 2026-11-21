@@ -16515,3 +16515,46 @@ sequence.
   **2,600** bodies because its seeds moved when #763 landed the class packages, and the module plan is computed from
   the committed attribution plus that row, which is why it moves by exactly one function. The 55 mapped
   representatives' reads and the 398 bodies named by nothing stay open.
+
+### Execution notes (2026-11-21, the two derived artifacts behind the map were 1,402 rows and 2,599 names behind)
+
+- **Task.** Four bundles closed on the same residue: `inventory/native_unreachable.csv` still read the map at
+  14,973 bodies and `inventory/function_module_attribution.csv` carried a single patched row from #806. This pass
+  re-runs both against today's 16,375-body map, reads what moved, and corrects the counter the unreachable census
+  had been getting wrong.
+- **The unreachable census was 1,402 map bodies and 2,599 names behind.** Re-run: **3,773 of 19,617 bodies dead**
+  (was 3,779 of 19,507) -- 3,101 the map names (was 3,106), 672 padding-only (was 673), in **426 runs** (was 433).
+  The population moved both ways: 1,402 map rows landed, 1,292 padding starts became map rows (so the padding
+  population falls 4,534 -> 3,242), and 2,599 bodies that were `FUN_*` now carry a real symbol. 8 addresses left
+  the dead set because the map no longer has a row there (boundary repairs merged them), and 2 entered: the
+  `Core_UnVcWin32` row #806 added and `0x003e9994` `_sinh`.
+- **The census's "named" count was counting the padding rows.** `named` was every dead body whose name does not
+  start with `FUN_`, and a padding-only body's name is `-`, so the old row's **799 was 673 padding rows plus 126
+  map-named bodies**. Counted over map rows only it is **2,702**, and the split is the finding: **2,550 are a
+  shipped-library symbol** (a C++ mangled name, an `__stdcall` decoration or a C `_name`), **78 a
+  `<Module>_<File>` assert token and 74 another identifier**. The dead population is therefore mostly statically
+  linked library code that nothing calls, not game code the linker kept -- which is what the 2,599 renames are:
+  the library-symbol import naming bodies the map had guessed.
+- **The attribution re-run changes 1,968 of 16,375 rows.** Labelled **6,623 -> 7,370 (40.45% -> 45.01%)**, asserted
+  **1,405 -> 1,943**: 538 new seeds, 363 rows `propagated` -> `assert` and 175 `none` -> `assert`, because the
+  renamed bodies bring their own assert path into the seed set. 572 rows gain a module from a neighbour, and 595
+  move only between name-only buckets (`(unnamed)` -> `(other named)`), which changes no list. The plan follows:
+  **6,798 -> 7,370 functions in 12 modules, and 6,501 -> 7,052 runs**, and the union is the attribution exactly -- the name
+  rule's 1,943 rows are all seeds of the locality rule, so nothing is added on top.
+- **What did not move is the control.** `class_installer_callers.csv` (724 rows), `class_interface_installers.csv`
+  (233 + 916) and `native_class_packages.csv` (68) are byte-identical on a re-run against the new censuses, so this
+  catch-up moved two derived counts and no verdict: no installer changed reachability, no interface changed owner,
+  and no class changed package. `make native-class-packages` could not have proven that from the Makefile, which is
+  the one build fix here: its `-o inventory` wrote `inventory/inventory/native_class_packages.csv` (the tool's own
+  output path already starts with `inventory/`) and its `--write-doc` was handed a path by a flag that takes none.
+- **Files.** `tools/native-unreachable.py` (the `named` filter, the library/file/other split, one rendered sentence,
+  two more synthetic assertions), `inventory/native_unreachable.csv`, `inventory/function_module_attribution.csv`,
+  `inventory/module_export_plan.csv`, `docs/systems/CLASS_REGISTRATION.md` (the block), `docs/MODULE_ATTRIBUTION.md`
+  (totals, the per-module table, the 2026-11-21 re-derivation), `docs/MODULE_SPLIT.md` (the plan table and prose),
+  `docs/STATUS.md`, `README.md`, `Makefile`, `docs/UNKNOWNS.md` (U40's closing sentence), this note.
+- **Gates.** `make ci` green; both artifacts reproduce byte for byte on a second run; `native-unreachable --check`
+  is 17 synthetic assertions and `--check-doc` rebuilds the page block from the committed CSV with no dump; the
+  attribution and module-split `--check`s reconcile the plan, the artifact and the rollup. No boot, no Ghidra round.
+- **Not in this bundle.** The 55 mapped representatives' reads and the 398 bodies named by nothing (both still
+  open); the union's export round is not re-paid, so `docs/MODULE_SPLIT.md`'s 2026-11-20 pass table is the older
+  6,150-address run.
