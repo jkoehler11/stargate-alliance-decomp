@@ -6251,6 +6251,10 @@ exactly one class, so a walker's class is derivable even though 113 of the 199 c
 (`0x00630e20`..`0x00630f20`, one 65-entry static array past the file-backed `.data`). The literal-path channel is
 refused for a measured reason rather than a count: **all 36** map bodies that push a build path push an `Inc\*.h`
 path and **none** a `Src\*.cpp` one, and the four gap bodies are headers too, so the channel places where the
-header's stem matches (10 of 36) and names nothing. What is left of this entry: the 199 walkers' add (their class
-is stated by the table they walk; 123 share a table, so it needs a duplicate policy), the 65 array entries, the
-540 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
+header's stem matches (10 of 36) and names nothing. The family is also **nameable**: the keys are
+`int[AU]<Class>exec<Func>` (the read had spelled `intA` and so dropped 65 copies' class), and over both halves all
+93 tables state one class (87 distinct, none stating two), so **all 199 copies take `<Class>_lookup`** -- 112
+numbered by ascending address, no base name colliding with a symbol the map carries (`derived_name` in
+`inventory/gap_body_families.csv`). What is left of this entry: the add itself (writing those 199 names into
+`symbols/xbox_functions.csv`), the 65 array entries, the 540 silent bodies, the 2 bodies in `0x0051724c`, the 4
+linker folds and the 359 interface-only bodies.

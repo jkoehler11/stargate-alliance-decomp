@@ -18,6 +18,11 @@ So this read takes the population the census calls *named by no channel* and ask
     already classifies, its size and terminator, the string a per-body read found in it
     (`inventory/gap_body_files.csv`), and the module of the nearest named row.
 
+One family answers the naming question the rest cannot: the generated walker's keys are
+`int[AU]<Class>exec<Func>` names, so the table states the class, and the copy takes `<Class>_lookup`
+(numbered when two copies bind the same class). The derivation is a column, not an edit -- see
+`--report`'s block in `docs/systems/CLASS_REGISTRATION.md`.
+
 The controls are what makes the second question a measurement: the same `.text` dword read over the map's
 own 16,xxx rows (a population whose names are known) says how often code takes its own body's address by
 operand and how often a table holds it, and a random gap byte's address is the base rate that a reference
@@ -57,11 +62,12 @@ DOC = os.path.join(ROOT, "docs", "systems", "CLASS_REGISTRATION.md")
 DOC_A = ("<!-- generated:gap-body-families -->", "<!-- /generated:gap-body-families -->")
 
 BODY = ("body_va", "size", "prologue", "terminator", "string_head", "text_sites", "site_kind",
-        "owner_kind", "owner_va", "owner_name", "owner_module", "slot_dest", "table_key", "family",
-        "near_module")
+        "owner_kind", "owner_va", "owner_name", "owner_module", "slot_dest", "table_key", "table_va",
+        "family", "near_module", "derived_name")
 CENSUS = ("decoded", "unnamed", "unnamed_bytes", "islands_unnamed", "slot_movs", "slot_dests",
           "slot_run", "slot_lo", "slot_hi", "walkers", "walkers_silent", "walker_tables",
-          "walkers_dup", "walker_entries", "walker_mixed", "with_text", "with_operand", "with_table", "operand_in_row",
+          "walkers_dup", "walker_entries", "walker_mixed", "walker_classes", "walker_unclassed",
+          "derived_named", "derived_suffixed", "derived_map_clash", "with_text", "with_operand", "with_table", "operand_in_row",
           "table_in_row", "operand_in_head", "operand_in_gap", "table_in_head", "table_in_gap", "silent",
           "map_rows", "map_text", "map_operand", "map_table", "map_self_operand",
           "base_n", "base_hit", "mod_operand", "fam_silent_bytes", "thirteen_byte")
@@ -71,6 +77,9 @@ OBJ_LINE = re.compile(r"^\s*([0-9a-f]+):\t([0-9a-f ]+?)\s*\t(.*)$")
 TOKEN = re.compile(r"^([A-Za-z][A-Za-z0-9]*)_([A-Za-z0-9_]+)$")
 # A global function-pointer slot: `mov DWORD PTR ds:0x630f34,0x11420`.
 DEST = re.compile(r"DWORD PTR ds:(0x[0-9a-f]+),")
+# An intrinsic-name key: `intA<Class>exec<Func>` or `intU<Class>exec<Func>` -- the letter says whether the
+# class is an actor, and the class is what follows it.
+CLASS_NAME = re.compile(r"int[AU](.+?)exec")
 MAX_HEAD = 48
 CENSUS_TEXT = ("mod_operand", "slot_lo", "slot_hi")
 BASE_RATE = 2000
@@ -260,6 +269,7 @@ def measure(image, names, sizes, head_rows, joined, modules):
     sites = dword_sites(blob, tva, set(pop_va) | set(map_rows))
 
     rows, fam_counts, fam_bytes, mod_counts = [], collections.Counter(), collections.Counter(), collections.Counter()
+    walks = {}
     map_starts = sorted(names)
     order = [("operand", "row"), ("operand", "head"), ("operand", "gap"), ("table", "row"),
              ("table", "head"), ("table", "gap")]
@@ -298,6 +308,7 @@ def measure(image, names, sizes, head_rows, joined, modules):
         fam_counts[family] += 1
         fam_bytes[family] += size
         walk = walker_table(image, insns.at(va))
+        walks[va] = walk
         j = joined.get(va, {})
         rows.append({
             "body_va": "0x%08x" % va, "size": str(size),
@@ -311,6 +322,7 @@ def measure(image, names, sizes, head_rows, joined, modules):
             "owner_module": best[5] if best else "",
             "slot_dest": "0x%08x" % dest if dest else "",
             "table_key": walk[0],
+            "table_va": "0x%08x" % walk[1] if walk[1] else "",
             "family": family,
             "near_module": nearest_module(va, names, modules, map_starts),
         })
@@ -346,11 +358,13 @@ def measure(image, names, sizes, head_rows, joined, modules):
 
     walk = [r for r in rows if r["table_key"]]
     keys = collections.Counter(r["table_key"] for r in walk)
-    tbl = {}
-    for r in pop:
-        got = walker_table(image, insns.at(int(r["head_va"], 16)))
-        if got[1]:
-            tbl[got[1]] = got
+    tbl = {walks[va][1]: walks[va] for va in walks if walks[va][1]}
+    taken = {n: v for v, n in names.items() if n}
+    pairs = sorted((int(r["body_va"], 16),
+                    one_class(tbl.get(int(r["table_va"], 16), (0, 0, 0, {}))[3])) for r in walk)
+    derived = derive_names(pairs, taken)
+    for r in rows:
+        r["derived_name"] = derived.get(int(r["body_va"], 16), "")
     mixed = [g for g, got in tbl.items() if len([c for c in got[3] if c != "?"]) > 1]
     entries = sum(got[2] for got in tbl.values())
     islands = [r for r in head_rows if r.get("row") == "head" and r.get("verdict") == "island"
@@ -375,6 +389,11 @@ def measure(image, names, sizes, head_rows, joined, modules):
         "walkers": len(walk), "walkers_silent": sum(1 for r in walk if r["family"] == "silent"),
         "walker_tables": len(tbl), "walkers_dup": sum(1 for r in walk if keys[r["table_key"]] > 1),
         "walker_entries": entries, "walker_mixed": len(mixed),
+        "walker_classes": len({one_class(got[3]) for got in tbl.values()} - {""}),
+        "walker_unclassed": sum(1 for r in walk if not r["derived_name"]),
+        "derived_named": len(derived),
+        "derived_suffixed": sum(1 for n in derived.values() if not n.endswith("_lookup")),
+        "derived_map_clash": sum(1 for _, cls in pairs if cls and (cls + "_lookup") in taken),
         "slot_movs": len(dests), "slot_dests": len(set(dests)), "slot_run": run,
         "slot_lo": "0x%08x" % best_lo if best_lo else "", "slot_hi": "0x%08x" % best_hi if best_hi else "",
         "unnamed": len(pop), "unnamed_bytes": sum(int(r.get("size") or 0) for r in pop),
@@ -457,9 +476,35 @@ def walker_table(image, insn, limit=200):
         if not name:
             continue
         first = first or name
-        cm = re.match(r"intA(.+?)exec", name)
+        cm = CLASS_NAME.match(name)
         classes[cm.group(1) if cm else "?"] += 1
     return first, (va if entries else 0), entries, dict(classes)
+
+
+def one_class(classes):
+    """The single class a table's keys name, or '' -- `int[AU]<Class>exec<Func>` in every entry."""
+    named = [c for c in classes if c != "?"]
+    return named[0] if len(named) == 1 else ""
+
+
+def derive_names(pairs, taken):
+    """{va: name} for the walkers -- `<Class>_lookup`, numbered by address when the base name is taken.
+
+    `pairs` is `[(body_va, class)]` sorted by address and `taken` is `{name: va}` over the map's own rows,
+    so a derivation that would collide with a symbol the build already carries is numbered instead of
+    overwriting it. The numbering is by address, which makes the whole list reproducible from the artifact.
+    """
+    out, used = {}, dict(taken)
+    for va, cls in pairs:
+        if not cls:
+            continue
+        base, name, k = "%s_lookup" % cls, "%s_lookup" % cls, 1
+        while used.get(name, va) != va:
+            k += 1
+            name = "%s_%d" % (base, k)
+        used[name] = va
+        out[va] = name
+    return out
 
 
 def nearest_module(va, names, modules, starts=None):
@@ -537,6 +582,28 @@ def render(rows, census):
                " ..." if len(keys) > 4 else "", census["walker_tables"], census["walker_entries"],
                census.get("walker_mixed", 0), census["walkers_dup"], census["walkers"],
                census["walkers_silent"], census["walkers"]))
+        lines.append("")
+    if census.get("derived_named"):
+        unclassed = census.get("walker_unclassed", 0)
+        clash = census.get("derived_map_clash", 0)
+        lines.append(
+            "**The family is nameable, and the grammar that names it is `int[AU]<Class>exec<Func>` -- the "
+            "class follows a letter that says whether it is an actor, and the census read only the `intA` "
+            "half.** Over both prefixes every one of the %d tables %s and **%d of the %d copies take a name**: "
+            "`<Class>_lookup`, the class the table states, with **%d numbered** (`_2` by ascending address) "
+            "because that many copies bind a class another copy already holds. %s %s"
+            % (census["walker_tables"],
+               "states one class (%d distinct, none stating two)" % census["walker_classes"]
+               if not census.get("walker_mixed") else
+               "states two classes or more in %d cases" % census["walker_mixed"],
+               census["derived_named"], census["walkers"], census["derived_suffixed"],
+               "%d base name%s already %s in the map, so a derivation is numbered rather than allowed "
+               "to overwrite a symbol the build carries." % (clash, "" if clash == 1 else "s",
+                                                            "exists" if clash == 1 else "exist")
+               if clash else "No base name collides with a symbol the map already carries.",
+               "%d copies take no name." % unclassed if unclassed else
+               "The list is the artifact's `derived_name` column -- this read derives the names and "
+               "writes none of them into the symbol map."))
         lines.append("")
     if census.get("slot_movs"):
         lines.append(
@@ -633,6 +700,21 @@ def self_check():
         bad.append("an unnamed body votes for no module")
     if module_of("ucpp_Register_GoauldDrone", mods) != "":
         bad.append("a name whose prefix is not a module votes for none")
+    if one_class({"ShadowManager": 3}) != "ShadowManager":
+        bad.append("a table whose keys name one class states it")
+    if one_class({"ShadowManager": 2, "BotBase": 1}) != "":
+        bad.append("a table whose keys name two classes states none")
+    if one_class({"?": 2}) != "":
+        bad.append("a table whose keys name no class states none")
+    m = CLASS_NAME.match("intUSGOrderexecDrawIcon")
+    if not m or m.group(1) != "SGOrder":
+        bad.append("the class grammar reads the intU half as well as the intA half")
+    got = derive_names([(0x1000, "Alpha"), (0x1100, "Alpha"), (0x1200, "Beta")],
+                       {"Beta_lookup": 0x9999})
+    if got != {0x1000: "Alpha_lookup", 0x1100: "Alpha_lookup_2", 0x1200: "Beta_lookup_2"}:
+        bad.append("a derivation is numbered by address and never overwrites a map symbol")
+    if derive_names([(0x1000, "")], {}) != {}:
+        bad.append("a copy whose table states no class takes no name")
     blob = struct.pack("<I", 0x1200) + b"\x00" * 8 + struct.pack("<I", 0x9999)
     got = dword_sites(blob, 0x1000, {0x1200})
     if got != {0x1200: [0x1000]}:
@@ -642,16 +724,17 @@ def self_check():
     rows = [{"body_va": "0x00001000", "size": "16", "prologue": "global-load-eax", "terminator": "ret",
              "string_head": "", "text_sites": "1", "site_kind": "operand", "owner_kind": "row",
              "owner_va": "0x00001100", "owner_name": "Core_Src_UnFooo", "owner_module": "Core",
-             "slot_dest": "0x00630000", "table_key": "", "family": "operand-in-row",
-             "near_module": "Core"},
+             "slot_dest": "0x00630000", "table_key": "", "table_va": "", "family": "operand-in-row",
+             "near_module": "Core", "derived_name": ""},
             {"body_va": "0x00002000", "size": "9", "prologue": "bare-ret", "terminator": "ret",
              "string_head": "ReadFile beyond EOF", "text_sites": "0", "site_kind": "", "owner_kind": "",
              "owner_va": "", "owner_name": "", "owner_module": "", "slot_dest": "",
-             "table_key": "intAShadowManager", "family": "silent",
-             "near_module": "Core"}]
+             "table_key": "intAShadowManager", "table_va": "0x00630010", "family": "silent",
+             "near_module": "Core", "derived_name": "ShadowManager_lookup"}]
     census = {"decoded": 3, "unnamed": 2, "unnamed_bytes": 25, "islands_unnamed": 1, "walkers": 1,
               "walkers_silent": 1, "walker_tables": 1, "walkers_dup": 0, "walker_entries": 1,
-              "walker_mixed": 0, "slot_movs": 1,
+              "walker_mixed": 0, "walker_classes": 1, "walker_unclassed": 0, "derived_named": 1,
+              "derived_suffixed": 0, "derived_map_clash": 0, "slot_movs": 1,
               "slot_dests": 1, "slot_run": 1, "slot_lo": "0x00630000", "slot_hi": "0x00630000", "with_text": 1, "with_operand": 1, "with_table": 0,
               "operand_in_row": 1, "table_in_row": 0, "operand_in_head": 0, "operand_in_gap": 0,
               "table_in_head": 0,
@@ -661,7 +744,7 @@ def self_check():
     text = render(rows, census)
     for want in ("`operand-in-row`", "Core_Src_UnFooo", "ReadFile beyond EOF", "**Of the 3 decoded heads",
                  "**1 of these bodies are stored into a global function-pointer slot**", "`0x00630000`..`0x00630000`",
-                 "`intAShadowManager`",
+                 "`intAShadowManager`", "The family is nameable", "1 of the 1 copies take a name",
                  "2 bodies and 25 bytes", "and 1 islands besides",
                  "**1** of the 2 are referenced", "40 by an operand", "10 of 1000"):
         if want not in text:

@@ -3300,9 +3300,15 @@ families carry most of it:
   `intAAIControllerexecWaitToSeeEnemy`, `intAActorexecMultiply_ColorFloat`, `intABotBaseexecCoverActors`,
   `intABotEnemyexecFindBestHideNode` -- so each walker binds one class's natives, and the 93 tables hold
   1,071 entries and **every table states exactly one class** (0 tables state two or more). That is the name a
-  copy does not carry: the table it walks says whose natives it binds. A table can be walked by more than one
-  copy (123 of the 199 are), and **113 of the 199 copies are named by nothing at all** -- the single largest
-  family in the residue, and the reason a body count alone never explained it. 116 of the 202 78-byte bodies
+  copy does not carry: the table it walks says whose natives it binds -- and the keys' grammar has two halves,
+  `intA<Class>exec<Func>` and `intU<Class>exec<Func>`, so the `intA`-only regex left 65 copies with no class and
+  measured its "one class" claim on the other 134. Over both halves all 93 tables state one class (87 distinct,
+  none stating two) and **every one of the 199 copies takes a name**: `<Class>_lookup`, numbered `_2` by ascending
+  address for the **112** whose class another copy already holds (the copies name 87 classes, eight carried by
+  twelve copies each), with **no base name colliding with a symbol the map carries**. The names are derived into
+  the census's `derived_name` column and not written into the map. A table can be walked by more than one copy
+  (123 of the 199 are), and **113 of the 199 copies are named by nothing at all** -- the single largest family in
+  the residue, and the reason a body count alone never explained it. 116 of the 202 78-byte bodies
   are silent copies of it and 86 are the ones `Core_UnObjBas` addresses.
 * **95 are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **65** of
   the 95 slots are consecutive dword globals at `0x00630e20`..`0x00630f20` -- one static array of 65 function
@@ -3337,6 +3343,8 @@ the map's `<Module>_<File>` names are built from.
 The modules the `operand-in-row` owners belong to: Core=88 ?=54 head=2 XboxAudio=1 gap=1 (the `?` entries are owners the map has no name for, and the two `head`/`gap` entries are the other two families).
 
 **199 of these bodies are the same generated walker: `mov eax,ds:<global>`, walk the `{UTF-16 name, handler}` pairs the global points at, compare the argument against each name.** The tables they walk are the intrinsic-name tables, and the first name in each one says so -- `intAAIControllerexecWaitToSeeEnemy`, `intAActorexecMultiply_ColorFloat`, `intABotBaseexecCoverActors`, `intABotEnemyexecFindBestHideNode` ... -- so the family is a name-keyed intrinsic lookup, one copy per table. The 93 tables hold 1071 entries and **every one of them names exactly one class** (0 tables state two or more), which is the name a copy does not carry: the table it walks says whose natives it binds. 123 of the 199 copies share a table with another copy, and **113 of the 199 copies are named by nothing at all** -- the largest single family in the residue, and the reason a body count alone could not explain it.
+
+**The family is nameable, and the grammar that names it is `int[AU]<Class>exec<Func>` -- the class follows a letter that says whether it is an actor, and the census read only the `intA` half.** Over both prefixes every one of the 93 tables states one class (87 distinct, none stating two) and **199 of the 199 copies take a name**: `<Class>_lookup`, the class the table states, with **112 numbered** (`_2` by ascending address) because that many copies bind a class another copy already holds. No base name collides with a symbol the map already carries. The list is the artifact's `derived_name` column -- this read derives the names and writes none of them into the symbol map.
 
 **95 of these bodies are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **65** of the 95 slots are consecutive dword globals at `0x00630e20`..`0x00630f20` -- one static array of 65 function pointers, written entry by entry by the registration body at startup.** The remaining 30 are singletons spread over 95 distinct globals. A body reachable only through that array cannot be called by a name in code, and nothing in the image spells the array's own meaning, so the census places them and does not name them -- what it can now say is which 65 of the 686 bodies nothing names are entries of it.
 

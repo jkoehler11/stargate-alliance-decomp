@@ -17260,8 +17260,9 @@ sequence.
   `Src\*.cpp` spelling this build does carry is the **assert path**, a different string family and the one the
   map's `<Module>_<File>` names come from.
 - **Files.** `tools/gap-body-families.py` (the population, the `.text` dword read, the instruction-ownership test,
-  the six families, the walker and slot censuses, both controls, `--check` synthetic), `inventory/gap_body_families.csv`
-  (686 rows + a census row), `docs/systems/CLASS_REGISTRATION.md` (the new section and its regenerated block),
+  the six families, the walker and slot censuses, the `int[AU]` key grammar and the `derived_name` derivation,
+  both controls, `--check` synthetic), `inventory/gap_body_families.csv`
+  (686 rows + a census row, 57 columns), `docs/systems/CLASS_REGISTRATION.md` (the new section and its regenerated block),
   `tools/gap-heads.py` (channel counts over the decoded population), `inventory/gap_heads.csv` and
   `docs/SYMBOLS.md` (regenerated), `tools/gap-body-files.py` (the literal-kind split),
   `inventory/gap_body_files.csv` (regenerated), `docs/UNKNOWNS.md` (U40), `Makefile` (the target, its help line and
@@ -17269,8 +17270,22 @@ sequence.
 - **Gates.** `make ci` green; `--check` synthetic and writes nothing; `--check-doc` rebuilds the block from the
   committed CSV with no dump; `gap-heads`' `--check`/`--selftest` and `gap-body-files`' `--check`/`--check-doc`
   stay green; every artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
-- **Next measurement:** the 199 walkers' add. Their name is derivable -- the table each one walks states its class
-  in every key -- but 123 of them share a table with another copy, so the add needs a duplicate policy (`<Class>_lookup`
-  and a numbered suffix), and that is the whole of what is left of the family.
-- **Not in this bundle.** The 199 walkers' add, the 65 array entries (the array's meaning is not in the image), the
-  540 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
+- **The walkers' key grammar has two halves and the census read one.** A table's keys are `intA<Class>exec<Func>`
+  **or** `intU<Class>exec<Func>` -- the letter says whether the class is an actor -- and `walker_table` spelled
+  `intA`, so every `intU` key counted as `?`. The keys the read resolves split 507 `intA` / 482 `intU` and not one
+  fails that grammar, but **65 of the 199 copies' tables had resolved to no class at all**, which is why the bullet
+  above claimed "every table states exactly one class" on the 134 whose keys happen to open `intA`: true of them,
+  unmeasured of the rest. Over both halves **all 93 tables state exactly one class -- 87 distinct, none stating
+  two** -- and six classes own two tables each.
+- **The duplicate policy is numbering, and all 199 copies take a name.** `derive_names` gives each copy
+  `<Class>_lookup` and numbers it (`_2`, `_3` ... by ascending address) when the base is already held: **199 of 199
+  named, 112 numbered** -- the copies name only 87 classes, eight of them carried by twelve copies each -- and
+  **no base name collides with a symbol the map already carries**, so a derivation never overwrites a name the
+  build has. The derivation is a column (`derived_name`, with the table's own address in `table_va`), not an edit:
+  the symbol map is unchanged by this bundle.
+- **Next measurement:** the add. The list is settled, total and collision-free, so writing the 199 `derived_name`
+  values into `symbols/xbox_functions.csv` is an edit with an `--apply` and a stale-row `--check` -- followed by the
+  symbols cascade (`make symbols`, `status.py`, the hashes) -- not another reading.
+- **Not in this bundle.** The add itself (the 199 names into `symbols/xbox_functions.csv` and `symbols/xbox.map`),
+  the 65 array entries (the array's meaning is not in the image), the 540 silent bodies, the 2 bodies in
+  `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
