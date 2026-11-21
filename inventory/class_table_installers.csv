@@ -1,9 +1,8 @@
 table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004c7800,21,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00027c10, FUN_0002a1b0); shared family - (0)"
 0x004c7854,2,3,FUN_000669e0|ctor_ControlChannel,at-least-TextBuffer,,at-least,"ctor 1, installer 1, plain 1; stores by 3 bodies (FUN_000669e0, FUN_001be140, ctor_ControlChannel); shared family - (0)"
-0x004c7860,22,36,FUN_00052870|FUN_00053190|ctor_LinkerLoad|ctor_LinkerSave|dtor_LinkerLoad|dtor_LinkerSave,at-least-LinkerLoad,,at-least,"ctor 4, installer 2, plain 30; stores by 36 bodies (Core_UnClass, Core_UnClass, Core_UnClass, Core_UnObj); shared family - (0)"
-0x004c78b8,1,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00017050); shared family - (0)
-0x004c78c0,31,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00017050); shared family -
+0x004c7860,22,36,FUN_00025ff0|FUN_00052870|FUN_00053190|ctor_LinkerLoad|ctor_LinkerSave|dtor_LinkerLoad|dtor_LinkerSave,at-least-NetConnection,,at-least,"ctor 4, installer 3, plain 29; stores by 36 bodies (Core_UnClass, Core_UnClass, Core_UnClass, Core_UnObj); shared family - (0)"
+0x004c78b8,1,1,FUN_00017050,at-least-Subsystem,,at-least,installer 1; stores by 1 bod (FUN_00017050); shared family - (0)
 0x004c8410,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00018be0, FUN_0001a120); shared family - (0)"
 0x004c84d0,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00018da0, FUN_0001a340); shared family - (0)"
 0x004c85b0,25,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
@@ -12,9 +11,8 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004c9338,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
 0x004c933c,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
 0x004c9348,31,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family -"
-0x004c93c4,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
-0x004c93c8,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
-0x004c94b0,43,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cd10, FUN_000fd9b0); shared family -"
+0x004c93c4,1,2,FUN_0001cc10|FUN_000f9ce0,at-least-Viewport,,at-least,"installer 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
+0x004c93c8,2,2,FUN_0001cc10|FUN_000f9ce0,at-least-Viewport,,at-least,"installer 2; stores by 2 bodies (FUN_0001cc10, FUN_000f9ce0); shared family - (0)"
 0x004c960c,1,2,ctor_XboxViewport|dtor_XboxViewport,at-least-XboxViewport,,at-least,"ctor 2; stores by 2 bodies (ctor_XboxViewport, dtor_XboxViewport); shared family - (0)"
 0x004c9610,2,2,ctor_XboxViewport|dtor_XboxViewport,at-least-XboxViewport,,at-least,"ctor 2; stores by 2 bodies (ctor_XboxViewport, dtor_XboxViewport); shared family - (0)"
 0x004c96fc,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000fb890); shared family - (0)
@@ -22,9 +20,9 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004c9858,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001d6d0, FUN_0001dd60); shared family - (0)"
 0x004c9a98,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0001f5c0); shared family - (0)
 0x004c9b50,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001f880, FUN_0001fbc0); shared family - (0)"
-0x004d0314,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00025f30, FUN_00183730); shared family - (0)"
-0x004d03b8,1,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
-0x004d03bc,2,3,FUN_00110120,at-least-PackageMapLevel,,at-least,"installer 1, plain 2; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
+0x004d0314,1,2,FUN_00025f30|FUN_00183730,at-least-NetDriver,,at-least,"installer 2; stores by 2 bodies (FUN_00025f30, FUN_00183730); shared family - (0)"
+0x004d03b8,1,3,FUN_00025ff0|FUN_0010ffa0|FUN_00110120,at-least-NetConnection,,at-least,"installer 3; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
+0x004d03bc,2,3,FUN_00025ff0|FUN_0010ffa0|FUN_00110120,at-least-NetConnection,,at-least,"installer 3; stores by 3 bodies (FUN_00025ff0, FUN_0010ffa0, FUN_00110120); shared family - (0)"
 0x004d0470,1,3,FUN_002d2890|ctor_TcpipConnection|dtor_TcpipConnection,at-least-TcpipConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d2890, ctor_TcpipConnection, dtor_TcpipConnection); shared family - (0)"
 0x004d0474,2,3,FUN_002d2890|ctor_TcpipConnection|dtor_TcpipConnection,at-least-TcpipConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_002d2890, ctor_TcpipConnection, dtor_TcpipConnection); shared family - (0)"
 0x004d0528,1,2,ctor_TcpNetDriver|dtor_TcpNetDriver,at-least-TcpNetDriver,,at-least,"ctor 2; stores by 2 bodies (ctor_TcpNetDriver, dtor_TcpNetDriver); shared family - (0)"
@@ -37,15 +35,11 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004d1430,2,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0002bff0, FUN_0002c2a0, FUN_0002c3b0); shared family - (0)"
 0x004d1438,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0002c340, FUN_003e547f); shared family - (0)"
 0x004d1468,35,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0002c8a0, FUN_00038d70); shared family -"
-0x004d17a8,53,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_00031830, FUN_0007b0c0, FUN_0007b0f0); shared family -"
-0x004d2400,37,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000321f0); shared family -
 0x004d2abc,6,2,ctor_XHVVoiceSubsystem|dtor_XHVVoiceSubsystem,at-least-XHVVoiceSubsystem,,at-least,"ctor 2; stores by 2 bodies (ctor_XHVVoiceSubsystem, dtor_XHVVoiceSubsystem); shared family - (0)"
 0x004d2ad4,1,2,ctor_XHVVoiceSubsystem|dtor_XHVVoiceSubsystem,at-least-XHVVoiceSubsystem,,at-least,"ctor 2; stores by 2 bodies (ctor_XHVVoiceSubsystem, dtor_XHVVoiceSubsystem); shared family - (0)"
 0x004d2e58,29,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00034060); shared family - (0)
 0x004d3118,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000345c0); shared family - (0)
 0x004d3248,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UExporter); shared family - (0)
-0x004d34d8,32,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00034bc0, FUN_00035c70); shared family -"
-0x004d3af0,33,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00036710, FUN_00036ac0); shared family -"
 0x004d3ba0,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00037aa0, FUN_0010d1e0); shared family - (0)"
 0x004d40d0,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00038b50); shared family - (0)
 0x004da720,22,3,FUN_00052870|ctor_LinkerLoad|dtor_LinkerLoad,at-least-LinkerLoad,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_00052870, ctor_LinkerLoad, dtor_LinkerLoad); shared family - (0)"
@@ -64,7 +58,6 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004de3c0,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
 0x004de558,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
 0x004e3520,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0008b280); shared family - (0)
-0x004eaea8,47,1,,,,plain-only,plain 1; stores by 1 bod (FUN_000bd030); shared family -
 0x004eaf68,62,1,ctor_NullRenderDevice,at-least-NullRenderDevice,,at-least,ctor 1; stores by 1 bod (ctor_NullRenderDevice); shared family - (0)
 0x004eb914,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000c37b0, FUN_00186c60); shared family - (0)"
 0x004ebb00,12,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_000c3650, FUN_000c37b0); shared family - (0)"
@@ -77,13 +70,11 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004fc35c,8,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011bf90, FUN_001617d0); shared family - (0)"
 0x004fc4cc,8,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0011bf20, FUN_0011bf90, FUN_001617d0); shared family - (0)"
 0x004fc4f0,30,3,,,,plain-only,"plain 3; stores by 3 bodies (FUN_0011bf20, FUN_0011bf90, FUN_001617d0); shared family -"
-0x004fc568,8,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011c050, FUN_001a57b0); shared family - (0)"
-0x004fc588,34,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0011c050, FUN_001a57b0); shared family -"
+0x004fc568,8,2,FUN_0011c050|FUN_001a57b0,at-least-PendingLevel,,at-least,"installer 2; stores by 2 bodies (FUN_0011c050, FUN_001a57b0); shared family - (0)"
 0x004fc610,8,3,FUN_0011bce0|ctor_DemoPlayPendingLevel|dtor_DemoPlayPendingLevel,at-least-DemoPlayPendingLevel,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011bce0, ctor_DemoPlayPendingLevel, dtor_DemoPlayPendingLevel); shared family - (0)"
 0x004fcc08,1,3,FUN_0011d460|ctor_DemoRecConnection|dtor_DemoRecConnection,at-least-DemoRecConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011d460, ctor_DemoRecConnection, dtor_DemoRecConnection); shared family - (0)"
 0x004fcc0c,2,3,FUN_0011d460|ctor_DemoRecConnection|dtor_DemoRecConnection,at-least-DemoRecConnection,,at-least,"ctor 2, installer 1; stores by 3 bodies (FUN_0011d460, ctor_DemoRecConnection, dtor_DemoRecConnection); shared family - (0)"
 0x004fccc0,1,2,ctor_DemoRecDriver|dtor_DemoRecDriver,at-least-DemoRecDriver,,at-least,"ctor 2; stores by 2 bodies (ctor_DemoRecDriver, dtor_DemoRecDriver); shared family - (0)"
-0x004fcfe0,36,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0011f6c0); shared family -
 0x005040cc,1,2,FUN_001212e0|FUN_00127230,at-least-Engine,,at-least,"installer 2; stores by 2 bodies (FUN_001212e0, FUN_00127230); shared family - (0)"
 0x00507bb8,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00128f70); shared family - (0)
 0x00507c7c,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0012d750); shared family - (0)
@@ -121,8 +112,6 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x005174a8,18,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001e04e0, FUN_001e0840); shared family - (0)"
 0x00517588,18,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_001e04e0, FUN_001e0840); shared family - (0)"
 0x00517778,9,4,,,,plain-only,"plain 4; stores by 4 bodies (FUN_001eaa40, FUN_001eab90, FUN_001eacc0, FUN_00418e70); shared family - (0)"
-0x00517860,30,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001ead60); shared family -
-0x005178d8,32,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001eade0); shared family -
 0x00517e88,5,2,,,,plain-only,"plain 2; stores by 2 bodies (Core_UnTemplate, FUN_001ed2e0); shared family - (0)"
 0x00517ff0,9,5,,,,plain-only,"plain 5; stores by 5 bodies (Engine_UnRenderUtil, FUN_001f1f10, FUN_001f42c0, FUN_001f4330); shared family - (0)"
 0x00518080,18,1,,,,plain-only,plain 1; stores by 1 bod (FUN_001f4450); shared family - (0)
@@ -136,7 +125,7 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x005181dc,3,0,,,,no-store,no store; stores by 0 bodies (-); shared family - (0)
 0x0051a27c,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021aa80); shared family - (0)
 0x0051a3c4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021ab90); shared family - (0)
-0x0051a810,61,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0021e478, FUN_0021ed80); shared family - (0)"
+0x0051a810,61,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0021ed80, ShadowBitmapMaterial_vt47); shared family - (0)"
 0x0051a9e4,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0021ee40); shared family - (0)
 0x0051b0cc,6,5,,,,plain-only,"plain 5; stores by 5 bodies (Core_UnTemplate, FUN_00238020, FUN_0023a8f0, FUN_0023c110); shared family - (0)"
 0x0051b0e4,6,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0023a8f0); shared family - (0)

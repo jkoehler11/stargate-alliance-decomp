@@ -19,7 +19,10 @@ reasons under test).
     an assert block, a block entry the body branches to, or bytes that are not even an instruction boundary
     of the body's own decode.  `symbol-boundaries.py` already pairs an `add` with a `drop` for exactly this
     shape, so the body is addable at its declared start with its measured end and the interior row folded
-    into it; `--emit-moves` writes the reviewed rows.
+    into it; `--emit-moves` writes the reviewed rows.  A body the same read measures to **close with
+    no map row inside its span** needs the `add` and no `drop`, so the flag writes that too -- otherwise
+    a body whose end is measured still cannot become a row, because the gap census's own decoder is
+    what could not close it.
   * **A switch's own table bounds the body.**  A `jmp *disp(,%reg,4)` inside the span names the dword table
     the case dispatch reads, and the compiler lays that table directly behind the function's last
     instruction (at most a `lea r,[r+0]` alignment nop between), so a terminator whose successor is the
@@ -214,9 +217,9 @@ def residue_rows():
     return out
 
 
-def map_rows():
+def map_rows(path=FUNCTIONS):
     rows = []
-    for r in read_csv(FUNCTIONS):
+    for r in read_csv(path):
         va = num(r.get("address"))
         if va is None:
             continue
@@ -586,18 +589,18 @@ def emit_moves(out=OUT, boundaries=None, overrides=None, map_path=FUNCTIONS):
     boundaries = boundaries or BOUNDARIES
     overrides = overrides or OVERRIDES
     rows = read_csv(out)
-    moves = [r for r in rows if r["row"] == "body" and r["verdict"] == "move"]
-    if not moves:
-        print("declarer-residue: no `move` verdict in %s, nothing to write" % out)
+    bodies = [r for r in rows if r["row"] == "body" and r["verdict"] in ("move", "closes")]
+    if not bodies:
+        print("declarer-residue: no `move` or `closes` verdict in %s, nothing to write" % out)
         return 0
-    sym = map_rows()
+    sym = map_rows(map_path)
     b_rows = read_csv(boundaries)
     o_rows = read_csv(overrides)
     b_by = {int(r["address"], 16): r for r in b_rows}
     o_by = {int(r["address"], 16): r for r in o_rows}
     names = {n for _a, n, _s in sym}
     want = {}
-    for r in moves:
+    for r in bodies:
         va = int(r["head_va"], 16)
         size = int(r["size"])
         klass = (r["declarers"] or "").split()[0] if r["declarers"] else ""
@@ -613,13 +616,21 @@ def emit_moves(out=OUT, boundaries=None, overrides=None, map_path=FUNCTIONS):
         if prev is None and name in names and va not in {a for a, n, _s in sym if n == name}:
             sys.exit("declarer-residue: --emit-moves: the map already uses the name %s" % name)
         inner = [(a, n, sp) for a, n, sp in sym if va < a < va + size]
-        if not inner:
-            sys.exit("declarer-residue: --emit-moves: %#010x has no interior row to fold" % va)
-        ev = ("slot %s of %s holds this body and `tools/declarer-residue.py` measures it %d byte(s) from "
-              "its declared start (close `%s`); the row(s) the artifact records inside that span -- %s -- "
-              "are interior code no direct call and no class slot names, so the body is added at the "
-              "start the slot holds and each fragment is folded into it"
-              % (slot, klass, size, r["closes_at"], r["inside"]))
+        if r["verdict"] == "move":
+            if not inner:
+                sys.exit("declarer-residue: --emit-moves: %#010x has no interior row to fold" % va)
+            ev = ("slot %s of %s holds this body and `tools/declarer-residue.py` measures it %d byte(s) "
+                  "from its declared start (close `%s`); the row(s) the artifact records inside that "
+                  "span -- %s -- are interior code no direct call and no class slot names, so the body "
+                  "is added at the start the slot holds and each fragment is folded into it"
+                  % (slot, klass, size, r["closes_at"], r["inside"]))
+        else:
+            if inner:
+                sys.exit("declarer-residue: --emit-moves: %#010x closes before the next row but %d "
+                         "row(s) sit inside its span" % (va, len(inner)))
+            ev = ("slot %s of %s holds this body; `tools/declarer-residue.py` measures it %d byte(s) "
+                  "from its declared start, closing at `%s`, and no map row sits inside the span, so it "
+                  "is added at the start the slot holds" % (slot, klass, size, r["closes_at"]))
         want[va] = prev if prev is not None else {
             "address": r["head_va"], "action": "add", "target": name, "size": str(size),
             "evidence": ev}
@@ -810,6 +821,42 @@ Disassembly of section .data:
     write_artifact(rows, path)
     if read_csv(path) != rows:
         bad.append("artifact round trip differs")
+
+    # `--emit-moves` writes an add for a body measured to close with no row inside its span
+    tmp = tempfile.mkdtemp()
+    res = os.path.join(tmp, "res.csv")
+    with open(res, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=FIELDS, lineterminator="\n")
+        w.writeheader()
+        w.writerow({"row": "body", "head_va": "0x00005000", "kind": "declared", "verdict": "closes",
+                    "size": "40", "declarers": "Klass", "indices": "7", "tables": "1",
+                    "stop_va": "0x00005040", "stop_name": "FUN_00005040", "stop_shape": "code",
+                    "closes_at": "0x00005028", "crossed": "0", "inside": "", "evidence": "x",
+                    "census": ""})
+    bpath = os.path.join(tmp, "b.csv")
+    with open(bpath, "w", newline="", encoding="utf-8") as fh:
+        csv.DictWriter(fh, fieldnames=["address", "action", "target", "size", "evidence"],
+                       lineterminator="\n").writeheader()
+    opath = os.path.join(tmp, "o.csv")
+    with open(opath, "w", newline="", encoding="utf-8") as fh:
+        csv.DictWriter(fh, fieldnames=["address", "name", "evidence", "class", "outer", "object_size",
+                                       "assert_line", "module", "source_file", "function_size"],
+                       lineterminator="\r\n").writeheader()
+    mpath = os.path.join(tmp, "m.csv")
+    with open(mpath, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "name", "size", "module"], lineterminator="\r\n")
+        w.writeheader()
+        w.writerow({"address": "0x00005040", "name": "FUN_00005040", "size": "8", "module": ""})
+    if emit_moves(res, bpath, opath, mpath) != 0:
+        bad.append("--emit-moves refused a body that closes with no row inside its span")
+    got = [(r["address"], r["action"], r["target"], r["size"]) for r in read_csv(bpath)]
+    if got != [("0x00005000", "add", "Klass_vt7", "40")]:
+        bad.append("--emit-moves did not write the add: %r" % (got,))
+    if [r["name"] for r in read_csv(opath)] != ["Klass_vt7"]:
+        bad.append("--emit-moves did not write the creation row: %r" % (read_csv(opath),))
+    emit_moves(res, bpath, opath, mpath)
+    if len(read_csv(bpath)) != 1 or len(read_csv(opath)) != 1:
+        bad.append("--emit-moves is not idempotent on the closes row")
     if bad:
         print("FAIL declarer-residue: " + "; ".join(bad))
         return 1

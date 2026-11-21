@@ -794,6 +794,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00034970,Core_UExporter,177,Core,Core,assert,,0,,,
 0x00034ab0,FUN_00034ab0,264,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034970
 0x00034bc0,FUN_00034bc0,18,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034c10
+0x00034be0,Exporter_vt11,43,(other named),Core,propagated,locality,1,2.00,1.000,0x00034c10
 0x00034c10,Core_UExporter,807,Core,Core,assert,,0,,,
 0x00034f40,Core_UExporter,189,Core,Core,assert,,0,,,
 0x00035000,Core_UExporter,200,Core,Core,assert,,0,,,
@@ -828,6 +829,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00036900,FUN_00036900,39,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036930
 0x00036930,Core_UnTemplate,171,Core,Core,assert,,0,,,
 0x000369e0,Core_UnObjBas,131,Core,Core,assert,,0,,,
+0x00036a70,Factory_vt30,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
+0x00036a80,Factory_vt31,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036a90,FUN_00036a90,33,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036ac0,FUN_00036ac0,131,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
 0x00036b50,FUN_00036b50,19,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
@@ -1830,6 +1833,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x000777b0,FUN_000777b0,53,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077780
 0x000777f0,FUN_000777f0,7,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077780
 0x00077800,FUN_00077800,72,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077860
+0x00077850,Property_vt36,3,(other named),Core,propagated,locality,1,2.00,1.000,0x00077860
 0x00077860,Core_UnProp,183,Core,Core,assert,,0,,,
 0x00077920,FUN_00077920,264,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077860
 0x00077a30,ByteProperty_vt45,15,Core,Core,assert,,0,,,
@@ -3776,6 +3780,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x000fd8f0,Engine_UnCamMgr,183,Engine,Engine,assert,,0,,,
 0x000fd9b0,FUN_000fd9b0,35,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
 0x000fd9e0,FUN_000fd9e0,1068,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
+0x000fde10,Client_vt11,32,(other named),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
 0x000fde30,FUN_000fde30,46,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
 0x000fde60,FUN_000fde60,228,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
 0x000fdf50,FUN_000fdf50,1276,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fe480
@@ -4181,6 +4186,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0011e6a0,FUN_0011e6a0,75,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e6f0,FUN_0011e6f0,30,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e710,FUN_0011e710,31,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
+0x0011e730,Download_vt34,23,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e750,FUN_0011e750,82,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e7b0,FUN_0011e7b0,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e8c0,FUN_0011e8c0,44,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
@@ -4188,10 +4194,12 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0011e910,FUN_0011e910,25,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e930,FUN_0011e930,45,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e960
 0x0011e960,Engine_UnDownload,183,Engine,Engine,assert,,0,,,
+0x0011ea30,Download_vt32,605,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e960
 0x0011ec90,FUN_0011ec90,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011eda0
 0x0011eda0,ChannelDownload_vt30,255,Engine,Engine,assert,,0,,,
 0x0011eea0,Engine_UnDownload,372,Engine,Engine,assert,,0,,,
 0x0011f020,Engine_UnDownload,183,Engine,Engine,assert,,0,,,
+0x0011f0e0,Download_vt35,1499,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011f020
 0x0011f6c0,FUN_0011f6c0,92,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011f980
 0x0011f720,FUN_0011f720,33,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011f980
 0x0011f750,ctor_ChannelDownload,29,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011f980
@@ -5509,6 +5517,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001a5070,FUN_001a5070,213,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001a5160
 0x001a5160,Engine_UnPenLev,180,Engine,Engine,assert,,0,,,
 0x001a5220,FUN_001a5220,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001a5160
+0x001a5330,PendingLevel_vt33,46,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
 0x001a5360,NetPendingLevel_member_0x28_vt0,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
 0x001a5370,NetPendingLevel_member_0x28_vt1,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
 0x001a5380,NetPendingLevel_member_0x28_vt2,5,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
@@ -5571,14 +5580,15 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001af0b0,FUN_001af0b0,1436,(unnamed),(unnamed),none,,,,,
 0x001af650,FUN_001af650,888,(unnamed),Core,propagated,locality,1,1.00,0.500,0x001af9d0
 0x001af9d0,Core_UnClass,1120,Core,Core,assert,,0,,,
-0x001afe40,FUN_001afe40,4168,(unnamed),Core,propagated,locality,1,2.00,1.000,0x001af9d0
+0x001afe40,FUN_001afe40,4168,(unnamed),Core,propagated,locality,1,1.00,0.500,0x001af9d0
 0x001b0e90,FUN_001b0e90,892,(unnamed),(unnamed),none,,,,,
 0x001b1210,FUN_001b1210,773,(unnamed),(unnamed),none,,,,,
 0x001b1520,FUN_001b1520,361,(unnamed),(unnamed),none,,,,,
-0x001b25b0,execMoveSmooth,131,(dispatch: declared),Core,propagated,locality,1,2.00,1.000,0x001b2d50
-0x001b2640,FUN_001b2640,658,(unnamed),Core,propagated,locality,1,2.00,1.000,0x001b2d50
-0x001b2ab0,FUN_001b2ab0,363,(unnamed),Core,propagated,locality,1,2.00,1.000,0x001b2d50
-0x001b2c60,FUN_001b2c60,171,(unnamed),Core,propagated,locality,1,2.00,1.000,0x001b2d50
+0x001b25b0,execMoveSmooth,131,(dispatch: declared),Engine,propagated,locality,1,1.00,0.500,0x001b28e0
+0x001b2640,FUN_001b2640,658,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x001b28e0
+0x001b28e0,Mover_vt82,419,Engine,Engine,assert,,0,,,
+0x001b2ab0,FUN_001b2ab0,363,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x001b28e0
+0x001b2c60,FUN_001b2c60,171,(unnamed),Core,propagated,locality,1,1.00,0.500,0x001b2d50
 0x001b2d50,Core_UnClass,1469,Core,Core,assert,,0,,,
 0x001b3310,FUN_001b3310,567,(unnamed),Core,propagated,locality,1,1.00,0.500,0x001b2d50
 0x001b3550,FUN_001b3550,2464,(unnamed),Core,propagated,locality,1,1.00,0.500,0x001b2d50
@@ -6147,6 +6157,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001eaf40,Engine_UnRenderResource,177,Engine,Engine,assert,,0,,,
 0x001eb000,FUN_001eb000,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eaf40
 0x001eb110,Engine_UnRenderResource,177,Engine,Engine,assert,,0,,,
+0x001eb1d0,RenderResource_vt11,32,(other named),Engine,propagated,locality,1,2.00,1.000,0x001eb110
 0x001eb1f0,FUN_001eb1f0,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb110
 0x001eb300,FUN_001eb300,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb110
 0x001eb410,FUN_001eb410,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb520
@@ -7851,7 +7862,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x002ae320,D3DRenderDevice_vt35,30,D3DDrv,D3DDrv,assert,,0,,,
 0x002ae340,D3DRenderDevice_vt33,15,D3DDrv,D3DDrv,assert,,0,,,
 0x002ae350,D3DRenderDevice_vt38,108,D3DDrv,D3DDrv,assert,,0,,,
-0x002ae4e0,FUN_002ae4e0,2301,(unnamed),D3DDrv,propagated,locality,1,2.00,1.000,0x002ae350
+0x002ae3e0,D3DRenderDevice_vt49,83,D3DDrv,D3DDrv,assert,,0,,,
+0x002ae4e0,FUN_002ae4e0,2301,(unnamed),D3DDrv,propagated,locality,1,2.00,1.000,0x002ae3e0
 0x002aee30,D3DRenderDevice_vt47,13,D3DDrv,D3DDrv,assert,,0,,,
 0x002aee40,D3DRenderDevice_vt36,57,D3DDrv,D3DDrv,assert,,0,,,
 0x002aee80,FUN_002aee80,292,(unnamed),D3DDrv,propagated,locality,1,2.00,1.000,0x002aee40
@@ -8883,6 +8895,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x002fb280,FUN_002fb280,88,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x002fb200
 0x002fb2e0,FUN_002fb2e0,5204,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x002fb200
 0x002fc750,FUN_002fc750,3429,(unnamed),(unnamed),none,,,,,
+0x002fd640,GUIController_vt32,1601,Gui,Gui,assert,,0,,,
 0x002fdcf0,GUIController_vt35,1800,Gui,Gui,assert,,0,,,
 0x002fe400,FUN_002fe400,101,(unnamed),Gui,propagated,locality,1,2.00,1.000,0x002fe470
 0x002fe470,Gui_UnGUICore,180,Gui,Gui,assert,,0,,,

@@ -121,7 +121,7 @@ below).
 
 | body | name | stores in body order | own table | own table class | row whose table is a base |
 |---|---|---|---|---|---|
-| 0x00110120 | FUN_00110120 | 0x004d03c8 -> 0x004fb9b8 | 0x004fb9b8 | PackageMapLevel | - |
+| 0x00110120 | FUN_00110120 | 0x004d03c8 -> 0x004fb9b8 | 0x004fb9b8 | PackageMapLevel | NetConnection |
 | 0x002e81f0 | ctor_FireTexture | 0x004cfc88 -> 0x004cfd78 | 0x004cfd78 | FireTexture | FractalTexture |
 | 0x002e8260 | FUN_002e8260 | 0x004cfc88 -> 0x004cfe68 | 0x004cfe68 | WaterTexture | FractalTexture |
 | 0x002e8370 | ctor_IceTexture | 0x004cfc88 -> 0x004d0228 | 0x004d0228 | IceTexture | FractalTexture |
@@ -286,7 +286,7 @@ from the window's `0x0007588d` store to the real one at `0x00066a14`.
 
 **A table is named from its constructor body's last store.** 3 table(s) are named from a body that installs two class tables -- the first store there is a base class's table, written by the base constructor the compiler inlined -- and 2 row(s) are read without a symbol size, bounded at the body's own `int3` padding: `0x004ddf78` (TextBuffer), `0x0052cb00` (HTTPDownload).
 
-492 tables: 478 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names, 6 from the tree the child supers describe, 4 from the assert file their slots inline), 0 unresolved, 14 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
+492 tables: 489 named (465 by an unshared constructor thunk, 2 by the hierarchy a shared thunk forces, 0 derived from a nearest common ancestor, 1 from a base store no registration names, 6 from the tree the child supers describe, 11 from the children's `Super` the class object writes, 4 from the assert file their slots inline), 0 unresolved, 3 with no registration. 2 tables are reached by more than one registration site, so a write-order rule would name them by whichever site happened to be written last.
 <!-- /generated:class-table-names -->
 
 ## The site census reads the body's last store, and 2 of 493 rows move
@@ -426,32 +426,36 @@ which is why no name is written from it: the six names the tree can carry are al
 <!-- generated:class-table-installers -->
 | the tables no name reaches | tables |
 | --- | --- |
-| stored by a class constructor (so an ancestor of that class) | 37 |
-| stored only by bodies no class names | 205 |
+| stored by a class constructor (so an ancestor of that class) | 42 |
+| stored only by bodies no class names | 189 |
 | stored by nothing | 4 |
-| **total** | **246** |
+| **total** | **235** |
 
-The constructor-stored tables carry a bound, not a name: 24 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
+The constructor-stored tables carry a bound, not a name: 28 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
 
 | class whose constructor stores it | tables it bounds |
 | --- | --- |
 | `SkeletalMesh` | 5 |
+| `NetConnection` | 3 |
 | `TextBuffer` | 2 |
-| `LinkerLoad` | 2 |
+| `Viewport` | 2 |
 | `XboxViewport` | 2 |
-| `PackageMapLevel` | 2 |
 | `TcpipConnection` | 2 |
 | `TcpipConnectionXbox` | 2 |
 | `XHVVoiceSubsystem` | 2 |
 | `DemoRecConnection` | 2 |
 | `StaticMesh` | 2 |
+| `Subsystem` | 1 |
+| `NetDriver` | 1 |
 | `TcpNetDriver` | 1 |
 | `TcpNetDriverXbox` | 1 |
+| `LinkerLoad` | 1 |
 | `LinkerSave` | 1 |
 | `LinkerSaveGame` | 1 |
 | `LinkerLoadGame` | 1 |
 | `NullRenderDevice` | 1 |
 | `ControlChannel` | 1 |
+| `PendingLevel` | 1 |
 | `DemoPlayPendingLevel` | 1 |
 | `DemoRecDriver` | 1 |
 | `Engine` | 1 |
@@ -2309,24 +2313,24 @@ than inferred.
 <!-- generated:class-slot-declarers -->
 | what holds the body | bodies | share | name it earns |
 |---|---|---|---|
-| a class table, and the walk reaches the top of its chain | 3 | 1% | `<Class>_vt<slot>` |
-| a class table no registration names, which the walk reaches by its parent edge | 7 | 2% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
+| a class table, and the walk reaches the top of its chain | 0 | 0% | `<Class>_vt<slot>` |
+| a class table no registration names, which the walk reaches by its parent edge | 0 | 0% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
 | two independent declarations of one body | 4 | 1% | none (a conflict) |
 | a member table (a constructor stores it into a field) | 8 | 2% | `<Class>_member_<field>_vt<slot>` |
-| a class table the class map leaves unnamed | 3 | 1% | none (no class) |
-| interface tables only | 424 | 94% | none (an interface name) |
+| a class table the class map leaves unnamed | 0 | 0% | none (no class) |
+| interface tables only | 424 | 97% | none (an interface name) |
 
-**The 449 bodies are 1113 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 531 sit-ins are class-table slots and 582 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
+**The 436 bodies are 1090 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (489 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 508 sit-ins are class-table slots and 582 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
 
-**The control is the map's own names: 538 of 545 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
+**The control is the map's own names: 541 of 548 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
 
-**The gap census's own slot names survive the walk: 3 of 5 name the declarer, 0 name someone else, and 2 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
+**The gap census's own slot names survive the walk: 0 of 3 name the declarer, 0 name someone else, and 3 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
 
 **11 bodies sit at two or more slot indices**, which no single name can carry: `0x0001f9b0` (10/11), `0x00179930` (1/2), `0x00179b00` (7/8), `0x0017a7d0` (1/7), `0x001ddf20` (2/3/8), `0x001df4e0` (1/2/3), `0x001df570` (1/2), `0x001ec800` (7/8/30). The index set is recorded per body; the verdict is `conflict` only when two *classes* both declare it -- an interface slot beside a class slot is one method seen through two tables, not two declarations.
 
 **The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and `tools/declarer-residue.py` reads them as the linker's identical-code folds (one shortest shape held at two or more indices of classes that are neither ancestor nor descendant): `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
-**What the walk did with its names.** 246 of these bodies are map rows now -- 214 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 27224 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 3 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 424 are an interface's method, and 3 sit in a class table whose class the class map has not named.
+**What the walk did with its names.** 256 of these bodies are map rows now -- 224 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 29517 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 0 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 424 are an interface's method, and 0 sit in a class table whose class the class map has not named.
 
 <!-- /generated:class-slot-declarers -->
 
@@ -2461,7 +2465,18 @@ classes that are neither ancestor nor descendant, and the map's byte-duplicate c
 declarations" is therefore one folded body read once per index, no single `<Class>_vt<slot>` name carries
 it, and the artifact says `fold` rather than "not decided".
 
-**The 18 need a name no table on the image side carries.** The 8 member bodies sit in three member tables
+**The second pass closes the declared half (2026-11-21).** The seven tables above are named in the class
+map by `tools/class-table-names.py`'s `child-super` rule -- the vote is `inventory/class_table_super_names.csv`,
+the artifact `tools/class-super-edges.py` writes from the class object's `+0x28` store -- so the declarer walk
+names the ten declarations and adds their rows: `Exporter_vt11` 43 bytes, `Factory_vt30`/`vt31` 5 each,
+`Property_vt36` 3, `Client_vt11` 32, `Download_vt34`/`vt32`/`vt35` 23/605/1,499, `PendingLevel_vt33` 46 and
+`RenderResource_vt11` 32. The three bodies the declared half had measured an end for but no name -- `Mover` 419,
+`D3DRenderDevice` 83, `GUIController` 1,601 -- are the same `add` with no interior row to fold, so
+`declarer-residue --emit-moves` writes them too. The residue goes **25 -> 12 bodies: 4 folds and 8 member
+bodies**, and the walk reports `declared 0`, so everything left is a name the image's field layout does not
+carry.
+
+**The 8 that remain need a name no table on the image side carries.** They sit in three member tables
 the label pass refused -- `0x0051724c` (2 bodies, field `0x38`), `0x0053f7f0` (3, field `0x8`) and
 `0x0053f888` (3, field `0x8`) -- so the method is real and its owner is the open question. The 10
 declarations sit on **7** class tables no registration names, and the registration *does* name their
@@ -2477,30 +2492,20 @@ neither is a read the declaration walk owes.
 <!-- generated:declarer-residue -->
 | the four bodies two classes declare | byte(s) | the body | declarations |
 |---|---:|---|---|
-| `0x000624e0` | 1 | `c3` | Object_vt17 (held by 474); GameInfo_vt17 (held by 1) |
+| `0x000624e0` | 1 | `c3` | Object_vt17 (held by 485); GameInfo_vt17 (held by 1) |
 | `0x001b9040` | 21 | `8b417485c0740a8bc88b01ffa0880000008b4158c3` | PSDistortionBaseMaterial_vt34 (held by 6); PSBlurMaterial_vt34 (held by 1) |
 | `0x001b9060` | 21 | `8b417485c0740a8bc88b01ffa08c0000008b415cc3` | PSDistortionBaseMaterial_vt35 (held by 6); PSBlurMaterial_vt35 (held by 1) |
 | `0x001ec800` | 4 | `8b4138c3` | VertexBuffer_vt30 (held by 1); VertexStreamVECTOR_vt30 (held by 1); VertexStreamCOLOR_vt30 (held by 1); VertexStreamUV_vt30 (held by 1); VertexStreamPosNormTex_vt30 (held by 1) |
 
-**The 4 conflict bodies are folded bodies, not declarations.** Each is one of the build's smallest shapes held at two or more slot indices in classes that are neither ancestor nor descendant: a 1-byte `ret` at slot 17 of two class tables, a 4-byte `mov eax,[ecx+0x38]; ret` at slots 7, 8 and 30 of five, and a 21-byte getter pair at slots 34 and 35 of two. The linker emitted one body for identical methods, so the walk reads the same dword once per index. The map's own byte-duplicate groups are the control: the map's 105 duplicate group(s) cover 805 bodies.
+**The 4 conflict bodies are folded bodies, not declarations.** Each is one of the build's smallest shapes held at two or more slot indices in classes that are neither ancestor nor descendant: a 1-byte `ret` at slot 17 of two class tables, a 4-byte `mov eax,[ecx+0x38]; ret` at slots 7, 8 and 30 of five, and a 21-byte getter pair at slots 34 and 35 of two. The linker emitted one body for identical methods, so the walk reads the same dword once per index. The map's own byte-duplicate groups are the control: the map's 105 duplicate group(s) cover 806 bodies.
 
 | the undecoded declarations | declarer | row above | it opens on | verdict | closes at | byte(s) | map rows inside |
 |---|---|---|---|---|---|---:|---:|
-| `0x001b28e0` | Mover | `FUN_001b2ab0` | code | `closes` | `0x001b2a83` | 419 | 0 |
-| `0x002ae3e0` | D3DRenderDevice | `FUN_002ae4e0` | code | `closes` | `0x002ae433` | 83 | 0 |
-| `0x002fd640` | GUIController | `GUIController_vt35` | code | `closes` | `0x002fdc81` | 1601 | 0 |
 
-**3 of the 3 declared bodies close before the next map row; 0 close past a row that is interior code.** On the second kind the row inside the body is an assert block, a block entry the body branches to, or bytes that are not an instruction boundary of its own decode -- no direct call and no class slot names it -- so `symbol-boundaries.py` adds the body at its declared start with the measured end and drops the interior row into it, and the body is addable without a boundary move. 0 more close at the dword table their own switch reads (the table sits behind the last instruction, so no pad run follows), 0 reach no terminator, and 0 hold a body of their own.
+**0 of the 0 declared bodies close before the next map row; 0 close past a row that is interior code.** On the second kind the row inside the body is an assert block, a block entry the body branches to, or bytes that are not an instruction boundary of its own decode -- no direct call and no class slot names it -- so `symbol-boundaries.py` adds the body at its declared start with the measured end and drops the interior row into it, and the body is addable without a boundary move. 0 more close at the dword table their own switch reads (the table sits behind the last instruction, so no pad run follows), 0 reach no terminator, and 0 hold a body of their own.
 
 | the residue with no name | byte(s) | kind | its blocker | what the name would need |
 |---|---:|---|---|---|
-| `0x00034be0` | 43 | `declared-unnamed` | class table, no registration `0x004d34d8` | a class for the declarer table |
-| `0x00036a80` | 5 | `declared-unnamed` | class table, no registration `0x004d3af0` | a class for the declarer table |
-| `0x000fde10` | 32 | `declared-unnamed` | class table, no registration `0x004c94b0` | a class for the declarer table |
-| `0x0011e730` | 23 | `declared-unnamed` | class table, no registration `0x004fcfe0` | a class for the declarer table |
-| `0x0011ea30` | 605 | `declared-unnamed` | class table, no registration `0x004fcfe0` | a class for the declarer table |
-| `0x0011f0e0` | 1499 | `declared-unnamed` | class table, no registration `0x004fcfe0` | a class for the declarer table |
-| `0x001a5330` | 46 | `declared-unnamed` | class table, no registration `0x004fc588` | a class for the declarer table |
 | `0x001df4e0` | 4 | `member` | unlabelled member table `0x0051724c` | a label for the member table's owner |
 | `0x001dfe40` | 7 | `member` | unlabelled member table `0x0051724c` | a label for the member table's owner |
 | `0x00332362` | 25 | `member` | unlabelled member table `0x0053f7f0` | a label for the member table's owner |
@@ -2509,11 +2514,8 @@ neither is a read the declaration walk owes.
 | `0x00332fb9` | 16 | `member` | unlabelled member table `0x0053f888` | a label for the member table's owner |
 | `0x003332a0` | 29 | `member` | unlabelled member table `0x0053f888` | a label for the member table's owner |
 | `0x003332bd` | 19 | `member` | unlabelled member table `0x0053f888` | a label for the member table's owner |
-| `0x00036a70` | 5 | `unnamed-table` | class table, no registration `0x004d3af0` | a class for the declarer table |
-| `0x00077850` | 3 | `unnamed-table` | class table, no registration `0x004d17a8` | a class for the declarer table |
-| `0x001eb1d0` | 32 | `unnamed-table` | class table, no registration `0x00517860` | a class for the declarer table |
 
-**18 bodies need a name no image-side table carries.** The 8 member bodies sit in 3 member tables whose owner the label pass refused, and the 10 declarations sit on 7 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
+**8 bodies need a name no image-side table carries.** The 8 member bodies sit in 3 member tables whose owner the label pass refused, and the 0 declarations sit on 0 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
 <!-- /generated:declarer-residue -->
 
 **What this does not do.** The declared half of this residue is empty (the section below closes it); what
@@ -2779,7 +2781,7 @@ literals; `inventory/class_super_edges.csv` is the census.
 
 ### The tables the registrations cannot name, named by their children
 
-**11 of the 122 tables a caller edge constrains get a name from their children's `Super`, and the same join reproduces 102 of the 102 tables the registrations already named (0 disagree).** The rule has no free parameter: the table is the class its calling classes say their parent is, at least one caller must be a class this census resolved, and every resolved caller must agree. A table whose callers disagree is a table those classes share higher up, not their parent, and it stays unnamed.
+**11 of the 122 tables a caller edge constrains carry a name their children's `Super` states -- 11 written by this join, 102 already named -- and the control, the tables the registrations and the other rules name, agrees 102 of 102 (0 disagree).** The rule has no free parameter: the table is the class its calling classes say their parent is, at least one caller must be a class this census resolved, and every resolved caller must agree. A table whose callers disagree is a table those classes share higher up, not their parent, and it stays unnamed. The rows this join named are counted apart from the control and named by `name_rule=child-super` in `inventory/xbe_class_table_names.csv`, so a name this tool derived never votes in its next round.
 
 | table | slots | the children that call its installer | their `Super` | class |
 |---|---:|---|---|---|
@@ -2795,7 +2797,7 @@ literals; `inventory/class_super_edges.csv` is the census.
 | `0x517860` | 2 | IndexBuffer, SkinVertexBuffer | RenderResource (x2) | **`RenderResource`** |
 | `0x5178d8` | 5 | VertexBuffer, VertexStreamCOLOR, VertexStreamPosNormTex, VertexStreamUV, VertexStreamVECTOR | VertexStreamBase (x5) | **`VertexStreamBase`** |
 
-**7 of the declarer walk's seven unnamed tables are named here**: `0x4c94b0` `Client`, `0x4d17a8` `Property`, `0x4d34d8` `Exporter`, `0x4d3af0` `Factory`, `0x4fc588` `PendingLevel`, `0x4fcfe0` `Download`, `0x517860` `RenderResource`. All seven, so the ten `declared-unnamed` bodies and the three `unnamed-table` bodies that residue counts now have a declarer class; what this does **not** do is write their `<Class>_vt<slot>` names into the map -- that is the add `tools/declarer-residue.py --emit-moves` already carries, and it is the next run's first command.
+**7 of the declarer walk's seven unnamed tables are named here**: `0x4c94b0` `Client`, `0x4d17a8` `Property`, `0x4d34d8` `Exporter`, `0x4d3af0` `Factory`, `0x4fc588` `PendingLevel`, `0x4fcfe0` `Download`, `0x517860` `RenderResource`. All seven are in `inventory/xbe_class_table_names.csv` with `name_rule=child-super`, so `tools/class-slot-declarers.py` names the bodies their slots hold and the map carries `<Class>_vt<slot>` rows for them.
 
 **9 table(s) split**: `0x4c7958` (35 caller(s), 8 distinct `Super`); `0x4ca830` (9 caller(s), 4 distinct `Super`); `0x4cfba0` (7 caller(s), 2 distinct `Super`); `0x4cfc88` (5 caller(s), 2 distinct `Super`); `0x4d0738` (3 caller(s), 2 distinct `Super`); `0x4d1468` (16 caller(s), 3 distinct `Super`); `0x4dd2a8` (349 caller(s), 83 distinct `Super`); `0x4fc1b0` (12 caller(s), 4 distinct `Super`); `0x4fc4f0` (3 caller(s), 2 distinct `Super`). A split is two callers of one table whose `Super` disagrees, so the table is a class those callers share higher up rather than their parent, and it stays unnamed.
 

@@ -8,6 +8,7 @@ ByteProperty,Core,0x0007c829,Core_UnProp,Core,assert,1,unanimous
 Channel,Engine,0x001083c6,Engine_UnChan,Engine,assert,1,unanimous
 ChannelDownload,Engine,0x0011f099,Engine_UnDownload,Engine,assert,1,unanimous
 ClassProperty,Core,0x0007cd65,Core_UnProp,Core,assert,1,unanimous
+Client,Engine,0x000fd969,Engine_UnCamMgr,Engine,assert,1,unanimous
 Const,Core,0x0003b1b5,Core_UnClass,Core,assert,1,unanimous
 ControlChannel,Engine,0x00108c06,Engine_UnChan,Engine,assert,1,unanimous
 ConvexVolume,Engine,0x0011ac38,Engine_UnConvexVolume,Engine,assert,1,unanimous
@@ -17,7 +18,10 @@ DemoPlayPendingLevel,Engine,0x0011be49,Engine_UnDemoPenLev,Engine,assert,1,unani
 DemoPlayPendingLevel_member_0x28,,,,,,0,no-site
 DemoRecConnection,Engine,0x0011d599,Engine_UnDemoRec,Engine,assert,1,unanimous
 DemoRecDriver,Engine,0x0011d659,Engine_UnDemoRec,Engine,assert,1,unanimous
+Download,Engine,0x0011e9d9,Engine_UnDownload,Engine,assert,1,unanimous
 Enum,Core,0x000689f5,Core_UnObj,Core,assert,1,unanimous
+Exporter,Core,0x000349e6,Core_UExporter,Core,assert,1,unanimous
+Factory,Core,0x00036066,Core_UFactory,Core,assert,1,unanimous
 FileChannel,Engine,0x00108ee9,Engine_UnChan,Engine,assert,1,unanimous
 FixedArrayProperty,Core,0x0007cfa9,Core_UnProp,Core,assert,1,unanimous
 FloatProperty,Core,0x0007cbe9,Core_UnProp,Core,assert,1,unanimous
@@ -42,7 +46,7 @@ MeshAnimation,Engine,0x0022d8e6,Engine_UnSkeletalMesh,Engine,assert,1,unanimous
 MeshInstance,Engine,0x00172ce5,Engine_UnMesh,Engine,assert,1,unanimous
 Model,Engine,0x00178bd8,Engine_UnModel,Engine,assert,1,unanimous
 NameProperty,Core,0x0007ce29,Core_UnProp,Core,assert,1,unanimous
-NetConnection,,,,,,0,no-site
+NetConnection,Engine,0x0010d6a9,Engine_UnConn,Engine,assert,1,unanimous
 NetDriver,Engine,0x00183599,Engine_UnNetDrv,Engine,assert,1,unanimous
 NetPendingLevel,Engine,0x001a6919,Engine_UnPenLev,Engine,assert,1,unanimous
 NetPendingLevel_member_0x28,,,,,,0,no-site
@@ -54,9 +58,12 @@ PackageMap,Core,0x0003ed36,Core_UnCoreNet,Core,assert,1,unanimous
 PackageMapLevel,Engine,0x00183986,Engine_UnNetDrv,Engine,assert,1,unanimous
 PackageMapLevel_member_0x28,,,,,,0,no-site
 PackageMapLevel_member_0x2c,,,,,,0,no-site
+PendingLevel,Engine,0x001a51d9,Engine_UnPenLev,Engine,assert,1,unanimous
 PointerProperty,Core,0x0007c9a9,Core_UnProp,Core,assert,1,unanimous
 Primitive,Engine,0x001cb3d5,Engine_UnPrim,Engine,assert,1,unanimous
 ProjectorPrimitive,Engine,0x001ce185,Engine_UnProjector,Engine,assert,1,unanimous
+Property,Core,0x000778d9,Core_UnProp,Core,assert,1,unanimous
+RenderResource,Engine,0x001eafb6,Engine_UnRenderResource,Engine,assert,1,unanimous
 SkeletalMesh,Engine,0x0022d9a9,Engine_UnSkeletalMesh,Engine,assert,1,unanimous
 SkeletalMeshInstance,Engine,0x0022da69,Engine_UnSkeletalMesh,Engine,assert,1,unanimous
 SkinVertexBuffer,Engine,0x001ec215,Engine_UnRenderResource,Engine,assert,1,unanimous

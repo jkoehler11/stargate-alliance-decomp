@@ -105,16 +105,16 @@ matching `--check-doc`, so it is the current numbers rather than the ones the fi
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named by the registration literal | 478 |
-| unnamed | 14 |
-| named tables with a measured child set | 398 |
-| … whose child set equals the class's direct subclasses in `classes.csv` | **379** |
-| … that disagree | **19** |
-| … whose class has no subclass in the image (a leaf) | 80 |
+| named by the registration literal | 489 |
+| unnamed | 3 |
+| named tables with a measured child set | 408 |
+| … whose child set equals the class's direct subclasses in `classes.csv` | **385** |
+| … that disagree | **23** |
+| … whose class has no subclass in the image (a leaf) | 81 |
 
 | conflict cause | tables |
 |---|---|
-| `no-script-row` | 13 |
+| `no-script-row` | 17 |
 | `descendant-edge` | 5 |
 | `native-child` | 1 |
 | `foreign-child` | 0 |
@@ -124,8 +124,8 @@ matching `--check-doc`, so it is the current numbers rather than the ones the fi
 |---|---|
 | named exactly by their child set | 0 |
 | ambiguous (two classes match) | 0 |
-| partly named child set | 2 |
-| unconstrained (no class's subclass set matches) | 12 |
+| partly named child set | 0 |
+| unconstrained (no class's subclass set matches) | 3 |
 <!-- /generated:class-tree -->
 
 The claim this instrument is worth is the ratio of the two bold rows: the constructor call edges
@@ -360,8 +360,8 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named in `inventory/xbe_class_table_names.csv` | 478 |
-| unnamed | 14 |
+| named in `inventory/xbe_class_table_names.csv` | 489 |
+| unnamed | 3 |
 | `agrees` -- the installer's symbol names the committed class | **474** |
 | `adjacent` -- the symbol names a parent or child | 0 |
 | `differs` -- the symbol names an unrelated class | 0 |
@@ -372,10 +372,21 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 
 | table | committed | the rule's answer | basis | verdict |
 |---|---|---|---|---|
+| `0x4c78c0` | Subsystem | - | `parent-of-callers` | `constrained` |
 | `0x4c93d0` | Viewport | - | `parent-of-callers` | `constrained` |
+| `0x4c94b0` | Client | - | `parent-of-callers` | `constrained` |
 | `0x4d0318` | NetDriver | - | `parent-of-callers` | `constrained` |
 | `0x4d03c8` | NetConnection | - | `parent-of-callers` | `constrained` |
+| `0x4d17a8` | Property | - | `parent-of-callers` | `constrained` |
+| `0x4d2400` | VoiceSubsystem | - | `parent-of-callers` | `constrained` |
+| `0x4d34d8` | Exporter | - | `parent-of-callers` | `constrained` |
+| `0x4d3af0` | Factory | - | `parent-of-callers` | `constrained` |
+| `0x4eaea8` | RenderDevice | - | `parent-of-callers` | `constrained` |
 | `0x4fa390` | Channel | - | `parent-of-callers` | `constrained` |
+| `0x4fc588` | PendingLevel | - | `parent-of-callers` | `constrained` |
+| `0x4fcfe0` | Download | - | `parent-of-callers` | `constrained` |
+| `0x517860` | RenderResource | - | `parent-of-callers` | `constrained` |
+| `0x5178d8` | VertexStreamBase | - | `parent-of-callers` | `constrained` |
 <!-- /generated:class-table-parents -->
 
 * **The installer-name edge reproduces the whole map it resolves: all 474 of the 478 named tables
@@ -434,15 +445,15 @@ packages are the six the image links: `Engine` 39, `Core` 19, `IpDrv` 5, `XboxAu
 <!-- generated:native-class-packages -->
 | the 68 native classes' package | classes | `<Class>_vt<slot>` rows |
 | --- | --- | --- |
-| `Engine` | 46 | 181 |
-| `Core` | 23 | 123 |
+| `Engine` | 51 | 188 |
+| `Core` | 26 | 127 |
 | `IpDrv` | 5 | 16 |
 | `XboxAudio` | 2 | 9 |
 | `XboxDrv` | 2 | 24 |
-| `D3DDrv` | 1 | 9 |
-| **total** | **79** | **362** |
+| `D3DDrv` | 1 | 10 |
+| **total** | **87** | **374** |
 
-79 class(es) resolve, 0 conflict, 0 land in no attributed body, 15 have no site. The rule is the registration site's body, and unanimity across a class's sites is the check.
+87 class(es) resolve, 0 conflict, 0 land in no attributed body, 14 have no site. The rule is the registration site's body, and unanimity across a class's sites is the check.
 <!-- /generated:native-class-packages -->
 
 ## Status

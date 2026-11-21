@@ -1,5 +1,5 @@
 table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,installed_at,stores,bound,evidence,sites,name_rule,site_literals
-0x004c78c0,,,,,,,,,no registration names this table,0,no-registration,
+0x004c78c0,Subsystem,,,,,,,,"no registration names this table: 3 calling class(es) (AudioSubsystem, Input, new) each say their parent is Subsystem, so the table is the one that class's constructor installs",0,child-super,"AudioSubsystem, Input, new"
 0x004c7958,Material,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 3 child table(s) declare super Material, so the table is Material's",0,tree-paired,Material
 0x004c7a10,RenderedMaterial,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 7 child table(s) declare super RenderedMaterial, so the table is RenderedMaterial's",0,tree-paired,RenderedMaterial
 0x004c7ac8,BitmapMaterial,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 3 child table(s) declare super BitmapMaterial, so the table is BitmapMaterial's",0,tree-paired,BitmapMaterial
@@ -22,7 +22,7 @@ table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,i
 0x004c9270,SubActionDepthOfField,132,0x00323428,0x0001d070,0x0001bbb0,0x0001bbb8,1,symbol,"class literal at 0x00323428, whose constructor thunk no other registration site uses",1,unshared-thunk,SubActionDepthOfField
 0x004c9348,,,,,,,,,no registration names this table,0,no-registration,
 0x004c93d0,Viewport,456,0x000f92c9,,,,,,"no registration names this table; its class is the literal at 0x000f92c9 (456 bytes, pushes the shared default constructor, so that site installs the object root's table), 4 of this table's 56 slots inline a UnCamera assert path, and the 1 named table(s) carrying that file are at least as long (XboxViewport 57) and no smaller object (XboxViewport 464)",0,slot-file-token,"Viewport@0x000f92c9, XboxViewport 57"
-0x004c94b0,,,,,,,,,no registration names this table,0,no-registration,
+0x004c94b0,Client,,,,,,,,"no registration names this table: 1 calling class(es) (XboxClient) each say their parent is Client, so the table is the one that class's constructor installs",0,child-super,XboxClient
 0x004c9560,XboxClient,196,0x0032cc69,0x000180e0,0x0032c910,0x0032c918,1,symbol,"class literal at 0x0032cc69, whose constructor thunk no other registration site uses",1,unshared-thunk,XboxClient
 0x004c9618,XboxViewport,464,0x0032d9d9,0x000180f0,0x0032d910,0x0032d91a,1,symbol,"class literal at 0x0032d9d9, whose constructor thunk no other registration site uses",1,unshared-thunk,XboxViewport
 0x004c9c60,Actor,908,0x000c810c,0x000dff90,0x00021940,0x00021948,1,symbol,"class literal at 0x000c810c, whose constructor thunk no other registration site uses",1,unshared-thunk,Actor
@@ -92,19 +92,19 @@ table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,i
 0x004d0950,UnrealPlayer,4012,0x00322d49,0x00027830,0x00026990,0x00026998,1,symbol,"class literal at 0x00322d49, whose constructor thunk no other registration site uses",1,unshared-thunk,UnrealPlayer
 0x004d0b68,StargatePlayer,4344,0x00322e09,0x00027840,0x00026a70,0x00026a78,1,symbol,"class literal at 0x00322e09, whose constructor thunk no other registration site uses",1,unshared-thunk,StargatePlayer
 0x004d1468,,,,,,,,,no registration names this table,0,no-registration,
-0x004d17a8,,,,,,,,,no registration names this table,0,no-registration,
+0x004d17a8,Property,,,,,,,,"no registration names this table: 13 calling class(es) (ArrayProperty, BoolProperty, ByteProperty, DelegateProperty, FixedArrayProperty, FloatProperty (+7 more)) each say their parent is Property, so the table is the one that class's constructor installs",0,child-super,"ArrayProperty, BoolProperty, ByteProperty, DelegateProperty, FixedArrayProperty, FloatProperty, IntProperty, MapProperty, NameProperty, ObjectProperty, PointerProperty, StrProperty, StructProperty"
 0x004d1880,IntProperty,108,0x0007c8e9,0x0007dff0,0x0007da10,0x0007da30,1,symbol,"class literal at 0x0007c8e9, whose constructor thunk no other registration site uses",1,unshared-thunk,IntProperty
 0x004d1958,BoolProperty,112,0x0007cb29,0x0007e010,0x0007daf0,0x0007db10,1,symbol,"class literal at 0x0007cb29, whose constructor thunk no other registration site uses",1,unshared-thunk,BoolProperty
 0x004d1a30,FloatProperty,108,0x0007cbe9,0x0007e020,0x0007db20,0x0007db40,1,symbol,"class literal at 0x0007cbe9, whose constructor thunk no other registration site uses",1,unshared-thunk,FloatProperty
 0x004d1f88,AudioSubsystem,152,0x000e5809,0x000e6380,0x00031e90,0x00031ebb,1,symbol,"class literal at 0x000e5809, whose constructor thunk no other registration site uses",1,unshared-thunk,AudioSubsystem
 0x004d21f8,XBoxAudioSubsystem,432,0x000313f9,0x00032190,0x0002fc80,0x0002fca4,1,symbol,"class literal at 0x000313f9, whose constructor thunk no other registration site uses",1,unshared-thunk,XBoxAudioSubsystem
-0x004d2400,,,,,,,,,no registration names this table,0,no-registration,
+0x004d2400,VoiceSubsystem,,,,,,,,"no registration names this table: 1 calling class(es) (XHVVoiceSubsystem) each say their parent is VoiceSubsystem, so the table is the one that class's constructor installs",0,child-super,XHVVoiceSubsystem
 0x004d2ad8,XHVVoiceSubsystem,84,0x00033d95,0x00034030,0x00033450,0x0003345f,1,symbol,"class literal at 0x00033d95, whose constructor thunk no other registration site uses",1,unshared-thunk,XHVVoiceSubsystem
 0x004d32a0,StrProperty,108,0x0007cee9,0x0007e060,0x00035890,0x00035898,1,symbol,"class literal at 0x0007cee9, whose constructor thunk no other registration site uses",1,unshared-thunk,StrProperty
 0x004d3378,ArrayProperty,112,0x0007d069,0x0007e080,0x0007dda0,0x0007ddc0,1,symbol,"class literal at 0x0007d069, whose constructor thunk no other registration site uses",1,unshared-thunk,ArrayProperty
-0x004d34d8,,,,,,,,,no registration names this table,0,no-registration,
+0x004d34d8,Exporter,,,,,,,,"no registration names this table: 1 calling class(es) (ObjectExporterT3D) each say their parent is Exporter, so the table is the one that class's constructor installs",0,child-super,ObjectExporterT3D
 0x004d3828,ObjectExporterT3D,64,0x000356f5,0x00035da0,0x00035d00,0x00035d08,1,symbol,"class literal at 0x000356f5, whose constructor thunk no other registration site uses",1,unshared-thunk,ObjectExporterT3D
-0x004d3af0,,,,,,,,,no registration names this table,0,no-registration,
+0x004d3af0,Factory,,,,,,,,"no registration names this table: 1 calling class(es) (TextBufferFactory) each say their parent is Factory, so the table is the one that class's constructor installs",0,child-super,TextBufferFactory
 0x004d4418,Struct,128,0x0003b338,0x0003daf0,0x0003d560,0x0003d56a,1,symbol,"class literal at 0x0003b338, whose constructor thunk no other registration site uses",1,unshared-thunk,Struct
 0x004d44c8,Function,164,0x0003b0fc,0x0003db00,0x0003d5b0,0x0003d5c3,1,symbol,"class literal at 0x0003b0fc, whose constructor thunk no other registration site uses",1,unshared-thunk,Function
 0x004d4570,State,1176,0x0003b3fc,0x0003db10,0x0003d6a0,0x0003d6b3,1,symbol,"class literal at 0x0003b3fc, whose constructor thunk no other registration site uses",1,unshared-thunk,State
@@ -153,7 +153,7 @@ table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,i
 0x004e8090,KarmaParamsSkel,276,0x000a4e88,0x000a7360,0x000a7170,0x000a7178,1,symbol,"class literal at 0x000a4e88, whose constructor thunk no other registration site uses",1,unshared-thunk,KarmaParamsSkel
 0x004e8108,KarmaParamsRBFull,256,0x000a4dc8,0x000a7370,0x000a7220,0x000a7228,1,symbol,"class literal at 0x000a4dc8, whose constructor thunk no other registration site uses",1,unshared-thunk,KarmaParamsRBFull
 0x004e8440,KMeshProps,124,0x000a5845,0x000a7d30,0x000a7380,0x000a738b,1,symbol,"class literal at 0x000a5845, whose constructor thunk no other registration site uses",1,unshared-thunk,KMeshProps
-0x004eaea8,,,,,,,,,no registration names this table,0,no-registration,
+0x004eaea8,RenderDevice,,,,,,,,"no registration names this table: 2 calling class(es) (D3DRenderDevice, NullRenderDevice) each say their parent is RenderDevice, so the table is the one that class's constructor installs",0,child-super,"D3DRenderDevice, NullRenderDevice"
 0x004eb0a8,NullRenderDevice,220,0x000bd309,0x000bd570,0x000bd3c0,0x000bd3cf,1,symbol,"class literal at 0x000bd309, whose constructor thunk no other registration site uses",1,unshared-thunk,NullRenderDevice
 0x004eb2b0,TextureEditable,216,0x000c0348,0x000c0430,0x000c0390,0x000c0398,1,symbol,"class literal at 0x000c0348, whose constructor thunk no other registration site uses",1,unshared-thunk,TextureEditable
 0x004eb420,ExportCacheCommandlet,476,0x000c05e9,0x000c1ad0,0x000c1a30,0x000c1a38,1,symbol,"class literal at 0x000c05e9, whose constructor thunk no other registration site uses",1,unshared-thunk,ExportCacheCommandlet
@@ -258,11 +258,11 @@ table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,i
 0x004fc1b0,Primitive,84,0x001cb3d5,0x001cb410,0x0011b090,0x0011b0a0,1,symbol,"class literal at 0x001cb3d5, whose constructor thunk no other registration site uses",1,unshared-thunk,Primitive
 0x004fc250,ConvexVolume,136,0x0011ac38,0x0011b6b0,0x0011ab50,0x0011ab5a,1,symbol,"class literal at 0x0011ac38, whose constructor thunk no other registration site uses",1,unshared-thunk,ConvexVolume
 0x004fc4f0,,,,,,,,,no registration names this table,0,no-registration,
-0x004fc588,,,,,,,,,no registration names this table,0,no-registration,
+0x004fc588,PendingLevel,,,,,,,,"no registration names this table: 2 calling class(es) (DemoPlayPendingLevel, NetPendingLevel) each say their parent is PendingLevel, so the table is the one that class's constructor installs",0,child-super,"DemoPlayPendingLevel, NetPendingLevel"
 0x004fc630,DemoPlayPendingLevel,176,0x0011be49,0x0011c1c0,0x0011c0f0,0x0011c10c,1,symbol,"class literal at 0x0011be49, whose constructor thunk no other registration site uses",1,unshared-thunk,DemoPlayPendingLevel
 0x004fcc18,DemoRecConnection,20368,0x0011d599,0x0011e680,0x0011e510,0x0011e518,1,symbol,"class literal at 0x0011d599, whose constructor thunk no other registration site uses",1,unshared-thunk,DemoRecConnection
 0x004fccc8,DemoRecDriver,4684,0x0011d659,0x0011e690,0x0011d4b0,0x0011d4d4,1,symbol,"class literal at 0x0011d659, whose constructor thunk no other registration site uses",1,unshared-thunk,DemoRecDriver
-0x004fcfe0,,,,,,,,,no registration names this table,0,no-registration,
+0x004fcfe0,Download,,,,,,,,"no registration names this table: 2 calling class(es) (ChannelDownload, HTTPDownload) each say their parent is Download, so the table is the one that class's constructor installs",0,child-super,"ChannelDownload, HTTPDownload"
 0x004fd070,ChannelDownload,1116,0x0011f099,0x0011f7f0,0x0011f750,0x0011f763,1,symbol,"class literal at 0x0011f099, whose constructor thunk no other registration site uses",1,unshared-thunk,ChannelDownload
 0x005040d0,Engine,,,,,,,,"no registration names this table: its class's site pushes the shared default constructor, and 1 child table(s) declare super Engine, so the table is Engine's",0,tree-paired,Engine
 0x00504560,ServerCommandlet,476,0x00122329,0x00127e60,0x00127ad0,0x00127ad8,1,symbol,"class literal at 0x00122329, whose constructor thunk no other registration site uses",1,unshared-thunk,ServerCommandlet
@@ -361,8 +361,8 @@ table_va,class,object_size,registration_va,constructor_thunk_va,constructor_va,i
 0x005169b0,ProjectorMaterial,212,0x001ce0c8,0x001cff70,0x001cb640,0x001cb648,1,symbol,"class literal at 0x001ce0c8, whose constructor thunk no other registration site uses",1,unshared-thunk,ProjectorMaterial
 0x00516ac8,ProjectorPrimitive,84,0x001ce185,0x001d0100,0x001cff80,0x001cff88,1,symbol,"class literal at 0x001ce185, whose constructor thunk no other registration site uses",1,unshared-thunk,ProjectorPrimitive
 0x00516be8,Projector,1308,0x001ced39,0x001d0dd0,0x001d0c40,0x001d0c48,1,symbol,"class literal at 0x001ced39, whose constructor thunk no other registration site uses",1,unshared-thunk,Projector
-0x00517860,,,,,,,,,no registration names this table,0,no-registration,
-0x005178d8,,,,,,,,,no registration names this table,0,no-registration,
+0x00517860,RenderResource,,,,,,,,"no registration names this table: 2 calling class(es) (IndexBuffer, SkinVertexBuffer) each say their parent is RenderResource, so the table is the one that class's constructor installs",0,child-super,"IndexBuffer, SkinVertexBuffer"
+0x005178d8,VertexStreamBase,,,,,,,,"no registration names this table: 5 calling class(es) (VertexBuffer, VertexStreamCOLOR, VertexStreamPosNormTex, VertexStreamUV, VertexStreamVECTOR) each say their parent is VertexStreamBase, so the table is the one that class's constructor installs",0,child-super,"VertexBuffer, VertexStreamCOLOR, VertexStreamPosNormTex, VertexStreamUV, VertexStreamVECTOR"
 0x00517a18,IndexBuffer,56,0x001ebdc5,0x001ed180,0x001ec2a0,0x001ec2aa,1,symbol,"class literal at 0x001ebdc5, whose constructor thunk no other registration site uses",1,unshared-thunk,IndexBuffer
 0x00517a90,VertexBuffer,68,0x001ec165,0x001ed190,0x001ec7c0,0x001ec7db,1,symbol,"class literal at 0x001ec165, whose constructor thunk no other registration site uses",1,unshared-thunk,VertexBuffer
 0x00517b10,VertexStreamVECTOR,68,0x001ebea5,0x001ed1a0,0x001eca30,0x001eca4b,1,symbol,"class literal at 0x001ebea5, whose constructor thunk no other registration site uses",1,unshared-thunk,VertexStreamVECTOR

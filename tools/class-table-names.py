@@ -60,6 +60,13 @@ So the name comes from one of these joins, in this order, and the `name_rule` co
                           measured in `inventory/class_table_name_pairs.csv` does: the row's `paired`
                           verdict names the class those children's script supers describe. The name is
                           the tree's, not a store's, and the row says so.
+  * `child-super`      -- no site, no store and no tree names the table, but the classes that call its
+                          installer all say their own parent is the same class: a class's table is
+                          installed by its constructor and its children call that constructor, so the
+                          table is the one class those children descend from. The vote is
+                          `inventory/class_table_super_names.csv` (`tools/class-super-edges.py` reads the
+                          class object's `+0x28` store); a table whose callers disagree is a class they
+                          share higher up, not their parent, and it is left unnamed.
   * `slot-file-token`  -- no site, no store and no tree names the table, but the class it belongs to is a
                           literal the build ships, and the table's own *slots* say which one: every slot
                           body's assert inlines a source path, so a table's slots vote for a `.cpp` file,
@@ -107,6 +114,7 @@ CLASSES = os.path.join(ROOT, "inventory/classes.csv")
 SYMBOLS = os.path.join(ROOT, "symbols/xbox_functions.csv")
 PAIRS = os.path.join(ROOT, "inventory/class_table_name_pairs.csv")
 TOKENS = os.path.join(ROOT, "inventory/class_slot_tokens.csv")
+SUPER_NAMES = os.path.join(ROOT, "inventory/class_table_super_names.csv")
 REGISTRATIONS = os.path.join(ROOT, "inventory/class_registrations.csv")
 # The one literal in this census: the engine's class for a source file. The image names every class below
 # (`inventory/class_registrations.csv` carries the site that pushes it), and it names no class for these
@@ -490,6 +498,58 @@ def apply_pairs(rows, pairs=None):
     return rows
 
 
+def super_names(path=SUPER_NAMES):
+    """{table_va: (class, children, votes)} for the tables the callers' `Super` names.
+
+    The artifact is `tools/class-super-edges.py`'s join: a table no registration names is named by the
+    classes that call its installer, and each of those names is a *child* -- so the class the table
+    belongs to is the one its children agree their parent is. Only the `names-the-table` verdicts are
+    read; a `split`, `partial` or `no-child-super` row states that the vote did not decide, and a table
+    whose callers were already naming it lands as `agrees`, which is this census's own answer written
+    back and is never read here.
+    """
+    out = {}
+    if not path or not os.path.exists(path):
+        return out
+    with open(path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            if row.get("verdict") != "names-the-table" or not row.get("class"):
+                continue
+            key = int(row["table_va"], 16) if row.get("table_va") else None
+            if key is not None:
+                out[key] = (row["class"], row.get("children", ""), row.get("child_supers", ""))
+    return out
+
+
+def apply_super_names(rows, names=None):
+    """Name the tables the callers' `Super` agrees on, and only the rows still empty.
+
+    A row that already carries a name is never overwritten: the image's own store, the tree and the
+    slots' assert files are each a stronger statement than this hierarchy join, which fills only what
+    none of them reached. The evidence names the children and the class they vote for, because that is
+    the measurement, not the row.
+    """
+    names = super_names() if names is None else names
+    for row in rows:
+        if row["class"]:
+            continue
+        hit = names.get(int(row["table_va"], 16))
+        if not hit:
+            continue
+        name, children, _votes = hit
+        kids = [k for k in children.split("|") if k]
+        shown = ", ".join(kids[:6]) + (" (+%d more)" % (len(kids) - 6) if len(kids) > 6 else "")
+        row.update({
+            "class": name,
+            "name_rule": "child-super",
+            "evidence": ("no registration names this table: %d calling class(es) (%s) each say their "
+                         "parent is %s, so the table is the one that class's constructor installs"
+                         % (len(kids), shown, name)),
+            "site_literals": ", ".join(kids),
+        })
+    return rows
+
+
 def slot_token_tallies(path=TOKENS):
     """Per table: its slot count, and how many slots inline each assert-file token.
 
@@ -687,7 +747,7 @@ def census(xbe, ctor):
                 "site_literals": ", ".join(owners),
             })
         rows.append(row)
-    return apply_slot_tokens(apply_pairs(rows))
+    return apply_slot_tokens(apply_super_names(apply_pairs(rows)))
 
 
 def evidence(rule, site, group, name):
@@ -732,14 +792,15 @@ def render(rows):
     lines.append("")
     lines.append("%d tables: %d named (%d by an unshared constructor thunk, %d by the hierarchy a "
                  "shared thunk forces, %d derived from a nearest common ancestor, %d from a base store "
-                 "no registration names, %d from the tree the child supers describe, %d from the assert "
+                 "no registration names, %d from the tree the child supers describe, %d from the "
+                 "children's `Super` the class object writes, %d from the assert "
                  "file their slots inline), %d unresolved, "
                  "%d with no registration. %d tables are reached by more than one registration site, "
                  "so a write-order rule would name them by whichever site happened to be written last."
                  % (len(rows), named, rules.get("unshared-thunk", 0),
                     rules.get("hierarchy-ancestor", 0), rules.get("ancestor-derived", 0),
                     rules.get("base-store-ancestor", 0), rules.get("tree-paired", 0),
-                    rules.get("slot-file-token", 0),
+                    rules.get("child-super", 0), rules.get("slot-file-token", 0),
                     rules.get("unresolved", 0), rules.get("no-registration", 0), len(multi)))
     return "\n".join(lines)
 
@@ -934,6 +995,17 @@ def self_check():
     apply_slot_tokens(rows, {0x5000: (8, {"UnFam": 2})}, {"UnFam": "Fam"}, fam_site)
     if rows[0]["class"]:
         bad.append("slot-file-token named a table with no named carrier: %r" % (rows[0],))
+
+    # the children's `Super` names a table no store reaches -- and neither a named row nor a split moves
+    rows = [tok_row(0x5000), tok_row(0x5008, "Kid"), tok_row(0x5010)]
+    apply_super_names(rows, {0x5000: ("Super", "Child|Kid", "Super|Super"),
+                             0x5010: ("", "Aaa|Bbb", "Xxx|Yyy")})
+    if (rows[0]["class"], rows[0]["name_rule"]) != ("Super", "child-super"):
+        bad.append("child-super did not name the empty row: %r" % (rows[0],))
+    if rows[1]["class"] != "Kid":
+        bad.append("child-super overwrote a name the image states: %r" % (rows[1],))
+    if rows[2]["class"]:
+        bad.append("child-super named a table its callers disagree on: %r" % (rows[2],))
 
     rows = [{"table_va": "0x00005000", "class": "Root", "object_size": "8",
              "registration_va": "0x00000010", "constructor_thunk_va": "0x00002000",
