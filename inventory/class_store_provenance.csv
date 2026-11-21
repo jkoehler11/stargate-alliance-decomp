@@ -9,7 +9,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004c7ac8,48,BitmapMaterial,named,vtable-slot,,1,1,this,this this this this this,5,0,0,0,0,1,0,,,,base-level,1 store site(s) at 0x172bd; 5 call site(s): this; 0 register store(s)
 0x004c7b88,30,Order,named,vtable-slot,,2,2,this,this this,2,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x173cd,0x17408; 2 call site(s): this; 0 register store(s)"
 0x004c7c00,30,MatObject,named,vtable-slot,,2,2,this,this this this,3,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x17dfd,0x17e38; 3 call site(s): this; 0 register store(s)"
-0x004c7c78,33,CameraEffect,named,vtable-slot,,1,1,this,this this this this this this this this this this this,11,0,0,0,0,1,0,,,,base-level,1 store site(s) at 0x17f8d; 11 call site(s): this; 0 register store(s)
+0x004c7c78,32,CameraEffect,named,vtable-slot,,1,1,this,this this this this this this this this this this this,11,0,0,0,0,1,0,,,,base-level,1 store site(s) at 0x17f8d; 11 call site(s): this; 0 register store(s)
 0x004c7d98,32,SGScreenSniperOverlay,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x183dd,0x18418; 1 call site(s): this; 0 register store(s)"
 0x004c7e18,32,SGScreenMenuPause,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x184ad,0x184e8; 1 call site(s): this; 0 register store(s)"
 0x004c7e98,32,SGScreenBlur,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x1857d,0x185b8; 1 call site(s): this; 0 register store(s)"
@@ -20,7 +20,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004c8410,22,,plain-only,vtable-slot,,2,2,this,ret this,1,0,0,1,0,0,0,,,,mixed,"2 store site(s) at 0x18c3c,0x1a128; 2 call site(s): ret,this; 0 register store(s)"
 0x004c84d0,22,,plain-only,vtable-slot,,2,2,this,ret this,1,0,0,1,0,0,0,,,,mixed,"2 store site(s) at 0x18e20,0x1a35e; 2 call site(s): ret,this; 0 register store(s)"
 0x004c85b0,25,,plain-only,frame-only,,1,1,ebp,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x1298c; 0 call site(s): -; 0 register store(s)
-0x004c8db8,26,,plain-only,vtable-slot,,1,1,this,ebp-0x954,0,0,1,0,0,0,0,,,,stack-object,1 store site(s) at 0x1a3c0; 1 call site(s): ebp-0x954; 0 register store(s)
+0x004c8db8,25,,plain-only,vtable-slot,,1,1,this,ebp-0x954,0,0,1,0,0,0,0,,,,stack-object,1 store site(s) at 0x1a3c0; 1 call site(s): ebp-0x954; 0 register store(s)
 0x004c8f28,33,MatSubAction,named,vtable-slot,,2,2,this,this this this this this this this this this this this this,12,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x1b58d,0x1b608; 12 call site(s): this; 0 register store(s)"
 0x004c8fb0,33,SubActionCameraEffect,named,vtable-slot,,2,2,this,this this,2,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x1b63d,0x1b6a8; 2 call site(s): this; 0 register store(s)"
 0x004c9038,22,,plain-only,vtable-slot,,2,2,this,this this this esp+0x14 esp+0xc this+0x294 this+0x294,3,2,2,0,0,2,0,,0x294,,mixed,"2 store site(s) at 0x1b7a7,0x37a24; 7 call site(s): esp+0x14,esp+0xc,this,this+0x294; 0 register store(s)"
@@ -34,7 +34,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004c9348,31,,plain-only,vtable-slot,,2,2,this,this this this this this this,6,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x1cb8d,0x1be164; 6 call site(s): this; 0 register store(s)"
 0x004c93c4,1,,plain-only,member-field,yes,2,2,this,this this this,3,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x1cc3a,0xf9d21; 3 call site(s): this; 0 register store(s)"
 0x004c93c8,2,,plain-only,member-field,yes,2,2,this,this this this,3,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x1cc33,0xf9d1a; 3 call site(s): this; 0 register store(s)"
-0x004c93d0,56,,plain-only,vtable-slot,yes,2,2,this,this this this,3,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x1cc2d,0xf9d14; 3 call site(s): this; 0 register store(s)"
+0x004c93d0,56,Viewport,plain-only,vtable-slot,yes,2,2,this,this this this,3,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x1cc2d,0xf9d14; 3 call site(s): this; 0 register store(s)"
 0x004c94b0,43,,plain-only,vtable-slot,yes,2,2,this,this this this,3,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x1cd2d,0xfd9b8; 3 call site(s): this; 0 register store(s)"
 0x004c9560,43,XboxClient,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x1cdbd,0x32c918; 1 call site(s): this; 0 register store(s)"
 0x004c960c,1,,bounded,member-field,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x1ce7a,0x32d927; 1 call site(s): this; 0 register store(s)"
@@ -103,10 +103,10 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004d0138,59,WetTexture,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x259fd,0x2e8366; 1 call site(s): this; 0 register store(s)"
 0x004d0228,59,IceTexture,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x25aad,0x2e83be; 1 call site(s): this; 0 register store(s)"
 0x004d0314,1,,plain-only,member-field,,2,2,this,this this this this this this this,7,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x25f53,0x183765; 7 call site(s): this; 0 register store(s)"
-0x004d0318,40,,plain-only,vtable-slot,,2,2,this,this this this this this this this,7,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x25f4d,0x18375f; 7 call site(s): this; 0 register store(s)"
+0x004d0318,40,NetDriver,plain-only,vtable-slot,,2,2,this,this this this this this this this,7,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x25f4d,0x18375f; 7 call site(s): this; 0 register store(s)"
 0x004d03b8,1,,bounded,member-field,,3,3,this,this this this this this this this this this this,10,0,0,0,0,3,0,,,,base-level,"3 store site(s) at 0x2601d,0x10ffdc,0x110168; 10 call site(s): this; 0 register store(s)"
 0x004d03bc,2,,bounded,member-field,,3,3,this,this this this this this this this this this this,10,0,0,0,0,3,0,,,,base-level,"3 store site(s) at 0x26016,0x10ffd5,0x110161; 10 call site(s): this; 0 register store(s)"
-0x004d03c8,42,,bounded,vtable-slot,,3,3,this,this this this this this this this this this this,10,0,0,0,0,3,0,,,,base-level,"3 store site(s) at 0x26010,0x10ffcf,0x11015b; 10 call site(s): this; 0 register store(s)"
+0x004d03c8,42,NetConnection,bounded,vtable-slot,,3,3,this,this this this this this this this this this this,10,0,0,0,0,3,0,,,,base-level,"3 store site(s) at 0x26010,0x10ffcf,0x11015b; 10 call site(s): this; 0 register store(s)"
 0x004d0470,1,,bounded,member-field,,3,3,this,this ret ret,1,0,0,2,0,0,0,,,,mixed,"3 store site(s) at 0x261ca,0x26215,0x2d28fe; 3 call site(s): ret,this; 0 register store(s)"
 0x004d0474,2,,bounded,member-field,,3,3,this,this ret ret,1,0,0,2,0,0,0,,,,mixed,"3 store site(s) at 0x261c3,0x2620e,0x2d28f7; 3 call site(s): ret,this; 0 register store(s)"
 0x004d0480,42,TcpipConnection,named,vtable-slot,,3,3,this,this ret ret,1,0,0,2,0,0,0,,,,mixed,"3 store site(s) at 0x261bd,0x26208,0x2d28f1; 3 call site(s): ret,this; 0 register store(s)"
@@ -146,7 +146,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004d3af0,33,,plain-only,vtable-slot,yes,2,2,this,this this this,3,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x3671a,0x36add; 3 call site(s): this; 0 register store(s)"
 0x004d3ba0,22,,plain-only,vtable-slot,,2,2,this,this esp+0x10 this,2,0,1,0,0,2,0,,,,mixed,"2 store site(s) at 0x37b11,0x10d217; 3 call site(s): esp+0x10,this; 0 register store(s)"
 0x004d40d0,22,,plain-only,vtable-slot,,1,1,this,esp+0x10,0,0,1,0,0,0,0,,,,stack-object,1 store site(s) at 0x38ba3; 1 call site(s): esp+0x10; 0 register store(s)
-0x004d4418,43,Struct,named,vtable-slot,,5,4,? this,this ret ret this this this,4,0,0,2,0,2,0,,,,mixed,"5 store site(s) at 0x3a180,0x3a1e2,0x3bd8a; 6 call site(s): ret,this; 0 register store(s)"
+0x004d4418,42,Struct,named,vtable-slot,,5,4,? this,this ret ret this this this,4,0,0,2,0,2,0,,,,mixed,"5 store site(s) at 0x3a180,0x3a1e2,0x3bd8a; 6 call site(s): ret,this; 0 register store(s)"
 0x004d44c8,42,Function,named,vtable-slot,,3,2,? this,this,1,0,0,0,0,0,0,,,,own-object,"3 store site(s) at 0x3a727,0x3d5c3,0x3d61d; 1 call site(s): this; 0 register store(s)"
 0x004d4570,42,State,named,vtable-slot,,5,3,? this,this this this,3,0,0,0,0,2,0,,,,base-level,"5 store site(s) at 0x3a5dd,0x3a661,0x3c41d; 3 call site(s): this; 0 register store(s)"
 0x004d4618,35,Const,named,vtable-slot,,3,3,this,this,1,0,0,0,0,0,0,,,,own-object,"3 store site(s) at 0x3a7d9,0x3d6fa,0x3d75d; 1 call site(s): this; 0 register store(s)"
@@ -174,7 +174,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004ddf78,30,TextBuffer,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x66a14,0x7588d; 1 call site(s): this; 0 register store(s)"
 0x004de008,31,Commandlet,named,vtable-slot,,2,2,this,this this this this this this this this this this this this this,13,0,0,0,0,2,0,,,,base-level,"2 store site(s) at 0x66b85,0x7577d; 13 call site(s): this; 0 register store(s)"
 0x004de088,30,Package,named,vtable-slot,,3,3,ret this,ret this,1,0,0,1,0,0,0,,,,mixed,"3 store site(s) at 0x66cd6,0x6da4d,0x755fd; 2 call site(s): ret,this; 0 register store(s)"
-0x004de118,36,Enum,named,vtable-slot,,3,3,this,this,1,0,0,0,0,0,0,,,,own-object,"3 store site(s) at 0x67eaf,0x758e4,0x7594d; 1 call site(s): this; 0 register store(s)"
+0x004de118,35,Enum,named,vtable-slot,,3,3,this,this,1,0,0,0,0,0,0,,,,own-object,"3 store site(s) at 0x67eaf,0x758e4,0x7594d; 1 call site(s): this; 0 register store(s)"
 0x004de3c0,22,,plain-only,vtable-slot,,1,1,this,esp+0x8,0,0,1,0,0,0,0,,,,stack-object,1 store site(s) at 0x75a71; 1 call site(s): esp+0x8; 0 register store(s)
 0x004de558,22,,plain-only,vtable-slot,,1,1,this,esp+0x30,0,0,1,0,0,0,0,,,,stack-object,1 store site(s) at 0x762c3; 1 call site(s): esp+0x30; 0 register store(s)
 0x004de7a0,33,TextBufferFactory,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x69a48,0x76e5d; 1 call site(s): this; 0 register store(s)"
@@ -187,7 +187,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004e14f8,53,MapProperty,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x7ddf0,0x7de4d; 1 call site(s): this; 0 register store(s)"
 0x004e15d0,53,StructProperty,named,vtable-slot,,4,4,ret this,this ret,1,0,0,1,0,0,0,,,,mixed,"4 store site(s) at 0x7dea0,0x7defd,0x14e277; 2 call site(s): ret,this; 0 register store(s)"
 0x004e16a8,53,DelegateProperty,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x7df50,0x7dfad; 1 call site(s): this; 0 register store(s)"
-0x004e1ce8,32,new,named,vtable-slot,,2,2,this,ebp-0x2cc this,1,0,1,0,0,0,0,,,,mixed,"2 store site(s) at 0x7eeff,0x7ffbd; 2 call site(s): ebp-0x2cc,this; 0 register store(s)"
+0x004e1ce8,31,new,named,vtable-slot,,2,2,this,ebp-0x2cc this,1,0,1,0,0,0,0,,,,mixed,"2 store site(s) at 0x7eeff,0x7ffbd; 2 call site(s): ebp-0x2cc,this; 0 register store(s)"
 0x004e24a8,123,FileLog,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x80a08,0x80a6d; 1 call site(s): this; 0 register store(s)"
 0x004e2720,123,GameStats,named,vtable-slot,,2,2,this,this this,2,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x80fe8,0x8104d; 2 call site(s): this; 0 register store(s)"
 0x004e2978,123,SceneSubtitles,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x81308,0x8136d; 1 call site(s): this; 0 register store(s)"
@@ -292,8 +292,8 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004f4878,123,Light,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xdfe58,0xdfebd; 1 call site(s): this; 0 register store(s)"
 0x004f4a68,123,LevelInfo,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe0108,0xe016d; 1 call site(s): this; 0 register store(s)"
 0x004f4c58,30,GameProfile,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe06ca,0xe074d; 1 call site(s): this; 0 register store(s)"
-0x004f4cd0,31,Manifest,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe0828,0xe088d; 1 call site(s): this; 0 register store(s)"
-0x004f6188,135,Camera,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe0b68,0xe0bcd; 1 call site(s): this; 0 register store(s)"
+0x004f4cd0,30,Manifest,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe0828,0xe088d; 1 call site(s): this; 0 register store(s)"
+0x004f6188,134,Camera,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe0b68,0xe0bcd; 1 call site(s): this; 0 register store(s)"
 0x004f6d38,30,TextToSpeechAlias,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe0eb8,0xe0f1d; 1 call site(s): this; 0 register store(s)"
 0x004f6dd8,127,IMusicActor,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe1008,0xe106d; 1 call site(s): this; 0 register store(s)"
 0x004f6ff8,30,I3DL2Listener,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe1168,0xe11cd; 1 call site(s): this; 0 register store(s)"
@@ -301,7 +301,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004f70a0,2,,plain-only,vtable-slot,,1,0,?,,0,0,0,0,0,0,0,,,,no-installer,1 store site(s) at 0xe1704; 0 call site(s): -; 0 register store(s)
 0x004f72a0,46,Sound,named,vtable-slot,,4,4,this,this this ret ret ret this this this,5,0,0,3,0,2,0,,,,mixed,"4 store site(s) at 0xe3bb8,0xe3c58,0xe3cf8; 8 call site(s): ret,this; 0 register store(s)"
 0x004f7380,46,ProceduralSound,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe4e30,0xe634d; 1 call site(s): this; 0 register store(s)"
-0x004f7468,47,SoundGroup,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe5668,0xe643d; 1 call site(s): this; 0 register store(s)"
+0x004f7468,46,SoundGroup,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xe5668,0xe643d; 1 call site(s): this; 0 register store(s)"
 0x004f7690,9,,plain-only,vtable-slot,,1,1,this,esp+0xc8,0,0,1,0,0,0,0,,,,stack-object,1 store site(s) at 0xea6a5; 1 call site(s): esp+0xc8; 0 register store(s)
 0x004f76b8,40,ParticleEmitter,named,vtable-slot,,2,2,this,this this this this this this,6,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0xea71d,0xea838; 6 call site(s): this; 0 register store(s)"
 0x004f7758,42,BeamEmitter,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xea858,0xea8bd; 1 call site(s): this; 0 register store(s)"
@@ -310,7 +310,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x004f9618,32,CameraOverlay,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xfbb28,0xfbb8d; 1 call site(s): this; 0 register store(s)"
 0x004f9728,32,MotionBlur,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0xfca98,0xfcafd; 1 call site(s): this; 0 register store(s)"
 0x004fa110,51,Canvas,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x106e98,0x106efd; 1 call site(s): this; 0 register store(s)"
-0x004fa390,37,,plain-only,vtable-slot,,2,2,this,this this this this this,5,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x107d7d,0x108018; 5 call site(s): this; 0 register store(s)"
+0x004fa390,37,Channel,plain-only,vtable-slot,,2,2,this,this this this this this,5,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x107d7d,0x108018; 5 call site(s): this; 0 register store(s)"
 0x004fa5a8,2,,bounded,member-field,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x108535,0x10cea3; 1 call site(s): this; 0 register store(s)"
 0x004fa5b0,37,ControlChannel,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x10852f,0x10ce9d; 1 call site(s): this; 0 register store(s)"
 0x004fa650,37,FileChannel,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x108608,0x10cf2d; 1 call site(s): this; 0 register store(s)"
@@ -558,7 +558,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x0051da50,123,StaticMeshActor,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x24e9b8,0x24ea1d; 1 call site(s): this; 0 register store(s)"
 0x0051dc40,30,StaticMeshInstance,named,vtable-slot,,2,2,this,ret this,1,0,0,1,0,0,0,,,,mixed,"2 store site(s) at 0x24ee64,0x24eeed; 2 call site(s): ret,this; 0 register store(s)"
 0x0051dd28,40,StaticMesh,named,vtable-slot,,2,2,this,ret this,1,0,0,1,0,0,0,,,,mixed,"2 store site(s) at 0x24b4b6,0x24f4e0; 2 call site(s): ret,this; 0 register store(s)"
-0x0051ec98,23,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x25fdc4; 0 call site(s): -; 0 register store(s)
+0x0051ec98,22,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x25fdc4; 0 call site(s): -; 0 register store(s)
 0x0051f650,30,SVehicleWheel,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x263a98,0x263afd; 1 call site(s): this; 0 register store(s)"
 0x0051f6d8,5,,plain-only,frame-only,,1,1,esp,indexed,0,0,0,0,1,0,0,,,,mixed,1 store site(s) at 0x274e21; 1 call site(s): indexed; 0 register store(s)
 0x0051f6ec,5,,plain-only,frame-only,,1,1,esp,indexed,0,0,0,0,1,0,0,,,,mixed,1 store site(s) at 0x275d68; 1 call site(s): indexed; 0 register store(s)
@@ -586,15 +586,15 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x005218b0,124,DecorationList,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x290b18,0x290b7d; 1 call site(s): this; 0 register store(s)"
 0x00521b30,30,Spline,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x290db8,0x290e1d; 1 call site(s): this; 0 register store(s)"
 0x00521f80,30,StreamBase,named,vtable-slot,,2,2,this,this this this this,4,0,0,0,0,1,0,,,,base-level,"2 store site(s) at 0x29230d,0x292348; 4 call site(s): this; 0 register store(s)"
-0x00521ff8,3,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x295c59; 0 call site(s): -; 0 register store(s)
+0x00521ff8,1,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x295c59; 0 call site(s): -; 0 register store(s)
 0x00522110,31,StreamInterface,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x295e88,0x295eed; 1 call site(s): this; 0 register store(s)"
-0x00522190,37,StreamInteraction,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x295f38,0x295f9d; 1 call site(s): this; 0 register store(s)"
+0x00522190,36,StreamInteraction,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x295f38,0x295f9d; 1 call site(s): this; 0 register store(s)"
 0x00522e88,30,Stream,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x29793a,0x2979cd; 1 call site(s): this; 0 register store(s)"
 0x00522f90,30,StreamTag,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x297c7d,0x297f2d; 1 call site(s): this; 0 register store(s)"
-0x00523008,3,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x298007; 0 call site(s): -; 0 register store(s)
+0x00523008,1,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x298007; 0 call site(s): -; 0 register store(s)
 0x00523340,9,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x2984e5; 0 call site(s): -; 0 register store(s)
 0x00523394,9,,plain-only,vtable-slot,,1,1,this,,0,0,0,0,0,0,0,,,,no-direct-call,1 store site(s) at 0x2a11e9; 0 call site(s): -; 0 register store(s)
-0x0052352c,16,,plain-only,vtable-slot,,1,1,this,imm,0,0,0,0,1,0,0,,,,mixed,1 store site(s) at 0x2aab02; 1 call site(s): imm; 0 register store(s)
+0x0052352c,15,,plain-only,vtable-slot,,1,1,this,imm,0,0,0,0,1,0,0,,,,mixed,1 store site(s) at 0x2aab02; 1 call site(s): imm; 0 register store(s)
 0x0052b45c,1,,bounded,member-field,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x2b3b6f,0x2b4f03; 1 call site(s): this; 0 register store(s)"
 0x0052b460,50,D3DRenderDevice,named,vtable-slot,,2,2,this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x2b3b69,0x2b4efd; 1 call site(s): this; 0 register store(s)"
 0x0052bbf8,65,,plain-only,vtable-slot,yes,1,1,this,this+0x4754,0,1,0,0,0,1,0,,0x4754,,member-of-caller,1 store site(s) at 0x2b9be7; 1 call site(s): this+0x4754; 0 register store(s)
@@ -609,7 +609,7 @@ table_va,slots,class,population,store_verdict,second_table,sites,bodies,store_or
 0x0052cb00,36,HTTPDownload,named,vtable-slot,,2,2,? this,this,1,0,0,0,0,0,0,,,,own-object,"2 store site(s) at 0x2c2684,0x2c3c7d; 1 call site(s): this; 0 register store(s)"
 0x0052cc50,22,,plain-only,vtable-slot,,1,1,this,ebp-0x4 this,1,0,1,0,0,1,0,,,,mixed,"1 store site(s) at 0x2c3d80; 2 call site(s): ebp-0x4,this; 0 register store(s)"
 0x0052cefc,7,,plain-only,vtable-slot,,4,4,this,this this this this,4,0,0,0,0,2,0,,,,base-level,"4 store site(s) at 0x2c4ec0,0x2c4ee8,0x2c651e; 4 call site(s): this; 0 register store(s)"
-0x0052d1a0,23,,plain-only,vtable-slot,,1,1,this,esp+0x128 esp+0x98,0,0,2,0,0,0,0,,,,stack-object,"1 store site(s) at 0x2c51d3; 2 call site(s): esp+0x128,esp+0x98; 0 register store(s)"
+0x0052d1a0,22,,plain-only,vtable-slot,,1,1,this,esp+0x128 esp+0x98,0,0,2,0,0,0,0,,,,stack-object,"1 store site(s) at 0x2c51d3; 2 call site(s): esp+0x128,esp+0x98; 0 register store(s)"
 0x0052d3e8,25,,plain-only,vtable-slot,,3,2,? this,this this this this this,5,0,0,0,0,2,0,,,,base-level,"3 store site(s) at 0x2c610e,0x2c61e1,0x2c624d; 5 call site(s): this; 0 register store(s)"
 0x0052d498,22,,plain-only,vtable-slot,,2,2,ebp-0x4 this,ret ebp-0x4,0,0,1,1,0,0,0,,,,mixed,"2 store site(s) at 0x2c6466,0x2c64bd; 2 call site(s): ebp-0x4,ret; 0 register store(s)"
 0x0052d528,22,,plain-only,vtable-slot,,1,1,this,esp+0x28 esp+0x34 esp+0x1c esp+0x3c esp+0x10,0,0,5,0,0,1,0,,,,stack-object,"1 store site(s) at 0x2c66ed; 5 call site(s): esp+0x10,esp+0x1c,esp+0x28,esp+0x34; 0 register store(s)"

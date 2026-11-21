@@ -801,7 +801,7 @@ almost never lost between a class and its super, while the bits it leaves out ar
 | 0x40000000 | PerObjectLocalized |  | 3 | 3 | 1 | `UPreviewRootWindow` |
 | 0x80000000 | HasCrossLevelRefs |  | 3 | 2 | 0 | `UPreviewMapListClient` |
 
-**The image names the displacement 109 times: 84 sit inside a mapped function and 84 of those are instruction boundaries; 25 are outside the symbol map.** 11 are byte-wide, and 31 carry one immediate -- the readers. A reader's immediate is the clearest evidence for what a bit means: `Core_UnTemplate` tests `0x20` (a localised template), `Core_UnObj` tests `0x4` and `0x8`, `Engine_UnLevAct` tests `0x1`.
+**The image names the displacement 109 times: 101 sit inside a mapped function and 101 of those are instruction boundaries; 8 are outside the symbol map.** 11 are byte-wide, and 31 carry one immediate -- the readers. A reader's immediate is the clearest evidence for what a bit means: `Core_UnTemplate` tests `0x20` (a localised template), `Core_UnObj` tests `0x4` and `0x8`, `Engine_UnLevAct` tests `0x1`.
 
 | mask | name | at | in |
 |---:|---|---|---|
@@ -825,6 +825,8 @@ almost never lost between a class and its super, while the bits it leaves out ar
 | `0x80000` | unnamed | `0x0006482c` | FUN_00064770 |
 | `0x80000` | unnamed | `0x00212b82` | execPlaySound |
 | `0x200000` | Instanced | `0x00078742` | Core_UnProp |
+| `0x200000` | Instanced | `0x000786b2` | ObjectProperty_vt11 |
+| `0x400000` | HideDropDown | `0x0020c3f0` | FUN_0020c3c0 |
 | `0x1000000` | ParseConfig | `0x0003aaba` | Core_UnClass |
 | `0x4000000` | Exported | `0x0006ca8b` | Core_UnObj |
 | `0x4000000` | Exported | `0x001598ad` | Engine_UnLevAct |

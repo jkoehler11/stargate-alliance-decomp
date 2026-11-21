@@ -372,36 +372,32 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 <!-- generated:class-orphan-tables -->
 | table | slots | proposed class | store sites | installing bodies | registration thunk | callers | verdict | named classes whose constructor calls it |
 |---|---|---|---|---|---|---|---|---|
-| `0x004c78c0` | 31 | -- | 1 | 1 | no | 17 | dtor+wrapper+stub | table:0x004d0318, AudioSubsystem, table:0x004d2400, new +3 |
+| `0x004c78c0` | 31 | -- | 1 | 1 | no | 17 | dtor+wrapper+stub | NetDriver, AudioSubsystem, table:0x004d2400, new +3 |
 | `0x004c7958` | 46 | Material | 2 | 2 | no | 40 | ctor, dtor+wrapper+stub | RenderedMaterial, Modifier, Combiner, MultiPassMaterial +32 |
 | `0x004c7a10` | 46 | RenderedMaterial | 1 | 1 | no | 17 | dtor+wrapper+stub | BitmapMaterial, ConstantMaterial, TexCoordMaterial, VertexColor +5 |
-| `0x004c7ac8` | 46 | BitmapMaterial | 1 | 1 | no | 10 | dtor+wrapper+stub | Texture, ProxyBitmapMaterial, ScriptedTexture, ShadowBitmapMaterial |
-| `0x004c7c78` | 34 | CameraEffect | 1 | 1 | no | 16 | dtor+wrapper+stub | SGScreenSniperOverlay, SGScreenMenuPause, SGScreenBlur, SGScreenDOF +6 |
-| `0x004c9348` | 30 | -- | 2 | 2 | no | 11 | ctor, dtor+wrapper+stub | table:0x004c93d0, table:0x004d03c8 |
-| `0x004c93d0` | 35 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | XboxViewport |
-| `0x004c94b0` | 30 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | XboxClient |
+| `0x004c7ac8` | 48 | BitmapMaterial | 1 | 1 | no | 10 | dtor+wrapper+stub | Texture, ProxyBitmapMaterial, ScriptedTexture, ShadowBitmapMaterial |
+| `0x004c7c78` | 32 | CameraEffect | 1 | 1 | no | 16 | dtor+wrapper+stub | SGScreenSniperOverlay, SGScreenMenuPause, SGScreenBlur, SGScreenDOF +6 |
+| `0x004c9348` | 31 | -- | 2 | 2 | no | 11 | ctor, dtor+wrapper+stub | Viewport, NetConnection |
+| `0x004c94b0` | 43 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | XboxClient |
 | `0x004cfe68` | 59 | WaterTexture | 2 | 2 | no | 8 | ctor, dtor+code+stub | WaveTexture, FluidTexture, WetTexture |
-| `0x004d0318` | 31 | -- | 2 | 2 | no | 11 | ctor, dtor+wrapper+stub | TcpNetDriver, TcpNetDriverXbox, DemoRecDriver |
-| `0x004d03c8` | 31 | -- | 3 | 3 | no | 15 | ctor, dtor+wrapper+stub | TcpipConnection, TcpipConnectionXbox, DemoRecConnection |
 | `0x004d1468` | 35 | -- | 4 | 2 | no | 28 | ctor, dtor+wrapper+stub, no-body | table:0x004d17a8, Struct, Const, Enum +13 |
-| `0x004d17a8` | 37 | -- | 3 | 3 | no | 36 | ctor, dtor+wrapper+stub | IntProperty, BoolProperty, FloatProperty, StrProperty +9 |
-| `0x004d2400` | 31 | -- | 1 | 1 | no | 3 | dtor+wrapper+stub | XHVVoiceSubsystem |
+| `0x004d17a8` | 53 | -- | 3 | 3 | no | 36 | ctor, dtor+wrapper+stub | IntProperty, BoolProperty, FloatProperty, StrProperty +9 |
+| `0x004d2400` | 37 | -- | 1 | 1 | no | 3 | dtor+wrapper+stub | XHVVoiceSubsystem |
 | `0x004d34d8` | 32 | -- | 2 | 2 | no | 3 | dtor+wrapper+stub, no-caller | ObjectExporterT3D |
 | `0x004d3af0` | 33 | -- | 2 | 2 | no | 4 | ctor, dtor+wrapper+stub | TextBufferFactory |
-| `0x004eaea8` | 31 | -- | 1 | 1 | no | 6 | dtor+wrapper+stub | NullRenderDevice, D3DRenderDevice |
-| `0x004fa390` | 34 | -- | 2 | 2 | no | 7 | dtor+wrapper+stub, no-caller | ControlChannel, FileChannel, VoiceChannel, ActorChannel |
+| `0x004eaea8` | 47 | -- | 1 | 1 | no | 6 | dtor+wrapper+stub | NullRenderDevice, D3DRenderDevice |
 | `0x004fc4f0` | 30 | -- | 3 | 3 | no | 13 | ctor, dtor+wrapper+stub | table:0x004fc588, Level, DemoPlayPendingLevel, NetPendingLevel |
-| `0x004fc588` | 30 | -- | 2 | 2 | no | 8 | ctor, dtor+wrapper+stub | DemoPlayPendingLevel, NetPendingLevel |
+| `0x004fc588` | 34 | -- | 2 | 2 | no | 8 | ctor, dtor+wrapper+stub | DemoPlayPendingLevel, NetPendingLevel |
 | `0x004fcfe0` | 36 | -- | 1 | 1 | no | 6 | dtor+wrapper+stub | ChannelDownload, HTTPDownload |
-| `0x005040d0` | 30 | Engine | 2 | 2 | no | 5 | ctor, dtor+wrapper+stub | GameEngine |
+| `0x005040d0` | 56 | Engine | 2 | 2 | no | 5 | ctor, dtor+wrapper+stub | GameEngine |
 | `0x00517860` | 30 | -- | 1 | 1 | no | 7 | dtor+wrapper+stub | table:0x005178d8, IndexBuffer, SkinVertexBuffer |
-| `0x005178d8` | 30 | -- | 1 | 1 | no | 11 | dtor+wrapper+stub | VertexBuffer, VertexStreamVECTOR, VertexStreamCOLOR, VertexStreamUV +1 |
+| `0x005178d8` | 32 | -- | 1 | 1 | no | 11 | dtor+wrapper+stub | VertexBuffer, VertexStreamVECTOR, VertexStreamCOLOR, VertexStreamUV +1 |
 
-**24 tables, 44 store sites in 42 bodies, 2 of the sites in no symbol-map body.** None of the bodies that install one of these tables is a registration thunk target, and one body stores 1 table more than once.
+**20 tables, 35 store sites in 33 bodies, 2 of the sites in no symbol-map body.** None of the bodies that install one of these tables is a registration thunk target, and one body stores 1 table more than once.
 
-**6 of the 24 tables carry a name from the caller rule**, the join in the `proposed class` column and not this sweep's measurement; the rest are that tool's `constrained` verdict (a caller set whose common ancestor is not one class), its name-clash case, or a table with no named caller at all.
+**6 of the 20 tables carry a name from the caller rule**, the join in the `proposed class` column and not this sweep's measurement; the rest are that tool's `constrained` verdict (a caller set whose common ancestor is not one class), its name-clash case, or a table with no named caller at all.
 
-**40 of the 42 installing bodies are reached, and the shape is a base class, not isolated code: 16 are called from a class constructor (13 of the 24 tables have at least one) and 24 from a class destructor.** 106 named classes call an installer body from their own constructor. The other edges are 23 forwarder wrappers (a body whose first call targets the installer), 85 tail jumps of which 84 come from code the symbol map does not cover, and 0 calls from no map body at all; 2 bodies have no inbound edge.
+**32 of the 33 installing bodies are reached, and the shape is a base class, not isolated code: 12 are called from a class constructor (10 of the 20 tables have at least one) and 20 from a class destructor.** 98 named classes call an installer body from their own constructor. The other edges are 19 forwarder wrappers (a body whose first call targets the installer), 73 tail jumps of which 72 come from code the symbol map does not cover, and 0 calls from no map body at all; 1 bodies have no inbound edge.
 <!-- /generated:class-orphan-tables -->
 
 ## The 250 tables no registration reaches: 38 a constructor bounds, 208 only unnamed bodies store
@@ -476,17 +472,17 @@ class whose constructor writes it.
 <!-- generated:class-table-store-fields -->
 | population | tables | object slot | slot and member | member only | frame only | global only | no `C7` store |
 |---|---|---|---|---|---|---|---|
-| named by the registration path (control) | 474 | 474 | -- | -- | -- | -- | -- |
-| nameless: a class ctor stores it | 38 | 2 | 9 | 27 | -- | -- | -- |
-| nameless: only bodies no class names store it | 212 | 176 | 2 | 11 | 20 | 3 | -- |
+| named by the registration path (control) | 478 | 478 | -- | -- | -- | -- | -- |
+| nameless: a class ctor stores it | 37 | 1 | 9 | 27 | -- | -- | -- |
+| nameless: only bodies no class names store it | 209 | 173 | 2 | 11 | 20 | 3 | -- |
 
-**The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store of their own at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled rather than written into a field and 3 only into a global variable, where the object is a singleton in `.data`.
+**The 478 named tables are the control: 478 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 246 tables no registration names, **185 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store of their own at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled rather than written into a field and 3 only into a global variable, where the object is a singleton in `.data`.
 
 **The member offsets are a class's own layout, not a shared constant**: `0x8` in 2 tables, `0x28` in 24 tables, `0x2c` in 8 tables, `0x38` in 1 table, `0x64` in 2 tables, `0xb8` in 6 tables, `0xc0` in 1 table, `0xd8` in 1 table, `0xf0` in 1 table, `0x108` in 1 table, `0x134` in 1 table, `0x14c` in 2 tables, `0x164` in 1 table, `0x17c` in 1 table, `0x194` in 1 table.** A field that holds a table pointer is a member of the class whose constructor stores it, so the table is that member's dispatch table and its slots are methods of the member, not of the class -- naming it `<Class>_vt<slot>` would claim a class slot the image does not have.
 
 **38 of the 49 member tables have a class whose own constructor stores the field** (SkeletalMesh (5), ControlChannel (2), TextBuffer (2), XboxViewport (2), PackageMapLevel (2), TcpipConnection (2)), so the member's owner is known even though the table's class is not: these are `<Class>`'s field, and the name the map lacks is the member's, not a class's.
 
-**What this settles for U40.** 36 of the 38 tables a class constructor stores are member tables (27 only a member, 9 the object slot as well), so the `at-least-<base>` bound those tables carry is a bound on the *owner* of a member, not on a class's dispatch table; the reading that a ctor's table is its own or its base's holds only for the 2 that write `[reg]` at all. And 176 of the 212 plain-only tables are written into the object slot by a body no class names, which is the shape of a constructor the map has not named rather than of a table nothing installs.
+**What this settles for U40.** 36 of the 37 tables a class constructor stores are member tables (27 only a member, 9 the object slot as well), so the `at-least-<base>` bound those tables carry is a bound on the *owner* of a member, not on a class's dispatch table; the reading that a ctor's table is its own or its base's holds only for the 1 that write `[reg]` at all. And 173 of the 209 plain-only tables are written into the object slot by a body no class names, which is the shape of a constructor the map has not named rather than of a table nothing installs.
 <!-- /generated:class-table-store-fields -->
 
 Three readings follow, and each corrects the section above rather than restating it:
@@ -581,7 +577,7 @@ the interface's default, not an unimplemented slot.
 **32 of the 49 tables carry a label of the form `<Class>_member_<field>`, and the class is the one that declares the field.** 34 are a single owner's field, 1 are declared in a shared ancestor of every owner (`Linker_member_0xb8`), 1 have owners in no common chain -- where the same offset is two different layouts, not one field -- and 13 have no owner at all. A table whose row carries more than one field offset keeps no label: the store does not pair the offset with its owner, and naming one of them would pick.
 | 24 table(s) in no family | 24 | -- | -- | -- |
 
-**The 49 member tables are interface vtables, and their slot 0 is not a class slot.** All 492 class tables the class-map census covers (474 of them named by the registration path) share one slot-0 body, `0x00062650`; none of the 49 member tables carry it, and their slot-0 values are 36 distinct bodies. A class dispatch table starts with the entry every class table starts with; an interface object's table starts with its own first method, which is why no slot here can be named `<Class>_vt<slot>`.
+**The 49 member tables are interface vtables, and their slot 0 is not a class slot.** All 492 class tables the class-map census covers (478 of them named by the registration path) share one slot-0 body, `0x00062650`; none of the 49 member tables carry it, and their slot-0 values are 36 distinct bodies. A class dispatch table starts with the entry every class table starts with; an interface object's table starts with its own first method, which is why no slot here can be named `<Class>_vt<slot>`.
 
 **292 slots resolve to 115 distinct bodies, and 82 slots land outside the symbol map.** 24 slots are `__purecall`, 111 are stubs of 8 bytes or less (`ret`, `xor eax,eax; ret` -- the default implementations of an interface whose real work is elsewhere), 12 carry a real name in the map rather than a `FUN_` row, and 198 are `FUN_` rows the map covers.
 **32 of the 82 slots outside the map are bodies U40's gap rule decodes** -- that is, **32 of the 269 gap bodies U40 counts in an unnamed table's slot are in these 49 member tables** and the rest are in the plain-only ones -- and the remaining 50 slots outside the map are bodies neither the map nor the padding rule reaches, so those interface methods are code nothing has decoded yet.
@@ -707,15 +703,15 @@ class for **978 of them (99.6%)**, so it is a measured reading and not an assump
 <!-- generated:class-table-installer-shapes -->
 | population | tables | installer bodies | returns `this` (ctor) | installs before any call (dtor) | neither | ends in a tail `jmp` | names one table only |
 |---|---|---|---|---|---|---|---|
-| named | 474 | 990 | 507 | 475 | 8 | 0 | 923 |
-| plain-only | 208 | 347 | 192 | 106 | 49 | 1 | 226 |
+| named | 478 | 999 | 512 | 479 | 8 | 0 | 925 |
+| plain-only | 205 | 341 | 189 | 103 | 49 | 1 | 224 |
 | no-store | 4 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-**The control is the population the registration path already names.** Of the 990 installer bodies behind the 474 named tables, 982 carry a `ctor_<Class>`/`dtor_<Class>` symbol and the shape rule agrees with that class on 978; 507 bodies return `this`, 475 install the table before any call and 8 read as neither.
+**The control is the population the registration path already names.** Of the 999 installer bodies behind the 478 named tables, 991 carry a `ctor_<Class>`/`dtor_<Class>` symbol and the shape rule agrees with that class on 978; 512 bodies return `this`, 479 install the table before any call and 8 read as neither.
 
-**Of the 208 plain-only tables, 192 installer bodies return `this`, 106 install before any call and 49 read as neither; 226 of the bodies install exactly one table, which is a self-install.** 97 tables are installed only by a body that returns `this`, 29 only by a destructor-shaped body, 56 by both, 26 by bodies the rule reads as neither and 0 name no installer body at all.
+**Of the 205 plain-only tables, 189 installer bodies return `this`, 103 install before any call and 49 read as neither; 224 of the bodies install exactly one table, which is a self-install.** 97 tables are installed only by a body that returns `this`, 29 only by a destructor-shaped body, 53 by both, 26 by bodies the rule reads as neither and 0 name no installer body at all.
 
-**A destructor never returns `this`, and the class-ctors signature only matches `mov eax, <reg>`.** Its second form is a load from the frame (`mov eax,[esp+N]` / `[ebp+N]`): 2 of the 106 dtor-shaped installer bodies behind the plain-only tables return `this` that way; the other 104 carry the destructor shape, which an initializer that installs the table into an object it was handed -- and returns something other than `this` -- has as well. That is why the verdict is a reading and not a proof: 29 tables have only such installers, and the artifact names them one body at a time instead of sweeping them into a constructor count.
+**A destructor never returns `this`, and the class-ctors signature only matches `mov eax, <reg>`.** Its second form is a load from the frame (`mov eax,[esp+N]` / `[ebp+N]`): 2 of the 103 dtor-shaped installer bodies behind the plain-only tables return `this` that way; the other 101 carry the destructor shape, which an initializer that installs the table into an object it was handed -- and returns something other than `this` -- has as well. That is why the verdict is a reading and not a proof: 29 tables have only such installers, and the artifact names them one body at a time instead of sweeping them into a constructor count.
 <!-- /generated:class-table-installer-shapes -->
 
 The plain-only tables split three ways, and each split is a different question. A body that
@@ -1143,28 +1139,28 @@ method. `tools/class-plain-tables.py` reads the **250** tables no registration n
 <!-- generated:class-plain-tables -->
 | population | store | tables | slots | the class-table prefix | named by their slots | named by the installer | neither |
 |---|---|---|---|---|---|---|---|
-| bounded | `vtable-slot` | 2 | 51 | 1 | 0 | 0 | 1 |
+| bounded | `vtable-slot` | 1 | 9 | 0 | 0 | 0 | 1 |
 | bounded | `vtable-slot+member` | 9 | 50 | 0 | 0 | 0 | 9 |
 | bounded | `member-field` | 27 | 192 | 0 | 0 | 0 | 27 |
-| plain-only | `vtable-slot` | 176 | 2554 | 17 | 18 | 1 | 141 |
+| plain-only | `vtable-slot` | 173 | 2421 | 14 | 18 | 22 | 141 |
 | plain-only | `vtable-slot+member` | 2 | 7 | 0 | 0 | 0 | 2 |
-| plain-only | `member-field` | 11 | 43 | 0 | 0 | 0 | 11 |
+| plain-only | `member-field` | 11 | 43 | 0 | 0 | 2 | 11 |
 | plain-only | `global` | 3 | 41 | 0 | 0 | 0 | 3 |
 | plain-only | `frame-only` | 20 | 260 | 0 | 0 | 0 | 20 |
 
-**The block scan's extent is 8 dword(s) too long on 6 of the 250 tables: this population holds 3198 slots, not the 3206 `inventory/native_vtable_reach.csv` counts.** These tables sit in `.rdata` in front of the build's wide-string pool, so a string's first two characters (`0x00330044` is `D3`) are an aligned dword inside `.text`'s *address range* and the scan keeps counting -- the class census ends a table on exactly that dword and 12 of its 492 tables end on one, 14 dwords in all. Each row above is read at the shorter extent, and `stop` names the dword that ended it: `0x004c8db8` 26 -> 25 (`0x003a0044`), `0x0051ec98` 23 -> 22 (`0x002e0030`), `0x00521ff8` 3 -> 1 (`0x00200020`), `0x00523008` 3 -> 1 (`0x00200020`), `0x0052352c` 16 -> 15 (`0x00330044`), `0x0052d1a0` 23 -> 22 (`0x00210021`).
+**The block scan's extent and the tables' own extent agree on all 246 rows: 3023 slots.** A string's first two characters would be an aligned dword inside `.text`'s address range, so this is a measurement and not a formality -- the class census ends 12 of its 492 tables on that dword, 14 dwords in all.
 
-**18 of the 250 tables no registration names carry the class-table prefix, and the control is measured on both sides.** All 474 tables the registration path names start with the same three bodies (`0x00062650`, `0x00062660`, `0x00062670`) and none of the 49 member tables does, so the prefix separates a class's dispatch table from an interface object's table without a name. The 18 that carry it are class tables whose class no registration names; the other 232 are interfaces.
+**14 of the 246 tables no registration names carry the class-table prefix, and the control is measured on both sides.** All 478 tables the registration path names start with the same three bodies (`0x00062650`, `0x00062660`, `0x00062670`) and none of the 49 member tables does, so the prefix separates a class's dispatch table from an interface object's table without a name. The 14 that carry it are class tables whose class no registration names; the other 232 are interfaces.
 
-**All 18 are recorded as a parent edge, and 17 are a named class's.** `0x004d17a8` (53 slots) is the table behind `ArrayProperty`, `BoolProperty`, `ByteProperty`, `DelegateProperty`, `FixedArrayProperty` and 8 more; `0x005178d8` (32 slots) is the table behind `VertexBuffer`, `VertexStreamCOLOR`, `VertexStreamPosNormTex`, `VertexStreamUV`, `VertexStreamVECTOR`; `0x004fa390` (37 slots) is the table behind `ActorChannel`, `ControlChannel`, `FileChannel`, `VoiceChannel`; `0x004d03c8` (42 slots) is the table behind `DemoRecConnection`, `TcpipConnection`, `TcpipConnectionXbox`; `0x004d0318` (40 slots) is the table behind `DemoRecDriver`, `TcpNetDriver`, `TcpNetDriverXbox`. Those are the tables `inventory/class_table_parent_edges.csv` records as the classes' `parent_va`, read from the destructor thunk rather than from a registration, and no shipped package declares the class of any of them -- `inventory/classes.csv` has no row -- which is why no registration site can carry its name. Where the child the edge names is itself one of the 18 (`0x004c78c0` -> `0x004d0318` -> `TcpNetDriver`), the ladder is read rung by rung; the five base levels U40 left open are five of these 18, and their parent is unnamed because the class is not in any `.u`.
+**All 14 are recorded as a parent edge, and 13 are a named class's.** `0x004d17a8` (53 slots) is the table behind `ArrayProperty`, `BoolProperty`, `ByteProperty`, `DelegateProperty`, `FixedArrayProperty` and 8 more; `0x005178d8` (32 slots) is the table behind `VertexBuffer`, `VertexStreamCOLOR`, `VertexStreamPosNormTex`, `VertexStreamUV`, `VertexStreamVECTOR`; `0x004c78c0` (31 slots) is the table behind `AudioSubsystem`, `Engine`, `Input`; `0x004eaea8` (47 slots) is the table behind `D3DRenderDevice`, `NullRenderDevice`; `0x004fcfe0` (36 slots) is the table behind `ChannelDownload`, `HTTPDownload`. Those are the tables `inventory/class_table_parent_edges.csv` records as the classes' `parent_va`, read from the destructor thunk rather than from a registration, and no shipped package declares the class of any of them -- `inventory/classes.csv` has no row -- which is why no registration site can carry its name. Where the child the edge names is itself one of the 14 (`0x004c78c0` -> `0x004d0318` -> `TcpNetDriver`), the ladder is read rung by rung; the five base levels U40 left open are five of these 14, and their parent is unnamed because the class is not in any `.u`.
 
 **18 of the 232 interfaces are named by their own slots.** A C++ vtable holds its class's virtual methods, and the map carries masked-symbol matches against the shipped XDK libraries (`uix.lib`, `xvoice.lib`, `xonline.lib`), so a table whose slots are one class's methods carries that class: `0x0053f9ec` = `CUIPlugin` (7 of 7 slots that carry a class), `0x00540484` = `CEncoderXMO` (7 of 7 slots that carry a class), `0x005404bc` = `CEncoderXMO` (6 of 7 slots that carry a class), `0x0053f8a0` = `CPlayersFeature` (5 of 5 slots that carry a class), `0x0053f718` = `CAlertFeature` (4 of 4 slots that carry a class), `0x0053f770` = `CFeatureContext` (4 of 4 slots that carry a class), `0x0053f808` = `CVoiceMailPseudoFeature` (4 of 4 slots that carry a class), `0x0053f998` = `CLogonFeature` (4 of 4 slots that carry a class), `0x0053f6ec` = `CPopupScreen` (3 of 3 slots that carry a class), `0x0053f874` = `CPopupScreen` (3 of 3 slots that carry a class), `0x0053f90c` = `CFriendsScreen` (3 of 3 slots that carry a class), `0x0053f97c` = `CLogonScreen` (3 of 3 slots that carry a class), `0x0053f700` = `CNotificationScreen` (2 of 2 slots that carry a class), `0x0053f920` = `CFriendsFeature` (2 of 2 slots that carry a class), `0x00540464` = `CQueueXMO` (2 of 2 slots that carry a class), `0x005404f4` = `CDecoderXMO` (2 of 2 slots that carry a class), `0x00540520` = `CDecoderXMO` (2 of 3 slots that carry a class), `0x0053f990` = `CNotificationTask` (1 of 1 slots that carry a class).
 
 **The same reading names 0 of the 49 member tables.** Their slots carry no mangled class scope at all, so the interface object a member field holds stays unnamed by this channel -- the member's *own* name comes from the field it is stored in, which `tools/class-member-tables.py` already builds.
 
-**The installer's own symbol names a class on 1 table, and the two channels agree on 0.** It is `0x0057534c` = `exception`, a CRT class and not one of the interfaces. A `??0<C>@@`/`??1<C>@@` symbol is a C++ constructor or destructor and names the class it builds outright; it is the narrow channel of the two, because only the XDK library bodies carry a mangled symbol, and the slot vocabulary does not need one.
+**The installer's own symbol names a class on 24 tables, and the two channels agree on 18.** It is `0x0053f6d8` = `CFriendsScreen CLogonScreen CNotificationScreen CPlayersScreen CPopupScreen`, `0x0053f6ec` = `CPopupScreen`, `0x0053f700` = `CNotificationScreen`, `0x0053f718` = `CAlertFeature`, `0x0053f770` = `CFeatureContext`, `0x0053f7f0` = `CVoiceMailPseudoFeature`, `0x0053f808` = `CVoiceMailPseudoFeature`, `0x0053f85c` = `CVoiceMailScreen`, `0x0053f874` = `CPlayersContextScreen`, `0x0053f888` = `CPlayersFeature`, `0x0053f8a0` = `CPlayersFeature`, `0x0053f8f4` = `CPlayersScreen`, `0x0053f90c` = `CFriendsScreen`, `0x0053f920` = `CFriendsFeature`, `0x0053f97c` = `CLogonScreen`, `0x0053f990` = `CNotificationTask`, `0x0053f998` = `CLogonFeature`, `0x0053f9ec` = `CUIPlugin`, `0x00540464` = `CQueueXMO`, `0x00540484` = `CEncoderXMO`, `0x005404bc` = `COneToOneEncoder`, `0x005404f4` = `CDecoderXMO`, `0x00540520` = `COneToOneDecoder`, `0x0057534c` = `exception`, a CRT class and not one of the interfaces. A `??0<C>@@`/`??1<C>@@` symbol is a C++ constructor or destructor and names the class it builds outright; it is the narrow channel of the two, because only the XDK library bodies carry a mangled symbol, and the slot vocabulary does not need one.
 
-**3198 slots resolve, and 829 of them sit outside the function map.** 134 slots are `__purecall` and 1224 are stubs of 8 bytes or less -- an interface's default implementation -- so the interface half repeats the shape the 49 member tables already showed, at a receiver that is the object's own slot rather than a member field.
+**3023 slots resolve, and 815 of them sit outside the function map.** 116 slots are `__purecall` and 1172 are stubs of 8 bytes or less -- an interface's default implementation -- so the interface half repeats the shape the 49 member tables already showed, at a receiver that is the object's own slot rather than a member field.
 <!-- /generated:class-plain-tables -->
 
 **The 18 class tables are the heads of native ladders, and 17 of them are a named class's base.** A

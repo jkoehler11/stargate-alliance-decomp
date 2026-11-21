@@ -9,7 +9,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004c7ac8,48,named,1,1,0,1,0,1,0,0,0,0,1,1,dtor-only,1 bod: dtor 1; 1 install one table only; tails 1 ret / 0 jmp
 0x004c7b88,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004c7c00,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x004c7c78,33,named,1,1,0,1,0,1,0,0,0,0,1,1,dtor-only,1 bod: dtor 1; 1 install one table only; tails 1 ret / 0 jmp
+0x004c7c78,32,named,1,1,0,1,0,1,0,0,0,0,1,1,dtor-only,1 bod: dtor 1; 1 install one table only; tails 1 ret / 0 jmp
 0x004c7d98,32,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004c7e18,32,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004c7e98,32,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
@@ -20,7 +20,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004c8410,22,plain-only,2,1,0,2,0,1,0,0,0,0,0,0,dtor-only,2 bodies: dtor 2; 1 install one table only; tails 1 ret / 0 jmp
 0x004c84d0,22,plain-only,2,1,1,1,0,1,0,0,0,0,0,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 1 install one table only; tails 1 ret / 0 jmp"
 0x004c85b0,25,plain-only,1,1,0,0,1,0,0,1,0,0,0,0,unclassified,1 bod: unclassified 1; 1 install one table only; tails 0 ret / 0 jmp
-0x004c8db8,26,plain-only,1,1,1,0,0,1,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 1 ret / 0 jmp
+0x004c8db8,25,plain-only,1,1,1,0,0,1,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 1 ret / 0 jmp
 0x004c8f28,33,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004c8fb0,33,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004c9038,22,plain-only,2,2,2,0,0,0,0,0,0,0,0,0,installed-by-ctor,2 bodies: ctor 2; 2 install one table only; tails 0 ret / 0 jmp
@@ -34,7 +34,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004c9348,31,plain-only,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004c93c4,1,plain-only,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004c93c8,2,plain-only,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
-0x004c93d0,56,plain-only,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
+0x004c93d0,56,named,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004c94b0,43,plain-only,2,2,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004c9560,43,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004c960c,1,at-least,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
@@ -103,10 +103,10 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004d0138,59,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004d0228,59,named,2,1,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 1 install one table only; tails 2 ret / 0 jmp"
 0x004d0314,1,plain-only,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
-0x004d0318,40,plain-only,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
+0x004d0318,40,named,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004d03b8,1,at-least,3,0,2,1,0,2,0,0,0,2,1,0,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004d03bc,2,at-least,3,0,2,1,0,2,0,0,0,2,1,0,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
-0x004d03c8,42,at-least,3,0,2,1,0,2,0,0,0,2,1,0,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
+0x004d03c8,42,named,3,0,2,1,0,2,0,0,0,2,1,0,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004d0470,1,at-least,3,0,2,1,0,2,0,0,0,2,1,0,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004d0474,2,at-least,3,0,2,1,0,2,0,0,0,2,1,0,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004d0480,42,named,3,0,2,1,0,2,0,0,0,2,1,3,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
@@ -146,7 +146,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004d3af0,33,plain-only,2,2,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004d3ba0,22,plain-only,2,2,2,0,0,0,0,0,0,0,0,0,installed-by-ctor,2 bodies: ctor 2; 2 install one table only; tails 0 ret / 0 jmp
 0x004d40d0,22,plain-only,1,1,0,1,0,0,0,0,0,0,0,0,dtor-only,1 bod: dtor 1; 1 install one table only; tails 0 ret / 0 jmp
-0x004d4418,43,named,4,4,3,1,0,2,0,0,0,3,1,4,ctor-and-dtor,"4 bodies: ctor 3, dtor 1; 4 install one table only; tails 2 ret / 0 jmp"
+0x004d4418,42,named,4,4,3,1,0,2,0,0,0,3,1,4,ctor-and-dtor,"4 bodies: ctor 3, dtor 1; 4 install one table only; tails 2 ret / 0 jmp"
 0x004d44c8,42,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004d4570,42,named,3,3,2,1,0,2,0,0,0,2,1,3,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 3 install one table only; tails 2 ret / 0 jmp"
 0x004d4618,35,named,3,3,2,1,0,2,0,0,0,2,1,3,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 3 install one table only; tails 2 ret / 0 jmp"
@@ -174,7 +174,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004ddf78,30,named,2,0,1,1,0,1,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 1 ret / 0 jmp"
 0x004de008,31,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004de088,30,named,3,3,1,1,1,3,0,0,0,1,1,2,ctor-and-dtor,"3 bodies: ctor 1, dtor 1, unclassified 1; 3 install one table only; tails 3 ret / 0 jmp"
-0x004de118,36,named,3,3,2,1,0,2,0,1,0,2,1,3,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 3 install one table only; tails 2 ret / 0 jmp"
+0x004de118,35,named,3,3,2,1,0,2,0,1,0,2,1,3,ctor-and-dtor,"3 bodies: ctor 2, dtor 1; 3 install one table only; tails 2 ret / 0 jmp"
 0x004de3c0,22,plain-only,1,1,1,0,0,0,0,1,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
 0x004de558,22,plain-only,1,1,1,0,0,0,0,1,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
 0x004de7a0,33,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
@@ -187,7 +187,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004e14f8,53,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004e15d0,53,named,4,2,1,1,2,4,0,0,0,1,1,2,ctor-and-dtor,"4 bodies: ctor 1, dtor 1, unclassified 2; 2 install one table only; tails 4 ret / 0 jmp"
 0x004e16a8,53,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x004e1ce8,32,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
+0x004e1ce8,31,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004e24a8,123,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004e2720,123,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004e2978,123,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
@@ -292,8 +292,8 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004f4878,123,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f4a68,123,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f4c58,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x004f4cd0,31,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x004f6188,135,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
+0x004f4cd0,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
+0x004f6188,134,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f6d38,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f6dd8,127,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f6ff8,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
@@ -301,7 +301,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004f70a0,2,no-store,0,0,0,0,0,0,0,0,0,0,0,0,no-body,0 bodies: none read; 0 install one table only; tails 0 ret / 0 jmp
 0x004f72a0,46,named,4,4,3,1,0,2,0,0,0,3,1,4,ctor-and-dtor,"4 bodies: ctor 3, dtor 1; 4 install one table only; tails 2 ret / 0 jmp"
 0x004f7380,46,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x004f7468,47,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
+0x004f7468,46,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f7690,9,plain-only,1,1,1,0,0,1,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 1 ret / 0 jmp
 0x004f76b8,40,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f7758,42,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
@@ -310,7 +310,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x004f9618,32,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004f9728,32,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004fa110,51,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x004fa390,37,plain-only,2,2,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
+0x004fa390,37,named,2,2,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x004fa5a8,2,at-least,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004fa5b0,37,named,2,0,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x004fa650,37,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
@@ -558,7 +558,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x0051da50,123,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x0051dc40,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x0051dd28,40,named,2,1,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 1 install one table only; tails 2 ret / 0 jmp"
-0x0051ec98,23,plain-only,1,1,1,0,0,0,0,1,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
+0x0051ec98,22,plain-only,1,1,1,0,0,0,0,1,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
 0x0051f650,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x0051f6d8,5,plain-only,1,0,0,0,1,0,0,0,0,0,0,0,unclassified,1 bod: unclassified 1; 0 install one table only; tails 0 ret / 0 jmp
 0x0051f6ec,5,plain-only,1,0,0,0,1,0,0,0,0,0,0,0,unclassified,1 bod: unclassified 1; 0 install one table only; tails 0 ret / 0 jmp
@@ -586,15 +586,15 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x005218b0,124,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x00521b30,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x00521f80,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x00521ff8,3,plain-only,1,1,1,0,0,0,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
+0x00521ff8,1,plain-only,1,1,1,0,0,0,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
 0x00522110,31,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x00522190,37,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
+0x00522190,36,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x00522e88,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x00522f90,30,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
-0x00523008,3,plain-only,1,1,1,0,0,1,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 1 ret / 0 jmp
+0x00523008,1,plain-only,1,1,1,0,0,1,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 1 ret / 0 jmp
 0x00523340,9,plain-only,1,1,1,0,0,1,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 1 ret / 0 jmp
 0x00523394,9,plain-only,1,1,1,0,0,1,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 1 ret / 0 jmp
-0x0052352c,16,plain-only,1,1,1,0,0,0,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
+0x0052352c,15,plain-only,1,1,1,0,0,0,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
 0x0052b45c,1,at-least,2,0,1,1,0,2,0,0,0,1,1,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x0052b460,50,named,2,0,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 0 install one table only; tails 2 ret / 0 jmp"
 0x0052bbf8,65,plain-only,1,1,1,0,0,0,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
@@ -609,7 +609,7 @@ table_va,slots,population,installers,self_installs,ctor_shaped,dtor_shaped,uncla
 0x0052cb00,36,named,2,2,1,1,0,2,0,0,0,1,1,2,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x0052cc50,22,plain-only,1,1,0,1,0,0,0,0,0,0,0,0,dtor-only,1 bod: dtor 1; 1 install one table only; tails 0 ret / 0 jmp
 0x0052cefc,7,plain-only,4,4,2,2,0,2,0,0,0,0,0,0,ctor-and-dtor,"4 bodies: ctor 2, dtor 2; 4 install one table only; tails 2 ret / 0 jmp"
-0x0052d1a0,23,plain-only,1,1,0,1,0,0,0,0,0,0,0,0,dtor-only,1 bod: dtor 1; 1 install one table only; tails 0 ret / 0 jmp
+0x0052d1a0,22,plain-only,1,1,0,1,0,0,0,0,0,0,0,0,dtor-only,1 bod: dtor 1; 1 install one table only; tails 0 ret / 0 jmp
 0x0052d3e8,25,plain-only,2,2,1,1,0,2,0,0,0,0,0,0,ctor-and-dtor,"2 bodies: ctor 1, dtor 1; 2 install one table only; tails 2 ret / 0 jmp"
 0x0052d498,22,plain-only,2,1,0,1,1,1,0,1,0,0,0,0,dtor-only,"2 bodies: dtor 1, unclassified 1; 1 install one table only; tails 1 ret / 0 jmp"
 0x0052d528,22,plain-only,1,1,1,0,0,0,0,0,0,0,0,0,installed-by-ctor,1 bod: ctor 1; 1 install one table only; tails 0 ret / 0 jmp
