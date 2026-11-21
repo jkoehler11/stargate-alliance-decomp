@@ -5936,3 +5936,22 @@ slots hold **342 bodies outside the function map over 257 distinct gap heads -- 
 44 shared by two or more -- 42 of the shared at the same slot index and 2 across indices -- and those are U40's slot-named bodies, not the 399 that
 nothing names. What is left of this entry: the 56 mapped representatives' reads, the extent rule, the 399
 bodies, and a name for an interface from a member field or a caller rather than from its own slots.
+
+**Answered since (2026-11-21, who builds the interface object).** The two channels this entry left -- a
+member field that holds the object and a caller whose class is known -- are one join, and
+`tools/class-interface-installers.py` reads it from the store sites the provenance census already measured
+(`inventory/class_interface_installers.csv`, 232 rows and a census). **36 of the 232 tables are stored inside
+a class constructor** -- and **35 of those are the member tables the field already names**, so that channel
+is the member-field channel read from the code side and names nothing new; the one anonymous table it
+reaches is `0x0051d830` (9 slots) in StaticMesh's constructor. **19 more are stored by a body a constructor
+calls, 11 of them anonymous and 7 owed representatives**, and the `ecx` the constructor loads before the
+call places the object: `this+0x4754` for `0x0052bbf8` in D3DRenderDevice, `+0x184` in VertMesh, `+0x7c` in
+SkeletalMeshInstance, `+0x34` in StaticMesh/StaticMeshInstance, `+0x94`/`+0xdc`/`+0xf8` in
+StaticMesh/TerrainSector, and a nested member for `0x0051ffd8` (Texture) and `0x00520248` (Cubemap). **That
+names a class and an offset, not the interface**: the field gets a name in the `Linker_member_0xb8`
+convention and the interface at it stays anonymous. **172 tables stay `unnamed-holder` (149 of them
+anonymous) because the store body and every caller install no class table**, and 4 anonymous tables have no
+store site in the provenance census at all. The remaining residue of this entry: an interface's own *name*,
+the 4 no-site tables' locator extent, the 26 gap-head representatives' add, and the 2 shared heads whose two
+slot indices differ.
+

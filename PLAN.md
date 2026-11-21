@@ -16271,6 +16271,47 @@ sequence.
 - **Not in this bundle.** The extents themselves (the class-table census's rule re-read against the 14 rungs),
   the 89 representative body reads, and the 18's class-record name field.
 
+### Execution notes (2026-11-21, who builds an interface object: 35 of 36 stored by a class ctor are the member tables, and 11 anonymous ones are members seen through a helper)
+
+- **The per-body read's remaining naming channels are the installer and the caller, and they are one join.**
+  `tools/class-interface-installers.py` reads the store sites `inventory/class_store_provenance.csv` already
+  measured, maps each site to its containing body with the map's own extents, and asks whether that body
+  installs a class table (`inventory/class_constructors.csv`, whose `form` column separates `ctor` from
+  `dtor`). If it does, the table is stored inside a named class; if it does not, the read goes one call out
+  to the constructor bodies that call it and records the register the constructor loads before the call.
+  **36 tables are `ctor-holder`, 19 `ctor-caller`, 1 `dtor-caller`, 172 `unnamed-holder` and 4 `no-site`.**
+- **The ctor-holder channel is the member-field channel, which is its control.** **35 of the 36 are the member
+  tables `class_member_tables.csv` already names from the field**, and the one anonymous table it reaches is
+  `0x0051d830` (9 slots) in StaticMesh's constructor -- so reading the ctor re-derives the 49 member names
+  rather than naming anything new. The 4 `no-site` rows (`0x004f70a0`, `0x005172ec`, `0x005181dc`,
+  `0x0053f7c4`, all anonymous) are the provenance census's extent rule missing a store, not four tables
+  without an installer.
+- **`vtable-slot` against `member-field` is one event read at two operands, and inlining moves 11 anonymous
+  member stores into the root population.** A helper handed `this+off` in `ecx` stores `[ecx]`, which the
+  store-field census reads as the object's own slot. The offsets are explicit: `this+0x4754` for `0x0052bbf8`
+  (65 slots, D3DRenderDevice), `+0x184` (VertMesh), `+0x7c` (SkeletalMeshInstance), `+0x34` (StaticMesh and
+  StaticMeshInstance), `+0x94`/`+0xdc`/`+0xf8` (StaticMesh and TerrainSector) -- and `0x00518104`'s three
+  offsets are the correction that an offset is not an identity. Two of the eleven (`0x0051ffd8` Texture,
+  `0x00520248` Cubemap) get a nested object in `ecx`, so their owner is that object's class, not the ctor's.
+- **The 89 representatives read one slot at a time: 944 slots, 175 mapped over 146 distinct bodies, 161 gap
+  heads over 150, 268 outside the map, 302 stubs over 26 bodies (one fills 116) and 38 purecalls.** 33 of the
+  mapped slots carry a name and **every one is a library or engine file** (`Engine_UnTex`,
+  `D3DDrv_D3DRenderInterface`, `IpDrv_InternetLink`, `Core_UnTemplate`, the UIX mangled names), which is the
+  token census's verdict reproduced at the body. **17 bodies are held by two or more representatives in 6
+  clusters**, so two anonymous interfaces can be two instantiations of one implementation.
+- **Files.** `tools/class-interface-installers.py` (`--xbe`/`-o`/`--report`/`--write-doc`/`--check-doc`/
+  `--check`), `inventory/class_interface_installers.csv` (233 rows), `inventory/class_interface_rep_bodies.csv`
+  (945 rows), `docs/systems/CLASS_REGISTRATION.md` (two new sections and their blocks),
+  `docs/UNKNOWNS.md` U40, `docs/ARTIFACTS.md`, `Makefile` (target, `.PHONY`, help, two CI lines), this note.
+- **Gates.** `make ci` green; `--check` is synthetic (the map-extent lookup at a body's last byte and in the
+  hole between two bodies, the store-site parse, the five installer verdicts including the dtor-only edge,
+  the `ecx` placement at a call, the five slot kinds, both artifact round trips) and writes nothing;
+  `--check-doc` rebuilds both blocks from the committed CSVs with no dump; both artifacts reproduce byte for
+  byte on a second run.
+- **Not in this bundle.** An interface's own *name* (a class plus an offset names the field, in the
+  `Linker_member_0xb8` convention, not the interface), the 26 gap-head representatives' add, the 2 shared
+  heads that sit at different slot indices, and `class_plain_tables.csv`'s own extent rule.
+
 ### Execution notes (2026-11-21, the 89 representative reads cost out to 56 bodies, and the call target is not a name)
 
 - **The per-body read had no size, and its first half is how many of the 89 have a body at all.**
