@@ -1,7 +1,11 @@
 # The symbol map (`symbols/xbox.map`)
 
-Status: emitted and checked. **15,447 symbols** — 14,973 functions plus 474 class tables — every one
+Status: emitted and checked. **16,848 symbols** — 16,374 functions plus 474 class tables — every one
 inside the image's own sections, and `gdb` resolves them from the assembled form. This is PLAN 4.10.
+
+The function count is not a constant: it was 14,973 when this page was written and has grown as the map's boundary
+repairs split bodies that a first pass had merged (the naming percentage moves with it — `docs/STATUS.md` carries the
+current pair). Quote the artifact, not this paragraph, when a number matters.
 
 ## What is in it
 
