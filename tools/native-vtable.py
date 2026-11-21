@@ -525,6 +525,41 @@ def table_starts(rows):
     return out
 
 
+def wide_text(v):
+    """Two printable UTF-16 characters -- a wide string's first half, not a code pointer."""
+    lo, hi = v & 0xFFFF, (v >> 16) & 0xFFFF
+    return 0x20 <= lo <= 0x7E and 0x20 <= hi <= 0x7E
+
+
+def tail_extents(xbe, tables, text):
+    """({table_va: (slots, stop)}, {table_va: run_slots}) under the tables' own tail rule.
+
+    `block_scan` counts a run of dwords inside `.text`'s *address range*, and `.rdata` holds these
+    tables in front of the build's wide-string pool: a string's first two characters
+    (`0x00330044` is `D3`) is an in-range dword, so the run keeps counting past the table's last
+    slot.  `tools/class-tables.py` ends a class table on exactly that dword, and this is the same
+    rule applied to the whole population -- a dword outside `.text`, or one that spells two
+    printable UTF-16 characters, ends the table and is kept as the row's `stop`.  `run_slots` is
+    the block scan's count, so every row carries its own before and after.
+    """
+    out, runs = {}, {}
+    lo, hi = text.va, text.va + text.vsize
+    for tva, n in sorted(tables.items()):
+        runs[tva] = n
+        k, stop = 0, None
+        while k < n:
+            try:
+                v = struct.unpack("<I", xbe.read_va(tva + 4 * k, 4))[0]
+            except (KeyError, struct.error):
+                break
+            if not (lo <= v < hi) or wide_text(v):
+                stop = v
+                break
+            k += 1
+        out[tva] = (k, stop)
+    return out, runs
+
+
 def load_function_spans(path):
     """[(address, size, name)] from the symbol map, for naming a reference's body."""
     out = []
@@ -718,11 +753,43 @@ def cmd_check():
     eq("empty slot never matches", overlap([0, 2], [1, 2]), (0, 1))
     eq("truncated to the shorter", overlap([1, 2], [1, 2, 3]), (2, 2))
 
+    # the tail rule: a wide string's first two characters end a table, the run is kept beside it
+    class Fake(object):
+        def __init__(self, vals):
+            self.vals = dict(vals)
+
+        def read_va(self, va, n):
+            if va not in self.vals:
+                raise KeyError(va)
+            return struct.pack("<I", self.vals[va])
+
+    class Sec(object):
+        va, vsize = 0x11000, 0x4080fc          # this image's `.text`, so 0x00330044 is in range
+
+    base = 0x500000
+    img = Fake({base + 4 * i: v for i, v in enumerate(
+        (0x00062650, 0x00062660, 0x00330044, 0x00062670))})
+    eq("wide-string tail", tail_extents(img, {base: 4}, Sec()), ({base: (2, 0x00330044)},
+                                                                 {base: 4}))
+    img = Fake({base + 4 * i: v for i, v in enumerate((0x00062650, 0x00062660))})
+    eq("clean run", tail_extents(img, {base: 2}, Sec()), ({base: (2, None)}, {base: 2}))
+    img = Fake({base + 4 * i: v for i, v in enumerate((0x00062650, 0x004c6b20))})
+    eq("outside .text", tail_extents(img, {base: 2}, Sec()), ({base: (1, 0x004c6b20)},
+                                                              {base: 2}))
+    img = Fake({base + 4 * i: v for i, v in enumerate((0x00062650, 0x00062658))})
+    eq("the rule is text, not alignment", tail_extents(img, {base: 2}, Sec())[0][base], (2, None))
+    img = Fake({base: 0x00062650})
+    eq("unreadable slot ends the run", tail_extents(img, {base: 3}, Sec()), ({base: (1, None)},
+                                                                            {base: 3}))
+    eq("a code pointer is not wide text", wide_text(0x00062650), False)
+    eq("a string half is", wide_text(0x00330044), True)
+
     if fails:
         for f in fails:
             print("FAIL " + f)
         return 1
-    print("ok: 12 terminator cases, 6 immediate-store cases, 19 dispatch cases, 5 overlap cases")
+    print("ok: 12 terminator cases, 6 immediate-store cases, 19 dispatch cases, 5 overlap cases, "
+          "7 tail-rule cases")
     return 0
 
 
@@ -754,6 +821,8 @@ def main():
         text = next((s for s in x.sections if s.name == ".text"), None)
         if text is None:
             raise SystemExit(".text: section not found")
+        extents, run_slots = tail_extents(x, tables, text)
+        tables = {va: extents[va][0] for va in tables}
         insns, _ = sweep(x, text)
         mapped = load_table_rows(os.path.join(here, "inventory", "xbe_class_tables.csv"))
         classes = {va: r.get("class", "") for va, r in
@@ -762,10 +831,16 @@ def main():
         reach = reach_scan(x, tables, insns, load_function_spans(args.symbols), set(mapped),
                            classes, install_census(x, next(s for s in x.sections
                                                            if s.name == ".rdata")))
+        for row in reach:
+            tva = int(row["table_va"], 16)
+            row["slots_run"] = run_slots.get(tva, row["table_slots"])
+            stop = extents.get(tva, (None, None))[1]
+            row["stop"] = "" if stop is None else f"{stop:#010x}"
         out = args.out or os.path.join(here, "inventory", "native_vtable_reach.csv")
         os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
-        fields = ["table_va", "table_slots", "mapped", "class", "refs", "installs", "loads",
-                  "lea", "pushes", "absolute", "other", "other_ops", "loads_into", "dispatch",
+        fields = ["table_va", "table_slots", "slots_run", "stop", "mapped", "class", "refs",
+                  "installs", "loads", "lea", "pushes", "absolute", "other", "other_ops",
+                  "loads_into", "dispatch",
                   "dispatch_slots", "dispatch_functions", "load_sites", "absolute_slots",
                   "absolute_sites", "install_sites", "install_bodies", "shared_classes"]
         with open(out, "w", newline="", encoding="utf-8") as fh:
@@ -803,16 +878,24 @@ def main():
         text = next((s for s in x.sections if s.name == ".text"), None)
         if text is None:
             raise SystemExit(".text: section not found")
+        extents, run_slots = tail_extents(x, tables, text)
+        tables = {va: extents[va][0] for va in tables}
         mapped = {va: int(r.get("slots") or 0) for va, r in
                   load_table_rows(os.path.join(here, "inventory", "xbe_class_tables.csv")).items()}
         classes = {va: r.get("class", "") for va, r in
                    load_table_rows(os.path.join(here, "inventory",
                                                 "xbe_class_table_names.csv")).items()}
         shared = share_scan(x, tables, mapped, classes, text, sweep(x, text)[0])
+        for row in shared:
+            tva = int(row["table_va"], 16)
+            row["slots_run"] = run_slots.get(tva, row["table_slots"])
+            stop = extents.get(tva, (None, None))[1]
+            row["stop"] = "" if stop is None else f"{stop:#010x}"
         out = args.out or os.path.join(here, "inventory", "native_vtable_shared.csv")
         with open(out, "w", newline="", encoding="utf-8") as fh:
-            w = csv.DictWriter(fh, fieldnames=["table_va", "table_slots", "best_va", "best_class",
-                                              "prefix", "matched", "best_slots", "family"])
+            w = csv.DictWriter(fh, fieldnames=["table_va", "table_slots", "slots_run", "stop",
+                                              "best_va", "best_class", "prefix", "matched",
+                                              "best_slots", "family"])
             w.writeheader()
             w.writerows(shared)
 

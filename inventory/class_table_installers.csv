@@ -7,7 +7,7 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x004c8410,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00018be0, FUN_0001a120); shared family - (0)"
 0x004c84d0,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_00018da0, FUN_0001a340); shared family - (0)"
 0x004c85b0,25,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
-0x004c8db8,26,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0001a3b0); shared family - (0)
+0x004c8db8,25,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0001a3b0); shared family - (0)
 0x004c9038,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001b770, FUN_000379b0); shared family - (0)"
 0x004c9338,1,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
 0x004c933c,2,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_0001cb70, FUN_001be140); shared family - (0)"
@@ -161,7 +161,7 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x0051d80c,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_0024e330); shared family - (0)
 0x0051d830,9,1,ctor_StaticMesh,at-least-StaticMesh,,at-least,ctor 1; stores by 1 bod (ctor_StaticMesh); shared family - (0)
 0x0051d854,2,2,ctor_StaticMesh,at-least-StaticMesh,,at-least,"ctor 1, plain 1; stores by 2 bodies (FUN_0024e4d0, ctor_StaticMesh); shared family - (0)"
-0x0051ec98,23,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
+0x0051ec98,22,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
 0x0051f6d8,5,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
 0x0051f6ec,5,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
 0x0051f700,5,1,,,,plain-only,plain 1; stores by 1 bod (Core_UnObjBas); shared family - (0)
@@ -172,11 +172,11 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x0052075c,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00283c20); shared family - (0)
 0x005207a4,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00284020); shared family - (0)
 0x0052086c,9,1,,,,plain-only,plain 1; stores by 1 bod (TrailEmitter_vt39); shared family - (0)
-0x00521ff8,3,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00295c40); shared family - (0)
-0x00523008,3,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00298000); shared family - (0)
+0x00521ff8,1,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00295c40); shared family - (0)
+0x00523008,1,1,,,,plain-only,plain 1; stores by 1 bod (FUN_00298000); shared family - (0)
 0x00523340,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002984e0); shared family - (0)
 0x00523394,9,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002a11e0); shared family - (0)
-0x0052352c,16,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002aaae0); shared family - (0)
+0x0052352c,15,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002aaae0); shared family - (0)
 0x0052b45c,1,2,ctor_D3DRenderDevice|dtor_D3DRenderDevice,at-least-D3DRenderDevice,,at-least,"ctor 2; stores by 2 bodies (ctor_D3DRenderDevice, dtor_D3DRenderDevice); shared family - (0)"
 0x0052bbf8,65,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002b9bb0); shared family - (0)
 0x0052bdb8,16,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002bf8a0); shared family - (0)
@@ -189,7 +189,7 @@ table_va,slots,installers,named_bodies,bound,family,verdict,evidence
 0x0052c780,5,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c1100); shared family - (0)
 0x0052cc50,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c3d30); shared family - (0)
 0x0052cefc,7,4,,,,plain-only,"plain 4; stores by 4 bodies (FUN_002c4e90, FUN_002c4ee0, FUN_002c6500, FUN_002c7000); shared family - (0)"
-0x0052d1a0,23,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c5180); shared family - (0)
+0x0052d1a0,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c5180); shared family - (0)
 0x0052d3e8,25,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002c60f0, FUN_002c6230); shared family - (0)"
 0x0052d498,22,2,,,,plain-only,"plain 2; stores by 2 bodies (FUN_002c6450, FUN_002c64a0); shared family - (0)"
 0x0052d528,22,1,,,,plain-only,plain 1; stores by 1 bod (FUN_002c6670); shared family - (0)

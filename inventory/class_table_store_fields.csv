@@ -9,7 +9,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004c7ac8,48,BitmapMaterial,named,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x004c7b88,30,Order,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c7c00,30,MatObject,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x004c7c78,33,CameraEffect,named,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
+0x004c7c78,32,CameraEffect,named,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x004c7d98,32,SGScreenSniperOverlay,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c7e18,32,SGScreenMenuPause,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c7e98,32,SGScreenBlur,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
@@ -20,7 +20,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004c8410,22,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c84d0,22,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c85b0,25,,plain-only,1,0,,1,0,0,,frame-only,1 store site(s): frame=1
-0x004c8db8,26,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
+0x004c8db8,25,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x004c8f28,33,MatSubAction,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c8fb0,33,SubActionCameraEffect,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c9038,22,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
@@ -34,7 +34,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004c9348,31,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c93c4,1,,plain-only,2,0,0x2c,0,0,0,,member-field,2 store site(s): member=2
 0x004c93c8,2,,plain-only,2,0,0x28,0,0,0,,member-field,2 store site(s): member=2
-0x004c93d0,56,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x004c93d0,56,Viewport,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c94b0,43,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c9560,43,XboxClient,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004c960c,1,,bounded,2,0,0x2c,0,0,0,XboxViewport,member-field,2 store site(s): member=2
@@ -103,10 +103,10 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004d0138,59,WetTexture,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004d0228,59,IceTexture,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004d0314,1,,plain-only,2,0,0x28,0,0,0,,member-field,2 store site(s): member=2
-0x004d0318,40,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x004d0318,40,NetDriver,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004d03b8,1,,bounded,3,0,0x2c,0,0,0,PackageMapLevel,member-field,3 store site(s): member=3
 0x004d03bc,2,,bounded,3,0,0x28,0,0,0,PackageMapLevel,member-field,3 store site(s): member=3
-0x004d03c8,42,,bounded,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
+0x004d03c8,42,NetConnection,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
 0x004d0470,1,,bounded,3,0,0x2c,0,0,0,TcpipConnection,member-field,3 store site(s): member=3
 0x004d0474,2,,bounded,3,0,0x28,0,0,0,TcpipConnection,member-field,3 store site(s): member=3
 0x004d0480,42,TcpipConnection,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
@@ -146,7 +146,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004d3af0,33,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004d3ba0,22,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004d40d0,22,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
-0x004d4418,43,Struct,named,5,5,,0,0,0,,vtable-slot,5 store site(s): slot=5
+0x004d4418,42,Struct,named,5,5,,0,0,0,,vtable-slot,5 store site(s): slot=5
 0x004d44c8,42,Function,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
 0x004d4570,42,State,named,5,5,,0,0,0,,vtable-slot,5 store site(s): slot=5
 0x004d4618,35,Const,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
@@ -174,7 +174,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004ddf78,30,TextBuffer,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004de008,31,Commandlet,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004de088,30,Package,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
-0x004de118,36,Enum,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
+0x004de118,35,Enum,named,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
 0x004de3c0,22,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x004de558,22,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x004de7a0,33,TextBufferFactory,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
@@ -187,7 +187,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004e14f8,53,MapProperty,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004e15d0,53,StructProperty,named,4,4,,0,0,0,,vtable-slot,4 store site(s): slot=4
 0x004e16a8,53,DelegateProperty,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x004e1ce8,32,new,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x004e1ce8,31,new,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004e24a8,123,FileLog,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004e2720,123,GameStats,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004e2978,123,SceneSubtitles,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
@@ -292,8 +292,8 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004f4878,123,Light,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f4a68,123,LevelInfo,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f4c58,30,GameProfile,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x004f4cd0,31,Manifest,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x004f6188,135,Camera,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x004f4cd0,30,Manifest,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x004f6188,134,Camera,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f6d38,30,TextToSpeechAlias,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f6dd8,127,IMusicActor,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f6ff8,30,I3DL2Listener,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
@@ -301,7 +301,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004f70a0,2,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x004f72a0,46,Sound,named,4,4,,0,0,0,,vtable-slot,4 store site(s): slot=4
 0x004f7380,46,ProceduralSound,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x004f7468,47,SoundGroup,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x004f7468,46,SoundGroup,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f7690,9,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x004f76b8,40,ParticleEmitter,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f7758,42,BeamEmitter,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
@@ -310,7 +310,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x004f9618,32,CameraOverlay,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004f9728,32,MotionBlur,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004fa110,51,Canvas,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x004fa390,37,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x004fa390,37,Channel,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004fa5a8,2,,bounded,2,0,0x64,0,0,0,ControlChannel,member-field,2 store site(s): member=2
 0x004fa5b0,37,ControlChannel,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x004fa650,37,FileChannel,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
@@ -558,7 +558,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x0051da50,123,StaticMeshActor,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0051dc40,30,StaticMeshInstance,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0051dd28,40,StaticMesh,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x0051ec98,23,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
+0x0051ec98,22,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0051f650,30,SVehicleWheel,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0051f6d8,5,,plain-only,1,0,,1,0,0,,frame-only,1 store site(s): frame=1
 0x0051f6ec,5,,plain-only,1,0,,1,0,0,,frame-only,1 store site(s): frame=1
@@ -586,15 +586,15 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x005218b0,124,DecorationList,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x00521b30,30,Spline,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x00521f80,30,StreamBase,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x00521ff8,3,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
+0x00521ff8,1,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x00522110,31,StreamInterface,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x00522190,37,StreamInteraction,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
+0x00522190,36,StreamInteraction,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x00522e88,30,Stream,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x00522f90,30,StreamTag,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
-0x00523008,3,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
+0x00523008,1,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x00523340,9,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x00523394,9,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
-0x0052352c,16,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
+0x0052352c,15,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0052b45c,1,,bounded,2,0,0x28,0,0,0,D3DRenderDevice,member-field,2 store site(s): member=2
 0x0052b460,50,D3DRenderDevice,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0052bbf8,65,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
@@ -609,7 +609,7 @@ table_va,slots,class,population,stores,vtable_slots,member_fields,frame_sites,gl
 0x0052cb00,36,HTTPDownload,named,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0052cc50,22,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0052cefc,7,,plain-only,4,4,,0,0,0,,vtable-slot,4 store site(s): slot=4
-0x0052d1a0,23,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
+0x0052d1a0,22,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1
 0x0052d3e8,25,,plain-only,3,3,,0,0,0,,vtable-slot,3 store site(s): slot=3
 0x0052d498,22,,plain-only,2,2,,0,0,0,,vtable-slot,2 store site(s): slot=2
 0x0052d528,22,,plain-only,1,1,,0,0,0,,vtable-slot,1 store site(s): slot=1

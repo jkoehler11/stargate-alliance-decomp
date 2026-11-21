@@ -5,11 +5,11 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004c78b8,plain-only,dtor-only,1,,1,8,8,0,,0/1,AudioSubsystem|Input|new,dtor,,,,,base-of-group,"3 caller classes (AudioSubsystem, Input, new), deepest common ancestor -"
 0x004c78c0,plain-only,dtor-only,31,,1,8,8,0,,0/1,AudioSubsystem|Input|new,dtor,,,,,base-of-group,"3 caller classes (AudioSubsystem, Input, new), deepest common ancestor -"
 0x004c7958,named,ctor-and-dtor,46,Material,2,37,37,0,,0/2,Combiner|Modifier|MultiPassMaterial|PSAdditiveDistortion|PSBackBufferEffect|PSBlendedDistortionMaterial,ctor+dtor,Material,0x004c7958,,class,control-class,"35 caller class(es), dca Material"
-0x004c7a10,named,dtor-only,46,RenderedMaterial,1,10,10,0,,0/1,ConstantMaterial|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|Shader|TerrainMaterial,dtor,,,,other,control-other,"8 caller class(es), dca -"
-0x004c7ac8,named,dtor-only,48,BitmapMaterial,1,5,5,0,,0/1,ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial|Texture,dtor,,,,other,control-other,"4 caller class(es), dca -"
+0x004c7a10,named,dtor-only,46,RenderedMaterial,1,10,10,0,,0/1,ConstantMaterial|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|Shader|TerrainMaterial,dtor,RenderedMaterial,0x004c7a10,,class,control-class,"8 caller class(es), dca RenderedMaterial"
+0x004c7ac8,named,dtor-only,48,BitmapMaterial,1,5,5,0,,0/1,ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial|Texture,dtor,BitmapMaterial,0x004c7ac8,,class,control-class,"4 caller class(es), dca BitmapMaterial"
 0x004c7b88,named,ctor-and-dtor,30,Order,2,2,2,0,,0/2,SGOrder,dtor,SGOrder,0x004cc2c0,,descendant,control-descendant,"1 caller class(es), dca SGOrder"
 0x004c7c00,named,ctor-and-dtor,30,MatObject,2,3,3,0,,0/2,MatAction|MatSubAction,dtor,MatObject,0x004c7c00,,class,control-class,"2 caller class(es), dca MatObject"
-0x004c7c78,named,dtor-only,33,CameraEffect,1,11,11,0,,0/1,CameraOverlay|MotionBlur|SGScreenBlur|SGScreenDOF|SGScreenEmissive|SGScreenEmissiveWithBloom,dtor,CameraEffect,0x004c7c78,,class,control-class,"10 caller class(es), dca CameraEffect"
+0x004c7c78,named,dtor-only,32,CameraEffect,1,11,11,0,,0/1,CameraOverlay|MotionBlur|SGScreenBlur|SGScreenDOF|SGScreenEmissive|SGScreenEmissiveWithBloom,dtor,CameraEffect,0x004c7c78,,class,control-class,"10 caller class(es), dca CameraEffect"
 0x004c7d98,named,ctor-and-dtor,32,SGScreenSniperOverlay,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenSniperOverlay_vt3
 0x004c7e18,named,ctor-and-dtor,32,SGScreenMenuPause,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenMenuPause_vt3
 0x004c7e98,named,ctor-and-dtor,32,SGScreenBlur,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenBlur_vt3
@@ -20,7 +20,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004c8410,plain-only,dtor-only,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001a0f0, FUN_0001d290"
 0x004c84d0,plain-only,ctor-and-dtor,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001a310, FUN_0001d290"
 0x004c85b0,plain-only,unclassified,25,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
-0x004c8db8,plain-only,installed-by-ctor,26,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers Core_UnObjBas
+0x004c8db8,plain-only,installed-by-ctor,25,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers Core_UnObjBas
 0x004c8f28,named,ctor-and-dtor,33,MatSubAction,2,12,12,0,,0/2,SubActionCameraEffect|SubActionCameraShake|SubActionFOV|SubActionFade|SubActionGameSpeed|SubActionOrientation,dtor,MatSubAction,0x004c8f28,,class,control-class,"11 caller class(es), dca MatSubAction"
 0x004c8fb0,named,ctor-and-dtor,33,SubActionCameraEffect,2,2,2,0,,0/2,SubActionDepthOfField,dtor,SubActionDepthOfField,0x004c9270,,descendant,control-descendant,"1 caller class(es), dca SubActionDepthOfField"
 0x004c9038,plain-only,installed-by-ctor,22,,2,7,7,0,,0/2,,,,,,,callers-unnamed,"callers Engine_UnConn, FUN_0001cf20, FUN_000eaa50"
@@ -34,7 +34,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004c9348,plain-only,ctor-and-dtor,31,,2,6,6,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001cbe0, FUN_0001cc10, FUN_00025ff0"
 0x004c93c4,plain-only,ctor-and-dtor,1,,2,3,3,0,,0/2,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
 0x004c93c8,plain-only,ctor-and-dtor,2,,2,3,3,0,,0/2,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
-0x004c93d0,plain-only,ctor-and-dtor,56,,2,3,3,0,,0/2,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
+0x004c93d0,named,ctor-and-dtor,56,Viewport,2,3,3,0,,0/2,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,other,control-other,"1 caller class(es), dca XboxViewport"
 0x004c94b0,plain-only,ctor-and-dtor,43,,2,3,3,0,,0/2,XboxClient,ctor+dtor,XboxClient,0x004c9560,,,second-table,"its only caller class is XboxClient, whose own table is 0x004c9560"
 0x004c9560,named,ctor-and-dtor,43,XboxClient,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers XboxClient_vt3
 0x004c960c,at-least,ctor-and-dtor,1,,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers XboxViewport_vt3
@@ -94,19 +94,19 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004cf548,named,ctor-and-dtor,133,TeltakBot,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers TeltakBot_vt3
 0x004cf760,named,ctor-and-dtor,133,DeathGliderBot,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers DeathGliderBot_vt3
 0x004cf978,named,ctor-and-dtor,133,AlkeshBomberBot,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers AlkeshBomberBot_vt3
-0x004cfba0,named,ctor-and-dtor,58,Texture,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x004cfc88,named,ctor-and-dtor,59,FractalTexture,4,4,4,0,,1/4,FluidTexture|WaveTexture|WetTexture,ctor,WaterTexture,0x004cfe68,,descendant,control-descendant,"3 caller class(es), dca WaterTexture"
-0x004cfd78,named,ctor-and-dtor,59,FireTexture,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x004cfba0,named,ctor-and-dtor,58,Texture,2,14,14,0,,0/2,BackBufferTexture|Cubemap|FireTexture|FractalTexture|IceTexture|MovieTexture,ctor+dtor,Texture,0x004cfba0,,class,control-class,"7 caller class(es), dca Texture"
+0x004cfc88,named,ctor-and-dtor,59,FractalTexture,5,7,7,0,,1/5,FireTexture|FluidTexture|IceTexture|WaveTexture|WetTexture,ctor+dtor,FractalTexture,0x004cfc88,,class,control-class,"5 caller class(es), dca FractalTexture"
+0x004cfd78,named,ctor-and-dtor,59,FireTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FireTexture_vt3
 0x004cfe68,named,ctor-and-dtor,59,WaterTexture,2,7,7,0,,0/2,FluidTexture|WaveTexture|WetTexture,ctor+dtor,WaterTexture,0x004cfe68,,class,control-class,"3 caller class(es), dca WaterTexture"
 0x004cff58,named,ctor-and-dtor,59,WaveTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers WaveTexture_vt3
 0x004d0048,named,ctor-and-dtor,59,FluidTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FluidTexture_vt3
 0x004d0138,named,ctor-and-dtor,59,WetTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers WetTexture_vt3
-0x004d0228,named,ctor-and-dtor,59,IceTexture,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x004d0228,named,ctor-and-dtor,59,IceTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers IceTexture_vt3
 0x004d0314,plain-only,ctor-and-dtor,1,,2,7,7,0,,0/2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecDriver, TcpNetDriver, TcpNetDriverXbox), deepest common ancestor -"
-0x004d0318,plain-only,ctor-and-dtor,40,,2,7,7,0,,0/2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecDriver, TcpNetDriver, TcpNetDriverXbox), deepest common ancestor -"
+0x004d0318,named,ctor-and-dtor,40,NetDriver,2,7,7,0,,0/2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,ctor+dtor,,,,other,control-other,"3 caller class(es), dca -"
 0x004d03b8,at-least,ctor-and-dtor,1,,3,10,10,0,,0/3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
 0x004d03bc,at-least,ctor-and-dtor,2,,3,10,10,0,,0/3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
-0x004d03c8,at-least,ctor-and-dtor,42,,3,10,10,0,,0/3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
+0x004d03c8,named,ctor-and-dtor,42,NetConnection,3,10,10,0,,0/3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,other,control-other,"3 caller class(es), dca -"
 0x004d0470,at-least,ctor-and-dtor,1,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
 0x004d0474,at-least,ctor-and-dtor,2,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
 0x004d0480,named,ctor-and-dtor,42,TcpipConnection,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
@@ -146,7 +146,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004d3af0,plain-only,ctor-and-dtor,33,,2,3,3,0,,0/2,TextBufferFactory,ctor+dtor,TextBufferFactory,0x004de7a0,,,second-table,"its only caller class is TextBufferFactory, whose own table is 0x004de7a0"
 0x004d3ba0,plain-only,installed-by-ctor,22,,2,3,3,0,,0/2,,,,,,,callers-unnamed,"callers FUN_000eab70, FUN_0010d370, FUN_0010f390"
 0x004d40d0,plain-only,dtor-only,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0003cd70
-0x004d4418,named,ctor-and-dtor,43,Struct,4,6,10,4,0x0003a5d0 0x0003a700 0x0003c3d0 0x0003c430,1/4,Function|State,dtor,Struct,0x004d4418,,class,control-class,"2 caller class(es), dca Struct"
+0x004d4418,named,ctor-and-dtor,42,Struct,4,6,10,4,0x0003a5d0 0x0003a700 0x0003c3d0 0x0003c430,1/4,Function|State,dtor,Struct,0x004d4418,,class,control-class,"2 caller class(es), dca Struct"
 0x004d44c8,named,ctor-and-dtor,42,Function,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0003d5d0
 0x004d4570,named,ctor-and-dtor,42,State,3,3,3,0,,0/3,Class,dtor,Class,0x004d4870,,descendant,control-descendant,"1 caller class(es), dca Class"
 0x004d4618,named,ctor-and-dtor,35,Const,3,1,1,0,,1/3,,,,,,,callers-unnamed,callers FUN_0003d710
@@ -162,7 +162,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004daa48,at-least,ctor-and-dtor,22,,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnObj, FUN_00053be0"
 0x004daaa0,named,ctor-and-dtor,32,LinkerLoadGame,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnObj, FUN_00053be0"
 0x004dd250,plain-only,installed-by-ctor,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00070cb0
-0x004dd2a8,named,ctor-and-dtor,30,Object,2,1,3,2,0x00038d30 0x0003a150,0/2,,,,,,,callers-unnamed,callers FUN_0003a5f0
+0x004dd2a8,named,ctor-and-dtor,30,Object,3,365,368,3,0x00038d30 0x0003a150,0/3,ACTION_TriggerEvent|ACTION_WaitForEvent|AIController|AIMarker|AIMsgManager|AIScript,ctor,,,,other,control-other,"345 caller class(es), dca -"
 0x004dd488,plain-only,installed-by-ctor,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00070cb0
 0x004dd4e0,plain-only,installed-by-ctor,22,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_00070cb0"
 0x004dd538,plain-only,unclassified,22,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
@@ -174,7 +174,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004ddf78,named,ctor-and-dtor,30,TextBuffer,2,1,3,2,0x00075820,0/2,,,,,,,callers-unnamed,callers FUN_00075840
 0x004de008,named,ctor-and-dtor,31,Commandlet,2,13,13,0,,0/2,CompressCommandlet|DecompressCommandlet|ExportCacheCommandlet|MasterMD5Commandlet|ServerCommandlet|UModUnpackCommandlet,ctor+dtor,Commandlet,0x004de008,,class,control-class,"6 caller class(es), dca Commandlet"
 0x004de088,named,ctor-and-dtor,30,Package,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnMisc, FUN_000755b0"
-0x004de118,named,ctor-and-dtor,36,Enum,3,1,2,1,0x000fd030,0/3,,,,,,,callers-unnamed,callers FUN_00075900
+0x004de118,named,ctor-and-dtor,35,Enum,3,1,2,1,0x000fd030,0/3,,,,,,,callers-unnamed,callers FUN_00075900
 0x004de3c0,plain-only,installed-by-ctor,22,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
 0x004de558,plain-only,installed-by-ctor,22,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
 0x004de7a0,named,ctor-and-dtor,33,TextBufferFactory,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00076e10
@@ -187,7 +187,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004e14f8,named,ctor-and-dtor,53,MapProperty,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0007de00
 0x004e15d0,named,ctor-and-dtor,53,StructProperty,4,10,14,0,,0/4,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnObj, Engine_UnLevel"
 0x004e16a8,named,ctor-and-dtor,53,DelegateProperty,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0007df60
-0x004e1ce8,named,ctor-and-dtor,32,new,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0007f5a0, FUN_0007ff70"
+0x004e1ce8,named,ctor-and-dtor,31,new,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0007f5a0, FUN_0007ff70"
 0x004e24a8,named,ctor-and-dtor,123,FileLog,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00080a20
 0x004e2720,named,ctor-and-dtor,123,GameStats,2,2,2,0,,0/2,MasterServerGameStats,dtor,MasterServerGameStats,0x0052ef78,,descendant,control-descendant,"1 caller class(es), dca MasterServerGameStats"
 0x004e2978,named,ctor-and-dtor,123,SceneSubtitles,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00081320
@@ -292,16 +292,16 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004f4878,named,ctor-and-dtor,123,Light,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfe70
 0x004f4a68,named,ctor-and-dtor,123,LevelInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0120
 0x004f4c58,named,ctor-and-dtor,30,GameProfile,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0700
-0x004f4cd0,named,ctor-and-dtor,31,Manifest,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0840
-0x004f6188,named,ctor-and-dtor,135,Camera,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0b80
+0x004f4cd0,named,ctor-and-dtor,30,Manifest,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0840
+0x004f6188,named,ctor-and-dtor,134,Camera,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0b80
 0x004f6d38,named,ctor-and-dtor,30,TextToSpeechAlias,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0ed0
 0x004f6dd8,named,ctor-and-dtor,127,IMusicActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e1020
 0x004f6ff8,named,ctor-and-dtor,30,I3DL2Listener,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e1180
-0x004f7070,plain-only,unclassified,12,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x004f7070,plain-only,unclassified,12,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
 0x004f70a0,no-store,no-body,2,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
 0x004f72a0,named,ctor-and-dtor,46,Sound,4,8,8,0,,0/4,ProceduralSound|SoundGroup,ctor+dtor,Sound,0x004f72a0,,class,control-class,"2 caller class(es), dca Sound"
 0x004f7380,named,ctor-and-dtor,46,ProceduralSound,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e6300
-0x004f7468,named,ctor-and-dtor,47,SoundGroup,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e63f0
+0x004f7468,named,ctor-and-dtor,46,SoundGroup,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e63f0
 0x004f7690,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers BeamEmitter_vt39
 0x004f76b8,named,ctor-and-dtor,40,ParticleEmitter,2,6,6,0,,0/2,BeamEmitter|MeshEmitter|SparkEmitter|SpriteEmitter|TrailEmitter,dtor,ParticleEmitter,0x004f76b8,,class,control-class,"5 caller class(es), dca ParticleEmitter"
 0x004f7758,named,ctor-and-dtor,42,BeamEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000ea870
@@ -310,7 +310,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x004f9618,named,ctor-and-dtor,32,CameraOverlay,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000fbb40
 0x004f9728,named,ctor-and-dtor,32,MotionBlur,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000fcab0
 0x004fa110,named,ctor-and-dtor,51,Canvas,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00106eb0
-0x004fa390,plain-only,ctor-and-dtor,37,,2,5,5,0,,1/2,ActorChannel|ControlChannel|FileChannel|VoiceChannel,dtor,,,,,base-of-group,"4 caller classes (ActorChannel, ControlChannel, FileChannel, VoiceChannel), deepest common ancestor -"
+0x004fa390,named,ctor-and-dtor,37,Channel,2,5,5,0,,1/2,ActorChannel|ControlChannel|FileChannel|VoiceChannel,dtor,,,,other,control-other,"4 caller class(es), dca -"
 0x004fa5a8,at-least,ctor-and-dtor,2,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010ce50
 0x004fa5b0,named,ctor-and-dtor,37,ControlChannel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010ce50
 0x004fa650,named,ctor-and-dtor,37,FileChannel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010cee0
@@ -545,10 +545,10 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x0051c310,named,ctor-and-dtor,45,SkeletalMesh,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0023d900
 0x0051d238,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers SparkEmitter_vt39
 0x0051d260,named,ctor-and-dtor,40,SparkEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00245540
-0x0051d300,plain-only,installed-by-ctor,9,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0051d300,plain-only,installed-by-ctor,9,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
 0x0051d37c,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers SpriteEmitter_vt39
 0x0051d3a0,named,ctor-and-dtor,41,SpriteEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00247ed0
-0x0051d444,plain-only,unclassified,9,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0051d444,plain-only,unclassified,9,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
 0x0051d7c4,plain-only,installed-by-ctor,9,,1,2,2,0,,0/1,StaticMesh,ctor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
 0x0051d7e8,plain-only,installed-by-ctor,9,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0024a150, FUN_0024efb0"
 0x0051d80c,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,StaticMesh,ctor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
@@ -558,7 +558,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x0051da50,named,ctor-and-dtor,123,StaticMeshActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0024e9d0
 0x0051dc40,named,ctor-and-dtor,30,StaticMeshInstance,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0024bc30, FUN_0024eea0"
 0x0051dd28,named,ctor-and-dtor,40,StaticMesh,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0024f490, FUN_00263650"
-0x0051ec98,plain-only,installed-by-ctor,23,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x0051ec98,plain-only,installed-by-ctor,22,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
 0x0051f650,named,ctor-and-dtor,30,SVehicleWheel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00263ab0
 0x0051f6d8,plain-only,unclassified,5,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
 0x0051f6ec,plain-only,unclassified,5,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
@@ -576,7 +576,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x0052075c,plain-only,installed-by-ctor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers TrailEmitter_vt39
 0x005207a4,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers TrailEmitter_vt39
 0x005207c8,named,ctor-and-dtor,41,TrailEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00284180
-0x0052086c,plain-only,unclassified,9,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0052086c,plain-only,unclassified,9,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
 0x00520ca0,named,ctor-and-dtor,92,VertMeshInstance,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028f130
 0x00520fd8,named,ctor-and-dtor,45,VertMesh,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028f2f0
 0x005210a8,named,ctor-and-dtor,123,PlayerChatManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028fac0
@@ -586,15 +586,15 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x005218b0,named,ctor-and-dtor,124,DecorationList,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00290b30
 0x00521b30,named,ctor-and-dtor,30,Spline,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00290dd0
 0x00521f80,named,ctor-and-dtor,30,StreamBase,2,4,4,0,,0/2,Stream|StreamInterface|StreamTag,dtor,StreamBase,0x00521f80,,class,control-class,"3 caller class(es), dca StreamBase"
-0x00521ff8,plain-only,installed-by-ctor,3,,1,0,1,1,0x002952d0,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x002953a6, every one inside a body the symbol map does not cover; 0x002952d0 is a body the gap census decoded"
+0x00521ff8,plain-only,installed-by-ctor,1,,1,0,1,1,0x002952d0,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x002953a6, every one inside a body the symbol map does not cover; 0x002952d0 is a body the gap census decoded"
 0x00522110,named,ctor-and-dtor,31,StreamInterface,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00295ea0
-0x00522190,named,ctor-and-dtor,37,StreamInteraction,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00295f50
+0x00522190,named,ctor-and-dtor,36,StreamInteraction,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00295f50
 0x00522e88,named,ctor-and-dtor,30,Stream,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00297980
 0x00522f90,named,ctor-and-dtor,30,StreamTag,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00297ee0
-0x00523008,plain-only,installed-by-ctor,3,,1,0,1,1,0x002952d0,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00295351, every one inside a body the symbol map does not cover; 0x002952d0 is a body the gap census decoded"
+0x00523008,plain-only,installed-by-ctor,1,,1,0,1,1,0x002952d0,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00295351, every one inside a body the symbol map does not cover; 0x002952d0 is a body the gap census decoded"
 0x00523340,plain-only,installed-by-ctor,9,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00417a35, every one inside a body the symbol map does not cover"
 0x00523394,plain-only,installed-by-ctor,9,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00417a55, every one inside a body the symbol map does not cover"
-0x0052352c,plain-only,installed-by-ctor,16,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers FUN_002a5d40
+0x0052352c,plain-only,installed-by-ctor,15,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers FUN_002a5d40
 0x0052b45c,at-least,ctor-and-dtor,1,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002b4eb0
 0x0052b460,named,ctor-and-dtor,50,D3DRenderDevice,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002b4eb0
 0x0052bbf8,plain-only,installed-by-ctor,65,,1,1,1,0,,0/1,D3DRenderDevice,ctor,D3DRenderDevice,0x0052b460,,,second-table,"its only caller class is D3DRenderDevice, whose own table is 0x0052b460"
@@ -609,7 +609,7 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x0052cb00,named,ctor-and-dtor,36,HTTPDownload,2,1,1,0,,1/2,,,,,,,callers-unnamed,callers FUN_002c3c30
 0x0052cc50,plain-only,dtor-only,22,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002c6450, FUN_002c6e90"
 0x0052cefc,plain-only,ctor-and-dtor,7,,4,4,4,0,,0/4,,,,,,,callers-unnamed,"callers FUN_002cbc80, FUN_002ccd60, FUN_002ccdb0"
-0x0052d1a0,plain-only,dtor-only,23,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002cbe70, FUN_002cd7c0"
+0x0052d1a0,plain-only,dtor-only,22,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002cbe70, FUN_002cd7c0"
 0x0052d3e8,plain-only,ctor-and-dtor,25,,2,5,5,0,,0/2,,,,,,,callers-unnamed,"callers FUN_002c72e0, FUN_002c83b0, FUN_002c8900"
 0x0052d498,plain-only,dtor-only,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_002c6ed0, FUN_002c7310"
 0x0052d528,plain-only,installed-by-ctor,22,,1,5,5,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002c91c0, FUN_002cbcf0, FUN_002cd2e0"
@@ -695,31 +695,31 @@ table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_
 0x0053d80c,plain-only,installed-by-ctor,4,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers FUN_00327ac0
 0x0053e3dc,plain-only,ctor-and-dtor,4,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0032a910, XboxLiveManager_StartStatsQuery"
 0x0053ec54,plain-only,ctor-and-dtor,4,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0032adb0, XboxLiveManager_StartStatsLadderRead"
-0x0053f6d8,plain-only,installed-by-ctor,5,,2,0,0,0,,0/2,,,,,,,no-call,no `E8` in .text targets its 2 installer body(ies)
-0x0053f6ec,plain-only,dtor-only,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f700,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f718,plain-only,ctor-and-dtor,21,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
-0x0053f770,plain-only,dtor-only,21,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f6d8,plain-only,installed-by-ctor,5,,7,4,4,0,,0/7,,,,,,,callers-unnamed,"callers ??1CPlayersScreen@UIXNamespace@@UAE@XZ, ??_GCFriendsScreen@UIXNamespace@@UAEPAXI@Z, ??_GCPlayersScreen@UIXNamespace@@UAEPAXI@Z"
+0x0053f6ec,plain-only,dtor-only,5,,3,8,8,0,,0/3,,,,,,,callers-unnamed,"callers ??0CFriendsScreen@UIXNamespace@@QAE@KKU_XUID@@H@Z, ??0CPlayersContextScreen@CPlayersScreen@UIXNamespace@@QAE@K@Z, ??0CVoiceMailScreen@UIXNamespace@@QAE@XZ"
+0x0053f700,plain-only,installed-by-ctor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers ?CreateNotificationScreen@CAlertFeature@UIXNamespace@@QAEJXZ
+0x0053f718,plain-only,ctor-and-dtor,21,,3,0,1,1,,0/3,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00418c4a, every one inside a body the symbol map does not cover"
+0x0053f770,plain-only,dtor-only,21,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers ?CreateEngine@CLiveEngine@UIXNamespace@@QAEJPBDK@Z
 0x0053f7c4,no-store,no-body,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f7f0,plain-only,dtor-only,6,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
-0x0053f808,plain-only,dtor-only,21,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
-0x0053f85c,plain-only,ctor-and-dtor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00332e57
-0x0053f874,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f888,plain-only,dtor-only,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f8a0,plain-only,dtor-only,21,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f8f4,plain-only,ctor-and-dtor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f90c,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f920,plain-only,ctor-and-dtor,21,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_003374ee
+0x0053f7f0,plain-only,dtor-only,6,,3,1,2,1,,0/3,,,,,,,callers-unnamed,callers FUN_00332f37
+0x0053f808,plain-only,dtor-only,21,,3,1,2,1,,0/3,,,,,,,callers-unnamed,callers FUN_00332f37
+0x0053f85c,plain-only,ctor-and-dtor,5,,2,1,2,1,0x00332eed,0/2,,,,,,,callers-unnamed,callers FUN_00332e57
+0x0053f874,plain-only,installed-by-ctor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers ??0CPlayersScreen@UIXNamespace@@QAE@KKAAVCArray@1@0AAHHKKPAUITitlePlayersListItem@@PAVCVoiceMailMsg@1@PAEK@Z
+0x0053f888,plain-only,dtor-only,5,,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers FUN_003351ee
+0x0053f8a0,plain-only,dtor-only,21,,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers FUN_003351ee
+0x0053f8f4,plain-only,ctor-and-dtor,5,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers ??_GCPlayersScreen@UIXNamespace@@UAEPAXI@Z, ?ActivateFeature@CPlayersFeature@UIXNamespace@@UAGJPBX@Z"
+0x0053f90c,plain-only,installed-by-ctor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers ?ActivateFeature@CFriendsFeature@UIXNamespace@@UAGJPBX@Z
+0x0053f920,plain-only,ctor-and-dtor,21,,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers FUN_003374ee
 0x0053f978,plain-only,unclassified,1,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0033858d
-0x0053f97c,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f990,plain-only,installed-by-ctor,1,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f998,plain-only,ctor-and-dtor,21,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0033858d
-0x0053f9ec,plain-only,ctor-and-dtor,15,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00540464,plain-only,ctor-and-dtor,8,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00540484,plain-only,ctor-and-dtor,14,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x005404bc,plain-only,installed-by-ctor,14,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x005404f4,plain-only,dtor-only,11,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00540520,plain-only,installed-by-ctor,11,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f97c,plain-only,installed-by-ctor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers ?ActivateFeature@CLogonFeature@UIXNamespace@@UAGJPBX@Z
+0x0053f990,plain-only,installed-by-ctor,1,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers ??0CLogonFeature@UIXNamespace@@QAE@XZ
+0x0053f998,plain-only,ctor-and-dtor,21,,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers FUN_0033858d
+0x0053f9ec,plain-only,ctor-and-dtor,15,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers ??_GCUIPlugin@UIXNamespace@@QAEPAXI@Z, _UIXCreateUIPlugin@8"
+0x00540464,plain-only,ctor-and-dtor,8,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers _XVoiceQueueCreateMediaObject@8
+0x00540484,plain-only,ctor-and-dtor,14,,2,3,3,0,,1/2,,,,,,,callers-unnamed,"callers ??0COneToOneEncoder@@QAE@XZ, ??_GCEncoderXMO@@UAEPAXI@Z, ??_GCOneToOneEncoder@@UAEPAXI@Z"
+0x005404bc,plain-only,installed-by-ctor,14,,2,1,1,0,,1/2,,,,,,,callers-unnamed,callers _XVoiceCreateOneToOneEncoder@4
+0x005404f4,plain-only,dtor-only,11,,2,3,3,0,,0/2,,,,,,,callers-unnamed,"callers ??0COneToOneDecoder@@QAE@XZ, ??_GCOneToOneDecoder@@UAEPAXI@Z, FUN_00344187"
+0x00540520,plain-only,installed-by-ctor,11,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers _XVoiceCreateOneToOneDecoder@4
 0x00564da4,plain-only,dtor-only,6,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers Engine_KDynStep
 0x00564dbc,plain-only,dtor-only,9,,3,2,3,1,,0/3,,,,,,,callers-unnamed,"callers Engine_KDynStep, FUN_0038b4b0"
-0x0057534c,plain-only,ctor-and-dtor,2,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0002c2a0, FUN_003e65d8"
+0x0057534c,plain-only,ctor-and-dtor,2,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_0002c2a0, FUN_0002c3b0, FUN_003e65d8"

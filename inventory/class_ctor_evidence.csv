@@ -9,7 +9,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4c7ac8,48,named,dtor-only,BitmapMaterial,RenderedMaterial,1,,0,,,0,no,,0,,0,0x4c7a10,RenderedMaterial,named,agree,RenderedMaterial,1,nothing,,named parent; chains to RenderedMaterial at depth 1
 0x4c7b88,30,named,ctor-and-dtor,Order,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4c7c00,30,named,ctor-and-dtor,MatObject,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
-0x4c7c78,33,named,dtor-only,CameraEffect,Object,1,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,0x4dd2a8,Object,named,agree,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
+0x4c7c78,32,named,dtor-only,CameraEffect,Object,1,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,0x4dd2a8,Object,named,agree,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
 0x4c7d98,32,named,ctor-and-dtor,SGScreenSniperOverlay,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
 0x4c7e18,32,named,ctor-and-dtor,SGScreenMenuPause,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
 0x4c7e98,32,named,ctor-and-dtor,SGScreenBlur,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4c7c78,CameraEffect,named,agree,CameraEffect,1,subsystem,,1 named callee(s); named parent; chains to CameraEffect at depth 1
@@ -20,7 +20,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4c8410,22,plain-only,dtor-only,,,2,,0,,,0,no,_CloseHandle@4,1,78a4a045,2,,,none,,,0,subsystem,,1 named callee(s)
 0x4c84d0,22,plain-only,ctor-and-dtor,,,2,new,1,,,0,no,_CloseHandle@4,1,78a4a045,2,,,none,,,0,subsystem,,1 field literal(s); 1 named callee(s)
 0x4c85b0,25,plain-only,unclassified,,,1,m05c|m08|.unr|.lin,4,,,0,no,_XGetLaunchInfo@8|_XSetFileCacheSize@4|__chkstk|_wcscat|_wcsstr|thunk__wcscpy,6,52b95f49,1,,,none,,,0,subsystem,,4 field literal(s); 6 named callee(s)
-0x4c8db8,26,plain-only,installed-by-ctor,,,1,D:\|Z:\Cache|Z:\Help|Z:\Maps,9,,,0,no,_CreateDirectoryA@8|__chkstk|thunk__wcscpy,3,8a54c65f,1,,,none,,,0,subsystem,,9 field literal(s); 3 named callee(s)
+0x4c8db8,25,plain-only,installed-by-ctor,,,1,D:\|Z:\Cache|Z:\Help|Z:\Maps,9,,,0,no,_CreateDirectoryA@8|__chkstk|thunk__wcscpy,3,8a54c65f,1,,,none,,,0,subsystem,,9 field literal(s); 3 named callee(s)
 0x4c8f28,33,named,ctor-and-dtor,MatSubAction,MatObject,2,,0,,,0,no,ctor_Object|dtor_MatObject,2,9bc6dc21,1,0x4c7c00,MatObject,named,agree,MatObject,1,subsystem,,2 named callee(s); named parent; chains to MatObject at depth 1
 0x4c8fb0,33,named,ctor-and-dtor,SubActionCameraEffect,MatSubAction,2,,0,,,0,no,ctor_Object|dtor_MatSubAction,2,ad5ef558,11,0x4c8f28,MatSubAction,named,agree,MatSubAction,1,subsystem,,2 named callee(s); named parent; chains to MatSubAction at depth 1
 0x4c9038,22,plain-only,installed-by-ctor,,,2,,0,,,0,no,,0,,0,0x4c7860,,unnamed,,,0,nothing,,unnamed parent
@@ -34,7 +34,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4c9348,31,plain-only,ctor-and-dtor,,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,,,none,,,0,subsystem,,3 named callee(s)
 0x4c93c4,1,plain-only,ctor-and-dtor,,,2,Engine|ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,3,ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,Engine,1,no,Core_UnObj|Core_UnTemplate|Engine_UnCanvas|Engine_UnIn,4,7d3a9c64,3,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 4 named callee(s)
 0x4c93c8,2,plain-only,ctor-and-dtor,,,2,Engine|ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,3,ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,Engine,1,no,Core_UnObj|Core_UnTemplate|Engine_UnCanvas|Engine_UnIn,4,7d3a9c64,3,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 4 named callee(s)
-0x4c93d0,56,plain-only,ctor-and-dtor,,,2,Engine|ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,3,ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,Engine,1,no,Core_UnObj|Core_UnTemplate|Engine_UnCanvas|Engine_UnIn,4,7d3a9c64,3,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 4 named callee(s)
+0x4c93d0,56,named,ctor-and-dtor,Viewport,,2,Engine|ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,3,ini:Engine.Engine.Canvas|ini:Engine.Engine.Input,Engine,1,no,Core_UnObj|Core_UnTemplate|Engine_UnCanvas|Engine_UnIn,4,7d3a9c64,3,,,none,,,0,config-class,,an `ini:` literal names the declaring class (Engine); 1 literal(s) are class names; 3 field literal(s); 4 named callee(s)
 0x4c94b0,43,plain-only,ctor-and-dtor,,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x4c9560,43,named,ctor-and-dtor,XboxClient,,2,,0,,,0,no,,0,,0,0x4c94b0,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
 0x4c960c,1,at-least,ctor-and-dtor,,,2,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
@@ -103,10 +103,10 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4d0138,59,named,ctor-and-dtor,WetTexture,WaterTexture,2,,0,,,0,no,,0,,0,0x4cfe68,WaterTexture,named,agree,WaterTexture,1,nothing,,named parent; chains to WaterTexture at depth 1
 0x4d0228,59,named,ctor-and-dtor,IceTexture,FractalTexture,2,,0,,,0,no,ctor_Texture|dtor_FractalTexture,2,8be06d11,2,0x4cfc88,FractalTexture,named,agree,FractalTexture,1,subsystem,,2 named callee(s); named parent; chains to FractalTexture at depth 1
 0x4d0314,1,plain-only,ctor-and-dtor,,,2,Engine|Core|Role|RemoteRole,5,,,1,no,Core_UnCoreNet|Core_UnObj|Core_UnProp|Core_UnTemplate|Engine_UnActor|ctor_Object|ctor_PackageMap,7,c00dd239,2,,,none,,,0,class-literal,,1 literal(s) are class names; 5 field literal(s); 7 named callee(s)
-0x4d0318,40,plain-only,ctor-and-dtor,,,2,Engine|Core|Role|RemoteRole,5,,,1,no,Core_UnCoreNet|Core_UnObj|Core_UnProp|Core_UnTemplate|Engine_UnActor|ctor_Object|ctor_PackageMap,7,c00dd239,2,,,none,,,0,class-literal,,1 literal(s) are class names; 5 field literal(s); 7 named callee(s)
+0x4d0318,40,named,ctor-and-dtor,NetDriver,,2,Engine|Core|Role|RemoteRole,5,,,1,no,Core_UnCoreNet|Core_UnObj|Core_UnProp|Core_UnTemplate|Engine_UnActor|ctor_Object|ctor_PackageMap,7,c00dd239,2,,,none,,,0,class-literal,,1 literal(s) are class names; 5 field literal(s); 7 named callee(s)
 0x4d03b8,1,at-least,ctor-and-dtor,,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,6 field literal(s); 1 named callee(s)
 0x4d03bc,2,at-least,ctor-and-dtor,,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,6 field literal(s); 1 named callee(s)
-0x4d03c8,42,at-least,ctor-and-dtor,,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,6 field literal(s); 1 named callee(s)
+0x4d03c8,42,named,ctor-and-dtor,NetConnection,,3,PktLoss=|PktOrder=|PktDup=|PktLag=,6,,,0,no,Core_UnTemplate,1,740cc920,13,,,none,,,0,subsystem,,6 field literal(s); 1 named callee(s)
 0x4d0470,1,at-least,ctor-and-dtor,,,3,new,1,,,0,no,_inet_addr@4|_wcschr,2,a6bfeb44,3,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
 0x4d0474,2,at-least,ctor-and-dtor,,,3,new,1,,,0,no,_inet_addr@4|_wcschr,2,a6bfeb44,3,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
 0x4d0480,42,named,ctor-and-dtor,TcpipConnection,,3,new,1,,,0,no,_inet_addr@4|_wcschr,2,a6bfeb44,3,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
@@ -146,7 +146,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4d3af0,33,plain-only,ctor-and-dtor,,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4d3ba0,22,plain-only,installed-by-ctor,,,2,,0,,,0,no,,0,,0,0x4c7860,,unnamed,,,0,nothing,,unnamed parent
 0x4d40d0,22,plain-only,dtor-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
-0x4d4418,43,named,ctor-and-dtor,Struct,,4,Core,1,,,0,no,Core_UnClass|Core_UnObj|Core_UnTemplate|ctor_Object,4,f294583c,1,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 field literal(s); 4 named callee(s); named parent; chains to Object at depth 1
+0x4d4418,42,named,ctor-and-dtor,Struct,,4,Core,1,,,0,no,Core_UnClass|Core_UnObj|Core_UnTemplate|ctor_Object,4,f294583c,1,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 field literal(s); 4 named callee(s); named parent; chains to Object at depth 1
 0x4d44c8,42,named,ctor-and-dtor,Function,,2,,0,,,0,no,ctor_Object|dtor_Struct,2,6fbbe467,2,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4d4570,42,named,ctor-and-dtor,State,,3,,0,,,0,no,ctor_Object|dtor_Struct,2,6fbbe467,2,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4d4618,35,named,ctor-and-dtor,Const,,3,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
@@ -174,7 +174,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4ddf78,30,named,ctor-and-dtor,TextBuffer,,2,,0,,,0,no,Core_UnObj,1,61ccbe1f,7,,,none,,,0,subsystem,,1 named callee(s)
 0x4de008,31,named,ctor-and-dtor,Commandlet,Object,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnObj,3,7dc9ea45,1,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x4de088,30,named,ctor-and-dtor,Package,,3,CONFLICTS|NOGC|Core,3,,,0,no,Core_UnClass|Core_UnObj|Core_UnProp|Core_UnVcWin32,4,9e43b8e9,1,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 field literal(s); 4 named callee(s); named parent; chains to Object at depth 1
-0x4de118,36,named,ctor-and-dtor,Enum,,3,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x4d1468,,unnamed,parent-unnamed,Object,2,subsystem,,1 named callee(s); unnamed parent; chains to Object at depth 2
+0x4de118,35,named,ctor-and-dtor,Enum,,3,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x4d1468,,unnamed,parent-unnamed,Object,2,subsystem,,1 named callee(s); unnamed parent; chains to Object at depth 2
 0x4de3c0,22,plain-only,installed-by-ctor,,,1,Core,1,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|Core_UnObj|appAssertFailed,3,5367938e,1,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
 0x4de558,22,plain-only,installed-by-ctor,,,1,Core,1,,,0,no,Core_UnObj|Core_UnObjBas|appAssertFailed,3,ef5840f6,1,,,none,,,0,subsystem,,1 field literal(s); 3 named callee(s)
 0x4de7a0,33,named,ctor-and-dtor,TextBufferFactory,,2,,0,,,0,no,,0,,0,0x4d3af0,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
@@ -187,7 +187,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4e14f8,53,named,ctor-and-dtor,MapProperty,,2,,0,,,0,no,,0,,0,0x4d1468,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
 0x4e15d0,53,named,ctor-and-dtor,StructProperty,,4,Engine|Alias|Command|Aliases,15,,,2,no,Core_UnName|Core_UnObj|Core_UnProp|Engine_UnIn|Engine_UnInteractionMaster|Engine_UnMaterial,6,c4a1e7b1,1,0x4d1468,,unnamed,parent-unnamed,Object,2,class-literal,,2 literal(s) are class names; 15 field literal(s); 6 named callee(s); unnamed parent; chains to Object at depth 2
 0x4e16a8,53,named,ctor-and-dtor,DelegateProperty,,2,,0,,,0,no,,0,,0,0x4d1468,,unnamed,parent-unnamed,Object,2,nothing,,unnamed parent; chains to Object at depth 2
-0x4e1ce8,32,named,ctor-and-dtor,new,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4e1ce8,31,named,ctor-and-dtor,new,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4e24a8,123,named,ctor-and-dtor,FileLog,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4e2720,123,named,ctor-and-dtor,GameStats,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4e2978,123,named,ctor-and-dtor,SceneSubtitles,Info,2,,0,,,0,no,ctor_Object|dtor_Info,2,f6a4a13c,14,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
@@ -292,8 +292,8 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4f4878,123,named,ctor-and-dtor,Light,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4f4a68,123,named,ctor-and-dtor,LevelInfo,ZoneInfo,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_ZoneInfo,3,7a32d7ed,1,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x4f4c58,30,named,ctor-and-dtor,GameProfile,Object,2,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z|??_M@YGXPAXIHP6EX0@Z@Z|Core_UnObj|ctor_Object,4,83e612c9,1,0x4dd2a8,Object,named,agree,Object,1,subsystem,,4 named callee(s); named parent; chains to Object at depth 1
-0x4f4cd0,31,named,ctor-and-dtor,Manifest,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
-0x4f6188,135,named,ctor-and-dtor,Camera,PlayerController,2,,0,,,0,no,ctor_PlayerController|dtor_PlayerController,2,2f0d54b9,2,0x4d0738,PlayerController,named,agree,PlayerController,1,subsystem,,2 named callee(s); named parent; chains to PlayerController at depth 1
+0x4f4cd0,30,named,ctor-and-dtor,Manifest,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4f6188,134,named,ctor-and-dtor,Camera,PlayerController,2,,0,,,0,no,ctor_PlayerController|dtor_PlayerController,2,2f0d54b9,2,0x4d0738,PlayerController,named,agree,PlayerController,1,subsystem,,2 named callee(s); named parent; chains to PlayerController at depth 1
 0x4f6d38,30,named,ctor-and-dtor,TextToSpeechAlias,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4f6dd8,127,named,ctor-and-dtor,IMusicActor,Actor,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Actor,3,942aab36,11,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x4f6ff8,30,named,ctor-and-dtor,I3DL2Listener,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
@@ -301,7 +301,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4f70a0,2,no-store,no-body,,,0,,0,,,0,no,,0,,0,,,none,,,0,window,"dword run 0x004f6ff8+44; this address at offset 42; 3 listed table(s) in the run, 2 with an installer body; the recorded store site 0x000e1706 lies in no body of the map","dword run 0x004f6ff8+44; this address at offset 42; 3 listed table(s) in the run, 2 with an installer body; the recorded store site 0x000e1706 lies in no body of the map"
 0x4f72a0,46,named,ctor-and-dtor,Sound,Object,4,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4f7380,46,named,ctor-and-dtor,ProceduralSound,Sound,2,,0,,,0,no,ctor_Sound|dtor_Sound,2,e107486d,1,0x4f72a0,Sound,named,agree,Sound,1,subsystem,,2 named callee(s); named parent; chains to Sound at depth 1
-0x4f7468,47,named,ctor-and-dtor,SoundGroup,Sound,2,,0,,,0,no,Core_UnTemplate|ctor_Sound|dtor_Sound,3,b09d1b1d,1,0x4f72a0,Sound,named,agree,Sound,1,subsystem,,3 named callee(s); named parent; chains to Sound at depth 1
+0x4f7468,46,named,ctor-and-dtor,SoundGroup,Sound,2,,0,,,0,no,Core_UnTemplate|ctor_Sound|dtor_Sound,3,b09d1b1d,1,0x4f72a0,Sound,named,agree,Sound,1,subsystem,,3 named callee(s); named parent; chains to Sound at depth 1
 0x4f7690,9,plain-only,installed-by-ctor,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
 0x4f76b8,40,named,ctor-and-dtor,ParticleEmitter,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x4f7758,42,named,ctor-and-dtor,BeamEmitter,ParticleEmitter,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_ParticleEmitter,3,ddfcdd3a,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
@@ -310,7 +310,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x4f9618,32,named,ctor-and-dtor,CameraOverlay,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
 0x4f9728,32,named,ctor-and-dtor,MotionBlur,CameraEffect,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
 0x4fa110,51,named,ctor-and-dtor,Canvas,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
-0x4fa390,37,plain-only,ctor-and-dtor,,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x4fa390,37,named,ctor-and-dtor,Channel,,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x4fa5a8,2,at-least,ctor-and-dtor,,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
 0x4fa5b0,37,named,ctor-and-dtor,ControlChannel,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,,,none,,,0,subsystem,,1 named callee(s)
 0x4fa650,37,named,ctor-and-dtor,FileChannel,,2,,0,,,0,no,ctor_Object,1,7054b6d1,26,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,1 named callee(s); named parent; chains to Object at depth 1
@@ -558,7 +558,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x51da50,123,named,ctor-and-dtor,StaticMeshActor,Actor,2,,0,,,0,no,ctor_Object|dtor_Actor,2,d4853bc1,29,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x51dc40,30,named,ctor-and-dtor,StaticMeshInstance,,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,no-script-chain,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x51dd28,40,named,ctor-and-dtor,StaticMesh,,2,,0,,,0,no,Core_UnTemplate|ctor_Primitive|dtor_Primitive,3,3abfde25,3,0x51d854,,unnamed,parent-unnamed,,0,subsystem,,3 named callee(s); unnamed parent
-0x51ec98,23,plain-only,installed-by-ctor,,,1,Core,1,,,0,no,Core_UnObj|appAssertFailed,2,6f1d9c2a,1,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
+0x51ec98,22,plain-only,installed-by-ctor,,,1,Core,1,,,0,no,Core_UnObj|appAssertFailed,2,6f1d9c2a,1,,,none,,,0,subsystem,,1 field literal(s); 2 named callee(s)
 0x51f650,30,named,ctor-and-dtor,SVehicleWheel,Object,2,,0,,,0,no,Core_UnObj|Core_UnTemplate|ctor_Object,3,1a42050e,22,0x4dd2a8,Object,named,agree,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x51f6d8,5,plain-only,unclassified,,,1,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial,2,7406b337,3,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
 0x51f6ec,5,plain-only,unclassified,,,1,Engine,1,,,1,no,Core_UnObjBas|Engine_UnMaterial,2,7406b337,3,,,none,,,0,class-literal,,1 literal(s) are class names; 1 field literal(s); 2 named callee(s)
@@ -586,15 +586,15 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x5218b0,124,named,ctor-and-dtor,DecorationList,Keypoint,2,,0,,,0,no,Core_UnTemplate|ctor_Object|dtor_Keypoint,3,7e3ed67e,2,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,3 named callee(s); named parent; chains to Object at depth 1
 0x521b30,30,named,ctor-and-dtor,Spline,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x521f80,30,named,ctor-and-dtor,StreamBase,Object,2,,0,,,0,no,Core_UnObj|ctor_Object,2,2e0cd61f,38,0x4dd2a8,Object,named,agree,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
-0x521ff8,3,plain-only,installed-by-ctor,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x521ff8,1,plain-only,installed-by-ctor,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
 0x522110,31,named,ctor-and-dtor,StreamInterface,StreamBase,2,,0,,,0,no,ctor_Object|dtor_StreamBase,2,fa6b5549,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
-0x522190,37,named,ctor-and-dtor,StreamInteraction,Interaction,2,,0,,,0,no,ctor_Object|dtor_Interaction,2,e72e56eb,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
+0x522190,36,named,ctor-and-dtor,StreamInteraction,Interaction,2,,0,,,0,no,ctor_Object|dtor_Interaction,2,e72e56eb,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x522e88,30,named,ctor-and-dtor,Stream,StreamBase,2,,0,,,0,no,ctor_Object|dtor_StreamBase,2,fa6b5549,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
 0x522f90,30,named,ctor-and-dtor,StreamTag,StreamBase,2,,0,,,0,no,ctor_Object|dtor_StreamBase,2,fa6b5549,3,0x4dd2a8,Object,named,ancestor,Object,1,subsystem,,2 named callee(s); named parent; chains to Object at depth 1
-0x523008,3,plain-only,installed-by-ctor,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x523008,1,plain-only,installed-by-ctor,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
 0x523340,9,plain-only,installed-by-ctor,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
 0x523394,9,plain-only,installed-by-ctor,,,1,,0,,,0,no,__allmul,1,e06435d6,33,,,none,,,0,subsystem,,1 named callee(s)
-0x52352c,16,plain-only,installed-by-ctor,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52352c,15,plain-only,installed-by-ctor,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
 0x52b45c,1,at-least,ctor-and-dtor,,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,,,none,,,0,subsystem,,2 named callee(s)
 0x52b460,50,named,ctor-and-dtor,D3DRenderDevice,,2,,0,,,0,no,Core_UnTemplate|ctor_Object,2,40edbeef,18,,,none,,,0,subsystem,,2 named callee(s)
 0x52bbf8,65,plain-only,installed-by-ctor,,,1,,0,,,0,no,??_L@YGXPAXIHP6EX0@Z1@Z,1,85803bc7,1,,,none,,,0,subsystem,,1 named callee(s)
@@ -609,7 +609,7 @@ table_va,slots,population,shape,class,script_super,installers,literals,literal_c
 0x52cb00,36,named,ctor-and-dtor,HTTPDownload,,2,,0,,,0,no,Core_UnTemplate|IpDrv_UnSocket,2,65f03664,1,0x4fcfe0,,unnamed,parent-unnamed,Object,2,subsystem,,2 named callee(s); unnamed parent; chains to Object at depth 2
 0x52cc50,22,plain-only,dtor-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
 0x52cefc,7,plain-only,ctor-and-dtor,,,4,,0,,,0,no,Core_UnTemplate|IpDrv_UnSocket|_closesocket@4,3,e854c8b3,1,,,none,,,0,subsystem,,3 named callee(s)
-0x52d1a0,23,plain-only,dtor-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
+0x52d1a0,22,plain-only,dtor-only,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
 0x52d3e8,25,plain-only,ctor-and-dtor,,,2,,0,,,0,no,Core_UnTemplate|IpDrv_UnSocket|__ftol2|_closesocket@4,4,8f5b80cb,1,,,none,,,0,subsystem,,4 named callee(s)
 0x52d498,22,plain-only,dtor-only,,,2,,0,,,0,no,Core_UnTemplate,1,740cc920,13,0x52cc50,,unnamed,,,0,subsystem,,1 named callee(s); unnamed parent
 0x52d528,22,plain-only,installed-by-ctor,,,1,,0,,,0,no,,0,,0,,,none,,,0,nothing,,no literal and no named callee
