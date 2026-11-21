@@ -16996,3 +16996,40 @@ sequence.
 - **Not in this bundle.** The two names are not yet in `inventory/xbe_class_table_names.csv` (that starts the
   class-map cascade and the declarer walk), `0x0051724c`'s two bodies, the 4 linker folds, the 424
   interface-only bodies and the 807 bodies no channel names.
+
+### Execution note (2026-11-21, the naming rule works and neither channel holds still)
+
+- **What was tried.** The two names the nearest-common-ancestor census proposes were applied to
+  `inventory/xbe_class_table_names.csv` through a new `child-parent-edge` rule in
+  `tools/class-table-names.py` (a class's children are the tables whose installer calls its own, and their
+  script supers name their parent). The map went 489 -> 492 named over three rounds: `Field` (from `Const`,
+  `Enum`, `Struct`), `LevelBase` (from `Level`) and then `Player` (from `NetConnection` and `Viewport`) --
+  the last unnamed table in the image, closed by the second round.
+- **Why it is not shipped.** The artifact does not reach a fixpoint. Naming a table re-votes the channels
+  that named it: `class_table_parent_edges.csv` scores the newly named child as `agrees`,
+  `class-table-lca.py` re-scores `named-by-parent-edge` into `equal`, and `0x004fc4f0`'s parent-edge
+  proposal then collapses to empty because its two children now split (`Level` -> `LevelBase`,
+  `PendingLevel` -> `Object`, the member construction). Three rounds of the same loop read 491, 492, 491
+  named: the rule names a table and then loses it, so the map, `symbols/` and the three parent-edge
+  artifacts are reverted to this bundle's state and the rename stays the next bundle's story.
+- **Two reads had to be widened, and they are one shape.** `class-super-edges.py` writes `agrees` for a
+  table the map already names and `names-the-table` only while it does not, so a regenerated
+  `class_table_super_names.csv` dropped **11** names the map held (`Subsystem`, `Client`, `Property`,
+  `VoiceSubsystem`, `Exporter`, `Factory`, ...): the artifact could not be regenerated from its own inputs.
+  Reading `agrees` as well as `names-the-table` restores all 11; reading `class-table-lca.py`'s
+  `proposed_class` instead of its verdict is what makes the second-round `Player` proposal visible. Both
+  columns are the measurement; only the verdict is scored against the map.
+- **What the fix is.** Compute both channels against a map blanked of the tool's own output -- the
+  `unnamed_by_image` shape `class-name-pair.py` already uses -- so `agrees` and `equal` are scores a reader
+  can quote and never the source of a name. Then the `child-parent-edge` rule lands once, and the declarer
+  walk that names the bodies those three tables' slots hold follows it.
+- **What the round measured on the way.** The parent-edge channel's verdicts move with the map and not with
+  the image: regenerated against the named map, `parent-unnamed` falls 57 -> 2 and `class-outside-script`
+  rises 56 -> 109 (a child of a named class outside the script tree is no longer "parent unnamed"), which
+  is the same dependency seen from the other side. `make symbols` with the three names writes
+  `Vtbl_Player`, `Vtbl_Field` and `Vtbl_LevelBase` into `symbols/xbox.map` with a `0` size -- a class with no
+  script record has no size -- and zeroes the four rows (`Viewport`, `NetDriver`, `NetConnection`,
+  `Channel`) whose old size came from the shared default thunk's site installing `Object`'s table rather
+  than their own.
+- **Files.** This note only; the tool changes and the regenerated artifacts are not in this bundle (they are
+  kept in the run's work log). No boot, no xemu, no Ghidra.
