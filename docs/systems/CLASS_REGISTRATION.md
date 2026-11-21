@@ -2074,6 +2074,9 @@ signature. This is the fifth name channel measured shut for the interfaces -- af
 callee file, the pushed literal and the slot body's own file -- and the only one that could have answered
 from the table alone.
 
+The sixth channel is not in the image at all -- the **supplied libraries'** own symbols on the slot
+bodies -- and it is not shut: it names 12 of the 232 interface tables (the note below).
+
 **What it does not say.** A build without RTTI still has a name channel in *code that wraps the object*:
 the constructor that stores the table is in the class's own translation unit and its asserts name the file.
 That channel is the one the installers census reads, and this measurement says nothing new about it.
@@ -2085,6 +2088,98 @@ That channel is the one the installers census reads, and this measurement says n
 `--check` is synthetic (the four chain verdicts, the control row and the artifact round trip; no dump,
 writes nothing) and `--check-doc` rebuilds the block from the committed CSV with no dump. Both run in
 `make ci`.
+
+## The interface's own name is in the library, not the image (2026-11-21)
+
+Every channel above reads the **image** for a name and every one of them is shut: the assert token, the
+callee's file, the pushed literal, the slot body's own file, the RTTI locator and the ctor symbol on the
+store body (which names 3 tables, because the rest of the store bodies are `FUN_` bodies). Five of those
+six are shut because a UIX/XMO class is in no package and its code lives in a **library**: `uix.lib` and
+`xvoice.lib` are statically linked into the image, and `inventory/xdk_lib_names.csv` already holds the
+mangled symbol of every library body `tools/xdk-lib-match.py` matched. A table's slot points at a body,
+and that body's symbol names the class the method belongs to, so the slots of a table are a **vote** for
+the class that table dispatches.
+
+`tools/interface-lib-names.py` reads the vote over all 724 tables. A slot counts only if its body carries
+a library symbol, and the symbol is read as a class only where MSVC's mangling puts one there: a
+`?Method@CClass@NS@@` names `CClass`, a `??0`/`??1`/`??_G`/`??_E` names its class first, and a
+**two-token** name (`?CreateScreen@UIXNamespace@@`) is a free function whose second token is a namespace,
+so it votes nothing. The rule is `tools/xdk-call-names.py`'s: the top class must hold a **strict majority
+of the named slots over at least two of them**; a tie is `split`, and a table with a single named slot is
+`thin` rather than named, because one inherited method is not a vote.
+
+<!-- generated:interface-lib-names -->
+| population | tables | `named` | `thin` | `split` | `none` |
+|---|---:|---:|---:|---:|---:|
+| interface | 232 | 12 | 9 | 1 | 210 |
+| class (control) | 492 | 0 | 0 | 0 | 492 |
+
+**12 of the 232 interface tables carry a name the supplied libraries write, and 0 of the 492 class tables vote at all.** A vote needs a strict majority of the named slots over at least two of them, so a table split between two classes, or named by a single library symbol, is reported rather than named. The 12 named tables hold 166 of the 2519 interface slots and account for 42 of the 144 interface slots that point at a library body; only 53 of those 144 symbols carry a class -- the rest are plain C names (`XMOEncoderProcess`) or free functions at namespace scope, which vote nothing.
+
+| the table | slots | named | the class the slots name | votes | the label another channel gave it |
+|---|---:|---:|---|---|---|
+| `0x0053f6ec` | 5 | 3 | **`CPopupScreen`** | CPopupScreen=3 | `CPopupScreen` |
+| `0x0053f700` | 5 | 2 | **`CNotificationScreen`** | CNotificationScreen=2 | `CNotificationScreen` |
+| `0x0053f718` | 21 | 3 | **`CAlertFeature`** | CAlertFeature=3 | `CAlertFeature` |
+| `0x0053f770` | 21 | 4 | **`CFeatureContext`** | CFeatureContext=4 | `CFeatureContext` |
+| `0x0053f808` | 21 | 3 | **`CVoiceMailPseudoFeature`** | CVoiceMailPseudoFeature=3 | `CVoiceMailPseudoFeature` |
+| `0x0053f874` | 5 | 3 | **`CPopupScreen`** | CPopupScreen=3 | `CPlayersContextScreen` |
+| `0x0053f8a0` | 21 | 5 | **`CPlayersFeature`** | CPlayersFeature=5 | `CPlayersFeature` |
+| `0x0053f90c` | 5 | 3 | **`CFriendsScreen`** | CFriendsScreen=3 | `CFriendsScreen` |
+| `0x0053f920` | 21 | 2 | **`CFriendsFeature`** | CFriendsFeature=2 | `CFriendsFeature` |
+| `0x0053f97c` | 5 | 3 | **`CLogonScreen`** | CLogonScreen=3 | `CLogonScreen` |
+| `0x0053f998` | 21 | 4 | **`CLogonFeature`** | CLogonFeature=4 | `CLogonFeature` |
+| `0x0053f9ec` | 15 | 7 | **`CUIPlugin`** | CUIPlugin=7 | `CUIPlugin` |
+
+**Control: of the 20 tables a constructor symbol had already labelled, the vote reproduces that class on 18 and disagrees on 2**; the label comes from a `??0`/`??1` symbol on the store body, the vote from the slot bodies' own symbols, so the two never read the same bytes. The 9 `thin` rows (`0x0053f6d8` `CScreen`, `0x0053f7c4` `CExtFeatureScreen`, `0x0053f7f0` `CVoiceMailPseudoFeature`, `0x0053f8f4` `CPlayersScreen`, `0x0053f990` `CNotificationTask`, `0x00540464` `CQueueXMO`, `0x00540484` `CEncoderXMO`, `0x005404bc` `COneToOneEncoder`, `0x00540520` `COneToOneDecoder`) each rest on one library symbol, and the 1 `split` row on none of theirs.
+<!-- end:interface-lib-names -->
+
+**A shape family is a slot layout, not a class -- and the vote is what separates them.** Four of the 12
+named tables are one family (`class_interface_shapes.csv`'s `0x0053f718`, 4 tables of 21 slots) and they
+vote **four different classes** -- `CAlertFeature` (3 classed slots), `CPlayersFeature` (5),
+`CFriendsFeature` (2) and `CLogonFeature` (4) -- so the family groups tables whose slots *are laid out*
+alike, which is what four UIX feature classes look like, and it cannot be read as "the same interface".
+The other direction is `0x0053f6ec`'s family: two tables of 5 slots that vote the same class twice
+(`CPopupScreen`, 3 classed slots each) -- one class with two tables, which is the pair the shapes census
+calls a twin. `0x00540484`'s family splits into `CEncoderXMO` and `COneToOneEncoder` (one classed slot
+each), and that is the one the families census already flagged as a full-slot twin whose slots differ.
+
+**The vote names the class that *declares* the methods, which is a lower bound on the table's class.** The
+two disagreements are the rule, not noise: `0x0053f874` is stored by `CPlayersContextScreen`'s own
+constructor into `this+0x107c` and its three named slots are `CPopupScreen`'s methods that
+`CPlayersContextScreen` does not override, so the table is the `CPopupScreen` subobject and not
+`CPlayersContextScreen`'s own dispatch table; `0x0053f6d8` is stored by **two** constructors
+(`CNotificationScreen` and `CPopupScreen`), which is what a base class's table looks like when both
+daughters install it. Both readings are what the installer census already said in another language --
+that a table's holder is the class whose constructor stores it, and a base class's table is stored by
+every daughter -- so a name from this channel is the class the slots belong to and the *family* decides
+whether it is also the table's.
+
+**Why this is the channel the other six were not.** It is not a name in the image at all: it is the
+supplied library's own symbol on a body the linker kept, so it survives exactly the case every image
+channel fails on -- a class no package declares. And it reaches only what the library wrote: **144 of the
+2,519 interface slots** point at a body a supplied library names, and only **53 of those symbols carry a
+class** -- the rest are plain `C` names -- so the 12 names and the 10 reported rows are all 53. The 210
+tables with no vote are the ones whose slots are game code (`0x004c7800`'s 21 slots are the Engine's, not
+UIX's); the class tables do reach library bodies (**69** of their 34,936 slots) and **none** of those
+symbols carries a class, because they are the CRT's stubs and `__purecall`, so the zero there is a fact
+about those symbols rather than a silence.
+
+**What this does not do.** It names 12 tables and reports 10 more (`thin` and `split`) rather than naming
+them; it writes no map row, because a `<Class>_vt<slot>` name claims the table *is* that class's dispatch
+table and the lower bound above is exactly the case where it is not -- the family chain and the store's
+field have to decide that, and that is the add this note leaves for the next one. The 5 `xvoice` rows are
+`thin` because the XMO classes' methods are mostly plain `C` symbols (`XMOEncoderProcess`), which carry no
+class.
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/interface-lib-names.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/interface-lib-names.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (the seven symbol shapes, the four vote verdicts, the control population and the
+artifact round trip; no dump, writes nothing) and `--check-doc` rebuilds the block from the committed CSV
+with no dump. Both run in `make ci`. The generator needs the dump and the supplied libraries, so it is
+named in the CI output like `map-census`.
 
 ## The defaults read as bodies: 27 bodies, eight shapes, and the seven that own nothing else
 

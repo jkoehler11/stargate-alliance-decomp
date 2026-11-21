@@ -6171,3 +6171,26 @@ named, 3 -> 0 `no-registration`**; `symbols/xbox.map` gains `Vtbl_Player`, `Vtbl
 `Vtbl_LevelBase` at size 0 (a class no package declares has no script record).
 What is left of this entry: the 2 bodies in `0x0051724c`, the 4 linker folds, the 424 interface-only bodies
 and the 807 bodies no channel names.
+**Answered since (2026-11-21, the interface's own name is a library symbol, not an image one).** Every
+channel this entry ended on reads the *image*, and six of them are shut (the assert token, the callee's
+file, the pushed literal, the slot body's own file, the RTTI locator, the ctor symbol on a `FUN_` store
+body). `tools/interface-lib-names.py` reads the seventh, which is not in the image at all: a slot's body
+carries `inventory/xdk_lib_names.csv`'s mangled symbol from the supplied `uix`/`xvoice` libraries, and the
+class in that symbol is the class the method belongs to, so a table's named slots are a vote for the class
+it dispatches. **144 of the 2,519 interface slots point at a body a supplied library names** and **53** of those
+symbols carry a class, and a strict majority of the classed slots names **12 tables** -- `CUIPlugin` on 7 of 7, `CPlayersFeature` 5,
+`CLogonFeature` 4, `CFeatureContext` 4, `CVoiceMailPseudoFeature` 3, `CPopupScreen` 3 (twice),
+`CNotificationScreen` 2, `CAlertFeature` 3, `CFriendsScreen` 3, `CFriendsFeature` 2, `CLogonScreen` 3 --
+while **9 `thin`** (one named slot, kept apart rather than named), **1 `split`** and **210** with no
+library slot are reported as such. The control is a label the image already gave: of the **20** tables a
+`??0`/`??1` symbol on the store body had labelled, the vote reproduces the class on **18** and disagrees on
+**2**, and both disagreements are the rule rather than noise -- `0x0053f874` holds `CPopupScreen`'s
+methods but is installed by `CPlayersContextScreen`'s ctor at `this+0x107c`, and `0x0053f6d8` is installed
+by *two* ctors -- so the vote names the class that **declares the methods**, a lower bound on the table's
+class, and the family chain decides whether it is also the table's. The 492 class tables score 0 votes: **69** of
+their slots reach a library body too, and none of those symbols carries a class (they are the CRT's stubs
+and `__purecall`), which is the channel's floor rather than its ceiling. What is left of this entry: the 12 names' add (a `<Class>_vt<slot>` row claims the table *is* that
+class's, which the family chain has to settle), the 2 bodies in `0x0051724c`, the 4 linker folds, the
+interface-only bodies (the declarer census reads **391 heads -- 385 interface-only, 4 conflict, 2 member**,
+not the 424 this entry's earlier rounds quoted) and the 807 bodies no channel names.
+
