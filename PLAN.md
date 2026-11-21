@@ -16951,3 +16951,48 @@ sequence.
 - **Not in this bundle.** `0x0051724c`'s two bodies (their stores carry no symbol), the 4 linker folds, the 9
   caller-split tables' nearest-common-ancestor reading, the 424 interface-only bodies and the 807 bodies no
   channel names.
+
+### Execution notes (2026-11-21, the callers' nearest common ancestor names two tables, and the parent edge is what a split means)
+
+- **The thread.** The class-registration page's own next instrument: the nine caller-split tables, and the two
+  `coincident` member rows the previous note said the reading had to solve first. One new dump-free census,
+  one correction to the member hierarchy join, and one mislabelled column.
+- **`tools/class-table-lca.py`** (`inventory/class_table_lca.csv`, `make class-table-lca`, `--check` and
+  `--check-doc` in `make ci`) joins three hierarchies into one -- `class_super_edges.csv` first, because the
+  image writes `Super` itself and covers `NetConnection`/`LevelBase`, which no package declares; then the
+  installer parent edges; then `classes.csv` -- and computes the callers' nearest common ancestor per table.
+- **The control makes it a bound.** 122 tables carry a caller edge and 120 have a name. The nearest common
+  ancestor is that class in **77**, one of its descendants in **43** (all 43 are the single-caller case,
+  where the ancestor of one class is its parent) and an unrelated class in **0**. A table's class is the NCA
+  or an ancestor of it, never below it.
+- **What it names.** The 7 named split tables agree with the map. The two unnamed ones are `0x004d1468`
+  (35 slots) = **`Field`** -- `Const`, `Enum` and `Struct` are the children whose parent edge is this table,
+  all three say `Field`, and the 16 callers' NCA says the same -- and `0x004fc4f0` (30 slots) =
+  **`LevelBase`**, from its one child `Level`. The parent-edge channel covers 122 tables and disagrees with 0
+  of the 120 names the map holds.
+- **`PendingLevel`'s `parent-unnamed` row is a member construction.** `0x004fc588`'s installer's last call is
+  `LevelBase`'s installer, but `DemoPlayPendingLevel` and `NetPendingLevel` are 2 of `0x004fc4f0`'s 3 callers
+  and cannot descend from `LevelBase`. A caller that is not a descendant of the class its table names stores
+  the table in a member, so the class object's `Super = Object` stands and the row is answered.
+- **The two `coincident` member rows are first-field collisions.** The member census's `super_map()` now
+  reads `class_super_edges.csv` first, so `NetConnection` -> `Player` -> `Object` resolves; the owners' NCA is
+  the root and the artifact's new `nearest_common_ancestor` column says so. `+0x28` is where a subclass's
+  first instance field begins (a class object's `Super` sits there), so the two classes' first two fields
+  collide by layout. Member census: 39 single, 1 ancestor (`Linker_member_0xb8`), 3 at the root, 6 unowned;
+  37 labelled.
+- **The census re-run reproduces the last bundle's map move.** `class_member_tables.csv` had not been
+  regenerated since six member bodies entered the map: 6 slots move from `outside_map` to named and the
+  gap-head count 7 -> 1, which is the join agreeing with the map rather than a new measurement.
+- **`class_table_super_names.csv`'s `slots` column was the caller count** -- the render wrote
+  `row["support"]` under a column named `slots`, so a 31-slot table read as three. The column is `support`
+  now and the page's header says callers.
+- **Files.** `tools/class-table-lca.py`, `tools/class-member-tables.py`, `tools/class-super-edges.py`,
+  `inventory/class_table_lca.csv`, `inventory/class_member_tables.csv`,
+  `inventory/class_table_super_names.csv`, `docs/systems/CLASS_REGISTRATION.md`, `docs/UNKNOWNS.md` (U40),
+  `Makefile`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `class-table-lca --check` is a synthetic read that writes nothing and
+  `--check-doc` matches the committed artifact; both regenerated CSVs and the page blocks reproduce byte for
+  byte on a second run. No boot, no xemu, no Ghidra.
+- **Not in this bundle.** The two names are not yet in `inventory/xbe_class_table_names.csv` (that starts the
+  class-map cascade and the declarer walk), `0x0051724c`'s two bodies, the 4 linker folds, the 424
+  interface-only bodies and the 807 bodies no channel names.
