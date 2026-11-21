@@ -1,5 +1,5 @@
 function_va,function_name,class,table_va,object_size,form,stack_args,returns_this,call_before_store,store_va,registration_ctor,evidence
-0x00017050,FUN_00017050,,0x004c78c0,,dtor,0,no,,0x0001706d,,class table installed before any call; the body does not return this
+0x00017050,FUN_00017050,Subsystem,0x004c78c0,,dtor,0,no,,0x0001706d,,class table installed before any call; the body does not return this
 0x00169980,FUN_00169980,Material,0x004c7958,,ctor,0,yes,0x00062ce0,0x00169988,,class table installed after a call into the base constructor; the body returns this
 0x00017140,FUN_00017140,Material,0x004c7958,,dtor,0,no,,0x0001715d,,class table installed before any call; the body does not return this
 0x00017220,FUN_00017220,RenderedMaterial,0x004c7a10,,dtor,0,no,,0x0001723d,,class table installed before any call; the body does not return this
@@ -39,10 +39,10 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x0001bb60,dtor_SubActionDepthOfField,SubActionDepthOfField,0x004c9270,132,dtor,0,no,,0x0001bb7d,0x0001bbb0,class table installed before any call; the body does not return this
 0x001be140,FUN_001be140,,0x004c9348,,ctor,0,yes,0x00062ce0,0x001be164,,class table installed after a call into the base constructor; the body returns this
 0x0001cb70,FUN_0001cb70,,0x004c9348,,dtor,0,no,,0x0001cb8d,,class table installed before any call; the body does not return this
-0x000f9ce0,FUN_000f9ce0,,0x004c93d0,,ctor,0,yes,0x001be140,0x000f9d14,,class table installed after a call into the base constructor; the body returns this
-0x0001cc10,FUN_0001cc10,,0x004c93d0,,dtor,0,no,,0x0001cc2d,,class table installed before any call; the body does not return this
-0x000fd9b0,FUN_000fd9b0,,0x004c94b0,,ctor,0,yes,0x00062ce0,0x000fd9b8,,class table installed after a call into the base constructor; the body returns this
-0x0001cd10,FUN_0001cd10,,0x004c94b0,,dtor,0,no,,0x0001cd2d,,class table installed before any call; the body does not return this
+0x000f9ce0,FUN_000f9ce0,Viewport,0x004c93d0,456,ctor,0,yes,0x001be140,0x000f9d14,,class table installed after a call into the base constructor; the body returns this
+0x0001cc10,FUN_0001cc10,Viewport,0x004c93d0,456,dtor,0,no,,0x0001cc2d,,class table installed before any call; the body does not return this
+0x000fd9b0,FUN_000fd9b0,Client,0x004c94b0,,ctor,0,yes,0x00062ce0,0x000fd9b8,,class table installed after a call into the base constructor; the body returns this
+0x0001cd10,FUN_0001cd10,Client,0x004c94b0,,dtor,0,no,,0x0001cd2d,,class table installed before any call; the body does not return this
 0x0032c910,ctor_XboxClient,XboxClient,0x004c9560,196,ctor,0,yes,0x000fd9b0,0x0032c918,0x0032c910,class table installed after a call into the base constructor; the body returns this
 0x0001cda0,dtor_XboxClient,XboxClient,0x004c9560,196,dtor,0,no,,0x0001cdbd,0x0032c910,class table installed before any call; the body does not return this
 0x0032d910,ctor_XboxViewport,XboxViewport,0x004c9618,464,ctor,0,yes,0x000f9ce0,0x0032d91a,0x0032d910,class table installed after a call into the base constructor; the body returns this
@@ -165,11 +165,11 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x000259e0,dtor_WetTexture,WetTexture,0x004d0138,4880,dtor,0,no,,0x000259fd,0x002e8350,class table installed before any call; the body does not return this
 0x002e8370,ctor_IceTexture,IceTexture,0x004d0228,296,ctor,0,yes,0x0027e3b0,0x002e83be,0x002e8370,class table installed after a call into the base constructor; the body returns this
 0x00025a90,dtor_IceTexture,IceTexture,0x004d0228,296,dtor,0,no,,0x00025aad,0x002e8370,class table installed before any call; the body does not return this
-0x00183730,FUN_00183730,,0x004d0318,,ctor,0,yes,0x00062ce0,0x0018375f,,class table installed after a call into the base constructor; the body returns this
-0x00025f30,FUN_00025f30,,0x004d0318,,dtor,0,no,,0x00025f4d,,class table installed before any call; the body does not return this
-0x0010ffa0,FUN_0010ffa0,,0x004d03c8,,ctor,0,yes,0x001be140,0x0010ffcf,,class table installed after a call into the base constructor; the body returns this
-0x00110120,FUN_00110120,,0x004d03c8,,ctor,,yes,0x001be140,0x0011015b,,class table installed after a call into the base constructor; the body returns this
-0x00025ff0,FUN_00025ff0,,0x004d03c8,,dtor,0,no,,0x00026010,,class table installed before any call; the body does not return this
+0x00183730,FUN_00183730,NetDriver,0x004d0318,4524,ctor,0,yes,0x00062ce0,0x0018375f,,class table installed after a call into the base constructor; the body returns this
+0x00025f30,FUN_00025f30,NetDriver,0x004d0318,4524,dtor,0,no,,0x00025f4d,,class table installed before any call; the body does not return this
+0x0010ffa0,FUN_0010ffa0,NetConnection,0x004d03c8,20368,ctor,0,yes,0x001be140,0x0010ffcf,,class table installed after a call into the base constructor; the body returns this
+0x00110120,FUN_00110120,NetConnection,0x004d03c8,20368,ctor,,yes,0x001be140,0x0011015b,,class table installed after a call into the base constructor; the body returns this
+0x00025ff0,FUN_00025ff0,NetConnection,0x004d03c8,20368,dtor,0,no,,0x00026010,,class table installed before any call; the body does not return this
 0x00026200,ctor_TcpipConnection,TcpipConnection,0x004d0480,20404,ctor,0,yes,0x0010ffa0,0x00026208,0x00026200,class table installed after a call into the base constructor; the body returns this
 0x002d2890,FUN_002d2890,TcpipConnection,0x004d0480,20404,ctor,36,yes,0x00110120,0x002d28f1,0x00026200,class table installed after a call into the base constructor; the body returns this
 0x000261a0,dtor_TcpipConnection,TcpipConnection,0x004d0480,20404,dtor,0,no,,0x000261bd,0x00026200,class table installed before any call; the body does not return this
@@ -188,9 +188,9 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x00026a10,dtor_StargatePlayer,StargatePlayer,0x004d0b68,4344,dtor,0,no,,0x00026a2d,0x00026a70,class table installed before any call; the body does not return this
 0x00038d70,FUN_00038d70,,0x004d1468,,ctor,4,yes,0x00062ce0,0x00038d7f,,class table installed after a call into the base constructor; the body returns this
 0x0002c8a0,FUN_0002c8a0,,0x004d1468,,dtor,0,no,,0x0002c8bd,,class table installed before any call; the body does not return this
-0x0007b0c0,FUN_0007b0c0,,0x004d17a8,,ctor,0,yes,0x00038d70,0x0007b0cf,,class table installed after a call into the base constructor; the body returns this
-0x0007b0f0,FUN_0007b0f0,,0x004d17a8,,ctor,16,yes,0x00038d70,0x0007b128,,class table installed after a call into the base constructor; the body returns this
-0x00031830,FUN_00031830,,0x004d17a8,,dtor,0,no,,0x0003184d,,class table installed before any call; the body does not return this
+0x0007b0c0,FUN_0007b0c0,Property,0x004d17a8,,ctor,0,yes,0x00038d70,0x0007b0cf,,class table installed after a call into the base constructor; the body returns this
+0x0007b0f0,FUN_0007b0f0,Property,0x004d17a8,,ctor,16,yes,0x00038d70,0x0007b128,,class table installed after a call into the base constructor; the body returns this
+0x00031830,FUN_00031830,Property,0x004d17a8,,dtor,0,no,,0x0003184d,,class table installed before any call; the body does not return this
 0x000318c0,FUN_000318c0,IntProperty,0x004d1880,108,ctor,16,yes,0x0007b0f0,0x000318db,0x0007da10,class table installed after a call into the base constructor; the body returns this
 0x0007da10,ctor_IntProperty,IntProperty,0x004d1880,108,ctor,0,yes,0x00038d70,0x0007da30,0x0007da10,class table installed after a call into the base constructor; the body returns this
 0x00031920,dtor_IntProperty,IntProperty,0x004d1880,108,dtor,0,no,,0x0003193d,0x0007da10,class table installed before any call; the body does not return this
@@ -209,7 +209,7 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x00031e00,dtor_AudioSubsystem,AudioSubsystem,0x004d1f88,152,dtor,0,no,,0x00031e1d,0x00031e90,class table installed before any call; the body does not return this
 0x0002fc80,ctor_XBoxAudioSubsystem,XBoxAudioSubsystem,0x004d21f8,432,ctor,0,yes,0x00031e90,0x0002fca4,0x0002fc80,class table installed after a call into the base constructor; the body returns this
 0x000320c0,dtor_XBoxAudioSubsystem,XBoxAudioSubsystem,0x004d21f8,432,dtor,0,no,,0x000320dd,0x0002fc80,class table installed before any call; the body does not return this
-0x000321f0,FUN_000321f0,,0x004d2400,,dtor,0,no,,0x0003220d,,class table installed before any call; the body does not return this
+0x000321f0,FUN_000321f0,VoiceSubsystem,0x004d2400,,dtor,0,no,,0x0003220d,,class table installed before any call; the body does not return this
 0x00033450,ctor_XHVVoiceSubsystem,XHVVoiceSubsystem,0x004d2ad8,84,ctor,0,yes,0x00062ce0,0x0003345f,0x00033450,class table installed after a call into the base constructor; the body returns this
 0x00033fc0,dtor_XHVVoiceSubsystem,XHVVoiceSubsystem,0x004d2ad8,84,dtor,0,no,,0x00033fdd,0x00033450,class table installed before any call; the body does not return this
 0x00035890,ctor_StrProperty,StrProperty,0x004d32a0,108,ctor,0,yes,0x0007b0c0,0x00035898,0x00035890,class table installed after a call into the base constructor; the body returns this
@@ -221,12 +221,12 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x0007dda0,ctor_ArrayProperty,ArrayProperty,0x004d3378,112,ctor,0,yes,0x00038d70,0x0007ddc0,0x0007dda0,class table installed after a call into the base constructor; the body returns this
 0x00035990,dtor_ArrayProperty,ArrayProperty,0x004d3378,112,dtor,0,no,,0x000359ad,0x0007dda0,class table installed before any call; the body does not return this
 0x0024af30,FUN_0024af30,ArrayProperty,0x004d3378,112,unclassified,0,no,0x00055ed0,0x0024b1d9,0x0007dda0,shape signatures disagree; left unclassified
-0x00034bc0,FUN_00034bc0,,0x004d34d8,,ctor,0,yes,0x00062ce0,0x00034bc8,,class table installed after a call into the base constructor; the body returns this
-0x00035c70,FUN_00035c70,,0x004d34d8,,dtor,0,no,,0x00035c8d,,class table installed before any call; the body does not return this
+0x00034bc0,FUN_00034bc0,Exporter,0x004d34d8,,ctor,0,yes,0x00062ce0,0x00034bc8,,class table installed after a call into the base constructor; the body returns this
+0x00035c70,FUN_00035c70,Exporter,0x004d34d8,,dtor,0,no,,0x00035c8d,,class table installed before any call; the body does not return this
 0x00035d00,ctor_ObjectExporterT3D,ObjectExporterT3D,0x004d3828,64,ctor,0,yes,0x00062ce0,0x00035d08,0x00035d00,class table installed after a call into the base constructor; the body returns this
 0x00035d50,dtor_ObjectExporterT3D,ObjectExporterT3D,0x004d3828,64,dtor,0,no,,0x00035d6d,0x00035d00,class table installed before any call; the body does not return this
-0x00036710,FUN_00036710,,0x004d3af0,,ctor,0,yes,0x00062ce0,0x0003671a,,class table installed after a call into the base constructor; the body returns this
-0x00036ac0,FUN_00036ac0,,0x004d3af0,,dtor,0,no,,0x00036add,,class table installed before any call; the body does not return this
+0x00036710,FUN_00036710,Factory,0x004d3af0,,ctor,0,yes,0x00062ce0,0x0003671a,,class table installed after a call into the base constructor; the body returns this
+0x00036ac0,FUN_00036ac0,Factory,0x004d3af0,,dtor,0,no,,0x00036add,,class table installed before any call; the body does not return this
 0x0003a1b0,FUN_0003a1b0,Struct,0x004d4418,128,ctor,4,yes,0x00062ce0,0x0003a1e2,0x0003d560,class table installed after a call into the base constructor; the body returns this
 0x0003bd30,FUN_0003bd30,Struct,0x004d4418,128,ctor,24,yes,0x0003b440,0x0003bd8a,0x0003d560,class table installed after a call into the base constructor; the body returns this
 0x0003d560,ctor_Struct,Struct,0x004d4418,128,ctor,0,yes,0x00062ce0,0x0003d56a,0x0003d560,class table installed after a call into the base constructor; the body returns this
@@ -344,7 +344,7 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x000a7270,dtor_KarmaParamsRBFull,KarmaParamsRBFull,0x004e8108,256,dtor,0,no,,0x000a728d,0x000a7220,class table installed before any call; the body does not return this
 0x000a7380,ctor_KMeshProps,KMeshProps,0x004e8440,124,ctor,0,yes,0x00062ce0,0x000a738b,0x000a7380,class table installed after a call into the base constructor; the body returns this
 0x000a7be0,dtor_KMeshProps,KMeshProps,0x004e8440,124,dtor,0,no,,0x000a7bfd,0x000a7380,class table installed before any call; the body does not return this
-0x000bd030,FUN_000bd030,,0x004eaea8,,dtor,0,no,,0x000bd04d,,class table installed before any call; the body does not return this
+0x000bd030,FUN_000bd030,RenderDevice,0x004eaea8,,dtor,0,no,,0x000bd04d,,class table installed before any call; the body does not return this
 0x000bd3c0,ctor_NullRenderDevice,NullRenderDevice,0x004eb0a8,220,ctor,0,yes,0x00062ce0,0x000bd3cf,0x000bd3c0,class table installed after a call into the base constructor; the body returns this
 0x000bd500,dtor_NullRenderDevice,NullRenderDevice,0x004eb0a8,220,dtor,0,no,,0x000bd51d,0x000bd3c0,class table installed before any call; the body does not return this
 0x000c0390,ctor_TextureEditable,TextureEditable,0x004eb2b0,216,ctor,0,yes,0x0027e3b0,0x000c0398,0x000c0390,class table installed after a call into the base constructor; the body returns this
@@ -529,8 +529,8 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x000fcae0,dtor_MotionBlur,MotionBlur,0x004f9728,76,dtor,0,no,,0x000fcafd,0x000fca90,class table installed before any call; the body does not return this
 0x00106e90,ctor_Canvas,Canvas,0x004fa110,3316,ctor,0,yes,0x00062ce0,0x00106e98,0x00106e90,class table installed after a call into the base constructor; the body returns this
 0x00106ee0,dtor_Canvas,Canvas,0x004fa110,3316,dtor,0,no,,0x00106efd,0x00106e90,class table installed before any call; the body does not return this
-0x00108010,FUN_00108010,,0x004fa390,,ctor,0,yes,0x00062ce0,0x00108018,,class table installed after a call into the base constructor; the body returns this
-0x00107d60,FUN_00107d60,,0x004fa390,,dtor,0,no,,0x00107d7d,,class table installed before any call; the body does not return this
+0x00108010,FUN_00108010,Channel,0x004fa390,100,ctor,0,yes,0x00062ce0,0x00108018,,class table installed after a call into the base constructor; the body returns this
+0x00107d60,FUN_00107d60,Channel,0x004fa390,100,dtor,0,no,,0x00107d7d,,class table installed before any call; the body does not return this
 0x00108520,ctor_ControlChannel,ControlChannel,0x004fa5b0,104,ctor,0,yes,0x00062ce0,0x0010852f,0x00108520,class table installed after a call into the base constructor; the body returns this
 0x0010ce80,dtor_ControlChannel,ControlChannel,0x004fa5b0,104,dtor,0,no,,0x0010ce9d,0x00108520,class table installed before any call; the body does not return this
 0x00108600,ctor_FileChannel,FileChannel,0x004fa650,628,ctor,0,yes,0x00062ce0,0x00108608,0x00108600,class table installed after a call into the base constructor; the body returns this
@@ -557,8 +557,8 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x0011bf90,FUN_0011bf90,,0x004fc4f0,,ctor,0,yes,0x00062ce0,0x0011bfbd,,class table installed after a call into the base constructor; the body returns this
 0x001617d0,FUN_001617d0,,0x004fc4f0,,ctor,8,yes,0x00062ce0,0x00161800,,class table installed after a call into the base constructor; the body returns this
 0x0011bf20,FUN_0011bf20,,0x004fc4f0,,dtor,0,no,,0x0011bf3d,,class table installed before any call; the body does not return this
-0x001a57b0,FUN_001a57b0,,0x004fc588,,ctor,8,yes,0x001617d0,0x001a57c6,,class table installed after a call into the base constructor; the body returns this
-0x0011c050,FUN_0011c050,,0x004fc588,,dtor,0,no,,0x0011c06d,,class table installed before any call; the body does not return this
+0x001a57b0,FUN_001a57b0,PendingLevel,0x004fc588,,ctor,8,yes,0x001617d0,0x001a57c6,,class table installed after a call into the base constructor; the body returns this
+0x0011c050,FUN_0011c050,PendingLevel,0x004fc588,,dtor,0,no,,0x0011c06d,,class table installed before any call; the body does not return this
 0x0011bce0,FUN_0011bce0,DemoPlayPendingLevel,0x004fc630,176,ctor,8,yes,0x001a57b0,0x0011bd12,0x0011c0f0,class table installed after a call into the base constructor; the body returns this
 0x0011c0f0,ctor_DemoPlayPendingLevel,DemoPlayPendingLevel,0x004fc630,176,ctor,0,yes,0x0011bf90,0x0011c10c,0x0011c0f0,class table installed after a call into the base constructor; the body returns this
 0x0011c160,dtor_DemoPlayPendingLevel,DemoPlayPendingLevel,0x004fc630,176,dtor,0,no,,0x0011c17d,0x0011c0f0,class table installed before any call; the body does not return this
@@ -567,7 +567,7 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x0011e560,dtor_DemoRecConnection,DemoRecConnection,0x004fcc18,20368,dtor,0,no,,0x0011e57d,0x0011e510,class table installed before any call; the body does not return this
 0x0011d4b0,ctor_DemoRecDriver,DemoRecDriver,0x004fccc8,4684,ctor,0,yes,0x00183730,0x0011d4d4,0x0011d4b0,class table installed after a call into the base constructor; the body returns this
 0x0011e5f0,dtor_DemoRecDriver,DemoRecDriver,0x004fccc8,4684,dtor,0,no,,0x0011e60d,0x0011d4b0,class table installed before any call; the body does not return this
-0x0011f6c0,FUN_0011f6c0,,0x004fcfe0,,dtor,0,no,,0x0011f6dd,,class table installed before any call; the body does not return this
+0x0011f6c0,FUN_0011f6c0,Download,0x004fcfe0,,dtor,0,no,,0x0011f6dd,,class table installed before any call; the body does not return this
 0x0011f750,ctor_ChannelDownload,ChannelDownload,0x004fd070,1116,ctor,0,yes,0x00062ce0,0x0011f763,0x0011f750,class table installed after a call into the base constructor; the body returns this
 0x0011f7a0,dtor_ChannelDownload,ChannelDownload,0x004fd070,1116,dtor,0,no,,0x0011f7bd,0x0011f750,class table installed before any call; the body does not return this
 0x001212e0,FUN_001212e0,Engine,0x005040d0,,ctor,0,yes,0x00062ce0,0x00121300,,class table installed after a call into the base constructor; the body returns this
@@ -767,8 +767,8 @@ function_va,function_name,class,table_va,object_size,form,stack_args,returns_thi
 0x001d00b0,dtor_ProjectorPrimitive,ProjectorPrimitive,0x00516ac8,84,dtor,0,no,,0x001d00cd,0x001cff80,class table installed before any call; the body does not return this
 0x001d0c40,ctor_Projector,Projector,0x00516be8,1308,ctor,0,yes,0x00062ce0,0x001d0c48,0x001d0c40,class table installed after a call into the base constructor; the body returns this
 0x001d0d80,dtor_Projector,Projector,0x00516be8,1308,dtor,0,no,,0x001d0d9d,0x001d0c40,class table installed before any call; the body does not return this
-0x001ead60,FUN_001ead60,,0x00517860,,dtor,0,no,,0x001ead7d,,class table installed before any call; the body does not return this
-0x001eade0,FUN_001eade0,,0x005178d8,,dtor,0,no,,0x001eadfd,,class table installed before any call; the body does not return this
+0x001ead60,FUN_001ead60,RenderResource,0x00517860,,dtor,0,no,,0x001ead7d,,class table installed before any call; the body does not return this
+0x001eade0,FUN_001eade0,VertexStreamBase,0x005178d8,,dtor,0,no,,0x001eadfd,,class table installed before any call; the body does not return this
 0x001ec2a0,ctor_IndexBuffer,IndexBuffer,0x00517a18,56,ctor,0,yes,0x00062ce0,0x001ec2aa,0x001ec2a0,class table installed after a call into the base constructor; the body returns this
 0x001ec2f0,dtor_IndexBuffer,IndexBuffer,0x00517a18,56,dtor,0,no,,0x001ec30d,0x001ec2a0,class table installed before any call; the body does not return this
 0x001ec7c0,ctor_VertexBuffer,VertexBuffer,0x00517a90,68,ctor,0,yes,0x00062ce0,0x001ec7db,0x001ec7c0,class table installed after a call into the base constructor; the body returns this

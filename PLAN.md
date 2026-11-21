@@ -16855,3 +16855,53 @@ sequence.
   body is a row of its own, so the two halves cannot be one contiguous map row); the 3 that close past an
   ordinary row; the 3 that cross an inline jump table; the 807 bodies no channel names; and the 7 unnamed
   class tables whose parent the packages do not declare.
+
+
+### Execution notes (2026-11-21, the class map learns the children's Super, and the declared residue closes to zero)
+
+- **Task.** The superclass-edge census named the eleven class tables no registration reaches, but nothing wrote
+  those names into the map, so the declarer walk still left ten declarations on seven unnamed tables. This
+  bundle is the apply: the naming rule, the walk's second pass, and the residue's last three bodies.
+- **The `child-super` rule.** `tools/class-table-names.py` reads `inventory/class_table_super_names.csv` (the
+  join `tools/class-super-edges.py` writes) and fills a row only where no store, no tree pairing and no slot
+  token reached it: the table is the class its calling classes say their parent is. Eleven rows gain a name
+  with `name_rule=child-super` -- `Subsystem` `0x4c78c0` (3 children), `Client` `0x4c94b0`, `Property`
+  `0x4d17a8` (13), `VoiceSubsystem` `0x4d2400`, `Exporter` `0x4d34d8`, `Factory` `0x4d3af0`, `RenderDevice`
+  `0x4eaea8`, `PendingLevel` `0x4fc588`, `Download` `0x4fcfe0`, `RenderResource` `0x517860`, and
+  `VertexStreamBase` `0x5178d8` (5) -- and the map moves 478 -> 489 named of 492, with 14 -> 3
+  `no-registration` rows.
+- **A derived name must not vote.** `class-super-edges` now reads the map's `name_rule` and counts its own rows
+  as `self` rather than as control agreement: 102 agree, 11 self, 9 split, 0 disagree. The control is
+  unchanged at 102 of 102, which is the point -- the eleven rows are receipts, not evidence.
+- **The walk's second pass.** `class-slot-declarers` names the ten declarations (verdict `declared`, not
+  `declared-unnamed`) and `--apply-adds` writes ten `add` rows with their creation rows: `Exporter_vt11`,
+  `Factory_vt30`, `Factory_vt31`, `Property_vt36`, `Client_vt11`, `Download_vt32`/`vt34`/`vt35`,
+  `PendingLevel_vt33`, `RenderResource_vt11`.
+- **The three closes become adds.** `declarer-residue --emit-moves` now writes the `add` for a body the same
+  read measures to *close* with no map row inside its span -- the old path only handled a `move`, so three
+  bodies with a measured end and a name could not become rows. `Mover_vt82` 419, `D3DRenderDevice_vt49` 83,
+  `GUIController_vt32` 1,601; the self-test drives the verb, its idempotent re-run and the creation row.
+- **Numbers.** Map 16,620 -> 16,634 rows, 4,223,304 -> 4,227,700 bytes of code; gap census loses 13 heads;
+  declarer residue **25 -> 12 bodies** (4 folds, 8 member, 0 declared); the class slot walk `declared 13 ->
+  0`; native naming 51.56% -> 51.60%; module attribution 16,620 -> 16,633 rows.
+- **Files.** `tools/class-table-names.py` (the rule, its evidence and its self-test), `tools/class-super-edges.py`
+  (the `self` verdict, `map_names()`, the control split, the doc block), `tools/declarer-residue.py` (the
+  `closes` add, `map_rows(path)`, the self-test), `inventory/xbe_class_table_names.csv`,
+  `inventory/class_table_super_names.csv`, `inventory/class_table_parents.csv`,
+  `inventory/class_slot_declarers.csv`, `inventory/declarer_residue.csv`, `inventory/gap_heads.csv`,
+  `inventory/class_constructors.csv`, `inventory/class_ctor_bases.csv`, `inventory/registration_sites.csv`,
+  `inventory/class_table_installers.csv`, `inventory/native_class_packages.csv`,
+  `inventory/function_module_attribution.csv`, `inventory/function_modules.csv`,
+  `inventory/module_export_plan.csv`, `inventory/xbe_functions_by_module.csv`, `inventory/module_export_census.csv`,
+  `symbols/xbe_boundaries.csv`, `symbols/xbe_overrides.csv`, `symbols/xbox_functions.csv`, `symbols/xbox.map`,
+  `docs/systems/CLASS_REGISTRATION.md`, `docs/NATIVE_CLASS_TREE.md`, `docs/NATIVE.md`, `docs/MODULE_CENSUS.md`,
+  `docs/SYMBOLS.md`, `docs/STATUS.md`, `README.md`, this note.
+- **Gates.** `make ci` green; `class-table-names --check`, `class-super-edges --check` and
+  `declarer-residue --check` are dump-free and write nothing; the map, the declarations census, the gap census
+  and the residue reproduce byte for byte on a second run; `--emit-moves` is idempotent (two runs, `cmp`
+  identical). No boot, no xemu, no Ghidra.
+- **Not in this bundle.** The 8 member bodies in the three unowned interface tables (`0x0051724c` field
+  `0x38`, `0x0053f7f0` and `0x0053f888` field `0x8`) -- one of `0x0053f7f0`'s slots already carries the
+  mangled `?MicrophoneRawDataReady@CVoiceMailPseudoFeature@UIXNamespace@@...`, which is the owner's first
+  channel and not yet a rule; the 9 caller-split tables' nearest-common-ancestor reading; and the 424
+  interface-only bodies (U40's remaining half).

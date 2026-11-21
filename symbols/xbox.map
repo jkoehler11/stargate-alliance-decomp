@@ -797,6 +797,7 @@
 0x00034970 Core_UExporter                                177 
 0x00034ab0 FUN_00034ab0                                  264 
 0x00034bc0 FUN_00034bc0                                   18 
+0x00034be0 Exporter_vt11                                  43 
 0x00034c10 Core_UExporter                                807 
 0x00034f40 Core_UExporter                                189 
 0x00035000 Core_UExporter                                200 
@@ -831,6 +832,8 @@
 0x00036900 FUN_00036900                                   39 
 0x00036930 Core_UnTemplate                               171 
 0x000369e0 Core_UnObjBas                                 131 
+0x00036a70 Factory_vt30                                    5 
+0x00036a80 Factory_vt31                                    5 
 0x00036a90 FUN_00036a90                                   33 
 0x00036ac0 FUN_00036ac0                                  131 
 0x00036b50 FUN_00036b50                                   19 
@@ -1833,6 +1836,7 @@
 0x000777b0 FUN_000777b0                                   53 
 0x000777f0 FUN_000777f0                                    7 
 0x00077800 FUN_00077800                                   72 
+0x00077850 Property_vt36                                   3 
 0x00077860 Core_UnProp                                   183 
 0x00077920 FUN_00077920                                  264 
 0x00077a30 ByteProperty_vt45                              15 
@@ -3779,6 +3783,7 @@
 0x000fd8f0 Engine_UnCamMgr                               183 
 0x000fd9b0 FUN_000fd9b0                                   35 
 0x000fd9e0 FUN_000fd9e0                                 1068 
+0x000fde10 Client_vt11                                    32 
 0x000fde30 FUN_000fde30                                   46 
 0x000fde60 FUN_000fde60                                  228 
 0x000fdf50 FUN_000fdf50                                 1276 
@@ -4184,6 +4189,7 @@
 0x0011e6a0 FUN_0011e6a0                                   75 
 0x0011e6f0 FUN_0011e6f0                                   30 
 0x0011e710 FUN_0011e710                                   31 
+0x0011e730 Download_vt34                                  23 
 0x0011e750 FUN_0011e750                                   82 
 0x0011e7b0 FUN_0011e7b0                                  264 
 0x0011e8c0 FUN_0011e8c0                                   44 
@@ -4191,10 +4197,12 @@
 0x0011e910 FUN_0011e910                                   25 
 0x0011e930 FUN_0011e930                                   45 
 0x0011e960 Engine_UnDownload                             183 
+0x0011ea30 Download_vt32                                 605 
 0x0011ec90 FUN_0011ec90                                  264 
 0x0011eda0 ChannelDownload_vt30                          255 
 0x0011eea0 Engine_UnDownload                             372 
 0x0011f020 Engine_UnDownload                             183 
+0x0011f0e0 Download_vt35                                1499 
 0x0011f6c0 FUN_0011f6c0                                   92 
 0x0011f720 FUN_0011f720                                   33 
 0x0011f750 ctor_ChannelDownload                           29 
@@ -5512,6 +5520,7 @@
 0x001a5070 FUN_001a5070                                  213 
 0x001a5160 Engine_UnPenLev                               180 
 0x001a5220 FUN_001a5220                                  264 
+0x001a5330 PendingLevel_vt33                              46 
 0x001a5360 NetPendingLevel_member_0x28_vt0                 3 
 0x001a5370 NetPendingLevel_member_0x28_vt1                 3 
 0x001a5380 NetPendingLevel_member_0x28_vt2                 5 
@@ -5580,6 +5589,7 @@
 0x001b1520 FUN_001b1520                                  361 
 0x001b25b0 execMoveSmooth                                131 
 0x001b2640 FUN_001b2640                                  658 
+0x001b28e0 Mover_vt82                                    419 
 0x001b2ab0 FUN_001b2ab0                                  363 
 0x001b2c60 FUN_001b2c60                                  171 
 0x001b2d50 Core_UnClass                                 1469 
@@ -6150,6 +6160,7 @@
 0x001eaf40 Engine_UnRenderResource                       177 
 0x001eb000 FUN_001eb000                                  264 
 0x001eb110 Engine_UnRenderResource                       177 
+0x001eb1d0 RenderResource_vt11                            32 
 0x001eb1f0 FUN_001eb1f0                                  264 
 0x001eb300 FUN_001eb300                                  264 
 0x001eb410 FUN_001eb410                                  264 
@@ -7854,6 +7865,7 @@
 0x002ae320 D3DRenderDevice_vt35                           30 
 0x002ae340 D3DRenderDevice_vt33                           15 
 0x002ae350 D3DRenderDevice_vt38                          108 
+0x002ae3e0 D3DRenderDevice_vt49                           83 
 0x002ae4e0 FUN_002ae4e0                                 2301 
 0x002aee30 D3DRenderDevice_vt47                           13 
 0x002aee40 D3DRenderDevice_vt36                           57 
@@ -8886,6 +8898,7 @@
 0x002fb280 FUN_002fb280                                   88 
 0x002fb2e0 FUN_002fb2e0                                 5204 
 0x002fc750 FUN_002fc750                                 3429 
+0x002fd640 GUIController_vt32                           1601 
 0x002fdcf0 GUIController_vt35                           1800 
 0x002fe400 FUN_002fe400                                  101 
 0x002fe470 Gui_UnGUICore                                 180 
@@ -16274,6 +16287,7 @@
 0x004c68ca ?CloseEndpoint@XHawkMediaObject@@AAEXXZ        91 
 0x004c6925 ?FreeStreamingResources@XHawkMediaObject@@AAEXXZ    199 
 0x004c6a33 ?Release@XHawkMediaObject@@UAGKXZ              51 
+0x004c78c0 Vtbl_Subsystem                                  0 class table
 0x004c7958 Vtbl_Material                                   0 class table
 0x004c7a10 Vtbl_RenderedMaterial                           0 class table
 0x004c7ac8 Vtbl_BitmapMaterial                             0 class table
@@ -16295,6 +16309,7 @@
 0x004c91f8 Vtbl_ACTION_WaitForEvent                       68 class table
 0x004c9270 Vtbl_SubActionDepthOfField                    132 class table
 0x004c93d0 Vtbl_Viewport                                 456 class table
+0x004c94b0 Vtbl_Client                                     0 class table
 0x004c9560 Vtbl_XboxClient                               196 class table
 0x004c9618 Vtbl_XboxViewport                             464 class table
 0x004c9c60 Vtbl_Actor                                    908 class table
@@ -16364,15 +16379,19 @@
 0x004d0738 Vtbl_PlayerController                        3980 class table
 0x004d0950 Vtbl_UnrealPlayer                            4012 class table
 0x004d0b68 Vtbl_StargatePlayer                          4344 class table
+0x004d17a8 Vtbl_Property                                   0 class table
 0x004d1880 Vtbl_IntProperty                              108 class table
 0x004d1958 Vtbl_BoolProperty                             112 class table
 0x004d1a30 Vtbl_FloatProperty                            108 class table
 0x004d1f88 Vtbl_AudioSubsystem                           152 class table
 0x004d21f8 Vtbl_XBoxAudioSubsystem                       432 class table
+0x004d2400 Vtbl_VoiceSubsystem                             0 class table
 0x004d2ad8 Vtbl_XHVVoiceSubsystem                         84 class table
 0x004d32a0 Vtbl_StrProperty                              108 class table
 0x004d3378 Vtbl_ArrayProperty                            112 class table
+0x004d34d8 Vtbl_Exporter                                   0 class table
 0x004d3828 Vtbl_ObjectExporterT3D                         64 class table
+0x004d3af0 Vtbl_Factory                                    0 class table
 0x004d4418 Vtbl_Struct                                   128 class table
 0x004d44c8 Vtbl_Function                                 164 class table
 0x004d4570 Vtbl_State                                   1176 class table
@@ -16421,6 +16440,7 @@
 0x004e8090 Vtbl_KarmaParamsSkel                          276 class table
 0x004e8108 Vtbl_KarmaParamsRBFull                        256 class table
 0x004e8440 Vtbl_KMeshProps                               124 class table
+0x004eaea8 Vtbl_RenderDevice                               0 class table
 0x004eb0a8 Vtbl_NullRenderDevice                         220 class table
 0x004eb2b0 Vtbl_TextureEditable                          216 class table
 0x004eb420 Vtbl_ExportCacheCommandlet                    476 class table
@@ -16526,9 +16546,11 @@
 0x004fc0f8 Vtbl_AIMsgManager                             108 class table
 0x004fc1b0 Vtbl_Primitive                                 84 class table
 0x004fc250 Vtbl_ConvexVolume                             136 class table
+0x004fc588 Vtbl_PendingLevel                               0 class table
 0x004fc630 Vtbl_DemoPlayPendingLevel                     176 class table
 0x004fcc18 Vtbl_DemoRecConnection                      20368 class table
 0x004fccc8 Vtbl_DemoRecDriver                           4684 class table
+0x004fcfe0 Vtbl_Download                                   0 class table
 0x004fd070 Vtbl_ChannelDownload                         1116 class table
 0x005040d0 Vtbl_Engine                                     0 class table
 0x00504560 Vtbl_ServerCommandlet                         476 class table
@@ -16628,6 +16650,8 @@
 0x005169b0 Vtbl_ProjectorMaterial                        212 class table
 0x00516ac8 Vtbl_ProjectorPrimitive                        84 class table
 0x00516be8 Vtbl_Projector                               1308 class table
+0x00517860 Vtbl_RenderResource                             0 class table
+0x005178d8 Vtbl_VertexStreamBase                           0 class table
 0x00517a18 Vtbl_IndexBuffer                               56 class table
 0x00517a90 Vtbl_VertexBuffer                              68 class table
 0x00517b10 Vtbl_VertexStreamVECTOR                        68 class table

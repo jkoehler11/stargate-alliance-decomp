@@ -162,19 +162,19 @@ site_va,class,outer,class_table,evidence,literals
 0x000e5989,SoundGroup,System,SoundGroup,class table agrees,new|System|SoundGroup
 0x000ea128,BeamEmitter,System,BeamEmitter,class table agrees,new|System|BeamEmitter
 0x000f1de9,CacheManager,System,CacheManager,class table agrees,new|System|CacheManager
-0x000f92c9,Viewport,System,,the site's only identifier literal (not in classes.csv),new|System|Viewport
+0x000f92c9,Viewport,System,Viewport,class table agrees,new|System|Viewport
 0x000fbd46,CameraEffect,System,,class name in the site's pushes,new|System|CameraEffect
 0x000fc2d5,CameraOverlay,System,CameraOverlay,class table agrees,new|System|CameraOverlay
 0x000fc5a5,MotionBlur,System,MotionBlur,class table agrees,new|System|MotionBlur
 0x000fca55,SubActionCameraEffect,System,SubActionCameraEffect,class table agrees,new|System|SubActionCameraEffect
 0x000fd969,Client,System,,the site's only identifier literal (not in classes.csv),new|System|Client
 0x00106a59,Canvas,System,Canvas,class table agrees,new|System|Canvas
-0x001083c6,Channel,System,,the site's only identifier literal (not in classes.csv),new|System|Channel
+0x001083c6,Channel,System,Channel,class table agrees,new|System|Channel
 0x00108c06,ControlChannel,System,ControlChannel,class table agrees,new|System|ControlChannel
 0x00108ee9,FileChannel,System,FileChannel,class table agrees,new|System|FileChannel
 0x00109876,VoiceChannel,System,VoiceChannel,class table agrees,new|System|VoiceChannel
 0x0010bbe9,ActorChannel,System,ActorChannel,class table agrees,new|System|ActorChannel
-0x0010d6a9,,,,,new|User|NetConnection
+0x0010d6a9,NetConnection,,NetConnection,class table agrees,new|User|NetConnection
 0x00112fe5,CheatManager,System,CheatManager,class table agrees,new|System|CheatManager
 0x00113099,PlayerInput,System,PlayerInput,class table agrees,new|System|PlayerInput
 0x00119658,AdminBase,System,AdminBase,class table agrees,new|System|AdminBase
@@ -248,7 +248,7 @@ site_va,class,outer,class_table,evidence,literals
 0x0017c15c,Mover,System,Mover,class table agrees,new|System|Mover
 0x0017cc95,Movie,System,Movie,class table agrees,new|System|Movie
 0x0017d4e8,MovieTexture,System,MovieTexture,class table agrees,new|System|MovieTexture
-0x00183599,NetDriver,System,,the site's only identifier literal (not in classes.csv),new|System|NetDriver
+0x00183599,NetDriver,System,NetDriver,class table agrees,new|System|NetDriver
 0x00183986,PackageMapLevel,System,PackageMapLevel,class table agrees,new|System|PackageMapLevel
 0x001873c5,PackageCheckInfo,System,PackageCheckInfo,class table agrees,new|System|PackageCheckInfo
 0x0018d518,ParticleEmitter,System,ParticleEmitter,class table agrees,new|System|ParticleEmitter

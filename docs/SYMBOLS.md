@@ -310,33 +310,33 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | measure | value |
 |---|---|
 | `.text` | `0x00011000`..`0x004190fc` (4227324 bytes) |
-| gaps between map rows / bytes they cover | 11302 / 578151 (3645 gaps under 8 bytes) |
-| heads the pad-before + prologue rule finds | 2591 |
-| ...decode to a body / are a 1-2 instruction island | 2193 / 317 |
-| ...refused (`no-close` / `undecoded`) | 37 / 44 |
-| bytes the bodies cover | 283860 (49.0% of the gap bytes) |
-| runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 1182 in 970 runs |
+| gaps between map rows / bytes they cover | 11313 / 573755 (3651 gaps under 8 bytes) |
+| heads the pad-before + prologue rule finds | 2578 |
+| ...decode to a body / are a 1-2 instruction island | 2186 / 314 |
+| ...refused (`no-close` / `undecoded`) | 36 / 42 |
+| bytes the bodies cover | 281567 (49.0% of the gap bytes) |
+| runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 1153 in 964 runs |
 | bodies a split ends (a terminator no branch in the run targets) | 238 |
 | bodies in a generated family (`register-once` / `_atexit`) | 0 / 0 |
-| named by a dword outside `.text` | 909 |
-| ...of those, in a class-table slot (449 bodies; 724 tables, 4 of them class-named) | 449 |
+| named by a dword outside `.text` | 896 |
+| ...of those, in a class-table slot (436 bodies; 724 tables, 2 of them class-named) | 436 |
 | named by an `E8`/`E9` branch | 74 |
 | named by a `68` push | 724 |
-| named by any channel / by none | 1690 / 820 |
-| boundaries: the gap's start / fill / a split | 256 / 2097 / 238 |
-| heads a measured opening adds (not in the shared prologue table) / of them decode | 1050 / 1033 |
+| named by any channel / by none | 1677 / 823 |
+| boundaries: the gap's start / fill / a split | 256 / 2084 / 238 |
+| heads a measured opening adds (not in the shared prologue table) / of them decode | 1046 / 1030 |
 | ...of those, named by no channel | 418 |
-| control: map rows passing the head rule / decoding to their size | 10670 of 13163 / 12415 |
-| ...the two tests apart: both / fill only (prologue miss) / opening only (boundary miss) / neither | 10670 / 322 / 1935 / 236 |
-| ...the same four cells with the shared prologue table alone | 9255 / 1737 / 1750 / 421 |
+| control: map rows passing the head rule / decoding to their size | 10683 of 13176 / 12428 |
+| ...the two tests apart: both / fill only (prologue miss) / opening only (boundary miss) / neither | 10683 / 322 / 1935 / 236 |
+| ...the same four cells with the shared prologue table alone | 9264 / 1741 / 1750 / 421 |
 | ...of the no-fill rows, the successor of a terminator (what the split arm reads) / of nothing | 1858 / 313 |
-| ...rows the measured openings name that the shared table refuses: behind fill / behind code | 1415 / 185 |
-| ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | 73 / 4 |
-| ...split points that reading means / of those, entries of a `.text` jump table | 377 / 348 |
+| ...rows the measured openings name that the shared table refuses: behind fill / behind code | 1419 / 185 |
+| ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | 76 / 4 |
+| ...split points that reading means / of those, entries of a `.text` jump table | 386 / 357 |
 | ...of the rows still cut, a class-table slot names the opening / nothing names it | 0 / 4 |
 | inline jump tables in `.text` (aligned runs of >=3 code addresses) / entries | 144 / 1510 |
 | control: the same rule over `.rdata`, `.data`, XNET, DSOUND (646 head-shaped runs, 3.3 MB of data) | 0 / 0 / 0 / 403 bodies |
-| base rate: a dword outside `.text` names a random gap byte / a map row's start | 26 of 2000 (1.3%) / 633 of 2000 (31.6%) |
+| base rate: a dword outside `.text` names a random gap byte / a map row's start | 31 of 2000 (1.6%) / 630 of 2000 (31.5%) |
 
 | gap | heads | bodies | first head |
 |---|---:|---:|---|
@@ -351,22 +351,22 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 
 | opening this census adds | map rows it opens | pad-bounded data openings |
 |---|---:|---:|
-| `global-load-eax` | 881 | 8 |
+| `global-load-eax` | 882 | 8 |
 | `global-load-ecx` | 77 | 0 |
 | `global-load-edx` | 23 | 0 |
 | `self-return` | 90 | 0 |
-| `getter-disp8` | 153 | 1 |
+| `getter-disp8` | 154 | 1 |
 | `getter-disp32` | 89 | 0 |
 | `fpu-arg` | 76 | 0 |
 | `sse-load` | 58 | 0 |
-| `zero-return` | 72 | 1 |
+| `zero-return` | 74 | 1 |
 | `add-reg-imm8` | 26 | 0 |
 | `push-arg` | 25 | 0 |
 | `bare-ret` | 30 | 4 |
 
-449 of the 2193 bodies sit in a class-table slot; 444 of those are in the 246 tables no registration names, and 820 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+436 of the 2186 bodies sit in a class-table slot; 433 of those are in the 235 tables no registration names, and 823 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
 
-The split rule does not hold on the map's own rows the way it holds on the gaps: 73 rows read as two bodies with relative branches alone, and **348 of their 377 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 238 split heads**, which is what makes the 238 splits bodies rather than case blocks.
+The split rule does not hold on the map's own rows the way it holds on the gaps: 76 rows read as two bodies with relative branches alone, and **357 of their 386 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 238 split heads**, which is what makes the 238 splits bodies rather than case blocks.
 <!-- /generated:gap-heads -->
 
 **What is left is what no channel names.** 279 bodies still sit in a table slot -- **264 of them in the 246
