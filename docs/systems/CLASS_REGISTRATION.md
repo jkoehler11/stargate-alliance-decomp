@@ -2355,13 +2355,14 @@ index -- the first-hit channel recorded one of the tables and it was the wrong o
 five: they are `LodMeshInstance_vt42`, `MeshInstance_vt86`, `LodMeshInstance_vt91`, `MeshInstance_vt76` and
 `NetPendingLevel_vt31` in the map now.
 
-**The 40 member-table bodies are an interface object's methods, and 32 of them are map rows now.**
-`inventory/class_member_tables.csv` labels 32 of the 49 member tables `<Class>_member_<field>`, and 32 of
-these bodies sit in a labelled one -- `NullRenderDevice_member_0xb8` 6, `NetPendingLevel_member_0x28` 5,
-`XHVVoiceSubsystem_member_0x2c` 4, the `Linker_member_0xb8` and `Connection_member_0x28` families among the
-rest -- so each is named `<member>_vt<slot>`, which says it is that member's method and not a class's slot.
-The other 8 sit in a member table the label pass refused (no owner, or more than one field offset), so the
-method is real and its owner is the open question.
+**The 40 member-table bodies are an interface object's methods, and 38 of them are map rows now.**
+`inventory/class_member_tables.csv` labels 40 of the 49 member tables `<Class>_member_<field>` (35 before
+the constructor channel below), and 38 of these bodies sit in a labelled one --
+`NullRenderDevice_member_0xb8` 6, `NetPendingLevel_member_0x28` 5, `XHVVoiceSubsystem_member_0x2c` 4, the
+`Linker_member_0xb8` and `Connection_member_0x28` families among the rest -- so each is named
+`<member>_vt<slot>`, which says it is that member's method and not a class's slot. The other 2 sit in
+`0x0051724c`, whose two store bodies carry no symbol at all, so the method is real and its owner is still
+the open question.
 
 **The 4 conflicts are one body two independent classes both declare, and the linker folded them**:
 `0x000624e0` (`Object` slot 17 and `GameInfo` slot 17), `0x001b9040` and `0x001b9060`
@@ -2481,10 +2482,11 @@ names the ten declarations and adds their rows: `Exporter_vt11` 43 bytes, `Facto
 bodies**, and the walk reports `declared 0`, so everything left is a name the image's field layout does not
 carry.
 
-**The 8 that remain need a name no table on the image side carries.** They sit in three member tables
-the label pass refused -- `0x0051724c` (2 bodies, field `0x38`), `0x0053f7f0` (3, field `0x8`) and
-`0x0053f888` (3, field `0x8`) -- so the method is real and its owner is the open question. The 10
-declarations sit on **7** class tables no registration names, and the registration *does* name their
+**The 2 that remain need a name no table on the image side carries, and the other six resolved on the
+constructor's own symbol (the section at the end of this page).** They sit in one member table the label
+pass refused -- `0x0051724c` (2 bodies, field `0x38`), whose two store bodies are `FUN_001de030` and
+`FUN_001df420` and carry no class -- so the method is real and its owner is the open question. The 10
+declarations sat on **7** class tables no registration names, and the registration *did* name their
 children: `0x004d34d8` -> `ObjectExporterT3D`, `0x004d3af0` -> `TextBufferFactory`, `0x004c94b0` ->
 `XboxClient`, `0x004fcfe0` -> `ChannelDownload` and `HTTPDownload`, `0x004fc588` ->
 `DemoPlayPendingLevel` and `NetPendingLevel`, `0x004d17a8` -> the property classes (`ArrayProperty`,
@@ -2514,13 +2516,13 @@ neither is a read the declaration walk owes.
 | `0x001df4e0` | 4 | `member` | unlabelled member table `0x0051724c` | a label for the member table's owner |
 | `0x001dfe40` | 7 | `member` | unlabelled member table `0x0051724c` | a label for the member table's owner |
 
-**2 bodies need a name no image-side table carries.** The 2 member bodies sit in 1 member tables whose owner the label pass refused, and the 0 declarations sit on 0 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
+**2 bodies need a name no image-side table carries.** The 2 member bodies sit in 1 member table(s) whose owner the label pass refused, and the 0 declarations sit on 0 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
 <!-- /generated:declarer-residue -->
 
-**What this does not do.** The declared half of this residue is empty (the section below closes it); what
-stands is the 18 that need a name no image-side table carries -- 8 member bodies in 3 unlabelled member
-tables and 10 declarations on 7 class tables no registration names -- plus the 4 bodies the linker folded
-(one body read once per index) and the 807 bodies no channel names.
+**What this does not do.** The declared half of this residue is empty (the section below closes it) and so
+is the class-table half (the `child-super` rule named the seven parents); what stands is the 2 bodies that
+need a name no image-side table carries -- both in the one unlabelled member table, `0x0051724c` -- plus
+the 4 bodies the linker folded (one body read once per index) and the 807 bodies no channel names.
 
 ## The declared residue closes: a false head is a move, a switch table is a boundary (2026-11-21)
 
@@ -2819,3 +2821,84 @@ object there, or one of the two reads is wrong. It stays `parent-unnamed` in
 The add the names feed is the one `tools/declarer-residue.py --emit-moves` already carries; the ten
 `declared-unnamed` bodies now have a declarer class, so the repair is
 `make declarer-residue-emit && make boundaries && make symbols` followed by the censuses the map move touches.
+
+## The interface's owner is the class whose constructor stores it (2026-11-21)
+
+The declarer walk left eight member bodies in three member tables with one reason: no table on the image
+side names the member's owner. The reason was the roster, not the image. `inventory/class_constructors.csv`
+is the UnrealScript roster, so both store censuses looked for a UE class around each store body -- and a
+UIX/XMO class is in no package. The body that writes the pointer is
+`??0CVoiceMailPseudoFeature@UIXNamespace@@QAE@XZ`, whose own symbol names the class outright.
+
+**The channel is one reader, and both censuses take it.** `tools/class-table-store-fields.py` and
+`tools/class-interface-installers.py` now merge a `cpp_ctors()` map into the ctor roster: every map row
+whose name starts `??0`, `??1`, `??_G` or `??_E` reads as `{body: (class, form, symbol)}` through one
+`mangled_class`, which takes the class token for a constructor (`??0CClass@NS@@`), a destructor
+(`??1CClass@NS@@`) and a scalar-deleting destructor (`??_GCClass@NS@@`), and refuses a template (`??$`)
+rather than guessing its scope. A store into `[this+off]` from a class's own constructor installs that
+class's member, so the store body's symbol is the owner the label pass was missing.
+
+| table | field | its store bodies | the class they name | label |
+|---|---:|---|---|---|
+| `0x0053f7f0` | `0x8` | `??0` at `0x00332d5b`, `??1` at `0x00332f23`, one `ds:` store in `FUN_004190bf` | `CVoiceMailPseudoFeature` | `CVoiceMailPseudoFeature_member_0x8` |
+| `0x0053f888` | `0x8` | `??0` at `0x00333d2c`, `??1` at `0x00334a40` | `CPlayersFeature` | `CPlayersFeature_member_0x8` |
+| `0x0051724c` | `0x38` | `FUN_001de030`, `FUN_001df420` | none (no symbol) | unowned, and now a measured residue |
+
+**Two of the three resolve, and the third is a named residue rather than an unnamed table.** The eight
+member bodies become six named ones and two left: `CVoiceMailPseudoFeature_member_0x8_vt1` 56 bytes,
+`_vt4` 25, `_vt5` 17, `CPlayersFeature_member_0x8_vt2` 16, `_vt3` 29, `_vt4` 19 -- all six written as
+`symbols/xbe_boundaries.csv` `add` rows with their creation rows in `symbols/xbe_overrides.csv`, so the map
+goes **16,633 -> 16,639 functions, 4,227,700 -> 4,227,862 bytes of code**, the gap census 2,578 -> **2,572**
+heads (2,186 -> 2,180 bodies), the declarer residue 12 -> **6 bodies (4 linker folds + 2 member)**, and
+native naming 51.60% -> **51.61%**. The 2 left are `0x001df4e0` (4 bytes) and `0x001dfe40` (7) in
+`0x0051724c`: its stores are `FUN_` bodies, so the channel that names a member is absent rather than wrong,
+which is what the residue row now says.
+
+**The name is the member's, not a class slot's.** `<member>_vt<slot>` is the shape the page's own caution
+asks for: a member table's slots are the member's methods, so `CVoiceMailPseudoFeature_member_0x8_vt4`
+names the body after the field it is a method of and never claims `CVoiceMailPseudoFeature_vt4`.
+
+**The installer census moves with it, and the interface population keeps its own numbers.** The 232
+interface tables read **65 ctor-holder** (36), **16 ctor-caller** (19), **0 dtor-caller** (1) and **147
+unnamed-holder** (172) with 4 no-site: a C++ constructor is the holder of 29 more tables, and the two tables
+here are the ones the member census could act on. `0x0051724c` keeps `unnamed-holder` and the family
+`0x00507c7c` keeps four tables of five slots with no owner.
+
+**The census was stale, and re-running it is what showed the channel's other half.** Five member tables the
+label pass had refused gain the owner their committed ctor map already recorded -- `0x004c78b8` `Subsystem`,
+`0x004c93c4` and `0x004c93c8` `Viewport`, `0x004d0314` `NetDriver` and `0x004fc568` `PendingLevel`, all
+named by the #828 `child-super` rule -- and 185 `class_interface_rep_bodies.csv` rows move from `outside` to
+the `gap`/`stub` their body now reads as. A census that only runs when its own section changes drifts from
+the artifacts it joins; `make class-table-store-fields` and `make class-interface-installers` are the two
+that had.
+
+**Two rows lose a label, and the nearest common ancestor is why.** `0x004d03b8` and `0x004d03bc` are stored
+at `+0x2c` and `+0x28` by both `NetConnection` and `PackageMapLevel` (three stores each, read from
+`FUN_00025ff0`/`FUN_0010ffa0` and `FUN_00110120`), so their owner set is two classes and `declares()` reads
+`coincident`. It is the honest answer for this build: `NetConnection` has no parent edge in
+`inventory/class_table_parent_edges.csv` and `PackageMapLevel` chains to `PackageMap` -> `Object`, so no
+ancestor joins them. The member census reads **40 labelled of 49** (35), **6 unowned** (13) and **3
+coincident** (1).
+
+**What this does not do.** `0x0051724c`'s two bodies still have no name (their stores carry no symbol), the
+4 linker-folded bodies still read one body per index, and the 424 interface-only bodies and 807 unnamed
+bodies are untouched. The 9 caller-split tables' nearest-common-ancestor reading is not in this bundle; the
+two `coincident` rows above are the case it has to solve first, and they show the census it needs (a parent
+edge for `NetConnection`).
+
+**Files.** `tools/class-table-store-fields.py` (the reader, the merge, the evidence's holder),
+`tools/class-interface-installers.py` (the same reader, `cpp_ctor_map`, the merged ctor map),
+`tools/declarer-residue.py` (the count reads as a count), `symbols/xbe_boundaries.csv`,
+`symbols/xbe_overrides.csv`, `symbols/xbox_functions.csv`, `symbols/xbox.map`,
+`inventory/class_table_store_fields.csv`, `inventory/class_member_tables.csv`,
+`inventory/class_interface_installers.csv`, `inventory/class_interface_rep_bodies.csv`,
+`inventory/class_slot_declarers.csv`, `inventory/declarer_residue.csv`, `inventory/gap_heads.csv`,
+`inventory/function_modules.csv`, `inventory/module_export_plan.csv`,
+`inventory/xbe_functions_by_module.csv`, `inventory/native_class_packages.csv`, `docs/NATIVE.md`,
+`docs/NATIVE_CLASS_TREE.md`, `docs/SYMBOLS.md`, `docs/STATUS.md`, `README.md`, this page, `docs/UNKNOWNS.md`,
+`PLAN.md`.
+
+**Gates.** `make ci` green; `class-table-store-fields --check` and `class-interface-installers --check` are
+dump-free synthetic reads that write nothing; the map, the gap census, the declarer walk and the residue
+reproduce byte for byte on a second run; `--apply-adds` refused to write a row the map already had. No boot,
+no xemu, no Ghidra.

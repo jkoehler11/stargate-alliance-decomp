@@ -16905,3 +16905,49 @@ sequence.
   mangled `?MicrophoneRawDataReady@CVoiceMailPseudoFeature@UIXNamespace@@...`, which is the owner's first
   channel and not yet a rule; the 9 caller-split tables' nearest-common-ancestor reading; and the 424
   interface-only bodies (U40's remaining half).
+
+### Execution notes (2026-11-21, the interface's owner is the class whose constructor stores it)
+
+- **Task.** The declarer walk's last 8 bodies sat in three member tables under one reason: no image-side table
+  names the member's owner. The reason was the roster -- `inventory/class_constructors.csv` is the UnrealScript
+  one and a UIX/XMO class is in no package -- so both store censuses asked the wrong question of the right
+  body.
+- **The rule.** A map row whose mangled name is a constructor (`??0CClass@NS@@`), a destructor
+  (`??1CClass@NS@@`) or a scalar-deleting destructor (`??_GCClass@NS@@`) names its class outright, and a store
+  into `[this+off]` from a class's own constructor installs that class's member. One `mangled_class` reader
+  (templates refused) and one `cpp_ctors()` map, merged into the ctor roster in both
+  `tools/class-table-store-fields.py` and `tools/class-interface-installers.py`.
+- **The three tables.** `0x0053f7f0` field `0x8` is `CVoiceMailPseudoFeature` (`??0` at `0x00332d5b` and `??1`
+  at `0x00332f23` both store it; a third store is a `ds:` in `FUN_004190bf`), `0x0053f888` field `0x8` is
+  `CPlayersFeature` (`??0` at `0x00333d2c`, `??1` at `0x00333dd1`), and `0x0051724c` field `0x38` keeps no name
+  because its stores are `FUN_001de030`/`FUN_001df420` -- a residue with a measured reason.
+- **The add ran.** `class-slot-declarers --apply-adds` writes six boundary rows and their creation rows:
+  `CVoiceMailPseudoFeature_member_0x8_vt1/4/5` (56/25/17 bytes) and `CPlayersFeature_member_0x8_vt2/3/4`
+  (16/29/19). Map 16,633 -> **16,639 functions**, 4,227,700 -> **4,227,862 bytes**; gap census 2,578 ->
+  **2,572 heads**; declarer residue 12 -> **6 bodies** (4 folds + 2 member); native naming 51.60% ->
+  **51.61%**; installer verdicts 36 -> **65 ctor-holder**, 172 -> **147 unnamed-holder**.
+- **The census was stale, and re-running it was half the finding.** Five member tables the label pass refused
+  already had an owner in the committed ctor map (`Subsystem`, `Viewport` twice, `NetDriver`, `PendingLevel`,
+  all named by #828's `child-super` rule) and 185 interface-representative rows read `outside` where their body
+  is a `gap`/`stub` now. A census that only runs when its own section changes drifts from the artifacts it
+  joins.
+- **Two rows lose a label.** `0x004d03b8`/`0x004d03bc` are stored at `+0x2c`/`+0x28` by `NetConnection` and
+  `PackageMapLevel` both, so `declares()` reads `coincident` -- and honestly: `NetConnection` has no parent
+  edge in the census and `PackageMapLevel` chains to `PackageMap` -> `Object`. Member census: 40 labelled of
+  49 (35), 6 unowned (13), 3 coincident (1).
+- **Files.** `tools/class-table-store-fields.py`, `tools/class-interface-installers.py`,
+  `tools/declarer-residue.py` (the count reads as a count), `symbols/xbe_boundaries.csv`,
+  `symbols/xbe_overrides.csv`, `symbols/xbox_functions.csv`, `symbols/xbox.map`,
+  `inventory/class_table_store_fields.csv`, `inventory/class_member_tables.csv`,
+  `inventory/class_interface_installers.csv`, `inventory/class_interface_rep_bodies.csv`,
+  `inventory/class_slot_declarers.csv`, `inventory/declarer_residue.csv`, `inventory/gap_heads.csv`,
+  `inventory/function_modules.csv`, `inventory/module_export_plan.csv`,
+  `inventory/xbe_functions_by_module.csv`, `inventory/native_class_packages.csv`, `docs/NATIVE.md`,
+  `docs/NATIVE_CLASS_TREE.md`, `docs/SYMBOLS.md`, `docs/STATUS.md`, `README.md`,
+  `docs/systems/CLASS_REGISTRATION.md`, `docs/UNKNOWNS.md`, this note.
+- **Gates.** `make ci` green (389 checks); both new readers answer `--check` without the dump and write
+  nothing; the map, the gap census, the declarer walk and the residue reproduce byte for byte on a second run.
+  No boot, no xemu, no Ghidra.
+- **Not in this bundle.** `0x0051724c`'s two bodies (their stores carry no symbol), the 4 linker folds, the 9
+  caller-split tables' nearest-common-ancestor reading, the 424 interface-only bodies and the 807 bodies no
+  channel names.
