@@ -16045,3 +16045,46 @@ sequence.
   the name field), the 214 interfaces whose slots carry no mangled class (the per-body read the 399 bodies
   need), and the member tables' per-member *type* -- the channel that names the UIX/XMO interfaces reaches
   none of the 49, which is now measured rather than assumed.
+
+### Execution notes (2026-11-20, the 232 interfaces are 216 shapes, and the 49 member tables are 49 of them)
+
+- **The thread's next question was identity, not another name channel.** The older note left three items: the
+  18 class tables' names, the 214 interfaces' names and the member tables' per-member type. The first is a
+  class-record question and stays one; the other two turned out to be the same question, because
+  `inventory/class_member_tables.csv` and `inventory/class_plain_tables.csv` share **all 49** of the member
+  tables (``table_va``-for-`table_va`) -- the member tables *are* 49 of the 232, and only the **store** tells
+  them apart (a member field of an object, or the object's own slot). So the member's type and the
+  interface's identity are one measurement, not two.
+- **The measurement is the vtable itself.** `tools/class-interface-shapes.py` reads the 232 slot vectors and
+  applies `tools/class-member-tables.py`'s kin rule unchanged -- identical vectors, one vector subsuming
+  another of the same length, or two vectors of four slots or more agreeing on more than half -- so a family
+  means exactly what it means in the member census. The 232 tables are **216** shapes (**27** exact repeats,
+  spread 2 named / 15 member / 10 anonymous), **132** families, **137** tables in a family of two or more and
+  **95** alone.
+- **The largest family names a class of object without a string.** **31** tables of 22 slots, held at `0xb8`
+  by `LinkerLoad`, `LinkerSave`, `LinkerLoadGame` and `LinkerSaveGame` (the four member rows), the other 27
+  anonymous, with object sizes `0x58`, `0x84`, `0x86c`, `0x8064` -- one archive interface, implemented by
+  archives of very different sizes. The second-largest, **10** tables of 9 slots, contains `0x0051d300` and
+  `0x0052086c`, which the U40 copy of this thread already reads as the base table
+  `SparkEmitter`/`SpriteEmitter`/`TrailEmitter` install. Both are readings of the shipped hierarchy, labelled
+  as readings and **not** written into the artifact as names.
+- **Roles are the only names, and they do not propagate.** 18 named by a slot's masked class scope, 49 held
+  by a named field, 165 with neither; the sets are disjoint and **no family holds both a named and an unnamed
+  table** (0 of 132). So the next instrument is **one body read per family representative**, not 165 of them:
+  100 of the 165 sit in a family of two or more, and **65** are the residue. **33** tables also carry an
+  object size (the installer's allocation immediate, or the class registry); the other 199 are allocated on a
+  stack frame, through a global, or by an allocation whose size operand is not an immediate.
+- **Files.** `tools/class-interface-shapes.py` (`--check`, `--check-doc`, `--report`, `--write-doc`),
+  `inventory/class_interface_shapes.csv` (232 rows, 21 columns), `docs/systems/CLASS_REGISTRATION.md` (the new
+  section, its block, the regenerating paragraph), `docs/UNKNOWNS.md` (U40's interface paragraph and its
+  closing sentence), `Makefile` (target, `.PHONY`, help, the two CI checks), `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `class-interface-shapes --check` is a synthetic self-test (a rung that
+  implements the slot below leaves pure, the reverse refusal, more than half alike, two two-slot tables that
+  are *not* kin, a stranger; the three roles; the size column and the allocation immediate; the twin count)
+  and writes nothing; `--check-doc` rebuilds the block from the committed CSV with no dump; the artifact
+  reproduces byte for byte on a second run.
+- **Not in this bundle.** The names of the 18 class tables (the class-record name field -- the static
+  initialiser the previous note pointed at), the 165 anonymous interfaces' bodies (one read per family
+  representative now that the families exist), and the 18's UE2.5 ladder reading, which is still a reading
+  rather than a measurement.

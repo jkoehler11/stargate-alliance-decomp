@@ -1201,6 +1201,115 @@ interfaces and a stranger; the mangled-name reader against a constructor, a meth
 destructor and a template; no dump, writes nothing) and `--check-doc` rebuilds the block from the
 committed `inventory/class_plain_tables.csv` with no dump. Both run in `make ci`.
 
+The interface census reads the 232 slot vectors and writes the shape, the family, the role and the object
+size:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-interface-shapes.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-interface-shapes.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic set of slot vectors (a rung that implements the slot below leaves `__purecall`, the
+reverse refusal, more than half alike, two two-slot tables that are *not* kin, a stranger) plus the role
+assignment, the size columns and the twin count, and it writes nothing; `--check-doc` rebuilds its block
+from the committed `inventory/class_interface_shapes.csv` with no dump. Both run in `make ci`.
+
+
+
+## The 232 interfaces' identity: 18 named, 49 held, 165 anonymous
+
+The section above asks *what kind of object* a table is and answers it with the class-table prefix. The
+question it leaves is *which of the 232 are the same interface*, and that one the image answers with the
+vtable rather than with a name, because no symbol or string in the image names most of these classes.
+`tools/class-interface-shapes.py` reads the 232 slot vectors (`inventory/class_interface_shapes.csv`, 232
+rows) and applies `tools/class-member-tables.py`'s kin rule to them unchanged -- identical vectors, one
+vector *subsuming* another of the same length, or two vectors of four slots or more agreeing on more than
+half -- so a family here means exactly what a family means there.
+
+**The 49 member tables are 49 of these 232, not a neighbouring population.** Every `table_va` in
+`inventory/class_member_tables.csv` is a row of `inventory/class_plain_tables.csv` (49 of 49), so "the 232
+interfaces" already *are* the member tables plus the plain ones; what separates the two is the **store** --
+a member field of a class's object, or the object's own slot -- and not the table. That matters because a
+member's *type* is then a question this population can answer without a class name: the field names the
+interface, and the family says how many owners hold that shape (`LinkerLoad,LinkerSave@0xb8` is one table
+two classes hold at the same offset). The earlier sentence that the slot-symbol reading "names 0 of the 49
+member tables" is a statement about that *channel* (1 of the 49's 292 slots carries a mangled class scope,
+and one slot cannot name a table), not about the tables being a separate population.
+
+<!-- generated:class-interface-shapes -->
+| role | tables | slots | with an exact twin | in a family of two or more | alone |
+|---|---|---|---|---|---|
+| named | 18 | 225 | 2 | 10 | 8 |
+| member | 49 | 292 | 15 | 27 | 22 |
+| anonymous | 165 | 2010 | 10 | 100 | 65 |
+| **all** | **232** | **2527** | **27** | **137** | **95** |
+
+**232 table(s) over 2527 slot(s) are 132 family(ies); 27 table(s) have an exact twin and 95 stand alone.** The largest family holds **31** tables of **22** slots.
+
+| family | tables | slots | roles | names | members (up to 12) |
+|---|---|---|---|---|---|
+| `0x004c7860` | 31 | 22 | anonymous,member | LinkerLoad,LinkerLoad,LinkerSave,LinkerLoadGame,LinkerSave,LinkerSaveGame | 0x004c7860 0x004c8410 0x004c84d0 0x004c9038 0x004c9738 0x004c9858 0x004c9a98 0x004c9b50 0x004d0de8 0x004d3118 0x004d3248 0x004d3ba0 |
+| `0x004e3520` | 10 | 9 | anonymous | - | 0x004e3520 0x004f7690 0x00507bb8 0x0051707c 0x0051d238 0x0051d300 0x0051d7c4 0x005207a4 0x0052086c 0x00523394 |
+| `0x0053d590` | 7 | 4 | anonymous | - | 0x0053d590 0x0053d5c8 0x0053d5fc 0x0053d630 0x0053d70c 0x0053d768 0x0053d7a0 |
+| `0x004fc35c` | 6 | 8 | member | DemoPlayPendingLevel,Level,NetPendingLevel,unowned | 0x004fc35c 0x004fc4cc 0x004fc568 0x004fc610 0x0050e88c 0x005139f4 |
+| `0x005170f4` | 5 | 15 | anonymous | - | 0x005170f4 0x00517134 0x005171b4 0x0051a27c 0x0051a9e4 |
+| `0x004d03b8` | 4 | 1 | member | DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox | 0x004d03b8 0x004d0470 0x004d05d0 0x004fcc08 |
+| `0x004d03bc` | 4 | 2 | member | DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox | 0x004d03bc 0x004d0474 0x004d05d4 0x004fcc0c |
+| `0x00507c7c` | 4 | 5 | anonymous,member | unowned | 0x00507c7c 0x0051724c 0x00517430 0x0051f6ec |
+| `0x00516fd4` | 4 | 14 | anonymous | - | 0x00516fd4 0x0051700c 0x00517044 0x005170a8 |
+| `0x0053f718` | 4 | 21 | named | CAlertFeature,CFriendsFeature,CLogonFeature,CPlayersFeature | 0x0053f718 0x0053f8a0 0x0053f920 0x0053f998 |
+| `0x00510f78` | 3 | 18 | anonymous | - | 0x00510f78 0x005174a8 0x00517588 |
+| `0x0052d3e8` | 3 | 25 | anonymous | - | 0x0052d3e8 0x0052e0c8 0x0052f1c0 |
+
+| object size (the installer's allocation) | tables | roles |
+|---|---|---|
+| 0x30 | 3 | anonymous |
+| 0x58 | 3 | anonymous,member |
+| 0x2c | 2 | anonymous |
+| 0x38 | 2 | anonymous |
+| 0x4f90 | 2 | member |
+| 0x4fb4 | 2 | member |
+| 0x4fc8 | 2 | member |
+| 0xb0 | 2 | member |
+| no size read | 199 | anonymous,member,named |
+<!-- /generated:class-interface-shapes -->
+
+**A shape is the identity, and 27 tables are exact copies.** The 232 tables carry **216** distinct slot
+vectors: **27** of them repeat another's vector exactly -- the same vtable emitted twice, once per
+translation unit -- so the population is 232 *tables* and 216 *shapes*. The repeat is spread across the
+roles (2 of the 18 named tables, 15 of the 49 member tables and 10 of the 165 anonymous ones), which is
+what a per-translation-unit copy looks like rather than a reimplementation.
+
+**132 families, and the largest is one interface implemented 31 times.** The kin rule leaves **95** tables
+alone and joins **137** into families of two or more. The largest family holds **31** tables of 22 slots,
+and its named members are the four `Linker` classes -- `LinkerLoad`, `LinkerSave`, `LinkerLoadGame` and
+`LinkerSaveGame`, each holding it in a field at `0xb8` -- plus 27 anonymous tables whose objects are of very
+different sizes (`0x58`, `0x84`, `0x86c`, `0x8064`), i.e. one archive-style interface that a file archive, a
+memory archive and a save archive each implement. The second-largest holds **10** tables of 9 slots, three
+of them exact twins, and two of its members (`0x0051d300`, `0x0052086c`) are the tables U40 already records
+as the base table `SparkEmitter`, `SpriteEmitter` and `TrailEmitter` install, so that family is the emitter
+hierarchy's interface. Neither reading is a symbol the image carries: they are readings of the hierarchy,
+labelled as readings and not written into the artifact as names.
+
+**The roles are the only names, they are disjoint, and they do not propagate.** 18 tables are named by the
+class scope of their own slots' masked symbols, 49 by the class and field that hold them, and **165 carry
+neither**. The 18 and the 49 do not overlap, and **no family holds both a named table and an unnamed one**
+(0 of the 132), so the slot-symbol names do not reach down a family: a family is a unit of work, not a
+name. **33** tables also carry an object size, read from the installer's allocation immediate or from the
+class registry when the class registers one; the other **199** are allocated on a stack frame, through a
+global, or by an allocation whose size operand is not an immediate, so a size is a bonus identity channel
+rather than a census.
+
+**What this does not say.** It does not name the 165, and it cannot: the family says which tables are one
+interface and the role says where a name already exists, but neither invents a class name the image never
+stores. What it does say is that naming them is not 165 separate questions -- **100** of the 165 sit in a
+family with another table, and one representative per family is what a per-body read would owe, with the
+lone **65** as the residue that read has to carry.
+
+`--check` is a synthetic self-test (a rung that implements the slot below leaves pure, the reverse refusal,
+more than half alike, two two-slot tables that are *not* kin, a stranger; the role of a named, a member and
+an anonymous table; a size column and an allocation immediate; the twin count) and writes nothing;
+`--check-doc` rebuilds the block from the committed `inventory/class_interface_shapes.csv` with no dump.
+Both run in `make ci`.
 
 ## Regenerating
 
