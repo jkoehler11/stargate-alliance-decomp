@@ -1508,14 +1508,9 @@ break: a derived class's table is never shorter than its parent's.
 | parent (unnamed) | slots | children | replaced | added | most slots in a child | verdicts |
 |---|---|---|---|---|---|---|
 | `0x004c78c0` | 31 | 7 | 7 | 93 | 56 | extends 6 identical 1 |
-| `0x004c7958` | 46 | 4 | 18 | 0 | 46 | extends 3 identical 1 |
-| `0x004c7a10` | 46 | 9 | 21 | 4 | 48 | extends 6 identical 3 |
-| `0x004c7ac8` | 48 | 4 | 16 | 10 | 58 | extends 4 |
-| `0x004c7c78` | 32 | 10 | 28 | 4 | 33 | extends 10 |
 | `0x004c9348` | 31 | 2 | 6 | 36 | 56 | extends 2 |
 | `0x004c93d0` | 56 | 1 | 14 | 1 | 57 | extends 1 |
 | `0x004c94b0` | 43 | 1 | 15 | 0 | 43 | extends 1 |
-| `0x004cfe68` | 59 | 3 | 13 | 0 | 59 | extends 3 |
 | `0x004d0318` | 40 | 3 | 16 | 1 | 41 | extends 3 |
 | `0x004d03c8` | 42 | 3 | 14 | 0 | 42 | extends 3 |
 | `0x004d1468` | 35 | 4 | 9 | 25 | 53 | extends 4 |
@@ -1528,15 +1523,14 @@ break: a derived class's table is never shorter than its parent's.
 | `0x004fc4f0` | 30 | 2 | 3 | 45 | 71 | extends 2 |
 | `0x004fc588` | 34 | 2 | 7 | 0 | 34 | extends 2 |
 | `0x004fcfe0` | 36 | 2 | 9 | 0 | 36 | extends 2 |
-| `0x005040d0` | 56 | 1 | 14 | 10 | 66 | extends 1 |
 | `0x00517860` | 30 | 3 | 3 | 2 | 32 | extends 3 |
 | `0x005178d8` | 32 | 5 | 15 | 0 | 32 | extends 5 |
 
 **490 of the 490 measured parent edges read as rungs -- 362 `extends`, 128 `identical`, 0 `shorter`.** A child's table is never shorter than its parent's, so a `shorter` row is the parent link or the slot count, not the rule: none does.
 
-**88 of the 490 edges land in a parent no registration names, over 24 distinct heads**, and every one of those heads is a class with no script row, so this is the only override census the 88 edges have: the remaining 402 are the script-linked population the control is read on.
+**57 of the 490 edges land in a parent no registration names, over 18 distinct heads**, and every one of those heads is a class with no script row, so this is the only override census the 88 edges have: the remaining 433 are the script-linked population the control is read on.
 
-**Control: the 372 script-linked edges this read reaches reproduce `class_virtual_overrides.csv` on 372, 0 disagreeing.** Same slot vectors and the same slot-3 exclusion, so a count on a row that has no published answer is the same measurement.
+**Control: the 377 script-linked edges this read reaches reproduce `class_virtual_overrides.csv` on 377, 0 disagreeing.** Same slot vectors and the same slot-3 exclusion, so a count on a row that has no published answer is the same measurement.
 <!-- /generated:class-ladder-rungs -->
 
 **The control is what makes the rest a measurement, and finding it wrong first was this run's third stale
