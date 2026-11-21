@@ -1928,7 +1928,6 @@ corroborates -- it is the same reference, one level out.
 | `0x00192730` | 836 | Reviewing Paths | This pickup should have a PickupBase | 3 string site(s) |
 | `0x0001fa30` | 154 | Arctor<BYTE>(Linear)==LINEAR_SEEK | ..\..\Core\Inc\FFileManagerLinear.h | 2 string site(s) |
 | `0x00035f10` | 222 | InContextCommand | StrProperty0 | 2 string site(s) |
-| `0x0007c02f` | 560 | %s::ImportText: Illegal or missing key n | %s::ImportText: Incomplete parenthesised | 2 string site(s) |
 | `0x0011ea30` | 605 | Receiving package '%s' | Engine | 2 string site(s) |
 | `0x001d3270` | 436 | NumItems | Config%d | 2 string site(s) |
 | `0x00295d30` | 175 |      Title: %s |      Album: %s | 2 string site(s) |
@@ -1949,7 +1948,7 @@ corroborates -- it is the same reference, one level out.
 | `0x001bff70` | 174 | Cast of %s to %s failed | 1 string site(s) |
 | `0x001d2620` | 143 | Engine | 1 string site(s) |
 | `0x00223bb0` | 107 | GetBoneRotation: Bone [%s] not found in  | 1 string site(s) |
-| `0x002b5880` | 244 | invalid stencil op | 1 string site(s) |
+| `0x002b5880` | 97 | invalid stencil op | 1 string site(s) |
 | `0x002b96b0` | 160 | Engine | 1 string site(s) |
 | `0x002b9a10` | 65 | CREATING COPY TARGET - RETURNING | 1 string site(s) |
 | `0x002c1890` | 195 | Settings | 1 string site(s) |
@@ -1958,6 +1957,7 @@ corroborates -- it is the same reference, one level out.
 | `0x003081c0` | 239 | UnregisterPlayer failed with code 0x%x | 1 string site(s) |
 | `0x00318f90` | 879 | Engine | 1 string site(s) |
 | `0x00328890` | 606 | SessionStartTask::Finsh: ExchangeKey: %s | 1 string site(s) |
+| `0x003db740` | 3245 | MdtConstraintCreateFromMeFJoint: Both bo | 1 string site(s) |
 | `0x00017630` | 38 | Engine_UnStaticMesh | a call into a named body |
 | `0x0001bf10` | 1490 | Core_UnTemplate | a call into a named body |
 | `0x0002a870` | 46 | XboxAudio_FindSlotByKey | a call into a named body |
@@ -1977,9 +1977,9 @@ corroborates -- it is the same reference, one level out.
 | `0x00068ac0` | 95 | Core_UnTemplate | a call into a named body |
 | ... | | 47 more | |
 
-**2506 heads decode as 2188 bodies and 318 islands; of the bodies 0 hold an assert path, 43 a printable string and 754 a call into a body the map names, and 2081 hold none of the three.**
+**2510 heads decode as 2193 bodies and 317 islands; of the bodies 0 hold an assert path, 43 a printable string and 755 a call into a body the map names, and 2086 hold none of the three.**
 
-**Control: 1337 of the map's 16618 bodies hold an assert site, and 1283 of the 1329 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 46 reference no assert path at all -- so the name is that reference read one level out.**
+**Control: 1337 of the map's 16621 bodies hold an assert site, and 1283 of the 1329 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 46 reference no assert path at all -- so the name is that reference read one level out.**
 
 **The owed interface representatives' slots hold 150 of these heads and only 108 are bodies -- 33 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 42; of the 108 bodies 0 hold an assert path, 2 a string and 61 a call into a named body, and the per-body read cannot name an interface (U40).**
 <!-- /generated:gap-body-files -->
@@ -2309,24 +2309,24 @@ than inferred.
 <!-- generated:class-slot-declarers -->
 | what holds the body | bodies | share | name it earns |
 |---|---|---|---|
-| a class table, and the walk reaches the top of its chain | 13 | 3% | `<Class>_vt<slot>` |
+| a class table, and the walk reaches the top of its chain | 10 | 2% | `<Class>_vt<slot>` |
 | a class table no registration names, which the walk reaches by its parent edge | 7 | 2% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
 | two independent declarations of one body | 4 | 1% | none (a conflict) |
 | a member table (a constructor stores it into a field) | 8 | 2% | `<Class>_member_<field>_vt<slot>` |
 | a class table the class map leaves unnamed | 3 | 1% | none (no class) |
-| interface tables only | 423 | 92% | none (an interface name) |
+| interface tables only | 424 | 93% | none (an interface name) |
 
-**The 458 bodies are 1122 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 541 sit-ins are class-table slots and 581 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
+**The 456 bodies are 1120 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 538 sit-ins are class-table slots and 582 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
 
 **The control is the map's own names: 531 of 538 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
 
-**The gap census's own slot names survive the walk: 13 of 15 name the declarer, 0 name someone else, and 2 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
+**The gap census's own slot names survive the walk: 10 of 12 name the declarer, 0 name someone else, and 2 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
 
 **11 bodies sit at two or more slot indices**, which no single name can carry: `0x0001f9b0` (10/11), `0x00179930` (1/2), `0x00179b00` (7/8), `0x0017a7d0` (1/7), `0x001ddf20` (2/3/8), `0x001df4e0` (1/2/3), `0x001df570` (1/2), `0x001ec800` (7/8/30). The index set is recorded per body; the verdict is `conflict` only when two *classes* both declare it -- an interface slot beside a class slot is one method seen through two tables, not two declarations.
 
 **The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and `tools/declarer-residue.py` reads them as the linker's identical-code folds (one shortest shape held at two or more indices of classes that are neither ancestor nor descendant): `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
-**What the walk did with its names.** 243 of these bodies are map rows now -- 211 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 25433 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 13 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 423 are an interface's method, and 3 sit in a class table whose class the class map has not named.
+**What the walk did with its names.** 246 of these bodies are map rows now -- 214 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 27224 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 10 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 424 are an interface's method, and 3 sit in a class table whose class the class map has not named.
 
 <!-- /generated:class-slot-declarers -->
 
@@ -2416,6 +2416,40 @@ bytes** -- and `0x0007be00` (StructProperty slot 43) closes on `ret $0xc` at `0x
 next add can carry. The 4 `check()`-cut bodies cannot be added: their spans hold one map row each, and a
 row is one address that cannot hold two.
 
+**Three of them were addable once the census stopped refusing valid instructions (2026-11-21).** The 13
+were never bodies without an end: on 10 the *census's own* decoder or tail rule refused a form the compiler
+emits, which is why `tools/declarer-residue.py` is written against `objdump` and not against the census.
+Both refusals are now modelled, and the population closes as follows.
+
+* **A `0x66` operand-size prefix shrinks every immediate form.** `vcall-receiver.decode` skipped the prefix
+  byte and then took `imm32`, so `0x00078ae0` drifted at its first `66 c7 06 28 00` (`mov word [esi],0x28`
+  -- five bytes, read as seven) and `0x0007be00` at `66 3d 30 00` (`cmp ax,0x30`, four bytes, read as six).
+  The prefix is now read for the families that carry an immediate -- the arith-immediate group (so `3D`),
+  `A9`, `B8-BF`, `68`, `81`, `C7`, `69` and `F7 /0|/1` -- and the map's own rows are the control: of the
+  13,164 rows in `.text`, the ones that decode to their declared size go **12,355 -> 12,410** and the ones
+  a linear read cannot close **778 -> 739**.
+* **A `lea r,[r+0]` is MSVC's alignment nop, not code.** `0x0007bc10` (StructProperty slot 42) closes on
+  `ret 0x10` at `0x0007bdda` against `8d 49 00` -- `lea ecx,[ecx+0]` -- and the case table its dispatch
+  reads sits behind that. The tail rule did not know the idiom, so the read ran through the table, through
+  the next class's body at `0x0007be00`, and closed on *its* `ret` 1,669 bytes later: one body where the
+  class tables declare two. With the idiom in `native-census._align_at` (modrm mod 01/10, reg == rm, zero
+  displacement, which is a nop whatever follows it) the same head reads **461** bytes with tail
+  `align+table+pad`, and slot 43's body reappears as a head of its own at 1,173.
+
+| the add this unblocked | declarer | slot | byte(s) | the map row |
+|---|---|---:|---:|---|
+| `0x00078ae0` | FixedArrayProperty | 42 | 157 | `FixedArrayProperty_vt42` |
+| `0x0007bc10` | StructProperty | 42 | 461 | `StructProperty_vt42` |
+| `0x0007be00` | StructProperty | 43 | 1,173 | `StructProperty_vt43` |
+
+**And the add ran.** `tools/class-slot-declarers.py --apply-adds` writes the three boundary rows, the
+creation row each needs in `symbols/xbe_overrides.csv`, and the `add` receipt in its own artifact; the map
+goes **16,618 -> 16,621 rows**, all three names are new to it, and the gap census loses the three heads
+(2,602 -> 2,599) — so the residue of this section is **32 bodies, not 35**, with `closes 2 -> 0`: every one
+of the 13 undecoded declarations now has a measured end. What is left is the 4 `check()`-cut bodies (their
+span holds a map row, so a row cannot carry them), the 3 that close past a map row, the 3 that cross an
+inline jump table, the 8 member bodies and the 10 declarations on 7 unnamed class tables.
+
 **The 4 conflicts are the linker's identical-code folding, which settles a question this page left open.**
 The bodies are 1 byte (`ret` -- `Object` slot 17 and `GameInfo` slot 17), 4 bytes
 (`mov eax,[ecx+0x38]; ret` -- the four `VertexStream*` classes at slots 7, 8 and 30) and 21 bytes (the
@@ -2453,9 +2487,6 @@ neither is a read the declaration walk owes.
 |---|---|---|---|---|---|---:|---:|
 | `0x0002f120` | XBoxAudioSubsystem | `XboxAudio_XboxAudioSubsystem` | assert-block | `island-cut` | `0x0002fa26` | 2310 | 1 |
 | `0x00032480` | XHVVoiceSubsystem | `XboxAudio_XHVVoiceSubsystem` | assert-block | `island-cut` | `0x0003266b` | 491 | 1 |
-| `0x00078ae0` | FixedArrayProperty | `FixedArrayProperty_vt43` | code | `closes` | `0x00078b7d` | 157 | 0 |
-| `0x0007bc10` | StructProperty | `FUN_0007c2a0` | code | `table-cut` | `0x0007c295` | 1669 | 0 |
-| `0x0007be00` | StructProperty | `FUN_0007c2a0` | code | `closes` | `0x0007c295` | 1173 | 0 |
 | `0x000ffda0` | Canvas | `FUN_00100000` | code | `spans-row` | `0x0010056a` | 1994 | 1 |
 | `0x00155cf0` | Level | `Engine_UnLevAct` | assert-block | `island-cut` | `0x00155e72` | 386 | 1 |
 | `0x00173700` | MeshEmitter | `Core_UnClass` | assert-block | `island-cut` | `0x001744a5` | 3493 | 1 |
@@ -2465,7 +2496,7 @@ neither is a read the declaration walk owes.
 | `0x002ae3e0` | D3DRenderDevice | `FUN_002ae4e0` | code | `table-cut` | `0x002ae4a3` | 195 | 0 |
 | `0x002fd640` | GUIController | `GUIController_vt35` | code | `table-cut` | `0x002fe3f8` | 3512 | 1 |
 
-**4 of the 13 declared bodies are cut by a check() block, not by the boundary the gap census drew.** On those the row above opens on `push; push; push; call` behind no padding -- an out-of-line `check()` block laid out inside the function, which the body branches over -- so the gap ends inside the body. 3 more close past a map row that is not a check() block, 4 cross an inline jump table first so a linear read cannot bound them, 2 close before the row above and are addable as measured, and 0 reach no terminator behind a pad run. The handler is one address on every check() block of them.
+**4 of the 10 declared bodies are cut by a check() block, not by the boundary the gap census drew.** On those the row above opens on `push; push; push; call` behind no padding -- an out-of-line `check()` block laid out inside the function, which the body branches over -- so the gap ends inside the body. 3 more close past a map row that is not a check() block, 3 cross an inline jump table first so a linear read cannot bound them, 0 close before the row above and are addable as measured, and 0 reach no terminator behind a pad run. The handler is one address on every check() block of them.
 
 | the residue with no name | byte(s) | kind | its blocker | what the name would need |
 |---|---:|---|---|---|
@@ -2491,9 +2522,11 @@ neither is a read the declaration walk owes.
 **18 bodies need a name no image-side table carries.** The 8 member bodies sit in 3 member tables whose owner the label pass refused, and the 10 declarations sit on 7 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
 <!-- /generated:declarer-residue -->
 
-**What this does not do.** It adds no map row: the two addable sizes are measured and left to the add (a row
-moves `symbols/`, `module-split`, `native-summary`, `module-census` and `status`), the 4 `check()`-cut spans
-need a boundary move first, and the 7 unnamed class tables need a class the packages do not declare.
+**What this does not do.** It carries the three adds above and nothing else: the 4 `check()`-cut spans need
+a boundary move first (a `check()` block laid out inside the body is a row of its own, so the body's two
+halves cannot be one contiguous map row), the 3 that close past an ordinary map row need the same answer,
+the 3 that cross an inline jump table need the table walked rather than decoded, and the 7 unnamed class
+tables need a class the packages do not declare.
 
 ## Regenerating, continued
 

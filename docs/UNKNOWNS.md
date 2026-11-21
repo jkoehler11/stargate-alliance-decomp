@@ -6092,4 +6092,23 @@ in three unlabelled member tables (`0x0051724c` field `0x38`, `0x0053f7f0` and `
 name needs an owner for a field or a class for a parent table, and the five parents that could be guessed are
 in neither `Core.u`'s nor `Engine.u`'s `ScriptText`.
 
+**Answered since (2026-11-21, three of the 13 were the census's own refusal).** The declarer residue's 13
+undecoded declarations were read with `objdump` in the entry above; three of them turn out to be bodies the
+census's *decoder* refused, not bodies without an end, so they are now in the map: `0x00078ae0`
+(`FixedArrayProperty_vt42`, 157 bytes), `0x0007bc10` (`StructProperty_vt42`, 461) and `0x0007be00`
+(`StructProperty_vt43`, 1,173). Two rules were missing. The `0x66` operand-size prefix was skipped and every
+immediate then read as `imm32`, so `66 c7 06 28 00` consumed seven bytes instead of five and `66 3d 30 00`
+six instead of four; `vcall-receiver.decode` now reads the prefix for the arith-immediate group, `A9`,
+`B8-BF`, `68`, `81`, `C7`, `69` and `F7 /0|/1`, and the map's own `.text` rows are the control (decode-to-size
+12,355 -> 12,410, no-close 778 -> 739). The tail rule did not know MSVC's `lea r,[r+0]` alignment nop, so
+`0x0007bc10` read through its own case table and through the next class's body: one 1,669-byte body where the
+class tables declare two. `native-census._align_at` reads modrm mod 01/10 with reg == rm and a zero
+displacement as the nop it is, and the pair now reads 461 + 1,173. **The control over the data sections had
+to be corrected for the same reason**: the null population's DSOUND arm is code (the map places 427 rows in
+that segment), so its 0 was a decoder artifact and stands at 403 bodies now; only `.rdata` (0 of 216 runs) and
+`.data` (0 of 13) are a null population. What is left of this entry: the 26 gap-head representatives' add,
+the 807 bodies named by nothing, the 4 bodies a `check()` block cuts in half (a row of their own inside the
+function, so one contiguous map row cannot carry them), the 3 that close past an ordinary row and the 3 that
+cross an inline jump table.
+
 

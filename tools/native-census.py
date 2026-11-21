@@ -170,11 +170,34 @@ TAIL_SHAPES = ("edge", "pad", "align", "table", "bytes")
 
 
 def _align_at(tail, i):
-    """The length of an alignment idiom at `tail[i]`, or 0. `8b ff` is MSVC's hotpatch slot."""
+    """The length of an alignment idiom at `tail[i]`, or 0. `8b ff` is MSVC's hotpatch slot.
+
+    **A `lea r,[r+0]` is a nop and MSVC pads with it, so it belongs here.** `0x0007bc10`
+    (StructProperty's slot 42) closes on `ret 0x10` against `8d 49 00` -- a three-byte
+    `lea ecx,[ecx+0]` -- and the case table that follows it; without the idiom the tail read is
+    `None`, so the sweep walked through the table, through the next class's body at `0x0007be00`,
+    and closed on *its* `ret` 1,669 bytes later. The rule is the instruction, not a byte pattern:
+    modrm mod 01/10, reg == rm, zero displacement. That is a nop whatever follows it.
+    """
     for idiom in (b"\x8b\xff", b"\x66\x90", b"\x0f\x1f\x44\x00\x00", b"\x0f\x1f\x40\x00", b"\x0f\x1f\x00",
                   b"\x0f\x1f\x84\x00\x00\x00\x00\x00", b"\x90"):
         if tail.startswith(idiom, i):
             return len(idiom)
+    n = _nop_lea(tail, i)
+    return n
+
+
+def _nop_lea(tail, i):
+    """The length of a `lea r,[r+0]` at `tail[i]`, or 0 -- MSVC's 3- or 6-byte alignment nop."""
+    if tail[i:i + 1] != b"\x8d" or i + 3 > len(tail):
+        return 0
+    modrm = tail[i + 1]
+    if ((modrm >> 3) & 7) != (modrm & 7):          # not the same register: a real address
+        return 0
+    if (modrm >> 6) == 1 and tail[i + 2] == 0:
+        return 3
+    if (modrm >> 6) == 2 and i + 6 <= len(tail) and tail[i + 2:i + 6] == b"\x00\x00\x00\x00":
+        return 6
     return 0
 
 

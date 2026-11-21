@@ -1916,6 +1916,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00078a70,FixedArrayProperty_vt41,8,Core,Core,assert,,0,,,
 0x00078a80,FixedArrayProperty_vt11,43,Core,Core,assert,,0,,,
 0x00078ab0,FixedArrayProperty_vt39,45,Core,Core,assert,,0,,,
+0x00078ae0,FixedArrayProperty_vt42,157,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00078ab0
 0x00078b80,FixedArrayProperty_vt43,160,Core,Core,assert,,0,,,
 0x00078c20,Core_UnProp,109,Core,Core,assert,,0,,,
 0x00078c90,FUN_00078c90,82,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00078cf0
@@ -1990,6 +1991,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0007b2c0,StrProperty_vt45,17,Core,Core,assert,,0,,,
 0x0007b2e0,FUN_0007b2e0,176,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007b2c0
 0x0007b3a0,FUN_0007b3a0,2156,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007b2c0
+0x0007bc10,StructProperty_vt42,461,(unnamed),(unnamed),none,,,,,
+0x0007be00,StructProperty_vt43,1173,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007c490
 0x0007c2a0,FUN_0007c2a0,124,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007c490
 0x0007c320,FUN_0007c320,101,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007c490
 0x0007c390,FUN_0007c390,120,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0007c490
@@ -3725,7 +3728,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x000f97f0,FUN_000f97f0,22,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000f9790
 0x000f9810,FUN_000f9810,22,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000f9790
 0x000f9830,FUN_000f9830,294,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000f9790
-0x000f9b70,XboxViewport_member_0x28_vt0,134,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000f9c60
+0x000f9b70,XboxViewport_member_0x28_vt0,134,(other named),Engine,propagated,locality,1,2.00,1.000,0x000f9c60
 0x000f9c60,Engine_UnCamera,120,Engine,Engine,assert,,0,,,
 0x000f9ce0,FUN_000f9ce0,685,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000f9c60
 0x000f9f90,Viewport_vt10,170,Engine,Engine,assert,,0,,,
