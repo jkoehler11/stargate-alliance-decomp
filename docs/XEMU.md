@@ -4474,6 +4474,21 @@ Three readings:
    `PurgeCacheDays=30`, and `Suppress=DevLoad` / `Suppress=DevSave` (each twice) — the object cache is the natural
    neighbour of the `Z:` extraction the menu performs, though whether they are the same mechanism is not established here.
 
+**`Z:` is a whole layout, not one path.** The image carries thirteen wide strings that together form a complete mirror of
+the disc's directory set on the development kit's `Z:` drive:
+
+```
+Z:\splash.raw   Z:\Animations   Z:\Textures   Z:\System    Z:\Streams
+Z:\StaticMeshes Z:\Sounds       Z:\Prefabs    Z:\Prefabs\General
+Z:\Music        Z:\Maps         Z:\Help       Z:\Cache
+```
+
+None of those directories exists on the retail disc, which serves the same names from `D:`; the boot trace shows the build
+asking for `d:\splash.raw` three times and `z:\splash.raw` once, which is the two roots being tried in turn. So `Z:` is
+the development staging root baked into the image — the same species of leftover as the `TestMaps` search path, and the
+reason the menu's sound extraction writes `Z:\chevguy4.tm` rather than into `D:\Cache`, which is what `Default.ini`
+declares as `CachePath`.
+
 **Probe counts are not phases.** `XboxDrv` is probed four times per location in this window and `D3DDrv` twice, which most
 likely tracks how many times the name is requested rather than a difference between the packages — with a step-over per
 stop, counts remain instrument-limited and are reported as counts only.
