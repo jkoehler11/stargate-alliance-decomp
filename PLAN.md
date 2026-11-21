@@ -16768,3 +16768,46 @@ sequence.
 - **Not in this bundle.** The two addable rows and the five artifacts a map row moves; the boundary move the
   4 `check()`-cut spans need; the 3 that close past an ordinary row; and the 7 unnamed class tables, whose
   names need a class no package declares.
+
+### Execution notes (2026-11-21, the three adds: two decoder refusals, and the map row each carried)
+
+- **Task.** The previous bundle measured the declarer walk's residue with objdump and left "the two addable
+  rows and the five artifacts they move" to the add. Doing the add showed that three bodies were addable,
+  and that the missing one was the census's own refusal: the 13 undecoded declarations were never bodies
+  without an end -- on 10 of them `tools/gap-heads.py`'s instruction decoder or its tail rule refused a form
+  the compiler emits.
+- **The `0x66` operand-size prefix was not modelled.** `vcall-receiver.decode` skipped the prefix and then
+  took `imm32`, so `0x00078ae0` (FixedArrayProperty slot 42) drifted at `66 c7 06 28 00`
+  (`mov word [esi],0x28`: five bytes read as seven) and `0x0007be00` (StructProperty slot 43) at
+  `66 3d 30 00` (`cmp ax,0x30`: four read as six). Read now for the arith-immediate group (so `3D`), `A9`,
+  `B8-BF`, `68`, `81`, `C7`, `69` and `F7 /0|/1`. Control: the map's own 13,164 `.text` rows decode to
+  their declared size **12,355 -> 12,410** and fail to close **778 -> 739**.
+- **MSVC's `lea r,[r+0]` alignment nop was read as code.** `0x0007bc10` (StructProperty slot 42) closes on
+  `ret 0x10` against `8d 49 00` and the case table its dispatch reads; the tail rule did not know the idiom,
+  so the read ran through the table, through `0x0007be00`'s body and closed on *its* ret 1,669 bytes later.
+  `native-census._align_at` now reads modrm mod 01/10 with reg == rm and a zero displacement as the nop it
+  is: the same head reads **461** bytes (tail `align+table+pad`) and slot 43's body is a head again at
+  **1,173**.
+- **The add ran.** `class-slot-declarers.py --apply-adds` writes three boundary rows, their creation rows in
+  `symbols/xbe_overrides.csv` and three `add` receipts: `FixedArrayProperty_vt42` (157),
+  `StructProperty_vt42` (461), `StructProperty_vt43` (1,173). Map 16,618 -> 16,621 rows; gap census
+  2,602 -> 2,599 heads; declarer residue **35 -> 32 bodies, closes 2 -> 0**; `make status` moves the named
+  share to 51.54%.
+- **The data-section control was not a null population.** The gap census's control scans `.rdata`, `.data`,
+  XNET and DSOUND for bodies; DSOUND is the DirectSound *code* segment (the map places 427 rows in it, XNET
+  413, XGRPH 642, D3DX 379, D3D 302, XPP 242), so its 0 was the decoder's refusal and it stands at **403**
+  now. `docs/SYMBOLS.md` says so, and the claim narrows to `.rdata` (0 of 216 runs) and `.data` (0 of 13).
+- **Files.** `tools/vcall-receiver.py` (the prefix rule, with the two measured bodies in its docstring),
+  `tools/native-census.py` (`_nop_lea` in `_align_at`), `symbols/xbe_boundaries.csv`,
+  `symbols/xbe_overrides.csv`, `symbols/xbox_functions.csv`, `symbols/xbox.map` and the three artifacts that
+  count map rows (`class_slot_declarers`, `declarer_residue`, `gap_heads`, `gap_body_files`,
+  `function_modules`, `native_summary`), `docs/systems/CLASS_REGISTRATION.md` (the section, its regenerated
+  block, "what this does not do"), `docs/SYMBOLS.md` (the null-population bullet and the head count),
+  `docs/UNKNOWNS.md` (U40), `docs/STATUS.md`, `README.md`, this note.
+- **Gates.** `make ci` green; `vcall-receiver --check` (14 windows) and `native-census --check` unchanged;
+  the gap census and the declarer census reproduce byte for byte on a second run; `make artifact-hashes`
+  and `make inventory-index` run in the same commit. No boot, no xemu, no Ghidra.
+- **Not in this bundle.** The boundary move the 4 `check()`-cut spans need (a `check()` block inside the
+  body is a row of its own, so the two halves cannot be one contiguous map row); the 3 that close past an
+  ordinary row; the 3 that cross an inline jump table; the 807 bodies no channel names; and the 7 unnamed
+  class tables whose parent the packages do not declare.

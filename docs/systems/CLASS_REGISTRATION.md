@@ -2416,6 +2416,40 @@ bytes** -- and `0x0007be00` (StructProperty slot 43) closes on `ret $0xc` at `0x
 next add can carry. The 4 `check()`-cut bodies cannot be added: their spans hold one map row each, and a
 row is one address that cannot hold two.
 
+**Three of them were addable once the census stopped refusing valid instructions (2026-11-21).** The 13
+were never bodies without an end: on 10 the *census's own* decoder or tail rule refused a form the compiler
+emits, which is why `tools/declarer-residue.py` is written against `objdump` and not against the census.
+Both refusals are now modelled, and the population closes as follows.
+
+* **A `0x66` operand-size prefix shrinks every immediate form.** `vcall-receiver.decode` skipped the prefix
+  byte and then took `imm32`, so `0x00078ae0` drifted at its first `66 c7 06 28 00` (`mov word [esi],0x28`
+  -- five bytes, read as seven) and `0x0007be00` at `66 3d 30 00` (`cmp ax,0x30`, four bytes, read as six).
+  The prefix is now read for the families that carry an immediate -- the arith-immediate group (so `3D`),
+  `A9`, `B8-BF`, `68`, `81`, `C7`, `69` and `F7 /0|/1` -- and the map's own rows are the control: of the
+  13,164 rows in `.text`, the ones that decode to their declared size go **12,355 -> 12,410** and the ones
+  a linear read cannot close **778 -> 739**.
+* **A `lea r,[r+0]` is MSVC's alignment nop, not code.** `0x0007bc10` (StructProperty slot 42) closes on
+  `ret 0x10` at `0x0007bdda` against `8d 49 00` -- `lea ecx,[ecx+0]` -- and the case table its dispatch
+  reads sits behind that. The tail rule did not know the idiom, so the read ran through the table, through
+  the next class's body at `0x0007be00`, and closed on *its* `ret` 1,669 bytes later: one body where the
+  class tables declare two. With the idiom in `native-census._align_at` (modrm mod 01/10, reg == rm, zero
+  displacement, which is a nop whatever follows it) the same head reads **461** bytes with tail
+  `align+table+pad`, and slot 43's body reappears as a head of its own at 1,173.
+
+| the add this unblocked | declarer | slot | byte(s) | the map row |
+|---|---|---:|---:|---|
+| `0x00078ae0` | FixedArrayProperty | 42 | 157 | `FixedArrayProperty_vt42` |
+| `0x0007bc10` | StructProperty | 42 | 461 | `StructProperty_vt42` |
+| `0x0007be00` | StructProperty | 43 | 1,173 | `StructProperty_vt43` |
+
+**And the add ran.** `tools/class-slot-declarers.py --apply-adds` writes the three boundary rows, the
+creation row each needs in `symbols/xbe_overrides.csv`, and the `add` receipt in its own artifact; the map
+goes **16,618 -> 16,621 rows**, all three names are new to it, and the gap census loses the three heads
+(2,602 -> 2,599) — so the residue of this section is **32 bodies, not 35**, with `closes 2 -> 0`: every one
+of the 13 undecoded declarations now has a measured end. What is left is the 4 `check()`-cut bodies (their
+span holds a map row, so a row cannot carry them), the 3 that close past a map row, the 3 that cross an
+inline jump table, the 8 member bodies and the 10 declarations on 7 unnamed class tables.
+
 **The 4 conflicts are the linker's identical-code folding, which settles a question this page left open.**
 The bodies are 1 byte (`ret` -- `Object` slot 17 and `GameInfo` slot 17), 4 bytes
 (`mov eax,[ecx+0x38]; ret` -- the four `VertexStream*` classes at slots 7, 8 and 30) and 21 bytes (the
@@ -2488,9 +2522,11 @@ neither is a read the declaration walk owes.
 **18 bodies need a name no image-side table carries.** The 8 member bodies sit in 3 member tables whose owner the label pass refused, and the 10 declarations sit on 7 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
 <!-- /generated:declarer-residue -->
 
-**What this does not do.** It adds no map row: the two addable sizes are measured and left to the add (a row
-moves `symbols/`, `module-split`, `native-summary`, `module-census` and `status`), the 4 `check()`-cut spans
-need a boundary move first, and the 7 unnamed class tables need a class the packages do not declare.
+**What this does not do.** It carries the three adds above and nothing else: the 4 `check()`-cut spans need
+a boundary move first (a `check()` block laid out inside the body is a row of its own, so the body's two
+halves cannot be one contiguous map row), the 3 that close past an ordinary map row need the same answer,
+the 3 that cross an inline jump table need the table walked rather than decoded, and the 7 unnamed class
+tables need a class the packages do not declare.
 
 ## Regenerating, continued
 
