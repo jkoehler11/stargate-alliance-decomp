@@ -16606,3 +16606,48 @@ sequence.
   bodies named by nothing, and the 2 cross-index gap heads' dual-index row. The 55 mapped representatives
   now have their bodies read and their slot mix indexed, but no channel in those bodies names an interface,
   which is the honest end of that route.
+
+### Execution notes (2026-11-21, the gap census's two tests measured apart, and twelve openings it never named)
+
+- **Task.** The previous bundle's closing question: the three unlisted interface constructors are the first
+  measured bodies the gap census's boundary rule misses, so how many more does it miss? The answer is that
+  the boundary half barely misses anything and the *prologue* half was doing the missing. U40's residue is
+  the 26 gap-head representatives' add and the bodies no channel names; this bundle measures the rule's
+  recall instead of touching those rows.
+- **The two tests, apart, on the map's own rows.** The page quoted one recall number (9,218 of 12,918 rows
+  pass the pad + prologue rule). Crossed, the four cells are **9,218 both / 1,528 fill only / 1,753 opening
+  only / 419 neither**, with the shared prologue table alone: the 1,528 are the prologue test's miss and the
+  1,753 the boundary test's. **1,851 of the 2,172 no-fill rows stand behind a terminator** (ret 823,
+  ret-imm 729, jmp 118, jmp-ind 4 in the shared-table split), which is exactly the split arm's evidence, so
+  the boundary's miss is not a missing rule -- it is an opening the split arm refuses because the prologue
+  table refuses it.
+- **Twelve openings measured against both populations.** For every first-instruction shape on the 1,947
+  unlisted rows the tool now counts two things: the map rows it opens and the pad-bounded openings it
+  matches in `.rdata`/`.data`/XNET/DSOUND. Admitted at 20+ rows against 0-8 data openings: `a1 <imm32>`
+  841/8, `self-return` 85/0, `getter-disp8` 82/0, `global-load-ecx` 77/0, `fpu-arg` 73/0, `sse-load` 48/0,
+  `getter-disp32` 47/0, `zero-return` 42/1, `add-reg-imm8` 26/0, `push-arg` 25/0, `global-load-edx` 21/0,
+  `bare-ret` 20/0. Refused: `a3 <imm32>`, the shape that mirrors `a1` -- **0 rows against 7 data openings**.
+  Every count is re-measured per run into the artifact's census row and `--check` fails on an opening that
+  stops opening a map row.
+- **What it moves.** 1,526 -> **2,850 heads**, 1,248 -> **2,362 bodies** (+387 islands), 205,836 ->
+  **296,532 body bytes** (34.0% -> 49.0% of the 611,067 gap bytes); the twelve accounts for 1,271 heads
+  (1,246 decoding), 421 of them named by no channel; slot-sitting bodies 279 -> **701** in 724 tables, 122
+  class-named against 12. The split arm moves with it -- 154 -> **239** bodies end at a split and 215 ->
+  1,274 openings stay merged, because 27 more rows are cut once the shapes are openings and 348 of the 384
+  split points are inline jump-table entries. The **null population stays at 0 bodies** in 3.3 MB of data,
+  which is the control the twelve had to pass.
+- **PR #808's note is corrected in both places it was made.** Those three constructors open `8b c1`, and the
+  shared table's `mov-eax` is `b8` (`mov eax,imm32`), not `8b c1`: the census never classified them, so what
+  they lacked was an opening, not a boundary. All three are heads now at the same 24, 106 and 17 bytes the
+  interface census measured by hand (`0x000e1700`, `0x001df4f0`, `0x00200600`).
+- **Files.** `tools/gap-heads.py` (`EXTRA_PROLOGUES` + `prologue()`, the four-cell control, the per-opening
+  counts and their gate, 21 selftest assertions), `inventory/gap_heads.csv` (2,850 head rows + census),
+  `docs/SYMBOLS.md` (block regenerated, section prose corrected in place), `docs/UNKNOWNS.md` (U40's new
+  "answered since"), `docs/systems/CLASS_REGISTRATION.md` (the #808 claim), this note.
+- **Gates.** `make ci` green; `--check` is dump-free (the artifact against the map, the four cells' sum, the
+  boundary partition, one count per opening) and failed on the old artifact before regeneration; `--selftest`
+  is 21 synthetic assertions including the split `8b c1` now earns and the branch that cancels it; artifacts
+  deterministic on a second run. No boot, no xemu, no Ghidra.
+- **Not in this bundle.** The 26 gap-head representatives' add (a map row moves five artifacts), the 2
+  cross-index gap heads' dual-index row, and the 807 bodies no channel names -- the last is now larger than
+  the 398 it replaced, which is the honest cost of the extension.
