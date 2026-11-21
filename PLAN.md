@@ -17220,3 +17220,57 @@ sequence.
 - **Not in this bundle.** The 807 bodies no channel names (63 more are placed and none named: a literal names a
   subsystem), the `Class::Method` pair as map rows (a row needs the class the method belongs to), the 4 linker
   folds, `0x0051724c`'s two member bodies and the 359 interface-only bodies.
+
+### Execution notes (2026-11-21, the residue is 686 bodies, one in five is addressed from inside `.text`, and a third of it is one generated walker)
+
+- **Task.** U40 has ended on "the 807 bodies no channel names" for five bundles, and the census names a head by
+  four channels that all point *into* it from **outside the code** -- an `E8` call, an `E9` jump, a `68` push and a
+  dword **outside `.text`**. That last qualifier excluded exactly the references a body whose address is taken
+  has: a `switch`'s jump table, a dispatch table behind a body and a `mov eax,<fn>` all spell the address with a
+  dword that never leaves the section. This bundle reads that channel, censuses the families, and fixes the count.
+- **The count was thirteen short of its own population.** `gap-heads.py` computed `unnamed = len(bodies) -
+  ch["any"]`, subtracting a **whole-head** channel count (`ch["any"]` counts every head, including the 13
+  `undecoded`/`no-close` rows that carry a channel) from a **decoded-head** population. Counted over the decoded
+  population the artifact's own rows read **2,398 decoded heads, 1,571 named by a channel, 827 by none: 686
+  bodies (120,339 bytes) and 141 islands**. The page's row now reads `1,571 / 827 (686 / 141)` and the census keeps
+  `islands_unnamed`/`bodies_unnamed` so the split is a column, not a caption.
+- **One in five is addressed from inside `.text`, nine times the map's own rate.** The new
+  `tools/gap-body-families.py` reads every dword in `.text`, decides with `objdump` whether the site is an operand
+  of an instruction or a data word between them, and takes the owning body from the function map's extents:
+  **146 of the 686** are referenced (142 by an operand, 7 by a table word). Control: **378 of the map's 16,734
+  rows** are spelled inside `.text` (207 operand / 182 table / 2 self), and a random gap byte's address is spelled
+  there **23 of 2,000** times. A named body is reached by a `call`; a body whose address is *taken* is not, so this
+  is where the function pointers are.
+- **The families, and the one that is a third of the residue.** `operand-in-row` 140 (51,742 bytes),
+  `operand-in-head` 2, `table-in-row` 3, `table-in-gap` 1, **silent 540** (61,299 bytes). **199 of the 686 are one
+  generated walker**: `mov eax,ds:<global>`, walk the `{UTF-16 name, handler}` pairs that global holds, compare the
+  argument against each name. The keys are the engine's intrinsic names -- `intAAIControllerexecWaitToSeeEnemy`,
+  `intAActorexecMultiply_ColorFloat`, `intABotBaseexecCoverActors` -- so each walker binds one class's natives:
+  **93 tables, 1,071 entries, and every table states exactly one class** (0 tables state two or more), which is
+  the name a copy does not carry. 123 of the 199 share a table with another copy and **113 of the 199 are named by
+  nothing at all**. The other family is **95 global slots**: `mov DWORD PTR ds:<global>,<body>` stores, **65 of
+  them into consecutive dword globals at `0x00630e20`..`0x00630f20`** -- one static array of 65 function pointers
+  filled entry by entry at startup, past the file-backed `.data` (its last file byte is `0x5cd99b`), so the image
+  holds the stores and not the values.
+- **The literal path is always a header, so the `Src` channel the last note asked about does not exist.**
+  `gap-body-files.py` now records the kind of path a literal carries: **36 of 36** map bodies that push a build
+  path push an `Inc\*.h` one and **0** push a `Src\*.cpp` one; the four gap bodies are all headers too. The 10 that
+  agree with their name do so because the header carries the translation unit's stem (`UnChan.cpp` asserts through
+  `UnChan.h`) -- a 28% base rate, so the channel places where the stem matches and names nothing. The
+  `Src\*.cpp` spelling this build does carry is the **assert path**, a different string family and the one the
+  map's `<Module>_<File>` names come from.
+- **Files.** `tools/gap-body-families.py` (the population, the `.text` dword read, the instruction-ownership test,
+  the six families, the walker and slot censuses, both controls, `--check` synthetic), `inventory/gap_body_families.csv`
+  (686 rows + a census row), `docs/systems/CLASS_REGISTRATION.md` (the new section and its regenerated block),
+  `tools/gap-heads.py` (channel counts over the decoded population), `inventory/gap_heads.csv` and
+  `docs/SYMBOLS.md` (regenerated), `tools/gap-body-files.py` (the literal-kind split),
+  `inventory/gap_body_files.csv` (regenerated), `docs/UNKNOWNS.md` (U40), `Makefile` (the target, its help line and
+  two `ci` gates), `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `--check` synthetic and writes nothing; `--check-doc` rebuilds the block from the
+  committed CSV with no dump; `gap-heads`' `--check`/`--selftest` and `gap-body-files`' `--check`/`--check-doc`
+  stay green; every artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
+- **Next measurement:** the 199 walkers' add. Their name is derivable -- the table each one walks states its class
+  in every key -- but 123 of them share a table with another copy, so the add needs a duplicate policy (`<Class>_lookup`
+  and a numbered suffix), and that is the whole of what is left of the family.
+- **Not in this bundle.** The 199 walkers' add, the 65 array entries (the array's meaning is not in the image), the
+  540 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.

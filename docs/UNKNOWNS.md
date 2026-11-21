@@ -6229,3 +6229,28 @@ and a build path inside a literal reaches 4 gap bodies while the map's control i
 header path is the file the inlined code came from and not the body's own. What is left of this entry: the 2
 bodies in `0x0051724c`, the 4 linker folds, the **359** interface-only bodies no name reaches, the 5 inherited,
 and the **807** bodies no channel names.
+
+**Answered since (2026-11-21, the residue is 686 bodies and the channel that found them is inside `.text`).** The
+count this entry has carried for five rounds ("807 named by no channel", 814 in the artifact) was subtracting a
+whole-head channel count from a decoded-head population: the 13 `undecoded`/`no-close` heads that carry a channel
+of their own were counted as named while not being in the population, so `unnamed` read 814 against 827 read off
+the artifact's own rows. The census now counts every channel over the decoded population and the residue is
+**686 bodies (120,339 bytes) and 141 islands**, of 2,398 decoded heads named 1,571 by a channel
+(`tools/gap-heads.py`, `inventory/gap_heads.csv`, `docs/SYMBOLS.md`). The four channels all point *into* a head
+from outside the code, and one of them -- the dword -- was read only **outside `.text`**, which is where a pointer
+in a table lives and not where a body whose address is taken is spelled. Read inside the section, with `objdump`
+deciding whether a site is an operand or a data word and the function map's extents deciding the owner,
+**146 of the 686 are referenced** (142 by an operand, 7 by a table word) against a control of **378 of the map's
+16,734 rows** (2.3%) and a random-gap-byte base rate of 23 of 2,000. The families (`tools/gap-body-families.py`,
+`inventory/gap_body_families.csv`): `operand-in-row` 140 (51,742 bytes), `operand-in-head` 2, `table-in-row` 3,
+`table-in-gap` 1 and **540 silent** (61,299 bytes). **199 are one generated walker** -- `mov eax,ds:<global>`, walk
+the `{UTF-16 name, handler}` pairs the global holds -- over **93 tables and 1,071 entries whose keys are the
+engine's intrinsic names** (`intAAIControllerexecWaitToSeeEnemy`, `intABotBaseexecCoverActors`); every table states
+exactly one class, so a walker's class is derivable even though 113 of the 199 copies are named by nothing.
+**95 are stored into global function-pointer slots** and 65 of those slots are consecutive dwords
+(`0x00630e20`..`0x00630f20`, one 65-entry static array past the file-backed `.data`). The literal-path channel is
+refused for a measured reason rather than a count: **all 36** map bodies that push a build path push an `Inc\*.h`
+path and **none** a `Src\*.cpp` one, and the four gap bodies are headers too, so the channel places where the
+header's stem matches (10 of 36) and names nothing. What is left of this entry: the 199 walkers' add (their class
+is stated by the table they walk; 123 share a table, so it needs a duplicate policy), the 65 array entries, the
+540 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
