@@ -127,6 +127,36 @@ script-only rebuild has to replace.
 than the retail disc image; the retail layout is the same shape but the scripts do not prove the disc used it verbatim.
 Nothing here says what `xbox.bin` is (it is copied, never produced, by these files).
 
+## `Packages.md5` is a package, and the game reads it as a wide string (2026-11-19)
+
+The shipping layout above says a rebuilt package "must be reflected" in `System/Packages.md5`. That claim is now measured,
+and the file is not what its name suggests.
+
+**It is a UE2 package.** `System/Packages.md5` begins `C1 83 2A 9E` — the package magic — and is 20,111 bytes holding
+**`PackageCheckInfo0` … `PackageCheckInfo167`**: 168 entries, each carrying **two** md5 strings (168 uppercase, 168
+lowercase), plus the class names `Core`, `Engine` and `Package`. It is not a text manifest and cannot be edited by
+appending a line.
+
+**The engine does open it — as UTF-16.** `"Packages.md5"` occurs **twice in `default.xbe` encoded as UTF-16LE and zero
+times as ASCII**, and `"Packages"` occurs eight times wide against zero narrow. An ASCII-only string scan therefore reports
+the file as unreferenced, which is exactly the conclusion this page first drew before checking the wide encoding. The
+integrity check is real, and it covers **168** packages — far more than the 18 `.u` files, so content packages are in scope
+too.
+
+**Consequences for a rebuild.**
+
+1. **Refreshing an entry means regenerating a package**, not editing text: the manifest is loaded by the engine's package
+   machinery, so it has to stay a well-formed package. PLAN 3.6's package writer is the tool that can produce it.
+2. **Two hashes per entry, and the target is not a visible string.** No package filename appears anywhere in the manifest —
+   only the class names — so the entries are keyed some other way (name-table index or order), and mapping entry → file is
+   not something this reading established.
+3. **A rebuilt tree that leaves `Packages.md5` stale is detectable at run time**, because the game verifies 168 packages,
+   not just the scripts.
+
+**Limits.** The mapping from `PackageCheckInfoN` to a package file is unidentified; the meaning of the upper/lower hash pair
+is not established (candidate: the manifest's own hash beside the package's, which would explain the pairing); and which
+168 packages are covered is not enumerated.
+
 ## The boot chain sits in `UW.ini`, and one map it names does not ship (2026-11-19)
 
 `System/UW.ini` (745 lines) is the game's own engine configuration; `Default.ini` (430) is the SDK default and repeats the
