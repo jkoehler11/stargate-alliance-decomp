@@ -16270,3 +16270,40 @@ sequence.
   blocks from committed CSVs with no dump; the rung artifact reproduces byte for byte on a second run.
 - **Not in this bundle.** The extents themselves (the class-table census's rule re-read against the 14 rungs),
   the 89 representative body reads, and the 18's class-record name field.
+
+### Execution notes (2026-11-21, the 89 representative reads cost out to 56 bodies, and the call target is not a name)
+
+- **The per-body read had no size, and its first half is how many of the 89 have a body at all.**
+  `tools/class-interface-behaviour.py` reads every slot of the 232 interface tables three ways -- the body
+  census (purecall, stub, mapped, outside), the printable UTF-16 literals a body pushes, and the direct `E8`
+  calls it makes -- and writes `inventory/class_interface_behaviour.csv` (232 rows plus a census).
+  **165 tables hold a body the map decodes (657 slots), 151 call something, 40 name the file they call, 48
+  own only an undecoded gap head and 19 hold no body at all.** The 89 owed representatives read **56 with a
+  mapped body, 26 with only a gap head, 7 with no body**, so the family census's 89 reads are 56 reads.
+- **The second file witness is not a witness, and the correction is the measurement.** 14 tables carry both
+  a callee file and their own slot token: **0 agree, 14 disagree**. A slot token is the file the interface's
+  method was compiled from; a callee file is the file of the code that method calls -- `UnTemplate` on 7 of
+  the 11 callee-file representatives, `UnClass`, `D3DResource`, `UnStaticMesh`/`UnSkeletalMesh` -- so it
+  labels what a slot does and cannot name the interface.
+- **The literal channel is a subsystem label, and it never carries the file.** 52 tables' slot bodies push a
+  printable literal and **none ends in `.cpp` or `.h`** (`zlib: uncompress failed`,
+  `[FCollisionHash::RemoveActor] IterateCount Over 10000!`, `ISFULLSCREEN`, `ReaderSaveLinear`), so the
+  `<Module>_<File>` name the map carries is not the pushed assert path of this build and a file cannot be
+  recovered from the literals. What the literals do give is what the slot is for: `CollisionHash`, `D3D`,
+  `zlib`, the package writer.
+- **The undecoded half is U40's add route, and the twins make 44 of it ambiguous.** The interface slots hold
+  342 bodies outside the map over **257 distinct gap heads, 213 in exactly one table and 44 shared by two or
+  more** (the exact-repeat families), so those bodies are U40's slot-named population rather than the 399
+  nothing names -- and an add would have to name one body from two tables for the 44, which is
+  unambiguous on 42 of them (the body sits at the same slot index in both tables) and needs a rule on 2.
+- **Files.** `tools/class-interface-behaviour.py` (`--xbe`/`-o`/`--report`/`--write-doc`/`--check-doc`/
+  `--check`), `inventory/class_interface_behaviour.csv` (233 rows), `docs/systems/CLASS_REGISTRATION.md` (the
+  new section, its block, and the 89-read paragraph corrected in place), `docs/UNKNOWNS.md` U40, `Makefile`
+  (target, `.PHONY`, help, two CI lines), this note.
+- **Gates.** `make ci` green; `--check` is synthetic (five categories, the two file witnesses and four
+  agreement answers, the source-path pattern, the artifact round trip) and writes nothing; `--check-doc`
+  rebuilds the block from the committed CSV with no dump; the artifact reproduces byte for byte on a second
+  run.
+- **Not in this bundle.** The 56 mapped representatives' actual per-body reads (the artifact is the index
+  they start from), the 44 shared gap heads' naming, the 26 gap-head representatives' add, and
+  `class_plain_tables.csv`'s own extent rule.

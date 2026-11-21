@@ -5920,5 +5920,19 @@ dwords are not function starts (they sit inside `CLiveEngine::SeparateTextAndIco
 length. The per-body read the family census owed is **89 representatives over 135 tables**, not 165 tables:
 30 of the 165 anonymous tables sit in a family a slot symbol or a member field already names. The 27 exact
 repeats are **per-class, not per-translation-unit** -- 3 groups hold two or more owner classes, 3 one class's
-name beside a table whose owner is unread, and 5 groups (11 tables) carry no class. What is left of this entry
-is unchanged: the 89 body reads, the extent rule, and the 399 bodies.
+name beside a table whose owner is unread, and 5 groups (11 tables) carry no class.
+
+**Answered since (2026-11-21, what the 89 representatives hold).** `tools/class-interface-behaviour.py` reads
+every slot of the 232 interface tables (`inventory/class_interface_behaviour.csv`, 232 rows and a census row):
+**165 hold a body the map decodes (657 slots), 151 call something, 48 own only a gap head and 19 hold no body
+at all.** On the 89 owed representatives the split is **56 with a mapped body, 26 that own only a gap head
+U40 already decodes, and 7 that are the compiler's defaults** -- so the per-body read is 56 bodies, not 89,
+and the 26 are an add on the map's existing route. The channel that was hoped to name the 56 does not: of the
+14 tables carrying both a callee file and the slot's own assert token, **0 agree and 14 disagree**, because a
+callee file is the file of the code a slot *calls* (`UnTemplate` on 7 representatives, `UnClass`,
+`D3DResource`, zlib), and **none of the 52 tables whose slot bodies push a printable literal pushes a source
+path**, so the map's `<Module>_<File>` token is not the pushed assert string of this build. The interface
+slots hold **342 bodies outside the function map over 257 distinct gap heads -- 213 in exactly one table and
+44 shared by two or more -- 42 of the shared at the same slot index and 2 across indices -- and those are U40's slot-named bodies, not the 399 that
+nothing names. What is left of this entry: the 56 mapped representatives' reads, the extent rule, the 399
+bodies, and a name for an interface from a member field or a caller rather than from its own slots.
