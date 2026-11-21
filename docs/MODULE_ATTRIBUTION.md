@@ -62,7 +62,10 @@ heuristic, not a second opinion about the name.
 
 The library sections (`XONLINE`, `XGRPH`, `D3D`, `DSOUND`, …) carry almost no asserts, so an unbounded nearest
 neighbour hands thousands of their functions to whichever module happens to sit closest — it labels 13,998 of 14,973
-and hands most of them to whichever module happens to sit closest. The sweep picks the bound; the numbers are what `--holdout 400` printed:
+and hands most of them to whichever module happens to sit closest. *(Both figures in this paragraph were measured against
+the pre-split map with an earlier tool revision; see "Re-measured 2026-11-20" below before comparing them with the table
+further up — the current tool's `--rule neighbours` reports 4,206 attributed and 10,366 given any module bucket, neither
+of which reproduces 13,998.)* The sweep picks the bound; the numbers are what `--holdout 400` printed:
 
 | `--max-gap` | functions labelled | held-out exact |
 |---|---:|---:|
