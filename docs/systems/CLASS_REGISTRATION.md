@@ -2167,10 +2167,12 @@ tables: every one is installed by its own constructor, and the objects they buil
 sentinel `0xdeaddead` in the field beside the vftable (24-byte one: fields `+0x58`, `+0x5c`, `+0x60`). The
 three unlisted constructors are also the first measure of what the gap census's boundary rule misses: one
 sits inside the gap the census attributes to `0x000e1720`, the other two in a span no gap range covers, and
-all three are thiscall constructors whose first instruction is `mov eax,ecx` -- a prologue the census does
-classify (`mov-eax`, 185 heads), so what they lack is a boundary inside the gap rather than a rule that
-cannot read them. Nothing in this population is left owed: the 26 gap-head representatives remain the
-map's work (U40), and these four are read.
+all three are thiscall constructors whose first instruction is `mov eax,ecx` (`8b c1`) -- **an opening the
+census did not name**: the shared prologue table's `mov-eax` is `b8` (`mov eax,imm32`), and this note first
+read the two as the same shape. `tools/gap-heads.py` now carries `8b c1` among the twelve openings it
+measured against the map's own rows, and **all three constructors are heads**, at the 24, 106 and 17 bytes
+this census measured by hand. Nothing in this population is left owed: the 26 gap-head representatives
+remain the map's work (U40), and these four are read.
 
 `--check-doc` rebuilds both blocks from the committed CSVs with no dump; the census row of each artifact
 carries the totals above.

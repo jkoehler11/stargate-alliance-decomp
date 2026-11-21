@@ -7,19 +7,30 @@ jumps (`tools/native-island-gaps.py`) and the bodies a *table* names (`native-ce
 described, not measured -- the previous bundle's note guessed "~1,800 decodable heads, mostly one-`ret`
 islands inside data and alignment". This tool replaces the guess with a census and a control.
 
-A **head** is an address in a gap that satisfies two things a function start satisfies in this build:
+A head is an address in a gap that satisfies two things a function start satisfies in this build:
 
 * **a boundary in front of it** -- a run of `0xCC`/`0x90` fill, which is how MSVC separates bodies here,
-  or the gap's own start (the row above hands over). A head inside a run whose predecessor is not a pad
-  is not read: the bytes before it are code, so it is a block of that code, not a boundary.
+  or the gap's own start (the row above hands over). A head inside a run whose predecessor is not a
+  pad is not read: the bytes before it are code, so it is a block of that code, not a boundary.
 * **an MSVC prologue shape** -- the same table `tools/native-census.py` classifies the 883 registration
   bodies with (`8b ff` hotpatch, `55 8b ec` frame, `64 a1` SEH, an argument load, `sub esp`, `ret imm16`,
-  a push, `mov eax`).
+  a push, `mov eax`), plus `EXTRA_PROLOGUES`: the openings that table does not name but that open the
+  map's own rows far more often than they open pad-bounded bytes in the data sections (`a1 <imm32>`,
+  `8b 0d <imm32>`, `8b 41 <disp8>`, `8b c1`, ...). Each one's two counts are in the artifact's census
+  row, so the extension is a measurement and not a loosening of the test.
 
 A head becomes a **body** when a linear decode from it closes on an unconditional terminator *with a tail
 behind it* (`native-census.sweep_body`, whose five tails are `pad`/`edge`/`align`/`table`/`bytes`). It is
 an **island** when that close is one or two instructions or four bytes (the `33 c0 c2 08 00` stub a vtable
 slot holds); `no-close` and `undecoded` are the refusals.
+
+**The two tests are not one rule, and the map's own rows measure them apart.** Over the 12,918 rows in
+`.text`, 9,218 pass both, **1,528 have the fill but an opening neither table names** (the prologue test's
+miss) and **1,753 have the opening but no fill in front** (the boundary test's miss); 419 have neither.
+The boundary's miss is not a hole in the rule: 1,674 of those 1,753 rows are the successor of a
+terminator, which is exactly what the split arm reads (a terminator whose successor no branch in the run
+targets) -- so the bodies behind code are found when their opening is one the prologue test accepts, and
+`8b c1` was the one it did not.
 
 The census is only worth quoting with its controls, and they are measured in the same run:
 
@@ -294,8 +305,41 @@ def strong_opening(pro, blob, i):
     return pro(blob[i:i + 8]) != "other"
 
 
+# The openings `native-census.PROLOGUES` does not name, measured on the map's own rows: each pattern
+# below opens rows in `symbols/xbox_functions.csv` (a known body start) at a rate its pad-bounded
+# occurrences in the four data sections do not support. `(pattern, name, rows, data)` -- the two counts
+# are re-measured every run and land in the census row, so this table is evidence, not a judgement call.
+EXTRA_PROLOGUES = (
+    (b"\xa1", "global-load-eax", 841, 8),          # mov eax, ds:[imm32]
+    (b"\x8b\x0d", "global-load-ecx", 77, 0),       # mov ecx, [imm32] -- the XDK library's opening
+    (b"\x8b\x15", "global-load-edx", 21, 0),
+    (b"\x8b\xc1", "self-return", 85, 0),           # mov eax, ecx -- the thiscall thunk / ctor opening
+    (b"\x8b\x41", "getter-disp8", 82, 0),          # mov eax, [ecx+disp8] -- a field getter
+    (b"\x8b\x81", "getter-disp32", 47, 0),
+    (b"\xd9\x44\x24", "fpu-arg", 73, 0),           # fld dword [esp+n]
+    (b"\xf3\x0f\x10", "sse-load", 48, 0),          # movss xmm0, ...
+    (b"\x33\xc0", "zero-return", 42, 1),           # xor eax, eax
+    (b"\x83\xc1", "add-reg-imm8", 26, 0),
+    (b"\xff\x74", "push-arg", 25, 0),              # push dword [esp+n]
+    (b"\xc3", "bare-ret", 20, 0),                  # the shared table names `c2 imm16`, not a bare `ret`
+)
+EXTRA_NAMES = [name for _p, name, _r, _d in EXTRA_PROLOGUES]
+
+
+def prologue(nc, first):
+    """The shared table's name for an opening, else one of this census's measured ones, else `other`."""
+    name = nc.prologue(first)
+    if name != "other":
+        return name
+    for pat, label, _rows, _data in EXTRA_PROLOGUES:
+        if first.startswith(pat):
+            return label
+    return "other"
+
+
 def scan(decode, nc, lo, hi, blob, table=None):
     """Every head in `blob` between `lo` and `hi`: heads, walked from the region's first byte."""
+    pro = lambda head: prologue(nc, head)
     out, off, first, forced = [], 0, True, set()
     while off < len(blob):
         pad = 0
@@ -305,12 +349,12 @@ def scan(decode, nc, lo, hi, blob, table=None):
             k -= 1
         preceded = first or off in forced or (off >= 1 and blob[off - 1] in (0xCC, 0x90))
         if preceded:
-            pr = nc.prologue(blob[off:off + 8])
+            pr = pro(blob[off:off + 8])
             # A split point is a body even when its opening is not one of the named prologues: the
             # terminator in front of it and the absence of a branch into it are the evidence.
             if pr != "other" or off in forced:
                 size, n, close, tail, inner, split = walk(decode, nc.tail_shape, nc.terminator_kind,
-                                                          nc.prologue, blob[off:], len(blob) - off, lo + off,
+                                                          pro, blob[off:], len(blob) - off, lo + off,
                                                           table)
                 if off in forced:
                     boundary = "after-ret"
@@ -579,13 +623,27 @@ def measure(args):
         h["family_item"] = "0x%08x" % item if item else ""
 
     # the controls: the same two tests over the rows the map already places
+    pro = lambda head: prologue(nc, head)
     ctl = collections.Counter()
     split_rows = []
     for a, b, _n in [t for t in table if lo <= t[0] < hi]:
         pad = a > lo and text[a - 1 - lo] in (0xCC, 0x90)
-        pr = nc.prologue(text[a - lo:a - lo + 8])
+        pr = pro(text[a - lo:a - lo + 8])
         ctl["both" if (pad and pr != "other") else ("pad" if pad else ("prologue" if pr != "other" else "neither"))] += 1
-        size, n, close, tail, _i, _sp = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
+        # which half refused the row: an opening the shared table does not name but this census does is
+        # the prologue half's own miss, and a row behind a terminator is the boundary half's.
+        if pr != "other" and nc.prologue(text[a - lo:a - lo + 8]) == "other":
+            ctl["ext_" + ("pad" if pad else "nopad")] += 1
+        if not pad and pr != "other":
+            for s in range(max(lo, a - 16), a):
+                ins = decode(text[s - lo:a - lo], 0)
+                if ins is None or ins.length != a - s:
+                    continue
+                k = nc.terminator_kind(text, s - lo, ins.text)
+                if k:
+                    ctl["nopad_term_" + k] += 1
+                    break
+        size, n, close, tail, _i, _sp = walk(decode, nc.tail_shape, nc.terminator_kind, pro,
                                              text[a - lo:b - lo], b - a, a, _TABLE["targets"])
         if tail == "split":
             ctl["split"] += 1
@@ -597,7 +655,7 @@ def measure(args):
         else:
             ctl["noclose"] += 1
         # what the same rule says *without* the table channel, and how many of its openings a table names
-        size0, _n0, _c0, tail0, _i0, _sp0 = walk(decode, nc.tail_shape, nc.terminator_kind, nc.prologue,
+        size0, _n0, _c0, tail0, _i0, _sp0 = walk(decode, nc.tail_shape, nc.terminator_kind, pro,
                                                 text[a - lo:b - lo], b - a, a)
         if tail0 == "split":
             ctl["split_rel"] += 1
@@ -613,6 +671,21 @@ def measure(args):
         found = scan(decode, nc, sec.va, sec.va + sec.vsize, blobs[name])
         ctl["null_" + name] = sum(1 for f in found if f["size"])
         ctl["nullheads_" + name] = len(found)
+    # each extra opening's two counts, re-measured: the map rows it opens, and the pad-bounded openings
+    # it matches in the data sections. The ratio is the whole argument for calling it a prologue.
+    row_starts = [t[0] for t in table if lo <= t[0] < hi]
+    data_pads = []
+    for name in (".rdata", ".data", "XNET", "DSOUND"):
+        if name not in blobs:
+            continue
+        blob = blobs[name]
+        data_pads += [blob[o:o + 8] for o in range(1, len(blob))
+                      if blob[o - 1] in (0xCC, 0x90) and blob[o] not in (0xCC, 0x90)]
+    for pat, label, _rows, _data in EXTRA_PROLOGUES:
+        ctl["extrows_" + label] = sum(1 for a in row_starts
+                                      if nc.prologue(text[a - lo:a - lo + 8]) == "other"
+                                      and text[a - lo:a - lo + len(pat)] == pat)
+        ctl["extdata_" + label] = sum(1 for chunk in data_pads if chunk.startswith(pat))
     # base rates for the pointer channel
     import random
     random.seed(7)
@@ -674,6 +747,30 @@ def measure(args):
     meta["map_rows_head"] = ctl["both"]
     meta["map_rows_pad_only"] = ctl["pad"]
     meta["map_rows_prologue_only"] = ctl["prologue"]
+    meta["map_rows_neither"] = ctl["neither"]
+    # the two tests apart: the boundary half's miss is the prologue-only rows, and 1,674 of them stand
+    # behind a terminator; the prologue half's miss is the pad-only rows plus the ones this census names.
+    meta["map_rows_nopad"] = ctl["prologue"] + ctl["neither"]
+    meta["map_rows_nopad_term"] = sum(v for k, v in ctl.items() if k.startswith("nopad_term_"))
+    meta["map_rows_ext_pad"] = ctl["ext_pad"]
+    meta["map_rows_ext_nopad"] = ctl["ext_nopad"]
+    # the same four cells with the *shared* table alone, so the page can state the split both ways
+    meta["map_rows_shared_head"] = meta["map_rows_head"] - meta["map_rows_ext_pad"]
+    meta["map_rows_shared_pad_only"] = meta["map_rows_pad_only"] + meta["map_rows_ext_pad"]
+    meta["map_rows_shared_pro_only"] = meta["map_rows_prologue_only"] - meta["map_rows_ext_nopad"]
+    meta["map_rows_shared_neither"] = meta["map_rows_neither"] + meta["map_rows_ext_nopad"]
+    meta["heads_start"] = sum(1 for r in rows if r.get("boundary") == "start")
+    meta["heads_after_ret"] = sum(1 for r in rows if r.get("boundary") == "after-ret")
+    meta["heads_ext"] = sum(1 for r in rows if r.get("prologue") in EXTRA_NAMES)
+    meta["bodies_ext"] = sum(1 for r in rows if r.get("prologue") in EXTRA_NAMES
+                             and r.get("verdict") in ("body", "island"))
+    meta["unnamed_ext"] = sum(1 for r in rows if r.get("prologue") in EXTRA_NAMES
+                              and r.get("verdict") in ("body", "island")
+                              and not (int(r.get("calls") or 0) or int(r.get("jumps") or 0)
+                                       or int(r.get("imms") or 0) or int(r.get("pointers") or 0)))
+    for pat, label, _r, _d in EXTRA_PROLOGUES:
+        meta["extrows_" + label] = ctl["extrows_" + label]
+        meta["extdata_" + label] = ctl["extdata_" + label]
     meta["map_rows_decode"] = ctl["decode"]
     meta["map_rows_short"] = ctl["short"]
     meta["map_rows_noclose"] = ctl["noclose"]
@@ -770,8 +867,8 @@ def add_evidence(r):
     elif r.get("family") == "atexit":
         who = ("its own instructions: `push %s; call _atexit`, the static destructor registration of that "
                "destructor" % (r.get("family_item") or "?"))
-    pad = ("%d bytes of pad" % int(r["boundary"].split(":")[1])) if r["boundary"].startswith("pad") \
-        else "a split boundary"
+    pad = (("%d bytes of pad" % int(r["boundary"].split(":")[1])) if r["boundary"].startswith("pad")
+           else {"after-ret": "a split boundary"}.get(r["boundary"], "the gap's start"))
     calls, jumps = int(r["calls"] or 0), int(r["jumps"] or 0)
     if calls or jumps:
         reach = ("the image's only references to it are %d call site(s) and %d jump(s), and the map "
@@ -961,8 +1058,24 @@ def render(rows):
             "| named by an `E8`/`E9` branch | %d |" % m["named_branch"],
             "| named by a `68` push | %d |" % m["named_imm"],
             "| named by any channel / by none | %d / %d |" % (m["named_any"], m["unnamed"]),
+            "| boundaries: the gap's start / fill / a split | %d / %d / %d |"
+            % (m.get("heads_start", 0),
+               m["heads"] - m.get("heads_start", 0) - m.get("heads_after_ret", 0), m.get("heads_after_ret", 0)),
+            "| heads a measured opening adds (not in the shared prologue table) / of them decode | %d / %d |"
+            % (m.get("heads_ext", 0), m.get("bodies_ext", 0)),
+            "| ...of those, named by no channel | %d |" % m.get("unnamed_ext", 0),
             "| control: map rows passing the head rule / decoding to their size | %d of %d / %d |"
             % (m["map_rows_head"], m["map_rows"], m["map_rows_decode"]),
+            "| ...the two tests apart: both / fill only (prologue miss) / opening only (boundary miss) / neither | %d / %d / %d / %d |"
+            % (m["map_rows_head"], m.get("map_rows_pad_only", 0), m.get("map_rows_prologue_only", 0),
+               m.get("map_rows_neither", 0)),
+            "| ...the same four cells with the shared prologue table alone | %d / %d / %d / %d |"
+            % (m.get("map_rows_shared_head", 0), m.get("map_rows_shared_pad_only", 0),
+               m.get("map_rows_shared_pro_only", 0), m.get("map_rows_shared_neither", 0)),
+            "| ...of the no-fill rows, the successor of a terminator (what the split arm reads) / of nothing | %d / %d |"
+            % (m.get("map_rows_nopad_term", 0), m.get("map_rows_nopad", 0) - m.get("map_rows_nopad_term", 0)),
+            "| ...rows the measured openings name that the shared table refuses: behind fill / behind code | %d / %d |"
+            % (m.get("map_rows_ext_pad", 0), m.get("map_rows_ext_nopad", 0)),
             "| ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | %d / %d |"
             % (m.get("map_rows_split_rel", 0), m.get("map_rows_split", 0)),
             "| ...split points that reading means / of those, entries of a `.text` jump table | %d / %d |"
@@ -989,6 +1102,10 @@ def render(rows):
             lines.append("| `%s`..`%s` | %d | %d | `%s` |" % (row[0]["gap_lo"], row[0]["gap_hi"], n, nb,
                                                              min(r["head_va"] for r in row)))
     if m:
+        lines += ["", "| opening this census adds | map rows it opens | pad-bounded data openings |",
+                  "|---|---:|---:|"]
+        for name in EXTRA_NAMES:
+            lines.append("| `%s` | %d | %d |" % (name, m.get("extrows_" + name, 0), m.get("extdata_" + name, 0)))
         lines += ["", "%d of the %d bodies sit in a class-table slot; %d of those are in the %d tables no "
                   "registration names, and %d are named by no channel at all: nothing calls them, nothing "
                   "points at them, and the map has no row for them."
@@ -1026,9 +1143,29 @@ def check():
         sys.exit("gap-heads: --check: the table's columns are %r, the tool writes %r" % (list(rows[0].keys()), COLS))
     m = census_of(rows)
     for key in ("text_lo", "text_hi", "gaps", "heads", "bodies", "islands", "no_close", "undecoded",
-                "splits", "family_register_once", "family_atexit", "slot_named"):
+                "splits", "family_register_once", "family_atexit", "slot_named",
+                "heads_ext", "map_rows_nopad", "map_rows_nopad_term"):
         if key not in m:
             sys.exit("gap-heads: --check: the census row carries no %s" % key)
+    # the boundaries partition the heads, the two-test split partitions the rows, and the closer the
+    # rule gets the smaller the residues are -- the claims this bundle makes, held by the gate.
+    if m["heads_start"] + m["heads_after_ret"] > m["heads"]:
+        sys.exit("gap-heads: --check: %d start + %d split heads of %d"
+                 % (m["heads_start"], m["heads_after_ret"], m["heads"]))
+    if (m["map_rows_head"] + m["map_rows_pad_only"] + m["map_rows_prologue_only"]
+            + m["map_rows_neither"]) != m["map_rows"]:
+        sys.exit("gap-heads: --check: the two-test split does not sum to %d rows" % m["map_rows"])
+    if m["map_rows_nopad"] != m["map_rows_prologue_only"] + m["map_rows_neither"]:
+        sys.exit("gap-heads: --check: %d no-fill rows against %d + %d"
+                 % (m["map_rows_nopad"], m["map_rows_prologue_only"], m["map_rows_neither"]))
+    if m["map_rows_nopad_term"] > m["map_rows_nopad"]:
+        sys.exit("gap-heads: --check: %d of %d no-fill rows stand behind a terminator"
+                 % (m["map_rows_nopad_term"], m["map_rows_nopad"]))
+    for name in EXTRA_NAMES:
+        if "extrows_" + name not in m or "extdata_" + name not in m:
+            sys.exit("gap-heads: --check: the census row carries no counts for the opening %r" % name)
+        if m["extrows_" + name] < 1:
+            sys.exit("gap-heads: --check: the opening %r opens no map row, so it is not a prologue" % name)
     # The map-row control: every row falls in exactly one bucket, and the rule no longer cuts a row once
     # the inline jump tables are read -- that is the claim this bundle makes, so the gate holds it.
     if "map_rows_split" in m:
@@ -1158,6 +1295,18 @@ def selftest():
     early = b"\x55\x8b\xec" + b"\x74\x01" + b"\xc3" + b"\xb8" + struct.pack("<I", 1) + b"\xc3" + b"\xcc"
     e = scan(decode, nc, 0x5000, 0x5000 + len(early), early)
     assert len(e) == 1 and e[0]["inner_starts"] == 1 and e[0]["tail"] == "pad", e
+    # a body behind code, opened by `8b c1` -- the thiscall opening the shared table does not name, and
+    # the shape all three of #808's unlisted constructors open on: the split arm reads it only because
+    # `EXTRA_PROLOGUES` makes it a strong opening
+    after = b"\xcc\xcc\x55\x8b\xec\xc3" + b"\x8b\xc1\xc3" + b"\xcc"
+    ac = scan(decode, nc, 0x5800, 0x5800 + len(after), after)
+    assert len(ac) == 2 and ac[1]["boundary"] == "after-ret", ac
+    assert ac[1]["prologue"] == "self-return" and ac[1]["size"] == 3, ac
+    assert nc.prologue(b"\x8b\xc1" + b"\xc3" * 6) == "other", "the shared table names `8b c1`"
+    # a branch into the code behind the close is the same body's early return: no second head
+    joined = b"\xcc\xcc\x55\x8b\xec\x74\x01\xc3" + b"\x8b\xc1\xc3" + b"\xcc"
+    j2 = scan(decode, nc, 0x5900, 0x5900 + len(joined), joined)
+    assert len(j2) == 1 and j2[0]["inner_starts"] == 1, j2
     # the two generated families, from their own instructions
     thunk = b"\x68" + struct.pack("<I", 0x5c29e0) + b"\x68\xff\x00\x00\x00" + b"\xe8" + \
         struct.pack("<i", 0x46c60 - 0x500a - 5) + b"\x83\xc4\x08" + b"\xa2" + \
@@ -1208,7 +1357,8 @@ def selftest():
     assert "| heads the pad-before + prologue rule finds | 1 |" in page, page
     assert "| `0x1000`..`0x1010` | 1 | 1 | `0x1007` |" in page, page
     assert splice(os.path.join(ROOT, "Makefile"), "x") is None   # no markers: refused, not echoed
-    print("ok   gap-heads: 18 assertions (head rule, island, refusal, split, merged early return, five "
+    print("ok   gap-heads: 21 assertions (head rule, island, refusal, split, merged early return, the "
+          "measured opening that makes a body behind code a split and the branch that cancels it, five "
           "abutting bodies, both families, the switch's case blocks and the table index, gaps, census "
           "round trip, marker refusal)")
     return 0

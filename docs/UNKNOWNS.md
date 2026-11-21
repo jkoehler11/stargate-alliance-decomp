@@ -6007,6 +6007,26 @@ attribution artifact was a one-row patch and its full re-run moves **1,968 of 16
 1,943 asserted, 538 new seeds); `native_class_packages.csv`, `class_interface_installers.csv` and
 `class_installer_callers.csv` re-run byte-identical, so no verdict moved with them.
 
+**Answered since (2026-11-21, the head rule's two tests apart -- and the openings it never named).** The
+rule's recall was one number (9,218 of 12,918 rows, 71.4%); separated, the map's own rows say **9,218 pass
+both tests, 1,528 have the fill but an opening neither table names, 1,753 have the opening but no fill in
+front, and 419 have neither**. The boundary half is not a hole in the rule: **1,851 of the 2,172 no-fill rows
+stand behind a terminator**, which is exactly the split arm's evidence, so a body behind code is found when
+its opening is one the prologue test accepts. The prologue half was the real miss, and twelve openings were
+admitted to it after measuring each one's two counts (map rows it opens against pad-bounded data openings it
+matches): `a1 <imm32>` 841/8, `self-return` (`8b c1`) 85/0, `8b 41 <disp8>` 82/0, `global-load-ecx` 77/0,
+`fpu-arg` 73/0, `getter-disp32` 47/0, `sse-load` 48/0, `zero-return` 42/1, `add-reg-imm8` 26/0, `push-arg`
+25/0, `global-load-edx` 21/0, `bare-ret` 20/0 -- while `a3 <imm32>`, the shape that looked like `a1`'s
+mirror, opens **0 rows against 7 data openings** and is refused. The census moves **1,526 -> 2,850 heads,
+1,248 -> 2,362 bodies, 205,836 -> 296,532 bytes (34.0% -> 49.0% of the gap bytes)**, **807 named by no channel**
+(398 -> 807), and the bodies sitting in a class-table slot move **279 -> 701** (122 tables class-named
+against 12). The section's 56-item interface representative list is unaffected: its 26 gap-head
+representatives were already heads. **PR #808's claim that the three unlisted interface constructors open "a
+prologue the census does classify (`mov-eax`, 185 heads)" was wrong**: they open `8b c1`, which the shared
+table has never named (`b8` is `mov eax,imm32`), and all three are heads now at 24, 106 and 17 bytes --
+`0x000e1700`, `0x001df4f0`, `0x00200600`. What is left of this entry is the 26 gap-head representatives' add
+and the bodies no channel names.
+
 **Answered since (2026-11-21, the table's own bytes and the defaults read as bodies).** Three of this
 entry's last residues are now read to their end. **The RTTI channel is shut for every table, with the
 image's own control**: `tools/class-interface-rtti.py` reads `vftable[-1]` as an MSVC
