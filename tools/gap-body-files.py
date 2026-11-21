@@ -19,7 +19,15 @@ Three channels, read at the body instead of at the map's name:
   * **`callee`** -- the `<Module>_<File>` tokens of the map bodies a body calls through a direct
     `E8 rel32`. This places a body in a module and never names it (that channel is already measured in
     `tools/class-interface-behaviour.py`), and an `E8` byte inside another instruction's displacement
-    can encode a false call, so it is reported as an upper bound with the map's own rate beside it.
+    can encode a false call, so the instruction-boundary read below is the control it is scored against.
+
+The first two channels are read **twice**: once as a 4-byte-aligned dword in the image, which is how a
+pointer in a table looks, and once as the *operand of the instruction that carries it*, which is what a
+`push 0x4e1aa8` or a `mov edi,0x4e1aa8` is whether or not its own address is aligned. The operand read is
+the one the verdicts use (`objdump` decodes the instruction, so a value inside another instruction's
+bytes is not a reference); the aligned read is kept beside it as the control, and a `Class::Method`
+literal -- UE2's log and assert text names the method that emitted it -- is read from the same operands
+as a name the body states about itself.
 
 Both ends are in one artifact: the 1,249 gap-head bodies U40 decodes, and a `census` row carrying the
 control's counts, which is what lets the page be rebuilt from the committed CSV with no dump.
@@ -40,6 +48,8 @@ import csv
 import importlib.util
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -53,14 +63,28 @@ OUT = os.path.join(ROOT, "inventory", "gap_body_files.csv")
 DOC = os.path.join(ROOT, "docs", "systems", "CLASS_REGISTRATION.md")
 DOC_A = ("<!-- generated:gap-body-files -->", "<!-- /generated:gap-body-files -->")
 
-BODY = ("body_va", "size", "assert_file", "assert_sites", "string_sites", "string_head",
-        "callee_file", "callee_files", "verdict")
+BODY = ("body_va", "size", "assert_file", "assert_sites", "string_sites", "string_head", "string_aligned",
+        "callee_file", "callee_files", "callee_insn", "literal_file", "method_token", "verdict")
 CENSUS = ("heads", "bodies", "islands", "unclosed", "with_assert", "with_string", "with_callee", "silent",
           "rep_heads", "rep_bodies", "rep_islands", "rep_assert", "rep_string", "rep_callee", "map_bodies", "map_assert",
-          "map_string", "map_callee", "name_pairs", "name_agree", "name_other", "name_wrong", "multi_files")
+          "map_string", "map_callee", "name_pairs", "name_agree", "name_other", "name_wrong", "multi_files",
+          "with_assert_any", "with_string_aligned", "string_both", "string_operand_only", "string_aligned_only",
+          "map_string_aligned", "map_assert_any", "map_assert_operand", "callee_byte_only", "callee_insn_only",
+          "with_method", "method_ambiguous", "map_method", "map_method_agree", "map_method_other",
+          "with_literal_file", "map_literal_file", "map_literal_agree", "map_literal_other")
 WIDE = re.compile(rb"(?:[ -~]\x00){6,}")
 NARROW = re.compile(rb"[ -~]{8,}")
 TOKEN = re.compile(r"^([A-Za-z][A-Za-z0-9]*)_([A-Za-z0-9_]+)$")
+# An objdump listing line: `  4d1aa8:\t68 a8 1a 4e 00     \tpush   0x4e1aa8`.
+OBJ_LINE = re.compile(r"^\s*([0-9a-f]+):\t([0-9a-f ]+?)\s*\t(.*)$")
+# A 32-bit value an instruction carries as an operand. `-0x...` is a frame offset, never a VA.
+IMM_VA = re.compile(r"(?<!-)0x([0-9a-f]{5,8})\b")
+# A build path inside a literal: the assert text often carries the file *and* the expression in one
+# string (`..\\..\\Core\\Inc\\FFileManagerXbox.h | InPos<=Size`), where the reference points at the
+# combined literal and not at the path's own first byte.
+SRC_IN_LITERAL = re.compile(r"([A-Za-z][A-Za-z0-9_]*)[\\/](?:Src|Inc)[\\/]([A-Za-z0-9_]+)\.(?:cpp|hpp|cxx|h)")
+# UE2's log and assert text names the method that emitted it: `FMallocError::Init`, `CPlayer::Tick`.
+METHOD = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_~][A-Za-z0-9_]*)+$")
 MAX_HEAD = 40
 
 
@@ -87,7 +111,12 @@ def load_symbols(path):
 
 
 def load_heads(path):
-    """{head_va: (size, verdict)} for every gap head the rule decodes, body or not."""
+    """{head_va: (size, verdict)} for every gap head the census lists, sized or not.
+
+    A head the rule could not close has no size of its own, so it can never be a body this read
+    visits -- but dropping it here is what made the artifact's `heads` count disagree with the
+    census it joins (2,398 rows against 2,476 heads) and its `unclosed` column unobservable.
+    """
     out = {}
     for row in read_csv(path):
         try:
@@ -95,7 +124,7 @@ def load_heads(path):
             size = int(row.get("size") or 0)
         except (KeyError, ValueError):
             continue
-        if size > 0 and row.get("verdict"):
+        if row.get("verdict"):
             out[va] = (size, row["verdict"])
     return out
 
@@ -171,6 +200,79 @@ def dword_sites(image, starts):
     return out
 
 
+
+def objdump_bin():
+    """The independent decoder, refused loudly rather than silently answering zero references."""
+    exe = shutil.which("objdump")
+    if not exe:
+        sys.exit("gap-body-files: objdump not found (the operand read needs binutils)")
+    return exe
+
+
+def sweep(image, indices):
+    """{instruction_va: (length, text)} from one linear objdump sweep of the given sections.
+
+    A linear sweep decodes from a section's own start, so an `E8` byte or a dword that sits inside
+    another instruction's operand does not exist here -- that is the difference between this read and
+    the byte scans it controls. A `.byte` line is a place the sweep lost alignment and is dropped, so
+    a body's absence from this map is `unread` rather than "no reference".
+    """
+    exe = objdump_bin()
+    out = {}
+    for s in image.sections:
+        if s.index not in indices:
+            continue
+        blob = image.data[s.foff:s.foff + min(s.fsize, s.vsize)]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as fh:
+            fh.write(blob)
+            path = fh.name
+        try:
+            listing = subprocess.run([exe, "-D", "-b", "binary", "-m", "i386", "-M", "intel",
+                                      "--adjust-vma=0x%x" % s.va, path],
+                                     capture_output=True, text=True, check=False).stdout
+        finally:
+            os.unlink(path)
+        for line in listing.splitlines():
+            m = OBJ_LINE.match(line)
+            if not m or ".byte" in m.group(3):
+                continue
+            out[int(m.group(1), 16)] = (len(m.group(2).split()), m.group(3))
+    return out
+
+
+def operands(text):
+    """The 32-bit values one instruction carries as operands (a `-0x...` frame offset is not a VA)."""
+    return [int(v, 16) for v in IMM_VA.findall(text)]
+
+
+def read_insns(insns, bmap, string_set, assert_set, names):
+    """The assert, string and callee channels at instruction boundaries.
+
+    Returns ({body: [(site, value)] per channel}, {body: [(site, target)]} for a direct call into a
+    body the map names). A value is bucketed by the instruction that carries it, so a site inside
+    another instruction's operand is invisible by construction.
+    """
+    hits = collections.defaultdict(list)
+    callee = collections.defaultdict(list)
+    for va in sorted(insns):
+        body = bmap.at(va)
+        if body is None:
+            continue
+        text = insns[va][1]
+        if text.startswith("call "):
+            tok = text.split()[1].rstrip(",")
+            if re.fullmatch(r"0x[0-9a-f]+", tok):
+                target = int(tok, 16)
+                if names.get(target):
+                    callee[body].append((va, target))
+        for value in operands(text):
+            if value in assert_set:
+                hits[(body, "assert")].append((va, value))
+            elif value in string_set:
+                hits[(body, "string")].append((va, value))
+    return hits, callee
+
+
 def assert_refs(image):
     """{string_va: (module, file)} for the image's assert paths, plus {string_va: path}."""
     by_va, paths = {}, {}
@@ -197,23 +299,38 @@ def measure(image, names, sizes, heads, modules):
     """The whole read: every body's extent, the three channels, and the control's counts."""
     extents = {va: n for va, n in sizes.items() if n}
     for va, (n, _) in heads.items():
-        extents.setdefault(va, n)
+        if n:
+            extents.setdefault(va, n)
     bmap = Bodies(extents)
     gap = {va: n for va, (n, verdict) in heads.items() if verdict == "body"}
 
     a_by_va, _ = assert_refs(image)
     strings = strings_of(image)
-    sites = []
+
+    # The aligned read: every 4-byte dword in the image that names a string start, kept as the control
+    # the operand read is measured against.
+    aligned = collections.defaultdict(set)
+    for site, sva in dword_sites(image, strings):
+        body = bmap.at(site)
+        if body is not None:
+            aligned[body].add(sva)
+    assert_any = collections.defaultdict(set)
     for sva in a_by_va:                      # the assert channel, by the map's own string index
         for site in image.xrefs_to(sva):
-            sites.append((site, sva, "assert"))
-    n_assert_sites = len(sites)
-    for site, sva in dword_sites(image, strings):
-        sites.append((site, sva, "string"))
-    n_string_sites = len(sites) - n_assert_sites
-    hits = bucket(sites, bmap)
+            body = bmap.at(site)
+            if body is not None:
+                assert_any[body].add(sva)
 
-    callee = collections.defaultdict(list)
+    # The operand read: the same channels from the instruction that carries the value, plus a direct
+    # call at an instruction boundary and the `Class::Method` literal a body logs about itself.
+    want = set()
+    for va in extents:
+        sec = image.section_for(va)
+        if sec is not None:
+            want.add(sec.index)
+    insns = sweep(image, want)
+    hits, callee_insn = read_insns(insns, bmap, set(strings), set(a_by_va), names)
+    callee_byte = collections.defaultdict(list)
     for va, n in extents.items():
         blob = image.read_va(va, n)
         if len(blob) < 5:
@@ -221,21 +338,31 @@ def measure(image, names, sizes, heads, modules):
         for target, callers in e8_targets(blob, va).items():
             if target in names and names[target]:
                 for site in callers:
-                    callee[va].append(target)
+                    callee_byte[va].append(target)
+    callee = callee_insn
 
     rows = []
+    method_of = {}
     for va in sorted(heads):
         size, verdict_head = heads[va]
+        if not size:
+            continue
         files = [a_by_va[sva] for _, sva in hits.get((va, "assert"), [])]
         assert_set = sorted({f"{m}/{f}" for m, f in files})
         strs = [strings[sva] for _, sva in hits.get((va, "string"), [])]
+        literal_files = sorted({f"{m}_{f}" for s in strs for m, f in SRC_IN_LITERAL.findall(s)})
+        found = sorted({s for s in strs if METHOD.match(s)})
+        method = found[0] if len(found) == 1 else ""
+        method_of[va] = (len(found), method)
         tokens = []
-        for target in callee.get(va, []):
+        for _, target in callee.get(va, []):
             tok = name_token(names[target], modules)
             if tok and f"{tok[0]}_{tok[1]}" not in tokens:
                 tokens.append(f"{tok[0]}_{tok[1]}")
         head = " | ".join(t.replace("|", "/")[:MAX_HEAD] for t in strs[:2])
         verdict = ("assert-file" if assert_set else
+                   "literal-file" if literal_files else
+                   "method" if method else
                    "string" if strs else
                    "callee-file" if tokens else "silent")
         if verdict_head != "body":
@@ -244,20 +371,23 @@ def measure(image, names, sizes, heads, modules):
                      "assert_file": " ".join(assert_set),
                      "assert_sites": " ".join(f"{site:#010x}" for site, _ in hits.get((va, "assert"), [])),
                      "string_sites": str(len(strs)), "string_head": head,
+                     "string_aligned": str(len(aligned.get(va, ()))),
                      "callee_file": tokens[0] if len(tokens) == 1 else "",
-                     "callee_files": " ".join(tokens[:3]), "verdict": verdict})
+                     "callee_files": " ".join(tokens[:3]),
+                     "callee_insn": str(len({t for _, t in callee.get(va, [])})),
+                     "literal_file": " ".join(literal_files[:2]),
+                     "method_token": method, "verdict": verdict})
 
     def count(pop, channel):
         return sum(1 for va in pop if hits.get((va, channel)))
 
     map_bodies = {va: n for va, n in sizes.items() if n}
     island = {va for va, (_, v) in heads.items() if v == "island"}
-    unclosed = {va: n for va, (n, v) in heads.items() if v not in ("body", "island")}
     census = {
         "heads": len(heads),
         "bodies": len(gap),
         "islands": len(island),
-        "unclosed": len(unclosed),
+        "unclosed": sum(1 for va, (n, v) in heads.items() if v not in ("body", "island")),
         "with_assert": count(gap, "assert"),
         "with_string": count(gap, "string"),
         "with_callee": sum(1 for va in gap if callee.get(va)),
@@ -267,6 +397,20 @@ def measure(image, names, sizes, heads, modules):
         "map_string": count(map_bodies, "string"),
         "map_callee": sum(1 for va in map_bodies if callee.get(va)),
         "multi_files": sum(1 for r in rows if " " in r["assert_file"]),
+        "with_assert_any": sum(1 for va in gap if assert_any.get(va)),
+        "with_string_aligned": sum(1 for va in gap if aligned.get(va)),
+        "string_both": sum(1 for va in gap if aligned.get(va) and hits.get((va, "string"))),
+        "string_operand_only": sum(1 for va in gap if hits.get((va, "string")) and not aligned.get(va)),
+        "string_aligned_only": sum(1 for va in gap if aligned.get(va) and not hits.get((va, "string"))),
+        "map_string_aligned": sum(1 for va in map_bodies if aligned.get(va)),
+        "map_assert_any": sum(1 for va in map_bodies if assert_any.get(va)),
+        "map_assert_operand": count(map_bodies, "assert"),
+        "callee_byte_only": sum(1 for va in gap if callee_byte.get(va) and not callee.get(va)),
+        "callee_insn_only": sum(1 for va in gap if callee.get(va) and not callee_byte.get(va)),
+        "with_literal_file": sum(1 for r in rows
+                                 if r["verdict"] == "literal-file"),
+        "with_method": sum(1 for va in gap if method_of.get(va, (0, ""))[1]),
+        "method_ambiguous": sum(1 for va in gap if method_of.get(va, (0, ""))[0] > 1),
     }
     pairs = agree = other = wrong = 0
     for va in map_bodies:
@@ -283,6 +427,37 @@ def measure(image, names, sizes, heads, modules):
         else:
             other += 1
     census.update({"name_pairs": pairs, "name_agree": agree, "name_other": other, "name_wrong": wrong})
+    # The method literal's control: a map body that logs `Class::Method` should carry a name that holds
+    # one of the token's own parts -- and a name it does not hold is the channel's failure rate.
+    m_named = m_agree = 0
+    for va in map_bodies:
+        name = names.get(va) or ""
+        if not name:
+            continue
+        got = sorted({strings[s] for _, s in hits.get((va, "string"), []) if METHOD.match(strings[s])})
+        if not got:
+            continue
+        m_named += 1
+        if any(part and part in name for part in got[0].split("::")):
+            m_agree += 1
+    census.update({"map_method": m_named, "map_method_agree": m_agree,
+                   "map_method_other": m_named - m_agree})
+    # The literal path's control: a `<Module>_<File>` body that pushes a build path should push its own
+    # file, and a body that pushes another file's is the channel's failure rate.
+    l_named = l_agree = 0
+    for va in map_bodies:
+        name = names.get(va) or ""
+        if not name:
+            continue
+        got = {f"{m}_{f}" for _, s in hits.get((va, "string"), [])
+               for m, f in SRC_IN_LITERAL.findall(strings[s])}
+        if not got:
+            continue
+        l_named += 1
+        if any(tok.split("_", 1)[-1] in name for tok in got):
+            l_agree += 1
+    census.update({"map_literal_file": l_named, "map_literal_agree": l_agree,
+                   "map_literal_other": l_named - l_agree})
     rep = {int(r["body_va"], 16) for r in read_csv(REP)
            if r.get("kind") == "gap" and r.get("body_va")}
     rep_body = rep & set(gap)
@@ -292,10 +467,12 @@ def measure(image, names, sizes, heads, modules):
     census["rep_assert"] = sum(1 for va in rep_body if hits.get((va, "assert")))
     census["rep_string"] = sum(1 for va in rep_body if hits.get((va, "string")))
     census["rep_callee"] = sum(1 for va in rep_body if callee.get(va))
-    print(f"{len(rows)} gap-head rows; {census['with_assert']} assert, {census['with_string']} string, "
-          f"{census['with_callee']} callee, {census['silent']} silent; "
-          f"map control {census['map_assert']} assert / {census['map_string']} string of {census['map_bodies']}; "
-          f"name agreement {agree} of {pairs}")
+    print(f"{len(rows)} gap-head rows; {census['with_assert']} assert, {census['with_string']} string "
+          f"({census['with_string_aligned']} at an aligned dword), {census['with_callee']} callee, "
+          f"{census['with_method']} method literal, {census['silent']} silent; "
+          f"map control {census['map_assert']} assert / {census['map_string']} string "
+          f"({census['map_string_aligned']} aligned) / {census['map_method_agree']} of {census['map_method']} "
+          f"method literals named, of {census['map_bodies']}; name agreement {agree} of {pairs}")
     return rows, census
 
 
@@ -328,27 +505,74 @@ def read_artifact(path):
 def render(rows, census):
     hits = [r for r in rows if r["verdict"] not in ("silent", "island") and r["verdict"] != "island"
             and not r["verdict"].startswith("no")]
-    hits.sort(key=lambda r: (r["verdict"] != "assert-file", -int(r["string_sites"] or 0), r["body_va"]))
+    hits.sort(key=lambda r: (r["verdict"] not in ("assert-file", "method"), -int(r["string_sites"] or 0),
+                              r["body_va"]))
     lines = ["| gap head | size | names | the reference |", "|---|---|---|---|"]
     for r in hits[:60]:
-        what = r["assert_file"] or r["string_head"] or r["callee_files"]
+        what = r["method_token"] or r["assert_file"] or r["string_head"] or r["callee_files"]
         how = ("assert path at " + " ".join(r["assert_sites"].split())) if r["assert_file"] else (
-            f"{r['string_sites']} string site(s)" if r["string_head"] else "a call into a named body")
+            f"`Class::Method` literal among {r['string_sites']} string site(s)" if r["method_token"] else (
+                f"{r['string_sites']} string site(s)" if r["string_head"] else "a call into a named body"))
         lines.append(f"| `{r['body_va']}` | {r['size']} | {what} | {how} |")
     if len(hits) > 60:
         lines.append(f"| ... | | {len(hits) - 60} more | |")
     lines.append("")
+    named = [r for r in rows if r["method_token"]]
+    if named:
+        lines.append("| gap head | size | the method it names itself by | the literal it pushes |")
+        lines.append("|---|---|---|---|")
+        for r in named[:40]:
+            lines.append(f"| `{r['body_va']}` | {r['size']} | `{r['method_token']}` | {r['string_head']} |")
+        if len(named) > 40:
+            lines.append(f"| ... | | {len(named) - 40} more | |")
+        lines.append("")
     lines.append(
         f"**{census['heads']} heads decode as {census['bodies']} bodies and {census['islands']} islands; of the "
         f"bodies {census['with_assert']} hold an assert path, {census['with_string']} a printable string and "
         f"{census['with_callee']} a call into a body the map names, and {census['silent']} hold none of the "
-        f"three.**")
+        f"three. The other {census['unclosed']} heads the census lists hold no extent at all -- {census['unclosed']} "
+        f"of the {census['heads']} -- so a per-body read can never visit them.**")
     lines.append("")
     lines.append(
         f"**Control: {census['map_assert']} of the map's {census['map_bodies']} bodies hold an assert site, and "
         f"{census['name_agree']} of the {census['name_pairs']} `<Module>_<File>` bodies carry the file their own "
         f"name is built from, {census['name_wrong']} carry a different one and {census['name_other']} reference no "
         f"assert path at all -- so the name is that reference read one level out.**")
+    lines.append("")
+    lines.append(
+        f"**The read is at instruction boundaries, and the alignment the old one assumed cost it most of its "
+        f"names.** An operand is the value the instruction carries whether or not its own address is 4-aligned, "
+        f"so the string channel reads **{census['map_string']}** of the map's {census['map_bodies']} bodies against "
+        f"**{census['map_string_aligned']}** from a 4-aligned dword scan ({census['map_method']} of those bodies "
+        f"also log a `Class::Method` literal, and {census['map_method_agree']} of them carry a name that holds one "
+        f"of its parts). On the gap population the same read is **{census['with_string']} bodies against "
+        f"{census['with_string_aligned']}**: {census['string_both']} both, {census['string_operand_only']} only at "
+        f"an instruction and {census['string_aligned_only']} only at an aligned dword -- an aligned dword no "
+        f"instruction owns is a data word inside code, not a reference. The assert channel is unchanged "
+        f"({census['map_assert_any']} of the map's bodies by any offset, {census['map_assert_operand']} as an "
+        f"operand), because that one was always read at every byte.")
+    lines.append("")
+    lines.append(
+        f"**{census['with_literal_file']} gap bodies push a literal that carries a build path** -- the assert "
+        f"text of this build often holds the file and the expression in one string "
+        f"(`..\\..\\Core\\Inc\\FFileManagerXbox.h | InPos<=Size`), so the reference points at the combined "
+        f"literal and not at the path's first byte. The control is the map's own names: {census['map_literal_file']} "
+        f"named bodies push such a path and {census['map_literal_agree']} of them push their own file "
+        f"({census['map_literal_other']} another file's), so the path inside the literal is the same reference "
+        f"read one level out.")
+    lines.append("")
+    lines.append(
+        f"**The callee channel's `E8` byte scan is exact, and it is the byte scan that had the doubt.** Read at "
+        f"instruction boundaries the gap population holds **{census['with_callee']}** bodies with a direct call "
+        f"into a body the map names, the same count the byte scan gives: {census['callee_byte_only']} bodies are "
+        f"named by a byte scan alone and {census['callee_insn_only']} by an instruction alone, so no `E8` inside "
+        f"another instruction's displacement reached a mapped body here.")
+    lines.append("")
+    lines.append(
+        f"**{census['with_method']} gap bodies carry exactly one `Class::Method` literal and "
+        f"{census['method_ambiguous']} carry two or more.** The literal is UE2's log or assert text naming the "
+        f"method that emitted it, so a body with one is named by the image itself; a body that logs about another "
+        f"object is the ambiguous case and is refused rather than guessed.")
     lines.append("")
     lines.append(
         f"**The owed interface representatives' slots hold {census['rep_heads']} of these heads and only "
@@ -396,29 +620,63 @@ def self_check():
     hits = bucket([(0x1004, 7, "assert"), (0x1020, 8, "string")], b)
     if hits != {(0x1000, "assert"): [(0x1004, 7)]}:
         bad.append("a site outside every body is dropped, not attributed")
+    # The operand read: the value an instruction carries, and the `-0x...` frame offset that is not one.
+    if operands("push   0x4e1aa8") != [0x4E1AA8]:
+        bad.append("an operand is the value an instruction pushes")
+    if operands("mov    edi,DWORD PTR [ebp-0x4c7948]"):
+        bad.append("a negative displacement is not an address")
+    if operands("mov    eax,DWORD PTR [ecx+0x4]") != []:
+        bad.append("a small displacement is not a 32-bit value")
+    if not METHOD.match("FMallocError::Init") or not METHOD.match("CPlayer::Tick"):
+        bad.append("a Class::Method literal is a method name")
+    if METHOD.match("Called %s before memory init") or METHOD.match("ReadFile failed"):
+        bad.append("prose is not a method name")
+    insns = {0x1000: (5, "push   0x00110004"), 0x1005: (3, "ret"),
+             0x1006: (5, "call   0x00110008"), 0x100B: (1, "nop")}
+    got, calls = read_insns(insns, b, {0x110004}, {0x110000}, {0x110008: "FUN_00110008"})
+    if got != {(0x1000, "string"): [(0x1000, 0x110004)]}:
+        bad.append("an operand is bucketed by the instruction that carries it")
+    if calls != {0x1000: [(0x1006, 0x110008)]}:
+        bad.append("a direct call is read at its instruction boundary")
+    if read_insns({0x1000: (5, "push   0x00000000")}, b, {0x110004}, {0x110000}, {})[0]:
+        bad.append("a value that names no string is no reference")
     rows = [{"body_va": "0x00000100", "size": "16", "assert_file": "Engine/UnChan", "assert_sites": "0x00000104",
-             "string_sites": "0", "string_head": "", "callee_file": "", "callee_files": "",
-             "verdict": "assert-file"},
+             "string_sites": "0", "string_head": "", "string_aligned": "1", "callee_file": "", "callee_files": "",
+             "callee_insn": "0", "literal_file": "", "method_token": "", "verdict": "assert-file"},
             {"body_va": "0x00000200", "size": "8", "assert_file": "", "assert_sites": "0",
-             "string_sites": "2", "string_head": "invalid stencil op | D3D", "callee_file": "",
-             "callee_files": "", "verdict": "string"},
+             "string_sites": "2", "string_head": "invalid stencil op | D3D", "string_aligned": "0", "callee_file": "",
+             "callee_files": "", "callee_insn": "0", "literal_file": "", "method_token": "", "verdict": "string"},
+            {"body_va": "0x00000210", "size": "9", "assert_file": "", "assert_sites": "0",
+             "string_sites": "1", "string_head": "FMallocError::Init", "string_aligned": "0", "callee_file": "",
+             "callee_files": "", "callee_insn": "0", "literal_file": "", "method_token": "FMallocError::Init", "verdict": "method"},
             {"body_va": "0x00000300", "size": "12", "assert_file": "", "assert_sites": "0",
-             "string_sites": "0", "string_head": "", "callee_file": "Core_UnObj",
-             "callee_files": "Core_UnObj", "verdict": "callee-file"},
+             "string_sites": "0", "string_head": "", "string_aligned": "0", "callee_file": "Core_UnObj",
+             "callee_files": "Core_UnObj", "callee_insn": "1", "literal_file": "", "method_token": "",
+             "verdict": "callee-file"},
             {"body_va": "0x00000400", "size": "6", "assert_file": "", "assert_sites": "0",
-             "string_sites": "0", "string_head": "", "callee_file": "", "callee_files": "",
-             "verdict": "silent"},
+             "string_sites": "0", "string_head": "", "string_aligned": "0", "callee_file": "", "callee_files": "",
+             "callee_insn": "0", "literal_file": "", "method_token": "", "verdict": "silent"},
+            {"body_va": "0x00000410", "size": "7", "assert_file": "", "assert_sites": "0",
+             "string_sites": "1", "string_head": "..\\..\\Core\\Inc\\FFileManagerXbox.h | InPos<=Size",
+             "string_aligned": "0", "callee_file": "", "callee_files": "", "callee_insn": "0",
+             "literal_file": "Core_FFileManagerXbox", "method_token": "", "verdict": "literal-file"},
             {"body_va": "0x00000500", "size": "3", "assert_file": "", "assert_sites": "0",
-             "string_sites": "0", "string_head": "", "callee_file": "", "callee_files": "",
-             "verdict": "island"}]
-    census = {"heads": 5, "bodies": 4, "islands": 1, "unclosed": 0, "with_assert": 1, "with_string": 1,
+             "string_sites": "0", "string_head": "", "string_aligned": "0", "callee_file": "", "callee_files": "",
+             "callee_insn": "0", "literal_file": "", "method_token": "", "verdict": "island"}]
+    census = {"heads": 7, "bodies": 6, "islands": 1, "unclosed": 0, "with_assert": 1, "with_string": 2,
               "with_callee": 1, "silent": 1, "rep_heads": 2, "rep_bodies": 1, "rep_islands": 1, "rep_assert": 0,
               "rep_string": 1, "rep_callee": 0, "map_bodies": 9, "map_assert": 3, "map_string": 4,
               "map_callee": 5, "name_pairs": 6, "name_agree": 5, "name_other": 1, "name_wrong": 0,
-              "multi_files": 0}
+              "multi_files": 0, "with_assert_any": 1, "with_string_aligned": 1, "string_both": 1,
+              "string_operand_only": 1, "string_aligned_only": 0, "map_string_aligned": 2,
+              "map_assert_any": 3, "map_assert_operand": 3, "callee_byte_only": 0, "callee_insn_only": 0,
+              "with_method": 1, "method_ambiguous": 0, "map_method": 4, "map_method_agree": 3,
+              "map_method_other": 1, "with_literal_file": 2, "map_literal_file": 2,
+              "map_literal_agree": 2, "map_literal_other": 0}
     text = render(rows, census)
     for want in ("`0x00000100`", "invalid stencil op", "Control: 3 of the map's 9", "5 of the 6",
-                 "0 carry a different one", "hold an assert path, 1 a string and 0 a call"):
+                 "0 carry a different one", "2 a printable string and 1 a call",
+                 "FMallocError::Init", "1 gap bodies carry exactly one"):
         if want not in text:
             bad.append("render lacks %r" % (want,))
     if "`0x00000500`" in text:

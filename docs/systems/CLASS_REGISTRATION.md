@@ -1924,73 +1924,86 @@ corroborates -- it is the same reference, one level out.
 <!-- generated:gap-body-files -->
 | gap head | size | names | the reference |
 |---|---|---|---|
-| `0x003e0a30` | 5715 | ANG_DAMP | USE_FAST_SPIN | 38 string site(s) |
-| `0x000fd030` | 2227 | UltraHigh | Normal | 14 string site(s) |
-| `0x002b0050` | 1169 | Options | UseTrilinear | 11 string site(s) |
-| `0x002bda20` | 564 | D3DERR_UNSUPPORTEDALPHAOPERATION | D3DERR_UNSUPPORTEDCOLORARG | 9 string site(s) |
-| `0x00182f30` | 846 | Client | KeepAliveTime | 7 string site(s) |
-| `0x0007e970` | 595 | Options | Options | 6 string site(s) |
-| `0x000f9990` | 469 | Client | Client | 5 string site(s) |
-| `0x0002e690` | 624 | PAUSESOUNDS | PAUSESOUNDS | 4 string site(s) |
-| `0x0002d600` | 299 | XBoxAudio | MusicVolume | 3 string site(s) |
-| `0x00192730` | 836 | Reviewing Paths | This pickup should have a PickupBase | 3 string site(s) |
-| `0x0001fa30` | 154 | Arctor<BYTE>(Linear)==LINEAR_SEEK | ..\..\Core\Inc\FFileManagerLinear.h | 2 string site(s) |
-| `0x00035f10` | 222 | InContextCommand | StrProperty0 | 2 string site(s) |
-| `0x001d3270` | 436 | NumItems | Config%d | 2 string site(s) |
-| `0x00295d30` | 175 |      Title: %s |      Album: %s | 2 string site(s) |
-| `0x002ce490` | 3123 | RI_AuthenticationFailed | RI_BannedClient | 2 string site(s) |
-| `0x002d26b0` | 250 | Client | LogMaxConnPerIPPerMin | 2 string site(s) |
-| `0x002d4100` | 201 | UTcpNetDriverXbox | bUseVDP | 2 string site(s) |
-| `0x003e3050` | 879 | line %d, char %d: Expected int, found %s | line %d, char %d: found garbage after da | 2 string site(s) |
-| `0x00012410` | 165 | [SDS] - Launch Main Exiting Loop | 1 string site(s) |
-| `0x0001f800` | 115 | LinearFileStillOpen | 1 string site(s) |
-| `0x00026be0` | 75 | InPos>=0 && InPos<=Size | 1 string site(s) |
+| `0x00034160` | 25 | FMallocError::Init | `Class::Method` literal among 2 string site(s) |
+| `0x00034180` | 25 | FMallocError::Exit | `Class::Method` literal among 2 string site(s) |
+| `0x000fd030` | 2227 | ETextureDetail | UltraHigh | 68 string site(s) |
+| `0x003e0a30` | 5715 | PRIMITIVE | MASS_OFFSET | 55 string site(s) |
+| `0x002b0050` | 1169 | UseHardwareTL | Options | 46 string site(s) |
+| `0x00182f30` | 846 | ConnectionTimeout | Client | 32 string site(s) |
+| `0x002bda20` | 564 | D3DERR_WRONGTEXTUREFORMAT | D3DERR_OUTOFVIDEOMEMORY | 23 string site(s) |
+| `0x0007e970` | 595 | PurgeCacheDays | Options | 21 string site(s) |
+| `0x000f9990` | 469 | HighDetailActors | Client | 20 string site(s) |
+| `0x002ce490` | 3123 | UT2K4SERVER | Approval %s | 17 string site(s) |
+| `0x0002d600` | 299 | UsePrecache | XBoxAudio | 12 string site(s) |
+| `0x00192730` | 836 | FPathBuilder reviewing paths | Reviewing paths... | 12 string site(s) |
+| `0x002d26b0` | 250 | AllowPlayerPortUnreach | Client | 10 string site(s) |
+| `0x001d3270` | 436 | UnrealEd.ini | Rebuild Configs | 9 string site(s) |
+| `0x00012410` | 165 | [SDS_BOX_HACK] REBOOT | Exiting Loop | 8 string site(s) |
+| `0x0002e690` | 624 | PAUSESOUNDS | PAUSESOUNDS | 8 string site(s) |
+| `0x002c1890` | 195 | ProxyServerHost | Settings | 8 string site(s) |
+| `0x002d4100` | 201 | StoredHostInfo | UTcpNetDriverXbox | 8 string site(s) |
+| `0x000e3440` | 281 | MusicVolume | SoundVolume | 6 string site(s) |
+| `0x00328890` | 606 | [VL:XBOXLIVE]> SessionStartTask::Finishe | [VL:XBOXLIVE] Can't create Match Making  | 6 string site(s) |
+| `0x003e3050` | 879 | line %d, char %d: Expected int, found %s | line %d, char %d: found garbage after da | 6 string site(s) |
+| `0x00018e90` | 141 | ..\..\Core\Inc\FFileManagerXbox.h | InPos>=0 | 5 string site(s) |
+| `0x00035f10` | 222 | Description | InContextCommand | 5 string site(s) |
+| `0x00295d30` | 175 |   == V1 Tag ==   |      Title: %s | 5 string site(s) |
+| `0x00397190` | 165 | Attempt to calculate the bounding box of | Attempt to calculate the bounding sphere | 5 string site(s) |
+| `0x0001fa30` | 154 | ..\..\Core\Inc\FFileManagerLinear.h | Arctor<BYTE>(Linear)==LINEAR_SEEK | 4 string site(s) |
+| `0x00318f90` | 879 | Engine | Engine | 4 string site(s) |
+| `0x003db740` | 3245 | MdtConstraintCreateFromMeFJoint: Both bo | MdtConstraintCreateFromMeFJoint: Both bo | 4 string site(s) |
+| `0x0012a290` | 1329 | Rebuilding Fluid Clamp Bitmap | Fluid Checking Against Level. | 3 string site(s) |
+| `0x001bff70` | 174 | Engine | Engine | 3 string site(s) |
+| `0x0001a1d0` | 311 | ReadFile beyond EOF %i+%i/%i | ReadFile failed: Count=%i Length=%i Erro | 2 string site(s) |
+| `0x0001f800` | 115 | ..\..\Core\Inc\FFileManagerLinear.h | LinearFileStillOpen | 2 string site(s) |
+| `0x00026be0` | 75 | ..\..\Core\Inc\FFileManagerArc.h | InPos>=0 && InPos<=Size | 2 string site(s) |
+| `0x00034140` | 25 | appHeapCheck | Called %s before memory init | 2 string site(s) |
+| `0x00046e70` | 143 | %s (%s:%04X) %s | %s (%s:%04X) %s | 2 string site(s) |
+| `0x00073f40` | 301 |    %s references: |       %s | 2 string site(s) |
+| `0x000adb00` | 173 | (Karma):  | (Karma):  | 2 string site(s) |
+| `0x002b9750` | 325 | Engine | Engine | 2 string site(s) |
+| `0x002c47e0` | 243 | !! Error checking socket status: %i | !! Failed to accept queued connection: % | 2 string site(s) |
+| `0x003081c0` | 239 | UUIXInteraction::RemovePlayerItem - PRI  | UnregisterPlayer failed with code 0x%x | 2 string site(s) |
+| `0x00398fe0` | 904 | McdTriangleListMaximumPoint: Don't know  | McdTriangleListGetMassProperties: Don't  | 2 string site(s) |
+| `0x003d93b0` | 126 | MePoolMallocReset() not implemented | MePoolMallocDestroy(): %d structs still  | 2 string site(s) |
+| `0x00011d80` | 27 | [XBOX-EXCEPTION] Filtered!! | 1 string site(s) |
+| `0x00017630` | 38 | Engine | 1 string site(s) |
+| `0x00018c60` | 22 | Can't seek compressed file | 1 string site(s) |
+| `0x00019ba0` | 267 | Error reentered: %s | 1 string site(s) |
+| `0x00027f80` | 34 | Files map: | 1 string site(s) |
+| `0x00029f60` | 442 | System | 1 string site(s) |
+| `0x00058cd0` | 44 | Progress | 1 string site(s) |
+| `0x00058d30` | 44 | General | 1 string site(s) |
+| `0x000628ee` | 31 | Double fault in object ShutdownAfterErro | 1 string site(s) |
+| `0x00068a40` | 128 | txt;Text files | 1 string site(s) |
 | `0x0007e8c0` | 49 | Aborted! | 1 string site(s) |
-| `0x000adb00` | 173 | (Karma):  | 1 string site(s) |
-| `0x00182880` | 85 | Engine | 1 string site(s) |
-| `0x00194ca0` | 85 | Engine | 1 string site(s) |
-| `0x00194d00` | 85 | Engine | 1 string site(s) |
-| `0x00194dc0` | 85 | Engine | 1 string site(s) |
-| `0x001b1690` | 3870 | %s flew out of the world! | 1 string site(s) |
-| `0x001bff70` | 174 | Cast of %s to %s failed | 1 string site(s) |
-| `0x001d2620` | 143 | Engine | 1 string site(s) |
-| `0x00223bb0` | 107 | GetBoneRotation: Bone [%s] not found in  | 1 string site(s) |
-| `0x002b5880` | 97 | invalid stencil op | 1 string site(s) |
-| `0x002b96b0` | 160 | Engine | 1 string site(s) |
-| `0x002b9a10` | 65 | CREATING COPY TARGET - RETURNING | 1 string site(s) |
-| `0x002c1890` | 195 | Settings | 1 string site(s) |
-| `0x002c62c0` | 387 | !!Send() got SOCKET_ERROR %d for %s | 1 string site(s) |
-| `0x002d3790` | 56 | UnregisterInfo: XNetUnregisterKey(HostKe | 1 string site(s) |
-| `0x003081c0` | 239 | UnregisterPlayer failed with code 0x%x | 1 string site(s) |
-| `0x00318f90` | 879 | Engine | 1 string site(s) |
-| `0x00328890` | 606 | SessionStartTask::Finsh: ExchangeKey: %s | 1 string site(s) |
-| `0x003db740` | 3245 | MdtConstraintCreateFromMeFJoint: Both bo | 1 string site(s) |
-| `0x00017630` | 38 | Engine_UnStaticMesh | a call into a named body |
-| `0x0001bf10` | 1490 | Core_UnTemplate | a call into a named body |
-| `0x0002a870` | 46 | XboxAudio_FindSlotByKey | a call into a named body |
-| `0x0002a8a0` | 49 | XboxAudio_FindSlotByKey | a call into a named body |
-| `0x0002a8e0` | 113 | XboxAudio_FindSlotByKey | a call into a named body |
-| `0x0002afb0` | 258 | XboxAudio_ApplyBufferParams XboxAudio_HasPendingKey | a call into a named body |
-| `0x0002b570` | 67 | XboxAudio_CloseSoundDevice | a call into a named body |
-| `0x0002b7f0` | 202 | XboxAudio_PollDeviceChanges | a call into a named body |
-| `0x0002bc20` | 86 | XboxAudio_FindSlotByKey XboxAudio_ApplyBufferParams | a call into a named body |
-| `0x0002bc80` | 86 | XboxAudio_FindSlotByKey XboxAudio_ApplyBufferParams | a call into a named body |
-| `0x00034a30` | 125 | Core_UnObj | a call into a named body |
-| `0x00038ce0` | 65 | Core_UnObj | a call into a named body |
-| `0x00059730` | 177 | Core_UnTemplate | a call into a named body |
-| `0x000679c0` | 188 | Core_UnObjBas Core_UnObj | a call into a named body |
-| `0x00068a40` | 128 | Core_UnObj | a call into a named body |
-| `0x00068ac0` | 95 | Core_UnTemplate | a call into a named body |
-| `0x0006cef0` | 54 | Core_UnObj | a call into a named body |
-| `0x00074dc0` | 70 | Core_UnClass | a call into a named body |
-| `0x000869f0` | 62 | Core_UnClass | a call into a named body |
-| ... | | 42 more | |
+| `0x000ad900` | 23 | MePoolMallocReset() not implemented | 1 string site(s) |
+| `0x000ad950` | 30 | MePoolMallocDestroy(): %d structs still  | 1 string site(s) |
+| `0x000af230` | 114 | Element Index (%d) larger than number of | 1 string site(s) |
+| `0x000b1c70` | 25 | [LIPSinc]: LIPSincShutdownEditor | 1 string site(s) |
+| `0x000ba4d0` | 29 | [LIPSinc]: LIPSincInitEditor | 1 string site(s) |
+| `0x000be75a` | 70 | Unpopulated box! | 1 string site(s) |
+| `0x000ee440` | 188 | Added %s: %s | 1 string site(s) |
+| ... | | 86 more | |
 
-**2398 heads decode as 2088 bodies and 310 islands; of the bodies 0 hold an assert path, 41 a printable string and 688 a call into a body the map names, and 1986 hold none of the three.**
+| gap head | size | the method it names itself by | the literal it pushes |
+|---|---|---|---|
+| `0x00034160` | 25 | `FMallocError::Init` | FMallocError::Init | Called %s before memory init |
+| `0x00034180` | 25 | `FMallocError::Exit` | FMallocError::Exit | Called %s before memory init |
 
-**Control: 1337 of the map's 16734 bodies hold an assert site, and 1279 of the 1325 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 46 reference no assert path at all -- so the name is that reference read one level out.**
+**2476 heads decode as 2088 bodies and 310 islands; of the bodies 0 hold an assert path, 104 a printable string and 688 a call into a body the map names, and 1942 hold none of the three. The other 78 heads the census lists hold no extent at all -- 78 of the 2476 -- so a per-body read can never visit them.**
 
-**The owed interface representatives' slots hold 289 of these heads and only 211 are bodies -- 72 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 78; of the 211 bodies 0 hold an assert path, 4 a string and 80 a call into a named body, and the per-body read cannot name an interface (U40).**
+**Control: 1336 of the map's 16734 bodies hold an assert site, and 1278 of the 1325 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 47 reference no assert path at all -- so the name is that reference read one level out.**
+
+**The read is at instruction boundaries, and the alignment the old one assumed cost it most of its names.** An operand is the value the instruction carries whether or not its own address is 4-aligned, so the string channel reads **3154** of the map's 16734 bodies against **1744** from a 4-aligned dword scan (3 of those bodies also log a `Class::Method` literal, and 3 of them carry a name that holds one of its parts). On the gap population the same read is **104 bodies against 41**: 41 both, 63 only at an instruction and 0 only at an aligned dword -- an aligned dword no instruction owns is a data word inside code, not a reference. The assert channel is unchanged (1337 of the map's bodies by any offset, 1336 as an operand), because that one was always read at every byte.
+
+**4 gap bodies push a literal that carries a build path** -- the assert text of this build often holds the file and the expression in one string (`..\..\Core\Inc\FFileManagerXbox.h | InPos<=Size`), so the reference points at the combined literal and not at the path's first byte. The control is the map's own names: 36 named bodies push such a path and 10 of them push their own file (26 another file's), so the path inside the literal is the same reference read one level out.
+
+**The callee channel's `E8` byte scan is exact, and it is the byte scan that had the doubt.** Read at instruction boundaries the gap population holds **688** bodies with a direct call into a body the map names, the same count the byte scan gives: 0 bodies are named by a byte scan alone and 0 by an instruction alone, so no `E8` inside another instruction's displacement reached a mapped body here.
+
+**2 gap bodies carry exactly one `Class::Method` literal and 0 carry two or more.** The literal is UE2's log or assert text naming the method that emitted it, so a body with one is named by the image itself; a body that logs about another object is the ambiguous case and is refused rather than guessed.
+
+**The owed interface representatives' slots hold 289 of these heads and only 211 are bodies -- 72 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 78; of the 211 bodies 0 hold an assert path, 18 a string and 80 a call into a named body, and the per-body read cannot name an interface (U40).**
 <!-- /generated:gap-body-files -->
 
 **The one gap head the channel named is now a map row.** `0x0007e3b0` (65 bytes) holds two push sites of
@@ -3176,3 +3189,75 @@ six artifacts reproduce byte for byte on a third run and the page blocks match t
 **Not in this bundle.** `0x0051724c`'s two member bodies (their stores carry no symbol), the 4
 linker folds, the 424 interface-only bodies and the 807 bodies no channel names.
 
+
+## The reference is the instruction's operand, and the aligned scan read a quarter of the population (2026-11-21)
+
+**Task.** U40's residue is the bodies no channel names, and the block above counts three channels over them:
+an assert path, a printable string and a call into a named body. Two of those were read as a **4-byte-aligned
+dword** anywhere in the image, which is how a pointer in a table looks and not how a reference in code looks:
+`push 0x4e1aa8` and `mov edi,0x4e1aa8` carry the value at whatever offset the instruction happens to sit at.
+This bundle reads both channels from the instruction that carries the value (`objdump` decodes the section, so a
+value inside another instruction's bytes is not a reference), controls them against the aligned read and against
+the map's own names, and finds in the same pass the heads the read was never visiting at all.
+
+**The alignment was doing the reading.** On the map's own 16,734 bodies the string channel reads **3,154**
+bodies as an operand and **1,744** as an aligned dword. On the gap population it is **104 against 41**: 41 both,
+**63 only at an instruction** and **0 only at an aligned dword**, so the aligned scan is a strict subset here and
+an aligned dword no instruction owns is a data word inside code rather than a reference. The 63 begin with the
+CRT's file and memory layer -- `0x00018e90` (141 bytes) `ReadFile beyond EOF`, `0x0001a1d0` (311)
+`ReadFile failed`, `0x00018c60` (22) `Can't seek compressed file`, `0x00019ba0` (267) `Error reentered: %s`,
+`0x00011d80` (27) `[XBOX-EXCEPTION] Filtered!!`, `0x00034140`/`0x00034160` (25 each) `appHeapCheck` and
+`FMallocError::Init` -- so a good part of what nothing names is not game code at all. The artifact keeps both
+counts (`string_sites` and `string_aligned`), so the difference is a column and not a claim.
+
+**The assert channel did not move, and the operand read's one cost is a count.** 1,336 of the map's bodies carry
+their assert path as an operand against **1,337** by any offset, and the gap population is **0 either way** (the
+one gap head that carried a path became `Core_UnVcWin32` a bundle ago). The single body the boundary read does
+not see is reported as the two census counts rather than dropped, because a byte-level scan and an instruction
+boundary are different instruments and this page should say which one a number is.
+
+**The callee channel's byte scan is exact, and it is the byte scan that had the doubt.** The artifact described
+its `E8` scan as an upper bound because an `E8` inside another instruction's displacement can encode a false
+call. Read at instruction boundaries the gap population holds **688** bodies with a direct call into a body the
+map names -- the same 688, with **0** bodies named by one read alone -- and the map's population moves 12,379 to
+**12,383**: four more bodies, five whose call the byte scan missed and one the boundary read does not see. So the
+channel's doubt costs nothing and the caveat becomes a count.
+
+**The heads the read never visited.** The census lists **2,476** heads and the artifact counted **2,398**, and
+its `unclosed` column read 0 every run: `load_heads` kept only heads that carry a size, so the **78** heads with
+no extent were dropped *before* the census counted them. They are **42** the decoder never closes and **36** that
+close on no terminator, and the columns now read `heads 2,476`, `bodies 2,088`, `islands 310`, `unclosed 78`. A
+per-body read can never visit them -- this is a population statement, not a residue.
+
+**Two name channels measured, and both refused with a number.** *A `Class::Method` literal* names the method that
+logs it: **2** gap bodies carry exactly one (`0x00034160` `FMallocError::Init` and `0x00034180`
+`FMallocError::Exit`, 25 bytes each, and they are a pair), and the control is exact -- 3 of the map's 3 bodies
+with such a literal carry a name that holds one of its parts. But the channel is thin because UE2's script text
+does not name its methods: `inventory/body_names.csv` names **5** of its 6,147 exported bodies by the same
+reading, so two bodies is the channel working and not a population to pay. *A build path inside a literal* is the
+other side of the assert channel: this build's assert text often carries the file and the expression in one
+string (`..\..\Core\Inc\FFileManagerXbox.h | InPos<=Size`), so the reference points at the combined literal and
+never at the path's own first byte. **4** gap bodies push one -- `0x00018e90` 141 (`Core\Inc\FFileManagerXbox.h`),
+`0x0001f800` 115 and `0x0001fa30` 154 (`FFileManagerLinear.h`), `0x00026be0` 75 (`FFileManagerArc.h`) -- and the
+control is what refuses the name: **36** of the map's named bodies push such a path and only **10** push their own
+file, **26** another file's. A header path is the file the inlined or asserted code came from, not the body's
+translation unit, so those four bodies are placed and not named.
+
+**The interface representatives read 18 with a literal, not 4.** Those bodies are why this channel mattered, and
+the artifact read **4** of them as holding a string; at instruction boundaries it is **18** over the same **211**
+bodies, with the call channel unchanged at 80. So the per-body route's negative ("no channel in those bodies
+names an interface") is a measurement rather than a side effect of the alignment.
+
+**Files.** `tools/gap-body-files.py` (the sweep, the operand read, the callee boundary, the literal path, the
+method literal, the head census), `inventory/gap_body_files.csv`, this page (the section and its regenerated
+block), `docs/UNKNOWNS.md` (U40), `Makefile` (the help line), `PLAN.md`.
+
+**Gates.** `make ci` green; `--check` is synthetic (the operand value, the `-0x` frame offset, the small
+displacement, the method literal against prose, the operand bucket, the call boundary, the no-reference case, the
+render and both artifact round trips) and writes nothing; `--check-doc` rebuilds the block from the committed CSV
+with no dump; the artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
+
+**Not in this bundle.** The 807 bodies no channel names (this bundle places 63 more and names none of them -- a
+literal names a subsystem, and both name channels here are refused with a count), the `Class::Method` pair as map
+rows (a row needs the class the method belongs to, which the literal states without the mangling), the 4 linker
+folds, `0x0051724c`'s two member bodies, and the 359 interface-only bodies.
