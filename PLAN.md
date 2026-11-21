@@ -17097,3 +17097,37 @@ sequence.
 - **Not in this bundle.** `0x0051724c`'s two member bodies, the 4 linker folds, the 424 interface-only
   bodies and the 807 bodies no channel names -- the class-map side has nothing left.
 
+
+### The interface population's own name: the library's symbols, not the image's (2026-11-21)
+
+- **Task.** U40's last naming channel for the 232 interface tables: "a name for an interface from a member
+  field or a caller". Both were read (the member/installer censuses, #830/#831) and neither names a table;
+  six image-side channels are measured shut, the RTTI locator being the last (`docs/systems/CLASS_REGISTRATION.md`).
+- **The channel.** The name is not in the image: a UIX/XMO class is in no package and its code was linked
+  out of `uix.lib`/`xvoice.lib`, so the *supplied library's* symbol on a slot body names the class the
+  method belongs to, and a table's named slots are a vote for the class it dispatches.
+  `tools/interface-lib-names.py` (new, `make interface-lib-names`, `inventory/interface_lib_names.csv`).
+- **The finding.** 144 of the 2,519 interface slots point at a body `inventory/xdk_lib_names.csv` names,
+  and 53 of those symbols carry a class (the rest are plain `C` names). A strict majority over at least
+  two classed slots names **12 tables** (`CUIPlugin` 7 of 7,
+  `CPlayersFeature` 5, `CLogonFeature` 4, `CFeatureContext` 4, `CVoiceMailPseudoFeature` 3,
+  `CPopupScreen` 3 on two tables, `CAlertFeature` 3, `CFriendsScreen` 3, `CNotificationScreen` 2,
+  `CFriendsFeature` 2, `CLogonScreen` 3); **9** tables are `thin` (one named slot) and **1** `split`
+  (`0x0053f85c`: `CVoiceMailScreen` 1, `CPopupScreen` 1), and **210** have no library slot at all.
+- **The control, and what it says the vote is.** Of the **20** tables a `??0`/`??1` symbol on the store
+  body had already labelled, the vote reproduces the class on **18** and disagrees on **2** -- and both
+  disagreements are the base-class case: `0x0053f874` holds `CPopupScreen`'s methods but is installed by
+  `CPlayersContextScreen`'s ctor into `this+0x107c`, and `0x0053f6d8` is installed by two ctors. So the
+  vote names the class that **declares the methods**, a lower bound on the table's class. The 492 class
+  tables score **0** votes -- 69 of their slots reach a library body, but none of those symbols carries a
+  class, so the zero is a fact about the CRT's stubs rather than a silence.
+- **Not in this bundle.** The add. A `<Class>_vt<slot>` row claims the table *is* that class's dispatch
+  table, and the lower bound above is exactly the case where it is not, so the family chain and the
+  store's field have to decide it first; the doc block says so where the names are listed.
+- **Files.** `tools/interface-lib-names.py` (the symbol reader, the vote, the three populations,
+  `--check`/`--check-doc`), `inventory/interface_lib_names.csv`, `docs/systems/CLASS_REGISTRATION.md` (a
+  new section, its block generated from the CSV, and one pointer sentence in the RTTI note),
+  `docs/UNKNOWNS.md` (U40), `Makefile` (the target, its help line and two `ci` gates).
+- **Gates.** `make ci` green; `--check` is synthetic (seven symbol shapes, four vote verdicts, the control
+  population, the artifact round trip) and `--check-doc` rebuilds the block from the CSV with no dump. No
+  boot, no xemu, no Ghidra.
