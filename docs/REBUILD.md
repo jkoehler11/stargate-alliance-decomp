@@ -137,11 +137,18 @@ and the file is not what its name suggests.
 lowercase), plus the class names `Core`, `Engine` and `Package`. It is not a text manifest and cannot be edited by
 appending a line.
 
-**The engine does open it — as UTF-16.** `"Packages.md5"` occurs **twice in `default.xbe` encoded as UTF-16LE and zero
-times as ASCII**, and `"Packages"` occurs eight times wide against zero narrow. An ASCII-only string scan therefore reports
-the file as unreferenced, which is exactly the conclusion this page first drew before checking the wide encoding. The
-integrity check is real, and it covers **168** packages — far more than the 18 `.u` files, so content packages are in scope
-too.
+**The engine does open it — as UTF-16, and the references are in code.** `"Packages.md5"` occurs **twice in `default.xbe`
+encoded as UTF-16LE and zero times as ASCII**, and `"Packages"` occurs eight times wide against zero narrow. The wider of
+the two occurrences is at `0x00504470` and carries **nine references** from code; the second, at `0x005086d6`, has none.
+So an ASCII-only scan reports the file as unreferenced — the conclusion this page first drew before checking the wide
+encoding — while the truth is nine call sites. The integrity check is real, and it covers **168** packages, far more than
+the 18 `.u` files.
+
+**The contrast matters, because two wide strings alone prove nothing.** `splash.raw` is also named twice as UTF-16LE
+(`0x004c8656`, `0x004d1326`) and has **zero** references from either, so the game never opens it by name: it is a
+640×480×3 raw image (921,600 bytes) that the deploy scripts copy to the disc root for something outside the game — the
+launcher or the dashboard — not game content. Same encoding, opposite conclusion, and only the reference count separates
+them.
 
 **Consequences for a rebuild.**
 
