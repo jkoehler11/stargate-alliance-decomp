@@ -47,6 +47,19 @@ COLUMNS = ("kind", "at", "name", "detail", "evidence")
 PAD = 0xCC
 RUN_MIN = 2            # a padding run shorter than this is a stray byte inside a body
 RUN_GAP = 0x400        # two unreachable bodies this close belong to the same run
+# A dead body's name is not always its own: the padding rule's bodies carry `-` (they have no map row at
+# all, so no name), and two name sources are not a function's identity -- a shipped library's symbol and
+# the `<Module>_<File>` token the map builds from the assert path a body pushes. The census counts them
+# apart, because "named" once read the padding rows' `-` as a name.
+MODULE_TOKENS = ("Core", "Engine", "Gui", "IpDrv", "D3DDrv", "XboxDrv", "XboxAudio", "XboxLive",
+                 "stargategame", "stargatevehicles", "Gameplay", "Fire", "Window", "UnrealEd")
+FILE_TOKEN = re.compile(r"^(%s)_[A-Za-z][A-Za-z0-9_]*$" % "|".join(MODULE_TOKENS))
+
+
+def library_symbol(name):
+    """A shipped `.lib`'s public name: `?`-mangled C++, `_name@N` stdcall, or a C `_name`."""
+    return name.startswith("?") or name.startswith("_")
+
 BODY_WINDOW = 0x900    # how much of a body `--trace` disassembles
 
 # The pair the previous note nominated, plus the base each one calls. Two of these are in the symbol
@@ -292,18 +305,22 @@ def measure(xbe_path):
     inbound, counts = edges(xbe, text, pop)
     dead = unreachable(pop, inbound, xbe.entry)
     runs = runs_of(dead, pop)
-    named = [p for p in pop if p[0] in dead and not p[1].startswith("FUN_")]
+    named = [p for p in pop if p[0] in dead and p[3] == "map" and not p[1].startswith("FUN_")]
+    named_lib = [p for p in named if library_symbol(p[1])]
+    named_file = [p for p in named if FILE_TOKEN.match(p[1])]
+    named_other = [p for p in named if p not in named_lib and p not in named_file]
     pad_n = sum(1 for p in pop if p[0] in dead and p[3] == "pad")
     aligned = sum(1 for p in pop if p[0] in dead and p[0] % 4 == 0)
 
     rows = [{"kind": "census", "at": "-", "name": "-",
              "detail": "population=%d;map=%d;pad=%d;dead_map=%d;dead_pad=%d;seeds=%d;closure=%d;"
-                       "named=%d;aligned=%d;runs=%d;entry=0x%06x"
+                       "named=%d;named_lib=%d;named_file=%d;named_other=%d;aligned=%d;runs=%d;entry=0x%06x"
                        % (len(pop), len(map_rows), len(pop) - len(map_rows),
                           sum(1 for p in pop if p[0] in dead and p[3] == "map"),
                           sum(1 for p in pop if p[0] in dead and p[3] == "pad"),
                           len([p for p in pop if p[0] in dead and not external(inbound, p[0])[0]]),
-                          len(dead), len(named), aligned, len(runs), xbe.entry or 0),
+                          len(dead), len(named), len(named_lib), len(named_file), len(named_other),
+                          aligned, len(runs), xbe.entry or 0),
              "evidence": "edges: %d call, %d jmp, %d data dword, %d immediate"
                          % (counts["call"], counts["jmp"], counts["data"], counts["imm"])}]
     for run in runs:
@@ -367,6 +384,13 @@ def render(rows):
                  % (c["closure"], c["population"], c["map"], c["pad"], c["seeds"],
                     c["closure"] - c["seeds"], c["closure"], c["dead_map"], c["dead_pad"],
                     c["runs"], c["named"], c["aligned"]))
+    lines.append("")
+    lines.append("**The %d named dead bodies split by what the name is: %d a shipped-library symbol (a C++ "
+                 "mangled name, an `__stdcall` decoration or a C `_name`), %d a `<Module>_<File>` assert token "
+                 "and %d another identifier -- and the %d padding-only bodies carry no name at all, because "
+                 "they have no map row.**"
+                 % (c["named"], c.get("named_lib", 0), c.get("named_file", 0), c.get("named_other", 0),
+                    c["dead_pad"]))
     lines.append("")
     if len(runs):
         biggest = runs[0]
@@ -470,8 +494,8 @@ def check():
     n += 3
     # render over a hand-made census: the counts come from the rows, so --check-doc can rebuild it
     rows = [{"kind": "census", "at": "-", "name": "-",
-             "detail": "population=10;map=9;pad=1;dead_map=3;dead_pad=1;seeds=3;closure=4;named=1;aligned=2;"
-                       "runs=1;entry=0x11000",
+             "detail": "population=10;map=9;pad=1;dead_map=3;dead_pad=1;seeds=3;closure=4;named=1;"
+                       "named_lib=1;named_file=0;named_other=0;aligned=2;runs=1;entry=0x11000",
              "evidence": "-"},
             {"kind": "run", "at": "0x1000", "name": "-",
              "detail": "bodies=4;aligned=2;extent=0x1000-0x1050", "evidence": "-"}]
@@ -482,7 +506,8 @@ def check():
     text = render(rows)
     assert "4 of the image's 10 bodies" in text, text[:200]
     assert "0x4d4870" in text and "0x1000-0x1050" in text and "(3 the map names, 1 found only" in text
-    n += 3
+    assert "The 1 named dead bodies split" in text and "1 a shipped-library symbol" in text, text[:400]
+    n += 5
     print("native-unreachable: %d synthetic assertions pass" % n)
     return 0
 
