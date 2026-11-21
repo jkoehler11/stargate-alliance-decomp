@@ -1530,7 +1530,20 @@ One subtlety worth carrying: `0x1E` is a **union** in that header — `D3DFMT_LI
 value, so the name is only correct because the field is a back-buffer format. Anyone quoting "30 = LIN_X8R8G8B8" as a
 global fact would be over-reading a format union.
 
-So nothing remains open in this entry: request, reported caps, fill site and now the three enumerant names.
+**The rest of the presentation block names as well, and one field says what the output is.**
+
+| field | value | name(s) |
+|---|---|---|
+| `SwapEffect` | 1 | `D3DSWAPEFFECT_DISCARD` |
+| `Flags` | `0x121` | `D3DPRESENTFLAG_LOCKABLE_BACKBUFFER` (`0x1`) \| `D3DPRESENTFLAG_INTERLACED` (`0x20`) \| `D3DPRESENTFLAG_10X11PIXELASPECTRATIO` (`0x100`) |
+| `BehaviorFlags` | `0x40` | `D3DCREATE_HARDWARE_VERTEXPROCESSING` |
+
+`Flags = 0x121` is the field worth reading twice: **interlaced output at a 10:11 pixel aspect ratio** is a television
+signal, not a monitor one, so the request is a 640×480 **interlaced TV** back buffer rather than a 480p progressive one.
+That is consistent with the depth-stencil choice (`D24S8`, 32-bit) and with `BehaviorFlags 0x40` agreeing with the
+`MATERIALSOURCE7` caps test rather than falling through the software path.
+
+So nothing remains open in this entry: request, reported caps, fill site, the enumerants, and the presentation flags.
 
 **Status.** Closed for both halves (request and report); `tools/xemu/bp-args.py` and
 `tools/xemu/d3d-caps.py` are the instruments, and the three stub behaviours `bp-args.py` works around are in
