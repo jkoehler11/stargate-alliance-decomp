@@ -1,9 +1,10 @@
 # The class tables and the classes that own them
 
-Status: **466 of the 492 tables** in `inventory/xbe_class_tables.csv` are named from the build's own
+Status: **474 of the 492 tables** in `inventory/xbe_class_tables.csv` are named from the build's own
 class registrations, and every class's object size comes with the name
-(`inventory/xbe_class_table_names.csv`, `tools/class-table-names.py`). The 26 that are not named are
-listed at the end. This answers the "two families of table" question that `docs/NATIVE_VM.md` left
+(`inventory/xbe_class_table_names.csv`, `tools/class-table-names.py`). The 18 that are not named are
+listed at the end; the 26 this header used to carry was the count before the tree pairing and the
+body-start extent rule named eight of them (`docs/NATIVE_CLASS_TREE.md`). This answers the "two families of table" question that `docs/NATIVE_VM.md` left
 open: the split is classes that override two virtuals against classes that keep an empty default.
 
 ## The registration every class goes through
@@ -84,9 +85,9 @@ functions unimplemented.
 
 - **Which virtuals slots 19 and 20 are.** The override reads `[this+0x2dc] & 1` and then `[this+0xa4]`,
   `[+0xf4]`; the property classes do not override them, so nothing in the property track calls them.
-- **The 26 tables with no registration.** They are `0x004c78c0`, `0x004c7958`, `0x004c7a10`,
-  `0x004c7ac8`, `0x004c7c78`, `0x004c9348`, `0x004c93d0`, `0x004c94b0` and 18 more, listed in the CSV
-  with the evidence column saying so. Their constructors exist (the `mov [this], table` store is
+- **The 18 tables with no registration.** They are `0x004c78c0`, `0x004c9348`, `0x004c93d0`,
+  `0x004c94b0`, `0x004d0318` and 13 more, listed in the CSV with the evidence column saying so (the
+  26 below was this population before the tree pairing and the extent rule named eight). Their constructors exist (the `mov [this], table` store is
   there) but the registration that names them does not push both a literal and a followable thunk,
 so the link is missing rather than the table. **Measured 2026-11-10**: 25 of those 27 sites push one
   pointer (`0x00034650`, a thunk to a nine-byte default constructor at `0x00062ce0` that stores

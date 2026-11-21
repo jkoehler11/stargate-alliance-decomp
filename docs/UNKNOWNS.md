@@ -5870,7 +5870,22 @@ family (`LinkerLoad` and `LinkerSave` hold one table at one offset), not a name 
 **What would settle the rest.** Naming the 18 is a class-record question, not a body question: their
 ladders, slot counts and children are read, so what is missing is a name source for header-declared engine
 classes -- the static initialiser that writes the class record's name field -- and `docs/NATIVE_CLASS_TREE.md`
-is where those initialisers are censused. The UE2.5 reading of the ladders (`UField`, `UProperty`,
+is where those initialisers are censused. **Two of the routes this entry named are now measured and gone
+(2026-11-20).** The runtime read is not one: an object's `+0x24` gives its `UClass` and the class's `+0x20`
+its `FName`, but **0 of the 18 appear in either booted read** -- `inventory/live_class_tables.csv` names
+179 tables at the title screen and `live_class_tables_m00.csv` 189 with M00 loaded, every one of them
+already named -- and the base rate is why that settles nothing about them: **285 of the 474 named tables
+are absent from both**, because only a class whose default object is constructed is in the array. And the
+**slot-body read is a file, not a class**: the map names a body after the assert path it inlines
+(`Engine_UnChan`), and `tools/class-slot-tokens.py` tallies that vote per table
+(`inventory/class_slot_tokens.csv`). Four heads carry a token no other table carries except their own
+named descendants -- `0x004d0318` `UnNetDrv` (`TcpNetDriver`/`TcpNetDriverXbox`/`DemoRecDriver`),
+`0x004d03c8` `UnConn` (`TcpipConnection`/`TcpipConnectionXbox`/`DemoRecConnection`), `0x004fa390` `UnChan`
+(`ControlChannel`/`FileChannel`/`VoiceChannel`/`ActorChannel`) and `0x004c93d0` `UnCamera`
+(`XboxViewport`, one slot above it) -- and each shares its slot count with those children, so the head is
+the level they extend: `NetDriver`, `NetConnection`, `Channel`, `Viewport`. Only **13 of the 474 named
+tables** carry a token that starts with their own class name, so the token corroborates a ladder and does
+not name a class; writing those four in needs a token-to-class rule in `tools/class-table-names.py`. The UE2.5 reading of the ladders (`UField`, `UProperty`,
 `USubsystem`, `UChannel`, `ULevel`/`UPendingLevel`, `URenderDevice`, `UVertexStream`) is a reading of the
 shipped hierarchy and not a measurement: the image carries no name string for any of them. For the 165 anonymous
 interfaces the name is the *body's* -- a slot body no symbol names cannot name the interface it
