@@ -1613,37 +1613,37 @@ Three readings:
 three of the 41 pixel programs not reached here may be exactly that. The ids are numbers with no names attached — which
 material each represents is still unknown.
 
-### The campaign sample: thirteen missions, all seven (2026-11-19)
+### All 63 campaign indices compile the same seven programs (2026-11-19)
 
-`tools/xemu/shader-union.sh` makes this a one-line measurement per mission: boot the index with the GDB stub, break on
-`_XGAssembleShader@44`, record the stops, and fold every JSON into a per-program table (`--summary`). Thirteen indices
-spanning the campaign — `10 15 20 25 30 35 40 45 50 55 60 65 70` — give **ten or eleven stops each, the same seven
-programs, and every program compiled by every mission**:
+`tools/xemu/shader-union.sh` turns this into one boot per index: arm `_XGAssembleShader@44`, record the stops, and
+`--summary` folds every JSON into a per-program table. Swept over the whole campaign — indices **10 to 72, 63 of them** —
+with `SG1_WINDOW=1800`:
 
-| program | version | missions compiling it |
-|---|---|---|
-| `0x00524b00` | `vs.1.1` | **13 of 13** |
-| `0x00524be0` | `xps.1.1` | **13 of 13** |
-| `0x00524c50` | `xps.1.1` | **13 of 13** |
-| `0x00524d18` | `xps.1.1` | **13 of 13** |
-| `0x00526160` | `xvs.1.1` | **13 of 13** |
-| `0x00526c38` | `xps.1.1` | **13 of 13** |
-| `0x00528354` | `vs.1.1` | **13 of 13** |
+| | |
+|---|---|
+| indices recorded | **63 of 63** |
+| assembler stops per index | **10 or 11** |
+| programs compiled, every index | **the same seven** |
+| union | **7** |
 
-**A window that closes early looks exactly like a smaller shader set.** The first pass reported indices 20 and 45 as
-**five** programs, with 8 and 9 stops against the others' 10–11 — a plausible reading was "some missions need fewer
-shaders". Re-running those two alone with `SG1_WINDOW=1000` gave **eleven stops and seven programs** each, so the missing
-two were compiled after the 640-second window closed. The instrument, not the game, produced the variance, and the
-harness now takes the window as an environment variable because of it.
+The seven, unchanged from the earlier loads: `0x524b00` `vs.1.1`, `0x524be0` `xps.1.1`, `0x524c50` `xps.1.1`,
+`0x524d18` `xps.1.1`, `0x526160` `xvs.1.1`, `0x526c38` `xps.1.1`, `0x528354` `vs.1.1`.
 
-**What this settles for Phase 6.** The bake table is those seven programs: thirteen campaign missions plus the four earlier
-loads (M00, M04B, M12F and the front end) all compile a subset of them, and none compiles an eighth. "Seven programs" is
-therefore a floor *and* the whole set for everything measured — 17 loads in total — while the campaign's remaining fifty
-indices are the only thing that could still add one.
+**The window has to outlast the load, and the failure mode is a plausible-looking smaller set.** The first pass at a
+640-second window reported two indices with **five** programs and 8–9 stops; re-running those two at 1,000 s brought them
+to eleven stops and seven. The full sweep at 1,000 s then reported **ten** indices at five, and re-running those ten at
+**1,800 s** brought every one to ten stops and seven. Each stage looked like a real property of those missions, and each
+time it was the instrument closing the window early. The harness reads `SG1_WINDOW` for exactly this reason, and 1,800 s is
+the value that has now measured 63 of 63.
 
-**Limits.** Thirteen of 63 indices, one load each; a mission that compiles an eighth program only on a second visit (a
-cutscene, a vehicle section) would not appear here. The harness records the stops but not which *case* of the dispatcher
-selected each program, so "which mission uses which shader for what" is still unread.
+**What this settles for Phase 6.** The bake table is those seven programs and the campaign adds nothing: **63 campaign
+indices plus the front end compile a subset of seven, and not one compiles an eighth.** A rebuild that ships these seven
+shaders covers everything the shipped missions ask for at load time.
+
+**Limits.** One visit per index — a second visit (a cutscene, a vehicle section, a reload) could in principle compile a
+different set, and nothing here measured that. The stops say *which* programs compiled, not which dispatcher case chose
+them, so "which mission uses which shader for what" is still unread. And a longer window being needed is itself a hint that
+some loads finish later than the nominal settle, which the mission table does not record.
 
 ## Karma ragdolls: `.ka` and `.kaw` are XML (PLAN 5.5)
 
