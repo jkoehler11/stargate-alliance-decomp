@@ -456,7 +456,7 @@ packages are the six the image links: `Engine` 39, `Core` 19, `IpDrv` 5, `XboxAu
 | `D3DDrv` | 1 | 10 |
 | **total** | **87** | **374** |
 
-87 class(es) resolve, 0 conflict, 0 land in no attributed body, 16 have no site. The rule is the registration site's body, and unanimity across a class's sites is the check.
+87 class(es) resolve, 0 conflict, 0 land in no attributed body, 28 have no site. The rule is the registration site's body, and unanimity across a class's sites is the check.
 <!-- /generated:native-class-packages -->
 
 ## Status

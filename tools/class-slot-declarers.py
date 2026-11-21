@@ -20,8 +20,13 @@ slot decides:
     name would claim a class slot the image does not have.
   * **unnamed-table** -- it sits only in one of the class tables the class map leaves unnamed; the class
     is unknown, so the slot is a real declaration with no name to give.
-  * **interface** -- only interface tables hold it; the slot is an interface method and the name has to
-    come from the interface, which is the residue U40 already measured.
+  * **declared-interface** -- only interface tables hold it, and one of them carries a name from the
+    slot vocabulary's vote (`inventory/class_plain_tables.csv`'s `class_name`): every table that holds
+    it holds it at the *same* index, so the body is that class's method and earns `<Class>_vt<slot>`.
+  * **inherited-interface** -- several named interface tables hold it at one index under different
+    classes: the method is the classes' base's, and no one of them declares it.
+  * **interface** -- only interface tables hold it and none of them is named; the slot is an
+    interface method with no name to give.
 
 The control is the map's own `<Class>_vt<slot>` rows: 538 names were built from a table slot, and the
 same declaration walk must say the same class. A name whose declarer is an ancestor would prove the map
@@ -55,6 +60,7 @@ GAPS = os.path.join(ROOT, "inventory", "gap_heads.csv")
 CLASS_TABLES = os.path.join(ROOT, "inventory", "xbe_class_tables.csv")
 TABLE_NAMES = os.path.join(ROOT, "inventory", "xbe_class_table_names.csv")
 INTERFACE_TABLES = os.path.join(ROOT, "inventory", "native_vtable_shared.csv")
+PLAIN_TABLES = os.path.join(ROOT, "inventory", "class_plain_tables.csv")
 MEMBER_TABLES = os.path.join(ROOT, "inventory", "class_member_tables.csv")
 CLASSES = os.path.join(ROOT, "inventory", "classes.csv")
 EDGES = os.path.join(ROOT, "inventory", "class_table_parent_edges.csv")
@@ -70,6 +76,10 @@ FIELDS = ("row", "head_va", "size", "verdict", "declarer", "slot", "name_earned"
           "current_agrees", "sit_ins", "tables", "indices", "member", "member_tables", "evidence",
           "census")
 CLASS_SLOT_NAME = re.compile(r"^(?P<cls>.+)_vt(?P<slot>\d+)$")
+# every verdict the head census can reach -- one tuple, so a verdict this list forgets fails the
+# count check instead of quietly leaving the population
+VERDICTS = ("declared", "declared-unnamed", "declared-interface", "inherited-interface",
+            "interface-conflict", "conflict", "member", "interface", "unnamed-table")
 
 
 # --------------------------------------------------------------------------- reading
@@ -89,6 +99,17 @@ def load_inventory():
         if r.get("class"):
             class_of[int(r["table_va"], 16)] = r["class"]
     member = {int(r["table_va"], 16): r for r in read_csv(MEMBER_TABLES)}
+    # an interface table's own name, from the slot vocabulary's vote (`class_plain_tables.csv`'s
+    # `class_name`): the class whose methods its slots are, and whether a constructor of that class
+    # stores the table (`own`) or another class's does into a field (`member`).
+    iface_name = {}
+    for r in read_csv(PLAIN_TABLES):
+        try:
+            tva = int(r["table_va"], 16)
+        except (KeyError, ValueError):
+            continue
+        if r.get("class_name") and r.get("signature") != "yes":
+            iface_name[tva] = r["class_name"]
     # the parent table of every edge the rung census measured, and the script super an edge names for
     # a parent table no registration named -- the walk then needs no class name to reach a parent
     parent, parent_name = {}, {}
@@ -105,7 +126,8 @@ def load_inventory():
     heads = [r for r in read_csv(GAPS) if r.get("row") == "head"]
     gaps = {h["head_va"]: h for h in heads}
     return dict(tables=tables, shared=shared, class_of=class_of, member=member, supers=supers,
-                heads=heads, gaps=gaps, parent=parent, parent_name=parent_name)
+                heads=heads, gaps=gaps, parent=parent, parent_name=parent_name,
+                iface_name=iface_name)
 
 
 # --------------------------------------------------------------------------- the declaration walk
@@ -183,6 +205,7 @@ def member_pick(mems, member):
 def census_heads(inv, slot_of):
     tables, shared = inv["tables"], inv["shared"]
     class_of, member, supers = inv["class_of"], inv["member"], inv["supers"]
+    iface_name = inv.get("iface_name") or {}
     parent, parent_name = inv["parent"], inv["parent_name"]
     table_of = {}
     for t in sorted(class_of):
@@ -198,6 +221,7 @@ def census_heads(inv, slot_of):
         exact = collections.OrderedDict()      # (class, slot) -> holders, the declaring table is named
         unnamed = collections.OrderedDict()    # (table, slot, script) -> holders, the declarer has no class
         mems, ifaces, unresolved = set(), set(), set()
+        named_iface = []
         for t, i, kind in sits:
             if kind != "class":
                 sit_iface += 1
@@ -255,9 +279,34 @@ def census_heads(inv, slot_of):
             evidence = ("class table 0x%08x slot %d, and neither a class name nor a parent edge reaches "
                         "it" % (t, i))
         else:
-            verdict = "interface"
-            name = ""
-            evidence = "%d interface table(s) hold it; no class table does" % len(ifaces)
+            # no class table holds it -- an interface's slot. The interface's own name comes from the
+            # slot vocabulary's vote (`iface_name`), and a name needs every placement to agree on the
+            # index: one body at one index in one named table is that class's method, the same body at
+            # one index under several classes is a method they inherit, and two indices is no name.
+            named_iface = sorted({(iface_name.get(t, ""), i) for t, i in ifaces if iface_name.get(t)})
+            idx = sorted({i for _, i, _ in sits})
+            if len(named_iface) == 1 and len(idx) == 1:
+                who, slot = named_iface[0]
+                verdict, name = "declared-interface", "%s_vt%d" % (who, slot)
+                evidence = ("%d interface table(s) hold it at slot %d and no class table does; %s is the "
+                            "class the one table the slot vocabulary names carries, so the body is that "
+                            "class's method" % (len(ifaces), slot, who))
+            elif len(named_iface) > 1 and len(idx) == 1:
+                verdict, name = "inherited-interface", ""
+                evidence = ("%d interface table(s) hold it at slot %d and their names give %d classes "
+                            "(%s) -- a method the classes inherit, so it is their base's and no one of "
+                            "them declares it" % (len(ifaces), idx[0], len(named_iface),
+                                                  ", ".join(w for w, _ in named_iface)))
+            elif named_iface:
+                verdict, name = "interface-conflict", ""
+                evidence = ("interface tables hold it at slots %s and their names give %s -- no single "
+                            "index to carry a name" % ("/".join(str(i) for i in idx),
+                                                       ", ".join("%s_vt%d" % (w, i) for w, i in named_iface)))
+            else:
+                verdict = "interface"
+                name = ""
+                evidence = ("%d interface table(s) hold it; no class table does and no interface table "
+                            "the slot vocabulary names holds it" % len(ifaces))
         if verdict in ("declared", "declared-unnamed") and mems:
             evidence += "; also a member table's slot"
         cur = ("%s_vt%s" % (h["slot_class"], h["slot_index"])) if h.get("slot_class") else ""
@@ -269,6 +318,8 @@ def census_heads(inv, slot_of):
             agrees = ""
         if len(exact) == 1:
             dec, slot = list(exact)[0]
+        elif named_iface:
+            dec, slot = named_iface[0]
         elif unnamed:
             dec, slot = list(unnamed)[0][0], str(list(unnamed)[0][1])
         elif mems:
@@ -357,7 +408,7 @@ def add_candidates(head_rows, gaps):
     """
     out, taken = [], set()
     for r in head_rows:
-        if r["verdict"] not in ("declared", "member") or not r["name_earned"]:
+        if r["verdict"] not in ("declared", "declared-interface", "member") or not r["name_earned"]:
             continue
         h = gaps.get(r["head_va"]) or {}
         if not h.get("size") or h.get("close") not in CLOSES:
@@ -386,6 +437,11 @@ def add_evidence(r, h, name):
                "is that member's method, not a class slot, so the name is the member's and not a "
                "`<Class>_vt<slot>` claim" % (r["member_tables"].split()[0] if r["member_tables"] else "?",
                                              r["slot"], r["member"]))
+    elif r["verdict"] == "declared-interface":
+        who = ("slot %s of %d interface table(s), none of them a class table, and %s is the class the "
+               "only one of them the slot vocabulary names carries -- the interface's method, so the "
+               "name is that class's and not the first table a reference landed in"
+               % (r["slot"], int(r["tables"] or 0), r["declarer"]))
     else:
         who = ("slot %s of %d table(s) in %s's subtree hold it and the measured parent edges reach %s as "
                "the declarer, so the name is the declarer's and not the first table a reference landed "
@@ -474,6 +530,9 @@ def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0), adds=None):
     v = collections.Counter(r["verdict"] for r in head_rows)
     m = {"heads": len(head_rows), "declared": v["declared"],
          "declared_unnamed": v["declared-unnamed"],
+         "declared_interface": v["declared-interface"],
+         "inherited_interface": v["inherited-interface"],
+         "interface_conflict": v["interface-conflict"],
          "conflict": v["conflict"],
          "member": v["member"], "interface": v["interface"], "unnamed_table": v["unnamed-table"],
          "sit_ins": sum(int(r["sit_ins"]) for r in head_rows),
@@ -496,8 +555,10 @@ def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0), adds=None):
          "control_unresolved": sum(1 for r in ctl_rows if r["verdict"] == "unresolved")}
     m["class_sit_ins"], m["interface_sit_ins"] = sits
     m["declared_bytes"] = sum(int(r["size"]) for r in head_rows
-                              if r["verdict"] in ("declared", "declared-unnamed") and r["size"])
-    m["declared_tables"] = sum(int(r["tables"]) for r in head_rows if r["verdict"] == "declared")
+                              if r["verdict"] in ("declared", "declared-unnamed", "declared-interface")
+                              and r["size"])
+    m["declared_tables"] = sum(int(r["tables"]) for r in head_rows
+                               if r["verdict"] in ("declared", "declared-interface"))
     m["member_sit_tables"] = len({t for r in head_rows if r["verdict"] == "member"
                                  for t in r["member_tables"].split()})
     adds = adds or []
@@ -536,6 +597,12 @@ def render(rows, ctl, meta):
     lines = ["| what holds the body | bodies | share | name it earns |", "|---|---|---|---|"]
     lines.append("| a class table, and the walk reaches the top of its chain | %d | %.0f%% | "
                  "`<Class>_vt<slot>` |" % (meta["declared"], 100.0 * meta["declared"] / n))
+    lines.append("| an interface table the slot vocabulary names, at one index in every table that "
+                 "holds it | %d | %.0f%% | `<Class>_vt<slot>` |"
+                 % (meta["declared_interface"], 100.0 * meta["declared_interface"] / n))
+    lines.append("| interface tables that name different classes at one index | %d | %.0f%% | none (a "
+                 "method the classes inherit) |"
+                 % (meta["inherited_interface"], 100.0 * meta["inherited_interface"] / n))
     lines.append("| a class table no registration names, which the walk reaches by its parent edge | %d "
                  "| %.0f%% | `<script>_vt<slot>` when an edge records the script super (%d), none "
                  "otherwise |" % (meta["declared_unnamed"], 100.0 * meta["declared_unnamed"] / n,
@@ -549,6 +616,9 @@ def render(rows, ctl, meta):
                  % (meta["unnamed_table"], 100.0 * meta["unnamed_table"] / n))
     lines.append("| interface tables only | %d | %.0f%% | none (an interface name) |"
                  % (meta["interface"], 100.0 * meta["interface"] / n))
+    if meta.get("interface_conflict"):
+        lines.append("| interface tables that name different slots | %d | %.0f%% | none (no one index) |"
+                     % (meta["interface_conflict"], 100.0 * meta["interface_conflict"] / n))
     lines.append("")
     lines.append("**The %d bodies are %d slot sit-ins over %d tables, and a declared body sits in every "
                  "descendant table that does not override the slot.** The census reads the %d tables the "
@@ -603,20 +673,51 @@ def render(rows, ctl, meta):
                                                 r["indices"].replace(" ", "/")) for r in conf[:6])))
         lines.append("")
     lines.append("**What the walk did with its names.** %d of these bodies are map rows now -- %d named "
-                 "`<Class>_vt<slot>` from the declaration, %d a member's method -- %d bytes, each through "
+                 "`<Class>_vt<slot>` from the declaration (a class table's subtree or an interface "
+                 "table's own name), %d a member's method -- %d bytes, each through "
                  "`symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import "
                  "needs, and each named after its **declarer**, never the first table that held the "
                  "pointer. %d bodies earn a name the decode cannot carry, because a name is not a size. "
-                 "What is left is a name, not a read: %d are an interface's method, and %d sit in a class "
-                 "table whose class the class map has not named."
+                 "What is left is a name, not a read: %d are an interface's method, %d are a method "
+                 "several named interfaces hold at one index (their base's, which no table in the image "
+                 "names), and %d sit in a class table whose class the class map has not named."
                  % (meta["add_rows"], meta["add_rows"] - meta["add_member"], meta["add_member"],
                     meta["add_bytes"], meta["named_unplaced"], meta["interface"],
-                    meta["unnamed_table"]))
+                    meta["inherited_interface"], meta["unnamed_table"]))
     lines.append("")
     return "\n".join(lines) + "\n"
 
 
 # --------------------------------------------------------------------------- checks
+def synthetic_interface():
+    """The interface branch of the head census: a name, an agreement, and the three refusals."""
+    grid = {0x1000: [0x11, 0x12, 0x13, 0x14, 0x15],
+            0x2000: [0x13, 0x12, 0x98, 0x14, 0x96],
+            0x3000: [0x21, 0x22, 0x23]}
+    slot_of = lambda t, n: grid[t][:n]  # noqa: E731
+    heads = [{"head_va": "0x%08x" % v, "size": "8"} for v in (0x11, 0x12, 0x13, 0x14, 0x21)]
+
+    def rows_for(names):
+        inv = dict(tables={}, shared={0x1000: 5, 0x2000: 5, 0x3000: 3}, class_of={}, member={},
+                   supers={}, heads=heads, gaps={}, parent={}, parent_name={}, iface_name=names)
+        return {int(r["head_va"], 16): r for r in census_heads(inv, slot_of)[0]}
+
+    one = rows_for({0x1000: "CFoo"})
+    both = rows_for({0x1000: "CFoo", 0x2000: "CBar"})
+    return [
+        ("an interface's own slot is named after the class its table carries",
+         (one[0x11]["verdict"], one[0x11]["name_earned"]), ("declared-interface", "CFoo_vt0")),
+        ("an unnamed interface holding it at the same index does not stop the name",
+         (one[0x12]["verdict"], one[0x12]["name_earned"]), ("declared-interface", "CFoo_vt1")),
+        ("the same body at two indices is no declaration",
+         (one[0x13]["verdict"], one[0x13]["name_earned"]), ("interface-conflict", "")),
+        ("two named interfaces at one index is an inherited method",
+         (both[0x14]["verdict"], both[0x14]["name_earned"]), ("inherited-interface", "")),
+        ("a body only an unnamed interface holds earns nothing",
+         (one[0x21]["verdict"], one[0x21]["name_earned"]), ("interface", "")),
+    ]
+
+
 def synthetic():
     """The walk on tables whose answers are known, with no image and no artifact."""
     tables = {0x100: 6, 0x200: 8, 0x300: 6, 0x400: 8}
@@ -648,6 +749,8 @@ def synthetic():
          walk(0x200, 3, 90, co=no_name), ("", "unnamed-declarer:0x00000100:Base"))
     want("an edge-less table declares nothing",
          walk(0x900, 0, 1), ("", "no-extent:0x00000900"))
+    for name, got, expect in synthetic_interface():
+        want(name, got, expect)
     bad = [(n, g, e) for n, g, e in checks if g != e]
     if bad:
         print("FAIL class-slot-declarers: %d synthetic walk(s) wrong: %s" % (len(bad), bad))
@@ -680,23 +783,27 @@ def self_check():
         print("FAIL class-slot-declarers: %d rows are not gap heads: %s" % (len(bad), bad[:3]))
         return 1
     v = collections.Counter(r["verdict"] for r in heads)
-    total = sum(v[k] for k in ("declared", "declared-unnamed", "conflict", "member", "interface",
-                               "unnamed-table"))
+    total = sum(v[k] for k in VERDICTS)
     if total != int(m["heads"]):
         print("FAIL class-slot-declarers: verdicts sum to %d, census says %s" % (total, m["heads"]))
         return 1
     if v["declared"] != int(m["declared"]) or v["member"] != int(m["member"]) \
             or v["declared-unnamed"] != int(m["declared_unnamed"]) \
+            or v["declared-interface"] != int(m["declared_interface"]) \
+            or v["inherited-interface"] != int(m["inherited_interface"]) \
             or v["conflict"] != int(m["conflict"]):
         print("FAIL class-slot-declarers: census verdict counts do not match the rows")
         return 1
     for r in heads:
-        if r["verdict"] == "declared":
+        if r["verdict"] in ("declared", "declared-interface"):
             want = "%s_vt%s" % (r["declarer"], r["slot"])
             if r["name_earned"] != want or not r["declarer"]:
                 print("FAIL class-slot-declarers: %s earns %r, not %r"
                       % (r["head_va"], r["name_earned"], want))
                 return 1
+        if r["verdict"] in ("inherited-interface", "interface-conflict") and r["name_earned"]:
+            print("FAIL class-slot-declarers: %s is %s and earns a name" % (r["head_va"], r["verdict"]))
+            return 1
         if r["verdict"] == "declared-unnamed" and r["name_earned"]:
             if not r["name_earned"].startswith(r["evidence"].split("(`")[-1].split("`")[0]):
                 print("FAIL class-slot-declarers: %s names an unnamed table from the wrong script"

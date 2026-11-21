@@ -230,4 +230,4 @@ table_va,interface,slots,classed_slots,tokens,distinctive,top_token,top_df,in_cl
 0x00540520,CDecoderXMO,11,0,,,,,,0x005404f4,no-token
 0x00564da4,,6,0,,,,,,0x00564da4,no-token
 0x00564dbc,,9,0,,,,,,0x00564dbc,no-token
-0x0057534c,,2,0,,,,,,0x0057534c,no-token
+0x0057534c,exception,2,0,,,,,,0x0057534c,no-token
