@@ -331,15 +331,17 @@ it is smaller than the object on 266 of the 333 classes that have both.
 <!-- generated:class-size-sources -->
 | source | what the value is | rows that carry it | equals the site's push |
 |---|---|---|---|
-| `inventory/class_registrations.csv` | the site's second-to-last push (the argument position) | 468 sites | -- this is the read |
-| `inventory/xbe_class_table_names.csv` | its chosen site's last immediate push | 468 tables | 468 of 468 |
+| `inventory/class_registrations.csv` | the site's second-to-last push (the argument position) | 472 sites | -- this is the read |
+| `inventory/xbe_class_table_names.csv` | its chosen site's last immediate push | 472 tables (468 whose site resolves to them, 4 whose site is their class's) | 472 of 472 |
 | `inventory/class_constructors.csv` | copied from the table row | 986 rows | 986 of 986 |
 | `inventory/class_ctor_bases.csv` | copied from the constructor row | 504 rows | 504 of 504 |
 | `inventory/class_records.csv` | the class **script** record's byte length | 333 of 468 classes | not an object size (smaller than it on 266 of 333) |
 
-**The object size has one source, and three of those columns are copies of it.** 468 of the 492 tables have a registration site; their sizes are **200 distinct values, 40 to 348696 bytes**, and the naming census carries the same value on all of them. The 2 constructor-side artifacts copy the column rather than measuring it, so a disagreement between two of the four columns can only come from the site-to-table attribution upstream -- which is what the object root's 40 against the old reader's 56 was.
+**The object size has one source, and three of those columns are copies of it.** 468 of the 492 tables have a registration site that resolves to them; their sizes are **202 distinct values, 40 to 348696 bytes**, and the naming census carries the same value on all of them. The 2 constructor-side artifacts copy the column rather than measuring it, so a disagreement between two of the four columns can only come from the site-to-table attribution upstream -- which is what the object root's 40 against the old reader's 56 was.
 
-24 of the 492 tables have **no size at all** -- no registration site resolves to them, so nothing in this tree measures them.
+**4 more carry their class's own site, and that site installs another table.** These are the `slot-file-token` rows: the class's literal and the size it pushes are the site's, but the store the site reaches is the object root's, so the size is the class's own measurement while the table it names comes from the ladder (`0x004c93d0` 456, `0x004d0318` 4524, `0x004d03c8` 20368, `0x004fa390` 100).
+
+20 of the 492 tables have **no size at all** -- no registration site resolves to them and no class site names them, so nothing in this tree measures them.
 <!-- /generated:class-size-sources -->
 
 **What a disagreement between two of the columns can mean, then, is an attribution defect upstream, not a

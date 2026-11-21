@@ -107,7 +107,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_registrations.csv` | 493 | 14 | `make class-registrations` |
 | `inventory/class_scripttext_refs.csv` | 2209 | 8 | `make class-scripttext-ref` |
 | `inventory/class_serialize_slots.csv` | 492 | 6 | `make serialize-slots` |
-| `inventory/class_size_sources.csv` | 492 | 12 | `make ci` |
+| `inventory/class_size_sources.csv` | 492 | 13 | `make ci` |
 | `inventory/class_slot_tokens.csv` | 492 | 10 | `make ci` |
 | `inventory/class_store_provenance.csv` | 724 | 22 | `make ci` |
 | `inventory/class_table_installer_shapes.csv` | 724 | 17 | `make ci` |

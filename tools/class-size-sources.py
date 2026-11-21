@@ -40,7 +40,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIELDS = ["table_va", "class", "site_va", "site_size", "naming_size", "site_agrees_naming",
-          "ctor_rows", "ctor_agrees", "base_rows", "base_agrees", "record_bytes", "verdict"]
+          "site_kind", "ctor_rows", "ctor_agrees", "base_rows", "base_agrees", "record_bytes", "verdict"]
 ARTIFACT = os.path.join(ROOT, "inventory/class_size_sources.csv")
 DOC = os.path.join(ROOT, "docs/systems/CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-size-sources -->"
@@ -73,6 +73,10 @@ def harvest(reg, names, ctors, bases, records):
         site = site_of.get(r.get("registration_va") or "", None)
         size = (site or {}).get("object_size") or ""
         naming = r.get("object_size") or ""
+        # a `slot-file-token` row carries its *class's* site, and that site's store installs another
+        # table: the size is the class's own push, but no registration resolves to this table
+        kind = ("class" if (site and r.get("name_rule") == "slot-file-token")
+                else "table" if site else "")
         ct = [s for s in ctor_by_table.get(table, []) if s]
         cb = [s for s in base_by_table.get(table, []) if s]
         ctor_ok = "".join("yes" if s == size else "no" for s in ct) or ""
@@ -81,7 +85,7 @@ def harvest(reg, names, ctors, bases, records):
         if not size:
             verdict = "no-registration"
         elif agrees == "yes" and "no" not in ctor_ok and "no" not in base_ok:
-            verdict = "one-read"
+            verdict = "class-site" if kind == "class" else "one-read"
         else:
             verdict = "disagrees"
         rows.append({
@@ -91,6 +95,7 @@ def harvest(reg, names, ctors, bases, records):
             "site_size": size,
             "naming_size": naming,
             "site_agrees_naming": agrees,
+            "site_kind": kind,
             "ctor_rows": str(len(ct)),
             "ctor_agrees": ctor_ok,
             "base_rows": str(len(cb)),
@@ -104,13 +109,15 @@ def harvest(reg, names, ctors, bases, records):
 def render(rows):
     with_site = [r for r in rows if r["site_size"]]
     no_site = [r for r in rows if not r["site_size"]]
+    resolved = [r for r in with_site if r["site_kind"] == "table"]
+    classy = [r for r in with_site if r["site_kind"] == "class"]
     naming_ok = [r for r in with_site if r["site_agrees_naming"] == "yes"]
     naming_bad = [r for r in with_site if r["site_agrees_naming"] == "no"]
-    ctor_rows = sum(int(r["ctor_rows"]) for r in with_site)
-    ctor_ok = sum(r["ctor_agrees"].count("yes") for r in with_site)
-    base_rows = sum(int(r["base_rows"]) for r in with_site)
-    base_ok = sum(r["base_agrees"].count("yes") for r in with_site)
-    joined = [r for r in with_site if r["record_bytes"]]
+    ctor_rows = sum(int(r["ctor_rows"]) for r in resolved)
+    ctor_ok = sum(r["ctor_agrees"].count("yes") for r in resolved)
+    base_rows = sum(int(r["base_rows"]) for r in resolved)
+    base_ok = sum(r["base_agrees"].count("yes") for r in resolved)
+    joined = [r for r in resolved if r["record_bytes"]]
     smaller = [r for r in joined if int(r["record_bytes"]) < int(r["site_size"])]
     sizes = sorted(int(r["site_size"]) for r in with_site)
 
@@ -119,8 +126,8 @@ def render(rows):
     lines.append("| `inventory/class_registrations.csv` | the site's second-to-last push (the argument "
                  "position) | %d sites | -- this is the read |" % len(with_site))
     lines.append("| `inventory/xbe_class_table_names.csv` | its chosen site's last immediate push | %d "
-                 "tables | %d of %d%s |"
-                 % (len(with_site), len(naming_ok), len(with_site),
+                 "tables (%d whose site resolves to them, %d whose site is their class's) | %d of %d%s |"
+                 % (len(with_site), len(resolved), len(classy), len(naming_ok), len(with_site),
                     "" if not naming_bad else " (**%d differ**)" % len(naming_bad)))
     lines.append("| `inventory/class_constructors.csv` | copied from the table row | %d rows | %d of %d |"
                  % (ctor_rows, ctor_ok, ctor_rows))
@@ -128,20 +135,30 @@ def render(rows):
                  % (base_rows, base_ok, base_rows))
     lines.append("| `inventory/class_records.csv` | the class **script** record's byte length | %d of %d "
                  "classes | not an object size (smaller than it on %d of %d) |"
-                 % (len(joined), len(with_site), len(smaller), len(joined)))
+                 % (len(joined), len(resolved), len(smaller), len(joined)))
     lines.append("")
     lines.append("**The object size has one source, and three of those columns are copies of it.** "
-                 "%d of the %d tables have a registration site; their sizes are **%d distinct values, %d to "
-                 "%d bytes**, and the naming census carries the same value on all of them%s. The 2 "
-                 "constructor-side artifacts copy the column rather than measuring it, so a disagreement "
-                 "between two of the four columns can only come from the site-to-table attribution "
-                 "upstream -- which is what the object root's 40 against the old reader's 56 was."
-                 % (len(with_site), len(rows), len(set(sizes)), sizes[0] if sizes else 0,
+                 "%d of the %d tables have a registration site that resolves to them; their sizes are "
+                 "**%d distinct values, %d to %d bytes**, and the naming census carries the same value on "
+                 "all of them%s. The 2 constructor-side artifacts copy the column rather than measuring "
+                 "it, so a disagreement between two of the four columns can only come from the "
+                 "site-to-table attribution upstream -- which is what the object root's 40 against the "
+                 "old reader's 56 was."
+                 % (len(resolved), len(rows), len(set(sizes)), sizes[0] if sizes else 0,
                     sizes[-1] if sizes else 0,
                     "" if not naming_bad else " apart from %d row(s)" % len(naming_bad)))
     lines.append("")
-    lines.append("%d of the %d tables have **no size at all** -- no registration site resolves to them, so "
-                 "nothing in this tree measures them." % (len(no_site), len(rows)))
+    if classy:
+        lines.append("**%d more carry their class's own site, and that site installs another table.** "
+                     "These are the `slot-file-token` rows: the class's literal and the size it pushes are "
+                     "the site's, but the store the site reaches is the object root's, so the size is the "
+                     "class's own measurement while the table it names comes from the ladder (%s)."
+                     % (len(classy), ", ".join("`%s` %s" % (r["table_va"], r["site_size"])
+                                               for r in sorted(classy, key=lambda r: r["table_va"]))))
+        lines.append("")
+    lines.append("%d of the %d tables have **no size at all** -- no registration site resolves to them "
+                 "and no class site names them, so nothing in this tree measures them."
+                 % (len(no_site), len(rows)))
     return "\n".join(lines)
 
 

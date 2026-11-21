@@ -599,6 +599,11 @@ def apply_slot_tokens(rows, tallies=None, mapping=None, sites=None):
         row.update({
             "class": name,
             "name_rule": "slot-file-token",
+            # the class's own site -- its literal and the object size it pushes. There is no store to
+            # record: the site pushes the shared default constructor, so `installed_at`/`stores`/`bound`
+            # stay empty and the table this row names is the ladder's, not the site's.
+            "object_size": str(site[1]) if site[1] else "",
+            "registration_va": "0x%08x" % site[0],
             "evidence": ("no registration names this table; its class is the literal at 0x%08x (%d "
                          "bytes, pushes the shared default constructor, so that site installs the object "
                          "root's table), %d of this table's %d slots inline a %s assert path, and the %d "
