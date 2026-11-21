@@ -2314,7 +2314,7 @@ conflict and an unnamed table -- never a name the walk contradicts.
 
 **The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and whether the linker folded two identical functions or both were built from one stub is not decided here: `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
-**What the walk did with its names.** 242 of these bodies are map rows now -- 209 named `<Class>_vt<slot>` from the declaration, 33 a member's method -- 25299 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 13 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 423 are an interface's method, and 3 sit in a class table whose class the class map has not named.
+**What the walk did with its names.** 242 of these bodies are map rows now -- 211 named `<Class>_vt<slot>` from the declaration, 31 a member's method -- 25299 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 13 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 423 are an interface's method, and 3 sit in a class table whose class the class map has not named.
 
 <!-- /generated:class-slot-declarers -->
 

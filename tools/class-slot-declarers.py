@@ -494,7 +494,7 @@ def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0), adds=None):
     gaps = inv.get("gaps", {})
     m["add_rows"] = len(adds)
     m["add_bytes"] = sum(int(r["size"]) for r in adds if r["size"])
-    m["add_member"] = sum(1 for r in adds if r["member"])
+    m["add_member"] = sum(1 for r in adds if not r["declarer"])
     m["add_live"] = sum(1 for r in adds if r["current_agrees"] == "yes")
     # the bodies this walk names that no `add` can carry: a name is not a size, and an undecoded body
     # would put every later row's address at risk
