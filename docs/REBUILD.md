@@ -164,7 +164,7 @@ them.
 is not established (candidate: the manifest's own hash beside the package's, which would explain the pairing); and which
 168 packages are covered is not enumerated.
 
-## The boot chain sits in `UW.ini`, and one map it names does not ship (2026-11-19)
+## The boot chain: `Default.ini` is read, `UW.ini` is not, and the missing map is named anyway (2026-11-19)
 
 `System/UW.ini` (745 lines) is the game's own engine configuration; `Default.ini` (430) is the SDK default and repeats the
 same four keys, so the values below hold whether the shipped tree reads one or the other.
@@ -196,6 +196,39 @@ same instrument `docs/XEMU.md` documents for the mission harness, pointed one st
 
 **Limits.** These are config values, not behaviour: the keys are read, but which one wins at startup is exactly the open
 part. `Entry.unr`'s role (front end, intro, or a fallback) is not established here either.
+
+### What is resident twelve seconds in
+
+A RAM dump taken **12 s after boot** (`drive.py --step=watch=`, `tools/xemu/ramscan.py` over the 128 MB image) settles
+which of these names the running build actually carries. Counting terminated UTF-16 strings:
+
+| text | copies in RAM at t = 12 s |
+|---|---|
+| `Index.unr` | **3** |
+| `Entry.unr` | **3** |
+| `StoryModeGame` | **3** |
+| `Default.ini` | **3** |
+| `Packages.md5` | **2** |
+| `UW.ini` | **none** |
+
+Three readings, in order of strength:
+
+1. **The config values are consumed, not ignored.** `Map=Index.unr`, `LocalMap=Entry.unr` and
+   `DefaultGame=StoryModeGame` are all resident three times over, so the engine has parsed those keys and is holding the
+   values. The map it names is absent from the disc, and the build still reaches the menu — so the failure is handled
+   rather than fatal.
+2. **The name that is resident is `Default.ini`, and `UW.ini` does not appear at all.** That answers the question this
+   page opened with: the ini the engine reads at boot is `Default.ini`, the standard UE2 file, and `UW.ini` — the one the
+   deploy scripts copy into `System/` — is not present in memory. It is the player-facing config the build does not read
+   when no user copy exists, not the boot configuration the engine loads.
+3. **The package manifest is already open.** `Packages.md5` is resident twice at 12 s, which is consistent with the nine
+   code references to it and with the check running early.
+
+**Limits.** Presence is not proof of an open: a filename can be resident without ever having been passed to the file
+system, so "`Default.ini` was read" rests on the value strings being parsed alongside it rather than on a traced open.
+The reader of `Index.unr` was **not** caught — the watchpoint armed on one of the three copies and saw no read in twenty
+seconds, and the read may well have happened before the dump. Tracing the open itself is the instrument that would close
+both gaps; nothing here did that.
 
 ## Bake or reproduce: the two costs, with the numbers in hand
 
