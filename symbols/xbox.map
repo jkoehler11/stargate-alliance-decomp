@@ -16388,6 +16388,7 @@
 0x004c9180 Vtbl_LatentScriptedAction                      56 class table
 0x004c91f8 Vtbl_ACTION_WaitForEvent                       68 class table
 0x004c9270 Vtbl_SubActionDepthOfField                    132 class table
+0x004c9348 Vtbl_Player                                     0 class table
 0x004c93d0 Vtbl_Viewport                                 456 class table
 0x004c94b0 Vtbl_Client                                     0 class table
 0x004c9560 Vtbl_XboxClient                               196 class table
@@ -16459,6 +16460,7 @@
 0x004d0738 Vtbl_PlayerController                        3980 class table
 0x004d0950 Vtbl_UnrealPlayer                            4012 class table
 0x004d0b68 Vtbl_StargatePlayer                          4344 class table
+0x004d1468 Vtbl_Field                                      0 class table
 0x004d17a8 Vtbl_Property                                   0 class table
 0x004d1880 Vtbl_IntProperty                              108 class table
 0x004d1958 Vtbl_BoolProperty                             112 class table
@@ -16626,6 +16628,7 @@
 0x004fc0f8 Vtbl_AIMsgManager                             108 class table
 0x004fc1b0 Vtbl_Primitive                                 84 class table
 0x004fc250 Vtbl_ConvexVolume                             136 class table
+0x004fc4f0 Vtbl_LevelBase                                  0 class table
 0x004fc588 Vtbl_PendingLevel                               0 class table
 0x004fc630 Vtbl_DemoPlayPendingLevel                     176 class table
 0x004fcc18 Vtbl_DemoRecConnection                      20368 class table

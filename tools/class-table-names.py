@@ -67,6 +67,14 @@ So the name comes from one of these joins, in this order, and the `name_rule` co
                           `inventory/class_table_super_names.csv` (`tools/class-super-edges.py` reads the
                           class object's `+0x28` store); a table whose callers disagree is a class they
                           share higher up, not their parent, and it is left unnamed.
+  * `child-parent-edge` -- no site, no store, no tree and no caller vote names the table, but a class's
+                          own installer calls its parent's constructor *before* it stores its own table,
+                          so the first table-storing call of class C stores the table of `Super(C)`.
+                          `inventory/class_table_lca.csv` reads that equation per child and takes the
+                          class every child's `Super` names; a child whose `Super` has a *different*
+                          table is a member construction and is excluded, not counted. The vote is the
+                          map-independent half of `tools/class-table-lca.py` (its caller channel is a
+                          bound, not a source of names).
   * `slot-file-token`  -- no site, no store and no tree names the table, but the class it belongs to is a
                           literal the build ships, and the table's own *slots* say which one: every slot
                           body's assert inlines a source path, so a table's slots vote for a `.cpp` file,
@@ -115,6 +123,7 @@ SYMBOLS = os.path.join(ROOT, "symbols/xbox_functions.csv")
 PAIRS = os.path.join(ROOT, "inventory/class_table_name_pairs.csv")
 TOKENS = os.path.join(ROOT, "inventory/class_slot_tokens.csv")
 SUPER_NAMES = os.path.join(ROOT, "inventory/class_table_super_names.csv")
+LCA = os.path.join(ROOT, "inventory/class_table_lca.csv")
 REGISTRATIONS = os.path.join(ROOT, "inventory/class_registrations.csv")
 # The one literal in this census: the engine's class for a source file. The image names every class below
 # (`inventory/class_registrations.csv` carries the site that pushes it), and it names no class for these
@@ -550,6 +559,61 @@ def apply_super_names(rows, names=None):
     return rows
 
 
+def parent_edge_names(path=LCA):
+    """{table_va: (class, children, excluded)} for the tables the children's `Super` names.
+
+    `inventory/class_table_lca.csv` (`tools/class-table-lca.py`) reads a class's own installer: its
+    first table-storing call is its *base* call, so the table it stores is the one `Super(C)` names.
+    Only the `named-by-parent-edge` verdicts are read -- a row the map already names lands as any
+    other verdict and is the control, and a row whose children disagree, or whose only children are
+    member constructions, carries no proposal and is left unnamed.
+    """
+    out = {}
+    if not path or not os.path.exists(path):
+        return out
+    with open(path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            if row.get("verdict") != "named-by-parent-edge" or not row.get("proposed_class"):
+                continue
+            key = int(row["table_va"], 16) if row.get("table_va") else None
+            if key is not None:
+                out[key] = (row["proposed_class"], row.get("parent_edge_children", ""),
+                            row.get("parent_edge_excluded", ""))
+    return out
+
+
+def apply_parent_edges(rows, names=None):
+    """Name the tables the children's `Super` agrees on, and only the rows still empty.
+
+    A row that already carries a name is never overwritten: the image's own store, the tree, the
+    slots' assert files and the callers' `Super` are each a stronger or earlier statement than this
+    channel, which fills only what none of them reached. The evidence names the children and the
+    excluded edges, because they are the measurement.
+    """
+    names = parent_edge_names() if names is None else names
+    for row in rows:
+        if row["class"]:
+            continue
+        hit = names.get(int(row["table_va"], 16))
+        if not hit:
+            continue
+        name, children, excluded = hit
+        kids = [k for k in children.split("|") if k]
+        shown = ", ".join(kids[:6]) + (" (+%d more)" % (len(kids) - 6) if len(kids) > 6 else "")
+        why = ("%d class(es) (%s) each call their parent's constructor and the table it stores is %s's"
+               % (len(kids), shown, name))
+        if excluded:
+            why += ("; %s excluded as a member construction, because its own `Super` names a class "
+                    "with a different table" % ", ".join(e.split("(")[0] for e in excluded.split("|")))
+        row.update({
+            "class": name,
+            "name_rule": "child-parent-edge",
+            "evidence": "no registration names this table: " + why,
+            "site_literals": ", ".join(kids),
+        })
+    return rows
+
+
 def slot_token_tallies(path=TOKENS):
     """Per table: its slot count, and how many slots inline each assert-file token.
 
@@ -747,7 +811,7 @@ def census(xbe, ctor):
                 "site_literals": ", ".join(owners),
             })
         rows.append(row)
-    return apply_slot_tokens(apply_super_names(apply_pairs(rows)))
+    return apply_slot_tokens(apply_parent_edges(apply_super_names(apply_pairs(rows))))
 
 
 def evidence(rule, site, group, name):
@@ -793,14 +857,15 @@ def render(rows):
     lines.append("%d tables: %d named (%d by an unshared constructor thunk, %d by the hierarchy a "
                  "shared thunk forces, %d derived from a nearest common ancestor, %d from a base store "
                  "no registration names, %d from the tree the child supers describe, %d from the "
-                 "children's `Super` the class object writes, %d from the assert "
-                 "file their slots inline), %d unresolved, "
+                 "children's `Super` the class object writes, %d from the parent edge a child's "
+                 "`Super` confirms, %d from the assert file their slots inline), %d unresolved, "
                  "%d with no registration. %d tables are reached by more than one registration site, "
                  "so a write-order rule would name them by whichever site happened to be written last."
                  % (len(rows), named, rules.get("unshared-thunk", 0),
                     rules.get("hierarchy-ancestor", 0), rules.get("ancestor-derived", 0),
                     rules.get("base-store-ancestor", 0), rules.get("tree-paired", 0),
-                    rules.get("child-super", 0), rules.get("slot-file-token", 0),
+                    rules.get("child-super", 0), rules.get("child-parent-edge", 0),
+                    rules.get("slot-file-token", 0),
                     rules.get("unresolved", 0), rules.get("no-registration", 0), len(multi)))
     return "\n".join(lines)
 
@@ -1006,6 +1071,18 @@ def self_check():
         bad.append("child-super overwrote a name the image states: %r" % (rows[1],))
     if rows[2]["class"]:
         bad.append("child-super named a table its callers disagree on: %r" % (rows[2],))
+
+    # the children's `Super` equation names a table no other channel reaches -- and no named row moves
+    rows = [tok_row(0x5000), tok_row(0x5008, "Kid")]
+    apply_parent_edges(rows, {0x5000: ("LeafBase", "LeafA|LeafB", "Embedder(Object->0x00003000)"),
+                              0x5008: ("Other", "Kid", "")})
+    if (rows[0]["class"], rows[0]["name_rule"]) != ("LeafBase", "child-parent-edge"):
+        bad.append("child-parent-edge did not name the empty row: %r" % (rows[0],))
+    if "Embedder excluded as a member construction" not in rows[0]["evidence"]:
+        bad.append("child-parent-edge evidence does not carry the excluded edge: %r"
+                   % (rows[0]["evidence"],))
+    if rows[1]["class"] != "Kid":
+        bad.append("child-parent-edge overwrote a name the image states: %r" % (rows[1],))
 
     rows = [{"table_va": "0x00005000", "class": "Root", "object_size": "8",
              "registration_va": "0x00000010", "constructor_thunk_va": "0x00002000",
