@@ -4384,13 +4384,23 @@ bare name, while the sound layer is *handed* an absolute, lowercase `d:\MUSIC\en
 `docs/MUSIC.md` records statically for the 1,923 streamed WAVs, now confirmed at run time from a call site inside the
 DirectSound code rather than from a literal.
 
-**A third caller, and an unresolved name.** A longer window adds one more site: `0x0002d8f2` (game code, not XAPI) asks
-for **`Z:\chevguy4.tm`**. The name has a source — `Sounds/Menu.uax` carries sound objects `chevguy1` … `chevguy7`, and the
-same identifiers appear in `Maps/MainMenu.unr` — but neither the `Z:` drive nor the `.tm` suffix is a literal anywhere in
-`default.xbe` (0 occurrences each), so the path is assembled at run time or carried in data. On Xbox `Z:` is the cache
-partition, which makes extract-to-cache-then-stream the obvious reading, and **it stays a reading**: the tracer records
-argument 1, and whether this open is a write (an extraction) or a read (a stream) is argument 2, which was not recorded.
-Naming the sound is the useful part; the direction is open.
+**A third caller, and what it does to a cache file.** A longer window adds `0x0002d8f2` (game code, not XAPI), and
+recording **argument 2** settles its direction instead of leaving it to a guess:
+
+| caller | file | access (argument 2) |
+|---|---|---|
+| `0x0002d8f2` | `Z:\chevguy4.tm`, `…2`, `…6`, `…7` | **`0xC0000000`** = `GENERIC_READ` \| `GENERIC_WRITE` |
+| `0x004a2430` | `d:\MUSIC\entry\10_17_nc.WAV` | `0x80000000` = `GENERIC_READ` |
+
+So the two audio paths differ in kind, and it is measured rather than inferred: **packaged sounds are extracted to the `Z:`
+cache and streamed from there**, while **music streams straight from the disc WAV**. The names are sound objects —
+`chevguy1` … `chevguy7` all exist in `Sounds/Menu.uax` — and neither `Z:` nor `.tm` is a literal anywhere in `default.xbe`
+(0 occurrences each), so the cache path is assembled at run time from the sound's name.
+
+**The decoder needed a fix to say any of this.** The first version chose narrow-vs-wide on an odd-position-NUL count and
+turned a short ASCII path into CJK mojibake (`Z:\chevguy4.tm` came back unreadable); a wide string then lost its last
+character to a byte-level split. It now decodes both ways, cuts at the NUL *character*, and keeps whichever candidate has
+more printable characters — which is why the names above are readable.
 
 **Limits.** Arming needs a user-mode sample, so everything opened before roughly twenty seconds — the config files and the
 first packages — is outside this measurement; the trace says nothing about boot ordering. **A count here is not a rate**:
