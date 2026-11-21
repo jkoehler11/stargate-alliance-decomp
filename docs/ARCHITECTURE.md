@@ -77,7 +77,7 @@ UnrealScript objects are C++ objects with a table, and the table is the whole in
 
 ```
 UObject                    0x00077860 (constructor), 0x6c-byte instance
-  +0x00  vtable  ->  class table (492 of them, 30..159 slots)
+  +0x00  vtable  ->  class table (492 of them, 30..143 slots)
   vtable +0x54  (slot 21)  =  0x0004bf20   ProcessEvent      <- in 492/492 tables
 ```
 
