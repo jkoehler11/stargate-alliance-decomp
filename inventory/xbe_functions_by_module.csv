@@ -1,13 +1,13 @@
 module,functions,named_from_asserts,bytes,mean_size
-(unnamed),8083,0,2248005,278.1
+(unnamed),8079,0,2245758,278.0
 (other named),6026,6026,927588,153.9
-Engine,1036,1036,419064,404.5
-Core,702,702,400478,570.5
+Engine,1040,1040,429670,413.1
+Core,701,701,397519,567.1
 (dispatch: declared),273,273,84397,309.1
 Gui,85,85,25755,303.0
 (dispatch: slot only),83,83,9860,118.8
 stargategame,75,75,19249,256.7
-XboxAudio,48,48,17443,363.4
+XboxAudio,48,48,17632,367.3
 IpDrv,45,45,11897,264.4
 Fire,35,35,6240,178.3
 D3DDrv,31,31,20450,659.7

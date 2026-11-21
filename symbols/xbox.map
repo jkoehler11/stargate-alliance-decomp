@@ -688,7 +688,7 @@
 0x0002ed20 XboxAudio_FlushSounds                         137 
 0x0002edb0 XboxAudio_OpenStreamRead                      301 
 0x0002eee0 XboxAudio_XboxAudioSubsystem                  571 
-0x0002f13c XboxAudio_XboxAudioSubsystem                 2282 
+0x0002f120 XBoxAudioSubsystem_vt36                      2310 
 0x0002fa30 FUN_0002fa30                                   87 
 0x0002fa90 XboxAudio_SetSoundDevice                      278 
 0x0002fbb0 XboxAudio_CompleteStreamRead                  203 
@@ -738,7 +738,7 @@
 0x00032390 FUN_00032390                                   99 
 0x00032410 XHVVoiceSubsystem_vt10                         46 
 0x00032440 FUN_00032440                                   57 
-0x000324d6 XboxAudio_XHVVoiceSubsystem                   330 
+0x00032480 XHVVoiceSubsystem_vt32                        491 
 0x00032670 FUN_00032670                                   62 
 0x000326b0 FUN_000326b0                                   55 
 0x00032710 FUN_00032710                                  293 
@@ -3801,7 +3801,7 @@
 0x000ffb40 FUN_000ffb40                                  193 
 0x000ffc10 FUN_000ffc10                                  196 
 0x000ffce0 FUN_000ffce0                                  186 
-0x00100000 FUN_00100000                                   71 
+0x000ffda0 Canvas_vt42                                  1994 
 0x00100570 Canvas_vt47                                  1956 
 0x00100d20 FUN_00100d20                                  186 
 0x00100de0 Canvas_vt44                                   195 
@@ -4637,7 +4637,7 @@
 0x00155bc0 LevelInfo_vt74                                  1 
 0x00155bd0 LevelInfo_vt75                                  3 
 0x00155be0 Engine_UnLevAct                               264 
-0x00155dab Engine_UnLevAct                               210 
+0x00155cf0 Level_vt47                                    386 
 0x00155e80 Engine_UnLevAct                               632 
 0x00156100 FUN_00156100                                 1258 
 0x001565f0 FUN_001565f0                                 1230 
@@ -5065,7 +5065,7 @@
 0x00173360 FUN_00173360                                   31 
 0x00173380 MeshEmitter_vt30                              356 
 0x001734f0 FUN_001734f0                                  522 
-0x00173988 Core_UnClass                                 2959 
+0x00173700 MeshEmitter_vt39                             3493 
 0x001744b0 Engine_UnMeshEmitter                          179 
 0x00174570 FUN_00174570                                   85 
 0x001745d0 Core_UnObjBas                                 131 
@@ -6701,7 +6701,7 @@
 0x0021db80 ShadowProjector_vt35                           44 
 0x0021dbb0 FUN_0021dbb0                                   92 
 0x0021dc10 FUN_0021dc10                                  541 
-0x0021e478 FUN_0021e478                                 1374 
+0x0021de30 ShadowBitmapMaterial_vt47                    2986 
 0x0021e9e0 Engine_UnShadowProjector                      180 
 0x0021ec70 thunk_FUN_001d4d10                              5 
 0x0021ec80 FUN_0021ec80                                   85 
@@ -7525,8 +7525,7 @@
 0x0027f3a0 Engine_UnTrace                                654 
 0x0027f630 FUN_0027f630                                   78 
 0x0027fbe0 FUN_0027fbe0                                  560 
-0x00280020 FUN_00280020                                    3 
-0x00280064 FUN_00280064                                  799 
+0x0027fe10 Model_vt31                                   1957 
 0x002805c0 Engine_UnTrace                                304 
 0x002806f0 FUN_002806f0                                  646 
 0x00280a80 FUN_00280a80                                  586 

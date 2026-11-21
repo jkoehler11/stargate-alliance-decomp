@@ -14,6 +14,17 @@ reasons under test).
     Read linearly, each of the 13 reaches a terminator behind a pad run.  Where that terminus is *past* the
     next map row, the row above opens on `push line; push file; push function; call <handler>` and stands
     behind no padding: an out-of-line `check()` block the body branches over, laid out inside the function.
+  * **A false head inside the body is a `move`, not a refusal.**  Where the measured span holds a map row
+    that no direct call and no class slot names, the row is interior code a seeder started a function on --
+    an assert block, a block entry the body branches to, or bytes that are not even an instruction boundary
+    of the body's own decode.  `symbol-boundaries.py` already pairs an `add` with a `drop` for exactly this
+    shape, so the body is addable at its declared start with its measured end and the interior row folded
+    into it; `--emit-moves` writes the reviewed rows.
+  * **A switch's own table bounds the body.**  A `jmp *disp(,%reg,4)` inside the span names the dword table
+    the case dispatch reads, and the compiler lays that table directly behind the function's last
+    instruction (at most a `lea r,[r+0]` alignment nop between), so a terminator whose successor is the
+    table is the body's end even though no pad run follows it.  Without that rule the read walks the table
+    as code and closes on a terminator inside the next class's body.
   * **The 4 are the linker's identical-code folding.**  Each is one of the build's smallest shapes (a 1-byte
     `ret`, a 4-byte field getter, a 21-byte pair of getters) held at two or more slot indices by classes
     that are neither ancestor nor descendant, so "two declarations" is one folded body read once per index.
@@ -51,10 +62,12 @@ GAPS = os.path.join(ROOT, "inventory", "gap_heads.csv")
 DECLARERS = os.path.join(ROOT, "inventory", "class_slot_declarers.csv")
 PLAIN = os.path.join(ROOT, "inventory", "class_plain_tables.csv")
 OUT = os.path.join(ROOT, "inventory", "declarer_residue.csv")
+BOUNDARIES = os.path.join(ROOT, "symbols", "xbe_boundaries.csv")
+OVERRIDES = os.path.join(ROOT, "symbols", "xbe_overrides.csv")
 DOC_START = "<!-- generated:declarer-residue -->"
 DOC_END = "<!-- /generated:declarer-residue -->"
 FIELDS = ("row", "head_va", "kind", "verdict", "size", "declarers", "indices", "tables", "stop_va",
-          "stop_name", "stop_shape", "closes_at", "crossed", "evidence", "census")
+          "stop_name", "stop_shape", "closes_at", "crossed", "inside", "evidence", "census")
 RESIDUE = ("declared", "member", "conflict", "unnamed-table", "declared-unnamed")
 DECLARED = re.compile(r"([A-Za-z_][\w:]*)_vt(\d+) \(held by (\d+)\)")
 MEMBER_TABLE = re.compile(r"table (0x[0-9a-f]+)")
@@ -63,6 +76,8 @@ MEMBER_FIELD = re.compile(r"field (0x[0-9a-f]+)")
 INSN = re.compile(r"^\s+([0-9a-f]+):\t((?:[0-9a-f]{2} )+)\s*\t(.*)$")
 PAD = (0xCC, 0x90)
 WINDOW = 4096
+SWITCH = re.compile(r"jmp\s+\*0x([0-9a-f]+)\(,%e[a-z]{2},4\)")
+ALIGN = 8
 
 
 def sibling(name):
@@ -157,12 +172,25 @@ def pad_run(vec, at, n=2):
     return all(vec[at + k] in PAD for k in range(n))
 
 
-def closes(ins, vec, lo):
-    """(va, size, saw_table) for the first terminator whose successor is a pad run, else None.
+def switch_tables(ins):
+    """The dword tables this body's own case dispatch reads (`jmp *disp(,%reg,4)`)."""
+    out = set()
+    for _va, _s, text in ins:
+        m = SWITCH.search(text)
+        if m:
+            out.add(int(m.group(1), 16))
+    return out
 
-    `lo` is the VA the vector starts at, so an instruction's byte offset is `va - lo`.  `saw_table` is
-    set when the sweep passed a jump through a memory table: the table's dwords are data laid out inline,
-    so a linear read that crosses one is reading data as code and its terminus is not a boundary.
+
+def closes(ins, vec, lo, tables=()):
+    """(va, size, saw_table) for the first terminator that ends the body, else None.
+
+    `lo` is the VA the vector starts at, so an instruction's byte offset is `va - lo`.  A terminator ends
+    the body when a pad run follows it **or** when what follows it is the dword table a switch inside the
+    body reads: the compiler lays that table behind the last instruction (a `lea r,[r+0]` alignment nop at
+    most), so the table's start is a boundary and a read that does not know it walks the data as code and
+    closes on a terminator inside the next class's body.  `saw_table` is set when the sweep passed a jump
+    through a memory table, for the evidence line.
     """
     saw = False
     for va, size, text in ins:
@@ -170,7 +198,10 @@ def closes(ins, vec, lo):
             saw = True
         if not terminates(text):
             continue
-        if pad_run(vec, va - lo + size):
+        end = va + size
+        if pad_run(vec, end - lo):
+            return va, size, saw
+        if any(0 <= t - end <= ALIGN for t in tables):
             return va, size, saw
     return None
 
@@ -220,6 +251,71 @@ def duplicate_groups(image, rows):
     return groups
 
 
+def slot_bodies():
+    """Every address `class_slot_declarers.csv` resolves as a class slot's body (a real method)."""
+    out = set()
+    for r in read_csv(DECLARERS):
+        if r.get("row") in ("control", "head") and r.get("head_va"):
+            va = num(r["head_va"])
+            if va is not None:
+                out.add(va)
+    return out
+
+
+def call_census(image):
+    """Direct `call`/`jmp` targets over `.text`, read at instruction boundaries with objdump.
+
+    A dword scan answers where an address is *stored* and a `Callers.java` answer is only the analysed
+    xrefs, so the census a false-head test needs is the byte one -- decoded, not sprayed, because an `E8`
+    byte inside another instruction's immediate invents a target nobody calls.
+    """
+    sec = None
+    for s in image.sections:
+        if s.name == ".text":
+            sec = s
+            break
+    if sec is None:
+        return collections.Counter()
+    out = collections.Counter()
+    for va, _size, text in disasm(image.read_va(sec.va, sec.fsize), sec.va):
+        if "*" in text or "0x" not in text:
+            continue
+        if not (text.startswith("call") or text.startswith("jmp")):
+            continue
+        m = re.search(r"0x([0-9a-f]+)", text)
+        if m:
+            out[int(m.group(1), 16)] += 1
+    return out
+
+
+def interior_row(image, va, name, size, ins, calls, slots, targets=None):
+    """What a map row inside a declared body's span is, and whether it is a body of its own.
+
+    `body` needs an image-side claim: a class slot holds it or a direct call/jump targets it.  Everything
+    else inside the span is interior code -- an assert block, a block entry the body branches to, or bytes
+    that are not an instruction boundary of the body's own decode.
+    """
+    try:
+        head = image.read_va(va, 32)
+    except KeyError:
+        head = b""
+    sins = disasm(head, va) if head else []
+    on_stream = any(i[0] == va for i in ins)
+    handler = assert_block(sins, targets)
+    if va in slots or calls.get(va):
+        kind = "body"
+    elif handler is not None:
+        kind = "assert-block"
+    elif not on_stream:
+        kind = "off-stream"
+    else:
+        kind = "block-entry"
+    return {"va": va, "name": name, "size": size, "kind": kind, "real": kind == "body",
+            "calls": calls.get(va, 0),
+            "label": "%#010x %s `%s` (%d direct call/jump site(s))"
+                     % (va, kind, name, calls.get(va, 0))}
+
+
 def child_classes():
     out = collections.defaultdict(list)
     for r in read_csv(PLAIN):
@@ -237,6 +333,8 @@ def harvest(image):
     rows = map_rows()
     gaps = {r["head_va"]: r for r in read_csv(GAPS) if r.get("row") == "head"}
     kids = child_classes()
+    calls = call_census(image)
+    slots = slot_bodies()
     groups = duplicate_groups(image, rows)
     dup_groups = sum(1 for n in groups.values() if n > 1)
     dup_bodies = sum(n for n in groups.values() if n > 1)
@@ -277,7 +375,8 @@ def harvest(image):
             except KeyError:
                 vec = image.read_va(va, 64)
             ins = disasm(vec, va)
-            close = closes(ins, vec, va)
+            tables = switch_tables(ins)
+            close = closes(ins, vec, va, tables)
             stop_va, stop_name = (nxt[0], nxt[1]) if nxt else (0, "")
             shape, handler, opening = "code", None, "-"
             if nxt is not None:
@@ -291,32 +390,37 @@ def harvest(image):
                     shape = "assert-block" if handler is not None else "code"
                     opening = " | ".join(t for _a, _s, t in sins[:3]) or "-"
             size = close[0] + close[1] - va if close else None
-            crossed = sum(1 for a, _n, _s in rows if close and va < a < va + size)
-            if close and close[2]:
-                verdict = "table-cut"
-                why = ("the sweep crosses an inline jump table before it closes, so a linear read cannot "
-                       "bound the body")
-            elif close and crossed and handler is not None:
-                verdict = "island-cut"
-                why = ("the body closes %d byte(s) in, past %d map row(s), and the row above is a check() "
-                       "block it branches over" % (size, crossed))
-            elif close and crossed:
-                verdict = "spans-row"
-                why = ("the body closes %d byte(s) in, past %d map row(s) that is not a check() block -- "
-                       "either the row is a false head or the sweep overran" % (size, crossed))
-            elif close:
-                verdict = "closes"
-                why = "the body closes %d byte(s) in, before the row above" % size
-            else:
+            inner = []
+            if size:
+                inner = [interior_row(image, a, n, sp, ins, calls, slots, targets)
+                         for a, n, sp in rows if va < a < va + size]
+            crossed = len(inner)
+            if not close:
                 verdict = "no-close"
                 why = "no terminator behind a pad run in %d byte(s)" % len(vec)
-            if verdict == "island-cut" and handler is not None:
-                why += ", and the row above is an out-of-line check() block it branches over"
+            elif inner and not any(r["real"] for r in inner):
+                verdict = "move"
+                why = ("the body closes %d byte(s) in and the %d row(s) inside it are interior code (%s), "
+                       "so the row is a false head: the add carries the measured end and folds it"
+                       % (size, len(inner), "; ".join(r["label"] for r in inner)))
+            elif inner:
+                verdict = "real-row"
+                why = ("the body closes %d byte(s) in, past a row that is a body of its own (%s), so the "
+                       "declared body cannot be one contiguous row"
+                       % (size, "; ".join(r["label"] for r in inner if r["real"])))
+            else:
+                verdict = "closes"
+                why = "the body closes %d byte(s) in, before the row above" % size
+                if close[2] and tables:
+                    why = ("the body closes %d byte(s) in at the dword table its own switch reads (%s), "
+                           "which a read that walks the table as code cannot bound"
+                           % (size, ", ".join("%#010x" % t for t in sorted(tables))))
             rec.update({
                 "verdict": verdict, "size": str(size or ""),
                 "stop_va": "%#010x" % stop_va if stop_va else "", "stop_name": stop_name,
                 "stop_shape": shape, "closes_at": "%#010x" % (va + size) if size else "",
                 "crossed": str(crossed),
+                "inside": "; ".join(r["label"] for r in inner),
                 "evidence": "gap %s..%s (%s byte(s)), row above %s at %s opening on `%s`; %s"
                             % (ghead.get("gap_lo", "-"), ghead.get("gap_hi", "-"),
                                ghead.get("gap_size", "-"), stop_name or "-",
@@ -364,14 +468,14 @@ def harvest(image):
         "row": "census", "census": "census",
         "size": str(sum(1 for r in out if r["verdict"] == "closes")),
         "crossed": str(sum(int(r["crossed"] or 0) for r in out if r["crossed"])),
-        "evidence": "residue %d bodies: fold %d, closes %d, island-cut %d, table-cut %d, no-name %d "
+        "evidence": "residue %d bodies: fold %d, closes %d, move %d, real-row %d, no-name %d "
                     "(%d member over %d table(s), %d unnamed declarer over %d table(s)), no-close %d; "
                     "check() stops %d over %d handler(s)%s; the map's %d duplicate group(s) cover %d bodies"
                     % (len(out),
                        sum(1 for r in out if r["verdict"] == "fold"),
                        sum(1 for r in out if r["verdict"] == "closes"),
-                       sum(1 for r in out if r["verdict"] == "island-cut"),
-                       sum(1 for r in out if r["verdict"] == "table-cut"),
+                       sum(1 for r in out if r["verdict"] == "move"),
+                       sum(1 for r in out if r["verdict"] == "real-row"),
                        sum(1 for r in out if r["verdict"] == "no-name"),
                        sum(1 for r in out if r["verdict"] == "no-name" and r["kind"] == "member"),
                        len({r["stop_va"] for r in out
@@ -394,9 +498,8 @@ def summary(rows):
     bodies = [r for r in rows if r["row"] == "body"]
     pick = lambda v: [r for r in bodies if r["verdict"] == v]
     return {
-        "bodies": bodies, "folds": pick("fold"), "islands": pick("island-cut"), "closes": pick("closes"),
-        "tables": pick("table-cut"), "spans": pick("spans-row"), "no_name": pick("no-name"),
-        "no_close": pick("no-close"),
+        "bodies": bodies, "folds": pick("fold"), "moves": pick("move"), "closes": pick("closes"),
+        "real": pick("real-row"), "no_name": pick("no-name"), "no_close": pick("no-close"),
         "member": [r for r in bodies if r["verdict"] == "no-name" and r["kind"] == "member"],
         "unnamed": [r for r in bodies if r["verdict"] == "no-name"
                     and r["kind"] in ("unnamed-table", "declared-unnamed")],
@@ -440,15 +543,16 @@ def render(rows):
                    % (r["head_va"], r["declarers"] or "-", r["stop_name"] or "-", r["stop_shape"] or "-",
                       r["verdict"], r["closes_at"] or "-", r["size"] or "-", r["crossed"] or "0"))
     out.append("")
-    out.append("**%d of the %d declared bodies are cut by a check() block, not by the boundary the gap "
-               "census drew.** On those the row above opens on `push; push; push; call` behind no padding "
-               "-- an out-of-line `check()` block laid out inside the function, which the body branches "
-               "over -- so the gap ends inside the body. %d more close past a map row that is not a "
-               "check() block, %d cross an inline jump table first so a linear read cannot bound them, "
-               "%d close before the row above and are addable as measured, and %d reach no terminator "
-               "behind a pad run.%s"
-               % (len(s["islands"]), len(s["declared"]), len(s["spans"]), len(s["tables"]),
-                  len(s["closes"]), len(s["no_close"]),
+    out.append("**%d of the %d declared bodies close before the next map row; %d close past a row that "
+               "is interior code.** On the second kind the row inside the body is an assert block, a block "
+               "entry the body branches to, or bytes that are not an instruction boundary of its own decode "
+               "-- no direct call and no class slot names it -- so `symbol-boundaries.py` adds the body at "
+               "its declared start with the measured end and drops the interior row into it, and the body "
+               "is addable without a boundary move. %d more close "
+               "at the dword table their own switch reads (the table sits behind the last instruction, so "
+               "no pad run follows), %d reach no terminator, and %d hold a body of their own.%s"
+               % (len(s["closes"]), len(s["declared"]), len(s["moves"]), len(s["moves"]),
+                  len(s["no_close"]), len(s["real"]),
                   (" The handler is one address on every check() block of them." if handlers else "")))
     out.append("")
     out.append("| the residue with no name | byte(s) | kind | its blocker | what the name would need |")
@@ -467,6 +571,125 @@ def render(rows):
                % (len(s["no_name"]), len(s["member"]), s["member_tables"], len(s["unnamed"]),
                   s["unnamed_tables"]))
     return "\n".join(out)
+
+
+def emit_moves(out=OUT, boundaries=None, overrides=None, map_path=FUNCTIONS):
+    """Write the `add` + `drop` rows every `move` body earns, and the override row each add needs.
+
+    The move is the pairing `symbol-boundaries.py` already validates: the add claims the declared start
+    with the measured end, the drop names that add and must land strictly inside it, and the override row
+    is what `XbePost.java` builds the function from on a fresh import.  Dump-free -- it reads the artifact
+    and the map, so a reviewer can re-derive every row from committed files.  A dropped address that an
+    older repair already touched supersedes that repair (a `resize` of the fragment's own end described
+    the false head; the add claims the whole body), and a re-run is a no-op.
+    """
+    boundaries = boundaries or BOUNDARIES
+    overrides = overrides or OVERRIDES
+    rows = read_csv(out)
+    moves = [r for r in rows if r["row"] == "body" and r["verdict"] == "move"]
+    if not moves:
+        print("declarer-residue: no `move` verdict in %s, nothing to write" % out)
+        return 0
+    sym = map_rows()
+    b_rows = read_csv(boundaries)
+    o_rows = read_csv(overrides)
+    b_by = {int(r["address"], 16): r for r in b_rows}
+    o_by = {int(r["address"], 16): r for r in o_rows}
+    names = {n for _a, n, _s in sym}
+    want = {}
+    for r in moves:
+        va = int(r["head_va"], 16)
+        size = int(r["size"])
+        klass = (r["declarers"] or "").split()[0] if r["declarers"] else ""
+        slot = (r["indices"] or "").split()[0]
+        if not klass or not slot:
+            sys.exit("declarer-residue: --emit-moves: %#010x has no declarer slot to name it" % va)
+        name = "%s_vt%s" % (klass, slot)
+        prev = b_by.get(va)
+        if prev is not None and not (prev["action"] == "add" and prev["target"] == name
+                                     and prev["size"] == str(size)):
+            sys.exit("declarer-residue: --emit-moves: %#010x already carries a %s repair"
+                     % (va, prev["action"]))
+        if prev is None and name in names and va not in {a for a, n, _s in sym if n == name}:
+            sys.exit("declarer-residue: --emit-moves: the map already uses the name %s" % name)
+        inner = [(a, n, sp) for a, n, sp in sym if va < a < va + size]
+        if not inner:
+            sys.exit("declarer-residue: --emit-moves: %#010x has no interior row to fold" % va)
+        ev = ("slot %s of %s holds this body and `tools/declarer-residue.py` measures it %d byte(s) from "
+              "its declared start (close `%s`); the row(s) the artifact records inside that span -- %s -- "
+              "are interior code no direct call and no class slot names, so the body is added at the "
+              "start the slot holds and each fragment is folded into it"
+              % (slot, klass, size, r["closes_at"], r["inside"]))
+        want[va] = prev if prev is not None else {
+            "address": r["head_va"], "action": "add", "target": name, "size": str(size),
+            "evidence": ev}
+        if va not in o_by:
+            want[("override", va)] = {
+                "address": r["head_va"], "name": name,
+                "evidence": "added to the map by symbols/xbe_boundaries.csv: " + ev,
+                "class": "", "outer": "", "object_size": "", "assert_line": "", "module": "",
+                "source_file": "", "function_size": str(size)}
+        elif o_by[va]["name"] != name or (o_by[va].get("function_size") or "") != str(size):
+            sys.exit("declarer-residue: --emit-moves: xbe_overrides.csv disagrees at %#010x" % va)
+        for a, nn, _sp in inner:
+            old = b_by.get(a)
+            if old is not None and old["action"] == "drop" and old["target"] == r["head_va"]:
+                want[a] = old
+                continue
+            tail = ""
+            if old is not None and not (old["action"] == "drop" and old["target"] == r["head_va"]):
+                tail = ("; it supersedes this file's `%s` row for the same address, which repaired the "
+                        "fragment's own end where the add now claims the whole body" % old["action"])
+            want[a] = {"address": "%#010x" % a, "action": "drop", "target": r["head_va"], "size": "",
+                       "evidence": "interior code of %s (%#010x..%#010x): %s -- no `E8`/`E9` site and "
+                                   "no class slot holds it, so it is not a function start%s"
+                                   % (name, va, va + size, r["inside"], tail)}
+    adds = [k for k in want if not isinstance(k, tuple) and want[k]["action"] == "add"]
+    drops = [k for k in want if not isinstance(k, tuple) and want[k]["action"] == "drop"]
+    orows = [want[k] for k in want if isinstance(k, tuple)]
+    spans = []
+    for k in adds:
+        spans.append((k, int(want[k]["size"]), want[k]["target"]))
+    keep = []
+    for r in b_rows:
+        a = int(r["address"], 16)
+        if a in set(adds) | set(drops):
+            continue
+        if r["action"] == "drop":
+            try:
+                t = int(r["target"], 16)
+            except ValueError:
+                t = None
+            if t in set(drops):
+                for va, size, name in spans:
+                    if va < a < va + size:
+                        r = dict(r, target="%#010x" % va,
+                                 evidence=r["evidence"] + "; retargeted to %s, which now claims the whole "
+                                                          "body the fragment sat in" % name)
+                        break
+        keep.append(r)
+    b_rows = keep
+    b_rows.extend(want[k] for k in sorted(adds))
+    b_rows.extend(want[k] for k in sorted(drops))
+    o_rows.extend(orows)
+    with open(boundaries, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "action", "target", "size", "evidence"],
+                           lineterminator="\n")
+        w.writeheader()
+        w.writerows(b_rows)
+    with open(overrides, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "name", "evidence", "class", "outer",
+                                           "object_size", "assert_line", "module", "source_file",
+                                           "function_size"], lineterminator="\r\n")
+        w.writeheader()
+        w.writerows(o_rows)
+    for k in sorted(adds):
+        print("add    %s %-32s %5s bytes" % (want[k]["address"], want[k]["target"], want[k]["size"]))
+    for k in sorted(drops):
+        print("drop   %s into %s" % (want[k]["address"], want[k]["target"]))
+    print("declarer-residue: %d add row(s), %d drop row(s) and %d creation row(s) in place; "
+          "now run `python3 tools/symbol-boundaries.py --apply`" % (len(adds), len(drops), len(orows)))
+    return 0
 
 
 def write_artifact(rows, path):
@@ -533,9 +756,22 @@ Disassembly of section .data:
     if not pad_run(b"\x00\xcc\xcc", 1) or pad_run(b"\x00\xcc\x00", 1):
         bad.append("a tail is a run of pad bytes, not one")
 
+    dispatch = ins([(0, "55", "push   %ebp"),
+                    (1, "ff 24 85 84 dc 2f 00", "jmp    *0x2fdc84(,%edx,4)")])
+    if switch_tables(dispatch) != {0x2FDC84}:
+        bad.append("the case dispatch names the dword table it reads")
+    aligned = ins([(0, "55", "push   %ebp"), (1, "c2 0c 00", "ret    $0xc")])
+    tail = b"\x55\xc2\x0c\x00\x8d\x49\x00" + b"\x00" * 8
+    if closes(aligned, tail, 0) is not None:
+        bad.append("a ret whose successor is the switch table is not a boundary without the table")
+    if closes(aligned, tail, 0, {0x0c}) != (1, 3, False):
+        bad.append("a ret whose successor is the table the body reads closes the body")
+    if closes(aligned, tail, 0, {0x20}) is not None:
+        bad.append("a table beyond the alignment window does not close the body")
+
     rows = []
     for va, kind, verdict, stop, crossed, size, shape, decl in (
-            ("0x0002f120", "declared", "island-cut", "0x0002f13c", "1", 91, "assert-block", "X"),
+            ("0x0002f120", "declared", "move", "0x0002f13c", "1", 91, "assert-block", "X"),
             ("0x00078ae0", "declared", "closes", "0x00078b80", "0", 157, "code", "Y"),
             ("0x001ec800", "conflict", "fold", "", "0", 4, "identical-code fold",
              "Object_vt17 (held by 474)"),
@@ -545,14 +781,14 @@ Disassembly of section .data:
         r = {k: "" for k in FIELDS}
         r.update({"row": "body", "head_va": va, "kind": kind, "verdict": verdict, "size": str(size),
                   "stop_va": stop, "stop_shape": shape, "crossed": crossed, "declarers": decl,
-                  "stop_name": "XboxAudio_XboxAudioSubsystem" if verdict == "island-cut" else "-",
-                  "closes_at": "0x0002f17b" if verdict == "island-cut" else "",
+                  "stop_name": "XboxAudio_XboxAudioSubsystem" if verdict == "move" else "-",
+                  "closes_at": "0x0002f17b" if verdict == "move" else "",
                   "evidence": "`%s` synthetic; the map's 1 duplicate group(s) cover 3 bodies" % (
                       "c3" if verdict == "fold" else "")})
         rows.append(r)
     rows.append({k: "" for k in FIELDS})
     rows[-1].update({"row": "census", "census": "census", "size": "1", "crossed": "1",
-                     "evidence": "residue 5 bodies: fold 1, closes 1, island-cut 1, no-name 2 (1 member "
+                     "evidence": "residue 5 bodies: fold 1, closes 1, move 1, real-row 0, no-name 2 (1 member "
                                  "over 1 table(s), 1 unnamed declarer over 1 table(s)), no-close 0; "
                                  "check() stops 1 over 1 handler(s) (0x00058a30); the map's 1 "
                                  "duplicate group(s) cover 3 bodies"})
@@ -561,7 +797,7 @@ Disassembly of section .data:
         if want not in out:
             bad.append("render lacks %r" % (want,))
     s = summary(rows)
-    if len(s["folds"]) != 1 or len(s["islands"]) != 1 or len(s["closes"]) != 1 or len(s["member"]) != 1:
+    if len(s["folds"]) != 1 or len(s["moves"]) != 1 or len(s["closes"]) != 1 or len(s["member"]) != 1:
         bad.append("the verdicts split the population")
     if len(s["declared"]) != 2:
         bad.append("the declared population is the two declared rows")
@@ -592,9 +828,13 @@ def main():
     ap.add_argument("--write-doc")
     ap.add_argument("--check-doc")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--emit-moves", action="store_true",
+                    help="write the `add`/`drop` rows a `move` body earns, and its override row")
     args = ap.parse_args()
     if args.check:
         return self_check()
+    if args.emit_moves:
+        return emit_moves()
     if args.check_doc:
         rows = read_csv(OUT)
         if not rows:

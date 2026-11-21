@@ -2,14 +2,14 @@ kind,site,insn,body,body_name,module,index_source,audio_id,op,note
 scope-site,0x000125c0,0x000125be,0x000124c0,FUN_000124c0,(unnamed),global 0x007b5f14,,read only,
 scope-site,0x000125d6,0x000125d4,0x000124c0,FUN_000124c0,(unnamed),global 0x007b6084,,read only,
 scope-site,0x0002d415,0x0002d413,0x0002d3f0,XboxAudio_StopStreamingSound,XboxAudio,field 0x1a4 of edi,StoppedSounds (+0x1a4),inc by 1,
-scope-site,0x0002f1d9,0x0002f1d8,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x188 of esi,PlaySound (+0x188),sub tsc,
-scope-site,0x0002f205,0x0002f203,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x194 of esi,PlaySound (+0x194),inc by 1,
-scope-site,0x0002f287,0x0002f285,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of esi,Occlusion (+0x190),sub tsc,
-scope-site,0x0002f360,0x0002f35e,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of esi,Occlusion (+0x190),add tsc,
-scope-site,0x0002f447,0x0002f445,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x188 of esi,PlaySound (+0x188),add tsc,
-scope-site,0x0002f524,0x0002f522,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of esi,Occlusion (+0x190),sub tsc,
-scope-site,0x0002f62b,0x0002f629,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of esi,Occlusion (+0x190),add tsc,
-scope-site,0x0002f9f4,0x0002f9f3,0x0002f13c,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x188 of esi,PlaySound (+0x188),add tsc,
+scope-site,0x0002f1d9,0x0002f1d8,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x188 of esi,PlaySound (+0x188),sub tsc,
+scope-site,0x0002f205,0x0002f203,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x194 of esi,PlaySound (+0x194),inc by 1,
+scope-site,0x0002f287,0x0002f285,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x190 of esi,Occlusion (+0x190),sub tsc,
+scope-site,0x0002f360,0x0002f35e,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x190 of esi,Occlusion (+0x190),add tsc,
+scope-site,0x0002f447,0x0002f445,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x188 of esi,PlaySound (+0x188),add tsc,
+scope-site,0x0002f524,0x0002f522,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x190 of esi,Occlusion (+0x190),sub tsc,
+scope-site,0x0002f62b,0x0002f629,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x190 of esi,Occlusion (+0x190),add tsc,
+scope-site,0x0002f9f4,0x0002f9f3,0x0002f120,XBoxAudioSubsystem_vt36,XboxAudio,field 0x188 of esi,PlaySound (+0x188),add tsc,
 scope-site,0x0002fee4,0x0002fee2,0x0002feb0,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x18c of ebp,Update (+0x18c),sub tsc,
 scope-site,0x00030477,0x00030475,0x0002feb0,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of ebp,Occlusion (+0x190),sub tsc,
 scope-site,0x00030546,0x00030545,0x0002feb0,XboxAudio_XboxAudioSubsystem,XboxAudio,field 0x190 of ebp,Occlusion (+0x190),add tsc,
@@ -23,7 +23,10 @@ scope-site,0x00082b79,0x00082b78,0x00082a20,FUN_00082a20,(unnamed),global 0x007b
 scope-site,0x00082e3a,0x00082e39,0x00082a20,FUN_00082a20,(unnamed),global 0x007b6014,,add delta,
 scope-site,0x00082e4e,0x00082e4d,0x00082a20,FUN_00082a20,(unnamed),global 0x007b601c,,add tsc,
 scope-site,0x0008548f,0x0008548e,0x000850e0,FUN_000850e0,(unnamed),global 0x007b6010,,add tsc,
+scope-site,0x00089523,0x00089522,0x00088290,xProcMesh_vt35,Engine,global 0x007b6014,,add delta,
+scope-site,0x0008953c,0x0008953b,0x00088290,xProcMesh_vt35,Engine,global 0x007b6010,,add tsc,
 scope-site,0x00089bc6,0x00089bc4,0x00089650,FUN_00089650,(unnamed),global 0x007b601c,,add tsc,
+scope-site,0x0008bf96,0x0008bf94,0x0008b8b0,xWeatherEffect_vt35,Engine,global 0x007b6010,,add tsc,
 scope-site,0x0008c362,0x0008c361,0x0008c010,FUN_0008c010,(unnamed),global 0x007b6014,,add delta,
 scope-site,0x0008c371,0x0008c36f,0x0008c010,FUN_0008c010,(unnamed),global 0x007b601c,,add tsc,
 scope-site,0x0008f7bb,0x0008f7ba,0x0008f610,FUN_0008f610,(unnamed),global 0x007b5f1c,,sub tsc,
@@ -34,6 +37,8 @@ scope-site,0x0008f95b,0x0008f959,0x0008f610,FUN_0008f610,(unnamed),global 0x007b
 scope-site,0x0008f98a,0x0008f989,0x0008f610,FUN_0008f610,(unnamed),global 0x007b5f1c,,add tsc,
 scope-site,0x0008f9df,0x0008f9dd,0x0008f610,FUN_0008f610,(unnamed),global 0x007b5f28,,sub tsc,
 scope-site,0x0008fa27,0x0008fa25,0x0008f610,FUN_0008f610,(unnamed),global 0x007b5f28,,add tsc,
+scope-site,0x000930c1,0x000930c0,0x000930c0,KConstraint_vt94,Engine,unread,,read only,
+scope-site,0x00093294,0x00093292,0x000930c0,KConstraint_vt94,Engine,global 0x007b5f3c,,add tsc,
 scope-site,0x0009ace3,0x0009ace1,0x0009abc0,Engine_KDynStep,Engine,global 0x007b5f2c,,sub tsc,
 scope-site,0x0009ad47,0x0009ad46,0x0009abc0,Engine_KDynStep,Engine,global 0x007b5f2c,,add tsc,
 scope-site,0x0009ae3d,0x0009ae3b,0x0009abc0,Engine_KDynStep,Engine,global 0x007b5f30,,sub tsc,
@@ -79,6 +84,8 @@ scope-site,0x00102109,0x00102107,0x00101ea0,FUN_00101ea0,(unnamed),global 0x007b
 scope-site,0x001021be,0x001021bc,0x00101ea0,FUN_00101ea0,(unnamed),global 0x007b60d8,,add tsc,
 scope-site,0x0010251c,0x0010251a,0x00102310,FUN_00102310,(unnamed),global 0x007b60dc,,sub tsc,
 scope-site,0x00102560,0x0010255e,0x00102310,FUN_00102310,(unnamed),global 0x007b60dc,,add tsc,
+scope-site,0x00102ad7,0x00102ad6,0x00102a30,FUN_00102a30,(unnamed),global 0x007b60dc,,sub tsc,
+scope-site,0x00102b1a,0x00102b19,0x00102a30,FUN_00102a30,(unnamed),global 0x007b60dc,,add tsc,
 scope-site,0x00102e5c,0x00102e5a,0x00102d20,FUN_00102d20,(unnamed),global 0x007b60dc,,sub tsc,
 scope-site,0x00102e97,0x00102e95,0x00102d20,FUN_00102d20,(unnamed),global 0x007b60dc,,add tsc,
 scope-site,0x00105f84,0x00105f82,0x00105eb0,FUN_00105eb0,(unnamed),global 0x007b60b0,,sub tsc,
@@ -120,6 +127,10 @@ scope-site,0x0013332b,0x0013332a,0x00133250,FUN_00133250,(unnamed),global 0x007b
 scope-site,0x00133eca,0x00133ec8,0x00133250,FUN_00133250,(unnamed),global 0x007b609c,,sub tsc,
 scope-site,0x00133f99,0x00133f97,0x00133250,FUN_00133250,(unnamed),global 0x007b609c,,add tsc,
 scope-site,0x001342b6,0x001342b5,0x00133250,FUN_00133250,(unnamed),global 0x007b5f18,,add tsc,
+scope-site,0x0014ee9e,0x0014ee9c,0x0014edc0,FUN_0014edc0,(unnamed),global 0x007b60dc,,sub tsc,
+scope-site,0x0014eee3,0x0014eee1,0x0014edc0,FUN_0014edc0,(unnamed),global 0x007b60dc,,add tsc,
+scope-site,0x0014f1be,0x0014f1bc,0x0014f0e0,FUN_0014f0e0,(unnamed),global 0x007b60dc,,sub tsc,
+scope-site,0x0014f203,0x0014f201,0x0014f0e0,FUN_0014f0e0,(unnamed),global 0x007b60dc,,add tsc,
 scope-site,0x0015705f,0x0015705e,0x00156ee0,Engine_UnLevAct,Engine,global 0x007b60bc,,inc by 1,
 scope-site,0x00157068,0x00157066,0x00156ee0,Engine_UnLevAct,Engine,global 0x007b60b8,,sub tsc,
 scope-site,0x001575cd,0x001575cc,0x00156ee0,Engine_UnLevAct,Engine,global 0x007b60b8,,add tsc,
@@ -132,6 +143,7 @@ scope-site,0x0015a1a3,0x0015a1a1,0x00159d50,Engine_UnLevAct,Engine,global 0x007b
 scope-site,0x0015a3d4,0x0015a3d3,0x0015a200,FUN_0015a200,(unnamed),global 0x007b60c4,,add tsc,
 scope-site,0x0015a600,0x0015a5fe,0x0015a200,FUN_0015a200,(unnamed),global 0x007b60c4,,add tsc,
 scope-site,0x0015a639,0x0015a637,0x0015a200,FUN_0015a200,(unnamed),global 0x007b60c4,,add tsc,
+scope-site,0x0015ae53,0x0015ae51,0x0015a660,ULevel_MultiLineCheck,(other named),global 0x007b60c0,,add tsc,
 scope-site,0x00164664,0x00164662,0x001645f0,FUN_001645f0,(unnamed),global 0x007b608c,,add tsc,
 scope-site,0x0016468f,0x0016468d,0x001645f0,FUN_001645f0,(unnamed),global 0x007b60e4,,sub tsc,
 scope-site,0x00164945,0x00164943,0x001645f0,FUN_001645f0,(unnamed),global 0x007b60e4,,add tsc,
@@ -145,6 +157,9 @@ scope-site,0x00166eec,0x00166eeb,0x00166d10,FUN_00166d10,(unnamed),global 0x007b
 scope-site,0x001674f7,0x001674f6,0x00166d10,FUN_00166d10,(unnamed),global 0x007b608c,,add tsc,
 scope-site,0x00167638,0x00167637,0x00166d10,FUN_00166d10,(unnamed),global 0x007b60a0,,sub tsc,
 scope-site,0x00167665,0x00167664,0x00166d10,FUN_00166d10,(unnamed),global 0x007b60a0,,add tsc,
+scope-site,0x0018dc36,0x0018dc35,0x0018db80,Emitter_vt35,Engine,global 0x007b60ac,,sub tsc,
+scope-site,0x0018e3fe,0x0018e3fc,0x0018db80,Emitter_vt35,Engine,global 0x007b60ac,,add tsc,
+scope-site,0x0018e5e1,0x0018e5df,0x0018db80,Emitter_vt35,Engine,global 0x007b60ac,,add tsc,
 scope-site,0x0018e6d4,0x0018e6d3,0x0018e650,FUN_0018e650,(unnamed),global 0x007b6024,,add tsc,
 scope-site,0x0018e83d,0x0018e83c,0x0018e650,FUN_0018e650,(unnamed),global 0x007b6020,,add delta,
 scope-site,0x0018e858,0x0018e857,0x0018e650,FUN_0018e650,(unnamed),global 0x007b6014,,add delta,
@@ -243,9 +258,13 @@ scope-site,0x001ffec0,0x001ffebf,0x001fd850,Core_UnMath,Core,global 0x007b5f9c,,
 scope-site,0x00200140,0x0020013f,0x001fd850,Core_UnMath,Core,global 0x007b5fe0,,add tsc,
 scope-site,0x00200403,0x00200401,0x001fd850,Core_UnMath,Core,global 0x007b5fc0,,add delta,
 scope-site,0x0020b09a,0x0020b098,0x0020ab60,FUN_0020ab60,(unnamed),global 0x007b5fec,,add tsc,
+scope-site,0x002109b1,0x002109b0,0x00210990,FUN_00210990,(unnamed),global 0x007b60e0,,sub tsc,
+scope-site,0x00210a01,0x00210a00,0x002109e0,FUN_002109e0,(unnamed),global 0x007b60e0,,add tsc,
 scope-site,0x002138ed,0x002138eb,0x002137e0,execSpawn,(dispatch: declared),global 0x007b6098,,sub tsc,
 scope-site,0x00213990,0x0021398e,0x002137e0,execSpawn,(dispatch: declared),global 0x007b6098,,add tsc,
 scope-site,0x00218695,0x00218694,0x00218680,FUN_00218680,(unnamed),unread,,read only,
+scope-site,0x0021df44,0x0021df43,0x0021de30,ShadowBitmapMaterial_vt47,Engine,unread,,read only,
+scope-site,0x0021dfc4,0x0021dfc3,0x0021de30,ShadowBitmapMaterial_vt47,Engine,global 0x007b60dc,,add tsc,
 scope-site,0x0022fa47,0x0022fa45,0x0022e090,FUN_0022e090,(unnamed),global 0x007b6004,,add delta,
 scope-site,0x00231391,0x0023138f,0x0022e090,FUN_0022e090,(unnamed),global 0x007b6004,,add delta,
 scope-site,0x00232069,0x00232068,0x00231a10,Core_UnObjBas,Core,global 0x007b6000,,add delta,
@@ -254,6 +273,9 @@ scope-site,0x0023294a,0x00232948,0x00231a10,Core_UnObjBas,Core,global 0x007b6008
 scope-site,0x002329d7,0x002329d6,0x00231a10,Core_UnObjBas,Core,global 0x007b5ff8,,add tsc,
 scope-site,0x00232ec9,0x00232ec7,0x00231a10,Core_UnObjBas,Core,global 0x007b600c,,add delta,
 scope-site,0x00233926,0x00233924,0x00231a10,Core_UnObjBas,Core,global 0x007b6000,,add delta,
+scope-site,0x00251f97,0x00251f96,0x00251f90,StaticMesh_vt31,Engine,unread,,read only,
+scope-site,0x00252aa8,0x00252aa7,0x00251f90,StaticMesh_vt31,Engine,global 0x007b6064,,add tsc,
+scope-site,0x00252f53,0x00252f52,0x00252af0,StaticMesh_vt30,Engine,global 0x007b6064,,add tsc,
 scope-site,0x00252fc2,0x00252fc1,0x00252fc0,FUN_00252fc0,(unnamed),stack 0x14,,read only,
 scope-site,0x0025e65a,0x0025e659,0x00256280,FUN_00256280,(unnamed),global 0x007b60a8,,read only,
 scope-site,0x00269a6d,0x00269a6c,0x00269a40,FUN_00269a40,(unnamed),global 0x007b5fd0,,sub tsc,
@@ -268,7 +290,10 @@ scope-site,0x0027598a,0x00275989,0x00274290,Core_UnObjBas,Core,global 0x007b5f94
 scope-site,0x00275998,0x00275997,0x00274290,Core_UnObjBas,Core,global 0x007b5f98,,add delta,
 scope-site,0x002759bd,0x002759bb,0x00274290,Core_UnObjBas,Core,global 0x007b5f8c,,add tsc,
 scope-site,0x0027f5f2,0x0027f5f0,0x0027f3a0,Engine_UnTrace,Engine,global 0x007b5f80,,add tsc,
-scope-site,0x00280347,0x00280346,0x00280064,FUN_00280064,(unnamed),global 0x007b5f80,,add tsc,
+scope-site,0x00280347,0x00280346,0x0027fe10,Model_vt31,Engine,global 0x007b5f80,,add tsc,
+scope-site,0x002804f2,0x002804f0,0x0027fe10,Model_vt31,Engine,global 0x007b5f80,,add tsc,
+scope-site,0x0028053b,0x0028053a,0x0027fe10,Model_vt31,Engine,global 0x007b5f80,,add tsc,
+scope-site,0x0028057a,0x00280579,0x0027fe10,Model_vt31,Engine,global 0x007b5f80,,add tsc,
 scope-site,0x002aefc0,0x002aefbe,0x002aefb0,D3DDrv_D3DRenderDevice,D3DDrv,field 0x5518c of esi,,sub tsc,
 scope-site,0x002af06a,0x002af068,0x002aefb0,D3DDrv_D3DRenderDevice,D3DDrv,field 0x551a0 of esi,,read only,
 scope-site,0x002af083,0x002af081,0x002aefb0,D3DDrv_D3DRenderDevice,D3DDrv,field 0x551a4 of esi,,read only,
@@ -339,25 +364,10 @@ scope-site,0x002bfcca,0x002bfcc8,0x002bfbc0,D3DDrv_D3DResource,D3DDrv,field 0x55
 scope-site,0x002bfce8,0x002bfce6,0x002bfbc0,D3DDrv_D3DResource,D3DDrv,field 0x551e0 of eax,,sub tsc,
 scope-site,0x002bfd26,0x002bfd24,0x002bfbc0,D3DDrv_D3DResource,D3DDrv,field 0x551e0 of edx,,add tsc,
 scope-site,0x002bfd61,0x002bfd5f,0x002bfbc0,D3DDrv_D3DResource,D3DDrv,field 0x551e4 of eax,,inc by 1,
-scope-site,0x00089523,0x00089522,,(no body),,global 0x007b6014,,add delta,outside every map body
-scope-site,0x0008953c,0x0008953b,,(no body),,global 0x007b6010,,read only,outside every map body
-scope-site,0x0008bf96,0x0008bf94,,(no body),,global 0x007b6010,,read only,outside every map body
-scope-site,0x000930c1,0x000930c0,,(no body),,unread,,read only,outside every map body
-scope-site,0x00093294,0x00093292,,(no body),,global 0x007b5f3c,,read only,outside every map body
-scope-site,0x00102ad7,0x00102ad6,,(no body),,global 0x007b60dc,,read only,outside every map body
-scope-site,0x00102b1a,0x00102b19,,(no body),,global 0x007b60dc,,read only,outside every map body
 scope-site,0x0012b860,0x0012b85f,,(no body),,global 0x007b60ec,,read only,outside every map body
-scope-site,0x0014ee9e,0x0014ee9c,,(no body),,global 0x007b60dc,,read only,outside every map body
-scope-site,0x0014eee3,0x0014eee1,,(no body),,global 0x007b60dc,,read only,outside every map body
-scope-site,0x0014f1be,0x0014f1bc,,(no body),,global 0x007b60dc,,read only,outside every map body
-scope-site,0x0014f203,0x0014f201,,(no body),,global 0x007b60dc,,read only,outside every map body
-scope-site,0x0015ae53,0x0015ae51,,(no body),,global 0x007b60c0,,read only,outside every map body
 scope-site,0x001677e2,0x001677e0,,(no body),,global 0x007b60a8,,read only,outside every map body
 scope-site,0x00167819,0x00167817,,(no body),,global 0x007b60a8,,read only,outside every map body
 scope-site,0x00167948,0x00167946,,(no body),,global 0x007b6144,,read only,outside every map body
-scope-site,0x0018dc36,0x0018dc35,,(no body),,global 0x007b60ac,,read only,outside every map body
-scope-site,0x0018e3fe,0x0018e3fc,,(no body),,global 0x007b60ac,,read only,outside every map body
-scope-site,0x0018e5e1,0x0018e5df,,(no body),,global 0x007b60ac,,read only,outside every map body
 scope-site,0x001b28e1,0x001b28e0,,(no body),,global 0x007b60b4,,read only,outside every map body
 scope-site,0x001b2a56,0x001b2a54,,(no body),,global 0x007b60b4,,read only,outside every map body
 scope-site,0x001deb31,0x001deb30,,(no body),,unread,,read only,outside every map body
@@ -374,17 +384,7 @@ scope-site,0x001df0d8,0x001df0d7,,(no body),,global 0x007b6060,,read only,outsid
 scope-site,0x001df102,0x001df101,,(no body),,global 0x007b6040,,read only,outside every map body
 scope-site,0x001df5e7,0x001df5e6,,(no body),,global 0x007b6034,,read only,outside every map body
 scope-site,0x001dfb04,0x001dfb02,,(no body),,global 0x007b6034,,read only,outside every map body
-scope-site,0x002109b1,0x002109b0,,(no body),,global 0x007b60e0,,read only,outside every map body
-scope-site,0x00210a01,0x00210a00,,(no body),,global 0x007b60e0,,read only,outside every map body
-scope-site,0x0021df44,0x0021df43,,(no body),,unread,,read only,outside every map body
-scope-site,0x0021dfc4,0x0021dfc3,,(no body),,global 0x007b60dc,,read only,outside every map body
 scope-site,0x00247f8c,0x00247f8a,,(no body),,global 0x007b6010,,read only,outside every map body
-scope-site,0x00251f97,0x00251f96,,(no body),,unread,,read only,outside every map body
-scope-site,0x00252aa8,0x00252aa7,,(no body),,global 0x007b6064,,read only,outside every map body
-scope-site,0x00252f53,0x00252f52,,(no body),,global 0x007b6064,,read only,outside every map body
-scope-site,0x002804f2,0x002804f0,,(no body),,global 0x007b5f80,,read only,outside every map body
-scope-site,0x0028053b,0x0028053a,,(no body),,global 0x007b5f80,,read only,outside every map body
-scope-site,0x0028057a,0x00280579,,(no body),,global 0x007b5f80,,read only,outside every map body
 scope-site,0x002b62b2,0x002b62b0,,(no body),,field 0x551f0 of eax,,read only,outside every map body
 scope-site,0x002b6347,0x002b6345,,(no body),,field 0x551f0 of eax,,read only,outside every map body
 scope-site,0x002b6373,0x002b6372,,(no body),,field 0x551ec of ecx,,inc by 1,outside every map body
@@ -417,4 +417,4 @@ id,0x00000198,,,Occlusion,,1 site(s),Occlusion,used,
 id,0x0000019c,,,Streaming,,1 site(s),Streaming,used,
 id,0x000001a0,,,Regular,,1 site(s),Regular,used,
 id,0x000001a4,,,StoppedSounds,,1 site(s),StoppedSounds,used,
-census,0x007b5dfc,,,409 site(s) over 96 bodies,,8 id(s) used of 8,,,"410 reference(s) total, 69 outside every map body, 1 not-a-boundary, 24 with no resolved index source; block base +0x184 read from the device body"
+census,0x007b5dfc,,,409 site(s) over 109 bodies,,8 id(s) used of 8,,,"410 reference(s) total, 44 outside every map body, 1 not-a-boundary, 24 with no resolved index source; block base +0x184 read from the device body"
