@@ -555,7 +555,7 @@ def harvest(rows, prov, by_va, calls_of, dis_of, body_name, gap_of, reach_of_bod
             "array_heads": " ".join(arrays[:4]),
             "element_sizes": " ".join(sorted({c[6:c.index("]")] for c in chains
                                              if c.startswith("array[")})),
-            "statics": " ".join(statics[:4]),
+            "statics": " ".join(statics[:8]),
             "temporary_sizes": " ".join(sizes[:4]),
             "registry_size": "%#x" % reg_size[tva] if reg_size.get(tva) else "",
             "size_match": "",
