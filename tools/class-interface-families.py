@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One read per interface family: what the per-body read owes, and where the repeats actually sit.
 
-`inventory/class_interface_shapes.csv` joins the 232 interface tables into 132 families and leaves the
+`inventory/class_interface_shapes.csv` joins the 232 interface tables into families and leaves the
 naming question open with a bound: *100 of the 165 anonymous tables sit in a family with another table,
 so one representative per family is what a per-body read would owe*. This tool turns that bound into a
 census -- one row per family with the representative the read would start from, the channels that already

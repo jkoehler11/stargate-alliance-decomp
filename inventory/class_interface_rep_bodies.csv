@@ -70,7 +70,6 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x004c8db8,0x004c8db8,22,0x00018bb0,FUN_00018bb0,5,stub,,,,,,,stub
 0x004c8db8,0x004c8db8,23,0x00018bc0,FUN_00018bc0,5,stub,,,,,,,stub
 0x004c8db8,0x004c8db8,24,0x00018bd0,FUN_00018bd0,5,stub,,,,,,,stub
-0x004c8db8,0x004c8db8,25,0x003a0044,FUN_003a0044,19,mapped,,no,FUN_003976d0,FUN,,,mapped-unnamed
 0x004c96fc,0x004c96fc,0,0x0001cf10,,,outside,,,,,,,outside
 0x004c96fc,0x004c96fc,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
 0x004c96fc,0x004c96fc,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
@@ -111,8 +110,8 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x004d1430,0x004d1430,1,0x0002c030,,,outside,,,,,,,outside
 0x004d2e58,0x004d2e58,0,0x000357a0,FUN_000357a0,33,mapped,,no,FUN_00073dd0,FUN,,,mapped-unnamed
 0x004d2e58,0x004d2e58,1,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
-0x004d2e58,0x004d2e58,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
-0x004d2e58,0x004d2e58,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x0052d7d0,mapped-unnamed
 0x004d2e58,0x004d2e58,4,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,5,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,6,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
@@ -121,15 +120,15 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x004d2e58,0x004d2e58,9,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,10,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,11,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
-0x004d2e58,0x004d2e58,12,0x00016ed0,FUN_00016ed0,40,mapped,,no,,,,0x0051ec98,mapped-unnamed
-0x004d2e58,0x004d2e58,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
-0x004d2e58,0x004d2e58,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,12,0x00016ed0,FUN_00016ed0,40,mapped,,no,,,,,mapped-unnamed
+0x004d2e58,0x004d2e58,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x0052d7d0,mapped-unnamed
 0x004d2e58,0x004d2e58,15,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,17,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,18,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,19,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
-0x004d2e58,0x004d2e58,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x0052d7d0,mapped-unnamed
 0x004d2e58,0x004d2e58,21,0x00016f50,FUN_00016f50,4,stub,,,,,,,stub
 0x004d2e58,0x004d2e58,22,0x000340c0,appMallocBeforeInit,29,mapped,,yes,FUN_000574d0,FUN,appMalloc,,mapped-named
 0x004d2e58,0x004d2e58,23,0x000340e0,FUN_000340e0,29,mapped,,no,FUN_000574d0,FUN,appRealloc,,mapped-unnamed
@@ -606,29 +605,6 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x0051d7e8,0x0051d7e8,6,0x0024e2b0,,,gap,body,,,,,,gap-head
 0x0051d7e8,0x0051d7e8,7,0x0024e2e0,,,outside,,,,,,,outside
 0x0051d7e8,0x0051d7e8,8,0x0024e310,,,outside,,,,,,,outside
-0x0051ec98,0x0051ec98,0,0x002602b0,FUN_002602b0,33,mapped,,no,FUN_002602e0,FUN,,,mapped-unnamed
-0x0051ec98,0x0051ec98,1,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
-0x0051ec98,0x0051ec98,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x004d2e58 0x0052d7d0,mapped-unnamed
-0x0051ec98,0x0051ec98,4,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,5,0x00260160,FUN_00260160,161,mapped,,no,FUN_0002c800,FUN,,,mapped-unnamed
-0x0051ec98,0x0051ec98,6,0x0025ff40,FUN_0025ff40,536,mapped,,no,Engine_UnStaticMesh FUN_00249ca0 Engine_UnSkeletalMesh FUN_00220a10 FUN_00220900 FUN_00220680,Engine FUN,Engine,,mapped-unnamed
-0x0051ec98,0x0051ec98,7,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,8,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,9,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,10,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,11,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,12,0x00016ed0,FUN_00016ed0,40,mapped,,no,,,,0x004d2e58,mapped-unnamed
-0x0051ec98,0x0051ec98,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
-0x0051ec98,0x0051ec98,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
-0x0051ec98,0x0051ec98,15,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,17,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,18,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,19,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
-0x0051ec98,0x0051ec98,21,0x00016f50,FUN_00016f50,4,stub,,,,,,,stub
-0x0051ec98,0x0051ec98,22,0x002e0030,,,outside,,,,,,,outside
 0x0051f6d8,0x0051f6d8,0,0x0023a1c0,,,outside,,,,,,,outside
 0x0051f6d8,0x0051f6d8,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
 0x0051f6d8,0x0051f6d8,2,0x00275e70,,,outside,,,,,,,outside
@@ -677,11 +653,7 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x00520248,0x00520248,13,0x0027bc00,,,outside,,,,,,,outside
 0x00520248,0x00520248,14,0x00279df0,,,gap,body,,,,,,gap-head
 0x00521ff8,0x00521ff8,0,0x00295d30,,,outside,,,,,,,outside
-0x00521ff8,0x00521ff8,1,0x00200020,,,outside,,,,,,,outside
-0x00521ff8,0x00521ff8,2,0x00200020,,,outside,,,,,,,outside
 0x00523008,0x00523008,0,0x00298070,,,outside,,,,,,,outside
-0x00523008,0x00523008,1,0x00200020,,,outside,,,,,,,outside
-0x00523008,0x00523008,2,0x003d003d,,,outside,,,,,,,outside
 0x00523340,0x00523340,0,0x001eaab0,,,outside,,,,,,,outside
 0x00523340,0x00523340,1,0x001eaaf0,FUN_001eaaf0,4,stub,,,,,,,stub
 0x00523340,0x00523340,2,0x002a1250,,,outside,,,,,,,outside
@@ -706,7 +678,6 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x0052352c,0x0052352c,12,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
 0x0052352c,0x0052352c,13,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
 0x0052352c,0x0052352c,14,0x002aaee0,,,gap,body,,,,,,gap-head
-0x0052352c,0x0052352c,15,0x00330044,,,outside,,,,,,,outside
 0x0052bbf8,0x0052bbf8,0,0x002b5b10,D3DDrv_D3DRenderInterface,266,mapped,,yes,appAssertFailed,,,,mapped-named
 0x0052bbf8,0x0052bbf8,1,0x002b7d50,,,gap,body,,,,,,gap-head
 0x0052bbf8,0x0052bbf8,2,0x002b8310,,,outside,,,,,,,outside
@@ -842,8 +813,8 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x0052d3e8,0x0052d3e8,24,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,0,0x002c74f0,FUN_002c74f0,33,mapped,,no,FUN_002c7520,FUN,,,mapped-unnamed
 0x0052d7d0,0x0052d7d0,1,0x002c6930,,,gap,body,,,,,,gap-head
-0x0052d7d0,0x0052d7d0,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
-0x0052d7d0,0x0052d7d0,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x004d2e58,mapped-unnamed
+0x0052d7d0,0x0052d7d0,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x004d2e58,mapped-unnamed
 0x0052d7d0,0x0052d7d0,4,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,5,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,6,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
@@ -853,14 +824,14 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x0052d7d0,0x0052d7d0,10,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,11,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,12,0x002c4e80,,,outside,,,,,,,outside
-0x0052d7d0,0x0052d7d0,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
-0x0052d7d0,0x0052d7d0,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x004d2e58,mapped-unnamed
+0x0052d7d0,0x0052d7d0,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x004d2e58,mapped-unnamed
 0x0052d7d0,0x0052d7d0,15,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,17,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,18,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,19,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
-0x0052d7d0,0x0052d7d0,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x004d2e58,mapped-unnamed
 0x0052d7d0,0x0052d7d0,21,0x00016f50,FUN_00016f50,4,stub,,,,,,,stub
 0x0052d7d0,0x0052d7d0,22,0x002c56b0,FUN_002c56b0,280,mapped,,no,FUN_00055ed0,FUN,,,mapped-unnamed
 0x0052d7d0,0x0052d7d0,23,0x002c57d0,,,outside,,,,,,,outside
@@ -943,4 +914,4 @@ rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,ca
 0x00564dbc,0x00564dbc,8,0x00386710,FUN_00386710,1,stub,,,,,,,stub
 0x0057534c,0x0057534c,0,0x003e65d8,FUN_003e65d8,28,mapped,,no,??1exception@@UAE@XZ ??3@YAXPAX@Z,,,,mapped-unnamed
 0x0057534c,0x0057534c,1,0x003e65cb,,,outside,,,,,,,outside
-census,,944,,,,census,,,,,,146 distinct mapped body(ies); 17 held by two or more representatives,"the 89 owed representatives: gap 161, mapped 175, outside 268, pure 38, stub 302"
+census,,915,,,,census,,,,,,142 distinct mapped body(ies); 16 held by two or more representatives,"the 88 owed representatives: gap 161, mapped 165, outside 262, pure 38, stub 289"

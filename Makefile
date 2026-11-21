@@ -266,7 +266,7 @@ help:
 	@echo "  class-slot-tokens        the .cpp file each class table's slot bodies assert in"
 	@echo "  class-interface-tokens  the interface vtables' assert-file vote (no name channel)"
 	@echo "  class-interface-behaviour  what the interface slots hold: bodies, callees and literals"
-	@echo "  class-interface-installers  which class builds an interface object, and the 89 representatives per slot"
+	@echo "  class-interface-installers  which class builds an interface object, and the owed representatives per slot"
 	@echo "  class-interface-shapes   which of the 232 interfaces are the same one, and which have a name"
 	@echo "  class-ladder-rungs       the 493 measured parent edges as rungs: what a child repeats, replaces, adds"
 	@echo "  class-interface-families one read per interface family: the representatives the per-body read owes"

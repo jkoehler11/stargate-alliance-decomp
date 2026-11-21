@@ -1,10 +1,10 @@
 family,tables,slots,named,member,anonymous,rep_va,rep_role,rep_name,rep_slots,rep_size,rep_installers,rep_callers,rep_literals,read_owed,verdict,evidence
 0x004c7800,1,21,0,0,1,0x004c7800,anonymous,,21,0x30,2,4,,yes,anonymous,1 table(s) of 21 slot(s); rep 0x004c7800 anonymous
 0x004c7854,2,2,0,2,0,0x004c7854,member,"ControlChannel,TextBuffer@0x28/0x64",2,,3,3,,no,member-held,2 table(s) of 2 slot(s); rep 0x004c7854 member-held
-0x004c7860,31,22,0,5,26,0x004c7860,member,"LinkerLoad,LinkerSave@0xb8",22,0x58,32,DemoRecConnection|LinkerLoadGame|LinkerSaveGame|TcpipConnection|TcpipConnectionXbox,,no,member-held,31 table(s) of 22 slot(s); rep 0x004c7860 member-held
+0x004c7860,33,22,0,5,28,0x004c7860,member,"LinkerLoad,LinkerSave@0xb8",22,0x58,32,DemoRecConnection|LinkerLoadGame|LinkerSaveGame|TcpipConnection|TcpipConnectionXbox,,no,member-held,33 table(s) of 22 slot(s); rep 0x004c7860 member-held
 0x004c78b8,2,1,0,1,1,0x004c78b8,member,unowned@0x28,1,,1,AudioSubsystem|Input|new,,no,member-held,2 table(s) of 1 slot(s); rep 0x004c78b8 member-held
 0x004c85b0,2,25,0,0,2,0x004c85b0,anonymous,,25,,1,0,,yes,anonymous,2 table(s) of 25 slot(s); rep 0x004c85b0 anonymous
-0x004c8db8,1,26,0,0,1,0x004c8db8,anonymous,,26,,1,1,,yes,anonymous,1 table(s) of 26 slot(s); rep 0x004c8db8 anonymous
+0x004c8db8,1,25,0,0,1,0x004c8db8,anonymous,,25,,1,1,,yes,anonymous,1 table(s) of 25 slot(s); rep 0x004c8db8 anonymous
 0x004c9338,1,1,0,1,0,0x004c9338,member,unowned@0x2c,1,,2,6,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c9338 member-held
 0x004c93c4,1,1,0,1,0,0x004c93c4,member,unowned@0x2c,1,,2,XboxViewport,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c93c4 member-held
 0x004c93c8,2,2,0,2,0,0x004c93c8,member,unowned@0x28,2,,2,XboxViewport,,no,member-held,2 table(s) of 2 slot(s); rep 0x004c93c8 member-held
@@ -81,15 +81,14 @@ family,tables,slots,named,member,anonymous,rep_va,rep_role,rep_name,rep_slots,re
 0x0051d37c,2,9,0,0,2,0x0051d37c,anonymous,,9,,1,1,,yes,anonymous,2 table(s) of 9 slot(s); rep 0x0051d37c anonymous
 0x0051d7e8,1,9,0,0,1,0x0051d7e8,anonymous,,9,,2,2,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x0051d7e8 anonymous
 0x0051d854,1,2,0,1,0,0x0051d854,member,StaticMesh@0x14c,2,,2,StaticMesh,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051d854 member-held
-0x0051ec98,2,23,0,0,2,0x0051ec98,anonymous,,23,,1,0,,yes,anonymous,2 table(s) of 23 slot(s); rep 0x0051ec98 anonymous
 0x0051f6d8,2,5,0,0,2,0x0051f6d8,anonymous,,5,,1,0,,yes,anonymous,2 table(s) of 5 slot(s); rep 0x0051f6d8 anonymous
 0x0051faa0,1,9,0,0,1,0x0051faa0,anonymous,,9,,1,2,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x0051faa0 anonymous
 0x0051ffd8,1,18,0,0,1,0x0051ffd8,anonymous,,18,,1,Texture,,yes,anonymous,1 table(s) of 18 slot(s); rep 0x0051ffd8 anonymous
 0x00520248,1,15,0,0,1,0x00520248,anonymous,,15,,1,Cubemap,,yes,anonymous,1 table(s) of 15 slot(s); rep 0x00520248 anonymous
-0x00521ff8,1,3,0,0,1,0x00521ff8,anonymous,,3,,1,0,,yes,anonymous,1 table(s) of 3 slot(s); rep 0x00521ff8 anonymous
-0x00523008,1,3,0,0,1,0x00523008,anonymous,,3,,1,0,,yes,anonymous,1 table(s) of 3 slot(s); rep 0x00523008 anonymous
+0x00521ff8,1,1,0,0,1,0x00521ff8,anonymous,,1,,1,0,,yes,anonymous,1 table(s) of 1 slot(s); rep 0x00521ff8 anonymous
+0x00523008,1,1,0,0,1,0x00523008,anonymous,,1,,1,0,,yes,anonymous,1 table(s) of 1 slot(s); rep 0x00523008 anonymous
 0x00523340,1,9,0,0,1,0x00523340,anonymous,,9,,1,0,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00523340 anonymous
-0x0052352c,1,16,0,0,1,0x0052352c,anonymous,,16,,1,1,,yes,anonymous,1 table(s) of 16 slot(s); rep 0x0052352c anonymous
+0x0052352c,1,15,0,0,1,0x0052352c,anonymous,,15,,1,1,,yes,anonymous,1 table(s) of 15 slot(s); rep 0x0052352c anonymous
 0x0052b45c,1,1,0,1,0,0x0052b45c,member,D3DRenderDevice@0x28,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x0052b45c member-held
 0x0052bbf8,1,65,0,0,1,0x0052bbf8,anonymous,,65,,1,D3DRenderDevice,,yes,anonymous,1 table(s) of 65 slot(s); rep 0x0052bbf8 anonymous
 0x0052bdb8,1,16,0,0,1,0x0052bdb8,anonymous,,16,,1,1,,yes,anonymous,1 table(s) of 16 slot(s); rep 0x0052bdb8 anonymous

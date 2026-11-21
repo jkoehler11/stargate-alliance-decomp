@@ -1146,11 +1146,13 @@ method. `tools/class-plain-tables.py` reads the **250** tables no registration n
 | bounded | `vtable-slot` | 2 | 51 | 1 | 0 | 0 | 1 |
 | bounded | `vtable-slot+member` | 9 | 50 | 0 | 0 | 0 | 9 |
 | bounded | `member-field` | 27 | 192 | 0 | 0 | 0 | 27 |
-| plain-only | `vtable-slot` | 176 | 2562 | 17 | 18 | 1 | 141 |
+| plain-only | `vtable-slot` | 176 | 2554 | 17 | 18 | 1 | 141 |
 | plain-only | `vtable-slot+member` | 2 | 7 | 0 | 0 | 0 | 2 |
 | plain-only | `member-field` | 11 | 43 | 0 | 0 | 0 | 11 |
 | plain-only | `global` | 3 | 41 | 0 | 0 | 0 | 3 |
 | plain-only | `frame-only` | 20 | 260 | 0 | 0 | 0 | 20 |
+
+**The block scan's extent is 8 dword(s) too long on 6 of the 250 tables: this population holds 3198 slots, not the 3206 `inventory/native_vtable_reach.csv` counts.** These tables sit in `.rdata` in front of the build's wide-string pool, so a string's first two characters (`0x00330044` is `D3`) are an aligned dword inside `.text`'s *address range* and the scan keeps counting -- the class census ends a table on exactly that dword and 12 of its 492 tables end on one, 14 dwords in all. Each row above is read at the shorter extent, and `stop` names the dword that ended it: `0x004c8db8` 26 -> 25 (`0x003a0044`), `0x0051ec98` 23 -> 22 (`0x002e0030`), `0x00521ff8` 3 -> 1 (`0x00200020`), `0x00523008` 3 -> 1 (`0x00200020`), `0x0052352c` 16 -> 15 (`0x00330044`), `0x0052d1a0` 23 -> 22 (`0x00210021`).
 
 **18 of the 250 tables no registration names carry the class-table prefix, and the control is measured on both sides.** All 474 tables the registration path names start with the same three bodies (`0x00062650`, `0x00062660`, `0x00062670`) and none of the 49 member tables does, so the prefix separates a class's dispatch table from an interface object's table without a name. The 18 that carry it are class tables whose class no registration names; the other 232 are interfaces.
 
@@ -1162,7 +1164,7 @@ method. `tools/class-plain-tables.py` reads the **250** tables no registration n
 
 **The installer's own symbol names a class on 1 table, and the two channels agree on 0.** It is `0x0057534c` = `exception`, a CRT class and not one of the interfaces. A `??0<C>@@`/`??1<C>@@` symbol is a C++ constructor or destructor and names the class it builds outright; it is the narrow channel of the two, because only the XDK library bodies carry a mangled symbol, and the slot vocabulary does not need one.
 
-**3206 slots resolve, and 836 of them sit outside the function map.** 134 slots are `__purecall` and 1224 are stubs of 8 bytes or less -- an interface's default implementation -- so the interface half repeats the shape the 49 member tables already showed, at a receiver that is the object's own slot rather than a member field.
+**3198 slots resolve, and 829 of them sit outside the function map.** 134 slots are `__purecall` and 1224 are stubs of 8 bytes or less -- an interface's default implementation -- so the interface half repeats the shape the 49 member tables already showed, at a receiver that is the object's own slot rather than a member field.
 <!-- /generated:class-plain-tables -->
 
 **The 18 class tables are the heads of native ladders, and 17 of them are a named class's base.** A
@@ -1326,14 +1328,14 @@ and one slot cannot name a table), not about the tables being a separate populat
 |---|---|---|---|---|---|
 | named | 18 | 225 | 2 | 10 | 8 |
 | member | 49 | 292 | 15 | 27 | 22 |
-| anonymous | 165 | 2010 | 10 | 100 | 65 |
-| **all** | **232** | **2527** | **27** | **137** | **95** |
+| anonymous | 165 | 2002 | 10 | 100 | 65 |
+| **all** | **232** | **2519** | **27** | **137** | **95** |
 
-**232 table(s) over 2527 slot(s) are 132 family(ies); 27 table(s) have an exact twin and 95 stand alone.** The largest family holds **31** tables of **22** slots.
+**232 table(s) over 2519 slot(s) are 131 family(ies); 27 table(s) have an exact twin and 95 stand alone.** The largest family holds **33** tables of **22** slots.
 
 | family | tables | slots | roles | names | members (up to 12) |
 |---|---|---|---|---|---|
-| `0x004c7860` | 31 | 22 | anonymous,member | LinkerLoad,LinkerLoad,LinkerSave,LinkerLoadGame,LinkerSave,LinkerSaveGame | 0x004c7860 0x004c8410 0x004c84d0 0x004c9038 0x004c9738 0x004c9858 0x004c9a98 0x004c9b50 0x004d0de8 0x004d3118 0x004d3248 0x004d3ba0 |
+| `0x004c7860` | 33 | 22 | anonymous,member | LinkerLoad,LinkerLoad,LinkerSave,LinkerLoadGame,LinkerSave,LinkerSaveGame | 0x004c7860 0x004c8410 0x004c84d0 0x004c9038 0x004c9738 0x004c9858 0x004c9a98 0x004c9b50 0x004d0de8 0x004d3118 0x004d3248 0x004d3ba0 |
 | `0x004e3520` | 10 | 9 | anonymous | - | 0x004e3520 0x004f7690 0x00507bb8 0x0051707c 0x0051d238 0x0051d300 0x0051d7c4 0x005207a4 0x0052086c 0x00523394 |
 | `0x0053d590` | 7 | 4 | anonymous | - | 0x0053d590 0x0053d5c8 0x0053d5fc 0x0053d630 0x0053d70c 0x0053d768 0x0053d7a0 |
 | `0x004fc35c` | 6 | 8 | member | DemoPlayPendingLevel,Level,NetPendingLevel,unowned | 0x004fc35c 0x004fc4cc 0x004fc568 0x004fc610 0x0050e88c 0x005139f4 |
@@ -1366,7 +1368,7 @@ vectors: **27** of them repeat another's vector exactly, so the population is 23
 where each repeat sits and which class owns it -- and a per-translation-unit copy of one class's table is
 the answer for one group of the eleven, not for the population.
 
-**132 families, and the largest is one interface implemented 31 times.** The kin rule leaves **95** tables
+**131 families, and the largest is one interface implemented 33 times.** The kin rule leaves **95** tables
 alone and joins **137** into families of two or more. The largest family holds **31** tables of 22 slots,
 and its named members are the four `Linker` classes -- `LinkerLoad`, `LinkerSave`, `LinkerLoadGame` and
 `LinkerSaveGame`, each holding it in a field at `0xb8` -- plus 27 anonymous tables whose objects are of very
@@ -1522,11 +1524,11 @@ argument, the eleven-byte `disp32` frame store, a tail jump, a dword pointer and
 -- and it writes nothing; `--check-doc` rebuilds its block from the committed
 `inventory/class_receiver_reads.csv` with no dump. Both run in `make ci`.
 
-## What the per-body read owes: 89 representatives, not 165
+## What the per-body read owes: 88 representatives, not 165
 
 The shape census left the naming question with a bound -- *one representative per family is what a per-body
 read would owe* -- and this is that bound as a list. `tools/class-interface-families.py` reads the committed
-shape census and writes one row per family (`inventory/class_interface_families.csv`, 132 rows): the
+shape census and writes one row per family (`inventory/class_interface_families.csv`, 131 rows): the
 representative a read would start from, the role that names it if anything does, the installer and caller
 counts already measured for it, and whether the family is owed a read at all.
 
@@ -1534,19 +1536,19 @@ counts already measured for it, and whether the family is owed a read at all.
 | representative role | families | tables held | per-body read owed |
 |---|---|---|---|
 | named | 12 | 18 | no |
-| member-held | 31 | 79 | no |
-| anonymous | 89 | 135 | yes |
+| member-held | 31 | 81 | no |
+| anonymous | 88 | 133 | yes |
 
-**132 families, and 89 of them have no named and no member-held table: the per-body read is 89 representative reads over 135 tables, not one read per anonymous table.** The other 43 families already carry a name -- 12 from a slot's masked class scope, 31 from the member field that holds them -- and owe no read at all.
+**131 families, and 88 of them have no named and no member-held table: the per-body read is 88 representative reads over 133 tables, not one read per anonymous table.** The other 43 families already carry a name -- 12 from a slot's masked class scope, 31 from the member field that holds them -- and owe no read at all.
 
-**30 of the 165 anonymous tables sit in a family the census would read once**, and the remaining 135 are members of the 89 anonymous-only families: the family is a unit of work, not a name, and one representative per unpaid family is the whole residue.
+**32 of the 165 anonymous tables sit in a family the census would read once**, and the remaining 133 are members of the 88 anonymous-only families: the family is a unit of work, not a name, and one representative per unpaid family is the whole residue.
 <!-- /generated:class-interface-families -->
 
 The read is owed where *no* member carries a name, and the number is smaller than the table count by the
 families that already answer it: the representative is a formality for the named and member-held families,
-and for the 89 anonymous ones it is the class whose name a per-body read would have to earn. That read is
-now costed in the section below: **56 of the 89 have a mapped body, 26 own only a gap head U40 already
-decodes, and 7 are the compiler's defaults**, so the list is 56 reads and not 89 -- and the same 257
+and for the 88 anonymous ones it is the class whose name a per-body read would have to earn. That read is
+now costed in the section below: **55 of the 88 have a mapped body, 26 own only a gap head U40 already
+decodes, and 7 are the compiler's defaults**, so the list is 55 reads and not 88 -- and the same 257
 distinct bodies are U40's slot-named half, which makes the interface population and the map's gap work
 one list rather than two.
 
@@ -1573,11 +1575,11 @@ extents that census measured.
 | `UnActCol` | 1 | 3 | 1 |
 | `UnOctree` | 1 | 2 | 1 |
 
-**25 of the 232 interface tables carry an assert-file token on at least one slot (0 of the 23 named, 25 of the 209 unnamed), over 2527 slots in all** -- and **25 carry one no more than 8 of the 232 carry**, of which 25 are unnamed.
+**25 of the 232 interface tables carry an assert-file token on at least one slot (0 of the 23 named, 25 of the 209 unnamed), over 2519 slots in all** -- and **25 carry one no more than 8 of the 232 carry**, of which 25 are unnamed.
 
 **7 tokens are carried by more than one table, and 4 of them sit in exactly one shape family** (`InternetLink`, `UnLinker`, `UnPenLev`, `UnRender`) -- a second, independent vote for the grouping `class-interface-shapes.py` made from the slot vectors. **3 cross families** (`UnRenderUtil`, `UnTemplate`, `XboxLiveMatchMaking`), which is what an inherited slot looks like rather than a family signature.
 
-**The channel that named four class tables names nothing here, and the reason is the population.** An interface's slots are the compiler's defaults (111 stubs of 8 bytes or less, 24 `__purecall`; class-table census) and the shipped XDK libraries' methods, whose names are MSVC-mangled rather than `<Module>_<File>`, so the vote is 45 of 2527 slots; 6 of the 25 tables that do carry a token carry only tokens a *class* table already has, i.e. a slot inherited from an engine base class rather than a slot that describes the interface. So the 89 representative reads cannot be paid for with this channel, and an interface's name has to come from its slots' behaviour or from a member field that holds it.
+**The channel that named four class tables names nothing here, and the reason is the population.** An interface's slots are the compiler's defaults (111 stubs of 8 bytes or less, 24 `__purecall`; class-table census) and the shipped XDK libraries' methods, whose names are MSVC-mangled rather than `<Module>_<File>`, so the vote is 45 of 2519 slots; 6 of the 25 tables that do carry a token carry only tokens a *class* table already has, i.e. a slot inherited from an engine base class rather than a slot that describes the interface. So the representative reads cannot be paid for with this channel, and an interface's name has to come from its slots' behaviour or from a member field that holds it.
 <!-- /generated:class-interface-tokens -->
 
 **What the vote does buy is a second opinion on the families.** Seven tokens are shared by more than one
@@ -1587,7 +1589,7 @@ three cross families (`UnRenderUtil`, `UnTemplate`, `XboxLiveMatchMaking`), whic
 from an engine base looks like rather than a family signature. **19 of the 25 tables carry a file no class
 table carries** (`XboxLiveMatchMaking` on 4, `D3DRenderInterface`, `UnLevel`, `UnActCol`, `UnTex`, ...), so
 the vote does say which module emitted the slot -- a module label, not a class name, and the image has no
-registration literal for those classes. **That is why the 89 representative reads stay owed**: they are
+registration literal for those classes. **That is why the 88 representative reads stay owed**: they are
 behaviour reads, and the fragment's own question -- *which interface is this* -- has to be answered from
 what a representative's slots do, or from a member field that holds it.
 
@@ -1599,9 +1601,9 @@ what a representative's slots do, or from a member field that holds it.
 frequency, the class-table control, the block and the artifact round trip; no dump, writes nothing) and
 `--check-doc` rebuilds the block from the committed CSV. Both run in `make ci`.
 
-## What the 89 representatives hold: 56 bodies, 26 gap heads and 7 defaults
+## What the 88 representatives hold: 55 bodies, 26 gap heads and 7 defaults
 
-The families census bound the per-body read at 89 representatives and the token census measured the
+The families census bound the per-body read at 88 representatives and the token census measured the
 interface side of the assert-file channel shut; neither said how much of that list has a body to read.
 `tools/class-interface-behaviour.py` reads every slot of the 232 interface tables three ways -- the body
 census (a purecall, a stub of 8 bytes or less, a body with a map row, a body without one), the printable
@@ -1611,34 +1613,35 @@ before it is a question.
 <!-- generated:class-interface-behaviour -->
 | what the slot bodies are | tables | slots |
 |---|---|---|
-| `callee-file` | 40 | 526 |
+| `callee-file` | 40 | 524 |
 | `assert-only` | 13 | 172 |
-| `mapped-no-name` | 112 | 1253 |
-| `unmapped-only` | 48 | 486 |
-| `no-body` | 19 | 90 |
+| `mapped-no-name` | 112 | 1252 |
+| `unmapped-only` | 48 | 485 |
+| `no-body` | 19 | 86 |
 
-**165 of the 232 interface tables hold at least one body the map decodes (657 slots), 151 call something, and 40 name the file they call; 48 tables' only body is an undecoded gap head and 19 hold no body at all.** The 342 interface slots outside the function map are 342 `tools/gap-heads.py` heads over 257 distinct bodies, so they are U40's work and not a fourth channel: 213 of the 257 sit in exactly one table and 44 in two or more -- and of the shared ones 42 sit at the same slot index in both tables and 2 at different indices, so the twin families share bodies and an add would have to name one body from two tables for those.
+**165 of the 232 interface tables hold at least one body the map decodes (656 slots), 151 call something, and 40 name the file they call; 48 tables' only body is an undecoded gap head and 19 hold no body at all.** The 342 interface slots outside the function map are 342 `tools/gap-heads.py` heads over 257 distinct bodies, so they are U40's work and not a fourth channel: 213 of the 257 sit in exactly one table and 44 in two or more -- and of the shared ones 42 sit at the same slot index in both tables and 2 at different indices, so the twin families share bodies and an add would have to name one body from two tables for those.
 
-| the 89 representatives | families |
+**The 2 cross-index heads `0x000bd360` at `0x004eaf68` slot 7 and `0x0052d3e8` slot 20 and `0x0052e0c8` slot 20 and `0x0052f1c0` slot 20; `0x000bd380` at `0x004eaf68` slot 6 and `0x004eaf68` slot 20 and `0x0051a810` slot 20 and `0x0052ef14` slot 6** -- one body two tables place at different slots, which is an interface implemented at a different offset rather than two interfaces, so the row that names it has to carry both indices.
+
+| the 88 representatives | families |
 |---|---|
-| `callee-file` | 11 |
+| `callee-file` | 10 |
 | `assert-only` | 9 |
 | `mapped-no-name` | 36 |
 | `unmapped-only` | 26 |
 | `no-body` | 7 |
 
-**Of the 89 representative reads the families census owes, only 56 have a mapped body to read; 26 more own nothing but an undecoded gap head and 7 are the compiler's defaults (purecalls and stubs) and have no read at all.** 11 of the mapped ones carry a callee file.
+**Of the 88 representative reads the families census owes, only 55 have a mapped body to read; 26 more own nothing but an undecoded gap head and 7 are the compiler's defaults (purecalls and stubs) and have no read at all.** 10 of the mapped ones carry a callee file.
 
 | representative | slots | the file its slots call | callee class | the slot's own token | agree |
 |---|---|---|---|---|---|
-| `0x004c8db8` | 26 | UnTemplate:21 | - | - | one-side |
+| `0x004c8db8` | 25 | UnTemplate:21 | - | - | one-side |
 | `0x004d0ec8` | 21 | UnTemplate:2 | - | - | one-side |
 | `0x00510f78` | 18 | UnCache:2 UnRenderLight:2 | - | - | one-side |
 | `0x005124a4` | 12 | UnTemplate:2 | - | UnOctree | no |
 | `0x004f7070` | 12 | UnTrace:1 | - | - | one-side |
 | `0x00516fd4` | 14 | UnActor:2 UnMaterial:2 UnObjBas:2 UnFluidSurface:1 UnMath:1 UnParticleSystem:1 | - | - | one-side |
 | `0x005170f4` | 15 | UnActor:2 UnMaterial:2 UnObjBas:2 UnFluidSurface:1 UnParticleSystem:1 | - | - | one-side |
-| `0x0051ec98` | 23 | UnSkeletalMesh:3 UnStaticMesh:2 UnMaterial:1 | - | - | one-side |
 | `0x0052bbf8` | 65 | D3DRenderState:1 D3DResource:1 | - | D3DRenderInterface | no |
 | `0x0052ef14` | 8 | UnTemplate:1 | - | - | one-side |
 | `0x0053d58c` | 1 | UnTemplate:1 XboxLiveMatchMaking:1 | - | - | one-side |
@@ -1648,7 +1651,7 @@ before it is a question.
 **52 tables' slot bodies push a printable literal, and none of them is a source path.** The strings name what the slot does rather than the file it came from (`0x004c8410` zlib: uncompress failed; `0x004c84d0` ReadFile failed: Count=%i BufferCount=%i Error=%s; `0x004c85b0` ReaderSaveLinear; `0x004c8db8` D:\; `0x004c93c4` ISFULLSCREEN; `0x004c9858` Core), so a literal labels a slot's subsystem where the map has no name for its body, and the `<Module>_<File>` token is not among the pushed immediates.
 <!-- /generated:class-interface-behaviour -->
 
-**56 of the 89 representatives have a mapped body, and that is the whole per-body read.** The other 33
+**55 of the 88 representatives have a mapped body, and that is the whole per-body read.** The other 33
 split by what they own instead: **26** hold no mapped body at all but do hold a body
 `tools/gap-heads.py` already decodes -- U40's slot-named gap heads, so they are an add on the map's
 existing route rather than a read of this census -- and **7** are the compiler's defaults, purecalls and
@@ -1693,7 +1696,7 @@ the block from the committed CSV with no dump. Both run in `make ci`.
 
 ## Who builds an interface object: a constructor, a constructor's helper, or neither
 
-The family census left 89 representatives owed a read, the behaviour census priced that read and measured
+The family census left 88 representatives owed a read, the behaviour census priced that read and measured
 the two channels a slot carries, and neither named an interface -- because a slot's assert file is the file
 the interface's *own* method was compiled from and its callee's file is the file of the code that method
 *calls*. The page named the two channels that were left: **a member field that holds the object** and **a
@@ -1710,12 +1713,12 @@ destructor is reported apart, because a destructor resets a member's vtable on t
 than building it.
 
 <!-- generated:class-interface-installers -->
-| verdict | tables | anonymous | of the 89 representatives | what it means |
+| verdict | tables | anonymous | of the 88 representatives | what it means |
 |---|---|---|---|---|
 | `ctor-holder` | 36 | 1 | 0 | the store itself sits in a body that installs a class table |
 | `ctor-caller` | 19 | 11 | 7 | the store body is called by a body that installs a class table, and a ctor is one |
 | `dtor-caller` | 1 | 0 | 0 | only destructors call the store body: the teardown path, not the build |
-| `unnamed-holder` | 172 | 149 | 78 | neither the store body nor any caller installs a class table |
+| `unnamed-holder` | 172 | 149 | 77 | neither the store body nor any caller installs a class table |
 | `no-site` | 4 | 4 | 4 | the provenance census names no store site |
 
 **36 of the 232 interface tables are stored inside a class constructor and 35 of those are the member-held tables the field already names, so that channel is the member-field channel read end to end; 19 more are stored by a body a constructor calls, 11 of them anonymous and 7 owed a per-body read.**
@@ -1783,34 +1786,33 @@ would still owe if a name is to come from code. Four anonymous tables (`0x004f70
 `0x005181dc`, `0x0053f7c4`) have no store site in the provenance census at all, which is that census's
 extent rule reaching for a store the locator did not find, not four tables without an installer.
 
-## The 89 representatives read one slot at a time: 944 slots, 146 bodies, 17 shared
+## The 88 representatives read one slot at a time: 915 slots, 142 bodies, 16 shared
 
 The representatives the family census owed were costed by the behaviour census as 56 with a mapped body,
 26 with a gap head and 7 compiler defaults. That cost is a table-level answer; the read itself is per slot,
-and it is the artifact behind the second block: every slot of all 89 representatives, classified by what it
+and it is the artifact behind the second block: every slot of all 88 representatives, classified by what it
 holds, with each mapped body's name, size, callees, first literal and the other representatives that hold
 it.
 
 <!-- generated:class-interface-rep-bodies -->
 | what a representative's slot holds | slots | distinct bodies |
 |---|---|---|
-| `mapped` | 175 | 146 |
+| `mapped` | 165 | 142 |
 | `gap` | 161 | 150 |
-| `outside` | 268 | 239 |
-| `stub` | 302 | 26 |
+| `outside` | 262 | 235 |
+| `stub` | 289 | 26 |
 | `pure` | 38 | 1 |
 
-**The 89 owed representatives hold 944 slots: 175 mapped over 146 distinct bodies, 161 U40 gap heads, 268 outside the map, 302 stubs and 38 purecalls; 33 mapped slots carry a name the map holds and 17 bodies are held by two or more representatives.**
+**The 88 owed representatives hold 915 slots: 165 mapped over 142 distinct bodies, 161 U40 gap heads, 262 outside the map, 289 stubs and 38 purecalls; 33 mapped slots carry a name the map holds and 16 bodies are held by two or more representatives.**
 
 | body | name | representatives that hold it |
 |---|---|---|
-| `0x00016ed0` | FUN_00016ed0 | `0x004d2e58` `0x0051ec98` |
-| `0x00016f00` | FUN_00016f00 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
-| `0x00016f30` | FUN_00016f30 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
-| `0x00016f40` | FUN_00016f40 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
+| `0x00016f00` | FUN_00016f00 | `0x004d2e58` `0x0052d7d0` |
+| `0x00016f30` | FUN_00016f30 | `0x004d2e58` `0x0052d7d0` |
+| `0x00016f40` | FUN_00016f40 | `0x004d2e58` `0x0052d7d0` |
 | `0x00018b90` | FUN_00018b90 | `0x004c85b0` `0x004c8db8` |
-| `0x00019240` | FUN_00019240 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
-| `0x0001b230` | FUN_0001b230 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
+| `0x00019240` | FUN_00019240 | `0x004d2e58` `0x0052d7d0` |
+| `0x0001b230` | FUN_0001b230 | `0x004d2e58` `0x0052d7d0` |
 | `0x00034240` | FUN_00034240 | `0x004c85b0` `0x004c8db8` |
 | `0x0008a940` | FUN_0008a940 | `0x004e3520` `0x00517214` `0x00523340` |
 | `0x001d5510` | FUN_001d5510 | `0x00516fd4` `0x005170f4` |

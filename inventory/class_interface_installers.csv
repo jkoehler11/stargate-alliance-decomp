@@ -6,7 +6,7 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x004c8410,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x004c84d0,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x004c85b0,25,anonymous,0x004c85b0,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x004c8db8,26,anonymous,0x004c8db8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
+0x004c8db8,25,anonymous,0x004c8db8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x004c9038,22,anonymous,0x004c7860,2,2,,0x00110120,PackageMapLevel,ctor:1,this+0x294,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class PackageMapLevel; ecx this+0x294
 0x004c9338,1,member,0x004c9338,2,2,,0x00110120,PackageMapLevel,ctor:1,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class PackageMapLevel; ecx ?
 0x004c933c,2,member,0x004c7854,2,2,,0x00110120,PackageMapLevel,ctor:1,?,2,ctor-caller,2 store site(s) in 2 body(ies); holder class -; caller class PackageMapLevel; ecx ?
@@ -147,7 +147,7 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x0051d80c,9,anonymous,0x00510e90,1,1,,0x0024b490,StaticMesh,ctor:1,this+0xc0,2,ctor-caller,1 store site(s) in 1 body(ies); holder class -; caller class StaticMesh; ecx this+0xc0
 0x0051d830,9,anonymous,0x005181a8,2,1,StaticMesh,,,,,1,ctor-holder,2 store site(s) in 1 body(ies); holder class StaticMesh; caller class -; ecx -
 0x0051d854,2,member,0x0051d854,2,2,StaticMesh,0x0024f4c0,StaticMesh,dtor:1,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class StaticMesh; caller class StaticMesh; ecx -
-0x0051ec98,23,anonymous,0x0051ec98,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
+0x0051ec98,22,anonymous,0x004c7860,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0051f6d8,5,anonymous,0x0051f6d8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0051f6ec,5,anonymous,0x00507c7c,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0051f700,5,anonymous,0x00517238,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
@@ -158,11 +158,11 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x0052075c,5,anonymous,0x0051f6d8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x005207a4,9,anonymous,0x004e3520,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0052086c,9,anonymous,0x004e3520,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x00521ff8,3,anonymous,0x00521ff8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x00523008,3,anonymous,0x00523008,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
+0x00521ff8,1,anonymous,0x00521ff8,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
+0x00523008,1,anonymous,0x00523008,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x00523340,9,anonymous,0x00523340,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x00523394,9,anonymous,0x004e3520,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
-0x0052352c,16,anonymous,0x0052352c,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
+0x0052352c,15,anonymous,0x0052352c,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0052b45c,1,member,0x0052b45c,2,2,D3DRenderDevice,,,,,1,ctor-holder,2 store site(s) in 2 body(ies); holder class D3DRenderDevice; caller class -; ecx -
 0x0052bbf8,65,anonymous,0x0052bbf8,1,1,,0x002b3b30,D3DRenderDevice,ctor:1,this+0x4754,2,ctor-caller,1 store site(s) in 1 body(ies); holder class -; caller class D3DRenderDevice; ecx this+0x4754
 0x0052bdb8,16,anonymous,0x0052bdb8,2,1,,,,,,,unnamed-holder,2 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
@@ -175,7 +175,7 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x0052c780,5,anonymous,0x0052c498,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0052cc50,22,anonymous,0x004c7860,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0052cefc,7,anonymous,0x0052cefc,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-0x0052d1a0,23,anonymous,0x0051ec98,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
+0x0052d1a0,22,anonymous,0x004c7860,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x0052d3e8,25,anonymous,0x0052d3e8,3,2,,,,,,,unnamed-holder,3 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x0052d498,22,anonymous,0x004c7860,2,2,,,,,,,unnamed-holder,2 store site(s) in 2 body(ies); holder class -; caller class -; ecx -
 0x0052d528,22,anonymous,0x004c7860,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
@@ -231,4 +231,4 @@ table_va,slots,role,family,stores,holders,holder_class,holder_callers,caller_cla
 0x00564da4,6,anonymous,0x00564da4,1,1,,,,,,,unnamed-holder,1 store site(s) in 1 body(ies); holder class -; caller class -; ecx -
 0x00564dbc,9,anonymous,0x00564dbc,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
 0x0057534c,2,anonymous,0x0057534c,3,3,,,,,,,unnamed-holder,3 store site(s) in 3 body(ies); holder class -; caller class -; ecx -
-census,2527,,,397,377,36,32,32,,,,census,"the 232 interface tables: 36 ctor-holder, 19 ctor-caller, 1 dtor-caller, 172 unnamed-holder, 4 no-site"
+census,2519,,,397,377,36,32,32,,,,census,"the 232 interface tables: 36 ctor-holder, 19 ctor-caller, 1 dtor-caller, 172 unnamed-holder, 4 no-site"
