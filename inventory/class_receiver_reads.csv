@@ -127,5 +127,5 @@ table_va,class,population,resolution,sites,bodies,installer,callers,verdict,chan
 0x0053f718,,plain-only,no-direct-call,3,3,??_GCAlertFeature@UIXNamespace@@UAEPAXI@Z ??0CAlertFeature@UIXNamespace@@QAE@XZ FUN_004190aa,0,no-caller,,,,,,,,,slot:0x53f718+20 none none,3 store site(s); 0 caller(s): -
 0x0053f8f4,,plain-only,mixed,2,2,??0CPlayersScreen@UIXNamespace@@QAE@KKAAVCArray@1@0AAHHKKPAUITitlePlayersListItem@@PAVCVoiceMailMsg@1@PAEK@Z ??1CPlayersScreen@UIXNamespace@@UAE@XZ,2,both-ways,allocation own-object,new(0x11fc:0x33ace5) this,,,,0x11fc,,,,"2 store site(s); 2 caller(s): new(0x11fc:0x33ace5),this"
 0x0053f9ec,,plain-only,mixed,2,2,??0CUIPlugin@UIXNamespace@@QAE@XZ ??1CUIPlugin@UIXNamespace@@QAE@XZ,2,both-ways,allocation own-object,new(0x910:0x33ace5) this,,,,0x910,,,,"2 store site(s); 2 caller(s): new(0x910:0x33ace5),this"
-0x00564da4,,plain-only,mixed,1,1,FUN_00385690,1,unresolved,unresolved,imm:0x17,,,,,,,,1 store site(s); 1 caller(s): imm:0x17
-0x00564dbc,,plain-only,mixed,3,3,FUN_00385690 FUN_0038b1a0 FUN_0038b280,2,unresolved,own-object unresolved,imm:0x17 this,,,,,,,,"3 store site(s); 2 caller(s): imm:0x17,this"
+0x00564da4,,plain-only,mixed,1,1,FUN_00385690,1,both-ways,value,imm:0x17,,,,,,,,1 store site(s); 1 caller(s): imm:0x17
+0x00564dbc,,plain-only,mixed,3,3,FUN_00385690 FUN_0038b1a0 FUN_0038b280,2,both-ways,own-object value,imm:0x17 this,,,,,,,,"3 store site(s); 2 caller(s): imm:0x17,this"

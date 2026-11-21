@@ -59,7 +59,7 @@ COLUMNS = ("table_va", "class", "population", "resolution", "sites", "bodies", "
            "verdict", "channels", "receivers", "array_heads", "element_sizes", "statics", "temporary_sizes",
            "registry_size", "size_match", "reach", "evidence")
 VERDICTS = ("array-element", "static-object", "pointer-field", "walked-pointer", "both-ways",
-            "no-caller", "unresolved")
+            "no-caller", "value", "unresolved")
 REGS = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi")
 SIZES = ("BYTE PTR ", "WORD PTR ", "DWORD PTR ", "QWORD PTR ", "XMMWORD PTR ", "FWORD PTR ")
 NO_WRITE = ("cmp", "test", "push", "jmp", "je", "jne", "jz", "jnz", "jbe", "jae", "ja", "jb", "jg", "jge",
@@ -355,7 +355,7 @@ def kind(chain):
     if chain.startswith("static:"):
         return "static-object"
     if chain.startswith("imm:"):
-        return "unresolved"
+        return "value"                     # a small immediate is handed over, not a receiver
     if chain.startswith("ptr("):
         return "pointer-field"
     if chain.startswith("[") or chain == "ds":
@@ -374,6 +374,10 @@ def kind(chain):
 
 def verdict_of(kinds):
     """One table's verdict from the buckets its receivers fall in.
+
+    A `value` chain is not in the precedence list: `deep()` returns it for an immediate below the
+    image's address range, which is a value handed over and not a receiver, so a row carrying one and
+    nothing else odd lands on `both-ways` rather than on `unresolved`.
 
     The verdict names the channel that answers U40's question, in that order: a receiver this read
     cannot name is the residue and comes first; an array element is the arithmetic the one-level read
@@ -575,6 +579,36 @@ def count(rows, pred):
     return sum(1 for r in rows if pred(r))
 
 
+CALLERS = os.path.join("inventory", "class_installer_callers.csv")
+
+
+def caller_scan(rows, cal=None):
+    """(called, only from a gap body, no `E8`, no installer body) over the `E8` caller census.
+
+    The reach scan this file carries reads slots, tail jumps and dwords; a direct `E8` call is a fourth
+    channel, and the caller census (`inventory/class_installer_callers.csv`) is where it is measured. The
+    two artifacts share `table_va`, so the join is one dict.
+    """
+    if cal is None:
+        cal = {r.get("table_va", "").lower(): r for r in read_csv(CALLERS)}
+    called = gap = none = body = 0
+    for r in rows:
+        c = cal.get(r["table_va"].lower())
+        if not c:
+            continue
+        if c.get("verdict") == "no-installer":
+            body += 1
+            continue
+        if c.get("verdict") == "caller-gap":
+            gap += 1
+            called += 1
+        elif c.get("e8_sites", "0") not in ("0", ""):
+            called += 1
+        else:
+            none += 1
+    return called, gap, none, body
+
+
 def render(rows):
     """The page block: a verdict table, then one reading per receiver channel."""
     mixed = [r for r in rows if r["resolution"] == "mixed"]
@@ -652,11 +686,16 @@ def render(rows):
         for tok in (r["reach"] or "").split():
             by_kind.setdefault(tok.split(":")[0], []).append("%s %s" % (r["table_va"], tok))
     kinds = [k for k in ("slot", "tail", "ptr", "gap") if by_kind.get(k)]
-    text.append("**The %d tables no `E8` reaches have a channel, and it names the reader.** An installer is "
-                "reached by a tail jump (`E9`), by a dword that holds its address -- a class-table slot, or a "
-                "`.data` pointer -- or by nothing the image carries. %d of %d have a channel; %d are pointed at by "
-                "nothing at all, which makes them tables whose class no shipped code instantiates.%s" % (
+    e8_called, e8_gap, e8_none, e8_body = caller_scan(nocall)
+    text.append("**The %d `no-direct-call` tables have a channel that is not a call, and a call for most of "
+                "them.** An installer is also reached by a tail jump (`E9`) or by a dword that holds its address "
+                "-- a class-table slot, or a `.data` pointer: %d of %d have one of the three and %d have none, "
+                "which is a statement about *this* scan and not about the image, because a direct `E8` call is a "
+                "fourth channel it never reads. `inventory/class_installer_callers.csv` scans for it and finds "
+                "**%d of the %d called, %d of them only from a body inside a map gap, %d with no `E8` and "
+                "%d with no installer body at all**.%s" % (
                     len(nocall), len(reached), len(nocall), len(nocall) - len(reached),
+                    e8_called, len(nocall), e8_gap, e8_none, e8_body,
                     (" By channel: %s." % "; ".join(
                         "%d by a %s (%s)" % (len(by_kind[k]), {"slot": "class-table slot", "tail": "tail jump",
                                                                "ptr": "dword pointer", "gap": "gap head"}[k],
@@ -664,9 +703,10 @@ def render(rows):
                         for k in kinds)) if kinds else ""))
     if unresolved:
         text.append("")
-        text.append("**%d stay unresolved** (%s): the instruction that defines the receiver is not a copy, an "
+        text.append("**%d stay%s unresolved** (%s): the instruction that defines the receiver is not a copy, an "
                     "address, a load or a scaled add, and the artifact names its mnemonic." % (
-                        len(unresolved), ", ".join(r["table_va"] for r in unresolved[:8])))
+                        len(unresolved), "" if len(unresolved) > 1 else "s",
+                        ", ".join(r["table_va"] for r in unresolved[:8])))
     return "\n".join(text)
 
 
@@ -715,6 +755,15 @@ def self_check():
             (0x1014, "call 0x179860")]
     want("array element", deep(body, 8, "ecx", this_register(body)), "array[0x1c]@[this+0x0]")
     want("array element bucket", kind("array[0x1c]@[this+0x0]"), "array-element")
+    want("a handed-over immediate is a value", kind("imm:0x17"), "value")
+    want("the caller join splits three ways", caller_scan(
+        [{"table_va": "0x10"}, {"table_va": "0x20"}, {"table_va": "0x30"}, {"table_va": "0x40"}],
+        {"0x10": {"verdict": "caller-gap", "e8_sites": "1"},
+         "0x20": {"verdict": "callers-unnamed", "e8_sites": "2"},
+         "0x30": {"verdict": "no-call", "e8_sites": "0"},
+         "0x40": {"verdict": "no-installer", "e8_sites": "0"}}), (2, 1, 1, 1))
+    want("a value is not the residue", verdict_of(["stack-object", "value"]), "both-ways")
+    want("an unknown chain is still the residue", verdict_of(["stack-object", kind("?imul")]), "unresolved")
     want("array head", deep(body, 8, "edi", this_register(body)), "array[0x1c]@[this+0x0]")
 
     # --- a `shl` stride and a `lea` with a scaled index

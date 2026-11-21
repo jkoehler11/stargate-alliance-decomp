@@ -1,725 +1,725 @@
-table_va,population,shape,slots,class,installers,callers,caller_classes,caller_kinds,owner_candidate,owner_table,owner_shared,relation,verdict,evidence
-0x004c7800,plain-only,installed-by-ctor,21,,2,4,,,,,,,callers-unnamed,"callers FUN_0002a120, FUN_0002a180, FUN_0014b0f0"
-0x004c7854,at-least,installed-by-ctor,2,,3,3,,,,,,,callers-unnamed,"callers FUN_000f9ce0, FUN_0010ffa0, FUN_00110120"
-0x004c7860,at-least,ctor-and-dtor,22,,32,52,DemoRecConnection|LinkerLoadGame|LinkerSaveGame|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"5 caller classes (DemoRecConnection, LinkerLoadGame, LinkerSaveGame, TcpipConnection), deepest common ancestor -"
-0x004c78b8,plain-only,dtor-only,1,,1,8,AudioSubsystem|Input|new,dtor,,,,,base-of-group,"3 caller classes (AudioSubsystem, Input, new), deepest common ancestor -"
-0x004c78c0,plain-only,dtor-only,31,,1,8,AudioSubsystem|Input|new,dtor,,,,,base-of-group,"3 caller classes (AudioSubsystem, Input, new), deepest common ancestor -"
-0x004c7958,named,ctor-and-dtor,46,Material,2,37,Combiner|Modifier|MultiPassMaterial|PSAdditiveDistortion|PSBackBufferEffect|PSBlendedDistortionMaterial,ctor+dtor,Material,0x004c7958,,class,control-class,"35 caller class(es), dca Material"
-0x004c7a10,named,dtor-only,46,RenderedMaterial,1,10,ConstantMaterial|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|Shader|TerrainMaterial,dtor,,,,other,control-other,"8 caller class(es), dca -"
-0x004c7ac8,named,dtor-only,48,BitmapMaterial,1,5,ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial|Texture,dtor,,,,other,control-other,"4 caller class(es), dca -"
-0x004c7b88,named,ctor-and-dtor,30,Order,2,2,SGOrder,dtor,SGOrder,0x004cc2c0,,descendant,control-descendant,"1 caller class(es), dca SGOrder"
-0x004c7c00,named,ctor-and-dtor,30,MatObject,2,3,MatAction|MatSubAction,dtor,MatObject,0x004c7c00,,class,control-class,"2 caller class(es), dca MatObject"
-0x004c7c78,named,dtor-only,33,CameraEffect,1,11,CameraOverlay|MotionBlur|SGScreenBlur|SGScreenDOF|SGScreenEmissive|SGScreenEmissiveWithBloom,dtor,CameraEffect,0x004c7c78,,class,control-class,"10 caller class(es), dca CameraEffect"
-0x004c7d98,named,ctor-and-dtor,32,SGScreenSniperOverlay,2,1,,,,,,,callers-unnamed,callers SGScreenSniperOverlay_vt3
-0x004c7e18,named,ctor-and-dtor,32,SGScreenMenuPause,2,1,,,,,,,callers-unnamed,callers SGScreenMenuPause_vt3
-0x004c7e98,named,ctor-and-dtor,32,SGScreenBlur,2,1,,,,,,,callers-unnamed,callers SGScreenBlur_vt3
-0x004c7f18,named,ctor-and-dtor,33,SGScreenDOF,2,1,,,,,,,callers-unnamed,callers SGScreenDOF_vt3
-0x004c7fa0,named,ctor-and-dtor,33,SGScreenMotionBlur,2,1,,,,,,,callers-unnamed,callers SGScreenMotionBlur_vt3
-0x004c8028,named,ctor-and-dtor,32,SGScreenRadialBlur,2,1,,,,,,,callers-unnamed,callers SGScreenRadialBlur_vt3
-0x004c80a8,named,ctor-and-dtor,33,SGScreenEmissiveWithBloom,2,1,,,,,,,callers-unnamed,callers SGScreenEmissiveWithBloom_vt3
-0x004c8410,plain-only,dtor-only,22,,2,2,,,,,,,callers-unnamed,"callers FUN_0001a0f0, FUN_0001d290"
-0x004c84d0,plain-only,ctor-and-dtor,22,,2,2,,,,,,,callers-unnamed,"callers FUN_0001a310, FUN_0001d290"
-0x004c85b0,plain-only,unclassified,25,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004c8db8,plain-only,installed-by-ctor,26,,1,1,,,,,,,callers-unnamed,callers Core_UnObjBas
-0x004c8f28,named,ctor-and-dtor,33,MatSubAction,2,12,SubActionCameraEffect|SubActionCameraShake|SubActionFOV|SubActionFade|SubActionGameSpeed|SubActionOrientation,dtor,MatSubAction,0x004c8f28,,class,control-class,"11 caller class(es), dca MatSubAction"
-0x004c8fb0,named,ctor-and-dtor,33,SubActionCameraEffect,2,2,SubActionDepthOfField,dtor,SubActionDepthOfField,0x004c9270,,descendant,control-descendant,"1 caller class(es), dca SubActionDepthOfField"
-0x004c9038,plain-only,installed-by-ctor,22,,2,7,,,,,,,callers-unnamed,"callers Engine_UnConn, FUN_0001cf20, FUN_000eaa50"
-0x004c9090,named,ctor-and-dtor,30,ScriptedAction,2,3,ACTION_TriggerEvent|LatentScriptedAction,dtor,ScriptedAction,0x004c9090,,class,control-class,"2 caller class(es), dca ScriptedAction"
-0x004c9108,named,ctor-and-dtor,30,ACTION_TriggerEvent,2,1,,,,,,,callers-unnamed,callers ACTION_TriggerEvent_vt3
-0x004c9180,named,ctor-and-dtor,30,LatentScriptedAction,2,2,ACTION_WaitForEvent,dtor,ACTION_WaitForEvent,0x004c91f8,,descendant,control-descendant,"1 caller class(es), dca ACTION_WaitForEvent"
-0x004c91f8,named,ctor-and-dtor,30,ACTION_WaitForEvent,2,1,,,,,,,callers-unnamed,callers ACTION_WaitForEvent_vt3
-0x004c9270,named,ctor-and-dtor,33,SubActionDepthOfField,2,1,,,,,,,callers-unnamed,callers SubActionDepthOfField_vt3
-0x004c9338,plain-only,ctor-and-dtor,1,,2,6,,,,,,,callers-unnamed,"callers FUN_0001cbe0, FUN_0001cc10, FUN_00025ff0"
-0x004c933c,plain-only,ctor-and-dtor,2,,2,6,,,,,,,callers-unnamed,"callers FUN_0001cbe0, FUN_0001cc10, FUN_00025ff0"
-0x004c9348,plain-only,ctor-and-dtor,31,,2,6,,,,,,,callers-unnamed,"callers FUN_0001cbe0, FUN_0001cc10, FUN_00025ff0"
-0x004c93c4,plain-only,ctor-and-dtor,1,,2,3,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
-0x004c93c8,plain-only,ctor-and-dtor,2,,2,3,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
-0x004c93d0,plain-only,ctor-and-dtor,56,,2,3,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
-0x004c94b0,plain-only,ctor-and-dtor,43,,2,3,XboxClient,ctor+dtor,XboxClient,0x004c9560,,,second-table,"its only caller class is XboxClient, whose own table is 0x004c9560"
-0x004c9560,named,ctor-and-dtor,43,XboxClient,2,1,,,,,,,callers-unnamed,callers XboxClient_vt3
-0x004c960c,at-least,ctor-and-dtor,1,,2,1,,,,,,,callers-unnamed,callers XboxViewport_vt3
-0x004c9610,at-least,ctor-and-dtor,2,,2,1,,,,,,,callers-unnamed,callers XboxViewport_vt3
-0x004c9618,named,ctor-and-dtor,57,XboxViewport,2,1,,,,,,,callers-unnamed,callers XboxViewport_vt3
-0x004c96fc,plain-only,installed-by-ctor,15,,1,1,,,,,,,callers-unnamed,callers FUN_000f9ce0
-0x004c9738,plain-only,installed-by-ctor,22,,3,9,,,,,,,callers-unnamed,"callers ChannelDownload_vt30, Engine_UnChan, Engine_UnConn"
-0x004c9858,plain-only,ctor-and-dtor,22,,2,1,,,,,,,callers-unnamed,callers FUN_0001dd30
-0x004c9a98,plain-only,installed-by-ctor,22,,1,1,,,,,,,callers-unnamed,callers FUN_0001f490
-0x004c9b50,plain-only,ctor-and-dtor,22,,2,2,,,,,,,callers-unnamed,"callers FUN_0001f490, FUN_0001fb90"
-0x004c9c60,named,ctor-and-dtor,123,Actor,2,43,AntiPortalActor|AvoidanceWaypoint|Brush|Controller|DamageType|DecoCollideActor,dtor,Actor,0x004c9c60,,class,control-class,"42 caller class(es), dca Actor"
-0x004c9e58,named,ctor-and-dtor,124,Keypoint,2,9,AIScript|AlkeshLandingZone|AmbientSound|ClipMarker|DecorationList|InterpolationPoint,dtor,Keypoint,0x004c9e58,,class,control-class,"8 caller class(es), dca Keypoint"
-0x004ca048,named,ctor-and-dtor,124,AIScript,2,2,ScriptedSequence,dtor,ScriptedSequence,0x004cb8b0,,descendant,control-descendant,"1 caller class(es), dca ScriptedSequence"
-0x004ca238,named,ctor-and-dtor,123,Info,2,24,AmbushInfo|AnnouncerVoice|CoverInfo|FileLog|FluidSurfaceInfo|GameInfo,dtor,Info,0x004ca238,,class,control-class,"23 caller class(es), dca Info"
-0x004ca428,named,ctor-and-dtor,123,ReplicationInfo,2,8,GameReplicationInfo|LinkedReplicationInfo|PlayerReplicationInfo|SceneReplicationInfo|SquadAIBasic|TeamInfo,dtor,ReplicationInfo,0x004ca428,,class,control-class,"7 caller class(es), dca ReplicationInfo"
-0x004ca618,named,ctor-and-dtor,134,Pawn,2,7,GoauldDrone|Scout|Vehicle,ctor+dtor,Pawn,0x004ca618,,class,control-class,"3 caller class(es), dca Pawn"
-0x004ca830,named,ctor-and-dtor,136,Vehicle,2,12,AlkeshBomber|DeathGlider|KVehicle|SVehicle|StargateCar|StargateCopter,ctor+dtor,Vehicle,0x004ca830,,class,control-class,"9 caller class(es), dca Vehicle"
-0x004caa50,named,ctor-and-dtor,140,SVehicle,2,2,StargateVehicle,dtor,StargateVehicle,0x004ccaf8,,descendant,control-descendant,"1 caller class(es), dca StargateVehicle"
-0x004cac80,named,ctor-and-dtor,126,Emitter,2,3,BeamArc|Electrocutor,dtor,Emitter,0x004cac80,,class,control-class,"2 caller class(es), dca Emitter"
-0x004cae78,named,ctor-and-dtor,138,NavigationPoint,2,9,Ambushpoint|Door|JumpDest|JumpPad|LiftCenter|LiftExit,dtor,NavigationPoint,0x004cae78,,class,control-class,"8 caller class(es), dca NavigationPoint"
-0x004cb0a0,named,ctor-and-dtor,123,Triggers,2,6,AvoidMarker|LineOfSightTrigger|SVehicleTrigger|Trigger|TriggeredCondition,dtor,Triggers,0x004cb0a0,,class,control-class,"5 caller class(es), dca Triggers"
-0x004cb290,named,ctor-and-dtor,133,Controller,2,3,AIController|PlayerController,dtor,Controller,0x004cb290,,class,control-class,"2 caller class(es), dca Controller"
-0x004cb4a8,named,ctor-and-dtor,133,AIController,2,2,ScriptedController,dtor,ScriptedController,0x004cc0a8,,descendant,control-descendant,"1 caller class(es), dca ScriptedController"
-0x004cb6c0,named,ctor-and-dtor,123,HUD,2,3,StargateHUD,ctor+dtor,StargateHUD,0x004cd738,,descendant,control-descendant,"1 caller class(es), dca StargateHUD"
-0x004cb8b0,named,ctor-and-dtor,124,ScriptedSequence,2,2,UnrealScriptedSequence,dtor,UnrealScriptedSequence,0x004cc338,,descendant,control-descendant,"1 caller class(es), dca UnrealScriptedSequence"
-0x004cbaa0,named,ctor-and-dtor,123,AmbushInfo,2,1,,,,,,,callers-unnamed,callers AmbushInfo_vt3
-0x004cbc90,named,ctor-and-dtor,138,Ambushpoint,2,1,,,,,,,callers-unnamed,callers Ambushpoint_vt3
-0x004cbeb8,named,ctor-and-dtor,123,TriggeredCondition,2,2,SGTriggeredCondition,dtor,SGTriggeredCondition,0x004cd118,,descendant,control-descendant,"1 caller class(es), dca SGTriggeredCondition"
-0x004cc0a8,named,ctor-and-dtor,133,ScriptedController,2,2,BotBase,dtor,BotBase,0x004cd308,,descendant,control-descendant,"1 caller class(es), dca BotBase"
-0x004cc2c0,named,ctor-and-dtor,30,SGOrder,2,1,,,,,,,callers-unnamed,callers SGOrder_vt3
-0x004cc338,named,ctor-and-dtor,124,UnrealScriptedSequence,2,1,,,,,,,callers-unnamed,callers UnrealScriptedSequence_vt3
-0x004cc528,named,ctor-and-dtor,123,SquadAIBasic,2,1,,,,,,,callers-unnamed,callers SquadAIBasic_vt3
-0x004cc718,named,ctor-and-dtor,123,CoverInfo,2,1,,,,,,,callers-unnamed,callers CoverInfo_vt3
-0x004cc908,named,ctor-and-dtor,123,SGFontInfo,2,1,,,,,,,callers-unnamed,callers SGFontInfo_vt3
-0x004ccaf8,named,ctor-and-dtor,140,StargateVehicle,2,5,DeathGlider|StargateCar|StargateCopter|StargateHover,dtor,StargateVehicle,0x004ccaf8,,class,control-class,"4 caller class(es), dca StargateVehicle"
-0x004ccd28,named,ctor-and-dtor,126,BeamArc,2,1,,,,,,,callers-unnamed,callers BeamArc_vt3
-0x004ccf20,named,ctor-and-dtor,126,Electrocutor,2,1,,,,,,,callers-unnamed,callers Electrocutor_vt3
-0x004cd118,named,ctor-and-dtor,123,SGTriggeredCondition,2,1,,,,,,,callers-unnamed,callers SGTriggeredCondition_vt3
-0x004cd308,named,ctor-and-dtor,133,BotBase,2,5,AlkeshBomberBot|BotEnemy|DeathGliderBot|TeltakBot,dtor,BotBase,0x004cd308,,class,control-class,"4 caller class(es), dca BotBase"
-0x004cd520,named,ctor-and-dtor,133,BotEnemy,2,1,,,,,,,callers-unnamed,callers BotEnemy_vt3
-0x004cd738,named,ctor-and-dtor,123,StargateHUD,2,1,,,,,,,callers-unnamed,callers StargateHUD_vt3
-0x004cd928,named,ctor-and-dtor,123,ShadowManager,2,1,,,,,,,callers-unnamed,callers ShadowManager_vt3
-0x004cdb18,named,ctor-and-dtor,123,IntelligentSpawner,2,1,,,,,,,callers-unnamed,callers IntelligentSpawner_vt3
-0x004cdd08,named,ctor-and-dtor,123,FarClipChange,2,1,,,,,,,callers-unnamed,callers FarClipChange_vt3
-0x004cdef8,named,ctor-and-dtor,123,SGLevel,2,1,,,,,,,callers-unnamed,callers SGLevel_vt3
-0x004ce0e8,named,ctor-and-dtor,123,SGGenericOrderActor,2,1,,,,,,,callers-unnamed,callers SGGenericOrderActor_vt3
-0x004ce2d8,named,ctor-and-dtor,33,SGScreenEmissive,2,2,SGScreenBloom,dtor,SGScreenBloom,0x004ce360,,descendant,control-descendant,"1 caller class(es), dca SGScreenBloom"
-0x004ce360,named,ctor-and-dtor,33,SGScreenBloom,3,1,,,,,,,callers-unnamed,callers SGScreenBloom_vt3
-0x004ce3e8,named,ctor-and-dtor,124,AlkeshLandingZone,2,1,,,,,,,callers-unnamed,callers AlkeshLandingZone_vt3
-0x004ce5d8,named,ctor-and-dtor,141,StargateCopter,2,3,AlkeshBomber|Teltak,dtor,StargateCopter,0x004ce5d8,,class,control-class,"2 caller class(es), dca StargateCopter"
-0x004ce810,named,ctor-and-dtor,141,Teltak,2,1,,,,,,,callers-unnamed,callers Teltak_vt3
-0x004cea48,named,ctor-and-dtor,141,AlkeshBomber,2,1,,,,,,,callers-unnamed,callers AlkeshBomber_vt3
-0x004cec80,named,ctor-and-dtor,142,StargateHover,2,1,,,,,,,callers-unnamed,callers StargateHover_vt3
-0x004ceeb8,named,ctor-and-dtor,143,StargateCar,2,1,,,,,,,callers-unnamed,callers StargateCar_vt3
-0x004cf0f8,named,ctor-and-dtor,142,DeathGlider,2,1,,,,,,,callers-unnamed,callers DeathGlider_vt3
-0x004cf330,named,ctor-and-dtor,134,GoauldDrone,2,1,,,,,,,callers-unnamed,callers GoauldDrone_vt3
-0x004cf548,named,ctor-and-dtor,133,TeltakBot,2,1,,,,,,,callers-unnamed,callers TeltakBot_vt3
-0x004cf760,named,ctor-and-dtor,133,DeathGliderBot,2,1,,,,,,,callers-unnamed,callers DeathGliderBot_vt3
-0x004cf978,named,ctor-and-dtor,133,AlkeshBomberBot,2,1,,,,,,,callers-unnamed,callers AlkeshBomberBot_vt3
-0x004cfba0,named,ctor-and-dtor,58,Texture,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x004cfc88,named,ctor-and-dtor,59,FractalTexture,4,4,FluidTexture|WaveTexture|WetTexture,ctor,WaterTexture,0x004cfe68,,descendant,control-descendant,"3 caller class(es), dca WaterTexture"
-0x004cfd78,named,ctor-and-dtor,59,FireTexture,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x004cfe68,named,ctor-and-dtor,59,WaterTexture,2,7,FluidTexture|WaveTexture|WetTexture,ctor+dtor,WaterTexture,0x004cfe68,,class,control-class,"3 caller class(es), dca WaterTexture"
-0x004cff58,named,ctor-and-dtor,59,WaveTexture,2,1,,,,,,,callers-unnamed,callers WaveTexture_vt3
-0x004d0048,named,ctor-and-dtor,59,FluidTexture,2,1,,,,,,,callers-unnamed,callers FluidTexture_vt3
-0x004d0138,named,ctor-and-dtor,59,WetTexture,2,1,,,,,,,callers-unnamed,callers WetTexture_vt3
-0x004d0228,named,ctor-and-dtor,59,IceTexture,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004d0314,plain-only,ctor-and-dtor,1,,2,7,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecDriver, TcpNetDriver, TcpNetDriverXbox), deepest common ancestor -"
-0x004d0318,plain-only,ctor-and-dtor,40,,2,7,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecDriver, TcpNetDriver, TcpNetDriverXbox), deepest common ancestor -"
-0x004d03b8,at-least,ctor-and-dtor,1,,3,10,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
-0x004d03bc,at-least,ctor-and-dtor,2,,3,10,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
-0x004d03c8,at-least,ctor-and-dtor,42,,3,10,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
-0x004d0470,at-least,ctor-and-dtor,1,,3,3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
-0x004d0474,at-least,ctor-and-dtor,2,,3,3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
-0x004d0480,named,ctor-and-dtor,42,TcpipConnection,3,3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
-0x004d0528,at-least,ctor-and-dtor,1,,2,1,,,,,,,callers-unnamed,callers TcpNetDriver_vt3
-0x004d0530,named,ctor-and-dtor,40,TcpNetDriver,2,1,,,,,,,callers-unnamed,callers TcpNetDriver_vt3
-0x004d05d0,at-least,ctor-and-dtor,1,,3,3,,,,,,,callers-unnamed,"callers FUN_002d5c70, TcpNetDriverXbox_vt34, TcpipConnectionXbox_vt3"
-0x004d05d4,at-least,ctor-and-dtor,2,,3,3,,,,,,,callers-unnamed,"callers FUN_002d5c70, TcpNetDriverXbox_vt34, TcpipConnectionXbox_vt3"
-0x004d05e0,named,ctor-and-dtor,42,TcpipConnectionXbox,3,3,,,,,,,callers-unnamed,"callers FUN_002d5c70, TcpNetDriverXbox_vt34, TcpipConnectionXbox_vt3"
-0x004d0688,at-least,ctor-and-dtor,1,,2,1,,,,,,,callers-unnamed,callers TcpNetDriverXbox_vt3
-0x004d0690,named,ctor-and-dtor,41,TcpNetDriverXbox,2,1,,,,,,,callers-unnamed,callers TcpNetDriverXbox_vt3
-0x004d0738,named,ctor-and-dtor,134,PlayerController,2,6,Camera|StargatePlayer|UnrealPlayer,ctor+dtor,PlayerController,0x004d0738,,class,control-class,"3 caller class(es), dca PlayerController"
-0x004d0950,named,ctor-and-dtor,134,UnrealPlayer,2,2,StargatePlayer,dtor,StargatePlayer,0x004d0b68,,descendant,control-descendant,"1 caller class(es), dca StargatePlayer"
-0x004d0b68,named,ctor-and-dtor,134,StargatePlayer,2,1,,,,,,,callers-unnamed,callers StargatePlayer_vt3
-0x004d0d80,plain-only,unclassified,25,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004d0de8,plain-only,ctor-and-dtor,22,,2,1,,,,,,,callers-unnamed,callers FUN_00026ca0
-0x004d0ec8,plain-only,ctor-and-dtor,21,,2,4,,,,,,,callers-unnamed,"callers FUN_0002a120, FUN_0002a180, FUN_0014b0f0"
-0x004d1430,plain-only,ctor-and-dtor,2,,3,4,,,,,,,callers-unnamed,"callers FUN_0002c040, FUN_0002c340, FUN_003e5427"
-0x004d1438,plain-only,unclassified,2,,2,3,,,,,,,callers-unnamed,"callers FUN_0002c060, FUN_0002c180, FUN_0002c440"
-0x004d1468,plain-only,ctor-and-dtor,35,,2,21,ArrayProperty|BoolProperty|ByteProperty|ClassProperty|Const|DelegateProperty,ctor+dtor,,,,,base-of-group,"16 caller classes (ArrayProperty, BoolProperty, ByteProperty, ClassProperty), deepest common ancestor -"
-0x004d17a8,plain-only,ctor-and-dtor,53,,3,23,ArrayProperty|BoolProperty|ByteProperty|DelegateProperty|FixedArrayProperty|FloatProperty,ctor+dtor,,,,,base-of-group,"13 caller classes (ArrayProperty, BoolProperty, ByteProperty, DelegateProperty), deepest common ancestor -"
-0x004d1880,named,ctor-and-dtor,53,IntProperty,3,1,,,,,,,callers-unnamed,callers FUN_000318f0
-0x004d1958,named,ctor-and-dtor,53,BoolProperty,4,1,,,,,,,callers-unnamed,callers FUN_000319a0
-0x004d1a30,named,ctor-and-dtor,53,FloatProperty,3,1,,,,,,,callers-unnamed,callers FUN_00031a50
-0x004d1f88,named,ctor-and-dtor,54,AudioSubsystem,2,3,XBoxAudioSubsystem,ctor+dtor,XBoxAudioSubsystem,0x004d21f8,,descendant,control-descendant,"1 caller class(es), dca XBoxAudioSubsystem"
-0x004d21f8,named,ctor-and-dtor,54,XBoxAudioSubsystem,2,1,,,,,,,callers-unnamed,callers FUN_00032090
-0x004d2400,plain-only,dtor-only,37,,1,2,XHVVoiceSubsystem,dtor,XHVVoiceSubsystem,0x004d2ad8,,,second-table,"its only caller class is XHVVoiceSubsystem, whose own table is 0x004d2ad8"
-0x004d2abc,at-least,ctor-and-dtor,6,,2,1,,,,,,,callers-unnamed,callers FUN_00033f90
-0x004d2ad4,at-least,ctor-and-dtor,1,,2,1,,,,,,,callers-unnamed,callers FUN_00033f90
-0x004d2ad8,named,ctor-and-dtor,37,XHVVoiceSubsystem,2,1,,,,,,,callers-unnamed,callers FUN_00033f90
-0x004d2e58,plain-only,dtor-only,29,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004d3118,plain-only,dtor-only,22,,1,1,,,,,,,callers-unnamed,callers Core_UExporter
-0x004d3248,plain-only,installed-by-ctor,22,,1,3,,,,,,,callers-unnamed,"callers Core_UExporter, FUN_00034ab0, FUN_0006d520"
-0x004d32a0,named,ctor-and-dtor,53,StrProperty,4,10,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnObj, Engine_UnLevel"
-0x004d3378,named,ctor-and-dtor,53,ArrayProperty,4,1,,,,,,,callers-unnamed,callers FUN_00035960
-0x004d34d8,plain-only,ctor-and-dtor,32,,2,2,ObjectExporterT3D,dtor,ObjectExporterT3D,0x004d3828,,,second-table,"its only caller class is ObjectExporterT3D, whose own table is 0x004d3828"
-0x004d3828,named,ctor-and-dtor,32,ObjectExporterT3D,2,1,,,,,,,callers-unnamed,callers FUN_00035d20
-0x004d3af0,plain-only,ctor-and-dtor,33,,2,3,TextBufferFactory,ctor+dtor,TextBufferFactory,0x004de7a0,,,second-table,"its only caller class is TextBufferFactory, whose own table is 0x004de7a0"
-0x004d3ba0,plain-only,installed-by-ctor,22,,2,3,,,,,,,callers-unnamed,"callers FUN_000eab70, FUN_0010d370, FUN_0010f390"
-0x004d40d0,plain-only,dtor-only,22,,1,1,,,,,,,callers-unnamed,callers FUN_0003cd70
-0x004d4418,named,ctor-and-dtor,43,Struct,4,6,Function|State,dtor,Struct,0x004d4418,,class,control-class,"2 caller class(es), dca Struct"
-0x004d44c8,named,ctor-and-dtor,42,Function,2,1,,,,,,,callers-unnamed,callers FUN_0003d5d0
-0x004d4570,named,ctor-and-dtor,42,State,3,3,Class,dtor,Class,0x004d4870,,descendant,control-descendant,"1 caller class(es), dca Class"
-0x004d4618,named,ctor-and-dtor,35,Const,3,1,,,,,,,callers-unnamed,callers FUN_0003d710
-0x004d4870,named,ctor-and-dtor,42,Class,4,144,,,,,,,callers-unnamed,"callers Core_UExporter, Core_UFactory, Core_UnClass"
-0x004d9238,named,ctor-and-dtor,40,PackageMap,2,5,PackageMapLevel,ctor+dtor,PackageMapLevel,0x004fb9b8,,descendant,control-descendant,"1 caller class(es), dca PackageMapLevel"
-0x004da500,named,ctor-and-dtor,31,Linker,3,5,LinkerLoad|LinkerSave,ctor+dtor,Linker,0x004da500,,class,control-class,"2 caller class(es), dca Linker"
-0x004da720,at-least,ctor-and-dtor,22,,3,5,LinkerLoadGame,ctor+dtor,LinkerLoadGame,0x004daaa0,,,second-table,"its only caller class is LinkerLoadGame, whose own table is 0x004daaa0"
-0x004da778,named,ctor-and-dtor,32,LinkerLoad,3,5,LinkerLoadGame,ctor+dtor,LinkerLoadGame,0x004daaa0,,descendant,control-descendant,"1 caller class(es), dca LinkerLoadGame"
-0x004da850,at-least,ctor-and-dtor,22,,3,5,LinkerSaveGame,ctor+dtor,LinkerSaveGame,0x004da9c8,,,second-table,"its only caller class is LinkerSaveGame, whose own table is 0x004da9c8"
-0x004da8a8,named,ctor-and-dtor,31,LinkerSave,3,5,LinkerSaveGame,ctor+dtor,LinkerSaveGame,0x004da9c8,,descendant,control-descendant,"1 caller class(es), dca LinkerSaveGame"
-0x004da970,at-least,ctor-and-dtor,22,,3,2,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_00053b40"
-0x004da9c8,named,ctor-and-dtor,31,LinkerSaveGame,3,2,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_00053b40"
-0x004daa48,at-least,ctor-and-dtor,22,,3,2,,,,,,,callers-unnamed,"callers Core_UnObj, FUN_00053be0"
-0x004daaa0,named,ctor-and-dtor,32,LinkerLoadGame,3,2,,,,,,,callers-unnamed,"callers Core_UnObj, FUN_00053be0"
-0x004dd250,plain-only,installed-by-ctor,22,,1,1,,,,,,,callers-unnamed,callers FUN_00070cb0
-0x004dd2a8,named,ctor-and-dtor,30,Object,2,1,,,,,,,callers-unnamed,callers FUN_0003a5f0
-0x004dd488,plain-only,installed-by-ctor,22,,1,1,,,,,,,callers-unnamed,callers FUN_00070cb0
-0x004dd4e0,plain-only,installed-by-ctor,22,,1,2,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_00070cb0"
-0x004dd538,plain-only,unclassified,22,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004dd590,plain-only,unclassified,22,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004dd5e8,plain-only,unclassified,22,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004dd640,plain-only,unclassified,22,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004ddd50,plain-only,installed-by-ctor,22,,1,1,,,,,,,callers-unnamed,callers FUN_00067450
-0x004ddf70,at-least,ctor-and-dtor,2,,2,1,,,,,,,callers-unnamed,callers FUN_00075840
-0x004ddf78,named,ctor-and-dtor,30,TextBuffer,2,1,,,,,,,callers-unnamed,callers FUN_00075840
-0x004de008,named,ctor-and-dtor,31,Commandlet,2,13,CompressCommandlet|DecompressCommandlet|ExportCacheCommandlet|MasterMD5Commandlet|ServerCommandlet|UModUnpackCommandlet,ctor+dtor,Commandlet,0x004de008,,class,control-class,"6 caller class(es), dca Commandlet"
-0x004de088,named,ctor-and-dtor,30,Package,3,2,,,,,,,callers-unnamed,"callers Core_UnMisc, FUN_000755b0"
-0x004de118,named,ctor-and-dtor,36,Enum,3,1,,,,,,,callers-unnamed,callers FUN_00075900
-0x004de3c0,plain-only,installed-by-ctor,22,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004de558,plain-only,installed-by-ctor,22,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004de7a0,named,ctor-and-dtor,33,TextBufferFactory,2,1,,,,,,,callers-unnamed,callers FUN_00076e10
-0x004e0b40,named,ctor-and-dtor,53,ObjectProperty,3,2,ClassProperty,dtor,ClassProperty,0x004e1270,,descendant,control-descendant,"1 caller class(es), dca ClassProperty"
-0x004e10c0,named,ctor-and-dtor,53,ByteProperty,3,1,,,,,,,callers-unnamed,callers FUN_0007d990
-0x004e1198,named,ctor-and-dtor,53,PointerProperty,2,1,,,,,,,callers-unnamed,callers FUN_0007da70
-0x004e1270,named,ctor-and-dtor,53,ClassProperty,2,1,,,,,,,callers-unnamed,callers FUN_0007dbc0
-0x004e1348,named,ctor-and-dtor,53,NameProperty,3,10,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnObj, Engine_UnLevel"
-0x004e1420,named,ctor-and-dtor,53,FixedArrayProperty,2,1,,,,,,,callers-unnamed,callers FUN_0007dd20
-0x004e14f8,named,ctor-and-dtor,53,MapProperty,2,1,,,,,,,callers-unnamed,callers FUN_0007de00
-0x004e15d0,named,ctor-and-dtor,53,StructProperty,4,10,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnObj, Engine_UnLevel"
-0x004e16a8,named,ctor-and-dtor,53,DelegateProperty,2,1,,,,,,,callers-unnamed,callers FUN_0007df60
-0x004e1ce8,named,ctor-and-dtor,32,new,2,2,,,,,,,callers-unnamed,"callers FUN_0007f5a0, FUN_0007ff70"
-0x004e24a8,named,ctor-and-dtor,123,FileLog,2,1,,,,,,,callers-unnamed,callers FUN_00080a20
-0x004e2720,named,ctor-and-dtor,123,GameStats,2,2,MasterServerGameStats,dtor,MasterServerGameStats,0x0052ef78,,descendant,control-descendant,"1 caller class(es), dca MasterServerGameStats"
-0x004e2978,named,ctor-and-dtor,123,SceneSubtitles,2,1,,,,,,,callers-unnamed,callers FUN_00081320
-0x004e2d28,named,ctor-and-dtor,123,xEmitter,2,1,,,,,,,callers-unnamed,callers FUN_000864b0
-0x004e2fc0,named,ctor-and-dtor,123,xPickUpBase,2,1,,,,,,,callers-unnamed,callers FUN_00086ab0
-0x004e3258,named,ctor-and-dtor,123,xProcMesh,2,1,,,,,,,callers-unnamed,callers FUN_0008b180
-0x004e3520,plain-only,installed-by-ctor,9,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004e3568,named,ctor-and-dtor,123,xWeatherEffect,2,1,,,,,,,callers-unnamed,callers FUN_0008d7f0
-0x004e50c8,named,ctor-and-dtor,123,KActor,2,3,KConstraint|KTire,dtor,KActor,0x004e50c8,,class,control-class,"2 caller class(es), dca KActor"
-0x004e52b8,named,ctor-and-dtor,125,KConstraint,2,5,KBSJoint|KCarWheelJoint|KConeLimit|KHinge,dtor,KConstraint,0x004e52b8,,class,control-class,"4 caller class(es), dca KConstraint"
-0x004e54b0,named,ctor-and-dtor,125,KCarWheelJoint,2,1,,,,,,,callers-unnamed,callers FUN_00094390
-0x004e56a8,named,ctor-and-dtor,125,KConeLimit,2,1,,,,,,,callers-unnamed,callers FUN_00094430
-0x004e58a0,named,ctor-and-dtor,125,KHinge,2,1,,,,,,,callers-unnamed,callers FUN_000944d0
-0x004e5a98,named,ctor-and-dtor,125,KBSJoint,2,1,,,,,,,callers-unnamed,callers FUN_00094570
-0x004e77b0,named,ctor-and-dtor,30,KarmaParamsCollision,2,2,KarmaParams,dtor,KarmaParams,0x004e8018,,descendant,control-descendant,"1 caller class(es), dca KarmaParams"
-0x004e7a18,named,ctor-and-dtor,136,KVehicle,2,1,,,,,,,callers-unnamed,callers FUN_000a6f00
-0x004e7c38,named,ctor-and-dtor,123,KRepulsor,2,1,,,,,,,callers-unnamed,callers FUN_000a6fa0
-0x004e7e28,named,ctor-and-dtor,123,KTire,2,1,,,,,,,callers-unnamed,callers FUN_000a7040
-0x004e8018,named,ctor-and-dtor,30,KarmaParams,2,3,KarmaParamsRBFull|KarmaParamsSkel,dtor,KarmaParams,0x004e8018,,class,control-class,"2 caller class(es), dca KarmaParams"
-0x004e8090,named,ctor-and-dtor,30,KarmaParamsSkel,2,1,,,,,,,callers-unnamed,callers FUN_000a7190
-0x004e8108,named,ctor-and-dtor,30,KarmaParamsRBFull,2,1,,,,,,,callers-unnamed,callers FUN_000a7240
-0x004e8440,named,ctor-and-dtor,30,KMeshProps,2,1,,,,,,,callers-unnamed,callers FUN_000a7bb0
-0x004eaea8,plain-only,dtor-only,47,,1,3,D3DRenderDevice|NullRenderDevice,dtor,,,,,base-of-group,"2 caller classes (D3DRenderDevice, NullRenderDevice), deepest common ancestor -"
-0x004eaf68,at-least,installed-by-ctor,62,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x004eb0a8,named,ctor-and-dtor,48,NullRenderDevice,2,1,,,,,,,callers-unnamed,callers FUN_000bd4d0
-0x004eb2b0,named,ctor-and-dtor,58,TextureEditable,2,1,,,,,,,callers-unnamed,callers FUN_000c03b0
-0x004eb420,named,ctor-and-dtor,31,ExportCacheCommandlet,2,1,,,,,,,callers-unnamed,callers FUN_000c1a50
-0x004eb914,plain-only,unclassified,12,,2,2,,,,,,,callers-unnamed,"callers FUN_000c3a10, FUN_00187020"
-0x004ebb00,plain-only,ctor-and-dtor,12,,2,1,,,,,,,callers-unnamed,callers FUN_000c3a10
-0x004ebb38,named,ctor-and-dtor,30,ReachSpec,2,1,,,,,,,callers-unnamed,callers FUN_000c3da0
-0x004ebdd0,named,ctor-and-dtor,30,LogEntry,2,1,,,,,,,callers-unnamed,callers FUN_000dbbb0
-0x004ebe48,named,ctor-and-dtor,30,LevelSummary,2,1,,,,,,,callers-unnamed,callers FUN_000dbd20
-0x004ebf54,plain-only,installed-by-ctor,6,,2,3,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_000db2e0, Gui_UnUIXInteraction"
-0x004ebfd8,named,ctor-and-dtor,124,InterpolationPoint,2,2,MapVolumeViewPoint,dtor,MapVolumeViewPoint,0x004ec1c8,,descendant,control-descendant,"1 caller class(es), dca MapVolumeViewPoint"
-0x004ec1c8,named,ctor-and-dtor,124,MapVolumeViewPoint,2,1,,,,,,,callers-unnamed,callers FUN_000dc880
-0x004ec3b8,named,ctor-and-dtor,124,AmbientSound,2,1,,,,,,,callers-unnamed,callers FUN_000dc920
-0x004ec5a8,named,ctor-and-dtor,124,PolyMarker,2,1,,,,,,,callers-unnamed,callers FUN_000dc9d0
-0x004ec798,named,ctor-and-dtor,124,ClipMarker,2,1,,,,,,,callers-unnamed,callers FUN_000dca70
-0x004ec988,named,ctor-and-dtor,123,TeamInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dcb60
-0x004ecb78,named,ctor-and-dtor,123,GameReplicationInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dcc90
-0x004ecd68,named,ctor-and-dtor,123,SceneReplicationInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dce30
-0x004ecf58,named,ctor-and-dtor,123,LinkedReplicationInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dcee0
-0x004ed148,named,ctor-and-dtor,124,PlayerReplicationInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dcf80
-0x004ed338,named,ctor-and-dtor,123,AnnouncerVoice,2,1,,,,,,,callers-unnamed,callers FUN_000dd110
-0x004ed528,named,ctor-and-dtor,123,Mutator,2,1,,,,,,,callers-unnamed,callers FUN_000dd200
-0x004ed718,named,ctor-and-dtor,123,PotentialClimbWatcher,2,1,,,,,,,callers-unnamed,callers FUN_000dd300
-0x004ed908,named,ctor-and-dtor,123,InternetInfo,2,2,InternetLink,dtor,InternetLink,0x0052d5c8,,descendant,control-descendant,"1 caller class(es), dca InternetLink"
-0x004edaf8,named,ctor-and-dtor,123,SavedMove,2,1,,,,,,,callers-unnamed,callers FUN_000dd440
-0x004edce8,named,ctor-and-dtor,123,ZoneInfo,2,4,LevelInfo|SkyZoneInfo|WarpZoneInfo,dtor,ZoneInfo,0x004edce8,,class,control-class,"3 caller class(es), dca ZoneInfo"
-0x004eded8,named,ctor-and-dtor,123,WarpZoneInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dd600
-0x004ee0c8,named,ctor-and-dtor,123,SkyZoneInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dd6d0
-0x004ee2b8,named,ctor-and-dtor,123,GameInfo,2,1,,,,,,,callers-unnamed,callers FUN_000dd830
-0x004ee4a8,named,ctor-and-dtor,134,Scout,2,1,,,,,,,callers-unnamed,callers FUN_000ddb70
-0x004ee6c0,named,ctor-and-dtor,125,Brush,2,2,Volume,dtor,Volume,0x004ee910,,descendant,control-descendant,"1 caller class(es), dca Volume"
-0x004ee910,named,ctor-and-dtor,125,Volume,2,4,BlockingVolume|MapVolume|PhysicsVolume,dtor,Volume,0x004ee910,,class,control-class,"3 caller class(es), dca Volume"
-0x004eeb08,named,ctor-and-dtor,125,MapVolume,2,1,,,,,,,callers-unnamed,callers FUN_000de060
-0x004eed00,named,ctor-and-dtor,125,BlockingVolume,2,1,,,,,,,callers-unnamed,callers FUN_000de100
-0x004eeef8,named,ctor-and-dtor,125,PhysicsVolume,2,3,DefaultPhysicsVolume|LadderVolume,dtor,PhysicsVolume,0x004eeef8,,class,control-class,"2 caller class(es), dca PhysicsVolume"
-0x004ef0f0,named,ctor-and-dtor,125,LadderVolume,2,1,,,,,,,callers-unnamed,callers FUN_000de250
-0x004ef2e8,named,ctor-and-dtor,125,DefaultPhysicsVolume,2,1,,,,,,,callers-unnamed,callers FUN_000de2f0
-0x004ef4e0,named,ctor-and-dtor,138,PathNode,2,4,FlyingPathNode|ReplicatorPathNode|RoadPathNode,dtor,PathNode,0x004ef4e0,,class,control-class,"3 caller class(es), dca PathNode"
-0x004ef708,named,ctor-and-dtor,138,RoadPathNode,2,1,,,,,,,callers-unnamed,callers FUN_000de430
-0x004ef930,named,ctor-and-dtor,138,FlyingPathNode,2,1,,,,,,,callers-unnamed,callers FUN_000de4d0
-0x004efb58,named,ctor-and-dtor,138,ReplicatorPathNode,2,1,,,,,,,callers-unnamed,callers FUN_000de570
-0x004efd80,named,ctor-and-dtor,138,SmallNavigationPoint,2,8,AIMarker|InventorySpot|Ladder|LevelLoadingView|PlayerStart|Teleporter,dtor,SmallNavigationPoint,0x004efd80,,class,control-class,"7 caller class(es), dca SmallNavigationPoint"
-0x004effa8,named,ctor-and-dtor,138,LevelLoadingView,2,1,,,,,,,callers-unnamed,callers FUN_000de6b0
-0x004f01d0,named,ctor-and-dtor,138,Ladder,2,2,AutoLadder,dtor,AutoLadder,0x004f03f8,,descendant,control-descendant,"1 caller class(es), dca AutoLadder"
-0x004f03f8,named,ctor-and-dtor,138,AutoLadder,2,1,,,,,,,callers-unnamed,callers FUN_000de7f0
-0x004f0620,named,ctor-and-dtor,138,WarpZoneMarker,2,1,,,,,,,callers-unnamed,callers FUN_000de890
-0x004f0848,named,ctor-and-dtor,138,AIMarker,2,1,,,,,,,callers-unnamed,callers FUN_000de930
-0x004f0a70,named,ctor-and-dtor,138,InventorySpot,2,1,,,,,,,callers-unnamed,callers FUN_000de9d0
-0x004f0c98,named,ctor-and-dtor,138,PlayerStart,2,1,,,,,,,callers-unnamed,callers FUN_000dea70
-0x004f0ec0,named,ctor-and-dtor,138,Teleporter,2,1,,,,,,,callers-unnamed,callers FUN_000deb10
-0x004f10e8,named,ctor-and-dtor,138,JumpDest,2,1,,,,,,,callers-unnamed,callers FUN_000debc0
-0x004f1310,named,ctor-and-dtor,138,JumpPad,2,1,,,,,,,callers-unnamed,callers FUN_000dec60
-0x004f1538,named,ctor-and-dtor,138,Door,2,2,AutoDoor,dtor,AutoDoor,0x004f1760,,descendant,control-descendant,"1 caller class(es), dca AutoDoor"
-0x004f1760,named,ctor-and-dtor,138,AutoDoor,2,1,,,,,,,callers-unnamed,callers FUN_000deda0
-0x004f1988,named,ctor-and-dtor,138,LiftExit,2,1,,,,,,,callers-unnamed,callers FUN_000dee40
-0x004f1bb0,named,ctor-and-dtor,138,LiftCenter,2,1,,,,,,,callers-unnamed,callers FUN_000deee0
-0x004f1dd8,named,ctor-and-dtor,123,AvoidMarker,2,1,,,,,,,callers-unnamed,callers FUN_000def80
-0x004f1fc8,named,ctor-and-dtor,123,LineOfSightTrigger,2,1,,,,,,,callers-unnamed,callers FUN_000df020
-0x004f21b8,named,ctor-and-dtor,123,SVehicleTrigger,2,1,,,,,,,callers-unnamed,callers FUN_000df0c0
-0x004f23a8,named,ctor-and-dtor,123,Trigger,2,1,,,,,,,callers-unnamed,callers FUN_000df160
-0x004f2598,named,ctor-and-dtor,123,Pickup,2,3,Ammo|StationaryWeapons,dtor,Pickup,0x004f2598,,class,control-class,"2 caller class(es), dca Pickup"
-0x004f2788,named,ctor-and-dtor,123,StationaryWeapons,2,1,,,,,,,callers-unnamed,callers FUN_000df2f0
-0x004f2978,named,ctor-and-dtor,123,Ammo,2,1,,,,,,,callers-unnamed,callers FUN_000df390
-0x004f2b68,named,ctor-and-dtor,123,AntiPortalActor,2,1,,,,,,,callers-unnamed,callers FUN_000df430
-0x004f2d58,named,ctor-and-dtor,123,InventoryAttachment,2,2,WeaponAttachment,dtor,WeaponAttachment,0x004f2f48,,descendant,control-descendant,"1 caller class(es), dca WeaponAttachment"
-0x004f2f48,named,ctor-and-dtor,123,WeaponAttachment,2,1,,,,,,,callers-unnamed,callers FUN_000df570
-0x004f3138,named,ctor-and-dtor,123,DamageType,2,1,,,,,,,callers-unnamed,callers FUN_000df610
-0x004f3328,named,ctor-and-dtor,123,SVehicleFactory,2,1,,,,,,,callers-unnamed,callers FUN_000df710
-0x004f3518,named,ctor-and-dtor,123,VehiclePart,2,1,,,,,,,callers-unnamed,callers FUN_000df7b0
-0x004f3708,named,ctor-and-dtor,123,Inventory,2,4,Ammunition|Powerups|Weapon,dtor,Inventory,0x004f3708,,class,control-class,"3 caller class(es), dca Inventory"
-0x004f38f8,named,ctor-and-dtor,123,Ammunition,2,1,,,,,,,callers-unnamed,callers FUN_000df900
-0x004f3ae8,named,ctor-and-dtor,123,Powerups,2,1,,,,,,,callers-unnamed,callers FUN_000df9a0
-0x004f3cd8,named,ctor-and-dtor,123,Weapon,2,1,,,,,,,callers-unnamed,callers FUN_000dfa60
-0x004f3ec8,named,ctor-and-dtor,123,Projectile,2,1,,,,,,,callers-unnamed,callers FUN_000dfb30
-0x004f40b8,named,ctor-and-dtor,123,Decoration,2,1,,,,,,,callers-unnamed,callers FUN_000dfbd0
-0x004f42a8,named,ctor-and-dtor,123,AvoidanceWaypoint,2,1,,,,,,,callers-unnamed,callers FUN_000dfc70
-0x004f4498,named,ctor-and-dtor,123,Vignette,2,1,,,,,,,callers-unnamed,callers FUN_000dfd10
-0x004f4688,named,ctor-and-dtor,123,Note,2,1,,,,,,,callers-unnamed,callers FUN_000dfdc0
-0x004f4878,named,ctor-and-dtor,123,Light,2,1,,,,,,,callers-unnamed,callers FUN_000dfe70
-0x004f4a68,named,ctor-and-dtor,123,LevelInfo,2,1,,,,,,,callers-unnamed,callers FUN_000e0120
-0x004f4c58,named,ctor-and-dtor,30,GameProfile,2,1,,,,,,,callers-unnamed,callers FUN_000e0700
-0x004f4cd0,named,ctor-and-dtor,31,Manifest,2,1,,,,,,,callers-unnamed,callers FUN_000e0840
-0x004f6188,named,ctor-and-dtor,135,Camera,2,1,,,,,,,callers-unnamed,callers FUN_000e0b80
-0x004f6d38,named,ctor-and-dtor,30,TextToSpeechAlias,2,1,,,,,,,callers-unnamed,callers FUN_000e0ed0
-0x004f6dd8,named,ctor-and-dtor,127,IMusicActor,2,1,,,,,,,callers-unnamed,callers FUN_000e1020
-0x004f6ff8,named,ctor-and-dtor,30,I3DL2Listener,2,1,,,,,,,callers-unnamed,callers FUN_000e1180
-0x004f7070,plain-only,unclassified,12,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x004f70a0,no-store,no-body,2,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x004f72a0,named,ctor-and-dtor,46,Sound,4,8,ProceduralSound|SoundGroup,ctor+dtor,Sound,0x004f72a0,,class,control-class,"2 caller class(es), dca Sound"
-0x004f7380,named,ctor-and-dtor,46,ProceduralSound,2,1,,,,,,,callers-unnamed,callers FUN_000e6300
-0x004f7468,named,ctor-and-dtor,47,SoundGroup,2,1,,,,,,,callers-unnamed,callers FUN_000e63f0
-0x004f7690,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers BeamEmitter_vt39
-0x004f76b8,named,ctor-and-dtor,40,ParticleEmitter,2,6,BeamEmitter|MeshEmitter|SparkEmitter|SpriteEmitter|TrailEmitter,dtor,ParticleEmitter,0x004f76b8,,class,control-class,"5 caller class(es), dca ParticleEmitter"
-0x004f7758,named,ctor-and-dtor,42,BeamEmitter,2,1,,,,,,,callers-unnamed,callers FUN_000ea870
-0x004f7868,plain-only,installed-by-ctor,22,,2,2,,,,,,,callers-unnamed,"callers Engine_UnChan, Engine_UnConn"
-0x004f8960,named,ctor-and-dtor,30,CacheManager,2,2,,,,,,,callers-unnamed,"callers FUN_000f1e30, FUN_000f90e0"
-0x004f9618,named,ctor-and-dtor,32,CameraOverlay,2,1,,,,,,,callers-unnamed,callers FUN_000fbb40
-0x004f9728,named,ctor-and-dtor,32,MotionBlur,2,1,,,,,,,callers-unnamed,callers FUN_000fcab0
-0x004fa110,named,ctor-and-dtor,51,Canvas,2,1,,,,,,,callers-unnamed,callers FUN_00106eb0
-0x004fa390,plain-only,ctor-and-dtor,37,,2,5,ActorChannel|ControlChannel|FileChannel|VoiceChannel,dtor,,,,,base-of-group,"4 caller classes (ActorChannel, ControlChannel, FileChannel, VoiceChannel), deepest common ancestor -"
-0x004fa5a8,at-least,ctor-and-dtor,2,,2,1,,,,,,,callers-unnamed,callers FUN_0010ce50
-0x004fa5b0,named,ctor-and-dtor,37,ControlChannel,2,1,,,,,,,callers-unnamed,callers FUN_0010ce50
-0x004fa650,named,ctor-and-dtor,37,FileChannel,2,1,,,,,,,callers-unnamed,callers FUN_0010cee0
-0x004fa6f0,named,ctor-and-dtor,37,VoiceChannel,2,1,,,,,,,callers-unnamed,callers FUN_0010d0b0
-0x004fa958,named,ctor-and-dtor,37,ActorChannel,2,1,,,,,,,callers-unnamed,callers FUN_0010d3d0
-0x004fb9b8,named,ctor-and-dtor,40,PackageMapLevel,3,4,,,,,,,callers-unnamed,"callers FUN_00110b50, FUN_0011d460, FUN_002d2890"
-0x004fbb30,named,ctor-and-dtor,30,PlayerInput,2,1,,,,,,,callers-unnamed,callers FUN_00110f70
-0x004fbba8,named,ctor-and-dtor,30,CheatManager,2,1,,,,,,,callers-unnamed,callers FUN_00111010
-0x004fc060,named,ctor-and-dtor,30,AdminBase,2,1,,,,,,,callers-unnamed,callers FUN_00119ed0
-0x004fc0f8,named,ctor-and-dtor,30,AIMsgManager,2,1,,,,,,,callers-unnamed,callers FUN_0011a1c0
-0x004fc1b0,named,ctor-and-dtor,39,Primitive,2,24,ConvexVolume|FluidSurfacePrimitive|LodMesh|LodMeshInstance|Mesh|MeshInstance,ctor+dtor,Primitive,0x004fc1b0,,class,control-class,"12 caller class(es), dca Primitive"
-0x004fc250,named,ctor-and-dtor,39,ConvexVolume,2,1,,,,,,,callers-unnamed,callers FUN_0011b610
-0x004fc35c,plain-only,installed-by-ctor,8,,2,6,DemoPlayPendingLevel|Level|NetPendingLevel,ctor,,,,,base-of-group,"3 caller classes (DemoPlayPendingLevel, Level, NetPendingLevel), deepest common ancestor -"
-0x004fc4cc,plain-only,ctor-and-dtor,8,,3,9,DemoPlayPendingLevel|Level|NetPendingLevel,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoPlayPendingLevel, Level, NetPendingLevel), deepest common ancestor -"
-0x004fc4f0,plain-only,ctor-and-dtor,30,,3,9,DemoPlayPendingLevel|Level|NetPendingLevel,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoPlayPendingLevel, Level, NetPendingLevel), deepest common ancestor -"
-0x004fc568,plain-only,ctor-and-dtor,8,,2,4,DemoPlayPendingLevel|NetPendingLevel,dtor,,,,,base-of-group,"2 caller classes (DemoPlayPendingLevel, NetPendingLevel), deepest common ancestor -"
-0x004fc588,plain-only,ctor-and-dtor,34,,2,4,DemoPlayPendingLevel|NetPendingLevel,dtor,,,,,base-of-group,"2 caller classes (DemoPlayPendingLevel, NetPendingLevel), deepest common ancestor -"
-0x004fc610,at-least,ctor-and-dtor,8,,3,2,,,,,,,callers-unnamed,"callers FUN_0011c130, FUN_0015ef40"
-0x004fc630,named,ctor-and-dtor,34,DemoPlayPendingLevel,3,2,,,,,,,callers-unnamed,"callers FUN_0011c130, FUN_0015ef40"
-0x004fcc08,at-least,ctor-and-dtor,1,,3,3,,,,,,,callers-unnamed,"callers DemoRecDriver_vt34, Engine_UnDemoRec, FUN_0011e530"
-0x004fcc0c,at-least,ctor-and-dtor,2,,3,3,,,,,,,callers-unnamed,"callers DemoRecDriver_vt34, Engine_UnDemoRec, FUN_0011e530"
-0x004fcc18,named,ctor-and-dtor,42,DemoRecConnection,3,3,,,,,,,callers-unnamed,"callers DemoRecDriver_vt34, Engine_UnDemoRec, FUN_0011e530"
-0x004fccc0,at-least,ctor-and-dtor,1,,2,1,,,,,,,callers-unnamed,callers FUN_0011e5c0
-0x004fccc8,named,ctor-and-dtor,40,DemoRecDriver,2,1,,,,,,,callers-unnamed,callers FUN_0011e5c0
-0x004fcfe0,plain-only,dtor-only,36,,1,3,ChannelDownload|HTTPDownload,dtor,,,,,base-of-group,"2 caller classes (ChannelDownload, HTTPDownload), deepest common ancestor -"
-0x004fd070,named,ctor-and-dtor,36,ChannelDownload,2,1,,,,,,,callers-unnamed,callers FUN_0011f770
-0x005040cc,at-least,ctor-and-dtor,1,,2,3,GameEngine,ctor+dtor,GameEngine,0x00509438,,,second-table,"its only caller class is GameEngine, whose own table is 0x00509438"
-0x005040d0,named,ctor-and-dtor,56,Engine,2,3,GameEngine,ctor+dtor,GameEngine,0x00509438,,descendant,control-descendant,"1 caller class(es), dca GameEngine"
-0x00504560,named,ctor-and-dtor,31,ServerCommandlet,2,1,,,,,,,callers-unnamed,callers FUN_00127af0
-0x005045e0,named,ctor-and-dtor,31,UModUnpackCommandlet,2,1,,,,,,,callers-unnamed,callers FUN_00127b90
-0x00504660,named,ctor-and-dtor,31,MasterMD5Commandlet,2,3,,,,,,,callers-unnamed,"callers FUN_00127c40, FUN_0021ada0, FUN_0021b5f0"
-0x005046e0,named,ctor-and-dtor,30,GlobalTempObjects,2,2,,,,,,,callers-unnamed,"callers FUN_001226a0, FUN_00127dd0"
-0x00507bb8,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers FUN_0012bbf0
-0x00507be0,named,ctor-and-dtor,39,FluidSurfacePrimitive,2,1,,,,,,,callers-unnamed,callers FUN_0012d690
-0x00507c7c,plain-only,installed-by-ctor,5,,1,1,,,,,,,callers-unnamed,callers FUN_0012bbf0
-0x00507da0,named,ctor-and-dtor,123,FluidSurfaceOscillator,2,1,,,,,,,callers-unnamed,callers FUN_0012d960
-0x00507f90,named,ctor-and-dtor,123,FluidSurfaceInfo,2,1,,,,,,,callers-unnamed,callers FUN_0012da10
-0x005081d8,named,ctor-and-dtor,30,Font,2,1,,,,,,,callers-unnamed,callers FUN_0012e830
-0x005085d8,named,ctor-and-dtor,30,Polys,2,2,,,,,,,callers-unnamed,"callers Core_UnTemplate, FUN_00131ab0"
-0x00509010,named,ctor-and-dtor,123,MaplistManagerBase,2,1,,,,,,,callers-unnamed,callers FUN_00148d90
-0x00509200,named,ctor-and-dtor,123,PrecacheHack,2,1,,,,,,,callers-unnamed,callers FUN_00148e30
-0x00509438,named,ctor-and-dtor,66,GameEngine,2,1,,,,,,,callers-unnamed,callers FUN_00148fc0
-0x0050a808,named,ctor-and-dtor,30,CrosshairPack,2,1,,,,,,,callers-unnamed,callers FUN_001491e0
-0x0050c314,at-least,ctor-and-dtor,1,,2,1,,,,,,,callers-unnamed,callers FUN_0014e7c0
-0x0050c318,named,ctor-and-dtor,45,Input,2,1,,,,,,,callers-unnamed,callers FUN_0014e7c0
-0x0050c808,named,ctor-and-dtor,30,Interactions,2,3,Interaction|InteractionMaster,dtor,Interactions,0x0050c808,,class,control-class,"2 caller class(es), dca Interactions"
-0x0050c880,named,ctor-and-dtor,36,Interaction,2,5,AbstractUIXInteraction|BaseGUIController|Console|StreamInteraction,dtor,Interaction,0x0050c880,,class,control-class,"4 caller class(es), dca Interaction"
-0x0050c910,named,ctor-and-dtor,37,AbstractUIXInteraction,2,2,UIXInteraction,dtor,UIXInteraction,0x00539988,,descendant,control-descendant,"1 caller class(es), dca UIXInteraction"
-0x0050ca30,named,ctor-and-dtor,39,BaseGUIController,2,2,GUIController,dtor,GUIController,0x00538d50,,descendant,control-descendant,"1 caller class(es), dca GUIController"
-0x0050cb80,named,ctor-and-dtor,36,Console,2,1,,,,,,,callers-unnamed,callers FUN_0014fc10
-0x0050cc68,named,ctor-and-dtor,30,InteractionMaster,2,1,,,,,,,callers-unnamed,callers FUN_00150cc0
-0x0050e88c,at-least,ctor-and-dtor,8,,3,3,,,,,,,callers-unnamed,"callers Engine_UnModel, FUN_00128810, FUN_00163060"
-0x0050e8b0,named,ctor-and-dtor,71,Level,3,3,,,,,,,callers-unnamed,"callers Engine_UnModel, FUN_00128810, FUN_00163060"
-0x0050ec30,named,ctor-and-dtor,42,Mesh,2,2,LodMesh,dtor,LodMesh,0x0050f020,,descendant,control-descendant,"1 caller class(es), dca LodMesh"
-0x0050ecd8,named,ctor-and-dtor,91,MeshInstance,2,2,LodMeshInstance,dtor,LodMeshInstance,0x0050ee48,,descendant,control-descendant,"1 caller class(es), dca LodMeshInstance"
-0x0050ee48,named,ctor-and-dtor,92,LodMeshInstance,2,3,SkeletalMeshInstance|VertMeshInstance,dtor,LodMeshInstance,0x0050ee48,,class,control-class,"2 caller class(es), dca LodMeshInstance"
-0x0050f020,named,ctor-and-dtor,45,LodMesh,2,5,SkeletalMesh|VertMesh,ctor+dtor,LodMesh,0x0050f020,,class,control-class,"2 caller class(es), dca LodMesh"
-0x0050f178,named,ctor-and-dtor,47,ConstantMaterial,2,3,ConstantColor|FadeColor,dtor,ConstantMaterial,0x0050f178,,class,control-class,"2 caller class(es), dca ConstantMaterial"
-0x0050f238,named,ctor-and-dtor,46,Modifier,2,7,ColorModifier|FinalBlend|MaterialSequence|MaterialSwitch|OpacityModifier|TexModifier,dtor,Modifier,0x0050f238,,class,control-class,"6 caller class(es), dca Modifier"
-0x0050f2f0,named,ctor-and-dtor,47,TexModifier,2,9,TexCoordSource|TexEnvMap|TexMatrix|TexOscillator|TexPanner|TexRotator,dtor,TexModifier,0x0050f2f0,,class,control-class,"8 caller class(es), dca TexModifier"
-0x0050f3b0,named,ctor-and-dtor,47,TexOscillator,2,2,TexOscillatorTriggered,dtor,TexOscillatorTriggered,0x0050fd70,,descendant,control-descendant,"1 caller class(es), dca TexOscillatorTriggered"
-0x0050f470,named,ctor-and-dtor,47,TexPanner,2,2,TexPannerTriggered,dtor,TexPannerTriggered,0x00510070,,descendant,control-descendant,"1 caller class(es), dca TexPannerTriggered"
-0x0050f618,named,ctor-and-dtor,46,TexCoordMaterial,2,1,,,,,,,callers-unnamed,callers FUN_0016fe20
-0x0050f6d0,named,ctor-and-dtor,46,VertexColor,2,1,,,,,,,callers-unnamed,callers FUN_0016fec0
-0x0050f788,named,ctor-and-dtor,47,FadeColor,2,1,,,,,,,callers-unnamed,callers FUN_0016ff80
-0x0050f848,named,ctor-and-dtor,47,ConstantColor,2,1,,,,,,,callers-unnamed,callers FUN_00170030
-0x0050f908,named,ctor-and-dtor,46,Shader,2,1,,,,,,,callers-unnamed,callers FUN_001700f0
-0x0050f9c0,named,ctor-and-dtor,46,OpacityModifier,2,1,,,,,,,callers-unnamed,callers FUN_001701b0
-0x0050fa78,named,ctor-and-dtor,46,FinalBlend,2,1,,,,,,,callers-unnamed,callers FUN_00170250
-0x0050fb30,named,ctor-and-dtor,47,TexCoordSource,2,1,,,,,,,callers-unnamed,callers FUN_00170310
-0x0050fbf0,named,ctor-and-dtor,47,TexMatrix,2,1,,,,,,,callers-unnamed,callers FUN_001703c0
-0x0050fcb0,named,ctor-and-dtor,47,TexEnvMap,2,1,,,,,,,callers-unnamed,callers FUN_00170460
-0x0050fd70,named,ctor-and-dtor,47,TexOscillatorTriggered,2,1,,,,,,,callers-unnamed,callers FUN_00170520
-0x0050fe30,named,ctor-and-dtor,47,TexRotator,2,1,,,,,,,callers-unnamed,callers FUN_001705f0
-0x0050fef0,named,ctor-and-dtor,47,TexScaler,2,1,,,,,,,callers-unnamed,callers FUN_00170690
-0x0050ffb0,named,ctor-and-dtor,47,VariableTexPanner,2,1,,,,,,,callers-unnamed,callers FUN_00170730
-0x00510070,named,ctor-and-dtor,47,TexPannerTriggered,2,1,,,,,,,callers-unnamed,callers FUN_001707f0
-0x00510130,named,ctor-and-dtor,46,ColorModifier,2,1,,,,,,,callers-unnamed,callers FUN_00170890
-0x005101e8,named,ctor-and-dtor,46,Combiner,2,1,,,,,,,callers-unnamed,callers FUN_001709c0
-0x005104a8,named,ctor-and-dtor,48,ProxyBitmapMaterial,2,1,,,,,,,callers-unnamed,callers FUN_00170e20
-0x00510568,named,ctor-and-dtor,46,MaterialSequence,2,1,,,,,,,callers-unnamed,callers FUN_00170fc0
-0x00510620,named,ctor-and-dtor,46,MaterialSwitch,2,1,,,,,,,callers-unnamed,callers FUN_00171070
-0x005106d8,named,ctor-and-dtor,46,MultiPassMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001711a0
-0x005107c0,named,ctor-and-dtor,58,BackBufferTexture,2,1,,,,,,,callers-unnamed,callers FUN_001712f0
-0x00510cf0,named,ctor-and-dtor,40,MeshEmitter,2,1,,,,,,,callers-unnamed,callers FUN_00174680
-0x00510e6c,plain-only,installed-by-ctor,9,,1,3,,,,,,,callers-unnamed,"callers FUN_0017a0b0, FUN_0017ac10, Model_vt11"
-0x00510e90,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers FUN_0017a0b0
-0x00510eb8,plain-only,installed-by-ctor,18,,1,2,,,,,,,callers-unnamed,"callers FUN_00179ab0, FUN_001ea3a0"
-0x00510f00,plain-only,installed-by-ctor,16,,2,1,,,,,,,callers-unnamed,callers FUN_0017aaa0
-0x00510f78,plain-only,dtor-only,18,,1,1,,,,,,,callers-unnamed,callers FUN_0017b1f0
-0x00510fc8,named,ctor-and-dtor,39,Model,3,2,,,,,,,callers-unnamed,"callers Engine_UnLevel, FUN_0017b0a0"
-0x005110c8,named,ctor-and-dtor,125,Mover,2,1,,,,,,,callers-unnamed,callers FUN_0017c270
-0x00511308,named,ctor-and-dtor,30,Movie,2,1,,,,,,,callers-unnamed,callers FUN_0017d530
-0x00511380,plain-only,ctor-and-dtor,12,,2,2,,,,,,,callers-unnamed,"callers FUN_0017cd90, FUN_0017d5f0"
-0x005113b0,plain-only,ctor-and-dtor,12,,2,2,,,,,,,callers-unnamed,"callers FUN_0017d5f0, FUN_002c0b80"
-0x00511538,named,ctor-and-dtor,59,MovieTexture,2,1,,,,,,,callers-unnamed,callers FUN_0017d710
-0x005124a4,plain-only,ctor-and-dtor,12,,2,1,,,,,,,callers-unnamed,callers FUN_00187020
-0x00512798,named,ctor-and-dtor,31,PackageCheckInfo,2,1,,,,,,,callers-unnamed,callers FUN_00187430
-0x00512938,named,ctor-and-dtor,46,ParticleMaterial,2,1,,,,,,,callers-unnamed,callers FUN_0018ef70
-0x005139f4,at-least,ctor-and-dtor,8,,3,2,,,,,,,callers-unnamed,"callers Engine_UnGame, FUN_001a6c70"
-0x00513a18,named,ctor-and-dtor,34,NetPendingLevel,3,2,,,,,,,callers-unnamed,"callers Engine_UnGame, FUN_001a6c70"
-0x00513fd0,named,ctor-and-dtor,47,PixelShaderMaterial,2,17,PSBackBufferEffect|PSBloomSelectMaterial|PSBlurMaterial|PSBump|PSDepthOfFieldMaterial|PSDistortionBaseMaterial,dtor,PixelShaderMaterial,0x00513fd0,,class,control-class,"16 caller class(es), dca PixelShaderMaterial"
-0x00514090,named,ctor-and-dtor,47,PSShieldMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001b8da0
-0x00514150,named,ctor-and-dtor,47,PSReplicatorVision,2,1,,,,,,,callers-unnamed,callers FUN_001b8e40
-0x00514210,named,ctor-and-dtor,47,PSBump,2,3,PSBumpBSP|PSBumpSpecular,dtor,PSBump,0x00514210,,class,control-class,"2 caller class(es), dca PSBump"
-0x005142d0,named,ctor-and-dtor,47,PSBumpSpecular,2,3,PSBumpSpecularBSP|PSVDM,dtor,PSBumpSpecular,0x005142d0,,class,control-class,"2 caller class(es), dca PSBumpSpecular"
-0x00514390,named,ctor-and-dtor,47,PSDistortionBaseMaterial,2,3,PSBlendedDistortionMaterial|PSDistortionMaterial,dtor,PSDistortionBaseMaterial,0x00514390,,class,control-class,"2 caller class(es), dca PSDistortionBaseMaterial"
-0x00514450,named,ctor-and-dtor,47,PSBlendedDistortionMaterial,2,4,PSAdditiveDistortion|PSModulatedDistortionMaterial|PSSubtractiveDistortion,dtor,PSBlendedDistortionMaterial,0x00514450,,class,control-class,"3 caller class(es), dca PSBlendedDistortionMaterial"
-0x00514510,named,ctor-and-dtor,47,PSSubtractiveDistortion,2,1,,,,,,,callers-unnamed,callers FUN_001b9190
-0x005145d0,named,ctor-and-dtor,47,PSAdditiveDistortion,2,1,,,,,,,callers-unnamed,callers FUN_001b9230
-0x00514690,named,ctor-and-dtor,47,PSModulatedDistortionMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001b92d0
-0x00514750,named,ctor-and-dtor,47,PSDistortionMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001b9370
-0x00514810,named,ctor-and-dtor,47,PSSimple,2,1,,,,,,,callers-unnamed,callers FUN_001b9410
-0x005148d0,named,ctor-and-dtor,47,PSEmissiveShader,2,1,,,,,,,callers-unnamed,callers FUN_001b9540
-0x00514990,named,ctor-and-dtor,47,PSEmissiveConstColor,2,1,,,,,,,callers-unnamed,callers FUN_001b95e0
-0x00514a50,named,ctor-and-dtor,47,PSBackBufferEffect,2,1,,,,,,,callers-unnamed,callers FUN_001b9690
-0x00514b10,named,ctor-and-dtor,47,PSBlurMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001b9730
-0x00514bd0,named,ctor-and-dtor,47,PSUseTexIndexMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001b97f0
-0x00514c90,named,ctor-and-dtor,47,PSLuminanceTexIndexMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001b9890
-0x00514d50,named,ctor-and-dtor,47,PSBloomSelectMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001b9930
-0x00514e10,named,ctor-and-dtor,47,PSWater,2,1,,,,,,,callers-unnamed,callers FUN_001bd580
-0x00514ed0,named,ctor-and-dtor,47,PSMotionBlurMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001bd600
-0x00514f90,named,ctor-and-dtor,47,PSVDM,2,1,,,,,,,callers-unnamed,callers FUN_001bd710
-0x00515050,named,ctor-and-dtor,47,PSBumpSpecularBSP,2,1,,,,,,,callers-unnamed,callers FUN_001bd7b0
-0x00515110,named,ctor-and-dtor,47,PSBumpBSP,2,1,,,,,,,callers-unnamed,callers FUN_001bd850
-0x00515220,named,ctor-and-dtor,47,PSDepthOfFieldMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001bdb20
-0x005152e0,named,ctor-and-dtor,47,PSRefractionMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001bdba0
-0x005153a0,named,ctor-and-dtor,123,WaterSceneManager,2,1,,,,,,,callers-unnamed,callers FUN_001bdc40
-0x005155d8,named,ctor-and-dtor,30,PlayerProfile,2,1,,,,,,,callers-unnamed,callers FUN_001bfe80
-0x00515bd0,named,ctor-and-dtor,30,PlayerStats,2,2,PlayerStatCache,dtor,PlayerStatCache,0x00515d38,,descendant,control-descendant,"1 caller class(es), dca PlayerStatCache"
-0x00515c48,named,ctor-and-dtor,30,StatsQuery,2,1,,,,,,,callers-unnamed,callers FUN_001c6030
-0x00515cc0,named,ctor-and-dtor,30,StatsWrite,2,1,,,,,,,callers-unnamed,callers FUN_001c60f0
-0x00515d38,named,ctor-and-dtor,30,PlayerStatCache,2,1,,,,,,,callers-unnamed,callers FUN_001c61b0
-0x00516808,named,ctor-and-dtor,30,PlayInfo,2,1,,,,,,,callers-unnamed,callers FUN_001ca4a0
-0x005169b0,named,ctor-and-dtor,46,ProjectorMaterial,2,1,,,,,,,callers-unnamed,callers FUN_001cb660
-0x00516ac8,named,ctor-and-dtor,39,ProjectorPrimitive,2,1,,,,,,,callers-unnamed,callers FUN_001d0080
-0x00516be8,named,ctor-and-dtor,128,Projector,2,2,ShadowProjector,dtor,ShadowProjector,0x0051ab38,,descendant,control-descendant,"1 caller class(es), dca ShadowProjector"
-0x00516fa8,plain-only,ctor-and-dtor,10,,5,16,,,,,,,callers-unnamed,"callers FUN_00101c40, FUN_00101ea0, FUN_00102310"
-0x00516fd4,plain-only,installed-by-ctor,14,,2,4,,,,,,,callers-unnamed,"callers FUN_001d5050, FUN_001d50d0, FUN_001d6b60"
-0x0051700c,plain-only,installed-by-ctor,14,,1,1,,,,,,,callers-unnamed,callers FUN_001fc630
-0x00517044,plain-only,installed-by-ctor,14,,1,1,,,,,,,callers-unnamed,callers FUN_001fc630
-0x0051707c,plain-only,dtor-only,9,,2,5,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnMath, Emitter_vt70"
-0x005170a8,plain-only,installed-by-ctor,14,,1,1,,,,,,,callers-unnamed,callers FUN_001fc630
-0x005170f4,plain-only,installed-by-ctor,15,,1,7,,,,,,,callers-unnamed,"callers FUN_00102a30, FUN_0014edc0, FUN_0014f0e0"
-0x00517134,plain-only,installed-by-ctor,15,,1,1,,,,,,,callers-unnamed,callers FUN_00133250
-0x005171b4,plain-only,installed-by-ctor,15,,1,5,,,,,,,callers-unnamed,"callers FUN_00101c40, FUN_00101ea0, FUN_00102310"
-0x00517214,plain-only,unclassified,9,,1,1,,,,,,,callers-unnamed,callers Core_UnMath
-0x00517238,plain-only,unclassified,5,,1,1,,,,,,,callers-unnamed,callers Core_UnMath
-0x0051724c,plain-only,installed-by-ctor,5,,2,1,,,,,,,callers-unnamed,callers Core_UnClass
-0x00517260,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers FUN_001df420
-0x005172ec,no-store,no-body,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00517428,plain-only,unclassified,2,,1,2,,,,,,,callers-unnamed,"callers Core_UnMath, FUN_001fc630"
-0x00517430,plain-only,installed-by-ctor,5,,2,2,,,,,,,callers-unnamed,"callers Core_UnMath, FUN_001e0df0"
-0x00517444,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers FUN_001e0840
-0x00517468,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers FUN_001e04e0
-0x0051748c,plain-only,unclassified,2,,4,5,,,,,,,callers-unnamed,"callers Core_UnMath, Core_UnMisc, FUN_0004f090"
-0x005174a0,plain-only,unclassified,2,,1,2,,,,,,,callers-unnamed,"callers Core_UnMath, FUN_001fc630"
-0x005174a8,plain-only,dtor-only,18,,2,1,,,,,,,callers-unnamed,callers FUN_001e1140
-0x00517588,plain-only,unclassified,18,,2,1,,,,,,,callers-unnamed,callers FUN_001e1140
-0x00517778,plain-only,ctor-and-dtor,9,,4,6,,,,,,,callers-unnamed,"callers Engine_UnRender, FUN_001da840, FUN_001eab90"
-0x00517860,plain-only,dtor-only,30,,1,4,IndexBuffer|SkinVertexBuffer,dtor,,,,,base-of-group,"2 caller classes (IndexBuffer, SkinVertexBuffer), deepest common ancestor -"
-0x005178d8,plain-only,dtor-only,32,,1,6,VertexBuffer|VertexStreamCOLOR|VertexStreamPosNormTex|VertexStreamUV|VertexStreamVECTOR,dtor,,,,,base-of-group,"5 caller classes (VertexBuffer, VertexStreamCOLOR, VertexStreamPosNormTex, VertexStreamUV), deepest common ancestor -"
-0x00517a18,named,ctor-and-dtor,30,IndexBuffer,2,1,,,,,,,callers-unnamed,callers FUN_001ec2c0
-0x00517a90,named,ctor-and-dtor,32,VertexBuffer,2,1,,,,,,,callers-unnamed,callers FUN_001ec9a0
-0x00517b10,named,ctor-and-dtor,32,VertexStreamVECTOR,2,1,,,,,,,callers-unnamed,callers FUN_001eca90
-0x00517b90,named,ctor-and-dtor,32,VertexStreamCOLOR,2,1,,,,,,,callers-unnamed,callers FUN_001ecc60
-0x00517c10,named,ctor-and-dtor,32,VertexStreamUV,2,1,,,,,,,callers-unnamed,callers FUN_001ece10
-0x00517c90,named,ctor-and-dtor,32,VertexStreamPosNormTex,2,1,,,,,,,callers-unnamed,callers FUN_001ed040
-0x00517d10,named,ctor-and-dtor,30,SkinVertexBuffer,2,1,,,,,,,callers-unnamed,callers FUN_001ed0f0
-0x00517e88,plain-only,dtor-only,5,,2,4,,,,,,,callers-unnamed,"callers Core_UnMisc, Core_UnTemplate, FUN_0004f090"
-0x00517ff0,plain-only,ctor-and-dtor,9,,5,5,,,,,,,callers-unnamed,"callers Engine_UnRenderUtil, FUN_0021e478, SGScreenBloom_vt31"
-0x00518080,plain-only,installed-by-ctor,18,,1,16,,,,,,,callers-unnamed,"callers Core_UnMath, Core_UnObjBas, Core_UnTemplate"
-0x005180c8,plain-only,ctor-and-dtor,15,,2,8,,,,,,,callers-unnamed,"callers FUN_000fbea0, FUN_000fc4f0, FUN_00102310"
-0x00518104,plain-only,installed-by-ctor,7,,1,11,StaticMesh|TerrainSector,ctor,Object,0x004dd2a8,,,base-of-group,"2 caller classes (StaticMesh, TerrainSector), deepest common ancestor Object"
-0x00518120,plain-only,installed-by-ctor,5,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x00518160,plain-only,ctor-and-dtor,9,,3,30,,,,,,,callers-unnamed,"callers Ambushpoint_vt137, Camera_vt70, Core_UnClass"
-0x00518184,plain-only,ctor-and-dtor,9,,2,23,,,,,,,callers-unnamed,"callers CameraOverlay_vt31, Canvas_vt31, Core_UnMath"
-0x005181a8,plain-only,installed-by-ctor,9,,1,4,StaticMesh|StaticMeshInstance,ctor,Object,0x004dd2a8,,,base-of-group,"2 caller classes (StaticMesh, StaticMeshInstance), deepest common ancestor Object"
-0x005181d0,plain-only,dtor-only,3,,1,1,,,,,,,callers-unnamed,callers FUN_002007a0
-0x005181dc,no-store,no-body,3,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00518468,named,ctor-and-dtor,30,MeshObject,2,1,,,,,,,callers-unnamed,callers FUN_00203810
-0x00518530,named,ctor-and-dtor,33,SubActionPlayMovie,2,1,,,,,,,callers-unnamed,callers FUN_0020b2e0
-0x005185b8,named,ctor-and-dtor,33,SubActionShowText,2,1,,,,,,,callers-unnamed,callers FUN_0020b390
-0x00518640,named,ctor-and-dtor,33,SubActionSubTitle,2,1,,,,,,,callers-unnamed,callers FUN_0020b440
-0x005186c8,named,ctor-and-dtor,33,SubActionSceneSpeed,2,1,,,,,,,callers-unnamed,callers FUN_0020b4e0
-0x00518750,named,ctor-and-dtor,33,SubActionGameSpeed,2,1,,,,,,,callers-unnamed,callers FUN_0020b580
-0x005187d8,named,ctor-and-dtor,33,SubActionOrientation,2,1,,,,,,,callers-unnamed,callers FUN_0020b670
-0x00518860,named,ctor-and-dtor,33,SubActionCameraShake,2,1,,,,,,,callers-unnamed,callers FUN_0020b710
-0x005188e8,named,ctor-and-dtor,33,SubActionFOV,2,1,,,,,,,callers-unnamed,callers FUN_0020b7b0
-0x00518970,named,ctor-and-dtor,33,SubActionTrigger,2,1,,,,,,,callers-unnamed,callers FUN_0020b850
-0x005189f8,named,ctor-and-dtor,33,SubActionFade,2,1,,,,,,,callers-unnamed,callers FUN_0020b8f0
-0x00518c30,named,ctor-and-dtor,30,MatAction,2,3,ActionMoveCamera|ActionPause,dtor,MatAction,0x00518c30,,class,control-class,"2 caller class(es), dca MatAction"
-0x00518ca8,named,ctor-and-dtor,31,ActionPause,2,2,MatActionWaitForEvent,dtor,MatActionWaitForEvent,0x005194c8,,descendant,control-descendant,"1 caller class(es), dca MatActionWaitForEvent"
-0x00518ef8,named,ctor-and-dtor,124,LookTarget,2,1,,,,,,,callers-unnamed,callers FUN_0020bce0
-0x005190e8,named,ctor-and-dtor,123,SceneManager,2,1,,,,,,,callers-unnamed,callers FUN_0020be80
-0x005192d8,named,ctor-and-dtor,123,MatDemoActor,2,1,,,,,,,callers-unnamed,callers FUN_0020bf50
-0x005194c8,named,ctor-and-dtor,31,MatActionWaitForEvent,2,1,,,,,,,callers-unnamed,callers FUN_0020c030
-0x00519548,named,ctor-and-dtor,30,ActionMoveCamera,2,1,,,,,,,callers-unnamed,callers FUN_0020c0d0
-0x0051a27c,plain-only,installed-by-ctor,15,,1,1,,,,,,,callers-unnamed,callers FUN_0021a590
-0x0051a2b8,named,ctor-and-dtor,48,ScriptedTexture,2,1,,,,,,,callers-unnamed,callers FUN_0021ab00
-0x0051a3c4,plain-only,installed-by-ctor,15,,1,1,,,,,,,callers-unnamed,callers ScriptedTexture_vt47
-0x0051a5b0,named,ctor-and-dtor,123,Security,2,1,,,,,,,callers-unnamed,callers FUN_0021c7a0
-0x0051a810,plain-only,installed-by-ctor,61,,2,0,,,,,,,no-direct-call,"2 installer body(ies), no direct `E8` caller in .text"
-0x0051a908,named,ctor-and-dtor,48,ShadowBitmapMaterial,2,1,,,,,,,callers-unnamed,callers FUN_0021ed00
-0x0051a9e4,plain-only,installed-by-ctor,15,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0051ab38,named,ctor-and-dtor,128,ShadowProjector,2,1,,,,,,,callers-unnamed,callers FUN_0021f020
-0x0051ad50,named,ctor-and-dtor,31,AnimNotify,2,8,AnimNotify_DestroyEffect|AnimNotify_Effect|AnimNotify_LIPSinc|AnimNotify_MatSubAction|AnimNotify_Script|AnimNotify_Scripted,dtor,AnimNotify,0x0051ad50,,class,control-class,"7 caller class(es), dca AnimNotify"
-0x0051add0,named,ctor-and-dtor,31,AnimNotify_MatSubAction,2,1,,,,,,,callers-unnamed,callers FUN_0021f6d0
-0x0051ae50,named,ctor-and-dtor,31,AnimNotify_Scripted,2,1,,,,,,,callers-unnamed,callers FUN_0021f770
-0x0051aed0,named,ctor-and-dtor,31,AnimNotify_Script,2,1,,,,,,,callers-unnamed,callers FUN_0021f810
-0x0051af50,named,ctor-and-dtor,31,AnimNotify_LIPSinc,2,1,,,,,,,callers-unnamed,callers FUN_0021f8b0
-0x0051afd0,named,ctor-and-dtor,31,AnimNotify_DestroyEffect,2,1,,,,,,,callers-unnamed,callers FUN_0021f950
-0x0051b050,named,ctor-and-dtor,31,AnimNotify_Effect,2,1,,,,,,,callers-unnamed,callers FUN_0021f9f0
-0x0051b0cc,plain-only,dtor-only,6,,5,11,,,,,,,callers-unnamed,"callers Core_UnMisc, FUN_0004f090, FUN_000599e0"
-0x0051b0e4,plain-only,unclassified,6,,1,2,,,,,,,callers-unnamed,"callers FUN_0023a9e0, FUN_0023c110"
-0x0051b100,named,ctor-and-dtor,30,Animation,2,1,,,,,,,callers-unnamed,callers FUN_00220600
-0x0051b178,plain-only,unclassified,9,,1,1,,,,,,,callers-unnamed,callers Core_UnObjBas
-0x0051bc08,at-least,ctor-and-dtor,2,,3,5,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
-0x0051bc10,at-least,ctor-and-dtor,2,,3,5,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
-0x0051bc18,plain-only,ctor-and-dtor,2,,2,4,,,,,,,callers-unnamed,"callers FUN_0023ba40, FUN_0023cbb0, FUN_00241ad0"
-0x0051bc20,plain-only,installed-by-ctor,11,,1,2,VertMesh,ctor,VertMesh,0x00520fd8,,,second-table,"its only caller class is VertMesh, whose own table is 0x00520fd8"
-0x0051bc4c,plain-only,installed-by-ctor,9,,1,2,SkeletalMeshInstance,ctor,SkeletalMeshInstance,0x0051c188,,,second-table,"its only caller class is SkeletalMeshInstance, whose own table is 0x0051c188"
-0x0051bc70,plain-only,installed-by-ctor,6,,1,1,,,,,,,callers-unnamed,callers FUN_0023a8f0
-0x0051bc88,plain-only,installed-by-ctor,6,,1,1,,,,,,,callers-unnamed,callers FUN_0023a8f0
-0x0051bca0,plain-only,unclassified,6,,1,2,,,,,,,callers-unnamed,"callers FUN_0023a9e0, FUN_0023c110"
-0x0051bf18,at-least,ctor-and-dtor,2,,3,5,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
-0x0051bf20,at-least,ctor-and-dtor,2,,2,1,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
-0x0051bf28,at-least,ctor-and-dtor,2,,2,1,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
-0x0051bf30,named,ctor-and-dtor,31,AnimNotify_Sound,2,1,,,,,,,callers-unnamed,callers FUN_0023bb50
-0x0051c040,named,ctor-and-dtor,39,MeshAnimation,2,1,,,,,,,callers-unnamed,callers FUN_0023cf40
-0x0051c188,named,ctor-and-dtor,98,SkeletalMeshInstance,2,1,,,,,,,callers-unnamed,callers FUN_0023d470
-0x0051c310,named,ctor-and-dtor,45,SkeletalMesh,2,1,,,,,,,callers-unnamed,callers FUN_0023d900
-0x0051d238,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers SparkEmitter_vt39
-0x0051d260,named,ctor-and-dtor,40,SparkEmitter,2,1,,,,,,,callers-unnamed,callers FUN_00245540
-0x0051d300,plain-only,installed-by-ctor,9,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0051d37c,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers SpriteEmitter_vt39
-0x0051d3a0,named,ctor-and-dtor,41,SpriteEmitter,2,1,,,,,,,callers-unnamed,callers FUN_00247ed0
-0x0051d444,plain-only,unclassified,9,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0051d7c4,plain-only,installed-by-ctor,9,,1,2,StaticMesh,ctor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
-0x0051d7e8,plain-only,installed-by-ctor,9,,2,2,,,,,,,callers-unnamed,"callers FUN_0024a150, FUN_0024efb0"
-0x0051d80c,plain-only,installed-by-ctor,9,,1,1,StaticMesh,ctor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
-0x0051d830,at-least,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers FUN_00263650
-0x0051d854,at-least,ctor-and-dtor,2,,2,2,StaticMesh,dtor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
-0x0051d860,named,ctor-and-dtor,123,DecoCollideActor,2,1,,,,,,,callers-unnamed,callers FUN_0024e930
-0x0051da50,named,ctor-and-dtor,123,StaticMeshActor,2,1,,,,,,,callers-unnamed,callers FUN_0024e9d0
-0x0051dc40,named,ctor-and-dtor,30,StaticMeshInstance,2,2,,,,,,,callers-unnamed,"callers FUN_0024bc30, FUN_0024eea0"
-0x0051dd28,named,ctor-and-dtor,40,StaticMesh,2,2,,,,,,,callers-unnamed,"callers FUN_0024f490, FUN_00263650"
-0x0051ec98,plain-only,installed-by-ctor,23,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0051f650,named,ctor-and-dtor,30,SVehicleWheel,2,1,,,,,,,callers-unnamed,callers FUN_00263ab0
-0x0051f6d8,plain-only,unclassified,5,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0051f6ec,plain-only,unclassified,5,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0051f700,plain-only,unclassified,5,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0051f720,named,ctor-and-dtor,39,TerrainPrimitive,3,2,,,,,,,callers-unnamed,"callers FUN_00275f70, FUN_002796a0"
-0x0051fa7c,plain-only,unclassified,9,,1,1,,,,,,,callers-unnamed,callers FUN_0026f480
-0x0051faa0,plain-only,installed-by-ctor,9,,1,2,,,,,,,callers-unnamed,"callers FUN_0026f480, FUN_00279400"
-0x0051fc18,named,ctor-and-dtor,46,TerrainMaterial,2,1,,,,,,,callers-unnamed,callers FUN_00279230
-0x0051fcd0,named,ctor-and-dtor,30,TerrainSector,3,2,,,,,,,callers-unnamed,"callers FUN_00273aa0, FUN_00279340"
-0x0051fda8,named,ctor-and-dtor,123,TerrainInfo,2,1,,,,,,,callers-unnamed,callers FUN_00279750
-0x0051ffd8,plain-only,installed-by-ctor,18,,1,7,Texture,ctor,Texture,0x004cfba0,,,second-table,"its only caller class is Texture, whose own table is 0x004cfba0"
-0x00520248,plain-only,installed-by-ctor,15,,1,1,Cubemap,ctor,Cubemap,0x005205c8,,,second-table,"its only caller class is Cubemap, whose own table is 0x005205c8"
-0x00520288,named,ctor-and-dtor,30,Palette,2,7,,,,,,,callers-unnamed,"callers FUN_0027e640, FUN_0027eea0, Fire_UnFractal"
-0x005205c8,named,ctor-and-dtor,58,Cubemap,2,1,,,,,,,callers-unnamed,callers FUN_0027ef90
-0x0052075c,plain-only,installed-by-ctor,5,,1,1,,,,,,,callers-unnamed,callers TrailEmitter_vt39
-0x005207a4,plain-only,installed-by-ctor,9,,1,1,,,,,,,callers-unnamed,callers TrailEmitter_vt39
-0x005207c8,named,ctor-and-dtor,41,TrailEmitter,2,1,,,,,,,callers-unnamed,callers FUN_00284180
-0x0052086c,plain-only,unclassified,9,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00520ca0,named,ctor-and-dtor,92,VertMeshInstance,2,1,,,,,,,callers-unnamed,callers FUN_0028f130
-0x00520fd8,named,ctor-and-dtor,45,VertMesh,2,1,,,,,,,callers-unnamed,callers FUN_0028f2f0
-0x005210a8,named,ctor-and-dtor,123,PlayerChatManager,2,1,,,,,,,callers-unnamed,callers FUN_0028fac0
-0x00521298,named,ctor-and-dtor,123,VoiceChatRoom,2,1,,,,,,,callers-unnamed,callers FUN_0028fb60
-0x005214d0,named,ctor-and-dtor,123,VoiceChatReplicationInfo,2,1,,,,,,,callers-unnamed,callers FUN_0028fdc0
-0x005216c0,named,ctor-and-dtor,123,DecoVolumeObject,2,1,,,,,,,callers-unnamed,callers FUN_00290a90
-0x005218b0,named,ctor-and-dtor,124,DecorationList,2,1,,,,,,,callers-unnamed,callers FUN_00290b30
-0x00521b30,named,ctor-and-dtor,30,Spline,2,1,,,,,,,callers-unnamed,callers FUN_00290dd0
-0x00521f80,named,ctor-and-dtor,30,StreamBase,2,4,Stream|StreamInterface|StreamTag,dtor,StreamBase,0x00521f80,,class,control-class,"3 caller class(es), dca StreamBase"
-0x00521ff8,plain-only,installed-by-ctor,3,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x00522110,named,ctor-and-dtor,31,StreamInterface,2,1,,,,,,,callers-unnamed,callers FUN_00295ea0
-0x00522190,named,ctor-and-dtor,37,StreamInteraction,2,1,,,,,,,callers-unnamed,callers FUN_00295f50
-0x00522e88,named,ctor-and-dtor,30,Stream,2,1,,,,,,,callers-unnamed,callers FUN_00297980
-0x00522f90,named,ctor-and-dtor,30,StreamTag,2,1,,,,,,,callers-unnamed,callers FUN_00297ee0
-0x00523008,plain-only,installed-by-ctor,3,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x00523340,plain-only,installed-by-ctor,9,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x00523394,plain-only,installed-by-ctor,9,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0052352c,plain-only,installed-by-ctor,16,,1,1,,,,,,,callers-unnamed,callers FUN_002a5d40
-0x0052b45c,at-least,ctor-and-dtor,1,,2,1,,,,,,,callers-unnamed,callers FUN_002b4eb0
-0x0052b460,named,ctor-and-dtor,50,D3DRenderDevice,2,1,,,,,,,callers-unnamed,callers FUN_002b4eb0
-0x0052bbf8,plain-only,installed-by-ctor,65,,1,1,D3DRenderDevice,ctor,D3DRenderDevice,0x0052b460,,,second-table,"its only caller class is D3DRenderDevice, whose own table is 0x0052b460"
-0x0052bdb8,plain-only,installed-by-ctor,16,,1,1,,,,,,,callers-unnamed,callers D3DDrv_D3DRenderDevice
-0x0052be38,plain-only,ctor-and-dtor,12,,2,2,,,,,,,callers-unnamed,"callers D3DRenderDevice_vt46, FUN_002c12b0"
-0x0052be68,plain-only,ctor-and-dtor,5,,2,7,,,,,,,callers-unnamed,"callers FUN_002be490, FUN_002be4d0, FUN_002bf900"
-0x0052be7c,plain-only,ctor-and-dtor,5,,2,2,,,,,,,callers-unnamed,"callers FUN_002b98a0, FUN_002c1310"
-0x0052c2b8,plain-only,ctor-and-dtor,5,,3,2,,,,,,,callers-unnamed,"callers FUN_002c1340, FUN_002c1370"
-0x0052c498,plain-only,ctor-and-dtor,5,,3,3,,,,,,,callers-unnamed,"callers FUN_002b71e0, FUN_002c13d0, FUN_002c1400"
-0x0052c76c,plain-only,installed-by-ctor,5,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0052c780,plain-only,installed-by-ctor,5,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0052cb00,named,ctor-and-dtor,36,HTTPDownload,2,1,,,,,,,callers-unnamed,callers FUN_002c3c30
-0x0052cc50,plain-only,dtor-only,22,,1,2,,,,,,,callers-unnamed,"callers FUN_002c6450, FUN_002c6e90"
-0x0052cefc,plain-only,ctor-and-dtor,7,,4,4,,,,,,,callers-unnamed,"callers FUN_002cbc80, FUN_002ccd60, FUN_002ccdb0"
-0x0052d1a0,plain-only,dtor-only,23,,1,2,,,,,,,callers-unnamed,"callers FUN_002cbe70, FUN_002cd7c0"
-0x0052d3e8,plain-only,ctor-and-dtor,25,,2,5,,,,,,,callers-unnamed,"callers FUN_002c72e0, FUN_002c83b0, FUN_002c8900"
-0x0052d498,plain-only,dtor-only,22,,2,2,,,,,,,callers-unnamed,"callers FUN_002c6ed0, FUN_002c7310"
-0x0052d528,plain-only,installed-by-ctor,22,,1,5,,,,,,,callers-unnamed,"callers FUN_002c91c0, FUN_002cbcf0, FUN_002cd2e0"
-0x0052d5c8,named,ctor-and-dtor,123,InternetLink,2,5,TcpLink|UdpLink,ctor+dtor,InternetLink,0x0052d5c8,,class,control-class,"2 caller class(es), dca InternetLink"
-0x0052d7d0,plain-only,installed-by-ctor,24,,1,1,,,,,,,callers-unnamed,callers FUN_002c6ed0
-0x0052e0c8,plain-only,installed-by-ctor,25,,1,1,,,,,,,callers-unnamed,callers FUN_002c8180
-0x0052e298,named,ctor-and-dtor,124,MasterServerLink,2,3,MasterServerUplink|ServerQueryClient,dtor,MasterServerLink,0x0052e298,,class,control-class,"2 caller class(es), dca MasterServerLink"
-0x0052e488,named,ctor-and-dtor,124,ServerQueryClient,2,2,MasterServerClient,dtor,MasterServerClient,0x0052e678,,descendant,control-descendant,"1 caller class(es), dca MasterServerClient"
-0x0052e678,named,ctor-and-dtor,124,MasterServerClient,2,1,,,,,,,callers-unnamed,callers FUN_002c9500
-0x0052eb78,plain-only,installed-by-ctor,7,,1,1,,,,,,,callers-unnamed,callers FUN_002c7d50
-0x0052ef14,plain-only,installed-by-ctor,8,,1,1,,,,,,,callers-unnamed,callers IpDrv_MasterServerUplink
-0x0052ef34,plain-only,installed-by-ctor,8,,1,2,,,,,,,callers-unnamed,"callers FUN_002cd2e0, IpDrv_MasterServerUplink"
-0x0052ef54,plain-only,installed-by-ctor,8,,1,1,,,,,,,callers-unnamed,callers IpDrv_MasterServerUplink
-0x0052ef78,named,ctor-and-dtor,123,MasterServerGameStats,2,1,,,,,,,callers-unnamed,callers FUN_002cdd40
-0x0052f1c0,plain-only,ctor-and-dtor,25,,2,3,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_002ce210, IpDrv_UnSocket"
-0x0052f4a0,named,ctor-and-dtor,124,MasterServerUplink,2,1,,,,,,,callers-unnamed,callers FUN_002ce3a0
-0x00530000,named,ctor-and-dtor,123,TcpLink,2,1,,,,,,,callers-unnamed,callers FUN_002d1bc0
-0x00531710,named,ctor-and-dtor,31,CompressCommandlet,2,1,,,,,,,callers-unnamed,callers FUN_002d6d00
-0x00531790,named,ctor-and-dtor,31,DecompressCommandlet,2,1,,,,,,,callers-unnamed,callers FUN_002d6da0
-0x00531c40,named,ctor-and-dtor,123,UdpLink,2,1,,,,,,,callers-unnamed,callers FUN_002d7f40
-0x00536370,named,ctor-and-dtor,30,GUI,2,4,GUIComponent|GUIFont|GUIStyles,dtor,GUI,0x00536370,,class,control-class,"3 caller class(es), dca GUI"
-0x005363e8,named,ctor-and-dtor,30,StatsManager,2,1,,,,,,,callers-unnamed,callers FUN_002eabe0
-0x00536460,named,ctor-and-dtor,38,PropertyManagerBase,2,1,,,,,,,callers-unnamed,callers FUN_002eac80
-0x00536590,named,ctor-and-dtor,30,GUIStyles,2,1,,,,,,,callers-unnamed,callers FUN_002f37d0
-0x00536648,named,ctor-and-dtor,58,GUIComponent,2,11,GUIButton|GUIHorzScrollZone|GUIImage|GUILabel|GUIListBase|GUIMultiColumnListHeader,dtor,GUIComponent,0x00536648,,class,control-class,"10 caller class(es), dca GUIComponent"
-0x00536730,named,ctor-and-dtor,63,GUIMultiComponent,2,8,GUIComboBox|GUIListBoxBase|GUIMenuOption|GUINumericEdit|GUIPanel|GUIScrollBarBase,dtor,GUIMultiComponent,0x00536730,,class,control-class,"7 caller class(es), dca GUIMultiComponent"
-0x00536830,named,ctor-and-dtor,63,GUIPanel,2,4,GUIPage|GUIScrollingPanel|GUITabPanel,dtor,GUIPanel,0x00536830,,class,control-class,"3 caller class(es), dca GUIPanel"
-0x00536930,named,ctor-and-dtor,63,GUIScrollingPanel,2,1,,,,,,,callers-unnamed,callers FUN_002f3f90
-0x00536a30,named,ctor-and-dtor,63,GUITabPanel,2,1,,,,,,,callers-unnamed,callers FUN_002f4040
-0x00536b30,named,ctor-and-dtor,63,GUIPage,2,1,,,,,,,callers-unnamed,callers FUN_002f40e0
-0x00536c30,named,ctor-and-dtor,63,GUIMenuOption,2,1,,,,,,,callers-unnamed,callers FUN_002f4190
-0x00536d30,named,ctor-and-dtor,63,GUIComboBox,2,1,,,,,,,callers-unnamed,callers FUN_002f4270
-0x00536e30,named,ctor-and-dtor,63,GUITabControl,2,1,,,,,,,callers-unnamed,callers FUN_002f4320
-0x00536f30,named,ctor-and-dtor,63,GUIScrollBarBase,2,3,GUIHorzScrollBar|GUIVertScrollBar,dtor,GUIScrollBarBase,0x00536f30,,class,control-class,"2 caller class(es), dca GUIScrollBarBase"
-0x00537030,named,ctor-and-dtor,63,GUIHorzScrollBar,2,1,,,,,,,callers-unnamed,callers FUN_002f4480
-0x00537130,named,ctor-and-dtor,63,GUIVertScrollBar,2,1,,,,,,,callers-unnamed,callers FUN_002f4520
-0x00537230,named,ctor-and-dtor,63,GUINumericEdit,2,1,,,,,,,callers-unnamed,callers FUN_002f45c0
-0x00537330,named,ctor-and-dtor,58,GUIProgressBar,2,1,,,,,,,callers-unnamed,callers FUN_002f4670
-0x00537418,named,ctor-and-dtor,58,GUITitleBar,2,1,,,,,,,callers-unnamed,callers FUN_002f4740
-0x00537500,named,ctor-and-dtor,58,GUIButton,2,9,GUICheckBoxButton|GUIEditBox|GUIHorzGripButton|GUIHorzScrollButton|GUISpinnerButton|GUITabButton,dtor,GUIButton,0x00537500,,class,control-class,"8 caller class(es), dca GUIButton"
-0x005375e8,named,ctor-and-dtor,58,GUITabButton,2,1,,,,,,,callers-unnamed,callers FUN_002f48a0
-0x005376d0,named,ctor-and-dtor,58,GUIHorzGripButton,2,1,,,,,,,callers-unnamed,callers FUN_002f4940
-0x005377b8,named,ctor-and-dtor,58,GUIHorzScrollButton,2,1,,,,,,,callers-unnamed,callers FUN_002f49e0
-0x005378a0,named,ctor-and-dtor,58,GUIVertGripButton,2,1,,,,,,,callers-unnamed,callers FUN_002f4a80
-0x00537988,named,ctor-and-dtor,58,GUIVertScrollButton,2,2,GUIComboButton,dtor,GUIComboButton,0x00537a70,,descendant,control-descendant,"1 caller class(es), dca GUIComboButton"
-0x00537a70,named,ctor-and-dtor,58,GUIComboButton,2,1,,,,,,,callers-unnamed,callers FUN_002f4bc0
-0x00537b58,named,ctor-and-dtor,58,GUIEditBox,2,1,,,,,,,callers-unnamed,callers FUN_002f4c60
-0x00537c40,named,ctor-and-dtor,58,GUICheckBoxButton,2,1,,,,,,,callers-unnamed,callers FUN_002f4d20
-0x00537d28,named,ctor-and-dtor,58,GUISpinnerButton,2,1,,,,,,,callers-unnamed,callers FUN_002f4dc0
-0x00537e10,named,ctor-and-dtor,58,GUIHorzScrollZone,2,1,,,,,,,callers-unnamed,callers FUN_002f4e60
-0x00537ef8,named,ctor-and-dtor,58,GUIVertScrollZone,2,1,,,,,,,callers-unnamed,callers FUN_002f4f00
-0x00537fe0,named,ctor-and-dtor,58,GUILabel,2,1,,,,,,,callers-unnamed,callers FUN_002f4fa0
-0x005380c8,named,ctor-and-dtor,58,GUIImage,2,1,,,,,,,callers-unnamed,callers FUN_002f5060
-0x005381b0,named,ctor-and-dtor,30,GUIFont,2,1,,,,,,,callers-unnamed,callers FUN_002f5350
-0x005385a8,named,ctor-and-dtor,30,GameStartInfo,2,1,,,,,,,callers-unnamed,callers FUN_002f54b0
-0x00538d50,named,ctor-and-dtor,42,GUIController,2,1,,,,,,,callers-unnamed,callers FUN_00300c20
-0x00538e28,named,ctor-and-dtor,58,GUIMultiColumnListHeader,2,1,,,,,,,callers-unnamed,callers FUN_003059a0
-0x00538f10,named,ctor-and-dtor,63,GUIListBoxBase,2,4,GUIListBox|GUIMultiColumnListBox|GUIScrollTextBox,dtor,GUIListBoxBase,0x00538f10,,class,control-class,"3 caller class(es), dca GUIListBoxBase"
-0x00539010,named,ctor-and-dtor,63,GUIScrollTextBox,2,1,,,,,,,callers-unnamed,callers FUN_00305af0
-0x00539110,named,ctor-and-dtor,63,GUIListBox,2,1,,,,,,,callers-unnamed,callers FUN_00305b90
-0x005392e8,named,ctor-and-dtor,59,GUIListBase,2,3,GUIHorzList|GUIVertList,dtor,GUIListBase,0x005392e8,,class,control-class,"2 caller class(es), dca GUIListBase"
-0x005393d8,named,ctor-and-dtor,59,GUIVertList,2,3,GUIMultiColumnList|GUIScrollText,dtor,GUIVertList,0x005393d8,,class,control-class,"2 caller class(es), dca GUIVertList"
-0x005394c8,named,ctor-and-dtor,59,GUIScrollText,2,1,,,,,,,callers-unnamed,callers FUN_003064c0
-0x005395b8,named,ctor-and-dtor,59,GUIHorzList,2,1,,,,,,,callers-unnamed,callers FUN_003065c0
-0x005396c8,named,ctor-and-dtor,59,GUIMultiColumnList,2,1,,,,,,,callers-unnamed,callers FUN_00306690
-0x005397b8,named,ctor-and-dtor,63,GUIMultiColumnListBox,2,1,,,,,,,callers-unnamed,callers FUN_00306780
-0x00539988,named,ctor-and-dtor,37,UIXInteraction,2,1,,,,,,,callers-unnamed,callers FUN_00306980
-0x0053a194,plain-only,unclassified,5,,1,1,,,,,,,callers-unnamed,callers FUN_00308420
-0x0053b168,named,ctor-and-dtor,30,XboxLiveInterface,2,1,,,,,,,callers-unnamed,callers FUN_0030bba0
-0x0053d58c,plain-only,installed-by-ctor,1,,1,1,,,,,,,callers-unnamed,callers FUN_001c0050
-0x0053d590,plain-only,ctor-and-dtor,4,,18,18,,,,,,,callers-unnamed,"callers FUN_00326d40, FUN_00326f60, FUN_003274d0"
-0x0053d5c8,plain-only,installed-by-ctor,4,,1,2,,,,,,,callers-unnamed,"callers FUN_00326d40, FUN_00326f60"
-0x0053d5fc,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers XboxLiveManager_StartNewSession
-0x0053d630,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers FUN_00327c20
-0x0053d660,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers XboxLive_XboxLiveMatchMaking
-0x0053d698,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers XboxLive_XboxLiveMatchMaking
-0x0053d6fc,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers FUN_003274d0
-0x0053d70c,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsWrite
-0x0053d73c,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsRead
-0x0053d768,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsEnumerate
-0x0053d7a0,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsReset
-0x0053d7fc,plain-only,ctor-and-dtor,4,,2,2,,,,,,,callers-unnamed,"callers FUN_0032a370, XboxLiveManager_StartStatsLadderWrite"
-0x0053d80c,plain-only,installed-by-ctor,4,,1,1,,,,,,,callers-unnamed,callers FUN_00327ac0
-0x0053e3dc,plain-only,ctor-and-dtor,4,,2,2,,,,,,,callers-unnamed,"callers FUN_0032a910, XboxLiveManager_StartStatsQuery"
-0x0053ec54,plain-only,ctor-and-dtor,4,,2,2,,,,,,,callers-unnamed,"callers FUN_0032adb0, XboxLiveManager_StartStatsLadderRead"
-0x0053f6d8,plain-only,installed-by-ctor,5,,2,0,,,,,,,no-direct-call,"2 installer body(ies), no direct `E8` caller in .text"
-0x0053f6ec,plain-only,dtor-only,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f700,plain-only,installed-by-ctor,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f718,plain-only,ctor-and-dtor,21,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0053f770,plain-only,dtor-only,21,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f7c4,no-store,no-body,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f7f0,plain-only,dtor-only,6,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0053f808,plain-only,dtor-only,21,,1,0,,,,,,,no-direct-call,"1 installer body(ies), no direct `E8` caller in .text"
-0x0053f85c,plain-only,ctor-and-dtor,5,,1,1,,,,,,,callers-unnamed,callers FUN_00332e57
-0x0053f874,plain-only,installed-by-ctor,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f888,plain-only,dtor-only,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f8a0,plain-only,dtor-only,21,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f8f4,plain-only,ctor-and-dtor,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f90c,plain-only,installed-by-ctor,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f920,plain-only,ctor-and-dtor,21,,1,1,,,,,,,callers-unnamed,callers FUN_003374ee
-0x0053f978,plain-only,unclassified,1,,1,1,,,,,,,callers-unnamed,callers FUN_0033858d
-0x0053f97c,plain-only,installed-by-ctor,5,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f990,plain-only,installed-by-ctor,1,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x0053f998,plain-only,ctor-and-dtor,21,,1,1,,,,,,,callers-unnamed,callers FUN_0033858d
-0x0053f9ec,plain-only,ctor-and-dtor,15,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00540464,plain-only,ctor-and-dtor,8,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00540484,plain-only,ctor-and-dtor,14,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x005404bc,plain-only,installed-by-ctor,14,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x005404f4,plain-only,dtor-only,11,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00540520,plain-only,installed-by-ctor,11,,0,0,,,,,,,no-installer,no installer body resolves through the symbol map
-0x00564da4,plain-only,dtor-only,6,,1,1,,,,,,,callers-unnamed,callers Engine_KDynStep
-0x00564dbc,plain-only,dtor-only,9,,3,2,,,,,,,callers-unnamed,"callers Engine_KDynStep, FUN_0038b4b0"
-0x0057534c,plain-only,ctor-and-dtor,2,,2,2,,,,,,,callers-unnamed,"callers FUN_0002c2a0, FUN_003e65d8"
+table_va,population,shape,slots,class,installers,callers,e8_sites,gap_sites,gap_bodies,unreached,caller_classes,caller_kinds,owner_candidate,owner_table,owner_shared,relation,verdict,evidence
+0x004c7800,plain-only,installed-by-ctor,21,,2,4,11,2,0x0011f0e0,0/2,,,,,,,callers-unnamed,"callers FUN_0002a120, FUN_0002a180, FUN_0014b0f0"
+0x004c7854,at-least,installed-by-ctor,2,,3,3,5,2,0x00075820,0/3,,,,,,,callers-unnamed,"callers FUN_000f9ce0, FUN_0010ffa0, FUN_00110120"
+0x004c7860,at-least,ctor-and-dtor,22,,32,52,64,2,,0/32,DemoRecConnection|LinkerLoadGame|LinkerSaveGame|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"5 caller classes (DemoRecConnection, LinkerLoadGame, LinkerSaveGame, TcpipConnection), deepest common ancestor -"
+0x004c78b8,plain-only,dtor-only,1,,1,8,8,0,,0/1,AudioSubsystem|Input|new,dtor,,,,,base-of-group,"3 caller classes (AudioSubsystem, Input, new), deepest common ancestor -"
+0x004c78c0,plain-only,dtor-only,31,,1,8,8,0,,0/1,AudioSubsystem|Input|new,dtor,,,,,base-of-group,"3 caller classes (AudioSubsystem, Input, new), deepest common ancestor -"
+0x004c7958,named,ctor-and-dtor,46,Material,2,37,37,0,,0/2,Combiner|Modifier|MultiPassMaterial|PSAdditiveDistortion|PSBackBufferEffect|PSBlendedDistortionMaterial,ctor+dtor,Material,0x004c7958,,class,control-class,"35 caller class(es), dca Material"
+0x004c7a10,named,dtor-only,46,RenderedMaterial,1,10,10,0,,0/1,ConstantMaterial|ParticleMaterial|PixelShaderMaterial|ProjectorMaterial|Shader|TerrainMaterial,dtor,,,,other,control-other,"8 caller class(es), dca -"
+0x004c7ac8,named,dtor-only,48,BitmapMaterial,1,5,5,0,,0/1,ProxyBitmapMaterial|ScriptedTexture|ShadowBitmapMaterial|Texture,dtor,,,,other,control-other,"4 caller class(es), dca -"
+0x004c7b88,named,ctor-and-dtor,30,Order,2,2,2,0,,0/2,SGOrder,dtor,SGOrder,0x004cc2c0,,descendant,control-descendant,"1 caller class(es), dca SGOrder"
+0x004c7c00,named,ctor-and-dtor,30,MatObject,2,3,3,0,,0/2,MatAction|MatSubAction,dtor,MatObject,0x004c7c00,,class,control-class,"2 caller class(es), dca MatObject"
+0x004c7c78,named,dtor-only,33,CameraEffect,1,11,11,0,,0/1,CameraOverlay|MotionBlur|SGScreenBlur|SGScreenDOF|SGScreenEmissive|SGScreenEmissiveWithBloom,dtor,CameraEffect,0x004c7c78,,class,control-class,"10 caller class(es), dca CameraEffect"
+0x004c7d98,named,ctor-and-dtor,32,SGScreenSniperOverlay,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenSniperOverlay_vt3
+0x004c7e18,named,ctor-and-dtor,32,SGScreenMenuPause,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenMenuPause_vt3
+0x004c7e98,named,ctor-and-dtor,32,SGScreenBlur,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenBlur_vt3
+0x004c7f18,named,ctor-and-dtor,33,SGScreenDOF,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenDOF_vt3
+0x004c7fa0,named,ctor-and-dtor,33,SGScreenMotionBlur,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenMotionBlur_vt3
+0x004c8028,named,ctor-and-dtor,32,SGScreenRadialBlur,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenRadialBlur_vt3
+0x004c80a8,named,ctor-and-dtor,33,SGScreenEmissiveWithBloom,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGScreenEmissiveWithBloom_vt3
+0x004c8410,plain-only,dtor-only,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001a0f0, FUN_0001d290"
+0x004c84d0,plain-only,ctor-and-dtor,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001a310, FUN_0001d290"
+0x004c85b0,plain-only,unclassified,25,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x004c8db8,plain-only,installed-by-ctor,26,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers Core_UnObjBas
+0x004c8f28,named,ctor-and-dtor,33,MatSubAction,2,12,12,0,,0/2,SubActionCameraEffect|SubActionCameraShake|SubActionFOV|SubActionFade|SubActionGameSpeed|SubActionOrientation,dtor,MatSubAction,0x004c8f28,,class,control-class,"11 caller class(es), dca MatSubAction"
+0x004c8fb0,named,ctor-and-dtor,33,SubActionCameraEffect,2,2,2,0,,0/2,SubActionDepthOfField,dtor,SubActionDepthOfField,0x004c9270,,descendant,control-descendant,"1 caller class(es), dca SubActionDepthOfField"
+0x004c9038,plain-only,installed-by-ctor,22,,2,7,7,0,,0/2,,,,,,,callers-unnamed,"callers Engine_UnConn, FUN_0001cf20, FUN_000eaa50"
+0x004c9090,named,ctor-and-dtor,30,ScriptedAction,2,3,3,0,,0/2,ACTION_TriggerEvent|LatentScriptedAction,dtor,ScriptedAction,0x004c9090,,class,control-class,"2 caller class(es), dca ScriptedAction"
+0x004c9108,named,ctor-and-dtor,30,ACTION_TriggerEvent,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers ACTION_TriggerEvent_vt3
+0x004c9180,named,ctor-and-dtor,30,LatentScriptedAction,2,2,2,0,,0/2,ACTION_WaitForEvent,dtor,ACTION_WaitForEvent,0x004c91f8,,descendant,control-descendant,"1 caller class(es), dca ACTION_WaitForEvent"
+0x004c91f8,named,ctor-and-dtor,30,ACTION_WaitForEvent,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers ACTION_WaitForEvent_vt3
+0x004c9270,named,ctor-and-dtor,33,SubActionDepthOfField,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SubActionDepthOfField_vt3
+0x004c9338,plain-only,ctor-and-dtor,1,,2,6,6,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001cbe0, FUN_0001cc10, FUN_00025ff0"
+0x004c933c,plain-only,ctor-and-dtor,2,,2,6,6,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001cbe0, FUN_0001cc10, FUN_00025ff0"
+0x004c9348,plain-only,ctor-and-dtor,31,,2,6,6,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001cbe0, FUN_0001cc10, FUN_00025ff0"
+0x004c93c4,plain-only,ctor-and-dtor,1,,2,3,3,0,,0/2,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
+0x004c93c8,plain-only,ctor-and-dtor,2,,2,3,3,0,,0/2,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
+0x004c93d0,plain-only,ctor-and-dtor,56,,2,3,3,0,,0/2,XboxViewport,ctor+dtor,XboxViewport,0x004c9618,,,second-table,"its only caller class is XboxViewport, whose own table is 0x004c9618"
+0x004c94b0,plain-only,ctor-and-dtor,43,,2,3,3,0,,0/2,XboxClient,ctor+dtor,XboxClient,0x004c9560,,,second-table,"its only caller class is XboxClient, whose own table is 0x004c9560"
+0x004c9560,named,ctor-and-dtor,43,XboxClient,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers XboxClient_vt3
+0x004c960c,at-least,ctor-and-dtor,1,,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers XboxViewport_vt3
+0x004c9610,at-least,ctor-and-dtor,2,,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers XboxViewport_vt3
+0x004c9618,named,ctor-and-dtor,57,XboxViewport,2,1,2,1,,0/2,,,,,,,callers-unnamed,callers XboxViewport_vt3
+0x004c96fc,plain-only,installed-by-ctor,15,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_000f9ce0
+0x004c9738,plain-only,installed-by-ctor,22,,3,9,16,0,,0/3,,,,,,,callers-unnamed,"callers ChannelDownload_vt30, Engine_UnChan, Engine_UnConn"
+0x004c9858,plain-only,ctor-and-dtor,22,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0001dd30
+0x004c9a98,plain-only,installed-by-ctor,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0001f490
+0x004c9b50,plain-only,ctor-and-dtor,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0001f490, FUN_0001fb90"
+0x004c9c60,named,ctor-and-dtor,123,Actor,2,43,43,0,,0/2,AntiPortalActor|AvoidanceWaypoint|Brush|Controller|DamageType|DecoCollideActor,dtor,Actor,0x004c9c60,,class,control-class,"42 caller class(es), dca Actor"
+0x004c9e58,named,ctor-and-dtor,124,Keypoint,2,9,9,0,,0/2,AIScript|AlkeshLandingZone|AmbientSound|ClipMarker|DecorationList|InterpolationPoint,dtor,Keypoint,0x004c9e58,,class,control-class,"8 caller class(es), dca Keypoint"
+0x004ca048,named,ctor-and-dtor,124,AIScript,2,2,2,0,,0/2,ScriptedSequence,dtor,ScriptedSequence,0x004cb8b0,,descendant,control-descendant,"1 caller class(es), dca ScriptedSequence"
+0x004ca238,named,ctor-and-dtor,123,Info,2,24,24,0,,0/2,AmbushInfo|AnnouncerVoice|CoverInfo|FileLog|FluidSurfaceInfo|GameInfo,dtor,Info,0x004ca238,,class,control-class,"23 caller class(es), dca Info"
+0x004ca428,named,ctor-and-dtor,123,ReplicationInfo,2,8,8,0,,0/2,GameReplicationInfo|LinkedReplicationInfo|PlayerReplicationInfo|SceneReplicationInfo|SquadAIBasic|TeamInfo,dtor,ReplicationInfo,0x004ca428,,class,control-class,"7 caller class(es), dca ReplicationInfo"
+0x004ca618,named,ctor-and-dtor,134,Pawn,2,7,7,0,,0/2,GoauldDrone|Scout|Vehicle,ctor+dtor,Pawn,0x004ca618,,class,control-class,"3 caller class(es), dca Pawn"
+0x004ca830,named,ctor-and-dtor,136,Vehicle,2,12,12,0,,0/2,AlkeshBomber|DeathGlider|KVehicle|SVehicle|StargateCar|StargateCopter,ctor+dtor,Vehicle,0x004ca830,,class,control-class,"9 caller class(es), dca Vehicle"
+0x004caa50,named,ctor-and-dtor,140,SVehicle,2,2,2,0,,0/2,StargateVehicle,dtor,StargateVehicle,0x004ccaf8,,descendant,control-descendant,"1 caller class(es), dca StargateVehicle"
+0x004cac80,named,ctor-and-dtor,126,Emitter,2,3,3,0,,0/2,BeamArc|Electrocutor,dtor,Emitter,0x004cac80,,class,control-class,"2 caller class(es), dca Emitter"
+0x004cae78,named,ctor-and-dtor,138,NavigationPoint,2,9,9,0,,0/2,Ambushpoint|Door|JumpDest|JumpPad|LiftCenter|LiftExit,dtor,NavigationPoint,0x004cae78,,class,control-class,"8 caller class(es), dca NavigationPoint"
+0x004cb0a0,named,ctor-and-dtor,123,Triggers,2,6,6,0,,0/2,AvoidMarker|LineOfSightTrigger|SVehicleTrigger|Trigger|TriggeredCondition,dtor,Triggers,0x004cb0a0,,class,control-class,"5 caller class(es), dca Triggers"
+0x004cb290,named,ctor-and-dtor,133,Controller,2,3,3,0,,0/2,AIController|PlayerController,dtor,Controller,0x004cb290,,class,control-class,"2 caller class(es), dca Controller"
+0x004cb4a8,named,ctor-and-dtor,133,AIController,2,2,2,0,,0/2,ScriptedController,dtor,ScriptedController,0x004cc0a8,,descendant,control-descendant,"1 caller class(es), dca ScriptedController"
+0x004cb6c0,named,ctor-and-dtor,123,HUD,2,3,3,0,,0/2,StargateHUD,ctor+dtor,StargateHUD,0x004cd738,,descendant,control-descendant,"1 caller class(es), dca StargateHUD"
+0x004cb8b0,named,ctor-and-dtor,124,ScriptedSequence,2,2,2,0,,0/2,UnrealScriptedSequence,dtor,UnrealScriptedSequence,0x004cc338,,descendant,control-descendant,"1 caller class(es), dca UnrealScriptedSequence"
+0x004cbaa0,named,ctor-and-dtor,123,AmbushInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers AmbushInfo_vt3
+0x004cbc90,named,ctor-and-dtor,138,Ambushpoint,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers Ambushpoint_vt3
+0x004cbeb8,named,ctor-and-dtor,123,TriggeredCondition,2,2,2,0,,0/2,SGTriggeredCondition,dtor,SGTriggeredCondition,0x004cd118,,descendant,control-descendant,"1 caller class(es), dca SGTriggeredCondition"
+0x004cc0a8,named,ctor-and-dtor,133,ScriptedController,2,2,2,0,,0/2,BotBase,dtor,BotBase,0x004cd308,,descendant,control-descendant,"1 caller class(es), dca BotBase"
+0x004cc2c0,named,ctor-and-dtor,30,SGOrder,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGOrder_vt3
+0x004cc338,named,ctor-and-dtor,124,UnrealScriptedSequence,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers UnrealScriptedSequence_vt3
+0x004cc528,named,ctor-and-dtor,123,SquadAIBasic,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SquadAIBasic_vt3
+0x004cc718,named,ctor-and-dtor,123,CoverInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers CoverInfo_vt3
+0x004cc908,named,ctor-and-dtor,123,SGFontInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGFontInfo_vt3
+0x004ccaf8,named,ctor-and-dtor,140,StargateVehicle,2,5,5,0,,0/2,DeathGlider|StargateCar|StargateCopter|StargateHover,dtor,StargateVehicle,0x004ccaf8,,class,control-class,"4 caller class(es), dca StargateVehicle"
+0x004ccd28,named,ctor-and-dtor,126,BeamArc,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers BeamArc_vt3
+0x004ccf20,named,ctor-and-dtor,126,Electrocutor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers Electrocutor_vt3
+0x004cd118,named,ctor-and-dtor,123,SGTriggeredCondition,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGTriggeredCondition_vt3
+0x004cd308,named,ctor-and-dtor,133,BotBase,2,5,5,0,,0/2,AlkeshBomberBot|BotEnemy|DeathGliderBot|TeltakBot,dtor,BotBase,0x004cd308,,class,control-class,"4 caller class(es), dca BotBase"
+0x004cd520,named,ctor-and-dtor,133,BotEnemy,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers BotEnemy_vt3
+0x004cd738,named,ctor-and-dtor,123,StargateHUD,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers StargateHUD_vt3
+0x004cd928,named,ctor-and-dtor,123,ShadowManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers ShadowManager_vt3
+0x004cdb18,named,ctor-and-dtor,123,IntelligentSpawner,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers IntelligentSpawner_vt3
+0x004cdd08,named,ctor-and-dtor,123,FarClipChange,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FarClipChange_vt3
+0x004cdef8,named,ctor-and-dtor,123,SGLevel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGLevel_vt3
+0x004ce0e8,named,ctor-and-dtor,123,SGGenericOrderActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers SGGenericOrderActor_vt3
+0x004ce2d8,named,ctor-and-dtor,33,SGScreenEmissive,2,2,2,0,,0/2,SGScreenBloom,dtor,SGScreenBloom,0x004ce360,,descendant,control-descendant,"1 caller class(es), dca SGScreenBloom"
+0x004ce360,named,ctor-and-dtor,33,SGScreenBloom,3,1,1,0,,1/3,,,,,,,callers-unnamed,callers SGScreenBloom_vt3
+0x004ce3e8,named,ctor-and-dtor,124,AlkeshLandingZone,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers AlkeshLandingZone_vt3
+0x004ce5d8,named,ctor-and-dtor,141,StargateCopter,2,3,3,0,,0/2,AlkeshBomber|Teltak,dtor,StargateCopter,0x004ce5d8,,class,control-class,"2 caller class(es), dca StargateCopter"
+0x004ce810,named,ctor-and-dtor,141,Teltak,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers Teltak_vt3
+0x004cea48,named,ctor-and-dtor,141,AlkeshBomber,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers AlkeshBomber_vt3
+0x004cec80,named,ctor-and-dtor,142,StargateHover,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers StargateHover_vt3
+0x004ceeb8,named,ctor-and-dtor,143,StargateCar,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers StargateCar_vt3
+0x004cf0f8,named,ctor-and-dtor,142,DeathGlider,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers DeathGlider_vt3
+0x004cf330,named,ctor-and-dtor,134,GoauldDrone,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers GoauldDrone_vt3
+0x004cf548,named,ctor-and-dtor,133,TeltakBot,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers TeltakBot_vt3
+0x004cf760,named,ctor-and-dtor,133,DeathGliderBot,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers DeathGliderBot_vt3
+0x004cf978,named,ctor-and-dtor,133,AlkeshBomberBot,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers AlkeshBomberBot_vt3
+0x004cfba0,named,ctor-and-dtor,58,Texture,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x004cfc88,named,ctor-and-dtor,59,FractalTexture,4,4,4,0,,1/4,FluidTexture|WaveTexture|WetTexture,ctor,WaterTexture,0x004cfe68,,descendant,control-descendant,"3 caller class(es), dca WaterTexture"
+0x004cfd78,named,ctor-and-dtor,59,FireTexture,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x004cfe68,named,ctor-and-dtor,59,WaterTexture,2,7,7,0,,0/2,FluidTexture|WaveTexture|WetTexture,ctor+dtor,WaterTexture,0x004cfe68,,class,control-class,"3 caller class(es), dca WaterTexture"
+0x004cff58,named,ctor-and-dtor,59,WaveTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers WaveTexture_vt3
+0x004d0048,named,ctor-and-dtor,59,FluidTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FluidTexture_vt3
+0x004d0138,named,ctor-and-dtor,59,WetTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers WetTexture_vt3
+0x004d0228,named,ctor-and-dtor,59,IceTexture,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x004d0314,plain-only,ctor-and-dtor,1,,2,7,7,0,,0/2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecDriver, TcpNetDriver, TcpNetDriverXbox), deepest common ancestor -"
+0x004d0318,plain-only,ctor-and-dtor,40,,2,7,7,0,,0/2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecDriver, TcpNetDriver, TcpNetDriverXbox), deepest common ancestor -"
+0x004d03b8,at-least,ctor-and-dtor,1,,3,10,10,0,,0/3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
+0x004d03bc,at-least,ctor-and-dtor,2,,3,10,10,0,,0/3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
+0x004d03c8,at-least,ctor-and-dtor,42,,3,10,10,0,,0/3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoRecConnection, TcpipConnection, TcpipConnectionXbox), deepest common ancestor -"
+0x004d0470,at-least,ctor-and-dtor,1,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
+0x004d0474,at-least,ctor-and-dtor,2,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
+0x004d0480,named,ctor-and-dtor,42,TcpipConnection,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d2bb0, FUN_002d2cd0, TcpipConnection_vt3"
+0x004d0528,at-least,ctor-and-dtor,1,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers TcpNetDriver_vt3
+0x004d0530,named,ctor-and-dtor,40,TcpNetDriver,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers TcpNetDriver_vt3
+0x004d05d0,at-least,ctor-and-dtor,1,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d5c70, TcpNetDriverXbox_vt34, TcpipConnectionXbox_vt3"
+0x004d05d4,at-least,ctor-and-dtor,2,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d5c70, TcpNetDriverXbox_vt34, TcpipConnectionXbox_vt3"
+0x004d05e0,named,ctor-and-dtor,42,TcpipConnectionXbox,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002d5c70, TcpNetDriverXbox_vt34, TcpipConnectionXbox_vt3"
+0x004d0688,at-least,ctor-and-dtor,1,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers TcpNetDriverXbox_vt3
+0x004d0690,named,ctor-and-dtor,41,TcpNetDriverXbox,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers TcpNetDriverXbox_vt3
+0x004d0738,named,ctor-and-dtor,134,PlayerController,2,6,6,0,,0/2,Camera|StargatePlayer|UnrealPlayer,ctor+dtor,PlayerController,0x004d0738,,class,control-class,"3 caller class(es), dca PlayerController"
+0x004d0950,named,ctor-and-dtor,134,UnrealPlayer,2,2,2,0,,0/2,StargatePlayer,dtor,StargatePlayer,0x004d0b68,,descendant,control-descendant,"1 caller class(es), dca StargatePlayer"
+0x004d0b68,named,ctor-and-dtor,134,StargatePlayer,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers StargatePlayer_vt3
+0x004d0d80,plain-only,unclassified,25,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x004d0de8,plain-only,ctor-and-dtor,22,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00026ca0
+0x004d0ec8,plain-only,ctor-and-dtor,21,,2,4,11,2,0x0011f0e0,0/2,,,,,,,callers-unnamed,"callers FUN_0002a120, FUN_0002a180, FUN_0014b0f0"
+0x004d1430,plain-only,ctor-and-dtor,2,,3,4,6,2,0x0002c420 0x003e5467,0/3,,,,,,,callers-unnamed,"callers FUN_0002c040, FUN_0002c340, FUN_003e5427"
+0x004d1438,plain-only,unclassified,2,,2,3,3,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0002c060, FUN_0002c180, FUN_0002c440"
+0x004d1468,plain-only,ctor-and-dtor,35,,2,21,21,0,,0/2,ArrayProperty|BoolProperty|ByteProperty|ClassProperty|Const|DelegateProperty,ctor+dtor,,,,,base-of-group,"16 caller classes (ArrayProperty, BoolProperty, ByteProperty, ClassProperty), deepest common ancestor -"
+0x004d17a8,plain-only,ctor-and-dtor,53,,3,23,33,0,,0/3,ArrayProperty|BoolProperty|ByteProperty|DelegateProperty|FixedArrayProperty|FloatProperty,ctor+dtor,,,,,base-of-group,"13 caller classes (ArrayProperty, BoolProperty, ByteProperty, DelegateProperty), deepest common ancestor -"
+0x004d1880,named,ctor-and-dtor,53,IntProperty,3,1,22,21,0x0002d600 0x0007e970 0x000f9990 0x000fd030 0x00182f30 0x002b0050 0x002c1890 0x002d26b0,0/3,,,,,,,callers-unnamed,callers FUN_000318f0
+0x004d1958,named,ctor-and-dtor,53,BoolProperty,4,1,49,48,0x0002d600 0x000e3440 0x000f9990 0x000fd030 0x00182f30 0x002b0050 0x002c1890 0x002d26b0 0x002d4100,0/4,,,,,,,callers-unnamed,callers FUN_000319a0
+0x004d1a30,named,ctor-and-dtor,53,FloatProperty,3,1,25,24,0x0002d600 0x000e3440 0x000fd030 0x00182f30 0x002b0050,0/3,,,,,,,callers-unnamed,callers FUN_00031a50
+0x004d1f88,named,ctor-and-dtor,54,AudioSubsystem,2,3,3,0,,0/2,XBoxAudioSubsystem,ctor+dtor,XBoxAudioSubsystem,0x004d21f8,,descendant,control-descendant,"1 caller class(es), dca XBoxAudioSubsystem"
+0x004d21f8,named,ctor-and-dtor,54,XBoxAudioSubsystem,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00032090
+0x004d2400,plain-only,dtor-only,37,,1,2,2,0,,0/1,XHVVoiceSubsystem,dtor,XHVVoiceSubsystem,0x004d2ad8,,,second-table,"its only caller class is XHVVoiceSubsystem, whose own table is 0x004d2ad8"
+0x004d2abc,at-least,ctor-and-dtor,6,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00033f90
+0x004d2ad4,at-least,ctor-and-dtor,1,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00033f90
+0x004d2ad8,named,ctor-and-dtor,37,XHVVoiceSubsystem,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00033f90
+0x004d2e58,plain-only,dtor-only,29,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0040ca65, every one inside a body the symbol map does not cover"
+0x004d3118,plain-only,dtor-only,22,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers Core_UExporter
+0x004d3248,plain-only,installed-by-ctor,22,,1,3,5,0,,0/1,,,,,,,callers-unnamed,"callers Core_UExporter, FUN_00034ab0, FUN_0006d520"
+0x004d32a0,named,ctor-and-dtor,53,StrProperty,4,10,33,19,0x00035f10 0x0007e970 0x00182f30 0x002c1890 0x002d4100,0/4,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnObj, Engine_UnLevel"
+0x004d3378,named,ctor-and-dtor,53,ArrayProperty,4,1,9,8,0x00035f10 0x0007e970 0x00182f30,0/4,,,,,,,callers-unnamed,callers FUN_00035960
+0x004d34d8,plain-only,ctor-and-dtor,32,,2,2,2,0,,1/2,ObjectExporterT3D,dtor,ObjectExporterT3D,0x004d3828,,,second-table,"its only caller class is ObjectExporterT3D, whose own table is 0x004d3828"
+0x004d3828,named,ctor-and-dtor,32,ObjectExporterT3D,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00035d20
+0x004d3af0,plain-only,ctor-and-dtor,33,,2,3,3,0,,0/2,TextBufferFactory,ctor+dtor,TextBufferFactory,0x004de7a0,,,second-table,"its only caller class is TextBufferFactory, whose own table is 0x004de7a0"
+0x004d3ba0,plain-only,installed-by-ctor,22,,2,3,3,0,,0/2,,,,,,,callers-unnamed,"callers FUN_000eab70, FUN_0010d370, FUN_0010f390"
+0x004d40d0,plain-only,dtor-only,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0003cd70
+0x004d4418,named,ctor-and-dtor,43,Struct,4,6,10,4,0x0003a5d0 0x0003a700 0x0003c3d0 0x0003c430,1/4,Function|State,dtor,Struct,0x004d4418,,class,control-class,"2 caller class(es), dca Struct"
+0x004d44c8,named,ctor-and-dtor,42,Function,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0003d5d0
+0x004d4570,named,ctor-and-dtor,42,State,3,3,3,0,,0/3,Class,dtor,Class,0x004d4870,,descendant,control-descendant,"1 caller class(es), dca Class"
+0x004d4618,named,ctor-and-dtor,35,Const,3,1,1,0,,1/3,,,,,,,callers-unnamed,callers FUN_0003d710
+0x004d4870,named,ctor-and-dtor,42,Class,4,144,494,0,,1/4,,,,,,,callers-unnamed,"callers Core_UExporter, Core_UFactory, Core_UnClass"
+0x004d9238,named,ctor-and-dtor,40,PackageMap,2,5,5,0,,0/2,PackageMapLevel,ctor+dtor,PackageMapLevel,0x004fb9b8,,descendant,control-descendant,"1 caller class(es), dca PackageMapLevel"
+0x004da500,named,ctor-and-dtor,31,Linker,3,5,5,0,,0/3,LinkerLoad|LinkerSave,ctor+dtor,Linker,0x004da500,,class,control-class,"2 caller class(es), dca Linker"
+0x004da720,at-least,ctor-and-dtor,22,,3,5,5,0,,0/3,LinkerLoadGame,ctor+dtor,LinkerLoadGame,0x004daaa0,,,second-table,"its only caller class is LinkerLoadGame, whose own table is 0x004daaa0"
+0x004da778,named,ctor-and-dtor,32,LinkerLoad,3,5,5,0,,0/3,LinkerLoadGame,ctor+dtor,LinkerLoadGame,0x004daaa0,,descendant,control-descendant,"1 caller class(es), dca LinkerLoadGame"
+0x004da850,at-least,ctor-and-dtor,22,,3,5,5,0,,0/3,LinkerSaveGame,ctor+dtor,LinkerSaveGame,0x004da9c8,,,second-table,"its only caller class is LinkerSaveGame, whose own table is 0x004da9c8"
+0x004da8a8,named,ctor-and-dtor,31,LinkerSave,3,5,5,0,,0/3,LinkerSaveGame,ctor+dtor,LinkerSaveGame,0x004da9c8,,descendant,control-descendant,"1 caller class(es), dca LinkerSaveGame"
+0x004da970,at-least,ctor-and-dtor,22,,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_00053b40"
+0x004da9c8,named,ctor-and-dtor,31,LinkerSaveGame,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_00053b40"
+0x004daa48,at-least,ctor-and-dtor,22,,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnObj, FUN_00053be0"
+0x004daaa0,named,ctor-and-dtor,32,LinkerLoadGame,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnObj, FUN_00053be0"
+0x004dd250,plain-only,installed-by-ctor,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00070cb0
+0x004dd2a8,named,ctor-and-dtor,30,Object,2,1,3,2,0x00038d30 0x0003a150,0/2,,,,,,,callers-unnamed,callers FUN_0003a5f0
+0x004dd488,plain-only,installed-by-ctor,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00070cb0
+0x004dd4e0,plain-only,installed-by-ctor,22,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_00070cb0"
+0x004dd538,plain-only,unclassified,22,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x004dd590,plain-only,unclassified,22,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x004dd5e8,plain-only,unclassified,22,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x004dd640,plain-only,unclassified,22,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x004ddd50,plain-only,installed-by-ctor,22,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00067450
+0x004ddf70,at-least,ctor-and-dtor,2,,2,1,3,2,0x00075820,0/2,,,,,,,callers-unnamed,callers FUN_00075840
+0x004ddf78,named,ctor-and-dtor,30,TextBuffer,2,1,3,2,0x00075820,0/2,,,,,,,callers-unnamed,callers FUN_00075840
+0x004de008,named,ctor-and-dtor,31,Commandlet,2,13,13,0,,0/2,CompressCommandlet|DecompressCommandlet|ExportCacheCommandlet|MasterMD5Commandlet|ServerCommandlet|UModUnpackCommandlet,ctor+dtor,Commandlet,0x004de008,,class,control-class,"6 caller class(es), dca Commandlet"
+0x004de088,named,ctor-and-dtor,30,Package,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Core_UnMisc, FUN_000755b0"
+0x004de118,named,ctor-and-dtor,36,Enum,3,1,2,1,0x000fd030,0/3,,,,,,,callers-unnamed,callers FUN_00075900
+0x004de3c0,plain-only,installed-by-ctor,22,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x004de558,plain-only,installed-by-ctor,22,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x004de7a0,named,ctor-and-dtor,33,TextBufferFactory,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00076e10
+0x004e0b40,named,ctor-and-dtor,53,ObjectProperty,3,2,2,0,,0/3,ClassProperty,dtor,ClassProperty,0x004e1270,,descendant,control-descendant,"1 caller class(es), dca ClassProperty"
+0x004e10c0,named,ctor-and-dtor,53,ByteProperty,3,1,8,7,0x000fd030,0/3,,,,,,,callers-unnamed,callers FUN_0007d990
+0x004e1198,named,ctor-and-dtor,53,PointerProperty,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0007da70
+0x004e1270,named,ctor-and-dtor,53,ClassProperty,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0007dbc0
+0x004e1348,named,ctor-and-dtor,53,NameProperty,3,10,15,1,0x0007e970,0/3,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnObj, Engine_UnLevel"
+0x004e1420,named,ctor-and-dtor,53,FixedArrayProperty,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0007dd20
+0x004e14f8,named,ctor-and-dtor,53,MapProperty,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0007de00
+0x004e15d0,named,ctor-and-dtor,53,StructProperty,4,10,14,0,,0/4,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnObj, Engine_UnLevel"
+0x004e16a8,named,ctor-and-dtor,53,DelegateProperty,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0007df60
+0x004e1ce8,named,ctor-and-dtor,32,new,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0007f5a0, FUN_0007ff70"
+0x004e24a8,named,ctor-and-dtor,123,FileLog,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00080a20
+0x004e2720,named,ctor-and-dtor,123,GameStats,2,2,2,0,,0/2,MasterServerGameStats,dtor,MasterServerGameStats,0x0052ef78,,descendant,control-descendant,"1 caller class(es), dca MasterServerGameStats"
+0x004e2978,named,ctor-and-dtor,123,SceneSubtitles,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00081320
+0x004e2d28,named,ctor-and-dtor,123,xEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000864b0
+0x004e2fc0,named,ctor-and-dtor,123,xPickUpBase,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00086ab0
+0x004e3258,named,ctor-and-dtor,123,xProcMesh,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0008b180
+0x004e3520,plain-only,installed-by-ctor,9,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00413eb5, every one inside a body the symbol map does not cover"
+0x004e3568,named,ctor-and-dtor,123,xWeatherEffect,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0008d7f0
+0x004e50c8,named,ctor-and-dtor,123,KActor,2,3,3,0,,0/2,KConstraint|KTire,dtor,KActor,0x004e50c8,,class,control-class,"2 caller class(es), dca KActor"
+0x004e52b8,named,ctor-and-dtor,125,KConstraint,2,5,5,0,,0/2,KBSJoint|KCarWheelJoint|KConeLimit|KHinge,dtor,KConstraint,0x004e52b8,,class,control-class,"4 caller class(es), dca KConstraint"
+0x004e54b0,named,ctor-and-dtor,125,KCarWheelJoint,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00094390
+0x004e56a8,named,ctor-and-dtor,125,KConeLimit,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00094430
+0x004e58a0,named,ctor-and-dtor,125,KHinge,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000944d0
+0x004e5a98,named,ctor-and-dtor,125,KBSJoint,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00094570
+0x004e77b0,named,ctor-and-dtor,30,KarmaParamsCollision,2,2,2,0,,0/2,KarmaParams,dtor,KarmaParams,0x004e8018,,descendant,control-descendant,"1 caller class(es), dca KarmaParams"
+0x004e7a18,named,ctor-and-dtor,136,KVehicle,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000a6f00
+0x004e7c38,named,ctor-and-dtor,123,KRepulsor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000a6fa0
+0x004e7e28,named,ctor-and-dtor,123,KTire,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000a7040
+0x004e8018,named,ctor-and-dtor,30,KarmaParams,2,3,3,0,,0/2,KarmaParamsRBFull|KarmaParamsSkel,dtor,KarmaParams,0x004e8018,,class,control-class,"2 caller class(es), dca KarmaParams"
+0x004e8090,named,ctor-and-dtor,30,KarmaParamsSkel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000a7190
+0x004e8108,named,ctor-and-dtor,30,KarmaParamsRBFull,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000a7240
+0x004e8440,named,ctor-and-dtor,30,KMeshProps,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000a7bb0
+0x004eaea8,plain-only,dtor-only,47,,1,3,3,0,,0/1,D3DRenderDevice|NullRenderDevice,dtor,,,,,base-of-group,"2 caller classes (D3DRenderDevice, NullRenderDevice), deepest common ancestor -"
+0x004eaf68,at-least,installed-by-ctor,62,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x004eb0a8,named,ctor-and-dtor,48,NullRenderDevice,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000bd4d0
+0x004eb2b0,named,ctor-and-dtor,58,TextureEditable,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000c03b0
+0x004eb420,named,ctor-and-dtor,31,ExportCacheCommandlet,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000c1a50
+0x004eb914,plain-only,unclassified,12,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_000c3a10, FUN_00187020"
+0x004ebb00,plain-only,ctor-and-dtor,12,,2,1,1,0,,1/2,,,,,,,callers-unnamed,callers FUN_000c3a10
+0x004ebb38,named,ctor-and-dtor,30,ReachSpec,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000c3da0
+0x004ebdd0,named,ctor-and-dtor,30,LogEntry,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dbbb0
+0x004ebe48,named,ctor-and-dtor,30,LevelSummary,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dbd20
+0x004ebf54,plain-only,installed-by-ctor,6,,2,3,3,0,,0/2,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_000db2e0, Gui_UnUIXInteraction"
+0x004ebfd8,named,ctor-and-dtor,124,InterpolationPoint,2,2,2,0,,0/2,MapVolumeViewPoint,dtor,MapVolumeViewPoint,0x004ec1c8,,descendant,control-descendant,"1 caller class(es), dca MapVolumeViewPoint"
+0x004ec1c8,named,ctor-and-dtor,124,MapVolumeViewPoint,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dc880
+0x004ec3b8,named,ctor-and-dtor,124,AmbientSound,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dc920
+0x004ec5a8,named,ctor-and-dtor,124,PolyMarker,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dc9d0
+0x004ec798,named,ctor-and-dtor,124,ClipMarker,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dca70
+0x004ec988,named,ctor-and-dtor,123,TeamInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dcb60
+0x004ecb78,named,ctor-and-dtor,123,GameReplicationInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dcc90
+0x004ecd68,named,ctor-and-dtor,123,SceneReplicationInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dce30
+0x004ecf58,named,ctor-and-dtor,123,LinkedReplicationInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dcee0
+0x004ed148,named,ctor-and-dtor,124,PlayerReplicationInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dcf80
+0x004ed338,named,ctor-and-dtor,123,AnnouncerVoice,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dd110
+0x004ed528,named,ctor-and-dtor,123,Mutator,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dd200
+0x004ed718,named,ctor-and-dtor,123,PotentialClimbWatcher,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dd300
+0x004ed908,named,ctor-and-dtor,123,InternetInfo,2,2,2,0,,0/2,InternetLink,dtor,InternetLink,0x0052d5c8,,descendant,control-descendant,"1 caller class(es), dca InternetLink"
+0x004edaf8,named,ctor-and-dtor,123,SavedMove,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dd440
+0x004edce8,named,ctor-and-dtor,123,ZoneInfo,2,4,4,0,,0/2,LevelInfo|SkyZoneInfo|WarpZoneInfo,dtor,ZoneInfo,0x004edce8,,class,control-class,"3 caller class(es), dca ZoneInfo"
+0x004eded8,named,ctor-and-dtor,123,WarpZoneInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dd600
+0x004ee0c8,named,ctor-and-dtor,123,SkyZoneInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dd6d0
+0x004ee2b8,named,ctor-and-dtor,123,GameInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dd830
+0x004ee4a8,named,ctor-and-dtor,134,Scout,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000ddb70
+0x004ee6c0,named,ctor-and-dtor,125,Brush,2,2,2,0,,0/2,Volume,dtor,Volume,0x004ee910,,descendant,control-descendant,"1 caller class(es), dca Volume"
+0x004ee910,named,ctor-and-dtor,125,Volume,2,4,4,0,,0/2,BlockingVolume|MapVolume|PhysicsVolume,dtor,Volume,0x004ee910,,class,control-class,"3 caller class(es), dca Volume"
+0x004eeb08,named,ctor-and-dtor,125,MapVolume,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de060
+0x004eed00,named,ctor-and-dtor,125,BlockingVolume,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de100
+0x004eeef8,named,ctor-and-dtor,125,PhysicsVolume,2,3,3,0,,0/2,DefaultPhysicsVolume|LadderVolume,dtor,PhysicsVolume,0x004eeef8,,class,control-class,"2 caller class(es), dca PhysicsVolume"
+0x004ef0f0,named,ctor-and-dtor,125,LadderVolume,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de250
+0x004ef2e8,named,ctor-and-dtor,125,DefaultPhysicsVolume,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de2f0
+0x004ef4e0,named,ctor-and-dtor,138,PathNode,2,4,4,0,,0/2,FlyingPathNode|ReplicatorPathNode|RoadPathNode,dtor,PathNode,0x004ef4e0,,class,control-class,"3 caller class(es), dca PathNode"
+0x004ef708,named,ctor-and-dtor,138,RoadPathNode,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de430
+0x004ef930,named,ctor-and-dtor,138,FlyingPathNode,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de4d0
+0x004efb58,named,ctor-and-dtor,138,ReplicatorPathNode,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de570
+0x004efd80,named,ctor-and-dtor,138,SmallNavigationPoint,2,8,8,0,,0/2,AIMarker|InventorySpot|Ladder|LevelLoadingView|PlayerStart|Teleporter,dtor,SmallNavigationPoint,0x004efd80,,class,control-class,"7 caller class(es), dca SmallNavigationPoint"
+0x004effa8,named,ctor-and-dtor,138,LevelLoadingView,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de6b0
+0x004f01d0,named,ctor-and-dtor,138,Ladder,2,2,2,0,,0/2,AutoLadder,dtor,AutoLadder,0x004f03f8,,descendant,control-descendant,"1 caller class(es), dca AutoLadder"
+0x004f03f8,named,ctor-and-dtor,138,AutoLadder,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de7f0
+0x004f0620,named,ctor-and-dtor,138,WarpZoneMarker,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de890
+0x004f0848,named,ctor-and-dtor,138,AIMarker,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de930
+0x004f0a70,named,ctor-and-dtor,138,InventorySpot,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000de9d0
+0x004f0c98,named,ctor-and-dtor,138,PlayerStart,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dea70
+0x004f0ec0,named,ctor-and-dtor,138,Teleporter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000deb10
+0x004f10e8,named,ctor-and-dtor,138,JumpDest,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000debc0
+0x004f1310,named,ctor-and-dtor,138,JumpPad,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dec60
+0x004f1538,named,ctor-and-dtor,138,Door,2,2,2,0,,0/2,AutoDoor,dtor,AutoDoor,0x004f1760,,descendant,control-descendant,"1 caller class(es), dca AutoDoor"
+0x004f1760,named,ctor-and-dtor,138,AutoDoor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000deda0
+0x004f1988,named,ctor-and-dtor,138,LiftExit,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dee40
+0x004f1bb0,named,ctor-and-dtor,138,LiftCenter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000deee0
+0x004f1dd8,named,ctor-and-dtor,123,AvoidMarker,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000def80
+0x004f1fc8,named,ctor-and-dtor,123,LineOfSightTrigger,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df020
+0x004f21b8,named,ctor-and-dtor,123,SVehicleTrigger,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df0c0
+0x004f23a8,named,ctor-and-dtor,123,Trigger,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df160
+0x004f2598,named,ctor-and-dtor,123,Pickup,2,3,3,0,,0/2,Ammo|StationaryWeapons,dtor,Pickup,0x004f2598,,class,control-class,"2 caller class(es), dca Pickup"
+0x004f2788,named,ctor-and-dtor,123,StationaryWeapons,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df2f0
+0x004f2978,named,ctor-and-dtor,123,Ammo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df390
+0x004f2b68,named,ctor-and-dtor,123,AntiPortalActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df430
+0x004f2d58,named,ctor-and-dtor,123,InventoryAttachment,2,2,2,0,,0/2,WeaponAttachment,dtor,WeaponAttachment,0x004f2f48,,descendant,control-descendant,"1 caller class(es), dca WeaponAttachment"
+0x004f2f48,named,ctor-and-dtor,123,WeaponAttachment,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df570
+0x004f3138,named,ctor-and-dtor,123,DamageType,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df610
+0x004f3328,named,ctor-and-dtor,123,SVehicleFactory,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df710
+0x004f3518,named,ctor-and-dtor,123,VehiclePart,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df7b0
+0x004f3708,named,ctor-and-dtor,123,Inventory,2,4,4,0,,0/2,Ammunition|Powerups|Weapon,dtor,Inventory,0x004f3708,,class,control-class,"3 caller class(es), dca Inventory"
+0x004f38f8,named,ctor-and-dtor,123,Ammunition,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df900
+0x004f3ae8,named,ctor-and-dtor,123,Powerups,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000df9a0
+0x004f3cd8,named,ctor-and-dtor,123,Weapon,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfa60
+0x004f3ec8,named,ctor-and-dtor,123,Projectile,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfb30
+0x004f40b8,named,ctor-and-dtor,123,Decoration,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfbd0
+0x004f42a8,named,ctor-and-dtor,123,AvoidanceWaypoint,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfc70
+0x004f4498,named,ctor-and-dtor,123,Vignette,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfd10
+0x004f4688,named,ctor-and-dtor,123,Note,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfdc0
+0x004f4878,named,ctor-and-dtor,123,Light,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000dfe70
+0x004f4a68,named,ctor-and-dtor,123,LevelInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0120
+0x004f4c58,named,ctor-and-dtor,30,GameProfile,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0700
+0x004f4cd0,named,ctor-and-dtor,31,Manifest,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0840
+0x004f6188,named,ctor-and-dtor,135,Camera,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0b80
+0x004f6d38,named,ctor-and-dtor,30,TextToSpeechAlias,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e0ed0
+0x004f6dd8,named,ctor-and-dtor,127,IMusicActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e1020
+0x004f6ff8,named,ctor-and-dtor,30,I3DL2Listener,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e1180
+0x004f7070,plain-only,unclassified,12,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x004f70a0,no-store,no-body,2,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x004f72a0,named,ctor-and-dtor,46,Sound,4,8,8,0,,0/4,ProceduralSound|SoundGroup,ctor+dtor,Sound,0x004f72a0,,class,control-class,"2 caller class(es), dca Sound"
+0x004f7380,named,ctor-and-dtor,46,ProceduralSound,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e6300
+0x004f7468,named,ctor-and-dtor,47,SoundGroup,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000e63f0
+0x004f7690,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers BeamEmitter_vt39
+0x004f76b8,named,ctor-and-dtor,40,ParticleEmitter,2,6,6,0,,0/2,BeamEmitter|MeshEmitter|SparkEmitter|SpriteEmitter|TrailEmitter,dtor,ParticleEmitter,0x004f76b8,,class,control-class,"5 caller class(es), dca ParticleEmitter"
+0x004f7758,named,ctor-and-dtor,42,BeamEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000ea870
+0x004f7868,plain-only,installed-by-ctor,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers Engine_UnChan, Engine_UnConn"
+0x004f8960,named,ctor-and-dtor,30,CacheManager,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_000f1e30, FUN_000f90e0"
+0x004f9618,named,ctor-and-dtor,32,CameraOverlay,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000fbb40
+0x004f9728,named,ctor-and-dtor,32,MotionBlur,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_000fcab0
+0x004fa110,named,ctor-and-dtor,51,Canvas,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00106eb0
+0x004fa390,plain-only,ctor-and-dtor,37,,2,5,5,0,,1/2,ActorChannel|ControlChannel|FileChannel|VoiceChannel,dtor,,,,,base-of-group,"4 caller classes (ActorChannel, ControlChannel, FileChannel, VoiceChannel), deepest common ancestor -"
+0x004fa5a8,at-least,ctor-and-dtor,2,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010ce50
+0x004fa5b0,named,ctor-and-dtor,37,ControlChannel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010ce50
+0x004fa650,named,ctor-and-dtor,37,FileChannel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010cee0
+0x004fa6f0,named,ctor-and-dtor,37,VoiceChannel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010d0b0
+0x004fa958,named,ctor-and-dtor,37,ActorChannel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0010d3d0
+0x004fb9b8,named,ctor-and-dtor,40,PackageMapLevel,3,4,4,0,,0/3,,,,,,,callers-unnamed,"callers FUN_00110b50, FUN_0011d460, FUN_002d2890"
+0x004fbb30,named,ctor-and-dtor,30,PlayerInput,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00110f70
+0x004fbba8,named,ctor-and-dtor,30,CheatManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00111010
+0x004fc060,named,ctor-and-dtor,30,AdminBase,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00119ed0
+0x004fc0f8,named,ctor-and-dtor,30,AIMsgManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0011a1c0
+0x004fc1b0,named,ctor-and-dtor,39,Primitive,2,24,24,0,,0/2,ConvexVolume|FluidSurfacePrimitive|LodMesh|LodMeshInstance|Mesh|MeshInstance,ctor+dtor,Primitive,0x004fc1b0,,class,control-class,"12 caller class(es), dca Primitive"
+0x004fc250,named,ctor-and-dtor,39,ConvexVolume,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0011b610
+0x004fc35c,plain-only,installed-by-ctor,8,,2,6,6,0,,0/2,DemoPlayPendingLevel|Level|NetPendingLevel,ctor,,,,,base-of-group,"3 caller classes (DemoPlayPendingLevel, Level, NetPendingLevel), deepest common ancestor -"
+0x004fc4cc,plain-only,ctor-and-dtor,8,,3,9,9,0,,0/3,DemoPlayPendingLevel|Level|NetPendingLevel,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoPlayPendingLevel, Level, NetPendingLevel), deepest common ancestor -"
+0x004fc4f0,plain-only,ctor-and-dtor,30,,3,9,9,0,,0/3,DemoPlayPendingLevel|Level|NetPendingLevel,ctor+dtor,,,,,base-of-group,"3 caller classes (DemoPlayPendingLevel, Level, NetPendingLevel), deepest common ancestor -"
+0x004fc568,plain-only,ctor-and-dtor,8,,2,4,4,0,,0/2,DemoPlayPendingLevel|NetPendingLevel,dtor,,,,,base-of-group,"2 caller classes (DemoPlayPendingLevel, NetPendingLevel), deepest common ancestor -"
+0x004fc588,plain-only,ctor-and-dtor,34,,2,4,4,0,,0/2,DemoPlayPendingLevel|NetPendingLevel,dtor,,,,,base-of-group,"2 caller classes (DemoPlayPendingLevel, NetPendingLevel), deepest common ancestor -"
+0x004fc610,at-least,ctor-and-dtor,8,,3,2,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_0011c130, FUN_0015ef40"
+0x004fc630,named,ctor-and-dtor,34,DemoPlayPendingLevel,3,2,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_0011c130, FUN_0015ef40"
+0x004fcc08,at-least,ctor-and-dtor,1,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers DemoRecDriver_vt34, Engine_UnDemoRec, FUN_0011e530"
+0x004fcc0c,at-least,ctor-and-dtor,2,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers DemoRecDriver_vt34, Engine_UnDemoRec, FUN_0011e530"
+0x004fcc18,named,ctor-and-dtor,42,DemoRecConnection,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers DemoRecDriver_vt34, Engine_UnDemoRec, FUN_0011e530"
+0x004fccc0,at-least,ctor-and-dtor,1,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0011e5c0
+0x004fccc8,named,ctor-and-dtor,40,DemoRecDriver,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0011e5c0
+0x004fcfe0,plain-only,dtor-only,36,,1,3,3,0,,0/1,ChannelDownload|HTTPDownload,dtor,,,,,base-of-group,"2 caller classes (ChannelDownload, HTTPDownload), deepest common ancestor -"
+0x004fd070,named,ctor-and-dtor,36,ChannelDownload,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0011f770
+0x005040cc,at-least,ctor-and-dtor,1,,2,3,3,0,,0/2,GameEngine,ctor+dtor,GameEngine,0x00509438,,,second-table,"its only caller class is GameEngine, whose own table is 0x00509438"
+0x005040d0,named,ctor-and-dtor,56,Engine,2,3,3,0,,0/2,GameEngine,ctor+dtor,GameEngine,0x00509438,,descendant,control-descendant,"1 caller class(es), dca GameEngine"
+0x00504560,named,ctor-and-dtor,31,ServerCommandlet,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00127af0
+0x005045e0,named,ctor-and-dtor,31,UModUnpackCommandlet,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00127b90
+0x00504660,named,ctor-and-dtor,31,MasterMD5Commandlet,2,3,3,0,,0/2,,,,,,,callers-unnamed,"callers FUN_00127c40, FUN_0021ada0, FUN_0021b5f0"
+0x005046e0,named,ctor-and-dtor,30,GlobalTempObjects,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_001226a0, FUN_00127dd0"
+0x00507bb8,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0012bbf0
+0x00507be0,named,ctor-and-dtor,39,FluidSurfacePrimitive,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0012d690
+0x00507c7c,plain-only,installed-by-ctor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0012bbf0
+0x00507da0,named,ctor-and-dtor,123,FluidSurfaceOscillator,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0012d960
+0x00507f90,named,ctor-and-dtor,123,FluidSurfaceInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0012da10
+0x005081d8,named,ctor-and-dtor,30,Font,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0012e830
+0x005085d8,named,ctor-and-dtor,30,Polys,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers Core_UnTemplate, FUN_00131ab0"
+0x00509010,named,ctor-and-dtor,123,MaplistManagerBase,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00148d90
+0x00509200,named,ctor-and-dtor,123,PrecacheHack,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00148e30
+0x00509438,named,ctor-and-dtor,66,GameEngine,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00148fc0
+0x0050a808,named,ctor-and-dtor,30,CrosshairPack,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001491e0
+0x0050c314,at-least,ctor-and-dtor,1,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0014e7c0
+0x0050c318,named,ctor-and-dtor,45,Input,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0014e7c0
+0x0050c808,named,ctor-and-dtor,30,Interactions,2,3,3,0,,0/2,Interaction|InteractionMaster,dtor,Interactions,0x0050c808,,class,control-class,"2 caller class(es), dca Interactions"
+0x0050c880,named,ctor-and-dtor,36,Interaction,2,5,5,0,,0/2,AbstractUIXInteraction|BaseGUIController|Console|StreamInteraction,dtor,Interaction,0x0050c880,,class,control-class,"4 caller class(es), dca Interaction"
+0x0050c910,named,ctor-and-dtor,37,AbstractUIXInteraction,2,2,2,0,,0/2,UIXInteraction,dtor,UIXInteraction,0x00539988,,descendant,control-descendant,"1 caller class(es), dca UIXInteraction"
+0x0050ca30,named,ctor-and-dtor,39,BaseGUIController,2,2,2,0,,0/2,GUIController,dtor,GUIController,0x00538d50,,descendant,control-descendant,"1 caller class(es), dca GUIController"
+0x0050cb80,named,ctor-and-dtor,36,Console,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0014fc10
+0x0050cc68,named,ctor-and-dtor,30,InteractionMaster,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00150cc0
+0x0050e88c,at-least,ctor-and-dtor,8,,3,3,5,0,,0/3,,,,,,,callers-unnamed,"callers Engine_UnModel, FUN_00128810, FUN_00163060"
+0x0050e8b0,named,ctor-and-dtor,71,Level,3,3,5,0,,0/3,,,,,,,callers-unnamed,"callers Engine_UnModel, FUN_00128810, FUN_00163060"
+0x0050ec30,named,ctor-and-dtor,42,Mesh,2,2,2,0,,0/2,LodMesh,dtor,LodMesh,0x0050f020,,descendant,control-descendant,"1 caller class(es), dca LodMesh"
+0x0050ecd8,named,ctor-and-dtor,91,MeshInstance,2,2,2,0,,0/2,LodMeshInstance,dtor,LodMeshInstance,0x0050ee48,,descendant,control-descendant,"1 caller class(es), dca LodMeshInstance"
+0x0050ee48,named,ctor-and-dtor,92,LodMeshInstance,2,3,3,0,,0/2,SkeletalMeshInstance|VertMeshInstance,dtor,LodMeshInstance,0x0050ee48,,class,control-class,"2 caller class(es), dca LodMeshInstance"
+0x0050f020,named,ctor-and-dtor,45,LodMesh,2,5,5,0,,0/2,SkeletalMesh|VertMesh,ctor+dtor,LodMesh,0x0050f020,,class,control-class,"2 caller class(es), dca LodMesh"
+0x0050f178,named,ctor-and-dtor,47,ConstantMaterial,2,3,3,0,,0/2,ConstantColor|FadeColor,dtor,ConstantMaterial,0x0050f178,,class,control-class,"2 caller class(es), dca ConstantMaterial"
+0x0050f238,named,ctor-and-dtor,46,Modifier,2,7,7,0,,0/2,ColorModifier|FinalBlend|MaterialSequence|MaterialSwitch|OpacityModifier|TexModifier,dtor,Modifier,0x0050f238,,class,control-class,"6 caller class(es), dca Modifier"
+0x0050f2f0,named,ctor-and-dtor,47,TexModifier,2,9,9,0,,0/2,TexCoordSource|TexEnvMap|TexMatrix|TexOscillator|TexPanner|TexRotator,dtor,TexModifier,0x0050f2f0,,class,control-class,"8 caller class(es), dca TexModifier"
+0x0050f3b0,named,ctor-and-dtor,47,TexOscillator,2,2,2,0,,0/2,TexOscillatorTriggered,dtor,TexOscillatorTriggered,0x0050fd70,,descendant,control-descendant,"1 caller class(es), dca TexOscillatorTriggered"
+0x0050f470,named,ctor-and-dtor,47,TexPanner,2,2,2,0,,0/2,TexPannerTriggered,dtor,TexPannerTriggered,0x00510070,,descendant,control-descendant,"1 caller class(es), dca TexPannerTriggered"
+0x0050f618,named,ctor-and-dtor,46,TexCoordMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0016fe20
+0x0050f6d0,named,ctor-and-dtor,46,VertexColor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0016fec0
+0x0050f788,named,ctor-and-dtor,47,FadeColor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0016ff80
+0x0050f848,named,ctor-and-dtor,47,ConstantColor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170030
+0x0050f908,named,ctor-and-dtor,46,Shader,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001700f0
+0x0050f9c0,named,ctor-and-dtor,46,OpacityModifier,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001701b0
+0x0050fa78,named,ctor-and-dtor,46,FinalBlend,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170250
+0x0050fb30,named,ctor-and-dtor,47,TexCoordSource,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170310
+0x0050fbf0,named,ctor-and-dtor,47,TexMatrix,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001703c0
+0x0050fcb0,named,ctor-and-dtor,47,TexEnvMap,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170460
+0x0050fd70,named,ctor-and-dtor,47,TexOscillatorTriggered,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170520
+0x0050fe30,named,ctor-and-dtor,47,TexRotator,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001705f0
+0x0050fef0,named,ctor-and-dtor,47,TexScaler,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170690
+0x0050ffb0,named,ctor-and-dtor,47,VariableTexPanner,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170730
+0x00510070,named,ctor-and-dtor,47,TexPannerTriggered,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001707f0
+0x00510130,named,ctor-and-dtor,46,ColorModifier,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170890
+0x005101e8,named,ctor-and-dtor,46,Combiner,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001709c0
+0x005104a8,named,ctor-and-dtor,48,ProxyBitmapMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170e20
+0x00510568,named,ctor-and-dtor,46,MaterialSequence,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00170fc0
+0x00510620,named,ctor-and-dtor,46,MaterialSwitch,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00171070
+0x005106d8,named,ctor-and-dtor,46,MultiPassMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001711a0
+0x005107c0,named,ctor-and-dtor,58,BackBufferTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001712f0
+0x00510cf0,named,ctor-and-dtor,40,MeshEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00174680
+0x00510e6c,plain-only,installed-by-ctor,9,,1,3,3,0,,0/1,,,,,,,callers-unnamed,"callers FUN_0017a0b0, FUN_0017ac10, Model_vt11"
+0x00510e90,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0017a0b0
+0x00510eb8,plain-only,installed-by-ctor,18,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_00179ab0, FUN_001ea3a0"
+0x00510f00,plain-only,installed-by-ctor,16,,2,1,1,0,,1/2,,,,,,,callers-unnamed,callers FUN_0017aaa0
+0x00510f78,plain-only,dtor-only,18,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0017b1f0
+0x00510fc8,named,ctor-and-dtor,39,Model,3,2,3,0,,1/3,,,,,,,callers-unnamed,"callers Engine_UnLevel, FUN_0017b0a0"
+0x005110c8,named,ctor-and-dtor,125,Mover,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0017c270
+0x00511308,named,ctor-and-dtor,30,Movie,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0017d530
+0x00511380,plain-only,ctor-and-dtor,12,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0017cd90, FUN_0017d5f0"
+0x005113b0,plain-only,ctor-and-dtor,12,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0017d5f0, FUN_002c0b80"
+0x00511538,named,ctor-and-dtor,59,MovieTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0017d710
+0x005124a4,plain-only,ctor-and-dtor,12,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00187020
+0x00512798,named,ctor-and-dtor,31,PackageCheckInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00187430
+0x00512938,named,ctor-and-dtor,46,ParticleMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0018ef70
+0x005139f4,at-least,ctor-and-dtor,8,,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Engine_UnGame, FUN_001a6c70"
+0x00513a18,named,ctor-and-dtor,34,NetPendingLevel,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers Engine_UnGame, FUN_001a6c70"
+0x00513fd0,named,ctor-and-dtor,47,PixelShaderMaterial,2,17,17,0,,0/2,PSBackBufferEffect|PSBloomSelectMaterial|PSBlurMaterial|PSBump|PSDepthOfFieldMaterial|PSDistortionBaseMaterial,dtor,PixelShaderMaterial,0x00513fd0,,class,control-class,"16 caller class(es), dca PixelShaderMaterial"
+0x00514090,named,ctor-and-dtor,47,PSShieldMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b8da0
+0x00514150,named,ctor-and-dtor,47,PSReplicatorVision,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b8e40
+0x00514210,named,ctor-and-dtor,47,PSBump,2,3,3,0,,0/2,PSBumpBSP|PSBumpSpecular,dtor,PSBump,0x00514210,,class,control-class,"2 caller class(es), dca PSBump"
+0x005142d0,named,ctor-and-dtor,47,PSBumpSpecular,2,3,3,0,,0/2,PSBumpSpecularBSP|PSVDM,dtor,PSBumpSpecular,0x005142d0,,class,control-class,"2 caller class(es), dca PSBumpSpecular"
+0x00514390,named,ctor-and-dtor,47,PSDistortionBaseMaterial,2,3,3,0,,0/2,PSBlendedDistortionMaterial|PSDistortionMaterial,dtor,PSDistortionBaseMaterial,0x00514390,,class,control-class,"2 caller class(es), dca PSDistortionBaseMaterial"
+0x00514450,named,ctor-and-dtor,47,PSBlendedDistortionMaterial,2,4,4,0,,0/2,PSAdditiveDistortion|PSModulatedDistortionMaterial|PSSubtractiveDistortion,dtor,PSBlendedDistortionMaterial,0x00514450,,class,control-class,"3 caller class(es), dca PSBlendedDistortionMaterial"
+0x00514510,named,ctor-and-dtor,47,PSSubtractiveDistortion,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9190
+0x005145d0,named,ctor-and-dtor,47,PSAdditiveDistortion,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9230
+0x00514690,named,ctor-and-dtor,47,PSModulatedDistortionMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b92d0
+0x00514750,named,ctor-and-dtor,47,PSDistortionMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9370
+0x00514810,named,ctor-and-dtor,47,PSSimple,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9410
+0x005148d0,named,ctor-and-dtor,47,PSEmissiveShader,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9540
+0x00514990,named,ctor-and-dtor,47,PSEmissiveConstColor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b95e0
+0x00514a50,named,ctor-and-dtor,47,PSBackBufferEffect,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9690
+0x00514b10,named,ctor-and-dtor,47,PSBlurMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9730
+0x00514bd0,named,ctor-and-dtor,47,PSUseTexIndexMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b97f0
+0x00514c90,named,ctor-and-dtor,47,PSLuminanceTexIndexMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9890
+0x00514d50,named,ctor-and-dtor,47,PSBloomSelectMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001b9930
+0x00514e10,named,ctor-and-dtor,47,PSWater,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bd580
+0x00514ed0,named,ctor-and-dtor,47,PSMotionBlurMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bd600
+0x00514f90,named,ctor-and-dtor,47,PSVDM,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bd710
+0x00515050,named,ctor-and-dtor,47,PSBumpSpecularBSP,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bd7b0
+0x00515110,named,ctor-and-dtor,47,PSBumpBSP,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bd850
+0x00515220,named,ctor-and-dtor,47,PSDepthOfFieldMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bdb20
+0x005152e0,named,ctor-and-dtor,47,PSRefractionMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bdba0
+0x005153a0,named,ctor-and-dtor,123,WaterSceneManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bdc40
+0x005155d8,named,ctor-and-dtor,30,PlayerProfile,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001bfe80
+0x00515bd0,named,ctor-and-dtor,30,PlayerStats,2,2,2,0,,0/2,PlayerStatCache,dtor,PlayerStatCache,0x00515d38,,descendant,control-descendant,"1 caller class(es), dca PlayerStatCache"
+0x00515c48,named,ctor-and-dtor,30,StatsQuery,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001c6030
+0x00515cc0,named,ctor-and-dtor,30,StatsWrite,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001c60f0
+0x00515d38,named,ctor-and-dtor,30,PlayerStatCache,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001c61b0
+0x00516808,named,ctor-and-dtor,30,PlayInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001ca4a0
+0x005169b0,named,ctor-and-dtor,46,ProjectorMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001cb660
+0x00516ac8,named,ctor-and-dtor,39,ProjectorPrimitive,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001d0080
+0x00516be8,named,ctor-and-dtor,128,Projector,2,2,2,0,,0/2,ShadowProjector,dtor,ShadowProjector,0x0051ab38,,descendant,control-descendant,"1 caller class(es), dca ShadowProjector"
+0x00516fa8,plain-only,ctor-and-dtor,10,,5,16,19,0,,0/5,,,,,,,callers-unnamed,"callers FUN_00101c40, FUN_00101ea0, FUN_00102310"
+0x00516fd4,plain-only,installed-by-ctor,14,,2,4,4,0,,0/2,,,,,,,callers-unnamed,"callers FUN_001d5050, FUN_001d50d0, FUN_001d6b60"
+0x0051700c,plain-only,installed-by-ctor,14,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_001fc630
+0x00517044,plain-only,installed-by-ctor,14,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_001fc630
+0x0051707c,plain-only,dtor-only,9,,2,5,7,0,,0/2,,,,,,,callers-unnamed,"callers Core_UnClass, Core_UnMath, Emitter_vt70"
+0x005170a8,plain-only,installed-by-ctor,14,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_001fc630
+0x005170f4,plain-only,installed-by-ctor,15,,1,7,7,0,,0/1,,,,,,,callers-unnamed,"callers FUN_00102a30, FUN_0014edc0, FUN_0014f0e0"
+0x00517134,plain-only,installed-by-ctor,15,,1,1,4,0,,0/1,,,,,,,callers-unnamed,callers FUN_00133250
+0x005171b4,plain-only,installed-by-ctor,15,,1,5,5,0,,0/1,,,,,,,callers-unnamed,"callers FUN_00101c40, FUN_00101ea0, FUN_00102310"
+0x00517214,plain-only,unclassified,9,,1,1,3,0,,0/1,,,,,,,callers-unnamed,callers Core_UnMath
+0x00517238,plain-only,unclassified,5,,1,1,3,0,,0/1,,,,,,,callers-unnamed,callers Core_UnMath
+0x0051724c,plain-only,installed-by-ctor,5,,2,1,1,0,,1/2,,,,,,,callers-unnamed,callers Core_UnClass
+0x00517260,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_001df420
+0x005172ec,no-store,no-body,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x00517428,plain-only,unclassified,2,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers Core_UnMath, FUN_001fc630"
+0x00517430,plain-only,installed-by-ctor,5,,2,2,3,0,,0/2,,,,,,,callers-unnamed,"callers Core_UnMath, FUN_001e0df0"
+0x00517444,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_001e0840
+0x00517468,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_001e04e0
+0x0051748c,plain-only,unclassified,2,,4,5,6,1,,1/4,,,,,,,callers-unnamed,"callers Core_UnMath, Core_UnMisc, FUN_0004f090"
+0x005174a0,plain-only,unclassified,2,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers Core_UnMath, FUN_001fc630"
+0x005174a8,plain-only,dtor-only,18,,2,1,2,0,,0/2,,,,,,,callers-unnamed,callers FUN_001e1140
+0x00517588,plain-only,unclassified,18,,2,1,2,0,,0/2,,,,,,,callers-unnamed,callers FUN_001e1140
+0x00517778,plain-only,ctor-and-dtor,9,,4,6,6,0,,0/4,,,,,,,callers-unnamed,"callers Engine_UnRender, FUN_001da840, FUN_001eab90"
+0x00517860,plain-only,dtor-only,30,,1,4,4,0,,0/1,IndexBuffer|SkinVertexBuffer,dtor,,,,,base-of-group,"2 caller classes (IndexBuffer, SkinVertexBuffer), deepest common ancestor -"
+0x005178d8,plain-only,dtor-only,32,,1,6,6,0,,0/1,VertexBuffer|VertexStreamCOLOR|VertexStreamPosNormTex|VertexStreamUV|VertexStreamVECTOR,dtor,,,,,base-of-group,"5 caller classes (VertexBuffer, VertexStreamCOLOR, VertexStreamPosNormTex, VertexStreamUV), deepest common ancestor -"
+0x00517a18,named,ctor-and-dtor,30,IndexBuffer,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001ec2c0
+0x00517a90,named,ctor-and-dtor,32,VertexBuffer,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001ec9a0
+0x00517b10,named,ctor-and-dtor,32,VertexStreamVECTOR,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001eca90
+0x00517b90,named,ctor-and-dtor,32,VertexStreamCOLOR,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001ecc60
+0x00517c10,named,ctor-and-dtor,32,VertexStreamUV,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001ece10
+0x00517c90,named,ctor-and-dtor,32,VertexStreamPosNormTex,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001ed040
+0x00517d10,named,ctor-and-dtor,30,SkinVertexBuffer,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_001ed0f0
+0x00517e88,plain-only,dtor-only,5,,2,4,4,0,,0/2,,,,,,,callers-unnamed,"callers Core_UnMisc, Core_UnTemplate, FUN_0004f090"
+0x00517ff0,plain-only,ctor-and-dtor,9,,5,5,16,1,,0/5,,,,,,,callers-unnamed,"callers Engine_UnRenderUtil, FUN_0021e478, SGScreenBloom_vt31"
+0x00518080,plain-only,installed-by-ctor,18,,1,16,17,0,,0/1,,,,,,,callers-unnamed,"callers Core_UnMath, Core_UnObjBas, Core_UnTemplate"
+0x005180c8,plain-only,ctor-and-dtor,15,,2,8,12,2,,0/2,,,,,,,callers-unnamed,"callers FUN_000fbea0, FUN_000fc4f0, FUN_00102310"
+0x00518104,plain-only,installed-by-ctor,7,,1,11,14,0,,0/1,StaticMesh|TerrainSector,ctor,Object,0x004dd2a8,,,base-of-group,"2 caller classes (StaticMesh, TerrainSector), deepest common ancestor Object"
+0x00518120,plain-only,installed-by-ctor,5,,1,0,0,0,,1/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x00518160,plain-only,ctor-and-dtor,9,,3,30,80,0,,0/3,,,,,,,callers-unnamed,"callers Ambushpoint_vt137, Camera_vt70, Core_UnClass"
+0x00518184,plain-only,ctor-and-dtor,9,,2,23,64,0,,0/2,,,,,,,callers-unnamed,"callers CameraOverlay_vt31, Canvas_vt31, Core_UnMath"
+0x005181a8,plain-only,installed-by-ctor,9,,1,4,5,0,,0/1,StaticMesh|StaticMeshInstance,ctor,Object,0x004dd2a8,,,base-of-group,"2 caller classes (StaticMesh, StaticMeshInstance), deepest common ancestor Object"
+0x005181d0,plain-only,dtor-only,3,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_002007a0
+0x005181dc,no-store,no-body,3,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x00518468,named,ctor-and-dtor,30,MeshObject,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00203810
+0x00518530,named,ctor-and-dtor,33,SubActionPlayMovie,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b2e0
+0x005185b8,named,ctor-and-dtor,33,SubActionShowText,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b390
+0x00518640,named,ctor-and-dtor,33,SubActionSubTitle,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b440
+0x005186c8,named,ctor-and-dtor,33,SubActionSceneSpeed,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b4e0
+0x00518750,named,ctor-and-dtor,33,SubActionGameSpeed,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b580
+0x005187d8,named,ctor-and-dtor,33,SubActionOrientation,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b670
+0x00518860,named,ctor-and-dtor,33,SubActionCameraShake,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b710
+0x005188e8,named,ctor-and-dtor,33,SubActionFOV,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b7b0
+0x00518970,named,ctor-and-dtor,33,SubActionTrigger,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b850
+0x005189f8,named,ctor-and-dtor,33,SubActionFade,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020b8f0
+0x00518c30,named,ctor-and-dtor,30,MatAction,2,3,3,0,,0/2,ActionMoveCamera|ActionPause,dtor,MatAction,0x00518c30,,class,control-class,"2 caller class(es), dca MatAction"
+0x00518ca8,named,ctor-and-dtor,31,ActionPause,2,2,2,0,,0/2,MatActionWaitForEvent,dtor,MatActionWaitForEvent,0x005194c8,,descendant,control-descendant,"1 caller class(es), dca MatActionWaitForEvent"
+0x00518ef8,named,ctor-and-dtor,124,LookTarget,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020bce0
+0x005190e8,named,ctor-and-dtor,123,SceneManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020be80
+0x005192d8,named,ctor-and-dtor,123,MatDemoActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020bf50
+0x005194c8,named,ctor-and-dtor,31,MatActionWaitForEvent,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020c030
+0x00519548,named,ctor-and-dtor,30,ActionMoveCamera,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0020c0d0
+0x0051a27c,plain-only,installed-by-ctor,15,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0021a590
+0x0051a2b8,named,ctor-and-dtor,48,ScriptedTexture,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021ab00
+0x0051a3c4,plain-only,installed-by-ctor,15,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers ScriptedTexture_vt47
+0x0051a5b0,named,ctor-and-dtor,123,Security,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021c7a0
+0x0051a810,plain-only,installed-by-ctor,61,,2,0,1,1,,0/2,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0021e331, every one inside a body the symbol map does not cover"
+0x0051a908,named,ctor-and-dtor,48,ShadowBitmapMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021ed00
+0x0051a9e4,plain-only,installed-by-ctor,15,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0021e393, every one inside a body the symbol map does not cover"
+0x0051ab38,named,ctor-and-dtor,128,ShadowProjector,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021f020
+0x0051ad50,named,ctor-and-dtor,31,AnimNotify,2,8,8,0,,0/2,AnimNotify_DestroyEffect|AnimNotify_Effect|AnimNotify_LIPSinc|AnimNotify_MatSubAction|AnimNotify_Script|AnimNotify_Scripted,dtor,AnimNotify,0x0051ad50,,class,control-class,"7 caller class(es), dca AnimNotify"
+0x0051add0,named,ctor-and-dtor,31,AnimNotify_MatSubAction,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021f6d0
+0x0051ae50,named,ctor-and-dtor,31,AnimNotify_Scripted,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021f770
+0x0051aed0,named,ctor-and-dtor,31,AnimNotify_Script,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021f810
+0x0051af50,named,ctor-and-dtor,31,AnimNotify_LIPSinc,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021f8b0
+0x0051afd0,named,ctor-and-dtor,31,AnimNotify_DestroyEffect,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021f950
+0x0051b050,named,ctor-and-dtor,31,AnimNotify_Effect,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0021f9f0
+0x0051b0cc,plain-only,dtor-only,6,,5,11,24,0,,0/5,,,,,,,callers-unnamed,"callers Core_UnMisc, FUN_0004f090, FUN_000599e0"
+0x0051b0e4,plain-only,unclassified,6,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_0023a9e0, FUN_0023c110"
+0x0051b100,named,ctor-and-dtor,30,Animation,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00220600
+0x0051b178,plain-only,unclassified,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers Core_UnObjBas
+0x0051bc08,at-least,ctor-and-dtor,2,,3,5,5,0,,0/3,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
+0x0051bc10,at-least,ctor-and-dtor,2,,3,5,5,0,,0/3,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
+0x0051bc18,plain-only,ctor-and-dtor,2,,2,4,4,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0023ba40, FUN_0023cbb0, FUN_00241ad0"
+0x0051bc20,plain-only,installed-by-ctor,11,,1,2,2,0,,0/1,VertMesh,ctor,VertMesh,0x00520fd8,,,second-table,"its only caller class is VertMesh, whose own table is 0x00520fd8"
+0x0051bc4c,plain-only,installed-by-ctor,9,,1,2,2,0,,0/1,SkeletalMeshInstance,ctor,SkeletalMeshInstance,0x0051c188,,,second-table,"its only caller class is SkeletalMeshInstance, whose own table is 0x0051c188"
+0x0051bc70,plain-only,installed-by-ctor,6,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0023a8f0
+0x0051bc88,plain-only,installed-by-ctor,6,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0023a8f0
+0x0051bca0,plain-only,unclassified,6,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_0023a9e0, FUN_0023c110"
+0x0051bf18,at-least,ctor-and-dtor,2,,3,5,5,0,,0/3,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
+0x0051bf20,at-least,ctor-and-dtor,2,,2,1,1,0,,0/2,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
+0x0051bf28,at-least,ctor-and-dtor,2,,2,1,1,0,,0/2,SkeletalMesh,dtor,SkeletalMesh,0x0051c310,,,second-table,"its only caller class is SkeletalMesh, whose own table is 0x0051c310"
+0x0051bf30,named,ctor-and-dtor,31,AnimNotify_Sound,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0023bb50
+0x0051c040,named,ctor-and-dtor,39,MeshAnimation,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0023cf40
+0x0051c188,named,ctor-and-dtor,98,SkeletalMeshInstance,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0023d470
+0x0051c310,named,ctor-and-dtor,45,SkeletalMesh,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0023d900
+0x0051d238,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers SparkEmitter_vt39
+0x0051d260,named,ctor-and-dtor,40,SparkEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00245540
+0x0051d300,plain-only,installed-by-ctor,9,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0051d37c,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers SpriteEmitter_vt39
+0x0051d3a0,named,ctor-and-dtor,41,SpriteEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00247ed0
+0x0051d444,plain-only,unclassified,9,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0051d7c4,plain-only,installed-by-ctor,9,,1,2,2,0,,0/1,StaticMesh,ctor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
+0x0051d7e8,plain-only,installed-by-ctor,9,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0024a150, FUN_0024efb0"
+0x0051d80c,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,StaticMesh,ctor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
+0x0051d830,at-least,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00263650
+0x0051d854,at-least,ctor-and-dtor,2,,2,2,2,0,,0/2,StaticMesh,dtor,StaticMesh,0x0051dd28,,,second-table,"its only caller class is StaticMesh, whose own table is 0x0051dd28"
+0x0051d860,named,ctor-and-dtor,123,DecoCollideActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0024e930
+0x0051da50,named,ctor-and-dtor,123,StaticMeshActor,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0024e9d0
+0x0051dc40,named,ctor-and-dtor,30,StaticMeshInstance,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0024bc30, FUN_0024eea0"
+0x0051dd28,named,ctor-and-dtor,40,StaticMesh,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0024f490, FUN_00263650"
+0x0051ec98,plain-only,installed-by-ctor,23,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x0051f650,named,ctor-and-dtor,30,SVehicleWheel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00263ab0
+0x0051f6d8,plain-only,unclassified,5,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x0051f6ec,plain-only,unclassified,5,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x0051f700,plain-only,unclassified,5,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x0033f2ff, every one inside a body the symbol map does not cover"
+0x0051f720,named,ctor-and-dtor,39,TerrainPrimitive,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers FUN_00275f70, FUN_002796a0"
+0x0051fa7c,plain-only,unclassified,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0026f480
+0x0051faa0,plain-only,installed-by-ctor,9,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_0026f480, FUN_00279400"
+0x0051fc18,named,ctor-and-dtor,46,TerrainMaterial,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00279230
+0x0051fcd0,named,ctor-and-dtor,30,TerrainSector,3,2,2,0,,0/3,,,,,,,callers-unnamed,"callers FUN_00273aa0, FUN_00279340"
+0x0051fda8,named,ctor-and-dtor,123,TerrainInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00279750
+0x0051ffd8,plain-only,installed-by-ctor,18,,1,7,15,7,,0/1,Texture,ctor,Texture,0x004cfba0,,,second-table,"its only caller class is Texture, whose own table is 0x004cfba0"
+0x00520248,plain-only,installed-by-ctor,15,,1,1,1,0,,0/1,Cubemap,ctor,Cubemap,0x005205c8,,,second-table,"its only caller class is Cubemap, whose own table is 0x005205c8"
+0x00520288,named,ctor-and-dtor,30,Palette,2,7,10,3,,0/2,,,,,,,callers-unnamed,"callers FUN_0027e640, FUN_0027eea0, Fire_UnFractal"
+0x005205c8,named,ctor-and-dtor,58,Cubemap,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0027ef90
+0x0052075c,plain-only,installed-by-ctor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers TrailEmitter_vt39
+0x005207a4,plain-only,installed-by-ctor,9,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers TrailEmitter_vt39
+0x005207c8,named,ctor-and-dtor,41,TrailEmitter,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00284180
+0x0052086c,plain-only,unclassified,9,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x00520ca0,named,ctor-and-dtor,92,VertMeshInstance,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028f130
+0x00520fd8,named,ctor-and-dtor,45,VertMesh,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028f2f0
+0x005210a8,named,ctor-and-dtor,123,PlayerChatManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028fac0
+0x00521298,named,ctor-and-dtor,123,VoiceChatRoom,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028fb60
+0x005214d0,named,ctor-and-dtor,123,VoiceChatReplicationInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0028fdc0
+0x005216c0,named,ctor-and-dtor,123,DecoVolumeObject,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00290a90
+0x005218b0,named,ctor-and-dtor,124,DecorationList,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00290b30
+0x00521b30,named,ctor-and-dtor,30,Spline,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00290dd0
+0x00521f80,named,ctor-and-dtor,30,StreamBase,2,4,4,0,,0/2,Stream|StreamInterface|StreamTag,dtor,StreamBase,0x00521f80,,class,control-class,"3 caller class(es), dca StreamBase"
+0x00521ff8,plain-only,installed-by-ctor,3,,1,0,1,1,0x002952d0,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x002953a6, every one inside a body the symbol map does not cover; 0x002952d0 is a body the gap census decoded"
+0x00522110,named,ctor-and-dtor,31,StreamInterface,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00295ea0
+0x00522190,named,ctor-and-dtor,37,StreamInteraction,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00295f50
+0x00522e88,named,ctor-and-dtor,30,Stream,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00297980
+0x00522f90,named,ctor-and-dtor,30,StreamTag,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00297ee0
+0x00523008,plain-only,installed-by-ctor,3,,1,0,1,1,0x002952d0,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00295351, every one inside a body the symbol map does not cover; 0x002952d0 is a body the gap census decoded"
+0x00523340,plain-only,installed-by-ctor,9,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00417a35, every one inside a body the symbol map does not cover"
+0x00523394,plain-only,installed-by-ctor,9,,1,0,1,1,,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x00417a55, every one inside a body the symbol map does not cover"
+0x0052352c,plain-only,installed-by-ctor,16,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers FUN_002a5d40
+0x0052b45c,at-least,ctor-and-dtor,1,,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002b4eb0
+0x0052b460,named,ctor-and-dtor,50,D3DRenderDevice,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002b4eb0
+0x0052bbf8,plain-only,installed-by-ctor,65,,1,1,1,0,,0/1,D3DRenderDevice,ctor,D3DRenderDevice,0x0052b460,,,second-table,"its only caller class is D3DRenderDevice, whose own table is 0x0052b460"
+0x0052bdb8,plain-only,installed-by-ctor,16,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers D3DDrv_D3DRenderDevice
+0x0052be38,plain-only,ctor-and-dtor,12,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers D3DRenderDevice_vt46, FUN_002c12b0"
+0x0052be68,plain-only,ctor-and-dtor,5,,2,7,7,0,,0/2,,,,,,,callers-unnamed,"callers FUN_002be490, FUN_002be4d0, FUN_002bf900"
+0x0052be7c,plain-only,ctor-and-dtor,5,,2,2,3,1,,0/2,,,,,,,callers-unnamed,"callers FUN_002b98a0, FUN_002c1310"
+0x0052c2b8,plain-only,ctor-and-dtor,5,,3,2,3,1,,0/3,,,,,,,callers-unnamed,"callers FUN_002c1340, FUN_002c1370"
+0x0052c498,plain-only,ctor-and-dtor,5,,3,3,3,0,,0/3,,,,,,,callers-unnamed,"callers FUN_002b71e0, FUN_002c13d0, FUN_002c1400"
+0x0052c76c,plain-only,installed-by-ctor,5,,1,0,1,1,0x002b6f70,0/1,,,,,,,caller-gap,"1 direct `E8` caller(s) at 0x002b6fe8, every one inside a body the symbol map does not cover; 0x002b6f70 is a body the gap census decoded"
+0x0052c780,plain-only,installed-by-ctor,5,,1,0,2,2,0x002b73a0,0/1,,,,,,,caller-gap,"2 direct `E8` caller(s) at 0x002b742b, 0x002b7486, every one inside a body the symbol map does not cover; 0x002b73a0 is a body the gap census decoded"
+0x0052cb00,named,ctor-and-dtor,36,HTTPDownload,2,1,1,0,,1/2,,,,,,,callers-unnamed,callers FUN_002c3c30
+0x0052cc50,plain-only,dtor-only,22,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002c6450, FUN_002c6e90"
+0x0052cefc,plain-only,ctor-and-dtor,7,,4,4,4,0,,0/4,,,,,,,callers-unnamed,"callers FUN_002cbc80, FUN_002ccd60, FUN_002ccdb0"
+0x0052d1a0,plain-only,dtor-only,23,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002cbe70, FUN_002cd7c0"
+0x0052d3e8,plain-only,ctor-and-dtor,25,,2,5,5,0,,0/2,,,,,,,callers-unnamed,"callers FUN_002c72e0, FUN_002c83b0, FUN_002c8900"
+0x0052d498,plain-only,dtor-only,22,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_002c6ed0, FUN_002c7310"
+0x0052d528,plain-only,installed-by-ctor,22,,1,5,5,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002c91c0, FUN_002cbcf0, FUN_002cd2e0"
+0x0052d5c8,named,ctor-and-dtor,123,InternetLink,2,5,5,0,,0/2,TcpLink|UdpLink,ctor+dtor,InternetLink,0x0052d5c8,,class,control-class,"2 caller class(es), dca InternetLink"
+0x0052d7d0,plain-only,installed-by-ctor,24,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_002c6ed0
+0x0052e0c8,plain-only,installed-by-ctor,25,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_002c8180
+0x0052e298,named,ctor-and-dtor,124,MasterServerLink,2,3,3,0,,0/2,MasterServerUplink|ServerQueryClient,dtor,MasterServerLink,0x0052e298,,class,control-class,"2 caller class(es), dca MasterServerLink"
+0x0052e488,named,ctor-and-dtor,124,ServerQueryClient,2,2,2,0,,0/2,MasterServerClient,dtor,MasterServerClient,0x0052e678,,descendant,control-descendant,"1 caller class(es), dca MasterServerClient"
+0x0052e678,named,ctor-and-dtor,124,MasterServerClient,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002c9500
+0x0052eb78,plain-only,installed-by-ctor,7,,1,1,2,0,,0/1,,,,,,,callers-unnamed,callers FUN_002c7d50
+0x0052ef14,plain-only,installed-by-ctor,8,,1,1,2,0,,0/1,,,,,,,callers-unnamed,callers IpDrv_MasterServerUplink
+0x0052ef34,plain-only,installed-by-ctor,8,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_002cd2e0, IpDrv_MasterServerUplink"
+0x0052ef54,plain-only,installed-by-ctor,8,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers IpDrv_MasterServerUplink
+0x0052ef78,named,ctor-and-dtor,123,MasterServerGameStats,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002cdd40
+0x0052f1c0,plain-only,ctor-and-dtor,25,,2,3,4,0,,0/2,,,,,,,callers-unnamed,"callers Core_UnObjBas, FUN_002ce210, IpDrv_UnSocket"
+0x0052f4a0,named,ctor-and-dtor,124,MasterServerUplink,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002ce3a0
+0x00530000,named,ctor-and-dtor,123,TcpLink,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002d1bc0
+0x00531710,named,ctor-and-dtor,31,CompressCommandlet,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002d6d00
+0x00531790,named,ctor-and-dtor,31,DecompressCommandlet,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002d6da0
+0x00531c40,named,ctor-and-dtor,123,UdpLink,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002d7f40
+0x00536370,named,ctor-and-dtor,30,GUI,2,4,4,0,,0/2,GUIComponent|GUIFont|GUIStyles,dtor,GUI,0x00536370,,class,control-class,"3 caller class(es), dca GUI"
+0x005363e8,named,ctor-and-dtor,30,StatsManager,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002eabe0
+0x00536460,named,ctor-and-dtor,38,PropertyManagerBase,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002eac80
+0x00536590,named,ctor-and-dtor,30,GUIStyles,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f37d0
+0x00536648,named,ctor-and-dtor,58,GUIComponent,2,11,11,0,,0/2,GUIButton|GUIHorzScrollZone|GUIImage|GUILabel|GUIListBase|GUIMultiColumnListHeader,dtor,GUIComponent,0x00536648,,class,control-class,"10 caller class(es), dca GUIComponent"
+0x00536730,named,ctor-and-dtor,63,GUIMultiComponent,2,8,8,0,,0/2,GUIComboBox|GUIListBoxBase|GUIMenuOption|GUINumericEdit|GUIPanel|GUIScrollBarBase,dtor,GUIMultiComponent,0x00536730,,class,control-class,"7 caller class(es), dca GUIMultiComponent"
+0x00536830,named,ctor-and-dtor,63,GUIPanel,2,4,4,0,,0/2,GUIPage|GUIScrollingPanel|GUITabPanel,dtor,GUIPanel,0x00536830,,class,control-class,"3 caller class(es), dca GUIPanel"
+0x00536930,named,ctor-and-dtor,63,GUIScrollingPanel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f3f90
+0x00536a30,named,ctor-and-dtor,63,GUITabPanel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4040
+0x00536b30,named,ctor-and-dtor,63,GUIPage,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f40e0
+0x00536c30,named,ctor-and-dtor,63,GUIMenuOption,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4190
+0x00536d30,named,ctor-and-dtor,63,GUIComboBox,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4270
+0x00536e30,named,ctor-and-dtor,63,GUITabControl,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4320
+0x00536f30,named,ctor-and-dtor,63,GUIScrollBarBase,2,3,3,0,,0/2,GUIHorzScrollBar|GUIVertScrollBar,dtor,GUIScrollBarBase,0x00536f30,,class,control-class,"2 caller class(es), dca GUIScrollBarBase"
+0x00537030,named,ctor-and-dtor,63,GUIHorzScrollBar,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4480
+0x00537130,named,ctor-and-dtor,63,GUIVertScrollBar,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4520
+0x00537230,named,ctor-and-dtor,63,GUINumericEdit,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f45c0
+0x00537330,named,ctor-and-dtor,58,GUIProgressBar,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4670
+0x00537418,named,ctor-and-dtor,58,GUITitleBar,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4740
+0x00537500,named,ctor-and-dtor,58,GUIButton,2,9,9,0,,0/2,GUICheckBoxButton|GUIEditBox|GUIHorzGripButton|GUIHorzScrollButton|GUISpinnerButton|GUITabButton,dtor,GUIButton,0x00537500,,class,control-class,"8 caller class(es), dca GUIButton"
+0x005375e8,named,ctor-and-dtor,58,GUITabButton,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f48a0
+0x005376d0,named,ctor-and-dtor,58,GUIHorzGripButton,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4940
+0x005377b8,named,ctor-and-dtor,58,GUIHorzScrollButton,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f49e0
+0x005378a0,named,ctor-and-dtor,58,GUIVertGripButton,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4a80
+0x00537988,named,ctor-and-dtor,58,GUIVertScrollButton,2,2,2,0,,0/2,GUIComboButton,dtor,GUIComboButton,0x00537a70,,descendant,control-descendant,"1 caller class(es), dca GUIComboButton"
+0x00537a70,named,ctor-and-dtor,58,GUIComboButton,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4bc0
+0x00537b58,named,ctor-and-dtor,58,GUIEditBox,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4c60
+0x00537c40,named,ctor-and-dtor,58,GUICheckBoxButton,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4d20
+0x00537d28,named,ctor-and-dtor,58,GUISpinnerButton,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4dc0
+0x00537e10,named,ctor-and-dtor,58,GUIHorzScrollZone,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4e60
+0x00537ef8,named,ctor-and-dtor,58,GUIVertScrollZone,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4f00
+0x00537fe0,named,ctor-and-dtor,58,GUILabel,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f4fa0
+0x005380c8,named,ctor-and-dtor,58,GUIImage,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f5060
+0x005381b0,named,ctor-and-dtor,30,GUIFont,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f5350
+0x005385a8,named,ctor-and-dtor,30,GameStartInfo,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_002f54b0
+0x00538d50,named,ctor-and-dtor,42,GUIController,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00300c20
+0x00538e28,named,ctor-and-dtor,58,GUIMultiColumnListHeader,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_003059a0
+0x00538f10,named,ctor-and-dtor,63,GUIListBoxBase,2,4,4,0,,0/2,GUIListBox|GUIMultiColumnListBox|GUIScrollTextBox,dtor,GUIListBoxBase,0x00538f10,,class,control-class,"3 caller class(es), dca GUIListBoxBase"
+0x00539010,named,ctor-and-dtor,63,GUIScrollTextBox,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00305af0
+0x00539110,named,ctor-and-dtor,63,GUIListBox,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00305b90
+0x005392e8,named,ctor-and-dtor,59,GUIListBase,2,3,3,0,,0/2,GUIHorzList|GUIVertList,dtor,GUIListBase,0x005392e8,,class,control-class,"2 caller class(es), dca GUIListBase"
+0x005393d8,named,ctor-and-dtor,59,GUIVertList,2,3,3,0,,0/2,GUIMultiColumnList|GUIScrollText,dtor,GUIVertList,0x005393d8,,class,control-class,"2 caller class(es), dca GUIVertList"
+0x005394c8,named,ctor-and-dtor,59,GUIScrollText,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_003064c0
+0x005395b8,named,ctor-and-dtor,59,GUIHorzList,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_003065c0
+0x005396c8,named,ctor-and-dtor,59,GUIMultiColumnList,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00306690
+0x005397b8,named,ctor-and-dtor,63,GUIMultiColumnListBox,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00306780
+0x00539988,named,ctor-and-dtor,37,UIXInteraction,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_00306980
+0x0053a194,plain-only,unclassified,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00308420
+0x0053b168,named,ctor-and-dtor,30,XboxLiveInterface,2,1,1,0,,0/2,,,,,,,callers-unnamed,callers FUN_0030bba0
+0x0053d58c,plain-only,installed-by-ctor,1,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_001c0050
+0x0053d590,plain-only,ctor-and-dtor,4,,18,18,19,0,,5/18,,,,,,,callers-unnamed,"callers FUN_00326d40, FUN_00326f60, FUN_003274d0"
+0x0053d5c8,plain-only,installed-by-ctor,4,,1,2,2,0,,0/1,,,,,,,callers-unnamed,"callers FUN_00326d40, FUN_00326f60"
+0x0053d5fc,plain-only,installed-by-ctor,4,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers XboxLiveManager_StartNewSession
+0x0053d630,plain-only,installed-by-ctor,4,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00327c20
+0x0053d660,plain-only,installed-by-ctor,4,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers XboxLive_XboxLiveMatchMaking
+0x0053d698,plain-only,installed-by-ctor,4,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers XboxLive_XboxLiveMatchMaking
+0x0053d6fc,plain-only,installed-by-ctor,4,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_003274d0
+0x0053d70c,plain-only,installed-by-ctor,4,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsWrite
+0x0053d73c,plain-only,installed-by-ctor,4,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsRead
+0x0053d768,plain-only,installed-by-ctor,4,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsEnumerate
+0x0053d7a0,plain-only,installed-by-ctor,4,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers XboxLiveManager_StartStatsReset
+0x0053d7fc,plain-only,ctor-and-dtor,4,,2,2,2,0,,1/2,,,,,,,callers-unnamed,"callers FUN_0032a370, XboxLiveManager_StartStatsLadderWrite"
+0x0053d80c,plain-only,installed-by-ctor,4,,1,1,1,0,,1/1,,,,,,,callers-unnamed,callers FUN_00327ac0
+0x0053e3dc,plain-only,ctor-and-dtor,4,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0032a910, XboxLiveManager_StartStatsQuery"
+0x0053ec54,plain-only,ctor-and-dtor,4,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0032adb0, XboxLiveManager_StartStatsLadderRead"
+0x0053f6d8,plain-only,installed-by-ctor,5,,2,0,0,0,,0/2,,,,,,,no-call,no `E8` in .text targets its 2 installer body(ies)
+0x0053f6ec,plain-only,dtor-only,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f700,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f718,plain-only,ctor-and-dtor,21,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x0053f770,plain-only,dtor-only,21,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f7c4,no-store,no-body,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f7f0,plain-only,dtor-only,6,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x0053f808,plain-only,dtor-only,21,,1,0,0,0,,0/1,,,,,,,no-call,no `E8` in .text targets its 1 installer body(ies)
+0x0053f85c,plain-only,ctor-and-dtor,5,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_00332e57
+0x0053f874,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f888,plain-only,dtor-only,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f8a0,plain-only,dtor-only,21,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f8f4,plain-only,ctor-and-dtor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f90c,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f920,plain-only,ctor-and-dtor,21,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_003374ee
+0x0053f978,plain-only,unclassified,1,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0033858d
+0x0053f97c,plain-only,installed-by-ctor,5,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f990,plain-only,installed-by-ctor,1,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x0053f998,plain-only,ctor-and-dtor,21,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers FUN_0033858d
+0x0053f9ec,plain-only,ctor-and-dtor,15,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x00540464,plain-only,ctor-and-dtor,8,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x00540484,plain-only,ctor-and-dtor,14,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x005404bc,plain-only,installed-by-ctor,14,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x005404f4,plain-only,dtor-only,11,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x00540520,plain-only,installed-by-ctor,11,,0,0,0,0,,0/0,,,,,,,no-installer,no installer body resolves through the symbol map
+0x00564da4,plain-only,dtor-only,6,,1,1,1,0,,0/1,,,,,,,callers-unnamed,callers Engine_KDynStep
+0x00564dbc,plain-only,dtor-only,9,,3,2,3,1,,0/3,,,,,,,callers-unnamed,"callers Engine_KDynStep, FUN_0038b4b0"
+0x0057534c,plain-only,ctor-and-dtor,2,,2,2,2,0,,0/2,,,,,,,callers-unnamed,"callers FUN_0002c2a0, FUN_003e65d8"
