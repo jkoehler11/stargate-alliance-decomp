@@ -91,4 +91,5 @@ XHVVoiceSubsystem_member_0x28,,,,,,0,no-site
 XHVVoiceSubsystem_member_0x2c,,,,,,0,no-site
 XboxClient,XboxDrv,0x0032cc69,XboxDrv_XboxClient,XboxDrv,assert,1,unanimous
 XboxViewport,XboxDrv,0x0032d9d9,XboxDrv_XboxViewport,XboxDrv,assert,1,unanimous
+XboxViewport_member_0x28,,,,,,0,no-site
 XboxViewport_member_0x2c,,,,,,0,no-site

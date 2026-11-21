@@ -170,6 +170,16 @@ def index_bodies(slot_of, tables, shared):
     return holds
 
 
+def member_pick(mems, member):
+    """The member table a body is named from: a labelled one if any holds it, else the lowest address.
+
+    A body two member tables hold is one method reached through two interface objects, and the tie-break
+    cannot be the address: a table the label pass refused has no owner to name the method after, so the
+    labelled sibling is the one that carries the name.
+    """
+    return min(mems, key=lambda ti: (not (member[ti[0]].get("member_name") or ""), ti))
+
+
 def census_heads(inv, slot_of):
     tables, shared = inv["tables"], inv["shared"]
     class_of, member, supers = inv["class_of"], inv["member"], inv["supers"]
@@ -233,7 +243,7 @@ def census_heads(inv, slot_of):
                     "%s_vt%d" % (t, i) for t, i, _ in unnamed)
         elif mems:
             verdict = "member"
-            t, i = min(mems)
+            t, i = member_pick(mems, member)
             label = member[t].get("member_name") or ""
             name = "%s_vt%d" % (label, i) if label else ""
             evidence = ("member table 0x%08x slot %d (%s), field %s -- not a class slot"
@@ -262,7 +272,7 @@ def census_heads(inv, slot_of):
         elif unnamed:
             dec, slot = list(unnamed)[0][0], str(list(unnamed)[0][1])
         elif mems:
-            dec, slot = "", str(min(mems)[1])
+            dec, slot = "", str(member_pick(mems, member)[1])
         else:
             dec, slot = "", ""
         labels = sorted({member[t].get("member_name") or "" for t, _ in mems
@@ -271,13 +281,13 @@ def census_heads(inv, slot_of):
         if verdict == "member":
             # the label and the table the name was built from come first, so a reader never has to
             # guess which member a row is named after
-            first = member[min(mems)[0]].get("member_name") or ""
+            first = member[member_pick(mems, member)[0]].get("member_name") or ""
             if first in labels:
                 labels.remove(first)
                 labels.insert(0, first)
-            if min(mems)[0] in mtables:
-                mtables.remove(min(mems)[0])
-                mtables.insert(0, min(mems)[0])
+            if member_pick(mems, member)[0] in mtables:
+                mtables.remove(member_pick(mems, member)[0])
+                mtables.insert(0, member_pick(mems, member)[0])
         rows.append({"row": "head", "head_va": h["head_va"], "size": h.get("size", ""),
                      "verdict": verdict, "declarer": dec, "slot": str(slot),
                      "name_earned": name, "current_name": cur, "current_agrees": agrees,

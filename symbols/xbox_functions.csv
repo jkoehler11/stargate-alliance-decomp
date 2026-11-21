@@ -3725,6 +3725,7 @@ address,name,size,module
 0x000f97f0,FUN_000f97f0,22,
 0x000f9810,FUN_000f9810,22,
 0x000f9830,FUN_000f9830,294,
+0x000f9b70,XboxViewport_member_0x28_vt0,134,
 0x000f9c60,Engine_UnCamera,120,
 0x000f9ce0,FUN_000f9ce0,685,
 0x000f9f90,Viewport_vt10,170,

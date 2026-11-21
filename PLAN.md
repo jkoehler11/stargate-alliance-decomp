@@ -16697,9 +16697,9 @@ sequence.
 - **The add.** `--emit-adds` / `--apply-adds` on `tools/class-slot-declarers.py` write one `add` row per body
   into `symbols/xbe_boundaries.csv` and the `xbe_overrides.csv` creation row `XbePost.java` needs, named
   after the **declarer** the parent-edge walk reaches (or, for a member body, the member label the constructor
-  stored into a field): **211 declared names, 19,360 bytes over 119 classes, plus 31 member methods, 5,939
-  bytes -- 25,299 bytes**. The map goes **16,375 -> 16,617 functions, 4,190,491 -> 4,215,790 bytes of code**;
-  the gap census 2,850 -> **2,507 heads**; the declarer census 701 -> **459 heads** (13 declared, 9 member, 7
+  stored into a field): **211 declared names, 19,360 bytes over 119 classes, plus 32 member methods, 6,073
+  bytes -- 25,433 bytes**. The map goes **16,375 -> 16,618 functions, 4,190,491 -> 4,215,924 bytes of code**;
+  the gap census 2,850 -> **2,607 heads**; the declarer census 701 -> **459 heads** (13 declared, 8 member, 7
   declared-unnamed, 4 conflict, 3 unnamed-table, 423 interface).
 - **The receipt.** A body that is added stops being a gap head, so the artifact keeps one `row=add` row per
   body carrying the address, the name, the declarer, the slot and the evidence. `--check` (no dump) requires
@@ -16715,8 +16715,8 @@ sequence.
   named after anybody else. The 7 stay visible in the control's `derived` verdict.
 - **What it refuses, measured.** 13 of the 224 declared bodies have an empty `size` -- their decode never
   closes on a `ret`/`ret imm`/`jmp`/`jmp-ind` -- and an `add` with a guessed size moves every later row's
-  address; 9 member methods sit in a table the label pass refused; the 4 conflicts, 3 unnamed-table slots and
-  7 declared-unnamed bodies need a class or a linker reading first. 242 of the 255 named bodies are rows now.
+  address; 8 member methods sit in a table the label pass refused; the 4 conflicts, 3 unnamed-table slots and
+  7 declared-unnamed bodies need a class or a linker reading first. 243 of the 256 named bodies are rows now.
 - **Files.** `tools/class-slot-declarers.py` (the emitter, the receipt carry, the control exclusion, the
   check), `symbols/xbe_boundaries.csv` and `symbols/xbe_overrides.csv` (+242 each), `symbols/xbox.map`,
   `symbols/xbox_functions.csv`, `inventory/class_slot_declarers.csv` (242 add rows, census fields),

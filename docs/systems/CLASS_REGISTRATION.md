@@ -1977,9 +1977,9 @@ corroborates -- it is the same reference, one level out.
 | `0x00068ac0` | 95 | Core_UnTemplate | a call into a named body |
 | ... | | 47 more | |
 
-**2507 heads decode as 2189 bodies and 318 islands; of the bodies 0 hold an assert path, 43 a printable string and 755 a call into a body the map names, and 2082 hold none of the three.**
+**2506 heads decode as 2188 bodies and 318 islands; of the bodies 0 hold an assert path, 43 a printable string and 754 a call into a body the map names, and 2081 hold none of the three.**
 
-**Control: 1337 of the map's 16617 bodies hold an assert site, and 1283 of the 1329 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 46 reference no assert path at all -- so the name is that reference read one level out.**
+**Control: 1337 of the map's 16618 bodies hold an assert site, and 1283 of the 1329 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 46 reference no assert path at all -- so the name is that reference read one level out.**
 
 **The owed interface representatives' slots hold 150 of these heads and only 108 are bodies -- 33 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 42; of the 108 bodies 0 hold an assert path, 2 a string and 61 a call into a named body, and the per-body read cannot name an interface (U40).**
 <!-- /generated:gap-body-files -->
@@ -2265,7 +2265,7 @@ a class with no name in `inventory/xbe_class_table_names.csv` keeps its address 
 rules cannot confirm is `xEmitter`'s slot 18 (`0x00082ea0`), a body behind a jump table; the artifact
 counts it in `unconfirmed` and refuses to end a table on it.
 
-## Who declares a slot body: 242 of the 701 are map rows now, 423 an interface's method, and 4 bodies two classes share
+## Who declares a slot body: 243 of the 701 are map rows now, 423 an interface's method, and 4 bodies two classes share
 
 `inventory/gap_heads.csv` records **one** table per head: the first dword outside `.text` the read happened
 to resolve into a table slot. That is not a declaration. A class table's slot holds a pointer, and every
@@ -2312,11 +2312,11 @@ than inferred.
 | a class table, and the walk reaches the top of its chain | 13 | 3% | `<Class>_vt<slot>` |
 | a class table no registration names, which the walk reaches by its parent edge | 7 | 2% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
 | two independent declarations of one body | 4 | 1% | none (a conflict) |
-| a member table (a constructor stores it into a field) | 9 | 2% | `<Class>_member_<field>_vt<slot>` |
+| a member table (a constructor stores it into a field) | 8 | 2% | `<Class>_member_<field>_vt<slot>` |
 | a class table the class map leaves unnamed | 3 | 1% | none (no class) |
 | interface tables only | 423 | 92% | none (an interface name) |
 
-**The 459 bodies are 1124 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 541 sit-ins are class-table slots and 583 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
+**The 458 bodies are 1122 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 541 sit-ins are class-table slots and 581 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
 
 **The control is the map's own names: 531 of 538 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
 
@@ -2326,7 +2326,7 @@ than inferred.
 
 **The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and whether the linker folded two identical functions or both were built from one stub is not decided here: `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
-**What the walk did with its names.** 242 of these bodies are map rows now -- 211 named `<Class>_vt<slot>` from the declaration, 31 a member's method -- 25299 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 13 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 423 are an interface's method, and 3 sit in a class table whose class the class map has not named.
+**What the walk did with its names.** 243 of these bodies are map rows now -- 211 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 25433 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 13 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 423 are an interface's method, and 3 sit in a class table whose class the class map has not named.
 
 <!-- /generated:class-slot-declarers -->
 
@@ -2346,12 +2346,12 @@ index -- the first-hit channel recorded one of the tables and it was the wrong o
 five: they are `LodMeshInstance_vt42`, `MeshInstance_vt86`, `LodMeshInstance_vt91`, `MeshInstance_vt76` and
 `NetPendingLevel_vt31` in the map now.
 
-**The 40 member-table bodies are an interface object's methods, and 31 of them are map rows now.**
-`inventory/class_member_tables.csv` labels 32 of the 49 member tables `<Class>_member_<field>`, and 31 of
+**The 40 member-table bodies are an interface object's methods, and 32 of them are map rows now.**
+`inventory/class_member_tables.csv` labels 32 of the 49 member tables `<Class>_member_<field>`, and 32 of
 these bodies sit in a labelled one -- `NullRenderDevice_member_0xb8` 6, `NetPendingLevel_member_0x28` 5,
 `XHVVoiceSubsystem_member_0x2c` 4, the `Linker_member_0xb8` and `Connection_member_0x28` families among the
 rest -- so each is named `<member>_vt<slot>`, which says it is that member's method and not a class's slot.
-The other 9 sit in a member table the label pass refused (no owner, or more than one field offset), so the
+The other 8 sit in a member table the label pass refused (no owner, or more than one field offset), so the
 method is real and its owner is the open question.
 
 **The 4 conflicts are one body two independent classes both declare**: `0x000624e0` (`Object` slot 17 and
@@ -2364,15 +2364,15 @@ which the artifact records per body.
 **The 701 slot bodies and the 807 bodies named by nothing do not overlap, and that is structural.** A slot
 is a dword reference, so a body in a table slot is named by the pointer channel by construction; the 807 of
 the 2,749 decoded bodies that nothing names have no reference at all (no dword outside `.text`, no `push`, no
-call or jump). The two residues are therefore separate work: 242 of the slot bodies are map rows now (below),
+call or jump). The two residues are therefore separate work: 243 of the slot bodies are map rows now (below),
 and the 807 need a channel that does not exist yet.
 
-**The add is 242 rows, and the walk is what picks them.** `--apply-adds` writes one `add` row per body into
+**The add is 243 rows, and the walk is what picks them.** `--apply-adds` writes one `add` row per body into
 `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, named by its
 **declarer** and never by the first table that held the pointer: **211 declared names, 19,360 bytes over 119
-classes, plus 31 member methods, 5,939 bytes** -- 25,299 bytes in all. The map goes **16,375 -> 16,617
-functions and 4,190,491 -> 4,215,790 bytes of code**; the gap census 2,850 -> **2,507 heads**; this census 701
--> **459 heads**, the verdicts falling to 13 declared, 9 member, 7 declared-unnamed, 4 conflict, 3
+classes, plus 32 member methods, 6,073 bytes** -- 25,433 bytes in all. The map goes **16,375 -> 16,618
+functions and 4,190,491 -> 4,215,924 bytes of code**; the gap census 2,850 -> **2,607 heads**; this census 701
+-> **459 heads**, the verdicts falling to 13 declared, 8 member, 7 declared-unnamed, 4 conflict, 3
 unnamed-table and 423 interface. Each add row stays in the artifact as its receipt -- the body is no longer a
 gap head, so the row is the only record of what it was called -- and `--check` (no dump, no Ghidra) requires
 every receipt to be a map row at that address with that name, named after its declarer, and no longer a head.
@@ -2381,7 +2381,7 @@ every receipt to be a map row at that address with that name, named after its de
 decode cannot carry -- every one has an empty `size` in `gap_heads.csv`, because its decode never closed on a
 `ret`, `ret imm`, `jmp` or `jmp-ind`, and an `add` with a guessed size moves every later row's address. The 4
 conflicts, the 3 unnamed-table slots and the 7 declared-unnamed bodies need a class or a linker reading first.
-So 242 of the 255 bodies this walk names are rows now, and the 13 that are not are the ones the image has not
+So 243 of the 256 bodies this walk names are rows now, and the 13 that are not are the ones the image has not
 decoded yet.
 
 ## Regenerating, continued
