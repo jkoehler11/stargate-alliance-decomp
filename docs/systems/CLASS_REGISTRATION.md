@@ -427,8 +427,8 @@ which is why no name is written from it: the six names the tree can carry are al
 | the tables no name reaches | tables |
 | --- | --- |
 | stored by a class constructor (so an ancestor of that class) | 42 |
-| stored only by bodies no class names | 189 |
-| stored by nothing | 4 |
+| stored only by bodies no class names | 190 |
+| stored by nothing | 3 |
 | **total** | **235** |
 
 The constructor-stored tables carry a bound, not a name: 28 distinct classes, and a table a constructor stores is its base's, never its own. 0 of the population share a prefix with a mapped table (``), which is the family the shared census already recorded.
@@ -2321,11 +2321,11 @@ than inferred.
 | a class table, and the walk reaches the top of its chain | 0 | 0% | `<Class>_vt<slot>` |
 | a class table no registration names, which the walk reaches by its parent edge | 0 | 0% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
 | two independent declarations of one body | 4 | 1% | none (a conflict) |
-| a member table (a constructor stores it into a field) | 2 | 0% | `<Class>_member_<field>_vt<slot>` |
+| a member table (a constructor stores it into a field) | 2 | 1% | `<Class>_member_<field>_vt<slot>` |
 | a class table the class map leaves unnamed | 0 | 0% | none (no class) |
-| interface tables only | 424 | 99% | none (an interface name) |
+| interface tables only | 385 | 98% | none (an interface name) |
 
-**The 430 bodies are 1084 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (489 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 508 sit-ins are class-table slots and 576 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
+**The 391 bodies are 1041 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (489 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 508 sit-ins are class-table slots and 533 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
 
 **The control is the map's own names: 541 of 548 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
 
@@ -2335,7 +2335,7 @@ than inferred.
 
 **The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and `tools/declarer-residue.py` reads them as the linker's identical-code folds (one shortest shape held at two or more indices of classes that are neither ancestor nor descendant): `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
-**What the walk did with its names.** 262 of these bodies are map rows now -- 224 named `<Class>_vt<slot>` from the declaration, 38 a member's method -- 29679 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 0 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 424 are an interface's method, and 0 sit in a class table whose class the class map has not named.
+**What the walk did with its names.** 262 of these bodies are map rows now -- 224 named `<Class>_vt<slot>` from the declaration, 38 a member's method -- 29679 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 0 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 385 are an interface's method, and 0 sit in a class table whose class the class map has not named.
 
 <!-- /generated:class-slot-declarers -->
 
