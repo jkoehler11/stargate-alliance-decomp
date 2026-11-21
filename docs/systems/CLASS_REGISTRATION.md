@@ -922,11 +922,76 @@ tables no store names. Read at ten bytes they are three module singletons -- the
 **What this does not say.** It does not name the classes. The five base-level tables are the `parent_va`
 of `XboxClient`, `XboxViewport`, `XHVVoiceSubsystem`, `ObjectExporterT3D` and `TextBufferFactory`, and
 naming that level is `docs/NATIVE_CLASS_TREE.md`'s question, not this one. It does not follow an `ecx`
-that comes out of arithmetic beyond one `lea` (`lea ecx,[eax+esi*4]` is reported as `indexed`, and the two
-tables it reaches are left in the mixed group), and it does not decide whether a mixed table is two real
-construction sites or one caller the decoder mistook -- that is a per-body read of the kind the last two
-sections have been doing, and the artifact keeps every call site's resolved chain so the next read starts
-from the row rather than from the census.
+that comes out of arithmetic -- the section below does, and the receiver is an element of a dynamic
+array -- and it does not decide whether a mixed table is two real construction sites or one caller the
+decoder mistook; that too is the section below, and the artifact keeps every call site's resolved chain so
+the deeper read starts from the row rather than from the census.
+
+## `ecx` out of arithmetic: an array element, a static in `.data`, or a size
+
+The two residues the section above leaves -- its 108 `mixed` tables and the 21 no `E8` reaches -- are both
+a question about one instruction, so `tools/class-receiver-reads.py` reads the same store sites again, one
+instruction deeper, over that same population (`inventory/class_receiver_reads.csv`, 129 rows). Three
+readings come out of it, and the first is the arithmetic the one-level read reported as an opaque
+`indexed`: the build constructs an object **in place inside a dynamic array**, `mov eax,[esi]` (the
+array's data pointer) then `imul edi,edi,<size>` then `add edi,eax`, so `ecx` is the new element itself and
+the stride is the element's size. The second is that a `mov ecx,<abs>` is not an unnamed temporary but a
+fixed object in `.data`, and a `mov ecx,[esi+0x1c]` the pointer stored in that field rather than the field.
+The third is that an installation into a fresh object carries the argument its allocating call was handed,
+which on the control population is the class's registered `object_size` -- so a nameless table's temporary
+has a measured size. What none of the three is, is a class name: they say which object a table belongs to.
+
+<!-- generated:class-receiver-reads -->
+| population | tables | an array element | a static object | a pointer field | a walked pointer | two ways (member + temporary) | unresolved | no receiver |
+|---|---|---|---|---|---|---|---|---|
+| mixed | 108 | 21 | 3 | 10 | -- | 72 | 2 | -- |
+| no direct caller | 21 | -- | -- | -- | -- | -- | -- | 21 |
+
+**21 of the 108 mixed tables construct their object inside a dynamic array, and the element's size is in the stride.** The build's shape is `mov eax,[esi]` (the array's data pointer), `imul edi,edi,<size>` (or `shl edi,<n>`), `add edi,eax`, `mov ecx,edi`, `call <installer>` -- so `ecx` is the new element itself and the stride is the element's size: a struct of that size inside a `TArray`. The head is the pointer the data pointer was loaded from -- the caller's own object at `this+0`, a frame slot holding the `TArray`, or a global -- so the array is the caller's member or local, and the element is the object this table belongs to. The one-level read reported that receiver as one opaque `indexed` or `?`.
+
+| table | class | element size | the array's head | installer |
+|---|---|---|---|---|
+| 0x00510e6c | -- | 0x1c | [[esp+0x14]] | FUN_00179860 |
+| 0x00510f00 | -- | 0x6c | [[esp+0x14]] | FUN_00179ab0 |
+| 0x00510f78 | -- | 0xb0 | [[esp+0x14]] | FUN_0017a780 |
+| 0x0051724c | -- | 0x4c | [walk([esp+0x10]+0x111c)+0x0] | FUN_001de030 |
+| 0x00517428 | -- | 0x4 | [ebp+0x34c] | FUN_001e2110 |
+| 0x00517430 | -- | 0x4 | [esp+0x3dc] | FUN_001dfde0 |
+| 0x0051748c | -- | 0x4 | [[esp+0x14]+0x410] | FUN_001e2110 |
+| 0x005174a0 | -- | 0x4 | [ebp+0x34c] | FUN_001e2110 |
+| 0x00517ff0 | -- | 0x4 | [0x7b940c] | FUN_001f1f10 |
+| 0x005181a8 | -- | 0x1c | [[esp+0x14]] | FUN_001f7620 |
+| 0x0051b0e4 | -- | 0x4 | [ebp+0x58] | FUN_0023a8f0 |
+| 0x0051bc08 | -- | 0x138 | [[esp+0x14]] | FUN_002382f0 |
+| 0x0051bc10 | -- | 0x138 | [[esp+0x14]] | FUN_00238380 |
+| 0x0051bc18 | -- | 0x138 | [[esp+0x14]] | FUN_00239c90 |
+| 0x0051bca0 | -- | 0x4 | [ebp+0x58] | FUN_0023a8f0 |
+| 0x0051bf18 | -- | 0x138 | [[esp+0x14]] | FUN_0023ad50 |
+| 0x0051d7e8 | -- | 0x20 | [[esp+0x14]] | FUN_0024e230 |
+| 0x0051f6d8 | -- | 0x4 | [[esp+0x14]+0x410] | Core_UnObjBas |
+| 0x0051f6ec | -- | 0x4 | [[esp+0x14]+0x410] | Core_UnObjBas |
+| 0x0051f700 | -- | 0x4 | [[esp+0x14]+0x410] | Core_UnObjBas |
+| 0x0051faa0 | -- | 0x1c | [[esp+0x14]] | FUN_00278450 |
+
+**3 are a fixed object in `.data` and 10 a pointer loaded out of a field, so neither is an unnamed temporary.** `mov ecx,0x7ab94c` hands the installer the address of a module singleton: 0x0051707c -> 0x7b53c8, 0x00518080 -> 0x6e7a48, 0x0052352c -> 0x7b74c0. A `mov ecx,[esi+0x1c]` is the pointer *stored* in that field rather than the field itself (the field itself is reached with `lea`, which is how a table installed into an embedded member reads), and 10 tables are installed into an object a field points at.
+
+**A temporary's size is the argument the allocating call is handed, and on the control it is the class's registered `object_size`.** The receiver of an installation into a fresh object is read as `new(<arg>:<callee>)` -- the immediate pushed before the call that returns it -- and joined against `inventory/class_registrations.csv` it agrees on **11 and differs on 0** of the tables whose class a registration names, so the argument is a size. The 72 tables constructed both as a member and as a temporary are a fact about their callers, not a residue, and the size is what separates two classes with the same shape: 0x004c7800 0x30, 0x004c8410 0x8064, 0x004c84d0 0x86c, 0x004c9738 0x84, 0x004c9b50 0x58, 0x004d0470 0x4fb4, 0x004d0474 0x4fb4, 0x004d0480 0x4fb4 and 32 more.
+
+**The 21 tables no `E8` reaches have a channel, and it names the reader.** An installer is reached by a tail jump (`E9`), by a dword that holds its address -- a class-table slot, or a `.data` pointer -- or by nothing the image carries. 9 of 21 have a channel; 12 are pointed at by nothing at all, which makes them tables whose class no shipped code instantiates. By channel: 6 by a class-table slot (0x004d0d80 slot:0x5045e0+30, 0x004f7070 slot:0x4d1f88+36, 0x0051d300 slot:0x51d260+39, 0x0051d444 slot:0x51d3a0+39); 1 by a tail jump (0x004eaf68 tail:0xbd578); 4 by a dword pointer (0x0051a810 ptr:DOLBY+0x36e0, 0x0051a810 ptr:DOLBY+0x3718, 0x0051a810 ptr:DOLBY+0x3760, 0x00523008 ptr:.rdata+0xf6).
+
+**2 stay unresolved** (0x0051b0cc, 0x00564da4): the instruction that defines the receiver is not a copy, an address, a load or a scaled add, and the artifact names its mnemonic.
+<!-- /generated:class-receiver-reads -->
+
+**What this does not say.** It does not name the classes behind the array elements: the element a table is
+installed into is a struct of the stride's size inside a `TArray`, and the array's owner is the caller
+body, which the map still calls `FUN_*`. It does not decide whether an installer reached by nothing at all
+is dead code or reached through an address no dword in the image holds, which is the reading
+`tools/native-unreachable.py` owns. And it does not repair the two older censuses: `C7 84 24 <disp32>
+<imm32>` is an eleven-byte store, and both `tools/class-table-store-fields.py` and
+`tools/class-store-provenance.py` read its immediate at the ten-byte offset, so six stores of that form are
+invisible to them (`c7 84 24` occurs 1,038 times in `.text`, 27 `c7 44 24` frame stores are already read
+correctly). This tool reads the form at its own length; correcting the other two changes their artifacts
+and their blocks and is the next read of this thread.
 
 ## What this measurement does not say
 
@@ -1146,3 +1211,16 @@ The pointer every store goes through is read from the same sites, one operand in
 global load, a `call`'s return, four call-site `ecx` forms, the ten-byte absolute store and five
 register-store pairs -- and `--check-doc` rebuilds its block from `inventory/class_store_provenance.csv`
 with no dump; both run in `make ci`.
+
+The deeper read of that population -- the arithmetic receiver, the temporary's size and the channel a
+callerless installer has -- is its own tool over the same sites:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-receiver-reads.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-receiver-reads.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is 32 assertions on synthetic instructions -- the `TArray` growth shape, a `shl`
+stride, a scaled `lea`, a fixed object, a pointer field, a nested load, a pushed allocation
+argument, the eleven-byte `disp32` frame store, a tail jump, a dword pointer and a table slot
+-- and it writes nothing; `--check-doc` rebuilds its block from the committed
+`inventory/class_receiver_reads.csv` with no dump. Both run in `make ci`.
