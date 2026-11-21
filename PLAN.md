@@ -15821,3 +15821,39 @@ sequence.
   artifact reproduces byte for byte on a second run.
 - **Not in this bundle.** The class record's constructor field for the 97 (the route the literals do not
   give), the 29 destructor-shaped and 26 unclassified tables' per-body read, and the 399 bodies nothing names.
+
+### Execution notes (2026-11-20, who calls the installer, and what the destructor shape was)
+
+- **The installer's callers are the class below it, and the join holds on the named population.** The
+  new read (`tools/class-installer-callers.py`, `inventory/class_installer_callers.csv`, 724 rows) scans
+  `.text` for the `E8` sites that target an installer body and names the enclosing body from the symbol
+  map, then takes the deepest common ancestor of the caller classes over the script supers and the native
+  parent edge. **669 of the 724 installers are called directly**; on the 103 named tables whose callers
+  carry a `ctor_`/`dtor_` class symbol the join lands on the table's class or a descendant on **101**, and
+  the two misses are the `Material`/`RenderedMaterial` families whose common base has no script row.
+- **45 of the 246 nameless tables are built inside a class's own constructor, 28 of them tables the mapped
+  census never sees.** 22 are called by a group of sibling classes and are the base their constructors and
+  destructors reset to (`Level`/`NetPendingLevel`/`DemoPlayPendingLevel`, `TcpipConnection*`,
+  `VertexStream*`, `D3DRenderDevice`/`NullRenderDevice`, `ActorChannel`/`ControlChannel`/`FileChannel`/
+  `VoiceChannel`, `IndexBuffer`/`SkinVertexBuffer`, `AudioSubsystem`/`Input`); 23 are called by one class
+  that already owns a different table at another address (`Texture`, `StaticMesh`, `Cubemap`, `VertMesh`,
+  `SkeletalMeshInstance`, `SkeletalMesh`, `D3DRenderDevice`, `XboxViewport`, `XboxClient`, `GameEngine`,
+  `TextBufferFactory`, `ObjectExporterT3D`, `LinkerLoadGame`/`LinkerSaveGame`, `XHVVoiceSubsystem`), a
+  second array its constructor writes. 11 of the 23 store into a member field at least once, so the
+  store-field census separates a second class table from a member's interface; the 12 written only at
+  `[reg]` are the residue.
+- **The 29 destructor-shaped tables are not a missing constructor: they are base destructors.** 10 of the
+  58 destructor-shaped/unclassified tables carry named `dtor_` callers, and every such group is the set of
+  sibling destructors that reset the pointer to this table before calling their own base's -- `CameraEffect`
+  and its eleven screen classes is the one the join can name, the others run into a native base with no
+  script row. The remaining 48 are 28 called only from unnamed bodies, 12 never called directly and 8 with
+  no installer body.
+- **Files.** `tools/class-installer-callers.py`, `inventory/class_installer_callers.csv`,
+  `docs/systems/CLASS_REGISTRATION.md` (the new section, its block and the prose), `docs/UNKNOWNS.md` (U40),
+  `Makefile`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note. `git rm .tmp-body.md`, which
+  #777's ship staged by accident.
+- **Gates.** `make ci` green; `--check` is a synthetic self-test (nine cases: the two symbol prefixes, the
+  chain, four ancestor joins and an unnamed caller) and writes nothing; `--check-doc` rebuilds the block
+  from the committed CSV with no dump; the artifact reproduces byte for byte on a second run.
+- **Not in this bundle.** The 12 second tables written only at `[reg]` (a per-body field read), the 153
+  nameless tables called only from unnamed bodies, and the 399 bodies nothing names.

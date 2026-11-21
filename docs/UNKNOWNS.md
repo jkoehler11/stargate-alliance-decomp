@@ -5727,6 +5727,27 @@ into a 6-dword interface table, `0x0053f7c4` 21 dwords into a run of 2-mod-4 in-
 exception-scope table, not a vtable) and `0x005172ec` a 27-dword run after the UTF-16 string `mesh!!`; none
 has a store site inside a body of the map.
 
+**Answered since (2026-11-20, who calls the installer).** `tools/class-installer-callers.py` reads the other
+end of the edge over all **724** tables -- including the **228** the mapped census never sees -- by scanning
+`.text` for the `E8` sites that target an installer body and naming the enclosing body from the symbol map
+(`inventory/class_installer_callers.csv`). **669 of the 724 installers are called directly** (471 of the 474
+named, 198 of the 246 nameless); the control is that of the 103 named tables whose callers carry a
+`ctor_`/`dtor_` class symbol, the deepest common ancestor of those classes is the table's class or one of its
+descendants on **101**. **45 of the 246 nameless tables are built inside a class's own constructor**: 22 by a
+group of sibling classes (so the table is the base their constructors and destructors reset to -- `Level`/
+`NetPendingLevel`, `TcpipConnection*`, `VertexStream*`, `RenderDevice`, `Channel`'s four subclasses, the two
+property-factory families), and 23 by one class that already owns a different table at another address
+(`Texture` 18 slots, `D3DRenderDevice` 65, `XboxViewport` 1/2/56, `StaticMesh` 9/9/2, `SkeletalMesh` 2, …), a
+second array that class's constructor writes -- 11 of the 23 into a member field, so the store-field census
+is the discriminator and the 12 written only at `[reg]` are the residue. The **per-body read U40 asked for
+on the 29 destructor-shaped and 26 unclassified tables is now measured from the callers**: 10 carry named
+`dtor_` callers and every one of those is a group of **sibling destructors** that reset the pointer to this
+table before calling their own base's (`AudioSubsystem`+`Input`, the material family, `CameraEffect`'s eleven
+screen classes, `D3DRenderDevice`+`NullRenderDevice`, the two download classes, the buffer pair, the
+`VertexStream` family), so a destructor-shaped installer is a base destructor and the table it stores is the
+base's vtable, not a table whose constructor went missing. The rest of the 58 are 28 called only from unnamed
+bodies, 12 never called directly and 8 with no installer body.
+
 **What would settle the rest.** For the 176 plain-only tables written at `[reg]` the class is the class
 whose constructor the store body is, so that body has to be named -- and the read above says what the body
 carries: a field layout and a subsystem call, not a class name. The shape census says which 97 are installed
