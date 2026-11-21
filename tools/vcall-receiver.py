@@ -201,6 +201,10 @@ def decode(code, i):
         return None
     op = code[i]
     i += 1
+    # A `0x66` operand-size prefix makes every immediate form below 16-bit: the image's own bodies
+    # need it (`66 c7 06 28 00` is a 5-byte `mov word [esi],0x28`, and `66 3d 30 00` a 4-byte
+    # `cmp ax,0x30`), and a 4-byte read of either drifts the whole sweep one byte off.
+    opsz16 = 0x66 in code[start:i]
 
     if 0x40 <= op <= 0x47:                        # inc r32
         return Insn(i - start, "inc %s" % REGS[op - 0x40], [REGS[op - 0x40]], kind="other")
@@ -216,15 +220,18 @@ def decode(code, i):
         return Insn(i + 1 - start, "mov %s,0x%x" % (REGS[op - 0xB0], code[i]),
                     [REGS[op - 0xB0]], kind="other")
     if 0xB8 <= op <= 0xBF:
-        if i + 4 > len(code):
+        w = 2 if opsz16 else 4
+        if i + w > len(code):
             return None
-        imm = struct.unpack_from("<I", code, i)[0]
-        return Insn(i + 4 - start, "mov %s,0x%08x" % (REGS[op - 0xB8], imm), [REGS[op - 0xB8]],
-                    kind="immediate", imm=imm)
+        val = struct.unpack_from("<H" if w == 2 else "<I", code, i)[0]
+        return Insn(i + w - start, "mov %s,0x%0*x" % (REGS[op - 0xB8], 2 * w, val), [REGS[op - 0xB8]],
+                    kind="immediate", imm=val)
     if op == 0x68:
-        if i + 4 > len(code):
+        w = 2 if opsz16 else 4
+        if i + w > len(code):
             return None
-        return Insn(i + 4 - start, "push 0x%08x" % struct.unpack_from("<I", code, i)[0], [])
+        return Insn(i + w - start, "push 0x%08x" % struct.unpack_from("<H" if w == 2 else "<I",
+                                                                     code, i)[0], [])
     if op == 0x6A:
         if i + 1 > len(code):
             return None
@@ -242,7 +249,7 @@ def decode(code, i):
               0xAE, 0xAF, 0x60, 0x61, 0x06, 0x07, 0x0E, 0x16, 0x17, 0x1E, 0x1F):
         return Insn(i - start, "one-byte", [], kind="other")
     if op in (0xA8, 0xA9):                        # test al/eax, imm
-        w = 1 if op == 0xA8 else 4
+        w = 1 if op == 0xA8 else (2 if opsz16 else 4)
         if i + w > len(code):
             return None
         return Insn(i + w - start, "test %s,imm" % ("al" if w == 1 else "eax"), [], kind="other")
@@ -277,7 +284,7 @@ def decode(code, i):
         return Insn(i + 4 - start, "mov al/eax,moffs", ["eax"] if op == 0xA0 else [], kind="other")
     if op < 0x40 and (op & 0xF8) in ARITH_BASES and op not in ARITH_SKIP and (op & 7) >= 4:
         # the immediate forms of the same families: `add al,imm8` / `add eax,imm32`
-        w = 1 if (op & 7) == 4 else 4
+        w = 1 if (op & 7) == 4 else (2 if opsz16 else 4)
         if i + w > len(code):
             return None
         return Insn(i + w - start, "%s %s,imm" % (ARITH_NAMES[op & 0xF8],
@@ -302,10 +309,13 @@ def decode(code, i):
         if not got:
             return None
         i2, mod, reg, rm, base, index, disp = got
-        if i2 + GROUP1[op] > len(code):
+        w = GROUP1[op]
+        if w == 4 and opsz16:
+            w = 2
+        if i2 + w > len(code):
             return None
         text, _shape = where(mod, rm, base, index, disp)
-        return Insn(i2 + GROUP1[op] - start, "%s %s,imm" % (GROUP1_NAMES[reg], text),
+        return Insn(i2 + w - start, "%s %s,imm" % (GROUP1_NAMES[reg], text),
                     [REGS[rm]] if mod == 3 else [], kind="other")
     if op in SHIFTS or op in (0xC0, 0xC1):
         got = operand(code, i)
@@ -325,6 +335,8 @@ def decode(code, i):
         i2, mod, reg, rm, base, index, disp = got
         text, _shape = where(mod, rm, base, index, disp)
         immw = (1 if op == 0xF6 else 4) if reg in (0, 1) else 0
+        if immw == 4 and opsz16:
+            immw = 2
         if i2 + immw > len(code):
             return None
         dests = [REGS[rm]] if (mod == 3 and reg in (2, 3)) else []
@@ -385,12 +397,13 @@ def decode(code, i):
         if not got:
             return None
         i2, mod, reg, rm, base, index, disp = got
-        immw = 1 if op == 0xC6 else 4
+        immw = 1 if op == 0xC6 else (2 if opsz16 else 4)
         if i2 + immw > len(code):
             return None
-        width = "byte " if op == 0xC6 else ""
+        width = "byte " if op == 0xC6 else ("word " if opsz16 else "")
         if mod == 3:
-            imm = code[i2] if immw == 1 else struct.unpack_from("<I", code, i2)[0]
+            imm = code[i2] if immw == 1 else struct.unpack_from("<H" if immw == 2 else "<I",
+                                                                code, i2)[0]
             return Insn(i2 + immw - start, "mov %s%s,0x%x" % (width, REGS[rm], imm), [REGS[rm]],
                         kind="immediate", imm=imm)
         return Insn(i2 + immw - start, "mov %s%s,imm" % (width, mtext(base, index, disp)), [],
@@ -400,7 +413,7 @@ def decode(code, i):
         if not got:
             return None
         i2, mod, reg, rm, base, index, disp = got
-        immw = 4 if op == 0x69 else 1
+        immw = (2 if opsz16 else 4) if op == 0x69 else 1
         if i2 + immw > len(code):
             return None
         return Insn(i2 + immw - start, "imul %s,..." % REGS[reg], [REGS[reg]], kind="other")
