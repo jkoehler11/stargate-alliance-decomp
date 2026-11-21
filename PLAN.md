@@ -15906,3 +15906,51 @@ sequence.
   six-byte read (it reports the displacement `0x5fe168` as a table and fails twice).
 - **Not in this bundle.** Naming the five base levels, the 79 mixed tables' receivers, the 21 tables no
   body calls directly, and the 399 bodies nothing names.
+
+### Execution notes (2026-11-20, the receiver out of arithmetic is an array element, and a temporary has a size)
+
+- **The mixed bucket is three answers, and the arithmetic one is a `TArray` element.** `tools/class-receiver-reads.py`
+  reads the same store sites as `class-store-provenance.py` one instruction deeper over its two residues
+  (`inventory/class_receiver_reads.csv`, 130 rows: the 109 `mixed` and the 21 `no-direct-call`). 21 of the mixed
+  tables are constructed **in place inside a dynamic array** -- `mov eax,[esi]`, `imul edi,edi,<size>`,
+  `add edi,eax`, `mov ecx,edi`, `call <installer>` -- so the receiver is the new element and the stride is its
+  size: 0x4 (10 tables), 0x138 (4, the `SkeletalMesh` member tables), 0x1c (3), and one each of 0x6c, 0xb0, 0x4c
+  and 0x20. All 21 load the data pointer out of a frame slot, so the array is a **local of the caller body** --
+  the class the map still calls `FUN_*` -- with two tables also reaching one at `this+0x1438` and one out of a
+  global at `0x7b940c`.
+- **Two more channels are not temporaries.** 3 tables are installed into a **fixed object in `.data`**:
+  `0x0051707c` -> `0x7b53c8`, `0x0052352c` -> `0x7b74c0`, and `0x00518080`'s single installer `0x001f4450` is
+  handed **16 distinct objects** (`0x6e7a48`, `0x7ab94c`, `0x7ab96c`, ... `0x7b5cf8`), so it is the batch
+  constructor of a family of module singletons. 10 tables are installed into the **pointer stored in a field**
+  (`mov ecx,[esi+0x1c]`), which the one-level read had flattened into the field's own offset -- the field
+  (`lea`) and the pointer in it (`mov`) are now separate forms.
+- **A temporary's size is the class's `object_size`.** The argument the allocating call is handed, read as
+  `new(<arg>:<callee>)`, agrees with `inventory/class_registrations.csv`'s `object_size` on **11 of 11** tables
+  a registration names (`0x004d0480` 0x4fb4, `0x004d05e0` 0x4fc8, `0x004fcc08` 0x4f90, ...) -- so the 72 tables
+  built both as a member and as a temporary carry a measured size, and 44 of them are nameless.
+- **The 21 callerless installers have a channel, and three of them name a class.** 6 are reached from a
+  class-table slot, and three of those are slot 39 of the emitter's own table: `0x0051d300`, `0x0051d444` and
+  `0x0052086c` install `SparkEmitter`, `SpriteEmitter` and `TrailEmitter`'s base table from that class's own
+  virtual method. One is tail-called (`0x004eaf68` from `0x000bd578`), 4 are held by a dword (three in the
+  section named `DOLBY`, one in `.rdata`), and **12 are pointed at by nothing** -- tables whose class no shipped
+  code instantiates.
+- **A second decode bug, and this bundle fixes it in the two tools that had it.** `C7 84 24 <disp32> <imm32>`
+  is an **eleven-byte** store -- a frame slot past `disp8` -- and both `tools/class-table-store-fields.py` and
+  `tools/class-store-provenance.py` computed its immediate at the ten-byte offset, so they read the
+  displacement's last byte instead of the table. The form occurs **1,038** times in `.text` and **6** of those
+  stores carry one of the 724 tables. Read at its own length it gains stores on four tables -- `0x004c7860`
+  38 to 41, `0x0051707c` 1 to 2, `0x00517e88` 1 to 2, `0x00564dbc` 2 to 3 -- moves `0x00564dbc` from
+  `own-object` to `mixed` (109 mixed rows, 80 of them nameless) and leaves all 724 store-form verdicts where
+  they were. Both tools' selftests pin the `disp32` SIB form next to the `disp8` and absolute ones.
+- **Files.** `tools/class-receiver-reads.py`, `inventory/class_receiver_reads.csv`,
+  `docs/systems/CLASS_REGISTRATION.md` (the new section, its block, the corrected provenance paragraph and the
+  regenerating commands), `docs/UNKNOWNS.md` (U40 rewritten), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`,
+  `Makefile`, this note.
+- **Gates.** `make ci` green; `--check` is 32 assertions on synthetic instructions (the `TArray` growth shape,
+  a `shl` stride, a scaled `lea`, a fixed object, a pointer field, a nested load, a walked pointer, a pushed
+  allocation argument, a flag that must not read as a size, the three store lengths, a tail jump, a dword pointer,
+  a table slot, the verdicts) and writes nothing; `--check-doc` rebuilds the block from the committed CSV with no
+  dump; the artifact reproduces byte for byte on a second run.
+- **Not in this bundle.** Correcting the `disp32` SIB read in `class-table-store-fields.py` and
+  `class-store-provenance.py` and regenerating their artifacts and blocks; naming the 12 tables nothing points
+  at; naming the class behind each array element (the caller body's name).

@@ -5773,13 +5773,55 @@ and two more are only ever passed a global's address. The register-carried insta
 `mov [reg2(+disp)],reg`) is real but rare -- **1 of 724** tables, and that one also has an immediate store
 -- so the immediate census is not missing a population.
 
-**What would settle the rest.** For the 176 plain-only tables written at `[reg]` the class is the class
-whose constructor the body is, so that body has to be named -- and the channels above say what it carries:
-a field layout, a subsystem call, and a pointer whose provenance is the caller's own object. Naming the
-five base levels is the class tree's question (`0x004c9348` is already read as the level above
-`0x004c93d0` there); the 79 mixed tables need a per-body read of the receiver that comes out of arithmetic
-(`lea ecx,[eax+esi*4]` is reported as `indexed`), and the 21 with no direct caller need the channel the
-body's own store gives. For the 399 bodies nothing changes except that the ones sitting in a member
-table's slots are named from the member. For the 49 member tables the owner is known and the name the map
-lacks is the member's, so a per-member naming pass -- one body at a time, not a census -- is what closes
-this entry.
+**Answered since (2026-11-20, the receiver out of arithmetic).** `tools/class-receiver-reads.py` reads the
+same store sites one instruction deeper over exactly the two residues above -- the 109 `mixed` and the 21
+`no-direct-call` rows -- into `inventory/class_receiver_reads.csv` (130 rows). **21 of the 109 mixed tables
+construct their object in place inside a dynamic array**: `mov eax,[esi]` (the array's data pointer),
+`imul edi,edi,<size>` or `shl edi,<n>`, `add edi,eax`, `mov ecx,edi`, so `ecx` is the new element itself
+and the stride is its size -- seven strides, 0x4 (10 tables), 0x138 (4, the `SkeletalMesh` member
+tables), 0x1c (3) and one each of 0x6c, 0xb0, 0x4c and 0x20. **The array is always a local of the caller
+body**: all 21 load the data pointer out of a frame slot (4 of them, the `SkeletalMesh` group, also through
+a pointer a frame slot spilled), `0x0051faa0` also reads one at `this+0x1438` and `0x00517ff0` one out of
+a global at `0x7b940c`, so the element belongs to a `TArray` the unnamed body keeps on its own stack and
+naming it is naming that body. **3 are a fixed object in `.data`** -- `0x0051707c` -> `0x7b53c8`,
+`0x0052352c` -> `0x7b74c0`, and `0x00518080`'s single installer `0x001f4450` is handed **16 distinct
+objects** (`0x6e7a48`, `0x7ab94c`, `0x7ab96c`, `0x7ab98c`, ..., `0x7b5cf8`), so it is the batch constructor
+of a family of module singletons -- **10 are the pointer stored in a field** (the field itself is reached
+with `lea` and was already read as that field), and **72 a class built both as a member and as a
+temporary**, which is a fact about their callers rather than a gap. **2 stay unresolved**: `0x0051b0cc`
+(an `imul` the walk does not follow) and `0x00564da4` (`mov ecx,0x17`, an immediate below the image's
+address range).
+
+**A temporary now has a size, and the size is the class's registered one.** The receiver of an
+installation into a fresh object is read as `new(<arg>:<callee>)` -- the immediate pushed before the call
+that returns it -- and joined against `inventory/class_registrations.csv` it agrees with the class's
+`object_size` on **11 of 11** tables a registration names (`0x004d0480` 0x4fb4, `0x004d05e0` 0x4fc8,
+`0x004fcc08` 0x4f90, ...), which is what makes it a size for the tables no registration names.
+
+**9 of the 21 callerless installers are reached, and the channel names the reader.** 6 by a class-table
+slot -- three of them slot 39 of the emitter's own table, so `0x0051d300`, `0x0051d444` and `0x0052086c`
+install `SparkEmitter`, `SpriteEmitter` and `TrailEmitter`'s base table from that class's own virtual
+method, and `0x004d0d80`/`0x004f7070` from slot 30 and 36 of `0x005045e0`/`0x004d1f88` -- 1 by an `E9` tail
+jump (`0x004eaf68`, from `0x000bd578`) and 4 by a dword that holds the body (three in the section named
+`DOLBY` under `0x0051a810`, one in `.rdata` for `0x00523008`). The other **12 are pointed at by nothing the
+image carries**, which makes them tables whose class no shipped code instantiates.
+
+**A store form the two older censuses misread, found and fixed in this read.** `C7 84 24 <disp32>
+<imm32>` is an **eleven-byte** store -- a frame slot past `disp8` -- and both
+`tools/class-table-store-fields.py` and `tools/class-store-provenance.py` computed its immediate at the
+ten-byte offset, so they read the displacement's last byte and lost the table. The form occurs **1,038**
+times in `.text` and **6** of those stores carry one of the 724 tables; read at its own length it gains
+stores on four tables (`0x004c7860` 38 to 41, `0x0051707c` 1 to 2, `0x00517e88` 1 to 2, `0x00564dbc` 2 to
+3), moves `0x00564dbc` from `own-object` to `mixed` -- the 109th mixed row, and one of the 3 unresolved
+here -- and leaves every one of the 724 store-form verdicts unchanged. All three tools now read each form
+at its own length and pin the `disp8` SIB, the `disp32` SIB and the absolute form in their selftests.
+
+**What would settle the rest.** Naming the five base levels is the class tree's question (`0x004c9348` is
+already read as the level above `0x004c93d0` there). For the 176 plain-only tables written at `[reg]` the
+class is the class whose constructor the body is, so that body has to be named -- it carries a field
+layout, a subsystem call and a pointer whose provenance is now a channel rather than a question -- and
+naming the class behind each array element is the same pass, because the array is a local of that body.
+The 49 member tables' owner is known and the name the map lacks is the member's, so a per-member naming
+pass -- one body at a time, not a census -- is what closes that half. For the 399 bodies nothing changes
+except that the ones sitting in a member table's slots are named from the member, and the 12 installers
+nothing points at are candidates for the dead-code question `tools/native-unreachable.py` owns.
