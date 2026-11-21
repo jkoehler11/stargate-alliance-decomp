@@ -5876,3 +5876,18 @@ implements -- so the per-body read is the same one the 399 bodies need, and it i
 rather than one per table; the 49 member-held ones already carry their name from the field. The 49 member tables keep their per-member naming pass (the member's own name is built from
 its field). The 12 installers nothing points at are candidates for the dead-code question
 `tools/native-unreachable.py` owns.
+
+**Answered since (2026-11-20, the rungs and the families).** Two residues of this entry now have a size and a
+control. The 88 edges into the 24 unnamed heads are the override census those classes never had
+(`tools/class-ladder-rungs.py`, `inventory/class_ladder_rungs.csv`): 490 edges read, **353 `extends`, 123
+`identical`, 14 `shorter`**, and the 372 script-linked edges the read reaches reproduce
+`class_virtual_overrides.csv` exactly once that file is regenerated -- the committed copy was diffing three
+texture classes against `Texture`'s table instead of `WaterTexture`'s. **13 of the 14 `shorter` rows are two
+over-read extents**, `0x004c7c78` (32 slots, not 34) and `0x00521f80` (at most 31, not 34), whose surplus
+dwords are not function starts (they sit inside `CLiveEngine::SeparateTextAndIcons`,
+`ASN1Dec_KERB_AP_REPLY` and `Core_UnMath`), so the rungs are the cheapest test of a class table's real
+length. The per-body read the family census owed is **89 representatives over 135 tables**, not 165 tables:
+30 of the 165 anonymous tables sit in a family a slot symbol or a member field already names. The 27 exact
+repeats are **per-class, not per-translation-unit** -- 3 groups hold two or more owner classes, 3 one class's
+name beside a table whose owner is unread, and 5 groups (11 tables) carry no class. What is left of this entry
+is unchanged: the 89 body reads, the extent rule, and the 399 bodies.

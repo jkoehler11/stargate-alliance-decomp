@@ -16088,3 +16088,47 @@ sequence.
   initialiser the previous note pointed at), the 165 anonymous interfaces' bodies (one read per family
   representative now that the families exist), and the 18's UE2.5 ladder reading, which is still a reading
   rather than a measurement.
+
+### Execution notes (2026-11-20, the rungs give the 18 an override census, and the control caught a stale artifact)
+
+- **The 18 heads' override census did not exist, and closing it needed no new name channel.**
+  `class_virtual_overrides.csv` diffs each class against its *script* super; the 88 edges
+  (`class_table_parent_edges.csv`'s `parent-unnamed` rows) go into tables whose classes have no script row, so
+  they had no override row at all. `tools/class-ladder-rungs.py` reads the measured parent edge instead: **490
+  of the 492 edges read -- 353 `extends`, 123 `identical`, 14 `shorter`** -- and 88 of them are into 24 unnamed
+  heads, which makes this the only override census those tables have.
+- **The control is the 372 script-linked edges the read reaches, and it was wrong before it was right.** The
+  first run answered 206 agree / 3 differ, all three texture subclasses: the committed overrides census diffed
+  `WaveTexture`/`FluidTexture`/`WetTexture` against `Texture`'s table (`0x4cfba0`, 58 slots) instead of
+  `WaterTexture`'s (`0x4cfe68`, 59) -- the name `0x4cfba0` carried before #533 renamed the pair -- so the three
+  read 9 overrides and one added slot against a grandparent. Regenerated it has **378** resolved pairs where the
+  committed file had 302, and 372 of 372 agree; the tool now refuses to publish anything when the control
+  disagrees, so a fourth stale copy cannot pass silently.
+- **Thirteen of the fourteen `shorter` rows are two class tables whose extent is over-read, and the surplus
+  dwords say so.** `0x4c7c78` is counted 34 slots and its ten children are 32 or 33; its slots 32-33 hold
+  `0x00330044` and `0x00440044`, inside `CLiveEngine::SeparateTextAndIcons` and `ASN1Dec_KERB_AP_REPLY` rather
+  than at their starts. `0x521f80` is counted 34 with three children of 30-32; its slots 31-33 hold `0x00200020`
+  twice (inside `Core_UnMath`) and `0x00540020` (past the end of `.text`). Both counts come from the
+  packed-table rule in `class-tables.py` rather than from a count of function entries, so **the rungs are the
+  cheapest read of a table's real length**: 32 for `0x4c7c78`, at most 31 for `0x521f80`. The fourteenth row is
+  `Engine`'s own table (30 slots) against `0x4c78c0` (31) and stays open -- `Engine` declares no script super.
+- **The per-body read's size is a list now, and it is smaller than the bound.** 89 of the 132 families have no
+  named and no member-held table, so the read is **89 representatives over 135 tables**, not 165 tables; 30 of
+  the 165 anonymous tables sit in a family a slot symbol or a member field already names and owe nothing.
+- **The 27 exact repeats are per-class, and the page's per-translation-unit sentence was wrong for ten of
+  them.** Grouped by shape: 3 groups hold two or more owner classes (10 tables, 6 classes -- the two 4-member
+  groups are one interface at `+0x2c` and one at `+0x28` held by `PackageMapLevel`, `TcpipConnection`,
+  `TcpipConnectionXbox` and `DemoRecConnection`), 3 hold one class's name beside a table whose owner the member
+  read does not reach (including `CPopupScreen`'s two named tables), and 5 groups (11 tables) carry no class.
+  5 of the 11 sit inside one 4 KiB page and the widest spans `0x780c0`.
+- **Files.** `tools/class-ladder-rungs.py`, `tools/class-interface-families.py`, their three artifacts
+  (`class_ladder_rungs.csv` 490 rows, `class_interface_families.csv` 132, `class_interface_twins.csv` 11),
+  `inventory/class_virtual_overrides.csv` regenerated, `docs/systems/CLASS_REGISTRATION.md` (three sections and
+  their blocks, the corrected repeat sentence, the regenerating paragraph), `docs/UNKNOWNS.md` U40, `Makefile`
+  (two targets, `.PHONY`, help, four CI lines), `docs/ARTIFACTS.md` (regenerated), this note.
+- **Gates.** `make ci` green; `--check` on both tools is synthetic (the rungs: a replace plus an add, a whole
+  copy, a shorter child, slot 3 alone, the control's arithmetic; the families: a named, a member-held and an
+  anonymous family, a two-owner repeat, a singleton) and writes nothing; `--check-doc` on both rebuilds their
+  blocks from committed CSVs with no dump; the rung artifact reproduces byte for byte on a second run.
+- **Not in this bundle.** The extents themselves (the class-table census's rule re-read against the 14 rungs),
+  the 89 representative body reads, and the 18's class-record name field.

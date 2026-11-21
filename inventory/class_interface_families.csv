@@ -1,0 +1,133 @@
+family,tables,slots,named,member,anonymous,rep_va,rep_role,rep_name,rep_slots,rep_size,rep_installers,rep_callers,rep_literals,read_owed,verdict,evidence
+0x004c7800,1,21,0,0,1,0x004c7800,anonymous,,21,0x30,2,4,,yes,anonymous,1 table(s) of 21 slot(s); rep 0x004c7800 anonymous
+0x004c7854,2,2,0,2,0,0x004c7854,member,"ControlChannel,TextBuffer@0x28/0x64",2,,3,3,,no,member-held,2 table(s) of 2 slot(s); rep 0x004c7854 member-held
+0x004c7860,31,22,0,5,26,0x004c7860,member,"LinkerLoad,LinkerSave@0xb8",22,0x58,32,DemoRecConnection|LinkerLoadGame|LinkerSaveGame|TcpipConnection|TcpipConnectionXbox,,no,member-held,31 table(s) of 22 slot(s); rep 0x004c7860 member-held
+0x004c78b8,2,1,0,1,1,0x004c78b8,member,unowned@0x28,1,,1,AudioSubsystem|Input|new,,no,member-held,2 table(s) of 1 slot(s); rep 0x004c78b8 member-held
+0x004c85b0,2,25,0,0,2,0x004c85b0,anonymous,,25,,1,0,,yes,anonymous,2 table(s) of 25 slot(s); rep 0x004c85b0 anonymous
+0x004c8db8,1,26,0,0,1,0x004c8db8,anonymous,,26,,1,1,,yes,anonymous,1 table(s) of 26 slot(s); rep 0x004c8db8 anonymous
+0x004c9338,1,1,0,1,0,0x004c9338,member,unowned@0x2c,1,,2,6,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c9338 member-held
+0x004c93c4,1,1,0,1,0,0x004c93c4,member,unowned@0x2c,1,,2,XboxViewport,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c93c4 member-held
+0x004c93c8,2,2,0,2,0,0x004c93c8,member,unowned@0x28,2,,2,XboxViewport,,no,member-held,2 table(s) of 2 slot(s); rep 0x004c93c8 member-held
+0x004c960c,1,1,0,1,0,0x004c960c,member,XboxViewport@0x2c,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x004c960c member-held
+0x004c96fc,2,15,0,0,2,0x004c96fc,anonymous,,15,,1,1,,yes,anonymous,2 table(s) of 15 slot(s); rep 0x004c96fc anonymous
+0x004d0314,2,1,0,2,0,0x004d0314,member,unowned@0x28,1,,2,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,,no,member-held,2 table(s) of 1 slot(s); rep 0x004d0314 member-held
+0x004d03b8,4,1,0,4,0,0x004d03b8,member,PackageMapLevel@0x2c,1,,3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,,no,member-held,4 table(s) of 1 slot(s); rep 0x004d03b8 member-held
+0x004d03bc,4,2,0,4,0,0x004d03bc,member,PackageMapLevel@0x28,2,,3,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,,no,member-held,4 table(s) of 2 slot(s); rep 0x004d03bc member-held
+0x004d0688,1,1,0,1,0,0x004d0688,member,TcpNetDriverXbox@0x28,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x004d0688 member-held
+0x004d0ec8,1,21,0,0,1,0x004d0ec8,anonymous,,21,0x30,2,4,,yes,anonymous,1 table(s) of 21 slot(s); rep 0x004d0ec8 anonymous
+0x004d1430,2,2,0,0,2,0x004d1430,anonymous,,2,,3,4,,yes,anonymous,2 table(s) of 2 slot(s); rep 0x004d1430 anonymous
+0x004d2abc,1,6,0,1,0,0x004d2abc,member,XHVVoiceSubsystem@0x2c,6,,2,1,,no,member-held,1 table(s) of 6 slot(s); rep 0x004d2abc member-held
+0x004d2ad4,1,1,0,1,0,0x004d2ad4,member,XHVVoiceSubsystem@0x28,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x004d2ad4 member-held
+0x004d2e58,1,29,0,0,1,0x004d2e58,anonymous,,29,,1,0,,yes,anonymous,1 table(s) of 29 slot(s); rep 0x004d2e58 anonymous
+0x004ddf70,1,2,0,1,0,0x004ddf70,member,TextBuffer@0x28,2,,2,1,,no,member-held,1 table(s) of 2 slot(s); rep 0x004ddf70 member-held
+0x004e3520,10,9,0,0,10,0x004e3520,anonymous,,9,,1,0,,yes,anonymous,10 table(s) of 9 slot(s); rep 0x004e3520 anonymous
+0x004eaf68,1,62,0,1,0,0x004eaf68,member,NullRenderDevice@0xb8,62,,1,0,,no,member-held,1 table(s) of 62 slot(s); rep 0x004eaf68 member-held
+0x004eb914,2,12,0,0,2,0x004eb914,anonymous,,12,,2,2,,yes,anonymous,2 table(s) of 12 slot(s); rep 0x004eb914 anonymous
+0x004ebb00,1,12,0,0,1,0x004ebb00,anonymous,,12,,2,1,,yes,anonymous,1 table(s) of 12 slot(s); rep 0x004ebb00 anonymous
+0x004ebf54,1,6,0,0,1,0x004ebf54,anonymous,,6,0x30,2,3,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x004ebf54 anonymous
+0x004f7070,1,12,0,0,1,0x004f7070,anonymous,,12,,0,0,,yes,anonymous,1 table(s) of 12 slot(s); rep 0x004f7070 anonymous
+0x004f70a0,1,2,0,0,1,0x004f70a0,anonymous,,2,,0,0,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x004f70a0 anonymous
+0x004fa5a8,1,2,0,1,0,0x004fa5a8,member,ControlChannel@0x64,2,,2,1,,no,member-held,1 table(s) of 2 slot(s); rep 0x004fa5a8 member-held
+0x004fc35c,6,8,0,6,0,0x004fc35c,member,unowned@0x28,8,,2,DemoPlayPendingLevel|Level|NetPendingLevel,,no,member-held,6 table(s) of 8 slot(s); rep 0x004fc35c member-held
+0x004fccc0,1,1,0,1,0,0x004fccc0,member,DemoRecDriver@0x28,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x004fccc0 member-held
+0x005040cc,1,1,0,1,0,0x005040cc,member,Engine@0x28,1,,2,GameEngine,,no,member-held,1 table(s) of 1 slot(s); rep 0x005040cc member-held
+0x00507c7c,4,5,0,1,3,0x0051724c,member,unowned@0x38,5,,2,1,,no,member-held,4 table(s) of 5 slot(s); rep 0x0051724c member-held
+0x0050c314,1,1,0,1,0,0x0050c314,member,Input@0x28,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x0050c314 member-held
+0x00510e6c,1,9,0,0,1,0x00510e6c,anonymous,,9,,1,3,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00510e6c anonymous
+0x00510e90,2,9,0,0,2,0x00510e90,anonymous,,9,,1,1,,yes,anonymous,2 table(s) of 9 slot(s); rep 0x00510e90 anonymous
+0x00510eb8,1,18,0,0,1,0x00510eb8,anonymous,,18,,1,2,,yes,anonymous,1 table(s) of 18 slot(s); rep 0x00510eb8 anonymous
+0x00510f00,1,16,0,0,1,0x00510f00,anonymous,,16,,2,1,,yes,anonymous,1 table(s) of 16 slot(s); rep 0x00510f00 anonymous
+0x00510f78,3,18,0,0,3,0x00510f78,anonymous,,18,,1,1,,yes,anonymous,3 table(s) of 18 slot(s); rep 0x00510f78 anonymous
+0x005113b0,2,12,0,0,2,0x005113b0,anonymous,,12,,2,2,,yes,anonymous,2 table(s) of 12 slot(s); rep 0x005113b0 anonymous
+0x005124a4,1,12,0,0,1,0x005124a4,anonymous,,12,,2,1,,yes,anonymous,1 table(s) of 12 slot(s); rep 0x005124a4 anonymous
+0x00516fa8,1,10,0,0,1,0x00516fa8,anonymous,,10,,5,16,,yes,anonymous,1 table(s) of 10 slot(s); rep 0x00516fa8 anonymous
+0x00516fd4,4,14,0,0,4,0x00516fd4,anonymous,,14,,2,4,,yes,anonymous,4 table(s) of 14 slot(s); rep 0x00516fd4 anonymous
+0x005170f4,5,15,0,0,5,0x005170f4,anonymous,,15,,1,7,,yes,anonymous,5 table(s) of 15 slot(s); rep 0x005170f4 anonymous
+0x00517214,1,9,0,0,1,0x00517214,anonymous,,9,,1,1,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00517214 anonymous
+0x00517238,2,5,0,0,2,0x00517238,anonymous,,5,,1,1,,yes,anonymous,2 table(s) of 5 slot(s); rep 0x00517238 anonymous
+0x00517260,1,9,0,0,1,0x00517260,anonymous,,9,,1,1,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00517260 anonymous
+0x005172ec,1,5,0,0,1,0x005172ec,anonymous,,5,,0,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x005172ec anonymous
+0x00517428,1,2,0,0,1,0x00517428,anonymous,,2,,1,2,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x00517428 anonymous
+0x00517444,2,9,0,0,2,0x00517444,anonymous,,9,,1,1,,yes,anonymous,2 table(s) of 9 slot(s); rep 0x00517444 anonymous
+0x0051748c,1,2,0,0,1,0x0051748c,anonymous,,2,,4,5,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x0051748c anonymous
+0x005174a0,1,2,0,0,1,0x005174a0,anonymous,,2,,1,2,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x005174a0 anonymous
+0x00517778,1,9,0,0,1,0x00517778,anonymous,,9,0x24,4,6,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00517778 anonymous
+0x00517e88,1,5,0,0,1,0x00517e88,anonymous,,5,,2,4,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x00517e88 anonymous
+0x00517ff0,1,9,0,0,1,0x00517ff0,anonymous,,9,,5,5,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00517ff0 anonymous
+0x00518080,1,18,0,0,1,0x00518080,anonymous,,18,,1,16,,yes,anonymous,1 table(s) of 18 slot(s); rep 0x00518080 anonymous
+0x005180c8,1,15,0,0,1,0x005180c8,anonymous,,15,0x2c,2,8,,yes,anonymous,1 table(s) of 15 slot(s); rep 0x005180c8 anonymous
+0x00518104,1,7,0,0,1,0x00518104,anonymous,,7,0x1c,1,StaticMesh|TerrainSector,,yes,anonymous,1 table(s) of 7 slot(s); rep 0x00518104 anonymous
+0x00518120,1,5,0,0,1,0x00518120,anonymous,,5,,1,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x00518120 anonymous
+0x00518160,1,9,0,0,1,0x00518160,anonymous,,9,,3,30,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00518160 anonymous
+0x00518184,1,9,0,0,1,0x00518184,anonymous,,9,0xb8,2,23,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00518184 anonymous
+0x005181a8,2,9,0,0,2,0x005181a8,anonymous,,9,,1,StaticMesh|StaticMeshInstance,,yes,anonymous,2 table(s) of 9 slot(s); rep 0x005181a8 anonymous
+0x005181d0,1,3,0,0,1,0x005181d0,anonymous,,3,,1,1,,yes,anonymous,1 table(s) of 3 slot(s); rep 0x005181d0 anonymous
+0x005181dc,1,3,0,0,1,0x005181dc,anonymous,,3,,0,0,,yes,anonymous,1 table(s) of 3 slot(s); rep 0x005181dc anonymous
+0x0051a810,1,61,0,0,1,0x0051a810,anonymous,,61,,2,0,,yes,anonymous,1 table(s) of 61 slot(s); rep 0x0051a810 anonymous
+0x0051b0cc,1,6,0,0,1,0x0051b0cc,anonymous,,6,,5,11,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x0051b0cc anonymous
+0x0051b0e4,1,6,0,0,1,0x0051b0e4,anonymous,,6,,1,2,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x0051b0e4 anonymous
+0x0051b178,2,9,0,0,2,0x0051b178,anonymous,,9,,1,1,,yes,anonymous,2 table(s) of 9 slot(s); rep 0x0051b178 anonymous
+0x0051bc08,1,2,0,1,0,0x0051bc08,member,SkeletalMesh@0xd8/0x164,2,,3,SkeletalMesh,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051bc08 member-held
+0x0051bc10,1,2,0,1,0,0x0051bc10,member,SkeletalMesh@0x108/0x134,2,,3,SkeletalMesh,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051bc10 member-held
+0x0051bc18,1,2,0,1,0,0x0051bc18,member,unowned@0xf0,2,,2,4,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051bc18 member-held
+0x0051bc20,1,11,0,0,1,0x0051bc20,anonymous,,11,,1,VertMesh,,yes,anonymous,1 table(s) of 11 slot(s); rep 0x0051bc20 anonymous
+0x0051bc4c,1,9,0,0,1,0x0051bc4c,anonymous,,9,,1,SkeletalMeshInstance,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x0051bc4c anonymous
+0x0051bc70,1,6,0,0,1,0x0051bc70,anonymous,,6,,1,1,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x0051bc70 anonymous
+0x0051bc88,1,6,0,0,1,0x0051bc88,anonymous,,6,,1,1,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x0051bc88 anonymous
+0x0051bca0,1,6,0,0,1,0x0051bca0,anonymous,,6,,1,2,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x0051bca0 anonymous
+0x0051bf18,1,2,0,1,0,0x0051bf18,member,SkeletalMesh@0xc0/0x194,2,,3,SkeletalMesh,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051bf18 member-held
+0x0051bf20,1,2,0,1,0,0x0051bf20,member,SkeletalMesh@0x14c,2,,2,SkeletalMesh,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051bf20 member-held
+0x0051bf28,1,2,0,1,0,0x0051bf28,member,SkeletalMesh@0x17c,2,,2,SkeletalMesh,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051bf28 member-held
+0x0051d37c,2,9,0,0,2,0x0051d37c,anonymous,,9,,1,1,,yes,anonymous,2 table(s) of 9 slot(s); rep 0x0051d37c anonymous
+0x0051d7e8,1,9,0,0,1,0x0051d7e8,anonymous,,9,,2,2,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x0051d7e8 anonymous
+0x0051d854,1,2,0,1,0,0x0051d854,member,StaticMesh@0x14c,2,,2,StaticMesh,,no,member-held,1 table(s) of 2 slot(s); rep 0x0051d854 member-held
+0x0051ec98,2,23,0,0,2,0x0051ec98,anonymous,,23,,1,0,,yes,anonymous,2 table(s) of 23 slot(s); rep 0x0051ec98 anonymous
+0x0051f6d8,2,5,0,0,2,0x0051f6d8,anonymous,,5,,1,0,,yes,anonymous,2 table(s) of 5 slot(s); rep 0x0051f6d8 anonymous
+0x0051faa0,1,9,0,0,1,0x0051faa0,anonymous,,9,,1,2,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x0051faa0 anonymous
+0x0051ffd8,1,18,0,0,1,0x0051ffd8,anonymous,,18,,1,Texture,,yes,anonymous,1 table(s) of 18 slot(s); rep 0x0051ffd8 anonymous
+0x00520248,1,15,0,0,1,0x00520248,anonymous,,15,,1,Cubemap,,yes,anonymous,1 table(s) of 15 slot(s); rep 0x00520248 anonymous
+0x00521ff8,1,3,0,0,1,0x00521ff8,anonymous,,3,,1,0,,yes,anonymous,1 table(s) of 3 slot(s); rep 0x00521ff8 anonymous
+0x00523008,1,3,0,0,1,0x00523008,anonymous,,3,,1,0,,yes,anonymous,1 table(s) of 3 slot(s); rep 0x00523008 anonymous
+0x00523340,1,9,0,0,1,0x00523340,anonymous,,9,,1,0,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00523340 anonymous
+0x0052352c,1,16,0,0,1,0x0052352c,anonymous,,16,,1,1,,yes,anonymous,1 table(s) of 16 slot(s); rep 0x0052352c anonymous
+0x0052b45c,1,1,0,1,0,0x0052b45c,member,D3DRenderDevice@0x28,1,,2,1,,no,member-held,1 table(s) of 1 slot(s); rep 0x0052b45c member-held
+0x0052bbf8,1,65,0,0,1,0x0052bbf8,anonymous,,65,,1,D3DRenderDevice,,yes,anonymous,1 table(s) of 65 slot(s); rep 0x0052bbf8 anonymous
+0x0052bdb8,1,16,0,0,1,0x0052bdb8,anonymous,,16,,1,1,,yes,anonymous,1 table(s) of 16 slot(s); rep 0x0052bdb8 anonymous
+0x0052be68,1,5,0,0,1,0x0052be68,anonymous,,5,,2,7,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0052be68 anonymous
+0x0052be7c,1,5,0,0,1,0x0052be7c,anonymous,,5,0x60,2,2,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0052be7c anonymous
+0x0052c2b8,2,5,0,0,2,0x0052c2b8,anonymous,,5,,3,2,,yes,anonymous,2 table(s) of 5 slot(s); rep 0x0052c2b8 anonymous
+0x0052c498,2,5,0,0,2,0x0052c498,anonymous,,5,0x38,3,3,,yes,anonymous,2 table(s) of 5 slot(s); rep 0x0052c498 anonymous
+0x0052cefc,2,7,0,0,2,0x0052cefc,anonymous,,7,,4,4,,yes,anonymous,2 table(s) of 7 slot(s); rep 0x0052cefc anonymous
+0x0052d3e8,3,25,0,0,3,0x0052d3e8,anonymous,,25,,2,5,,yes,anonymous,3 table(s) of 25 slot(s); rep 0x0052d3e8 anonymous
+0x0052d7d0,1,24,0,0,1,0x0052d7d0,anonymous,,24,,1,1,,yes,anonymous,1 table(s) of 24 slot(s); rep 0x0052d7d0 anonymous
+0x0052ef14,3,8,0,0,3,0x0052ef14,anonymous,,8,,1,1,,yes,anonymous,3 table(s) of 8 slot(s); rep 0x0052ef14 anonymous
+0x0053a194,1,5,0,0,1,0x0053a194,anonymous,,5,,1,1,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053a194 anonymous
+0x0053d58c,1,1,0,0,1,0x0053d58c,anonymous,,1,,1,1,,yes,anonymous,1 table(s) of 1 slot(s); rep 0x0053d58c anonymous
+0x0053d590,7,4,0,0,7,0x0053d590,anonymous,,4,0x1c 0x20 0x24 0x28,18,18,,yes,anonymous,7 table(s) of 4 slot(s); rep 0x0053d590 anonymous
+0x0053d660,3,4,0,0,3,0x0053d660,anonymous,,4,,1,1,,yes,anonymous,3 table(s) of 4 slot(s); rep 0x0053d660 anonymous
+0x0053d6fc,1,4,0,0,1,0x0053d6fc,anonymous,,4,,1,1,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053d6fc anonymous
+0x0053d73c,1,4,0,0,1,0x0053d73c,anonymous,,4,,1,1,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053d73c anonymous
+0x0053d7fc,1,4,0,0,1,0x0053d7fc,anonymous,,4,0x38,2,2,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053d7fc anonymous
+0x0053e3dc,1,4,0,0,1,0x0053e3dc,anonymous,,4,0x34,2,2,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053e3dc anonymous
+0x0053ec54,1,4,0,0,1,0x0053ec54,anonymous,,4,0x28,2,2,,yes,anonymous,1 table(s) of 4 slot(s); rep 0x0053ec54 anonymous
+0x0053f6d8,1,5,0,0,1,0x0053f6d8,anonymous,,5,,2,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f6d8 anonymous
+0x0053f6ec,2,5,2,0,0,0x0053f6ec,named,CPopupScreen,5,0x5c,0,0,,no,named,2 table(s) of 5 slot(s); rep 0x0053f6ec named (CPopupScreen)
+0x0053f700,1,5,1,0,0,0x0053f700,named,CNotificationScreen,5,,0,0,,no,named,1 table(s) of 5 slot(s); rep 0x0053f700 named (CNotificationScreen)
+0x0053f718,4,21,4,0,0,0x0053f718,named,CAlertFeature,21,,1,0,,no,named,4 table(s) of 21 slot(s); rep 0x0053f718 named (CAlertFeature)
+0x0053f770,1,21,1,0,0,0x0053f770,named,CFeatureContext,21,,0,0,,no,named,1 table(s) of 21 slot(s); rep 0x0053f770 named (CFeatureContext)
+0x0053f7c4,1,5,0,0,1,0x0053f7c4,anonymous,,5,,0,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f7c4 anonymous
+0x0053f7f0,1,6,0,1,0,0x0053f7f0,member,unowned@0x8,6,,1,0,,no,member-held,1 table(s) of 6 slot(s); rep 0x0053f7f0 member-held
+0x0053f808,1,21,1,0,0,0x0053f808,named,CVoiceMailPseudoFeature,21,,1,0,,no,named,1 table(s) of 21 slot(s); rep 0x0053f808 named (CVoiceMailPseudoFeature)
+0x0053f85c,1,5,0,0,1,0x0053f85c,anonymous,,5,,1,1,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f85c anonymous
+0x0053f888,1,5,0,1,0,0x0053f888,member,unowned@0x8,5,,0,0,,no,member-held,1 table(s) of 5 slot(s); rep 0x0053f888 member-held
+0x0053f8f4,1,5,0,0,1,0x0053f8f4,anonymous,,5,0x11fc,0,0,,yes,anonymous,1 table(s) of 5 slot(s); rep 0x0053f8f4 anonymous
+0x0053f90c,1,5,1,0,0,0x0053f90c,named,CFriendsScreen,5,,0,0,,no,named,1 table(s) of 5 slot(s); rep 0x0053f90c named (CFriendsScreen)
+0x0053f97c,1,5,1,0,0,0x0053f97c,named,CLogonScreen,5,,0,0,,no,named,1 table(s) of 5 slot(s); rep 0x0053f97c named (CLogonScreen)
+0x0053f990,1,1,1,0,0,0x0053f990,named,CNotificationTask,1,,0,0,,no,named,1 table(s) of 1 slot(s); rep 0x0053f990 named (CNotificationTask)
+0x0053f9ec,1,15,1,0,0,0x0053f9ec,named,CUIPlugin,15,0x910,0,0,,no,named,1 table(s) of 15 slot(s); rep 0x0053f9ec named (CUIPlugin)
+0x00540464,1,8,1,0,0,0x00540464,named,CQueueXMO,8,,0,0,,no,named,1 table(s) of 8 slot(s); rep 0x00540464 named (CQueueXMO)
+0x00540484,2,14,2,0,0,0x00540484,named,CEncoderXMO,14,,0,0,,no,named,2 table(s) of 14 slot(s); rep 0x00540484 named (CEncoderXMO)
+0x005404f4,2,11,2,0,0,0x005404f4,named,CDecoderXMO,11,,0,0,,no,named,2 table(s) of 11 slot(s); rep 0x005404f4 named (CDecoderXMO)
+0x00564da4,1,6,0,0,1,0x00564da4,anonymous,,6,,1,1,,yes,anonymous,1 table(s) of 6 slot(s); rep 0x00564da4 anonymous
+0x00564dbc,1,9,0,0,1,0x00564dbc,anonymous,,9,,3,2,,yes,anonymous,1 table(s) of 9 slot(s); rep 0x00564dbc anonymous
+0x0057534c,1,2,0,0,1,0x0057534c,anonymous,,2,,2,2,,yes,anonymous,1 table(s) of 2 slot(s); rep 0x0057534c anonymous
