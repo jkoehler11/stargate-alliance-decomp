@@ -5847,14 +5847,32 @@ has had. The channel reaches **none** of the 49 member tables (1 of their 292 sl
 one slot cannot name a table), so a member's interface *type* stays open while its own name does not,
 and 214 of the 232 interfaces carry no mangled class at all.
 
+**Answered in part (2026-11-20, what the 232 interfaces are to each other).** The question in front of the
+naming one -- *which of these tables are the same interface* -- has an answer the image does give.
+`tools/class-interface-shapes.py` reads the 232 slot vectors (`inventory/class_interface_shapes.csv`, 232
+rows) with `class-member-tables.py`'s kin rule unchanged: the 232 tables are **216** distinct vectors
+(**27** repeat another's vector exactly, a per-translation-unit copy), the rule joins **137** into families
+of two or more and leaves **95** alone, **132** families in all. The largest is **31** tables of 22 slots
+held at `0xb8` by `LinkerLoad`, `LinkerSave`, `LinkerLoadGame` and `LinkerSaveGame` plus 27 anonymous tables
+whose objects run from `0x58` to `0x8064` bytes -- one archive interface with per-class overrides; the
+second is **10** tables of 9 slots, three of them exact twins, and two of its members are the tables this
+entry already reads as `SparkEmitter`/`SpriteEmitter`/`TrailEmitter`'s base, so it is the emitter
+hierarchy's interface. The roles are disjoint and there are only two: **18** tables named by a slot's masked
+class scope, **49** held by a named member field (`LinkerLoad,LinkerSave@0xb8`), **165** with neither -- and
+**no family holds both a named and an unnamed table** (0 of 132), so a slot-symbol name does not propagate
+down a family. **The 49 member tables are 49 of the 232**: all 49 `table_va`s are rows of
+`class_plain_tables.csv`, so the member population is not a neighbouring one, and what separates the two is
+the store -- a member field or the object's own slot. A member's *type* is therefore the shape plus the
+family (`LinkerLoad` and `LinkerSave` hold one table at one offset), not a name this population lacks.
+
 **What would settle the rest.** Naming the 18 is a class-record question, not a body question: their
 ladders, slot counts and children are read, so what is missing is a name source for header-declared engine
 classes -- the static initialiser that writes the class record's name field -- and `docs/NATIVE_CLASS_TREE.md`
 is where those initialisers are censused. The UE2.5 reading of the ladders (`UField`, `UProperty`,
 `USubsystem`, `UChannel`, `ULevel`/`UPendingLevel`, `URenderDevice`, `UVertexStream`) is a reading of the
-shipped hierarchy and not a measurement: the image carries no name string for any of them. For the 214
-unnamed interfaces the name is the *body's* -- a slot body no symbol names cannot name the interface it
-implements -- so the per-body read is the same one the 399 bodies need, and the masked-symbol cache is what
-would grow it. The 49 member tables keep their per-member naming pass (the member's own name is built from
+shipped hierarchy and not a measurement: the image carries no name string for any of them. For the 165 anonymous
+interfaces the name is the *body's* -- a slot body no symbol names cannot name the interface it
+implements -- so the per-body read is the same one the 399 bodies need, and it is owed one table per family
+rather than one per table; the 49 member-held ones already carry their name from the field. The 49 member tables keep their per-member naming pass (the member's own name is built from
 its field). The 12 installers nothing points at are candidates for the dead-code question
 `tools/native-unreachable.py` owns.
