@@ -4455,6 +4455,25 @@ Three readings:
    package load still asks for `D:\TestMaps\<name>.unr` — four failed opens per name in the sequence above. That is
    developer I/O left in the retail build, and it is the same kind of leftover as the `Z:` cache path.
 
+   **The order is configuration, not code.** `Default.ini`'s `[Core.System]` block declares exactly these eight entries, in
+   exactly this order:
+
+   ```
+   Paths=..\System\*.u
+   Paths=..\Maps\*.unr
+   Paths=..\TestMaps\*.unr
+   Paths=..\Textures\*.utx
+   Paths=..\Sounds\*.uax
+   Paths=..\Music\*.umx
+   Paths=..\StaticMeshes\*.usx
+   Paths=..\Animations\*.ukx
+   ```
+
+   The runtime probes match that list line for line, which makes the search path a **one-line ini change** for a rebuild
+   rather than an engine change. The same block sets `SavePath=..\Save`, `CachePath=..\Cache`, `CacheExt=.uxx`,
+   `PurgeCacheDays=30`, and `Suppress=DevLoad` / `Suppress=DevSave` (each twice) — the object cache is the natural
+   neighbour of the `Z:` extraction the menu performs, though whether they are the same mechanism is not established here.
+
 **Probe counts are not phases.** `XboxDrv` is probed four times per location in this window and `D3DDrv` twice, which most
 likely tracks how many times the name is requested rather than a difference between the packages — with a step-over per
 stop, counts remain instrument-limited and are reported as counts only.
