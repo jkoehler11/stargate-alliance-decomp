@@ -16472,3 +16472,46 @@ sequence.
 - **Not in this bundle.** The `Core_UnVcWin32` add (0x0007e3b0, 65 bytes) and the five artifacts it moves —
   a map row moves `native_unreachable.csv`'s 14,973 map bodies and module-split with it, which is its own
   story; the 55 mapped representatives' reads; and the 399 bodies named by nothing.
+
+### Execution notes (2026-11-21, the gap census's one assert-named body is a map row, and its siblings are that file's family)
+
+- **Task.** The previous three notes closed on the same residue: `0x0007e3b0` (65 bytes) holds the only assert path
+  among the 1,249 gap-head bodies, and the row that name earned was deliberately left out of those bundles because a
+  map row moves five artifacts. This pass lands it.
+- **The row.** `tools/native-census.py --gap-add 0x0007e3b0 --name Core_UnVcWin32` emits the `add` from the image:
+  no padding after the row at `0x0007e390` (32 bytes, already `Core_UnVcWin32`), an MSVC arg-load prologue, a
+  linear decode closing on `ret` at `0x0007e3f1` with pad to the next row (`0x0007e400`), and no inbound edge of
+  any kind -- no `E8`, no `E9`, no dword. `symbols/xbe_boundaries.csv` takes that row and
+  `symbols/xbe_overrides.csv` the creation row `XbePost.java` needs, appended together with the same evidence;
+  `make boundaries` applies the add to the map.
+- **The name is a family, not a one-off.** The map now holds four `Core_UnVcWin32` bodies: `0x0007e360` (37 bytes),
+  `0x0007e390` (32), the new `0x0007e3b0` (65) and `0x0007f4e0` (183). The add's name is the `UnVcWin32.cpp` assert
+  path the body itself pushes at `0x0007e3be` and `0x0007e3dd` -- the same reference read one level out that the
+  gap census controls on 1,322 `<Module>_<File>` rows (1,283 agree, 0 differ, 39 hold none).
+- **What the row moves.** Map **16,374 -> 16,375 functions** (4,190,426 -> 4,190,491 bytes), the published map
+  **16,852 -> 16,853 symbols**, `docs/NATIVE.md`'s Core row 676 -> 677 (393,367 -> 393,432 bytes), the module plan
+  Core 3,309 -> 3,310 functions with 65 more bytes and the same 3,179 runs (the body sits inside an existing run),
+  the attribution artifact 6,622 -> 6,623 labelled (1,404 -> 1,405 `assert`), and the status table 8,319/16,374 ->
+  8,320/16,375 named and 6,622/16,374 -> 6,623/16,375 attributed.
+- **What the row removes from the gap census.** `inventory/gap_heads.csv` reads 1,451 -> **1,450** heads; its
+  `assert` channel falls 1 -> **0** (the one hit is the row) and the map control moves to 1,337 assert sites over
+  1,322 token-named rows with 1,283 agreeing. `inventory/gap_body_files.csv` follows: 1,450 rows, 0 assert, 43
+  string, 456 callee, 1,161 silent. **The bodies named by nothing are 398, not 399** -- this body was one of them
+  by the map's own count, and the sentence every page quotes is regenerated from the same census.
+- **Files.** `symbols/xbe_boundaries.csv`, `symbols/xbe_overrides.csv`, `symbols/xbox_functions.csv`,
+  `symbols/xbox.map`, `inventory/xbe_functions_by_module.csv`, `inventory/function_modules.csv`,
+  `inventory/function_module_attribution.csv` (the tool's own deterministic row for the body), 
+  `inventory/module_export_plan.csv`, `inventory/gap_heads.csv`, `inventory/gap_body_files.csv`,
+  `docs/NATIVE.md`, `docs/SYMBOLS.md`, `docs/MODULE_ATTRIBUTION.md`, `docs/MODULE_SPLIT.md`,
+  `docs/systems/CLASS_REGISTRATION.md`, `docs/STATUS.md`, `README.md`, `docs/ARTIFACTS.md`,
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `symbols`, `native-summary`, `module-split`, `gap-heads` and `gap-body-files` reproduce
+  byte for byte on a second run; the `gap-heads` and `gap-body-files` doc blocks are written by their tools from the
+  committed CSVs, and `--check-doc` reproduces both with no dump; the attribution row is the tool's own output for
+  that body (a full re-run of the attribution is the catch-up named below, not this bundle).
+- **Not in this bundle.** `inventory/native_unreachable.csv` is not regenerated: it still reads the map at 14,973
+  bodies, 1,402 short of today's 16,375, so re-running it moves 1,402 rows that predate this add -- its own pass.
+  For the same reason the attribution artifact gets its one row rather than a full re-run: a fresh run relabels
+  **2,600** bodies because its seeds moved when #763 landed the class packages, and the module plan is computed from
+  the committed attribution plus that row, which is why it moves by exactly one function. The 55 mapped
+  representatives' reads and the 398 bodies named by nothing stay open.

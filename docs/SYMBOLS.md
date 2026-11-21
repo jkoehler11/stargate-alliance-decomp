@@ -1,6 +1,6 @@
 # The symbol map (`symbols/xbox.map`)
 
-Status: emitted and checked. **16,852 symbols** — 16,374 functions plus 478 class tables — every one
+Status: emitted and checked. **16,853 symbols** — 16,375 functions plus 478 class tables — every one
 inside the image's own sections, and `gdb` resolves them from the assembled form. This is PLAN 4.10.
 
 The function count is not a constant: it was 14,973 when this page was written and has grown as the map's boundary
@@ -260,11 +260,11 @@ bytes of code).
 | measure | value |
 |---|---|
 | `.text` | `0x00011000`..`0x004190fc` (4227324 bytes) |
-| gaps between map rows / bytes they cover | 11070 / 611132 (3516 gaps under 8 bytes) |
-| heads the pad-before + prologue rule finds | 1527 |
-| ...decode to a body / are a 1-2 instruction island | 1249 / 202 |
+| gaps between map rows / bytes they cover | 11070 / 611067 (3516 gaps under 8 bytes) |
+| heads the pad-before + prologue rule finds | 1526 |
+| ...decode to a body / are a 1-2 instruction island | 1248 / 202 |
 | ...refused (`no-close` / `undecoded`) | 34 / 42 |
-| bytes the bodies cover | 205901 (34.0% of the gap bytes) |
+| bytes the bodies cover | 205836 (34.0% of the gap bytes) |
 | runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 215 in 115 runs |
 | bodies a split ends (a terminator no branch in the run targets) | 154 |
 | bodies in a generated family (`register-once` / `_atexit`) | 0 / 0 |
@@ -272,14 +272,14 @@ bytes of code).
 | ...of those, in a class-table slot (279 bodies; 724 tables, 12 of them class-named) | 279 |
 | named by an `E8`/`E9` branch | 46 |
 | named by a `68` push | 651 |
-| named by any channel / by none | 1052 / 399 |
-| control: map rows passing the head rule / decoding to their size | 9218 of 12917 / 12120 |
+| named by any channel / by none | 1052 / 398 |
+| control: map rows passing the head rule / decoding to their size | 9218 of 12918 / 12121 |
 | ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | 58 / 8 |
 | ...split points that reading means / of those, entries of a `.text` jump table | 384 / 348 |
 | ...of the rows still cut, a class-table slot names the opening / nothing names it | 0 / 8 |
 | inline jump tables in `.text` (aligned runs of >=3 code addresses) / entries | 144 / 1510 |
 | control: the same rule over `.rdata`, `.data`, XNET, DSOUND (233 head-shaped runs, 3.3 MB of data) | 0 / 0 / 0 / 0 bodies |
-| base rate: a dword outside `.text` names a random gap byte / a map row's start | 29 of 2000 (1.4%) / 607 of 2000 (30.4%) |
+| base rate: a dword outside `.text` names a random gap byte / a map row's start | 29 of 2000 (1.4%) / 613 of 2000 (30.6%) |
 
 | gap | heads | bodies | first head |
 |---|---:|---:|---|
@@ -292,7 +292,7 @@ bytes of code).
 | `0x003fc208`..`0x00400340` | 19 | 19 | `0x003fc208` |
 | `0x001bd8cf`..`0x001bd9c0` | 15 | 15 | `0x001bd8d0` |
 
-279 of the 1249 bodies sit in a class-table slot; 264 of those are in the 246 tables no registration names, and 399 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+279 of the 1248 bodies sit in a class-table slot; 264 of those are in the 246 tables no registration names, and 398 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
 
 The split rule does not hold on the map's own rows the way it holds on the gaps: 58 rows read as two bodies with relative branches alone, and **348 of their 384 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 154 split heads**, which is what makes the 154 splits bodies rather than case blocks.
 <!-- /generated:gap-heads -->

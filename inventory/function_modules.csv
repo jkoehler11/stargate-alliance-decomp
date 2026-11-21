@@ -2022,6 +2022,7 @@ address,name,size,module,attributed_by,run
 0x0007e350,FUN_0007e350,1,(unnamed),unattributed,1106
 0x0007e360,Core_UnVcWin32,37,Core,name prefix,282
 0x0007e390,Core_UnVcWin32,32,Core,name prefix,283
+0x0007e3b0,Core_UnVcWin32,65,Core,name prefix,283
 0x0007e400,FUN_0007e400,70,(unnamed),unattributed,1107
 0x0007e450,FUN_0007e450,75,(unnamed),unattributed,1108
 0x0007e4a0,FUN_0007e4a0,73,(unnamed),unattributed,1109
