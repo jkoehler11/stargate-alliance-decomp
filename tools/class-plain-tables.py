@@ -259,6 +259,15 @@ def control_of():
         out["slot0"] = "%#010x" % int(rows["0"]["most_common"], 16)
     forms = store_forms()
     out["named"] = sum(1 for f in forms.values() if f[0] == "named")
+    names, _ = load_symbols(SYMBOLS)
+    members = read_csv(MEMBERS)
+    out["member_tables"] = len(members)
+    out["member_named"] = 0
+    for r in members:
+        vec = [int(b, 16) for b in (r.get("slot_bodies") or "").split()]
+        vocab, classed = vocabulary(vec, names)
+        if names_a_class(vocab, classed, len(vec)):
+            out["member_named"] += 1
     return out
 
 
@@ -332,6 +341,12 @@ def render(rows, control):
                         ", ".join("`%s` = `%s` (%s of %s slots that carry a class)" % (
                             r["table_va"], r["vocab_class"], r["vocab_slots"], r["vocab_classed"])
                             for r in sorted(named, key=lambda r: -int(r["vocab_slots"])))))
+        lines.append("")
+        lines.append("**The same reading names %d of the %d member tables.** Their slots carry no mangled "
+                     "class scope at all, so the interface object a member field holds stays unnamed by "
+                     "this channel -- the member's *own* name comes from the field it is stored in, which "
+                     "`tools/class-member-tables.py` already builds."
+                     % (control.get("member_named", 0), control.get("member_tables", 0)))
         lines.append("")
 
     lines.append("**The installer's own symbol names a class on %d table%s, and the two channels agree on "
@@ -429,7 +444,8 @@ def self_check():
     if by[0x1000]["signature"] != "yes" or by[0x2000]["signature"] != "no":
         bad.append("the prefix column follows the vector")
 
-    out = render(rows, {"tables": 3, "slot0": "0x00062650", "prefix": ["0x00062650"], "named": 3})
+    out = render(rows, {"tables": 3, "slot0": "0x00062650", "prefix": ["0x00062650"], "named": 3,
+                        "member_named": 0, "member_tables": 1})
     for want in ("class-table prefix", "parent edge", "interfaces"):
         if want not in out:
             bad.append("render lacks %r" % (want,))

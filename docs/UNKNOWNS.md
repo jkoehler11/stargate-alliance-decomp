@@ -5825,12 +5825,36 @@ stores on four tables (`0x004c7860` 38 to 41, `0x0051707c` 1 to 2, `0x00517e88` 
 here -- and leaves every one of the 724 store-form verdicts unchanged. All three tools now read each form
 at its own length and pin the `disp8` SIB, the `disp32` SIB and the absolute form in their selftests.
 
-**What would settle the rest.** Naming the five base levels is the class tree's question (`0x004c9348` is
-already read as the level above `0x004c93d0` there). For the 176 plain-only tables written at `[reg]` the
-class is the class whose constructor the body is, so that body has to be named -- it carries a field
-layout, a subsystem call and a pointer whose provenance is now a channel rather than a question -- and
-naming the class behind each array element is the same pass, because the array is a local of that body.
-The 49 member tables' owner is known and the name the map lacks is the member's, so a per-member naming
-pass -- one body at a time, not a census -- is what closes that half. For the 399 bodies nothing changes
-except that the ones sitting in a member table's slots are named from the member, and the 12 installers
-nothing points at are candidates for the dead-code question `tools/native-unreachable.py` owns.
+**Answered since (2026-11-20, what the unnamed tables are).** `tools/class-plain-tables.py` reads the
+250 tables' *contents* instead of their stores (`inventory/class_plain_tables.csv`, 250 rows). **18 carry
+the class-table prefix** -- the three bodies (`0x00062650`, `0x00062660`, `0x00062670`) that all 474 named
+tables start with and none of the 49 member tables does -- and the other **232 are interface vtables**, the
+same kind of object as a member table's at a receiver that is the object's own slot. The split is not this
+tool's alone: `inventory/native_vtable_shared.csv` lists exactly those 232 as the tables that share no
+prefix with any class table. **The 18 are the native ladders' heads.** 17 are the `parent_va` of named
+classes -- the thirteen `*Property` classes under `0x004d17a8`, `Const`/`Enum`/`Struct` and the property
+table under `0x004d1468`, `AudioSubsystem`/`Input` under `0x004c78c0`, the four channel classes under
+`0x004fa390`, `NetPendingLevel`/`DemoPlayPendingLevel` under `0x004fc588` and `Level` under `0x004fc4f0`,
+`D3DRenderDevice`/`NullRenderDevice` under `0x004eaea8`, the five vertex-stream classes under `0x005178d8`
+and `TcpNetDriver`/`TcpNetDriverXbox`/`DemoRecDriver` under `0x004d0318` -- and the five base levels the
+previous entry left open are five of them. That is also why no registration site names them: a site names
+the table its own class's constructor stores last, and these are the rungs *above* the classes whose
+destroyers reach them. **18 of the 232 interfaces are named by their own slots**: the map's masked-symbol
+matches against `uix.lib`/`xvoice.lib`/`xonline.lib` put one class's methods in two or more slots, so
+`0x0053f9ec` is `CUIPlugin`'s vtable, `0x00540484`/`0x005404bc` are `CEncoderXMO`'s, `0x0053f808` is
+`CVoiceMailPseudoFeature`'s, `0x0053f8a0` `CPlayersFeature`'s and so on -- the first names this population
+has had. The channel reaches **none** of the 49 member tables (1 of their 292 slots carries a class scope, and
+one slot cannot name a table), so a member's interface *type* stays open while its own name does not,
+and 214 of the 232 interfaces carry no mangled class at all.
+
+**What would settle the rest.** Naming the 18 is a class-record question, not a body question: their
+ladders, slot counts and children are read, so what is missing is a name source for header-declared engine
+classes -- the static initialiser that writes the class record's name field -- and `docs/NATIVE_CLASS_TREE.md`
+is where those initialisers are censused. The UE2.5 reading of the ladders (`UField`, `UProperty`,
+`USubsystem`, `UChannel`, `ULevel`/`UPendingLevel`, `URenderDevice`, `UVertexStream`) is a reading of the
+shipped hierarchy and not a measurement: the image carries no name string for any of them. For the 214
+unnamed interfaces the name is the *body's* -- a slot body no symbol names cannot name the interface it
+implements -- so the per-body read is the same one the 399 bodies need, and the masked-symbol cache is what
+would grow it. The 49 member tables keep their per-member naming pass (the member's own name is built from
+its field). The 12 installers nothing points at are candidates for the dead-code question
+`tools/native-unreachable.py` owns.

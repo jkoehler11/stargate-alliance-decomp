@@ -15994,3 +15994,54 @@ sequence.
   constructor it is); the 49 member tables' per-member names; the five base levels -- the five classes whose
   `parent_va` they are (`XboxViewport`, `XboxClient`, `XHVVoiceSubsystem`, `ObjectExporterT3D`,
   `TextBufferFactory`) have no row in `inventory/classes.csv`, so the parent edge names no class for them.
+### Execution notes (2026-11-20, an unnamed table is a class table or an interface, and the prefix says which)
+
+- **Task.** The previous note's three open items that are about *what the tables are*: naming the body
+  behind each of the 176 plain-only `[reg]` tables, the five base levels, and the member tables' half of
+  the naming pass. The answer is that two thirds of the 176 are not class tables at all, so the question
+  had the wrong population.
+- **The class-table prefix splits the 250, and the control is on both sides.** `tools/class-plain-tables.py`
+  reads every table no registration names (`inventory/class_plain_tables.csv`, 250 rows) and tests its
+  first three slots against the **class-table prefix** -- `0x00062650`, `0x00062660`, `0x00062670`, which
+  all **474** tables the registration path names start with and **none** of the 49 member tables does.
+  **18 carry it** (17 `plain-only`, 1 `bounded`) and **232 do not**. The second census had already said
+  the same thing from the other side: `inventory/native_vtable_shared.csv` lists exactly those 232 as the
+  tables that share no prefix with any class table, and the two sets partition the 250 with no member
+  either way.
+- **The 18 are the native ladders' heads, and their children name them.** 17 of the 18 are a named
+  class's `parent_va`: the thirteen `*Property` classes under `0x004d17a8`, `Const`/`Enum`/`Struct` and the
+  property table under `0x004d1468`, `AudioSubsystem`/`Input` under `0x004c78c0` (which chains to
+  `0x004d0318` -> `TcpNetDriver`), the four channel classes under `0x004fa390`, `NetPendingLevel`/
+  `DemoPlayPendingLevel` under `0x004fc588` and `Level` under `0x004fc4f0`, `D3DRenderDevice`/
+  `NullRenderDevice` under `0x004eaea8`, the five vertex-stream classes under `0x005178d8`. The one that
+  is nobody's named parent (`0x004c9348`) is the rung above two of the other 18. **The five base levels
+  the previous note left open are five of these 18**, and what was missing for them was never a body name:
+  a registration site names the table its own class's constructor stores last, and these are the rungs
+  above those classes.
+- **A naming channel the thread had not used: the slot's own symbol.** 18 of the 232 interfaces are named
+  by the class scopes of their slots' MSVC mangled names -- `0x0053f9ec` = `CUIPlugin`, `0x00540484` and
+  `0x005404bc` = `CEncoderXMO`, `0x0053f808` = `CVoiceMailPseudoFeature`, `0x0053f8a0` = `CPlayersFeature`,
+  `CLogonFeature`, `CPopupScreen` (twice), `CFriendsScreen`, `CFriendsFeature`, `CQueueXMO`,
+  `CDecoderXMO` (twice), `CNotificationScreen`, `CNotificationTask`, `CAlertFeature`, `CFeatureContext`,
+  `CLogonScreen` -- all of them UIX/XMO library classes, matched from the shipped `.lib` object files. The
+  channel reaches **none** of the 49 member tables (1 of their 292 slots carries a class scope, and one
+  slot cannot name a table) and none of the 18 class tables, and the installer's `??0<C>@@`/`??1<C>@@` symbol names only one table, a CRT class.
+- **The reframing is what closes the item.** The 176 plain-only `[reg]` tables are 17 class tables and 159
+  interfaces; the 20 `frame-only`, 11 `member-field`, 3 `global` and 2 mixed plain-only tables are
+  interfaces too. So "the class whose constructor the body is" is a question about 17 tables, not 176, and
+  for those 17 the constructor is a base's and the name is the class record's.
+- **Files.** `tools/class-plain-tables.py` (the prefix test, the mangled-scope reader with its template
+  refusal, the vocabulary share, the parent-edge join, `--check`/`--check-doc`/`--report`/`--write-doc`),
+  `inventory/class_plain_tables.csv` (250 rows), `docs/systems/CLASS_REGISTRATION.md` (the new section, its
+  block, the regenerating paragraph), `docs/UNKNOWNS.md` (U40's closing paragraph rewritten and a new
+  "what the unnamed tables are" paragraph), `Makefile` (target, `.PHONY`, help, the two CI checks),
+  `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `class-plain-tables --check` is a synthetic self-test (a prefixed table, a
+  prefixed table that is a parent edge, two interfaces and a stranger; a constructor, a method, a scalar
+  deleting destructor and a template for the mangled reader) and writes nothing; `--check-doc` rebuilds the
+  block from the committed CSV with no dump; the artifact reproduces byte for byte on a second run; the
+  suite now counts **222** tools answering `--check` without the dump.
+- **Not in this bundle.** The names of the 18 (a class-record question: the static initialiser that writes
+  the name field), the 214 interfaces whose slots carry no mangled class (the per-body read the 399 bodies
+  need), and the member tables' per-member *type* -- the channel that names the UIX/XMO interfaces reaches
+  none of the 49, which is now measured rather than assumed.
