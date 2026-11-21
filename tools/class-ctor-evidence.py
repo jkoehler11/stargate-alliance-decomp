@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What a nameless class table's constructor carries: its literals, its callees, its parent.
 
-`tools/class-table-installer-shape.py` settled *which* bodies install the 250 tables no
+`tools/class-table-installer-shape.py` settled *which* bodies install the 246 tables no
 registration names (97 constructor-shaped, 29 destructor-shaped, 56 both, 26 neither) and left
 the naming question to "the body, not the class map". This tool reads those bodies once and
 records the three things a body can still say about its class:
@@ -15,7 +15,7 @@ records the three things a body can still say about its class:
   * the **parent** -- the first call a self-installing constructor makes that lands in a body
     storing another table, which is the base constructor, followed through the null-check thunk.
 
-The control is the 474 tables the registration path already names. It settles what a constructor
+The control is the 478 tables the registration path already names. It settles what a constructor
 literal means: on those tables no body pushes its own class's name, and the two `ini:` literals
 name the class that *declares* the config property (`DemoPlayPendingLevel` pushes
 `ini:Engine.Engine.DemoRecordingDevice`), not the object's class. It also settles the parent rule:
@@ -517,8 +517,8 @@ def render(rows):
         d["callee"] += int(bool(r["named_call_count"]))
         d["edge"] += int(r["parent_route"] != "none")
     if any(d["tables"] for d in shapes.values()):
-        out.append("| the 208 plain-only tables, by what installs them | tables | a printable literal "
-                   "| a named callee | a base-caller edge |")
+        out.append("| the %d plain-only tables, by what installs them | tables | a printable literal "
+                   "| a named callee | a base-caller edge |" % plain["tables"])
         out.append("|---|---|---|---|---|")
         for k, d in shapes.items():
             if d["tables"]:

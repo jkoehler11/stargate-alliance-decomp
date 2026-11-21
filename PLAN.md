@@ -16432,3 +16432,43 @@ sequence.
 - **Not in this bundle.** The `Core_UnVcWin32` add and the five artifacts it moves; the 56 mapped
   representatives' reads and the 399 bodies named by nothing; and `native_vtable_reach.csv`'s own eight
   class-table extents, which are the control this page quotes and are still the block scan's reading.
+
+### Execution notes (2026-11-21, every page states the population the last round measured, and the gap census reads it too)
+
+- **Task.** The previous bundle moved the registration population to 478 named of 492 and 246 unnamed but
+  left the hand-written paragraphs of `docs/systems/CLASS_REGISTRATION.md` quoting 474/250/208/38 while the
+  generated blocks above them said 478/246/205/37, and `docs/NATIVE_CLASSES.md`,
+  `docs/NATIVE_CLASS_TREE.md` and `docs/SYMBOLS.md` still quoted 474/18. This pass reconciles every one of
+  those sentences with the artifact it describes, and finds one dependent artifact the round did not
+  regenerate.
+- **What changed on the registration page.** 26 hand-written sentences: the two section headings
+  (`The 246 tables no registration reaches: 37 a constructor bounds, 205 only unnamed bodies store`, and
+  `Where the 246's stores write ... 36 of the 37 are a member's table`), the installer-shape control
+  (982 of 990 -> **991 of 999**, 978 agree), the literal control (16 -> **18** tables push another class's
+  name), the caller control (474 named / 471 with a direct caller / 101 of 103 -> **478 / 478 / 104 of
+  109**, 66 on the class and 38 on a descendant, the five strangers the material families), the
+  second-table split (45 -> **41** built inside a class's constructor, 19 sibling groups + 22 single-class
+  second tables, 17 of them at `[reg]` and 11 member stores), the class-table population (250 -> **246**,
+  18 heads -> **14**) and the base rate (285 -> **289 of 478** named tables absent from both runtime
+  reads). The 18-head slot-token section now records that its four names are applied (`name_rule`
+  `slot-file-token`) instead of proposing them.
+- **The dependent artifact the round missed.** `inventory/gap_heads.csv` still held the pre-round census:
+  `tables_unclassed=250`, `slot_unclassed=269`, `slot_named=277`, `slot_classes=7`. Regenerated from the
+  same image against the 478-named map it reads **246 / 264 / 279 / 12**, and eight gap rows now carry a
+  slot class (`0x004d0318` `NetDriver` among them). `docs/SYMBOLS.md`'s `gap-heads` block and the paragraph
+  under it are regenerated from it; that block is the second reader of the registration population, so a
+  number left stale there would have contradicted the page this bundle fixes.
+- **The other pages.** `NATIVE_CLASSES.md`'s status header (474/18 -> 478/14), `NATIVE_CLASS_TREE.md`'s
+  opening paragraph and its 2026-11-15 note (and the four `slot-file-token` rows are now named as the rule
+  that added them), `NATIVE_CLASS_TREE.md`'s parents block prose (468 -> **474 of the 478**, the four new
+  names are the rule's `constrained` rows), `SYMBOLS.md`'s symbol count (16,848 / 474 -> **16,852 / 478**,
+  which `make symbols` reproduces) and `U40`'s ledger paragraph.
+- **Files.** `docs/systems/CLASS_REGISTRATION.md`, `docs/NATIVE_CLASSES.md`, `docs/NATIVE_CLASS_TREE.md`,
+  `docs/SYMBOLS.md`, `docs/UNKNOWNS.md` (U40's answered-since), `inventory/gap_heads.csv` (regenerated),
+  `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; the `gap-heads` artifact reproduces byte for byte on a second run;
+  `--check-doc` on the `gap-heads`, `class-tree`, `class-table-parents`, `class-slot-tokens` and
+  `class-plain-tables` blocks reproduces them from the committed CSVs with no dump.
+- **Not in this bundle.** The `Core_UnVcWin32` add (0x0007e3b0, 65 bytes) and the five artifacts it moves —
+  a map row moves `native_unreachable.csv`'s 14,973 map bodies and module-split with it, which is its own
+  story; the 55 mapped representatives' reads; and the 399 bodies named by nothing.

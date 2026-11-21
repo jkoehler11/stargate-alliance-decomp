@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What kind of body installs a nameless class table: a constructor, a destructor, or neither.
 
-`tools/class-table-installers.py` counts who stores the 250 tables no name reaches and
+`tools/class-table-installers.py` counts who stores the 246 tables no name reaches and
 `tools/class-table-store-fields.py` says where the store writes. Neither says *what the storing
 body is*. A class table is installed by the class's own constructor, and `tools/class-ctors.py`
 already separates a constructor from a destructor with two signatures that agree -- a constructor
@@ -10,7 +10,7 @@ call and returns nothing. This tool runs those two signatures over every body th
 the **724 tables** `inventory/native_vtable_reach.csv` censuses, so the nameless tables are read
 by the same rule that named the map's own `ctor_`/`dtor_` rows.
 
-The control is the population the map already names. For the 474 tables the registration path
+The control is the population the map already names. For the 478 tables the registration path
 names, the installer's symbol is usually `ctor_<Class>` or `dtor_<Class>`; the census records how
 often the shape rule lands on that answer, and that rate is the base rate for the nameless tables
 rather than an assumption about them.

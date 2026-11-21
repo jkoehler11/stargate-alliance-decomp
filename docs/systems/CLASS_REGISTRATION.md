@@ -400,26 +400,26 @@ caller-rule answer for the same table, joined in so the two readings sit side by
 **32 of the 33 installing bodies are reached, and the shape is a base class, not isolated code: 12 are called from a class constructor (10 of the 20 tables have at least one) and 20 from a class destructor.** 98 named classes call an installer body from their own constructor. The other edges are 19 forwarder wrappers (a body whose first call targets the installer), 73 tail jumps of which 72 come from code the symbol map does not cover, and 0 calls from no map body at all; 1 bodies have no inbound edge.
 <!-- /generated:class-orphan-tables -->
 
-## The 250 tables no registration reaches: 38 a constructor bounds, 208 only unnamed bodies store
+## The 246 tables no registration reaches: 37 a constructor bounds, 205 only unnamed bodies store
 
-`docs/UNKNOWNS.md` U40 counts 277 gap bodies a class-table slot names and 269 of them in tables nothing
-registers. The full population is **250**: the 232 tables `inventory/native_vtable_shared.csv` pairs with
-a mapped table by prefix, plus the 18 mapped tables the class map leaves proposed. The installer's own
+`docs/UNKNOWNS.md` U40 counts 279 gap bodies a class-table slot names and 264 of them in tables nothing
+registers. The full population is **246**: the 232 tables `inventory/native_vtable_shared.csv` pairs with
+a mapped table by prefix, plus the 14 mapped tables the class map leaves proposed. The installer's own
 call site is the route the entry names, and `tools/class-table-installers.py` walks it over every store
 `inventory/native_vtable_reach.csv` already censused.
 
 **A constructor's store bounds a table; it does not name one.** A constructor installs its parent's table
 before its own (this page's `base-store-ancestor` rule), so a table a single `ctor_FireTexture` stores is
 one of `FireTexture`'s **ancestors'** tables -- the table is at least as deep as that class and never the
-class itself. 38 tables carry that bound; the other 208 are stored only by bodies no class names, and 4 by
+class itself. 37 tables carry that bound; the other 205 are stored only by bodies no class names, and 4 by
 no store at all. The symbol map's `size` column is a **byte count in decimal**, and this census read it as hex
 until 2026-11-20: a short body's span then ran past its own end and the store of the body next door was
 credited to it, which is where the 39/209/2 this section used to quote came from. Read at the right base the
 same rule moves 12 rows' installer sets and three verdicts, and every mangled C++ name the evidence carried
-(the UIX screen constructors, `Core_UnObjBas`, `dtor_Movie`) disappears -- none of the 250 is installed by a
+(the UIX screen constructors, `Core_UnObjBas`, `dtor_Movie`) disappears -- none of the 246 is installed by a
 body with a C++ symbol. So the U40 route answers the *reachability* half of its question and not the naming half,
-which is why no name is written from it: the six names the tree can carry are already proposed on this
-page's own join.
+which is why no name is written from it: the six names the tree can carry are already applied
+(`name_rule` `tree-paired`).
 
 <!-- generated:class-table-installers -->
 | the tables no name reaches | tables |
@@ -459,7 +459,7 @@ The constructor-stored tables carry a bound, not a name: 24 distinct classes, an
 | `D3DRenderDevice` | 1 |
 <!-- /generated:class-table-installers -->
 
-## Where the 250's stores write: a class table is `[reg]`, and 36 of the 38 are a member's table
+## Where the 246's stores write: a class table is `[reg]`, and 36 of the 37 are a member's table
 
 `tools/class-table-installers.py` calls every `mov [reg(+disp)], <imm32>` an install, which is what the
 store is and not what it writes: the previous section's populations are populations of *stores*, and the
@@ -498,7 +498,7 @@ Three readings follow, and each corrects the section above rather than restating
   member's table, so a `<Class>_vt<slot>` name would claim a slot in a class table that does not hold
   them. The 38 member tables whose owner's constructor is known name their slots' *owner* once the member
   is named, which is a naming pass of its own, one class at a time.
-- **`install` counts a stack slot.** Twenty of the 250 are written only at `[esp+disp]`/`[ebp+disp]`, where
+- **`install` counts a stack slot.** Twenty of the 246 are written only at `[esp+disp]`/`[ebp+disp]`, where
   the address is spilled or passed and nothing owns it, so `tools/native-vtable.py`'s `installs` column is
   an upper bound on installations and the previous section's "2 stored by nothing" is 23 in this reading
   (20 stack-only, 3 with no `C7 /0` store at all). The gap between the two counts is the addressing bytes:
@@ -508,7 +508,7 @@ Three readings follow, and each corrects the section above rather than restating
 
 What this does not say: the partition is the form of the store, not a proof about `this` -- a `[reg+0x28]`
 store whose base is an argument rather than the object would read the same. The named population is what
-makes it evidence, and it is the part that cannot be argued with: 474 of the 474 class tables the
+makes it evidence, and it is the part that cannot be argued with: 478 of the 478 class tables the
 registration path names are written at `[reg]`, and not one of them only into a member.
 
 ## What a member table holds: an interface vtable, and five shapes that repeat
@@ -519,7 +519,7 @@ is settled by the tables themselves rather than by the store. `tools/class-membe
 the 49 at its address and censuses the slots: every slot is a dword into `.text`, so it resolves to a row
 of `symbols/xbox_functions.csv` and its body's size says whether the slot is an implementation (a body
 longer than 8 bytes), a stub (`ret`, `xor eax,eax; ret`) or `__purecall`. The control is the class table:
-**all 492 tables the class-map census covers -- the 474 the registration path names among them -- share one
+**all 492 tables the class-map census covers -- the 478 the registration path names among them -- share one
 slot-0 body**, so a table whose slot 0 is something else is not a class's dispatch table at all.
 
 The slots are mostly empty. Of 292 slots over the 49 tables, **111 are stubs of 8 bytes or less and 24 are
@@ -696,9 +696,9 @@ object's constructor. `tools/class-table-installer-shape.py` runs the two signat
 `tools/class-ctors.py` uses -- a constructor installs the table and returns `this`, a destructor
 installs it before any call and returns nothing -- over **every body that installs one of the 724
 tables**, so the nameless population is read by the same rule that named the map's own `ctor_`/
-`dtor_` rows. The control is the 474 tables the registration path already names: 982 of their 990
+`dtor_` rows. The control is the 478 tables the registration path already names: 991 of their 999
 installer bodies carry a `ctor_<Class>`/`dtor_<Class>` symbol, and the shape rule lands on the same
-class for **978 of them (99.6%)**, so it is a measured reading and not an assumption about the 208.
+class for **978 of them (97.9%)**, so it is a measured reading and not an assumption about the 205.
 
 <!-- generated:class-table-installer-shapes -->
 | population | tables | installer bodies | returns `this` (ctor) | installs before any call (dtor) | neither | ends in a tail `jmp` | names one table only |
@@ -726,7 +726,7 @@ names as the 399 bodies nothing names, met here from the table's side.
 
 ## What a nameless table's constructor carries: literals, callees and the parent
 
-`tools/class-table-installer-shape.py` split the 250 tables no registration names by the shape of the body
+`tools/class-table-installer-shape.py` split the 246 tables no registration names by the shape of the body
 that installs them and left the naming to "the body, not the class map". `tools/class-ctor-evidence.py`
 reads each of those bodies once and records the three channels a constructor still offers: the literals it
 pushes, the map's own names among the functions it calls, and the parent constructor its first call reaches.
@@ -741,7 +741,7 @@ population's split and the literal, callee, parent and chain columns.
 | plain-only | 205 | 341 | 55 | 2 | 15 | 0 | 135 | 53 |
 | no-store | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-| the 208 plain-only tables, by what installs them | tables | a printable literal | a named callee | a base-caller edge |
+| the 205 plain-only tables, by what installs them | tables | a printable literal | a named callee | a base-caller edge |
 |---|---|---|---|---|
 | installed-by-ctor | 97 | 20 | 55 | 28 |
 | dtor-only | 29 | 4 | 16 | 7 |
@@ -767,7 +767,7 @@ name. What it does say is in the artifact, one table at a time.
 **The literal channel is closed by its own control, and closed in a specific way.** A constructor literal is
 a field default or a config section, and the class it can name is the class that *declares* the property,
 never the object's class: `DemoPlayPendingLevel` pushes `ini:Engine.Engine.DemoRecordingDevice` and is not
-`DemoRecordingDevice`. Across the 474 named tables **no constructor pushes its own class's name** while 16
+`DemoRecordingDevice`. Across the 478 named tables **no constructor pushes its own class's name** while 18
 push some *other* class's name (a package, or a class registered from inside the constructor), which is why
 the class-name count is reported beside the zero rather than on its own.
 
@@ -796,7 +796,7 @@ class has no script chain 53 times, with **0 contradictions**: a script-only cla
 body that calls its nearest native base, so the edge is the nearest native ancestor and not the immediate
 one. Of the 246 nameless tables 55 get an edge and only 9 climb to a named class, so the tree does not name
 them either; it says which native ancestor's constructor they run, and for the 48 that hang off another
-nameless table it says which of the 250 is above which.
+nameless table it says which of the 246 is above which.
 
 **The four tables the census lists with no installer body are not tables.** `0x4f70a0` is the last two
 dwords of a 44-dword run that three listed tables tile, two of them with installer bodies (`0x4f6ff8` is
@@ -839,30 +839,30 @@ deepest common ancestor of those classes over `classes.csv`'s script supers plus
 <!-- /generated:class-installer-callers -->
 
 **The direct call is the rule, not the exception, and the control is the class's own lineage.** Of the
-474 named tables, 471 have an installer body that some `E8` in `.text` calls, and 101 of the 103 whose
-callers carry a `ctor_`/`dtor_` class symbol land the deepest common ancestor on the table's class (62) or on
-one of its descendants (39) -- **101 of 103, the two strangers being the `Material`/`RenderedMaterial`
-families whose common base has no script row.** Only two named tables have no direct caller at all, so the
-installer is reached by a call and not by a pointer except in the exception. What the 368 named tables
+478 named tables every one has an installer body that some `E8` in `.text` calls, and 104 of the 109 whose
+callers carry a `ctor_`/`dtor_` class symbol land the deepest common ancestor on the table's class (66) or on
+one of its descendants (38) -- **104 of 109, the five strangers being the `Material`/`RenderedMaterial`
+families whose common base has no script row.** No named table is without a direct caller, so the
+installer is reached by a call and not by a pointer. What the 369 named tables
 called only from unnamed bodies say is the other half: their callers are real bodies the symbol map still
 has no name for, which is U40's population met from this side.
 
-**Of the 246 nameless tables, 45 are built inside a class's own constructor.** Twenty-two are called by a
+**Of the 246 nameless tables, 41 are built inside a class's own constructor.** Nineteen are called by a
 group of sibling classes -- `AudioSubsystem`/`Input`, `D3DRenderDevice`/`NullRenderDevice`,
 `ChannelDownload`/`HTTPDownload`, `IndexBuffer`/`SkinVertexBuffer`, the five `VertexStream*` classes,
 `TcpNetDriver`/`TcpNetDriverXbox`/`DemoRecDriver`, `TcpipConnection`/`TcpipConnectionXbox`/`DemoRecConnection`,
 `Level`/`NetPendingLevel`/`DemoPlayPendingLevel`, `ActorChannel`/`ControlChannel`/`FileChannel`/`VoiceChannel`
 -- so the table is the base their constructors and destructors reset to, and the group names the family
-around it. Twenty-three are called by exactly one class that **already owns a different table**: `Texture`
+around it. Twenty-two are called by exactly one class that **already owns a different table**: `Texture`
 (18 slots at `0x0051ffd8`, its own table `0x004cfba0`), `StaticMesh` (two 9-slot tables and its own
 `0x0051dd28`), `Cubemap` (15 against `0x005205c8`), `VertMesh` (11 against `0x00520fd8`),
 `SkeletalMeshInstance` (9 against `0x0051c188`), `SkeletalMesh` (four 2-slot tables against `0x0051c310`),
 `D3DRenderDevice` (65 against `0x0052b460`), `XboxViewport` (1, 2 and 56 slots against `0x004c9618`),
 `XboxClient`, `GameEngine`, `TextBufferFactory`, `ObjectExporterT3D`, `LinkerLoadGame`/`LinkerSaveGame` and
 `XHVVoiceSubsystem`. Those are not class tables the packages forgot: the class is named and the array is a
-second one its constructor writes -- 12 at `[reg]` and 11 into a member field at least once, so
+second one its constructor writes -- 17 at `[reg]` at least once and 11 into a member field, so
 `inventory/class_table_store_fields.csv` is the discriminator between a second class table and a member's
-interface, and the 12 written only at `[reg]` are the residue a per-body read still has to name.
+interface, and the 11 written only at `[reg]` are the residue a per-body read still has to name.
 
 **The 29 destructor-shaped and 26 unclassified tables get the per-body answer U40 asked for, and it is the
 destructor's own edge.** Ten of the 58 have named `dtor_` callers, and in every one the callers are the
@@ -1119,10 +1119,10 @@ The censuses above read a table through the instruction that writes it -- the st
 site's `ecx`, the ctor's other stores -- and none of them says *what the table is*. The two things a
 `[reg]` store can hold are not the same kind of object: a class's dispatch table opens with the entries
 every class table opens with, and an interface object's table opens with the interface's own first
-method. `tools/class-plain-tables.py` reads the **250** tables no registration names
-(`inventory/class_plain_tables.csv`, 250 rows) and asks the contents:
+method. `tools/class-plain-tables.py` reads the **246** tables no registration names
+(`inventory/class_plain_tables.csv`, 246 rows) and asks the contents:
 
-- **the class-table prefix.** All 474 tables the registration path names start with the same three bodies
+- **the class-table prefix.** All 478 tables the registration path names start with the same three bodies
   (`0x00062650`, `0x00062660`, `0x00062670`), and none of the 49 member tables does, so "starts with the
   prefix" is a *measured* test on both sides of the population rather than a heuristic. A table that
   carries it is a class's dispatch table whatever its store wrote into.
@@ -1163,20 +1163,23 @@ method. `tools/class-plain-tables.py` reads the **250** tables no registration n
 **3023 slots resolve, and 815 of them sit outside the function map.** 116 slots are `__purecall` and 1172 are stubs of 8 bytes or less -- an interface's default implementation -- so the interface half repeats the shape the 49 member tables already showed, at a receiver that is the object's own slot rather than a member field.
 <!-- /generated:class-plain-tables -->
 
-**The 18 class tables are the heads of native ladders, and 17 of them are a named class's base.** A
+**The 14 class tables are the heads of native ladders, and 13 of them are a named class's base.** A
 constructor installs its parent's table before its own, so a registration site names the table of *its
-own* class and an ancestor's table is named only when the ancestor has a site -- and none of these 18 has
+own* class and an ancestor's table is named only when the ancestor has a site -- and none of these 14 has
 one, which is what put them in this population. The ladders they head are named by their members:
-thirteen `*Property` classes under `0x004d17a8`, `Const`/`Enum`/`Struct` and that property table under
-`0x004d1468`, `AudioSubsystem`/`Input` under `0x004c78c0`, the four channel classes under `0x004fa390`,
-`NetPendingLevel`/`DemoPlayPendingLevel` under `0x004fc588` and `Level` under `0x004fc4f0`,
-`D3DRenderDevice`/`NullRenderDevice` under `0x004eaea8`, the five vertex-stream classes under
-`0x005178d8`, and `TcpNetDriver`, `TcpNetDriverXbox` and `DemoRecDriver` under `0x004d0318` -- the
-transitive chain `0x004c78c0` -> `0x004d0318` -> `TcpNetDriver` is the same ladder read rung by rung.
-Read as UE2.5's own hierarchy the rungs are `UField` over `Const`/`Enum`/`Struct`, `UProperty` under the
-thirteen property classes, `USubsystem` over `AudioSubsystem`/`Input`/`NetDriver`/`RenderDevice`,
-`UChannel` over the four channel classes, `ULevel` and `UPendingLevel`, `URenderDevice` and
-`UVertexStream`; that is a reading of the shipped hierarchy and not a measurement, because the image
+thirteen `*Property` classes under `0x004d17a8`, `Const` under `0x004d1468`, `AudioSubsystem`/`Input`
+under `0x004c78c0`, `XboxClient` under `0x004c94b0`, `XHVVoiceSubsystem` under `0x004d2400`,
+`ObjectExporterT3D` and `TextBufferFactory` on their own tables, `D3DRenderDevice`/`NullRenderDevice`
+under `0x004eaea8`, `Level` under `0x004fc4f0`, `NetPendingLevel`/`DemoPlayPendingLevel` under
+`0x004fc588`, `ChannelDownload`/`HTTPDownload` under `0x004fcfe0`, `IndexBuffer`/`SkinVertexBuffer`
+under `0x00517860` and the five vertex-stream classes under `0x005178d8`. The four tables the
+registration path named in the 2026-11-21 round (`0x004c93d0` `Viewport`, `0x004d0318` `NetDriver`,
+`0x004d03c8` `NetConnection`, `0x004fa390` `Channel`) have left this population and are still rungs of
+it: the chain `0x004c78c0` -> `0x004d0318` -> `TcpNetDriver` is read rung by rung, and `0x004fa390`
+heads the four channel classes. Read as UE2.5's own hierarchy the rungs are `UField` over
+`Const`/`Enum`/`Struct`, `UProperty` under the thirteen property classes, `USubsystem` over
+`AudioSubsystem`/`Input`/`NetDriver`/`RenderDevice`, `UChannel` over the four channel classes,
+`ULevel` and `UPendingLevel`, `URenderDevice` and `UVertexStream`; that is a reading of the shipped hierarchy and not a measurement, because the image
 holds no name string for any of them, and U40 records it as the candidate that a class record's name
 field would settle.
 
@@ -1188,7 +1191,7 @@ default implementation is the common case here too. Eighteen of them are named b
 of those is a library class -- a UIX screen, feature or plugin, or an XMO codec -- matched from the
 library's own object files, the only place in this image where a mangled symbol reaches a vtable.
 
-**What this does not say.** It does not name the 18: no registration site names them
+**What this does not say.** It does not name the 14: no registration site names them
 (`inventory/class_registrations.csv` has no row whose table is one of these) and the parent-edge ladder
 is the only name the image gives them. It does not name the 214 interfaces whose slots
 carry no mangled class -- their slot bodies are code no symbol names, so the channel that names the
@@ -1217,13 +1220,13 @@ from the committed `inventory/class_interface_shapes.csv` with no dump. Both run
 
 ## What the 18 heads' slot bodies say: four files, and the four names they earn (2026-11-20)
 
-Three name routes for the 18 class tables no registration names are measured shut: the registration
+Three name routes for the 18 class tables no registration names (14 since the four below were applied) are measured shut: the registration
 literal (the site pushes a shared default constructor), the installer body (0 of 26 carry a string at
 all) and the registration's size argument (every size in the tree originates at a registration, so the
 join is circular). The **runtime** route is closed too, and this is the number: `0x004c78c0` and its
 seventeen siblings appear in **neither** booted read -- `inventory/live_class_tables.csv` (312 rows at
 the title screen) carries 179 tables and `live_class_tables_m00.csv` (376 rows) 189, **all of them
-named**. Absence alone says nothing about them, and the base rate is why: **285 of the 474 named tables
+named**. Absence alone says nothing about them, and the base rate is why: **289 of the 478 named tables
 are absent from both reads**, because only a class whose default object is constructed is in the array.
 So a boot can confirm a name this population already has and cannot supply one it lacks.
 
@@ -1254,7 +1257,10 @@ children extend, and the class the engine puts at that level is the name:
 `0x004fa390` is the row `inventory/class_table_name_pairs.csv` already called a `Channel` hint from the
 family anchor, and this read is an independent second instrument on it; `0x004c93d0` is the open row that
 page read as `XboxViewport` before #533 gave that name to `0x004c9618`, and the token agrees with the
-correction: it is the base, and `XboxViewport` adds one slot. The other fourteen carry nothing but the
+correction: it is the base, and `XboxViewport` adds one slot. **2026-11-21: those four names are applied.**
+All four are rows of `inventory/xbe_class_table_names.csv` with `name_rule` `slot-file-token`, so the
+population this section reads is 14 -- `0x004c78c0` and its thirteen remaining siblings -- and the other
+ten carry nothing but the
 base rate -- `UnObj`, on all 492 tables -- and the property head `0x004d17a8` (53 slots) carries `UnObj`
 alone even though thirteen `*Property` classes extend it, so a token is not a property of a hierarchy's
 size.
@@ -1671,7 +1677,7 @@ UTF-16 literal and **none of them ends in `.cpp` or `.h`** -- `zlib: uncompress 
 literal channel labels a slot's subsystem (`CollisionHash`, `D3D`, `zlib`, the package writer) where the
 map has no name for its body; it cannot name an interface either.
 
-**Where this leaves the naming question.** The 56 mapped representatives are now an index rather than a
+**Where this leaves the naming question.** The 55 mapped representatives are now an index rather than a
 blank: each row carries its slot mix, its callees and its literals, so a later read can start from the
 `UnTemplate`/`UnClass`/`D3D*` groups instead of re-deriving them. What the artifact does not do is name
 one, and this measurement says why: an interface's own file is written in no channel its slots carry --
@@ -2013,7 +2019,7 @@ writes nothing) and `--check-doc` rebuilds the block from the committed CSV with
 
 ## The 18 heads' rungs: 490 edges, 0 that are not rungs, and the extent rule they fixed
 
-The sections above read the 250 tables nothing names as *objects*: what they contain, which bodies store
+The sections above read the 246 tables nothing names as *objects*: what they contain, which bodies store
 them, which are a class's dispatch table. This one reads them as an **inheritance edge**. The 18 heads are
 named from the classes below them, and an override census is the constraint that gives those names a
 measurable meaning -- but `inventory/class_virtual_overrides.csv` diffs each class against its *script*

@@ -9,7 +9,7 @@ never read this way, and they carry something the installers do not: **the map n
 assert path it inlines** (`Engine_UnChan`, `Core_UnObj`), so a table's slots vote for a `.cpp` file.
 
 This tool tallies that vote per table. It is *evidence*, not a naming rule, and the control says why:
-only 13 of the 474 named tables carry a token that starts with their own class name, so a token
+only 13 of the 478 named tables carry a token that starts with their own class name, so a token
 corroborates a class family (`UnConn` for the connection hierarchy) without naming one. Its value is
 in the tokens no other table carries: a token on two tables is a base class and its child sharing an
 inherited slot body, and that pair is the read.
