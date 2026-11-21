@@ -1,14 +1,14 @@
 # Module attribution beyond the asserts (PLAN 4.5)
 
 Status: **measured, with a rule that scores 89.9% on held-out labels** -- **95.7%** where both neighbours agree and **68.8%** where they disagree, which is the split a reader needs (`--holdout 400`, 2026-11-10).
-Artifact: `inventory/function_module_attribution.csv` (16,375 rows, 6,623 of them with a module).
+Artifact: `inventory/function_module_attribution.csv` (16,375 rows, 7,370 of them with a module).
 Tool: `tools/module-attribution.py` (`make module-attribution`; `--check` in `make ci`).
 
 ## The gap this closes
 
 `inventory/function_modules.csv` attributes a function to a module only when the build already named it that
-way — the name's prefix comes from the `__FILE__` literal the function's own assert passes, so **1,405 of 16,375**
-functions carry a real module (`Core`, `Engine`, `Gui`, …). The remaining 13,598 are `(unnamed)` or one of the three
+way — the name's prefix comes from the `__FILE__` literal the function's own assert passes, so **1,943 of 16,375**
+functions carry a real module (`Core`, `Engine`, `Gui`, …). The remaining 14,432 are `(unnamed)` or one of the three
 name-only buckets (`(dispatch: declared)`, `(dispatch: slot only)`, `(other named)`).
 
 That number is not a fresh measurement of the build; it is the size of the *assert* evidence. Per-module work
@@ -86,25 +86,25 @@ labels it failed to recover: with every seed in place the same bound labels **6,
 
 ## What the artifact says
 
-With the default rule and every seed present: **6,623 of 16,375 functions carry a module (40.45%), 5,218 of them
-propagated** (against 1,405 asserted). The distribution is plausible against the asserted seeds:
+With the default rule and every seed present: **7,370 of 16,375 functions carry a module (45.01%), 5,427 of them
+propagated** (against 1,943 asserted). The distribution is plausible against the asserted seeds:
 
 | module | functions | asserted |
 |---|---:|---:|
-| `Core` | 3,367 | 579 |
-| `Engine` | 2,335 | 592 |
-| `Gui` | 199 | 59 |
-| `IpDrv` | 177 | 24 |
-| `D3DDrv` | 134 | 22 |
-| `XboxAudio` | 127 | 41 |
-| `stargategame` | 96 | 32 |
-| `stargatevehicles` | 56 | 12 |
-| `Fire` | 45 | 9 |
+| `Core` | 3,078 | 677 |
+| `Engine` | 2,915 | 882 |
+| `Gui` | 267 | 83 |
+| `IpDrv` | 232 | 41 |
+| `D3DDrv` | 145 | 31 |
+| `XboxAudio` | 131 | 45 |
+| `stargategame` | 217 | 72 |
+| `stargatevehicles` | 97 | 29 |
+| `Fire` | 80 | 25 |
 | `XboxLive` | 32 | 21 |
-| `XboxDrv` | 30 | 5 |
-| `Gameplay` | 25 | 9 |
+| `XboxDrv` | 95 | 18 |
+| `Gameplay` | 81 | 19 |
 
-`(unnamed)` falls from 13,598 to **9,752**, which is code the asserts do not reach: CRT start-up, the statically
+`(unnamed)` falls from 14,432 to **3,472**, which is code the asserts do not reach: CRT start-up, the statically
 linked libraries, and functions whose TU has no assert within 2 KB.
 
 ## The artifact that shipped was a scoring run's output — corrected here
@@ -129,6 +129,14 @@ artifact moves **632 module labels** (430 rows gain one, 202 change) and **784 m
 **6,622** of 16,374 (1,404 `assert`, 5,218 `propagated`) as re-derived on 2026-11-20; 6,147 of an earlier run's set
 were exported (`docs/MODULE_SPLIT.md`).
 
+**Re-derived again on 2026-11-21, after the map's naming passes: 7,370 of 16,375 (1,943 `assert`, 5,427
+`propagated`).** 1,968 rows change their module label or their method, and the methods are the finding: **538 new
+`assert` seeds** (363 rows `propagated` -> `assert`, 175 `none` -> `assert`) because the map now carries a name and
+an assert path for bodies it used to call `FUN_*`; **572 rows gain a module from a neighbour** (`none` ->
+`propagated`); and **595 move only between the name-only buckets** (`(unnamed)` -> `(other named)`), which changes
+no export list. The rule itself is unchanged -- this is its seeds moving, exactly the fragility the section below
+records.
+
 **Every absolute figure above was re-derived on 2026-11-20 from the committed artifact**, because the map grew from
 14,973 to 16,374 functions when boundary repairs split bodies a first pass had merged. One sentence in this page is
 deliberately left as history: the neighbour-rule comparison ("labels 13,998 of 14,973") came from an earlier tool
@@ -145,7 +153,8 @@ quoting it against the table above.
   reach — which is one more reason the winning rule is not a call-graph rule.
 - **Interleaved TUs get the wrong label.** Two files compiled next to each other have no marker between them; a
   function at the boundary takes its neighbour's module. That is the 10% the holdout measures.
-- **`(unnamed)` is a real answer.** 8,881 rows stay unattributed and are not guesses with the label stripped.
+- **`(unnamed)` is a real answer.** 9,005 rows stay unattributed -- 3,472 `(unnamed)`, 5,239 `(other named)` and
+  294 in a dispatch bucket -- and are not guesses with the label stripped.
 
 ## Reproduction
 
@@ -158,5 +167,5 @@ python3 tools/module-attribution.py --check   # dump-free: columns, order, and t
 ```
 
 The consumer is `make module-split --lists`: it emits one address list per module for `ExportAt.java`, and that
-list is the union of this artifact's `module` column with the asserted names -- 6,092 addresses, which is what the
-2026-11-09 export round ran on before 29 of them gained a name.
+list is the union of this artifact's `module` column with the asserted names -- 7,370 addresses today, against the
+6,092 the 2026-11-09 export round ran on.
