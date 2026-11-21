@@ -4371,8 +4371,21 @@ name and the `D:\System\` prefix is the layer's. The path itself lives in a **ca
    re-reports one call for the whole window — which reads as "the engine opens this file once per lookup" rather than as a
    stalled instrument.
 
+**A second window, in the menu.** Attaching at about 160 s and pressing through to the menu gives 16 opens of two
+different files, from two different layers:
+
+| file | opens | call site |
+|---|---|---|
+| `D:\System\StargateMenus.int` | 13 | `0x0001dee3` and `0x0001e083` (XAPI) |
+| `d:\MUSIC\entry\10_17_nc.WAV` | 3 | **`0x004a2430`** (the DirectSound stream layer) |
+
+The two path conventions differ by layer and are worth keeping straight: XAPI builds the absolute `D:\System\<name>` from a
+bare name, while the sound layer is *handed* an absolute, lowercase `d:\MUSIC\entry\<name>.wav`. That is the convention
+`docs/MUSIC.md` records statically for the 1,923 streamed WAVs, now confirmed at run time from a call site inside the
+DirectSound code rather than from a literal.
+
 **Limits.** Arming needs a user-mode sample, so everything opened before roughly twenty seconds — the config files and the
-first packages — is outside this measurement; the trace says nothing about boot ordering. Each stop costs a step plus a
-re-arm, so a 200-second window buys about thirty opens, and a full load's several hundred would need minutes of window.
-And the repetition above is genuinely thirty calls from two sites, but whether the engine reopens the `.int` per string
-lookup or is retrying a failed open is **not established** here — a breakpoint on the close path would separate them.
+first packages — is outside this measurement; the trace says nothing about boot ordering. **A count here is not a rate**:
+each stop costs a step plus a re-arm, so the instrument throttles the guest it measures — 13 `.int` opens in a throttled
+window says nothing about how often the unthrottled build opens it. And whether the engine reopens the `.int` per string
+lookup or is retrying a failed open is **not established**; a breakpoint on the close path would separate them.
