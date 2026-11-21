@@ -127,6 +127,39 @@ script-only rebuild has to replace.
 than the retail disc image; the retail layout is the same shape but the scripts do not prove the disc used it verbatim.
 Nothing here says what `xbox.bin` is (it is copied, never produced, by these files).
 
+## The boot chain sits in `UW.ini`, and one map it names does not ship (2026-11-19)
+
+`System/UW.ini` (745 lines) is the game's own engine configuration; `Default.ini` (430) is the SDK default and repeats the
+same four keys, so the values below hold whether the shipped tree reads one or the other.
+
+| section | key | value |
+|---|---|---|
+| `[URL]` | `Map` | **`Index.unr`** |
+| `[URL]` | `LocalMap` | `Entry.unr` |
+| `[URL]` | `MapExt` | `unr` |
+| `[Engine.Engine]` | `Console` | `Engine.Console` |
+| `[Engine.Engine]` | `GameEngine` | `Engine.GameEngine` |
+| `[Engine.Engine]` | `DefaultGame` | **`StargateGame.StoryModeGame`** |
+| `[Engine.GameEngine]` | `ServerPackages` | `GamePlay`, `StargateEffects`, `StargateGame` |
+| `[Engine.GameEngine]` | `ServerActors` | `IpDrv.MasterServerUplink` |
+
+**The discrepancy worth knowing about.** `Maps/` holds 73 `.unr` files and **none of them is `Index.unr`**; `Entry.unr` is
+there (337,241 bytes). Neither name appears in `default.xbe` — both occur only in `UW.ini` and `UnrealEngine2.ini` — so the
+startup map is config data, and the config names a map the shipped tree does not contain. Either the front end is reached
+through `LocalMap` (or a launch-time URL), or this default is stale relative to what the retail disc boots; the config
+alone cannot say which.
+
+**`ServerPackages` is a dependency list.** `GamePlay`, `StargateEffects` and `StargateGame` are the packages the engine
+loads for a server-side game, so they are the ones a rebuild must keep loadable even when it replaces script content — a
+useful short list to test against instead of "all 18 `.u` files".
+
+**What would settle the boot question.** The engine's own startup path reads `[URL] Map` before any `LoadMap`, so a
+breakpoint on the map-name reader with the config value in hand shows whether `Index.unr` is consumed or skipped — the
+same instrument `docs/XEMU.md` documents for the mission harness, pointed one step earlier in the boot.
+
+**Limits.** These are config values, not behaviour: the keys are read, but which one wins at startup is exactly the open
+part. `Entry.unr`'s role (front end, intro, or a fallback) is not established here either.
+
 ## Bake or reproduce: the two costs, with the numbers in hand
 
 The requirement is settled — a mission compiles seven of the 60 programs, through a 50-class assembler-and-optimiser
