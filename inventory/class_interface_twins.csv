@@ -1,0 +1,12 @@
+shape,tables,slots,roles,owners,delta,placement,members,verdict,evidence
+0ffbe2d3,4,1,member 4,"DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox",0x2c850,apart,0x004d03b8 0x004d0470 0x004d05d0 0x004fcc08,per-class,"4 table(s) of 1 slot(s), 0x2c850 apart, apart; 4 of 4 owned by DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox"
+4055b423,4,2,member 4,"DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox",0x2c850,apart,0x004d03bc 0x004d0474 0x004d05d4 0x004fcc0c,per-class,"4 table(s) of 2 slot(s), 0x2c850 apart, apart; 4 of 4 owned by DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox"
+cacf26f7,3,9,anonymous 3,,0x29114,apart,0x004f7690 0x0051d238 0x005207a4,unowned,"3 table(s) of 9 slot(s), 0x29114 apart, apart; 0 of 3 owned by no class"
+ba02af46,2,2,member 2,"ControlChannel,TextBuffer",0x1ae8,apart,0x004c7854 0x004c933c,per-class,"2 table(s) of 2 slot(s), 0x1ae8 apart, apart; 1 of 2 owned by ControlChannel,TextBuffer"
+e574845e,2,1,anonymous 1 member 1,,0x780c0,apart,0x004c78b8 0x0053f978,unowned,"2 table(s) of 1 slot(s), 0x780c0 apart, apart; 0 of 2 owned by no class"
+67c859fa,2,2,member 2,XboxViewport,0x248,same-page,0x004c93c8 0x004c9610,one-owner,"2 table(s) of 2 slot(s), 0x248 apart, same-page; 1 of 2 owned by XboxViewport"
+f64e27b4,2,1,member 2,TcpNetDriver,0x214,same-page,0x004d0314 0x004d0528,one-owner,"2 table(s) of 1 slot(s), 0x214 apart, same-page; 1 of 2 owned by TcpNetDriver"
+e0d62302,2,2,anonymous 2,,0x8,same-page,0x004d1430 0x004d1438,unowned,"2 table(s) of 2 slot(s), 0x8 apart, same-page; 0 of 2 owned by no class"
+d0e78346,2,9,anonymous 2,,0xc97c,apart,0x00510e90 0x0051d80c,unowned,"2 table(s) of 9 slot(s), 0xc97c apart, apart; 0 of 2 owned by no class"
+64351708,2,4,anonymous 2,,0x210,same-page,0x0053d590 0x0053d7a0,unowned,"2 table(s) of 4 slot(s), 0x210 apart, same-page; 0 of 2 owned by no class"
+7d30e054,2,5,named 2,CPopupScreen,0x188,same-page,0x0053f6ec 0x0053f874,one-owner,"2 table(s) of 5 slot(s), 0x188 apart, same-page; 2 of 2 owned by CPopupScreen"

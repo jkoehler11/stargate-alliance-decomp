@@ -1274,10 +1274,11 @@ and one slot cannot name a table), not about the tables being a separate populat
 <!-- /generated:class-interface-shapes -->
 
 **A shape is the identity, and 27 tables are exact copies.** The 232 tables carry **216** distinct slot
-vectors: **27** of them repeat another's vector exactly -- the same vtable emitted twice, once per
-translation unit -- so the population is 232 *tables* and 216 *shapes*. The repeat is spread across the
-roles (2 of the 18 named tables, 15 of the 49 member tables and 10 of the 165 anonymous ones), which is
-what a per-translation-unit copy looks like rather than a reimplementation.
+vectors: **27** of them repeat another's vector exactly, so the population is 232 *tables* and 216
+*shapes*. The repeat is spread across the roles (2 of the 18 named tables, 15 of the 49 member tables and
+10 of the 165 anonymous ones). *The 27 exact repeats are per-class, not per-translation-unit* below reads
+where each repeat sits and which class owns it -- and a per-translation-unit copy of one class's table is
+the answer for one group of the eleven, not for the population.
 
 **132 families, and the largest is one interface implemented 31 times.** The kin rule leaves **95** tables
 alone and joins **137** into families of two or more. The largest family holds **31** tables of 22 slots,
@@ -1431,3 +1432,152 @@ stride, a scaled `lea`, a fixed object, a pointer field, a nested load, a pushed
 argument, the eleven-byte `disp32` frame store, a tail jump, a dword pointer and a table slot
 -- and it writes nothing; `--check-doc` rebuilds its block from the committed
 `inventory/class_receiver_reads.csv` with no dump. Both run in `make ci`.
+
+## What the per-body read owes: 89 representatives, not 165
+
+The shape census left the naming question with a bound -- *one representative per family is what a per-body
+read would owe* -- and this is that bound as a list. `tools/class-interface-families.py` reads the committed
+shape census and writes one row per family (`inventory/class_interface_families.csv`, 132 rows): the
+representative a read would start from, the role that names it if anything does, the installer and caller
+counts already measured for it, and whether the family is owed a read at all.
+
+<!-- generated:class-interface-families -->
+| representative role | families | tables held | per-body read owed |
+|---|---|---|---|
+| named | 12 | 18 | no |
+| member-held | 31 | 79 | no |
+| anonymous | 89 | 135 | yes |
+
+**132 families, and 89 of them have no named and no member-held table: the per-body read is 89 representative reads over 135 tables, not one read per anonymous table.** The other 43 families already carry a name -- 12 from a slot's masked class scope, 31 from the member field that holds them -- and owe no read at all.
+
+**30 of the 165 anonymous tables sit in a family the census would read once**, and the remaining 135 are members of the 89 anonymous-only families: the family is a unit of work, not a name, and one representative per unpaid family is the whole residue.
+<!-- /generated:class-interface-families -->
+
+The read is owed where *no* member carries a name, and the number is smaller than the table count by the
+families that already answer it: the representative is a formality for the named and member-held families,
+and for the 89 anonymous ones it is the class whose name a per-body read would have to earn. That is the
+same read the 399 unnamed bodies need, so the two populations are one work item and not two.
+
+## The 27 exact repeats are per-class, not per-translation-unit
+
+`inventory/class_interface_twins.csv` groups the 232 tables by shape and records each group's members, the
+span they occupy, and the class each member's slot symbol or member field names. A repeat is not an
+anonymous duplication of one table: the group is a set of classes that each emit the same interface, which
+is what a C++ compiler writes for four classes embedding one two-slot interface at one offset.
+
+<!-- generated:class-interface-twins -->
+| shape | tables | slots | members | span | roles | classes |
+|---|---|---|---|---|---|---|
+| `0ffbe2d3` | 4 | 1 | 0x004d03b8 0x004d0470 0x004d05d0 0x004fcc08 | 0x2c850 | member 4 | DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox |
+| `4055b423` | 4 | 2 | 0x004d03bc 0x004d0474 0x004d05d4 0x004fcc0c | 0x2c850 | member 4 | DemoRecConnection,PackageMapLevel,TcpipConnection,TcpipConnectionXbox |
+| `cacf26f7` | 3 | 9 | 0x004f7690 0x0051d238 0x005207a4 | 0x29114 | anonymous 3 | - |
+| `ba02af46` | 2 | 2 | 0x004c7854 0x004c933c | 0x1ae8 | member 2 | ControlChannel,TextBuffer |
+| `e574845e` | 2 | 1 | 0x004c78b8 0x0053f978 | 0x780c0 | anonymous 1 member 1 | - |
+| `67c859fa` | 2 | 2 | 0x004c93c8 0x004c9610 | 0x248 | member 2 | XboxViewport |
+| `f64e27b4` | 2 | 1 | 0x004d0314 0x004d0528 | 0x214 | member 2 | TcpNetDriver |
+| `e0d62302` | 2 | 2 | 0x004d1430 0x004d1438 | 0x8 | anonymous 2 | - |
+| `d0e78346` | 2 | 9 | 0x00510e90 0x0051d80c | 0xc97c | anonymous 2 | - |
+| `64351708` | 2 | 4 | 0x0053d590 0x0053d7a0 | 0x210 | anonymous 2 | - |
+| `7d30e054` | 2 | 5 | 0x0053f6ec 0x0053f874 | 0x188 | named 2 | CPopupScreen |
+
+**11 shapes repeat over 27 tables, and the repeat is not a copy of one class's table: 3 groups are **per-class** (10 tables, 6 distinct owner classes), 3 hold one class's table twice (6 tables), and 5 groups (11 tables) carry no class at all.**
+
+**5 of the 11 groups sit inside one 4 KiB page and the widest spans `0x780c0`**, so a repeat is emitted next to the classes that hold it rather than collected in one place: the two 4-member groups are one interface at `+0x2c` and one at `+0x28` held by `PackageMapLevel`, `TcpipConnection`, `TcpipConnectionXbox` and `DemoRecConnection`, one table per class, and the pair is repeated in each.
+<!-- /generated:class-interface-twins -->
+
+The correction matters for the naming question rather than for the count: a repeat is evidence that the
+shape is one interface with several implementations, so the family is the unit a name would settle, and a
+group whose members carry no class at all is the anonymous half of the same question rather than a
+different one.
+
+## The 18 heads' rungs: 490 edges, 14 that are not rungs, and the extents that explain them
+
+The sections above read the 250 tables nothing names as *objects*: what they contain, which bodies store
+them, which are a class's dispatch table. This one reads them as an **inheritance edge**. The 18 heads are
+named from the classes below them, and an override census is the constraint that gives those names a
+measurable meaning -- but `inventory/class_virtual_overrides.csv` diffs each class against its *script*
+super, and none of these classes has one, so it has never had a row for them.
+
+`tools/class-ladder-rungs.py` reads the same two slot vectors over all 493 measured parent edges in
+`inventory/class_table_parent_edges.csv` and records what the child does to the parent's table: how many
+slots it repeats at the same index, how many it replaces, how many it adds, and slot 3 reported apart
+because it is per-class bookkeeping and never an override. The verdict is the one invariant a vtable cannot
+break: a derived class's table is never shorter than its parent's.
+
+<!-- generated:class-ladder-rungs -->
+| parent (unnamed) | slots | children | replaced | added | most slots in a child | verdicts |
+|---|---|---|---|---|---|---|
+| `0x004c78c0` | 31 | 7 | 6 | 38 | 55 | extends 3 identical 3 shorter 1 |
+| `0x004c7958` | 46 | 4 | 18 | 0 | 46 | extends 3 identical 1 |
+| `0x004c7a10` | 46 | 9 | 21 | 2 | 47 | extends 6 identical 3 |
+| `0x004c7ac8` | 46 | 4 | 9 | 18 | 58 | extends 4 |
+| `0x004c7c78` | 34 | 10 | 32 | 0 | 33 | shorter 10 |
+| `0x004c9348` | 30 | 2 | 4 | 6 | 35 | extends 2 |
+| `0x004c93d0` | 35 | 1 | 2 | 59 | 94 | extends 1 |
+| `0x004c94b0` | 30 | 1 | 3 | 16 | 46 | extends 1 |
+| `0x004cfe68` | 59 | 3 | 13 | 0 | 59 | extends 3 |
+| `0x004d0318` | 31 | 3 | 0 | 31 | 43 | extends 3 |
+| `0x004d03c8` | 31 | 3 | 1 | 36 | 43 | extends 3 |
+| `0x004d1468` | 35 | 4 | 9 | 9 | 42 | extends 4 |
+| `0x004d17a8` | 37 | 13 | 28 | 208 | 53 | extends 13 |
+| `0x004d2400` | 31 | 1 | 1 | 6 | 37 | extends 1 |
+| `0x004d34d8` | 32 | 1 | 1 | 0 | 32 | extends 1 |
+| `0x004d3af0` | 33 | 1 | 1 | 0 | 33 | extends 1 |
+| `0x004eaea8` | 31 | 2 | 1 | 36 | 50 | extends 2 |
+| `0x004fa390` | 34 | 4 | 14 | 12 | 37 | extends 4 |
+| `0x004fc4f0` | 30 | 2 | 3 | 41 | 71 | extends 1 identical 1 |
+| `0x004fc588` | 30 | 2 | 0 | 10 | 36 | extends 2 |
+| `0x004fcfe0` | 36 | 2 | 9 | 1 | 37 | extends 2 |
+| `0x005040d0` | 30 | 1 | 2 | 36 | 66 | extends 1 |
+| `0x00517860` | 30 | 3 | 3 | 0 | 30 | extends 3 |
+| `0x005178d8` | 30 | 5 | 5 | 10 | 32 | extends 5 |
+
+**476 of the 490 measured parent edges read as rungs -- 353 `extends`, 123 `identical`, 14 `shorter`.** A child's table is never shorter than its parent's, so a `shorter` row is the parent link or the slot count, not the rule: the rows above carry them.
+
+**88 of the 490 edges land in a parent no registration names, over 24 distinct heads**, and every one of those heads is a class with no script row, so this is the only override census the 88 edges have: the remaining 402 are the script-linked population the control is read on.
+
+**Control: the 372 script-linked edges this read reaches reproduce `class_virtual_overrides.csv` on 372, 0 disagreeing.** Same slot vectors and the same slot-3 exclusion, so a count on a row that has no published answer is the same measurement.
+<!-- /generated:class-ladder-rungs -->
+
+**The control is what makes the rest a measurement, and finding it wrong first was this run's third stale
+artifact.** The script-linked edges this read reaches reproduce `class_virtual_overrides.csv`'s own counts
+exactly, once that file is regenerated: the committed copy diffed `WaveTexture`, `FluidTexture` and
+`WetTexture` against `Texture`'s table (`0x004cfba0`, 58 slots) instead of `WaterTexture`'s
+(`0x004cfe68`, 59 slots) -- the name `0x004cfba0` carried before #533 renamed the pair -- so three
+classes read 9 overrides and 1 added slot instead of 4 and 0. Regenerated it has **378** resolved pairs
+where the committed file had 302: the six tables #533 and its follow-ups named are pairs the old file never
+had.
+
+**Thirteen of the fourteen `shorter` rows are two tables whose extent is over-read, and the surplus dwords
+say so.** `0x004c7c78` is counted 34 slots and its ten children are 32 or 33; its slots 32 and 33 hold
+`0x00330044` and `0x00440044`, which are inside `CLiveEngine::SeparateTextAndIcons` and
+`ASN1Dec_KERB_AP_REPLY` rather than at their starts. `0x00521f80` is counted 34 and its three children are
+30, 31 and 32; its slots 31 and 32 hold `0x00200020`, inside `Core_UnMath`, and slot 33 holds `0x00540020`,
+past the end of `.text`. Both extents come from the packed-table rule `tools/class-tables.py` uses (a table
+ends where the next one starts) and not from a count of function entries, so **the rungs are the cheapest
+read of a table's real length**: 32 slots for `0x004c7c78`, at most 31 for `0x00521f80`. The fourteenth row
+is `Engine`'s own table (`0x005040d0`, 30 slots) against `0x004c78c0` (31) and it stays open -- `Engine`
+declares no script super, so nothing else crosses that edge.
+
+**What this does not say.** It does not re-name anything: every row is keyed by the table's own address, and
+a class with no name in `inventory/xbe_class_table_names.csv` keeps its address here. It also does not
+decide which of the two extents `class-tables.py` and this read is right -- it measures that they disagree
+and on which dwords, which is the input the extent rule needs.
+
+## Regenerating, continued
+
+The rung census and the interface families both read committed artifacts; the rung census also reads the
+slot vectors:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-ladder-rungs.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-ladder-rungs.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+    python3 tools/class-interface-families.py -o inventory
+    python3 tools/class-interface-families.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` on the rung census is synthetic tables -- a child that replaces one slot and adds one, one that
+copies its parent whole, a shorter child, slot 3 alone, and the control's arithmetic -- and on the families
+it is synthetic shape rows -- a named family, a member-held one, an anonymous one, a two-owner repeat and a
+singleton. `--check-doc` on both rebuilds their blocks from the committed CSVs with no dump. All four run
+in `make ci`.
