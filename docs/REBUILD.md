@@ -165,6 +165,31 @@ through a table, not that it is unused.
 is not established (candidate: the manifest's own hash beside the package's, which would explain the pairing); and which
 168 packages are covered is not enumerated.
 
+## Where a rebuilt package has to live (2026-11-19)
+
+The engine does not open `StargateGame.u` by name; it opens a *package name* and tries eight locations in a fixed order,
+declared in `Default.ini`'s `[Core.System]` block and confirmed at run time by a breakpoint on `_CreateFileA@28`:
+
+```
+Paths=..\System\*.u          Paths=..\Sounds\*.uax
+Paths=..\Maps\*.unr          Paths=..\Music\*.umx
+Paths=..\TestMaps\*.unr      Paths=..\StaticMeshes\*.usx
+Paths=..\Textures\*.utx      Paths=..\Animations\*.ukx
+```
+
+Three consequences for a rebuild, and they are requirements rather than observations:
+
+1. **A rebuilt script package goes in `System/` as `<name>.u`.** That is the first probe, so it wins; a file placed in any
+   other probed directory would be found only if `System/` has no match.
+2. **`TestMaps` can be dropped from the config.** The retail disc has no such directory and every package load still probes
+   it, which is developer I/O left in the shipped build. Removing that `Paths=` line changes nothing a player sees.
+3. **A map is not addressed separately.** `Maps\<name>.unr` is one line of the same search, so a rebuilt level loads by
+   being present under that name in `Maps/` — there is no second registry to update.
+
+**Limits.** The order is measured for the engine packages this trace reached; a package name that resolves in an earlier
+directory would hide the later ones, and nothing here exercised that case. Which of the eight probes the engine *stops* at
+is likewise not established — the trace shows it asking all eight for a name that only exists in `System/`.
+
 ## The boot chain: `Default.ini` is read, `UW.ini` is not, and the missing map is named anyway (2026-11-19)
 
 `System/UW.ini` (745 lines) is the game's own engine configuration; `Default.ini` (430) is the SDK default and repeats the
