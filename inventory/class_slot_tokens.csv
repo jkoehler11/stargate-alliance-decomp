@@ -1,0 +1,493 @@
+table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df,named_by_class
+0x004c78c0,,31,3,UnObj:3,,UnObj,3,492,no
+0x004c7958,Material,46,2,UnObj:2,,UnObj,2,492,no
+0x004c7a10,RenderedMaterial,46,2,UnObj:2,,UnObj,2,492,no
+0x004c7ac8,BitmapMaterial,48,2,UnObj:2,,UnObj,2,492,no
+0x004c7b88,Order,30,3,UnObj:3,,UnObj,3,492,no
+0x004c7c00,MatObject,30,3,UnObj:3,,UnObj,3,492,no
+0x004c7c78,CameraEffect,32,3,UnObj:3,,UnObj,3,492,no
+0x004c7d98,SGScreenSniperOverlay,32,3,UnObj:3,,UnObj,3,492,no
+0x004c7e18,SGScreenMenuPause,32,3,UnObj:3,,UnObj,3,492,no
+0x004c7e98,SGScreenBlur,32,3,UnObj:3,,UnObj,3,492,no
+0x004c7f18,SGScreenDOF,33,5,UnObj:3 SGCameraEffects:2,SGCameraEffects:2,UnObj,3,492,no
+0x004c7fa0,SGScreenMotionBlur,33,3,UnObj:3,,UnObj,3,492,no
+0x004c8028,SGScreenRadialBlur,32,3,UnObj:3,,UnObj,3,492,no
+0x004c80a8,SGScreenEmissiveWithBloom,33,3,UnObj:3,,UnObj,3,492,no
+0x004c8f28,MatSubAction,33,3,UnObj:3,,UnObj,3,492,no
+0x004c8fb0,SubActionCameraEffect,33,3,UnObj:3,,UnObj,3,492,no
+0x004c9090,ScriptedAction,30,3,UnObj:3,,UnObj,3,492,no
+0x004c9108,ACTION_TriggerEvent,30,3,UnObj:3,,UnObj,3,492,no
+0x004c9180,LatentScriptedAction,30,3,UnObj:3,,UnObj,3,492,no
+0x004c91f8,ACTION_WaitForEvent,30,3,UnObj:3,,UnObj,3,492,no
+0x004c9270,SubActionDepthOfField,33,3,UnObj:3,,UnObj,3,492,no
+0x004c9348,,31,2,UnObj:2,,UnObj,2,492,no
+0x004c93d0,,56,6,UnCamera:4 UnObj:2,UnCamera:4,UnCamera,4,2,no
+0x004c94b0,,43,2,UnObj:2,,UnObj,2,492,no
+0x004c9560,XboxClient,43,2,UnObj:2,,UnObj,2,492,no
+0x004c9618,XboxViewport,57,8,UnCamera:4 UnObj:2 XboxViewport:2,XboxViewport:2 UnCamera:4,UnCamera,4,2,yes
+0x004c9c60,Actor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,yes
+0x004c9e58,Keypoint,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ca048,AIScript,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ca238,Info,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ca428,ReplicationInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ca618,Pawn,134,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ca830,Vehicle,136,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004caa50,SVehicle,140,10,UnSVehicle:5 UnObj:2 UnActor:1 UnClass:1 UnTemplate:1,UnSVehicle:5,UnSVehicle,5,8,yes
+0x004cac80,Emitter,126,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cae78,NavigationPoint,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004cb0a0,Triggers,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cb290,Controller,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cb4a8,AIController,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cb6c0,HUD,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004cb8b0,ScriptedSequence,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cbaa0,AmbushInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cbc90,Ambushpoint,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004cbeb8,TriggeredCondition,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cc0a8,ScriptedController,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cc2c0,SGOrder,30,3,UnObj:3,,UnObj,3,492,no
+0x004cc338,UnrealScriptedSequence,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cc528,SquadAIBasic,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cc718,CoverInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cc908,SGFontInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ccaf8,StargateVehicle,140,10,UnSVehicle:5 UnObj:2 UnActor:1 UnClass:1 UnTemplate:1,UnSVehicle:5,UnSVehicle,5,8,no
+0x004ccd28,BeamArc,126,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ccf20,Electrocutor,126,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cd118,SGTriggeredCondition,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cd308,BotBase,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cd520,BotEnemy,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cd738,StargateHUD,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004cd928,ShadowManager,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cdb18,IntelligentSpawner,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cdd08,FarClipChange,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cdef8,SGLevel,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ce0e8,SGGenericOrderActor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ce2d8,SGScreenEmissive,33,3,UnObj:3,,UnObj,3,492,no
+0x004ce360,SGScreenBloom,33,3,UnObj:3,,UnObj,3,492,no
+0x004ce3e8,AlkeshLandingZone,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ce5d8,StargateCopter,141,10,UnSVehicle:5 UnObj:2 UnActor:1 UnClass:1 UnTemplate:1,UnSVehicle:5,UnSVehicle,5,8,no
+0x004ce810,Teltak,141,10,UnSVehicle:5 UnObj:2 UnActor:1 UnClass:1 UnTemplate:1,UnSVehicle:5,UnSVehicle,5,8,no
+0x004cea48,AlkeshBomber,141,10,UnSVehicle:5 UnObj:2 UnActor:1 UnClass:1 UnTemplate:1,UnSVehicle:5,UnSVehicle,5,8,no
+0x004cec80,StargateHover,142,10,UnSVehicle:5 UnObj:2 UnActor:1 UnClass:1 UnTemplate:1,UnSVehicle:5,UnSVehicle,5,8,no
+0x004ceeb8,StargateCar,143,11,UnSVehicle:5 UnObj:2 StargateCar:1 UnActor:1 UnClass:1 UnTemplate:1,StargateCar:1 UnSVehicle:5,UnSVehicle,5,8,yes
+0x004cf0f8,DeathGlider,142,10,UnSVehicle:5 UnObj:2 UnActor:1 UnClass:1 UnTemplate:1,UnSVehicle:5,UnSVehicle,5,8,no
+0x004cf330,GoauldDrone,134,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cf548,TeltakBot,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cf760,DeathGliderBot,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cf978,AlkeshBomberBot,133,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004cfba0,Texture,58,4,UnObj:2 UnTex:2,,UnTex,2,11,no
+0x004cfc88,FractalTexture,59,4,UnObj:2 UnFractal:1 UnTex:1,UnFractal:1,UnObj,2,492,no
+0x004cfd78,FireTexture,59,3,UnObj:2 UnFractal:1,UnFractal:1,UnObj,2,492,no
+0x004cfe68,WaterTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
+0x004cff58,WaveTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
+0x004d0048,FluidTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
+0x004d0138,WetTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
+0x004d0228,IceTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
+0x004d0318,,40,3,UnObj:2 UnNetDrv:1,UnNetDrv:1,UnObj,2,492,no
+0x004d03c8,,42,6,UnConn:4 UnObj:2,UnConn:4,UnConn,4,4,no
+0x004d0480,TcpipConnection,42,6,UnConn:4 UnObj:2,UnConn:4,UnConn,4,4,no
+0x004d0530,TcpNetDriver,40,3,UnObj:2 UnNetDrv:1,UnNetDrv:1,UnObj,2,492,no
+0x004d05e0,TcpipConnectionXbox,42,6,UnConn:3 UnObj:2 TcpNetDriverXbox:1,TcpNetDriverXbox:1 UnConn:3,UnConn,3,4,no
+0x004d0690,TcpNetDriverXbox,41,3,UnObj:2 UnNetDrv:1,UnNetDrv:1,UnObj,2,492,no
+0x004d0738,PlayerController,134,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004d0950,UnrealPlayer,134,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004d0b68,StargatePlayer,134,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004d1468,,35,1,UnObj:1,,UnObj,1,492,no
+0x004d17a8,,53,1,UnObj:1,,UnObj,1,492,no
+0x004d1880,IntProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004d1958,BoolProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004d1a30,FloatProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004d1f88,AudioSubsystem,54,4,UnObj:3 UnAudio:1,UnAudio:1,UnObj,3,492,no
+0x004d21f8,XBoxAudioSubsystem,54,9,XboxAudioSubsystem:3 UnObj:2 CreateDevice:1 SetNextStream:1 SetSoundDevice:1 UnTemplate:1,XboxAudioSubsystem:3 CreateDevice:1 SetNextStream:1 SetSoundDevice:1,XboxAudioSubsystem,3,1,yes
+0x004d2400,,37,3,UnObj:3,,UnObj,3,492,no
+0x004d2ad8,XHVVoiceSubsystem,37,3,UnObj:3,,UnObj,3,492,no
+0x004d32a0,StrProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004d3378,ArrayProperty,53,2,UnObj:1 UnProp:1,UnProp:1,UnProp,1,5,no
+0x004d34d8,,32,2,UnObj:2,,UnObj,2,492,no
+0x004d3828,ObjectExporterT3D,32,2,UnObj:2,,UnObj,2,492,no
+0x004d3af0,,33,2,UnObj:2,,UnObj,2,492,no
+0x004d4418,Struct,42,5,UnClass:4 UnObj:1,,UnClass,4,175,no
+0x004d44c8,Function,42,4,UnClass:3 UnObj:1,,UnClass,3,175,no
+0x004d4570,State,42,3,UnClass:2 UnObj:1,,UnClass,2,175,no
+0x004d4618,Const,35,1,UnObj:1,,UnObj,1,492,no
+0x004d4870,Class,42,7,UnClass:6 UnObj:1,,UnClass,6,175,yes
+0x004d9238,PackageMap,40,3,UnObj:2 UnCoreNet:1,UnCoreNet:1,UnObj,2,492,no
+0x004da500,Linker,31,2,UnObj:2,,UnObj,2,492,no
+0x004da778,LinkerLoad,32,3,UnObj:2 UnTemplate:1,,UnObj,2,492,no
+0x004da8a8,LinkerSave,31,2,UnObj:2,,UnObj,2,492,no
+0x004da9c8,LinkerSaveGame,31,2,UnObj:2,,UnObj,2,492,no
+0x004daaa0,LinkerLoadGame,32,3,UnObj:2 UnTemplate:1,,UnObj,2,492,no
+0x004dd2a8,Object,30,3,UnObj:3,,UnObj,3,492,no
+0x004ddf78,TextBuffer,30,2,UnObj:2,,UnObj,2,492,no
+0x004de008,Commandlet,31,3,UnObj:3,,UnObj,3,492,no
+0x004de088,Package,30,2,UnObj:2,,UnObj,2,492,no
+0x004de118,Enum,35,1,UnObj:1,,UnObj,1,492,no
+0x004de7a0,TextBufferFactory,33,2,UnObj:2,,UnObj,2,492,no
+0x004e0b40,ObjectProperty,53,2,UnObj:1 UnProp:1,UnProp:1,UnProp,1,5,no
+0x004e10c0,ByteProperty,53,2,UnObj:1 UnProp:1,UnProp:1,UnProp,1,5,no
+0x004e1198,PointerProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004e1270,ClassProperty,53,3,UnProp:2 UnObj:1,UnProp:2,UnProp,2,5,no
+0x004e1348,NameProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004e1420,FixedArrayProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004e14f8,MapProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004e15d0,StructProperty,53,1,UnObj:1,,UnObj,1,492,no
+0x004e16a8,DelegateProperty,53,3,UnProp:2 UnObj:1,UnProp:2,UnProp,2,5,no
+0x004e1ce8,new,31,3,UnObj:3,,UnObj,3,492,no
+0x004e24a8,FileLog,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004e2720,GameStats,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004e2978,SceneSubtitles,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004e2d28,xEmitter,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004e2fc0,xPickUpBase,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004e3258,xProcMesh,123,6,UnClass:2 UnObj:2 KPhysic:1 KScript:1,,UnClass,2,175,no
+0x004e3568,xWeatherEffect,123,6,UnClass:2 UnObj:2 KPhysic:1 KScript:1,,UnClass,2,175,no
+0x004e50c8,KActor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004e52b8,KConstraint,125,6,UnObj:2 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004e54b0,KCarWheelJoint,125,6,UnObj:2 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004e56a8,KConeLimit,125,6,UnObj:2 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004e58a0,KHinge,125,6,UnObj:2 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004e5a98,KBSJoint,125,6,UnObj:2 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004e77b0,KarmaParamsCollision,30,3,UnObj:3,,UnObj,3,492,no
+0x004e7a18,KVehicle,136,9,KPhysic:3 UnObj:2 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,KPhysic,3,152,no
+0x004e7c38,KRepulsor,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004e7e28,KTire,123,7,UnClass:2 UnObj:2 KPhysic:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004e8018,KarmaParams,30,3,UnObj:3,,UnObj,3,492,no
+0x004e8090,KarmaParamsSkel,30,3,UnObj:3,,UnObj,3,492,no
+0x004e8108,KarmaParamsRBFull,30,3,UnObj:3,,UnObj,3,492,no
+0x004e8440,KMeshProps,30,2,UnObj:2,,UnObj,2,492,no
+0x004eaea8,,47,3,UnObj:3,,UnObj,3,492,no
+0x004eb0a8,NullRenderDevice,48,3,UnObj:3,,UnObj,3,492,no
+0x004eb2b0,TextureEditable,58,4,UnObj:2 UnTex:2,,UnTex,2,11,no
+0x004eb420,ExportCacheCommandlet,31,4,UnObj:3 UExportCacheCommandlet:1,UExportCacheCommandlet:1,UnObj,3,492,yes
+0x004ebb38,ReachSpec,30,3,UnObj:3,,UnObj,3,492,no
+0x004ebdd0,LogEntry,30,3,UnObj:3,,UnObj,3,492,no
+0x004ebe48,LevelSummary,30,3,UnObj:3,,UnObj,3,492,no
+0x004ebfd8,InterpolationPoint,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ec1c8,MapVolumeViewPoint,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ec3b8,AmbientSound,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ec5a8,PolyMarker,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ec798,ClipMarker,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ec988,TeamInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ecb78,GameReplicationInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ecd68,SceneReplicationInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ecf58,LinkedReplicationInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ed148,PlayerReplicationInfo,124,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004ed338,AnnouncerVoice,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ed528,Mutator,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ed718,PotentialClimbWatcher,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ed908,InternetInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004edaf8,SavedMove,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004edce8,ZoneInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004eded8,WarpZoneInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ee0c8,SkyZoneInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ee2b8,GameInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ee4a8,Scout,134,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004ee6c0,Brush,125,8,UnActor:2 UnObj:2 ABrush:1 KPhysic:1 KScript:1 UnClass:1,ABrush:1,UnActor,2,121,yes
+0x004ee910,Volume,125,8,UnActor:2 UnObj:2 ABrush:1 KPhysic:1 KScript:1 UnClass:1,ABrush:1,UnActor,2,121,no
+0x004eeb08,MapVolume,125,8,UnActor:2 UnObj:2 ABrush:1 KPhysic:1 KScript:1 UnClass:1,ABrush:1,UnActor,2,121,no
+0x004eed00,BlockingVolume,125,8,UnActor:2 UnObj:2 ABrush:1 KPhysic:1 KScript:1 UnClass:1,ABrush:1,UnActor,2,121,no
+0x004eeef8,PhysicsVolume,125,8,UnActor:2 UnObj:2 ABrush:1 KPhysic:1 KScript:1 UnClass:1,ABrush:1,UnActor,2,121,no
+0x004ef0f0,LadderVolume,125,8,UnActor:2 UnObj:2 ABrush:1 KPhysic:1 KScript:1 UnClass:1,ABrush:1,UnActor,2,121,no
+0x004ef2e8,DefaultPhysicsVolume,125,8,UnActor:2 UnObj:2 ABrush:1 KPhysic:1 KScript:1 UnClass:1,ABrush:1,UnActor,2,121,no
+0x004ef4e0,PathNode,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004ef708,RoadPathNode,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004ef930,FlyingPathNode,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004efb58,ReplicatorPathNode,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004efd80,SmallNavigationPoint,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004effa8,LevelLoadingView,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f01d0,Ladder,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f03f8,AutoLadder,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f0620,WarpZoneMarker,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f0848,AIMarker,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f0a70,InventorySpot,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f0c98,PlayerStart,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f0ec0,Teleporter,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f10e8,JumpDest,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f1310,JumpPad,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f1538,Door,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f1760,AutoDoor,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f1988,LiftExit,138,6,UnObj:2 KPhysic:1 KScript:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f1bb0,LiftCenter,138,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004f1dd8,AvoidMarker,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f1fc8,LineOfSightTrigger,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f21b8,SVehicleTrigger,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f23a8,Trigger,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f2598,Pickup,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f2788,StationaryWeapons,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f2978,Ammo,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f2b68,AntiPortalActor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f2d58,InventoryAttachment,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f2f48,WeaponAttachment,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f3138,DamageType,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f3328,SVehicleFactory,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f3518,VehiclePart,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f3708,Inventory,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f38f8,Ammunition,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f3ae8,Powerups,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f3cd8,Weapon,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f3ec8,Projectile,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f40b8,Decoration,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f42a8,AvoidanceWaypoint,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f4498,Vignette,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f4688,Note,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f4878,Light,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f4a68,LevelInfo,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x004f4c58,GameProfile,30,3,UnObj:3,,UnObj,3,492,no
+0x004f4cd0,Manifest,30,3,UnObj:3,,UnObj,3,492,no
+0x004f6188,Camera,134,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x004f6d38,TextToSpeechAlias,30,3,UnObj:3,,UnObj,3,492,no
+0x004f6dd8,IMusicActor,127,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x004f6ff8,I3DL2Listener,30,3,UnObj:3,,UnObj,3,492,no
+0x004f72a0,Sound,46,2,UnObj:2,,UnObj,2,492,no
+0x004f7380,ProceduralSound,46,8,UnAudio:6 UnObj:2,UnAudio:6,UnAudio,6,3,no
+0x004f7468,SoundGroup,46,10,UnAudio:8 UnObj:2,UnAudio:8,UnAudio,8,3,no
+0x004f76b8,ParticleEmitter,40,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x004f7758,BeamEmitter,42,3,UnObj:3,,UnObj,3,492,no
+0x004f8960,CacheManager,30,3,UnObj:3,,UnObj,3,492,no
+0x004f9618,CameraOverlay,32,3,UnObj:3,,UnObj,3,492,no
+0x004f9728,MotionBlur,32,3,UnObj:3,,UnObj,3,492,no
+0x004fa110,Canvas,51,4,UnObj:3 UnCanvas:1,UnCanvas:1,UnObj,3,492,yes
+0x004fa390,,37,7,UnChan:4 UnObj:3,UnChan:4,UnChan,4,5,no
+0x004fa5b0,ControlChannel,37,8,UnChan:5 UnObj:3,UnChan:5,UnChan,5,5,no
+0x004fa650,FileChannel,37,8,UnChan:5 UnObj:3,UnChan:5,UnChan,5,5,no
+0x004fa6f0,VoiceChannel,37,8,UnChan:6 UnObj:2,UnChan:6,UnChan,6,5,no
+0x004fa958,ActorChannel,37,5,UnObj:3 UnChan:2,UnChan:2,UnObj,3,492,no
+0x004fb9b8,PackageMapLevel,40,3,UnObj:2 UnCoreNet:1,UnCoreNet:1,UnObj,2,492,no
+0x004fbb30,PlayerInput,30,3,UnObj:3,,UnObj,3,492,no
+0x004fbba8,CheatManager,30,3,UnObj:3,,UnObj,3,492,no
+0x004fc060,AdminBase,30,3,UnObj:3,,UnObj,3,492,no
+0x004fc0f8,AIMsgManager,30,3,UnObj:3,,UnObj,3,492,no
+0x004fc1b0,Primitive,39,2,UnObj:2,,UnObj,2,492,no
+0x004fc250,ConvexVolume,39,2,UnObj:2,,UnObj,2,492,no
+0x004fc4f0,,30,2,UnObj:2,,UnObj,2,492,no
+0x004fc588,,34,2,UnObj:2,,UnObj,2,492,no
+0x004fc630,DemoPlayPendingLevel,34,3,UnObj:2 UnDemoPenLev:1,UnDemoPenLev:1,UnObj,2,492,no
+0x004fcc18,DemoRecConnection,42,4,UnConn:2 UnObj:2,UnConn:2,UnConn,2,4,no
+0x004fccc8,DemoRecDriver,40,4,UnObj:2 UnDemoRec:1 UnNetDrv:1,UnDemoRec:1 UnNetDrv:1,UnObj,2,492,no
+0x004fcfe0,,36,2,UnObj:2,,UnObj,2,492,no
+0x004fd070,ChannelDownload,36,3,UnObj:2 UnDownload:1,UnDownload:1,UnObj,2,492,no
+0x005040d0,Engine,56,2,UnObj:2,,UnObj,2,492,no
+0x00504560,ServerCommandlet,31,3,UnObj:3,,UnObj,3,492,no
+0x005045e0,UModUnpackCommandlet,31,3,UnObj:3,,UnObj,3,492,no
+0x00504660,MasterMD5Commandlet,31,3,UnObj:3,,UnObj,3,492,no
+0x005046e0,GlobalTempObjects,30,2,UnObj:2,,UnObj,2,492,no
+0x00507be0,FluidSurfacePrimitive,39,3,UnObj:2 UnFluidSurface:1,UnFluidSurface:1,UnObj,2,492,no
+0x00507da0,FluidSurfaceOscillator,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x00507f90,FluidSurfaceInfo,123,6,UnClass:2 UnObj:2 KPhysic:1 KScript:1,,UnClass,2,175,no
+0x005081d8,Font,30,2,UnObj:2,,UnObj,2,492,no
+0x005085d8,Polys,30,2,UnObj:2,,UnObj,2,492,no
+0x00509010,MaplistManagerBase,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x00509200,PrecacheHack,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x00509438,GameEngine,66,7,UnGame:4 UnObj:2 UnClass:1,UnGame:4,UnGame,4,1,no
+0x0050a808,CrosshairPack,30,3,UnObj:3,,UnObj,3,492,no
+0x0050c318,Input,45,6,UnIn:4 UnObj:2,UnIn:4,UnIn,4,1,no
+0x0050c808,Interactions,30,3,UnObj:3,,UnObj,3,492,no
+0x0050c880,Interaction,36,3,UnObj:3,,UnObj,3,492,no
+0x0050c910,AbstractUIXInteraction,37,3,UnObj:3,,UnObj,3,492,no
+0x0050ca30,BaseGUIController,39,3,UnObj:3,,UnObj,3,492,no
+0x0050cb80,Console,36,3,UnObj:3,,UnObj,3,492,no
+0x0050cc68,InteractionMaster,30,3,UnObj:3,,UnObj,3,492,no
+0x0050e8b0,Level,71,15,UnLevAct:7 UnLevTic:3 UnClass:2 UnObj:2 UnLevel:1,UnLevAct:7 UnLevTic:3 UnLevel:1,UnLevAct,7,1,yes
+0x0050ec30,Mesh,42,3,UnObj:2 UnClass:1,,UnObj,2,492,no
+0x0050ecd8,MeshInstance,91,2,UnObj:2,,UnObj,2,492,no
+0x0050ee48,LodMeshInstance,92,2,UnObj:2,,UnObj,2,492,no
+0x0050f020,LodMesh,45,3,UnObj:2 UnClass:1,,UnObj,2,492,no
+0x0050f178,ConstantMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x0050f238,Modifier,46,2,UnObj:2,,UnObj,2,492,no
+0x0050f2f0,TexModifier,47,2,UnObj:2,,UnObj,2,492,no
+0x0050f3b0,TexOscillator,47,2,UnObj:2,,UnObj,2,492,no
+0x0050f470,TexPanner,47,2,UnObj:2,,UnObj,2,492,no
+0x0050f618,TexCoordMaterial,46,2,UnObj:2,,UnObj,2,492,no
+0x0050f6d0,VertexColor,46,2,UnObj:2,,UnObj,2,492,no
+0x0050f788,FadeColor,47,2,UnObj:2,,UnObj,2,492,no
+0x0050f848,ConstantColor,47,2,UnObj:2,,UnObj,2,492,no
+0x0050f908,Shader,46,2,UnObj:2,,UnObj,2,492,no
+0x0050f9c0,OpacityModifier,46,2,UnObj:2,,UnObj,2,492,no
+0x0050fa78,FinalBlend,46,2,UnObj:2,,UnObj,2,492,no
+0x0050fb30,TexCoordSource,47,2,UnObj:2,,UnObj,2,492,no
+0x0050fbf0,TexMatrix,47,2,UnObj:2,,UnObj,2,492,no
+0x0050fcb0,TexEnvMap,47,2,UnObj:2,,UnObj,2,492,no
+0x0050fd70,TexOscillatorTriggered,47,2,UnObj:2,,UnObj,2,492,no
+0x0050fe30,TexRotator,47,2,UnObj:2,,UnObj,2,492,no
+0x0050fef0,TexScaler,47,2,UnObj:2,,UnObj,2,492,no
+0x0050ffb0,VariableTexPanner,47,2,UnObj:2,,UnObj,2,492,no
+0x00510070,TexPannerTriggered,47,2,UnObj:2,,UnObj,2,492,no
+0x00510130,ColorModifier,46,2,UnObj:2,,UnObj,2,492,no
+0x005101e8,Combiner,46,2,UnObj:2,,UnObj,2,492,no
+0x005104a8,ProxyBitmapMaterial,48,2,UnObj:2,,UnObj,2,492,no
+0x00510568,MaterialSequence,46,2,UnObj:2,,UnObj,2,492,no
+0x00510620,MaterialSwitch,46,2,UnObj:2,,UnObj,2,492,no
+0x005106d8,MultiPassMaterial,46,2,UnObj:2,,UnObj,2,492,no
+0x005107c0,BackBufferTexture,58,4,UnObj:2 UnTex:2,,UnTex,2,11,no
+0x00510cf0,MeshEmitter,40,3,UnObj:3,,UnObj,3,492,no
+0x00510fc8,Model,39,4,UnObj:2 UnTemplate:1 UnTrace:1,UnTrace:1,UnObj,2,492,no
+0x005110c8,Mover,125,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1,,UnClass,2,175,no
+0x00511308,Movie,30,3,UnObj:3,,UnObj,3,492,no
+0x00511538,MovieTexture,59,4,UnObj:2 UnTex:2,,UnTex,2,11,no
+0x00512798,PackageCheckInfo,31,2,UnObj:2,,UnObj,2,492,no
+0x00512938,ParticleMaterial,46,2,UnObj:2,,UnObj,2,492,no
+0x00513a18,NetPendingLevel,34,3,UnObj:2 UnPenLev:1,UnPenLev:1,UnObj,2,492,no
+0x00513fd0,PixelShaderMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514090,PSShieldMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514150,PSReplicatorVision,47,2,UnObj:2,,UnObj,2,492,no
+0x00514210,PSBump,47,2,UnObj:2,,UnObj,2,492,no
+0x005142d0,PSBumpSpecular,47,2,UnObj:2,,UnObj,2,492,no
+0x00514390,PSDistortionBaseMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514450,PSBlendedDistortionMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514510,PSSubtractiveDistortion,47,2,UnObj:2,,UnObj,2,492,no
+0x005145d0,PSAdditiveDistortion,47,2,UnObj:2,,UnObj,2,492,no
+0x00514690,PSModulatedDistortionMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514750,PSDistortionMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514810,PSSimple,47,2,UnObj:2,,UnObj,2,492,no
+0x005148d0,PSEmissiveShader,47,2,UnObj:2,,UnObj,2,492,no
+0x00514990,PSEmissiveConstColor,47,2,UnObj:2,,UnObj,2,492,no
+0x00514a50,PSBackBufferEffect,47,2,UnObj:2,,UnObj,2,492,no
+0x00514b10,PSBlurMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514bd0,PSUseTexIndexMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514c90,PSLuminanceTexIndexMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514d50,PSBloomSelectMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514e10,PSWater,47,2,UnObj:2,,UnObj,2,492,no
+0x00514ed0,PSMotionBlurMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x00514f90,PSVDM,47,2,UnObj:2,,UnObj,2,492,no
+0x00515050,PSBumpSpecularBSP,47,2,UnObj:2,,UnObj,2,492,no
+0x00515110,PSBumpBSP,47,2,UnObj:2,,UnObj,2,492,no
+0x00515220,PSDepthOfFieldMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x005152e0,PSRefractionMaterial,47,2,UnObj:2,,UnObj,2,492,no
+0x005153a0,WaterSceneManager,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x005155d8,PlayerProfile,30,3,UnObj:3,,UnObj,3,492,no
+0x00515bd0,PlayerStats,30,3,UnObj:3,,UnObj,3,492,no
+0x00515c48,StatsQuery,30,3,UnObj:3,,UnObj,3,492,no
+0x00515cc0,StatsWrite,30,3,UnObj:3,,UnObj,3,492,no
+0x00515d38,PlayerStatCache,30,3,UnObj:3,,UnObj,3,492,no
+0x00516808,PlayInfo,30,3,UnObj:3,,UnObj,3,492,no
+0x005169b0,ProjectorMaterial,46,2,UnObj:2,,UnObj,2,492,no
+0x00516ac8,ProjectorPrimitive,39,3,UnObj:2 UnProjector:1,UnProjector:1,UnObj,2,492,no
+0x00516be8,Projector,128,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x00517860,,30,2,UnObj:2,,UnObj,2,492,no
+0x005178d8,,32,2,UnObj:2,,UnObj,2,492,no
+0x00517a18,IndexBuffer,30,2,UnObj:2,,UnObj,2,492,no
+0x00517a90,VertexBuffer,32,2,UnObj:2,,UnObj,2,492,no
+0x00517b10,VertexStreamVECTOR,32,2,UnObj:2,,UnObj,2,492,no
+0x00517b90,VertexStreamCOLOR,32,2,UnObj:2,,UnObj,2,492,no
+0x00517c10,VertexStreamUV,32,2,UnObj:2,,UnObj,2,492,no
+0x00517c90,VertexStreamPosNormTex,32,2,UnObj:2,,UnObj,2,492,no
+0x00517d10,SkinVertexBuffer,30,2,UnObj:2,,UnObj,2,492,no
+0x00518468,MeshObject,30,3,UnObj:3,,UnObj,3,492,no
+0x00518530,SubActionPlayMovie,33,3,UnObj:3,,UnObj,3,492,no
+0x005185b8,SubActionShowText,33,3,UnObj:3,,UnObj,3,492,no
+0x00518640,SubActionSubTitle,33,3,UnObj:3,,UnObj,3,492,no
+0x005186c8,SubActionSceneSpeed,33,3,UnObj:3,,UnObj,3,492,no
+0x00518750,SubActionGameSpeed,33,3,UnObj:3,,UnObj,3,492,no
+0x005187d8,SubActionOrientation,33,3,UnObj:3,,UnObj,3,492,no
+0x00518860,SubActionCameraShake,33,3,UnObj:3,,UnObj,3,492,no
+0x005188e8,SubActionFOV,33,3,UnObj:3,,UnObj,3,492,no
+0x00518970,SubActionTrigger,33,3,UnObj:3,,UnObj,3,492,no
+0x005189f8,SubActionFade,33,3,UnObj:3,,UnObj,3,492,no
+0x00518c30,MatAction,30,3,UnObj:3,,UnObj,3,492,no
+0x00518ca8,ActionPause,31,3,UnObj:3,,UnObj,3,492,no
+0x00518ef8,LookTarget,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x005190e8,SceneManager,123,7,UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnClass:1 UnTemplate:1,,UnObj,2,492,no
+0x005192d8,MatDemoActor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x005194c8,MatActionWaitForEvent,31,3,UnObj:3,,UnObj,3,492,no
+0x00519548,ActionMoveCamera,30,3,UnObj:3,,UnObj,3,492,no
+0x0051a2b8,ScriptedTexture,48,2,UnObj:2,,UnObj,2,492,no
+0x0051a5b0,Security,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x0051a908,ShadowBitmapMaterial,48,2,UnObj:2,,UnObj,2,492,no
+0x0051ab38,ShadowProjector,128,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x0051ad50,AnimNotify,31,3,UnObj:3,,UnObj,3,492,no
+0x0051add0,AnimNotify_MatSubAction,31,3,UnObj:3,,UnObj,3,492,no
+0x0051ae50,AnimNotify_Scripted,31,3,UnObj:3,,UnObj,3,492,no
+0x0051aed0,AnimNotify_Script,31,3,UnObj:3,,UnObj,3,492,no
+0x0051af50,AnimNotify_LIPSinc,31,3,UnObj:3,,UnObj,3,492,no
+0x0051afd0,AnimNotify_DestroyEffect,31,3,UnObj:3,,UnObj,3,492,no
+0x0051b050,AnimNotify_Effect,31,3,UnObj:3,,UnObj,3,492,no
+0x0051b100,Animation,30,2,UnObj:2,,UnObj,2,492,no
+0x0051bf30,AnimNotify_Sound,31,3,UnObj:3,,UnObj,3,492,no
+0x0051c040,MeshAnimation,39,2,UnObj:2,,UnObj,2,492,no
+0x0051c188,SkeletalMeshInstance,98,3,UnObj:2 UnObjBas:1,UnObjBas:1,UnObj,2,492,no
+0x0051c310,SkeletalMesh,45,5,UnObj:2 UnSkeletalMeshCollision:2 UnClass:1,UnSkeletalMeshCollision:2,UnSkeletalMeshCollision,2,1,yes
+0x0051d260,SparkEmitter,40,3,UnObj:3,,UnObj,3,492,no
+0x0051d3a0,SpriteEmitter,41,3,UnObj:3,,UnObj,3,492,no
+0x0051d860,DecoCollideActor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x0051da50,StaticMeshActor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x0051dc40,StaticMeshInstance,30,2,UnObj:2,,UnObj,2,492,no
+0x0051dd28,StaticMesh,40,3,UnObj:2 UnStaticMesh:1,UnStaticMesh:1,UnObj,2,492,yes
+0x0051f650,SVehicleWheel,30,3,UnObj:3,,UnObj,3,492,no
+0x0051f720,TerrainPrimitive,39,4,UnObj:2 UnTerrain:2,UnTerrain:2,UnTerrain,2,1,no
+0x0051fc18,TerrainMaterial,46,2,UnObj:2,,UnObj,2,492,no
+0x0051fcd0,TerrainSector,30,2,UnObj:2,,UnObj,2,492,no
+0x0051fda8,TerrainInfo,123,5,UnObj:2 KPhysic:1 KScript:1 UnClass:1,,UnObj,2,492,no
+0x00520288,Palette,30,2,UnObj:2,,UnObj,2,492,no
+0x005205c8,Cubemap,58,4,UnObj:2 UnTex:2,,UnTex,2,11,no
+0x005207c8,TrailEmitter,41,3,UnObj:3,,UnObj,3,492,no
+0x00520ca0,VertMeshInstance,92,2,UnObj:2,,UnObj,2,492,no
+0x00520fd8,VertMesh,45,3,UnObj:2 UnClass:1,,UnObj,2,492,no
+0x005210a8,PlayerChatManager,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x00521298,VoiceChatRoom,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x005214d0,VoiceChatReplicationInfo,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x005216c0,DecoVolumeObject,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x005218b0,DecorationList,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x00521b30,Spline,30,3,UnObj:3,,UnObj,3,492,no
+0x00521f80,StreamBase,30,3,UnObj:3,,UnObj,3,492,no
+0x00522110,StreamInterface,31,3,UnObj:3,,UnObj,3,492,no
+0x00522190,StreamInteraction,36,3,UnObj:3,,UnObj,3,492,no
+0x00522e88,Stream,30,3,UnObj:3,,UnObj,3,492,no
+0x00522f90,StreamTag,30,3,UnObj:3,,UnObj,3,492,no
+0x0052b460,D3DRenderDevice,50,5,UnObj:3 D3DRenderDevice:2,D3DRenderDevice:2,UnObj,3,492,yes
+0x0052cb00,HTTPDownload,36,3,UnObj:2 UnTemplate:1,,UnObj,2,492,no
+0x0052d5c8,InternetLink,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x0052e298,MasterServerLink,124,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x0052e488,ServerQueryClient,124,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x0052e678,MasterServerClient,124,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x0052ef78,MasterServerGameStats,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
+0x0052f4a0,MasterServerUplink,124,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x00530000,TcpLink,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x00531710,CompressCommandlet,31,3,UnObj:3,,UnObj,3,492,no
+0x00531790,DecompressCommandlet,31,3,UnObj:3,,UnObj,3,492,no
+0x00531c40,UdpLink,123,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
+0x00536370,GUI,30,3,UnObj:3,,UnObj,3,492,no
+0x005363e8,StatsManager,30,3,UnObj:3,,UnObj,3,492,no
+0x00536460,PropertyManagerBase,38,3,UnObj:3,,UnObj,3,492,no
+0x00536590,GUIStyles,30,3,UnObj:3,,UnObj,3,492,no
+0x00536648,GUIComponent,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00536730,GUIMultiComponent,63,3,UnObj:3,,UnObj,3,492,no
+0x00536830,GUIPanel,63,3,UnObj:3,,UnObj,3,492,no
+0x00536930,GUIScrollingPanel,63,3,UnObj:3,,UnObj,3,492,no
+0x00536a30,GUITabPanel,63,3,UnObj:3,,UnObj,3,492,no
+0x00536b30,GUIPage,63,3,UnObj:3,,UnObj,3,492,no
+0x00536c30,GUIMenuOption,63,3,UnObj:3,,UnObj,3,492,no
+0x00536d30,GUIComboBox,63,3,UnObj:3,,UnObj,3,492,no
+0x00536e30,GUITabControl,63,3,UnObj:3,,UnObj,3,492,no
+0x00536f30,GUIScrollBarBase,63,3,UnObj:3,,UnObj,3,492,no
+0x00537030,GUIHorzScrollBar,63,3,UnObj:3,,UnObj,3,492,no
+0x00537130,GUIVertScrollBar,63,3,UnObj:3,,UnObj,3,492,no
+0x00537230,GUINumericEdit,63,3,UnObj:3,,UnObj,3,492,no
+0x00537330,GUIProgressBar,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537418,GUITitleBar,58,3,UnObj:3,,UnObj,3,492,no
+0x00537500,GUIButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x005375e8,GUITabButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x005376d0,GUIHorzGripButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x005377b8,GUIHorzScrollButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x005378a0,GUIVertGripButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537988,GUIVertScrollButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537a70,GUIComboButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537b58,GUIEditBox,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537c40,GUICheckBoxButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537d28,GUISpinnerButton,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537e10,GUIHorzScrollZone,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537ef8,GUIVertScrollZone,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x00537fe0,GUILabel,58,4,UnObj:3 UnGUI:1,UnGUI:1,UnObj,3,492,no
+0x005380c8,GUIImage,58,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x005381b0,GUIFont,30,3,UnObj:3,,UnObj,3,492,no
+0x005385a8,GameStartInfo,30,3,UnObj:3,,UnObj,3,492,no
+0x00538d50,GUIController,42,3,UnObj:3,,UnObj,3,492,no
+0x00538e28,GUIMultiColumnListHeader,58,3,UnObj:3,,UnObj,3,492,no
+0x00538f10,GUIListBoxBase,63,3,UnObj:3,,UnObj,3,492,no
+0x00539010,GUIScrollTextBox,63,3,UnObj:3,,UnObj,3,492,no
+0x00539110,GUIListBox,63,3,UnObj:3,,UnObj,3,492,no
+0x005392e8,GUIListBase,59,4,UnObj:3 UnTemplate:1,,UnObj,3,492,no
+0x005393d8,GUIVertList,59,3,UnObj:3,,UnObj,3,492,no
+0x005394c8,GUIScrollText,59,3,UnObj:3,,UnObj,3,492,no
+0x005395b8,GUIHorzList,59,3,UnObj:3,,UnObj,3,492,no
+0x005396c8,GUIMultiColumnList,59,3,UnObj:3,,UnObj,3,492,no
+0x005397b8,GUIMultiColumnListBox,63,3,UnObj:3,,UnObj,3,492,no
+0x00539988,UIXInteraction,37,3,UnObj:3,,UnObj,3,492,no
+0x0053b168,XboxLiveInterface,30,3,UnObj:3,,UnObj,3,492,no

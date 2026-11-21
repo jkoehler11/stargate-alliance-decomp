@@ -16089,6 +16089,41 @@ sequence.
   representative now that the families exist), and the 18's UE2.5 ladder reading, which is still a reading
   rather than a measurement.
 
+### Execution notes (2026-11-20, the 18 heads' slot bodies name four files, and the runtime read names none)
+
+- **The extent rule is one function now, and its artifact proves it did not move.** `class-tables.py`
+  grew `measure()` / `slot_rules()` / `read_entries()` so a second reader of the 492 tables cannot
+  re-derive an extent; regenerating `inventory/xbe_class_tables.csv` and `xbe_class_table_slots.csv`
+  answers byte-identical, which is the control for the refactor. The rule does **not** lift to the
+  724-table population: ten of its 250 tables start on an odd-aligned `.text` dword (`0x003313ad`) and
+  would lose every slot, which is why `class-plain-tables.py` still counts by the packed run.
+- **A slot body carries the `.cpp` it asserts in, and four heads carry one no one else has.**
+  `tools/class-slot-tokens.py` → `inventory/class_slot_tokens.csv` (492 rows): the map names an unnamed
+  body `<Module>_<File>` from its assert path, so a table's slots vote for a file. 4 of the 18 vote for
+  a file outside the base rate -- `UnNetDrv` on `0x004d0318`, `UnConn` on `0x004d03c8`, `UnChan` on
+  `0x004fa390`, `UnCamera` on `0x004c93d0` -- and each shares its slot count with the named children that
+  carry the same token (40/40/41/40, 42/42/42/42, 37/37/37/37/37, 56/57), so the head is the level they
+  extend: `NetDriver`, `NetConnection`, `Channel`, `Viewport`. The control is the other way round:
+  **13 of 474 named tables** carry a token that starts with their own class name, so a token is a file
+  and the class for a file is knowledge, not a measurement.
+- **The runtime route is closed with a base rate, not an assertion.** `live_class_tables.csv` (179
+  tables, title) and `live_class_tables_m00.csv` (189, M00) carry **0 of the 18** -- and **285 of the 474
+  named tables** are absent from both reads too, because only a class with a constructed default object
+  is in `GObjObjects`. So the boot can confirm a name and cannot supply one.
+- **The class page's header was two revisions stale.** `docs/NATIVE_CLASSES.md` said 466 of 492 named and
+  26 unnamed; the map reads **474 and 18** since the tree pairing and the extent rule, and the same
+  sentence in its `Not established` list now carries the 18 with the eight it used to count.
+- **Files.** `tools/class-tables.py` (the shared rule), `tools/class-slot-tokens.py` (`--check` synthetic,
+  `--report`/`--write-doc`/`--check-doc`), `inventory/class_slot_tokens.csv` (492 rows),
+  `docs/systems/CLASS_REGISTRATION.md` (the new section and its block), `docs/NATIVE_CLASSES.md`,
+  `docs/UNKNOWNS.md` (U40's "what would settle the rest"), the `Makefile` target, this note.
+- **Gates.** `make ci` green; the two regenerated artifacts are byte-identical; `--check` writes nothing;
+  the block regenerates from the committed CSV with no dump.
+- **Not in this bundle.** The four names are evidence, not a map change: they need a token-to-class rule
+  (`name_rule` `slot-file-token`) and the eight artifacts that cascade from
+  `inventory/xbe_class_table_names.csv`. The 89 interface-family representative body reads and the 399
+  unnamed bodies are still open.
+
 ### Execution notes (2026-11-20, the extent is a body-start rule and a run is split at its install stores)
 
 - **The 14 rungs that were not rungs were one rule, and the dwords that made them are string data.**

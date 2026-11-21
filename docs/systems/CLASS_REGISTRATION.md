@@ -1215,6 +1215,72 @@ from the committed `inventory/class_interface_shapes.csv` with no dump. Both run
 
 
 
+## What the 18 heads' slot bodies say: four files, and the ladder that names them (2026-11-20)
+
+Three name routes for the 18 class tables no registration names are measured shut: the registration
+literal (the site pushes a shared default constructor), the installer body (0 of 26 carry a string at
+all) and the registration's size argument (every size in the tree originates at a registration, so the
+join is circular). The **runtime** route is closed too, and this is the number: `0x004c78c0` and its
+seventeen siblings appear in **neither** booted read -- `inventory/live_class_tables.csv` (312 rows at
+the title screen) carries 179 tables and `live_class_tables_m00.csv` (376 rows) 189, **all of them
+named**. Absence alone says nothing about them, and the base rate is why: **285 of the 474 named tables
+are absent from both reads**, because only a class whose default object is constructed is in the array.
+So a boot can confirm a name this population already has and cannot supply one it lacks.
+
+What is left is the slot body, and it carries something the installers do not: **the symbol map names
+an unnamed body after the assert path it inlines** (`Engine_UnChan` is `...\Engine\Src\UnChan.cpp`),
+so a table's slots vote for a `.cpp` file. `tools/class-slot-tokens.py` tallies that vote per table over
+`inventory/xbe_class_tables.csv`'s extents (the body-start rule, so the read cannot disagree with the
+artifact about which dwords are slots) and writes `inventory/class_slot_tokens.csv`, one row per table
+with the token counts and every token that at most 8 of the 492 tables carry.
+
+<!-- generated:class-slot-tokens -->
+**492 of the 492 class tables carry an assert-file token on at least one slot (474 of the 474 named, 18 of the 18 unnamed).**
+
+| table | slots | distinctive slot tokens (count, tables carrying the token) |
+|---|---|---|
+| `0x004c93d0` | 56 | `UnCamera` 4 (2 table(s)) |
+| `0x004d0318` | 40 | `UnNetDrv` 1 (4 table(s)) |
+| `0x004d03c8` | 42 | `UnConn` 4 (4 table(s)) |
+| `0x004fa390` | 37 | `UnChan` 4 (5 table(s)) |
+
+**13 of the 474 named tables carry a token that starts with their own class name**, so a token corroborates a class family and does not name a class.
+<!-- /generated:class-slot-tokens -->
+
+**The four are the base of a named ladder, and the ladder is the argument -- not the token.** Each of the
+four shares its slot count with every child that carries the same token, so the head is the table the
+children extend, and the class the engine puts at that level is the name:
+
+| head | slots | children carrying the same token | class the level is |
+|---|---:|---|---|
+| `0x004d0318` | 40 | `TcpNetDriver` 40, `TcpNetDriverXbox` 41, `DemoRecDriver` 40 | `NetDriver` |
+| `0x004d03c8` | 42 | `TcpipConnection` 42, `TcpipConnectionXbox` 42, `DemoRecConnection` 42 | `NetConnection` |
+| `0x004fa390` | 37 | `ControlChannel` 37, `FileChannel` 37, `VoiceChannel` 37, `ActorChannel` 37 | `Channel` |
+| `0x004c93d0` | 56 | `XboxViewport` 57 | `Viewport` |
+
+`0x004fa390` is the row `inventory/class_table_name_pairs.csv` already called a `Channel` hint from the
+family anchor, and this read is an independent second instrument on it; `0x004c93d0` is the open row that
+page read as `XboxViewport` before #533 gave that name to `0x004c9618`, and the token agrees with the
+correction: it is the base, and `XboxViewport` adds one slot. The other fourteen carry nothing but the
+base rate -- `UnObj`, on all 492 tables -- and the property head `0x004d17a8` (53 slots) carries `UnObj`
+alone even though thirteen `*Property` classes extend it, so a token is not a property of a hierarchy's
+size.
+
+**Naming them is not in this read.** A token is a file, and the engine's class for a file is knowledge,
+not a measurement: the control is that only **13 of the 474 named tables** carry a token that starts with
+their own class name, so the channel cannot name a class on its own. Writing the four into
+`inventory/xbe_class_table_names.csv` means a token-to-class rule in `tools/class-table-names.py` whose
+`name_rule` column says `slot-file-token`, and that rule belongs in its own diff with the eight artifacts
+it regenerates.
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-slot-tokens.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-slot-tokens.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic self-test (the module prefix against a library name, a `FUN_*` and a `thunk_*`;
+the tally; the block render; no dump, writes nothing) and `--check-doc` rebuilds the block from the
+committed CSV with no dump. Both run in `make ci`.
+
 ## The 232 interfaces' identity: 18 named, 49 held, 165 anonymous
 
 The section above asks *what kind of object* a table is and answers it with the class-table prefix. The
