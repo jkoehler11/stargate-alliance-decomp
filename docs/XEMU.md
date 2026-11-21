@@ -4433,12 +4433,31 @@ Three readings:
 2. **`Default.ini` does not appear, and neither does `Index.unr`.** `Default.ini` is read before the arm lands, so its
    absence is an instrument limit. `Index.unr` is a different matter: the window opens before the splash, and no open of it
    occurs — the key is parsed and held in memory, and the map load it names is never attempted.
-3. **No map file appears at all**, and this page's first version claimed too much from that. `MainMenu.unr` exists on the
-   disc and the front end is reached without any `.unr` in the list. Two readings survive: the front end is drawn from
-   packages rather than from a map, or map loads go through a call this breakpoint cannot see. The trace cannot separate
-   them, and until it can, "the build opens no maps" is not a conclusion this instrument supports — only "no map open is
-   visible from `_CreateFileA@28`". The same caution applies to packages: `Core.u` and `Engine.u` appear, while the
-   game-specific package whose `.int` is read in a later window never does.
+3. **Maps are not opened by a separate mechanism — they are one line of the package search path.** In a longer window each
+   package name is probed across the same eight locations, in this order:
+
+   | probe | typical result |
+   |---|---|
+   | `D:\System\<name>.u` | present for engine packages |
+   | `D:\Maps\<name>.unr` | absent for these names |
+   | `D:\TestMaps\<name>.unr` | **directory not on the disc** |
+   | `D:\Textures\<name>.utx` | absent |
+   | `D:\Sounds\<name>.uax` | absent |
+   | `D:\Music\<name>.umx` | absent |
+   | `D:\StaticMeshes\<name>.usx` | absent |
+   | `D:\Animations\<name>.ukx` | absent |
+
+   So a map is opened as `Maps\<name>.unr` when a *package name* resolves there, which is why the front end produces no
+   `.unr`: its name resolves to a `.u`. The earlier version of this page guessed that map loads might bypass the
+   breakpoint; they do not, they simply never happen for those names.
+
+   **`TestMaps` is a shipped search path with no directory behind it.** The retail disc has no `TestMaps` folder, and every
+   package load still asks for `D:\TestMaps\<name>.unr` — four failed opens per name in the sequence above. That is
+   developer I/O left in the retail build, and it is the same kind of leftover as the `Z:` cache path.
+
+**Probe counts are not phases.** `XboxDrv` is probed four times per location in this window and `D3DDrv` twice, which most
+likely tracks how many times the name is requested rather than a difference between the packages — with a step-over per
+stop, counts remain instrument-limited and are reported as counts only.
 
 **Counting again.** `PlayerProfile.ini` opened 19 times where everything else opened twice is the kind of number that
 reads as a property of the engine; with a step-over per stop it is at least partly a property of the instrument, and the
