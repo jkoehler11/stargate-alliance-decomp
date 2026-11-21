@@ -792,9 +792,9 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00034780,FUN_00034780,264,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034970
 0x00034890,FUN_00034890,127,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034970
 0x00034970,Core_UExporter,177,Core,Core,assert,,0,,,
-0x00034ab0,FUN_00034ab0,264,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034970
-0x00034bc0,FUN_00034bc0,18,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034c10
-0x00034be0,Exporter_vt11,43,(other named),Core,propagated,locality,1,2.00,1.000,0x00034c10
+0x00034ab0,FUN_00034ab0,264,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034be0
+0x00034bc0,FUN_00034bc0,18,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00034be0
+0x00034be0,Exporter_vt11,43,Core,Core,assert,,0,,,
 0x00034c10,Core_UExporter,807,Core,Core,assert,,0,,,
 0x00034f40,Core_UExporter,189,Core,Core,assert,,0,,,
 0x00035000,Core_UExporter,200,Core,Core,assert,,0,,,
@@ -829,51 +829,51 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00036900,FUN_00036900,39,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036930
 0x00036930,Core_UnTemplate,171,Core,Core,assert,,0,,,
 0x000369e0,Core_UnObjBas,131,Core,Core,assert,,0,,,
-0x00036a70,Factory_vt30,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036a80,Factory_vt31,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036a90,FUN_00036a90,33,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036ac0,FUN_00036ac0,131,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036b50,FUN_00036b50,19,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036b70,FUN_00036b70,10,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036b80,FUN_00036b80,66,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036bd0,?compare@?$char_traits@D@std@@SAHPBD0I@Z,28,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036c20,_memmove,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036c30,FUN_00036c30,43,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036c60,FUN_00036c60,37,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036c90,FUN_00036c90,29,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036cb0,thunk__wcslen,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036cc0,_wcsstr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036cd0,_wcschr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036ce0,_wcscat,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036cf0,_wcscmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d00,__wcsicmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d10,thunk__wcscpy,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d20,thunk___wcsupr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d30,__wtol,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d50,FUN_00036d50,49,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036d90,__wtof,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036da0,_wcstoul,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036db0,_wcsncmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036dc0,__wcsnicmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036e20,_qsort,5,(other named),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036e30,FUN_00036e30,217,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036f10,FUN_00036f10,57,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036f50,FUN_00036f50,141,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00036fe0,FUN_00036fe0,52,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00037020,FUN_00037020,23,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00037040,FUN_00037040,23,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00037080,FUN_00037080,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x000370b0,FUN_000370b0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x000370e0,FUN_000370e0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00037110,FUN_00037110,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00037170,FUN_00037170,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x000371a0,FUN_000371a0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x000371d0,FUN_000371d0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x000369e0
-0x00037200,FUN_00037200,10,(unnamed),(unnamed),none,,,,,
-0x00037210,FUN_00037210,4,(unnamed),(unnamed),none,,,,,
-0x00037220,FUN_00037220,8,(unnamed),(unnamed),none,,,,,
-0x00037230,FUN_00037230,31,(unnamed),(unnamed),none,,,,,
-0x00037250,FUN_00037250,24,(unnamed),(unnamed),none,,,,,
+0x00036a70,Factory_vt30,5,Core,Core,assert,,0,,,
+0x00036a80,Factory_vt31,5,Core,Core,assert,,0,,,
+0x00036a90,FUN_00036a90,33,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036ac0,FUN_00036ac0,131,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036b50,FUN_00036b50,19,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036b70,FUN_00036b70,10,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036b80,FUN_00036b80,66,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036bd0,?compare@?$char_traits@D@std@@SAHPBD0I@Z,28,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036c20,_memmove,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036c30,FUN_00036c30,43,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036c60,FUN_00036c60,37,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036c90,FUN_00036c90,29,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036cb0,thunk__wcslen,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036cc0,_wcsstr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036cd0,_wcschr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036ce0,_wcscat,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036cf0,_wcscmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036d00,__wcsicmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036d10,thunk__wcscpy,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036d20,thunk___wcsupr,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036d30,__wtol,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036d50,FUN_00036d50,49,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036d90,__wtof,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036da0,_wcstoul,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036db0,_wcsncmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036dc0,__wcsnicmp,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036e20,_qsort,5,(other named),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036e30,FUN_00036e30,217,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036f10,FUN_00036f10,57,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036f50,FUN_00036f50,141,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00036fe0,FUN_00036fe0,52,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037020,FUN_00037020,23,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037040,FUN_00037040,23,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037080,FUN_00037080,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x000370b0,FUN_000370b0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x000370e0,FUN_000370e0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037110,FUN_00037110,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037170,FUN_00037170,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x000371a0,FUN_000371a0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x000371d0,FUN_000371d0,48,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037200,FUN_00037200,10,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037210,FUN_00037210,4,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037220,FUN_00037220,8,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037230,FUN_00037230,31,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
+0x00037250,FUN_00037250,24,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00036a80
 0x000372b0,FUN_000372b0,10,(unnamed),(unnamed),none,,,,,
 0x000372c0,FUN_000372c0,4,(unnamed),(unnamed),none,,,,,
 0x000372d0,FUN_000372d0,4,(unnamed),(unnamed),none,,,,,
@@ -1831,9 +1831,9 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00077780,StrProperty_vt41,28,Core,Core,assert,,0,,,
 0x000777a0,FUN_000777a0,9,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077780
 0x000777b0,FUN_000777b0,53,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077780
-0x000777f0,FUN_000777f0,7,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077780
-0x00077800,FUN_00077800,72,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077860
-0x00077850,Property_vt36,3,(other named),Core,propagated,locality,1,2.00,1.000,0x00077860
+0x000777f0,FUN_000777f0,7,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077850
+0x00077800,FUN_00077800,72,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077850
+0x00077850,Property_vt36,3,Core,Core,assert,,0,,,
 0x00077860,Core_UnProp,183,Core,Core,assert,,0,,,
 0x00077920,FUN_00077920,264,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00077860
 0x00077a30,ByteProperty_vt45,15,Core,Core,assert,,0,,,
@@ -3780,10 +3780,10 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x000fd8f0,Engine_UnCamMgr,183,Engine,Engine,assert,,0,,,
 0x000fd9b0,FUN_000fd9b0,35,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
 0x000fd9e0,FUN_000fd9e0,1068,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
-0x000fde10,Client_vt11,32,(other named),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
-0x000fde30,FUN_000fde30,46,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
-0x000fde60,FUN_000fde60,228,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fd8f0
-0x000fdf50,FUN_000fdf50,1276,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fe480
+0x000fde10,Client_vt11,32,Engine,Engine,assert,,0,,,
+0x000fde30,FUN_000fde30,46,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fde10
+0x000fde60,FUN_000fde60,228,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fde10
+0x000fdf50,FUN_000fdf50,1276,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fde10
 0x000fe450,FUN_000fe450,39,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x000fe480
 0x000fe480,Canvas_vt34,256,Engine,Engine,assert,,0,,,
 0x000fe580,Canvas_vt33,236,Engine,Engine,assert,,0,,,
@@ -3955,7 +3955,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0010d570,FUN_0010d570,78,(unnamed),Engine,propagated,locality,1,1.00,0.500,0x0010d500
 0x0010d5c0,PackageMapLevel_member_0x28_vt0,30,(other named),IpDrv,propagated,locality,1,1.00,0.500,0x0010d5e0
 0x0010d5e0,TcpipConnection_vt39,60,IpDrv,IpDrv,assert,,0,,,
-0x0010d620,NetConnection_vt30,3,(other named),Engine,propagated,locality,1,1.00,0.500,0x0010d630
+0x0010d620,NetConnection_vt30,3,Engine,Engine,assert,,0,,,
 0x0010d630,Engine_UnConn,183,Engine,Engine,assert,,0,,,
 0x0010d6f0,FUN_0010d6f0,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0010d630
 0x0010d800,Engine_UnConn,174,Engine,Engine,assert,,0,,,
@@ -4176,30 +4176,30 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0011d5e0,Engine_UnDemoRec,183,Engine,Engine,assert,,0,,,
 0x0011d6a0,DemoRecDriver_vt34,883,Engine,Engine,assert,,0,,,
 0x0011da20,Engine_UnDemoRec,2436,Engine,Engine,assert,,0,,,
-0x0011e3b0,FUN_0011e3b0,174,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e460,FUN_0011e460,174,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e510,ctor_DemoRecConnection,32,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e530,FUN_0011e530,33,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e560,dtor_DemoRecConnection,93,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e5c0,FUN_0011e5c0,33,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e5f0,dtor_DemoRecDriver,134,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e6a0,FUN_0011e6a0,75,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e6f0,FUN_0011e6f0,30,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e710,FUN_0011e710,31,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e730,Download_vt34,23,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e750,FUN_0011e750,82,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
-0x0011e7b0,FUN_0011e7b0,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
+0x0011e3b0,FUN_0011e3b0,174,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e460,FUN_0011e460,174,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e510,ctor_DemoRecConnection,32,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e530,FUN_0011e530,33,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e560,dtor_DemoRecConnection,93,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e5c0,FUN_0011e5c0,33,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e5f0,dtor_DemoRecDriver,134,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e6a0,FUN_0011e6a0,75,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e6f0,FUN_0011e6f0,30,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e710,FUN_0011e710,31,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e730,Download_vt34,23,Engine,Engine,assert,,0,,,
+0x0011e750,FUN_0011e750,82,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
+0x0011e7b0,FUN_0011e7b0,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e730
 0x0011e8c0,FUN_0011e8c0,44,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e8f0,ChannelDownload_vt10,31,Engine,Engine,assert,,0,,,
 0x0011e910,FUN_0011e910,25,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e8f0
 0x0011e930,FUN_0011e930,45,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011e960
 0x0011e960,Engine_UnDownload,183,Engine,Engine,assert,,0,,,
-0x0011ea30,Download_vt32,605,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011e960
+0x0011ea30,Download_vt32,605,Engine,Engine,assert,,0,,,
 0x0011ec90,FUN_0011ec90,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011eda0
 0x0011eda0,ChannelDownload_vt30,255,Engine,Engine,assert,,0,,,
 0x0011eea0,Engine_UnDownload,372,Engine,Engine,assert,,0,,,
 0x0011f020,Engine_UnDownload,183,Engine,Engine,assert,,0,,,
-0x0011f0e0,Download_vt35,1499,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011f020
+0x0011f0e0,Download_vt35,1499,Engine,Engine,assert,,0,,,
 0x0011f6c0,FUN_0011f6c0,92,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011f980
 0x0011f720,FUN_0011f720,33,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0011f980
 0x0011f750,ctor_ChannelDownload,29,(other named),Engine,propagated,locality,1,2.00,1.000,0x0011f980
@@ -5517,12 +5517,12 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001a5070,FUN_001a5070,213,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001a5160
 0x001a5160,Engine_UnPenLev,180,Engine,Engine,assert,,0,,,
 0x001a5220,FUN_001a5220,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001a5160
-0x001a5330,PendingLevel_vt33,46,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
-0x001a5360,NetPendingLevel_member_0x28_vt0,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
-0x001a5370,NetPendingLevel_member_0x28_vt1,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
-0x001a5380,NetPendingLevel_member_0x28_vt2,5,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
-0x001a5390,NetPendingLevel_member_0x28_vt3,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
-0x001a53a0,NetPendingLevel_member_0x28_vt5,42,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5460
+0x001a5330,PendingLevel_vt33,46,Engine,Engine,assert,,0,,,
+0x001a5360,NetPendingLevel_member_0x28_vt0,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5330
+0x001a5370,NetPendingLevel_member_0x28_vt1,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5330
+0x001a5380,NetPendingLevel_member_0x28_vt2,5,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5330
+0x001a5390,NetPendingLevel_member_0x28_vt3,3,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5330
+0x001a53a0,NetPendingLevel_member_0x28_vt5,42,(other named),Engine,propagated,locality,1,2.00,1.000,0x001a5330
 0x001a53d0,FUN_001a53d0,51,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001a5460
 0x001a5410,FUN_001a5410,79,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001a5460
 0x001a5460,Engine_UnPenLev,186,Engine,Engine,assert,,0,,,
@@ -6157,9 +6157,9 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x001eaf40,Engine_UnRenderResource,177,Engine,Engine,assert,,0,,,
 0x001eb000,FUN_001eb000,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eaf40
 0x001eb110,Engine_UnRenderResource,177,Engine,Engine,assert,,0,,,
-0x001eb1d0,RenderResource_vt11,32,(other named),Engine,propagated,locality,1,2.00,1.000,0x001eb110
-0x001eb1f0,FUN_001eb1f0,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb110
-0x001eb300,FUN_001eb300,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb110
+0x001eb1d0,RenderResource_vt11,32,Engine,Engine,assert,,0,,,
+0x001eb1f0,FUN_001eb1f0,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb1d0
+0x001eb300,FUN_001eb300,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb1d0
 0x001eb410,FUN_001eb410,264,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001eb520
 0x001eb520,Engine_UnRenderResource,61,Engine,Engine,assert,,0,,,
 0x001eb560,Engine_UnRenderResource,131,Engine,Engine,assert,,0,,,
@@ -9662,6 +9662,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0033224b,?DestroyFeedbackScreen@CVoiceMailScreen@UIXNamespace@@QAEXXZ,24,(other named),(other named),none,,,,,
 0x00332263,?FinishedRecording@CVoiceMailScreen@UIXNamespace@@IAEXKK@Z,96,(other named),(other named),none,,,,,
 0x00332343,?MicrophoneRawDataReady@CVoiceMailPseudoFeature@UIXNamespace@@UAGJKKPAXPAH@Z,31,(other named),(other named),none,,,,,
+0x00332362,CVoiceMailPseudoFeature_member_0x8_vt4,25,(other named),(other named),none,,,,,
 0x0033237b,?CreateTask@CTask@UIXNamespace@@QAEXPAUXONLINETASK_HANDLE__@@K@Z,32,(other named),(other named),none,,,,,
 0x0033239b,?DestroyTask@CTask@UIXNamespace@@QAEXXZ,24,(other named),(other named),none,,,,,
 0x003323b3,?Pump@CTask@UIXNamespace@@QAEJXZ,38,(other named),(other named),none,,,,,
@@ -9679,6 +9680,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00332b72,FUN_00332b72,75,(unnamed),(unnamed),none,,,,,
 0x00332bbd,FUN_00332bbd,225,(unnamed),(unnamed),none,,,,,
 0x00332c9e,?SetVoiceMailPlayScreenData@CVoiceMailPseudoFeature@UIXNamespace@@UAEJKKKPAE@Z,97,(other named),(other named),none,,,,,
+0x00332d12,CVoiceMailPseudoFeature_member_0x8_vt1,56,(other named),(other named),none,,,,,
+0x00332d4a,CVoiceMailPseudoFeature_member_0x8_vt5,17,(other named),(other named),none,,,,,
 0x00332d5b,??0CVoiceMailPseudoFeature@UIXNamespace@@QAE@XZ,55,(other named),(other named),none,,,,,
 0x00332d92,?SetVoiceMailEngine@CVoiceMailPseudoFeature@UIXNamespace@@UAEXPAX@Z,41,(other named),(other named),none,,,,,
 0x00332dcd,?DestroyFeature@CVoiceMailPseudoFeature@UIXNamespace@@UAGXXZ,33,(other named),(other named),none,,,,,
@@ -9689,6 +9692,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00332f37,FUN_00332f37,28,(unnamed),(unnamed),none,,,,,
 0x00332f53,?HibernateFeature@CPlayersFeature@UIXNamespace@@UAGXXZ,41,(other named),(other named),none,,,,,
 0x00332f7c,FUN_00332f7c,20,(unnamed),(unnamed),none,,,,,
+0x00332fb9,CPlayersFeature_member_0x8_vt2,16,(other named),(other named),none,,,,,
 0x00332fc9,?VoiceMailDataReady@CPlayersScreen@UIXNamespace@@QAEXPAU_UIX_VOICE_MAIL_INFO@@@Z,56,(other named),(other named),none,,,,,
 0x00333001,?SetSelectedPlayer@CPlayersScreen@UIXNamespace@@IAEXHK@Z,110,(other named),(other named),none,,,,,
 0x0033306f,?StartPlayerFeedbackScreen@CPlayersScreen@UIXNamespace@@IAEXXZ,166,(other named),(other named),none,,,,,
@@ -9696,6 +9700,8 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00333139,??0CPlayersContextScreen@CPlayersScreen@UIXNamespace@@QAE@K@Z,24,(other named),(other named),none,,,,,
 0x003331dd,??_GCVoiceMailMsg@UIXNamespace@@QAEPAXI@Z,40,(other named),(other named),none,,,,,
 0x00333205,?ReceiveMessage@CPlayersFeature@UIXNamespace@@UAGJKPBXPAXPAUIUIXFeature@@@Z,155,(other named),(other named),none,,,,,
+0x003332a0,CPlayersFeature_member_0x8_vt3,29,(other named),(other named),none,,,,,
+0x003332bd,CPlayersFeature_member_0x8_vt4,19,(other named),(other named),none,,,,,
 0x003332d0,?AddCurrentPlayer@CPlayersFeature@UIXNamespace@@IAEJPBUITitlePlayersListItem@@@Z,165,(other named),(other named),none,,,,,
 0x00333375,?RemoveCurrentPlayer@CPlayersFeature@UIXNamespace@@IAEJPBUITitlePlayersListItem@@@Z,150,(other named),(other named),none,,,,,
 0x0033340b,?AddDepartedPlayer@CPlayersFeature@UIXNamespace@@IAEJPBUITitlePlayersListItem@@@Z,231,(other named),(other named),none,,,,,

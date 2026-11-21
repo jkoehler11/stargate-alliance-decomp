@@ -102,6 +102,51 @@ def load_symbols(path):
     return names, sizes
 
 
+CTOR_FORMS = ("??0", "??1", "??_G", "??_E")
+
+
+def mangled_class(symbol):
+    """The class an MSVC mangled constructor or destructor belongs to, or ''.
+
+    `??0CVoiceMailPseudoFeature@UIXNamespace@@QAE@XZ` is a constructor and
+    `??1CVoiceMailPseudoFeature@UIXNamespace@@UAE@XZ` a destructor; both name the class outright, which
+    is the one channel a C++ class has in this image -- `inventory/class_constructors.csv` is the
+    UnrealScript roster and a UIX/XMO class is in no package. A template (`??$`) carries no class token
+    this reader trusts and a `FUN_` body has none.
+    """
+    if not symbol or not symbol.startswith(CTOR_FORMS):
+        return ""
+    prefix = 4 if symbol.startswith(("??_G", "??_E")) else 3
+    parts = symbol[prefix:].split("@@")[0].split("@")
+    return parts[0] if parts and parts[0] else ""
+
+
+def cpp_ctors(path, forms=None):
+    """{body_va: class} for the image's C++ constructor and destructor bodies.
+
+    A store into `[this+off]` from a class's own constructor installs that class's member, so the body's
+    own symbol is a class name -- the channel the 3 member tables the label pass refused needed.
+    """
+    out = {}
+    for row in read_csv(path):
+        sym = row.get("name") or ""
+        cls = mangled_class(sym)
+        if not cls:
+            continue
+        form = "ctor" if sym.startswith("??0") else "dtor"
+        out[int(row["address"], 16)] = (cls, form, sym)
+    return out
+
+
+def cpp_ctor_map(path, forms=None):
+    """`load_ctors`' own shape for the C++ bodies: {va: {classes, forms}}."""
+    out = collections.defaultdict(lambda: {"classes": set(), "forms": set()})
+    for va, (cls, form, _sym) in cpp_ctors(path).items():
+        out[va]["classes"].add(cls)
+        out[va]["forms"].add(form)
+    return out
+
+
 def load_ctors(path):
     """{body_va: {"classes": set, "forms": set}} for every body that installs a class table."""
     out = collections.defaultdict(lambda: {"classes": set(), "forms": set()})
@@ -646,7 +691,11 @@ def main():
     img = names_mod.Image()
     img.xbe, img.data = image, image.data
     img.size_of = lambda va: sizes.get(va)
-    rows_a = harvest_installers(plain, prov, load_ctors(CTORS), bodies, calls, shapes, fams,
+    ctors = load_ctors(CTORS)
+    for va, rec in cpp_ctor_map(SYMBOLS).items():
+        ctors[va]["classes"] |= rec["classes"]
+        ctors[va]["forms"] |= rec["forms"]
+    rows_a = harvest_installers(plain, prov, ctors, bodies, calls, shapes, fams,
                                 img.disasm, sizes)
     rows_b = harvest_slots(fam_rows, bodies, names, sizes, gap_heads(HEADS), image, literals)
     if args.out:

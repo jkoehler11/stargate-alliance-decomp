@@ -1,5 +1,5 @@
 table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df,named_by_class
-0x004c78c0,,31,3,UnObj:3,,UnObj,3,492,no
+0x004c78c0,Subsystem,31,3,UnObj:3,,UnObj,3,492,no
 0x004c7958,Material,46,2,UnObj:2,,UnObj,2,492,no
 0x004c7a10,RenderedMaterial,46,2,UnObj:2,,UnObj,2,492,no
 0x004c7ac8,BitmapMaterial,48,2,UnObj:2,,UnObj,2,492,no
@@ -22,7 +22,7 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x004c9270,SubActionDepthOfField,33,3,UnObj:3,,UnObj,3,492,no
 0x004c9348,,31,2,UnObj:2,,UnObj,2,492,no
 0x004c93d0,Viewport,56,6,UnCamera:4 UnObj:2,UnCamera:4,UnCamera,4,2,no
-0x004c94b0,,43,2,UnObj:2,,UnObj,2,492,no
+0x004c94b0,Client,43,2,UnObj:2,,UnObj,2,492,no
 0x004c9560,XboxClient,43,2,UnObj:2,,UnObj,2,492,no
 0x004c9618,XboxViewport,57,8,UnCamera:4 UnObj:2 XboxViewport:2,XboxViewport:2 UnCamera:4,UnCamera,4,2,yes
 0x004c9c60,Actor,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,yes
@@ -92,19 +92,19 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x004d0950,UnrealPlayer,134,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
 0x004d0b68,StargatePlayer,134,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
 0x004d1468,,35,1,UnObj:1,,UnObj,1,492,no
-0x004d17a8,,53,1,UnObj:1,,UnObj,1,492,no
+0x004d17a8,Property,53,1,UnObj:1,,UnObj,1,492,no
 0x004d1880,IntProperty,53,1,UnObj:1,,UnObj,1,492,no
 0x004d1958,BoolProperty,53,1,UnObj:1,,UnObj,1,492,no
 0x004d1a30,FloatProperty,53,1,UnObj:1,,UnObj,1,492,no
 0x004d1f88,AudioSubsystem,54,4,UnObj:3 UnAudio:1,UnAudio:1,UnObj,3,492,no
 0x004d21f8,XBoxAudioSubsystem,54,9,XboxAudioSubsystem:3 UnObj:2 CreateDevice:1 SetNextStream:1 SetSoundDevice:1 UnTemplate:1,XboxAudioSubsystem:3 CreateDevice:1 SetNextStream:1 SetSoundDevice:1,XboxAudioSubsystem,3,1,yes
-0x004d2400,,37,3,UnObj:3,,UnObj,3,492,no
+0x004d2400,VoiceSubsystem,37,3,UnObj:3,,UnObj,3,492,no
 0x004d2ad8,XHVVoiceSubsystem,37,3,UnObj:3,,UnObj,3,492,no
 0x004d32a0,StrProperty,53,1,UnObj:1,,UnObj,1,492,no
 0x004d3378,ArrayProperty,53,2,UnObj:1 UnProp:1,UnProp:1,UnProp,1,5,no
-0x004d34d8,,32,2,UnObj:2,,UnObj,2,492,no
+0x004d34d8,Exporter,32,2,UnObj:2,,UnObj,2,492,no
 0x004d3828,ObjectExporterT3D,32,2,UnObj:2,,UnObj,2,492,no
-0x004d3af0,,33,2,UnObj:2,,UnObj,2,492,no
+0x004d3af0,Factory,33,2,UnObj:2,,UnObj,2,492,no
 0x004d4418,Struct,42,5,UnClass:4 UnObj:1,,UnClass,4,175,no
 0x004d44c8,Function,42,4,UnClass:3 UnObj:1,,UnClass,3,175,no
 0x004d4570,State,42,3,UnClass:2 UnObj:1,,UnClass,2,175,no
@@ -153,7 +153,7 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x004e8090,KarmaParamsSkel,30,3,UnObj:3,,UnObj,3,492,no
 0x004e8108,KarmaParamsRBFull,30,3,UnObj:3,,UnObj,3,492,no
 0x004e8440,KMeshProps,30,2,UnObj:2,,UnObj,2,492,no
-0x004eaea8,,47,3,UnObj:3,,UnObj,3,492,no
+0x004eaea8,RenderDevice,47,3,UnObj:3,,UnObj,3,492,no
 0x004eb0a8,NullRenderDevice,48,3,UnObj:3,,UnObj,3,492,no
 0x004eb2b0,TextureEditable,58,4,UnObj:2 UnTex:2,,UnTex,2,11,no
 0x004eb420,ExportCacheCommandlet,31,4,UnObj:3 UExportCacheCommandlet:1,UExportCacheCommandlet:1,UnObj,3,492,yes
@@ -258,13 +258,13 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x004fc1b0,Primitive,39,2,UnObj:2,,UnObj,2,492,no
 0x004fc250,ConvexVolume,39,2,UnObj:2,,UnObj,2,492,no
 0x004fc4f0,,30,2,UnObj:2,,UnObj,2,492,no
-0x004fc588,,34,2,UnObj:2,,UnObj,2,492,no
+0x004fc588,PendingLevel,34,2,UnObj:2,,UnObj,2,492,no
 0x004fc630,DemoPlayPendingLevel,34,3,UnObj:2 UnDemoPenLev:1,UnDemoPenLev:1,UnObj,2,492,no
 0x004fcc18,DemoRecConnection,42,4,UnConn:2 UnObj:2,UnConn:2,UnConn,2,4,no
 0x004fccc8,DemoRecDriver,40,4,UnObj:2 UnDemoRec:1 UnNetDrv:1,UnDemoRec:1 UnNetDrv:1,UnObj,2,492,no
-0x004fcfe0,,36,2,UnObj:2,,UnObj,2,492,no
+0x004fcfe0,Download,36,2,UnObj:2,,UnObj,2,492,no
 0x004fd070,ChannelDownload,36,3,UnObj:2 UnDownload:1,UnDownload:1,UnObj,2,492,no
-0x005040d0,Engine,56,2,UnObj:2,,UnObj,2,492,no
+0x005040d0,Engine,56,9,UnObj:2 vt34:1 vt35:1 vt36:1 vt37:1 vt45:1 vt46:1 vt47:1,vt45:1 vt46:1 vt47:1 vt34:1 vt35:1 vt36:1 vt37:1,UnObj,2,492,no
 0x00504560,ServerCommandlet,31,3,UnObj:3,,UnObj,3,492,no
 0x005045e0,UModUnpackCommandlet,31,3,UnObj:3,,UnObj,3,492,no
 0x00504660,MasterMD5Commandlet,31,3,UnObj:3,,UnObj,3,492,no
@@ -276,7 +276,7 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x005085d8,Polys,30,2,UnObj:2,,UnObj,2,492,no
 0x00509010,MaplistManagerBase,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
 0x00509200,PrecacheHack,123,8,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnActor:1 UnTemplate:1,,UnClass,2,175,no
-0x00509438,GameEngine,66,7,UnGame:4 UnObj:2 UnClass:1,UnGame:4,UnGame,4,1,no
+0x00509438,GameEngine,66,11,UnGame:4 UnObj:2 UnClass:1 vt34:1 vt35:1 vt36:1 vt37:1,UnGame:4 vt34:1 vt35:1 vt36:1 vt37:1,UnGame,4,1,no
 0x0050a808,CrosshairPack,30,3,UnObj:3,,UnObj,3,492,no
 0x0050c318,Input,45,6,UnIn:4 UnObj:2,UnIn:4,UnIn,4,1,no
 0x0050c808,Interactions,30,3,UnObj:3,,UnObj,3,492,no
@@ -361,8 +361,8 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x005169b0,ProjectorMaterial,46,2,UnObj:2,,UnObj,2,492,no
 0x00516ac8,ProjectorPrimitive,39,3,UnObj:2 UnProjector:1,UnProjector:1,UnObj,2,492,no
 0x00516be8,Projector,128,7,UnClass:2 UnObj:2 KPhysic:1 KScript:1 UnTemplate:1,,UnClass,2,175,no
-0x00517860,,30,2,UnObj:2,,UnObj,2,492,no
-0x005178d8,,32,2,UnObj:2,,UnObj,2,492,no
+0x00517860,RenderResource,30,2,UnObj:2,,UnObj,2,492,no
+0x005178d8,VertexStreamBase,32,2,UnObj:2,,UnObj,2,492,no
 0x00517a18,IndexBuffer,30,2,UnObj:2,,UnObj,2,492,no
 0x00517a90,VertexBuffer,32,2,UnObj:2,,UnObj,2,492,no
 0x00517b10,VertexStreamVECTOR,32,2,UnObj:2,,UnObj,2,492,no
