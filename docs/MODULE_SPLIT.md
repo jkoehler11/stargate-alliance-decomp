@@ -3,7 +3,7 @@
 Status: **measured end to end** — the import plus twelve exporter rounds decompile 6,147 of the 6,150 attributed
 functions in 262 s of rounds (2026-11-20; the first pass, 2026-11-10, ran the same twelve rounds in 266 s and
 268 s over a stale 6,063-address list set).
-Artifacts: `inventory/function_modules.csv` (14,973 rows), `inventory/module_export_plan.csv` (12 rows),
+Artifacts: `inventory/function_modules.csv` (16,374 rows), `inventory/module_export_plan.csv` (12 rows),
 `inventory/module_export_rounds.csv` (12 rounds, one per module).
 Tools: `tools/module-split.py` (`make module-split`, `make module-lists`; `--check` in `make ci`),
 `tools/ghidra/export-module.sh` (the pass driver).
@@ -14,7 +14,8 @@ PLAN 4.5 asks for the XBE split into per-module Ghidra projects "using the asser
 per *function*: `inventory/function_modules.csv` attributes each function by the `__FILE__` assert its own body
 carries (plus the evidence overrides), and `inventory/function_module_attribution.csv` adds the functions whose
 module came from address locality (89.9% on held-out asserts; 95.7% where both neighbours agree, `docs/MODULE_ATTRIBUTION.md`). The union is
-**6,150 of 14,973 functions (41.07%) in 12 modules**.
+**6,622 of 16,374 functions (40.44%) in 12 modules** (re-derived from the artifact 2026-11-20). The module count is
+unchanged at 12, so the growth is function splitting rather than new modules.
 
 Their addresses are nowhere near contiguous: the 12 modules' 6,150 functions occupy **5,909 contiguous runs**, a
 mean of **1.04 functions per run**, and `Core` is 3,221 functions in 3,109 runs across a 3.2 MB span. That is the
