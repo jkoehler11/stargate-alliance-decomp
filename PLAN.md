@@ -16348,3 +16348,45 @@ sequence.
 - **Not in this bundle.** The 56 mapped representatives' actual per-body reads (the artifact is the index
   they start from), the 44 shared gap heads' naming, the 26 gap-head representatives' add, and
   `class_plain_tables.csv`'s own extent rule.
+
+### Execution notes (2026-11-21, the interface tables read at their own extent, and a family the over-read hid)
+
+- **The block scan's extent is the class-tables rule without its terminal test, and the tail it keeps is a string.**
+  `inventory/native_vtable_reach.csv` counts a run of dwords inside `.text`'s *address range*; the interface tables
+  sit in `.rdata` in front of the build's wide-string pool, so a string's first two characters (`0x00330044` is `D3`)
+  is an aligned in-range dword and the run keeps counting. `tools/class-plain-tables.py` now measures its own extent
+  (`own_extent`: a wide-text dword, or a dword outside `.text`, ends the table) and carries `slots_run` and `stop`
+  beside `slots`, so every row has its before and after. **6 of the 232 interface tables end on such a dword and 8
+  dwords were counted past them: 2,519 slots, not 2,527** -- `0x004c8db8` 26->25 (`0x003a0044`), `0x0051ec98`
+  23->22 (`0x002e0030`), `0x00521ff8` 3->1, `0x00523008` 3->1 (both `0x00200020`), `0x0052352c` 16->15
+  (`0x00330044`), `0x0052d1a0` 23->22 (`0x00210021`).
+- **Control, measured on the class population:** the same terminal test already ends **12 of the 492 class tables on
+  a wide-string dword, 14 dwords in all** (`xbe_class_tables.csv`'s `surplus` column), and the scan's extents differ
+  from the class census on 8 of the 492 -- the tables its interior-install clip shortens. So the tail rule is the
+  census's own reading applied to the other population, not a new one.
+- **The correction was hiding an identity: one family merges and one representative read is not owed.** With the
+  string dword dropped, the two 23-slot tables are 22-slot vectors that agree with family `0x004c7860`'s, so **132
+  families become 131 and the owed representatives 89 -> 88**; family `0x004c7860` grows 31 -> 33 tables and **32 of
+  the 165 anonymous tables now sit in a family the census reads once** (was 30). The read list is **55 mapped + 26
+  gap-head + 7 default**, and the 88 representatives hold 915 slots (165 mapped over 142 bodies, 161 gap heads, 262
+  outside, 289 stubs, 38 purecalls).
+- **The two cross-index gap heads are named.** `tools/class-interface-behaviour.py`'s census row now carries
+  `gap_cross_heads`: `0x000bd360` sits at `0x004eaf68` slot 7 and at slot 20 of `0x0052d3e8`, `0x0052e0c8` and
+  `0x0052f1c0`; `0x000bd380` sits at `0x004eaf68` slots **6 and 20**, `0x0051a810` slot 20 and `0x0052ef14` slot 6.
+  One of them sits twice in one table, so the add that names it has to carry both indices.
+- **The 26 gap-head representatives still cannot be paid as an add.** The 88 representatives' gap slots are **161
+  over 150 distinct bodies, and 0 of the 150 has a row in `symbols/xbox_functions.csv`** -- the name a row could
+  carry is `<table>_vt<slot>` and the table has no name, so the route is U40's naming half, not an add.
+- **Files.** `tools/class-plain-tables.py` (the extent, its columns, the control sentence, six synthetic cases),
+  `tools/class-interface-behaviour.py` (the `gap_cross_heads` census field and its sentence), 
+  `tools/class-interface-installers.py` (the owed count read, not typed), the six regenerated interface artifacts
+  (`class_plain_tables`, `class_interface_shapes`, `class_interface_families`, `class_interface_tokens`,
+  `class_interface_behaviour`, `class_interface_installers`, `class_interface_rep_bodies`, `class_interface_twins`),
+  `docs/systems/CLASS_REGISTRATION.md` (six blocks and every prose sentence that quoted 89, 132 or 2,527),
+  `Makefile` (help line), this note.
+- **Gates.** `make ci` green; `--check` on the plain tables is synthetic (the wide-text end, the null end, a clean
+  run, the block-scan control) and writes nothing; `--check-doc` reproduces all six blocks from the committed CSVs
+  with no dump; the artifacts reproduce byte for byte on a second run.
+- **Not in this bundle.** An interface's own name (a class plus an offset names the field), the 26 gap-head
+  representatives' add (blocked on the table's name, as measured above), and `native_vtable_reach.csv`'s own eight
+  class-table extents -- the block scan's reading there is the control this change is quoted against.

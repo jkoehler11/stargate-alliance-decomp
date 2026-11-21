@@ -6,7 +6,7 @@ table_va,interface,slots,classed_slots,tokens,distinctive,top_token,top_df,in_cl
 0x004c8410,,22,0,,,,,,0x004c7860,no-token
 0x004c84d0,,22,0,,,,,,0x004c7860,no-token
 0x004c85b0,,25,0,,,,,,0x004c85b0,no-token
-0x004c8db8,,26,0,,,,,,0x004c8db8,no-token
+0x004c8db8,,25,0,,,,,,0x004c8db8,no-token
 0x004c9038,,22,0,,,,,,0x004c7860,no-token
 0x004c9338,,1,0,,,,,,0x004c9338,no-token
 0x004c933c,,2,0,,,,,,0x004c7854,no-token
@@ -147,7 +147,7 @@ table_va,interface,slots,classed_slots,tokens,distinctive,top_token,top_df,in_cl
 0x0051d80c,,9,0,,,,,,0x00510e90,no-token
 0x0051d830,,9,0,,,,,,0x005181a8,no-token
 0x0051d854,,2,0,,,,,,0x0051d854,no-token
-0x0051ec98,,23,0,,,,,,0x0051ec98,no-token
+0x0051ec98,,22,0,,,,,,0x004c7860,no-token
 0x0051f6d8,,5,0,,,,,,0x0051f6d8,no-token
 0x0051f6ec,,5,0,,,,,,0x00507c7c,no-token
 0x0051f700,,5,0,,,,,,0x00517238,no-token
@@ -158,11 +158,11 @@ table_va,interface,slots,classed_slots,tokens,distinctive,top_token,top_df,in_cl
 0x0052075c,,5,0,,,,,,0x0051f6d8,no-token
 0x005207a4,,9,0,,,,,,0x004e3520,no-token
 0x0052086c,,9,0,,,,,,0x004e3520,no-token
-0x00521ff8,,3,0,,,,,,0x00521ff8,no-token
-0x00523008,,3,0,,,,,,0x00523008,no-token
+0x00521ff8,,1,0,,,,,,0x00521ff8,no-token
+0x00523008,,1,0,,,,,,0x00523008,no-token
 0x00523340,,9,0,,,,,,0x00523340,no-token
 0x00523394,,9,0,,,,,,0x004e3520,no-token
-0x0052352c,,16,0,,,,,,0x0052352c,no-token
+0x0052352c,,15,0,,,,,,0x0052352c,no-token
 0x0052b45c,,1,0,,,,,,0x0052b45c,no-token
 0x0052bbf8,,65,3,D3DRenderInterface:3,D3DRenderInterface:3,D3DRenderInterface,1,,0x0052bbf8,token-only
 0x0052bdb8,,16,0,,,,,,0x0052bdb8,no-token
@@ -175,7 +175,7 @@ table_va,interface,slots,classed_slots,tokens,distinctive,top_token,top_df,in_cl
 0x0052c780,,5,0,,,,,,0x0052c498,no-token
 0x0052cc50,,22,0,,,,,,0x004c7860,no-token
 0x0052cefc,,7,0,,,,,,0x0052cefc,no-token
-0x0052d1a0,,23,0,,,,,,0x0051ec98,no-token
+0x0052d1a0,,22,0,,,,,,0x004c7860,no-token
 0x0052d3e8,,25,3,InternetLink:2 UnTemplate:1,InternetLink:2 UnTemplate:1,InternetLink,3,,0x0052d3e8,token-only
 0x0052d498,,22,0,,,,,,0x004c7860,no-token
 0x0052d528,,22,0,,,,,,0x004c7860,no-token

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Which class builds an interface object, and what the 89 representatives' slots hold.
+"""Which class builds an interface object, and what the owed representatives' slots hold.
 
 `tools/class-interface-behaviour.py` costed the per-body read the family census owed and read the
 two channels a slot carries (the assert file its map name holds, and what the body calls); neither
@@ -14,7 +14,7 @@ measured.
     stored *inside* a named class, which is the member-field channel read end to end. For the tables
     whose store body is not a constructor, the read goes one call out: which constructor bodies call
     the body that holds the store.
-  * **the 89 representatives, one slot at a time.** Every slot of the 89 owed families is classified
+  * **the owed representatives, one slot at a time.** Every slot of the owed families is classified
     (`__purecall`, a stub of 8 bytes or less, a body the map has a row for, a U40 gap head, a dword
     outside the map), and each mapped body is named, priced, called, and located -- including whether
     another representative holds the same body, which is the interface-identity question the twins
@@ -361,6 +361,7 @@ def harvest_slots(fams, bodies, names, sizes, heads, image, literals):
     kinds = collections.Counter(x["kind"] for x in out)
     distinct = {x["body_va"] for x in out if x["kind"] == "mapped"}
     shared = {x["body_va"] for x in out if x["shared_with"]}
+    reps_owed = len({x["rep_va"] for x in out})
     out.append({
         "rep_va": "census", "family": "", "slot": str(len(out)),
         "body_va": "", "body_name": "", "body_size": "",
@@ -368,7 +369,7 @@ def harvest_slots(fams, bodies, names, sizes, heads, image, literals):
         "literal_head": "",
         "shared_with": "%d distinct mapped body(ies); %d held by two or more representatives"
                        % (len(distinct), len(shared)),
-        "verdict": "the 89 owed representatives: %s" % ", ".join("%s %d" % kv for kv in sorted(kinds.items())),
+        "verdict": "the %d owed representatives: %s" % (reps_owed, ", ".join("%s %d" % kv for kv in sorted(kinds.items()))),
     })
     return out
 
@@ -382,7 +383,8 @@ def render_installers(rows, fams):
     body = [r for r in rows if r["table_va"] != "census"]
     owed = {f["rep_va"] for f in fams if (f.get("read_owed") or "") == "yes"}
     v = counts(body, "verdict")
-    lines = ["| verdict | tables | anonymous | of the 89 representatives | what it means |", "|---|---|---|---|---|"]
+    lines = ["| verdict | tables | anonymous | of the %d representatives | what it means |" % len(owed),
+             "|---|---|---|---|---|"]
     meaning = {
         "ctor-holder": "the store itself sits in a body that installs a class table",
         "ctor-caller": "the store body is called by a body that installs a class table, and a ctor is one",

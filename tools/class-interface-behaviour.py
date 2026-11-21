@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """What the 232 interface tables' slot bodies are: their own file, their literals, and what they call.
 
-`tools/class-interface-families.py` bounded the per-body read at **89 representative reads over 135
-tables** and left the question of what a read would find. `tools/class-interface-tokens.py` measured the
+`tools/class-interface-families.py` bounded the per-body read at **one representative per anonymous
+family** and left the question of what a read would find. `tools/class-interface-tokens.py` measured the
 first channel -- the assert file a slot body's own map name carries -- and found it on 25 of the 232
-tables (45 of 2,527 slots), so the representatives stayed owed. This tool reads the same population
+tables (45 of the population's slots), so the representatives stayed owed. This tool reads the same population
 three ways, because a read is only owed where there is a body to read:
 
   * **the body census**: every slot is `__purecall`, a stub of 8 bytes or less, a body the map has a row
@@ -59,7 +59,7 @@ DOC_END = "<!-- /generated:class-interface-behaviour -->"
 FIELDS = ("table_va", "slots", "role", "family", "purecall", "stubs", "real", "outside", "calls",
           "callees", "callee_files", "top_file", "callee_classes", "top_class", "callee_modules",
           "literals", "literal_head", "slot_token", "token_agree", "gap_slots", "gap_verdicts",
-          "verdict", "evidence")
+          "gap_cross_heads", "verdict", "evidence")
 STUB_BYTES = 8
 HEX = re.compile(r"^(0x)?[0-9a-fA-F]+$")
 SOURCE = re.compile(r"([A-Za-z0-9_]+\.(?:cpp|h))$")
@@ -248,6 +248,8 @@ def harvest(rows, slots_of, shapes, tokens, heads, names, sizes, modules, disasm
                             kinds["outside"], len(head_hits), calls, top_file or "-",
                             (lits[0][:40] if lits else "-"), slot_token or "-")),
         })
+    cross = sorted((h, sorted(set(v))) for h, v in seen_heads.items()
+                   if len({x[0] for x in v}) > 1 and len({x[1] for x in v}) > 1)
     census = {k: "" for k in FIELDS}
     census.update({
         "table_va": "census",
@@ -266,6 +268,8 @@ def harvest(rows, slots_of, shapes, tokens, heads, names, sizes, modules, disasm
                                if len({x[0] for x in t}) > 1 and len({x[1] for x in t}) == 1),
                            sum(1 for t in seen_heads.values()
                                if len({x[0] for x in t}) > 1 and len({x[1] for x in t}) > 1)),
+        "gap_cross_heads": " ".join(
+            "%#010x=%s" % (h, ",".join("%#010x@%d" % (t, sl) for t, sl in v)) for h, v in cross),
         "verdict": "census",
         "evidence": "the 232 interface tables: %d gap-head slot(s) over %d distinct bodies"
                     % (sum(int(r["gap_slots"]) for r in out), len(seen_heads)),
@@ -275,7 +279,7 @@ def harvest(rows, slots_of, shapes, tokens, heads, names, sizes, modules, disasm
 
 
 def family_rows(fams, by_va):
-    """The 89 owed representatives, with the census row for each."""
+    """The owed representatives, with the census row for each."""
     out = []
     for f in fams:
         if (f.get("read_owed") or "") != "yes":
@@ -316,6 +320,7 @@ def summary(rows, fams):
         "gap_shared": counted(census.get("gap_verdicts"), "shared"),
         "gap_same": counted(census.get("gap_verdicts"), "same-index"),
         "gap_cross": counted(census.get("gap_verdicts"), "cross-index"),
+        "gap_cross_heads": census.get("gap_cross_heads", ""),
         "gap_tables": sum(1 for r in rows if int(r["gap_slots"])),
         "reps": len(reps),
         "rep_cats": rep_cats,
@@ -348,7 +353,18 @@ def render(rows, fams):
                     s["gap_bodies"], s["gap_single"], s["gap_bodies"], s["gap_shared"],
                     s["gap_same"], s["gap_cross"]))
     lines.append("")
-    lines.append("| the 89 representatives | families |")
+    if s["gap_cross_heads"]:
+        parts = []
+        for item in s["gap_cross_heads"].split():
+            head, _, held = item.partition("=")
+            parts.append("`%s` at %s" % (head, " and ".join(
+                "`%s` slot %s" % (t.split("@")[0], t.split("@")[1]) for t in held.split(","))))
+        lines.append("**The %d cross-index head%s %s** -- one body two tables place at different "
+                     "slots, which is an interface implemented at a different offset rather than two "
+                     "interfaces, so the row that names it has to carry both indices."
+                     % (s["gap_cross"], "" if s["gap_cross"] == 1 else "s", "; ".join(parts)))
+        lines.append("")
+    lines.append("| the %d representatives | families |" % s["reps"])
     lines.append("|---|---|")
     for v in VERDICTS:
         if s["rep_cats"][v]:
@@ -446,7 +462,8 @@ def self_check():
                      "callee_classes": "", "top_class": "", "callee_modules": "Core:1",
                      "literals": "1", "literal_head": "no body", "slot_token": "UnChan",
                      "token_agree": "yes", "gap_slots": "1" if verdict == "unmapped-only" else "0",
-                     "gap_verdicts": "body:1", "verdict": verdict, "evidence": ""})
+                     "gap_verdicts": "body:1", "gap_cross_heads": "", "verdict": verdict,
+                     "evidence": ""})
     fams = [{"read_owed": "yes", "rep_va": r["table_va"]} for r in rows]
     out = render(rows, fams)
     for want in ("callee-file", "assert-only", "unmapped-only", "no-body", "representative"):

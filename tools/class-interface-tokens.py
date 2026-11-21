@@ -3,8 +3,8 @@
 
 `tools/class-table-names.py`'s `slot-file-token` rule names four of the 18 unnamed class tables from the
 assert file their slot bodies inline, because the symbol map names an unnamed body `<Module>_<File>` after
-the assert path it inlines. The interfaces are the population that owes the next read -- 89 family
-representatives over 135 tables -- so the first question is whether that channel reaches them at all, and
+the assert path it inlines. The interfaces are the population that owes the next read -- one family
+representative per anonymous family -- so the first question is whether that channel reaches them at all, and
 this tool answers it by running the same tally over `inventory/class_plain_tables.csv`'s 232 interface
 tables instead of the 492 class tables.
 
@@ -227,7 +227,7 @@ def render(rows):
                  "whose names are MSVC-mangled rather than `<Module>_<File>`, so the vote is %d of %d "
                  "slots; %d of the %d tables that do carry a token carry only tokens a *class* table "
                  "already has, i.e. a slot inherited from an engine base class rather than a slot that "
-                 "describes the interface. So the 89 representative reads cannot be paid for with this "
+                 "describes the interface. So the representative reads cannot be paid for with this "
                  "channel, and an interface's name has to come from its slots' behaviour or from a member "
                  "field that holds it."
                  % (s["classed_slots"], slots,

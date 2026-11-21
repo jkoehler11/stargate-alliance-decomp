@@ -47,14 +47,15 @@ REACH = os.path.join(ROOT, "inventory", "native_vtable_reach.csv")
 SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 PARENTS = os.path.join(ROOT, "inventory", "class_table_parent_edges.csv")
 CLASS_SLOTS = os.path.join(ROOT, "inventory", "xbe_class_table_slots.csv")
+CLASS_TABLES = os.path.join(ROOT, "inventory", "xbe_class_tables.csv")
 MEMBERS = os.path.join(ROOT, "inventory", "class_member_tables.csv")
 SRC = os.path.join(ROOT, "inventory", "class_plain_tables.csv")
 DOC_START = "<!-- generated:class-plain-tables -->"
 DOC_END = "<!-- /generated:class-plain-tables -->"
-FIELDS = ("table_va", "slots", "population", "store", "signature", "slot0", "purecall", "stubs",
-          "named_slots", "fun_slots", "outside_map", "vocab_class", "vocab_slots", "vocab_classed",
-          "vocab_share", "installer_classes", "installer_agree", "children", "child_named",
-          "child_classes", "verdict", "evidence")
+FIELDS = ("table_va", "slots", "slots_run", "stop", "population", "store", "signature", "slot0",
+          "purecall", "stubs", "named_slots", "fun_slots", "outside_map", "vocab_class",
+          "vocab_slots", "vocab_classed", "vocab_share", "installer_classes", "installer_agree",
+          "children", "child_named", "child_classes", "verdict", "evidence")
 PREFIX = (0x00062650, 0x00062660, 0x00062670)
 STUB_BYTES = 8
 HEX = re.compile(r"^(0x)?[0-9a-fA-F]+$")
@@ -82,6 +83,35 @@ def key(text):
 
 def read_u32(image, va):
     return struct.unpack("<I", image.read_va(va, 4))[0]
+
+
+def wide_text(v):
+    """Two printable UTF-16 characters -- a wide string's first half, not a code pointer."""
+    lo, hi = v & 0xFFFF, (v >> 16) & 0xFFFF
+    return 0x20 <= lo <= 0x7E and 0x20 <= hi <= 0x7E
+
+
+def own_extent(read, table_va, run_slots, text_range):
+    """(slots, stop) under the tables' own tail rule: the run ends at the first dword that is not
+    inside `.text`, or that spells two printable UTF-16 characters.
+
+    `inventory/native_vtable_reach.csv`'s extent is the block scan's -- every dword inside
+    `.text`'s *address range* -- and `.rdata` holds these tables in front of the build's wide-string
+    pool, so a string's first two characters (`0x00330044`, `D3`) are an in-range aligned dword and
+    the run keeps counting. `tools/class-tables.py`'s class census already ends a table on that
+    dword; this is the same rule without its body-start gate, which cannot apply here because an
+    interface's bodies are the XDK libraries' and the function map covers `.rdata` 0.000.
+    """
+    n = 0
+    while n < run_slots:
+        try:
+            v = read(table_va + 4 * n)
+        except KeyError:
+            return n, None
+        if not (text_range[0] <= v < text_range[1]) or wide_text(v):
+            return n, v
+        n += 1
+    return n, None
 
 
 def slot_vector(image, table_va, count):
@@ -173,12 +203,15 @@ def verdict_of(signature, vocab, classed, slots, children):
 
 
 # --------------------------------------------------------------------------- rows
-def harvest(tables, names, sizes, installers, pop_of, form_of, parents):
+def harvest(tables, names, sizes, installers, pop_of, form_of, parents, runs=None):
     """`tables` is {table_va: slots}; `installers` is {table_va: [symbol names]}; `parents` is
-    {parent_va: [child class]}."""
+    {parent_va: [child class]}; `runs` is {table_va: (block-scan slots, the dword that ended it)},
+    so every row carries the extent it was read at beside the run the scan declared."""
+    runs = runs or {}
     rows = []
     for tva in sorted(tables):
         vector = tables[tva]
+        run_slots, stop = runs.get(tva, (len(vector), None))
         kinds = collections.Counter(body_kind(va, names, sizes) for va in vector)
         vocab, classed = vocabulary(vector, names)
         top, top_n = (max(vocab.items(), key=lambda kv: kv[1]) if vocab else ("", 0))
@@ -194,6 +227,8 @@ def harvest(tables, names, sizes, installers, pop_of, form_of, parents):
         row = {
             "table_va": "%#010x" % tva,
             "slots": str(len(vector)),
+            "slots_run": str(run_slots),
+            "stop": "" if stop is None else "%#010x" % stop,
             "population": pop_of.get(tva, ""),
             "store": form_of.get(tva, ""),
             "signature": "yes" if signature else "no",
@@ -214,9 +249,13 @@ def harvest(tables, names, sizes, installers, pop_of, form_of, parents):
             "child_classes": " ".join(kids[:8]),
             "verdict": verdict_of(signature, vocab, classed, len(vector), kids),
             "evidence": "%d slot(s); %d outside the map; %d named; top class %s on %d of %d classed; "
-                        "installer %s; %d child class(es)"
+                        "installer %s; %d child class(es)%s"
                         % (len(vector), kinds["outside"], kinds["named"], top or "-", top_n, classed,
-                           ", ".join(inst) or "-", len(kids)),
+                           ", ".join(inst) or "-", len(kids),
+                           "" if run_slots == len(vector) else
+                           "; the block scan read %d, ended by %s (%s)"
+                           % (run_slots, "" if stop is None else "%#010x" % stop,
+                              "wide text" if stop is not None and wide_text(stop) else "a non-code dword")),
         }
         rows.append(row)
     return rows
@@ -259,6 +298,11 @@ def control_of():
         out["slot0"] = "%#010x" % int(rows["0"]["most_common"], 16)
     forms = store_forms()
     out["named"] = sum(1 for f in forms.values() if f[0] == "named")
+    classrows = read_csv(CLASS_TABLES)
+    out["class_tables"] = len(classrows)
+    surplus = [int(r.get("surplus") or 0) for r in classrows]
+    out["class_moved"] = sum(1 for s in surplus if s)
+    out["class_surplus"] = sum(surplus)
     names, _ = load_symbols(SYMBOLS)
     members = read_csv(MEMBERS)
     out["member_tables"] = len(members)
@@ -301,6 +345,34 @@ def render(rows, control):
                 sum(1 for r in group if r["installer_classes"]),
                 sum(1 for r in group if r["verdict"] == "interface-unnamed")))
     lines.append("")
+
+    run_slots = sum(int(r.get("slots_run") or r["slots"]) for r in rows)
+    moved = [r for r in rows if int(r.get("slots_run") or r["slots"]) != int(r["slots"])]
+    if moved:
+        lines.append("**The block scan's extent is %d dword(s) too long on %d of the %d tables: this "
+                     "population holds %d slots, not the %d `inventory/native_vtable_reach.csv` "
+                     "counts.** These tables sit in `.rdata` in front of the build's wide-string "
+                     "pool, so a string's first two characters (`0x00330044` is `D3`) are an aligned "
+                     "dword inside `.text`'s *address range* and the scan keeps counting -- the class "
+                     "census ends a table on exactly that dword and %d of its %d tables end on one, "
+                     "%d dwords in all. Each row above is read at the shorter extent, and `stop` "
+                     "names the dword that ended it: %s."
+                     % (run_slots - slots, len(moved), n, slots, run_slots,
+                        control.get("class_moved", 0), control.get("class_tables", 0),
+                        control.get("class_surplus", 0),
+                        ", ".join("`%s` %d -> %d (%s)" % (
+                            r["table_va"], int(r["slots_run"]), int(r["slots"]),
+                            "`%s`" % r["stop"] if r["stop"] else "a non-code dword")
+                            for r in moved)))
+        lines.append("")
+    else:
+        lines.append("**The block scan's extent and the tables' own extent agree on all %d rows: %d "
+                     "slots.** A string's first two characters would be an aligned dword inside "
+                     "`.text`'s address range, so this is a measurement and not a formality -- the "
+                     "class census ends %d of its %d tables on that dword, %d dwords in all."
+                     % (n, slots, control.get("class_moved", 0), control.get("class_tables", 0),
+                        control.get("class_surplus", 0)))
+        lines.append("")
 
     lines.append("**%d of the %d tables no registration names carry the class-table prefix, and the control "
                  "is measured on both sides.** All %d tables the registration path names start with the same "
@@ -428,12 +500,28 @@ def self_check():
     if verdict_of(True, {}, 0, 5, ["XboxViewport"]) != "class-table-base":
         bad.append("a prefixed table that is a named class's parent edge is a base level")
 
+    # the tables' own extent: a wide-string half and a non-code dword each end the run, and a clean
+    # run is not shortened -- the block scan's wider rule is the control the row carries
+    text_range = (0x10000, 0x30000)
+    body = {0x5000: 0x11000, 0x5004: 0x11000, 0x5008: 0x00330044, 0x500C: 0x11000,
+            0x6000: 0x11000, 0x6004: 0x00000000}
+    if own_extent(lambda va: body[va], 0x5000, 4, text_range) != (2, 0x00330044):
+        bad.append("a wide-string half ends the table at the slot before it")
+    if own_extent(lambda va: body[va], 0x5000, 2, text_range) != (2, None):
+        bad.append("a run that ends on its last slot reads its full extent")
+    if own_extent(lambda va: body[va], 0x6000, 2, text_range) != (1, 0):
+        bad.append("a null slot ends the table at the slot before it")
+    if own_extent(lambda va: 0x11000, 0x7000, 3, text_range) != (3, None):
+        bad.append("a clean run is not shortened")
+    if not wide_text(0x00330044) or wide_text(0x003e5501) or wide_text(0x00016ed0):
+        bad.append("only two printable UTF-16 characters read as wide text")
+
     tables = {0x1000: class_table, 0x2000: interface, 0x3000: [0x9004, 0x9006, 0x9002]}
     rows = harvest(tables, names, sizes,
                    {0x2000: ["??0CFoo@@QAE@XZ"], 0x1000: ["FUN_00001000"]},
                    {0x1000: "plain-only", 0x2000: "bounded", 0x3000: "plain-only"},
                    {0x1000: "vtable-slot", 0x2000: "member-field", 0x3000: "frame-only"},
-                   {0x1000: ["XboxViewport"]})
+                   {0x1000: ["XboxViewport"]}, {0x2000: (5, 0x00330044)})
     by = {int(r["table_va"], 16): r for r in rows}
     if by[0x1000]["verdict"] != "class-table-base" or by[0x1000]["child_classes"] != "XboxViewport":
         bad.append("the parent edge is carried on the row: %r" % (by[0x1000],))
@@ -443,10 +531,16 @@ def self_check():
         bad.append("two classes in three slots name nothing: %r" % (by[0x3000],))
     if by[0x1000]["signature"] != "yes" or by[0x2000]["signature"] != "no":
         bad.append("the prefix column follows the vector")
+    if by[0x2000]["slots"] != "3" or by[0x2000]["slots_run"] != "5" or \
+            by[0x2000]["stop"] != "0x00330044":
+        bad.append("the row carries the run and the dword that ended it: %r" % (by[0x2000],))
+    if by[0x1000]["slots_run"] != by[0x1000]["slots"] or by[0x1000]["stop"]:
+        bad.append("a row with no run reads its own extent: %r" % (by[0x1000],))
 
     out = render(rows, {"tables": 3, "slot0": "0x00062650", "prefix": ["0x00062650"], "named": 3,
-                        "member_named": 0, "member_tables": 1})
-    for want in ("class-table prefix", "parent edge", "interfaces"):
+                        "member_named": 0, "member_tables": 1, "class_tables": 492,
+                        "class_moved": 12, "class_surplus": 14})
+    for want in ("class-table prefix", "parent edge", "interfaces", "too long on 1 of the 3"):
         if want not in out:
             bad.append("render lacks %r" % (want,))
 
@@ -523,18 +617,28 @@ def main():
             slots_of[key(row["table_va"])] = int(row["table_slots"] or 0)
         except ValueError:
             slots_of[key(row["table_va"])] = 0
-    tables, pop_of, form_of = {}, {}, {}
+    tables, pop_of, form_of, runs = {}, {}, {}, {}
+    text = next((s for s in image.sections if s.name == ".text"), None)
+    if text is None:
+        raise SystemExit(".text: section not found")
+    text_range = (text.va, text.va + text.vsize)
+    read = lambda va: read_u32(image, va)
     for tva, (pop, verdict) in forms.items():
         if pop not in POPULATIONS:
             continue
         n = slots_of.get(tva, 0)
         if not n:
             continue
-        tables[int(tva, 16)] = slot_vector(image, int(tva, 16), n)
-        pop_of[int(tva, 16)] = pop
-        form_of[int(tva, 16)] = verdict
+        va = int(tva, 16)
+        own, stop = own_extent(read, va, n, text_range)
+        if not own:
+            continue
+        tables[va] = slot_vector(image, va, own)
+        runs[va] = (n, stop)
+        pop_of[va] = pop
+        form_of[va] = verdict
     rows = harvest(tables, names, sizes, {int(k, 16): v for k, v in installer_names().items()},
-                   pop_of, form_of, {int(k, 16): v for k, v in parent_children().items()})
+                   pop_of, form_of, {int(k, 16): v for k, v in parent_children().items()}, runs)
     if args.out:
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, os.path.basename(OUT))

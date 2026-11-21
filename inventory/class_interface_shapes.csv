@@ -1,13 +1,13 @@
 table_va,slots,role,name,shape,family,family_tables,family_diff,twins,purecall,stubs,real,in_map,named_slots,outside_map,object_size,size_source,owners,fields,verdict,evidence
 0x004c7800,21,anonymous,,5ed34cc8,0x004c7800,1,0,,20,0,0,0,0,1,0x30,allocation,,,interface-unnamed,no name; 21 slot(s); 1 in a family of 1; 0 twin(s); size 0x30
 0x004c7854,2,member,"ControlChannel,TextBuffer@0x28/0x64",ba02af46,0x004c7854,2,0,0x004c933c,1,1,0,0,0,0,,,ControlChannel;TextBuffer,0x28 0x64,interface-unnamed,"ControlChannel,TextBuffer@0x28/0x64; 2 slot(s); 2 in a family of 2; 1 twin(s); size unread"
-0x004c7860,22,member,"LinkerLoad,LinkerSave@0xb8",97bbc925,0x004c7860,31,0,,0,15,6,6,0,1,0x58,allocation,LinkerLoad;LinkerSave,0xb8,interface-unnamed,"LinkerLoad,LinkerSave@0xb8; 22 slot(s); 31 in a family of 31; 0 twin(s); size 0x58"
+0x004c7860,22,member,"LinkerLoad,LinkerSave@0xb8",97bbc925,0x004c7860,33,0,,0,15,6,6,0,1,0x58,allocation,LinkerLoad;LinkerSave,0xb8,interface-unnamed,"LinkerLoad,LinkerSave@0xb8; 22 slot(s); 33 in a family of 33; 0 twin(s); size 0x58"
 0x004c78b8,1,member,unowned@0x28,e574845e,0x004c78b8,2,0,0x0053f978,1,0,0,0,0,0,,,,0x28,interface-unnamed,unowned@0x28; 1 slot(s); 2 in a family of 2; 1 twin(s); size unread
-0x004c8410,22,anonymous,,e6ce8164,0x004c7860,31,6,,0,11,8,8,0,3,0x8064,allocation,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size 0x8064
-0x004c84d0,22,anonymous,,ec8da5d2,0x004c7860,31,7,,0,10,8,8,0,4,0x86c,allocation,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size 0x86c
+0x004c8410,22,anonymous,,e6ce8164,0x004c7860,33,6,,0,11,8,8,0,3,0x8064,allocation,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size 0x8064
+0x004c84d0,22,anonymous,,ec8da5d2,0x004c7860,33,7,,0,10,8,8,0,4,0x86c,allocation,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size 0x86c
 0x004c85b0,25,anonymous,,84c2bab2,0x004c85b0,2,0,,0,5,4,4,0,16,,,,,interface-unnamed,no name; 25 slot(s); 2 in a family of 2; 0 twin(s); size unread
-0x004c8db8,26,anonymous,,a521ae4b,0x004c8db8,1,0,,0,7,13,13,0,6,,,,,interface-unnamed,no name; 26 slot(s); 1 in a family of 1; 0 twin(s); size unread
-0x004c9038,22,anonymous,,f8a1c87b,0x004c7860,31,4,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
+0x004c8db8,25,anonymous,,7cf4a059,0x004c8db8,1,0,,0,7,12,12,0,6,,,,,interface-unnamed,no name; 25 slot(s); 1 in a family of 1; 0 twin(s); size unread
+0x004c9038,22,anonymous,,f8a1c87b,0x004c7860,33,4,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x004c9338,1,member,unowned@0x2c,8f7d8014,0x004c9338,1,0,,0,0,1,1,0,0,,,,0x2c,interface-unnamed,unowned@0x2c; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004c933c,2,member,unowned@0x28,ba02af46,0x004c7854,2,0,0x004c7854,1,1,0,0,0,0,,,,0x28,interface-unnamed,unowned@0x28; 2 slot(s); 2 in a family of 2; 1 twin(s); size unread
 0x004c93c4,1,member,unowned@0x2c,990d916f,0x004c93c4,1,0,,0,0,0,1,1,0,,,,0x2c,interface-unnamed,unowned@0x2c; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
@@ -15,10 +15,10 @@ table_va,slots,role,name,shape,family,family_tables,family_diff,twins,purecall,s
 0x004c960c,1,member,XboxViewport@0x2c,4f4a78d4,0x004c960c,1,0,,0,0,0,0,0,1,,,XboxViewport,0x2c,interface-unnamed,XboxViewport@0x2c; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004c9610,2,member,XboxViewport@0x28,67c859fa,0x004c93c8,2,0,0x004c93c8,0,1,0,0,0,1,,,XboxViewport,0x28,interface-unnamed,XboxViewport@0x28; 2 slot(s); 2 in a family of 2; 1 twin(s); size unread
 0x004c96fc,15,anonymous,,ca41b447,0x004c96fc,2,0,,0,10,0,0,0,5,,,,,interface-unnamed,no name; 15 slot(s); 2 in a family of 2; 0 twin(s); size unread
-0x004c9738,22,anonymous,,4f8fcaef,0x004c7860,31,6,,0,12,9,9,0,1,0x84,allocation,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size 0x84
-0x004c9858,22,anonymous,,ace66fcd,0x004c7860,31,6,,0,11,9,9,0,2,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004c9a98,22,anonymous,,0adb89c7,0x004c7860,31,6,,0,11,7,7,0,4,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004c9b50,22,anonymous,,e9f5e71e,0x004c7860,31,6,,0,12,8,8,0,2,0x58,allocation,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size 0x58
+0x004c9738,22,anonymous,,4f8fcaef,0x004c7860,33,6,,0,12,9,9,0,1,0x84,allocation,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size 0x84
+0x004c9858,22,anonymous,,ace66fcd,0x004c7860,33,6,,0,11,9,9,0,2,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004c9a98,22,anonymous,,0adb89c7,0x004c7860,33,6,,0,11,7,7,0,4,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004c9b50,22,anonymous,,e9f5e71e,0x004c7860,33,6,,0,12,8,8,0,2,0x58,allocation,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size 0x58
 0x004d0314,1,member,unowned@0x28,f64e27b4,0x004d0314,2,0,0x004d0528,0,0,1,1,0,0,,,,0x28,interface-unnamed,unowned@0x28; 1 slot(s); 2 in a family of 2; 1 twin(s); size unread
 0x004d03b8,1,member,PackageMapLevel@0x2c,0ffbe2d3,0x004d03b8,4,0,0x004d0470 0x004d05d0 0x004fcc08,0,0,0,0,0,1,,,PackageMapLevel,0x2c,interface-unnamed,PackageMapLevel@0x2c; 1 slot(s); 4 in a family of 4; 3 twin(s); size unread
 0x004d03bc,2,member,PackageMapLevel@0x28,4055b423,0x004d03bc,4,0,0x004d0474 0x004d05d4 0x004fcc0c,0,1,0,0,0,1,,,PackageMapLevel,0x28,interface-unnamed,PackageMapLevel@0x28; 2 slot(s); 4 in a family of 4; 3 twin(s); size unread
@@ -29,32 +29,32 @@ table_va,slots,role,name,shape,family,family_tables,family_diff,twins,purecall,s
 0x004d05d4,2,member,TcpipConnectionXbox@0x28,4055b423,0x004d03bc,4,0,0x004d03bc 0x004d0474 0x004fcc0c,0,1,0,0,0,1,0x4fc8,allocation,TcpipConnectionXbox,0x28,interface-unnamed,TcpipConnectionXbox@0x28; 2 slot(s); 4 in a family of 4; 3 twin(s); size 0x4fc8
 0x004d0688,1,member,TcpNetDriverXbox@0x28,1c285fe6,0x004d0688,1,0,,0,0,0,0,0,1,,,TcpNetDriverXbox,0x28,interface-unnamed,TcpNetDriverXbox@0x28; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004d0d80,25,anonymous,,853ec226,0x004c85b0,2,6,,0,5,5,5,0,15,,,,,interface-unnamed,no name; 25 slot(s); 2 in a family of 2; 0 twin(s); size unread
-0x004d0de8,22,anonymous,,9d638736,0x004c7860,31,5,,0,11,8,8,0,3,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
+0x004d0de8,22,anonymous,,9d638736,0x004c7860,33,5,,0,11,8,8,0,3,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x004d0ec8,21,anonymous,,680ebf4f,0x004d0ec8,1,0,,0,0,6,6,0,15,0x30,allocation,,,interface-unnamed,no name; 21 slot(s); 1 in a family of 1; 0 twin(s); size 0x30
 0x004d1430,2,anonymous,,e0d62302,0x004d1430,2,0,0x004d1438,0,0,1,1,0,1,,,,,interface-unnamed,no name; 2 slot(s); 2 in a family of 2; 1 twin(s); size unread
 0x004d1438,2,anonymous,,e0d62302,0x004d1430,2,0,0x004d1430,0,0,1,1,0,1,,,,,interface-unnamed,no name; 2 slot(s); 2 in a family of 2; 1 twin(s); size unread
 0x004d2abc,6,member,XHVVoiceSubsystem@0x2c,bf12fcd4,0x004d2abc,1,0,,0,0,1,1,0,5,,,XHVVoiceSubsystem,0x2c,interface-unnamed,XHVVoiceSubsystem@0x2c; 6 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004d2ad4,1,member,XHVVoiceSubsystem@0x28,95c2eaea,0x004d2ad4,1,0,,0,0,0,0,0,1,,,XHVVoiceSubsystem,0x28,interface-unnamed,XHVVoiceSubsystem@0x28; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004d2e58,29,anonymous,,f651d4ae,0x004d2e58,1,0,,0,15,10,11,1,3,,,,,interface-unnamed,no name; 29 slot(s); 1 in a family of 1; 0 twin(s); size unread
-0x004d3118,22,anonymous,,2ecfe777,0x004c7860,31,5,,0,12,7,7,0,3,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004d3248,22,anonymous,,c3002c2b,0x004c7860,31,5,,0,12,7,7,0,3,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004d3ba0,22,anonymous,,6b3df9c2,0x004c7860,31,5,,0,14,6,6,0,2,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004d40d0,22,anonymous,,72356c11,0x004c7860,31,4,,0,12,7,7,0,3,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004da720,22,member,LinkerLoad@0xb8,0fa94160,0x004c7860,31,10,,0,6,8,9,1,7,,,LinkerLoad,0xb8,interface-unnamed,LinkerLoad@0xb8; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004da850,22,member,LinkerSave@0xb8,0691c873,0x004c7860,31,8,,0,8,6,6,0,8,,,LinkerSave,0xb8,interface-unnamed,LinkerSave@0xb8; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004da970,22,member,LinkerSaveGame@0xb8,65b6b65e,0x004c7860,31,8,,0,8,6,6,0,8,,,LinkerSaveGame,0xb8,interface-unnamed,LinkerSaveGame@0xb8; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004daa48,22,member,LinkerLoadGame@0xb8,1235e9d5,0x004c7860,31,10,,0,6,8,9,1,7,,,LinkerLoadGame,0xb8,interface-unnamed,LinkerLoadGame@0xb8; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004dd250,22,anonymous,,99e829a1,0x004c7860,31,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004dd488,22,anonymous,,17dc9e21,0x004c7860,31,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004dd4e0,22,anonymous,,daf62ed8,0x004c7860,31,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004dd538,22,anonymous,,18b61aab,0x004c7860,31,2,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004dd590,22,anonymous,,bb387f45,0x004c7860,31,2,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004dd5e8,22,anonymous,,64661019,0x004c7860,31,3,,0,13,8,8,0,1,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004dd640,22,anonymous,,15ecb50f,0x004c7860,31,3,,0,13,8,8,0,1,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004ddd50,22,anonymous,,db356db5,0x004c7860,31,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
+0x004d3118,22,anonymous,,2ecfe777,0x004c7860,33,5,,0,12,7,7,0,3,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004d3248,22,anonymous,,c3002c2b,0x004c7860,33,5,,0,12,7,7,0,3,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004d3ba0,22,anonymous,,6b3df9c2,0x004c7860,33,5,,0,14,6,6,0,2,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004d40d0,22,anonymous,,72356c11,0x004c7860,33,4,,0,12,7,7,0,3,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004da720,22,member,LinkerLoad@0xb8,0fa94160,0x004c7860,33,10,,0,6,8,9,1,7,,,LinkerLoad,0xb8,interface-unnamed,LinkerLoad@0xb8; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004da850,22,member,LinkerSave@0xb8,0691c873,0x004c7860,33,8,,0,8,6,6,0,8,,,LinkerSave,0xb8,interface-unnamed,LinkerSave@0xb8; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004da970,22,member,LinkerSaveGame@0xb8,65b6b65e,0x004c7860,33,8,,0,8,6,6,0,8,,,LinkerSaveGame,0xb8,interface-unnamed,LinkerSaveGame@0xb8; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004daa48,22,member,LinkerLoadGame@0xb8,1235e9d5,0x004c7860,33,10,,0,6,8,9,1,7,,,LinkerLoadGame,0xb8,interface-unnamed,LinkerLoadGame@0xb8; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004dd250,22,anonymous,,99e829a1,0x004c7860,33,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004dd488,22,anonymous,,17dc9e21,0x004c7860,33,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004dd4e0,22,anonymous,,daf62ed8,0x004c7860,33,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004dd538,22,anonymous,,18b61aab,0x004c7860,33,2,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004dd590,22,anonymous,,bb387f45,0x004c7860,33,2,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004dd5e8,22,anonymous,,64661019,0x004c7860,33,3,,0,13,8,8,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004dd640,22,anonymous,,15ecb50f,0x004c7860,33,3,,0,13,8,8,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004ddd50,22,anonymous,,db356db5,0x004c7860,33,2,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x004ddf70,2,member,TextBuffer@0x28,f32ed3db,0x004ddf70,1,0,,0,1,0,0,0,1,,,TextBuffer,0x28,interface-unnamed,TextBuffer@0x28; 2 slot(s); 1 in a family of 1; 0 twin(s); size unread
-0x004de3c0,22,anonymous,,07c2090d,0x004c7860,31,3,,0,13,8,8,0,1,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
-0x004de558,22,anonymous,,78ac8942,0x004c7860,31,2,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
+0x004de3c0,22,anonymous,,07c2090d,0x004c7860,33,3,,0,13,8,8,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
+0x004de558,22,anonymous,,78ac8942,0x004c7860,33,2,,0,14,8,8,0,0,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x004e3520,9,anonymous,,96db0f6e,0x004e3520,10,0,,0,3,3,3,0,3,,,,,interface-unnamed,no name; 9 slot(s); 10 in a family of 10; 0 twin(s); size unread
 0x004eaf68,62,member,NullRenderDevice@0xb8,1a8a3900,0x004eaf68,1,0,,0,52,0,0,0,10,,,NullRenderDevice,0xb8,interface-unnamed,NullRenderDevice@0xb8; 62 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004eb914,12,anonymous,,7604b615,0x004eb914,2,0,,11,0,0,0,0,1,,,,,interface-unnamed,no name; 12 slot(s); 2 in a family of 2; 0 twin(s); size unread
@@ -63,7 +63,7 @@ table_va,slots,role,name,shape,family,family_tables,family_diff,twins,purecall,s
 0x004f7070,12,anonymous,,e9ab226f,0x004f7070,1,0,,0,7,2,2,0,3,,,,,interface-unnamed,no name; 12 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004f70a0,2,anonymous,,e6542508,0x004f70a0,1,0,,0,0,0,0,0,2,,,,,interface-unnamed,no name; 2 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004f7690,9,anonymous,,cacf26f7,0x004e3520,10,5,0x0051d238 0x005207a4,0,5,1,1,0,3,,,,,interface-unnamed,no name; 9 slot(s); 10 in a family of 10; 2 twin(s); size unread
-0x004f7868,22,anonymous,,9673e0ff,0x004c7860,31,7,,0,12,7,7,0,3,0x78,allocation,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size 0x78
+0x004f7868,22,anonymous,,9673e0ff,0x004c7860,33,7,,0,12,7,7,0,3,0x78,allocation,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size 0x78
 0x004fa5a8,2,member,ControlChannel@0x64,6fc04136,0x004fa5a8,1,0,,0,1,1,1,0,0,,,ControlChannel,0x64,interface-unnamed,ControlChannel@0x64; 2 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x004fc35c,8,member,unowned@0x28,20cec294,0x004fc35c,6,0,,8,0,0,0,0,0,,,,0x28,interface-unnamed,unowned@0x28; 8 slot(s); 6 in a family of 6; 0 twin(s); size unread
 0x004fc4cc,8,member,unowned@0x28,8b7e83f7,0x004fc35c,6,1,,7,0,1,1,0,0,,,,0x28,interface-unnamed,unowned@0x28; 8 slot(s); 6 in a family of 6; 0 twin(s); size unread
@@ -147,7 +147,7 @@ table_va,slots,role,name,shape,family,family_tables,family_diff,twins,purecall,s
 0x0051d80c,9,anonymous,,d0e78346,0x00510e90,2,0,0x00510e90,0,3,0,0,0,6,,,,,interface-unnamed,no name; 9 slot(s); 2 in a family of 2; 1 twin(s); size unread
 0x0051d830,9,anonymous,,58a04d06,0x005181a8,2,1,,0,2,0,0,0,7,,,,,interface-unnamed,no name; 9 slot(s); 2 in a family of 2; 0 twin(s); size unread
 0x0051d854,2,member,StaticMesh@0x14c,983206e1,0x0051d854,1,0,,0,0,2,2,0,0,,,StaticMesh,0x14c,interface-unnamed,StaticMesh@0x14c; 2 slot(s); 1 in a family of 1; 0 twin(s); size unread
-0x0051ec98,23,anonymous,,5219a5b4,0x0051ec98,2,0,,0,13,9,9,0,1,,,,,interface-unnamed,no name; 23 slot(s); 2 in a family of 2; 0 twin(s); size unread
+0x0051ec98,22,anonymous,,3ec6d761,0x004c7860,33,3,,0,13,9,9,0,0,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x0051f6d8,5,anonymous,,b2ef03b8,0x0051f6d8,2,0,,0,2,0,0,0,3,,,,,interface-unnamed,no name; 5 slot(s); 2 in a family of 2; 0 twin(s); size unread
 0x0051f6ec,5,anonymous,,e469ad08,0x00507c7c,4,2,,0,2,0,0,0,3,,,,,interface-unnamed,no name; 5 slot(s); 4 in a family of 4; 0 twin(s); size unread
 0x0051f700,5,anonymous,,c338db4a,0x00517238,2,2,,0,2,1,1,0,2,,,,,interface-unnamed,no name; 5 slot(s); 2 in a family of 2; 0 twin(s); size unread
@@ -158,11 +158,11 @@ table_va,slots,role,name,shape,family,family_tables,family_diff,twins,purecall,s
 0x0052075c,5,anonymous,,8ed77651,0x0051f6d8,2,2,,0,2,1,1,0,2,,,,,interface-unnamed,no name; 5 slot(s); 2 in a family of 2; 0 twin(s); size unread
 0x005207a4,9,anonymous,,cacf26f7,0x004e3520,10,5,0x004f7690 0x0051d238,0,5,1,1,0,3,,,,,interface-unnamed,no name; 9 slot(s); 10 in a family of 10; 2 twin(s); size unread
 0x0052086c,9,anonymous,,1b2eadcb,0x004e3520,10,5,,0,5,1,1,0,3,,,,,interface-unnamed,no name; 9 slot(s); 10 in a family of 10; 0 twin(s); size unread
-0x00521ff8,3,anonymous,,dc9926be,0x00521ff8,1,0,,0,0,0,0,0,3,,,,,interface-unnamed,no name; 3 slot(s); 1 in a family of 1; 0 twin(s); size unread
-0x00523008,3,anonymous,,3e2b7e23,0x00523008,1,0,,0,0,0,0,0,3,,,,,interface-unnamed,no name; 3 slot(s); 1 in a family of 1; 0 twin(s); size unread
+0x00521ff8,1,anonymous,,3e309c53,0x00521ff8,1,0,,0,0,0,0,0,1,,,,,interface-unnamed,no name; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
+0x00523008,1,anonymous,,4c693b23,0x00523008,1,0,,0,0,0,0,0,1,,,,,interface-unnamed,no name; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x00523340,9,anonymous,,6b4dc303,0x00523340,1,0,,0,3,1,1,0,5,,,,,interface-unnamed,no name; 9 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x00523394,9,anonymous,,c7c95d85,0x004e3520,10,4,,0,3,2,2,0,4,,,,,interface-unnamed,no name; 9 slot(s); 10 in a family of 10; 0 twin(s); size unread
-0x0052352c,16,anonymous,,d8098f7b,0x0052352c,1,0,,0,9,0,0,0,7,,,,,interface-unnamed,no name; 16 slot(s); 1 in a family of 1; 0 twin(s); size unread
+0x0052352c,15,anonymous,,df6d3d9c,0x0052352c,1,0,,0,9,0,0,0,6,,,,,interface-unnamed,no name; 15 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x0052b45c,1,member,D3DRenderDevice@0x28,b0438cc9,0x0052b45c,1,0,,0,0,1,1,0,0,,,D3DRenderDevice,0x28,interface-unnamed,D3DRenderDevice@0x28; 1 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x0052bbf8,65,anonymous,,93111f11,0x0052bbf8,1,0,,0,6,7,10,3,49,,,,,interface-unnamed,no name; 65 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x0052bdb8,16,anonymous,,6d6d1229,0x0052bdb8,1,0,,0,9,0,0,0,7,,,,,interface-unnamed,no name; 16 slot(s); 1 in a family of 1; 0 twin(s); size unread
@@ -173,12 +173,12 @@ table_va,slots,role,name,shape,family,family_tables,family_diff,twins,purecall,s
 0x0052c498,5,anonymous,,6923b846,0x0052c498,2,0,,0,3,1,1,0,1,0x38,allocation,,,interface-unnamed,no name; 5 slot(s); 2 in a family of 2; 0 twin(s); size 0x38
 0x0052c76c,5,anonymous,,eeaabe6f,0x0052c2b8,2,1,,0,3,1,1,0,1,,,,,interface-unnamed,no name; 5 slot(s); 2 in a family of 2; 0 twin(s); size unread
 0x0052c780,5,anonymous,,92029a57,0x0052c498,2,1,,0,3,1,1,0,1,,,,,interface-unnamed,no name; 5 slot(s); 2 in a family of 2; 0 twin(s); size unread
-0x0052cc50,22,anonymous,,2f88b55d,0x004c7860,31,1,,0,15,7,7,0,0,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
+0x0052cc50,22,anonymous,,2f88b55d,0x004c7860,33,1,,0,15,7,7,0,0,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x0052cefc,7,anonymous,,47924b23,0x0052cefc,2,0,,1,0,3,4,1,2,,,,,interface-unnamed,no name; 7 slot(s); 2 in a family of 2; 0 twin(s); size unread
-0x0052d1a0,23,anonymous,,416edefd,0x0051ec98,2,6,,0,14,7,7,0,2,,,,,interface-unnamed,no name; 23 slot(s); 2 in a family of 2; 0 twin(s); size unread
+0x0052d1a0,22,anonymous,,85ab70ae,0x004c7860,33,3,,0,14,7,7,0,1,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x0052d3e8,25,anonymous,,73a80495,0x0052d3e8,3,0,,0,6,4,7,3,12,,,,,interface-unnamed,no name; 25 slot(s); 3 in a family of 3; 0 twin(s); size unread
-0x0052d498,22,anonymous,,21a0990c,0x004c7860,31,3,,0,13,9,9,0,0,0x58,allocation,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size 0x58
-0x0052d528,22,anonymous,,2ebe23f4,0x004c7860,31,4,,0,12,8,8,0,2,,,,,interface-unnamed,no name; 22 slot(s); 31 in a family of 31; 0 twin(s); size unread
+0x0052d498,22,anonymous,,21a0990c,0x004c7860,33,3,,0,13,9,9,0,0,0x58,allocation,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size 0x58
+0x0052d528,22,anonymous,,2ebe23f4,0x004c7860,33,4,,0,12,8,8,0,2,,,,,interface-unnamed,no name; 22 slot(s); 33 in a family of 33; 0 twin(s); size unread
 0x0052d7d0,24,anonymous,,4750ae0e,0x0052d7d0,1,0,,0,14,7,7,0,3,,,,,interface-unnamed,no name; 24 slot(s); 1 in a family of 1; 0 twin(s); size unread
 0x0052e0c8,25,anonymous,,6145b49c,0x0052d3e8,3,7,,0,0,8,11,3,14,,,,,interface-unnamed,no name; 25 slot(s); 3 in a family of 3; 0 twin(s); size unread
 0x0052eb78,7,anonymous,,10a44d3f,0x0052cefc,2,3,,0,0,4,5,1,2,,,,,interface-unnamed,no name; 7 slot(s); 2 in a family of 2; 0 twin(s); size unread
