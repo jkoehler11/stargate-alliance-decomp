@@ -57,7 +57,9 @@ def cstring(blob):
         # narrow read against a full wide string, and the short one wins the tie.
         if not text:
             return (0, 0.0)
-        good = sum(1 for ch in text if ch.isprintable() and (ch.isascii() or ch.isalnum()))
+        # ASCII only: CJK ideographs are `isalnum()`, so an ASCII path wrongly decoded as UTF-16 scored well enough
+        # to win (`D:\splash.raw` came back as `㩄獜汰獡⹨慲w`).
+        good = sum(1 for ch in text if ch.isprintable() and ch.isascii())
         return (good, good / len(text))
 
     return wide if score(wide) > score(narrow) else narrow

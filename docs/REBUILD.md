@@ -144,11 +144,12 @@ So an ASCII-only scan reports the file as unreferenced — the conclusion this p
 encoding — while the truth is nine call sites. The integrity check is real, and it covers **168** packages, far more than
 the 18 `.u` files.
 
-**The contrast matters, because two wide strings alone prove nothing.** `splash.raw` is also named twice as UTF-16LE
-(`0x004c8656`, `0x004d1326`) and has **zero** references from either, so the game never opens it by name: it is a
-640×480×3 raw image (921,600 bytes) that the deploy scripts copy to the disc root for something outside the game — the
-launcher or the dashboard — not game content. Same encoding, opposite conclusion, and only the reference count separates
-them.
+**Reference counts need the runtime to settle them.** `splash.raw` is also named twice as UTF-16LE (`0x004c8656`,
+`0x004d1326`) and has **zero** direct xrefs from either — and this page first concluded from that count that the game never
+opens it, calling it launcher material. A breakpoint on `_CreateFileA@28` shows the opposite: `d:\splash.raw` is opened
+**three times at boot**, plus once as `z:\splash.raw`, in the first seconds before anything else. It is a 640×480×3 raw
+image (921,600 bytes) that the build itself puts on screen, and the zero count meant the name is composed or reached
+through a table, not that it is unused.
 
 **Consequences for a rebuild.**
 

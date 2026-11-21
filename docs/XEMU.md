@@ -4407,3 +4407,36 @@ first packages — is outside this measurement; the trace says nothing about boo
 each stop costs a step plus a re-arm, so the instrument throttles the guest it measures — 13 `.int` opens in a throttled
 window says nothing about how often the unthrottled build opens it. And whether the engine reopens the `.int` per string
 lookup or is retrying a failed open is **not established**; a breakpoint on the close path would separate them.
+
+### What a boot asks the file system for (2026-11-19)
+
+Arming within a few seconds of reset — early enough that the window opens before the splash — gives the build's opening
+file list. Thirty of the forty stops are one file, so the list is short and complete for this call:
+
+| file | opens | access |
+|---|---|---|
+| `d:\splash.raw` | 3 | read |
+| `z:\splash.raw` | 1 | read |
+| `D:\System\Core.u`, `Core.int` | 2 each | read |
+| `D:\System\Engine.u`, `Engine.int` | 2 each | read |
+| `D:\System\User.ini` | 2 | read |
+| `D:\System\PlayerProfile.ini` | **19** | read |
+| `D:\System\Stats.ini` | 2 | read |
+| `D:\System\Tweak\Misc\PlayerController.ini` | 2 | read |
+| `D:\System\Tweak\MP\GameModes.ini` | 2 | read |
+
+Three readings:
+
+1. **The first file the build touches is `splash.raw`** — from `D:` and once from `Z:`. That corrects this page's earlier
+   claim, made from a string scan, that the game never opens it: the wide string has no direct xref, and the file is
+   opened three times at boot anyway. A zero cross-reference count is not evidence of disuse.
+2. **`Default.ini` does not appear, and neither does `Index.unr`.** `Default.ini` is read before the arm lands, so its
+   absence is an instrument limit. `Index.unr` is a different matter: the window opens before the splash, and no open of it
+   occurs — the key is parsed and held in memory, and the map load it names is never attempted.
+3. **The map that *is* shown never appears either.** `MainMenu.unr` is displayed and is not in this list, so at least one
+   file is opened through a call this breakpoint does not see. The list is complete for `_CreateFileA@28` and is not a
+   complete account of the build's I/O.
+
+**Counting again.** `PlayerProfile.ini` opened 19 times where everything else opened twice is the kind of number that
+reads as a property of the engine; with a step-over per stop it is at least partly a property of the instrument, and the
+honest reading is "more often than the others in a throttled window".
