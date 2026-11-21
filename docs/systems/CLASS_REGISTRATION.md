@@ -1691,6 +1691,166 @@ count of gap-head bodies the slots hold:
 the source-path pattern, and the artifact round trip; no dump, writes nothing) and `--check-doc` rebuilds
 the block from the committed CSV with no dump. Both run in `make ci`.
 
+## Who builds an interface object: a constructor, a constructor's helper, or neither
+
+The family census left 89 representatives owed a read, the behaviour census priced that read and measured
+the two channels a slot carries, and neither named an interface -- because a slot's assert file is the file
+the interface's *own* method was compiled from and its callee's file is the file of the code that method
+*calls*. The page named the two channels that were left: **a member field that holds the object** and **a
+caller whose class is known**. This reads both, from the store sites `inventory/class_store_provenance.csv`
+already measured, and it answers a different question than a name.
+
+The chain is three joins and no new scan. A store site falls inside a body, using the map's own extents; a
+body that also installs a class table is that class's constructor
+(`inventory/class_constructors.csv`, built from the class-table store, and its `form` column separates a
+`ctor` from a `dtor`); so a table stored by a constructor is stored inside a named class. Where it is not,
+the read goes one call out -- which constructor bodies call the body that holds the store -- and the
+register the constructor loads before that call says where the object goes. A slot body called only from a
+destructor is reported apart, because a destructor resets a member's vtable on the teardown path rather
+than building it.
+
+<!-- generated:class-interface-installers -->
+| verdict | tables | anonymous | of the 89 representatives | what it means |
+|---|---|---|---|---|
+| `ctor-holder` | 36 | 1 | 0 | the store itself sits in a body that installs a class table |
+| `ctor-caller` | 19 | 11 | 7 | the store body is called by a body that installs a class table, and a ctor is one |
+| `dtor-caller` | 1 | 0 | 0 | only destructors call the store body: the teardown path, not the build |
+| `unnamed-holder` | 172 | 149 | 78 | neither the store body nor any caller installs a class table |
+| `no-site` | 4 | 4 | 4 | the provenance census names no store site |
+
+**36 of the 232 interface tables are stored inside a class constructor and 35 of those are the member-held tables the field already names, so that channel is the member-field channel read end to end; 19 more are stored by a body a constructor calls, 11 of them anonymous and 7 owed a per-body read.**
+
+| table | slots | how it is stored | the class that builds it | what the constructor puts in `ecx` |
+|---|---|---|---|---|
+| `0x0052bbf8` (owed) | 65 | `ctor-caller` | D3DRenderDevice | this+0x4754 |
+| `0x004c9038` | 22 | `ctor-caller` | PackageMapLevel | this+0x294 |
+| `0x004c9738` | 22 | `ctor-caller` | PackageMapLevel | ? |
+| `0x0051ffd8` (owed) | 18 | `ctor-caller` | Texture | member(eax) |
+| `0x00520248` (owed) | 15 | `ctor-caller` | Cubemap | member(eax) |
+| `0x0051bc20` (owed) | 11 | `ctor-caller` | VertMesh | this+0x184 |
+| `0x005181a8` (owed) | 9 | `ctor-caller` | StaticMesh, StaticMeshInstance | member(ebx) this+0x34 |
+| `0x0051bc4c` (owed) | 9 | `ctor-caller` | SkeletalMeshInstance | this+0x7c |
+| `0x0051d7c4` | 9 | `ctor-caller` | StaticMesh | this+0x60 |
+| `0x0051d80c` | 9 | `ctor-caller` | StaticMesh | this+0xc0 |
+| `0x0051d830` | 9 | `ctor-holder` | StaticMesh | - |
+| `0x00518104` (owed) | 7 | `ctor-caller` | StaticMesh, TerrainSector | this+0x94 this+0xdc this+0xf8 |
+<!-- /generated:class-interface-installers -->
+
+**The ctor-holder channel is the member-field channel, and that is its control rather than its finding.**
+`tools/class-member-tables.py` names a member table from the field that holds it, and the field is written
+by the owner's constructor -- so the channel this read adds *is* that one, read from the code side. It
+returns 36 tables, and **35 of them are the member tables the field already names**; the one anonymous table
+it reaches is `0x0051d830` (9 slots) in StaticMesh's constructor, the second member of family
+`0x005181a8`. A channel that returns the population it was derived from and one stranger is a control, not
+a naming route.
+
+**`vtable-slot` and `member-field` are one event read at two operands, and the split leaks through the
+compiler's inlining.** The store-field census decides a table's receiver by the store's operand: `[reg]` is
+the object's own slot, `[reg+disp]` a member. When the compiler inlines the member's constructor into a
+helper, the helper is handed `this+off` in `ecx` and stores `[ecx]` -- an object-root operand for a member
+store. **11 anonymous tables are member stores read this way**, and the offsets are explicit in the
+constructor: `this+0x4754` for `0x0052bbf8` (65 slots, D3DRenderDevice), `+0x184` for `0x0051bc20` (11,
+VertMesh), `+0x7c` for `0x0051bc4c` (9, SkeletalMeshInstance), `+0x34` for `0x005181a8` (9, StaticMesh and
+StaticMeshInstance), and `+0x94`/`+0xdc`/`+0xf8` for `0x00518104` (7, StaticMesh and TerrainSector). The
+operand split is still a measurement -- it is the compiler's choice of where to write, not a guess -- but
+it is a measurement of the write, and one inlined helper moves a member store into the root population.
+
+**An offset is not an identity: `0x00518104` is stored at three offsets in one class.** The 7-slot table
+goes in at `+0x94`, `+0xdc` and `+0xf8`, all with the constructor's own `this`, so far from being one
+member it is the same interface embedded three times in the object (and, read from StaticMesh and
+TerrainSector, in two classes). The `D3DRenderDevice` row is the opposite kind: one offset, one class, one
+table -- and at 65 slots it is the largest anonymous interface in the population.
+
+**Two of the eleven are built on a member rather than on the object: `0x0051ffd8` (18, Texture) and
+`0x00520248` (15, Cubemap) get `[eax+disp]` in `ecx`, not `this`.** The class's constructor is in the call
+chain, but the object it hands the helper is a nested object the constructor fetched from `this`; the
+table's owner is that nested object's class, not `Texture`. This is the same distinction
+`class_member_tables.py` records as `layout=ancestor` against `layout=coincident`, read from the argument
+instead of the field.
+
+**The family is the unit the class names, and one family proves it.** Family `0x005181a8` (9 slots) has
+two tables and both are StaticMesh's: `0x005181a8` stored through the constructor's helper with
+`this+0x34`, and `0x0051d830` stored by the constructor itself. A family whose every member's builder is
+one class is a family that class can name, and the two operands it was stored with are the compiler's
+inlining decision rather than two different owners.
+
+**What this does not say.** It does not name an interface. A class and an offset name the *field*, in the
+convention `class_member_tables.csv` already uses (`Linker_member_0xb8`), and the interface implemented at
+that field stays anonymous; the interface's own name is not in the image's symbols, strings or call graph
+that this thread has read. The 149 anonymous tables that stay `unnamed-holder` are built by bodies no
+class constructor reaches -- library or static construction -- and they are the population a per-body read
+would still owe if a name is to come from code. Four anonymous tables (`0x004f70a0`, `0x005172ec`,
+`0x005181dc`, `0x0053f7c4`) have no store site in the provenance census at all, which is that census's
+extent rule reaching for a store the locator did not find, not four tables without an installer.
+
+## The 89 representatives read one slot at a time: 944 slots, 146 bodies, 17 shared
+
+The representatives the family census owed were costed by the behaviour census as 56 with a mapped body,
+26 with a gap head and 7 compiler defaults. That cost is a table-level answer; the read itself is per slot,
+and it is the artifact behind the second block: every slot of all 89 representatives, classified by what it
+holds, with each mapped body's name, size, callees, first literal and the other representatives that hold
+it.
+
+<!-- generated:class-interface-rep-bodies -->
+| what a representative's slot holds | slots | distinct bodies |
+|---|---|---|
+| `mapped` | 175 | 146 |
+| `gap` | 161 | 150 |
+| `outside` | 268 | 239 |
+| `stub` | 302 | 26 |
+| `pure` | 38 | 1 |
+
+**The 89 owed representatives hold 944 slots: 175 mapped over 146 distinct bodies, 161 U40 gap heads, 268 outside the map, 302 stubs and 38 purecalls; 33 mapped slots carry a name the map holds and 17 bodies are held by two or more representatives.**
+
+| body | name | representatives that hold it |
+|---|---|---|
+| `0x00016ed0` | FUN_00016ed0 | `0x004d2e58` `0x0051ec98` |
+| `0x00016f00` | FUN_00016f00 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
+| `0x00016f30` | FUN_00016f30 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
+| `0x00016f40` | FUN_00016f40 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
+| `0x00018b90` | FUN_00018b90 | `0x004c85b0` `0x004c8db8` |
+| `0x00019240` | FUN_00019240 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
+| `0x0001b230` | FUN_0001b230 | `0x004d2e58` `0x0051ec98` `0x0052d7d0` |
+| `0x00034240` | FUN_00034240 | `0x004c85b0` `0x004c8db8` |
+| `0x0008a940` | FUN_0008a940 | `0x004e3520` `0x00517214` `0x00523340` |
+| `0x001d5510` | FUN_001d5510 | `0x00516fd4` `0x005170f4` |
+| `0x001d6040` | FUN_001d6040 | `0x00516fd4` `0x005170f4` |
+| `0x001d63a0` | FUN_001d63a0 | `0x00516fd4` `0x005170f4` |
+| `0x002c3db0` | FUN_002c3db0 | `0x0052cefc` `0x0052d3e8` `0x0052ef14` |
+| `0x002c4f10` | FUdpLink_BindPort | `0x0052cefc` `0x0052ef14` |
+| `0x002c50b0` | FUN_002c50b0 | `0x0052cefc` `0x0052ef14` |
+| `0x00329c70` | FUN_00329c70 | `0x0053d590` `0x0053d73c` `0x0053d7fc` `0x0053e3dc` `0x0053ec54` |
+| `0x0032a490` | FUN_0032a490 | `0x0053d590` `0x0053d660` `0x0053d6fc` `0x0053d73c` |
+<!-- /generated:class-interface-rep-bodies -->
+
+**Three things follow that the table-level census could not say.** First, **the 175 mapped slots are 146
+distinct bodies and 33 of the slots carry a name the map holds -- every one of them a library or engine
+file, never a source path**: `Engine_UnTex`, `Engine_UnOctree`, `Engine_UnRenderLight`, `Engine_UnActCol`,
+`D3DDrv_D3DRenderInterface`, `IpDrv_InternetLink`, `Core_UnTemplate`, `StatsReadTask_Finished`,
+`XboxLive_XboxLiveMatchMaking`, and the UIX mangled names the 18 named tables already carry. A slot body
+the map names is named after the file it was compiled from and the file is always a library, so the read
+reproduces the token census's verdict at the body instead of at the table. Second, **the 302 stub slots are
+26 distinct bodies, and one of them fills 116**: an interface's default implementation is a handful of
+shared functions, not one stub per slot, which is what makes an interface's slot vector readable as
+"mostly defaults plus a few real bodies". Third, **the sharing is not pairwise noise: 17 bodies sit in 6
+clusters of representatives** -- `0x004d2e58`/`0x0051ec98`/`0x0052d7d0` share five bodies,
+`0x00516fd4`/`0x005170f4` three, `0x0052cefc`/`0x0052d3e8`/`0x0052ef14` three, and
+`0x0053d590`/`0x0053d660`/`0x0053d6fc`/`0x0053d73c`/`0x0053d7fc`/`0x0053e3dc`/`0x0053ec54` two -- so two
+anonymous interfaces can be two instantiations of one implementation, which is the twins census's finding
+for the gap heads read on the mapped bodies instead.
+
+The census row of the slot artifact carries the totals, and the block above is rebuilt from it with no
+dump:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-interface-installers.py \\
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-interface-installers.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (the map-extent lookup on a body's last byte and the hole between two bodies, the
+store-site parse, the five installer verdicts including the dtor-only edge, the `ecx` placement at a call,
+the five slot kinds, and both artifact round trips; no dump, writes nothing) and `--check-doc` rebuilds
+both blocks from the committed CSVs with no dump. Both run in `make ci`.
+
 ## The 27 exact repeats are per-class, not per-translation-unit
 
 `inventory/class_interface_twins.csv` groups the 232 tables by shape and records each group's members, the

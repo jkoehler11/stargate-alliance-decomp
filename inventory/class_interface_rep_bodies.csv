@@ -1,0 +1,946 @@
+rep_va,family,slot,body_va,body_name,body_size,kind,gap_verdict,named,callees,callee_files,literal_head,shared_with,verdict
+0x004c7800,0x004c7800,0,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,1,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,2,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,3,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,4,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,5,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,6,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,7,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,8,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,9,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,10,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,11,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,12,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,13,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,14,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,15,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,16,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,17,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,18,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,19,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004c7800,0x004c7800,20,0x00019210,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,0,0x00018fa0,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,1,0x0001f490,FUN_0001f490,289,mapped,,no,__wcsicmp FUN_0001f5c0 FUN_000574d0 FUN_0001f880,FUN,ReaderSaveLinear,,mapped-unnamed
+0x004c85b0,0x004c85b0,2,0x00026af0,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,3,0x00018fb0,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,4,0x00026b00,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,5,0x00026b10,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,6,0x0001bf10,,,gap,body,,,,,,gap-head
+0x004c85b0,0x004c85b0,7,0x00018f50,,,gap,body,,,,,,gap-head
+0x004c85b0,0x004c85b0,8,0x00026b40,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,9,0x00018fc0,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,10,0x00018fd0,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,11,0x00018fe0,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,12,0x00025150,FUN_00025150,45,mapped,,no,,,,,mapped-unnamed
+0x004c85b0,0x004c85b0,13,0x00018ff0,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,14,0x00027020,,,gap,body,,,,,,gap-head
+0x004c85b0,0x004c85b0,15,0x00034240,FUN_00034240,531,mapped,,no,_wcschr FUN_0001b260 FUN_000281d0 FUN_00027560 FUN_0001b2c0 FUN_0001b310,FUN,..\,0x004c8db8,mapped-unnamed
+0x004c85b0,0x004c85b0,16,0x00019000,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,17,0x00018b60,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,18,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x004c85b0,0x004c85b0,19,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x004c85b0,0x004c85b0,20,0x00018b80,,,outside,,,,,,,outside
+0x004c85b0,0x004c85b0,21,0x00018b90,FUN_00018b90,22,mapped,,no,,,,0x004c8db8,mapped-unnamed
+0x004c85b0,0x004c85b0,22,0x00018bb0,FUN_00018bb0,5,stub,,,,,,,stub
+0x004c85b0,0x004c85b0,23,0x00018bc0,FUN_00018bc0,5,stub,,,,,,,stub
+0x004c85b0,0x004c85b0,24,0x00018bd0,FUN_00018bd0,5,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,0,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,1,0x0001d290,FUN_0001d290,1082,mapped,,no,FUN_0001d090 FUN_0007e160 __chkstk FUN_0007e120 _CreateFileA@28 FUN_00055ed0,FUN Core,D:\,,mapped-unnamed
+0x004c8db8,0x004c8db8,2,0x0001d6d0,FUN_0001d6d0,1048,mapped,,no,FUN_0001d090 FUN_0007e160 __chkstk FUN_0007e120 _SetFileAttributesA@8 FUN_0001b310,FUN Core,D:\,,mapped-unnamed
+0x004c8db8,0x004c8db8,3,0x0001ddc0,FUN_0001ddc0,818,mapped,,no,FUN_0001d090 FUN_0007e160 __chkstk FUN_0007e120 _CreateFileA@28 FUN_00055ed0,FUN Core,D:\,,mapped-unnamed
+0x004c8db8,0x004c8db8,4,0x0001e8f0,FUN_0001e8f0,791,mapped,,no,FUN_0001d090 FUN_0007e160 __chkstk FUN_0007e120 _SetFileAttributesA@8 FUN_0001b310,FUN,D:\,,mapped-unnamed
+0x004c8db8,0x004c8db8,5,0x0001a870,FUN_0001a870,171,mapped,,no,FUN_000586b0 FUN_0007e160 __chkstk FUN_0007e120 _GetFileAttributesA@4 FUN_00057440,FUN,Error reading attributes for '%s',,mapped-unnamed
+0x004c8db8,0x004c8db8,6,0x0001e100,FUN_0001e100,2021,mapped,,no,FUN_0001d090 FUN_0007e160 __chkstk FUN_0007e120 _SetFileAttributesA@8 FUN_0001b310,FUN Core,D:\,,mapped-unnamed
+0x004c8db8,0x004c8db8,7,0x0001ec10,FUN_0001ec10,1673,mapped,,no,FUN_0001d090 FUN_0007e160 __chkstk FUN_0007e120 _MoveFileA@8 FUN_00055ed0,FUN Core,D:\,,mapped-unnamed
+0x004c8db8,0x004c8db8,8,0x00034200,,,outside,,,,,,,outside
+0x004c8db8,0x004c8db8,9,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,10,0x0001f2a0,FUN_0001f2a0,35,mapped,,no,,,,,mapped-unnamed
+0x004c8db8,0x004c8db8,11,0x00024c80,FUN_00024c80,35,mapped,,no,,,,,mapped-unnamed
+0x004c8db8,0x004c8db8,12,0x00024e70,FUN_00024e70,718,mapped,,no,FUN_0001d090 FUN_0007e160 __chkstk FUN_0007e120 _FindFirstFileA@8 FUN_00055ed0,FUN Core,D:\,,mapped-unnamed
+0x004c8db8,0x004c8db8,13,0x0001a7e0,,,gap,body,,,,,,gap-head
+0x004c8db8,0x004c8db8,14,0x0001c4f0,,,gap,body,,,,,,gap-head
+0x004c8db8,0x004c8db8,15,0x00034240,FUN_00034240,531,mapped,,no,_wcschr FUN_0001b260 FUN_000281d0 FUN_00027560 FUN_0001b2c0 FUN_0001b310,FUN,..\,0x004c85b0,mapped-unnamed
+0x004c8db8,0x004c8db8,16,0x0001a800,,,gap,body,,,,,,gap-head
+0x004c8db8,0x004c8db8,17,0x00018b60,,,outside,,,,,,,outside
+0x004c8db8,0x004c8db8,18,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,19,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,20,0x00018b80,,,outside,,,,,,,outside
+0x004c8db8,0x004c8db8,21,0x00018b90,FUN_00018b90,22,mapped,,no,,,,0x004c85b0,mapped-unnamed
+0x004c8db8,0x004c8db8,22,0x00018bb0,FUN_00018bb0,5,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,23,0x00018bc0,FUN_00018bc0,5,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,24,0x00018bd0,FUN_00018bd0,5,stub,,,,,,,stub
+0x004c8db8,0x004c8db8,25,0x003a0044,FUN_003a0044,19,mapped,,no,FUN_003976d0,FUN,,,mapped-unnamed
+0x004c96fc,0x004c96fc,0,0x0001cf10,,,outside,,,,,,,outside
+0x004c96fc,0x004c96fc,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,6,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,7,0x000f97b0,,,outside,,,,,,,outside
+0x004c96fc,0x004c96fc,8,0x000f97c0,,,outside,,,,,,,outside
+0x004c96fc,0x004c96fc,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,10,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,11,0x000f97d0,,,outside,,,,,,,outside
+0x004c96fc,0x004c96fc,12,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,13,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004c96fc,0x004c96fc,14,0x0001b760,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,0,0x00027d90,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,1,0x00027cd0,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,2,0x00027d30,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,3,0x00027f20,FUN_00027f20,96,mapped,,no,__chkstk FUN_000dbcc0,FUN,,,mapped-unnamed
+0x004d0ec8,0x004d0ec8,4,0x00029800,FUN_00029800,243,mapped,,no,FUN_000287d0 FUN_0001b260 FUN_00028dc0 FUN_0001b310 FUN_00029900 FUN_00036c60,FUN,,,mapped-unnamed
+0x004d0ec8,0x004d0ec8,5,0x00027ca0,FUN_00027ca0,46,mapped,,no,FUN_00056060,FUN,,,mapped-unnamed
+0x004d0ec8,0x004d0ec8,6,0x000299a0,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,7,0x00029b10,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,8,0x00029d80,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,9,0x00029f60,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,10,0x00027ec0,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,11,0x00027e20,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,12,0x00027e70,,,outside,,,,,,,outside
+0x004d0ec8,0x004d0ec8,13,0x00029c00,FUN_00029c00,375,mapped,,no,FUN_000287d0 FUN_0001b260 FUN_00028dc0 FUN_00055ed0 Core_UnTemplate FUN_00028f40,FUN Core,,,mapped-unnamed
+0x004d0ec8,0x004d0ec8,14,0x00028020,FUN_00028020,429,mapped,,no,__wcsicmp FUN_000281d0 FUN_00027560 FUN_00055ed0 Core_UnTemplate FUN_000282c0,FUN Core,,,mapped-unnamed
+0x004d0ec8,0x004d0ec8,15,0x000287a0,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,16,0x000297e0,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,17,0x00027ef0,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,18,0x00027c90,,,outside,,,,,,,outside
+0x004d0ec8,0x004d0ec8,19,0x00027f80,,,gap,body,,,,,,gap-head
+0x004d0ec8,0x004d0ec8,20,0x0002a180,FUN_0002a180,33,mapped,,no,FUN_0002a1b0,FUN,,,mapped-unnamed
+0x004d1430,0x004d1430,0,0x0002c040,FUN_0002c040,30,mapped,,no,FUN_0002bff0 ??3@YAXPAX@Z,FUN,,,mapped-unnamed
+0x004d1430,0x004d1430,1,0x0002c030,,,outside,,,,,,,outside
+0x004d2e58,0x004d2e58,0,0x000357a0,FUN_000357a0,33,mapped,,no,FUN_00073dd0,FUN,,,mapped-unnamed
+0x004d2e58,0x004d2e58,1,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,4,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,5,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,6,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,7,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,8,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,9,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,10,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,11,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,12,0x00016ed0,FUN_00016ed0,40,mapped,,no,,,,0x0051ec98,mapped-unnamed
+0x004d2e58,0x004d2e58,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,15,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,17,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,18,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,19,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x0051ec98 0x0052d7d0,mapped-unnamed
+0x004d2e58,0x004d2e58,21,0x00016f50,FUN_00016f50,4,stub,,,,,,,stub
+0x004d2e58,0x004d2e58,22,0x000340c0,appMallocBeforeInit,29,mapped,,yes,FUN_000574d0,FUN,appMalloc,,mapped-named
+0x004d2e58,0x004d2e58,23,0x000340e0,FUN_000340e0,29,mapped,,no,FUN_000574d0,FUN,appRealloc,,mapped-unnamed
+0x004d2e58,0x004d2e58,24,0x00034100,FUN_00034100,27,mapped,,no,FUN_000574d0,FUN,appFree,,mapped-unnamed
+0x004d2e58,0x004d2e58,25,0x00034120,FUN_00034120,25,mapped,,no,FUN_000574d0,FUN,appDumpAllocs,,mapped-unnamed
+0x004d2e58,0x004d2e58,26,0x00034140,,,outside,,,,,,,outside
+0x004d2e58,0x004d2e58,27,0x00034160,,,outside,,,,,,,outside
+0x004d2e58,0x004d2e58,28,0x00034180,,,outside,,,,,,,outside
+0x004e3520,0x004e3520,0,0x001dfe40,,,outside,,,,,,,outside
+0x004e3520,0x004e3520,1,0x001df4e0,,,outside,,,,,,,outside
+0x004e3520,0x004e3520,2,0x0024e1b0,FUN_0024e1b0,6,stub,,,,,,,stub
+0x004e3520,0x004e3520,3,0x0008b2e0,,,outside,,,,,,,outside
+0x004e3520,0x004e3520,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004e3520,0x004e3520,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004e3520,0x004e3520,6,0x002a1260,FUN_002a1260,47,mapped,,no,,,,,mapped-unnamed
+0x004e3520,0x004e3520,7,0x0008caa0,FUN_0008caa0,2992,mapped,,no,FUN_00031480 FUN_000314b0,FUN,,,mapped-unnamed
+0x004e3520,0x004e3520,8,0x0008a940,FUN_0008a940,13,mapped,,no,,,,0x00517214 0x00523340,mapped-unnamed
+0x004eb914,0x004eb914,0,0x000c1b10,,,outside,,,,,,,outside
+0x004eb914,0x004eb914,1,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,2,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,3,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,4,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,5,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,6,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,7,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,8,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,9,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,10,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004eb914,0x004eb914,11,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x004ebb00,0x004ebb00,0,0x000c3a10,FUN_000c3a10,33,mapped,,no,FUN_000c37b0,FUN,,,mapped-unnamed
+0x004ebb00,0x004ebb00,1,0x000c1c00,,,outside,,,,,,,outside
+0x004ebb00,0x004ebb00,2,0x000c33d0,,,gap,no-close,,,,,,gap-head
+0x004ebb00,0x004ebb00,3,0x000c1d50,Engine_UnActCol,588,mapped,,yes,appAssertFailed FUN_00062e20 FUN_000574d0 FUN_000c1cc0 FUN_0007e450,FUN,%s moved without proper hashing,,mapped-named
+0x004ebb00,0x004ebb00,4,0x000c2a30,,,gap,body,,,,,,gap-head
+0x004ebb00,0x004ebb00,5,0x000c1fb0,Engine_UnActCol,861,mapped,,yes,FUN_000c3880 appAssertFailed FUN_00055df0,FUN,,,mapped-named
+0x004ebb00,0x004ebb00,6,0x000c2320,FUN_000c2320,846,mapped,,no,FUN_000c3880 FUN_00055df0,FUN,,,mapped-unnamed
+0x004ebb00,0x004ebb00,7,0x000c2670,Engine_UnActCol,930,mapped,,yes,appAssertFailed FUN_000c1cc0 FUN_000c1b60 FUN_00055df0,FUN,,,mapped-named
+0x004ebb00,0x004ebb00,8,0x000c1c20,,,outside,,,,,,,outside
+0x004ebb00,0x004ebb00,9,0x000c1c90,,,gap,island,,,,,,gap-head
+0x004ebb00,0x004ebb00,10,0x000c1ca0,,,outside,,,,,,,outside
+0x004ebb00,0x004ebb00,11,0x000c1cb0,,,gap,island,,,,,,gap-head
+0x004ebf54,0x004ebf54,0,0x000dc010,,,gap,body,,,,,,gap-head
+0x004ebf54,0x004ebf54,1,0x000dbee0,,,gap,body,,,,,,gap-head
+0x004ebf54,0x004ebf54,2,0x000dbfa0,,,gap,body,,,,,,gap-head
+0x004ebf54,0x004ebf54,3,0x000dbef0,FUN_000dbef0,171,mapped,,no,FUN_000333b0 thunk_FUN_0034451b,FUN thunk,,,mapped-unnamed
+0x004ebf54,0x004ebf54,4,0x000dc000,,,gap,body,,,,,,gap-head
+0x004ebf54,0x004ebf54,5,0x00018bb0,FUN_00018bb0,5,stub,,,,,,,stub
+0x004f7070,0x004f7070,0,0x000e1630,FUN_000e1630,195,mapped,,no,,,,,mapped-unnamed
+0x004f7070,0x004f7070,1,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x004f7070,0x004f7070,2,0x000e2770,FUN_000e2770,555,mapped,,no,Engine_UnTrace FUN_000ad530,Engine FUN,,,mapped-unnamed
+0x004f7070,0x004f7070,3,0x000e29a0,,,gap,body,,,,,,gap-head
+0x004f7070,0x004f7070,4,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x004f7070,0x004f7070,5,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x004f7070,0x004f7070,6,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x004f7070,0x004f7070,7,0x000e60f0,,,gap,body,,,,,,gap-head
+0x004f7070,0x004f7070,8,0x001ddf20,,,outside,,,,,,,outside
+0x004f7070,0x004f7070,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x004f7070,0x004f7070,10,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x004f7070,0x004f7070,11,0x000bd350,FUN_000bd350,8,stub,,,,,,,stub
+0x004f70a0,0x004f70a0,0,0x000e1720,,,gap,body,,,,,,gap-head
+0x004f70a0,0x004f70a0,1,0x000e1870,,,outside,,,,,,,outside
+0x00510e6c,0x00510e6c,0,0x00179920,FUN_00179920,7,stub,,,,,,,stub
+0x00510e6c,0x00510e6c,1,0x00179930,,,outside,,,,,,,outside
+0x00510e6c,0x00510e6c,2,0x001798d0,,,gap,island,,,,,,gap-head
+0x00510e6c,0x00510e6c,3,0x001798c0,,,outside,,,,,,,outside
+0x00510e6c,0x00510e6c,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510e6c,0x00510e6c,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510e6c,0x00510e6c,6,0x001798e0,,,gap,body,,,,,,gap-head
+0x00510e6c,0x00510e6c,7,0x00179940,,,outside,,,,,,,outside
+0x00510e6c,0x00510e6c,8,0x00179970,,,gap,body,,,,,,gap-head
+0x00510e90,0x00510e90,0,0x00179920,FUN_00179920,7,stub,,,,,,,stub
+0x00510e90,0x00510e90,1,0x00179930,,,outside,,,,,,,outside
+0x00510e90,0x00510e90,2,0x0024e3a0,,,gap,island,,,,,,gap-head
+0x00510e90,0x00510e90,3,0x0024e390,,,outside,,,,,,,outside
+0x00510e90,0x00510e90,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510e90,0x00510e90,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510e90,0x00510e90,6,0x001799f0,,,gap,body,,,,,,gap-head
+0x00510e90,0x00510e90,7,0x0024e3b0,,,outside,,,,,,,outside
+0x00510e90,0x00510e90,8,0x0024e3e0,,,gap,body,,,,,,gap-head
+0x00510eb8,0x00510eb8,0,0x00179a90,,,outside,,,,,,,outside
+0x00510eb8,0x00510eb8,1,0x00179aa0,FUN_00179aa0,4,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,4,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,7,0x001ec800,,,outside,,,,,,,outside
+0x00510eb8,0x00510eb8,8,0x002c12a0,,,outside,,,,,,,outside
+0x00510eb8,0x00510eb8,9,0x001e6330,,,outside,,,,,,,outside
+0x00510eb8,0x00510eb8,10,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,11,0x00179a80,,,outside,,,,,,,outside
+0x00510eb8,0x00510eb8,12,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,13,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510eb8,0x00510eb8,14,0x001ea300,,,outside,,,,,,,outside
+0x00510eb8,0x00510eb8,15,0x001ea290,Engine_UnRenderLight,103,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00510eb8,0x00510eb8,16,0x001e6310,,,gap,body,,,,,,gap-head
+0x00510eb8,0x00510eb8,17,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,0,0x00179b10,,,outside,,,,,,,outside
+0x00510f00,0x00510f00,1,0x0003f9b0,,,outside,,,,,,,outside
+0x00510f00,0x00510f00,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,5,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,7,0x00179b00,,,gap,island,,,,,,gap-head
+0x00510f00,0x00510f00,8,0x00179b00,,,gap,island,,,,,,gap-head
+0x00510f00,0x00510f00,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,10,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00510f00,0x00510f00,11,0x0021ac30,,,gap,island,,,,,,gap-head
+0x00510f00,0x00510f00,12,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,13,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f00,0x00510f00,14,0x001eaaf0,FUN_001eaaf0,4,stub,,,,,,,stub
+0x00510f00,0x00510f00,15,0x001ea250,FUN_001ea250,63,mapped,,no,,,,,mapped-unnamed
+0x00510f78,0x00510f78,0,0x0017a7e0,,,outside,,,,,,,outside
+0x00510f78,0x00510f78,1,0x001df570,,,outside,,,,,,,outside
+0x00510f78,0x00510f78,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00510f78,0x00510f78,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f78,0x00510f78,4,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00510f78,0x00510f78,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f78,0x00510f78,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f78,0x00510f78,7,0x0017a7d0,,,outside,,,,,,,outside
+0x00510f78,0x00510f78,8,0x002c7240,,,outside,,,,,,,outside
+0x00510f78,0x00510f78,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00510f78,0x00510f78,10,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00510f78,0x00510f78,11,0x0021ac30,,,gap,island,,,,,,gap-head
+0x00510f78,0x00510f78,12,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00510f78,0x00510f78,13,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00510f78,0x00510f78,14,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x00510f78,0x00510f78,15,0x001e9a30,FUN_001e9a30,2075,mapped,,no,__allmul FUN_0014e5e0 Core_UnCache FUN_00279fd0 FUN_0008abb0 FUN_000c50f0,FUN Core Engine,,,mapped-unnamed
+0x00510f78,0x00510f78,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x00510f78,0x00510f78,17,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005113b0,0x005113b0,0,0x0017d5f0,FUN_0017d5f0,33,mapped,,no,FUN_0017c650,FUN,,,mapped-unnamed
+0x005113b0,0x005113b0,1,0x0017c670,FUN_0017c670,103,mapped,,no,FUN_0007e510,FUN,,,mapped-unnamed
+0x005113b0,0x005113b0,2,0x0017c6e0,FUN_0017c6e0,60,mapped,,no,FUN_0007e510,FUN,,,mapped-unnamed
+0x005113b0,0x005113b0,3,0x0017c720,,,outside,,,,,,,outside
+0x005113b0,0x005113b0,4,0x0017c730,,,outside,,,,,,,outside
+0x005113b0,0x005113b0,5,0x0017c740,,,outside,,,,,,,outside
+0x005113b0,0x005113b0,6,0x0017c640,,,outside,,,,,,,outside
+0x005113b0,0x005113b0,7,0x0017c750,,,outside,,,,,,,outside
+0x005113b0,0x005113b0,8,0x0017c770,,,outside,,,,,,,outside
+0x005113b0,0x005113b0,9,0x0017c790,FUN_0017c790,104,mapped,,no,FUN_0007e510,FUN,,,mapped-unnamed
+0x005113b0,0x005113b0,10,0x0017c800,FUN_0017c800,641,mapped,,no,,,,,mapped-unnamed
+0x005113b0,0x005113b0,11,0x001271f0,FUN_001271f0,3,stub,,,,,,,stub
+0x005124a4,0x005124a4,0,0x00187020,FUN_00187020,33,mapped,,no,FUN_00186c60,FUN,,,mapped-unnamed
+0x005124a4,0x005124a4,1,0x00183fb0,,,outside,,,,,,,outside
+0x005124a4,0x005124a4,2,0x00186cd0,Engine_UnOctree,660,mapped,,yes,appAssertFailed FUN_000574d0 FUN_00081450 FUN_00081560 FUN_00183da0 FUN_00186b40,FUN,Octree Warning (AddActor): %s Has Invalid Location.,,mapped-named
+0x005124a4,0x005124a4,3,0x00186890,Engine_UnOctree,372,mapped,,yes,appAssertFailed FUN_000574d0 Core_UnTemplate,FUN Core,Octree Warning (RemoveActor): %s has invalid ColLocation,,mapped-named
+0x005124a4,0x005124a4,4,0x00185480,FUN_00185480,1474,mapped,,no,FUN_00184270 FUN_00055c40 FUN_001848e0,FUN,,,mapped-unnamed
+0x005124a4,0x005124a4,5,0x00185a50,,,gap,body,,,,,,gap-head
+0x005124a4,0x005124a4,6,0x00185b80,FUN_00185b80,258,mapped,,no,FUN_001850a0,FUN,,,mapped-unnamed
+0x005124a4,0x005124a4,7,0x00185c90,FUN_00185c90,291,mapped,,no,FUN_00184bd0,FUN,,,mapped-unnamed
+0x005124a4,0x005124a4,8,0x00185dc0,,,gap,body,,,,,,gap-head
+0x005124a4,0x005124a4,9,0x00183fc0,,,gap,island,,,,,,gap-head
+0x005124a4,0x005124a4,10,0x00185e20,,,outside,,,,,,,outside
+0x005124a4,0x005124a4,11,0x00186a10,FUN_00186a10,294,mapped,,no,FUN_00185eb0 FUN_00185e30 FUN_000574d0 Core_UnTemplate,FUN Core,Octree Warning: Actor %s not in sync with Octree.,,mapped-unnamed
+0x00516fa8,0x00516fa8,0,0x001ddd50,FUN_001ddd50,33,mapped,,no,FUN_001d4070,FUN,,,mapped-unnamed
+0x00516fa8,0x00516fa8,1,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00516fa8,0x00516fa8,2,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x00516fa8,0x00516fa8,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fa8,0x00516fa8,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fa8,0x00516fa8,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fa8,0x00516fa8,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fa8,0x00516fa8,7,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fa8,0x00516fa8,8,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fa8,0x00516fa8,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,0,0x001ddd80,FUN_001ddd80,33,mapped,,no,FUN_001d4cf0,FUN,,,mapped-unnamed
+0x00516fd4,0x00516fd4,1,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,2,0x001d9fa0,FUN_001d9fa0,1880,mapped,,no,Engine_UnMaterial FUN_0016d990 Core_UnObjBas FUN_00085ea0 FUN_001f4450 FUN_00086c50,Engine FUN Core,Engine,,mapped-unnamed
+0x00516fd4,0x00516fd4,3,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,7,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,8,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,10,0x001d5510,FUN_001d5510,2841,mapped,,no,FUN_001f1740 FUN_000ab120 FUN_001d41b0 FUN_001cb420 FUN_001dd9f0 FUN_000f9470,FUN,,0x005170f4,mapped-unnamed
+0x00516fd4,0x00516fd4,11,0x001d6040,FUN_001d6040,862,mapped,,no,FUN_000c8010 Engine_UnParticleSystem FUN_0018d640 Engine_UnActor FUN_000cd080 Engine_UnFluidSurface,FUN Engine,Engine,0x005170f4,mapped-unnamed
+0x00516fd4,0x00516fd4,12,0x001d4d00,FUN_001d4d00,8,stub,,,,,,,stub
+0x00516fd4,0x00516fd4,13,0x001d63a0,FUN_001d63a0,296,mapped,,no,FUN_000f9470,FUN,,0x005170f4,mapped-unnamed
+0x005170f4,0x005170f4,0,0x001dddf0,FUN_001dddf0,33,mapped,,no,FUN_001d4d10,FUN,,,mapped-unnamed
+0x005170f4,0x005170f4,1,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,2,0x001da840,FUN_001da840,1573,mapped,,no,FUN_000f9470 FUN_001d9fa0 Engine_UnMaterial FUN_0016d990 Core_UnObjBas FUN_00085ea0,FUN Engine Core,Engine,,mapped-unnamed
+0x005170f4,0x005170f4,3,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,4,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,7,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,8,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005170f4,0x005170f4,10,0x001d5510,FUN_001d5510,2841,mapped,,no,FUN_001f1740 FUN_000ab120 FUN_001d41b0 FUN_001cb420 FUN_001dd9f0 FUN_000f9470,FUN,,0x00516fd4,mapped-unnamed
+0x005170f4,0x005170f4,11,0x001d6040,FUN_001d6040,862,mapped,,no,FUN_000c8010 Engine_UnParticleSystem FUN_0018d640 Engine_UnActor FUN_000cd080 Engine_UnFluidSurface,FUN Engine,Engine,0x00516fd4,mapped-unnamed
+0x005170f4,0x005170f4,12,0x001d4d00,FUN_001d4d00,8,stub,,,,,,,stub
+0x005170f4,0x005170f4,13,0x001d63a0,FUN_001d63a0,296,mapped,,no,FUN_000f9470,FUN,,0x00516fd4,mapped-unnamed
+0x005170f4,0x005170f4,14,0x001d64d0,FUN_001d64d0,1665,mapped,,no,FUN_00021540 FUN_000215c0 FUN_00021130 FUN_000fdf50 FUN_001d3ec0 FUN_001d3e20,FUN,,,mapped-unnamed
+0x00517214,0x00517214,0,0x0017a7e0,,,outside,,,,,,,outside
+0x00517214,0x00517214,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517214,0x00517214,2,0x001eaaf0,FUN_001eaaf0,4,stub,,,,,,,stub
+0x00517214,0x00517214,3,0x001ddf20,,,outside,,,,,,,outside
+0x00517214,0x00517214,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517214,0x00517214,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517214,0x00517214,6,0x001dde50,,,gap,body,,,,,,gap-head
+0x00517214,0x00517214,7,0x001ddeb0,,,gap,body,,,,,,gap-head
+0x00517214,0x00517214,8,0x0008a940,FUN_0008a940,13,mapped,,no,,,,0x004e3520 0x00523340,mapped-unnamed
+0x00517238,0x00517238,0,0x0017a7e0,,,outside,,,,,,,outside
+0x00517238,0x00517238,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517238,0x00517238,2,0x001ddf20,,,outside,,,,,,,outside
+0x00517238,0x00517238,3,0x001ddf30,FUN_001ddf30,113,mapped,,no,,,,,mapped-unnamed
+0x00517238,0x00517238,4,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x00517260,0x00517260,0,0x001dfe40,,,outside,,,,,,,outside
+0x00517260,0x00517260,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517260,0x00517260,2,0x00179930,,,outside,,,,,,,outside
+0x00517260,0x00517260,3,0x001df4e0,,,outside,,,,,,,outside
+0x00517260,0x00517260,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517260,0x00517260,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517260,0x00517260,6,0x001ddfb0,,,gap,body,,,,,,gap-head
+0x00517260,0x00517260,7,0x001de1a0,,,gap,body,,,,,,gap-head
+0x00517260,0x00517260,8,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x005172ec,0x005172ec,0,0x001df560,,,outside,,,,,,,outside
+0x005172ec,0x005172ec,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x005172ec,0x005172ec,2,0x001df570,,,outside,,,,,,,outside
+0x005172ec,0x005172ec,3,0x001df5e0,,,gap,body,,,,,,gap-head
+0x005172ec,0x005172ec,4,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x00517428,0x00517428,0,0x001dfda0,,,outside,,,,,,,outside
+0x00517428,0x00517428,1,0x001e2cc0,,,gap,body,,,,,,gap-head
+0x00517444,0x00517444,0,0x001eaab0,,,outside,,,,,,,outside
+0x00517444,0x00517444,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517444,0x00517444,2,0x00247e00,,,gap,island,,,,,,gap-head
+0x00517444,0x00517444,3,0x001dfec0,,,outside,,,,,,,outside
+0x00517444,0x00517444,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517444,0x00517444,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517444,0x00517444,6,0x001dfed0,,,gap,body,,,,,,gap-head
+0x00517444,0x00517444,7,0x001e3470,,,gap,body,,,,,,gap-head
+0x00517444,0x00517444,8,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0051748c,0x0051748c,0,0x001e0150,,,outside,,,,,,,outside
+0x0051748c,0x0051748c,1,0x001e01a0,,,outside,,,,,,,outside
+0x005174a0,0x005174a0,0,0x001e2c70,,,outside,,,,,,,outside
+0x005174a0,0x005174a0,1,0x001e01a0,,,outside,,,,,,,outside
+0x00517778,0x00517778,0,0x001eaab0,,,outside,,,,,,,outside
+0x00517778,0x00517778,1,0x001eabc0,Engine_UnRenderPool,48,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00517778,0x00517778,2,0x001eaac0,Engine_UnRenderPrivate,42,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00517778,0x00517778,3,0x001eaaf0,FUN_001eaaf0,4,stub,,,,,,,stub
+0x00517778,0x00517778,4,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517778,0x00517778,5,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517778,0x00517778,6,0x001eab00,Engine_UnRenderPrivate,42,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00517778,0x00517778,7,0x001eab30,Engine_UnRenderPrivate,42,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00517778,0x00517778,8,0x001eab60,Engine_UnRenderPrivate,42,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00517e88,0x00517e88,0,0x001ed1f0,,,outside,,,,,,,outside
+0x00517e88,0x00517e88,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517e88,0x00517e88,2,0x001f0e40,,,outside,,,,,,,outside
+0x00517e88,0x00517e88,3,0x001f0ef0,FUN_001f0ef0,573,mapped,,no,FUN_00091c80 FUN_001f1130 FUN_00055da0,FUN,,,mapped-unnamed
+0x00517e88,0x00517e88,4,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x00517ff0,0x00517ff0,0,0x001f7a40,,,outside,,,,,,,outside
+0x00517ff0,0x00517ff0,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x00517ff0,0x00517ff0,2,0x001f7a60,,,gap,island,,,,,,gap-head
+0x00517ff0,0x00517ff0,3,0x001f7a50,,,outside,,,,,,,outside
+0x00517ff0,0x00517ff0,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517ff0,0x00517ff0,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00517ff0,0x00517ff0,6,0x001f2330,,,gap,body,,,,,,gap-head
+0x00517ff0,0x00517ff0,7,0x001f2380,,,outside,,,,,,,outside
+0x00517ff0,0x00517ff0,8,0x001f23b0,Engine_UnRenderUtil,57,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00518080,0x00518080,0,0x001f2510,,,outside,,,,,,,outside
+0x00518080,0x00518080,1,0x001f2500,,,outside,,,,,,,outside
+0x00518080,0x00518080,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00518080,0x00518080,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00518080,0x00518080,4,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00518080,0x00518080,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00518080,0x00518080,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00518080,0x00518080,7,0x001f2520,,,gap,island,,,,,,gap-head
+0x00518080,0x00518080,8,0x001f2530,,,gap,island,,,,,,gap-head
+0x00518080,0x00518080,9,0x001f2580,,,outside,,,,,,,outside
+0x00518080,0x00518080,10,0x001f2570,,,gap,island,,,,,,gap-head
+0x00518080,0x00518080,11,0x001f2560,,,gap,island,,,,,,gap-head
+0x00518080,0x00518080,12,0x001f2540,,,outside,,,,,,,outside
+0x00518080,0x00518080,13,0x001f2550,,,outside,,,,,,,outside
+0x00518080,0x00518080,14,0x001f25f0,,,outside,,,,,,,outside
+0x00518080,0x00518080,15,0x001f2590,,,gap,no-close,,,,,,gap-head
+0x00518080,0x00518080,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x00518080,0x00518080,17,0x001f2600,,,outside,,,,,,,outside
+0x005180c8,0x005180c8,0,0x001f2620,,,outside,,,,,,,outside
+0x005180c8,0x005180c8,1,0x001f2610,,,outside,,,,,,,outside
+0x005180c8,0x005180c8,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x005180c8,0x005180c8,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005180c8,0x005180c8,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005180c8,0x005180c8,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005180c8,0x005180c8,6,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x005180c8,0x005180c8,7,0x001f2630,,,outside,,,,,,,outside
+0x005180c8,0x005180c8,8,0x001f2640,,,outside,,,,,,,outside
+0x005180c8,0x005180c8,9,0x001f2690,,,outside,,,,,,,outside
+0x005180c8,0x005180c8,10,0x001f2680,,,gap,island,,,,,,gap-head
+0x005180c8,0x005180c8,11,0x001f2670,,,outside,,,,,,,outside
+0x005180c8,0x005180c8,12,0x001f2650,,,gap,island,,,,,,gap-head
+0x005180c8,0x005180c8,13,0x001f2660,,,gap,island,,,,,,gap-head
+0x005180c8,0x005180c8,14,0x0001b760,,,gap,body,,,,,,gap-head
+0x00518104,0x00518104,0,0x001f2420,,,outside,,,,,,,outside
+0x00518104,0x00518104,1,0x001f2430,,,outside,,,,,,,outside
+0x00518104,0x00518104,2,0x001f2440,,,outside,,,,,,,outside
+0x00518104,0x00518104,3,0x001f43a0,,,outside,,,,,,,outside
+0x00518104,0x00518104,4,0x001f2450,,,gap,island,,,,,,gap-head
+0x00518104,0x00518104,5,0x001f23f0,,,outside,,,,,,,outside
+0x00518104,0x00518104,6,0x001f2400,Engine_UnRenderUtil,24,mapped,,yes,appAssertFailed,,,,mapped-named
+0x00518120,0x00518120,0,0x001f2460,,,outside,,,,,,,outside
+0x00518120,0x00518120,1,0x001f2470,,,outside,,,,,,,outside
+0x00518120,0x00518120,2,0x001f2480,,,outside,,,,,,,outside
+0x00518120,0x00518120,3,0x001f43d0,,,outside,,,,,,,outside
+0x00518120,0x00518120,4,0x001f2490,,,gap,island,,,,,,gap-head
+0x00518160,0x00518160,0,0x001f1dd0,,,outside,,,,,,,outside
+0x00518160,0x00518160,1,0x001f1de0,,,gap,island,,,,,,gap-head
+0x00518160,0x00518160,2,0x001f1e00,,,gap,island,,,,,,gap-head
+0x00518160,0x00518160,3,0x001f1df0,,,outside,,,,,,,outside
+0x00518160,0x00518160,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00518160,0x00518160,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00518160,0x00518160,6,0x001f1e10,,,gap,body,,,,,,gap-head
+0x00518160,0x00518160,7,0x001f41f0,,,outside,,,,,,,outside
+0x00518160,0x00518160,8,0x001f4220,,,gap,body,,,,,,gap-head
+0x00518184,0x00518184,0,0x001f1e40,,,outside,,,,,,,outside
+0x00518184,0x00518184,1,0x001f1e50,,,gap,island,,,,,,gap-head
+0x00518184,0x00518184,2,0x001f1e80,,,outside,,,,,,,outside
+0x00518184,0x00518184,3,0x001f1e60,,,outside,,,,,,,outside
+0x00518184,0x00518184,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00518184,0x00518184,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00518184,0x00518184,6,0x001f1e90,,,gap,body,,,,,,gap-head
+0x00518184,0x00518184,7,0x001f4240,,,outside,,,,,,,outside
+0x00518184,0x00518184,8,0x001f4290,,,outside,,,,,,,outside
+0x005181a8,0x005181a8,0,0x001f24a0,,,outside,,,,,,,outside
+0x005181a8,0x005181a8,1,0x001f24b0,,,outside,,,,,,,outside
+0x005181a8,0x005181a8,2,0x001f24d0,,,gap,island,,,,,,gap-head
+0x005181a8,0x005181a8,3,0x001f24c0,,,outside,,,,,,,outside
+0x005181a8,0x005181a8,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005181a8,0x005181a8,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x005181a8,0x005181a8,6,0x001f24e0,,,gap,body,,,,,,gap-head
+0x005181a8,0x005181a8,7,0x001f4400,,,outside,,,,,,,outside
+0x005181a8,0x005181a8,8,0x001f4430,,,outside,,,,,,,outside
+0x005181d0,0x005181d0,0,0x001f80b0,,,outside,,,,,,,outside
+0x005181d0,0x005181d0,1,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x005181d0,0x005181d0,2,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x005181dc,0x005181dc,0,0x002007a0,FUN_002007a0,33,mapped,,no,FUN_002004c0,FUN,,,mapped-unnamed
+0x005181dc,0x005181dc,1,0x00200730,,,gap,body,,,,,,gap-head
+0x005181dc,0x005181dc,2,0x00200620,FUN_00200620,264,mapped,,no,FUN_001f19a0,FUN,,,mapped-unnamed
+0x0051a810,0x0051a810,0,0x0021eab0,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,1,0x0021eac0,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,2,0x0021ead0,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,3,0x0021eae0,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,4,0x0021eaf0,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,6,0x0021eb00,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,7,0x0021eb10,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,8,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,9,0x0021ebf0,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,10,0x0021ec30,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,11,0x0021eb20,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,12,0x0021eb30,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,13,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,14,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x0051a810,0x0051a810,15,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,17,0x000bd370,,,gap,island,,,,,,gap-head
+0x0051a810,0x0051a810,18,0x001271f0,FUN_001271f0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,19,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,20,0x000bd380,,,gap,island,,,,,,gap-head
+0x0051a810,0x0051a810,21,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,22,0x0021eb40,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,23,0x0021eef0,,,gap,no-close,,,,,,gap-head
+0x0051a810,0x0051a810,24,0x0021ee00,,,gap,body,,,,,,gap-head
+0x0051a810,0x0051a810,25,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,26,0x0021eb70,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,27,0x0021eb80,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,28,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0051a810,0x0051a810,29,0x0021eb60,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,30,0x0021eb90,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,31,0x0021eb50,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,32,0x0021eba0,,,gap,body,,,,,,gap-head
+0x0051a810,0x0051a810,33,0x0021ebd0,,,gap,body,,,,,,gap-head
+0x0051a810,0x0051a810,34,0x0021ec40,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,35,0x0021ec50,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,36,0x0021ec60,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,37,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,38,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,39,0x00018bb0,FUN_00018bb0,5,stub,,,,,,,stub
+0x0051a810,0x0051a810,40,0x000bd0c0,,,gap,body,,,,,,gap-head
+0x0051a810,0x0051a810,41,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,42,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,43,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,44,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,45,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x0051a810,0x0051a810,46,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,47,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,48,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,49,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,50,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0051a810,0x0051a810,51,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0051a810,0x0051a810,52,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,53,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,54,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,55,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,56,0x000bd0d0,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,57,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0051a810,0x0051a810,58,0x0021ec00,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,59,0x0021ec10,,,outside,,,,,,,outside
+0x0051a810,0x0051a810,60,0x0021ec20,,,outside,,,,,,,outside
+0x0051b0cc,0x0051b0cc,0,0x002200b0,,,gap,island,,,,,,gap-head
+0x0051b0cc,0x0051b0cc,1,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x0051b0cc,0x0051b0cc,2,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x0051b0cc,0x0051b0cc,3,0x0023a2d0,FUN_0023a2d0,3,stub,,,,,,,stub
+0x0051b0cc,0x0051b0cc,4,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051b0cc,0x0051b0cc,5,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x0051b0e4,0x0051b0e4,0,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0051b0e4,0x0051b0e4,1,0x002200c0,FUN_002200c0,94,mapped,,no,FUN_00220120,FUN,,,mapped-unnamed
+0x0051b0e4,0x0051b0e4,2,0x00220280,,,gap,island,,,,,,gap-head
+0x0051b0e4,0x0051b0e4,3,0x00220290,FUN_00220290,75,mapped,,no,FUN_002202e0,FUN,,,mapped-unnamed
+0x0051b0e4,0x0051b0e4,4,0x00220360,,,gap,body,,,,,,gap-head
+0x0051b0e4,0x0051b0e4,5,0x002203a0,,,gap,body,,,,,,gap-head
+0x0051b178,0x0051b178,0,0x00237410,,,outside,,,,,,,outside
+0x0051b178,0x0051b178,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0051b178,0x0051b178,2,0x002783f0,,,gap,island,,,,,,gap-head
+0x0051b178,0x0051b178,3,0x00237420,,,gap,island,,,,,,gap-head
+0x0051b178,0x0051b178,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051b178,0x0051b178,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051b178,0x0051b178,6,0x00237430,,,gap,body,,,,,,gap-head
+0x0051b178,0x0051b178,7,0x00237470,,,gap,body,,,,,,gap-head
+0x0051b178,0x0051b178,8,0x00237490,,,gap,body,,,,,,gap-head
+0x0051bc20,0x0051bc20,0,0x0024e2d0,,,outside,,,,,,,outside
+0x0051bc20,0x0051bc20,1,0x0017a7d0,,,outside,,,,,,,outside
+0x0051bc20,0x0051bc20,2,0x00247e00,,,gap,island,,,,,,gap-head
+0x0051bc20,0x0051bc20,3,0x00239e90,,,outside,,,,,,,outside
+0x0051bc20,0x0051bc20,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051bc20,0x0051bc20,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051bc20,0x0051bc20,6,0x00239ea0,,,gap,body,,,,,,gap-head
+0x0051bc20,0x0051bc20,7,0x00239f20,,,outside,,,,,,,outside
+0x0051bc20,0x0051bc20,8,0x00239f50,,,gap,body,,,,,,gap-head
+0x0051bc20,0x0051bc20,9,0x00239ed0,,,outside,,,,,,,outside
+0x0051bc20,0x0051bc20,10,0x00239ef0,,,gap,body,,,,,,gap-head
+0x0051bc4c,0x0051bc4c,0,0x0023a1c0,,,outside,,,,,,,outside
+0x0051bc4c,0x0051bc4c,1,0x002a1250,,,outside,,,,,,,outside
+0x0051bc4c,0x0051bc4c,2,0x002208f0,,,outside,,,,,,,outside
+0x0051bc4c,0x0051bc4c,3,0x002208b0,FUN_002208b0,56,mapped,,no,,,,,mapped-unnamed
+0x0051bc4c,0x0051bc4c,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051bc4c,0x0051bc4c,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051bc4c,0x0051bc4c,6,0x0023a1d0,,,gap,body,,,,,,gap-head
+0x0051bc4c,0x0051bc4c,7,0x002219a0,,,outside,,,,,,,outside
+0x0051bc4c,0x0051bc4c,8,0x00221a00,,,outside,,,,,,,outside
+0x0051bc70,0x0051bc70,0,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x0051bc70,0x0051bc70,1,0x0023a2e0,,,gap,body,,,,,,gap-head
+0x0051bc70,0x0051bc70,2,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051bc70,0x0051bc70,3,0x0023a2d0,FUN_0023a2d0,3,stub,,,,,,,stub
+0x0051bc70,0x0051bc70,4,0x0023a320,,,gap,body,,,,,,gap-head
+0x0051bc70,0x0051bc70,5,0x0023a470,FUN_0023a470,46,mapped,,no,FUN_0023a4a0 FUN_000a7a30 FUN_00168940,FUN,,,mapped-unnamed
+0x0051bc88,0x0051bc88,0,0x0023a5c0,,,gap,island,,,,,,gap-head
+0x0051bc88,0x0051bc88,1,0x0023a5f0,,,gap,body,,,,,,gap-head
+0x0051bc88,0x0051bc88,2,0x0023a5d0,,,outside,,,,,,,outside
+0x0051bc88,0x0051bc88,3,0x00223de0,FUN_00223de0,957,mapped,,no,FUN_00220020 FUN_000b19b0,FUN,,,mapped-unnamed
+0x0051bc88,0x0051bc88,4,0x0023a630,,,gap,body,,,,,,gap-head
+0x0051bc88,0x0051bc88,5,0x0023a6e0,FUN_0023a6e0,46,mapped,,no,FUN_0023a710 FUN_000a7a30 FUN_00168940,FUN,,,mapped-unnamed
+0x0051bca0,0x0051bca0,0,0x0023a800,,,gap,island,,,,,,gap-head
+0x0051bca0,0x0051bca0,1,0x0023a820,,,outside,,,,,,,outside
+0x0051bca0,0x0051bca0,2,0x0023a810,,,outside,,,,,,,outside
+0x0051bca0,0x0051bca0,3,0x002241a0,FUN_002241a0,734,mapped,,no,FUN_00220020 FUN_000b19b0,FUN,,,mapped-unnamed
+0x0051bca0,0x0051bca0,4,0x0023a880,,,gap,body,,,,,,gap-head
+0x0051bca0,0x0051bca0,5,0x0023a8c0,FUN_0023a8c0,46,mapped,,no,FUN_0023a710 FUN_00168940 FUN_00178c90,FUN,,,mapped-unnamed
+0x0051d37c,0x0051d37c,0,0x00179920,FUN_00179920,7,stub,,,,,,,stub
+0x0051d37c,0x0051d37c,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0051d37c,0x0051d37c,2,0x00247e00,,,gap,island,,,,,,gap-head
+0x0051d37c,0x0051d37c,3,0x00247df0,,,outside,,,,,,,outside
+0x0051d37c,0x0051d37c,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051d37c,0x0051d37c,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051d37c,0x0051d37c,6,0x00247e10,,,gap,body,,,,,,gap-head
+0x0051d37c,0x0051d37c,7,0x00247e60,,,outside,,,,,,,outside
+0x0051d37c,0x0051d37c,8,0x00247e90,,,gap,body,,,,,,gap-head
+0x0051d7e8,0x0051d7e8,0,0x0024e2d0,,,outside,,,,,,,outside
+0x0051d7e8,0x0051d7e8,1,0x0017a7d0,,,outside,,,,,,,outside
+0x0051d7e8,0x0051d7e8,2,0x0024e2a0,FUN_0024e2a0,6,stub,,,,,,,stub
+0x0051d7e8,0x0051d7e8,3,0x0024e290,,,outside,,,,,,,outside
+0x0051d7e8,0x0051d7e8,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051d7e8,0x0051d7e8,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051d7e8,0x0051d7e8,6,0x0024e2b0,,,gap,body,,,,,,gap-head
+0x0051d7e8,0x0051d7e8,7,0x0024e2e0,,,outside,,,,,,,outside
+0x0051d7e8,0x0051d7e8,8,0x0024e310,,,outside,,,,,,,outside
+0x0051ec98,0x0051ec98,0,0x002602b0,FUN_002602b0,33,mapped,,no,FUN_002602e0,FUN,,,mapped-unnamed
+0x0051ec98,0x0051ec98,1,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
+0x0051ec98,0x0051ec98,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x004d2e58 0x0052d7d0,mapped-unnamed
+0x0051ec98,0x0051ec98,4,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,5,0x00260160,FUN_00260160,161,mapped,,no,FUN_0002c800,FUN,,,mapped-unnamed
+0x0051ec98,0x0051ec98,6,0x0025ff40,FUN_0025ff40,536,mapped,,no,Engine_UnStaticMesh FUN_00249ca0 Engine_UnSkeletalMesh FUN_00220a10 FUN_00220900 FUN_00220680,Engine FUN,Engine,,mapped-unnamed
+0x0051ec98,0x0051ec98,7,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,8,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,9,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,10,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,11,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,12,0x00016ed0,FUN_00016ed0,40,mapped,,no,,,,0x004d2e58,mapped-unnamed
+0x0051ec98,0x0051ec98,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
+0x0051ec98,0x0051ec98,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
+0x0051ec98,0x0051ec98,15,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,17,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,18,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,19,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x004d2e58 0x0052d7d0,mapped-unnamed
+0x0051ec98,0x0051ec98,21,0x00016f50,FUN_00016f50,4,stub,,,,,,,stub
+0x0051ec98,0x0051ec98,22,0x002e0030,,,outside,,,,,,,outside
+0x0051f6d8,0x0051f6d8,0,0x0023a1c0,,,outside,,,,,,,outside
+0x0051f6d8,0x0051f6d8,1,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0051f6d8,0x0051f6d8,2,0x00275e70,,,outside,,,,,,,outside
+0x0051f6d8,0x0051f6d8,3,0x00275ff0,,,gap,body,,,,,,gap-head
+0x0051f6d8,0x0051f6d8,4,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x0051faa0,0x0051faa0,0,0x00179920,FUN_00179920,7,stub,,,,,,,stub
+0x0051faa0,0x0051faa0,1,0x00179930,,,outside,,,,,,,outside
+0x0051faa0,0x0051faa0,2,0x002783f0,,,gap,island,,,,,,gap-head
+0x0051faa0,0x0051faa0,3,0x002784b0,,,outside,,,,,,,outside
+0x0051faa0,0x0051faa0,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051faa0,0x0051faa0,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051faa0,0x0051faa0,6,0x00237430,,,gap,body,,,,,,gap-head
+0x0051faa0,0x0051faa0,7,0x002784c0,,,outside,,,,,,,outside
+0x0051faa0,0x0051faa0,8,0x002784f0,,,gap,body,,,,,,gap-head
+0x0051ffd8,0x0051ffd8,0,0x00279d50,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,1,0x00279d60,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0051ffd8,0x0051ffd8,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051ffd8,0x0051ffd8,4,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0051ffd8,0x0051ffd8,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051ffd8,0x0051ffd8,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0051ffd8,0x0051ffd8,7,0x00279d80,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,8,0x00279d90,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,9,0x0027b2a0,FUN_0027b2a0,87,mapped,,no,FUN_0027a180,FUN,,,mapped-unnamed
+0x0051ffd8,0x0051ffd8,10,0x00279da0,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,11,0x00279db0,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,12,0x00279dc0,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,13,0x00279dd0,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,14,0x0027b300,FUN_0027b300,60,mapped,,no,,,,,mapped-unnamed
+0x0051ffd8,0x0051ffd8,15,0x0027b370,Engine_UnTex,1874,mapped,,yes,FUN_00062d90 FUN_000574d0 FUN_00161e90 FUN_0011f800 appAssertFailed,FUN,WARNING: Texture [%s] is corrupted.,,mapped-named
+0x0051ffd8,0x0051ffd8,16,0x0027b340,,,outside,,,,,,,outside
+0x0051ffd8,0x0051ffd8,17,0x00279de0,,,outside,,,,,,,outside
+0x00520248,0x00520248,0,0x00279e40,,,outside,,,,,,,outside
+0x00520248,0x00520248,1,0x00279e50,,,outside,,,,,,,outside
+0x00520248,0x00520248,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00520248,0x00520248,3,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x00520248,0x00520248,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00520248,0x00520248,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00520248,0x00520248,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00520248,0x00520248,7,0x0027bae0,,,outside,,,,,,,outside
+0x00520248,0x00520248,8,0x0027bb10,,,outside,,,,,,,outside
+0x00520248,0x00520248,9,0x0027bb70,,,outside,,,,,,,outside
+0x00520248,0x00520248,10,0x0027bb40,,,outside,,,,,,,outside
+0x00520248,0x00520248,11,0x0027bba0,,,outside,,,,,,,outside
+0x00520248,0x00520248,12,0x0027bbd0,,,outside,,,,,,,outside
+0x00520248,0x00520248,13,0x0027bc00,,,outside,,,,,,,outside
+0x00520248,0x00520248,14,0x00279df0,,,gap,body,,,,,,gap-head
+0x00521ff8,0x00521ff8,0,0x00295d30,,,outside,,,,,,,outside
+0x00521ff8,0x00521ff8,1,0x00200020,,,outside,,,,,,,outside
+0x00521ff8,0x00521ff8,2,0x00200020,,,outside,,,,,,,outside
+0x00523008,0x00523008,0,0x00298070,,,outside,,,,,,,outside
+0x00523008,0x00523008,1,0x00200020,,,outside,,,,,,,outside
+0x00523008,0x00523008,2,0x003d003d,,,outside,,,,,,,outside
+0x00523340,0x00523340,0,0x001eaab0,,,outside,,,,,,,outside
+0x00523340,0x00523340,1,0x001eaaf0,FUN_001eaaf0,4,stub,,,,,,,stub
+0x00523340,0x00523340,2,0x002a1250,,,outside,,,,,,,outside
+0x00523340,0x00523340,3,0x001df4e0,,,outside,,,,,,,outside
+0x00523340,0x00523340,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00523340,0x00523340,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x00523340,0x00523340,6,0x00298550,,,outside,,,,,,,outside
+0x00523340,0x00523340,7,0x002985e0,,,outside,,,,,,,outside
+0x00523340,0x00523340,8,0x0008a940,FUN_0008a940,13,mapped,,no,,,,0x004e3520 0x00517214,mapped-unnamed
+0x0052352c,0x0052352c,0,0x002aaeb0,,,outside,,,,,,,outside
+0x0052352c,0x0052352c,1,0x002aaec0,,,outside,,,,,,,outside
+0x0052352c,0x0052352c,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0052352c,0x0052352c,3,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0052352c,0x0052352c,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052352c,0x0052352c,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052352c,0x0052352c,6,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052352c,0x0052352c,7,0x002aaed0,,,outside,,,,,,,outside
+0x0052352c,0x0052352c,8,0x002aaed0,,,outside,,,,,,,outside
+0x0052352c,0x0052352c,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052352c,0x0052352c,10,0x00275ed0,FUN_00275ed0,6,stub,,,,,,,stub
+0x0052352c,0x0052352c,11,0x0021ac30,,,gap,island,,,,,,gap-head
+0x0052352c,0x0052352c,12,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0052352c,0x0052352c,13,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0052352c,0x0052352c,14,0x002aaee0,,,gap,body,,,,,,gap-head
+0x0052352c,0x0052352c,15,0x00330044,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,0,0x002b5b10,D3DDrv_D3DRenderInterface,266,mapped,,yes,appAssertFailed,,,,mapped-named
+0x0052bbf8,0x0052bbf8,1,0x002b7d50,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,2,0x002b8310,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,3,0x002b81e0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,4,0x002bb120,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,5,0x002bb140,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,6,0x002b53b0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,7,0x002b62b0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,8,0x002b5430,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,9,0x002b5a80,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,10,0x002b5a90,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,11,0x002b84e0,,,gap,no-close,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,12,0x002b8780,D3DDrv_D3DRenderInterface,829,mapped,,yes,appAssertFailed _D3DDevice_GetRenderTarget2@0 _D3DSurface_LockRect@16 _D3DResource_Release@4,,,,mapped-named
+0x0052bbf8,0x0052bbf8,13,0x002b5450,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,14,0x002b54a0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,15,0x002b5b00,,,gap,island,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,16,0x002b54d0,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,17,0x002b9cc0,FUN_002b9cc0,176,mapped,,no,FUN_002b98a0 FUN_002bb740,FUN,,,mapped-unnamed
+0x0052bbf8,0x0052bbf8,18,0x002b6390,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,19,0x002b6ac0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,20,0x002b6b20,FUN_002b6b20,310,mapped,,no,FUN_002bb740,FUN,,,mapped-unnamed
+0x0052bbf8,0x0052bbf8,21,0x002b5550,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,22,0x002b5580,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,23,0x002b9d70,,,gap,no-close,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,24,0x002b95e0,FUN_002b95e0,199,mapped,,no,FUN_00178df0 FUN_002aa5b0,FUN,,,mapped-unnamed
+0x0052bbf8,0x0052bbf8,25,0x002b5390,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,26,0x002b5620,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,27,0x002b5650,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,28,0x002b57b0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,29,0x002b5680,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,30,0x002b57a0,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,31,0x002b6c60,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,32,0x002b6cc0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,33,0x002b6f70,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,34,0x002b71e0,FUN_002b71e0,445,mapped,,no,FUN_002ae2d0 FUN_002c04d0 D3DDrv_D3DResource FUN_002bb7b0,FUN D3DDrv,new,,mapped-unnamed
+0x0052bbf8,0x0052bbf8,35,0x002b73a0,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,36,0x002b7560,D3DDrv_D3DRenderInterface,1334,mapped,,yes,appAssertFailed FUN_002b5c20 FUN_002bb740 D3DDrv_D3DRenderState FUN_002bc350 _D3DDevice_DrawIndexedVertices@12,FUN D3DDrv,,,mapped-named
+0x0052bbf8,0x0052bbf8,37,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052bbf8,0x0052bbf8,38,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052bbf8,0x0052bbf8,39,0x00018bb0,FUN_00018bb0,5,stub,,,,,,,stub
+0x0052bbf8,0x0052bbf8,40,0x00298430,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,41,0x002983b0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,42,0x002983d0,FUN_002983d0,46,mapped,,no,,,,,mapped-unnamed
+0x0052bbf8,0x0052bbf8,43,0x00298400,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,44,0x002b5860,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,45,0x002b57c0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,46,0x002bb190,FUN_002bb190,126,mapped,,no,FUN_000574d0 FUN_001ebb90 FUN_002b98a0,FUN,CREATING COPY TARGET - RETURNING,,mapped-unnamed
+0x0052bbf8,0x0052bbf8,47,0x002b96b0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,48,0x002bb150,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,49,0x002bb160,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,50,0x002b9a60,FUN_002b9a60,328,mapped,,no,FUN_000574d0 _D3DDevice_GetBackBuffer2@4 FUN_002b98a0 _D3DDevice_CopyRects@20 _D3DResource_Release@4,FUN,Backbuffer copy target doesnt exist,,mapped-unnamed
+0x0052bbf8,0x0052bbf8,51,0x002bb170,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,52,0x002bb180,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,53,0x002b9750,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,54,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052bbf8,0x0052bbf8,55,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052bbf8,0x0052bbf8,56,0x002b59a0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,57,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0052bbf8,0x0052bbf8,58,0x002b5ac0,,,gap,island,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,59,0x002b5ad0,,,gap,island,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,60,0x002b5ae0,,,gap,island,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,61,0x002b5a70,,,gap,island,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,62,0x002b57f0,,,outside,,,,,,,outside
+0x0052bbf8,0x0052bbf8,63,0x002b5880,,,gap,body,,,,,,gap-head
+0x0052bbf8,0x0052bbf8,64,0x002b5910,,,outside,,,,,,,outside
+0x0052bdb8,0x0052bdb8,0,0x002bdfe0,,,outside,,,,,,,outside
+0x0052bdb8,0x0052bdb8,1,0x002c1280,,,outside,,,,,,,outside
+0x0052bdb8,0x0052bdb8,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,5,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,6,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,7,0x002c1290,,,outside,,,,,,,outside
+0x0052bdb8,0x0052bdb8,8,0x001ec800,,,outside,,,,,,,outside
+0x0052bdb8,0x0052bdb8,9,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,10,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,11,0x002c12a0,,,outside,,,,,,,outside
+0x0052bdb8,0x0052bdb8,12,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,13,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0052bdb8,0x0052bdb8,14,0x0001b760,,,gap,body,,,,,,gap-head
+0x0052bdb8,0x0052bdb8,15,0x002bdff0,,,outside,,,,,,,outside
+0x0052be68,0x0052be68,0,0x002c12e0,FUN_002c12e0,33,mapped,,no,FUN_002be3f0,FUN,,,mapped-unnamed
+0x0052be68,0x0052be68,1,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052be68,0x0052be68,2,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052be68,0x0052be68,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052be68,0x0052be68,4,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052be7c,0x0052be7c,0,0x002c1310,FUN_002c1310,33,mapped,,no,FUN_002be4d0,FUN,,,mapped-unnamed
+0x0052be7c,0x0052be7c,1,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0052be7c,0x0052be7c,2,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052be7c,0x0052be7c,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052be7c,0x0052be7c,4,0x002bde60,,,gap,body,,,,,,gap-head
+0x0052c2b8,0x0052c2b8,0,0x002c1340,FUN_002c1340,33,mapped,,no,FUN_002bf930,FUN,,,mapped-unnamed
+0x0052c2b8,0x0052c2b8,1,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052c2b8,0x0052c2b8,2,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0052c2b8,0x0052c2b8,3,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052c2b8,0x0052c2b8,4,0x002be000,,,outside,,,,,,,outside
+0x0052c498,0x0052c498,0,0x002c13d0,FUN_002c13d0,33,mapped,,no,FUN_002c0500,FUN,,,mapped-unnamed
+0x0052c498,0x0052c498,1,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052c498,0x0052c498,2,0x000171c0,FUN_000171c0,3,stub,,,,,,,stub
+0x0052c498,0x0052c498,3,0x0001b520,FUN_0001b520,3,stub,,,,,,,stub
+0x0052c498,0x0052c498,4,0x002be010,,,outside,,,,,,,outside
+0x0052cefc,0x0052cefc,0,0x002c3d90,,,outside,,,,,,,outside
+0x0052cefc,0x0052cefc,1,0x002c3db0,FUN_002c3db0,12,mapped,,no,,,,0x0052d3e8 0x0052ef14,mapped-unnamed
+0x0052cefc,0x0052cefc,2,0x002c7000,FUN_002c7000,62,mapped,,no,_closesocket@4,,,,mapped-unnamed
+0x0052cefc,0x0052cefc,3,0x002c4f10,FUdpLink_BindPort,12,mapped,,yes,,,,0x0052ef14,mapped-named
+0x0052cefc,0x0052cefc,4,0x002c50b0,FUN_002c50b0,207,mapped,,no,__chkstk FUN_0041931d thunk__GetLastError@0 FUN_000574d0 FUN_002d8480,FUN thunk,RecvFrom returned SOCKET_ERROR %d,0x0052ef14,mapped-unnamed
+0x0052cefc,0x0052cefc,5,0x002c6590,,,gap,body,,,,,,gap-head
+0x0052cefc,0x0052cefc,6,0x003e5501,__purecall,20,pure,,,,,,,pure
+0x0052d3e8,0x0052d3e8,0,0x002c7250,,,outside,,,,,,,outside
+0x0052d3e8,0x0052d3e8,1,0x002c3db0,FUN_002c3db0,12,mapped,,no,,,,0x0052cefc 0x0052ef14,mapped-unnamed
+0x0052d3e8,0x0052d3e8,2,0x002c7240,,,outside,,,,,,,outside
+0x0052d3e8,0x0052d3e8,3,0x002c7280,,,outside,,,,,,,outside
+0x0052d3e8,0x0052d3e8,4,0x002c72e0,FUN_002c72e0,33,mapped,,no,FUN_002c6230,FUN,,,mapped-unnamed
+0x0052d3e8,0x0052d3e8,5,0x002c62c0,,,gap,body,,,,,,gap-head
+0x0052d3e8,0x0052d3e8,6,0x002c5600,,,outside,,,,,,,outside
+0x0052d3e8,0x0052d3e8,7,0x002c5690,,,outside,,,,,,,outside
+0x0052d3e8,0x0052d3e8,8,0x002c72c0,,,outside,,,,,,,outside
+0x0052d3e8,0x0052d3e8,9,0x002c6ed0,FUN_002c6ed0,239,mapped,,no,FUN_002c6450 FUN_002c6e90,FUN,new,,mapped-unnamed
+0x0052d3e8,0x0052d3e8,10,0x002c46f0,IpDrv_InternetLink,235,mapped,,yes,_socket@12 appAssertFailed FUN_002d83d0 FUN_002d8400 FUN_0041a29b FUN_002d83c0,FUN,Failed to bind listen socket,,mapped-named
+0x0052d3e8,0x0052d3e8,11,0x002c4d20,IpDrv_InternetLink,337,mapped,,yes,_closesocket@4 _socket@12 appAssertFailed FUN_002d83d0 FUN_002d83c0 FUN_0041a29b,FUN thunk,Failed to bind connect socket,,mapped-named
+0x0052d3e8,0x0052d3e8,12,0x002c48e0,FUN_002c48e0,820,mapped,,no,FUN_0041a29b FUN_002d8480 FUN_0007e570 _select@20 thunk__GetLastError@0 FUN_000574d0,FUN thunk,!! Error checking socket status: %i,,mapped-unnamed
+0x0052d3e8,0x0052d3e8,13,0x002c47e0,,,gap,body,,,,,,gap-head
+0x0052d3e8,0x0052d3e8,14,0x002c52d0,,,outside,,,,,,,outside
+0x0052d3e8,0x0052d3e8,15,0x002c5430,Core_UnTemplate,450,mapped,,yes,FUN_0041932c __ftol2 FUN_00055ed0 thunk__GetLastError@0 FUN_000574d0 appAssertFailed,FUN thunk,!!SendPendingData() got SOCKET_ERROR: %d,,mapped-named
+0x0052d3e8,0x0052d3e8,16,0x002c4c20,,,gap,body,,,,,,gap-head
+0x0052d3e8,0x0052d3e8,17,0x002c4c60,,,gap,body,,,,,,gap-head
+0x0052d3e8,0x0052d3e8,18,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0052d3e8,0x0052d3e8,19,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0052d3e8,0x0052d3e8,20,0x000bd360,,,gap,island,,,,,,gap-head
+0x0052d3e8,0x0052d3e8,21,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0052d3e8,0x0052d3e8,22,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0052d3e8,0x0052d3e8,23,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0052d3e8,0x0052d3e8,24,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,0,0x002c74f0,FUN_002c74f0,33,mapped,,no,FUN_002c7520,FUN,,,mapped-unnamed
+0x0052d7d0,0x0052d7d0,1,0x002c6930,,,gap,body,,,,,,gap-head
+0x0052d7d0,0x0052d7d0,2,0x00019240,FUN_00019240,78,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,3,0x0001b230,FUN_0001b230,46,mapped,,no,FUN_000122e0,FUN,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,4,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,5,0x000ea7f0,FUN_000ea7f0,3,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,6,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,7,0x0025ff30,FUN_0025ff30,5,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,8,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,9,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,10,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,11,0x00016ec0,FUN_00016ec0,4,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,12,0x002c4e80,,,outside,,,,,,,outside
+0x0052d7d0,0x0052d7d0,13,0x00016f00,FUN_00016f00,36,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,14,0x00016f30,FUN_00016f30,10,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,15,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,16,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,17,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,18,0x00031e70,FUN_00031e70,3,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,19,0x00020f00,FUN_00020f00,1,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,20,0x00016f40,FUN_00016f40,11,mapped,,no,,,,0x004d2e58 0x0051ec98,mapped-unnamed
+0x0052d7d0,0x0052d7d0,21,0x00016f50,FUN_00016f50,4,stub,,,,,,,stub
+0x0052d7d0,0x0052d7d0,22,0x002c56b0,FUN_002c56b0,280,mapped,,no,FUN_00055ed0,FUN,,,mapped-unnamed
+0x0052d7d0,0x0052d7d0,23,0x002c57d0,,,outside,,,,,,,outside
+0x0052ef14,0x0052ef14,0,0x002c3d90,,,outside,,,,,,,outside
+0x0052ef14,0x0052ef14,1,0x002c3db0,FUN_002c3db0,12,mapped,,no,,,,0x0052cefc 0x0052d3e8,mapped-unnamed
+0x0052ef14,0x0052ef14,2,0x002cdc00,FUN_002cdc00,33,mapped,,no,thunk_FUN_002c4ee0,thunk,,,mapped-unnamed
+0x0052ef14,0x0052ef14,3,0x002c4f10,FUdpLink_BindPort,12,mapped,,yes,,,,0x0052cefc,mapped-named
+0x0052ef14,0x0052ef14,4,0x002c50b0,FUN_002c50b0,207,mapped,,no,__chkstk FUN_0041931d thunk__GetLastError@0 FUN_000574d0 FUN_002d8480,FUN thunk,RecvFrom returned SOCKET_ERROR %d,0x0052cefc,mapped-unnamed
+0x0052ef14,0x0052ef14,5,0x002c6590,,,gap,body,,,,,,gap-head
+0x0052ef14,0x0052ef14,6,0x000bd380,,,gap,island,,,,,,gap-head
+0x0052ef14,0x0052ef14,7,0x002cdc30,FUN_002cdc30,130,mapped,,no,FUN_002c6670 FUN_00037040 FUN_00037110 FUN_002c6760 Core_UnTemplate,FUN Core,,,mapped-unnamed
+0x0053a194,0x0053a194,0,0x00018b70,FUN_00018b70,5,stub,,,,,,,stub
+0x0053a194,0x0053a194,1,0x00309d40,,,gap,body,,,,,,gap-head
+0x0053a194,0x0053a194,2,0x00309d70,,,gap,body,,,,,,gap-head
+0x0053a194,0x0053a194,3,0x00309d80,,,gap,body,,,,,,gap-head
+0x0053a194,0x0053a194,4,0x00309df0,,,gap,body,,,,,,gap-head
+0x0053d58c,0x0053d58c,0,0x00329630,FUN_00329630,615,mapped,,no,XboxLiveManager_UpdateTask FUN_0007e510 FUN_00326f60 FUN_00326d40 FUN_00057440 XboxLive_XboxLiveMatchMaking,XboxLiveManager FUN XboxLive,Unable to find matching ID,,mapped-unnamed
+0x0053d590,0x0053d590,0,0x0032a490,FUN_0032a490,33,mapped,,no,FUN_0032a200,FUN,,0x0053d660 0x0053d6fc 0x0053d73c,mapped-unnamed
+0x0053d590,0x0053d590,1,0x00329c70,FUN_00329c70,10,mapped,,no,_XOnlineTaskContinue@4,,,0x0053d73c 0x0053d7fc 0x0053e3dc 0x0053ec54,mapped-unnamed
+0x0053d590,0x0053d590,2,0x002783d0,FUN_002783d0,6,stub,,,,,,,stub
+0x0053d590,0x0053d590,3,0x000bd350,FUN_000bd350,8,stub,,,,,,,stub
+0x0053d660,0x0053d660,0,0x0032a490,FUN_0032a490,33,mapped,,no,FUN_0032a200,FUN,,0x0053d590 0x0053d6fc 0x0053d73c,mapped-unnamed
+0x0053d660,0x0053d660,1,0x00329e90,,,outside,,,,,,,outside
+0x0053d660,0x0053d660,2,0x003259c0,,,outside,,,,,,,outside
+0x0053d660,0x0053d660,3,0x000bd350,FUN_000bd350,8,stub,,,,,,,stub
+0x0053d6fc,0x0053d6fc,0,0x0032a490,FUN_0032a490,33,mapped,,no,FUN_0032a200,FUN,,0x0053d590 0x0053d660 0x0053d73c,mapped-unnamed
+0x0053d6fc,0x0053d6fc,1,0x00329e90,,,outside,,,,,,,outside
+0x0053d6fc,0x0053d6fc,2,0x00326760,XboxLive_XboxLiveMatchMaking,421,mapped,,yes,FUN_0042beac appAssertFailed FUN_0042beb7 FUN_000572d0 FUN_0001b260 FUN_0001b310,FUN,,,mapped-named
+0x0053d6fc,0x0053d6fc,3,0x00329fc0,,,gap,body,,,,,,gap-head
+0x0053d73c,0x0053d73c,0,0x0032a490,FUN_0032a490,33,mapped,,no,FUN_0032a200,FUN,,0x0053d590 0x0053d660 0x0053d6fc,mapped-unnamed
+0x0053d73c,0x0053d73c,1,0x00329c70,FUN_00329c70,10,mapped,,no,_XOnlineTaskContinue@4,,,0x0053d590 0x0053d7fc 0x0053e3dc 0x0053ec54,mapped-unnamed
+0x0053d73c,0x0053d73c,2,0x00325da0,StatsReadTask_Finished,420,mapped,,yes,FUN_0042c072 FUN_00324d60 FUN_000574d0 FUN_00057440 _XOnlineTaskClose@4,FUN,StatsReadTask::Finished -- XOnlineStatReadGetResult() failed,,mapped-named
+0x0053d73c,0x0053d73c,3,0x0032a150,,,outside,,,,,,,outside
+0x0053d7fc,0x0053d7fc,0,0x0032a370,FUN_0032a370,33,mapped,,no,FUN_0032a3a0,FUN,,,mapped-unnamed
+0x0053d7fc,0x0053d7fc,1,0x00329c70,FUN_00329c70,10,mapped,,no,_XOnlineTaskContinue@4,,,0x0053d590 0x0053d73c 0x0053e3dc 0x0053ec54,mapped-unnamed
+0x0053d7fc,0x0053d7fc,2,0x00325f50,XboxLive_XboxLiveMatchMaking,965,mapped,,yes,FUN_00307630 appAssertFailed _GetSystemTimeAsFileTime@4 __ftol2 FUN_0042d65a FUN_00324d60,FUN,StatsLadderWriteTask::Finished() -- XOnlineQueryAdd failed: ,,mapped-named
+0x0053d7fc,0x0053d7fc,3,0x0032a340,,,gap,body,,,,,,gap-head
+0x0053e3dc,0x0053e3dc,0,0x0032a910,FUN_0032a910,33,mapped,,no,FUN_0032a940,FUN,,,mapped-unnamed
+0x0053e3dc,0x0053e3dc,1,0x00329c70,FUN_00329c70,10,mapped,,no,_XOnlineTaskContinue@4,,,0x0053d590 0x0053d73c 0x0053d7fc 0x0053ec54,mapped-unnamed
+0x0053e3dc,0x0053e3dc,2,0x00326910,XboxLive_XboxLiveMatchMaking,726,mapped,,yes,FUN_0042c072 FUN_00324d60 FUN_000574d0 appAssertFailed FUN_00057440 FUN_00062ff0,FUN,StatsQueryTask::Finished -- XOnlineStatReadGetResult() faile,,mapped-named
+0x0053e3dc,0x0053e3dc,3,0x0032a840,Core_UnTemplate,201,mapped,,yes,FUN_00062ff0 appAssertFailed FUN_00055f00 FUN_001c0470,FUN,,,mapped-named
+0x0053ec54,0x0053ec54,0,0x0032adb0,FUN_0032adb0,33,mapped,,no,FUN_0032ade0,FUN,,,mapped-unnamed
+0x0053ec54,0x0053ec54,1,0x00329c70,FUN_00329c70,10,mapped,,no,_XOnlineTaskContinue@4,,,0x0053d590 0x0053d73c 0x0053d7fc 0x0053e3dc,mapped-unnamed
+0x0053ec54,0x0053ec54,2,0x00329ab0,,,gap,body,,,,,,gap-head
+0x0053ec54,0x0053ec54,3,0x000bd350,FUN_000bd350,8,stub,,,,,,,stub
+0x0053f6d8,0x0053f6d8,0,0x00330a00,FUN_00330a00,34,mapped,,no,?Destroy@CScreen@UIXNamespace@@IAEXXZ ??3@YAXPAX@Z,,,,mapped-unnamed
+0x0053f6d8,0x0053f6d8,1,0x003300f0,?CreateScreen@CScreen@UIXNamespace@@UAEJXZ,41,mapped,,yes,?Load@CSkinFile@UIXNamespace@@QAEJK@Z,,,,mapped-named
+0x0053f6d8,0x0053f6d8,2,0x003479e6,FUN_003479e6,1,stub,,,,,,,stub
+0x0053f6d8,0x0053f6d8,3,0x00343ece,,,outside,,,,,,,outside
+0x0053f6d8,0x0053f6d8,4,0x00331304,FUN_00331304,5,stub,,,,,,,stub
+0x0053f7c4,0x0053f7c4,0,0x0033158e,FUN_0033158e,38,mapped,,no,?Destroy@CScreen@UIXNamespace@@IAEXXZ ?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,,,,mapped-unnamed
+0x0053f7c4,0x0053f7c4,1,0x003313f6,?CreateScreen@CExtFeatureScreen@UIXNamespace@@UAEJXZ,22,mapped,,yes,?CreateScreen@CScreen@UIXNamespace@@UAEJXZ,,,,mapped-named
+0x0053f7c4,0x0053f7c4,2,0x0033140c,,,outside,,,,,,,outside
+0x0053f7c4,0x0053f7c4,3,0x00331416,,,outside,,,,,,,outside
+0x0053f7c4,0x0053f7c4,4,0x0033142a,,,outside,,,,,,,outside
+0x0053f85c,0x0053f85c,0,0x00332e57,FUN_00332e57,32,mapped,,no,FUN_00332e77 ?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,FUN,,,mapped-unnamed
+0x0053f85c,0x0053f85c,1,0x003324a7,?CreateScreen@CVoiceMailScreen@UIXNamespace@@UAEJXZ,331,mapped,,yes,?CreateScreen@CPopupScreen@UIXNamespace@@UAEJXZ ?CreateObject@CScreen@UIXNamespace@@IAEXW4_UIX_OBJECT_TYPE@@KPAK@Z ?SetText@CScreen@UIXNamespace@@IAEXKW4_UIX_RES_STRING_ENUM@@@Z ?AllocateMemoryZ@UIXNamespace@@YGPAXIW4UIX_PTAG_ENUM@1@@Z ??0CPopupScreen@UIXNamespace@@QAE@K@Z ?DestroyFeedbackScreen@CVoiceMailScreen@UIXNamespace@@QAEXXZ,,,,mapped-named
+0x0053f85c,0x0053f85c,2,0x003325f2,,,outside,,,,,,,outside
+0x0053f85c,0x0053f85c,3,0x00331f7c,?Input@CPopupScreen@UIXNamespace@@UAEXKW4_UIX_INPUT_TYPE@@@Z,361,mapped,,yes,?PlaySound@CLiveEngine@UIXNamespace@@QAEJW4_UIX_RES_AUDIO_ENUM@@@Z ?HideMessageScreen@CAlertFeature@UIXNamespace@@QAEHW4_UIX_MESSAGE_TYPE@2@@Z ?HideTopScreen@CLiveEngine@UIXNamespace@@QAEJXZ,,,,mapped-named
+0x0053f85c,0x0053f85c,4,0x00332ea5,,,gap,body,,,,,,gap-head
+0x0053f8f4,0x0053f8f4,0,0x00334a78,??_GCPlayersScreen@UIXNamespace@@UAEPAXI@Z,32,mapped,,yes,??1CPlayersScreen@UIXNamespace@@UAE@XZ ?FreeMemory@UIXNamespace@@YGXPAXW4UIX_PTAG_ENUM@1@@Z,,,,mapped-named
+0x0053f8f4,0x0053f8f4,1,0x0033357e,,,gap,body,,,,,,gap-head
+0x0053f8f4,0x0053f8f4,2,0x0033538b,,,outside,,,,,,,outside
+0x0053f8f4,0x0053f8f4,3,0x00334b9c,,,outside,,,,,,,outside
+0x0053f8f4,0x0053f8f4,4,0x00335518,,,outside,,,,,,,outside
+0x00564da4,0x00564da4,0,0x00386e10,,,outside,,,,,,,outside
+0x00564da4,0x00564da4,1,0x003869e0,,,outside,,,,,,,outside
+0x00564da4,0x00564da4,2,0x003867e0,,,gap,body,,,,,,gap-head
+0x00564da4,0x00564da4,3,0x00386720,FUN_00386720,189,mapped,,no,,,,,mapped-unnamed
+0x00564da4,0x00564da4,4,0x00386710,FUN_00386710,1,stub,,,,,,,stub
+0x00564da4,0x00564da4,5,0x003861d0,FUN_003861d0,41,mapped,,no,FUN_00385c70,FUN,,,mapped-unnamed
+0x00564dbc,0x00564dbc,0,0x00387b60,FUN_00387b60,252,mapped,,no,FUN_00385c00,FUN,,,mapped-unnamed
+0x00564dbc,0x00564dbc,1,0x003889e0,,,gap,body,,,,,,gap-head
+0x00564dbc,0x00564dbc,2,0x00387910,,,outside,,,,,,,outside
+0x00564dbc,0x00564dbc,3,0x00389080,FUN_00389080,2433,mapped,,no,__chkstk FID_conflict:_wprintf,FID,,,mapped-unnamed
+0x00564dbc,0x00564dbc,4,0x00387ef0,,,outside,,,,,,,outside
+0x00564dbc,0x00564dbc,5,0x00387c60,,,gap,body,,,,,,gap-head
+0x00564dbc,0x00564dbc,6,0x00388410,FUN_00388410,1464,mapped,,no,__chkstk,,,,mapped-unnamed
+0x00564dbc,0x00564dbc,7,0x00386710,FUN_00386710,1,stub,,,,,,,stub
+0x00564dbc,0x00564dbc,8,0x00386710,FUN_00386710,1,stub,,,,,,,stub
+0x0057534c,0x0057534c,0,0x003e65d8,FUN_003e65d8,28,mapped,,no,??1exception@@UAE@XZ ??3@YAXPAX@Z,,,,mapped-unnamed
+0x0057534c,0x0057534c,1,0x003e65cb,,,outside,,,,,,,outside
+census,,944,,,,census,,,,,,146 distinct mapped body(ies); 17 held by two or more representatives,"the 89 owed representatives: gap 161, mapped 175, outside 268, pure 38, stub 302"
