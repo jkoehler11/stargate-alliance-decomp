@@ -1885,6 +1885,136 @@ shape is one interface with several implementations, so the family is the unit a
 group whose members carry no class at all is the anonymous half of the same question rather than a
 different one.
 
+## What a body says about its own file: the map's names are its assert references, and 1 of the 1,249 gap heads carries one
+
+Every naming question on this page ends in the same place: a name for a body nothing names. The map's own
+`<Module>_<File>` names are the build's `__FILE__` assert paths, so the read a gap head needs is whether the
+body *holds* that reference. `tools/gap-body-files.py` reads three channels at the body instead of at the map
+row, over the 1,451 gap heads U40 decodes and over every body the map has.
+
+  * **`assert`** -- a code site holding the address of one of the image's assert-path strings. It is a *pushed
+    address*, not a pushed string: the site is the `imm32` of a `68` push whose dword is the path's VA, which is
+    why the interface behaviour census's printable-literal read found no source path in any of its 52 tables. The
+    assert path is referenced by address and never spelled as a literal.
+  * **`string`** -- a code site holding the address of any printable string in the image (a UTF-16 run of six
+    characters or more, or a narrow run of eight). A body that pushes `invalid stencil op` is a D3DDrv body
+    whatever else is unknown about it.
+  * **`callee`** -- the `<Module>_<File>` tokens of the map bodies a body calls through a direct `E8 rel32`.
+    This places a body in a module and never names it; an `E8` byte inside another instruction's displacement
+    can encode a false call, so it is an upper bound with the map's own rate beside it.
+
+The control is the map's population, and it is exact rather than a rate: of the 1,321 bodies whose own name is
+a `<Module>_<File>` token, **1,282 reference the assert path of the file their name is built from, 0 reference a
+different one and 39 reference no assert path at all**. A name the map holds is therefore not a guess this read
+corroborates -- it is the same reference, one level out.
+
+<!-- generated:gap-body-files -->
+| gap head | size | names | the reference |
+|---|---|---|---|
+| `0x0007e3b0` | 65 | Core/UnVcWin32 | assert path at 0x0007e3be 0x0007e3dd |
+| `0x003e0a30` | 5715 | ANG_DAMP | USE_FAST_SPIN | 38 string site(s) |
+| `0x000fd030` | 2227 | UltraHigh | Normal | 14 string site(s) |
+| `0x002b0050` | 1169 | Options | UseTrilinear | 11 string site(s) |
+| `0x002bda20` | 564 | D3DERR_UNSUPPORTEDALPHAOPERATION | D3DERR_UNSUPPORTEDCOLORARG | 9 string site(s) |
+| `0x00182f30` | 846 | Client | KeepAliveTime | 7 string site(s) |
+| `0x0007e970` | 595 | Options | Options | 6 string site(s) |
+| `0x000f9990` | 469 | Client | Client | 5 string site(s) |
+| `0x0011f0e0` | 1499 | Skipped '%s' | %s\%s-%i.uxx | 5 string site(s) |
+| `0x0002e690` | 624 | PAUSESOUNDS | PAUSESOUNDS | 4 string site(s) |
+| `0x0032cde0` | 1397 | [XBOX-MEM] %8d total KByte of virtual me | [XBOX-MEM] %8d percent of memory is in u | 4 string site(s) |
+| `0x0002d600` | 299 | XBoxAudio | MusicVolume | 3 string site(s) |
+| `0x00192730` | 836 | Reviewing Paths | This pickup should have a PickupBase | 3 string site(s) |
+| `0x00033490` | 1083 | UNMUTE | whisper | 2 string site(s) |
+| `0x00035f10` | 222 | InContextCommand | StrProperty0 | 2 string site(s) |
+| `0x0011b8b0` | 1064 | FLAGS= | DemoFileMissing | 2 string site(s) |
+| `0x0011ea30` | 605 | Receiving package '%s' | Engine | 2 string site(s) |
+| `0x001d3270` | 436 | NumItems | Config%d | 2 string site(s) |
+| `0x002ce490` | 3123 | RI_AuthenticationFailed | RI_BannedClient | 2 string site(s) |
+| `0x002d26b0` | 250 | Client | LogMaxConnPerIPPerMin | 2 string site(s) |
+| `0x002d4100` | 201 | UTcpNetDriverXbox | bUseVDP | 2 string site(s) |
+| `0x003e3050` | 879 | line %d, char %d: Expected int, found %s | line %d, char %d: found garbage after da | 2 string site(s) |
+| `0x0001f800` | 115 | LinearFileStillOpen | 1 string site(s) |
+| `0x00026be0` | 75 | InPos>=0 && InPos<=Size | 1 string site(s) |
+| `0x00033970` | 941 | - Communicator inserted | 1 string site(s) |
+| `0x00053920` | 94 | Bad name index when loading from file %i | 1 string site(s) |
+| `0x000adb00` | 173 | (Karma):  | 1 string site(s) |
+| `0x0010d910` | 142 | GETLOSS | 1 string site(s) |
+| `0x00182880` | 85 | Engine | 1 string site(s) |
+| `0x00194ca0` | 85 | Engine | 1 string site(s) |
+| `0x00194d00` | 85 | Engine | 1 string site(s) |
+| `0x00194dc0` | 85 | Engine | 1 string site(s) |
+| `0x001a53a0` | 42 | RequestDenied | 1 string site(s) |
+| `0x001b1690` | 3870 | %s flew out of the world! | 1 string site(s) |
+| `0x001bff70` | 174 | Cast of %s to %s failed | 1 string site(s) |
+| `0x001d2620` | 143 | Engine | 1 string site(s) |
+| `0x00223bb0` | 107 | GetBoneRotation: Bone [%s] not found in  | 1 string site(s) |
+| `0x002b5880` | 244 | invalid stencil op | 1 string site(s) |
+| `0x002c1890` | 195 | Settings | 1 string site(s) |
+| `0x002c62c0` | 387 | !!Send() got SOCKET_ERROR %d for %s | 1 string site(s) |
+| `0x002d3790` | 56 | UnregisterInfo: XNetUnregisterKey(HostKe | 1 string site(s) |
+| `0x003081c0` | 239 | UnregisterPlayer failed with code 0x%x | 1 string site(s) |
+| `0x00318f90` | 879 | Engine | 1 string site(s) |
+| `0x00328890` | 606 | SessionStartTask::Finsh: ExchangeKey: %s | 1 string site(s) |
+| `0x0001bf10` | 1490 | Core_UnTemplate | a call into a named body |
+| `0x0002a870` | 46 | XboxAudio_FindSlotByKey | a call into a named body |
+| `0x0002a8a0` | 49 | XboxAudio_FindSlotByKey | a call into a named body |
+| `0x0002a8e0` | 113 | XboxAudio_FindSlotByKey | a call into a named body |
+| `0x0002afb0` | 258 | XboxAudio_ApplyBufferParams XboxAudio_HasPendingKey | a call into a named body |
+| `0x0002b7f0` | 202 | XboxAudio_PollDeviceChanges | a call into a named body |
+| `0x0002bc20` | 86 | XboxAudio_FindSlotByKey XboxAudio_ApplyBufferParams | a call into a named body |
+| `0x0002bc80` | 86 | XboxAudio_FindSlotByKey XboxAudio_ApplyBufferParams | a call into a named body |
+| `0x00034be0` | 43 | Core_UnObj | a call into a named body |
+| `0x00038ce0` | 65 | Core_UnObj | a call into a named body |
+| `0x00059730` | 177 | Core_UnTemplate | a call into a named body |
+| `0x000679c0` | 188 | Core_UnObjBas Core_UnObj | a call into a named body |
+| `0x0006cef0` | 54 | Core_UnObj | a call into a named body |
+| `0x00074dc0` | 70 | Core_UnClass | a call into a named body |
+| `0x000b3fa0` | 18 | Core_UnTemplate | a call into a named body |
+| `0x000b4fa0` | 349 | Core_UnTemplate | a call into a named body |
+| ... | | 28 more | |
+
+**1451 heads decode as 1249 bodies and 202 islands; of the bodies 1 hold an assert path, 43 a printable string and 457 a call into a body the map names, and 1161 hold none of the three.**
+
+**Control: 1336 of the map's 16374 bodies hold an assert site, and 1282 of the 1321 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 39 reference no assert path at all -- so the name is that reference read one level out.**
+
+**The owed interface representatives' slots hold 150 of these heads and only 109 are bodies -- 36 are islands and the rest never close -- so the interface population's gap-head slots over-count their methods by 41; of the 109 bodies 0 hold an assert path, 2 a string and 61 a call into a named body, and the per-body read cannot name an interface (U40).**
+<!-- /generated:gap-body-files -->
+
+**The one gap head the channel names.** `0x0007e3b0` (65 bytes) holds two push sites of `UnVcWin32.cpp`, so
+the body nothing names is a `Core` translation unit's and the name it earns is `Core_UnVcWin32`. The add is
+not in this pull request: a row in `symbols/xbox_functions.csv` moves five artefacts and the map's own function
+count, and the evidence for it is what this census commits.
+
+**The 43 that carry a string are placed in a subsystem, not named.** `0x002b5880` pushes `invalid stencil op`
+and is a D3DDrv body, `0x002bda20` pushes `D3DERR_UNSUPPORTEDALPHAOPERATION`, `0x0002d600` pushes `MusicVolume`
+beside the literal `XBoxAudio`, and `0x002ce490` pushes `RI_AuthenticationFailed` and `RI_BannedClient`. The two
+of the 43 that sit in an owed representative's slot are `0x002b5880` and `0x002c62c0` (`!!Send() got SOCKET_ERROR %d for %s`, the socket layer). A string says which
+subsystem a body belongs to and never which class it is a method of.
+
+**The 457 that call a named body are a module, and the widest callee is a template.** 23 distinct callee
+files reach them: `Core_UnTemplate` 19 bodies, `Core_UnObj` and `Engine_UnActor` 7 each,
+`XboxAudio_FindSlotByKey` 5, and nineteen files reach 1 to 3. That is the verdict the behaviour census reached
+from the other side -- a callee's file is the file of the code a slot *calls* -- now read at the body the slot
+holds.
+
+**The interface population's gap heads over-count the methods they hold by 41.** The 88 owed
+representatives' slots hold 150 of these heads, and only 109 are bodies: 36 are jump-table islands of three to
+six bytes and 5 never close, so a slot that holds one points at a dword inside a function rather than at a
+method. Of the 109 bodies, **0 carry an assert path, 2 a string and 61 a call into a named body** -- so U40's
+per-body route cannot name an interface, and the read is now a count rather than an assumption.
+
+The census row of the artifact carries every number above, and the block is rebuilt from the committed CSV
+with no dump:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/gap-body-files.py \\
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/gap-body-files.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (the body lookup, the `<Module>_<File>` token, an `E8` target inside and outside the
+body, the drop of a site no body owns, all four verdicts, the render and both artifact round trips; no dump,
+writes nothing) and `--check-doc` rebuilds the block from the committed CSV with no dump. Both run in
+`make ci`.
+
 ## The 18 heads' rungs: 490 edges, 0 that are not rungs, and the extent rule they fixed
 
 The sections above read the 250 tables nothing names as *objects*: what they contain, which bodies store

@@ -5955,3 +5955,19 @@ store site in the provenance census at all. The remaining residue of this entry:
 the 4 no-site tables' locator extent, the 26 gap-head representatives' add, and the 2 shared heads whose two
 slot indices differ.
 
+**Answered since (2026-11-21, what a body says about its own file).** The per-body naming route this
+entry ends on has now been read at the body instead of at the map row, over all 1,451 gap heads and every body
+the map has (`tools/gap-body-files.py`, `inventory/gap_body_files.csv`). **The map's `<Module>_<File>` names are
+the build's own assert references**: of the 1,321 bodies whose name is such a token, 1,282 hold a code site
+whose dword is the assert path of that file, **0** hold a different file's and 39 hold none -- an exact control,
+not a rate. The reference is a *pushed address* (the `imm32` of a `68` push, never a printable literal), which
+is why the printable-literal read found no source path in any of the 52 tables it tested. **Of the 1,249
+gap-head bodies, 1 holds such a site**: `0x0007e3b0`, 65 bytes, two pushes of `UnVcWin32.cpp`, so the body
+earns `Core_UnVcWin32` (the add is not in that bundle: a map row moves five artefacts). 43 hold a printable
+string -- a subsystem, never a class -- 457 call a body the map names (23 distinct callee files, `Core_UnTemplate`
+19 of them) and 1,161 hold none of the three. **The interface representatives' 150 gap heads are 109 bodies and
+41 that are not** (36 jump-table islands of 3-6 bytes and 5 that never close), so the 161 gap slots over-count
+the methods they hold by 41; of the 109, 0 hold an assert path, 2 a string and 61 a call into a named body. The
+per-body read therefore cannot name an interface, and what is left of this entry is the 56 mapped
+representatives' reads, the 399 bodies, and a name from a member field or a caller.
+

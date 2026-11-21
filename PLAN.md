@@ -16390,3 +16390,45 @@ sequence.
 - **Not in this bundle.** An interface's own name (a class plus an offset names the field), the 26 gap-head
   representatives' add (blocked on the table's name, as measured above), and `native_vtable_reach.csv`'s own eight
   class-table extents -- the block scan's reading there is the control this change is quoted against.
+### Execution notes (2026-11-21, a body's file is the assert path it references by address, and 1 of the 1,249 gap heads holds one)
+
+- **Task.** The previous note's naming half: a name channel for the bodies nothing names. The map's own
+  `<Module>_<File>` names come from the build's `__FILE__` assert paths, so the question is whether a *body*
+  holds that reference. `tools/gap-body-files.py` reads it at the body over all 1,451 gap heads U40 decodes and
+  over every body the map has (`inventory/gap_body_files.csv`, 1,451 rows and a census row), with three
+  channels: an assert path referenced by address, any printable string referenced by address, and the
+  `<Module>_<File>` tokens of the map bodies the body calls through a direct `E8`.
+- **The reference is a pushed address, and that is why the literal read missed it.** The assert site is the
+  `imm32` of a `68` push whose dword is the string's VA (`0x0007e3b0`'s sites are `68 a8 1a 4e 00` at
+  `0x0007e3bd` and `0x0007e3dc`), never the text of the path. The interface behaviour census tested pushes of
+  printable literals and found no source path in any of its 52 tables; the path is an operand address, so the
+  channel had to be read as a dword reference instead.
+- **The control is exact, not a rate.** 1,336 of the map's 16,374 bodies hold an assert site, and of the 1,321
+  bodies whose name is a `<Module>_<File>` token **1,282 hold the assert path of the file their own name is
+  built from, 0 hold a different file's and 39 hold none at all**. So a map name is that reference read one
+  level out, and the read never contradicts a name it can check.
+- **One gap head earns a name and two are placed in a subsystem.** `0x0007e3b0` (65 bytes) holds two push
+  sites of `UnVcWin32.cpp`, so the body nothing names is a `Core` translation unit's: `Core_UnVcWin32`. The
+  add is not in this bundle (a map row moves `module-split`, `native-summary`, `module-census`, `status` and
+  the symbol map, and the evidence for the name is what the census commits). 43 of the 1,249 bodies hold a
+  printable string -- `0x002b5880` `invalid stencil op` (D3DDrv), `0x002bda20` a `D3DERR_*` code, `0x0002d600`
+  `MusicVolume` beside the literal `XBoxAudio` -- which names a subsystem and never a class. 457 call a body the
+  map names, over 23 distinct callee files (`Core_UnTemplate` 19, `Core_UnObj` and `Engine_UnActor` 7 each), and
+  1,161 hold none of the three.
+- **The interface population's gap heads over-count their methods by 41.** The 88 owed representatives' slots
+  hold 150 heads and only **109** are bodies: 36 are jump-table islands of 3-6 bytes and 5 never close, so 41 of
+  the 161 gap slots point at a dword inside a function rather than at a method. Of the 109 bodies, **0 hold an
+  assert path, 2 a string and 61 a call into a named body** -- so U40's per-body route cannot name an interface,
+  which is the item the previous three notes left open, now answered with a count.
+- **Files.** `tools/gap-body-files.py` (the three channels, the body index, the `<Module>_<File>` token, the
+  census row, a synthetic `--check` and `--check-doc`), `inventory/gap_body_files.csv` (1,451 rows + census),
+  `docs/systems/CLASS_REGISTRATION.md` (the new section, its block and its regenerating paragraph),
+  `docs/UNKNOWNS.md` (U40's answered-since), `Makefile` (target, help line, two gate lines), `docs/ARTIFACTS.md`
+  and `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; `--check` is synthetic (the body lookup, the name token, an `E8` target inside and
+  outside the body, the drop of a site no body owns, all four verdicts, the render and both artifact round
+  trips) and writes nothing; `--check-doc` rebuilds the block from the committed CSV with no dump; the artifact
+  reproduces byte for byte on a second run. No boot, no Ghidra round.
+- **Not in this bundle.** The `Core_UnVcWin32` add and the five artifacts it moves; the 56 mapped
+  representatives' reads and the 399 bodies named by nothing; and `native_vtable_reach.csv`'s own eight
+  class-table extents, which are the control this page quotes and are still the block scan's reading.
