@@ -2413,8 +2413,9 @@ tables are the `.text` dwords `tools/gap-heads.py` already indexes.
 closes on `ret $0x10` at `0x00078b7a`, pad to `0x00078b7d`, before the row above at `0x00078b80` -- **157
 bytes** -- and `0x0007be00` (StructProperty slot 43) closes on `ret $0xc` at `0x0007c292`, pad to
 `0x0007c295`, before `0x0007c2a0` -- **1,173 bytes**. Neither span holds a map row, so each is a row the
-next add can carry. The 4 `check()`-cut bodies cannot be added: their spans hold one map row each, and a
-row is one address that cannot hold two.
+next add can carry. The 4 `check()`-cut bodies cannot be added as one contiguous row: their spans hold one map
+row each, and a row is one address that cannot hold two. ^ Corrected in the next section: that row
+is interior code no call and no class slot names, so the add claims the body and folds it.
 
 **Three of them were addable once the census stopped refusing valid instructions (2026-11-21).** The 13
 were never bodies without an end: on 10 the *census's own* decoder or tail rule refused a form the compiler
@@ -2515,11 +2516,60 @@ neither is a read the declaration walk owes.
 **18 bodies need a name no image-side table carries.** The 8 member bodies sit in 3 member tables whose owner the label pass refused, and the 10 declarations sit on 7 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
 <!-- /generated:declarer-residue -->
 
-**What this does not do.** It carries the three adds above and nothing else: the 4 `check()`-cut spans need
-a boundary move first (a `check()` block laid out inside the body is a row of its own, so the body's two
-halves cannot be one contiguous map row), the 3 that close past an ordinary map row need the same answer,
-the 3 that cross an inline jump table need the table walked rather than decoded, and the 7 unnamed class
-tables need a class the packages do not declare.
+**What this does not do.** The declared half of this residue is empty (the section below closes it); what
+stands is the 18 that need a name no image-side table carries -- 8 member bodies in 3 unlabelled member
+tables and 10 declarations on 7 class tables no registration names -- plus the 4 bodies the linker folded
+(one body read once per index) and the 807 bodies no channel names.
+
+## The declared residue closes: a false head is a move, a switch table is a boundary (2026-11-21)
+
+The previous bundle left 10 undecoded declarations with a measured end and no way to write it: the map
+already had a row inside every span, and one address cannot hold two rows. Two rules settle them, and
+with them the declared half of this residue is empty.
+
+**A map row inside the span that nothing calls is not a function.** `tools/declarer-residue.py` now
+classifies every row inside a declared body's measured span against two image-side claims: a direct
+`call`/`jmp` site in `.text` (read at instruction boundaries with objdump, not sprayed -- an `E8` byte
+inside another instruction's immediate invents a caller) and membership of a class slot
+(`class_slot_declarers.csv`'s control and head rows). A row with neither is interior code: an assert
+block carrying the `__FILE__` it pushes, a block entry the body branches to, or bytes that are not even
+an instruction boundary of the body's own decode. Eight rows fail both claims -- `0x0002f13c`,
+`0x000324d6`, `0x00155dab` and `0x00173988` open on the `check()` shape; `0x00100000` and `0x0021e478`
+are block entries the body's stream flows into; `0x00280020` and `0x00280064` are not on that stream at
+all (the Model body's own decode has no instruction start at either address, and the first is three
+bytes long). `symbol-boundaries.py` already pairs an `add` with a `drop` for exactly this shape (U39),
+so each body is added at the declared start with its measured end and the fragment dropped into it.
+`--emit-moves` writes those rows; it supersedes this file's `resize 0x0002f13c 2282` (a repair of such a
+fragment's *end*, which the add now claims whole) and retargets the drop `0x0002f820 -> 0x0002f13c`,
+whose target is itself dropped, to the add that encloses it.
+
+**A switch's own table bounds the body.** A `jmp *disp(,%reg,4)` inside the span names the dword table
+the case dispatch reads, and the compiler lays that table directly behind the function's last
+instruction -- a `lea r,[r+0]` alignment nop at most -- so a terminator whose successor is the table is
+the body's end even though no pad run follows it. Without the rule the linear read walked the table as
+code and closed on a terminator inside the next class's body (the GUIController body closed 1,800 bytes
+into slot 35's body, exactly at *its* end):
+
+| body | declarer | slot | the table it reads | entries | byte(s) |
+|---|---|---:|---|---:|---:|
+| `0x001b28e0` | Mover | 82 | `0x001b2a84` | 7 | 419 |
+| `0x002ae3e0` | D3DRenderDevice | 49 | `0x002ae434` | 6 | 83 |
+| `0x002fd640` | GUIController | 32 | `0x002fdc84` | - | 1601 |
+
+**The move ran, and the declared half is empty.** The map goes **16,621 -> 16,620 rows** (7 adds, 8
+drops) and **4,217,715 -> 4,223,304 bytes of code**; the gap census 2,599 -> **2,591 heads**, the
+declarer census 459 -> **449 heads** (0 declared, 8 member, 3 unnamed-table, 4 conflict, 424
+interface), and this residue 32 -> **25 bodies** with `move 0`. Every one of the walk's 224 declared
+bodies now has a map row. The 7 names are the declarers' (`XBoxAudioSubsystem_vt36`,
+`XHVVoiceSubsystem_vt32`, `Canvas_vt42`, `Level_vt47`, `MeshEmitter_vt39`,
+`ShadowBitmapMaterial_vt47`, `Model_vt31`) -- none of the dropped rows was a function name: four were
+the `__FILE__` an assert pushes, and three were addresses Ghidra started on bytes that are not an
+instruction boundary.
+
+**One artifact was a snapshot and had to say so.** `inventory/module_export_census.csv` is the record of
+an export round, so 8 of its rows are bodies the map has since folded; its `--check` now reads
+`symbols/xbe_boundaries.csv`'s `drop` rows and counts them (19 export(s) the map folds into an enclosing
+row) instead of failing on them, because an export round is not a claim about the current map.
 
 ## Regenerating, continued
 
@@ -2536,6 +2586,8 @@ slot vectors:
 
     SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/declarer-residue.py \
         --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/declarer-residue.py --emit-moves        # add/drop rows for a `move` verdict
+    python3 tools/symbol-boundaries.py --apply            # rewrite the map from those rows
     python3 tools/declarer-residue.py --write-doc docs/systems/CLASS_REGISTRATION.md
 
 
