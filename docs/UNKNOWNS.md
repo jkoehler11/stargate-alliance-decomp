@@ -1543,7 +1543,15 @@ signal, not a monitor one, so the request is a 640×480 **interlaced TV** back b
 That is consistent with the depth-stencil choice (`D24S8`, 32-bit) and with `BehaviorFlags 0x40` agreeing with the
 `MATERIALSOURCE7` caps test rather than falling through the software path.
 
-So nothing remains open in this entry: request, reported caps, fill site, the enumerants, and the presentation flags.
+**The last unnamed bit in the caps is a negative capability.** `VertexProcessingCaps` `0xbb` was recorded as TEXGEN,
+MATERIALSOURCE7, DIRECTIONALLIGHTS, POSITIONALLIGHTS, LOCALVIEWER "and one unnamed `0x80` bit". `D3D8Caps.h` names it
+**`D3DVTXPCAPS_NO_VSDT_UBYTE4`** — *the device does not support `D3DVSDT_UBYTE4` vertex elements*. So `0xbb` is exactly
+those five capabilities plus one refusal, and the refusal is the part a rebuild has to honour: a vertex declaration that
+packs a component as `UBYTE4` is unsupported on this device, which is the kind of constraint that fails silently as
+mis-shaded geometry rather than as an error.
+
+So nothing remains open in this entry: request, reported caps, fill site, the enumerants, the presentation flags and the
+capability bits.
 
 **Status.** Closed for both halves (request and report); `tools/xemu/bp-args.py` and
 `tools/xemu/d3d-caps.py` are the instruments, and the three stub behaviours `bp-args.py` works around are in
