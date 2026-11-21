@@ -48,6 +48,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 OUT = os.path.join("inventory", "class_store_provenance.csv")
 REACH = os.path.join(ROOT, "inventory", "native_vtable_reach.csv")
 FIELDS_IN = os.path.join(ROOT, "inventory", "class_table_store_fields.csv")
+CALLERS = os.path.join(ROOT, "inventory", "class_installer_callers.csv")
 NAMES = os.path.join(ROOT, "inventory", "xbe_class_table_names.csv")
 FUNCS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 SRC = os.path.join(ROOT, "inventory", "class_store_provenance.csv")
@@ -55,9 +56,10 @@ PAGE = os.path.join("docs", "systems", "CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-store-provenance -->"
 DOC_END = "<!-- /generated:class-store-provenance -->"
 
-COLUMNS = ("table_va", "slots", "class", "population", "store_verdict", "sites", "bodies", "store_origin",
-           "call_sites", "this", "member", "frame", "fresh", "other", "caller_resets", "reg_stores",
-           "global_targets", "resolution", "evidence")
+COLUMNS = ("table_va", "slots", "class", "population", "store_verdict", "second_table", "sites", "bodies",
+           "store_origin", "call_sites", "this", "member", "frame", "fresh", "other", "caller_resets",
+           "reg_stores", "global_targets", "member_offsets", "offset_agreement", "resolution",
+           "evidence")
 RESOLUTIONS = ("own-object", "base-level", "member-of-caller", "stack-object", "allocated", "global-object",
                "mixed", "no-direct-call", "no-installer", "no-store")
 POPULATIONS = ("named", "bounded", "plain-only", "no-installer", "unnamed-other")
@@ -485,8 +487,8 @@ def resolution_of(rows):
     return "mixed"
 
 
-def harvest(tables, names, store_verdict, sites_by_table, reg_by_table, bodies_of_table,
-            call_sites_of, caller_resets_of, origin_of):
+def harvest(tables, names, store_verdict, second_table, store_offsets, sites_by_table, reg_by_table,
+            bodies_of_table, call_sites_of, caller_resets_of, origin_of):
     rows = []
     for tva in sorted(tables):
         sites = sites_by_table.get(tva, [])
@@ -500,6 +502,7 @@ def harvest(tables, names, store_verdict, sites_by_table, reg_by_table, bodies_o
             "class": names.get(tva, ""),
             "population": store_verdict.get(tva, ("", ""))[0],
             "store_verdict": store_verdict.get(tva, ("", ""))[1],
+            "second_table": second_table.get(tva, ""),
             "sites": len(sites),
             "bodies": len(bodies),
             "call_sites": chains,
@@ -515,6 +518,11 @@ def harvest(tables, names, store_verdict, sites_by_table, reg_by_table, bodies_o
         row["other"] = counts["other"] + counts["global"]
         row["store_origin"] = " ".join(sorted({o.split("+")[0] for o in row["_origins"]})) or "-"
         row["global_targets"] = " ".join(sorted({o[3:] for o in row["_origins"] if o.startswith("ds:")}))
+        row["member_offsets"] = " ".join(o[5:] for o in sorted(set(chains)) if o.startswith("this+"))
+        expected = {int(f, 16) for f in store_offsets.get(tva, [])}
+        row["offset_agreement"] = (
+            "agree" if expected and any(int(f, 16) in expected for f in row["member_offsets"].split())
+            else ("differ" if expected and row["member_offsets"] else ""))
         row["resolution"] = resolution_of(row)
         row["evidence"] = "%d store site(s) at %s; %d call site(s): %s; %d register store(s)" % (
             len(sites),
@@ -526,13 +534,16 @@ def harvest(tables, names, store_verdict, sites_by_table, reg_by_table, bodies_o
 
 # --------------------------------------------------------------------------- rendering
 def render(rows):
-    by_pop = collections.defaultdict(lambda: collections.Counter())
+    """The page block: one table of populations by resolution, then the four readings it supports."""
+    by_pop = collections.defaultdict(collections.Counter)
     for r in rows:
         by_pop[r["population"]][r["resolution"]] += 1
-    lines = ["| population | tables | own object | base level | a member of the caller | a frame slot | "
-             "an allocation | mixed | no direct call | no installer | no store |",
-             "|---|---|---|---|---|---|---|---|---|---|---|"]
-    label = {"named": "named by the registration path (control)", "bounded": "nameless: a class ctor stores it",
+    head = ["own object", "base level", "a member of the caller", "a frame slot", "an allocation",
+            "a global", "mixed", "no direct call", "no installer", "no store"]
+    lines = ["| population | tables | " + " | ".join(head) + " |",
+             "|---" * (len(head) + 2) + "|"]
+    label = {"named": "named by the registration path (control)",
+             "bounded": "nameless: a class ctor stores it",
              "plain-only": "nameless: only bodies no class names store it",
              "no-installer": "nameless: no installer body", "unnamed-other": "unnamed, outside the 250"}
 
@@ -549,80 +560,108 @@ def render(rows):
 
     named = [r for r in rows if r["population"] == "named"]
     nameless = [r for r in rows if r["population"] in ("bounded", "plain-only", "no-installer")]
-    second = [r for r in rows if r["resolution"] in ("own-object", "base-level", "mixed")]
-    member = [r for r in rows if r["resolution"] == "member-of-caller"]
-    stack = [r for r in rows if r["resolution"] == "stack-object"]
-    del second  # computed below per population
+    count = lambda rs, res: sum(1 for r in rs if r["resolution"] == res)
 
-    n_own = sum(1 for r in named if r["resolution"] == "own-object")
-    n_base = sum(1 for r in named if r["resolution"] == "base-level")
-    n_call = sum(1 for r in named if r["call_sites"])
-    n_member = sum(1 for r in named if r["resolution"] == "member-of-caller")
-    lines.append("**The control: %d of the %d named tables are installed with the caller's own `this`, and "
-                 "%d with a base level's.** %d of the %d have a direct caller at all; %d are installed "
-                 "through the address of one of the caller's members, which is the class table's own "
-                 "counterpart to `[reg+disp]` -- the same fact read from the call site instead of the "
-                 "store." % (n_own, len(named), n_base, n_call, len(named), n_member))
+    lines.append("**The control: of the %d named tables, %d are installed with the caller's own `this` and %d "
+                 "with a base level's.** A destructor (and a constructor) level writes its own table at `[reg]` "
+                 "and then calls the next level's with the same object, so a caller that owns a different table "
+                 "is the evidence that the callee's table is an ancestor's. %d of the named tables are mixed "
+                 "-- a class constructed both as a member and as a temporary by different callers reads that "
+                 "way, which is a fact about its callers rather than about the table."
+                 % (len(named), count(named, "own-object"), count(named, "base-level"), count(named, "mixed")))
     lines.append("")
 
-    nameless_base = [r for r in nameless if r["resolution"] == "base-level"]
-    nameless_member = [r for r in nameless if r["resolution"] == "member-of-caller"]
-    nameless_stack = [r for r in nameless if r["resolution"] == "stack-object"]
-    nameless_alloc = [r for r in nameless if r["resolution"] == "allocated"]
-    lines.append("**Of the %d nameless tables, %d are installed with a caller's own `this` and %d with a "
-                 "base level's, %d through a member's address and %d into a frame slot.** A frame-slot "
-                 "install is an object constructed in place in the caller's frame -- a temporary or an "
-                 "inlined constructor -- so the table belongs to a class that is only ever a local; an "
-                 "allocation install is the same for a heap object. Neither is a table nothing installs."
-                 % (len(nameless), sum(1 for r in nameless if r["resolution"] == "own-object"),
-                    len(nameless_base), len(nameless_member), len(nameless_stack)))
+    frame_only = [r for r in nameless if r["store_verdict"] == "frame-only"]
+    lines.append("**Of the %d nameless tables, %d are installed with a caller's own `this`, %d with a base "
+                 "level's, %d through a member's address, %d into a frame slot, %d into an allocation and %d "
+                 "into a global.** A frame-slot or allocation install is an object built in place -- a "
+                 "temporary, an argument passed by value, or an element of a local array -- so those tables "
+                 "belong to classes the build only ever instantiates as a local; a global install is a "
+                 "singleton in `.data`, constructed behind a one-shot flag. None of the four is a table "
+                 "nothing installs, which is what the store's own form made them look like. The %d tables "
+                 "`inventory/class_table_store_fields.csv` calls `frame-only` -- their own store writes a "
+                 "stack slot, so the address is spilled rather than installed -- split when the storing "
+                 "body's callers are read: %d into a frame slot, %d into an allocation, %d into a global, "
+                 "%d with the caller's own `this`, %d mixed and %d with no direct caller."
+                 % (len(nameless), count(nameless, "own-object"), count(nameless, "base-level"),
+                    count(nameless, "member-of-caller"), count(nameless, "stack-object"),
+                    count(nameless, "allocated"), count(nameless, "global-object"),
+                    len(frame_only), count(frame_only, "stack-object"), count(frame_only, "allocated"),
+                    count(frame_only, "global-object"), count(frame_only, "own-object"),
+                    count(frame_only, "mixed"), count(frame_only, "no-direct-call")))
     lines.append("")
 
-    slot_twelve = [r for r in nameless if r["store_verdict"] == "vtable-slot" and r["resolution"] != "own-object"]
-    lines.append("**The twelve tables written only at `[reg]` are not a second array of the owner's object.** "
-                 "Every one of them is stored by a body that moves `ecx` into a register first "
-                 "(`mov esi,ecx`, the thiscall prologue), so the store's base *is* the callee's own object; "
-                 "the object is not the owner's, it is whatever the caller passed in `ecx`: %d resolve to a "
-                 "member of the caller, %d to a frame slot, %d to an allocation, %d to a base level and %d "
-                 "stay mixed." % (len([r for r in slot_twelve if r["resolution"] == "member-of-caller"]),
-                                  len([r for r in slot_twelve if r["resolution"] == "stack-object"]),
-                                  len([r for r in slot_twelve if r["resolution"] == "allocated"]),
-                                  len([r for r in slot_twelve if r["resolution"] == "base-level"]),
-                                  len([r for r in slot_twelve if r["resolution"] == "mixed"])))
-    lines.append("")
+    second = [r for r in rows if r["second_table"]]
+    if second:
+        slot = [r for r in second if r["store_verdict"] == "vtable-slot"]
+        member = [r for r in second if "member" in r["store_verdict"]]
+        lines.append("**A second table is a different object, not a second array: of the %d tables the "
+                     "caller census reads as a second table, %d are written only at `[reg]` and %d at least "
+                     "once into a member field.** Read at the call site, the %d `[reg]` ones resolve to %d "
+                     "base levels, %d members of the caller, %d that are a slot or an allocation and %d "
+                     "mixes -- "
+                     "**not one of them is the owner's own object**, which is what \"the class builds it a "
+                     "second time\" would have required. The base levels are the same tables "
+                     "`inventory/class_table_parent_edges.csv` records as those classes' `parent_va`, reached "
+                     "from the call sites instead of from the destructor thunk."
+                     % (len(second), len(slot), len(member), len(slot),
+                        count(slot, "base-level"), count(slot, "member-of-caller"),
+                        count(slot, "stack-object") + count(slot, "allocated"), count(slot, "mixed")))
+        lines.append("")
+        agree = [r for r in second if r.get("offset_agreement") == "agree"]
+        differ = [r for r in second if r.get("offset_agreement") == "differ"]
+        if agree or differ:
+            lines.append("**The member offset is the same measured twice.** For %d second tables the store's "
+                         "own `[reg+disp]` and the caller's `lea ecx,[reg+disp]` are both in the image, and "
+                         "they agree on %d and differ on %d: %s."
+                         % (len(agree) + len(differ), len(agree), len(differ),
+                            ", ".join("%s `%s`" % (r["table_va"], r["member_offsets"]) for r in agree[:8])
+                            or "none"))
+            lines.append("")
 
-    names_base = [r for r in slot_twelve if r["resolution"] == "base-level"]
-    if names_base:
-        lines.append("**A base-level install is a destructor's second write, and the caller names the class "
-                     "the table belongs to.** The caller writes its own table at `[reg]` and then calls this "
-                     "body with the same `this`, so the callee is the base's destructor (or the base's "
-                     "constructor, which does the same at the other end) and the table is the *parent* "
-                     "class's: %s." % ", ".join(
-                         "%s -> `%s` of %s" % (r["table_va"], r["store_verdict"], r["class"] or
-                                               (r["population"] + " table")) for r in names_base[:8]))
+    glob = [r for r in rows if r["resolution"] == "global-object"]
+    stored = [r for r in glob if r["global_targets"]]
+    passed = [r for r in glob if not r["global_targets"]]
+    if glob:
+        text = "**%d tables are a module singleton.** " % len(glob)
+        if stored:
+            text += ("%d of them are stored into the global they live in -- %s -- by a body behind a one-shot "
+                     "flag (`test`/`or` on a byte beside the object, then the store), so the object is a "
+                     "`static` in `.data`, not a class instance. "
+                     % (len(stored), ", ".join("`%s` into %s" % (r["table_va"],
+                                                                 r["global_targets"].replace(" ", " and "))
+                                               for r in stored)))
+        if passed:
+            text += ("The other %s %s never passed anything but a global's address as `this`, so the object "
+                     "is one too -- it is simply built somewhere this read cannot follow."
+                     % (len(passed), "is" if len(passed) == 1 else "are"))
+        lines.append(text)
         lines.append("")
 
-    reg_only = [r for r in rows if r["reg_stores"] and not r["sites"]]
     reg_any = [r for r in rows if r["reg_stores"]]
-    lines.append("**%d of the %d tables carry a register-store install the immediate census cannot see, and "
-                 "%d of them have no immediate store at all** -- the pair `mov reg,<table>` / "
-                 "`mov [reg2(+disp)],reg` puts the address in the first instruction, so a census that reads "
-                 "the store's own immediate counts them as `frame-only` or `no-store`. %s"
-                 % (len(reg_any), len(rows), len(reg_only),
-                    ", ".join(r["table_va"] for r in reg_only[:10]) or "none"))
+    reg_only = [r for r in reg_any if not r["sites"]]
+    lines.append("**The register-carried install is real but rare: %d of the %d tables %s one, and %s.** The "
+                 "pair `mov reg,<table>` / `mov [reg2(+disp)],reg` puts the address in the first instruction, "
+                 "so a census that reads the store's own operand sees a register; here the channel adds "
+                 "nothing to the population, which is the negative that keeps the immediate census honest "
+                 "rather than a route still to walk."
+                 % (len(reg_any), len(rows), "has" if len(reg_any) == 1 else "have",
+                    ("none of them is a table without an immediate store at all" if not reg_only else
+                     "%s %s no immediate store at all" % (", ".join(r["table_va"] for r in reg_only),
+                                                          "has" if len(reg_only) == 1 else "have"))))
     lines.append("")
 
     lines.append("**What this settles for U40.** The `[reg]` store is the object's own slot *relative to the "
                  "body that writes it*, so the store's form alone cannot separate a class table from a "
-                 "member's: %d of the %d nameless tables are stored into `[reg]` of an object that is not "
-                 "the caller's own, and %d of those are a base class's table, which is a name the caller "
-                 "supplies. The residue that needs a per-body read is %d tables whose callers pass an "
-                 "unreadable `ecx`." % (
-                     sum(1 for r in nameless if r["store_verdict"] in ("vtable-slot", "vtable-slot+member")
-                         and r["resolution"] != "own-object"),
-                     len(nameless),
-                     len(nameless_base),
-                     sum(1 for r in nameless if r["resolution"] == "mixed")))
+                 "member's: in %d of the %d nameless tables the store lands on an object that is not the "
+                 "caller's own, and %d of those are an ancestor class's table, which is a name the caller "
+                 "supplies. What is left needing a per-body read is the %d mixed tables -- a receiver whose "
+                 "`ecx` comes out of arithmetic (`lea ecx,[eax+esi*4]`), an inlined constructor, or two "
+                 "callers that disagree -- and the %d tables no body calls directly."
+                 % (count(nameless, "member-of-caller") + count(nameless, "stack-object")
+                    + count(nameless, "allocated") + count(nameless, "global-object"),
+                    len(nameless), count(nameless, "base-level"), count(nameless, "mixed"),
+                    count(nameless, "no-direct-call")))
     return "\n".join(lines)
 
 
@@ -757,22 +796,31 @@ def self_check():
         {"sites": 1, "bodies": 1, "call_sites": ["ds:0x7ab9e8"], "caller_resets": 0}), "global-object")
 
     rows = [{"table_va": "0x004c0000", "slots": "4", "class": "", "population": "plain-only",
-             "store_verdict": "vtable-slot", "sites": 1, "bodies": 1, "call_sites": ["this+0x60"],
-             "caller_resets": 0, "reg_stores": 0, "this": 0, "member": 1, "frame": 0, "fresh": 0,
-             "other": 0, "store_origin": "this", "resolution": "member-of-caller",
+             "store_verdict": "vtable-slot", "second_table": "yes", "sites": 1, "bodies": 1,
+             "call_sites": ["this+0x60"], "caller_resets": 0, "reg_stores": 0, "this": 0, "member": 1,
+             "frame": 0, "fresh": 0, "other": 0, "store_origin": "this", "global_targets": "",
+             "member_offsets": "0x60", "offset_agreement": "agree", "resolution": "member-of-caller",
              "evidence": "1 store site(s) at 0x1000; 1 call site(s): this+0x60; 0 register store(s)"},
             {"table_va": "0x004c0100", "slots": "2", "class": "Named", "population": "named",
-             "store_verdict": "vtable-slot", "sites": 1, "bodies": 1, "call_sites": ["this"],
-             "caller_resets": 0, "reg_stores": 0, "this": 1, "member": 0, "frame": 0, "fresh": 0,
-             "other": 0, "store_origin": "this", "resolution": "own-object",
-             "evidence": "1 store site(s) at 0x2000; 1 call site(s): this; 0 register store(s)"}]
+             "store_verdict": "vtable-slot", "second_table": "", "sites": 1, "bodies": 1,
+             "call_sites": ["this"], "caller_resets": 0, "reg_stores": 0, "this": 1, "member": 0,
+             "frame": 0, "fresh": 0, "other": 0, "store_origin": "this", "global_targets": "",
+             "member_offsets": "", "offset_agreement": "", "resolution": "own-object",
+             "evidence": "1 store site(s) at 0x2000; 1 call site(s): this; 0 register store(s)"},
+            {"table_va": "0x004c0200", "slots": "5", "class": "", "population": "plain-only",
+             "store_verdict": "global", "second_table": "", "sites": 1, "bodies": 1,
+             "call_sites": [], "caller_resets": 0, "reg_stores": 0, "this": 0, "member": 0,
+             "frame": 0, "fresh": 0, "other": 0, "store_origin": "ds:0x7b9360",
+             "global_targets": "0x7b9360", "member_offsets": "", "offset_agreement": "",
+             "resolution": "global-object",
+             "evidence": "1 store site(s) at 0x3000; 0 call site(s): -; 0 register store(s)"}]
     out = render(rows)
-    for want_text in ("control", "U40", "register-store"):
+    for want_text in ("control", "U40", "register-carried", "a global", "same measured twice"):
         if want_text not in out:
             bad.append("render lacks %r" % (want_text,))
     path = os.path.join(tempfile.mkdtemp(), "a.csv")
     write_artifact(rows, path)
-    if [r["table_va"] for r in read_csv(path)] != ["0x004c0000", "0x004c0100"]:
+    if [r["table_va"] for r in read_csv(path)] != ["0x004c0000", "0x004c0100", "0x004c0200"]:
         bad.append("the artifact does not round-trip")
     if bad:
         print("FAIL class-store-provenance: " + "; ".join(bad))
@@ -837,6 +885,9 @@ def main():
     tables = {int(r["table_va"], 16): int(r["table_slots"] or 0) for r in read_csv(REACH)}
     names = {int(r["table_va"], 16): r["class"] for r in read_csv(NAMES) if r.get("class")}
     store_verdict = {int(r["table_va"], 16): (r["population"], r["verdict"]) for r in read_csv(FIELDS_IN)}
+    second_table = {int(r["table_va"], 16): "yes" for r in read_csv(CALLERS) if r["verdict"] == "second-table"}
+    store_offsets = {int(r["table_va"], 16): [f for f in (r.get("member_fields") or "").split()]
+                     for r in read_csv(FIELDS_IN)}
 
     funcs = read_csv(FUNCS)
     sizes = {int(r["address"], 16): int(r["size"] or 0) for r in funcs}
@@ -919,8 +970,8 @@ def main():
                         site[2], this_register(dis(b)))
         return chain
 
-    rows = harvest(tables, names, store_verdict, sites_by_table, reg_by_table, bodies_by_table,
-                   call_sites_of, caller_resets_of, origin_of)
+    rows = harvest(tables, names, store_verdict, second_table, store_offsets, sites_by_table, reg_by_table,
+                   bodies_by_table, call_sites_of, caller_resets_of, origin_of)
     if args.out:
         write_artifact(rows, os.path.join(args.out, os.path.basename(OUT)))
     if args.write_doc:
