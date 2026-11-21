@@ -476,9 +476,9 @@ class whose constructor writes it.
 |---|---|---|---|---|---|---|---|
 | named by the registration path (control) | 474 | 474 | -- | -- | -- | -- | -- |
 | nameless: a class ctor stores it | 38 | 2 | 9 | 27 | -- | -- | -- |
-| nameless: only bodies no class names store it | 212 | 176 | 2 | 11 | 20 | -- | 3 |
+| nameless: only bodies no class names store it | 212 | 176 | 2 | 11 | 20 | 3 | -- |
 
-**The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled and installed nowhere, and 3 into nothing a `C7 /0` store carries.
+**The 474 named tables are the control: 474 of them are written into the object's own slot and none of them into a member.** A class's dispatch table is the pointer its installer writes at `[reg]`. Of the 250 tables no registration names, **189 are written into an object slot at least once, 49 into a member field, and 23 have no object-field store of their own at all** -- 20 of those only into a stack slot, where the table's address is passed or spilled rather than written into a field and 3 only into a global variable, where the object is a singleton in `.data`.
 
 **The member offsets are a class's own layout, not a shared constant**: `0x8` in 2 tables, `0x28` in 24 tables, `0x2c` in 8 tables, `0x38` in 1 table, `0x64` in 2 tables, `0xb8` in 6 tables, `0xc0` in 1 table, `0xd8` in 1 table, `0xf0` in 1 table, `0x108` in 1 table, `0x134` in 1 table, `0x14c` in 2 tables, `0x164` in 1 table, `0x17c` in 1 table, `0x194` in 1 table.** A field that holds a table pointer is a member of the class whose constructor stores it, so the table is that member's dispatch table and its slots are methods of the member, not of the class -- naming it `<Class>_vt<slot>` would claim a class slot the image does not have.
 
@@ -875,6 +875,59 @@ a missing constructor site: it is the base's destructor, and the table it stores
 other 48 split 28 called only from unnamed bodies, 12 never called directly and 8 with no installer body,
 which is why a shape rule alone could not classify them.
 
+## Where the pointer came from: `this`, a member, a frame slot or a global
+
+The sections above read every store relative to the body that writes it, and that body is not always the
+object's own constructor: a class that builds a member in place stores into `[reg]` of the *member*'s
+`this`, which is a field of the caller, and a body whose `this` is a stack address is building a
+temporary. `tools/class-store-provenance.py` reads the other half -- `inventory/class_store_provenance.csv`,
+724 rows -- from two instructions per store: the **base register inside the storing body**, resolved
+through the thiscall prologue (`mov esi,ecx` makes `esi` the object), a member load, a `lea`, a frame slot,
+an absolute operand or a `call`'s return; and the **`ecx` every `E8` into that body passes**, resolved in
+the caller's own terms (`mov ecx,esi` is the caller's object, `lea ecx,[esi+0x60]` a member's address,
+`lea ecx,[esp+0x14]` a temporary, `mov ecx,eax` after a call a fresh object). Four readings come out of
+it: whose object the store writes, which level a caller resets, which member's offset the table sits at,
+and whether the object is a `.data` singleton.
+
+<!-- generated:class-store-provenance -->
+| population | tables | own object | base level | a member of the caller | a frame slot | an allocation | a global | mixed | no direct call | no installer | no store |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| named by the registration path (control) | 474 | 345 | 100 | -- | -- | -- | -- | 29 | -- | -- | -- |
+| nameless: a class ctor stores it | 38 | 12 | 5 | 2 | -- | 1 | -- | 17 | 1 | -- | -- |
+| nameless: only bodies no class names store it | 212 | 17 | 34 | 11 | 27 | 32 | 5 | 62 | 20 | 4 | -- |
+
+**The control: of the 474 named tables, 345 are installed with the caller's own `this` and 100 with a base level's.** A destructor (and a constructor) level writes its own table at `[reg]` and then calls the next level's with the same object, so a caller that owns a different table is the evidence that the callee's table is an ancestor's. 29 of the named tables are mixed -- a class constructed both as a member and as a temporary by different callers reads that way, which is a fact about its callers rather than about the table.
+
+**Of the 250 nameless tables, 29 are installed with a caller's own `this`, 39 with a base level's, 13 through a member's address, 27 into a frame slot, 33 into an allocation and 5 into a global.** A frame-slot or allocation install is an object built in place -- a temporary, an argument passed by value, or an element of a local array -- so those tables belong to classes the build only ever instantiates as a local; a global install is a singleton in `.data`, constructed behind a one-shot flag. None of the four is a table nothing installs, which is what the store's own form made them look like. The 20 tables `inventory/class_table_store_fields.csv` calls `frame-only` -- their own store writes a stack slot, so the address is spilled rather than installed -- split when the storing body's callers are read: 4 into a frame slot, 2 into an allocation, 2 into a global, 1 with the caller's own `this`, 6 mixed and 5 with no direct caller.
+
+**A second table is a different object, not a second array: of the 23 tables the caller census reads as a second table, 12 are written only at `[reg]` and 11 at least once into a member field.** Read at the call site, the 12 `[reg]` ones resolve to 5 base levels, 4 members of the caller, 1 to a slot or an allocation and 2 mixes -- **not one of them is the owner's own object**, which is what "the class builds it a second time" would have required. The base levels are the same tables `inventory/class_table_parent_edges.csv` records as those classes' `parent_va`, reached from the call sites instead of from the destructor thunk.
+
+**The member offset is the same measured twice.** For 6 second tables the store's own `[reg+disp]` and the caller's `lea ecx,[reg+disp]` are both in the image, and they agree on 6 and differ on 0: 0x0051bc08 `0x164 0xd8`, 0x0051bc10 `0x108 0x134`, 0x0051bf18 `0x194 0xc0`, 0x0051bf20 `0x14c`, 0x0051bf28 `0x17c`, 0x0051d854 `0x14c`.
+
+**5 tables are a module singleton.** 3 of them are stored into the global they live in -- `0x005174a8` into 0x7ab9e8 and 0x7aba2c, `0x00517588` into 0x7ab9d8 and 0x7aba1c, `0x0053a194` into 0x7b9360 -- by a body behind a one-shot flag (`test`/`or` on a byte beside the object, then the store), so the object is a `static` in `.data`, not a class instance. The other 2 are never passed anything but a global's address as `this`, so the object is one too -- it is simply built somewhere this read cannot follow.
+
+**The register-carried install is real but rare: 1 of the 724 tables has one, and none of them is a table without an immediate store at all.** The pair `mov reg,<table>` / `mov [reg2(+disp)],reg` puts the address in the first instruction, so a census that reads the store's own operand sees a register; here the channel adds nothing to the population, which is the negative that keeps the immediate census honest rather than a route still to walk.
+
+**What this settles for U40.** The `[reg]` store is the object's own slot *relative to the body that writes it*, so the store's form alone cannot separate a class table from a member's: in 78 of the 250 nameless tables the store lands on an object that is not the caller's own, and 39 of those are an ancestor class's table, which is a name the caller supplies. What is left needing a per-body read is the 79 mixed tables -- a receiver whose `ecx` comes out of arithmetic (`lea ecx,[eax+esi*4]`), an inlined constructor, or two callers that disagree -- and the 21 tables no body calls directly.
+<!-- /generated:class-store-provenance -->
+
+**The three `no-store` tables were a decode bug, not an absence.** `tools/class-table-store-fields.py`
+read `C7 05 <disp32> <imm32>` as a six-byte instruction, so the "table" it recorded was the store's own
+displacement and an absolute store was invisible: `0x005174a8`, `0x00517588` and `0x0053a194` looked like
+tables no store names. Read at ten bytes they are three module singletons -- the bytes at `0x7ab9f8` and
+`0x7b936c` are their one-shot flags -- and three more tables gain a global site, which is why
+`inventory/class_table_store_fields.csv` reads 20 frame-only and 3 global where it read 20 frame-only and
+3 `no C7 store`.
+
+**What this does not say.** It does not name the classes. The five base-level tables are the `parent_va`
+of `XboxClient`, `XboxViewport`, `XHVVoiceSubsystem`, `ObjectExporterT3D` and `TextBufferFactory`, and
+naming that level is `docs/NATIVE_CLASS_TREE.md`'s question, not this one. It does not follow an `ecx`
+that comes out of arithmetic beyond one `lea` (`lea ecx,[eax+esi*4]` is reported as `indexed`, and the two
+tables it reaches are left in the mixed group), and it does not decide whether a mixed table is two real
+construction sites or one caller the decoder mistook -- that is a per-body read of the kind the last two
+sections have been doing, and the artifact keeps every call site's resolved chain so the next read starts
+from the row rather than from the census.
+
 ## What this measurement does not say
 
 - **It does not separate dead code from map artefacts.** A body the symbol map names at an odd
@@ -1082,3 +1135,14 @@ The member tables' slots are the same population read one level deeper still:
 `--check` is a synthetic set of slot vectors -- a `__purecall` rung, the rung above it, a table that only
 agrees on half its slots and a stranger -- and `--check-doc` rebuilds its block from
 `inventory/class_member_tables.csv` with no dump; both run in `make ci`.
+
+The pointer every store goes through is read from the same sites, one operand in and one caller out:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-store-provenance.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-store-provenance.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic image -- a thiscall prologue, a member load, a nested member, a frame slot, a
+global load, a `call`'s return, four call-site `ecx` forms, the ten-byte absolute store and five
+register-store pairs -- and `--check-doc` rebuilds its block from `inventory/class_store_provenance.csv`
+with no dump; both run in `make ci`.

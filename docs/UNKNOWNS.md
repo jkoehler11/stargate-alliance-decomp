@@ -5748,30 +5748,38 @@ screen classes, `D3DRenderDevice`+`NullRenderDevice`, the two download classes, 
 base's vtable, not a table whose constructor went missing. The rest of the 58 are 28 called only from unnamed
 bodies, 12 never called directly and 8 with no installer body.
 
+**Answered since (2026-11-20, whose object the store writes).** `tools/class-store-provenance.py`
+resolves, for every store of the same 724 tables, the *base register* inside the storing body and the
+`ecx` every `E8` into that body passes (`inventory/class_store_provenance.csv`): the thiscall prologue's
+`mov esi,ecx` makes the store's base the callee's own object, a `lea ecx,[esi+0x60]` at a call site makes
+it the address of one of the caller's members, a frame slot makes it a temporary, and an absolute operand
+makes it a `.data` singleton. The control is the 474 named tables: **345 are installed with the caller's
+own `this` and 100 with a base level's** -- a level writes its own table and calls the next level's with
+the same object -- and 29 are mixed because one class is constructed both as a member and as a temporary.
+**The twelve tables written only at `[reg]` are not a second array of the owner's object**: five resolve
+to a base level (`0x004c93d0`, `0x004c94b0`, `0x004d2400`, `0x004d34d8`, `0x004d3af0`, which are exactly
+the `parent_va` of `XboxViewport`, `XboxClient`, `XHVVoiceSubsystem`, `ObjectExporterT3D` and
+`TextBufferFactory` in `inventory/class_table_parent_edges.csv`), four to the address of a caller's member
+(`0x0051bc20` at `+0x14`/`+0x184`, `0x0051bc4c` at `+0x78`/`+0x7c`, `0x0051d80c` at `+0xc0`, `0x0052bbf8`
+at `+0x4754`), one to an allocation and two to a mix; on the six second tables that have both channels in
+the image the store's `[reg+disp]` and the caller's `lea` agree on the offset **6 of 6**. Of the 250
+nameless tables, **29 are a caller's own object, 39 a base level, 13 a member's address, 27 a frame slot,
+33 an allocation and 5 a global**, and the 20 `frame-only` tables split 4/2/2/1/6/5 across those
+(four frame slots, two allocations, two globals, one own object, six mixed, five with no direct caller),
+so a spilled address is a table installed into an object this read can name, not a table nothing installs.
+The five globals are singletons: `0x005174a8` into `0x7ab9e8`/`0x7aba2c`, `0x00517588` into
+`0x7ab9d8`/`0x7aba1c`, `0x0053a194` into `0x7b9360`, each behind a one-shot flag (`0x7ab9f8`, `0x7b936c`),
+and two more are only ever passed a global's address. The register-carried install (`mov reg,<table>` then
+`mov [reg2(+disp)],reg`) is real but rare -- **1 of 724** tables, and that one also has an immediate store
+-- so the immediate census is not missing a population.
+
 **What would settle the rest.** For the 176 plain-only tables written at `[reg]` the class is the class
-whose constructor the store body is, so that body has to be named -- and the read above says what the body
-carries: a field layout and a subsystem call, not a class name. The shape census says which 97 are installed
-by a body that returns `this`, so the route left is outside the image's own literals: the class record's
-constructor field for a class no shipped package declares, or the native package's registration list, one
-body at a time. The 29 destructor-shaped and 26 unclassified tables need a per-body read rather than a rule.
-For the 23 with no object-field store the table has no installer, and the 3 with no `C7` store need the other
-addressing forms read (`mov [reg+index*4]` is an array slot, not a field). For the 399 bodies nothing changes
-except that the ones sitting in a member table's slots are named from the member.
-
-**What would settle the rest (superseded by the paragraph above).** For the 176 plain-only tables written at `[reg]` the class is the class
-whose constructor the store body is, so that body has to be named -- from a registration literal, a
-shipped `.u` class with that constructor, or the class record's constructor field -- one body at a time;
-the shape census now says which 97 of them are installed by a body that returns `this`, so that pass has a
-population. The 29 destructor-shaped and 26 unclassified tables need a per-body read rather than a rule.
-For the 23 with no object-field store the table has no installer, and the 3 with no `C7` store need the
-other addressing forms read (`mov [reg+index*4]` is an array slot, not a field). For the 399 bodies
-nothing changes except that the ones sitting in a member table's slots are named from the member.
-
-**What would settle it.** For the 269 bodies in unnamed tables, the class of each of the 250 tables (the
-installer's own call sites are the route `class-table-parents` uses) -- now answered for the 49
-member tables as far as their owner, and not for the rest. For the 273 `<Class>_vt<slot>` rows still
-unattributed, the native package each class belongs to (`XboxViewport`, `XboxClient`, `TcpipConnection`,
-`XBoxAudioSubsystem` live in the native `XboxDrv`/`IpDrv`/`XboxAudio` packages, which ship no `.u`, so
-`classes.csv` has no package for them) -- the installer's class-registration list is the route. For the 399,
-a naming channel that is not a pointer, a call or a table: their literals, or the CRT/XDK signature the block
-around them matches -- one body at a time, not a census.
+whose constructor the body is, so that body has to be named -- and the channels above say what it carries:
+a field layout, a subsystem call, and a pointer whose provenance is the caller's own object. Naming the
+five base levels is the class tree's question (`0x004c9348` is already read as the level above
+`0x004c93d0` there); the 79 mixed tables need a per-body read of the receiver that comes out of arithmetic
+(`lea ecx,[eax+esi*4]` is reported as `indexed`), and the 21 with no direct caller need the channel the
+body's own store gives. For the 399 bodies nothing changes except that the ones sitting in a member
+table's slots are named from the member. For the 49 member tables the owner is known and the name the map
+lacks is the member's, so a per-member naming pass -- one body at a time, not a census -- is what closes
+this entry.
