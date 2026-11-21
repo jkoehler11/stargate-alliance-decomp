@@ -900,7 +900,7 @@ and whether the object is a `.data` singleton.
 
 **Of the 250 nameless tables, 29 are installed with a caller's own `this`, 39 with a base level's, 13 through a member's address, 27 into a frame slot, 33 into an allocation and 5 into a global.** A frame-slot or allocation install is an object built in place -- a temporary, an argument passed by value, or an element of a local array -- so those tables belong to classes the build only ever instantiates as a local; a global install is a singleton in `.data`, constructed behind a one-shot flag. None of the four is a table nothing installs, which is what the store's own form made them look like. The 20 tables `inventory/class_table_store_fields.csv` calls `frame-only` -- their own store writes a stack slot, so the address is spilled rather than installed -- split when the storing body's callers are read: 4 into a frame slot, 2 into an allocation, 2 into a global, 1 with the caller's own `this`, 6 mixed and 5 with no direct caller.
 
-**A second table is a different object, not a second array: of the 23 tables the caller census reads as a second table, 12 are written only at `[reg]` and 11 at least once into a member field.** Read at the call site, the 12 `[reg]` ones resolve to 5 base levels, 4 members of the caller, 1 that are a slot or an allocation and 2 mixes -- **not one of them is the owner's own object**, which is what "the class builds it a second time" would have required. The base levels are the same tables `inventory/class_table_parent_edges.csv` records as those classes' `parent_va`, reached from the call sites instead of from the destructor thunk.
+**A second table is a different object, not a second array: of the 23 tables the caller census reads as a second table, 12 are written only at `[reg]` and 11 at least once into a member field.** Read at the call site, the 12 `[reg]` ones resolve to 5 base levels, 4 members of the caller, 1 to a slot or an allocation and 2 mixes -- **not one of them is the owner's own object**, which is what "the class builds it a second time" would have required. The base levels are the same tables `inventory/class_table_parent_edges.csv` records as those classes' `parent_va`, reached from the call sites instead of from the destructor thunk.
 
 **The member offset is the same measured twice.** For 6 second tables the store's own `[reg+disp]` and the caller's `lea ecx,[reg+disp]` are both in the image, and they agree on 6 and differ on 0: 0x0051bc08 `0x164 0xd8`, 0x0051bc10 `0x108 0x134`, 0x0051bf18 `0x194 0xc0`, 0x0051bf20 `0x14c`, 0x0051bf28 `0x17c`, 0x0051d854 `0x14c`.
 
@@ -1135,3 +1135,14 @@ The member tables' slots are the same population read one level deeper still:
 `--check` is a synthetic set of slot vectors -- a `__purecall` rung, the rung above it, a table that only
 agrees on half its slots and a stranger -- and `--check-doc` rebuilds its block from
 `inventory/class_member_tables.csv` with no dump; both run in `make ci`.
+
+The pointer every store goes through is read from the same sites, one operand in and one caller out:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-store-provenance.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-store-provenance.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic image -- a thiscall prologue, a member load, a nested member, a frame slot, a
+global load, a `call`'s return, four call-site `ecx` forms, the ten-byte absolute store and five
+register-store pairs -- and `--check-doc` rebuilds its block from `inventory/class_store_provenance.csv`
+with no dump; both run in `make ci`.

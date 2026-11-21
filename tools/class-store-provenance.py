@@ -598,7 +598,7 @@ def render(rows):
         lines.append("**A second table is a different object, not a second array: of the %d tables the "
                      "caller census reads as a second table, %d are written only at `[reg]` and %d at least "
                      "once into a member field.** Read at the call site, the %d `[reg]` ones resolve to %d "
-                     "base levels, %d members of the caller, %d that are a slot or an allocation and %d "
+                     "base levels, %d members of the caller, %d to a slot or an allocation and %d "
                      "mixes -- "
                      "**not one of them is the owner's own object**, which is what \"the class builds it a "
                      "second time\" would have required. The base levels are the same tables "
