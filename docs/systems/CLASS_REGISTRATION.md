@@ -1547,6 +1547,55 @@ families that already answer it: the representative is a formality for the named
 and for the 89 anonymous ones it is the class whose name a per-body read would have to earn. That is the
 same read the 399 unnamed bodies need, so the two populations are one work item and not two.
 
+## The channel that named four class tables is measured shut for the interfaces
+
+The `slot-file-token` rule above reads a table's slot bodies for the assert file they inline. The interfaces
+are the next population that owes a read, so the same tally runs over `inventory/class_plain_tables.csv`'s
+232 interface tables (`tools/class-interface-tokens.py`, `inventory/class_interface_tokens.csv`), read at the
+extents that census measured.
+
+<!-- generated:class-interface-tokens -->
+| token (the `.cpp` its slots assert in) | tables | slots | shape families |
+|---|---:|---:|---:|
+| `UnTemplate` | 4 | 4 | 2 |
+| `XboxLiveMatchMaking` | 4 | 4 | 4 |
+| `InternetLink` | 3 | 6 | 1 |
+| `UnPenLev` | 3 | 4 | 1 |
+| `UnRender` | 3 | 3 | 1 |
+| `UnLinker` | 2 | 2 | 1 |
+| `UnRenderUtil` | 2 | 2 | 2 |
+| `UnLevel` | 1 | 4 | 1 |
+| `UnRenderPrivate` | 1 | 4 | 1 |
+| `D3DRenderInterface` | 1 | 3 | 1 |
+| `UnActCol` | 1 | 3 | 1 |
+| `UnOctree` | 1 | 2 | 1 |
+
+**25 of the 232 interface tables carry an assert-file token on at least one slot (0 of the 23 named, 25 of the 209 unnamed), over 2527 slots in all** -- and **25 carry one no more than 8 of the 232 carry**, of which 25 are unnamed.
+
+**7 tokens are carried by more than one table, and 4 of them sit in exactly one shape family** (`InternetLink`, `UnLinker`, `UnPenLev`, `UnRender`) -- a second, independent vote for the grouping `class-interface-shapes.py` made from the slot vectors. **3 cross families** (`UnRenderUtil`, `UnTemplate`, `XboxLiveMatchMaking`), which is what an inherited slot looks like rather than a family signature.
+
+**The channel that named four class tables names nothing here, and the reason is the population.** An interface's slots are the compiler's defaults (111 stubs of 8 bytes or less, 24 `__purecall`; class-table census) and the shipped XDK libraries' methods, whose names are MSVC-mangled rather than `<Module>_<File>`, so the vote is 45 of 2527 slots; 6 of the 25 tables that do carry a token carry only tokens a *class* table already has, i.e. a slot inherited from an engine base class rather than a slot that describes the interface. So the 89 representative reads cannot be paid for with this channel, and an interface's name has to come from its slots' behaviour or from a member field that holds it.
+<!-- /generated:class-interface-tokens -->
+
+**What the vote does buy is a second opinion on the families.** Seven tokens are shared by more than one
+table and **four of them sit in exactly one shape family** (`InternetLink`, `UnLinker`, `UnPenLev`,
+`UnRender`) -- an independent vote for the grouping the shape census made from the slot vectors -- while
+three cross families (`UnRenderUtil`, `UnTemplate`, `XboxLiveMatchMaking`), which is what a slot inherited
+from an engine base looks like rather than a family signature. **19 of the 25 tables carry a file no class
+table carries** (`XboxLiveMatchMaking` on 4, `D3DRenderInterface`, `UnLevel`, `UnActCol`, `UnTex`, ...), so
+the vote does say which module emitted the slot -- a module label, not a class name, and the image has no
+registration literal for those classes. **That is why the 89 representative reads stay owed**: they are
+behaviour reads, and the fragment's own question -- *which interface is this* -- has to be answered from
+what a representative's slots do, or from a member field that holds it.
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-interface-tokens.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-interface-tokens.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (a slot whose body asserts in a file, a library method's mangled name, the document
+frequency, the class-table control, the block and the artifact round trip; no dump, writes nothing) and
+`--check-doc` rebuilds the block from the committed CSV. Both run in `make ci`.
+
 ## The 27 exact repeats are per-class, not per-translation-unit
 
 `inventory/class_interface_twins.csv` groups the 232 tables by shape and records each group's members, the

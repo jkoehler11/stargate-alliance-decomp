@@ -16123,6 +16123,26 @@ sequence.
   `docs/STATUS.md`, `README.md`, this note.
 - **Gates.** `make ci` green; `--check` is synthetic over tallies and writes nothing; `--check-doc` rebuilds
   both blocks from the committed CSVs with no dump; the names artifact regenerates byte for byte.
+- **The four rows also carry their class's own site and the size it pushes.** `object_size` and
+  `registration_va` were empty on the four; they now hold the site (`0x000f92c9` 456, `0x00183599` 4524,
+  `0x0010d6a9` 20368, `0x001083c6` 100), and `installed_at`/`stores`/`bound` stay empty because that
+  site's store installs the object root's table. `class-size-sources.py` gained a `site_kind` column
+  (468 `table` / 4 `class`) and a `class-site` verdict instead of counting the four as sites that resolve
+  to their table, and `symbols/xbox.map`'s `Vtbl_*` lines now carry the sizes.
+- **The size ladder is why those sizes matter to the name.** 100 -> 104/104/200/628 (channels),
+  4524 -> 4564/4608/4684 (drivers), 20368 -> 20404/20424 (connections), 456 -> 464 (viewport): the rule
+  refuses a name whose class is larger than a named carrier, so every one of the four is checked by slots
+  and by bytes, not by slots alone.
+- **The same channel is measured shut for the 232 interfaces.** `tools/class-interface-tokens.py` ->
+  `inventory/class_interface_tokens.csv` (232 rows): **25 tables carry an assert-file token** (45 of 2,527
+  slots; 0 of the 23 named, 25 of the 209 unnamed), 7 tokens are carried by more than one table and **4 of
+  those sit in exactly one shape family** (`InternetLink`, `UnLinker`, `UnPenLev`, `UnRender`) -- a second
+  vote for the shape grouping -- while 3 cross families (`UnRenderUtil`, `UnTemplate`,
+  `XboxLiveMatchMaking`). 19 of the 25 carry a file no class table carries, so the vote is a module label
+  and no registration literal stands behind it: the 89 representative reads stay behaviour reads.
+- **That block's doc gate had to be added to the gate line, and it was proved to bite.** The Makefile runs
+  `class-interface-tokens.py --check-doc` beside the other class doc checks; a corrupted count in the block
+  makes it answer `FAIL` (measured), and the bare `--check` is synthetic and writes nothing.
 - **Not in this bundle.** The 89 interface-family representative body reads, the 399 unnamed bodies, and
   `class_plain_tables.csv`'s own extent rule, which is measured not to lift from the class rule (ten of the
   250 tables start on an odd-aligned `.text` dword).
