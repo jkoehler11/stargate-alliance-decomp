@@ -1,13 +1,13 @@
 # Module attribution beyond the asserts (PLAN 4.5)
 
 Status: **measured, with a rule that scores 89.9% on held-out labels** -- **95.7%** where both neighbours agree and **68.8%** where they disagree, which is the split a reader needs (`--holdout 400`, 2026-11-10).
-Artifact: `inventory/function_module_attribution.csv` (14,973 rows, 6,092 of them with a module).
+Artifact: `inventory/function_module_attribution.csv` (16,374 rows, 6,622 of them with a module).
 Tool: `tools/module-attribution.py` (`make module-attribution`; `--check` in `make ci`).
 
 ## The gap this closes
 
 `inventory/function_modules.csv` attributes a function to a module only when the build already named it that
-way — the name's prefix comes from the `__FILE__` literal the function's own assert passes, so **1,375 of 14,973**
+way — the name's prefix comes from the `__FILE__` literal the function's own assert passes, so **1,404 of 16,374**
 functions carry a real module (`Core`, `Engine`, `Gui`, …). The remaining 13,598 are `(unnamed)` or one of the three
 name-only buckets (`(dispatch: declared)`, `(dispatch: slot only)`, `(other named)`).
 
@@ -83,25 +83,25 @@ labels it failed to recover: with every seed in place the same bound labels **6,
 
 ## What the artifact says
 
-With the default rule and every seed present: **6,092 of 14,973 functions carry a module (40.69%), 4,717 of them
-propagated** (against 1,375 asserted). The distribution is plausible against the asserted seeds:
+With the default rule and every seed present: **6,622 of 16,374 functions carry a module (40.44%), 5,218 of them
+propagated** (against 1,404 asserted). The distribution is plausible against the asserted seeds:
 
 | module | functions | asserted |
 |---|---:|---:|
-| `Core` | 3,244 | 581 |
-| `Engine` | 2,104 | 593 |
-| `IpDrv` | 159 | 24 |
-| `Gui` | 155 | 59 |
-| `D3DDrv` | 129 | 22 |
-| `stargategame` | 88 | 32 |
-| `stargatevehicles` | 52 | 12 |
-| `XboxAudio` | 42 | 9 |
-| `Fire` | 41 | 9 |
-| `XboxLive` | 32 | 20 |
-| `Gameplay` | 24 | 9 |
-| `XboxDrv` | 22 | 5 |
+| `Core` | 3,366 | 578 |
+| `Engine` | 2,335 | 592 |
+| `Gui` | 199 | 59 |
+| `IpDrv` | 177 | 24 |
+| `D3DDrv` | 134 | 22 |
+| `XboxAudio` | 127 | 41 |
+| `stargategame` | 96 | 32 |
+| `stargatevehicles` | 56 | 12 |
+| `Fire` | 45 | 9 |
+| `XboxLive` | 32 | 21 |
+| `XboxDrv` | 30 | 5 |
+| `Gameplay` | 25 | 9 |
 
-`(unnamed)` falls from 13,598 to **8,881**, which is code the asserts do not reach: CRT start-up, the statically
+`(unnamed)` falls from 13,598 to **9,752**, which is code the asserts do not reach: CRT start-up, the statically
 linked libraries, and functions whose TU has no assert within 2 KB.
 
 ## The artifact that shipped was a scoring run's output — corrected here
@@ -123,7 +123,15 @@ invariant that would have caught it, and which answers
 `0x0001afc0 carries the asserted module Core but is labelled propagated` against the shipped version. The corrected
 artifact moves **632 module labels** (430 rows gain one, 202 change) and **784 methods** (354 `propagated` →
 `assert`, 430 `none` → `propagated`); labelled 5,633 → 6,063. On the repaired map the same run labels
-**6,150** of 14,973 (1,411 `assert`, 4,739 `propagated`), and 6,147 of those are exported (`docs/MODULE_SPLIT.md`).
+**6,622** of 16,374 (1,404 `assert`, 5,218 `propagated`) as re-derived on 2026-11-20; 6,147 of an earlier run's set
+were exported (`docs/MODULE_SPLIT.md`).
+
+**Every absolute figure above was re-derived on 2026-11-20 from the committed artifact**, because the map grew from
+14,973 to 16,374 functions when boundary repairs split bodies a first pass had merged. One sentence in this page is
+deliberately left as history: the neighbour-rule comparison ("labels 13,998 of 14,973") came from an earlier tool
+revision whose definition matches neither metric the current tool reports — today `--rule neighbours` attributes
+**4,206 of 16,374** by `assert`+`propagated` and gives **10,366** any module bucket at all — so re-derive it before
+quoting it against the table above.
 
 ## Limits — what a module label is not
 
