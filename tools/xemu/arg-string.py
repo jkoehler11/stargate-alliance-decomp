@@ -35,17 +35,32 @@ def step(gdb, timeout=10.0):
 
 
 def cstring(blob):
-    """Decode a byte blob as ASCII up to the first NUL, or as UTF-16LE if it looks wide."""
-    cut = blob.split(b"\x00\x00", 1)[0] if blob[:2] != b"" else blob
-    wide = blob[:120].split(b"\x00\x00\x00", 1)[0]
-    # A wide string has NULs in every odd position; a narrow one does not.
-    odd_nuls = sum(1 for i in range(1, min(len(blob), 64), 2) if blob[i] == 0)
-    if odd_nuls >= min(20, len(blob) // 4) and len(wide) >= len(cut):
-        try:
-            return wide.decode("utf-16-le", "replace").rstrip("\x00")
-        except Exception:
-            pass
-    return cut.decode("latin-1", "replace")
+    """Decode a byte blob as a C string, narrow or UTF-16LE, and keep whichever reads as text.
+
+    The first version chose on an odd-position-NUL count and mis-decoded a plain ASCII path into mojibake
+    (`Z:\\chevguy4.tm` came back as CJK), because a short buffer never reaches the threshold. Score both
+    candidates by printable ratio instead: ASCII paths and wide strings then each win on their own merits.
+    """
+    narrow = blob.split(b"\x00", 1)[0].decode("latin-1", "replace").rstrip("\x00")
+    wide_bytes = blob[:160]
+    if len(wide_bytes) % 2:
+        wide_bytes = wide_bytes[:-1]
+    try:
+        # Decode everything, then cut at the first NUL *character*: splitting the bytes on a NUL pair straddles the
+        # boundary and eats the last character (`...Game.int` came back as `...Game.in`).
+        wide = wide_bytes.decode("utf-16-le", "replace").split("\x00", 1)[0]
+    except Exception:
+        wide = ""
+
+    def score(text):
+        # Rank by how many characters survive as text first, then by the ratio: a ratio alone ties a one-character
+        # narrow read against a full wide string, and the short one wins the tie.
+        if not text:
+            return (0, 0.0)
+        good = sum(1 for ch in text if ch.isprintable() and (ch.isascii() or ch.isalnum()))
+        return (good, good / len(text))
+
+    return wide if score(wide) > score(narrow) else narrow
 
 
 def main():
@@ -55,6 +70,8 @@ def main():
     ap.add_argument("--break", dest="breaks", action="append", required=True, metavar="ADDR",
                     help="address to break at (0x...), may be repeated")
     ap.add_argument("--arg", type=int, default=1, help="1-based stack argument holding the string pointer (default 1)")
+    ap.add_argument("--arg2", type=int, default=0,
+                    help="a second 1-based stack argument to record as a number (e.g. 2 = dwDesiredAccess)")
     ap.add_argument("--width", type=int, default=0x100, help="bytes to read at that pointer (default 0x100)")
     ap.add_argument("--stops", type=int, default=24)
     ap.add_argument("--window", type=float, default=300.0, help="seconds to keep the window open")
@@ -133,7 +150,13 @@ def main():
         regs = gdb.registers()
         eip = regs.get("eip")
         esp = regs.get("esp")
-        rec = {"n": len(records) + 1, "eip": eip, "esp": esp, "text": None, "ptr": None, "ret": None}
+        rec = {"n": len(records) + 1, "eip": eip, "esp": esp, "text": None, "ptr": None, "ret": None,
+               "arg2": None}
+        if args.arg2 and esp:
+            try:
+                rec["arg2"] = int.from_bytes(gdb.read(esp + 4 * args.arg2, 4), "little")
+            except (IOError, OSError):
+                pass
         try:
             rec["ret"] = int.from_bytes(gdb.read(esp, 4), "little") if esp else None
         except (IOError, OSError):
@@ -150,10 +173,12 @@ def main():
             except (IOError, OSError) as exc:
                 rec["error"] = str(exc)
         records.append(rec)
-        print("stop %d: eip=0x%08x ret=%s ptr=%s -> %r"
+        print("stop %d: eip=0x%08x ret=%s ptr=%s%s -> %r"
               % (rec["n"], eip or 0,
                  ("0x%08x" % rec["ret"]) if rec["ret"] else "?",
-                 ("0x%08x" % rec["ptr"]) if rec["ptr"] else "?", rec["text"]))
+                 ("0x%08x" % rec["ptr"]) if rec["ptr"] else "?",
+                 (" arg2=0x%08x" % rec["arg2"]) if rec["arg2"] is not None else "",
+                 rec["text"]))
         # The stub re-reports the same EIP on a plain continue: step over, then re-arm.
         if eip == last_eip:
             try:
