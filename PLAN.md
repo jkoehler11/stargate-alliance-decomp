@@ -15911,7 +15911,7 @@ sequence.
 
 - **The mixed bucket is three answers, and the arithmetic one is a `TArray` element.** `tools/class-receiver-reads.py`
   reads the same store sites as `class-store-provenance.py` one instruction deeper over its two residues
-  (`inventory/class_receiver_reads.csv`, 129 rows: the 108 `mixed` and the 21 `no-direct-call`). 21 of the mixed
+  (`inventory/class_receiver_reads.csv`, 130 rows: the 109 `mixed` and the 21 `no-direct-call`). 21 of the mixed
   tables are constructed **in place inside a dynamic array** -- `mov eax,[esi]`, `imul edi,edi,<size>`,
   `add edi,eax`, `mov ecx,edi`, `call <installer>` -- so the receiver is the new element and the stride is its
   size: 0x4 (10 tables), 0x138 (4, the `SkeletalMesh` member tables), 0x1c (3), and one each of 0x6c, 0xb0, 0x4c
@@ -15934,12 +15934,14 @@ sequence.
   virtual method. One is tail-called (`0x004eaf68` from `0x000bd578`), 4 are held by a dword (three in the
   section named `DOLBY`, one in `.rdata`), and **12 are pointed at by nothing** -- tables whose class no shipped
   code instantiates.
-- **A second decode bug, found and not yet fixed in the tool that has it.** `C7 84 24 <disp32> <imm32>` is an
-  eleven-byte store, and both `tools/class-table-store-fields.py` and `tools/class-store-provenance.py` read its
-  immediate at the ten-byte offset: the form occurs **1,038** times in `.text` and **6** of those stores carry
-  one of the 724 tables (`0x004d3248`'s own store among them). The new tool reads each form at its own length
-  and its selftest pins the `disp8` SIB, the `disp32` SIB and the absolute form; the correction of the other two
-  is the next bundle, because it moves their artifacts, their blocks and every population computed from them.
+- **A second decode bug, and this bundle fixes it in the two tools that had it.** `C7 84 24 <disp32> <imm32>`
+  is an **eleven-byte** store -- a frame slot past `disp8` -- and both `tools/class-table-store-fields.py` and
+  `tools/class-store-provenance.py` computed its immediate at the ten-byte offset, so they read the
+  displacement's last byte instead of the table. The form occurs **1,038** times in `.text` and **6** of those
+  stores carry one of the 724 tables. Read at its own length it gains stores on four tables -- `0x004c7860`
+  38 to 41, `0x0051707c` 1 to 2, `0x00517e88` 1 to 2, `0x00564dbc` 2 to 3 -- moves `0x00564dbc` from
+  `own-object` to `mixed` (109 mixed rows, 80 of them nameless) and leaves all 724 store-form verdicts where
+  they were. Both tools' selftests pin the `disp32` SIB form next to the `disp8` and absolute ones.
 - **Files.** `tools/class-receiver-reads.py`, `inventory/class_receiver_reads.csv`,
   `docs/systems/CLASS_REGISTRATION.md` (the new section, its block, the corrected provenance paragraph and the
   regenerating commands), `docs/UNKNOWNS.md` (U40 rewritten), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`,

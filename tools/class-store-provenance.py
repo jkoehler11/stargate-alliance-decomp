@@ -282,12 +282,14 @@ def sweep_imm_stores(text, text_va):
         if rm == 4:
             sib = text[i + 2] if i + 2 < n else 0
             base_no, index = sib & 7, (sib >> 3) & 7
+            # a `disp32` SIB store (`C7 84 24 <disp32> <imm32>`) is eleven bytes; the ten-byte
+            # walk read the displacement's last byte instead of the table
             if mod == 0:
-                ln = 10 if index == 4 and base_no == 5 else 7
+                ln = 11 if index == 4 and base_no == 5 else 7
             elif mod == 1:
                 ln = 8
             elif mod == 2:
-                ln = 10
+                ln = 11
             else:
                 i += 1
                 continue
@@ -300,8 +302,8 @@ def sweep_imm_stores(text, text_va):
             if index != 4:
                 form = "indexed"
             elif mod == 0 and base_no == 5:
-                form, ln = "global", 10
-                disp = struct.unpack_from("<I", text, i + 4)[0]
+                form, ln = "global", 11
+                disp = struct.unpack_from("<I", text, i + 3)[0]
             else:
                 form = "slot" if disp == 0 else "member"
         elif mod == 0 and rm == 5:
@@ -749,6 +751,13 @@ def self_check():
     gsites = sweep_imm_stores(bytes(gtext), 0x1000)
     want("a global store's table", [(f, "%#x" % d) for _, _, _, d, f in gsites], [("global", "0x7ab9e8")])
     want("the global store is not read short", [t for _, t, _, _, _ in gsites], [0x9000])
+
+    # a `disp32` SIB store is eleven bytes: a frame slot past `disp8`, and a ten-byte walk reads
+    # the displacement's last byte instead of the table
+    ftext = bytearray(b"\x90" * 0x40)
+    ftext[0x08:0x13] = b"\xc7\x84\x24" + struct.pack("<I", 0x310) + struct.pack("<I", 0x9100)
+    want("a disp32 frame store", [(f, "%#x" % d, "%#x" % t) for _, t, _, d, f in sweep_imm_stores(bytes(ftext), 0x1000)],
+         [("frame", "0x310", "0x9100")])
 
     # the register-carried install the immediate census cannot see
     text = bytearray(b"\x90" * 0x100)

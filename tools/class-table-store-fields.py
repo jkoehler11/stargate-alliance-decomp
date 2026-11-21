@@ -81,12 +81,15 @@ def sweep_stores(text, text_va):
         if rm == 4:
             sib = text[i + 2] if i + 2 < n else 0
             base_no, index = sib & 7, (sib >> 3) & 7
+            # the immediate's offset is the displacement's width plus three: a `disp32` SIB store
+            # (`C7 84 24 <disp32> <imm32>`) is eleven bytes, so a ten-byte walk reads the
+            # displacement's last byte instead of the table
             if mod == 0:
-                ln = 10 if index == 4 and base_no == 5 else 7
+                ln = 11 if index == 4 and base_no == 5 else 7
             elif mod == 1:
                 ln = 8
             elif mod == 2:
-                ln = 10
+                ln = 11
             else:
                 i += 1
                 continue
@@ -326,12 +329,13 @@ def self_check():
     text[0x58:0x62] = b"\xc7\x05" + struct.pack("<I", 0x5fe168) + struct.pack("<I", 0x9500)  # mov ds:0x5fe168,0x9500
     text[0x70:0x77] = b"\xc7\x44\x24\x08" + struct.pack("<I", 0x9600)      # SIB, [esp+8]
     text[0x80:0x87] = b"\xc7\x04\xc8" + struct.pack("<I", 0x9700)          # SIB with index: indexed
+    text[0xa0:0xab] = b"\xc7\x84\x24" + struct.pack("<I", 0x310) + struct.pack("<I", 0x9900)  # SIB, [esp+0x310]
     sites = sweep_stores(bytes(text), text_va)
     got = {imm: (form, disp) for _, imm, _, disp, form in sites}
     want = {0x9000: ("slot", 0), 0x9100: ("member", 0x28), 0x9200: ("member", 0x28),
             0x9800: ("member", 0xb8),
             0x9300: ("frame", 0), 0x9400: ("frame", 0), 0x9500: ("global", 0),
-            0x9600: ("frame", 8), 0x9700: ("indexed", 0)}
+            0x9600: ("frame", 8), 0x9700: ("indexed", 0), 0x9900: ("frame", 0x310)}
     if got != want:
         bad.append("the store forms are misread: %r" % (got,))
     if 0x5fe168 in got:

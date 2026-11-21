@@ -5774,8 +5774,8 @@ and two more are only ever passed a global's address. The register-carried insta
 -- so the immediate census is not missing a population.
 
 **Answered since (2026-11-20, the receiver out of arithmetic).** `tools/class-receiver-reads.py` reads the
-same store sites one instruction deeper over exactly the two residues above -- the 108 `mixed` and the 21
-`no-direct-call` rows -- into `inventory/class_receiver_reads.csv` (129 rows). **21 of the 108 mixed tables
+same store sites one instruction deeper over exactly the two residues above -- the 109 `mixed` and the 21
+`no-direct-call` rows -- into `inventory/class_receiver_reads.csv` (130 rows). **21 of the 109 mixed tables
 construct their object in place inside a dynamic array**: `mov eax,[esi]` (the array's data pointer),
 `imul edi,edi,<size>` or `shl edi,<n>`, `add edi,eax`, `mov ecx,edi`, so `ecx` is the new element itself
 and the stride is its size -- seven strides, 0x4 (10 tables), 0x138 (4, the `SkeletalMesh` member
@@ -5806,15 +5806,15 @@ jump (`0x004eaf68`, from `0x000bd578`) and 4 by a dword that holds the body (thr
 `DOLBY` under `0x0051a810`, one in `.rdata` for `0x00523008`). The other **12 are pointed at by nothing the
 image carries**, which makes them tables whose class no shipped code instantiates.
 
-**A store form the two older censuses still misread.** `C7 84 24 <disp32> <imm32>` is an **eleven-byte**
-store -- a frame slot past `disp8` -- and both `tools/class-table-store-fields.py` and
-`tools/class-store-provenance.py` compute its immediate at the ten-byte offset, so they read the
-displacement's last byte and lose the table. The form occurs **1,038** times in `.text` and **6** of those
-stores carry one of the 724 tables (`0x004d3248`'s own store is one of them, which is why the provenance
-row reads no call site while the body it lives in is `Core_UExporter`). This tool reads each store form at
-its own length and its selftest pins the `disp8` and `disp32` SIB forms and the absolute one; correcting
-the other two moves their artifacts, their blocks and the populations computed from them, so it is the next
-read of this thread rather than part of this one.
+**A store form the two older censuses misread, found and fixed in this read.** `C7 84 24 <disp32>
+<imm32>` is an **eleven-byte** store -- a frame slot past `disp8` -- and both
+`tools/class-table-store-fields.py` and `tools/class-store-provenance.py` computed its immediate at the
+ten-byte offset, so they read the displacement's last byte and lost the table. The form occurs **1,038**
+times in `.text` and **6** of those stores carry one of the 724 tables; read at its own length it gains
+stores on four tables (`0x004c7860` 38 to 41, `0x0051707c` 1 to 2, `0x00517e88` 1 to 2, `0x00564dbc` 2 to
+3), moves `0x00564dbc` from `own-object` to `mixed` -- the 109th mixed row, and one of the 3 unresolved
+here -- and leaves every one of the 724 store-form verdicts unchanged. All three tools now read each form
+at its own length and pin the `disp8` SIB, the `disp32` SIB and the absolute form in their selftests.
 
 **What would settle the rest.** Naming the five base levels is the class tree's question (`0x004c9348` is
 already read as the level above `0x004c93d0` there). For the 176 plain-only tables written at `[reg]` the

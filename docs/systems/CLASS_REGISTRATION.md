@@ -894,11 +894,11 @@ and whether the object is a `.data` singleton.
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | named by the registration path (control) | 474 | 345 | 100 | -- | -- | -- | -- | 29 | -- | -- | -- |
 | nameless: a class ctor stores it | 38 | 12 | 5 | 2 | -- | 1 | -- | 17 | 1 | -- | -- |
-| nameless: only bodies no class names store it | 212 | 17 | 34 | 11 | 27 | 32 | 5 | 62 | 20 | 4 | -- |
+| nameless: only bodies no class names store it | 212 | 16 | 34 | 11 | 27 | 32 | 5 | 63 | 20 | 4 | -- |
 
 **The control: of the 474 named tables, 345 are installed with the caller's own `this` and 100 with a base level's.** A destructor (and a constructor) level writes its own table at `[reg]` and then calls the next level's with the same object, so a caller that owns a different table is the evidence that the callee's table is an ancestor's. 29 of the named tables are mixed -- a class constructed both as a member and as a temporary by different callers reads that way, which is a fact about its callers rather than about the table.
 
-**Of the 250 nameless tables, 29 are installed with a caller's own `this`, 39 with a base level's, 13 through a member's address, 27 into a frame slot, 33 into an allocation and 5 into a global.** A frame-slot or allocation install is an object built in place -- a temporary, an argument passed by value, or an element of a local array -- so those tables belong to classes the build only ever instantiates as a local; a global install is a singleton in `.data`, constructed behind a one-shot flag. None of the four is a table nothing installs, which is what the store's own form made them look like. The 20 tables `inventory/class_table_store_fields.csv` calls `frame-only` -- their own store writes a stack slot, so the address is spilled rather than installed -- split when the storing body's callers are read: 4 into a frame slot, 2 into an allocation, 2 into a global, 1 with the caller's own `this`, 6 mixed and 5 with no direct caller.
+**Of the 250 nameless tables, 28 are installed with a caller's own `this`, 39 with a base level's, 13 through a member's address, 27 into a frame slot, 33 into an allocation and 5 into a global.** A frame-slot or allocation install is an object built in place -- a temporary, an argument passed by value, or an element of a local array -- so those tables belong to classes the build only ever instantiates as a local; a global install is a singleton in `.data`, constructed behind a one-shot flag. None of the four is a table nothing installs, which is what the store's own form made them look like. The 20 tables `inventory/class_table_store_fields.csv` calls `frame-only` -- their own store writes a stack slot, so the address is spilled rather than installed -- split when the storing body's callers are read: 4 into a frame slot, 2 into an allocation, 2 into a global, 0 with the caller's own `this`, 7 mixed and 5 with no direct caller.
 
 **A second table is a different object, not a second array: of the 23 tables the caller census reads as a second table, 12 are written only at `[reg]` and 11 at least once into a member field.** Read at the call site, the 12 `[reg]` ones resolve to 5 base levels, 4 members of the caller, 1 to a slot or an allocation and 2 mixes -- **not one of them is the owner's own object**, which is what "the class builds it a second time" would have required. The base levels are the same tables `inventory/class_table_parent_edges.csv` records as those classes' `parent_va`, reached from the call sites instead of from the destructor thunk.
 
@@ -908,7 +908,7 @@ and whether the object is a `.data` singleton.
 
 **The register-carried install is real but rare: 1 of the 724 tables has one, and none of them is a table without an immediate store at all.** The pair `mov reg,<table>` / `mov [reg2(+disp)],reg` puts the address in the first instruction, so a census that reads the store's own operand sees a register; here the channel adds nothing to the population, which is the negative that keeps the immediate census honest rather than a route still to walk.
 
-**What this settles for U40.** The `[reg]` store is the object's own slot *relative to the body that writes it*, so the store's form alone cannot separate a class table from a member's: in 78 of the 250 nameless tables the store lands on an object that is not the caller's own, and 39 of those are an ancestor class's table, which is a name the caller supplies. What is left needing a per-body read is the 79 mixed tables -- a receiver whose `ecx` comes out of arithmetic (`lea ecx,[eax+esi*4]`), an inlined constructor, or two callers that disagree -- and the 21 tables no body calls directly.
+**What this settles for U40.** The `[reg]` store is the object's own slot *relative to the body that writes it*, so the store's form alone cannot separate a class table from a member's: in 78 of the 250 nameless tables the store lands on an object that is not the caller's own, and 39 of those are an ancestor class's table, which is a name the caller supplies. What is left needing a per-body read is the 80 mixed tables -- a receiver whose `ecx` comes out of arithmetic (`lea ecx,[eax+esi*4]`), an inlined constructor, or two callers that disagree -- and the 21 tables no body calls directly.
 <!-- /generated:class-store-provenance -->
 
 **The three `no-store` tables were a decode bug, not an absence.** `tools/class-table-store-fields.py`
@@ -929,9 +929,9 @@ the deeper read starts from the row rather than from the census.
 
 ## `ecx` out of arithmetic: an array element, a static in `.data`, or a size
 
-The two residues the section above leaves -- its 108 `mixed` tables and the 21 no `E8` reaches -- are both
+The two residues the section above leaves -- its 109 `mixed` tables and the 21 no `E8` reaches -- are both
 a question about one instruction, so `tools/class-receiver-reads.py` reads the same store sites again, one
-instruction deeper, over that same population (`inventory/class_receiver_reads.csv`, 129 rows). Three
+instruction deeper, over that same population (`inventory/class_receiver_reads.csv`, 130 rows). Three
 readings come out of it, and the first is the arithmetic the one-level read reported as an opaque
 `indexed`: the build constructs an object **in place inside a dynamic array**, `mov eax,[esi]` (the
 array's data pointer) then `imul edi,edi,<size>` then `add edi,eax`, so `ecx` is the new element itself and
@@ -944,10 +944,10 @@ has a measured size. What none of the three is, is a class name: they say which 
 <!-- generated:class-receiver-reads -->
 | population | tables | an array element | a static object | a pointer field | a walked pointer | two ways (member + temporary) | unresolved | no receiver |
 |---|---|---|---|---|---|---|---|---|
-| mixed | 108 | 21 | 3 | 10 | -- | 72 | 2 | -- |
+| mixed | 109 | 21 | 3 | 10 | -- | 72 | 3 | -- |
 | no direct caller | 21 | -- | -- | -- | -- | -- | -- | 21 |
 
-**21 of the 108 mixed tables construct their object inside a dynamic array, and the element's size is in the stride.** The build's shape is `mov eax,[esi]` (the array's data pointer), `imul edi,edi,<size>` (or `shl edi,<n>`), `add edi,eax`, `mov ecx,edi`, `call <installer>` -- so `ecx` is the new element itself and the stride is the element's size: a struct of that size inside a `TArray`. The head is the pointer the data pointer was loaded from -- the caller's own object at `this+0`, a frame slot holding the `TArray`, or a global -- so the array is the caller's member or local, and the element is the object this table belongs to. The one-level read reported that receiver as one opaque `indexed` or `?`.
+**21 of the 109 mixed tables construct their object inside a dynamic array, and the element's size is in the stride.** The build's shape is `mov eax,[esi]` (the array's data pointer), `imul edi,edi,<size>` (or `shl edi,<n>`), `add edi,eax`, `mov ecx,edi`, `call <installer>` -- so `ecx` is the new element itself and the stride is the element's size: a struct of that size inside a `TArray`. The head is the pointer the data pointer was loaded from -- the caller's own object at `this+0`, a frame slot holding the `TArray`, or a global -- so the array is the caller's member or local, and the element is the object this table belongs to. The one-level read reported that receiver as one opaque `indexed` or `?`.
 
 | table | class | element size | the array's head | installer |
 |---|---|---|---|---|
@@ -979,19 +979,25 @@ has a measured size. What none of the three is, is a class name: they say which 
 
 **The 21 tables no `E8` reaches have a channel, and it names the reader.** An installer is reached by a tail jump (`E9`), by a dword that holds its address -- a class-table slot, or a `.data` pointer -- or by nothing the image carries. 9 of 21 have a channel; 12 are pointed at by nothing at all, which makes them tables whose class no shipped code instantiates. By channel: 6 by a class-table slot (0x004d0d80 slot:0x5045e0+30, 0x004f7070 slot:0x4d1f88+36, 0x0051d300 slot:0x51d260+39, 0x0051d444 slot:0x51d3a0+39); 1 by a tail jump (0x004eaf68 tail:0xbd578); 4 by a dword pointer (0x0051a810 ptr:DOLBY+0x36e0, 0x0051a810 ptr:DOLBY+0x3718, 0x0051a810 ptr:DOLBY+0x3760, 0x00523008 ptr:.rdata+0xf6).
 
-**2 stay unresolved** (0x0051b0cc, 0x00564da4): the instruction that defines the receiver is not a copy, an address, a load or a scaled add, and the artifact names its mnemonic.
+**3 stay unresolved** (0x0051b0cc, 0x00564da4, 0x00564dbc): the instruction that defines the receiver is not a copy, an address, a load or a scaled add, and the artifact names its mnemonic.
 <!-- /generated:class-receiver-reads -->
 
 **What this does not say.** It does not name the classes behind the array elements: the element a table is
 installed into is a struct of the stride's size inside a `TArray`, and the array's owner is the caller
 body, which the map still calls `FUN_*`. It does not decide whether an installer reached by nothing at all
 is dead code or reached through an address no dword in the image holds, which is the reading
-`tools/native-unreachable.py` owns. And it does not repair the two older censuses: `C7 84 24 <disp32>
-<imm32>` is an eleven-byte store, and both `tools/class-table-store-fields.py` and
-`tools/class-store-provenance.py` read its immediate at the ten-byte offset, so six stores of that form are
-invisible to them (`c7 84 24` occurs 1,038 times in `.text`, 27 `c7 44 24` frame stores are already read
-correctly). This tool reads the form at its own length; correcting the other two changes their artifacts
-and their blocks and is the next read of this thread.
+`tools/native-unreachable.py` owns. It does not read a receiver out of an `imul` whose index is not the
+register the walk follows, which is what the three unresolved rows are.
+
+**The read also repaired the store form the two censuses above it misread.** `C7 84 24 <disp32> <imm32>` is
+an **eleven-byte** store -- a frame slot past `disp8` -- and both `tools/class-table-store-fields.py` and
+`tools/class-store-provenance.py` computed its immediate at the ten-byte offset, so they read the
+displacement's last byte instead of the table. The form occurs **1,038** times in `.text` and **6** of those
+stores carry one of the 724 tables. Both tools now read it at its own length and pin it in their selftests,
+which gains stores on four tables -- `0x004c7860` 38 to 41, `0x0051707c` 1 to 2, `0x00517e88` 1 to 2 and
+`0x00564dbc` 2 to 3 -- moves `0x00564dbc` from `own-object` to `mixed` and leaves every verdict of the
+store-form census where it was, so this page's earlier counts stand except where the regenerated blocks
+say otherwise.
 
 ## What this measurement does not say
 
