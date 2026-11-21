@@ -2612,3 +2612,209 @@ in `make ci`. `--check` on the declarer census is eight synthetic walks -- an in
 override below the declarer, a sibling's own slot, a slot past the parent's extent, an unnamed declarer
 that names the script an edge records, and an edge-less table -- plus the artifact's own arithmetic
 against `gap_heads.csv` and the 538 map names.
+
+## The parent, from the image: `Super` is a store this build makes itself (2026-11-21)
+
+The seven tables the declarer walk left unnamed needed a *class*, and the page had been looking for one in two
+places that cannot hold it: no registration names the table (the parent's own constructor has no registration
+site -- it shares the object root's thunk), and no shipped package declares the class (`inventory/classes.csv` is
+built from the 18 packages, whose script does not declare it). The class object is where the name was: a class
+carries its parent at `+0x28` (`docs/NATIVE_PROPERTIES.md`, *`+0x28` on a class object is `Super`*), and this
+build does not leave that field to the package loader -- **it writes it, in a per-class setup body whose shape is
+the measurement**:
+
+    mov  eax,ds:<parent cell>      ; the parent's cached StaticClass() result
+    mov  ecx,ds:<self cell>        ; this class's own
+    cmp  eax,ecx                   ; the root cannot be its own parent...
+    je   .null
+    mov  [ecx+0x28],eax            ; Super = the parent
+    jmp  .done
+.null:
+    mov  [ecx+0x28],0x0            ; ...so its Super is null
+
+Both cells are `.data` dwords that the class's own `StaticClass()` wrapper fills with the object
+`tools/class-registrations.py` registers under a class literal (`call <registration body>`, then
+`mov ds:<cell>,eax`), so each side of the store is a class literal and the pair is an inheritance edge.
+`tools/class-super-edges.py` reads every `[reg+0x28]` store in `.text` -- the `89 /r` register form and the
+`c7 /0` null fallback -- takes the two cells the body loads immediately before it, and keys them to the
+literals; `inventory/class_super_edges.csv` is the census.
+
+<!-- generated:class-super-edges -->
+**492 class objects are written a parent and 493 `.data` cells are the join's key.** Every one of the image's 493 registration sites caches its class object in one of those cells, so each side of a store is a class literal rather than an address, and 986 `mov [reg+0x28]` stores name a base register and a source cell this census can resolve.
+
+| what the store is | stores | |
+|---|---:|---|
+| a named edge: both sides are a class cell | 984 | the hierarchy below |
+| the parent is a lookup, not a class cell | 0 | left `unresolved` |
+| the parent register is never loaded in the window | 0 | left `no-source` |
+| `[reg+0x28]` on something that is not a class object | 2 | left `foreign` |
+
+**The control is exact: every class `inventory/classes.csv` also holds agrees with the image's edge, 762 of 762, and 0 disagree.** No body stores a null: the root has no setup body of its own, and the `cmp`/`je` that would null a self-parent is the guard every body carries, not a store any class makes.
+
+| the parent | its children, as the image writes them |
+|---|---|
+| `Object` | `AIMsgManager`, `Actor`, `AdminBase`, `AnimNotify`, `Animation`, `CacheManager`, `CameraEffect`, `Canvas`, `Channel`, `CheatManager`, `Client`, `Commandlet`, `CrosshairPack`, `Download`, `Exporter`, `Factory`, `Field`, `Font`, `GUI`, `GameProfile`, `GameStartInfo`, `GlobalTempObjects`, `I3DL2Listener`, `Interactions`, `KMeshProps`, `KarmaParamsCollision`, `Language`, `LevelBase`, `LevelSummary`, `Linker`, `LogEntry`, `Manifest`, `MatObject`, `Material`, `MeshAnimation`, `MeshObject`, `Movie`, `Order`, `Package`, `PackageCheckInfo`, `PackageMap`, `Palette`, `ParticleEmitter`, `PendingLevel`, `PlayInfo`, `Player`, `PlayerInput`, `PlayerProfile`, `PlayerStats`, `Polys`, `Primitive`, `PropertyManagerBase`, `ReachSpec`, `RenderResource`, `SVehicleWheel`, `ScriptedAction`, `Sound`, `Spline`, `StaticMeshInstance`, `StatsManager`, `StatsQuery`, `StatsWrite`, `StreamBase`, `Subsystem`, `TerrainSector`, `TextBuffer`, `TextToSpeechAlias`, `XboxLiveInterface` |
+| `Actor` | `AntiPortalActor`, `AvoidanceWaypoint`, `Brush`, `Controller`, `DamageType`, `DecoCollideActor`, `DecoVolumeObject`, `Decoration`, `Emitter`, `FarClipChange`, `FluidSurfaceOscillator`, `HUD`, `IMusicActor`, `Info`, `IntelligentSpawner`, `Inventory`, `InventoryAttachment`, `KActor`, `KRepulsor`, `Keypoint`, `Light`, `MatDemoActor`, `Mover`, `NavigationPoint`, `Note`, `Pawn`, `Pickup`, `PrecacheHack`, `Projectile`, `Projector`, `SGGenericOrderActor`, `SGLevel`, `SVehicleFactory`, `ShadowManager`, `StaticMeshActor`, `Triggers`, `VehiclePart`, `Vignette`, `xEmitter`, `xPickUpBase`, `xProcMesh`, `xWeatherEffect` |
+| `Info` | `AmbushInfo`, `AnnouncerVoice`, `CoverInfo`, `FileLog`, `FluidSurfaceInfo`, `GameInfo`, `GameStats`, `InternetInfo`, `MaplistManagerBase`, `MasterServerLink`, `Mutator`, `PlayerChatManager`, `PotentialClimbWatcher`, `ReplicationInfo`, `SGFontInfo`, `SavedMove`, `SceneManager`, `SceneSubtitles`, `Security`, `TerrainInfo`, `VoiceChatRoom`, `WaterSceneManager`, `ZoneInfo` |
+| `PixelShaderMaterial` | `PSBackBufferEffect`, `PSBloomSelectMaterial`, `PSBlurMaterial`, `PSBump`, `PSDepthOfFieldMaterial`, `PSDistortionBaseMaterial`, `PSEmissiveConstColor`, `PSEmissiveShader`, `PSLuminanceTexIndexMaterial`, `PSMotionBlurMaterial`, `PSRefractionMaterial`, `PSReplicatorVision`, `PSShieldMaterial`, `PSSimple`, `PSUseTexIndexMaterial`, `PSWater` |
+| `Property` | `ArrayProperty`, `BoolProperty`, `ByteProperty`, `DelegateProperty`, `FixedArrayProperty`, `FloatProperty`, `IntProperty`, `MapProperty`, `NameProperty`, `ObjectProperty`, `PointerProperty`, `StrProperty`, `StructProperty` |
+| `MatSubAction` | `SubActionCameraEffect`, `SubActionCameraShake`, `SubActionFOV`, `SubActionFade`, `SubActionGameSpeed`, `SubActionOrientation`, `SubActionPlayMovie`, `SubActionSceneSpeed`, `SubActionShowText`, `SubActionSubTitle`, `SubActionTrigger` |
+| `CameraEffect` | `CameraOverlay`, `MotionBlur`, `SGScreenBlur`, `SGScreenDOF`, `SGScreenEmissive`, `SGScreenEmissiveWithBloom`, `SGScreenMenuPause`, `SGScreenMotionBlur`, `SGScreenRadialBlur`, `SGScreenSniperOverlay` |
+| `GUIComponent` | `GUIButton`, `GUIHorzScrollZone`, `GUIImage`, `GUILabel`, `GUIListBase`, `GUIMultiColumnListHeader`, `GUIMultiComponent`, `GUIProgressBar`, `GUITitleBar`, `GUIVertScrollZone` |
+| `RenderedMaterial` | `BitmapMaterial`, `ConstantMaterial`, `ParticleMaterial`, `PixelShaderMaterial`, `ProjectorMaterial`, `Shader`, `TerrainMaterial`, `TexCoordMaterial`, `VertexColor` |
+| `GUIButton` | `GUICheckBoxButton`, `GUIEditBox`, `GUIHorzGripButton`, `GUIHorzScrollButton`, `GUISpinnerButton`, `GUITabButton`, `GUIVertGripButton`, `GUIVertScrollButton` |
+| `Keypoint` | `AIScript`, `AlkeshLandingZone`, `AmbientSound`, `ClipMarker`, `DecorationList`, `InterpolationPoint`, `LookTarget`, `PolyMarker` |
+| `NavigationPoint` | `Ambushpoint`, `Door`, `JumpDest`, `JumpPad`, `LiftCenter`, `LiftExit`, `PathNode`, `SmallNavigationPoint` |
+| `Primitive` | `ConvexVolume`, `FluidSurfacePrimitive`, `Mesh`, `MeshInstance`, `Model`, `ProjectorPrimitive`, `StaticMesh`, `TerrainPrimitive` |
+| `TexModifier` | `TexCoordSource`, `TexEnvMap`, `TexMatrix`, `TexOscillator`, `TexPanner`, `TexRotator`, `TexScaler`, `VariableTexPanner` |
+| `AnimNotify` | `AnimNotify_DestroyEffect`, `AnimNotify_Effect`, `AnimNotify_LIPSinc`, `AnimNotify_MatSubAction`, `AnimNotify_Script`, `AnimNotify_Scripted`, `AnimNotify_Sound` |
+| `GUIMultiComponent` | `GUIComboBox`, `GUIListBoxBase`, `GUIMenuOption`, `GUINumericEdit`, `GUIPanel`, `GUIScrollBarBase`, `GUITabControl` |
+| `ReplicationInfo` | `GameReplicationInfo`, `LinkedReplicationInfo`, `PlayerReplicationInfo`, `SceneReplicationInfo`, `SquadAIBasic`, `TeamInfo`, `VoiceChatReplicationInfo` |
+| `SmallNavigationPoint` | `AIMarker`, `InventorySpot`, `Ladder`, `LevelLoadingView`, `PlayerStart`, `Teleporter`, `WarpZoneMarker` |
+| `Subsystem` | `AudioSubsystem`, `Engine`, `Input`, `NetDriver`, `RenderDevice`, `VoiceSubsystem`, `new` |
+| `Commandlet` | `CompressCommandlet`, `DecompressCommandlet`, `ExportCacheCommandlet`, `MasterMD5Commandlet`, `ServerCommandlet`, `UModUnpackCommandlet` |
+| `Modifier` | `ColorModifier`, `FinalBlend`, `MaterialSequence`, `MaterialSwitch`, `OpacityModifier`, `TexModifier` |
+| `ParticleEmitter` | `BeamEmitter`, `MeshEmitter`, `SparkEmitter`, `SpriteEmitter`, `TrailEmitter` |
+| `Texture` | `BackBufferTexture`, `Cubemap`, `FractalTexture`, `MovieTexture`, `TextureEditable` |
+| `Triggers` | `AvoidMarker`, `LineOfSightTrigger`, `SVehicleTrigger`, `Trigger`, `TriggeredCondition` |
+| `VertexStreamBase` | `VertexBuffer`, `VertexStreamCOLOR`, `VertexStreamPosNormTex`, `VertexStreamUV`, `VertexStreamVECTOR` |
+| `BitmapMaterial` | `ProxyBitmapMaterial`, `ScriptedTexture`, `ShadowBitmapMaterial`, `Texture` |
+| `BotBase` | `AlkeshBomberBot`, `BotEnemy`, `DeathGliderBot`, `TeltakBot` |
+| `Channel` | `ActorChannel`, `ControlChannel`, `FileChannel`, `VoiceChannel` |
+| `Field` | `Const`, `Enum`, `Property`, `Struct` |
+| `Interaction` | `AbstractUIXInteraction`, `BaseGUIController`, `Console`, `StreamInteraction` |
+| `KConstraint` | `KBSJoint`, `KCarWheelJoint`, `KConeLimit`, `KHinge` |
+| `Material` | `Combiner`, `Modifier`, `MultiPassMaterial`, `RenderedMaterial` |
+| `StargateVehicle` | `DeathGlider`, `StargateCar`, `StargateCopter`, `StargateHover` |
+| `FractalTexture` | `FireTexture`, `IceTexture`, `WaterTexture` |
+| `GUI` | `GUIComponent`, `GUIFont`, `GUIStyles` |
+| `GUIListBoxBase` | `GUIListBox`, `GUIMultiColumnListBox`, `GUIScrollTextBox` |
+| `GUIPanel` | `GUIPage`, `GUIScrollingPanel`, `GUITabPanel` |
+| `Inventory` | `Ammunition`, `Powerups`, `Weapon` |
+| `NetConnection` | `DemoRecConnection`, `TcpipConnection`, `TcpipConnectionXbox` |
+| `NetDriver` | `DemoRecDriver`, `TcpNetDriver`, `TcpNetDriverXbox` |
+| `PSBlendedDistortionMaterial` | `PSAdditiveDistortion`, `PSModulatedDistortionMaterial`, `PSSubtractiveDistortion` |
+| `PathNode` | `FlyingPathNode`, `ReplicatorPathNode`, `RoadPathNode` |
+| `Pawn` | `GoauldDrone`, `Scout`, `Vehicle` |
+| `RenderResource` | `IndexBuffer`, `SkinVertexBuffer`, `VertexStreamBase` |
+| `StreamBase` | `Stream`, `StreamInterface`, `StreamTag` |
+| `Volume` | `BlockingVolume`, `MapVolume`, `PhysicsVolume` |
+| `WaterTexture` | `FluidTexture`, `WaveTexture`, `WetTexture` |
+| `ZoneInfo` | `LevelInfo`, `SkyZoneInfo`, `WarpZoneInfo` |
+| `ConstantMaterial` | `ConstantColor`, `FadeColor` |
+| `Controller` | `AIController`, `PlayerController` |
+| `Download` | `ChannelDownload`, `HTTPDownload` |
+| `Emitter` | `BeamArc`, `Electrocutor` |
+| `GUIListBase` | `GUIHorzList`, `GUIVertList` |
+| `GUIScrollBarBase` | `GUIHorzScrollBar`, `GUIVertScrollBar` |
+| `GUIVertList` | `GUIMultiColumnList`, `GUIScrollText` |
+| `Interactions` | `Interaction`, `InteractionMaster` |
+| `InternetLink` | `TcpLink`, `UdpLink` |
+| `KActor` | `KConstraint`, `KTire` |
+| `KarmaParams` | `KarmaParamsRBFull`, `KarmaParamsSkel` |
+| `Linker` | `LinkerLoad`, `LinkerSave` |
+| `LodMesh` | `SkeletalMesh`, `VertMesh` |
+| `LodMeshInstance` | `SkeletalMeshInstance`, `VertMeshInstance` |
+| `MasterServerLink` | `MasterServerUplink`, `ServerQueryClient` |
+| `MatAction` | `ActionMoveCamera`, `ActionPause` |
+| `MatObject` | `MatAction`, `MatSubAction` |
+| `PSBump` | `PSBumpBSP`, `PSBumpSpecular` |
+| `PSBumpSpecular` | `PSBumpSpecularBSP`, `PSVDM` |
+| `PSDistortionBaseMaterial` | `PSBlendedDistortionMaterial`, `PSDistortionMaterial` |
+| `PendingLevel` | `DemoPlayPendingLevel`, `NetPendingLevel` |
+| `PhysicsVolume` | `DefaultPhysicsVolume`, `LadderVolume` |
+| `Pickup` | `Ammo`, `StationaryWeapons` |
+| `Player` | `NetConnection`, `Viewport` |
+| `PlayerController` | `Camera`, `UnrealPlayer` |
+| `RenderDevice` | `D3DRenderDevice`, `NullRenderDevice` |
+| `ScriptedAction` | `ACTION_TriggerEvent`, `LatentScriptedAction` |
+| `Sound` | `ProceduralSound`, `SoundGroup` |
+| `StargateCopter` | `AlkeshBomber`, `Teltak` |
+| `Struct` | `Function`, `State` |
+| `Vehicle` | `KVehicle`, `SVehicle` |
+| `AIController` | `ScriptedController` |
+| `AIScript` | `ScriptedSequence` |
+| `AbstractUIXInteraction` | `UIXInteraction` |
+| `ActionPause` | `MatActionWaitForEvent` |
+| `AudioSubsystem` | `XBoxAudioSubsystem` |
+| `BaseGUIController` | `GUIController` |
+| `Brush` | `Volume` |
+| `Client` | `XboxClient` |
+| `Door` | `AutoDoor` |
+| `Engine` | `GameEngine` |
+| `Exporter` | `ObjectExporterT3D` |
+| `Factory` | `TextBufferFactory` |
+| `GUIVertScrollButton` | `GUIComboButton` |
+| `GameStats` | `MasterServerGameStats` |
+| `HUD` | `StargateHUD` |
+| `InternetInfo` | `InternetLink` |
+| `InterpolationPoint` | `MapVolumeViewPoint` |
+| `InventoryAttachment` | `WeaponAttachment` |
+| `KarmaParamsCollision` | `KarmaParams` |
+| `Ladder` | `AutoLadder` |
+| `LatentScriptedAction` | `ACTION_WaitForEvent` |
+| `LevelBase` | `Level` |
+| `LinkerLoad` | `LinkerLoadGame` |
+| `LinkerSave` | `LinkerSaveGame` |
+| `Mesh` | `LodMesh` |
+| `MeshInstance` | `LodMeshInstance` |
+| `ObjectProperty` | `ClassProperty` |
+| `Order` | `SGOrder` |
+| `PackageMap` | `PackageMapLevel` |
+| `PlayerStats` | `PlayerStatCache` |
+| `Projector` | `ShadowProjector` |
+| `SGScreenEmissive` | `SGScreenBloom` |
+| `SVehicle` | `StargateVehicle` |
+| `ScriptedController` | `BotBase` |
+| `ScriptedSequence` | `UnrealScriptedSequence` |
+| `ServerQueryClient` | `MasterServerClient` |
+| `State` | `Class` |
+| `SubActionCameraEffect` | `SubActionDepthOfField` |
+| `TexOscillator` | `TexOscillatorTriggered` |
+| `TexPanner` | `TexPannerTriggered` |
+| `TriggeredCondition` | `SGTriggeredCondition` |
+| `UnrealPlayer` | `StargatePlayer` |
+| `Viewport` | `XboxViewport` |
+| `VoiceSubsystem` | `XHVVoiceSubsystem` |
+
+### The tables the registrations cannot name, named by their children
+
+**11 of the 122 tables a caller edge constrains get a name from their children's `Super`, and the same join reproduces 102 of the 102 tables the registrations already named (0 disagree).** The rule has no free parameter: the table is the class its calling classes say their parent is, at least one caller must be a class this census resolved, and every resolved caller must agree. A table whose callers disagree is a table those classes share higher up, not their parent, and it stays unnamed.
+
+| table | slots | the children that call its installer | their `Super` | class |
+|---|---:|---|---|---|
+| `0x4c78c0` | 3 | AudioSubsystem, Input, new | Subsystem (x3) | **`Subsystem`** |
+| `0x4c94b0` | 1 | XboxClient | Client | **`Client`** |
+| `0x4d17a8` | 13 | ArrayProperty, BoolProperty, ByteProperty, DelegateProperty, FixedArrayProperty, FloatProperty (+7 more) | Property (x13) | **`Property`** |
+| `0x4d2400` | 1 | XHVVoiceSubsystem | VoiceSubsystem | **`VoiceSubsystem`** |
+| `0x4d34d8` | 1 | ObjectExporterT3D | Exporter | **`Exporter`** |
+| `0x4d3af0` | 1 | TextBufferFactory | Factory | **`Factory`** |
+| `0x4eaea8` | 2 | D3DRenderDevice, NullRenderDevice | RenderDevice (x2) | **`RenderDevice`** |
+| `0x4fc588` | 2 | DemoPlayPendingLevel, NetPendingLevel | PendingLevel (x2) | **`PendingLevel`** |
+| `0x4fcfe0` | 2 | ChannelDownload, HTTPDownload | Download (x2) | **`Download`** |
+| `0x517860` | 2 | IndexBuffer, SkinVertexBuffer | RenderResource (x2) | **`RenderResource`** |
+| `0x5178d8` | 5 | VertexBuffer, VertexStreamCOLOR, VertexStreamPosNormTex, VertexStreamUV, VertexStreamVECTOR | VertexStreamBase (x5) | **`VertexStreamBase`** |
+
+**7 of the declarer walk's seven unnamed tables are named here**: `0x4c94b0` `Client`, `0x4d17a8` `Property`, `0x4d34d8` `Exporter`, `0x4d3af0` `Factory`, `0x4fc588` `PendingLevel`, `0x4fcfe0` `Download`, `0x517860` `RenderResource`. All seven, so the ten `declared-unnamed` bodies and the three `unnamed-table` bodies that residue counts now have a declarer class; what this does **not** do is write their `<Class>_vt<slot>` names into the map -- that is the add `tools/declarer-residue.py --emit-moves` already carries, and it is the next run's first command.
+
+**9 table(s) split**: `0x4c7958` (35 caller(s), 8 distinct `Super`); `0x4ca830` (9 caller(s), 4 distinct `Super`); `0x4cfba0` (7 caller(s), 2 distinct `Super`); `0x4cfc88` (5 caller(s), 2 distinct `Super`); `0x4d0738` (3 caller(s), 2 distinct `Super`); `0x4d1468` (16 caller(s), 3 distinct `Super`); `0x4dd2a8` (349 caller(s), 83 distinct `Super`); `0x4fc1b0` (12 caller(s), 4 distinct `Super`); `0x4fc4f0` (3 caller(s), 2 distinct `Super`). A split is two callers of one table whose `Super` disagrees, so the table is a class those callers share higher up rather than their parent, and it stays unnamed.
+
+<!-- /generated:class-super-edges -->
+
+**What the census is not.** It does not decide a parent that arrives as a *lookup* rather than a class cell; the
+stores that do are reported `unresolved` and left out of the join. It also does not say the setup body runs: it
+is the initialiser the registration passes as the call's last argument, and the same page's *What an unnamed
+table is* section is where its call site is measured.
+
+**`PendingLevel` is the one edge the ctor rule and this one disagree on.** The class object says
+`PendingLevel`'s parent is `Object` (`0x001a5220`), while `tools/class-table-parent-edge.py` reads
+`0x004fc588`'s parent as `0x004fc4f0` from the last call before its store -- and `0x004fc4f0`'s callers are
+`DemoPlayPendingLevel`, `NetPendingLevel` and `Level`, whose `Super`s are `PendingLevel`, `PendingLevel` and
+`LevelBase`. The name of `0x004fc588` is therefore not in doubt (`PendingLevel`: both of its children say so),
+but the table its installer calls at `0x0011bf20` still is: either `PendingLevel` embeds a `LevelBase`-like
+object there, or one of the two reads is wrong. It stays `parent-unnamed` in
+`inventory/class_table_parent_edges.csv` until that call is read, and it is the next instrument on this page.
+
+The add the names feed is the one `tools/declarer-residue.py --emit-moves` already carries; the ten
+`declared-unnamed` bodies now have a declarer class, so the repair is
+`make declarer-residue-emit && make boundaries && make symbols` followed by the censuses the map move touches.
