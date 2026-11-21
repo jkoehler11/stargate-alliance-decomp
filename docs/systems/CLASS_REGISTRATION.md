@@ -1115,6 +1115,93 @@ them, no store names them, and no class table holds them. `--check` is a synthet
 assertions, no dump, writes nothing) and `--check-doc` rebuilds the block from the committed artifact.
 
 
+## What an unnamed table is: a class's dispatch table, or an interface's vtable
+
+The censuses above read a table through the instruction that writes it -- the store's operand, the call
+site's `ecx`, the ctor's other stores -- and none of them says *what the table is*. The two things a
+`[reg]` store can hold are not the same kind of object: a class's dispatch table opens with the entries
+every class table opens with, and an interface object's table opens with the interface's own first
+method. `tools/class-plain-tables.py` reads the **250** tables no registration names
+(`inventory/class_plain_tables.csv`, 250 rows) and asks the contents:
+
+- **the class-table prefix.** All 474 tables the registration path names start with the same three bodies
+  (`0x00062650`, `0x00062660`, `0x00062670`), and none of the 49 member tables does, so "starts with the
+  prefix" is a *measured* test on both sides of the population rather than a heuristic. A table that
+  carries it is a class's dispatch table whatever its store wrote into.
+- **the slot vocabulary.** A C++ vtable's slots are the class's own virtual methods, and this build's map
+  carries masked-symbol matches against the shipped XDK libraries (`uix.lib`, `xvoice.lib`,
+  `xonline.lib`), so a table whose slots are one class's methods is that class's vtable.
+- **the installer's symbol.** `??0<C>@@`/`??1<C>@@` is a constructor or destructor and names the class it
+  builds outright. It is the narrow channel of the two, because only the XDK library bodies carry a
+  mangled symbol while the slot vocabulary does not need one.
+- **the parent edge.** `inventory/class_table_parent_edges.csv` records the table a class's own destructor
+  resets to, so a table that is a named class's `parent_va` is that class's base level, and the children
+  name the ladder it heads.
+
+<!-- generated:class-plain-tables -->
+| population | store | tables | slots | the class-table prefix | named by their slots | named by the installer | neither |
+|---|---|---|---|---|---|---|---|
+| bounded | `vtable-slot` | 2 | 51 | 1 | 0 | 0 | 1 |
+| bounded | `vtable-slot+member` | 9 | 50 | 0 | 0 | 0 | 9 |
+| bounded | `member-field` | 27 | 192 | 0 | 0 | 0 | 27 |
+| plain-only | `vtable-slot` | 176 | 2562 | 17 | 18 | 1 | 141 |
+| plain-only | `vtable-slot+member` | 2 | 7 | 0 | 0 | 0 | 2 |
+| plain-only | `member-field` | 11 | 43 | 0 | 0 | 0 | 11 |
+| plain-only | `global` | 3 | 41 | 0 | 0 | 0 | 3 |
+| plain-only | `frame-only` | 20 | 260 | 0 | 0 | 0 | 20 |
+
+**18 of the 250 tables no registration names carry the class-table prefix, and the control is measured on both sides.** All 474 tables the registration path names start with the same three bodies (`0x00062650`, `0x00062660`, `0x00062670`) and none of the 49 member tables does, so the prefix separates a class's dispatch table from an interface object's table without a name. The 18 that carry it are class tables whose class no registration names; the other 232 are interfaces.
+
+**All 18 are recorded as a parent edge, and 17 are a named class's.** `0x004d17a8` (53 slots) is the table behind `ArrayProperty`, `BoolProperty`, `ByteProperty`, `DelegateProperty`, `FixedArrayProperty` and 8 more; `0x005178d8` (32 slots) is the table behind `VertexBuffer`, `VertexStreamCOLOR`, `VertexStreamPosNormTex`, `VertexStreamUV`, `VertexStreamVECTOR`; `0x004fa390` (37 slots) is the table behind `ActorChannel`, `ControlChannel`, `FileChannel`, `VoiceChannel`; `0x004d03c8` (42 slots) is the table behind `DemoRecConnection`, `TcpipConnection`, `TcpipConnectionXbox`; `0x004d0318` (40 slots) is the table behind `DemoRecDriver`, `TcpNetDriver`, `TcpNetDriverXbox`. Those are the tables `inventory/class_table_parent_edges.csv` records as the classes' `parent_va`, read from the destructor thunk rather than from a registration, and no shipped package declares the class of any of them -- `inventory/classes.csv` has no row -- which is why no registration site can carry its name. Where the child the edge names is itself one of the 18 (`0x004c78c0` -> `0x004d0318` -> `TcpNetDriver`), the ladder is read rung by rung; the five base levels U40 left open are five of these 18, and their parent is unnamed because the class is not in any `.u`.
+
+**18 of the 232 interfaces are named by their own slots.** A C++ vtable holds its class's virtual methods, and the map carries masked-symbol matches against the shipped XDK libraries (`uix.lib`, `xvoice.lib`, `xonline.lib`), so a table whose slots are one class's methods carries that class: `0x0053f9ec` = `CUIPlugin` (7 of 7 slots that carry a class), `0x00540484` = `CEncoderXMO` (7 of 7 slots that carry a class), `0x005404bc` = `CEncoderXMO` (6 of 7 slots that carry a class), `0x0053f8a0` = `CPlayersFeature` (5 of 5 slots that carry a class), `0x0053f718` = `CAlertFeature` (4 of 4 slots that carry a class), `0x0053f770` = `CFeatureContext` (4 of 4 slots that carry a class), `0x0053f808` = `CVoiceMailPseudoFeature` (4 of 4 slots that carry a class), `0x0053f998` = `CLogonFeature` (4 of 4 slots that carry a class), `0x0053f6ec` = `CPopupScreen` (3 of 3 slots that carry a class), `0x0053f874` = `CPopupScreen` (3 of 3 slots that carry a class), `0x0053f90c` = `CFriendsScreen` (3 of 3 slots that carry a class), `0x0053f97c` = `CLogonScreen` (3 of 3 slots that carry a class), `0x0053f700` = `CNotificationScreen` (2 of 2 slots that carry a class), `0x0053f920` = `CFriendsFeature` (2 of 2 slots that carry a class), `0x00540464` = `CQueueXMO` (2 of 2 slots that carry a class), `0x005404f4` = `CDecoderXMO` (2 of 2 slots that carry a class), `0x00540520` = `CDecoderXMO` (2 of 3 slots that carry a class), `0x0053f990` = `CNotificationTask` (1 of 1 slots that carry a class).
+
+**The same reading names 0 of the 49 member tables.** Their slots carry no mangled class scope at all, so the interface object a member field holds stays unnamed by this channel -- the member's *own* name comes from the field it is stored in, which `tools/class-member-tables.py` already builds.
+
+**The installer's own symbol names a class on 1 table, and the two channels agree on 0.** It is `0x0057534c` = `exception`, a CRT class and not one of the interfaces. A `??0<C>@@`/`??1<C>@@` symbol is a C++ constructor or destructor and names the class it builds outright; it is the narrow channel of the two, because only the XDK library bodies carry a mangled symbol, and the slot vocabulary does not need one.
+
+**3206 slots resolve, and 836 of them sit outside the function map.** 134 slots are `__purecall` and 1224 are stubs of 8 bytes or less -- an interface's default implementation -- so the interface half repeats the shape the 49 member tables already showed, at a receiver that is the object's own slot rather than a member field.
+<!-- /generated:class-plain-tables -->
+
+**The 18 class tables are the heads of native ladders, and 17 of them are a named class's base.** A
+constructor installs its parent's table before its own, so a registration site names the table of *its
+own* class and an ancestor's table is named only when the ancestor has a site -- and none of these 18 has
+one, which is what put them in this population. The ladders they head are named by their members:
+thirteen `*Property` classes under `0x004d17a8`, `Const`/`Enum`/`Struct` and that property table under
+`0x004d1468`, `AudioSubsystem`/`Input` under `0x004c78c0`, the four channel classes under `0x004fa390`,
+`NetPendingLevel`/`DemoPlayPendingLevel` under `0x004fc588` and `Level` under `0x004fc4f0`,
+`D3DRenderDevice`/`NullRenderDevice` under `0x004eaea8`, the five vertex-stream classes under
+`0x005178d8`, and `TcpNetDriver`, `TcpNetDriverXbox` and `DemoRecDriver` under `0x004d0318` -- the
+transitive chain `0x004c78c0` -> `0x004d0318` -> `TcpNetDriver` is the same ladder read rung by rung.
+Read as UE2.5's own hierarchy the rungs are `UField` over `Const`/`Enum`/`Struct`, `UProperty` under the
+thirteen property classes, `USubsystem` over `AudioSubsystem`/`Input`/`NetDriver`/`RenderDevice`,
+`UChannel` over the four channel classes, `ULevel` and `UPendingLevel`, `URenderDevice` and
+`UVertexStream`; that is a reading of the shipped hierarchy and not a measurement, because the image
+holds no name string for any of them, and U40 records it as the candidate that a class record's name
+field would settle.
+
+**The 232 interfaces are the same kind of object as the 49 member tables, at a different receiver.** A
+member table's interface object hangs off a field of its owner; these hang off the object's own slot and
+are built by a constructor that is not a class's. The shape repeats: `__purecall` and eight-byte stubs
+dominate the slots and most of the remaining bodies sit outside the function map, so an interface's
+default implementation is the common case here too. Eighteen of them are named by their own slots, and every one
+of those is a library class -- a UIX screen, feature or plugin, or an XMO codec -- matched from the
+library's own object files, the only place in this image where a mangled symbol reaches a vtable.
+
+**What this does not say.** It does not name the 18: no registration site names them
+(`inventory/class_registrations.csv` has no row whose table is one of these) and the parent-edge ladder
+is the only name the image gives them. It does not name the 214 interfaces whose slots
+carry no mangled class -- their slot bodies are code no symbol names, so the channel that names the
+eighteen UIX/XMO tables cannot reach them. And it does not say an unnamed interface is unused: one can be
+constructed, dispatched through and freed with no symbol naming it, which is what the caller census
+already shows for a third of this population.
+
+`--check` is a synthetic self-test (a prefixed table, a prefixed table that is a parent edge, two
+interfaces and a stranger; the mangled-name reader against a constructor, a method, a scalar deleting
+destructor and a template; no dump, writes nothing) and `--check-doc` rebuilds the block from the
+committed `inventory/class_plain_tables.csv` with no dump. Both run in `make ci`.
+
+
 ## Regenerating
 
 The other gaps of the symbol map have their own tool, reading the same image and the same map:
