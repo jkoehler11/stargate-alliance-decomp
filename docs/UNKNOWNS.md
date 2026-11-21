@@ -6006,3 +6006,23 @@ identifiers: the dead population is mostly statically linked library code, not g
 attribution artifact was a one-row patch and its full re-run moves **1,968 of 16,375** rows (7,370 labelled,
 1,943 asserted, 538 new seeds); `native_class_packages.csv`, `class_interface_installers.csv` and
 `class_installer_callers.csv` re-run byte-identical, so no verdict moved with them.
+
+**Answered since (2026-11-21, the table's own bytes and the defaults read as bodies).** Three of this
+entry's last residues are now read to their end. **The RTTI channel is shut for every table, with the
+image's own control**: `tools/class-interface-rtti.py` reads `vftable[-1]` as an MSVC
+`RTTICompleteObjectLocator` for all 724 tables (232 interface, 492 class) and **0 of them carry one** --
+353 have a zero dword, 371 a mapped pointer that is not a locator -- while the image's four decorated names
+(`.?AVexception@@`, `.?AVlogic_error@std@@`, `.?AVlength_error@std@@`, `.?AVout_of_range@std@@`) are the
+control: two hosts pass the whole chain and two are refused on the signature, and no dword in the image
+holds any host, so RTTI was emitted for the CRT's throw types and never for a class table. **The 327
+default slots are 27 bodies in eight shapes**: 116 slots are one 3-byte `xor eax,eax; ret`, 38 the
+`__purecall` handler, and the rest return `this` (2 bodies), a field of `this` (3), a field pair (1), a
+constant (6, the values 1/2/4/8/24), `-1` (1) or nothing (7 bare returns) -- so an unoverridden interface
+method is defined behaviour, and the 7 representatives that owe no read hold 42 slots that are 33
+`__purecall` and 9 addresses outside the map, i.e. interfaces nothing implements rather than code the map
+has not read. **The four tables "nothing installs" are installed by their own constructors**: each store is
+a `mov [<reg>+disp], imm32` into the object's dword 0, three in constructors no map row and no gap head
+starts (17, 24 and 106 bytes, all opening `mov eax,ecx`) and one in a 73-byte `push-imm` gap head, and the
+24-byte one leaves the fresh-object sentinel `0xdeaddead` at `+0x5c`. What is left of this entry: the 55
+mapped representatives' *slot vectors* as an index (their bodies are read, and no channel in them names an
+interface), the 26 gap-head representatives' add, and the 398 bodies named by nothing.

@@ -16558,3 +16558,51 @@ sequence.
 - **Not in this bundle.** The 55 mapped representatives' reads and the 398 bodies named by nothing (both still
   open); the union's export round is not re-paid, so `docs/MODULE_SPLIT.md`'s 2026-11-20 pass table is the older
   6,150-address run.
+
+### Execution notes (2026-11-21, the interfaces' last name channel is shut with a control, and the default bodies read as code)
+
+- **Task.** U40's residue after #807 was the interface population's naming question: the 55 mapped
+  representatives' reads, the 26 gap-head representatives' add, the 398 bodies, and "a name from a member
+  field or a caller". This bundle reads the one channel that could name a table from the table alone, pays
+  the default bodies the behaviour census had only counted, and finds the install site for the four tables
+  the installers census read as "no site".
+- **RTTI: 0 of 724 tables, with the image's four decorated names as the control.** `vftable[-1]` is the
+  MSVC `RTTICompleteObjectLocator` pointer; `tools/class-interface-rtti.py` follows it for all 232
+  interface tables and all 492 class tables with a measured parent edge, accepting only a zero signature
+  plus a type descriptor that names `.?AV`/`.?AU`. **0 carry one**; 353 have a zero dword (the shape of a
+  vftable compiled without RTTI) and 371 a mapped pointer that is not a locator (the previous table's last
+  slot). The control is not synthetic-only: the image's 4 decorated names are the CRT's throw types, 2
+  hosts pass the chain and 2 are refused on the signature, and no dword in the image holds any host. So
+  this is the fifth interface name channel measured shut, and the only one that could have answered from
+  the table alone.
+- **The 327 default slots are 27 bodies in eight shapes.** `tools/class-interface-residue.py` disassembles
+  each distinct `stub`/`pure` body the 88 owed representatives hold: 116 slots are one 3-byte
+  `xor eax,eax; ret`, 38 the `__purecall` handler, and the rest return `this` (2 bodies), a field of `this`
+  (3: `+0xc`, `+0x2c`, `+0x48`), a field pair (1), a constant (6, values 1/2/4/8/24), `-1` (1) or nothing
+  (7 bare returns). An unoverridden interface method therefore *answers*: the defaults state the object
+  layout (`+0xc`/`+0x10`/`+0x2c`/`+0x48`) and the constants a decompiler can render literally. The 7
+  representatives that owe no read hold 42 slots -- 33 `__purecall`, 9 outside the map at addresses no gap
+  head decodes -- so a purecall-only table is an interface nothing implements in this build.
+- **The four tables nothing installs are installed by four constructors.** The provenance census's "1 store
+  site in 0 bodies" left `0x004f70a0`, `0x005172ec`, `0x005181dc` and `0x0053f7c4` unread. Each store is a
+  `mov [<reg>+disp], imm32` into the object's dword 0; walking back to the padding that bounds the region
+  finds a constructor of 24, 106 and 17 bytes for the first three (each opening `mov eax,ecx`, none a map
+  row and none a gap head) and a 73-byte `push-imm` gap head `0x003313ad` for the fourth. The 24-byte one
+  writes `0xdeaddead` at `+0x5c` beside the vftable -- the fresh-object sentinel -- and zeroes `+0x58` and
+  `+0x60`. So "no install site" was a limit of the census's body list, and the gap census's boundary rule
+  is the reason these bodies are unlisted: they sit inside gaps it attributes elsewhere, not outside its
+  prologue classes (`mov-eax` is 185 heads).
+- **Files.** `tools/class-interface-rtti.py`, `tools/class-interface-residue.py` (both new, each with
+  `--check`, `--check-doc`, `--report`), `inventory/class_interface_rtti.csv` (729 rows: 232 interface +
+  492 class + 4 control + census), `inventory/class_interface_default_bodies.csv` (28),
+  `inventory/class_interface_nosite.csv` (5), `docs/systems/CLASS_REGISTRATION.md` (three new sections and
+  their blocks), `docs/UNKNOWNS.md` (U40's new "answered since"), `docs/ARTIFACTS.md` (re-generated),
+  `Makefile` (two targets, help, `.PHONY`, four `make ci` lines), this note.
+- **Gates.** `make ci` green; `--check` is ten synthetic shape assertions plus the store parse, the
+  containing-object lookup and both artifact round trips (no dump); `--check-doc` rebuilds all three blocks
+  from the committed CSVs with no dump; the artifacts are deterministic on a second run. No boot, no Ghidra
+  round, no xemu.
+- **Not in this bundle.** The 26 gap-head representatives' add (a map row moves five artifacts), the 398
+  bodies named by nothing, and the 2 cross-index gap heads' dual-index row. The 55 mapped representatives
+  now have their bodies read and their slot mix indexed, but no channel in those bodies names an interface,
+  which is the honest end of that route.

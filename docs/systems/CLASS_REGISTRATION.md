@@ -2021,6 +2021,160 @@ body, the drop of a site no body owns, all four verdicts, the render and both ar
 writes nothing) and `--check-doc` rebuilds the block from the committed CSV with no dump. Both run in
 `make ci`.
 
+## The table's own bytes: no RTTI, and the reader's control is the image's own
+
+Every name the 232 interface tables carry came from a join -- a registration, a script class, a member
+field, a slot token -- and each of those channels has been measured shut or partial. The one channel still
+unread is the table's own bytes: MSVC writes a pointer to an `RTTICompleteObjectLocator` in the dword
+**before** a vftable when the translation unit is built with RTTI, and that locator's `pTypeDescriptor`
+names the class (`.?AV<Class>@@`). An interface table is a vtable nothing registers, so this is the one
+channel that could have named one from the table alone.
+
+`tools/class-interface-rtti.py` reads `vftable[-1]` for all 724 tables -- the 232 interface tables and
+every one of the 492 class tables with a measured parent edge -- and follows it as a locator: signature
+zero, a type descriptor eight bytes before a decorated name, and only a `.?AV`/`.?AU` name accepted, so a
+dword that merely points at a zero is not mistaken for one.
+
+<!-- generated:class-interface-rtti -->
+| population | tables | `col` | `no-col` | `not-a-col` | `prev-unmapped` |
+|---|---:|---:|---:|---:|---:|
+| interface | 232 | 0 | 54 | 178 | 0 |
+| class | 492 | 0 | 299 | 193 | 0 |
+| all | 724 | 0 | 353 | 371 | 0 |
+
+**0 of the 724 tables carry an RTTI locator.** The `-4` dword is zero on 353 of them and a mapped pointer on 371, and none of those 371 pointers resolves to a locator whose type descriptor names a class -- so no translation unit these tables were compiled in was built with RTTI, and an interface table's own bytes name nothing.
+
+| the image's control | host | signature | verdict |
+|---|---|---|---|
+| `.?AVexception@@` | `0x00578e04` | `0x00000000` | `col` |
+| `.?AVlength_error@std@@` | `0x00578e3c` | `0x00000028` | `not-a-col` |
+| `.?AVlogic_error@std@@` | `0x00578e20` | `0x0000000c` | `not-a-col` |
+| `.?AVout_of_range@std@@` | `0x00598d60` | `0x00000000` | `col` |
+
+**The image carries 4 decorated names, and the reader answers both ways on them: 2 hosts pass the whole chain and name `.?AVexception@@`, `.?AVout_of_range@std@@`, and 2 hosts are refused by the signature test.** No dword in the image holds any of the hosts, so no vftable heads one, so the control shows the reader accepting a real locator and refusing a non-locator in this image, and the zero above is the build's flag rather than the read.
+<!-- /generated:class-interface-rtti -->
+
+**What this settles.** An interface table's own bytes name nothing, and the selector is the build's flags
+rather than the read. The image carries four decorated names, the reader accepts two as complete locators
+and refuses the other two on the signature (they are not locators: one is a `_ThrowInfo`-shaped structure
+whose first dword is `0x28`, the other `0xc`), and no dword in the image holds any of the four hosts -- so
+RTTI was emitted for the CRT's own throw types and never for a class table. The 353 zero dwords are the
+shape of a vftable compiled without RTTI; the 371 that hold a mapped pointer hold the previous table's last
+slot or a neighbouring dword, which is why the chain is followed to a name instead of tested at the
+signature. This is the fifth name channel measured shut for the interfaces -- after the assert token, the
+callee file, the pushed literal and the slot body's own file -- and the only one that could have answered
+from the table alone.
+
+**What it does not say.** A build without RTTI still has a name channel in *code that wraps the object*:
+the constructor that stores the table is in the class's own translation unit and its asserts name the file.
+That channel is the one the installers census reads, and this measurement says nothing new about it.
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-interface-rtti.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-interface-rtti.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (the four chain verdicts, the control row and the artifact round trip; no dump,
+writes nothing) and `--check-doc` rebuilds the block from the committed CSV with no dump. Both run in
+`make ci`.
+
+## The defaults read as bodies: 27 bodies, eight shapes, and the seven that own nothing else
+
+`tools/class-interface-behaviour.py` counted 289 stub slots and 38 `__purecall` slots and stopped there,
+because a read is only owed where there is a body. A default slot is still code, and
+`tools/class-interface-residue.py` disassembles each distinct default body the 88 owed representatives hold
+-- **27 bodies over 327 slots** -- and classifies it by what it returns.
+
+<!-- generated:class-interface-defaults -->
+| the default body | bytes | what it returns | slots | representatives |
+|---|---:|---|---:|---|
+| `0x000171c0` | 3 | `return-zero` | 116 | 38 |
+| `0x003e5501` | 20 | `purecall` | 38 | 6 |
+| `0x0001b520` | 3 | `return-this` | 29 | 16 |
+| `0x00031e70` | 3 | `bare-return` | 29 | 8 |
+| `0x002783d0` | 6 | `return-const` | 29 | 22 |
+| `0x00020f00` | 1 | `bare-return` | 12 | 5 |
+| `0x00018b70` | 5 | `return-zero` | 11 | 8 |
+| `0x000ea7f0` | 3 | `bare-return` | 10 | 7 |
+| `0x00275ed0` | 6 | `return-const` | 8 | 8 |
+| `0x00018bb0` | 5 | `return-zero` | 5 | 5 |
+| `0x00016ec0` | 4 | `return-minus-one` | 4 | `0x004d2e58` `0x0052d7d0` |
+| `0x000bd350` | 8 | `return-const` | 4 | 4 |
+| `0x00179920` | 7 | `return-pair` | 4 | 4 |
+| `0x001eaaf0` | 4 | `return-field` | 4 | 4 |
+| `0x0025ff30` | 5 | `return-this` | 4 | `0x004d2e58` `0x0052d7d0` |
+| `0x00386710` | 1 | `bare-return` | 3 | `0x00564da4` `0x00564dbc` |
+| `0x00016f50` | 4 | `return-field` | 2 | `0x004d2e58` `0x0052d7d0` |
+| `0x00018bc0` | 5 | `return-zero` | 2 | `0x004c85b0` `0x004c8db8` |
+| `0x00018bd0` | 5 | `return-zero` | 2 | `0x004c85b0` `0x004c8db8` |
+| `0x001271f0` | 3 | `bare-return` | 2 | `0x005113b0` `0x0051a810` |
+| `0x001d4d00` | 8 | `return-const` | 2 | `0x00516fd4` `0x005170f4` |
+| `0x0023a2d0` | 3 | `bare-return` | 2 | `0x0051b0cc` `0x0051bc70` |
+| `0x00179aa0` | 4 | `return-field` | 1 | `0x00510eb8` |
+| `0x0024e1b0` | 6 | `return-const` | 1 | `0x004e3520` |
+| `0x0024e2a0` | 6 | `return-const` | 1 | `0x0051d7e8` |
+| `0x00331304` | 5 | `return-zero` | 1 | `0x0053f6d8` |
+| `0x003479e6` | 1 | `bare-return` | 1 | `0x0053f6d8` |
+
+**The owed representatives' 327 default slots are 27 distinct bodies in 8 shapes: `purecall` 1, `return-zero` 6, `bare-return` 7, `return-this` 2, `return-field` 3, `return-pair` 1, `return-const` 6, `return-minus-one` 1.** The largest is `0x000171c0` (`xor eax,eax; ret`, 3 bytes) filling 116 slots, and the only body that traps is `__purecall` itself (38 slots over 6 tables), so an unoverridden interface method answers rather than refuses: it returns zero, `this`, a field, a constant or nothing at all.
+
+**The constants a default returns are `0x1`, `0x2`, `0x4`, `0x8`, `0x18`** (`mov eax,<n>; ret`), and the fields one reads are `+0xc`, `+0x10`, `+0x2c`, `+0x48` -- a default getter is a field of `this` at a fixed offset, which is the object layout an unoverridden interface method assumes.
+<!-- /generated:class-interface-defaults -->
+
+**What this settles.** An unoverridden interface method is not a hole: it returns a value. **116 of the 327
+slots are one 3-byte `xor eax,eax; ret`**, 38 are the `__purecall` handler, and the rest return `this`, a
+field of `this`, a field pair, a constant (`1`, `2`, `4`, `8`, `24`), `-1`, or nothing at all -- so a call
+through a slot an implementation did not override is *defined* behaviour in this build, and a decompiler can
+render it as the constant or field access it is instead of an unknown. The field getters (`+0xc`, `+0x10`,
+`+0x2c`, `+0x48`) state the object layout an unoverridden method assumes, which is the same layout the
+implementing class's constructor writes.
+
+**The 7 representatives that owe no read are that finding from the other side.** None of their 42 slots
+holds a body: 33 are `__purecall` (20 of `0x004c7800`'s 21 slots, 11 of `0x004eb914`'s 12, 2 of
+`0x005181d0`'s 3) and 9 point outside the map at an address no gap head decodes. An interface whose table
+is purecall-only is therefore an interface **nothing implements in this build**, not one whose code the map
+has not read -- which is the distinction the family census's "defaults" category was standing in for.
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-interface-residue.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-interface-residue.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (the eight shapes, the immediate-store parse, the containing-object lookup and both
+artifact round trips; no dump, writes nothing) and `--check-doc` rebuilds both blocks from the committed
+CSVs with no dump. Both run in `make ci`.
+
+## The four tables nothing installs: four constructors, three of them unlisted
+
+The installers census left **four anonymous tables** with one store site each and no body around it, and
+the provenance census read that as "no installer". `tools/class-interface-residue.py` reads the site
+instead: each is a `mov [<reg>+disp], imm32` writing the table into dword 0 of a fresh object, and the body
+around it is found by walking back to the padding that bounds the region. Three are constructors that
+neither the map nor the gap census starts a body at -- 17, 24 and 106 bytes, each opening `mov eax,ecx` --
+and the fourth is a `push-imm` gap head of 73 bytes.
+
+<!-- generated:class-interface-nosite -->
+| the table | slots | store | the body it is stored in | bytes | its immediate stores |
+|---|---:|---|---|---:|---|
+| `0x004f70a0` | 2 | `0x000e1704` | hole `0x000e1700` | 24 | `+0x0=vtable 0x004f70a0` |
+| `0x005172ec` | 5 | `0x001df51c` | hole `0x001df4f0` | 106 | `+0x0=vtable 0x005172ec` |
+| `0x005181dc` | 3 | `0x00200604` | hole `0x00200600` | 17 | `+0x0=vtable 0x005181dc` |
+| `0x0053f7c4` | 5 | `0x003313cc` | head `0x003313ad` | 73 | `+0x0=vtable 0x0053f7c4` |
+
+**All 4 tables are stored: 3 by a constructor no map row and no gap head starts, and 1 by a gap head**, each a `mov [<reg>+disp], imm32` writing the table into the object's dword 0 before the first field write. The 3 unlisted constructors are 17/24/106 bytes and open `mov eax,ecx`; 1 of the 4 tables leaves `0xdeaddead` in a field beside the vftable, which is the layout a fresh object is built with.
+<!-- /generated:class-interface-nosite -->
+
+**What this settles.** "No install site" was a limit of the census's body list, not a property of the four
+tables: every one is installed by its own constructor, and the objects they build carry the fresh-object
+sentinel `0xdeaddead` in the field beside the vftable (24-byte one: fields `+0x58`, `+0x5c`, `+0x60`). The
+three unlisted constructors are also the first measure of what the gap census's boundary rule misses: one
+sits inside the gap the census attributes to `0x000e1720`, the other two in a span no gap range covers, and
+all three are thiscall constructors whose first instruction is `mov eax,ecx` -- a prologue the census does
+classify (`mov-eax`, 185 heads), so what they lack is a boundary inside the gap rather than a rule that
+cannot read them. Nothing in this population is left owed: the 26 gap-head representatives remain the
+map's work (U40), and these four are read.
+
+`--check-doc` rebuilds both blocks from the committed CSVs with no dump; the census row of each artifact
+carries the totals above.
+
 ## The 18 heads' rungs: 490 edges, 0 that are not rungs, and the extent rule they fixed
 
 The sections above read the 246 tables nothing names as *objects*: what they contain, which bodies store
