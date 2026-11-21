@@ -822,18 +822,22 @@ deepest common ancestor of those classes over `classes.csv`'s script supers plus
 `inventory/class_table_parent_edges.csv`'s native parent edge is the class the table belongs to.
 
 <!-- generated:class-installer-callers -->
-| population | tables | installer body called directly (`E8`) | a caller class names the owner | no direct caller | no installer body |
-|---|---|---|---|---|---|
-| named | 474 | 471 | 101 | 1 | 2 |
-| at-least | 38 | 37 | 9 | 1 | 0 |
-| plain-only | 208 | 161 | 16 | 27 | 20 |
-| no-store | 4 | 0 | 0 | 0 | 4 |
+| population | tables | installer body called directly (`E8`) | of those, only from a body the map does not cover | a caller class names the owner | no `E8` caller | no installer body |
+|---|---|---|---|---|---|---|
+| named | 474 | 471 | 0 | 101 | 1 | 2 |
+| at-least | 38 | 37 | 0 | 9 | 1 | 0 |
+| plain-only | 208 | 180 | 19 | 16 | 8 | 20 |
+| no-store | 4 | 0 | 0 | 0 | 0 | 4 |
 
-**The control: on the 474 named tables the callers are the derived classes, and their deepest common ancestor is the table's class on 62, one of its descendants on 39 and an unrelated class on 2.** 368 named tables are called only from bodies with no `ctor_`/`dtor_` symbol, and 1 have no direct caller at all.
+**The control: on the 474 named tables the callers are the derived classes, and their deepest common ancestor is the table's class on 62, one of its descendants on 39 and an unrelated class on 2.** 368 named tables are called only from bodies with no `ctor_`/`dtor_` symbol, and 1 have no `E8` caller at all.
 
-**Of the 246 nameless tables, 45 are built inside a class's own constructor -- 22 by a group of sibling classes, so the table is the base their constructors and destructors reset to, and 23 by a single class whose own table is a different address, a second table that class builds. 153 are called only from bodies with no class symbol and 28 are never called directly.**
+**Of the 246 nameless tables, 45 are built inside a class's own constructor -- 22 by a group of sibling classes, so the table is the base their constructors and destructors reset to, and 23 by a single class whose own table is a different address, a second table that class builds. 153 are called only from bodies with no class symbol, 19 are called from a body inside a map gap and 9 have no `E8` caller at all.**
 
-**Of the 58 tables whose installer is destructor-shaped or neither, 10 have callers that carry a `ctor_`/`dtor_` class symbol, and there the callers are the sibling destructors that reset the pointer to this table; 28 are called only from bodies with no class symbol, 12 are never called directly and 8 have no installer body.**
+**10 tables have no `E8` caller. On 1 of them the installer body is also absent from the reachability fixpoint (`inventory/native_unreachable.csv`: no `E8`, `E9` or dword in any section names it), so the table and its constructor are an isolated pair; on the other 9 a dword the `E8` scan cannot see still names the body.**
+
+**47 tables have a direct `E8` caller inside a body the symbol map does not cover, and for 19 of them that is the only caller. The gap census names the enclosing body of 4 of those 19 (3 distinct heads: `0x002952d0`, `0x002b6f70`, `0x002b73a0`), and the other 15 sites land in gaps the pad-and-prologue rule leaves open.**
+
+**Of the 58 tables whose installer is destructor-shaped or neither, 10 have callers that carry a `ctor_`/`dtor_` class symbol, and there the callers are the sibling destructors that reset the pointer to this table; 28 are called only from bodies with no class symbol, 7 from a body inside a map gap, 5 have no `E8` caller and 8 have no installer body.**
 <!-- /generated:class-installer-callers -->
 
 **The direct call is the rule, not the exception, and the control is the class's own lineage.** Of the
@@ -872,7 +876,8 @@ and `Input` (1 and 31 slots), the material family (`ConstantMaterial`, `Particle
 group whose common ancestor resolves) and likewise `D3DRenderDevice`/`NullRenderDevice`, the two download
 classes, the two buffer classes and the five `VertexStream` classes. So a destructor-shaped installer is not
 a missing constructor site: it is the base's destructor, and the table it stores is the base's vtable. The
-other 48 split 28 called only from unnamed bodies, 12 never called directly and 8 with no installer body,
+other 48 split 28 called only from bodies with no class symbol, 7 from a body inside a map gap, 5 with no
+`E8` caller and 8 with no installer body,
 which is why a shape rule alone could not classify them.
 
 ## Where the pointer came from: `this`, a member, a frame slot or a global
@@ -944,7 +949,7 @@ has a measured size. What none of the three is, is a class name: they say which 
 <!-- generated:class-receiver-reads -->
 | population | tables | an array element | a static object | a pointer field | a walked pointer | two ways (member + temporary) | unresolved | no receiver |
 |---|---|---|---|---|---|---|---|---|
-| mixed | 109 | 21 | 3 | 10 | -- | 72 | 3 | -- |
+| mixed | 109 | 21 | 3 | 10 | -- | 74 | 1 | -- |
 | no direct caller | 21 | -- | -- | -- | -- | -- | -- | 21 |
 
 **21 of the 109 mixed tables construct their object inside a dynamic array, and the element's size is in the stride.** The build's shape is `mov eax,[esi]` (the array's data pointer), `imul edi,edi,<size>` (or `shl edi,<n>`), `add edi,eax`, `mov ecx,edi`, `call <installer>` -- so `ecx` is the new element itself and the stride is the element's size: a struct of that size inside a `TArray`. The head is the pointer the data pointer was loaded from -- the caller's own object at `this+0`, a frame slot holding the `TArray`, or a global -- so the array is the caller's member or local, and the element is the object this table belongs to. The one-level read reported that receiver as one opaque `indexed` or `?`.
@@ -975,11 +980,11 @@ has a measured size. What none of the three is, is a class name: they say which 
 
 **3 are a fixed object in `.data` and 10 a pointer loaded out of a field, so neither is an unnamed temporary.** `mov ecx,0x7ab94c` hands the installer the address of a module singleton: 0x0051707c -> 0x7b53c8, 0x00518080 -> 0x6e7a48, 0x0052352c -> 0x7b74c0. A `mov ecx,[esi+0x1c]` is the pointer *stored* in that field rather than the field itself (the field itself is reached with `lea`, which is how a table installed into an embedded member reads), and 10 tables are installed into an object a field points at.
 
-**A temporary's size is the argument the allocating call is handed, and on the control it is the class's registered `object_size`.** The receiver of an installation into a fresh object is read as `new(<arg>:<callee>)` -- the immediate pushed before the call that returns it -- and joined against `inventory/class_registrations.csv` it agrees on **11 and differs on 0** of the tables whose class a registration names, so the argument is a size. The 72 tables constructed both as a member and as a temporary are a fact about their callers, not a residue, and the size is what separates two classes with the same shape: 0x004c7800 0x30, 0x004c8410 0x8064, 0x004c84d0 0x86c, 0x004c9738 0x84, 0x004c9b50 0x58, 0x004d0470 0x4fb4, 0x004d0474 0x4fb4, 0x004d0480 0x4fb4 and 32 more.
+**A temporary's size is the argument the allocating call is handed, and on the control it is the class's registered `object_size`.** The receiver of an installation into a fresh object is read as `new(<arg>:<callee>)` -- the immediate pushed before the call that returns it -- and joined against `inventory/class_registrations.csv` it agrees on **11 and differs on 0** of the tables whose class a registration names, so the argument is a size. The 74 tables constructed both as a member and as a temporary are a fact about their callers, not a residue, and the size is what separates two classes with the same shape: 0x004c7800 0x30, 0x004c8410 0x8064, 0x004c84d0 0x86c, 0x004c9738 0x84, 0x004c9b50 0x58, 0x004d0470 0x4fb4, 0x004d0474 0x4fb4, 0x004d0480 0x4fb4 and 32 more.
 
-**The 21 tables no `E8` reaches have a channel, and it names the reader.** An installer is reached by a tail jump (`E9`), by a dword that holds its address -- a class-table slot, or a `.data` pointer -- or by nothing the image carries. 9 of 21 have a channel; 12 are pointed at by nothing at all, which makes them tables whose class no shipped code instantiates. By channel: 6 by a class-table slot (0x004d0d80 slot:0x5045e0+30, 0x004f7070 slot:0x4d1f88+36, 0x0051d300 slot:0x51d260+39, 0x0051d444 slot:0x51d3a0+39); 1 by a tail jump (0x004eaf68 tail:0xbd578); 4 by a dword pointer (0x0051a810 ptr:DOLBY+0x36e0, 0x0051a810 ptr:DOLBY+0x3718, 0x0051a810 ptr:DOLBY+0x3760, 0x00523008 ptr:.rdata+0xf6).
+**The 21 `no-direct-call` tables have a channel that is not a call, and a call for most of them.** An installer is also reached by a tail jump (`E9`) or by a dword that holds its address -- a class-table slot, or a `.data` pointer: 9 of 21 have one of the three and 12 have none, which is a statement about *this* scan and not about the image, because a direct `E8` call is a fourth channel it never reads. `inventory/class_installer_callers.csv` scans for it and finds **13 of the 21 called, 12 of them only from a body inside a map gap, 4 with no `E8` and 4 with no installer body at all**. By channel: 6 by a class-table slot (0x004d0d80 slot:0x5045e0+30, 0x004f7070 slot:0x4d1f88+36, 0x0051d300 slot:0x51d260+39, 0x0051d444 slot:0x51d3a0+39); 1 by a tail jump (0x004eaf68 tail:0xbd578); 4 by a dword pointer (0x0051a810 ptr:DOLBY+0x36e0, 0x0051a810 ptr:DOLBY+0x3718, 0x0051a810 ptr:DOLBY+0x3760, 0x00523008 ptr:.rdata+0xf6).
 
-**3 stay unresolved** (0x0051b0cc, 0x00564da4, 0x00564dbc): the instruction that defines the receiver is not a copy, an address, a load or a scaled add, and the artifact names its mnemonic.
+**1 stays unresolved** (0x0051b0cc): the instruction that defines the receiver is not a copy, an address, a load or a scaled add, and the artifact names its mnemonic.
 <!-- /generated:class-receiver-reads -->
 
 **What this does not say.** It does not name the classes behind the array elements: the element a table is

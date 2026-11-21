@@ -67,7 +67,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_graph.csv` | 32 | 11 | `make class-graph` |
 | `inventory/class_group_after_scan.csv` | 1700 | 20 | `make class-group-after-scan` |
 | `inventory/class_group_stop.csv` | 1883 | 16 | `make class-group-after-scan` |
-| `inventory/class_installer_callers.csv` | 724 | 15 | `make ci` |
+| `inventory/class_installer_callers.csv` | 724 | 19 | `make ci` |
 | `inventory/class_member_dtors.csv` | 199 | 6 | `make class-member-map` |
 | `inventory/class_member_map.csv` | 3418 | 7 | `make class-member-map` |
 | `inventory/class_member_tables.csv` | 49 | 23 | `make ci` |

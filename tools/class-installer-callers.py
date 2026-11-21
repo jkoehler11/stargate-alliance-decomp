@@ -8,6 +8,12 @@ call edge: **which bodies call the installer**. It resolves every installer body
 census (`inventory/native_vtable_reach.csv`) through `symbols/xbox_functions.csv`, scans `.text` for
 the `E8` calls that target one, and names the enclosing body from the same map.
 
+A call site the map does not cover is **not** a missing caller: the symbol map leaves 11,070 gaps, and
+`inventory/gap_heads.csv` finds 1,451 decodable bodies in them. The first version of this census dropped
+such a site with the name it could not build, so a table called only from a gap body read *no direct
+caller* -- which is a report about the map, not about the image. `site_split()` keeps the two apart and
+the verdict is `caller-gap`; `no-call` now means no `E8` in `.text` targets the installer at all.
+
 Two populations answer the question from opposite sides. On the 474 tables the registration path
 names, the callers are the derived classes' constructors and destructors, and the deepest common
 ancestor of those classes is the table's class -- that is the control. On the 250 tables no
@@ -41,11 +47,14 @@ SHAPES = os.path.join(ROOT, "inventory", "class_table_installer_shapes.csv")
 NAMES = os.path.join(ROOT, "inventory", "xbe_class_table_names.csv")
 CLASSES = os.path.join(ROOT, "inventory", "classes.csv")
 MAP = os.path.join(ROOT, "symbols", "xbox_functions.csv")
+GAPS = os.path.join(ROOT, "inventory", "gap_heads.csv")
+UNREACHED = os.path.join(ROOT, "inventory", "native_unreachable.csv")
 OUT = os.path.join(ROOT, "inventory", "class_installer_callers.csv")
 PAGE = os.path.join(ROOT, "docs", "systems", "CLASS_REGISTRATION.md")
 DOC_START = "<!-- generated:class-installer-callers -->"
 DOC_END = "<!-- /generated:class-installer-callers -->"
-FIELDS = ["table_va", "population", "shape", "slots", "class", "installers", "callers", "caller_classes",
+FIELDS = ["table_va", "population", "shape", "slots", "class", "installers", "callers", "e8_sites",
+          "gap_sites", "gap_bodies", "unreached", "caller_classes",
           "caller_kinds", "owner_candidate", "owner_table", "owner_shared", "relation", "verdict", "evidence"]
 POPS = ("named", "at-least", "plain-only", "no-store")
 
@@ -80,6 +89,48 @@ def owner(starts, info, va):
     a = starts[i]
     name, size = info[a]
     return name if (size == 0 or va < a + size) else ""
+
+
+def site_split(sites, starts, info):
+    """The `E8` sites that land inside a mapped body, and those the symbol map does not cover.
+
+    A gap site is a real caller whose enclosing body the map has no row for: counting it as *no caller*
+    reports the map's coverage as the image's, and the two populations are what the verdict has to keep
+    apart.
+    """
+    named, gap = [], []
+    for site in sites:
+        (named if owner(starts, info, site) else gap).append(site)
+    return named, gap
+
+
+def unreached_split(bodies, unreached):
+    """How many of a table's installer bodies the fixpoint also finds unreferenced."""
+    return sum(1 for b in bodies if b in unreached), len(bodies)
+
+
+def gap_bodies(rows):
+    """[(head, end)] for the gap rows whose body the pad-and-prologue rule decoded."""
+    out = []
+    for r in rows:
+        try:
+            head, size = int(r["head_va"], 16), int(r["size"] or 0)
+        except (KeyError, ValueError):
+            continue
+        if size > 0 and r.get("verdict") in ("body", "island"):
+            out.append((head, head + size))
+    out.sort()
+    return out
+
+
+def gap_owner(site, spans):
+    """The decoded gap body a call site sits in, or 0: the map's gaps are only partly decoded."""
+    for head, end in spans:
+        if head <= site < end:
+            return head
+        if head > site:
+            break
+    return 0
 
 
 def symbol_class(name):
@@ -167,15 +218,21 @@ def harvest(reach, shapes, names, class_rows, map_rows, xbe):
                 bodies.add(a)
         targets[va] = addrs
     callers = scan(xbe, bodies)
+    spans = gap_bodies(read(GAPS))
+    unreached = set()
+    for r in read(UNREACHED):
+        if r.get("kind") == "body":
+            try:
+                unreached.add(int(r["at"], 16))
+            except (KeyError, ValueError):
+                pass
     rows = []
     for va in sorted(targets):
         shape = shapes_by.get(va, {})
         cls = named.get(va, "")
-        cnames = []                      # names of the bodies that call an installer
-        for b in targets[va]:
-            for site in callers.get(b, []):
-                cnames.append(owner(starts, info, site))
-        cnames = sorted(set(c for c in cnames if c))
+        sites = [s for b in targets[va] for s in callers.get(b, [])]
+        named_sites, gap_sites = site_split(sites, starts, info)
+        cnames = sorted(set(owner(starts, info, s) for s in named_sites))
         cclasses = sorted({symbol_class(c) for c in cnames if symbol_class(c)})
         kinds = sorted({("ctor" if c.startswith("ctor_") else "dtor") for c in cnames
                         if c.startswith(("ctor_", "dtor_"))})
@@ -184,15 +241,26 @@ def harvest(reach, shapes, names, class_rows, map_rows, xbe):
         row = {"table_va": "0x%08x" % va, "population": shape.get("population", ""),
                "shape": shape.get("verdict", ""), "slots": shape.get("slots", ""), "class": cls,
                "installers": str(len(targets[va])), "callers": str(len(cnames)),
+               "e8_sites": str(len(sites)), "gap_sites": str(len(gap_sites)),
+               "gap_bodies": " ".join("0x%08x" % h for h in
+                                      sorted({gap_owner(s, spans) for s in gap_sites} - {0})),
+               "unreached": "%d/%d" % unreached_split(targets[va], unreached),
                "caller_classes": "|".join(cclasses[:6]), "caller_kinds": "+".join(kinds),
                "owner_candidate": cand, "owner_table": "0x%08x" % own if own else "",
                "owner_shared": "", "relation": "", "verdict": "", "evidence": ""}
         if not targets[va]:
             row["verdict"] = "no-installer"
             row["evidence"] = "no installer body resolves through the symbol map"
+        elif not sites:
+            row["verdict"] = "no-call"
+            row["evidence"] = "no `E8` in .text targets its %d installer body(ies)" % len(targets[va])
         elif not cnames:
-            row["verdict"] = "no-direct-call"
-            row["evidence"] = "%d installer body(ies), no direct `E8` caller in .text" % len(targets[va])
+            row["verdict"] = "caller-gap"
+            row["evidence"] = ("%d direct `E8` caller(s) at %s, every one inside a body the symbol map "
+                               "does not cover%s"
+                               % (len(gap_sites), ", ".join("0x%08x" % s for s in gap_sites[:3]),
+                                  ("; %s is a body the gap census decoded" % row["gap_bodies"])
+                                  if row["gap_bodies"] else ""))
         elif not cclasses:
             row["verdict"] = "callers-unnamed"
             row["evidence"] = "callers %s" % ", ".join(cnames[:3])
@@ -228,51 +296,75 @@ def counts(rows):
         d = by_pop[r["population"]]
         d["tables"] += 1
         d["v:" + r["verdict"]] += 1
-        d["called"] += 1 if r["verdict"] not in ("no-direct-call", "no-installer") else 0
+        d["called"] += 1 if r["e8_sites"] not in ("0", "") else 0
+        d["gap-only"] += 1 if r["verdict"] == "caller-gap" else 0
         d["with-class"] += 1 if r["owner_candidate"] else 0
     return by_pop
 
 
 def render(rows):
     c = counts(rows)
-    out = ["| population | tables | installer body called directly (`E8`) | a caller class names the owner | no direct caller | no installer body |",
-           "|---|---|---|---|---|---|"]
+    out = ["| population | tables | installer body called directly (`E8`) | of those, only from a body the map does not cover | a caller class names the owner | no `E8` caller | no installer body |",
+           "|---|---|---|---|---|---|---|"]
     for pop in POPS:
         d = c[pop]
         if not d["tables"]:
             continue
-        out.append("| %s | %d | %d | %d | %d | %d |"
-                   % (pop, d["tables"], d["called"], d["with-class"],
-                      d["v:no-direct-call"], d["v:no-installer"]))
+        out.append("| %s | %d | %d | %d | %d | %d | %d |"
+                   % (pop, d["tables"], d["called"], d["gap-only"], d["with-class"],
+                      d["v:no-call"], d["v:no-installer"]))
     named = c["named"]
     out.append("")
     out.append("**The control: on the %d named tables the callers are the derived classes, and their deepest "
                "common ancestor is the table's class on %d, one of its descendants on %d and an unrelated "
                "class on %d.** %d named tables are called only from bodies with no `ctor_`/`dtor_` symbol, "
-               "and %d have no direct caller at all."
+               "and %d have no `E8` caller at all."
                % (named["tables"], named["v:control-class"], named["v:control-descendant"],
-                  named["v:control-other"], named["v:callers-unnamed"], named["v:no-direct-call"]))
+                  named["v:control-other"], named["v:callers-unnamed"], named["v:no-call"]))
     plain, at = c["plain-only"], c["at-least"]
     out.append("")
     out.append("**Of the %d nameless tables, %d are built inside a class's own constructor -- %d by a group of "
                "sibling classes, so the table is the base their constructors and destructors reset to, and %d by a "
                "single class whose own table is a different address, a second table that class builds. %d are "
-               "called only from bodies with no class symbol and %d are never called directly.**"
+               "called only from bodies with no class symbol, %d are called from a body inside a map gap and %d "
+               "have no `E8` caller at all.**"
                % (plain["tables"] + at["tables"],
                   plain["v:base-of-group"] + at["v:base-of-group"] + plain["v:second-table"] + at["v:second-table"],
                   plain["v:base-of-group"] + at["v:base-of-group"],
                   plain["v:second-table"] + at["v:second-table"],
                   plain["v:callers-unnamed"] + at["v:callers-unnamed"],
-                  plain["v:no-direct-call"] + at["v:no-direct-call"]))
+                  plain["v:caller-gap"] + at["v:caller-gap"],
+                  plain["v:no-call"] + at["v:no-call"]))
+    nocall = [r for r in rows if r["verdict"] == "no-call"]
+    dead = [r for r in nocall if r["unreached"].split("/")[0] == r["unreached"].split("/")[1]]
+    out.append("")
+    out.append("**%d tables have no `E8` caller. On %d of them the installer body is also absent from the "
+               "reachability fixpoint (`inventory/native_unreachable.csv`: no `E8`, `E9` or dword in any section "
+               "names it), so the table and its constructor are an isolated pair; on the other %d a dword the "
+               "`E8` scan cannot see still names the body.**"
+               % (len(nocall), len(dead), len(nocall) - len(dead)))
+    gaps = [r for r in rows if r["gap_sites"] not in ("0", "")]
+    gonly = [r for r in rows if r["verdict"] == "caller-gap"]
+    placed = [r for r in gonly if r["gap_bodies"]]
+    heads = sorted({h for r in placed for h in r["gap_bodies"].split()})
+    out.append("")
+    out.append("**%d tables have a direct `E8` caller inside a body the symbol map does not cover, and for %d "
+               "of them that is the only caller. The gap census names the enclosing body of %d of those %d "
+               "(%d distinct heads: %s), and the other %d sites land in gaps the pad-and-prologue rule leaves "
+               "open.**"
+               % (len(gaps), len(gonly), len(placed), len(gonly), len(heads),
+                  ", ".join("`%s`" % h for h in heads) or "-",
+                  sum(len(r["gap_sites"].split()) for r in gonly if not r["gap_bodies"])))
     d55 = [r for r in rows if r["shape"] in ("dtor-only", "unclassified")]
     d55c = sum(1 for r in d55 if r["caller_classes"])
     d55n = collections.Counter(r["verdict"] for r in d55)
     out.append("")
     out.append("**Of the %d tables whose installer is destructor-shaped or neither, %d have callers that carry a "
                "`ctor_`/`dtor_` class symbol, and there the callers are the sibling destructors that reset the "
-               "pointer to this table; %d are called only from bodies with no class symbol, %d are never called "
-               "directly and %d have no installer body.**"
-               % (len(d55), d55c, d55n["callers-unnamed"], d55n["no-direct-call"], d55n["no-installer"]))
+               "pointer to this table; %d are called only from bodies with no class symbol, %d from a body inside "
+               "a map gap, %d have no `E8` caller and %d have no installer body.**"
+               % (len(d55), d55c, d55n["callers-unnamed"], d55n["caller-gap"], d55n["no-call"],
+                  d55n["no-installer"]))
     return out
 
 
@@ -314,6 +406,20 @@ def self_check():
         ("a class and its child share the child", dca({"B": "A"}, ["A", "B"]) == "A"),
         ("unrelated classes share nothing", dca({"B": "A", "D": "C"}, ["B", "D"]) == ""),
         ("an unnamed caller is not a class", symbol_class("___security_init_cookie") == ""),
+        ("a site inside a mapped body is named", site_split([0x1010], [0x1000], {0x1000: ("a", 0x40)})[0] == [0x1010]),
+        ("a decoded gap body owns its site", gap_owner(0x2953a6, [(0x2952d0, 0x2952d0 + 462)]) == 0x2952d0),
+        ("a site past a gap body is owned by nothing", gap_owner(0x296000, [(0x2952d0, 0x2952ce)]) == 0),
+        ("a body the fixpoint names counts", unreached_split([0x1000, 0x2000], {0x1000}) == (1, 2)),
+        ("no body is zero of nothing", unreached_split([], {0x1000}) == (0, 0)),
+        ("the gaps read as spans", gap_bodies([{"head_va": "0x1000", "size": "10", "verdict": "body"},
+                                               {"head_va": "0x2000", "size": "0", "verdict": "no-close"}])
+         == [(0x1000, 0x100a)]),
+        ("a site past a body's size is a gap",
+         site_split([0x1050], [0x1000], {0x1000: ("a", 0x40)})[1] == [0x1050]),
+        ("a site in no body at all is a gap", site_split([0x9000], [0x1000], {0x1000: ("a", 0x40)})[1] == [0x9000]),
+        ("the split keeps both sides apart",
+         site_split([0x1010, 0x1050, 0x2008], [0x1000, 0x2000],
+                    {0x1000: ("a", 0x40), 0x2000: ("b", 0x10)}) == ([0x1010, 0x2008], [0x1050])),
     ]
     bad = [n for n, ok in cases if not ok]
     for n, ok in cases:

@@ -5730,8 +5730,9 @@ has a store site inside a body of the map.
 **Answered since (2026-11-20, who calls the installer).** `tools/class-installer-callers.py` reads the other
 end of the edge over all **724** tables -- including the **228** the mapped census never sees -- by scanning
 `.text` for the `E8` sites that target an installer body and naming the enclosing body from the symbol map
-(`inventory/class_installer_callers.csv`). **669 of the 724 installers are called directly** (471 of the 474
-named, 198 of the 246 nameless); the control is that of the 103 named tables whose callers carry a
+(`inventory/class_installer_callers.csv`). **688 of the 724 installers are called directly** (471 of the 474
+named, 37 of the 38 at-least and 180 of the 208 plain-only, 19 of those only from a body inside a map gap --
+corrected in the next entry); the control is that of the 103 named tables whose callers carry a
 `ctor_`/`dtor_` class symbol, the deepest common ancestor of those classes is the table's class or one of its
 descendants on **101**. **45 of the 246 nameless tables are built inside a class's own constructor**: 22 by a
 group of sibling classes (so the table is the base their constructors and destructors reset to -- `Level`/
@@ -5745,8 +5746,8 @@ on the 29 destructor-shaped and 26 unclassified tables is now measured from the 
 table before calling their own base's (`AudioSubsystem`+`Input`, the material family, `CameraEffect`'s eleven
 screen classes, `D3DRenderDevice`+`NullRenderDevice`, the two download classes, the buffer pair, the
 `VertexStream` family), so a destructor-shaped installer is a base destructor and the table it stores is the
-base's vtable, not a table whose constructor went missing. The rest of the 58 are 28 called only from unnamed
-bodies, 12 never called directly and 8 with no installer body.
+base's vtable, not a table whose constructor went missing. The rest of the 58 are 28 called only from bodies with no
+class symbol, 7 from a body inside a map gap, 5 with no `E8` caller and 8 with no installer body.
 
 **Answered since (2026-11-20, whose object the store writes).** `tools/class-store-provenance.py`
 resolves, for every store of the same 724 tables, the *base register* inside the storing body and the
@@ -5788,9 +5789,15 @@ naming it is naming that body. **3 are a fixed object in `.data`** -- `0x0051707
 objects** (`0x6e7a48`, `0x7ab94c`, `0x7ab96c`, `0x7ab98c`, ..., `0x7b5cf8`), so it is the batch constructor
 of a family of module singletons -- **10 are the pointer stored in a field** (the field itself is reached
 with `lea` and was already read as that field), and **72 a class built both as a member and as a
-temporary**, which is a fact about their callers rather than a gap. **2 stay unresolved**: `0x0051b0cc`
-(an `imul` the walk does not follow) and `0x00564da4` (`mov ecx,0x17`, an immediate below the image's
-address range).
+temporary**, which is a fact about their callers rather than a gap. **1 stays unresolved, and the other two are read.** `0x00564da4` and `0x00564dbc` were never receivers: the
+table is written into a frame slot of the installer body itself, and the caller's `ecx` is `0x17`, a value the
+body is handed -- `deep()` already refused it as a receiver and `kind()` counted it as the residue, which is
+fixed. `0x0051b0cc` is read at the instruction and left as the artifact's one unresolved row: its five store
+sites are one loop (`mov ecx,[esi]` / `test` / `call [edx+4]`, the element's destructor; `mov eax,[esi]` /
+`test` / `mov [eax],0x51b0cc` / `push eax` / `call [edx+8]`, `operator delete` / `mov [esi],0`), so the table
+is written into the object a `TArray` element points at as it is destroyed and freed -- the element is a
+pointer (the `shl eax,2` one instruction earlier is the stride the walk reports as 1) and the class the table
+belongs to is the element's, which nothing in the image names.
 
 **A temporary now has a size, and the size is the class's registered one.** The receiver of an
 installation into a fresh object is read as `new(<arg>:<callee>)` -- the immediate pushed before the call
@@ -5803,8 +5810,10 @@ slot -- three of them slot 39 of the emitter's own table, so `0x0051d300`, `0x00
 install `SparkEmitter`, `SpriteEmitter` and `TrailEmitter`'s base table from that class's own virtual
 method, and `0x004d0d80`/`0x004f7070` from slot 30 and 36 of `0x005045e0`/`0x004d1f88` -- 1 by an `E9` tail
 jump (`0x004eaf68`, from `0x000bd578`) and 4 by a dword that holds the body (three in the section named
-`DOLBY` under `0x0051a810`, one in `.rdata` for `0x00523008`). The other **12 are pointed at by nothing the
-image carries**, which makes them tables whose class no shipped code instantiates.
+`DOLBY` under `0x0051a810`, one in `.rdata` for `0x00523008`). **One** of the twelve (`0x00518120`) is pointed at by nothing
+that the image carries -- it is the only one of the 21 whose installer the reachability fixpoint also finds
+unreferenced -- and the other eleven are called, ten of them from a body inside a map gap. "Nothing
+instantiates it" therefore holds for one table, not for twelve.
 
 **A store form the two older censuses misread, found and fixed in this read.** `C7 84 24 <disp32>
 <imm32>` is an **eleven-byte** store -- a frame slot past `disp8` -- and both

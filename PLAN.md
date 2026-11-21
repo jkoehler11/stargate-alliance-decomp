@@ -15954,3 +15954,43 @@ sequence.
 - **Not in this bundle.** Correcting the `disp32` SIB read in `class-table-store-fields.py` and
   `class-store-provenance.py` and regenerating their artifacts and blocks; naming the 12 tables nothing points
   at; naming the class behind each array element (the caller body's name).
+
+### Execution notes (2026-11-20, the caller census counted names, and the residue was a value it had refused)
+
+- **Task.** `U40`'s "what would settle the rest" for the two edges this thread left open: whether the installers
+  nothing calls are dead, and the three table receivers the previous read left unresolved.
+- **The zero-caller verdict was about the symbol map, not the image.** `tools/class-installer-callers.py` names
+  a call site's enclosing body with `owner()` and kept only the names it built, so a site inside one of the map's
+  11,070 gaps vanished and a table called only from such a body read *no direct caller*. `site_split()` now keeps
+  the two populations apart: **47 tables have a direct `E8` caller inside a body the map does not cover, 19 of them
+  with no other caller**; **688 of the 724 installers have a direct `E8`**, 10 have none and 26 have no installer
+  body. The gap census (`inventory/gap_heads.csv`) names the enclosing body for **4 of the 19** (heads
+  `0x002952d0`, `0x002b6f70`, `0x002b73a0`); the other 15 sites sit in gaps its pad-and-prologue rule leaves open.
+- **The second instrument refutes "dead", not confirms it.** `inventory/native_unreachable.csv` is a fixpoint over
+  every byte reference; joining it on the installer bodies, **only one of the ten no-`E8` tables also has an
+  installer nothing in any section points at** (`0x00518120`). So the sentence "12 are pointed at by nothing the
+  image carries" held for one table, not twelve: the other eleven are called, ten from a gap body.
+- **Two receiver residues were a value the reader had already refused.** `deep()` returns `imm:<n>` for an
+  immediate below the image's address range and says it is "a value the body is handing over, not a receiver",
+  while `kind()` bucketed it as `unresolved` -- so `0x00564da4` and `0x00564dbc`, whose table is written into a
+  frame slot of the installer body itself, got the residue verdict from the caller's `ecx` = 0x17. `kind()` now
+  buckets that chain as `value` and the two rows resolve to `both-ways`; the read moves from 3 unresolved to 1.
+- **The last residue is read at the instruction.** `0x0051b0cc`'s five store sites are one loop: `mov ecx,[esi]`
+  / `test` / `call [edx+4]` (the element's destructor), then `mov eax,[esi]` / `test` / `mov [eax],0x51b0cc` /
+  `push eax` / `call [edx+8]` (`operator delete`) / `mov [esi],0`. The table is written into the object a `TArray`
+  element points at as that element is destroyed and freed; the element is a pointer (the `shl eax,2` one
+  instruction earlier is the stride the walk reports as 1), so the class the table belongs to is the element's and
+  nothing in the image names it. The artifact keeps the row unresolved and the page says which instruction.
+- **Files.** `tools/class-installer-callers.py` (`site_split`, `gap_bodies`/`gap_owner`, `unreached_split`, three
+  new columns, four prose claims driven from the artifact, 18 selftests), `tools/class-receiver-reads.py` (the
+  `value` bucket and its two selftests, `caller_scan` join against the caller census), `inventory/
+  class_installer_callers.csv` (724 rows, `e8_sites`/`gap_sites`/`gap_bodies`/`unreached`), `inventory/
+  class_receiver_reads.csv` (2 rows move `unresolved` -> `both-ways`), `docs/systems/CLASS_REGISTRATION.md` (both
+  generated blocks, and the one hand-written split sentence corrected), `docs/UNKNOWNS.md` U40 (four sentences
+  corrected in place), `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, this note.
+- **Gates.** `make ci` green; both `--check-doc` blocks reproduce from the committed CSVs with no dump; both
+  selftests are dump-free and write nothing. No boot, no Ghidra round.
+- **Not in this bundle.** Naming the body behind each of the 176 plain-only `[reg]` tables (the class whose
+  constructor it is); the 49 member tables' per-member names; the five base levels -- the five classes whose
+  `parent_va` they are (`XboxViewport`, `XboxClient`, `XHVVoiceSubsystem`, `ObjectExporterT3D`,
+  `TextBufferFactory`) have no row in `inventory/classes.csv`, so the parent edge names no class for them.
