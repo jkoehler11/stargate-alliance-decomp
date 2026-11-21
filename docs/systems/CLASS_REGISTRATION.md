@@ -719,11 +719,94 @@ class for **978 of them (99.6%)**, so it is a measured reading and not an assump
 The plain-only tables split three ways, and each split is a different question. A body that
 installs exactly one table and returns `this` is that object's constructor, so the table is an
 object's own dispatch table inside a class no shipped package registers -- the naming channel for
-those is the body, not the class map. A table whose only installer is destructor-shaped has no
+those is the body, not the class map. The next section reads those bodies, and the channel they
+carry is a field layout and a subsystem call rather than a name. A table whose only installer is destructor-shaped has no
 constructor site in the sweep; the shape rule reads a tail-jumped epilogue the same way, so the
 artifact names each such table rather than claiming the constructor is absent. And the tables whose
 installer reads as neither are the residue the two signatures do not describe -- the population U40
 names as the 399 bodies nothing names, met here from the table's side.
+
+## What a nameless table's constructor carries: literals, callees and the parent
+
+`tools/class-table-installer-shape.py` split the 250 tables no registration names by the shape of the body
+that installs them and left the naming to "the body, not the class map". `tools/class-ctor-evidence.py`
+reads each of those bodies once and records the three channels a constructor still offers: the literals it
+pushes, the map's own names among the functions it calls, and the parent constructor its first call reaches.
+`inventory/class_ctor_evidence.csv` carries one row per table of the 724-table population, with the
+population's split and the literal, callee, parent and chain columns.
+
+<!-- generated:class-ctor-evidence -->
+| population | tables | installer bodies | a printable literal | an `ini:` literal | a literal that is a class name | a literal that is its own class | a named callee | a base-caller edge |
+|---|---|---|---|---|---|---|---|---|
+| named | 474 | 990 | 26 | 2 | 16 | 0 | 450 | 453 |
+| at-least | 38 | 128 | 13 | 2 | 5 | 0 | 31 | 1 |
+| plain-only | 208 | 347 | 57 | 3 | 17 | 0 | 138 | 54 |
+| no-store | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+| the 208 plain-only tables, by what installs them | tables | a printable literal | a named callee | a base-caller edge |
+|---|---|---|---|---|
+| installed-by-ctor | 97 | 20 | 55 | 28 |
+| dtor-only | 29 | 4 | 16 | 7 |
+| ctor-and-dtor | 56 | 15 | 49 | 17 |
+| unclassified | 26 | 18 | 18 | 2 |
+
+**The control answers what a constructor literal is, and it is not a name.** 26 of the 990 installer bodies behind the 474 named tables push a printable UTF-16 literal; 16 of those tables push a literal that is a class name, and **none of the 474 pushes its own class**. The 2 `ini:` literals name the class that *declares* the config property -- `DemoPlayPendingLevel` pushes `ini:Engine.Engine.DemoRecordingDevice` and `NetPendingLevel` `ini:Engine.Engine.NetworkDevice` -- so a literal is a field default or a config section, and the class it can name is the declaring one.
+
+**Of the 246 nameless tables -- 208 plain-only and 38 whose table a constructor bounds -- 70 push a printable literal and 169 call a named function.** 5 push an `ini:` section, and that form does name a class: `0x4c93c4` (`ini:Engine.Engine.Canvas`, `ini:Engine.Engine.Input`); `0x4c93c8` (`ini:Engine.Engine.Canvas`, `ini:Engine.Engine.Input`); `0x4c93d0` (`ini:Engine.Engine.Canvas`, `ini:Engine.Engine.Input`); `0x4fc610` (`ini:Engine.Engine.DemoRecordingDevice`); `0x5139f4` (`ini:Engine.Engine.NetworkDevice`). The other 65 are field defaults and data addresses -- the commonest are `Engine` (21), `new` (15), `XboxLiveOnlineTask` (15), `Core` (9), `Official.ini` (5), `SavePackagesAsOfficial` (5) -- and 22 of the 246 push a class name (a package, or a class they register), never their own. So the literal channel places 5 of the 246 by config class and describes the fields of the rest, and names none of them.
+
+**The named callees place a table even when nothing names it.** 169 of the 246 nameless tables call at least one of the map's own `Core_*`/`Engine_*` rows; 31 signatures are shared by two or more of them and cover 116 tables, the largest being 33 tables that call the same set. A signature is not a name -- two classes in one subsystem share it -- which is why it is reported as a family and not as a label.
+
+**The base-caller edge is the parent's constructor, and the named population holds it to the script tree.** A table's own installer is the body whose *last* store is that table, and its first call that reaches another table's installer is its parent constructor, followed through the null-check thunk. On the named tables the edge is the class's script `super` on **167**, a further ancestor on **211** (a script-only class installs its table from a body that calls its nearest native base), and on **53** the class has no script chain; **0 contradict**. Of the 246 nameless tables 55 get an edge -- 7 to a named class, 48 to another nameless table -- and 9 climb a chain to a named class, the deepest 3 levels.
+
+**The 4 tables with no installer body are not tables: each is a window into a dword run, or a run the census cut short.** The store site each records lies in no body of the map, and the run of address-like dwords around it is tiled by tables the census already lists: `0x4f70a0` (2 slots) dword run 0x004f6ff8+44; this address at offset 42; 3 listed table(s) in the run, 2 with an installer body; the recorded store site 0x000e1706 lies in no body of the map; `0x5172ec` (5 slots) dword run 0x005172ec+27; this address at offset 0; 1 listed table(s) in the run, 0 with an installer body; the recorded store site 0x001df51e lies in no body of the map; `0x5181dc` (3 slots) dword run 0x005181d0+6; this address at offset 3; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x00200606 lies in no body of the map; `0x53f7c4` (5 slots) dword run 0x0053f770+31; this address at offset 21; 2 listed table(s) in the run, 1 with an installer body; the recorded store site 0x003313ce lies in no body of the map; 4 of 5 slots are not 4-aligned, so they are in-function offsets.
+<!-- /generated:class-ctor-evidence -->
+
+The 97 tables a constructor alone installs -- the population the previous read left -- are the
+`installed-by-ctor` row of the second table: 20 of them push a literal, 55 call a named body and 28 have a
+base edge, so the channel is thinner there than in the population as a whole and still says nothing about a
+name. What it does say is in the artifact, one table at a time.
+
+**The literal channel is closed by its own control, and closed in a specific way.** A constructor literal is
+a field default or a config section, and the class it can name is the class that *declares* the property,
+never the object's class: `DemoPlayPendingLevel` pushes `ini:Engine.Engine.DemoRecordingDevice` and is not
+`DemoRecordingDevice`. Across the 474 named tables **no constructor pushes its own class's name** while 16
+push some *other* class's name (a package, or a class registered from inside the constructor), which is why
+the class-name count is reported beside the zero rather than on its own.
+
+What the literals do give is a reading of what the object holds. `0x004c8db8`'s constructor pushes
+`Z:\Cache`, `Z:\Help`, `Z:\Maps`, `Z:\Animations`, `Z:\Music` and `D:\` through `thunk__wcscpy` and then
+calls `_CreateDirectoryA@8` -- a file manager with six configured roots, one of them a CD drive, which no
+class name would have told us. `0x004c96fc`'s writes a 3, a 0, a 0 and a -1 into `[esi+0x4]`..`[esi+0x10]`
+and advances the two globals at `0x005fe168`/`0x005fe16c` by `0xe0` on every call, a counter. This is object
+layout read from the constructor's side, and it is the same reading the class-record tools do from the
+record's side.
+
+**The callee channel places a table in a subsystem without naming it.** 169 of the 246 nameless tables call
+at least one of the map's own `Core_*`/`Engine_*` rows, and 31 signatures are shared by two or more of them.
+The two largest are idioms rather than classes: 33 tables whose only named callee is `__allmul` (the 64-bit
+multiply a counter or a GUID is advanced with) and 10 whose only one is `Core_UnTemplate`. The three tables
+that push `ini:Engine.Engine.Canvas` and `ini:Engine.Engine.Input` also call `Engine_UnCanvas` and
+`Engine_UnIn` -- the pair of constructors they run names the pair of objects they hold, which is as close to
+a name as this channel comes, and it is still a field's type rather than the class's name. Families are
+reported, never promoted to labels: two classes in one subsystem share a signature.
+
+**The parent channel is read from the body and held to the script tree.** A table's own installer is the
+body whose *last* store is that table -- the last-store rule the site census already uses -- and its first
+call that reaches another table's installer, through the null-check thunk, is its parent's constructor. On
+the named tables that edge is the class's script `super` 167 times, a further ancestor 211 times, and the
+class has no script chain 53 times, with **0 contradictions**: a script-only class installs its table from a
+body that calls its nearest native base, so the edge is the nearest native ancestor and not the immediate
+one. Of the 246 nameless tables 55 get an edge and only 9 climb to a named class, so the tree does not name
+them either; it says which native ancestor's constructor they run, and for the 48 that hang off another
+nameless table it says which of the 250 is above which.
+
+**The four tables the census lists with no installer body are not tables.** `0x4f70a0` is the last two
+dwords of a 44-dword run that three listed tables tile, two of them with installer bodies (`0x4f6ff8` is
+`I3DL2Listener`'s); `0x5181dc` is three dwords into a six-dword table whose head holds two `__purecall`
+entries, an interface's tail; `0x53f7c4` is 21 dwords into a run whose entries are 2-mod-4 in-function
+offsets, an exception-scope table and not a vtable; `0x5172ec` starts a 27-dword run immediately after the
+UTF-16 string `mesh!!`. None of the four has a store site inside any body of the map, which is the census's
+reason for listing it and the reason none of them is a class table.
 
 ## What this measurement does not say
 
@@ -910,6 +993,18 @@ The store-field partition is the same population read one operand deeper:
 `--check` is a synthetic image -- a slot store, a `disp8` and a `disp32` member store, a stack store, a
 global, an indexed SIB and a table no store carries -- and `--check-doc` rebuilds its block from
 `inventory/class_table_store_fields.csv` with no dump; both run in `make ci`.
+
+The constructor evidence is one pass over the same bodies, and its block above is rebuilt from
+the committed CSV with no dump:
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-ctor-evidence.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/class-ctor-evidence.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is a synthetic image -- a UTF-16 literal that must decode, an ASCII blob and a small integer that
+must not, an `ini:` section, a call whose target resolves through the map, a thunk that reaches the parent
+constructor, and a body installing two tables that must not yield an edge -- and `--check-doc` rebuilds the
+block from the committed CSV. Both run in `make ci`.
 
 The member tables' slots are the same population read one level deeper still:
 
