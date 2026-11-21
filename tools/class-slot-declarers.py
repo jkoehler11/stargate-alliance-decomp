@@ -7,8 +7,8 @@ body in a class table is not held by one table: every descendant class that does
 points at the same dword, so the same body appears at the same index in a whole subtree of tables, and
 "which table did the scan see first" is not a declaration. This tool reads **all 724 tables** the
 project censuses -- 492 class tables (`inventory/xbe_class_tables.csv`) and 232 interface tables
-(`inventory/native_vtable_shared.csv`) -- indexes every slot body, and for each of the 701 gap heads
-that sits in a slot decides:
+(`inventory/native_vtable_shared.csv`) -- indexes every slot body, and for each gap head that sits in a
+slot decides:
 
   * **declared** -- some class declares the body: walking up its own table's inheritance chain, the
     declarer is the highest class in the chain whose slot at that index holds the body. That class (and
@@ -34,6 +34,8 @@ the walk, so the residue is visible.
     python3 tools/class-slot-declarers.py --write-doc docs/systems/CLASS_REGISTRATION.md
     python3 tools/class-slot-declarers.py --check-doc docs/systems/CLASS_REGISTRATION.md
     python3 tools/class-slot-declarers.py --check        # artifact + synthetic walks, no dump, no write
+    python3 tools/class-slot-declarers.py --xbe ... --emit-adds   # the map rows these names earn
+    python3 tools/class-slot-declarers.py --xbe ... --apply-adds  # write them, then `make symbols`
 
 Addresses, slot indices, class names and counts only; no package or image content is written.
 """
@@ -57,6 +59,11 @@ MEMBER_TABLES = os.path.join(ROOT, "inventory", "class_member_tables.csv")
 CLASSES = os.path.join(ROOT, "inventory", "classes.csv")
 EDGES = os.path.join(ROOT, "inventory", "class_table_parent_edges.csv")
 SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
+BOUNDARIES = os.path.join(ROOT, "symbols", "xbe_boundaries.csv")
+OVERRIDES = os.path.join(ROOT, "symbols", "xbe_overrides.csv")
+# a body may be added only where a linear decode closes on a flow terminator: an `add` row whose size
+# is a guess puts every later row's address at risk, and the map is what the disassembly is.
+CLOSES = ("ret", "ret-imm", "jmp", "jmp-ind")
 DOC_START = "<!-- generated:class-slot-declarers -->"
 DOC_END = "<!-- /generated:class-slot-declarers -->"
 FIELDS = ("row", "head_va", "size", "verdict", "declarer", "slot", "name_earned", "current_name",
@@ -96,8 +103,9 @@ def load_inventory():
     for r in read_csv(CLASSES):
         supers.setdefault(r["class"], r.get("super") or "")
     heads = [r for r in read_csv(GAPS) if r.get("row") == "head"]
+    gaps = {h["head_va"]: h for h in heads}
     return dict(tables=tables, shared=shared, class_of=class_of, member=member, supers=supers,
-                heads=heads, parent=parent, parent_name=parent_name)
+                heads=heads, gaps=gaps, parent=parent, parent_name=parent_name)
 
 
 # --------------------------------------------------------------------------- the declaration walk
@@ -253,32 +261,53 @@ def census_heads(inv, slot_of):
             dec, slot = list(exact)[0]
         elif unnamed:
             dec, slot = list(unnamed)[0][0], str(list(unnamed)[0][1])
+        elif mems:
+            dec, slot = "", str(min(mems)[1])
         else:
             dec, slot = "", ""
+        labels = sorted({member[t].get("member_name") or "" for t, _ in mems
+                         if member[t].get("member_name")})
+        mtables = sorted({t for t, _ in mems})
+        if verdict == "member":
+            # the label and the table the name was built from come first, so a reader never has to
+            # guess which member a row is named after
+            first = member[min(mems)[0]].get("member_name") or ""
+            if first in labels:
+                labels.remove(first)
+                labels.insert(0, first)
+            if min(mems)[0] in mtables:
+                mtables.remove(min(mems)[0])
+                mtables.insert(0, min(mems)[0])
         rows.append({"row": "head", "head_va": h["head_va"], "size": h.get("size", ""),
                      "verdict": verdict, "declarer": dec, "slot": str(slot),
                      "name_earned": name, "current_name": cur, "current_agrees": agrees,
                      "sit_ins": str(len(sits)), "tables": str(len({t for t, _, _ in sits})),
                      "indices": " ".join(str(i) for i in sorted({i for _, i, _ in sits})),
-                     "member": " ".join(sorted({member[t].get("member_name") or ""
-                                                for t, _ in mems if member[t].get("member_name")})),
-                     "member_tables": " ".join("0x%08x" % t for t in sorted({t for t, _ in mems})),
+                     "member": " ".join(labels),
+                     "member_tables": " ".join("0x%08x" % t for t in mtables),
                      "evidence": evidence})
     return rows, holds, (sit_class, sit_iface)
 
 
 def census_control(inv, slot_of, holds):
-    """The map's own `<Class>_vt<slot>` rows, read by the same walk."""
+    """The map's own `<Class>_vt<slot>` rows, read by the same walk.
+
+    The artifact's own `add` rows are excluded: they carry this walk's conclusion, so reading them back
+    as an independent control would count the answer as its own evidence.
+    """
     tables, class_of, supers = inv["tables"], inv["class_of"], inv["supers"]
     table_of = {}
     for t in sorted(class_of):
         table_of.setdefault(class_of[t], t)
+    mine = {int(r["head_va"], 16) for r in read_csv(os.path.join(ROOT, OUT)) if r.get("row") == "add"}
     rows = []
     for r in read_csv(SYMBOLS):
         m = CLASS_SLOT_NAME.match(r.get("name") or "")
         if not m:
             continue
         va, cls, slot = int(r["address"], 16), m.group("cls"), int(m.group("slot"))
+        if va in mine:
+            continue
         t = table_of.get(cls)
         rec = {"row": "control", "head_va": r["address"], "size": r.get("size", ""),
                "verdict": "unresolved", "declarer": "", "slot": str(slot), "name_earned": r["name"],
@@ -308,7 +337,130 @@ def census_control(inv, slot_of, holds):
     return rows
 
 
-def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0)):
+# --------------------------------------------------------------------------- the rows the walk creates
+def add_candidates(head_rows, gaps):
+    """[(head row, name, gap head)] -- the bodies a settled declaration turns into a map row.
+
+    Two verdicts carry a name the walk proved: a class declares the slot, or a member table the class
+    constructor stores into a field holds it (the body is that member's method). A body is added only
+    where the gap census decoded it to a flow terminator -- a name is not a size.
+    """
+    out, taken = [], set()
+    for r in head_rows:
+        if r["verdict"] not in ("declared", "member") or not r["name_earned"]:
+            continue
+        h = gaps.get(r["head_va"]) or {}
+        if not h.get("size") or h.get("close") not in CLOSES:
+            continue
+        name = r["name_earned"]
+        if name in taken:
+            name += "_b"
+        taken.add(name)
+        out.append((r, name, h))
+    return out
+
+
+def add_evidence(r, h, name):
+    """The one sentence an `add` row carries: who declares it, and why the map has no row."""
+    pad = (("%d bytes of pad" % int(h["boundary"].split(":")[1])) if h["boundary"].startswith("pad")
+           else {"after-ret": "a split boundary"}.get(h["boundary"], "the gap's start"))
+    calls, jumps = int(h["calls"] or 0), int(h["jumps"] or 0)
+    if calls or jumps:
+        reach = ("the image's only references to it are %d call site(s) and %d jump(s), and the map "
+                 "turned neither into a row" % (calls, jumps))
+    else:
+        reach = ("no `E8` and no pointer outside a table names it, so the call graph that builds this "
+                 "map can never make it a function")
+    if r["verdict"] == "member":
+        who = ("the member table %s slot %s, which a constructor stores into the field `%s` -- the body "
+               "is that member's method, not a class slot, so the name is the member's and not a "
+               "`<Class>_vt<slot>` claim" % (r["member_tables"].split()[0] if r["member_tables"] else "?",
+                                             r["slot"], r["member"]))
+    else:
+        who = ("slot %s of %d table(s) in %s's subtree hold it and the measured parent edges reach %s as "
+               "the declarer, so the name is the declarer's and not the first table a reference landed "
+               "in" % (r["slot"], int(r["tables"] or 0), r["declarer"], r["declarer"]))
+    return ("the body in the gap %s..%s: %s; %s in front, an MSVC %s prologue and a linear decode "
+            "closing on `%s` at 0x%08x; %s"
+            % (h["gap_lo"], h["gap_hi"], who, pad, h["prologue"], h["close"],
+               int(r["head_va"], 16) + int(r["size"]), reach))
+
+
+def carried_adds():
+    """The `add` rows the artifact already records, re-read against the map.
+
+    An add row is the artifact's own receipt: after the census is regenerated the body is no longer a
+    gap head, so the only record that it was added -- and the name it was given -- is this row. A row
+    whose map name no longer matches keeps `current_agrees = no` and `--check` fails on it.
+    """
+    have = {}
+    for row in read_csv(SYMBOLS):
+        have[int(row["address"], 16)] = row.get("name") or ""
+    out = []
+    for r in read_csv(os.path.join(ROOT, OUT)):
+        if r.get("row") != "add":
+            continue
+        got = have.get(int(r["head_va"], 16))
+        rec = dict(r)
+        rec["current_name"] = got or ""
+        rec["current_agrees"] = "yes" if got == r["name_earned"] else ("no" if got else "")
+        out.append(rec)
+    return out
+
+
+def append_adds(cand):
+    """Write the population's `add` rows and the creation row each needs, refusing a duplicate.
+
+    An `add` with no `xbe_overrides.csv` row is invisible to a fresh import (`XbePost.java` builds the
+    function from that file), so the two rows are written together or not at all.
+    """
+    b_rows = read_csv(BOUNDARIES)
+    o_rows = read_csv(OVERRIDES)
+    have = {int(r["address"], 16) for r in b_rows} | {int(r["address"], 16) for r in o_rows}
+    dup = [r["head_va"] for r, _n, _h in cand if int(r["head_va"], 16) in have]
+    if dup:
+        sys.exit("class-slot-declarers: --apply-adds: %d of the population is already a row (%s); "
+                 "regenerate the census instead of re-adding it" % (len(dup), ", ".join(dup[:4])))
+    names = {r.get("name") for r in read_csv(SYMBOLS)}
+    clash = [n for _r, n, _h in cand if n in names]
+    if clash:
+        sys.exit("class-slot-declarers: --apply-adds: %d name(s) the map already uses (%s)"
+                 % (len(clash), ", ".join(clash[:4])))
+    art = []
+    for r, name, h in cand:
+        ev = add_evidence(r, h, name)
+        b_rows.append({"address": r["head_va"], "action": "add", "target": name, "size": r["size"],
+                       "evidence": ev})
+        o_rows.append({"address": r["head_va"], "name": name,
+                       "evidence": "added to the map by symbols/xbe_boundaries.csv: " + ev,
+                       "class": "", "outer": "", "object_size": "", "assert_line": "", "module": "",
+                       "source_file": "", "function_size": r["size"]})
+        art.append({"row": "add", "head_va": r["head_va"], "size": r["size"], "verdict": "added",
+                    "declarer": r["declarer"], "slot": r["slot"], "name_earned": name,
+                    "current_name": "", "current_agrees": "", "sit_ins": r["sit_ins"],
+                    "tables": r["tables"], "indices": r["indices"], "member": r["member"],
+                    "member_tables": r["member_tables"], "evidence": ev, "census": ""})
+    with open(BOUNDARIES, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "action", "target", "size", "evidence"],
+                           lineterminator="\n")
+        w.writeheader()
+        w.writerows(b_rows)
+    with open(OVERRIDES, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["address", "name", "evidence", "class", "outer",
+                                           "object_size", "assert_line", "module", "source_file",
+                                           "function_size"], lineterminator="\r\n")
+        w.writeheader()
+        w.writerows(o_rows)
+    with open(os.path.join(ROOT, OUT), "a", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, FIELDS, lineterminator="\r\n")
+        for r in art:
+            w.writerow(r)
+    print("class-slot-declarers: %d add row(s) and %d creation row(s) written; re-run `make symbols`"
+          % (len(cand), len(cand)))
+    return art
+
+
+def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0), adds=None):
     v = collections.Counter(r["verdict"] for r in head_rows)
     m = {"heads": len(head_rows), "declared": v["declared"],
          "declared_unnamed": v["declared-unnamed"],
@@ -338,6 +490,18 @@ def census_meta(head_rows, ctl_rows, inv, holds, sits=(0, 0)):
     m["declared_tables"] = sum(int(r["tables"]) for r in head_rows if r["verdict"] == "declared")
     m["member_sit_tables"] = len({t for r in head_rows if r["verdict"] == "member"
                                  for t in r["member_tables"].split()})
+    adds = adds or []
+    gaps = inv.get("gaps", {})
+    m["add_rows"] = len(adds)
+    m["add_bytes"] = sum(int(r["size"]) for r in adds if r["size"])
+    m["add_member"] = sum(1 for r in adds if r["member"])
+    m["add_live"] = sum(1 for r in adds if r["current_agrees"] == "yes")
+    # the bodies this walk names that no `add` can carry: a name is not a size, and an undecoded body
+    # would put every later row's address at risk
+    m["named_unplaced"] = sum(
+        1 for r in head_rows if r["name_earned"]
+        and not (gaps.get(r["head_va"], {}).get("size")
+                 and gaps.get(r["head_va"], {}).get("close") in CLOSES))
     return m
 
 
@@ -376,7 +540,7 @@ def render(rows, ctl, meta):
     lines.append("| interface tables only | %d | %.0f%% | none (an interface name) |"
                  % (meta["interface"], 100.0 * meta["interface"] / n))
     lines.append("")
-    lines.append("**The 701 bodies are %d slot sit-ins over %d tables, and a declared body sits in every "
+    lines.append("**The %d bodies are %d slot sit-ins over %d tables, and a declared body sits in every "
                  "descendant table that does not override the slot.** The census reads the %d tables the "
                  "project knows -- %d class tables (%d with a class) and %d interface tables -- and indexes "
                  "every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a "
@@ -384,7 +548,8 @@ def render(rows, ctl, meta):
                  "are interface slots; the widest fan-out is **%d tables for one body**, so \"the first table "
                  "that holds it\" is a choice among a subtree. The declarer is the highest class in the "
                  "`extends` chain whose slot at that index still holds the body."
-                 % (meta["sit_ins"], meta["tables_read"], meta["tables_read"], meta["class_tables"],
+                 % (meta["heads"], meta["sit_ins"], meta["tables_read"], meta["tables_read"],
+                    meta["class_tables"],
                     meta["named_class_tables"], meta["interface_tables"], meta["class_sit_ins"],
                     meta["sit_ins"] - meta["class_sit_ins"], meta["fanout_max"]))
     lines.append("")
@@ -426,12 +591,16 @@ def render(rows, ctl, meta):
                                              % (r["head_va"], "" if len(r["indices"].split()) == 1 else "s",
                                                 r["indices"].replace(" ", "/")) for r in conf[:6])))
         lines.append("")
-    lines.append("**What is left is a name, not a read.** %d bodies are an interface's method -- the slot is "
-                 "real, the body is a method, and the interface has no name, which is the residue U40 already "
-                 "prices. %d are a member's method with the owner and the field offset both known, so the "
-                 "name exists in the member convention and waits on the map add. %d sit in a class table "
-                 "whose class the class map has not named, so the declaration is real and its class is the "
-                 "open question." % (meta["interface"], meta["member"], meta["unnamed_table"]))
+    lines.append("**What the walk did with its names.** %d of these bodies are map rows now -- %d named "
+                 "`<Class>_vt<slot>` from the declaration, %d a member's method -- %d bytes, each through "
+                 "`symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import "
+                 "needs, and each named after its **declarer**, never the first table that held the "
+                 "pointer. %d bodies earn a name the decode cannot carry, because a name is not a size. "
+                 "What is left is a name, not a read: %d are an interface's method, and %d sit in a class "
+                 "table whose class the class map has not named."
+                 % (meta["add_rows"], meta["add_rows"] - meta["add_member"], meta["add_member"],
+                    meta["add_bytes"], meta["named_unplaced"], meta["interface"],
+                    meta["unnamed_table"]))
     lines.append("")
     return "\n".join(lines) + "\n"
 
@@ -528,8 +697,10 @@ def self_check():
     if int(m["current_agree"]) + int(m["current_disagree"]) > int(m["current_named"]):
         print("FAIL class-slot-declarers: the name comparison does not add up")
         return 1
+    mine = {int(r["head_va"], 16) for r in rows if r["row"] == "add"}
     map_rows = [r for r in read_csv(SYMBOLS)
-                if CLASS_SLOT_NAME.match(r.get("name") or "")]
+                if CLASS_SLOT_NAME.match(r.get("name") or "")
+                and int(r["address"], 16) not in mine]
     if len(ctl) != len(map_rows) or len(ctl) != int(m["control_rows"]):
         print("FAIL class-slot-declarers: %d control rows against %d map rows"
               % (len(ctl), len(map_rows)))
@@ -538,6 +709,44 @@ def self_check():
     if (cv["agrees"], cv["derived"], cv["unresolved"]) != (
             int(m["control_agree"]), int(m["control_derived"]), int(m["control_unresolved"])):
         print("FAIL class-slot-declarers: control verdicts do not match the census")
+        return 1
+    # the add rows are receipts: each one must be a map row with the name the walk gave it, must not be
+    # a gap head again, and must be named after its declarer (or its member's field), never a holder
+    adds = [r for r in rows if r["row"] == "add"]
+    if len(adds) != int(m.get("add_rows", -1)):
+        print("FAIL class-slot-declarers: %d add rows against a census of %s"
+              % (len(adds), m.get("add_rows")))
+        return 1
+    map_by_va = {int(r["address"], 16): r.get("name") or "" for r in read_csv(SYMBOLS)}
+    head_vas = {h["head_va"] for h in slot_heads}
+    for r in adds:
+        va, name = int(r["head_va"], 16), r["name_earned"]
+        if map_by_va.get(va) != name:
+            print("FAIL class-slot-declarers: the add at %s is %r in the map, not %r"
+                  % (r["head_va"], map_by_va.get(va), name))
+            return 1
+        if r["head_va"] in head_vas:
+            print("FAIL class-slot-declarers: %s is an add row and still a gap head" % r["head_va"])
+            return 1
+        # a class slot's name is the declarer's and nobody else's; a body no class declares may be a
+        # member's method, and then any of the member labels it records may name it
+        leaders = [r["declarer"]] if r["declarer"] else r["member"].split()
+        if not leaders:
+            print("FAIL class-slot-declarers: %s is an add with no declarer" % r["head_va"])
+            return 1
+        want = "%s_vt%s" % (leaders[0], r["slot"])
+        ok = [("%s_vt%s" % (m, r["slot"]), "%s_vt%s_b" % (m, r["slot"])) for m in leaders]
+        if r["name_earned"] not in [w for pair in ok for w in pair]:
+            print("FAIL class-slot-declarers: the add at %s is named %r, not after its declarer %r"
+                  % (r["head_va"], r["name_earned"], want))
+            return 1
+    names = [r["name_earned"] for r in adds]
+    if len(names) != len(set(names)):
+        print("FAIL class-slot-declarers: two add rows share a name")
+        return 1
+    if int(m.get("add_live", 0)) != len(adds):
+        print("FAIL class-slot-declarers: %d add rows, %s live in the map"
+              % (len(adds), m.get("add_live")))
         return 1
     rc = synthetic()
     if rc:
@@ -556,6 +765,10 @@ def main():
     ap.add_argument("--write-doc")
     ap.add_argument("--check-doc")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--emit-adds", action="store_true",
+                    help="print the `add` rows (symbols/xbe_boundaries.csv) the walk's names earn")
+    ap.add_argument("--apply-adds", action="store_true",
+                    help="write those rows, the creation row each needs, and the artifact receipt")
     args = ap.parse_args()
     if args.check:
         return self_check()
@@ -615,17 +828,31 @@ def main():
 
     inv = load_inventory()
     head_rows, holds, sits = census_heads(inv, slot_of)
+    if args.emit_adds or args.apply_adds:
+        cand = add_candidates(head_rows, inv["gaps"])
+        if args.emit_adds:
+            w = csv.writer(sys.stdout, lineterminator="\n")
+            for r, name, h in cand:
+                w.writerow([r["head_va"], "add", name, r["size"], add_evidence(r, h, name)])
+            print("class-slot-declarers: %d add(s) for %d named bodies (%d undecodable)"
+                  % (len(cand), sum(1 for r in head_rows if r["name_earned"]),
+                     sum(1 for r in head_rows if r["name_earned"]) - len(cand)), file=sys.stderr)
+            return 0
+        append_adds(cand)
+        return 0
     ctl_rows = census_control(inv, slot_of, holds)
-    meta = census_meta(head_rows, ctl_rows, inv, holds, sits)
+    adds = carried_adds()
+    meta = census_meta(head_rows, ctl_rows, inv, holds, sits, adds)
     os.makedirs(os.path.join(ROOT, args.out), exist_ok=True)
     out = os.path.join(ROOT, args.out, "class_slot_declarers.csv")
-    with open(out, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, FIELDS, lineterminator="\r\n")
+    with open(out, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, FIELDS, lineterminator="\r\n")
         w.writeheader()
-        for r in head_rows + ctl_rows:
+        for r in head_rows + ctl_rows + adds:
             w.writerow(r)
         w.writerow({"row": "census", "census": ";".join("%s=%s" % kv for kv in meta.items())})
-    print("wrote %s (%d head rows, %d control rows)" % (out, len(head_rows), len(ctl_rows)))
+    print("wrote %s (%d head rows, %d control rows, %d add rows)"
+          % (out, len(head_rows), len(ctl_rows), len(adds)))
     print("  declared %d, conflict %d, member %d, unnamed-table %d, interface %d in %d sit-ins"
           % (meta["declared"], meta["conflict"], meta["member"], meta["unnamed_table"],
              meta["interface"], meta["sit_ins"]))
