@@ -21,7 +21,7 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4c91f8,ACTION_WaitForEvent,ACTION_WaitForEvent,own-installer,,1,2,agrees
 0x4c9270,SubActionDepthOfField,SubActionDepthOfField,own-installer,,1,2,agrees
 0x4c9348,,,no-named-call,,6,0,no-caller
-0x4c93d0,,,parent-of-callers,XboxViewport,3,1,constrained
+0x4c93d0,Viewport,,parent-of-callers,XboxViewport,3,1,constrained
 0x4c94b0,,,parent-of-callers,XboxClient,3,1,constrained
 0x4c9560,XboxClient,XboxClient,own-installer,,1,2,agrees
 0x4c9618,XboxViewport,XboxViewport,own-installer,,1,2,agrees
@@ -82,8 +82,8 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4d0048,FluidTexture,FluidTexture,own-installer,,1,2,agrees
 0x4d0138,WetTexture,WetTexture,own-installer,,1,2,agrees
 0x4d0228,IceTexture,IceTexture,own-installer,,1,2,agrees
-0x4d0318,,,parent-of-callers,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,7,3,constrained
-0x4d03c8,,,parent-of-callers,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,10,3,constrained
+0x4d0318,NetDriver,,parent-of-callers,DemoRecDriver|TcpNetDriver|TcpNetDriverXbox,7,3,constrained
+0x4d03c8,NetConnection,,parent-of-callers,DemoRecConnection|TcpipConnection|TcpipConnectionXbox,10,3,constrained
 0x4d0480,TcpipConnection,TcpipConnection,own-installer,,3,2,agrees
 0x4d0530,TcpNetDriver,TcpNetDriver,own-installer,,1,2,agrees
 0x4d05e0,TcpipConnectionXbox,TcpipConnectionXbox,own-installer,,3,2,agrees
@@ -245,7 +245,7 @@ table_va,class_committed,proposed_class,basis,named_callers,callers,support,verd
 0x4f9618,CameraOverlay,CameraOverlay,own-installer,,1,2,agrees
 0x4f9728,MotionBlur,MotionBlur,own-installer,,1,2,agrees
 0x4fa110,Canvas,Canvas,own-installer,,1,2,agrees
-0x4fa390,,,parent-of-callers,ActorChannel|ControlChannel|FileChannel|VoiceChannel,5,4,constrained
+0x4fa390,Channel,,parent-of-callers,ActorChannel|ControlChannel|FileChannel|VoiceChannel,5,4,constrained
 0x4fa5b0,ControlChannel,ControlChannel,own-installer,,1,2,agrees
 0x4fa650,FileChannel,FileChannel,own-installer,,1,2,agrees
 0x4fa6f0,VoiceChannel,VoiceChannel,own-installer,,1,2,agrees

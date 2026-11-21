@@ -103,16 +103,16 @@ matching `--check-doc`, so it is the current numbers rather than the ones the fi
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named by the registration literal | 474 |
-| unnamed | 18 |
-| named tables with a measured child set | 394 |
-| … whose child set equals the class's direct subclasses in `classes.csv` | **378** |
-| … that disagree | **16** |
+| named by the registration literal | 478 |
+| unnamed | 14 |
+| named tables with a measured child set | 398 |
+| … whose child set equals the class's direct subclasses in `classes.csv` | **379** |
+| … that disagree | **19** |
 | … whose class has no subclass in the image (a leaf) | 80 |
 
 | conflict cause | tables |
 |---|---|
-| `no-script-row` | 10 |
+| `no-script-row` | 13 |
 | `descendant-edge` | 5 |
 | `native-child` | 1 |
 | `foreign-child` | 0 |
@@ -122,8 +122,8 @@ matching `--check-doc`, so it is the current numbers rather than the ones the fi
 |---|---|
 | named exactly by their child set | 0 |
 | ambiguous (two classes match) | 0 |
-| partly named child set | 3 |
-| unconstrained (no class's subclass set matches) | 15 |
+| partly named child set | 2 |
+| unconstrained (no class's subclass set matches) | 12 |
 <!-- /generated:class-tree -->
 
 The claim this instrument is worth is the ratio of the two bold rows: the constructor call edges
@@ -358,8 +358,8 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 | measurement | value |
 |---|---|
 | tables | 492 |
-| named in `inventory/xbe_class_table_names.csv` | 474 |
-| unnamed | 18 |
+| named in `inventory/xbe_class_table_names.csv` | 478 |
+| unnamed | 14 |
 | `agrees` -- the installer's symbol names the committed class | **474** |
 | `adjacent` -- the symbol names a parent or child | 0 |
 | `differs` -- the symbol names an unrelated class | 0 |
@@ -367,6 +367,13 @@ section, `symbols/xbox_functions.csv` for the caller names, `inventory/classes.c
 | `constrained` -- the callers share no named ancestor | 17 |
 | `name-clash` -- the proposal is another table's name | 0 |
 | `no-caller` -- no `E8` site reaches the installer | 1 |
+
+| table | committed | the rule's answer | basis | verdict |
+|---|---|---|---|---|
+| `0x4c93d0` | Viewport | - | `parent-of-callers` | `constrained` |
+| `0x4d0318` | NetDriver | - | `parent-of-callers` | `constrained` |
+| `0x4d03c8` | NetConnection | - | `parent-of-callers` | `constrained` |
+| `0x4fa390` | Channel | - | `parent-of-callers` | `constrained` |
 <!-- /generated:class-table-parents -->
 
 * **The installer-name edge reproduces the whole map: all 468 named tables `agrees`, 0 `adjacent`,

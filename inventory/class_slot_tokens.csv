@@ -21,7 +21,7 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x004c91f8,ACTION_WaitForEvent,30,3,UnObj:3,,UnObj,3,492,no
 0x004c9270,SubActionDepthOfField,33,3,UnObj:3,,UnObj,3,492,no
 0x004c9348,,31,2,UnObj:2,,UnObj,2,492,no
-0x004c93d0,,56,6,UnCamera:4 UnObj:2,UnCamera:4,UnCamera,4,2,no
+0x004c93d0,Viewport,56,6,UnCamera:4 UnObj:2,UnCamera:4,UnCamera,4,2,no
 0x004c94b0,,43,2,UnObj:2,,UnObj,2,492,no
 0x004c9560,XboxClient,43,2,UnObj:2,,UnObj,2,492,no
 0x004c9618,XboxViewport,57,8,UnCamera:4 UnObj:2 XboxViewport:2,XboxViewport:2 UnCamera:4,UnCamera,4,2,yes
@@ -82,8 +82,8 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x004d0048,FluidTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
 0x004d0138,WetTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
 0x004d0228,IceTexture,59,3,UnObj:2 UnTex:1,,UnObj,2,492,no
-0x004d0318,,40,3,UnObj:2 UnNetDrv:1,UnNetDrv:1,UnObj,2,492,no
-0x004d03c8,,42,6,UnConn:4 UnObj:2,UnConn:4,UnConn,4,4,no
+0x004d0318,NetDriver,40,3,UnObj:2 UnNetDrv:1,UnNetDrv:1,UnObj,2,492,no
+0x004d03c8,NetConnection,42,6,UnConn:4 UnObj:2,UnConn:4,UnConn,4,4,no
 0x004d0480,TcpipConnection,42,6,UnConn:4 UnObj:2,UnConn:4,UnConn,4,4,no
 0x004d0530,TcpNetDriver,40,3,UnObj:2 UnNetDrv:1,UnNetDrv:1,UnObj,2,492,no
 0x004d05e0,TcpipConnectionXbox,42,6,UnConn:3 UnObj:2 TcpNetDriverXbox:1,TcpNetDriverXbox:1 UnConn:3,UnConn,3,4,no
@@ -245,7 +245,7 @@ table_va,class,slots,classed_slots,tokens,distinctive,top_token,top_slots,top_df
 0x004f9618,CameraOverlay,32,3,UnObj:3,,UnObj,3,492,no
 0x004f9728,MotionBlur,32,3,UnObj:3,,UnObj,3,492,no
 0x004fa110,Canvas,51,4,UnObj:3 UnCanvas:1,UnCanvas:1,UnObj,3,492,yes
-0x004fa390,,37,7,UnChan:4 UnObj:3,UnChan:4,UnChan,4,5,no
+0x004fa390,Channel,37,7,UnChan:4 UnObj:3,UnChan:4,UnChan,4,5,no
 0x004fa5b0,ControlChannel,37,8,UnChan:5 UnObj:3,UnChan:5,UnChan,5,5,no
 0x004fa650,FileChannel,37,8,UnChan:5 UnObj:3,UnChan:5,UnChan,5,5,no
 0x004fa6f0,VoiceChannel,37,8,UnChan:6 UnObj:2,UnChan:6,UnChan,6,5,no

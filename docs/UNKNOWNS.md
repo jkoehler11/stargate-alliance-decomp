@@ -5849,6 +5849,20 @@ has had. The channel reaches **none** of the 49 member tables (1 of their 292 sl
 one slot cannot name a table), so a member's interface *type* stays open while its own name does not,
 and 214 of the 232 interfaces carry no mangled class at all.
 
+**Answered since (2026-11-20, four of the 18 heads earn names).** The heads' slot bodies name the file they
+assert in (`inventory/class_slot_tokens.csv`), and `tools/class-table-names.py`'s `slot-file-token` rule turns
+that vote into a class for the four whose file is a family the image already resolves: `0x004d0318`
+`NetDriver`, `0x004d03c8` `NetConnection`, `0x004fa390` `Channel` and `0x004c93d0` `Viewport` -- 474 to 478
+named of 492. The file-to-class step is the one stated literal; every other condition is measured, and each
+can refuse the name: the class must be a literal some registration site pushes, that site must install no
+table of its own (it throws the shared default constructor `0x00034650`, so this is exactly the class the
+registration path cannot name), every *named* table carrying the same file must be at least as long and have
+an object at least as large (490 of 490 measured rungs are monotone), and no shorter unnamed table may carry
+the file -- that one would be the better head. **The 14 that remain carry `UnObj` alone**, the token on all
+492 tables, so this route has no vote for them at all: the object root `0x004c78c0` and the property head
+`0x004d17a8` stay unnamed for that reason and would need a channel other than their slots.
+
+
 **Answered in part (2026-11-20, what the 232 interfaces are to each other).** The question in front of the
 naming one -- *which of these tables are the same interface* -- has an answer the image does give.
 `tools/class-interface-shapes.py` reads the 232 slot vectors (`inventory/class_interface_shapes.csv`, 232

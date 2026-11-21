@@ -16089,6 +16089,64 @@ sequence.
   representative now that the families exist), and the 18's UE2.5 ladder reading, which is still a reading
   rather than a measurement.
 
+### Execution notes (2026-11-20, four of the 18 heads are named, and the rule refuses the other fourteen)
+
+- **The file-to-class step is one literal; every condition around it is measured.** `class-table-names.py`
+  gained a `slot-file-token` rule, and an empty row is named only when all of this holds: the class is a
+  literal some registration site pushes (`inventory/class_registrations.csv`: `NetDriver` `0x00183599`,
+  `NetConnection` `0x0010d6a9`, `Channel` `0x001083c6`, `Viewport` `0x000f92c9`); that site installs no
+  table of its own, because it pushes the shared default constructor `0x00034650` -- which is exactly why
+  no site can name these tables; the table carries the mapped assert-file token
+  (`inventory/class_slot_tokens.csv`); every *named* table carrying the same token is at least as long and
+  has an object at least as large; and no shorter unnamed table carries the token. The four rows that pass
+  are `0x004d0318` `NetDriver`, `0x004d03c8` `NetConnection`, `0x004fa390` `Channel` and `0x004c93d0`
+  `Viewport`: **474 -> 478 named of 492, 18 -> 14 unnamed**, and the artifact's `evidence` column carries
+  the literal's site, the vote and both ladders each name was checked against.
+- **The object size is a second ladder, and it is monotone in every family.** 100 -> 104/104/200/628
+  (channels), 4524 -> 4564/4608/4684 (drivers), 20368 -> 20404/20424 (connections), 456 -> 464
+  (viewports). A wrong file-to-class step can fail on the size ladder as well as on the slot ladder, which
+  is why the two are checked rather than quoted.
+- **The fourteen that remain are refused by the data, not skipped.** They carry `UnObj` and nothing else,
+  so `class_slot_tokens.csv` now reads **0 of 14 unnamed with a distinctive token** (it read 0 of 18), and
+  the object root `0x004c78c0` and the property head `0x004d17a8` stay unnamed for that reason. The slot
+  route has no vote to offer them at all.
+- **The cascade was four artifacts and three doc blocks, and one of them failed loudly.** names ->
+  `make class-slot-tokens` -> names again (the naming census reads the tallies, so the order matters),
+  `class_table_parents.csv` (`class_committed` is a copy of the name column and its self-test is what
+  caught the stale copy), `symbols/xbox.map` (four `Vtbl_*` names; the function map did not move because
+  all four constructors are already named), `docs/STATUS.md` and README (the named-function share), the
+  three page blocks, the hash manifest and the inventory index.
+- **Files.** `tools/class-table-names.py` (the rule, its two inputs, five new `--check` refusals),
+  `inventory/xbe_class_table_names.csv`, `inventory/class_slot_tokens.csv`,
+  `inventory/class_table_parents.csv`, `symbols/xbox.map`, `docs/systems/CLASS_REGISTRATION.md` (the
+  section's prose and both blocks), `docs/NATIVE_CLASS_TREE.md`, `docs/UNKNOWNS.md` (U40's naming half),
+  `docs/STATUS.md`, `README.md`, this note.
+- **Gates.** `make ci` green; `--check` is synthetic over tallies and writes nothing; `--check-doc` rebuilds
+  both blocks from the committed CSVs with no dump; the names artifact regenerates byte for byte.
+- **The four rows also carry their class's own site and the size it pushes.** `object_size` and
+  `registration_va` were empty on the four; they now hold the site (`0x000f92c9` 456, `0x00183599` 4524,
+  `0x0010d6a9` 20368, `0x001083c6` 100), and `installed_at`/`stores`/`bound` stay empty because that
+  site's store installs the object root's table. `class-size-sources.py` gained a `site_kind` column
+  (468 `table` / 4 `class`) and a `class-site` verdict instead of counting the four as sites that resolve
+  to their table, and `symbols/xbox.map`'s `Vtbl_*` lines now carry the sizes.
+- **The size ladder is why those sizes matter to the name.** 100 -> 104/104/200/628 (channels),
+  4524 -> 4564/4608/4684 (drivers), 20368 -> 20404/20424 (connections), 456 -> 464 (viewport): the rule
+  refuses a name whose class is larger than a named carrier, so every one of the four is checked by slots
+  and by bytes, not by slots alone.
+- **The same channel is measured shut for the 232 interfaces.** `tools/class-interface-tokens.py` ->
+  `inventory/class_interface_tokens.csv` (232 rows): **25 tables carry an assert-file token** (45 of 2,527
+  slots; 0 of the 23 named, 25 of the 209 unnamed), 7 tokens are carried by more than one table and **4 of
+  those sit in exactly one shape family** (`InternetLink`, `UnLinker`, `UnPenLev`, `UnRender`) -- a second
+  vote for the shape grouping -- while 3 cross families (`UnRenderUtil`, `UnTemplate`,
+  `XboxLiveMatchMaking`). 19 of the 25 carry a file no class table carries, so the vote is a module label
+  and no registration literal stands behind it: the 89 representative reads stay behaviour reads.
+- **That block's doc gate had to be added to the gate line, and it was proved to bite.** The Makefile runs
+  `class-interface-tokens.py --check-doc` beside the other class doc checks; a corrupted count in the block
+  makes it answer `FAIL` (measured), and the bare `--check` is synthetic and writes nothing.
+- **Not in this bundle.** The 89 interface-family representative body reads, the 399 unnamed bodies, and
+  `class_plain_tables.csv`'s own extent rule, which is measured not to lift from the class rule (ten of the
+  250 tables start on an odd-aligned `.text` dword).
+
 ### Execution notes (2026-11-20, the 18 heads' slot bodies name four files, and the runtime read names none)
 
 - **The extent rule is one function now, and its artifact proves it did not move.** `class-tables.py`
