@@ -16769,6 +16769,50 @@ sequence.
   4 `check()`-cut spans need; the 3 that close past an ordinary row; and the 7 unnamed class tables, whose
   names need a class no package declares.
 
+### Execution notes (2026-11-21, the declared residue closes: a false head is a move, a switch table is a boundary)
+
+- **Task.** The last bundle gave every one of the walk's 13 undecoded declarations a measured end and
+  left the 4 `check()`-cut spans + the 3 that close past a row + the 3 that cross a jump table as "needs
+  a boundary move first" -- the map had a row inside each span and one address cannot hold two rows.
+- **The rule that moves it.** A row inside a declared body's measured span that has no direct
+  `call`/`jmp` site in `.text` (decoded at instruction boundaries with objdump -- a sprayed `E8` scan
+  invents callers) and is not in `class_slot_declarers.csv`'s control/head rows is interior code, not a
+  function. Eight rows fail both claims: four open on the `check()` shape, two are block entries on the
+  body's stream (`0x00100000`, `0x0021e478`), two are not on it at all (`0x00280020` -- 3 bytes -- and
+  `0x00280064`). `symbol-boundaries.py`'s `add`+`drop` pairing (U39) is the repair, so `declarer-residue
+  --emit-moves` writes 7 adds, 8 drops and 7 override rows; it supersedes the `resize 0x0002f13c 2282`
+  this file already carried (a repair of a fragment's end, which the add now claims whole) and
+  retargets `0x0002f820`'s drop, whose target is itself dropped, to the enclosing add.
+- **The rule that bounds the other three.** A `jmp *disp(,%reg,4)` in the span names the dword table the
+  dispatch reads, and the table is laid behind the last instruction (a `lea r,[r+0]` nop at most), so a
+  terminator whose successor is that table ends the body with no pad run after it. Mover 419 bytes,
+  D3DRenderDevice 83, GUIController 1601 -- before the rule each closed inside the next class's body
+  (GUIController exactly at slot 35's end, 1,800 bytes later).
+- **Numbers.** Map 16,621 -> 16,620 rows, 4,217,715 -> 4,223,304 bytes of code; gap census 2,599 ->
+  2,591 heads; declarer census 459 -> 449 (0 declared); this residue 32 -> 25 bodies, `move 0`. Native
+  naming 51.54% -> 51.56%.
+- **A snapshot artifact had to say it is one.** `module_export_census --check` failed with "7 address(es)
+  not in function_modules.csv": its rows come from an export round and 8 of them are bodies the map has
+  since folded. The check now reads the `drop` rows in `symbols/xbe_boundaries.csv` and counts them (19
+  export(s) fold into an enclosing row) rather than failing, because an export round is not a claim
+  about the current map.
+- **Files.** `tools/declarer-residue.py` (the switch-table bound, the interior-row classification, the
+  `inside` column, `--emit-moves` with its supersede/retarget pass, three new self-tests),
+  `tools/module-export-census.py` (the fold tolerance), `symbols/xbe_boundaries.csv` (7 add + 8 drop),
+  `symbols/xbe_overrides.csv` (+7), `symbols/xbox_functions.csv`, `symbols/xbox.map`,
+  `inventory/declarer_residue.csv`, `inventory/class_slot_declarers.csv`, `inventory/gap_heads.csv`,
+  `inventory/function_modules.csv`, `inventory/function_module_attribution.csv`,
+  `inventory/xbe_functions_by_module.csv`, `inventory/stat_scope_uses.csv`,
+  `inventory/module_export_plan.csv`, `inventory/audio_runtime.csv`, `docs/NATIVE.md`,
+  `docs/NATIVE_CLASS_TREE.md`, `docs/SYMBOLS.md`, `docs/STATUS.md`, `README.md`,
+  `docs/systems/CLASS_REGISTRATION.md`, `docs/UNKNOWNS.md`, this note.
+- **Gates.** `make ci` green; `--check` and `--check-doc` dump-free, the artifact reproduces byte for
+  byte on a second run, `--emit-moves` is idempotent (two runs, `cmp` identical) and
+  `symbol-boundaries --apply` answers 1,794 repairs / 16,620 functions. No boot, no xemu, no Ghidra.
+- **Not in this bundle.** The 18 bodies that need a name no image-side table carries (8 member bodies in
+  3 unlabelled member tables, 10 declarations on 7 class tables no registration names), the 807 bodies
+  no channel names, and the 424 interface-only bodies (U40's remaining half).
+
 ### Execution notes (2026-11-21, the three adds: two decoder refusals, and the map row each carried)
 
 - **Task.** The previous bundle measured the declarer walk's residue with objdump and left "the two addable

@@ -2309,24 +2309,24 @@ than inferred.
 <!-- generated:class-slot-declarers -->
 | what holds the body | bodies | share | name it earns |
 |---|---|---|---|
-| a class table, and the walk reaches the top of its chain | 10 | 2% | `<Class>_vt<slot>` |
+| a class table, and the walk reaches the top of its chain | 3 | 1% | `<Class>_vt<slot>` |
 | a class table no registration names, which the walk reaches by its parent edge | 7 | 2% | `<script>_vt<slot>` when an edge records the script super (0), none otherwise |
 | two independent declarations of one body | 4 | 1% | none (a conflict) |
 | a member table (a constructor stores it into a field) | 8 | 2% | `<Class>_member_<field>_vt<slot>` |
 | a class table the class map leaves unnamed | 3 | 1% | none (no class) |
-| interface tables only | 424 | 93% | none (an interface name) |
+| interface tables only | 424 | 94% | none (an interface name) |
 
-**The 456 bodies are 1120 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 538 sit-ins are class-table slots and 582 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
+**The 449 bodies are 1113 slot sit-ins over 724 tables, and a declared body sits in every descendant table that does not override the slot.** The census reads the 724 tables the project knows -- 492 class tables (478 with a class) and 232 interface tables -- and indexes every slot, because `inventory/gap_heads.csv`'s `slot_table` is the *first* table a reference happened to land in, not a declaration. 531 sit-ins are class-table slots and 582 are interface slots; the widest fan-out is **489 tables for one body**, so "the first table that holds it" is a choice among a subtree. The declarer is the highest class in the `extends` chain whose slot at that index still holds the body.
 
-**The control is the map's own names: 531 of 538 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
+**The control is the map's own names: 538 of 545 agree, 7 name a class that inherits the body, 0 could not be resolved.** Every `<Class>_vt<slot>` row in `symbols/xbox_functions.csv` is run through the same walk against its own class's table. The 7 derived rows are `XboxViewport_vt51`, `StrProperty_vt41`, `XboxViewport_vt54`, `TcpipConnection_vt39`, `GameEngine_vt33`, `GameEngine_vt54`, `GameEngine_vt55`: their class's table holds the body at that slot, and so does an ancestor's, so the name is a holder's and not the declarer's.
 
-**The gap census's own slot names survive the walk: 10 of 12 name the declarer, 0 name someone else, and 2 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
+**The gap census's own slot names survive the walk: 3 of 5 name the declarer, 0 name someone else, and 2 have no declarer to agree with.** The first-hit table agrees with the declaration walk where the subtree's root is the table the reference landed in, which is the common case; the artifact is what makes the difference checkable rather than assumed.
 
 **11 bodies sit at two or more slot indices**, which no single name can carry: `0x0001f9b0` (10/11), `0x00179930` (1/2), `0x00179b00` (7/8), `0x0017a7d0` (1/7), `0x001ddf20` (2/3/8), `0x001df4e0` (1/2/3), `0x001df570` (1/2), `0x001ec800` (7/8/30). The index set is recorded per body; the verdict is `conflict` only when two *classes* both declare it -- an interface slot beside a class slot is one method seen through two tables, not two declarations.
 
 **The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and `tools/declarer-residue.py` reads them as the linker's identical-code folds (one shortest shape held at two or more indices of classes that are neither ancestor nor descendant): `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
-**What the walk did with its names.** 246 of these bodies are map rows now -- 214 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 27224 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 10 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 424 are an interface's method, and 3 sit in a class table whose class the class map has not named.
+**What the walk did with its names.** 246 of these bodies are map rows now -- 214 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 27224 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 3 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 424 are an interface's method, and 3 sit in a class table whose class the class map has not named.
 
 <!-- /generated:class-slot-declarers -->
 
@@ -2413,8 +2413,9 @@ tables are the `.text` dwords `tools/gap-heads.py` already indexes.
 closes on `ret $0x10` at `0x00078b7a`, pad to `0x00078b7d`, before the row above at `0x00078b80` -- **157
 bytes** -- and `0x0007be00` (StructProperty slot 43) closes on `ret $0xc` at `0x0007c292`, pad to
 `0x0007c295`, before `0x0007c2a0` -- **1,173 bytes**. Neither span holds a map row, so each is a row the
-next add can carry. The 4 `check()`-cut bodies cannot be added: their spans hold one map row each, and a
-row is one address that cannot hold two.
+next add can carry. The 4 `check()`-cut bodies cannot be added as one contiguous row: their spans hold one map
+row each, and a row is one address that cannot hold two. ^ Corrected in the next section: that row
+is interior code no call and no class slot names, so the add claims the body and folds it.
 
 **Three of them were addable once the census stopped refusing valid instructions (2026-11-21).** The 13
 were never bodies without an end: on 10 the *census's own* decoder or tail rule refused a form the compiler
@@ -2485,18 +2486,11 @@ neither is a read the declaration walk owes.
 
 | the undecoded declarations | declarer | row above | it opens on | verdict | closes at | byte(s) | map rows inside |
 |---|---|---|---|---|---|---:|---:|
-| `0x0002f120` | XBoxAudioSubsystem | `XboxAudio_XboxAudioSubsystem` | assert-block | `island-cut` | `0x0002fa26` | 2310 | 1 |
-| `0x00032480` | XHVVoiceSubsystem | `XboxAudio_XHVVoiceSubsystem` | assert-block | `island-cut` | `0x0003266b` | 491 | 1 |
-| `0x000ffda0` | Canvas | `FUN_00100000` | code | `spans-row` | `0x0010056a` | 1994 | 1 |
-| `0x00155cf0` | Level | `Engine_UnLevAct` | assert-block | `island-cut` | `0x00155e72` | 386 | 1 |
-| `0x00173700` | MeshEmitter | `Core_UnClass` | assert-block | `island-cut` | `0x001744a5` | 3493 | 1 |
-| `0x001b28e0` | Mover | `FUN_001b2ab0` | code | `table-cut` | `0x001b330d` | 2605 | 3 |
-| `0x0021de30` | ShadowBitmapMaterial | `FUN_0021e478` | code | `spans-row` | `0x0021e9da` | 2986 | 1 |
-| `0x0027fe10` | Model | `FUN_00280020` | code | `spans-row` | `0x002805b5` | 1957 | 2 |
-| `0x002ae3e0` | D3DRenderDevice | `FUN_002ae4e0` | code | `table-cut` | `0x002ae4a3` | 195 | 0 |
-| `0x002fd640` | GUIController | `GUIController_vt35` | code | `table-cut` | `0x002fe3f8` | 3512 | 1 |
+| `0x001b28e0` | Mover | `FUN_001b2ab0` | code | `closes` | `0x001b2a83` | 419 | 0 |
+| `0x002ae3e0` | D3DRenderDevice | `FUN_002ae4e0` | code | `closes` | `0x002ae433` | 83 | 0 |
+| `0x002fd640` | GUIController | `GUIController_vt35` | code | `closes` | `0x002fdc81` | 1601 | 0 |
 
-**4 of the 10 declared bodies are cut by a check() block, not by the boundary the gap census drew.** On those the row above opens on `push; push; push; call` behind no padding -- an out-of-line `check()` block laid out inside the function, which the body branches over -- so the gap ends inside the body. 3 more close past a map row that is not a check() block, 3 cross an inline jump table first so a linear read cannot bound them, 0 close before the row above and are addable as measured, and 0 reach no terminator behind a pad run. The handler is one address on every check() block of them.
+**3 of the 3 declared bodies close before the next map row; 0 close past a row that is interior code.** On the second kind the row inside the body is an assert block, a block entry the body branches to, or bytes that are not an instruction boundary of its own decode -- no direct call and no class slot names it -- so `symbol-boundaries.py` adds the body at its declared start with the measured end and drops the interior row into it, and the body is addable without a boundary move. 0 more close at the dword table their own switch reads (the table sits behind the last instruction, so no pad run follows), 0 reach no terminator, and 0 hold a body of their own.
 
 | the residue with no name | byte(s) | kind | its blocker | what the name would need |
 |---|---:|---|---|---|
@@ -2522,11 +2516,60 @@ neither is a read the declaration walk owes.
 **18 bodies need a name no image-side table carries.** The 8 member bodies sit in 3 member tables whose owner the label pass refused, and the 10 declarations sit on 7 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
 <!-- /generated:declarer-residue -->
 
-**What this does not do.** It carries the three adds above and nothing else: the 4 `check()`-cut spans need
-a boundary move first (a `check()` block laid out inside the body is a row of its own, so the body's two
-halves cannot be one contiguous map row), the 3 that close past an ordinary map row need the same answer,
-the 3 that cross an inline jump table need the table walked rather than decoded, and the 7 unnamed class
-tables need a class the packages do not declare.
+**What this does not do.** The declared half of this residue is empty (the section below closes it); what
+stands is the 18 that need a name no image-side table carries -- 8 member bodies in 3 unlabelled member
+tables and 10 declarations on 7 class tables no registration names -- plus the 4 bodies the linker folded
+(one body read once per index) and the 807 bodies no channel names.
+
+## The declared residue closes: a false head is a move, a switch table is a boundary (2026-11-21)
+
+The previous bundle left 10 undecoded declarations with a measured end and no way to write it: the map
+already had a row inside every span, and one address cannot hold two rows. Two rules settle them, and
+with them the declared half of this residue is empty.
+
+**A map row inside the span that nothing calls is not a function.** `tools/declarer-residue.py` now
+classifies every row inside a declared body's measured span against two image-side claims: a direct
+`call`/`jmp` site in `.text` (read at instruction boundaries with objdump, not sprayed -- an `E8` byte
+inside another instruction's immediate invents a caller) and membership of a class slot
+(`class_slot_declarers.csv`'s control and head rows). A row with neither is interior code: an assert
+block carrying the `__FILE__` it pushes, a block entry the body branches to, or bytes that are not even
+an instruction boundary of the body's own decode. Eight rows fail both claims -- `0x0002f13c`,
+`0x000324d6`, `0x00155dab` and `0x00173988` open on the `check()` shape; `0x00100000` and `0x0021e478`
+are block entries the body's stream flows into; `0x00280020` and `0x00280064` are not on that stream at
+all (the Model body's own decode has no instruction start at either address, and the first is three
+bytes long). `symbol-boundaries.py` already pairs an `add` with a `drop` for exactly this shape (U39),
+so each body is added at the declared start with its measured end and the fragment dropped into it.
+`--emit-moves` writes those rows; it supersedes this file's `resize 0x0002f13c 2282` (a repair of such a
+fragment's *end*, which the add now claims whole) and retargets the drop `0x0002f820 -> 0x0002f13c`,
+whose target is itself dropped, to the add that encloses it.
+
+**A switch's own table bounds the body.** A `jmp *disp(,%reg,4)` inside the span names the dword table
+the case dispatch reads, and the compiler lays that table directly behind the function's last
+instruction -- a `lea r,[r+0]` alignment nop at most -- so a terminator whose successor is the table is
+the body's end even though no pad run follows it. Without the rule the linear read walked the table as
+code and closed on a terminator inside the next class's body (the GUIController body closed 1,800 bytes
+into slot 35's body, exactly at *its* end):
+
+| body | declarer | slot | the table it reads | entries | byte(s) |
+|---|---|---:|---|---:|---:|
+| `0x001b28e0` | Mover | 82 | `0x001b2a84` | 7 | 419 |
+| `0x002ae3e0` | D3DRenderDevice | 49 | `0x002ae434` | 6 | 83 |
+| `0x002fd640` | GUIController | 32 | `0x002fdc84` | - | 1601 |
+
+**The move ran, and the declared half is empty.** The map goes **16,621 -> 16,620 rows** (7 adds, 8
+drops) and **4,217,715 -> 4,223,304 bytes of code**; the gap census 2,599 -> **2,591 heads**, the
+declarer census 459 -> **449 heads** (0 declared, 8 member, 3 unnamed-table, 4 conflict, 424
+interface), and this residue 32 -> **25 bodies** with `move 0`. Every one of the walk's 224 declared
+bodies now has a map row. The 7 names are the declarers' (`XBoxAudioSubsystem_vt36`,
+`XHVVoiceSubsystem_vt32`, `Canvas_vt42`, `Level_vt47`, `MeshEmitter_vt39`,
+`ShadowBitmapMaterial_vt47`, `Model_vt31`) -- none of the dropped rows was a function name: four were
+the `__FILE__` an assert pushes, and three were addresses Ghidra started on bytes that are not an
+instruction boundary.
+
+**One artifact was a snapshot and had to say so.** `inventory/module_export_census.csv` is the record of
+an export round, so 8 of its rows are bodies the map has since folded; its `--check` now reads
+`symbols/xbe_boundaries.csv`'s `drop` rows and counts them (19 export(s) the map folds into an enclosing
+row) instead of failing on them, because an export round is not a claim about the current map.
 
 ## Regenerating, continued
 
@@ -2543,6 +2586,8 @@ slot vectors:
 
     SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/declarer-residue.py \
         --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/declarer-residue.py --emit-moves        # add/drop rows for a `move` verdict
+    python3 tools/symbol-boundaries.py --apply            # rewrite the map from those rows
     python3 tools/declarer-residue.py --write-doc docs/systems/CLASS_REGISTRATION.md
 
 

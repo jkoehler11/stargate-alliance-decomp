@@ -64,6 +64,7 @@ CSV_PATH = os.path.join(ROOT, "inventory", "module_export_census.csv")
 # no generator). Keep it split.
 ROUNDS = os.path.join(ROOT, "inventory", "module_export_" "rounds.csv")
 MODULES = os.path.join(ROOT, "inventory", "function_modules.csv")
+BOUNDARIES = os.path.join(ROOT, "symbols", "xbe_boundaries.csv")
 # `function_modules.csv` is the assert-only rule, so a locality-attributed function sits there as
 # `(unnamed)`; the union is in `function_module_attribution.csv`, which is the list the export used.
 ATTRIBUTION = os.path.join(ROOT, "inventory", "function_module_attribution.csv")
@@ -369,6 +370,14 @@ def check(path=CSV_PATH):
     known = {}
     for r in read_csv(MODULES):
         known[r["address"]] = r
+    # An export round is a snapshot: a body the map has since folded into an enclosing row (the `drop`
+    # repairs in symbols/xbe_boundaries.csv) is not a function the map is missing, and the exported file
+    # it came from still exists under $WORK. Count those rather than failing on them.
+    folded = {}
+    if os.path.exists(BOUNDARIES):
+        for b in read_csv(BOUNDARIES):
+            if (b.get("action") or "").strip() == "drop":
+                folded[b["address"]] = (b.get("target") or "").strip()
     union, method = {}, {}
     if os.path.exists(ATTRIBUTION):
         for r in read_csv(ATTRIBUTION):
@@ -377,7 +386,8 @@ def check(path=CSV_PATH):
     moved = []
     rethunked = []
     sized = []
-    missing = [r["address"] for r in rows if r["address"] not in known]
+    missing = [r["address"] for r in rows if r["address"] not in known
+               and r["address"] not in folded]
     if missing:
         bad.append("%d address(es) not in function_modules.csv, e.g. %s"
                    % (len(missing), ", ".join(missing[:3])))
@@ -438,10 +448,11 @@ def check(path=CSV_PATH):
     print("module-export-census: %d rows reconcile with %s (%d modules), function_modules.csv and "
           "themselves; %d propagated label(s) moved since the export round%s; %d thunk(s) named "
           "after their target; %d size extent(s) differ; %d attributed body(ies) the analysis holds "
-          "no function for"
+          "no function for%s"
           % (len(rows), os.path.basename(ROUNDS), len(per_module), len(moved),
              (" (" + ", ".join(moved[:6]) + (", ..." if len(moved) > 6 else "") + ")") if moved else "",
-             len(rethunked), len(sized), unexported))
+             len(rethunked), len(sized), unexported,
+             "; %d export(s) the map folds into an enclosing row" % len(folded) if folded else ""))
     return 0
 
 

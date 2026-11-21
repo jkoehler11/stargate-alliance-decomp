@@ -6110,5 +6110,20 @@ that segment), so its 0 was a decoder artifact and stands at 403 bodies now; onl
 the 807 bodies named by nothing, the 4 bodies a `check()` block cuts in half (a row of their own inside the
 function, so one contiguous map row cannot carry them), the 3 that close past an ordinary row and the 3 that
 cross an inline jump table.
+**Answered since (2026-11-21, the declared residue closes).** Two rules finished the walk's 13
+undecoded declarations. A map row inside a declared body's measured span that no direct `call`/`jmp`
+site and no class slot holds is **interior code**, not a function -- an assert block, a block entry the
+body's stream flows into, or bytes that are not an instruction boundary of that stream -- and
+`symbol-boundaries.py`'s `add`+`drop` pairing is the repair, so 7 bodies were added at their declared
+start with their measured end and 8 fragments folded into them (4 `check()` blocks, 2 block entries, 2
+addresses Ghidra started off the stream). A switch's own dword table (`jmp *disp(,%reg,4)`) is laid
+behind the function's last instruction, so a terminator whose successor is that table bounds the body
+with no pad run after it -- Mover 419 bytes, D3DRenderDevice 83, GUIController 1601, where a linear read
+had closed inside the next class's body. The map is 16,620 rows / 4,223,304 bytes over 16,621 / 4,217,715,
+the gap census 2,599 -> 2,591 heads, the declarer census 459 -> 449, and **0 declared bodies remain**.
+What is left of this entry: the 8 member bodies in three unlabelled member tables, the 10 declarations on
+7 class tables no registration names, the 4 linker-folded bodies, the 424 interface-only bodies and the
+807 bodies no channel names.
+
 
 
