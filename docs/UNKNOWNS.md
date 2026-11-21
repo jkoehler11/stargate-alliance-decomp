@@ -6071,4 +6071,25 @@ declaration, so their add is settled as blocked on an *interface* name, not on a
 bodies are disjoint from the **807** bodies named by nothing (counted over the 2,749 decoded bodies, not the
 2,850 heads): a slot is a reference and those 807 have none, so the two residues are separate work.
 
+**Answered since (2026-11-21, what stops the walk's 35 residue bodies).** The declarer walk above leaves 35
+bodies under a reason rather than a name, and `tools/declarer-residue.py` reads each reason against the image
+with objdump as the instruction reader (`inventory/declarer_residue.csv`, 35 body rows and a census), because
+the gap census's shape decoder is itself under test. **All 13 undecoded declarations close.** Four are cut by
+an out-of-line `check()` block -- the row above opens `push line; push file; push function; call 0x0058a30`
+behind no padding and the body branches over it (`0x0002f120` XBoxAudioSubsystem vt36, `0x00032480`
+XHVVoiceSubsystem vt32, `0x00155cf0` Level vt47, `0x00173700` MeshEmitter vt39), so the gap ends inside the
+body; three close past a map row that is not a `check()` block; four cross an inline jump table, which a
+linear read cannot bound; and two close before the row above and are addable as measured -- `0x00078ae0`
+FixedArrayProperty vt42 at **157 bytes** and `0x0007be00` StructProperty vt43 at **1,173 bytes**, neither
+span holding a map row. **The 4 conflicts are the linker's identical-code folding**: a 1-byte `ret`, a 4-byte
+`mov eax,[ecx+0x38]; ret` and a 21-byte getter pair, each held at two or more slot indices of classes that are
+neither ancestor nor descendant, against the map's own **105 duplicate groups over 805 bodies** as the
+control, so the page's "not decided here" is decided. **The 18 named by nothing** split into 8 member bodies
+in three unlabelled member tables (`0x0051724c` field `0x38`, `0x0053f7f0` and `0x0053f888` field `0x8`) and
+10 declarations on 7 class tables no registration names -- whose children the registration does name
+(`ObjectExporterT3D`, `TextBufferFactory`, `XboxClient`, `ChannelDownload`/`HTTPDownload`,
+`DemoPlayPendingLevel`/`NetPendingLevel`, the property classes, `IndexBuffer`/`SkinVertexBuffer`) -- so the
+name needs an owner for a field or a class for a parent table, and the five parents that could be guessed are
+in neither `Core.u`'s nor `Engine.u`'s `ScriptText`.
+
 

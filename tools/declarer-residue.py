@@ -433,7 +433,7 @@ def render(rows):
                    re.match(r"$", "")).group(0) or "not measured"))
     out.append("")
     out.append("| the undecoded declarations | declarer | row above | it opens on | verdict | closes at | "
-               "byte(s) | heads inside |")
+               "byte(s) | map rows inside |")
     out.append("|---|---|---|---|---|---|---:|---:|")
     for r in s["declared"]:
         out.append("| `%s` | %s | `%s` | %s | `%s` | `%s` | %s | %s |"

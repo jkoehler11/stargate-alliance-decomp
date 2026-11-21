@@ -2324,7 +2324,7 @@ than inferred.
 
 **11 bodies sit at two or more slot indices**, which no single name can carry: `0x0001f9b0` (10/11), `0x00179930` (1/2), `0x00179b00` (7/8), `0x0017a7d0` (1/7), `0x001ddf20` (2/3/8), `0x001df4e0` (1/2/3), `0x001df570` (1/2), `0x001ec800` (7/8/30). The index set is recorded per body; the verdict is `conflict` only when two *classes* both declare it -- an interface slot beside a class slot is one method seen through two tables, not two declarations.
 
-**The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and whether the linker folded two identical functions or both were built from one stub is not decided here: `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
+**The 4 conflicts are one body two independent classes both declare** -- the two tables point at the same address, and `tools/declarer-residue.py` reads them as the linker's identical-code folds (one shortest shape held at two or more indices of classes that are neither ancestor nor descendant): `0x000624e0` at slot 17; `0x001b9040` at slot 34; `0x001b9060` at slot 35; `0x001ec800` at slots 7/8/30.
 
 **What the walk did with its names.** 243 of these bodies are map rows now -- 211 named `<Class>_vt<slot>` from the declaration, 32 a member's method -- 25433 bytes, each through `symbols/xbe_boundaries.csv` with the `xbe_overrides.csv` creation row a fresh import needs, and each named after its **declarer**, never the first table that held the pointer. 13 bodies earn a name the decode cannot carry, because a name is not a size. What is left is a name, not a read: 423 are an interface's method, and 3 sit in a class table whose class the class map has not named.
 
@@ -2354,12 +2354,13 @@ rest -- so each is named `<member>_vt<slot>`, which says it is that member's met
 The other 8 sit in a member table the label pass refused (no owner, or more than one field offset), so the
 method is real and its owner is the open question.
 
-**The 4 conflicts are one body two independent classes both declare**: `0x000624e0` (`Object` slot 17 and
-`GameInfo` slot 17), `0x001b9040` and `0x001b9060` (`PSDistortionBaseMaterial` and `PSBlurMaterial`, slots
-34 and 35) and `0x001ec800` (four `VertexStream*` classes at slots 7, 8 and 30). Whether the linker folded
-two identical functions into one or the tables were built from one stub is not decided here; what is decided
-is that no single `<Class>_vt<slot>` name carries them, and 20 bodies in all sit at two or more slot indices,
-which the artifact records per body.
+**The 4 conflicts are one body two independent classes both declare, and the linker folded them**:
+`0x000624e0` (`Object` slot 17 and `GameInfo` slot 17), `0x001b9040` and `0x001b9060`
+(`PSDistortionBaseMaterial` and `PSBlurMaterial`, slots 34 and 35) and `0x001ec800` (four `VertexStream*`
+classes at slots 7, 8 and 30). The residue read below finds the fold in the bytes -- the same shortest shapes
+emitted once and held at two or more indices of classes that are neither ancestor nor descendant -- so no
+single `<Class>_vt<slot>` name carries them; 20 bodies in all sit at two or more slot indices, which the
+artifact records per body.
 
 **The 701 slot bodies and the 807 bodies named by nothing do not overlap, and that is structural.** A slot
 is a dword reference, so a body in a table slot is named by the pointer channel by construction; the 807 of
@@ -2377,12 +2378,122 @@ unnamed-table and 423 interface. Each add row stays in the artifact as its recei
 gap head, so the row is the only record of what it was called -- and `--check` (no dump, no Ghidra) requires
 every receipt to be a map row at that address with that name, named after its declarer, and no longer a head.
 
-**What the add refuses is a measured list, not a remainder.** 13 of the 224 declared bodies earn a name the
-decode cannot carry -- every one has an empty `size` in `gap_heads.csv`, because its decode never closed on a
-`ret`, `ret imm`, `jmp` or `jmp-ind`, and an `add` with a guessed size moves every later row's address. The 4
+**What the add refuses is a measured list, not a remainder.** 13 of the 224 declared bodies earn no size
+from the gap census -- every one is empty in `gap_heads.csv`, because the census's shape decoder closed on no
+`ret`, `ret imm`, `jmp` or `jmp-ind` -- and an `add` with a guessed size moves every later row's address. Read
+with objdump, 2 of the 13 close before the row above (157 and 1,173 bytes) and are addable, 4 are cut by a
+`check()` block the body branches over, 3 close past a map row that is not one, and 4 cross an inline jump
+table; the section below reads each one. The 4
 conflicts, the 3 unnamed-table slots and the 7 declared-unnamed bodies need a class or a linker reading first.
 So 243 of the 256 bodies this walk names are rows now, and the 13 that are not are the ones the image has not
 decoded yet.
+
+## What stops the 13, and the fold behind the 4 (2026-11-21)
+
+The declaration walk above leaves 35 bodies under a reason rather than a name: 13 declared bodies whose
+linear decode never closes (so they earn no size), 8 in a member table the label pass refused, 4 that two
+independent classes declare, 3 in a class table no registration names and 7 declared by one.
+`tools/declarer-residue.py` reads each of those reasons against the image with **objdump** as the
+instruction reader (`inventory/declarer_residue.csv`, 35 body rows and a census), because the gap census's
+linear shape decoder is itself one of the things under test: it refuses on instruction forms it does not
+model, and that refusal is a property of the decoder rather than of the body.
+
+**All 13 close, and 4 of them are cut by a `check()` block rather than by a function boundary.**
+`inventory/gap_heads.csv` ends a gap at the next map row. On `0x0002f120` (XBoxAudioSubsystem slot 36),
+`0x00032480` (XHVVoiceSubsystem 32), `0x00155cf0` (Level 47) and `0x00173700` (MeshEmitter 39) that row
+opens on `push line; push file; push function; call 0x0058a30` and stands behind **no padding**, and the
+body branches over it -- the `jp` at `0x0002f13a` skips the block at `0x0002f13c` to `0x0002f153`. That is
+an out-of-line `check()` failure block laid out inside the function: one handler serves all four, and the
+gap ends inside the body. Three more close past a map row that is **not** a `check()` block (`0x000ffda0`
+Canvas 42, `0x0021de30` ShadowBitmapMaterial 47, `0x0027fe10` Model 31), and four cross an inline jump table
+first (`0x0007bc10`, `0x001b28e0`, `0x002ae3e0`, `0x002fd640`), so a linear read cannot bound them -- those
+tables are the `.text` dwords `tools/gap-heads.py` already indexes.
+
+**Two of the 13 are addable as measured; the other 11 are not.** `0x00078ae0` (FixedArrayProperty slot 42)
+closes on `ret $0x10` at `0x00078b7a`, pad to `0x00078b7d`, before the row above at `0x00078b80` -- **157
+bytes** -- and `0x0007be00` (StructProperty slot 43) closes on `ret $0xc` at `0x0007c292`, pad to
+`0x0007c295`, before `0x0007c2a0` -- **1,173 bytes**. Neither span holds a map row, so each is a row the
+next add can carry. The 4 `check()`-cut bodies cannot be added: their spans hold one map row each, and a
+row is one address that cannot hold two.
+
+**The 4 conflicts are the linker's identical-code folding, which settles a question this page left open.**
+The bodies are 1 byte (`ret` -- `Object` slot 17 and `GameInfo` slot 17), 4 bytes
+(`mov eax,[ecx+0x38]; ret` -- the four `VertexStream*` classes at slots 7, 8 and 30) and 21 bytes (the
+`PSDistortionBaseMaterial`/`PSBlurMaterial` getter pair at slots 34 and 35). Each is a **different method in
+a different class that the linker emitted once**: the same byte run sits at two or more slot indices of
+classes that are neither ancestor nor descendant, and the map's byte-duplicate census is the control --
+**105 duplicate groups over 805 bodies** in a 16,618-row map, so this build does fold. "Two independent
+declarations" is therefore one folded body read once per index, no single `<Class>_vt<slot>` name carries
+it, and the artifact says `fold` rather than "not decided".
+
+**The 18 need a name no table on the image side carries.** The 8 member bodies sit in three member tables
+the label pass refused -- `0x0051724c` (2 bodies, field `0x38`), `0x0053f7f0` (3, field `0x8`) and
+`0x0053f888` (3, field `0x8`) -- so the method is real and its owner is the open question. The 10
+declarations sit on **7** class tables no registration names, and the registration *does* name their
+children: `0x004d34d8` -> `ObjectExporterT3D`, `0x004d3af0` -> `TextBufferFactory`, `0x004c94b0` ->
+`XboxClient`, `0x004fcfe0` -> `ChannelDownload` and `HTTPDownload`, `0x004fc588` ->
+`DemoPlayPendingLevel` and `NetPendingLevel`, `0x004d17a8` -> the property classes (`ArrayProperty`,
+`BoolProperty`, ...) and `0x00517860` -> `IndexBuffer` and `SkinVertexBuffer`. The parent's own name is the
+one thing missing, and it is not in the shipped `ScriptText`: `tools/pkg-script-text.py --class Property`,
+`ObjectExporter`, `TextBuffer`, `Download` and `PendingLevel` each answer *no matching class* in `Core.u` and
+`Engine.u`. The first residue needs an owner for a field and the second a class for a parent table, and
+neither is a read the declaration walk owes.
+
+<!-- generated:declarer-residue -->
+| the four bodies two classes declare | byte(s) | the body | declarations |
+|---|---:|---|---|
+| `0x000624e0` | 1 | `c3` | Object_vt17 (held by 474); GameInfo_vt17 (held by 1) |
+| `0x001b9040` | 21 | `8b417485c0740a8bc88b01ffa0880000008b4158c3` | PSDistortionBaseMaterial_vt34 (held by 6); PSBlurMaterial_vt34 (held by 1) |
+| `0x001b9060` | 21 | `8b417485c0740a8bc88b01ffa08c0000008b415cc3` | PSDistortionBaseMaterial_vt35 (held by 6); PSBlurMaterial_vt35 (held by 1) |
+| `0x001ec800` | 4 | `8b4138c3` | VertexBuffer_vt30 (held by 1); VertexStreamVECTOR_vt30 (held by 1); VertexStreamCOLOR_vt30 (held by 1); VertexStreamUV_vt30 (held by 1); VertexStreamPosNormTex_vt30 (held by 1) |
+
+**The 4 conflict bodies are folded bodies, not declarations.** Each is one of the build's smallest shapes held at two or more slot indices in classes that are neither ancestor nor descendant: a 1-byte `ret` at slot 17 of two class tables, a 4-byte `mov eax,[ecx+0x38]; ret` at slots 7, 8 and 30 of five, and a 21-byte getter pair at slots 34 and 35 of two. The linker emitted one body for identical methods, so the walk reads the same dword once per index. The map's own byte-duplicate groups are the control: the map's 105 duplicate group(s) cover 805 bodies.
+
+| the undecoded declarations | declarer | row above | it opens on | verdict | closes at | byte(s) | map rows inside |
+|---|---|---|---|---|---|---:|---:|
+| `0x0002f120` | XBoxAudioSubsystem | `XboxAudio_XboxAudioSubsystem` | assert-block | `island-cut` | `0x0002fa26` | 2310 | 1 |
+| `0x00032480` | XHVVoiceSubsystem | `XboxAudio_XHVVoiceSubsystem` | assert-block | `island-cut` | `0x0003266b` | 491 | 1 |
+| `0x00078ae0` | FixedArrayProperty | `FixedArrayProperty_vt43` | code | `closes` | `0x00078b7d` | 157 | 0 |
+| `0x0007bc10` | StructProperty | `FUN_0007c2a0` | code | `table-cut` | `0x0007c295` | 1669 | 0 |
+| `0x0007be00` | StructProperty | `FUN_0007c2a0` | code | `closes` | `0x0007c295` | 1173 | 0 |
+| `0x000ffda0` | Canvas | `FUN_00100000` | code | `spans-row` | `0x0010056a` | 1994 | 1 |
+| `0x00155cf0` | Level | `Engine_UnLevAct` | assert-block | `island-cut` | `0x00155e72` | 386 | 1 |
+| `0x00173700` | MeshEmitter | `Core_UnClass` | assert-block | `island-cut` | `0x001744a5` | 3493 | 1 |
+| `0x001b28e0` | Mover | `FUN_001b2ab0` | code | `table-cut` | `0x001b330d` | 2605 | 3 |
+| `0x0021de30` | ShadowBitmapMaterial | `FUN_0021e478` | code | `spans-row` | `0x0021e9da` | 2986 | 1 |
+| `0x0027fe10` | Model | `FUN_00280020` | code | `spans-row` | `0x002805b5` | 1957 | 2 |
+| `0x002ae3e0` | D3DRenderDevice | `FUN_002ae4e0` | code | `table-cut` | `0x002ae4a3` | 195 | 0 |
+| `0x002fd640` | GUIController | `GUIController_vt35` | code | `table-cut` | `0x002fe3f8` | 3512 | 1 |
+
+**4 of the 13 declared bodies are cut by a check() block, not by the boundary the gap census drew.** On those the row above opens on `push; push; push; call` behind no padding -- an out-of-line `check()` block laid out inside the function, which the body branches over -- so the gap ends inside the body. 3 more close past a map row that is not a check() block, 4 cross an inline jump table first so a linear read cannot bound them, 2 close before the row above and are addable as measured, and 0 reach no terminator behind a pad run. The handler is one address on every check() block of them.
+
+| the residue with no name | byte(s) | kind | its blocker | what the name would need |
+|---|---:|---|---|---|
+| `0x00034be0` | 43 | `declared-unnamed` | class table, no registration `0x004d34d8` | a class for the declarer table |
+| `0x00036a80` | 5 | `declared-unnamed` | class table, no registration `0x004d3af0` | a class for the declarer table |
+| `0x000fde10` | 32 | `declared-unnamed` | class table, no registration `0x004c94b0` | a class for the declarer table |
+| `0x0011e730` | 23 | `declared-unnamed` | class table, no registration `0x004fcfe0` | a class for the declarer table |
+| `0x0011ea30` | 605 | `declared-unnamed` | class table, no registration `0x004fcfe0` | a class for the declarer table |
+| `0x0011f0e0` | 1499 | `declared-unnamed` | class table, no registration `0x004fcfe0` | a class for the declarer table |
+| `0x001a5330` | 46 | `declared-unnamed` | class table, no registration `0x004fc588` | a class for the declarer table |
+| `0x001df4e0` | 4 | `member` | unlabelled member table `0x0051724c` | a label for the member table's owner |
+| `0x001dfe40` | 7 | `member` | unlabelled member table `0x0051724c` | a label for the member table's owner |
+| `0x00332362` | 25 | `member` | unlabelled member table `0x0053f7f0` | a label for the member table's owner |
+| `0x00332d12` | 56 | `member` | unlabelled member table `0x0053f7f0` | a label for the member table's owner |
+| `0x00332d4a` | 17 | `member` | unlabelled member table `0x0053f7f0` | a label for the member table's owner |
+| `0x00332fb9` | 16 | `member` | unlabelled member table `0x0053f888` | a label for the member table's owner |
+| `0x003332a0` | 29 | `member` | unlabelled member table `0x0053f888` | a label for the member table's owner |
+| `0x003332bd` | 19 | `member` | unlabelled member table `0x0053f888` | a label for the member table's owner |
+| `0x00036a70` | 5 | `unnamed-table` | class table, no registration `0x004d3af0` | a class for the declarer table |
+| `0x00077850` | 3 | `unnamed-table` | class table, no registration `0x004d17a8` | a class for the declarer table |
+| `0x001eb1d0` | 32 | `unnamed-table` | class table, no registration `0x00517860` | a class for the declarer table |
+
+**18 bodies need a name no image-side table carries.** The 8 member bodies sit in 3 member tables whose owner the label pass refused, and the 10 declarations sit on 7 class tables no registration names while the registration does name their children -- so the first needs an owner for a field and the second a class for a parent table, and neither is a read the declaration walk owes.
+<!-- /generated:declarer-residue -->
+
+**What this does not do.** It adds no map row: the two addable sizes are measured and left to the add (a row
+moves `symbols/`, `module-split`, `native-summary`, `module-census` and `status`), the 4 `check()`-cut spans
+need a boundary move first, and the 7 unnamed class tables need a class the packages do not declare.
 
 ## Regenerating, continued
 
@@ -2396,6 +2507,11 @@ slot vectors:
     SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/class-slot-declarers.py \
         --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
     python3 tools/class-slot-declarers.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/declarer-residue.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/declarer-residue.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
 
     python3 tools/class-interface-families.py -o inventory
     python3 tools/class-interface-families.py --write-doc docs/systems/CLASS_REGISTRATION.md
