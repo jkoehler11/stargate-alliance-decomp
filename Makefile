@@ -1544,8 +1544,8 @@ class-orphan-tables:
 # The 68 classes a `<Class>_vt<slot>` name needs that no shipped `.u` declares: the package is the
 # registration site's body. Committed CSVs in, CSV out -- no dump.
 native-class-packages:
-	@$(PYTHON) tools/native-class-packages.py -o inventory
-	@$(PYTHON) tools/native-class-packages.py --write-doc docs/NATIVE_CLASS_TREE.md
+	@$(PYTHON) tools/native-class-packages.py -o .
+	@$(PYTHON) tools/native-class-packages.py --write-doc
 
 # The 250 class tables no registration reaches, by the installer's own call sites (U40). Committed CSVs
 # in, CSV out -- no dump.
