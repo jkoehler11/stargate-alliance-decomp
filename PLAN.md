@@ -15857,3 +15857,52 @@ sequence.
   from the committed CSV with no dump; the artifact reproduces byte for byte on a second run.
 - **Not in this bundle.** The 12 second tables written only at `[reg]` (a per-body field read), the 153
   nameless tables called only from unnamed bodies, and the 399 bodies nothing names.
+
+
+### Execution notes (2026-11-20, the store's pointer is a member's or a base level's, and the twelve were neither)
+
+- **The twelve tables written only at `[reg]` are not a second array of the owner's object.** Every one is
+  stored by a body that moves `ecx` into a register first (`mov esi,ecx`, the thiscall prologue), so the
+  store's base *is* the callee's own object -- and the callee is not the owner's constructor: read at the
+  call sites, five resolve to a **base level** (the caller writes its own table at `[reg]` and then calls
+  this body with the same `this`, which is what a destructor or constructor level does), four to the
+  address of a **caller's member** (`lea ecx,[esi+0x60]`), one to an **allocation** (`mov ecx,eax` after a
+  call) and two to a **mix**. Not one is the owner's own object, which is what "the class builds it a
+  second time" required.
+- **The five base levels are the five parent edges, reached from the other end.** `0x004c93d0`,
+  `0x004c94b0`, `0x004d2400`, `0x004d34d8` and `0x004d3af0` are exactly the `parent_va` of `XboxViewport`,
+  `XboxClient`, `XHVVoiceSubsystem`, `ObjectExporterT3D` and `TextBufferFactory` in
+  `inventory/class_table_parent_edges.csv`, which found them from the destructor thunk; the call-site read
+  does not use that artifact and agrees 5 of 5. Naming that level stays the class tree's question.
+- **The member offset is measured twice on six tables, with 0 disagreements.** Where the store's own
+  `[reg+disp]` and the caller's `lea ecx,[reg+disp]` are both in the image (`0x0051bc08` `0x164`/`0xd8`,
+  `0x0051bc10`, `0x0051bf18`, `0x0051bf20`, `0x0051bf28`, `0x0051d854`) the two channels agree on all six,
+  so `<Class>_member_<field>` from either side is the same field.
+- **The twenty `frame-only` tables resolve, and none is "installed nowhere".** Their own store writes a
+  stack slot; read at the call site they split 4 frame slots, 2 allocations, 2 globals, 1 own object, 6
+  mixed and 5 with no direct caller -- an object built in place (a temporary, a by-value argument, an
+  element of a local array) or a `.data` singleton. The five globals are named: `0x005174a8` into
+  `0x7ab9e8`/`0x7aba2c`, `0x00517588` into `0x7ab9d8`/`0x7aba1c`, `0x0053a194` into `0x7b9360`, each behind a
+  one-shot flag.
+- **The three `no-store` tables were a decoding bug in the store census.** `tools/class-table-store-fields.py`
+  swept `C7 05 <disp32> <imm32>` as six bytes, so the "table" it recorded was the store's displacement and
+  an absolute store was invisible: the three tables are written into globals, and three more tables
+  (`0x0053f718`, `0x0053f7f0`, `0x0053f808`) gain a global site. The census now reads 20 `frame-only` and
+  3 `global`; its selftest pins the ten-byte form and fails on the old read (three ways).
+- **The register-carried install is real but rare, and it is the negative the census needed.** A
+  `mov reg,<table>` followed by `mov [reg2(+disp)],reg` installs a table without an immediate in the store,
+  which is the one shape a `C7 /0` sweep cannot see; over all 724 tables it adds **one** table
+  (`0x004d0d80`), which has an immediate store anyway -- so the immediate census is not missing a
+  population, and the `frame-only`/`no-store` buckets were not hiding a register channel.
+- **Files.** `tools/class-store-provenance.py`, `inventory/class_store_provenance.csv`,
+  `tools/class-table-store-fields.py` (the ten-byte operand fix and its selftest),
+  `inventory/class_table_store_fields.csv`, `docs/systems/CLASS_REGISTRATION.md` (the new section, its
+  block, the corrected counts, the corrected paragraph), `docs/UNKNOWNS.md` (U40 rewritten),
+  `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`, `Makefile`, this note.
+- **Gates.** `make ci` green; `--check` is a synthetic image (a thiscall prologue, a member load, a nested
+  member, a frame slot, a global load, a call's return, four call-site `ecx` forms, the ten-byte absolute
+  store, five register-store pairs and every verdict) and writes nothing; `--check-doc` rebuilds the block
+  from the committed CSV with no dump; the store census's own selftest was proved to bite by restoring the
+  six-byte read (it reports the displacement `0x5fe168` as a table and fails twice).
+- **Not in this bundle.** Naming the five base levels, the 79 mixed tables' receivers, the 21 tables no
+  body calls directly, and the 399 bodies nothing names.
