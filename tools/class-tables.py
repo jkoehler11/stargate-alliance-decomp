@@ -159,32 +159,28 @@ def self_test():
     return 0
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("xbe", nargs="?")
-    ap.add_argument("-o", "--out", default="inventory")
-    ap.add_argument("--symbols", default="symbols/xbox_functions.csv", help="for naming only")
-    ap.add_argument("--target", default="0x0004bf20", help="dispatched function (default ProcessEvent)")
-    ap.add_argument("--slot", type=int, default=DEFAULT_SLOT,
-                    help="slot the target must occupy; hits whose prefix is not all function "
-                         "entries are dropped")
-    ap.add_argument("--check", action="store_true", help="synthetic self-test, no dump")
-    args = ap.parse_args()
-    if args.check:
-        sys.exit(self_test())
-    if not args.xbe:
-        ap.error("an xbe path is required (or --check)")
 
-    xbe = Xbe(args.xbe)
-    target = int(args.target, 16)
-    names, sizes = {}, {}
-    with open(args.symbols) as f:
-        for row in csv.DictReader(f):
-            names[int(row["address"], 16)] = row["name"]
-            sizes[int(row["address"], 16)] = int(row["size"])
+def wide_text(v):
+    """Two printable UTF-16 characters -- a wide string's first half, not a code pointer."""
+    lo, hi = v & 0xFFFF, (v >> 16) & 0xFFFF
+    return 0x20 <= lo <= 0x7E and 0x20 <= hi <= 0x7E
+
+
+def read_entries(xbe, va, limit=4096):
+    """The dwords from `va` to the end of its section (at most `limit`), the table's candidate run."""
+    for s in xbe.sections:
+        if s.va <= va < s.va + s.vsize:
+            i = (va - s.va) // 4
+            n = min(s.fsize, s.vsize) // 4
+            return [struct.unpack_from("<I", xbe.data, s.foff + 4 * (i + k))[0]
+                    for k in range(0, min(n - i, limit))]
+    raise KeyError("%#x is in no section" % va)
+
+
+def slot_rules(xbe, names, sizes):
+    """(`slot_kind`, `slot_ok`) for one image -- the body-start rule, defined once."""
     code = code_sections(xbe, names, sizes)
-    sib = load_sibling()
-    term = sib.terminator
+    term = load_sibling().terminator
 
     def in_code(v):
         for s in xbe.sections:
@@ -208,8 +204,7 @@ def main():
           preceded by six `.text` offsets): it is a slot, and refusing it truncated a 123-slot
           table to 18, which the ladder then read as its child being shorter than its parent.
         """
-        lo, hi = v & 0xFFFF, (v >> 16) & 0xFFFF
-        if 0x20 <= lo <= 0x7E and 0x20 <= hi <= 0x7E:
+        if wide_text(v):
             return "text"
         if v == 0 or not in_code(v):
             return "null"
@@ -224,8 +219,69 @@ def main():
             return "null"
         return "unconfirmed"
 
-    def slot_ok(v):
-        return slot_kind(v) != "text" and slot_kind(v) != "null"
+    return slot_kind, (lambda v: slot_kind(v) not in ("text", "null"))
+
+
+def measure(xbe, names, sizes, starts, slot=DEFAULT_SLOT):
+    """{start_va: row} for packed table starts, by the body-start extent rule.
+
+    `starts` is the address-ordered list of table starts. The rule lives here and nowhere else, so
+    a reader of these tables reads the same extent this artifact does instead of re-deriving one.
+    Its gate is the *class* population's: a body start is an exact map address at any alignment, a
+    terminator one past it, or one unconfirmed aligned dword in a section the map covers. It does
+    **not** lift to the 724-table population -- the interfaces' bodies sit in the XDK libraries in
+    `.rdata`, which the map covers 0.000 of, and ten of their tables start on an odd-aligned
+    `.text` dword (`0x003313ad`) -- which is why `tools/class-plain-tables.py` still counts by the
+    packed run.
+    """
+    slot_kind, slot_ok = slot_rules(xbe, names, sizes)
+    sib = load_sibling()
+    installs = sib.find_installs(xbe, starts[0], starts[-1] + 4 * 160)
+    rows = {}
+    for k, s in enumerate(starts):
+        ent = read_entries(xbe, s)
+        # The tables are packed, so a neighbour start bounds the run of code pointers that spills
+        # over from the next table.
+        bound = len(ent)
+        if k + 1 < len(starts):
+            bound = min(bound, (starts[k + 1] - s) // 4)
+        # ... and so does an install store of a *different* table VA inside the run. Never before
+        # the target slot: a table cannot be split ahead of its own ProcessEvent.
+        split = [v for v in installs if s + 4 * slot + 4 <= v < s + 4 * bound]
+        if split:
+            bound = min(bound, (min(split) - s) // 4)
+        n, stop, over = extent(ent, slot_ok, lambda v: legacy_ok(xbe, v), bound)
+        rows[s] = {"entries": ent, "slots": n, "stop": stop, "surplus": over,
+                   "split_at": min(split) if split else None,
+                   "unconfirmed": sum(1 for v in ent[:n] if slot_kind(v) == "unconfirmed")}
+    return rows
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("xbe", nargs="?")
+    ap.add_argument("-o", "--out", default="inventory")
+    ap.add_argument("--symbols", default="symbols/xbox_functions.csv", help="for naming only")
+    ap.add_argument("--target", default="0x0004bf20", help="dispatched function (default ProcessEvent)")
+    ap.add_argument("--slot", type=int, default=DEFAULT_SLOT,
+                    help="slot the target must occupy; hits whose prefix is not all function "
+                         "entries are dropped")
+    ap.add_argument("--check", action="store_true", help="synthetic self-test, no dump")
+    args = ap.parse_args()
+    if args.check:
+        sys.exit(self_test())
+    if not args.xbe:
+        ap.error("an xbe path is required (or --check)")
+
+    xbe = Xbe(args.xbe)
+    target = int(args.target, 16)
+    names, sizes = {}, {}
+    with open(args.symbols) as f:
+        for row in csv.DictReader(f):
+            names[int(row["address"], 16)] = row["name"]
+            sizes[int(row["address"], 16)] = int(row["size"])
+    sib = load_sibling()
+    slot_kind, slot_ok = slot_rules(xbe, names, sizes)
 
     hits = []
     for sec in xbe.sections:
@@ -245,40 +301,17 @@ def main():
     starts = sorted({h[2] for h in hits})
     by_start = {h[2]: h for h in hits}
 
-    cache = {}
-
     def entries(start):
-        if start in cache:
-            return cache[start]
-        sec, i, _ = by_start[start]
-        n = min(sec.fsize, sec.vsize) // 4
-        cache[start] = [struct.unpack_from("<I", xbe.data, sec.foff + 4 * (i - args.slot + k))[0]
-                        for k in range(0, min(n - (i - args.slot), 4096))]
-        return cache[start]
+        return rows[start]["entries"]
 
     # A run of code pointers is not a table: the linker packs several structures back to back and
     # only an install store says where one ends. One image-wide scan answers every table.
-    span_lo = starts[0]
-    span_hi = starts[-1] + 4 * 160
-    installs = sib.find_installs(xbe, span_lo, span_hi)
-
-    lengths, stopat, surplus, unconf, splitat = {}, {}, {}, {}, {}
-    for k, s in enumerate(starts):
-        ent = entries(s)
-        # The tables are packed, so a neighbour start bounds the run of code pointers that spills
-        # over from the next table.
-        bound = len(ent)
-        if k + 1 < len(starts):
-            bound = min(bound, (starts[k + 1] - s) // 4)
-        # ... and so does an install store of a *different* table VA inside the run. Never before
-        # the target slot: a table cannot be split ahead of its own ProcessEvent.
-        split = [v for v in installs if s + 4 * args.slot + 4 <= v < s + 4 * bound]
-        if split:
-            bound = min(bound, (min(split) - s) // 4)
-        n, stop, over = extent(ent, slot_ok, lambda v: legacy_ok(xbe, v), bound)
-        lengths[s], stopat[s], surplus[s] = n, stop, over
-        splitat[s] = min(split) if split else None
-        unconf[s] = sum(1 for v in ent[:n] if slot_kind(v) == "unconfirmed")
+    rows = measure(xbe, names, sizes, starts, args.slot)
+    lengths = {s: rows[s]["slots"] for s in starts}
+    stopat = {s: rows[s]["stop"] for s in starts}
+    surplus = {s: rows[s]["surplus"] for s in starts}
+    splitat = {s: rows[s]["split_at"] for s in starts}
+    unconf = {s: rows[s]["unconfirmed"] for s in starts}
 
     total = sum(lengths.values())
     moved = [s for s in starts if surplus[s]]
