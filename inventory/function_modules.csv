@@ -289,8 +289,7 @@ address,name,size,module,attributed_by,run
 0x0001e100,FUN_0001e100,2024,(unnamed),unattributed,203
 0x0001e8f0,FUN_0001e8f0,791,(unnamed),unattributed,204
 0x0001ec10,FUN_0001ec10,1673,(unnamed),unattributed,205
-0x0001f2a0,FUN_0001f2a0,35,(unnamed),unattributed,206
-0x0001f2c3,FUN_0001f2c3,446,(unnamed),unattributed,206
+0x0001f2a0,FUN_0001f2a0,481,(unnamed),unattributed,206
 0x0001f490,FUN_0001f490,289,(unnamed),unattributed,207
 0x0001f5c0,FUN_0001f5c0,381,(unnamed),unattributed,208
 0x0001f7b0,FUN_0001f7b0,67,(unnamed),unattributed,209
@@ -476,8 +475,7 @@ address,name,size,module,attributed_by,run
 0x00024b00,FUN_00024b00,242,(unnamed),unattributed,253
 0x00024c00,FUN_00024c00,49,(unnamed),unattributed,254
 0x00024c40,FUN_00024c40,64,(unnamed),unattributed,255
-0x00024c80,FUN_00024c80,35,(unnamed),unattributed,255
-0x00024ca3,FUN_00024ca3,455,(unnamed),unattributed,255
+0x00024c80,FUN_00024c80,490,(unnamed),unattributed,255
 0x00024e70,FUN_00024e70,724,(unnamed),unattributed,256
 0x00025150,FUN_00025150,45,(unnamed),unattributed,257
 0x00025180,FUN_00025180,110,(unnamed),unattributed,258
@@ -1732,7 +1730,7 @@ address,name,size,module,attributed_by,run
 0x00070b30,Core_UnObj,382,Core,name prefix,175
 0x00070cb0,FUN_00070cb0,7866,(unnamed),unattributed,941
 0x00072b70,Core_UnObj,1529,Core,name prefix,176
-0x00073250,Core_UnObj,458,Core,name prefix,177
+0x00073250,Core_UnObj,694,Core,name prefix,177
 0x00073550,FUN_00073550,183,(unnamed),unattributed,942
 0x00073660,FUN_00073660,197,(unnamed),unattributed,943
 0x00073780,Core_UnObj,135,Core,name prefix,178
@@ -4510,7 +4508,7 @@ address,name,size,module,attributed_by,run
 0x00139d50,FUN_00139d50,4839,(unnamed),unattributed,2529
 0x0013b040,FUN_0013b040,3472,(unnamed),unattributed,2530
 0x0013bdd0,Engine_UnGame,176,Engine,name prefix,446
-0x0013be80,Core_UnClass,47779,Core,name prefix,416
+0x0013be80,Core_UnClass,48307,Core,name prefix,416
 0x00147b40,FUN_00147b40,85,(unnamed),unattributed,2531
 0x00147ba0,FUN_00147ba0,85,(unnamed),unattributed,2532
 0x00147c00,FUN_00147c00,85,(unnamed),unattributed,2533
@@ -8490,7 +8488,7 @@ address,name,size,module,attributed_by,run
 0x002dc840,FUN_002dc840,132,(unnamed),unattributed,5094
 0x002dc8d0,?inflate_set_dictionary@D3DX@@YAXPAUinflate_blocks_state@1@PBEI@Z,49,(other named),name only,954
 0x002dc920,FUN_002dc920,57,(unnamed),unattributed,5095
-0x002dc960,FUN_002dc960,1752,(unnamed),unattributed,5096
+0x002dc960,FUN_002dc960,1761,(unnamed),unattributed,5096
 0x002dd070,FUN_002dd070,20,(unnamed),unattributed,5097
 0x002dd090,FUN_002dd090,866,(unnamed),unattributed,5098
 0x002dd400,_inflateReset,66,(other named),name only,955
@@ -9060,7 +9058,7 @@ address,name,size,module,attributed_by,run
 0x00302e10,FUN_00302e10,220,(unnamed),unattributed,5445
 0x00302ef0,FUN_00302ef0,174,(unnamed),unattributed,5446
 0x00302fa0,FUN_00302fa0,137,(unnamed),unattributed,5447
-0x00303030,FUN_00303030,1,(unnamed),unattributed,5448
+0x00303030,FUN_00303030,121,(unnamed),unattributed,5448
 0x003030b0,FUN_003030b0,483,(unnamed),unattributed,5449
 0x003032a0,FUN_003032a0,287,(unnamed),unattributed,5450
 0x003033c0,FUN_003033c0,327,(unnamed),unattributed,5451
@@ -11158,7 +11156,7 @@ address,name,size,module,attributed_by,run
 0x00371604,FUN_00371604,107,(unnamed),unattributed,5875
 0x00371674,FUN_00371674,737,(unnamed),unattributed,5876
 0x00371964,FUN_00371964,107,(unnamed),unattributed,5877
-0x003719d4,FUN_003719d4,1213,(unnamed),unattributed,5878
+0x003719d4,FUN_003719d4,1222,(unnamed),unattributed,5878
 0x00371eb4,FUN_00371eb4,56,(unnamed),unattributed,5879
 0x00371ef4,FUN_00371ef4,60,(unnamed),unattributed,5880
 0x00371f34,FUN_00371f34,33,(unnamed),unattributed,5881
@@ -11212,7 +11210,7 @@ address,name,size,module,attributed_by,run
 0x0037ebd0,FUN_0037ebd0,1087,(unnamed),unattributed,5904
 0x0037f010,FUN_0037f010,581,(unnamed),unattributed,5905
 0x0037f5a0,_ownippsMin_64f,502,(other named),name only,1465
-0x0037f870,FUN_0037f870,235,(unnamed),unattributed,5906
+0x0037f870,FUN_0037f870,239,(unnamed),unattributed,5906
 0x0037fc30,_NuRand,77,(other named),name only,1466
 0x0037fc80,FUN_0037fc80,65,(unnamed),unattributed,5907
 0x0037fcd0,FUN_0037fcd0,69,(unnamed),unattributed,5908
@@ -12471,7 +12469,7 @@ address,name,size,module,attributed_by,run
 0x003e6129,__flushall,9,(other named),name only,1475
 0x003e6132,??_L@YGXPAXIHP6EX0@Z1@Z,74,(other named),name only,1475
 0x003e617c,FUN_003e617c,24,(unnamed),unattributed,7044
-0x003e61a0,_memmove,672,(other named),name only,1476
+0x003e61a0,_memmove,742,(other named),name only,1476
 0x003e64e0,__ftol2,117,(other named),name only,1477
 0x003e6555,FUN_003e6555,17,(unnamed),unattributed,7045
 0x003e6566,??0exception@@QAE@ABV0@@Z,79,(other named),name only,1478
