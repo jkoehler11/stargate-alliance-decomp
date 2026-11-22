@@ -17283,9 +17283,13 @@ sequence.
   **no base name collides with a symbol the map already carries**, so a derivation never overwrites a name the
   build has. The derivation is a column (`derived_name`, with the table's own address in `table_va`), not an edit:
   the symbol map is unchanged by this bundle.
-- **Next measurement:** the add. The list is settled, total and collision-free, so writing the 199 `derived_name`
-  values into `symbols/xbox_functions.csv` is an edit with an `--apply` and a stale-row `--check` -- followed by the
-  symbols cascade (`make symbols`, `status.py`, the hashes) -- not another reading.
+- **Next measurement:** the add, and it is an *insert*. The list is settled, total and collision-free, but a gap
+  head has no row in `symbols/xbox_functions.csv` at all -- `derived_state` over the map reads **199 missing, 0
+  misfiled** -- so the add writes 199 new rows at the census's own addresses and sizes (module empty: the name
+  states a class, not a translation unit), which the map's strictly-increasing rule accepts because a gap head
+  lies outside every extent the map already has. That row-count change (16,734 to 16,933) is the reason the add
+  is its own bundle: the map is read by `native-summary`, the module split and every count in `docs/NATIVE.md`,
+  `docs/SYMBOLS.md` and the status table, so it is a cascade, not a column write.
 - **Not in this bundle.** The add itself (the 199 names into `symbols/xbox_functions.csv` and `symbols/xbox.map`),
   the 65 array entries (the array's meaning is not in the image), the 540 silent bodies, the 2 bodies in
   `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
