@@ -17598,6 +17598,28 @@ sequence.
   `0x00024c80`, are twins whose second body opens `push esi` and reads `[ebp+8]` without setting `ebp`, so it
   is interior code of the row above.
 
+### Execution notes (2026-11-22, the front end's emitter: 1,724 constant-return bodies byte for byte)
+
+- **Task.** Stage 3's target was "a class whose source is short", and the smallest honest family turned out to be a
+  body of one constant return. Scoring it against `inventory/matching_baseline.csv` would have measured the disassembler
+  twice; the oracle is the function's own script bytes, which `tools/uscript-dis.py`'s `locate()` already isolates for
+  every body whose walk covers it.
+- **1,724 modelled, 1,724 identical, 0 differ**, and the artifact reproduces byte for byte on a second run
+  (`8849ee611254a27ec02d905d003fd7c0`). 11,687 shipped bodies walk cleanly; 11,337 join to a declaration (80
+  class-scope names and 270 state names the extracted text does not carry); 9,613 are refused by name -- 3,919 nested
+  block, 1,429 two statements, 1,412 a single non-return statement, 758 three statements, 445 a compound expression.
+- **Every one of the 11,687 ends on `04 0b 47`**, and 1,469 are those bytes alone: 801 declarations with no body, 352
+  comment-only bodies, 263 state functions the text attributes elsewhere, and 53 that declare code the package did not
+  compile. The trailer is the compiler's, so an empty body is exactly the trailer and the emitter appends it.
+- **The declared type picks the token.** `return 0` is `25` (IntZero) in an `int` function, `1e 00000000` in a `float`
+  one and `24 00` in a `byte` one; `return 1` is `26`, `return 2` is `2c 02`; a `name` literal is a name-table index in
+  the archive's compact form (`4f 20` for 2,063), which is why the emitter carries that index writer at all.
+- **Two refusals are findings.** A bodyless `native` declaration still ships a script -- it relays its arguments as
+  `29 <index>` NativeParm tokens (`Object.Clamp`: three of them) -- and a class whose text carries one name twice
+  compiled the longer declaration, which is what turned four `Pawn`/`UnrealPawn` bodies from differ to identical.
+- **Not in this PR:** the statement walk. One assignment or one call needs the property and local indices the emitter
+  does not read, and that is the population the 9,613 refusals are made of.
+
 ### Execution notes (2026-11-22, the front end's declaration score read at name level: seven rules, 46 classes recovered, and the corpus counted twice)
 
 - **Task.** Stage 2a's residue had never been sampled: the page carried "five `var`, 26 `function`, five `native
