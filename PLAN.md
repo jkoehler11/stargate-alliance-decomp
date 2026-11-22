@@ -17338,3 +17338,49 @@ sequence.
   name -- the key grammar applied to a table instead of to a walker.
 - **Not in this bundle.** The 65 array entries (the array's meaning is not in the image), the 427 silent bodies,
   the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
+
+### Execution notes (2026-11-21, the slot channel read at the store)
+
+- **Task.** U40's last two small items: the 9 global-slot stores (3 of them a run at `0x005ccb1c`) and the 65
+  consecutive array entries at `0x00630e20`. Both were "the image spells no meaning" items; both are read here
+  from the *store* instead of from the slot's value, because a `BSS` slot has no value in the image and a live
+  slot's value is written by exactly one instruction.
+- **The store form is a filter, not a scan.** Only `c7 05 <slot> <imm32>` writes an absolute slot; over the two
+  windows **91 slots give 79 stores and 309 candidates that spell a slot's address without writing it** (all
+  `ff 15`, `call [slot]`). The artifact counts the refusals; an occurrence census would read 388.
+- **The 9 are 11, from one installer, and all 11 are overrides.** `0x0008ded0` (the Karma init body, named by
+  `inventory/karma_runtime.csv` from its own literals) stores 11 bodies into `0x005ccadc`..`0x005ccb34` in a
+  100-byte run, and **every one replaces a file-backed default** (`0x003d8d80` -> `0x000ad860`, ...). The census
+  counted 9 because 2 targets were already map rows.
+- **The 3-entry run is three of 42, and not a class table.** The window is a **42-entry table**
+  (`0x005ccadc`..`0x005ccb80`, next dword zero) with 35 distinct values, and the seven entries at
+  `0x005ccb1c`..`0x005ccb37` repeat verbatim at `0x005ccb38`..`0x005ccb53` -- a structure with two copies of a
+  seven-method block, not two vtables. Two of the installed bodies state their name in a literal
+  (`MePoolMallocReset() not implemented`, `MePoolMallocDestroy(): %d structs still allocated`), three forward
+  into the engine allocator vtable `0x004c882c` through `ds:0x005bf510`, so the `int[AU]<Class>exec<Func>` read
+  has no key here: the table is MathEngine's own callback table, patched at startup.
+- **The 65 entries are 68 stores in one body.** `0x00012620` (`Core_UnObjBas`, 18,359 bytes) writes
+  `0x00630e20`..`0x00630f2c` one slot at a time from `0x0001363a`..`0x00016432`. The array is **past the
+  file-backed `.data`**, which is why no value was in the image; **67 of the 68 values are `<Class>_lookup`
+  walkers** and the 68th is `BotEnemy_lookup + 0x50`, an interior address. The same body installs
+  `ds:0x005bf510 = 0x0059ed68`.
+- **The add is two names, and the gate is a record.** `0x000ad900` and `0x000ad950` take `MePoolMallocReset` and
+  `MePoolMallocDestroy` -- their own literals, the channel `gap-body-files` measured on the map's population --
+  recorded in `inventory/global_slot_names.csv` and inserted into `symbols/xbox_functions.csv`;
+  `--check-symbols` (dump-free, in `make ci`) fails if either leaves the map or the map holds its address under
+  another name or size. The other 7 stay unnamed: an argument count is not a name.
+- **Files.** `tools/global-slot-stores.py` (new), `inventory/global_slot_stores.csv` (new, 79 rows + census),
+  `inventory/global_slot_names.csv` (new), `symbols/xbox_functions.csv` (+2 rows), `docs/SYMBOLS.md`,
+  `docs/NATIVE.md`, `docs/STATUS.md`, `README.md`, `docs/ARTIFACTS.md`, `inventory/artifact_hashes.csv`,
+  `docs/systems/CLASS_REGISTRATION.md` (the new section and its block), `docs/UNKNOWNS.md` (U40), `Makefile`
+  (the target, the two gates, the help line), this note.
+- **Gates.** `make ci` green; `--check` synthetic and writes nothing; `--check-doc` rebuilds the block from the
+  committed CSV; `--check-symbols` fails on a missing or misfiled name; the artifact reproduces byte for byte on
+  a second run. No boot, no xemu, no Ghidra.
+- **Next measurement:** the 2 bodies in `0x0051724c`. It is a 5-slot table, `plain-only`, installed by a
+  constructor, held as a member at `+0x38` of `0x00507c7c`'s table, with 2 calls and 2 gap slots -- the
+  interface tools (`class-interface-*`, `class-plain-tables`) already carry every column this needs, and it is
+  the last interface item that is not a residue count.
+- **Not in this bundle.** The 7 unnamed callback bodies, the 425 silent bodies, the 4 linker folds and the 359
+  interface-only bodies.
+

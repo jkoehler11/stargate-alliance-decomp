@@ -3334,17 +3334,17 @@ the map's `<Module>_<File>` names are built from.
 <!-- generated:gap-body-families -->
 | family | bodies | bytes | what the reference is |
 |---|---|---|---|
-| `operand-in-row` | 54 | 45034 | a named body's instruction loads the address |
+| `operand-in-row` | 52 | 44981 | a named body's instruction loads the address |
 | `operand-in-head` | 2 | 6594 | an unnamed gap body's instruction loads it |
 | `table-in-row` | 3 | 169 | a data word inside a named body (a jump or dispatch table) |
 | `table-in-gap` | 1 | 535 | a data word in a gap and inside no body at all |
 | `silent` | 427 | 52485 | nothing in `.text` spells the address |
 
-The modules the `operand-in-row` owners belong to: ?=54 Core=2 head=2 XboxAudio=1 gap=1 (the `?` entries are owners the map has no name for, and the two `head`/`gap` entries are the other two families).
+The modules the `operand-in-row` owners belong to: ?=52 Core=2 head=2 XboxAudio=1 gap=1 (the `?` entries are owners the map has no name for, and the two `head`/`gap` entries are the other two families).
 
 **The 199 names this read derived are rows of the symbol map, and the record outlives the population.** The add (`--apply-symbols`) wrote them into `symbols/xbox_functions.csv` at the census's own address and size, and `inventory/gap_walker_names.csv` is that add's own record. The census re-read after the add no longer sees these bodies -- they are map rows, not gap heads, so they have left this population -- which is why the `derived_name` column above now reads empty while the class each copy binds is still on the record. `--check-symbols` is the dump-free gate in `make ci`: a recorded name that leaves the map, or an address the map holds under another name or size, fails the build.
 
-**9 of these bodies are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **3** of the 9 slots are consecutive dword globals at `0x005ccb1c`..`0x005ccb24` -- one static array of 3 function pointers, written entry by entry by the registration body at startup.** The remaining 6 are singletons spread over 9 distinct globals. A body reachable only through that array cannot be called by a name in code, and nothing in the image spells the array's own meaning, so the census places them and does not name them -- what it can now say is which 3 of the 487 bodies nothing names are entries of it.
+**7 of these bodies are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **2** of the 7 slots are consecutive dword globals at `0x005ccadc`..`0x005ccae0` -- one static array of 2 function pointers, written entry by entry by the registration body at startup.** The remaining 5 are singletons spread over 7 distinct globals. A body reachable only through that array cannot be called by a name in code, and nothing in the image spells the array's own meaning, so the census places them and does not name them -- what it can now say is which 2 of the 485 bodies nothing names are entries of it.
 
 | gap body | size | family | owner | the string in it |
 |---|---|---|---|---|
@@ -3388,11 +3388,11 @@ The modules the `operand-in-row` owners belong to: ?=54 Core=2 head=2 XboxAudio=
 | `0x000ad8c0` | 61 | `operand-in-row` | FUN_0008ded0 | - |
 | `0x000bdaf0` | 43 | `table-in-row` | Core_UnObjBas | - |
 | `0x000ad920` | 41 | `operand-in-row` | FUN_0008ded0 | - |
-| ... | | | 447 more | |
+| ... | | | 445 more | |
 
-**Of the 2199 decoded heads, 487 bodies and 104817 bytes nothing names -- and 141 islands besides.** The census's pointer channel looks for a dword *outside* the section, so a switch table laid behind a body and a `mov eax,<fn>` that hands a pointer to a caller are invisible to it by construction. Read inside, **60** of the 487 are referenced from `.text` -- **56** by an instruction that carries the address and **6** by a data word -- and **427** (52485 bytes) are spelled nowhere in the section at all.
+**Of the 2197 decoded heads, 485 bodies and 104764 bytes nothing names -- and 141 islands besides.** The census's pointer channel looks for a dword *outside* the section, so a switch table laid behind a body and a `mov eax,<fn>` that hands a pointer to a caller are invisible to it by construction. Read inside, **58** of the 485 are referenced from `.text` -- **54** by an instruction that carries the address and **6** by a data word -- and **427** (52485 bytes) are spelled nowhere in the section at all.
 
-**The control is the map's own rows: 464 of its 16933 bodies are spelled inside `.text`, 293 by an operand and 183 by a table word** (2 of them by an operand inside their own span, which is recursion or a self-laid table and counted apart). A row is in the map because something names it -- a symbol, a slot, a `push` -- and half of them also handle their own address in code, so the channel is a floor on this population too. A random gap byte's address is spelled in `.text` **23 of 2000** times (1.1%), and no family below is smaller than that rate.
+**The control is the map's own rows: 466 of its 16935 bodies are spelled inside `.text`, 295 by an operand and 183 by a table word** (2 of them by an operand inside their own span, which is recursion or a self-laid table and counted apart). A row is in the map because something names it -- a symbol, a slot, a `push` -- and half of them also handle their own address in code, so the channel is a floor on this population too. A random gap byte's address is spelled in `.text` **23 of 2000** times (1.1%), and no family below is smaller than that rate.
 
 **18 of the silent bodies are 13 bytes or shorter**, and the heads' own prologue column says what they open on: a `ret`, a `xor eax,eax; ret`, a `mov eax,[ecx+d]`. A short body with no reference anywhere is the shape of a virtual method an unregistered class's table holds, or of a CRT stub reached through a pointer the image spells in a form these four channels do not read.
 
@@ -3467,3 +3467,163 @@ byte for byte; the three census artifacts reproduce byte for byte on a second ru
 **Not in this bundle.** The 9 global-slot stores (nothing in the image spells the array's meaning), the 65 array
 entries, the 427 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only
 bodies.
+
+## The slot-store channel read at the store: one Karma installer and a 68-slot lookup array (2026-11-21)
+
+**Task.** The post-add census leaves the slot channel small enough to read body by body: 9 global-slot stores
+(3 of them a run at `0x005ccb1c`) and the 65 consecutive array entries at `0x00630e20` whose meaning "nothing in
+the image spells". This read takes each slot window to the *store*: the form that writes the slot, the body the
+store sits in, the value it writes, and the default the image already ships there.
+
+**The store form, and why the count is not the occurrence count.** A slot's address appears in `.text` in
+several forms and only `c7 05 <slot> <imm32>` writes it -- `ff 15 <slot>` (`call [slot]`) reads it, and that is
+the form most of a live table's occurrences take. Over the two windows the read finds **79 stores in 79 of the
+91 slots it visits, with 309 further candidates that spell a slot's address and are not a store of it** (all of
+them the `ff 15`-family read, counted in the artifact's census rather than dropped). A census that counted
+occurrences would have read 388 sites for 79 stores.
+
+**The 9 are one installer's 11 stores, and every one is an override.** All 79 stores belong to two bodies.
+`0x0008ded0` (`FUN_0008ded0`, 860 bytes; `inventory/karma_runtime.csv` names it from its own literals --
+`(Karma): Beginning Karma for game.`, `KarmaGlobals`, `KARMA: MCDINIT`) makes **11 stores in a 100-byte run**
+at `0x0008e03b`..`0x0008e09f` into `0x005ccadc`..`0x005ccb34`, and **every one of the 11 replaces a file-backed
+default**: the image ships `0x003d8d80`, `0x003d8d90`, `0x003d8de0`, ... in those slots, and the installer writes
+`0x000ad860`, `0x000ad8c0`, `0x000ad920`, .... The census counted 9 because two of the eleven targets --
+`0x000ad970` and `0x000ad9b0` -- already had map rows, so they were never in the gap population.
+
+**The 3-entry run is not a class table, and the window says why.** `0x005ccb1c`..`0x005ccb24` is three entries of
+a **42-entry table** at `0x005ccadc`..`0x005ccb80` (the next dword, `0x005ccb84`, is zero): 42 `.text` pointers,
+35 distinct, and the seven entries at `0x005ccb1c`..`0x005ccb37` repeat **verbatim** at
+`0x005ccb38`..`0x005ccb53` -- so the run the census called three is seven, and the table holds two copies of the
+same seven-method block. A run that repeats inside one table is a structure with two instances, not two class
+tables packed back to back, and the `int[AU]<Class>exec<Func>` grammar has no key here because no intrinsic-name
+table states a class for any of these entries. The table is the **MathEngine runtime's own**: two of the nine
+bodies the installer writes state their name in a literal, `0x000ad900` pushing `MePoolMallocReset() not
+implemented` and `0x000ad950` pushing `MePoolMallocDestroy(): %d structs still allocated`, and three more
+(`0x000ad860`, `0x000ad880`, `0x000ad890`) forward into the object at `ds:0x005bf510`, whose first dword is the
+vtable `0x004c882c` -- the engine allocator (`0x000194b0`, `0x00019780`, `0x000198a0` at slots 0, 1 and 2). So
+the channel is a **callback table patched at startup**, its installer is the Karma init body, and "class table"
+was the wrong shape for it.
+
+**The 65 array entries are 68 stores in one body.** `0x00012620` (`Core_UnObjBas`, 18,359 bytes) writes
+`0x00630e20`..`0x00630f2c` with **68 `c7 05` stores** at `0x0001363a`..`0x00016432`, one per slot and in
+ascending index order. The array sits **past the file-backed `.data`** -- every slot reads short -- which is why
+no value is in the image and the census could not state its meaning: the meaning is in the stores.
+**67 of the 68 values are the `<Class>_lookup` walkers the previous census named**; the 68th, `0x00011600`, is
+not a body start at all -- it is `BotEnemy_lookup + 0x50`, inside a walker's 78-byte body -- so the array is an
+index-ordered table of class lookup walkers with one interior address in it. The same body also sets
+`ds:0x005bf510 = 0x0059ed68`, the interface the Karma callbacks dispatch through.
+
+**Two of the nine take the name the image gives them.** `0x000ad900` (23 bytes) and `0x000ad950` (30 bytes) are
+the bodies whose own literal is their name, the channel `gap-body-files` measured on the map's population; they
+are named `MePoolMallocReset` and `MePoolMallocDestroy`, recorded in `inventory/global_slot_names.csv` and
+gated by `--check-symbols`. The other seven are recorded with their slot and their forwarded interface slot and
+are **not** named: the table states no name for them and a role read off an argument count is not a name.
+
+<!-- generated:global-slot-stores -->
+| window | slots | stores | written | installer(s) | overrides | values the map names |
+|---|---|---|---|---|---|---|
+| `0x005ccadc` | 11 | 11 | 11 | `0x0008ded0` FUN_0008ded0 | 11 | 2 |
+| `0x00630e20` | 68 | 68 | 68 | `0x00012620` Core_UnObjBas | 0 | 67 |
+
+**79 stores fill 79 of the 91 slots the census read, from 2 installer body/bodies; 11 of them replace a default the image ships (12 slots have no store at all) and 309 other candidates in `.text` spelled a slot's address without being a store of it (spans 309).** The longest run of consecutive written slots is **68 entries at `0x00630e20`**, and the windows hold **5** run(s) of consecutive slots.
+
+**69 of the 79 stored values are bodies the map names and 67 are generated `<Class>_lookup` walkers** -- the split is the artifact's `value_name` column against `inventory/gap_walker_names.csv`, and it is what separates a table of library routines from the intrinsic-lookup array.
+
+| slot | site | installer | stored | name | ships |
+|---|---|---|---|---|---|
+| `0x005ccadc` | `0x0008e03b` | `FUN_0008ded0` | `0x000ad860` | - | `FUN_003d8d80` |
+| `0x005ccae0` | `0x0008e059` | `FUN_0008ded0` | `0x000ad8c0` | - | `FUN_003d8d90` |
+| `0x005ccae8` | `0x0008e045` | `FUN_0008ded0` | `0x000ad880` | - | `FUN_003d8db0` |
+| `0x005ccaf0` | `0x0008e04f` | `FUN_0008ded0` | `0x000ad890` | - | `FUN_003d8dc0` |
+| `0x005ccb1c` | `0x0008e063` | `FUN_0008ded0` | `0x000ad920` | - | `FUN_003d9290` |
+| `0x005ccb20` | `0x0008e06d` | `FUN_0008ded0` | `0x000ad950` | - | `FUN_003d9330` |
+| `0x005ccb24` | `0x0008e077` | `FUN_0008ded0` | `0x000ad900` | - | `0x003d9260` |
+| `0x005ccb28` | `0x0008e081` | `FUN_0008ded0` | `0x000ad970` | FUN_000ad970 | `FUN_003d9370` |
+| `0x005ccb2c` | `0x0008e08b` | `FUN_0008ded0` | `0x000ad9b0` | FUN_000ad9b0 | `FUN_003d9390` |
+| `0x005ccb30` | `0x0008e095` | `FUN_0008ded0` | `0x000ada00` | - | `FUN_003de510` |
+| `0x005ccb34` | `0x0008e09f` | `FUN_0008ded0` | `0x000ada10` | - | `0x003d93b0` |
+| `0x00630e20` | `0x0001363a` | `Core_UnObjBas` | `0x00120050` | Security_lookup | no file bytes |
+| `0x00630e24` | `0x00013663` | `Core_UnObjBas` | `0x001200a0` | ScriptedTexture_lookup | no file bytes |
+| `0x00630e28` | `0x000138d9` | `Core_UnObjBas` | `0x001200f0` | SceneManager_lookup | no file bytes |
+| `0x00630e2c` | `0x00013a57` | `Core_UnObjBas` | `0x00120140` | PlayInfo_lookup | no file bytes |
+| `0x00630e30` | `0x00013a80` | `Core_UnObjBas` | `0x00120190` | StatsWrite_lookup | no file bytes |
+| `0x00630e34` | `0x00013aa9` | `Core_UnObjBas` | `0x001201e0` | StatsQuery_lookup | no file bytes |
+| `0x00630e38` | `0x00013ad2` | `Core_UnObjBas` | `0x00120230` | PlayerStatCache_lookup | no file bytes |
+| `0x00630e3c` | `0x00013afb` | `Core_UnObjBas` | `0x00120280` | PlayerStats_lookup | no file bytes |
+| `0x00630e40` | `0x00013b24` | `Core_UnObjBas` | `0x001202d0` | PlayerProfile_lookup | no file bytes |
+| `0x00630e44` | `0x00013eb1` | `Core_UnObjBas` | `0x00120320` | Emitter_lookup | no file bytes |
+| `0x00630e48` | `0x00013ef9` | `Core_UnObjBas` | `0x00120370` | MovieTexture_lookup | no file bytes |
+| `0x00630e4c` | `0x00013f22` | `Core_UnObjBas` | `0x001203c0` | Movie_lookup | no file bytes |
+| `0x00630e50` | `0x0001432b` | `Core_UnObjBas` | `0x00120410` | InteractionMaster_lookup | no file bytes |
+| `0x00630e54` | `0x000144c8` | `Core_UnObjBas` | `0x00120460` | FluidSurfaceInfo_lookup | no file bytes |
+| `0x00630e58` | `0x00014627` | `Core_UnObjBas` | `0x001204b0` | Canvas_lookup | no file bytes |
+| `0x00630e5c` | `0x0001470a` | `Core_UnObjBas` | `0x00120500` | CacheManager_lookup | no file bytes |
+| `0x00630e60` | `0x0001482b` | `Core_UnObjBas` | `0x00120550` | Volume_lookup | no file bytes |
+| `0x00630e64` | `0x0001490e` | `Core_UnObjBas` | `0x001205a0` | NavigationPoint_lookup | no file bytes |
+| `0x00630e68` | `0x00014975` | `Core_UnObjBas` | `0x001205f0` | IMusicActor_lookup | no file bytes |
+| `0x00630e6c` | `0x00014ab5` | `Core_UnObjBas` | `0x00120640` | Pickup_lookup | no file bytes |
+| `0x00630e70` | `0x00014d2b` | `Core_UnObjBas` | `0x00120690` | PlayerController_lookup | no file bytes |
+| `0x00630e74` | `0x00014d54` | `Core_UnObjBas` | `0x001206e0` | Controller_lookup | no file bytes |
+| `0x00630e78` | `0x00014d7d` | `Core_UnObjBas` | `0x00120730` | AIController_lookup | no file bytes |
+| `0x00630e7c` | `0x00014edc` | `Core_UnObjBas` | `0x00120780` | PlayerReplicationInfo_lookup | no file bytes |
+| `0x00630e80` | `0x00014f62` | `Core_UnObjBas` | `0x001207d0` | HUD_lookup | no file bytes |
+| `0x00630e84` | `0x00015045` | `Core_UnObjBas` | `0x00120820` | WarpZoneInfo_lookup | no file bytes |
+| `0x00630e88` | `0x0001506e` | `Core_UnObjBas` | `0x00120870` | ZoneInfo_lookup | no file bytes |
+| `0x00630e8c` | `0x0001518f` | `Core_UnObjBas` | `0x001208c0` | GameInfo_lookup | no file bytes |
+| `0x00630e90` | `0x000151b8` | `Core_UnObjBas` | `0x00120910` | LevelInfo_lookup | no file bytes |
+| `0x00630e94` | `0x000152f8` | `Core_UnObjBas` | `0x00120960` | TextureEditable_lookup | no file bytes |
+| `0x00630e98` | `0x0001535f` | `Core_UnObjBas` | `0x001209b0` | KVehicle_lookup | no file bytes |
+| `0x00630e9c` | `0x00015404` | `Core_UnObjBas` | `0x00120a00` | KarmaParamsCollision_lookup | no file bytes |
+| `0x00630ea0` | `0x0001548a` | `Core_UnObjBas` | `0x00120a50` | KConstraint_lookup | no file bytes |
+| `0x00630ea4` | `0x0001552f` | `Core_UnObjBas` | `0x00120aa0` | xProcMesh_lookup | no file bytes |
+| `0x00630ea8` | `0x00015596` | `Core_UnObjBas` | `0x00120af0` | SceneSubtitles_lookup | no file bytes |
+| `0x00630eac` | `0x000155bf` | `Core_UnObjBas` | `0x00120b40` | GameStats_lookup | no file bytes |
+| `0x00630eb0` | `0x000155e8` | `Core_UnObjBas` | `0x00120b90` | FileLog_lookup | no file bytes |
+| `0x00630eb4` | `0x000156ac` | `Core_UnObjBas` | `0x002c7570` | UdpLink_lookup | no file bytes |
+| `0x00630eb8` | `0x000156d5` | `Core_UnObjBas` | `0x002c75c0` | InternetLink_lookup | no file bytes |
+| `0x00630ebc` | `0x0001577a` | `Core_UnObjBas` | `0x002c7610` | TcpLink_lookup | no file bytes |
+| `0x00630ec0` | `0x000157c2` | `Core_UnObjBas` | `0x002c7660` | MasterServerUplink_lookup | no file bytes |
+| `0x00630ec4` | `0x000157eb` | `Core_UnObjBas` | `0x002c76b0` | MasterServerLink_lookup | no file bytes |
+| `0x00630ec8` | `0x00015814` | `Core_UnObjBas` | `0x002c7700` | MasterServerClient_lookup | no file bytes |
+| `0x00630ecc` | `0x0001583d` | `Core_UnObjBas` | `0x002c7750` | ServerQueryClient_lookup | no file bytes |
+| `0x00630ed0` | `0x0001595e` | `Core_UnObjBas` | `0x002e97e0` | XboxLiveInterface_lookup | no file bytes |
+| `0x00630ed4` | `0x00015987` | `Core_UnObjBas` | `0x002e9830` | UIXInteraction_lookup | no file bytes |
+| `0x00630ed8` | `0x000159b0` | `Core_UnObjBas` | `0x002e9880` | GUIScrollText_lookup | no file bytes |
+| `0x00630edc` | `0x000159f8` | `Core_UnObjBas` | `0x002e98d0` | GUIListBase_lookup | no file bytes |
+| `0x00630ee0` | `0x00015a21` | `Core_UnObjBas` | `0x002e9920` | GUIComponent_lookup | no file bytes |
+| `0x00630ee4` | `0x00015a4a` | `Core_UnObjBas` | `0x002e9970` | GUI_lookup | no file bytes |
+| `0x00630ee8` | `0x00015a92` | `Core_UnObjBas` | `0x002e99c0` | GUIMultiColumnList_lookup | no file bytes |
+| `0x00630eec` | `0x00015b18` | `Core_UnObjBas` | `0x002e9a10` | GUIMultiComponent_lookup | no file bytes |
+| `0x00630ef0` | `0x00015b7f` | `Core_UnObjBas` | `0x002e9a60` | GUIController_lookup | no file bytes |
+| `0x00630ef4` | `0x00015ba8` | `Core_UnObjBas` | `0x002e9ab0` | StatsManager_lookup | no file bytes |
+| `0x00630ef8` | `0x00015bd1` | `Core_UnObjBas` | `0x002e9b00` | GUIScrollingPanel_lookup | no file bytes |
+| `0x00630efc` | `0x00015c76` | `Core_UnObjBas` | `0x002e9b50` | GUIMenuOption_lookup | no file bytes |
+| `0x00630f00` | `0x00015d59` | `Core_UnObjBas` | `0x002e9ba0` | GUIStyles_lookup | no file bytes |
+| `0x00630f04` | `0x00015f53` | `Core_UnObjBas` | `0x002e9bf0` | GUIFont_lookup | no file bytes |
+| `0x00630f08` | `0x00015f7c` | `Core_UnObjBas` | `0x002e9c40` | GUIPage_lookup | no file bytes |
+| `0x00630f0c` | `0x00016119` | `Core_UnObjBas` | `0x00011420` | ShadowManager_lookup | no file bytes |
+| `0x00630f10` | `0x0001619f` | `Core_UnObjBas` | `0x00011470` | FarClipChange_lookup | no file bytes |
+| `0x00630f14` | `0x000161c8` | `Core_UnObjBas` | `0x000114c0` | BotBase_lookup | no file bytes |
+| `0x00630f18` | `0x00016210` | `Core_UnObjBas` | `0x00011510` | Electrocutor_lookup | no file bytes |
+| `0x00630f1c` | `0x00016296` | `Core_UnObjBas` | `0x00011560` | SGOrder_lookup | no file bytes |
+| `0x00630f20` | `0x000162fd` | `Core_UnObjBas` | `0x000115b0` | BotEnemy_lookup | no file bytes |
+| `0x00630f24` | `0x00016326` | `Core_UnObjBas` | `0x00011600` | - | no file bytes |
+| `0x00630f28` | `0x0001638d` | `Core_UnObjBas` | `0x00011650` | SGFontInfo_lookup | no file bytes |
+| `0x00630f2c` | `0x00016432` | `Core_UnObjBas` | `0x000116a0` | SGScreenBloom_lookup | no file bytes |
+
+<!-- /generated:global-slot-stores -->
+
+**Files.** `tools/global-slot-stores.py` (the store form, the owner join, the default read, the artifact, the
+render, `--check`, `--apply-symbols`/`--check-symbols`), `inventory/global_slot_stores.csv` (new, 79 rows and a
+census row), `inventory/global_slot_names.csv` (new, the 2 recorded names and their evidence),
+`symbols/xbox_functions.csv` (the 2 rows), `docs/SYMBOLS.md`, `docs/NATIVE.md`, `docs/STATUS.md` and `README.md`
+(the counts), `Makefile` (the target, the two gates and the help line), `docs/UNKNOWNS.md` (U40), this page,
+`PLAN.md`.
+
+**Gates.** `make ci` green; `--check` is synthetic and writes nothing (the store form, the next-slot refusal,
+the window step, the owner lookup, the render); `--check-doc` rebuilds the block above from the committed CSV
+with no dump; `--check-symbols` fails when a recorded name leaves the map or the map holds its address under
+another name or size; the artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
+
+**Not in this bundle.** The 7 unnamed Karma callback bodies (their interface slot states no name), the 425
+silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
