@@ -17387,3 +17387,54 @@ sequence.
 - **Not in this bundle.** The 7 unnamed callback bodies, the 427 silent bodies, the 4 linker folds and the 359
   interface-only bodies.
 
+### Execution notes (2026-11-21, the last fourteen bodies read one at a time, and the residue is one shape per population)
+
+- **Task.** U40's residue had carried three small populations for five rounds, each named only by a count:
+  the 7 Karma callback bodies the MathEngine table names by no literal, the 2 bodies in `0x0051724c` (the
+  next measurement the last three notes handed forward), and the 5 inherited interface bodies
+  `tools/class-slot-declarers.py` refuses. Every earlier answer was the *absence* of a channel; this read
+  answers them with the body.
+- **The `0x0051724c` table is an object vtable, and its two bodies are its accessors.** The five slots are
+  `0x001dfe40` (`mov eax,[ecx+0x8]; mov edx,[ecx+0xc]; ret` -- the object's 64-bit id in `eax:edx`), a
+  shared `mov eax,1; ret` at `0x002783d0`, `0x001df4e0` (`mov eax,[ecx+0x10]; ret`), a 355-byte walker at
+  `0x001de9c0` and a shared `mov eax,2; ret` at `0x00275ed0`. `0x001de030` stores the table at `+0x0` (site
+  `0x001de037`) and returns `this`; `0x001df420` stores it at `+0x38` (site `0x001df45d`) of an object whose
+  `+0x40`/`+0x44` hold the same 64-bit pair and whose `+0x48` is the zero the accessor reads at `+0x10`, so
+  the member store is an embedded sub-object of the table's own type. Both constructors mint that id as
+  `__allmul` of the counter at `0x005fe168` by `0x100` plus `0xe1` (the table's one named callee is
+  `__allmul`), so the low byte is a tag and the rest a sequence from one counter. The composite constructor
+  is called once, from `Core_UnClass` at `0x0015ee2a`; the 5-slot one has no `E8` caller in the image.
+- **The seven Karma callbacks are one memory library, and three of them are one descriptor's methods.**
+  Four dispatch through the object whose pointer sits at `ds:0x005bf510` -- slot `+0x0` with one argument,
+  `+0x4` with two, `+0x8` as a frame-less tail jump -- each pushing the Karma context
+  `ds:0x006f7bf0 + 0x15018` first; the zero-filling one allocates through `+0x0` and then `rep stos` the
+  block it got (a calloc). The other three never dispatch: `0x000ad920` writes a five-dword descriptor
+  (`+0x0`=2, `+0x4`=0, its three arguments at `+0x8`/`+0xc`/`+0x10`) and `0x000ada00`/`0x000ada10` read it
+  back (`+0x4` and `+0xc` minus `+0x4`) -- the writer's `+0xc` and the reader's `+0xc` are one offset, so
+  the three are one type's init and accessors.
+- **The five inherited bodies are COM defaults.** Three return `E_NOTIMPL` (`0x80004001`) with 0, 4 and 11
+  argument dwords; two write the caller's out pointer and return 0 (one copying its first argument's
+  `+0x4`, the other the constant `3`). One body at one index under four or five feature interfaces is their
+  shared base's implementation, so the missing name is the base's -- which is why no class owns them.
+- **The read and its control.** `tools/residue-bodies.py` takes its population from the artifacts that
+  count it (`global_slot_stores.csv` minus `global_slot_names.csv`, `class_slot_declarers.csv`'s `member`
+  and `inherited-interface` rows), decodes each body to its first terminator with objdump, follows the
+  register sources of every dispatch and its context, and reads the fields, literals and callees. **14
+  bodies, 274 bytes, 7 kinds** (`inventory/residue_bodies.csv`). The zero that had to be controlled is the
+  literal channel: none of the 14 pushes a printable literal, and the same read finds the pushed name in
+  **2 of 2** bodies an earlier round named from their own literal.
+- **Files.** `tools/residue-bodies.py` (new), `inventory/residue_bodies.csv` (new, 14 rows + a census row),
+  `docs/systems/CLASS_REGISTRATION.md` (the new section and its block), `docs/UNKNOWNS.md` (U40),
+  `Makefile` (the target, the `--check-doc` gate and the help line), `inventory/artifact_hashes.csv`,
+  `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `--check` synthetic and writes nothing (all seven kinds from synthetic
+  bodies, the dispatch slot and its source, the interior call target, the render, both artifact round
+  trips); `--check-doc` rebuilds the block from the committed CSV with no dump; the artifact reproduces
+  byte for byte on a second run. No boot, no xemu, no Ghidra.
+- **Next measurement:** the 359 interface-only bodies, read the same way but at their *slot index*: the
+  inherited five are a base's defaults, so the question the residue still holds is whether the other 354
+  are per-interface defaults too (one body at one index across several tables) or real methods the
+  declarer walk missed.
+- **Not in this bundle.** The 4 linker folds (identical-code folds, one body serving unrelated classes,
+  already read in `inventory/declarer_residue.csv`), the 427 silent bodies, the 359 interface-only bodies,
+  and the `Core_UnVcWin32` family's remaining siblings.

@@ -6297,3 +6297,20 @@ them (`BotEnemy_lookup + 0x50`). Two bodies take the name their own literal stat
 **485 bodies (104,764 bytes) and 141 islands with the slot channel down from 9 stores to 7**. What is left of
 this entry: the 7 callback bodies the table names by no literal, the 427 silent bodies, the 2 bodies in
 `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
+
+
+**Answered since (2026-11-21, the last fourteen bodies read at their own instructions).** The three named
+populations are one shape each, not fourteen missing names (`tools/residue-bodies.py`,
+`inventory/residue_bodies.csv`, 14 rows, 274 bytes, 7 kinds). *The 2 in `0x0051724c`* are accessors of the
+object that table is the vtable of: `0x001dfe40` returns the 64-bit id pair at `+0x8`/`+0xc`,
+`0x001df4e0` returns `+0x10`, and the two constructors mint that id as `__allmul` of the counter at
+`0x005fe168` by 256 plus 225 -- so the table is a class vtable seen from two constructors and the `+0x38`
+store is an embedded sub-object, not an interface parked in a field. *The 7 Karma callbacks* are one
+memory library's method table: four dispatch through `ds:0x005bf510` at `+0x0`/`+0x4`/`+0x8` with the
+context `ds:0x006f7bf0+0x15018` first (one of them zero-filling after its allocate), and three are one
+descriptor's methods (an init writing `+0x0`=2, `+0x4`=0 and three fields, and two getters reading `+0x4`
+and `+0xc`-`+0x4`). *The 5 inherited* bodies are COM defaults: three return `E_NOTIMPL` with 0, 4 and 11
+argument dwords, two write the caller's out pointer. The literal channel's control is the two bodies an
+earlier round named from their own literal, and the same read finds it in **2 of 2**. What is left of this
+entry: the 427 silent bodies, the 4 linker folds (identical-code folds -- one body serving unrelated
+classes, so there is no single owner) and the 359 interface-only bodies no name reaches.
