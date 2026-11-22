@@ -297,7 +297,7 @@ stop,0x0007e160,FUN_0007e160,25,,"callee of 0x0002dff0, 21 callers outside the c
 stop,0x002530f0,FUN_002530f0,893,,"callee of 0x0002e900, 3 callers outside the chain",,,,,,
 slot31,0x00034f40,Core_UExporter,192,Core,.text,0x00034feb,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x000360b0,Core_UFactory,1617,Core,.text,0x000365d2,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
-slot31,0x00072b70,Core_UnObj,1519,Core,.text,0x000730f6,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
+slot31,0x00072b70,Core_UnObj,1529,Core,.text,0x000730f6,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x00078680,FUN_00078680,30,,.text,0x00078697,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x0007d670,FUN_0007d670,112,,.text,0x0007d689,call [eax+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
 slot31,0x0008b420,FUN_0008b420,1159,,.text,0x0008b87f,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,

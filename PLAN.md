@@ -17597,3 +17597,43 @@ sequence.
   after completing a cut instruction) need one `drop` review each -- the first two, `0x0001f2a0` and
   `0x00024c80`, are twins whose second body opens `push esi` and reads `[ebp+8]` without setting `ebp`, so it
   is interior code of the row above.
+
+### Execution notes (2026-11-21, the extents: the code behind a close read three ways, a head shorter than its own instruction, and the fold rule's three refusals)
+
+- **Task.** The cut note above left three open items: 60 tails that refused a close, 43 rows that still ended
+  mid-instruction (6 of them because objdump decodes nothing from a head shorter than its own first instruction),
+  and 13 rows the map split from its own continuation.
+- **The code behind a close is not the body's own code, so a `ret` with code behind it is read three ways.**
+  **12 rows** end where the next instructions are alignment filler (`nop`, `int3`, `lea r,[r+0x0]`), **7** where
+  they open a body of their own (the shared prologue table), and **3** where they read the same frame the close's
+  body built -- the shared epilogue an early return jumps into -- and the body runs on to the next close
+  (`0x0002be40` 225 -> 314, `Core_UnObj` `0x0006df00` 5,479 -> 5,548, `UObject_StaticShutdownAfterError`
+  `0x00063410` 142 -> 173). Together **22 rows and 339 bytes**, and refused tails fall **60 -> 38**.
+- **A head shorter than its own first instruction is a cut, not a row that will not decode.** Those 6 rows read
+  across the cut (`size + 16`) as ordinary cut rows, the cut family grows **254 -> 280** (2,276 -> 2,627 bytes),
+  and `undecoded` is **0** for the whole map.
+- **The fold rule reads forward from the fragment's own head and finds nothing on the corpus.** Of the **14**
+  splits, **11** have neither a measured prologue nor a name (`FUN_*`, 1 to 35 bytes), so the rule refuses to guess
+  where a body began; the 3 that do read as a body head each refuse for a stated reason -- the twins
+  `0x0001f2a0`/`0x00024c80` hit an unconditional `jmp` with code behind it, which a branch inside the body looks
+  like too, and `0x002c4f10` `FUdpLink_BindPort` has a map row inside the span whose head opens a body of its own.
+  So the thread's "three measurable folds" is a measured zero, and the `drop` verb `--write-boundaries` gained is
+  driven by `--selftest` only until a fold lands.
+- **The walk was twelve minutes of objdump spawns, not a slow image.** `close_ahead` re-decoded every 64 bytes, so
+  following a body to its close cost one spawn per 64 bytes; with a 512-byte window the whole-image read is
+  **66 s** for 16,935 rows, and `measure` writes a row counter to stderr so a slow read no longer looks like a hung
+  one.
+- **The map.** 4,263,466 -> **4,264,156 bytes** (+690), same 16,935 rows. `symbols/xbe_boundaries.csv` gains
+  **48** `resize` rows (704 total, plus the 19 `drop`s already there) and `xbe_overrides.csv` moves one column
+  (`UObject_StaticShutdownAfterError` 142 -> 173).
+- **Cascade, regenerated on the corrected map:** `gap_heads`, `gap_body_families`, `gap_body_files`,
+  `silent_bodies`, `class_slot_declarers` (373 head rows), `function_modules`, `module_export_plan`,
+  `xbe_functions_by_module`, `xboxaudio_chain`, `docs/NATIVE.md`, `docs/ARTIFACTS.md`,
+  `docs/systems/CLASS_REGISTRATION.md` and the generated blocks in `docs/SYMBOLS.md`.
+- **What is left in this thread:** 38 refused tails (7 a `jmp` with code behind it, 9 a `ret` followed by code that
+  is neither filler, a body's opening nor the same frame, 12 no terminator at all, 10 no byte behind them) and the
+  14 splits, each waiting on the review the fold walk cannot supply.
+- **Gates.** `make ci` green; `--check` proves all 648 resizes are applied to the map and carried by the artifact,
+  `--check-doc` rebuilds the SYMBOLS.md block from the committed CSV, `--selftest` covers the three closes, the
+  fold, the untrusted-short row, the carried `drop`, the undecoded cut and both round trips. No boot, no Ghidra,
+  no xemu.

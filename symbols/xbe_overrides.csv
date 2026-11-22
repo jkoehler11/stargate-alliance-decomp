@@ -181,7 +181,7 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x00053c10,dtor_LinkerLoadGame,class table installed before any call; the body does not return this,,,,,,,
 0x00058a30,appAssertFailed,"wide literal ""Assertion failed: %s [File:%s] [Line: %i]"" is the format it logs; its arguments are expression / file / line; 2432 direct call sites",,,,,Core,,67
 0x00062ce0,ctor_Object,class table installed after a call into the base constructor; the body returns this,,,,,,,
-0x00063410,UObject_StaticShutdownAfterError,own method literal UObject::StaticShutdownAfterError,UObject,,,,Core,,142
+0x00063410,UObject_StaticShutdownAfterError,own method literal UObject::StaticShutdownAfterError,UObject,,,,Core,,173
 0x00066b60,ctor_Commandlet,class table installed after a call into the base constructor; the body returns this,,,,,,,
 0x00066cb0,ctor_Package,class table installed after a call into the base constructor; the body returns this,,,,,,,
 0x00069a40,ctor_TextBufferFactory,class table installed after a call into the base constructor; the body returns this,,,,,,,
