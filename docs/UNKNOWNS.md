@@ -6276,3 +6276,24 @@ rows) and `--check-symbols` gates it in `make ci`: a recorded name that leaves t
 holds under another name or size, fails. What is left of this entry: the 9 slot stores, the 65 array entries
 (the array's meaning is still not in the image), the 427 silent bodies, the 2 bodies in `0x0051724c`, the 4
 linker folds and the 359 interface-only bodies.
+
+**Answered since (2026-11-21, the slot channel read at the store).** The 9 slot stores are one installer's run
+and the 65 array entries are one body's stores, so neither channel was ever a list of unrelated bodies. Read at
+the *store* (`tools/global-slot-stores.py`, `inventory/global_slot_stores.csv`), the two windows hold **91 slots,
+79 stores and 309 candidates that spell a slot's address without writing it** (all of them `call [slot]`, which
+is why an occurrence count over-reads). The 9 are **11 stores in a 100-byte run** inside `0x0008ded0`, the Karma
+init body, into `0x005ccadc`..`0x005ccb34`, and **all 11 replace a file-backed default** -- the two the census
+could not see (`0x000ad970`, `0x000ad9b0`) are already map rows. The 3-entry run at `0x005ccb1c` is three of a
+**42-entry table** (`0x005ccadc`..`0x005ccb80`, 35 distinct, the seven entries at `0x005ccb1c`..`0x005ccb37`
+repeated at `0x005ccb38`..`0x005ccb53`), it is the **MathEngine runtime's callback table** rather than a class
+table -- `0x000ad900` and `0x000ad950` say so in their own literals (`MePoolMallocReset() not implemented`,
+`MePoolMallocDestroy(): %d structs still allocated`), and three of the nine forward into the engine allocator
+vtable `0x004c882c` through `ds:0x005bf510` -- so the `int[AU]<Class>exec<Func>` grammar has no key for it.
+The 65 array entries are **68 `c7 05` stores by `0x00012620`** (`Core_UnObjBas`) into `0x00630e20`..`0x00630f2c`;
+the array is **past the file-backed `.data`**, which is why no value is in the image, and **67 of the 68 values
+are the `<Class>_lookup` walkers** this entry named while the 68th (`0x00011600`) is an address inside one of
+them (`BotEnemy_lookup + 0x50`). Two bodies take the name their own literal states (`MePoolMallocReset`,
+`MePoolMallocDestroy`), gated in `make ci` by `--check-symbols`; the census re-read over the post-name map reads
+**485 bodies (104,764 bytes) and 141 islands with the slot channel down from 9 stores to 7**. What is left of
+this entry: the 7 callback bodies the table names by no literal, the 427 silent bodies, the 2 bodies in
+`0x0051724c`, the 4 linker folds and the 359 interface-only bodies.

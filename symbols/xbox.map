@@ -2600,6 +2600,8 @@
 0x000ad600 FUN_000ad600                                  174 
 0x000ad810 FUN_000ad810                                   25 
 0x000ad830 FUN_000ad830                                   34 
+0x000ad900 MePoolMallocReset                              23 
+0x000ad950 MePoolMallocDestroy                            30 
 0x000ad970 FUN_000ad970                                   50 
 0x000ad9b0 FUN_000ad9b0                                   79 
 0x000ada20 FUN_000ada20                                   58 

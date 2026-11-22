@@ -1,0 +1,3 @@
+body_va,size,name,evidence
+0x000ad900,23,MePoolMallocReset,"pushes its own name: MePoolMallocReset() not implemented (0x004e9610) through the log wrapper at 0x003d9220, in the slot the image ships 0x003d9260"
+0x000ad950,30,MePoolMallocDestroy,"pushes its own name: MePoolMallocDestroy(): %d structs still allocated (0x004e9634) through 0x003d9240, in the slot the image ships 0x003d9330"

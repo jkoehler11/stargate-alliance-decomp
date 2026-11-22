@@ -164,9 +164,7 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x000ad880,11,global-load-ecx,jmp-ind,,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccae8,,0x005bf510,operand-in-row,FUN_000ad830,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000ad890,37,global-load-edx,ret-imm,,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccaf0,,,operand-in-row,FUN_000ad830,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000ad8c0,61,global-load-edx,ret-imm,,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccae0,,,operand-in-row,FUN_000ad830,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-0x000ad900,23,push-imm,ret-imm,MePoolMallocReset() not implemented,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccb24,,,operand-in-row,FUN_000ad830,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-0x000ad920,41,arg-load,ret-imm,,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccb1c,,,operand-in-row,FUN_000ad830,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-0x000ad950,30,arg-load,ret-imm,MePoolMallocDestroy(): %d structs still ,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccb20,,,operand-in-row,FUN_000ad830,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0x000ad920,41,arg-load,ret-imm,,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccb1c,,,operand-in-row,MePoolMallocReset,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000ada00,10,arg-load,ret-imm,,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccb30,,,operand-in-row,FUN_000ad9b0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000ada10,13,arg-load,ret-imm,,1,operand,row,0x0008ded0,FUN_0008ded0,,0x005ccb34,,,operand-in-row,FUN_000ad9b0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000adf50,103,arg-load,ret,,0,,,,,,,,,silent,FUN_000adf30,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -486,4 +484,4 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x00405c41,283,push-reg,jmp,,0,,,,,,,,,silent,FUN_00404f90,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00406e92,105,add-reg-imm8,jmp,,0,,,,,,,,,silent,FUN_00406330,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x0040a736,18,push-reg,jmp,,0,,,,,,,,,silent,FUN_00409100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,census,,,2199,487,104817,141,9,9,3,0x005ccb1c,0x005ccb24,0,0,6,0,297,0,0,0,0,0,0,60,56,6,54,3,2,0,0,1,427,16933,464,293,183,2,2000,23,?=54 Core=2 head=2 XboxAudio=1 gap=1,52485,25
+,,,,,,,,,,,,,,census,,,2197,485,104764,141,7,7,2,0x005ccadc,0x005ccae0,0,0,6,0,297,0,0,0,0,0,0,58,54,6,52,3,2,0,0,1,427,16935,466,295,183,2,2000,23,?=52 Core=2 head=2 XboxAudio=1 gap=1,52485,25
