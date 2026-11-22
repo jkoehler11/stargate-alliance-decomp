@@ -27,10 +27,19 @@ project's own rule is that only a run of two or more `int3` bounds a body. A row
 with that pad is already bounded where the map says it ends (`bounded`, no repair).
 
 Every other row that does not end on a terminator is counted and not repaired: `split` (the next map
-row starts at the row's end -- Ghidra split one body in two, which is a `drop` repair and needs a
-review this rule cannot supply), `refused` (a terminator with code behind it, or nothing to decode)
-and `short` (still a byte count: nothing spans the cut, the completed instruction would cross the next
+row starts at the row's end) and `refused` (a terminator with code behind it, or nothing to decode) and
+`short` (still a byte count: nothing spans the cut, the completed instruction would cross the next
 row, or the run behind it does not close).
+
+**A split is read as a fold, and the evidence is entry, not a frame.** A row whose next map row starts
+inside the body its own head reads forward to is a `drop` repair. Its head has to be a body's start: an
+instruction boundary in front of it (a `pad` or a terminator, `start_kind`) **and** one of three pieces
+of entry evidence -- a name the build gave it, a measured prologue, or a `call`/`jmp` that lands on it
+(`call_targets`). Every map row inside the span is interior code unless **something calls it**: a body is
+entered by a call or a jump, never by falling through its neighbour's last instruction. A row whose head
+is inside another instruction is not a body at all (`no-boundary`): no branch can enter it, so the map
+made a fragment inside a body it has no row for.
+
 
 **A `ret` is a boundary too, and the code behind it is read by what it *is*, not only by what it
 reads.** Nothing falls through a `ret` either, so code behind one is reached only by a branch, and the
@@ -72,6 +81,7 @@ import csv
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -95,8 +105,8 @@ CENSUS = ("text_rows", "sized_rows", "terminator", "short", "undecoded", "undeco
           "refused_undecoded", "refused_no_room", "padding_family", "padding_bytes", "behind_family",
           "behind_bytes", "body_family", "body_bytes", "data_family", "data_bytes", "follow_family",
           "follow_bytes", "short_overlap", "short_nostraddle", "short_refused", "short_split", "fold_trials",
-          "fold_agree", "null_hits", "null_trials", "over", "over_bytes", "refused_over_code",
-          "refused_over_close", "reread")
+          "split_noboundary", "fold_agree", "null_hits", "null_trials", "over", "over_bytes",
+          "refused_over_code", "refused_over_close", "reread")
 # the reason's first token is its family, so a carried row needs no second column
 FAMILIES = ("head", "tail", "pad", "jump", "complete", "padding", "behind", "body", "data", "follow")
 
@@ -261,7 +271,7 @@ def tail_rule(reader, decode_fn, start, limit, targets=None):
     if first is None:
         return tail, None, "no-close"
     why = close_kind(reader, decode_fn, first, limit)
-    if why in ("body", "data") and (first[0] + first[1]) in targets:
+    if why in ("body", "data", "behind", "follow") and (first[0] + first[1]) in targets:
         # the row branches to the bytes behind this close, so they are the row's own code -- the
         # early-return shape -- whatever they look like
         return tail, None, "then-code"
@@ -454,6 +464,54 @@ def opens_body(first):
     return False
 
 
+def call_targets(reader, lo, hi):
+    """Addresses a direct `call`/`jmp` in the section names: entry evidence a prologue cannot supply.
+
+    A body is entered by a call or a jump, never by falling through its neighbour's last instruction, so
+    a `call`/`jmp rel32` that lands exactly on an address is proof a function starts there even when the
+    opening matches no prologue (`0x003ee1ea`, `c6 05 ...  mov BYTE PTR ds:...,0x0`, is called from
+    `0x003ee1e2`). The scan is a byte walk rather than a decode of every row: a false positive only ever
+    *refuses* a fold, which is the safe direction, and the head test additionally requires an instruction
+    boundary in front of the address.
+    """
+    out = set()
+    blob = reader(lo, hi - lo)
+    for i in range(len(blob) - 4):
+        if blob[i] not in (0xE8, 0xE9):
+            continue
+        rel = struct.unpack_from("<i", blob, i + 1)[0]
+        tgt = lo + i + 5 + rel
+        if lo <= tgt < hi:
+            out.add(tgt)
+    return out
+
+
+def start_kind(reader, va, lo):
+    """`pad`/`ret`/`jmp` when an instruction boundary in front of `va` can begin a body, else None.
+
+    A row whose head is not an instruction boundary is not a body at all: no branch can land on it and
+    nothing falls into it, because the bytes in front belong to an instruction that is already running.
+    The boundary is read from the eight bytes in front (`int3`/`nop` fill, `ret`, `ret imm16`, `jmp`);
+    `None` is the answer for a head inside another instruction.
+    """
+    if va - 8 < lo:
+        return None
+    b = reader(va - 8, 8)
+    if len(b) < 8:
+        return None
+    if b[-1] in FILL:
+        return "pad"
+    if b[-1] == 0xC3:
+        return "ret"
+    if b[-3] == 0xC2:
+        return "ret-imm"
+    if b[-5] == 0xE9:
+        return "jmp"
+    if b[-2] == 0xEB:
+        return "jmp-short"
+    return None
+
+
 def is_fill_insn(text):
     """Alignment filler: `nop`, `int3`, `lea r,[r+0x0]`, or any other no-op that writes nothing.
 
@@ -502,7 +560,7 @@ def close_ahead(reader, decode_fn, start, limit, cap=600):
                 targets |= branch_targets([step])
                 continue
             kind = close_kind(reader, decode_fn, step, limit)
-            if kind in ("body", "data") and (step[0] + step[1]) in targets:
+            if kind in ("behind", "follow", "body", "data") and (step[0] + step[1]) in targets:
                 kind = "then-code"
             if kind in ("tail", "pad", "padding", "behind", "body", "data", "jump", "jump-pad",
                         "jump-behind", "jump-table", "jump-data"):
@@ -547,14 +605,16 @@ def owns_frame(reader, decode_fn, va, limit):
     return True
 
 
-def fold_end(reader, decode_fn, start, size, limit, starts, names):
+def fold_end(reader, decode_fn, start, size, limit, starts, calls=None):
     """(close address, close instruction, kind, refusal) for a row the map split from its own body.
 
     The row's head is a real instruction boundary, so the body is read forward from there: the first
-    close is where it ends. A map row that starts inside that span is a fragment of the same body unless
-    its own head opens a body (the shared prologue table) **and builds its own frame** -- a head that
-    reads `[ebp+..]` before writing `ebp` is using the enclosing body's frame, so it is continuation code
-    -- and then the read is refused rather than swallowing a function.
+    close is where it ends. Every map row that starts inside that span is **continuation code**: a body
+    is entered by a call or a jump, never by falling through its neighbour's last instruction, so a row
+    inside a linear decode cannot be a function unless something **calls** it. `calls` is the image's
+    call-target set; a line that holds one is refused (`body-inside`) rather than swallowed, which is
+    what keeps a called body from being folded into the row in front of it -- `0x003ee1f1` is 325 bytes
+    of its own and is called from `0x003ee1ea`, so the split the map made there is real.
     """
     close, kind = close_ahead(reader, decode_fn, start, limit)
     if close is None:
@@ -564,7 +624,11 @@ def fold_end(reader, decode_fn, start, size, limit, starts, names):
         return None, close, kind, "no-wider"
     k = bisect.bisect_right(starts, start)
     while k < len(starts) and starts[k] < cend:
-        if opens_body(reader(starts[k], 8)) and owns_frame(reader, decode_fn, starts[k], cend):
+        if calls is not None:
+            blocked = starts[k] in calls
+        else:
+            blocked = opens_body(reader(starts[k], 8)) and owns_frame(reader, decode_fn, starts[k], cend)
+        if blocked:
             return None, close, kind, "body-inside"
         k += 1
     return cend, close, kind, None
@@ -579,6 +643,18 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
     """
     lo, hi = text or (0x00010000, 0x00500000)
     starts = [r["va"] for r in rows if r["size"]]
+    calls = call_targets(reader, lo, hi)
+    # A registration or vtable slot names a body by *data*: `xbe_overrides.csv` holds the rows the
+    # class-registration pass created, and a slot that points into a fold's span proves the row there is
+    # a body (0x002c4f1c is FUdpLink::BindPort's own slot entry), not continuation code.
+    try:
+        with open(OVERRIDES, newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                a = (row.get("address") or "").strip()
+                if a.startswith("0x"):
+                    calls.add(int(a, 16))
+    except OSError:
+        pass
     head_at = {}
     for h in heads:
         head_at.setdefault(h["va"], h)
@@ -595,13 +671,48 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         out.append(_row(r, last, end_kind, tail_bytes, close_va, "continuation", reason, note,
                         head=head, close=close, new_size=new_size))
 
+    def fold_row(r, last, end_kind, note):
+        """A row whose next map row starts inside the body its own head reads forward to.
+
+        Both shapes the map makes here are the same repair: the row the map **split** at a boundary, and
+        the row the map **cut short** before a fragment row that starts inside its body. The head has to
+        be a body's start -- an instruction boundary in front of it, and a name, a measured prologue or a
+        call into it -- and no row inside the span may be called, or the fold would swallow a function.
+        """
+        nxt = None
+        k0 = bisect.bisect_right(starts, r["va"])
+        if k0 < len(starts):
+            nxt = starts[k0]
+        end = r["va"] + r["size"]
+        if nxt is None or nxt > end + MAX_FOLD:
+            return None
+        entry = start_kind(reader, r["va"], lo)
+        if not entry:
+            return None
+        named = bool(r["name"]) and not r["name"].startswith(("FUN_", "thunk_"))
+        if not (named or opens_body(reader(r["va"], 8)) or r["va"] in calls):
+            return None
+        limit = min(max(nxt, end) + MAX_FOLD, hi)
+        cend, close, kind, why = fold_end(reader, decode_fn, r["va"], r["size"], limit, starts, calls)
+        if cend is None or cend <= end or nxt >= cend:
+            return None
+        return _row(r, last, end_kind, cend - end, "0x%08x" % close[0], "interior", "fold",
+                    note + "; read forward from this row's own head the body closes on `%s` at 0x%08x "
+                    "(%s behind it), %d byte(s) past the map's end, so the row at 0x%08x that starts "
+                    "inside that span is interior code of it" % (
+                        close[2], close[0], kind, cend - end, nxt),
+                    close=close, new_size=cend - r["va"])
+
     def split_row(r, last, end_kind, cut=False):
         """A row whose end is the next row's start: is the next map row interior code of this one?
 
-        A split is only read as a fold when this row's head is a body's own start -- a measured prologue
-        shape, or a name the build gave it (an assert or a registration) rather than `FUN_*`/`thunk_*`
-        -- and the body read forward from that head reaches a close that the next row starts inside.
-        Every map row inside the repaired span becomes a `drop`."""
+        A split is only read as a fold when this row's head is a body's own start: an instruction
+        boundary in front of it (a `pad` or a terminator, `start_kind`) **and** one of the three pieces
+        of entry evidence -- a name the build gave it (an assert or a registration, not `FUN_*`/`thunk_*`),
+        a measured prologue shape, or a `call`/`jmp` that lands on it. A row whose head is inside another
+        instruction is not a body at all: no branch can enter it, so the map made a fragment inside a body
+        it has no row for, and that is named `no-boundary` rather than left to a review.
+        """
         cen["nonterm"] += 1
         cen["split"] += 1
         if cut:
@@ -609,15 +720,33 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         end = r["va"] + r["size"]
         note = ("the completed instruction ends where the next map row starts" if cut
                 else "the next map row starts at this row's end")
+        entry = start_kind(reader, r["va"], lo)
+        if not entry:
+            cen["split_noboundary"] += 1
+            out.append(_row(r, last, end_kind, 0, "", "split", "no-boundary",
+                            note + ", so the map split one body in two; but no instruction ends at this "
+                            "row's head -- the bytes in front of it are inside one -- so nothing can "
+                            "branch to it and it is a fragment of a body the map has no row for, not a "
+                            "body of its own"))
+            return
         named = bool(r["name"]) and not r["name"].startswith(("FUN_", "thunk_"))
-        if not (named or opens_body(reader(r["va"], 8))):
+        if not (named or opens_body(reader(r["va"], 8)) or r["va"] in calls):
             out.append(_row(r, last, end_kind, 0, "", "split", "next-row",
-                            note + ", so the map split one body in two; this row's head is neither a "
-                            "measured prologue nor a name the build gave it, so the split is left to a "
-                            "review that this rule cannot supply"))
+                            note + ", so the map split one body in two; this row's head follows a "
+                            "boundary (%s) but is neither a measured prologue, a name the build gave "
+                            "it nor the target of a `call`, so the split is left to a review this rule "
+                            "cannot supply" % entry))
+            return
+        folded = fold_row(r, last, end_kind, note)
+        if folded is not None:
+            cend = r["va"] + int(folded["new_size"])
+            cen["split_fold"] += 1
+            cen["fold_bytes"] += cend - end
+            cover.append((cend, r["va"]))
+            out.append(folded)
             return
         cend, close, kind, why = fold_end(reader, decode_fn, r["va"], r["size"],
-                                          min(end + MAX_FOLD, hi), starts, None)
+                                          min(end + MAX_FOLD, hi), starts, calls)
         if cend is None:
             out.append(_row(r, last, end_kind, 0, "", "split", "next-row",
                             note + ", so the map split one body in two, and the head reads as a body "
@@ -804,6 +933,21 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                              h["size"], h["verdict"], h["tail"] or "a terminator"),
                          r["size"] + h["size"], head=h)
         else:
+            # A row the map cut short before a fragment that starts inside its own body is the same
+            # repair as a split: read forward from the row's own head. Tried before the tail rule
+            # because the next map row leaves the tail no room to decode -- 0x002e0020 is 12 bytes and
+            # the fragment at 0x002e002e starts two bytes later, inside the body that runs to 0x2e008d.
+            folded = fold_row(r, last, "fold:short",
+                              "the row ends on a %s with its own body still running" % last[2])
+            if folded is not None:
+                cend = r["va"] + int(folded["new_size"])
+                cen["nonterm"] += 1
+                cen["split"] += 1
+                cen["split_fold"] += 1
+                cen["fold_bytes"] += cend - end
+                cover.append((cend, r["va"]))
+                out.append(folded)
+                continue
             tail, close, why = tail_rule(reader, decode_fn, end, nxt if nxt else end + MAX_TAIL,
                                          targets=branch_targets(ins))
             if close is not None:
@@ -1067,8 +1211,11 @@ def render(rows, cen):
     if rest:
         splits = [r for r in rest if r["verdict"] == "split"]
         folds = [r for r in rest if r["verdict"] == "interior"]
-        suffix = ((" -- the %d the fold rule can read are below, and the rest need a review it cannot "
-                   "supply" % len(folds)) if folds else " and needs a review this rule cannot supply")
+        nobd = [r for r in splits if r["reason"] == "no-boundary"]
+        suffix = ((" -- %d of them are not splits at all (their head is inside another instruction, "
+                   "below) and %d end on a real boundary and need a review this rule cannot supply"
+                   % (len(nobd), len(splits) - len(nobd))) if splits
+                  else " and needs a review this rule cannot supply")
         folded = [r for r in rest if r["verdict"] == "folded"]
         short = [r for r in rest if r["verdict"] == "short"]
         lines.append(
@@ -1106,21 +1253,30 @@ def render(rows, cen):
         lines.append("")
     if folds or folded:
         lines.append(
-            "**The splits this rule does repair are folds.** %d rows the map split from their own "
-            "continuation read forward from their **own head** -- a measured prologue, or a name the "
-            "build gave them -- to the close that ends the body (**%d bytes** past the row's end), and "
-            "every map row that starts inside that span is interior code of it: **%d rows** drop into "
-            "the row above, each a `drop` row in `symbols/xbe_boundaries.csv` beside the fold's "
-            "`resize`. A row inside that span only blocks the fold when it **builds its own frame**: one "
-            "that reads `[ebp+..]` or pops `ebp` before it writes `ebp` is using the enclosing body's "
-            "frame, so it is continuation code and the fold goes ahead. A split whose head is neither a "
-            "prologue nor a name (`FUN_*`) is left alone: "
-            "reading it forward would be a guess about where a body began, not a measurement. **The "
-            "control is the same read on rows that already close**: from its head, **%d of the %d "
-            "rows sampled** land on the map's own end (%.1f%%), so the read reproduces a size it was "
-            "not given." % (
-            len(folds), n("fold_bytes"), len(folded), n("fold_agree"), n("fold_trials"),
-            pct(n("fold_agree"), n("fold_trials"))))
+            "**Rows whose next map row starts inside their own body are folds.** %d rows read forward "
+            "from their **own head** -- an instruction boundary in front of them (a `pad` or a "
+            "terminator) and one of three pieces of entry evidence: a measured prologue, a name the "
+            "build gave them, or a `call`/`jmp` that lands on them -- to the close that ends the body "
+            "(**%d bytes** past the map's end), and every map row that starts inside that span is "
+            "interior code of it: **%d rows** drop into the row above, each a `drop` row in "
+            "`symbols/xbe_boundaries.csv` beside the fold's `resize`. A row inside the span blocks the "
+            "fold only when **something calls it**: a body is entered by a call or a jump, never by "
+            "falling through its neighbour's last instruction, so a row inside a linear decode is "
+            "continuation code unless a call lands on it. **The control is the same read on rows that "
+            "already close**: from its head, **%d of the %d rows sampled** land on the map's own end "
+            "(%.1f%%), so the read reproduces a size it was not given." % (
+                len(folds), n("fold_bytes"), len(folded), n("fold_agree"), n("fold_trials"),
+                pct(n("fold_agree"), n("fold_trials"))))
+        lines.append("")
+    if n("split_noboundary") or n("split"):
+        lines.append(
+            "**A split whose head is inside another instruction is not a split at all.** %d rows end "
+            "exactly where the next map row starts, and no instruction ends at their head -- the bytes "
+            "in front of it are the middle of one -- so nothing can branch to it and it is a fragment "
+            "the map made inside a body it has no row for. Their bytes are left where they are: a "
+            "`drop` needs a containing row, and the body that holds them is a gap with no row of its "
+            "own, which is the `add` repair this rule does not write. %d further splits end on a real "
+            "boundary and are left to the review above." % (n("split_noboundary"), n("split")))
         lines.append("")
     lines.append(
         "**The repairs are in the file, not in this tool's output.** `--write-boundaries` appends one "
@@ -1197,10 +1353,11 @@ def evidence_for(r):
                  "jump-data": "not code -- an instruction no ring-3 program can execute is in the run, "
                               "so the dispatch's table follows it"}[r["reason"]], r["new_size"]))
     if r["verdict"] == "interior":
-        return ("%s; the row's head is a body's own start and the body read forward from it closes on `%s` "
-                "at %s with %s behind it, so the %s bytes to that close are one body and the map rows "
-                "inside it are interior code" % (
-                    REPAIRS[4], r["close_insn"], r["close_va"], r["reason"], r["tail_bytes"]))
+        return (REPAIRS[4] + "; the row's head is a body's own start -- an instruction boundary in front "
+                "of it and a name, a measured prologue or a `call` landing on it -- and the body read "
+                "forward from it closes on `%s` at %s, so the %s bytes to that close are one body and "
+                "the map rows inside it are interior code"
+                % (r["close_insn"], r["close_va"], r["tail_bytes"]))
     return ("%s; `%s` closes the run %s bytes past the row's end and only fill follows before the next "
             "row" % (REPAIRS[1], r["close_insn"], r["tail_bytes"]))
 
@@ -1212,15 +1369,25 @@ def write_boundaries(rows, path=BOUNDARIES):
     have = {b["address"]: b for b in read_boundaries(path)}
     added, kept, bad = 0, 0, []
     lines = []
+    repl = {}
     for r in rows:
         if r["verdict"] == "folded":
             va, target = int(r["row_va"], 16), int(r["target_va"], 16)
             b = have.get(va)
             if b:
-                if b["action"] != "drop":
-                    bad.append("%s already carries a %s" % (r["row_va"], b["action"]))
-                else:
+                if b["action"] == "drop":
                     kept += 1
+                elif b["action"] == "resize":
+                    # the row was a continuation in an earlier measurement and is interior code of a
+                    # fold now: the resize it carried is superseded by the drop, so its line is
+                    # rewritten rather than refused
+                    repl[va] = '0x%08x,drop,0x%08x,,"%s"' % (
+                        va, target,
+                        "the body at 0x%08x reads forward from its own head to a close this row starts "
+                        "inside, so this row is interior code of it" % target)
+                    added += 1
+                else:
+                    bad.append("%s already carries a %s" % (r["row_va"], b["action"]))
                 continue
             lines.append('0x%08x,drop,0x%08x,,"%s"' % (
                 va, target, ("the body at 0x%08x reads forward from its own head to a close this row "
@@ -1241,6 +1408,14 @@ def write_boundaries(rows, path=BOUNDARIES):
         added += 1
     if bad:
         raise SystemExit("symbol-extents: refusing: " + "; ".join(bad))
+    if repl:
+        out = []
+        for line in text.splitlines(keepends=True):
+            addr = line.split(",", 1)[0].strip()
+            if addr in repl:
+                line = repl[addr] + ("\r\n" if line.endswith("\r\n") else "\n")
+            out.append(line)
+        text = "".join(out)
     if lines:
         if not text.endswith(("\n", "\r\n")):
             text += "\r\n"
@@ -1602,6 +1777,10 @@ def self_check():
                   (0x10703, 3, "mov    eax,DWORD PTR [ebp-0x4]")],
         0x10706: [(0x10706, 1, "push   esi"), (0x10707, 2, "mov    ebp,esp")],
         0x10709: [(0x10709, 1, "ret")],
+        0x10a00: [(0x10a00, 7, "mov    BYTE PTR ds:0x1,0x0")],
+        0x10a07: [(0x10a07, 1, "pop    ebp"), (0x10a08, 1, "ret")],
+        0x10c01: [(0x10c01, 1, "inc    ebp")],
+        0x10c02: [(0x10c02, 1, "ret")],
     }
 
     def d2(blob, base):
@@ -1618,6 +1797,11 @@ def self_check():
     put2(0x10606, b"\x56\x8b\x45\xf8")                     # the fragment reads [ebp] before writing it
     put2(0x10700, b"\x55\x8b\xec\x8b\x4d\xfc")           # a frame head, split at 0x10706
     put2(0x10706, b"\x56\x8b\xec")                          # ... whose fragment builds its own frame
+    put2(0x10a00, b"\xc6\x05\x01\x00\x00\x00\x00")        # a head no prologue matches ...
+    put2(0x10a07, b"\x5d\xc3")                               # ... split at 0x10a07
+    put2(0x10c00, b"\x45\x45")                               # a row whose head is inside an instruction
+    put2(0x10b00, b"\xe8\x01\xfc\xff\xff")                # call 0x10706: the fragment is a body
+    put2(0x10b08, b"\xe8\xf3\xfe\xff\xff")                # call 0x10a00: the head above is called
     _t, c1, w1 = tail_rule(r2, d2, 0x10100, 0x10110)
     if w1 != "padding":
         bad.append("a close followed by alignment filler is a `padding` close (got %s)" % w1)
@@ -1634,7 +1818,11 @@ def self_check():
                  {"va": 0x10600, "name": "FUN_00010600", "size": 6},
                  {"va": 0x10606, "name": "FUN_00010606", "size": 4},
                  {"va": 0x10700, "name": "FUN_00010700", "size": 6},
-                 {"va": 0x10706, "name": "FUN_00010706", "size": 3}]
+                 {"va": 0x10706, "name": "FUN_00010706", "size": 3},
+                 {"va": 0x10a00, "name": "FUN_00010a00", "size": 7},
+                 {"va": 0x10a07, "name": "FUN_00010a07", "size": 2},
+                 {"va": 0x10c01, "name": "FUN_00010c01", "size": 1},
+                 {"va": 0x10c02, "name": "FUN_00010c02", "size": 1}]
     fout, fcen = measure(fold_rows, [], r2, d2, text=(0x10000, 0x11000))
     fv = {r["row_va"]: r for r in fout}
     if fv.get("0x00010400", {}).get("verdict") != "interior" or \
@@ -1655,15 +1843,25 @@ def self_check():
                                                  fv.get("0x00010606", {}).get("verdict")))
     if fv.get("0x00010700", {}).get("verdict") != "split" or \
             "body-inside" not in (fv.get("0x00010700", {}).get("note") or ""):
-        bad.append("a fragment that builds its own frame is a body, so the fold refuses (got %s)"
+        bad.append("a fragment that is called from elsewhere is a body, so the fold refuses (got %s)"
                    % fv.get("0x00010700", {}).get("verdict"))
+    if fv.get("0x00010a00", {}).get("verdict") != "interior" or \
+            fv["0x00010a00"]["new_size"] != 9 or fv.get("0x00010a07", {}).get("verdict") != "folded":
+        bad.append("a head no prologue matches is a body start when a `call` lands on it, and its "
+                   "interior row drops (got %s / %s)" % (fv.get("0x00010a00", {}).get("verdict"),
+                                                        fv.get("0x00010a07", {}).get("verdict")))
+    if fv.get("0x00010c01", {}).get("reason") != "no-boundary":
+        bad.append("a row whose head is inside another instruction is named `no-boundary` (got %s)"
+                   % fv.get("0x00010c01", {}).get("reason"))
     tmp2 = tempfile.mkdtemp()
     try:
         p2 = os.path.join(tmp2, "symbol_extents.csv")
         write_artifact(fout, fcen, p2)
         again, cen4 = measure([fold_rows[0], fold_rows[2]], [], r2, d2,
                               known={r["row_va"]: r for r in fout}, text=(0x10000, 0x11000))
-        if cen4.get("split_folded") != 2 or not [r for r in again if r["verdict"] == "folded"]:
+        carried = {r["row_va"]: r for r in again if r["verdict"] == "folded"}
+        if "0x00010406" not in carried or carried["0x00010406"]["target_va"] != "0x00010400" or \
+                cen4.get("split_folded", 0) < 1:
             bad.append("a dropped row's record is carried from the artifact")
         carried_fold, cen5 = measure(
             [{"va": 0x10400, "name": "FUN_00010400", "size": 8},
