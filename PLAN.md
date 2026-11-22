@@ -17542,3 +17542,32 @@ sequence.
   cannot land half-way.
 - **Not in this bundle.** The 16 size corrections (above), and any name for the 337 unique bodies: the literals
   place their subsystem, and no channel in the image reaches an owner.
+
+### Execution notes (2026-11-21, the map's extents: 313 rows that stop on their own epilogue)
+
+- **Task.** The "16 short rows" the silent-body read left open are not 16: reading every `.text` row's last
+  instruction shows the family is **313 rows and 8,604 bytes**.
+- **The read.** `tools/symbol-extents.py` decodes each of the map's 13,478 `.text` rows at its own head:
+  12,752 close on a terminator, 303 end mid-instruction, 6 do not decode, and 417 decode to a
+  non-terminator. Of those, 313 leave a tail: **85** where a gap head starts at the row's end (its own sweep
+  measures it -- 6,599 bytes, `FUN_002a002a` 20 -> 4,521) and **228** where a decode from the row's own end
+  reaches a `ret` with nothing but fill up to the next row (2,005 bytes); a `jmp` opening that tail refuses
+  the read, because the tail-call's target code sits behind it.
+- **The control.** The same tail rule over 955 fixed addresses in the image's data sections finds a close
+  into fill **2** times (0.2%).
+- **The repairs.** 313 `resize` rows appended to `symbols/xbe_boundaries.csv` (now 2,221 rows: 1,780 `add`s,
+  369 `resize`s, 53 `rename`s, 19 `drop`s) and applied by `symbol-boundaries.py --apply`: the map moves from
+  4,252,261 to **4,260,865 bytes** (+8,604) with the same 16,935 rows and 8,051 `FUN_*`. Five
+  `xbe_overrides.csv` `function_size`s followed their rows (`XboxAudio_UnregisterSoundBytes`,
+  `XboxAudio_SetSoundDevice`, `LIPSincReadAnimFile`, `LIPSincReadControllerFile`, `StatsReadTask_Finished`).
+- **The cascade.** Regenerated on the corrected map in one commit: `gap_heads` (2,275 -> 2,188 heads),
+  `gap_body_families`, `gap_body_files`, `silent_bodies` (**427 -> 410 bodies, 52,485 -> 46,060 bytes**, and
+  **0** continuations remain: the 16 the silent read called continuations plus one more are inside their
+  rows), and the generated blocks in `docs/SYMBOLS.md` and `docs/systems/CLASS_REGISTRATION.md`.
+- **What is still open.** 7 rows the map already split from its continuation (a `drop` repair each, named in
+  `docs/SYMBOLS.md`), 97 rows whose tail does not close before the next row, and 303 rows whose size lands
+  mid-instruction.
+- **Gates.** `make ci` green; `--check` proves all 313 resizes are applied to the map and carried by the
+  artifact, `--check-doc` rebuilds the SYMBOLS.md block from the committed CSV, `--selftest` covers both
+  evidence families, the split, the `jmp` refusal, the carry and both artifact round trips. No boot, no
+  Ghidra, no xemu.
