@@ -1,0 +1,16 @@
+thread,body_va,size,insns,terminator,kind,args,dispatch_from,dispatch_slot,context,fields,literals,callees,tables,slot,declarers,note,threads,bodies,bytes,com_notimpl,alloc_zero,tail_dispatch,dispatch,init_descriptor,field_getter,out_param_write,other,with_literal,with_callee,dispatch_globals,args_min,args_max,karma,table_51724c,inherited,literal_control,literal_control_hits
+karma-callback,0x000ad860,31,9,ret 0x4,dispatch,1,[ds:0x5bf510],+0x0,ds:0x6f7bf0+0x15018,+0x8,,,0x005ccadc,0,,dispatches through slot +0x0 of [ds:0x5bf510] and returns (1 argument dword(s)),,,,,,,,,,,,,,,,,,,,,
+karma-callback,0x000ad8c0,61,25,ret 0x4,alloc-zero,1,[ds:0x5bf510],+0x0,ds:0x6f7bf0+0x15018,+0x8,,,0x005ccadc,1,,"allocates through [ds:0x5bf510]+0x0, then zero-fills the block (1 argument dword(s))",,,,,,,,,,,,,,,,,,,,,
+karma-callback,0x000ad880,11,3,jmp DWORD PTR [eax+0x8],tail-dispatch,,[ds:0x5bf510],+0x8,,+0x8,,,0x005ccadc,3,,tail-jumps to slot +0x8 of [ds:0x5bf510] -- no frame of its own,,,,,,,,,,,,,,,,,,,,,
+karma-callback,0x000ad890,37,11,ret 0x8,dispatch,2,[ds:0x5bf510],+0x4,ds:0x6f7bf0+0x15018,+0xc +0x4,,,0x005ccadc,5,,dispatches through slot +0x4 of [ds:0x5bf510] and returns (2 argument dword(s)),,,,,,,,,,,,,,,,,,,,,
+karma-callback,0x000ad920,41,10,ret 0x10,init-descriptor,4,,,,+0x4 +0x8 +0xc +0x10,,,0x005ccadc,16,,writes a descriptor into the object it is handed (4 argument dword(s)),,,,,,,,,,,,,,,,,,,,,
+karma-callback,0x000ada00,10,3,ret 0x4,field-getter,1,,,,+0x4,,,0x005ccadc,21,,a field getter over `+0x4`,,,,,,,,,,,,,,,,,,,,,
+karma-callback,0x000ada10,13,4,ret 0x4,field-getter,1,,,,+0x4 +0xc,,,0x005ccadc,22,,"a field getter over `+0x4`, `+0xc`",,,,,,,,,,,,,,,,,,,,,
+table-0x51724c,0x001df4e0,4,2,ret,field-getter,0,,,,+0x10,,,0x0051724c,2,,a field getter over `+0x10`,,,,,,,,,,,,,,,,,,,,,
+table-0x51724c,0x001dfe40,7,3,ret,field-getter,0,,,,+0x8 +0xc,,,0x0051724c,0,,"a field getter over `+0x8`, `+0xc`",,,,,,,,,,,,,,,,,,,,,
+inherited-slot,0x003312ea,18,6,ret 0x8,out-param-write,2,,,,+0x4 +0x8,,,5,7,CAlertFeature,writes into the caller's out pointer and returns 0 (2 argument dword(s)),,,,,,,,,,,,,,,,,,,,,
+inherited-slot,0x00331309,8,2,ret 0x2c,com-notimpl,11,,,,,,,4,15,CAlertFeature,a COM default: returns E_NOTIMPL (0x80004001) with 11 argument dword(s),,,,,,,,,,,,,,,,,,,,,
+inherited-slot,0x00331311,6,2,ret,com-notimpl,0,,,,,,,4,16,CAlertFeature,a COM default: returns E_NOTIMPL (0x80004001) with 0 argument dword(s),,,,,,,,,,,,,,,,,,,,,
+inherited-slot,0x0033131c,8,2,ret 0x10,com-notimpl,4,,,,,,,4,18,CAlertFeature,a COM default: returns E_NOTIMPL (0x80004001) with 4 argument dword(s),,,,,,,,,,,,,,,,,,,,,
+inherited-slot,0x003472e9,19,6,ret 0x8,out-param-write,2,,,,+0x8,,,4,3,CDecoderXMO,writes into the caller's out pointer and returns 0 (2 argument dword(s)),,,,,,,,,,,,,,,,,,,,,
+census,,,,,,,,,,,,,,,,,3,14,274,3,1,1,2,1,4,2,0,0,0,1,0,11,7,2,5,2,2

@@ -3632,3 +3632,79 @@ seven the table names by no literal stay in it.
 
 **Not in this bundle.** The 7 unnamed Karma callback bodies (their interface slot states no name), the 427
 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
+
+## The last fourteen bodies: the residue is one shape per population, read at its own instructions (2026-11-21)
+
+<!-- generated:residue-bodies -->
+**14 bodies, 274 bytes, 7 kinds** -- every one of the thread's residues read at its own instructions (`inventory/residue_bodies.csv`).
+
+The three populations split **7 / 2 / 5** (the MathEngine callbacks, the `0x0051724c` slots, the inherited interface bodies), and what they are is one shape per population rather than a missing name per body: **3 return `E_NOTIMPL`, 2 dispatch through a slot, 1 allocate and then zero-fill the block, 1 tail-jump into a slot with no frame of its own, 1 write a descriptor into the object they are handed, 4 are field getters, and 2 write the caller's out pointer and return 0**.
+
+| thread | body | size | kind | args | slot | what it is |
+|---|---|---|---|---|---|---|
+| `karma-callback` | `0x000ad860` | 31 | `dispatch` | 1 | 0 | dispatches through slot +0x0 of [ds:0x5bf510] and returns (1 argument dword(s)) |
+| `karma-callback` | `0x000ad8c0` | 61 | `alloc-zero` | 1 | 1 | allocates through [ds:0x5bf510]+0x0, then zero-fills the block (1 argument dword(s)) |
+| `karma-callback` | `0x000ad880` | 11 | `tail-dispatch` | - | 3 | tail-jumps to slot +0x8 of [ds:0x5bf510] -- no frame of its own |
+| `karma-callback` | `0x000ad890` | 37 | `dispatch` | 2 | 5 | dispatches through slot +0x4 of [ds:0x5bf510] and returns (2 argument dword(s)) |
+| `karma-callback` | `0x000ad920` | 41 | `init-descriptor` | 4 | 16 | writes a descriptor into the object it is handed (4 argument dword(s)) |
+| `karma-callback` | `0x000ada00` | 10 | `field-getter` | 1 | 21 | a field getter over `+0x4` |
+| `karma-callback` | `0x000ada10` | 13 | `field-getter` | 1 | 22 | a field getter over `+0x4`, `+0xc` |
+| `table-0x51724c` | `0x001df4e0` | 4 | `field-getter` | 0 | 2 | a field getter over `+0x10` |
+| `table-0x51724c` | `0x001dfe40` | 7 | `field-getter` | 0 | 0 | a field getter over `+0x8`, `+0xc` |
+| `inherited-slot` | `0x003312ea` | 18 | `out-param-write` | 2 | 7 | writes into the caller's out pointer and returns 0 (2 argument dword(s)) |
+| `inherited-slot` | `0x00331309` | 8 | `com-notimpl` | 11 | 15 | a COM default: returns E_NOTIMPL (0x80004001) with 11 argument dword(s) |
+| `inherited-slot` | `0x00331311` | 6 | `com-notimpl` | 0 | 16 | a COM default: returns E_NOTIMPL (0x80004001) with 0 argument dword(s) |
+| `inherited-slot` | `0x0033131c` | 8 | `com-notimpl` | 4 | 18 | a COM default: returns E_NOTIMPL (0x80004001) with 4 argument dword(s) |
+| `inherited-slot` | `0x003472e9` | 19 | `out-param-write` | 2 | 3 | writes into the caller's out pointer and returns 0 (2 argument dword(s)) |
+
+**All 4 dispatches read their table through `[ds:0x5bf510]`**, and the argument counts run 0 to 11 dwords: one library object's method table, not class methods. **0 of the 14 bodies push a printable literal**, and the control is the same read over the bodies `inventory/global_slot_names.csv` named from their own literal: **2 of 2** -- so the silence here is a measurement, not a broken channel.
+
+<!-- /generated:residue-bodies -->
+
+**The table at `0x0051724c` is an object's vtable, and its two unnamed bodies are that object's field
+accessors.** The five slots are `0x001dfe40` (`mov eax,[ecx+0x8]; mov edx,[ecx+0xc]; ret` -- the object's
+64-bit id in `eax:edx`), a shared `mov eax,1; ret` at `0x002783d0`, `0x001df4e0`
+(`mov eax,[ecx+0x10]; ret`), a 355-byte walker over a collection at `0x001de9c0`, and a shared
+`mov eax,2; ret` at `0x00275ed0`. Two constructors install it: `0x001de030` stores it at the object's
+`+0x0` (site `0x001de037`) and returns `this`, and `0x001df420` stores it at `+0x38` (site `0x001df45d`)
+of an object whose `+0x40`/`+0x44` hold the same 64-bit pair and whose `+0x48` is the same zero the
+accessor reads at `+0x10` -- so the `+0x38` store is a sub-object of the table's own type, not an
+interface pointer parked in a field. Both constructors mint the id the same way: `__allmul` of the 64-bit
+counter at `0x005fe168` by `0x100`, then `+0xe1`, i.e. `n * 256 + 225`, so the low byte is a tag and the
+rest a sequence from one global counter. The composite constructor is called once, from `Core_UnClass` at
+`0x0015ee2a`; the 5-slot one has no `E8` caller at all in the image.
+
+**The seven Karma callbacks are one memory library's method table, and three of them are one object's
+methods.** Four dispatch through the allocator object whose pointer lives at `ds:0x005bf510` -- slot `+0x0`
+with one argument, `+0x4` with two, `+0x8` as a frame-less tail jump -- and each pushes the Karma context
+`ds:0x006f7bf0 + 0x15018` as the call's first argument; the zero-filling one allocates through slot `+0x0`
+and then `rep stos` the block it got, which is a calloc. The other three never dispatch: `0x000ad920`
+writes a five-dword descriptor (`+0x0` = 2, `+0x4` = 0, then its three arguments at `+0x8`, `+0xc`,
+`+0x10`), and `0x000ada00` and `0x000ada10` read that descriptor back (`+0x4`, and `+0xc` minus `+0x4`) --
+the writer's `+0xc` field and the reader's `+0xc` field are the same offset, so the three are the
+descriptor's init and two of its accessors, not three unrelated leftovers.
+
+**The five inherited bodies are COM defaults, which is why no class owns them.** Three return
+`E_NOTIMPL` (`0x80004001`) with 0, 4 and 11 argument dwords, and the other two write the caller's out
+pointer and return 0 -- one copies its first argument's `+0x4` into it, the other writes the constant `3`.
+One body at one index under four or five feature interfaces is their shared base's implementation, and the
+missing name is the base's -- not any of the classes that hold it. The read that would fail if this were a naming problem is the literal control: the
+same code finds the pushed name in **2 of 2** bodies an earlier round named from their own literal
+(`MePoolMallocReset`, `MePoolMallocDestroy`), so the zero literals in this population is a measurement.
+
+**Files.** `tools/residue-bodies.py` (the three populations read from the artifacts that count them, the
+bounded decode, the dispatch and context sources, the field and literal reads, the kinds, the
+`--report`/`--write-doc`/`--check-doc`/`--check` paths), `inventory/residue_bodies.csv` (new, 14 rows and a
+census row), `docs/systems/CLASS_REGISTRATION.md` (this section), `docs/UNKNOWNS.md` (U40), `Makefile`
+(the target, the two gates and the help line), `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`,
+`PLAN.md`.
+
+**Gates.** `make ci` green; `--check` is synthetic and writes nothing (all seven kinds from synthetic
+bodies, the dispatch slot and its source register, the interior call target, the render, and both artifact
+round trips); `--check-doc` rebuilds the block above from the committed CSV with no dump; the artifact
+reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
+
+**Not in this bundle.** The four linker folds (each already read as identical-code folding in
+`inventory/declarer_residue.csv`, and a fold is one body serving several classes, so there is no single
+owner to name it after), the 427 silent bodies and the 359 interface-only bodies no name reaches, and the
+`Core_UnVcWin32` family's remaining siblings.
