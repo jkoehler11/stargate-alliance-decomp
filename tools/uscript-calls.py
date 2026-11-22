@@ -39,6 +39,25 @@ NOT_CALLS = {"if", "while", "for", "switch", "return", "until", "foreach", "case
              "function", "event", "delegate", "operator", "struct", "enum", "new"}
 
 
+# A package records an operator as a function: `==` on two MapItems compiles to `EqualEqual_MapItemMapItem`. The
+# source has no such name, so the mapping is by prefix and the check is "does this body contain the symbol".
+OP_SYMBOL = {
+    "equalequal": "==", "notequal": "!=", "lessequal": "<=", "greaterequal": ">=",
+    "less": "<", "greater": ">", "plus": "+", "add": "+", "minus": "-", "subtract": "-",
+    "times": "*", "multiply": "*", "divide": "/", "percent": "%", "modulo": "%",
+    "clockwisefrom": ">>", "counterclockwisefrom": "<<", "complement": "~", "concat": "$",
+    "andand": "&&", "oror": "||", "xor": "^^",
+}
+
+
+def operator_symbol(target):
+    """The symbol a recorded operator target stands for, or None when the target is an ordinary call."""
+    low = target.lower()
+    for prefix in sorted(OP_SYMBOL, key=len, reverse=True):
+        if low.startswith(prefix + "_"):
+            return OP_SYMBOL[prefix]
+    return None
+
 def tokens_of(text):
     toks, bad = lexer.lex(text)
     if bad is not None:
@@ -90,6 +109,8 @@ def bodies(text):
                 continue
             # walk the body, collecting `Name(` at any depth
             calls = set()
+            ops = set()
+            words = set()      # every identifier in the body: an operator can be spelled by name (`A ClockwiseFrom B`)
             brace = 0
             k = j
             while k < len(toks):
@@ -100,6 +121,11 @@ def bodies(text):
                     brace -= 1
                     if brace == 0:
                         break
+                elif kk in ("ident", "keyword"):
+                    words.add(vv.lower())
+                elif kk == "op" and vv in ("==", "!=", "<=", ">=", "<", ">", "+", "-", "*", "/", "%",
+                                            ">>", "<<", "~", "$", "&&", "||", "^^"):
+                    ops.add(vv)
                 elif kk == "op" and vv == "(" and k > 0:
                     pk, pv = toks[k - 1]
                     # a function may be *named* with a keyword: `Travel("Map")`, `Import(...)`. `int(X)` and `bool(X)`
@@ -111,9 +137,11 @@ def bodies(text):
             if name:
                 key = name.lower()
                 if key in out:
-                    out[key] |= calls
+                    out[key][0] |= calls
+                    out[key][1] |= ops
+                    out[key][2] |= words
                 else:
-                    out[key] = calls
+                    out[key] = [calls, ops, words]
             i = k + 1
             continue
         i += 1
@@ -144,24 +172,34 @@ def run(tree, calls_csv, out_dir):
                 rows.append({"file": rel, "class": cls or "", "function": "", "calls": "",
                              "recorded": "", "found": "", "missing": "unparsed"})
                 continue
-            for fn, calls in sorted(got.items()):
+            for fn, (calls, ops, words) in sorted(got.items()):
                 want = recorded.get((cls.lower(), fn), set())
                 # the recorded targets are lower-cased and the source keeps its own case: comparing the raw sets
                 # matched only names the source happens to spell in lower case (`initialise`), which is how a correct
                 # extractor scored 0.6%
                 lowered = {c.lower() for c in calls}
-                hit = want & lowered
+                hit = set()
+                for target in want:
+                    symbol = operator_symbol(target)
+                    if symbol is not None:
+                        # an operator is a call the text may never name: `==` is `EqualEqual_MapItemMapItem`, while
+                        # `ClockwiseFrom` is spelled as an infix word -- satisfy either the symbol or the word
+                        if symbol in ops or target.split("_")[0] in words:
+                            hit.add(target)
+                    elif target in lowered:
+                        hit.add(target)
                 if (cls.lower(), fn) not in seen:
                     seen.add((cls.lower(), fn))
                     found += len(hit)
                     missed += len(want - lowered)
                 rows.append({"file": rel, "class": cls, "function": fn,
                              "calls": ";".join(sorted(calls)),
+                             "ops": ";".join(sorted(ops)),
                              "recorded": len(want), "found": len(hit),
-                             "missing": ";".join(sorted(want - lowered))})
+                             "missing": ";".join(sorted(want - hit))})
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "uscript_calls.csv")
-    fields = ["file", "class", "function", "calls", "recorded", "found", "missing"]
+    fields = ["file", "class", "function", "calls", "ops", "recorded", "found", "missing"]
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
         w.writeheader()
@@ -194,9 +232,13 @@ def check(_args):
     if got is None:
         print("FAIL uscript-calls: the synthetic corpus does not lex")
         return 1
-    calls = got.get("caller")
-    if calls is None:
+    entry = got.get("caller")
+    if entry is None:
         print("FAIL uscript-calls: the function body was not found")
+        return 1
+    calls, ops, _words = entry
+    if ">" not in ops:
+        print("FAIL uscript-calls: the `>` operator was not collected (%s)" % sorted(ops))
         return 1
     for want in ("Foo", "Baz", "Qux", "Caller"):
         if want not in calls:
