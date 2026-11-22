@@ -6314,3 +6314,24 @@ argument dwords, two write the caller's out pointer. The literal channel's contr
 earlier round named from their own literal, and the same read finds it in **2 of 2**. What is left of this
 entry: the 427 silent bodies, the 4 linker folds (identical-code folds -- one body serving unrelated
 classes, so there is no single owner) and the 359 interface-only bodies no name reaches.
+
+**Answered since (2026-11-21, the two interface verdicts read at the table, and the one class with two
+parents).** The declarer walk's `359` (`interface`) and `5` (`inherited-interface`) bodies are now read at
+their **holders**, not at their bodies: `tools/interface-slot-bodies.py` indexes all 232 interface tables from
+the image's own slot dwords (`inventory/interface_slot_bodies.csv`) and **301 are one table's own method, 5
+are one table emitted twice (identical slot tuples), 58 are one implementation under 2-6 tables that differ
+elsewhere, and 0 sits in a class table** -- the holder control reproduces the census's `tables`/`indices` for
+all 364 rows, so **the declarer walk missed none of them** and the residue is the interface's own missing
+name, not a declarer's. 244 of the 364 are bodies (80 stubs, 34 constant returns, 3 `E_NOTIMPL`, 3 bare
+`ret`s), so the population is not defaults; 138 of the 232 tables hold one of them. The five a named
+interface inherits are **two shared bases**: slots 7/15/16/18 of `CAlertFeature`, `CPlayersFeature`,
+`CFriendsFeature` and `CLogonFeature` (`CVoiceMailPseudoFeature` holds slot 7's only), and slot 3 of two
+`CEncoderXMO` and two `CDecoderXMO` tables. And the page's `PendingLevel` question is answered:
+`tools/class-parent-relations.py` joins the class object's `+0x28` `Super` store against the installer's call
+over all 492 class tables (`inventory/class_parent_relations.csv`) -- **489 agree, 1 differs, 2 have no
+native edge (`Object`, `GameInfo`)** -- and the call the page named, `0x0011bf20`, is `LevelBase`'s installer
+(it stores `0x4fc4f0` at `[this]` at `0x0011bf3d` and calls `Object`'s at `0x63ee0`), called by
+`PendingLevel`'s installer at `0x0011c0a1` and by `Level`'s at `0x00163181`, whose `Super` is `LevelBase` and
+is the control. The `Super` field is the *script* parent and the installer's call is the *native* base: two
+relations, one class in 490 where they differ. What is left of this entry: the interface's own name for the 212
+anonymous tables (the slot vocabulary names 20), the 4 folds, and the 427 silent bodies.

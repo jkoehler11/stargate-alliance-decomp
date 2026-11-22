@@ -3708,3 +3708,159 @@ reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
 `inventory/declarer_residue.csv`, and a fold is one body serving several classes, so there is no single
 owner to name it after), the 427 silent bodies and the 359 interface-only bodies no name reaches, and the
 `Core_UnVcWin32` family's remaining siblings.
+
+## The interface-held bodies read at the table: 301 are their table's own, 58 are one method under several (2026-11-21)
+
+The last bundle's next measurement was the **359 bodies only an interface table holds**, read "at their slot
+index": the five a named interface inherits are a base's defaults, so the question was whether the other 354
+are per-interface defaults too -- one body at one index across several unrelated tables -- or real methods
+the declarer walk missed. `tools/interface-slot-bodies.py` reads it from the tables rather than from the
+bodies: every one of the 232 interface tables is indexed from the image's own slot dwords, so each body's
+holders are the `(table, index)` pairs that point at it, and the *tables* decide what the body is.
+
+**A table emitted twice and a method several interfaces share are different things, and the slots tell them
+apart.** Two holders whose slot tuples are identical are one table the build emitted more than once, so the
+body is still a single interface's method; holders that differ anywhere else are different interfaces
+pointing at one implementation, which is a base's method and no holder's. `inventory/interface_slot_bodies.csv`
+carries every row with its holders; the block below has the split.
+
+<!-- generated:interface-slot-bodies -->
+**364 bodies, 42807 bytes: 301 are one table's own method, 5 the same table emitted twice, 58 one method under several interfaces, and 0 a class's.**
+
+The population is the declarer walk's two interface verdicts (`inventory/class_slot_declarers.csv`): **359** only an interface table holds and **5** a named interface inherits. Read at the table instead of at the body, each body's holders are the `(table, index)` pairs the image's own slots state, and whether those tables hold the same slots tells a copy from a shared implementation:
+
+| what holds the body | bodies | share | what it is |
+|---|---:|---:|---|
+| one interface table | 301 | 83% | that interface's own method, at its own index |
+| two or more tables with the same slots | 5 | 1% | one table emitted more than once, so still one interface's method |
+| two or more tables that differ elsewhere | 58 | 16% | one implementation under several interfaces: a shared base's method |
+| a class table | 0 | 0% | a method the declarer walk missed |
+
+**138 of the 232 interface tables hold one of the 364, and 94 hold none of them.** A body's shape is its first instruction: a `ret`, an `E_NOTIMPL` return, a constant return or an eight-byte stub is a compiler default, and everything else is a body.
+
+| shape | sole | copies | shared | bodies |
+|---|---:|---:|---:|---:|
+| `body` | 210 | 4 | 30 | 244 |
+| `stub` | 59 | 0 | 21 | 80 |
+| `const` | 29 | 1 | 4 | 34 |
+| `notimpl` | 0 | 0 | 3 | 3 |
+| `ret` | 3 | 0 | 0 | 3 |
+
+| the 5 a named interface inherits | body | slot | the named tables that hold it | shape |
+|---|---|---:|---|---|
+| `0x003312ea` | 18 | 7 | CAlertFeature, CVoiceMailPseudoFeature, CPlayersFeature, CFriendsFeature, CLogonFeature | `body` |
+| `0x00331309` | 8 | 15 | CAlertFeature, CPlayersFeature, CFriendsFeature, CLogonFeature | `notimpl` |
+| `0x00331311` | 6 | 16 | CAlertFeature, CPlayersFeature, CFriendsFeature, CLogonFeature | `notimpl` |
+| `0x0033131c` | 8 | 18 | CAlertFeature, CPlayersFeature, CFriendsFeature, CLogonFeature | `notimpl` |
+| `0x003472e9` | 19 | 3 | CEncoderXMO, CEncoderXMO, CDecoderXMO, CDecoderXMO | `body` |
+
+**0 bodies fail the holder control** (the image's holders against the `tables`/`indices` the declarer census recorded, and no class table holding the body).
+<!-- /generated:interface-slot-bodies -->
+
+**The answer to the question is neither of its two branches.** No body in this population sits in a class
+table -- the holder control is the declarer census's own `tables`/`indices` per body, reproduced for all 364
+-- so **the declarer walk missed nothing**; and the sharing is not "one body at one index across unrelated
+tables" either: the 58 shared bodies are held by 2-6 tables that agree at the shared index and differ
+elsewhere, which is one implementation under several interfaces, the shape the five named ones already had.
+The 301 sole bodies are the interface's own method at its own index, and the 5 copies are one table emitted
+twice, so 306 of the 364 are one interface's method and 58 are a shared base's.
+
+**The five named ones are two shared bases, not five independent defaults.** Four of them sit at slots 7,
+15, 16 and 18 of `CAlertFeature`, `CPlayersFeature`, `CFriendsFeature` and `CLogonFeature` (with
+`CVoiceMailPseudoFeature` holding only slot 7's), and the fifth at slot 3 of two `CEncoderXMO` and two
+`CDecoderXMO` tables. That is the Xbox Live feature interface family and the XMO codec pair: each family is
+implemented once, so the slot bodies are its shared base's. Three of the five are the COM defaults the last
+bundle read as bodies -- `mov eax,0x80004001` with `ret 0x2c`, `ret`, and `ret 0x10` -- and the shapes now
+say so from the bytes rather than from the argument count alone.
+
+**The shapes are why "defaults" is the wrong word for the whole population.** 244 of the 364 are bodies, and
+only 120 are a `ret`, an `E_NOTIMPL` return, a constant return or an eight-byte stub; the stubs cluster in
+the sole population (59) as much as in the shared one (21), so a body's size says nothing about whether its
+interface shares it. What the read does **not** do is name any of them: the name would be the interface's
+own, and the image's slot vocabulary names 20 of the 232 tables and the other 212 are anonymous, while a shared
+base's table is not one of the 232 at all (the five's holders are the *interfaces*,
+and no table holds all five at their indices). The naming residue is therefore the interface's identity,
+which is the library's question, not a slot-index one.
+
+**Files.** `tools/interface-slot-bodies.py` (new: the table index, the holders, the copy/shared rule, the
+shapes, the holder control, `--report`/`--write-doc`/`--check-doc`/`--check`), `inventory/interface_slot_bodies.csv`
+(new, 364 rows and a census row), this section and its block, `docs/UNKNOWNS.md` (U40), `Makefile` (the
+target, the `--check-doc` gate and the help line), `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`,
+`PLAN.md`.
+
+**Gates.** `make ci` green; `--check` is synthetic and writes nothing (the copy/shared rule, the `sole`,
+`copies` and `shared` verdicts, the `E_NOTIMPL` shape, the render, both artifact round trips); `--check-doc`
+rebuilds the block from the committed CSV with no dump; the artifact reproduces byte for byte on a second
+run. No boot, no xemu, no Ghidra.
+
+**Not in this bundle.** The 427 silent bodies, the 4 linker folds, and the 53 unnamed shared bodies' base
+(their holders are unnamed tables, and the base's own table is not in the 232).
+
+## The two parents of one class: `Super` is the script parent and the installer's call is the native base (2026-11-21)
+
+This page ended its *parent, from the image* section on the one edge two censuses disagreed about:
+`PendingLevel`'s class object says its parent is `Object` (`0x001a5220`) while
+`tools/class-table-parent-edge.py` reads `0x004fc588`'s parent as `0x004fc4f0` from the last call before its
+store, and the paragraph left "either `PendingLevel` embeds a `LevelBase`-like object there, or one of the
+two reads is wrong". The call the page named as its next instrument is read here, in the image's own bytes.
+
+**`0x0011bf20` is `LevelBase`'s installer, and `PendingLevel`'s installer calls it.** The 112-byte body
+stores its table at `0x0011bf3d` (`mov [esi],0x4fc4f0`), its interface at `0x0011bf43`
+(`mov [esi+0x28],0x4fc4cc`), builds its members through two `call`s, and ends on `call 0x63ee0` at
+`0x0011bf7b` -- the thunk that installs `Object`'s table (`0x4dd2a8`), so its own parent is the root. The
+102-byte body at `0x0011c050` stores `0x4fc588` at `0x0011c06d`, its interface `0x4fc568` at `0x0011c073`,
+builds `+0xa4`, and then **calls `0x0011bf20` at `0x0011c0a1`**. An object built through `0x0011c050` is a
+`LevelBase` by construction, and the ctor-edge census is right about the native base.
+
+**The class object says something else, and it is a different relation.** `0x001a5220` loads `Object`'s class
+cell (`0x006c2154`), compares it against the class's own cell (`0x007ab7a4`), and stores it at
+`+0x28` (`0x001a5275`) under the self-parent guard the section above measured -- the script `Super`. Both
+reads are right because the class object's `+0x28` is the *script* parent and the installer's call is the
+*C++ base*; `tools/class-parent-relations.py` joins the two censuses over all 492 class tables, and the
+block below is the whole of the difference.
+
+<!-- generated:class-parent-relations -->
+**492 class tables, 490 joins: 489 agree, 1 differ, 2 with no native edge and 0 with no `Super` store; 0 table(s) have no class name.**
+
+The join is `inventory/class_super_edges.csv` (the `+0x28` store on the class object) against `inventory/class_table_parent_edges.csv` (the installer's call to its base), by class name.
+
+| what the two reads say | classes | |
+|---|---:|---|
+| the same parent | 489 | the script parent is the native base |
+| a different parent | 1 | the script parent is not the native base |
+| no native edge | 2 | the installer calls nothing that stores a table |
+| no `Super` store | 0 | no class object is written a parent |
+| no class name | 0 | an unnamed table, so nothing to join |
+
+| the class that differs | script `Super` | native base | its `Super` store | its installer |
+|---|---|---|---|---|
+| `PendingLevel` (`0x4fc588`) | `Object` | `LevelBase` | `0x001a5220 at 0x001a5275` | `0x11c050 at 0x11c0a1` |
+<!-- /generated:class-parent-relations -->
+
+**The control is the same body read through a class whose two parents agree.** `Level`'s installer
+(`0x163090`) calls `0x0011bf20` at `0x00163181` and its class object's `Super` is `LevelBase`, so the body
+at `0x0011bf20` *is* `LevelBase`'s and the two reads agree there; `PendingLevel` is the one class out of 490
+where the script parent is not the native base, and the image states both rather than one of them being a
+misread. `Object` itself and `GameInfo` are the two tables with no native edge at all: the root's installer
+calls nothing, and `GameInfo`'s installer makes no call that stores a table.
+
+**What this corrects.** `inventory/class_table_parent_edges.csv`'s `parent_class` is the **native base** --
+what a vtable inherits -- and its `script_super` column is filled from `inventory/classes.csv`, which only
+holds the 18 packages' classes, so for a native-only class it is empty and the earlier verdict
+`class-outside-script` said nothing about the relation. The script side of every class is in the class
+object's store (`inventory/class_super_edges.csv`, 493 classes), and the join is now a census rather than a
+sentence: a table's parent and its class's `Super` are two readings of two fields, and a class where they
+differ is a finding to record, not a contradiction to resolve.
+
+**Files.** `tools/class-parent-relations.py` (new: the join, the four verdicts, `--report`/`--write-doc`/
+`--check-doc`/`--check`), `inventory/class_parent_relations.csv` (new, 492 rows and a census row), this
+section and its block, `docs/UNKNOWNS.md` (U40), `Makefile` (the target, the `--check-doc` gate and the help
+line), `inventory/artifact_hashes.csv`, `docs/ARTIFACTS.md`, `PLAN.md`.
+
+**Gates.** `make ci` green; `--check` is synthetic and dump-free (the four verdicts from synthetic reads,
+the render, both round trips) and also re-derives all 492 rows from the two committed censuses and compares
+them with the artifact, so a stale row fails without the dump; `--check-doc` rebuilds the block from the
+committed CSV. The tool reads no image at all: both sides of the join are committed artifacts.
+
+**Not in this bundle.** Nothing of this edge is left; the class thread's residues are unchanged -- the 427
+silent bodies, the 4 linker folds, and the interface naming question the section above leaves to the library.
