@@ -567,3 +567,12 @@ operand cannot tell a copy from a lookalike. Requiring the rel32 targets to be e
 `??0XAsmCD3DXDwStack@XGRAPHICS@@QAE@XZ` at `0x00186420` (copy of `0x0049b6c5`) and `??0Buffer@XGRAPHICS@@QAE@XZ` at
 `0x00347975` (copy of `0x0047dc50`) -- and both are now rows. The route is exhausted at that yield: the other 2,032 gap
 bodies are code nothing names and nothing duplicates.
+
+**The CRT-message route is empty, and the bodies it would name are already named (2026-11-21).** A runtime body often
+carries its own message, so an unnamed function referencing `R6025` or "floating point support not loaded" would be
+identifiable without a byte match. Scanning all **7,448** unnamed functions for an immediate that points at a CRT-shaped
+string finds **0**. The reason is not that the messages are absent: `R6025 - pure virtual function call` is in the image at
+`0x00575cac`, but its **only** reference is at `0x005cd48c`, which is `.data` -- the string is reached through a pointer
+table, and an immediate scan cannot see it. The bodies behind those messages are already named by other routes:
+`__purecall` (`0x003e5501`, 20 bytes), `__matherr` (`0x00344e79`, 3 bytes) and `___crtFindFirstFileW` (`0x003ee7d4`, 93
+bytes). A table-walking version of this scan would still be possible, but it would be looking for names that exist.
