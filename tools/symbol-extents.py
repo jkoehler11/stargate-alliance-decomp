@@ -69,6 +69,17 @@ front bounds this one (`body`). The same two readings serve a `jmp` whose bytes 
 match the opening table: data behind a dispatch ends the body at the jump (`jump-data`), and a complete
 body behind it is the tail call `jump-behind` already names.
 
+**The code behind a close is read by what it *is*, and three shapes settle it that the first terminator's
+own byte cannot.** A run that reads the row's own frame and **runs to the next map row**, ending on a
+terminator within one instruction of that row, is the body's own code and the row ends there (`follow`,
+the `follow_run` read: `0x003ee8ec` +54, `__input` +297); an epilogue that opens with the x87 work that
+restores a float return value (`fstp st(0)`, `fld [esp+0x10]`) before its pops is still the body's own
+(`epilogue`, +16 on `0x003e5010`); and a run of **consecutive dwords that land inside `.text`** is a
+switch's dispatch table, so the close in front of it bounds the row (`data-table`, `0x003b7ae0`) -- the
+ring-0 vocabulary route was measured and dropped for it (867 `movs` and 675 `stos` sit inside real bodies
+of this map). What the run-to-next-row read may not swallow is a **new entry**: a call from outside the
+row, or a funclet whose first instruction restores ESP from the frame (`?CallCatchBlock`).
+
 **A size can be too long as well as too short.** A row whose declared size crosses the next map row's
 start holds two bodies at once, and the second one is the map's. Its own decode still ends where the body
 ends, so the last terminator in front of the next row's start with nothing but fill between the two is the
@@ -143,7 +154,22 @@ FILL = (0xCC, 0x90)
 # opcodes only occur inside data.
 RING0 = ("in", "out", "ins", "outs", "cli", "sti", "lgdt", "lidt", "lldt", "ltr", "lmsw", "clts",
          "invd", "invlpg", "wbinvd", "wrmsr", "rdmsr", "rdpmc", "sysenter", "sysexit", "hlt", "iret")
+# A switch's dispatch table is laid out behind the body that reads it, and its entries are **code
+# pointers**: consecutive dwords that land inside `.text`. Three in a row is not something code writes by
+# accident (a random dword lands in the section about once in a thousand), and the shape is in the image's
+# own population -- 43 of the map's 16,909 rows are followed by a run of three or more at their own end,
+# every one of them already closed on a terminator (`--selftest`'s control). The run is 4-byte aligned
+# from the close, so the alignment is read from the close rather than from the section.
+POINTERS = 3
+TEXT_RANGE = None     # the `.text` bounds, set by `measure`: a pointer table's entries land inside them
+# The x87 instructions a float-returning function's own epilogue can start with: `fstp st(0)` discards
+# the value the early return computed and `fld` restores it from a local before the pops run.
+X87 = ("fstp", "fst", "fld", "fstsw", "fnstsw", "fwait", "wait", "fxch", "faddp", "fsubp", "fsubrp",
+       "fmulp", "fdivp", "fdivrp", "fadd", "fsub", "fsubr", "fmul", "fdiv", "fdivr", "fabs", "fchs",
+       "fscale", "fcompp", "fcom", "fcomp", "fucom", "fucomp", "fucompp", "fldcw", "fnstcw", "fld1",
+       "fldz", "fldpi", "fldl2e", "f2xm1", "frndint", "fsqrt")
 MAX_TAIL = 256
+MAX_RUN = 4096        # how far the code behind a close is followed to the next map row
 MAX_CUT = 16          # the longest x86 instruction: a cut cannot reach further
 MAX_FOLD = 2048       # how far a fragment's body is followed to its close
 MAX_BEHIND = 256      # how far the code behind a close is followed for a body of its own
@@ -171,7 +197,9 @@ REPAIRS = ("row ends on a non-terminator and a gap head closes at its end",
            "the row's declared size runs into the next map row, and its last terminator in front of that "
            "row has only fill behind it",
            "the close is an early return and the code behind it unwinds the row's own frame -- the "
-           "registers its opening pushed and the allocation it made, in the mirror order")
+           "registers its opening pushed and the allocation it made, in the mirror order",
+           "the close is followed by a table of code pointers -- a switch's dispatch table, whose dwords "
+           "land inside `.text` -- which the map's size had overrun")
 
 
 
@@ -300,7 +328,7 @@ def tail_run(reader, decode_fn, start, limit, cap=8192):
     return out
 
 
-def tail_rule(reader, decode_fn, start, limit, targets=None):
+def tail_rule(reader, decode_fn, start, limit, targets=None, calls=None, head=None):
     """(tail instructions, close instruction, family-or-refusal) for the run after a row's end.
 
     The first terminator closes the row when **only fill** follows it (`tail` for a `ret`, `jump` for a
@@ -334,6 +362,8 @@ def tail_rule(reader, decode_fn, start, limit, targets=None):
         return tail, first, why
     if why == "jump-open":
         return tail, None, "jump"
+    if why == "table":
+        return tail, first, "data-table"
     if why in ("padding", "behind", "data", "body"):
         return tail, first, why
     if why == "jump-inside":
@@ -345,6 +375,11 @@ def tail_rule(reader, decode_fn, start, limit, targets=None):
         close, fwhy = close_ahead(reader, decode_fn, first[0] + first[1], limit, origin=start)
         if close is not None and mnemonic(close[2]) != "jmp":
             return tail, close, why
+        # the walk's own close test is blind at the row's horizon, so read the run behind the close to
+        # the next map row instead: a body's own locals after an early return end where that row begins
+        run, _rwhy = follow_run(reader, decode_fn, first[0] + first[1], limit, calls, head=head)
+        if run is not None:
+            return tail, run, why
         return tail, None, "then-code"
     return tail, None, "then-code"
 
@@ -441,16 +476,42 @@ def close_kind(reader, decode_fn, step, limit, deep=True, start=None):
 
 
 def not_code(ins):
-    """The first instruction in `ins` that no ring-3 program can execute, or None.
+    """The first instruction in `ins` that no ring-3 program can execute, or none.
 
     An `in`/`out` or a system-table opcode in this image is a byte pattern in a table, and objdump's
     `(bad)` is a byte pattern it cannot decode at all: a branch of the body whose close sits in front of
     them cannot reach either, so the bytes are data the map's size overran.
+
+    A **pointer table** is the other table shape and the ring-0 list cannot see it: the dwords decode
+    into `les`/`push ss`/`movs`, all legal instructions, which is why the vocabulary route was measured
+    and dropped (867 `movs` and 675 `stos` sit inside real bodies of this map -- MSVC's inline
+    `memcpy`/`memset`), so the table is proven by what its dwords *are* instead (`code_pointers`).
     """
     for _a, _l, t in ins:
         if "(bad)" in t or mnemonic(t) in RING0:
             return t
     return None
+
+
+def code_pointers(reader, va, limit, text=None):
+    """Are the bytes behind this close a table of code pointers? (consecutive dwords landing in `.text`)
+
+    A switch's table follows the body that reads it and holds addresses, not code. `0x003b7ae0` closes on
+    the `ret` at 0x003b9ad3 and the dwords behind it are 0x003b7ce0, 0x003b7da4, ... -- five in a row
+    inside `.text` -- while the decode called them `loopne`, `movs`, `push ss` and refused the close as
+    "code this rule cannot attribute".
+    """
+    text = text or TEXT_RANGE
+    if not text or limit - va < 4 * POINTERS:
+        return False
+    lo, hi = text
+    blob = reader(va, min(limit - va, 64))
+    k = 0
+    while (k + 1) * 4 <= len(blob):
+        if not (lo <= struct.unpack_from("<I", blob, k * 4)[0] < hi):
+            break
+        k += 1
+    return k >= POINTERS
 
 
 def body_behind(reader, decode_fn, va, limit, cap=64):
@@ -472,7 +533,7 @@ def body_behind(reader, decode_fn, va, limit, cap=64):
         if not is_term(step[2]):
             continue
         kind = close_kind(reader, decode_fn, step, limit, deep=False)
-        if kind in ("tail", "pad", "padding", "jump", "jump-pad", "jump-behind", "jump-table",
+        if kind in ("tail", "pad", "padding", "table", "jump", "jump-pad", "jump-behind", "jump-table",
                     "jump-data"):
             return step, kind
         if kind == "jump-inside":
@@ -575,11 +636,76 @@ def unwinds(text):
     return bool(UNWIND.match(text.strip()))
 
 
+def unwind_after_x87(ins):
+    """Does the run behind a close lead from x87 work into a stack unwind?
+
+    A function that returns a float in `st(0)` restores it from a local in front of its own epilogue:
+    `fstp st(0)` discards what the early return computed, `fld DWORD PTR [esp+0x10]` puts the value back,
+    and only then do the pops and `add esp,N` run. Reading only the *first* instruction behind the close
+    called that "code this rule cannot attribute" (`0x003e5010`, whose row is 16 bytes short).
+    """
+    for _a, _l, t in ins:
+        if mnemonic(t) in X87:
+            continue
+        return unwinds(t)
+    return False
+
+
+def follow_run(reader, decode_fn, va, limit, calls=None, head=None):
+    """(the terminator that ends the row, refusal) for the code behind a close that runs to the next row.
+
+    The close's successor reads the frame the row itself built (`after_kind`'s `follow`), and every byte
+    from there to the **next map row** decodes as that same body's code: the row ends at the last
+    terminator in the run, not at the first close in front of it. `0x003ee8ec` (2,983 bytes) closes on a
+    `ret` at 0x3ef49b and then runs 54 bytes of its own locals (`inc [ebp-0x20]`, `push [ebp+0x8]`,
+    `call 0x3f159d`...) to a `jmp` back into its loop at 0x3ef4c7, exactly where `__freebuf` starts;
+    `__input` closes at 0x3f0407 and runs 297 bytes of its `%f` conversion, which uses `[ebp-0x90]`
+    inside the frame its own `lea esp,[ebp-0x1e8]` built, to a `ret` at 0x3f0503.
+
+    What this may not swallow is a **new entry**. A `call`/`jmp` from **outside the row** that lands
+    inside the run makes the code a body of its own (`entry`) -- a call from the body itself is a local
+    helper and proves the opposite -- and a run whose first instruction is `mov esp,[ebp-0x18]` is a
+    funclet: the unwinder enters it through a stored pointer, not by falling through the close
+    (`?CallCatchBlock`, 0x003eaac1, refuses on exactly that). Nothing but non-terminator bytes may follow
+    the run's last terminator, and the terminator has to end within one instruction of the next row.
+    `calls` is `call_sites`' target->sites map and `head` the row's own start, so "outside" is the row.
+    """
+    room = limit - va
+    if room <= 0:
+        return None, "no-room"
+    if room > MAX_RUN:
+        return None, "too-long"
+    ins = decode_fn(reader(va, room), va)
+    if not ins:
+        return None, "undecoded"
+    if re.match(r"^mov\s+esp,DWORD PTR \[ebp", ins[0][2].strip()):
+        return None, "funclet"
+    last = None
+    body_lo = head if head is not None else va
+    for step in ins:
+        if step[0] + step[1] > limit:
+            break                      # the run's last instruction is cut by the row: not a clean read
+        if calls and step[0] in calls:
+            if any(not (body_lo <= s < limit) for s in calls[step[0]]):
+                return None, "entry"
+        if is_term(step[2]):
+            last = step
+    if last is None:
+        return None, "no-close"
+    if limit - (last[0] + last[1]) > MAX_CUT:
+        return None, "code-behind"
+    for step in ins:
+        if step[0] >= last[0] + last[1] and is_term(step[2]):
+            return None, "code-behind"
+    return last, None
+
+
 
 def after_kind(reader, decode_fn, va, limit, deep=True):
     """(`padding` | `behind` | `follow` | `epilogue` | `body` | `data` | `then-code`, first instruction).
 
-    `padding` is alignment filler, `behind` a body's own opening, `follow` a run that reads the frame
+    `padding` is alignment filler, `table` a run of code pointers (a switch's dispatch table), `behind`
+    a body's own opening, `follow` a run that reads the frame
     (`[ebp...]`, `leave`) it never writes in its opening window, and `epilogue` a run that **is** the
     unwind itself (`pop`, `leave`, `mov esp,ebp`, `add esp,N`) -- the body's own epilogue behind one of
     its return paths. The two readings a `ret` needs beyond those are `data` (a run that holds an
@@ -592,9 +718,12 @@ def after_kind(reader, decode_fn, va, limit, deep=True):
         return "then-code", None
     if is_fill_insn(ins[0][2]):
         return "padding", ins[0]
+    if code_pointers(reader, va, limit):
+        # a switch's table follows the body that reads it: the dwords are addresses, not code
+        return "table", ins[0]
     if opens_body(reader(va, 8)):
         return "behind", ins[0]
-    if unwinds(ins[0][2]):
+    if unwinds(ins[0][2]) or (mnemonic(ins[0][2]) in X87 and unwind_after_x87(ins)):
         # A stack unwind behind the close is the body's own epilogue, not a neighbour: a body with
         # several return paths emits one unwind block per `ret`, so the code after this one belongs to
         # the body it closes and the read continues to the close that has fill behind it.
@@ -644,6 +773,25 @@ def call_targets(reader, lo, hi):
         tgt = lo + i + 5 + rel
         if lo <= tgt < hi:
             out.add(tgt)
+    return out
+
+
+def call_sites(reader, lo, hi):
+    """target -> the sites of the `call`/`jmp rel32` in the section that land on it.
+
+    `call_targets` answers *whether* an address is entered; a run behind a close that is entered from
+    **inside** the body it belongs to is a local helper, not a new body (`__input` calls its own
+    `0x003f04b0` from 0x003f040f and 0x003f043e), so the caller needs the sites to tell the two apart.
+    """
+    out = {}
+    blob = reader(lo, hi - lo)
+    for i in range(len(blob) - 4):
+        if blob[i] not in (0xE8, 0xE9):
+            continue
+        rel = struct.unpack_from("<i", blob, i + 1)[0]
+        tgt = lo + i + 5 + rel
+        if lo <= tgt < hi:
+            out.setdefault(tgt, set()).add(lo + i)
     return out
 
 
@@ -728,7 +876,7 @@ def close_ahead(reader, decode_fn, start, limit, cap=600, origin=None):
             kind = close_kind(reader, decode_fn, step, limit, start=origin)
             if kind in ("behind", "follow", "body", "data", "epilogue") and (step[0] + step[1]) in targets:
                 kind = "then-code"
-            if kind in ("tail", "pad", "padding", "behind", "body", "data", "jump", "jump-pad",
+            if kind in ("tail", "pad", "padding", "behind", "body", "data", "table", "jump", "jump-pad",
                         "jump-behind", "jump-table", "jump-data"):
                 return step, kind
             if kind == "jump-open":
@@ -808,12 +956,15 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
     of objdump spawns, and without it a slow run and a hung one look the same.
     """
     lo, hi = text or (0x00010000, 0x00500000)
+    global TEXT_RANGE
+    TEXT_RANGE = (lo, hi)     # what makes a dword behind a close a code pointer
     starts = [r["va"] for r in rows if r["size"]]
     sized = sorted((r["va"], r["va"] + r["size"]) for r in rows if r["size"])
     prev_end_of = {}
     for _i in range(1, len(sized)):
         prev_end_of[sized[_i][0]] = sized[_i - 1][1]
-    calls = call_targets(reader, lo, hi)
+    sites = call_sites(reader, lo, hi)
+    calls = set(sites)
     # A registration or vtable slot names a body by *data*: `xbe_overrides.csv` holds the rows the
     # class-registration pass created, and a slot that points into a fold's span proves the row there is
     # a body (0x002c4f1c is FUdpLink::BindPort's own slot entry), not continuation code.
@@ -1127,7 +1278,7 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                 split_row(r, cut, "cut:next-row", cut=True)
                 continue
             tail, close, why = tail_rule(reader, decode_fn, cend, nxt if nxt else cend + MAX_TAIL,
-                                         targets=branch_targets(wide))
+                                         targets=branch_targets(wide), calls=sites, head=r["va"])
             if close is None:
                 cen["short"] += 1
                 cen["short_refused"] += 1
@@ -1168,7 +1319,7 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                 out.append(folded)
                 continue
             tail, close, why = tail_rule(reader, decode_fn, end, nxt if nxt else end + MAX_TAIL,
-                                         targets=branch_targets(ins))
+                                         targets=branch_targets(ins), calls=sites, head=r["va"])
             if close is not None:
                 # a pad *is* the boundary: the body ends where the pad's first `int3` begins
                 cclose = close[0] if mnemonic(close[2]) == "int3" else close[0] + close[1]
@@ -1196,6 +1347,9 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                         "data": "a decode from the row's end reaches `%s`, and the bytes behind it hold an "
                                 "instruction no ring-3 program can execute, so they are a table the row's "
                                 "size overran rather than code, and the close bounds the row",
+                        "data-table": "a decode from the row's end reaches `%s`, and the bytes behind it "
+                                      "are code pointers -- consecutive dwords that land inside `.text`, a "
+                                      "switch's dispatch table -- so the close bounds the row",
                         "jump-data": "a decode from the row's end reaches `%s`, and the bytes behind it "
                                      "hold an instruction no ring-3 program can execute -- the dispatch's "
                                      "own table -- so the body ends at the jump",
@@ -1246,9 +1400,14 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                                      "instruction is a terminator, so the row ends where it does"
                                      % span[2], scend - r["va"], close=span)
                         continue
-                    tail2, close2, _why2 = tail_rule(reader, decode_fn, scend,
-                                                     nxt if nxt else scend + MAX_TAIL,
-                                                     targets=branch_targets(wide))
+                    tail2, close2, why2 = tail_rule(reader, decode_fn, scend,
+                                                    nxt if nxt else scend + MAX_TAIL,
+                                                    targets=branch_targets(wide), calls=sites,
+                                                    head=r["va"])
+                    # the refusal is the *re-read's*: naming the reason from the read the re-read
+                    # replaced made 0x003ea9a0 report a `jmp` that its completed instruction never
+                    # reached, and sent a whole session after the wrong close
+                    why = why2
                     if close2 is not None:
                         c2 = close2[0] + close2[1]
                         continuation(r, close2, "cut:reread", c2 - end, "0x%08x" % c2,
@@ -1594,6 +1753,10 @@ def evidence_for(r):
     if r["reason"] in ("jump", "pad"):
         return ("%s; `%s` closes the run %s bytes past the row's end, and what follows it is fill or a pad "
                 "rather than code" % (REPAIRS[3], r["close_insn"], r["tail_bytes"]))
+    if r["reason"] == "data-table":
+        return (REPAIRS[8] + "; `%s` at %s is the first terminator behind the row's end and the dwords "
+                "behind it are consecutive addresses inside `.text`, so the table starts where the body "
+                "ends and the row runs to %s" % (r["close_insn"], r["close_va"], r["new_size"]))
     if r["reason"] in ("padding", "behind", "follow", "body", "data", "jump-data"):
         return (REPAIRS[5] if r["reason"] in ("body", "data", "jump-data") else REPAIRS[4]) + (
             "; `%s` at %s is the first terminator behind the row's end and the bytes behind it are "
@@ -1950,7 +2113,15 @@ def self_check():
             {"va": 0x3800, "name": "FUN_00003800", "size": 0x10},  # an early return into its own epilogue
             {"va": 0x4200, "name": "FUN_00004200", "size": 0x10},  # a row that closes, before the gap
             {"va": 0x4220, "name": "FUN_00004220", "size": 0x10},  # a fragment the gap's opening holds
-            {"va": 0x4230, "name": "FUN_00004230", "size": 0x10}]  # the row the fragment abuts
+            {"va": 0x4230, "name": "FUN_00004230", "size": 0x10},  # the row the fragment abuts
+            {"va": 0x5600, "name": "FUN_00005600", "size": 0x10},  # a close whose row runs on to the next
+            {"va": 0x5620, "name": "FUN_00005620", "size": 0x10},  # where that run ends
+            {"va": 0x5700, "name": "FUN_00005700", "size": 0x10},  # an epilogue behind an x87 discard
+            {"va": 0x5720, "name": "FUN_00005720", "size": 0x10},
+            {"va": 0x5800, "name": "FUN_00005800", "size": 0x10},  # a close with a pointer table behind
+            {"va": 0x5820, "name": "FUN_00005820", "size": 0x10},
+            {"va": 0x5900, "name": "FUN_00005900", "size": 0x10},  # a funclet behind the close: refuses
+            {"va": 0x5920, "name": "FUN_00005920", "size": 0x10}]
     heads = [{"va": 0x3010, "size": 3, "boundary": "start", "verdict": "island",
               "prologue": "bare-ret", "tail": "pad"}]
     im = bytearray(b"\xcc" * (0x6000 - 0x2000))
@@ -1990,6 +2161,23 @@ def self_check():
     put(0x3810, b"\xc3" + b"\x5b" + b"\x83\xc4\x10" + b"\xc3" + b"\xcc" * 8)
     # the gap at 0x4210 opens on a body whose first instruction runs across the fragment head at 0x4220
     # and closes on `ret` at 0x4224, with fill behind it up to the next row
+    # a close whose successor is the same body's own locals, running to the next map row
+    put(0x5600, b"\x90" * 0x0f + b"\x5d")
+    put(0x5610, b"\xc3" + b"\xff\x45\xe0" + b"\xe9" + b"\x00" * 9)
+    put(0x5620, b"\x90" * 0x0f + b"\xc3")
+    # an early return whose epilogue opens on an x87 discard and a reload from a local
+    put(0x5700, b"\x90" * 0x0f + b"\x5d")
+    put(0x5710, b"\xdd\xd8" + b"\xd9\x44\x24\x10" + b"\x5f" + b"\x83\xc4\x10" + b"\xc3"
+        + b"\x5b" + b"\x83\xc4\x10" + b"\xc3")
+    put(0x5720, b"\x90" * 0x0f + b"\xc3")
+    # a close whose successor is a run of code pointers: three dwords inside the image's own `.text`
+    put(0x5800, b"\x90" * 0x0f + b"\x5d")
+    put(0x5810, b"\xc3" + struct.pack("<III", 0x2000, 0x3000, 0x4000) + b"\xcc" * 4)
+    put(0x5820, b"\x90" * 0x0f + b"\xc3")
+    # the same run shape, but the first instruction is a funclet's stack restore: it refuses
+    put(0x5900, b"\x90" * 0x0f + b"\x5d")
+    put(0x5910, b"\xc3" + b"\x8b\x65\xe8" + b"\xff\x45\xe0" + b"\xe9" + b"\x00" * 8)
+    put(0x5920, b"\x90" * 0x0f + b"\xc3")
     put(0x4200, b"\x90" * 0x0f + b"\xc3")
     put(0x4210, b"\x8b\x43\x04" + b"\x0f" * 16 + b"\xc3" + b"\xcc" * 16)
 
@@ -2049,6 +2237,25 @@ def self_check():
             return [(0x4220, 0x10, "mov    eax,DWORD PTR [ebx+0x4]")]
         if base == 0x4230:
             return [(0x4230, 15, "nop"), (0x423f, 1, "ret")]
+        if base == 0x5610:
+            return [(0x5610, 1, "ret")]
+        if base == 0x5611:
+            return [(0x5611, 3, "inc    DWORD PTR [ebp-0x20]"), (0x5614, 12, "jmp    0x5600")]
+        if base == 0x5710:
+            return [(0x5710, 2, "fstp   st(0)"), (0x5712, 4, "fld    DWORD PTR [esp+0x10]"),
+                    (0x5716, 1, "pop    edi"), (0x5717, 3, "add    esp,0x10"), (0x571a, 1, "ret"),
+                    (0x571b, 1, "pop    ebx"), (0x571c, 3, "add    esp,0x10"), (0x571f, 1, "ret")]
+        if base == 0x5810:
+            return [(0x5810, 1, "ret")]
+        if base == 0x5811:
+            return [(0x5811, 3, "add    BYTE PTR [eax],al")]
+        if base == 0x5910:
+            return [(0x5910, 1, "ret")]
+        if base == 0x5911:
+            return [(0x5911, 3, "mov    esp,DWORD PTR [ebp-0x18]"),
+                    (0x5914, 3, "inc    DWORD PTR [ebp-0x20]"), (0x5917, 9, "jmp    0x5900")]
+        if base == 0x571b:
+            return [(0x571b, 1, "pop    ebx"), (0x571c, 3, "add    esp,0x10"), (0x571f, 1, "ret")]
         if base == 0x3811:
             # the run behind the early return: the body's own epilogue
             return [(0x3811, 1, "pop    ebx"), (0x3812, 3, "add    esp,0x10"), (0x3815, 1, "ret"),
@@ -2081,8 +2288,29 @@ def self_check():
             verdicts["0x00003800"]["tail_bytes"] != 6 or \
             verdicts["0x00003800"]["new_size"] != 0x16:
         bad.append("an early return into the row's own epilogue is read past the epilogue")
-    if int(cen.get("epilogue_family") or 0) != 1 or int(cen.get("epilogue_bytes") or 0) != 6:
-        bad.append("the epilogue family counts the row and its bytes")
+    if int(cen.get("epilogue_family") or 0) != 2 or int(cen.get("epilogue_bytes") or 0) != 22:
+        bad.append("the epilogue family counts the rows and their bytes (got %s/%s)"
+                   % (cen.get("epilogue_family"), cen.get("epilogue_bytes")))
+    if verdicts.get("0x00005700", {}).get("reason") != "epilogue" or \
+            verdicts["0x00005700"]["new_size"] != 0x20:
+        bad.append("an epilogue that opens on an x87 discard and a reload is still the row's own (got %s %s)"
+                   % (verdicts.get("0x00005700", {}).get("reason"),
+                      verdicts.get("0x00005700", {}).get("new_size")))
+    if verdicts.get("0x00005600", {}).get("reason") != "follow" or \
+            verdicts["0x00005600"]["new_size"] != 0x20 or verdicts["0x00005600"]["tail_bytes"] != 0x10:
+        bad.append("the code behind a close that runs to the next map row ends the row there (got %s %s)"
+                   % (verdicts.get("0x00005600", {}).get("reason"),
+                      verdicts.get("0x00005600", {}).get("new_size")))
+    if verdicts.get("0x00005800", {}).get("reason") != "data-table" or \
+            verdicts["0x00005800"]["new_size"] != 0x11:
+        bad.append("a close with three code pointers behind it bounds the row (got %s %s)"
+                   % (verdicts.get("0x00005800", {}).get("reason"),
+                      verdicts.get("0x00005800", {}).get("new_size")))
+    if verdicts.get("0x00005900", {}).get("verdict") != "refused":
+        bad.append("a funclet behind the close is a new entry, not the row's own code (got %s)"            
+                   % verdicts.get("0x00005900", {}).get("verdict"))
+    if verdicts.get("0x00005620", {}).get("verdict") == "over":
+        bad.append("the row the follow run ends at is not resized")
     if verdicts.get("0x00003100", {}).get("reason") != "tail" or \
             verdicts["0x00003100"]["tail_bytes"] != 4:
         bad.append("a row whose own decode closes into fill is a tail continuation of 4 bytes")
@@ -2157,7 +2385,7 @@ def self_check():
         bad.append("a fragment whose hole opens right in front of it has no holder behind it")
     if int(cen.get("add") or 0) != 1 or int(cen.get("add_bytes") or 0) != 0x15:
         bad.append("the holder family counts the row and its extent")
-    if cen.get("terminator") != 5:
+    if cen.get("terminator") != 9:
         bad.append("the five rows that close on `ret` must not enter the population")
     tmp = tempfile.mkdtemp()
     try:
@@ -2428,7 +2656,9 @@ def self_check():
           "bytes no ring-3 program can run), the fold and its frame test, the fragment a gap opening holds "
           "and the `add` it earns, the fragment a multi-body hole holds and the holder behind it, the "
           "undecoded cut, the row whose size runs into the next one, the cut the truncated decode hides, a "
-          "body that closes past 64 bytes, the carry and both round trips")
+          "body that closes past 64 bytes, the three readings behind a close (a run to the next map row, "
+          "an epilogue that opens on an x87 discard, and a run of code pointers, with the funclet entry "
+          "that refuses), the carry and both round trips")
     return 0
 
 
