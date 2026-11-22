@@ -71,7 +71,7 @@ finds nothing, and proves nothing:
 | `const` | 4,541 | 99.9% | 98 |
 | `state` | 4,507 | 99.2% | 185 |
 | `enum` | 4,471 | 98.4% | 114 |
-| `var` (properties) | 4,429 | 97.4% | **1,104** |
+| `var` (properties) | 4,471 | 98.4% | **1,104** |
 | `native function` | 4,427 | 97.4% | 92 |
 | `function` | 4,397 | 96.7% | **1,204** |
 | `struct` | 4,371 | *void* | **0** |
@@ -98,10 +98,10 @@ finds nothing, and proves nothing:
 The substantive disagreements are `var` (116) and `function` (148). Sampling the `var` classes against
 `inventory/class_properties.csv` — which lists properties by name — gives the cause for the first block of them:
 **38 of the 116 are `delegate` properties**. The source writes `delegate OnClick(...)`, the export table carries a
-property named `__onclick__delegate`, and the parser counts neither as a `var`. The remaining 78 are a spread, and at
-least one shape is already visible: `GUIHorzScrollZone` declares no `var` at all in its source while the table carries
-one, so part of the residue is properties the shipped text does not spell. That is the next thing to price, one cause at
-a time, rather than one rule at a time.
+property named `__onclick__delegate`. Counting each `delegate` as one property takes `var` from 97.4% to **98.4%**
+(4,429 → 4,471 agreeing, 42 classes flipped) and leaves 74 disagreements. Those are a spread, and one shape is visible:
+`GUIHorzScrollZone` declares no `var` at all in its source while the table carries one, so part of the residue is
+properties the shipped text does not spell. That is the next thing to price, one cause at a time.
 
 ## Stage 3 — the emitter
 
