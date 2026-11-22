@@ -425,28 +425,53 @@ def body_behind(reader, decode_fn, va, limit, cap=64):
     return None, "no-close"
 
 
-def containing_head(reader, decode_fn, head_va, prev_end):
-    """The gap's own first code byte in front of a fragment, or None.
+def spans(reader, decode_fn, start, va, cap=1 << 20):
+    """Does a linear decode from `start` execute an instruction across `va`?
+
+    A body holds a fragment only when the instruction stream from its opening runs through the
+    fragment's head: the fragment's first byte is the middle of one of its instructions.
+    """
+    room = min(va - start + 16, cap)
+    if room <= 0:
+        return False
+    for a, length, _t in decode_fn(reader(start, room), start):
+        if a <= va < a + length:
+            return True
+        if a > va:
+            return False
+    return False
+
+
+def containing_head(reader, decode_fn, head_va, prev_end, limit=None):
+    """(the gap's opening, its close) for the body that holds a fragment, or (None, None).
 
     A fragment's head is inside another instruction, so no branch can enter it and the map has no row
     for the body that holds it. That body opens where the gap's padding ends: decoded from the previous
     row's end (a boundary, since that row closes on a terminator), the first instruction that is neither
-    `int3` nor `nop` is the only place a body can start, and the linear decode from it runs through this
-    fragment. The address says where an `add` repair would put the row; it does not prove the gap holds
-    exactly one body.
+    `int3` nor `nop` is the only place a body can start -- and a decode from it has to **hold** the
+    fragment: run an instruction across the fragment's head **and** close behind it. The first non-fill
+    byte of a hole is not a container just because it is first: the gap in front of `0x00410020` opens on
+    a 10-byte `jmp` thunk at `0x0040c2c8` whose body closes 15,690 bytes in front of the fragment, and a
+    linear decode from the thunk runs on into the bytes behind its own close. The close says where an
+    `add` row for the holder would end; it does not prove the gap holds exactly one body.
     """
     if not prev_end or head_va - prev_end < 8:
         # no gap in front: the row before is another fragment of the same body, and the byte after its
         # end is not an opening -- the first fragment of the run is the one that carries the answer
-        return None
+        return None, None
     ins = decode_fn(reader(prev_end, min(head_va - prev_end + 16, 512)), prev_end)
     for a, _l, t in ins:
         if a > head_va - 4:
             break
         if mnemonic(t) in ("int3", "nop"):
             continue
-        return a
-    return None
+        if not spans(reader, decode_fn, a, head_va):
+            break
+        close, _why = close_ahead(reader, decode_fn, a, limit or head_va + MAX_FOLD)
+        if close is None or close[0] + close[1] <= head_va:
+            break
+        return a, close
+    return None, None
 
 
 UNWIND = re.compile(r"^(pop\s+[a-z]{2,3}|leave|mov\s+esp,ebp|add\s+esp,0x[0-9a-f]+)$")
@@ -770,7 +795,7 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         entry = start_kind(reader, r["va"], lo)
         if not entry:
             cen["split_noboundary"] += 1
-            head = containing_head(reader, decode_fn, r["va"], prev_end_of.get(r["va"]))
+            head, hclose = containing_head(reader, decode_fn, r["va"], prev_end_of.get(r["va"]))
             if head is not None:
                 cen["fragment_head"] += 1
             out.append(_row(r, last, end_kind, 0, "", "split", "no-boundary",
@@ -778,7 +803,13 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                             "row's head -- the bytes in front of it are inside one -- so nothing can "
                             "branch to it and it is a fragment of a body the map has no row for, not a "
                             "body of its own" + (
-                                "; the gap in front of it ends its padding at 0x%08x, the only place a body can open" % head
+                                "; the gap in front of it ends its padding at 0x%08x, and the decode "
+                                "from that opening runs an instruction across this row%s" % (
+                                    head,
+                                    " and closes on `%s` at 0x%08x, %d bytes in, which is where an "
+                                    "`add` row for the holder would end" % (
+                                        hclose[2], hclose[0] + hclose[1],
+                                        hclose[0] + hclose[1] - head) if hclose else "")
                                 if head is not None else ""),
                             target=head or 0))
             return
@@ -1340,10 +1371,12 @@ def render(rows, cen):
             "exactly where the next map row starts, and no instruction ends at their head -- the bytes "
             "in front of it are the middle of one -- so nothing can branch to it and it is a fragment "
             "the map made inside a body it has no row for. That body is not unmeasured: decoded from the "
-            "previous row's end, %d of the %d fragments sit in a gap whose first code byte is in front "
-            "of them (%s) -- the first non-padding instruction after the row in front. Their bytes are left "
-            "where they are: a `drop` needs a containing row, and the gap has none, which is the `add` "
-            "repair this rule does not write. %d further splits end on "
+            "previous row's end, **%d of the %d fragments** sit in a gap whose first code byte **holds "
+            "them** -- a decode from that opening runs an instruction across the fragment's head and its "
+            "body closes behind it (%s), which is what separates a holder from the first non-fill byte of "
+            "a hole. Their bytes are "
+            "left where they are: a `drop` needs a containing row, and the gap has none, which is the "
+            "`add` repair this rule does not write. %d further splits end on "
             "a real boundary and are left to the review above."
             % (len(rows_nobd), n("fragment_head"), len(rows_nobd), ", ".join("`%s`" % h for h in heads)
                or "none found", len(rows_split) - len(rows_nobd)))
