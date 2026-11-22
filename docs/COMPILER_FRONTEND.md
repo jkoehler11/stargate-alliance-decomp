@@ -55,6 +55,38 @@ An AST per file, with two gates:
   export table for that class — the packages already carry it (`inventory/classes.csv`, `inventory/natives.csv`), so a
   parser that invents or drops a declaration fails against data rather than against opinion.
 
+## Stage 2a — declarations, scored against the packages (measured 2026-11-21)
+
+`tools/uscript-decls.py` parses each file's class header and its `var` / `function` / `event` / `state` / `struct` /
+`enum` / `const` declarations, and scores them against `inventory/classes.csv` — six counts and a super name per class,
+each side measured independently. **4,543 files join to a package row**, and agreement is:
+
+| column | agree | share |
+|---|---|---|
+| class name | 4,543 / 4,543 | **100.0%** |
+| `const` | 4,539 | 99.9% |
+| `state` | 4,473 | 98.5% |
+| `enum` | 4,467 | 98.3% |
+| `super` | 4,443 | 97.8% |
+| `var` (properties) | 4,425 | 97.4% |
+| `native function` | 4,425 | 97.4% |
+| `function` | 4,389 | 96.6% |
+| `struct` | 4,369 | 96.2% |
+
+**Two counting conventions were settled by measuring, not by assuming, and both came from the *direction* of the
+disagreement rather than its size:**
+
+1. **`event` counts as a function.** With only `function` counted, agreement sat at **82.4%**, and the package had more
+   functions than the source in **794** classes against only **6** the other way — a one-sided gap, which is what a missing
+   declaration form looks like. Adding `event` raises it to **96.6%**, and the asymmetry nearly disappears.
+2. **State functions do *not* count.** The obvious next guess — that a `function` inside a `state` body also lands in the
+   table — was tested and **refuted**: counting them drops agreement from 82.4% to **79.3%**, because it overshoots the
+   classes that were already right.
+
+The residual 2–4% per column is the next question, and it now has a shape: it is a spread of small disagreements rather
+than one missing form, so the next step is to sample the disagreeing classes rather than to add another rule and watch the
+average move.
+
 ## Stage 3 — the emitter
 
 Bytecode out, compared against the shipped function bodies at the tiers `AGENTS.md` defines: the oracle is
