@@ -6405,3 +6405,19 @@ like too; and a map row inside the span whose head opens a body). The map holds 
 4,264,156 bytes) and the walk that measures it is **66 s** instead of twelve minutes, one objdump pass per 512 bytes.
 What is left of the entry is 38 refused tails and those 14 splits, each named with its reason in
 `inventory/symbol_extents.csv`.
+
+**Answered since (2026-11-22, the tail read past its window, and the fragment in a hole the map never
+entered).** Two residue rows were one defect: a read that stops short of the close it is looking for. The tail
+was decoded inside a fixed 256-byte window, so `0x003b0ef0` (77 bytes in the map, 693 bytes of body behind it)
+reached no terminator and was reported as having no close; read to the next map row in 512-byte chunks it
+closes on `ret` at `0x003b11f1` -- **77 -> 770** -- and the same horizon settles `0x00303030` **1 -> 121**. A
+`jmp` whose target is a **loop back-edge** into the run (behind the jump, not in front of it) was the second
+half: `0x003b1137` -> `0x003b0f73` is that row's own loop top, and reading it as an exit refused the row even
+once the window reached its close. A hole the map never entered holds **more than one** body, so the
+gap-opening holder rule cannot find a fragment's holder -- the `0x004100xx` fragments sit 15,704 bytes into a
+hole whose opening is a 10-byte `jmp` thunk (`0x0040c2c8`). The holder is the body on the **nearest pad behind
+the fragment**: `0x00410010`, 89 bytes, closing on `ret` at `0x00410068` with a 7-byte `int3` pad behind it,
+and its span drops the nine map rows inside it, which is the cluster's two `no-boundary` splits, its
+`no-close` tail and its over-long row in one `add`. What is left of U40 is 3 tails that close and then run
+into code the rule cannot attribute (`0x003b7ae0`, `0x003ef88b`, `0x003ea9a0`), 3 `short` rows of the same
+shape and 2 splits that refuse as `body-inside` because a map row inside the span is called.

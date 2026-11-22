@@ -17598,6 +17598,52 @@ sequence.
   `0x00024c80`, are twins whose second body opens `push esi` and reads `[ebp+8]` without setting `ebp`, so it
   is interior code of the row above.
 
+### Execution notes (2026-11-22, the extents' tail read past its window, the loop back-edge, and the fragment in a hole the map never entered: 4 rows and 720 bytes)
+
+- **Task.** The last note left the `no-close`/long-tail window (`0x003b0ef0`, a 707-byte gap behind it) and the
+  two `no-boundary` splits in the `0x004100xx` cluster, and named the defect both share: a read that stops short
+  of the close it is looking for.
+- **The tail was read to a fixed 256-byte horizon, which is a claim about the window and not about the tail.**
+  `0x003b0ef0` is 77 bytes in the map and its body runs 693 bytes further, so the first terminator was outside
+  the read and the row was reported as reaching no close at all. The tail is now read in `WINDOW` chunks to the
+  next map row (`tail_run`): **`0x003b0ef0` 77 -> 770** (close on `ret` at `0x003b11f1`, 14 `nop`s of padding
+  before the next row at `0x003b1200`), and the same horizon settles **`0x00303030` 1 -> 121**, a 1-byte row whose
+  close sits 120 bytes behind it -- one defect, two rows.
+- **A `jmp` whose target is behind it is a loop, not an exit.** `jump_kind` accepted a *forward* target inside the
+  run as a branch (`jump-inside`) and read a **backward** one as code the rule cannot attribute, which refused
+  `0x003b0ef0` even once the window reached its close: its only `jmp` before the close (`0x003b1137` ->
+  `0x003b0f73`) jumps back to the top of its own loop. A backward target inside the run being read is now the same
+  `jump-inside`, and `close_ahead` takes the **body's origin** rather than its resume point, because the loop
+  target sits in front of where the walk resumed after an earlier branch.
+- **A hole the map never entered holds more than one body, so its own opening cannot be the holder.** The last
+  bundle's holder rule proved a gap that holds *exactly one* body; the fragments at `0x00410020`/`0x0041004d` sit
+  15,704 bytes into a hole whose opening is a 10-byte `jmp` thunk (`0x0040c2c8`), so the rule found no holder and
+  both stayed `no-boundary`. The holder is now the body that opens on the **nearest pad behind the fragment**
+  (`holder_behind`, `spans` + `closes` behind the head, read from the nearest pad backwards): `0x00410010`, **89
+  bytes**, closing on the `ret` at `0x00410068` with a 7-byte `int3` pad behind it. The control is the map itself:
+  its twin at `0x00410070` is already a row of exactly **89** bytes, and the two decodes agree byte for byte.
+- **One `add` settles seven residue rows.** The holder's span drops **nine** map rows -- `0x00410020` (34),
+  `0x00410045` (6, `over-close`), `0x00410047` (3, `no-close`), `0x0041004c` (1, `short overlap`), `0x0041004d`
+  (2, `no-boundary`), `0x00410052` (1, `short overlap`), `0x00410053` (1, `no-straddle`), `0x00410055` and
+  `0x00410062` (7 each, both carrying a resize this replaces) -- so the cluster's two `no-boundary` splits, its
+  `no-close` tail, its over-long row and three short rows all resolve as interior code of a body the map had no
+  row for, which is the same story the `0x003a00xx` and `0x003100xx` clusters told.
+- **The map.** 4,263,843 -> **4,264,563 bytes** (+720 = +693 resize, +89 add, -62 dropped) and 16,917 -> **16,909
+  rows** (one `add`, nine `drop`s); `symbols/xbe_boundaries.csv` gains 12 rows (2 resizes, 1 add, 9 drops, one of
+  them a `resize` -> `drop` rewrite) and `symbols/xbe_overrides.csv` one creation row for the holder.
+- **Cascade, regenerated on the repaired map:** `gap_heads`, `gap_body_families`, `gap_body_files`,
+  `silent_bodies`, `class_slot_declarers`, `function_modules`, `module_export_plan`, `xbe_functions_by_module`,
+  `symbols/xbox.map` + `xbox.sym.s`, `docs/NATIVE.md`, `docs/ARTIFACTS.md`, `docs/systems/CLASS_REGISTRATION.md`
+  and the generated blocks in `docs/SYMBOLS.md`.
+- **What is left in this thread.** 3 tails that close and then run into code the rule cannot attribute
+  (`0x003b7ae0` 8,177 bytes, `0x003ef88b` `__input`, `0x003ea9a0` `___FrameUnwindToState`), 3 `short` rows whose
+  completed instruction is not a terminator and whose run behind does not close (`0x003e5010`, `0x003eaac1`
+  `?CallCatchBlock`, `0x003ee8ec`), and 2 splits that refuse as `body-inside` (`0x002c4f10` `FUdpLink_BindPort`,
+  `0x003ee1ea`) because a map row inside the span is called.
+- **Gates.** `--selftest` covers the loop back-edge and the multi-body holder (a `jmp` thunk opening the hole, the
+  holder on the pad, and the negative where the hole opens right in front of the fragment); `--check` proves the
+  770-byte resize and the 89-byte add are applied to the map and carried by the artifact.
+
 ### Execution notes (2026-11-22, the extents that run too long: 9 rows and 1,832 bytes given back)
 
 - **Task.** The thread's rows that refuse a close were exhausted one family at a time, and the last one was

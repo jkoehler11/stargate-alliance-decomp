@@ -11747,7 +11747,7 @@ address,name,size,module,attributed_by,run
 0x003b0a10,FUN_003b0a10,205,(unnamed),unattributed,6409
 0x003b0ae0,FUN_003b0ae0,127,(unnamed),unattributed,6410
 0x003b0b60,FUN_003b0b60,912,(unnamed),unattributed,6411
-0x003b0ef0,FUN_003b0ef0,77,(unnamed),unattributed,6411
+0x003b0ef0,FUN_003b0ef0,770,(unnamed),unattributed,6411
 0x003b1200,FUN_003b1200,881,(unnamed),unattributed,6412
 0x003b1580,FUN_003b1580,166,(unnamed),unattributed,6413
 0x003b1630,FUN_003b1630,518,(unnamed),unattributed,6414
@@ -12798,17 +12798,9 @@ address,name,size,module,attributed_by,run
 0x00409100,FUN_00409100,8,(unnamed),unattributed,7077
 0x0040ab70,FUN_0040ab70,8,(unnamed),unattributed,7078
 0x0040c2c0,FUN_0040c2c0,8,(unnamed),unattributed,7079
-0x00410020,FUN_00410020,34,(unnamed),unattributed,7080
-0x00410045,FUN_00410045,6,(unnamed),unattributed,7081
-0x00410047,FUN_00410047,3,(unnamed),unattributed,7082
-0x0041004c,FUN_0041004c,1,(unnamed),unattributed,7083
-0x0041004d,FUN_0041004d,2,(unnamed),unattributed,7083
-0x00410052,FUN_00410052,1,(unnamed),unattributed,7084
-0x00410053,FUN_00410053,1,(unnamed),unattributed,7084
-0x00410055,FUN_00410055,7,(unnamed),unattributed,7085
-0x00410062,FUN_00410062,7,(unnamed),unattributed,7086
+0x00410010,FUN_00410010,89,(unnamed),unattributed,7080
 0x0041006e,__break,1,(other named),name only,1543
-0x00410070,FUN_00410070,89,(unnamed),unattributed,7087
+0x00410070,FUN_00410070,89,(unnamed),unattributed,7081
 0x00413c40,dtor_00418cf0,12,(other named),name only,1544
 0x00413db0,static_init_005c29e0,21,(other named),name only,1545
 0x00413dd0,static_init_005c29e4,21,(other named),name only,1546
@@ -13404,81 +13396,81 @@ address,name,size,module,attributed_by,run
 0x00418bf0,static_init_005c6674,21,(other named),name only,2136
 0x00418c10,static_init_005c6678,21,(other named),name only,2137
 0x00418c30,static_init_005c667c,21,(other named),name only,2138
-0x00418cc0,FUN_00418cc0,10,(unnamed),unattributed,7088
-0x00418cd0,FUN_00418cd0,10,(unnamed),unattributed,7089
-0x00418ce0,FUN_00418ce0,10,(unnamed),unattributed,7090
-0x00418cf0,FUN_00418cf0,1,(unnamed),unattributed,7091
-0x00418d00,FUN_00418d00,10,(unnamed),unattributed,7092
-0x00418d10,FUN_00418d10,10,(unnamed),unattributed,7093
-0x00418d20,FUN_00418d20,10,(unnamed),unattributed,7094
-0x00418d30,FUN_00418d30,10,(unnamed),unattributed,7095
-0x00418d40,FUN_00418d40,10,(unnamed),unattributed,7096
-0x00418d50,FUN_00418d50,10,(unnamed),unattributed,7097
-0x00418d60,FUN_00418d60,10,(unnamed),unattributed,7098
-0x00418d70,FUN_00418d70,10,(unnamed),unattributed,7099
-0x00418d80,FUN_00418d80,10,(unnamed),unattributed,7100
-0x00418d90,FUN_00418d90,10,(unnamed),unattributed,7101
-0x00418da0,FUN_00418da0,10,(unnamed),unattributed,7102
-0x00418db0,FUN_00418db0,10,(unnamed),unattributed,7103
-0x00418dc0,FUN_00418dc0,10,(unnamed),unattributed,7104
-0x00418dd0,FUN_00418dd0,10,(unnamed),unattributed,7105
-0x00418de0,FUN_00418de0,10,(unnamed),unattributed,7106
-0x00418df0,FUN_00418df0,1,(unnamed),unattributed,7107
-0x00418e00,FUN_00418e00,10,(unnamed),unattributed,7108
-0x00418e10,FUN_00418e10,10,(unnamed),unattributed,7109
-0x00418e20,FUN_00418e20,10,(unnamed),unattributed,7110
-0x00418e30,FUN_00418e30,10,(unnamed),unattributed,7111
-0x00418e50,FUN_00418e50,10,(unnamed),unattributed,7112
-0x00418e60,FUN_00418e60,10,(unnamed),unattributed,7113
-0x00418e70,FUN_00418e70,46,(unnamed),unattributed,7114
-0x00418ea0,FUN_00418ea0,10,(unnamed),unattributed,7115
-0x00418eb0,FUN_00418eb0,10,(unnamed),unattributed,7116
-0x00418ec0,FUN_00418ec0,10,(unnamed),unattributed,7117
-0x00418ed0,FUN_00418ed0,10,(unnamed),unattributed,7118
-0x00418ee0,FUN_00418ee0,10,(unnamed),unattributed,7119
-0x00418ef0,FUN_00418ef0,10,(unnamed),unattributed,7120
-0x00418f00,FUN_00418f00,10,(unnamed),unattributed,7121
-0x00418f10,FUN_00418f10,10,(unnamed),unattributed,7122
-0x00418f20,FUN_00418f20,10,(unnamed),unattributed,7123
-0x00418f30,FUN_00418f30,10,(unnamed),unattributed,7124
-0x00418f40,FUN_00418f40,10,(unnamed),unattributed,7125
-0x00418f50,FUN_00418f50,10,(unnamed),unattributed,7126
-0x00418f60,FUN_00418f60,10,(unnamed),unattributed,7127
-0x00418f70,FUN_00418f70,1,(unnamed),unattributed,7128
-0x00418f80,FUN_00418f80,10,(unnamed),unattributed,7129
-0x00418f90,FUN_00418f90,10,(unnamed),unattributed,7130
-0x00418fa0,FUN_00418fa0,10,(unnamed),unattributed,7131
-0x00418fb0,FUN_00418fb0,10,(unnamed),unattributed,7132
-0x00418fc0,FUN_00418fc0,10,(unnamed),unattributed,7133
-0x00418fd0,FUN_00418fd0,10,(unnamed),unattributed,7134
-0x00418fe0,FUN_00418fe0,10,(unnamed),unattributed,7135
-0x00418ff0,FUN_00418ff0,10,(unnamed),unattributed,7136
-0x00419000,FUN_00419000,10,(unnamed),unattributed,7137
-0x004190aa,FUN_004190aa,21,(unnamed),unattributed,7138
-0x004190bf,FUN_004190bf,31,(unnamed),unattributed,7138
-0x004190de,FUN_004190de,10,(unnamed),unattributed,7138
-0x004190e8,FUN_004190e8,10,(unnamed),unattributed,7138
-0x004190f2,FUN_004190f2,10,(unnamed),unattributed,7138
-0x00419100,FUN_00419100,17,(unnamed),unattributed,7139
-0x00419111,FUN_00419111,17,(unnamed),unattributed,7139
-0x00419122,FUN_00419122,17,(unnamed),unattributed,7139
+0x00418cc0,FUN_00418cc0,10,(unnamed),unattributed,7082
+0x00418cd0,FUN_00418cd0,10,(unnamed),unattributed,7083
+0x00418ce0,FUN_00418ce0,10,(unnamed),unattributed,7084
+0x00418cf0,FUN_00418cf0,1,(unnamed),unattributed,7085
+0x00418d00,FUN_00418d00,10,(unnamed),unattributed,7086
+0x00418d10,FUN_00418d10,10,(unnamed),unattributed,7087
+0x00418d20,FUN_00418d20,10,(unnamed),unattributed,7088
+0x00418d30,FUN_00418d30,10,(unnamed),unattributed,7089
+0x00418d40,FUN_00418d40,10,(unnamed),unattributed,7090
+0x00418d50,FUN_00418d50,10,(unnamed),unattributed,7091
+0x00418d60,FUN_00418d60,10,(unnamed),unattributed,7092
+0x00418d70,FUN_00418d70,10,(unnamed),unattributed,7093
+0x00418d80,FUN_00418d80,10,(unnamed),unattributed,7094
+0x00418d90,FUN_00418d90,10,(unnamed),unattributed,7095
+0x00418da0,FUN_00418da0,10,(unnamed),unattributed,7096
+0x00418db0,FUN_00418db0,10,(unnamed),unattributed,7097
+0x00418dc0,FUN_00418dc0,10,(unnamed),unattributed,7098
+0x00418dd0,FUN_00418dd0,10,(unnamed),unattributed,7099
+0x00418de0,FUN_00418de0,10,(unnamed),unattributed,7100
+0x00418df0,FUN_00418df0,1,(unnamed),unattributed,7101
+0x00418e00,FUN_00418e00,10,(unnamed),unattributed,7102
+0x00418e10,FUN_00418e10,10,(unnamed),unattributed,7103
+0x00418e20,FUN_00418e20,10,(unnamed),unattributed,7104
+0x00418e30,FUN_00418e30,10,(unnamed),unattributed,7105
+0x00418e50,FUN_00418e50,10,(unnamed),unattributed,7106
+0x00418e60,FUN_00418e60,10,(unnamed),unattributed,7107
+0x00418e70,FUN_00418e70,46,(unnamed),unattributed,7108
+0x00418ea0,FUN_00418ea0,10,(unnamed),unattributed,7109
+0x00418eb0,FUN_00418eb0,10,(unnamed),unattributed,7110
+0x00418ec0,FUN_00418ec0,10,(unnamed),unattributed,7111
+0x00418ed0,FUN_00418ed0,10,(unnamed),unattributed,7112
+0x00418ee0,FUN_00418ee0,10,(unnamed),unattributed,7113
+0x00418ef0,FUN_00418ef0,10,(unnamed),unattributed,7114
+0x00418f00,FUN_00418f00,10,(unnamed),unattributed,7115
+0x00418f10,FUN_00418f10,10,(unnamed),unattributed,7116
+0x00418f20,FUN_00418f20,10,(unnamed),unattributed,7117
+0x00418f30,FUN_00418f30,10,(unnamed),unattributed,7118
+0x00418f40,FUN_00418f40,10,(unnamed),unattributed,7119
+0x00418f50,FUN_00418f50,10,(unnamed),unattributed,7120
+0x00418f60,FUN_00418f60,10,(unnamed),unattributed,7121
+0x00418f70,FUN_00418f70,1,(unnamed),unattributed,7122
+0x00418f80,FUN_00418f80,10,(unnamed),unattributed,7123
+0x00418f90,FUN_00418f90,10,(unnamed),unattributed,7124
+0x00418fa0,FUN_00418fa0,10,(unnamed),unattributed,7125
+0x00418fb0,FUN_00418fb0,10,(unnamed),unattributed,7126
+0x00418fc0,FUN_00418fc0,10,(unnamed),unattributed,7127
+0x00418fd0,FUN_00418fd0,10,(unnamed),unattributed,7128
+0x00418fe0,FUN_00418fe0,10,(unnamed),unattributed,7129
+0x00418ff0,FUN_00418ff0,10,(unnamed),unattributed,7130
+0x00419000,FUN_00419000,10,(unnamed),unattributed,7131
+0x004190aa,FUN_004190aa,21,(unnamed),unattributed,7132
+0x004190bf,FUN_004190bf,31,(unnamed),unattributed,7132
+0x004190de,FUN_004190de,10,(unnamed),unattributed,7132
+0x004190e8,FUN_004190e8,10,(unnamed),unattributed,7132
+0x004190f2,FUN_004190f2,10,(unnamed),unattributed,7132
+0x00419100,FUN_00419100,17,(unnamed),unattributed,7133
+0x00419111,FUN_00419111,17,(unnamed),unattributed,7133
+0x00419122,FUN_00419122,17,(unnamed),unattributed,7133
 0x00419133,?XNetRandom@CXn@@QAEHPAEI@Z,29,(other named),name only,2139
-0x00419150,FUN_00419150,15,(unnamed),unattributed,7140
-0x0041915f,FUN_0041915f,17,(unnamed),unattributed,7140
+0x00419150,FUN_00419150,15,(unnamed),unattributed,7134
+0x0041915f,FUN_0041915f,17,(unnamed),unattributed,7134
 0x00419170,?XNetQosListen@CXn@@QAEHPBUXNKID@@PBEIKK@Z,22,(other named),name only,2140
-0x00419186,FUN_00419186,17,(unnamed),unattributed,7141
-0x00419197,FUN_00419197,17,(unnamed),unattributed,7141
-0x004191a8,FUN_004191a8,17,(unnamed),unattributed,7141
+0x00419186,FUN_00419186,17,(unnamed),unattributed,7135
+0x00419197,FUN_00419197,17,(unnamed),unattributed,7135
+0x004191a8,FUN_004191a8,17,(unnamed),unattributed,7135
 0x004191b9,_XNetConfig@8,11,(other named),name only,2141
 0x004191c4,_XNetGetConfigStatus@4,11,(other named),name only,2141
 0x004191cf,_XNetRandom@8,11,(other named),name only,2141
-0x004191da,FUN_004191da,11,(unnamed),unattributed,7142
-0x004191e5,FUN_004191e5,11,(unnamed),unattributed,7142
-0x004191f0,FUN_004191f0,11,(unnamed),unattributed,7142
-0x004191fb,FUN_004191fb,23,(unnamed),unattributed,7142
+0x004191da,FUN_004191da,11,(unnamed),unattributed,7136
+0x004191e5,FUN_004191e5,11,(unnamed),unattributed,7136
+0x004191f0,FUN_004191f0,11,(unnamed),unattributed,7136
+0x004191fb,FUN_004191fb,23,(unnamed),unattributed,7136
 0x00419212,_XNetDnsLookup@12,23,(other named),name only,2142
 0x00419229,_XNetDnsRelease@4,11,(other named),name only,2142
-0x00419234,FUN_00419234,15,(unnamed),unattributed,7143
+0x00419234,FUN_00419234,15,(unnamed),unattributed,7137
 0x00419243,_XNetQosRelease@4,11,(other named),name only,2143
 0x0041924e,_XNetGetTitleXnAddr@4,11,(other named),name only,2143
 0x00419259,_socket@12,11,(other named),name only,2143
@@ -13486,23 +13478,23 @@ address,name,size,module,attributed_by,run
 0x0041926f,_shutdown@8,11,(other named),name only,2143
 0x0041927a,_ioctlsocket@12,11,(other named),name only,2143
 0x00419285,_setsockopt@20,15,(other named),name only,2143
-0x00419294,FUN_00419294,15,(unnamed),unattributed,7144
-0x004192a3,FUN_004192a3,11,(unnamed),unattributed,7144
-0x004192ae,FUN_004192ae,11,(unnamed),unattributed,7144
+0x00419294,FUN_00419294,15,(unnamed),unattributed,7138
+0x004192a3,FUN_004192a3,11,(unnamed),unattributed,7138
+0x004192ae,FUN_004192ae,11,(unnamed),unattributed,7138
 0x004192b9,_connect@12,11,(other named),name only,2144
-0x004192c4,FUN_004192c4,11,(unnamed),unattributed,7145
-0x004192cf,FUN_004192cf,11,(unnamed),unattributed,7145
+0x004192c4,FUN_004192c4,11,(unnamed),unattributed,7139
+0x004192cf,FUN_004192cf,11,(unnamed),unattributed,7139
 0x004192da,_select@20,15,(other named),name only,2145
 0x004192e9,_WSAGetOverlappedResult@20,15,(other named),name only,2145
 0x004192f8,_WSACancelOverlappedIO@4,11,(other named),name only,2145
-0x00419303,FUN_00419303,11,(unnamed),unattributed,7146
+0x00419303,FUN_00419303,11,(unnamed),unattributed,7140
 0x0041930e,_WSARecv@28,15,(other named),name only,2146
-0x0041931d,FUN_0041931d,15,(unnamed),unattributed,7147
-0x0041932c,FUN_0041932c,11,(unnamed),unattributed,7147
+0x0041931d,FUN_0041931d,15,(unnamed),unattributed,7141
+0x0041932c,FUN_0041932c,11,(unnamed),unattributed,7141
 0x00419337,_WSASend@28,15,(other named),name only,2147
-0x00419346,FUN_00419346,15,(unnamed),unattributed,7148
+0x00419346,FUN_00419346,15,(unnamed),unattributed,7142
 0x00419355,_WSASendTo@36,15,(other named),name only,2148
-0x00419367,FUN_00419367,17,(unnamed),unattributed,7149
+0x00419367,FUN_00419367,17,(unnamed),unattributed,7143
 0x00419378,_XNetServerToInAddr@12,23,(other named),name only,2149
 0x0041938f,_XNetUnregisterInAddr@4,11,(other named),name only,2149
 0x0041939a,_XnInit@24,518,(other named),name only,2149
@@ -13532,8 +13524,8 @@ address,name,size,module,attributed_by,run
 0x00419ff4,?RecvReqEnqueue@CXnSock@@AAEJPAVCSocket@@PAVCRecvReq@@@Z,117,(other named),name only,2149
 0x0041a069,?SockQueueOverlappedSend@CXnSock@@AAEJPAVCSocket@@PAVCSendReq@@@Z,204,(other named),name only,2149
 0x0041a135,_inet_addr@4,349,(other named),name only,2149
-0x0041a292,FUN_0041a292,9,(unnamed),unattributed,7150
-0x0041a29b,FUN_0041a29b,15,(unnamed),unattributed,7150
+0x0041a292,FUN_0041a292,9,(unnamed),unattributed,7144
+0x0041a29b,FUN_0041a29b,15,(unnamed),unattributed,7144
 0x0041a2aa,?SockWaitForEvent@CXnSock@@AAEJPAVCSocket@@HI@Z,131,(other named),name only,2150
 0x0041a32d,?SockReqComplete@CXnSock@@AAEXPAVCSocket@@PAVCSockReq@@J@Z,82,(other named),name only,2150
 0x0041a37f,?SockReset@CXnSock@@AAEXUCIpAddr@@@Z,126,(other named),name only,2150
@@ -13788,23 +13780,23 @@ address,name,size,module,attributed_by,run
 0x004283f1,_XNetOpenConfigVolume@0,78,(other named),name only,2161
 0x0042843f,_XNetCloseConfigVolume@4,23,(other named),name only,2161
 0x00428456,?XnSetXoBase@CXoBase@@QAEXPAV1@@Z,11,(other named),name only,2161
-0x00428461,FUN_00428461,11,(unnamed),unattributed,7151
+0x00428461,FUN_00428461,11,(unnamed),unattributed,7145
 0x0042846c,?XnLogonGetQFlags@CXoBase@@QAEKI@Z,11,(other named),name only,2162
 0x00428477,?XnLogonGetQVals@CXoBase@@QAEHIPAUCQVal@@I@Z,11,(other named),name only,2162
 0x00428482,?XnLogonSetQVals@CXoBase@@QAEHIPAUCQVal@@I@Z,11,(other named),name only,2162
 0x0042848d,?XnLogonSetQEvent@CXoBase@@QAEIIPAX@Z,11,(other named),name only,2162
 0x00428498,?XnLogonClearQEvent@CXoBase@@QAEHII@Z,11,(other named),name only,2162
 0x004284a3,?XnLogonSetPState@CXoBase@@QAEHIKPBUXNKID@@IPBEH@Z,15,(other named),name only,2162
-0x004284b2,FUN_004284b2,11,(unnamed),unattributed,7152
+0x004284b2,FUN_004284b2,11,(unnamed),unattributed,7146
 0x004284bd,?XnLogonNoteSystemTime@CXoBase@@QAEXXZ,11,(other named),name only,2163
-0x004284c8,FUN_004284c8,11,(unnamed),unattributed,7153
+0x004284c8,FUN_004284c8,11,(unnamed),unattributed,7147
 0x004284d3,?XnSetEventTimer@CXoBase@@QAEXPAEPAXK@Z,11,(other named),name only,2164
-0x004284de,FUN_004284de,11,(unnamed),unattributed,7154
+0x004284de,FUN_004284de,11,(unnamed),unattributed,7148
 0x004284e9,_XConfigChecksum@8,42,(other named),name only,2165
 0x00428513,_XNetLoadConfigSector@16,183,(other named),name only,2165
 0x004285ca,_XNetSaveConfigSector@16,163,(other named),name only,2165
 0x0042866d,_XNetSaveConfigParams@4,150,(other named),name only,2165
-0x00428703,FUN_00428703,11,(unnamed),unattributed,7155
+0x00428703,FUN_00428703,11,(unnamed),unattributed,7149
 0x0042870e,?XnNatDetect@CXoBase@@QAEKUin_addr@@H@Z,11,(other named),name only,2166
 0x00428719,_XNetLoadConfigParams@4,154,(other named),name only,2166
 0x004287b3,_XNetUpdateConfigParams@8,106,(other named),name only,2166
@@ -13878,17 +13870,17 @@ address,name,size,module,attributed_by,run
 0x0042be01,_XOnlineLogon@20,15,(other named),name only,2170
 0x0042be10,_XOnlineGetLogonUsers@0,11,(other named),name only,2170
 0x0042be1b,_XOnlineSilentLogon@16,11,(other named),name only,2170
-0x0042be26,FUN_0042be26,11,(unnamed),unattributed,7156
+0x0042be26,FUN_0042be26,11,(unnamed),unattributed,7150
 0x0042be31,_XOnlineRetrieveLogonState@16,11,(other named),name only,2171
 0x0042be3c,_XOnlineTitleUpdate@4,11,(other named),name only,2171
-0x0042be47,FUN_0042be47,15,(unnamed),unattributed,7157
-0x0042be56,FUN_0042be56,11,(unnamed),unattributed,7157
-0x0042be61,FUN_0042be61,30,(unnamed),unattributed,7157
-0x0042be7f,FUN_0042be7f,30,(unnamed),unattributed,7157
-0x0042be9d,FUN_0042be9d,15,(unnamed),unattributed,7157
-0x0042beac,FUN_0042beac,11,(unnamed),unattributed,7157
-0x0042beb7,FUN_0042beb7,11,(unnamed),unattributed,7157
-0x0042bec2,FUN_0042bec2,11,(unnamed),unattributed,7157
+0x0042be47,FUN_0042be47,15,(unnamed),unattributed,7151
+0x0042be56,FUN_0042be56,11,(unnamed),unattributed,7151
+0x0042be61,FUN_0042be61,30,(unnamed),unattributed,7151
+0x0042be7f,FUN_0042be7f,30,(unnamed),unattributed,7151
+0x0042be9d,FUN_0042be9d,15,(unnamed),unattributed,7151
+0x0042beac,FUN_0042beac,11,(unnamed),unattributed,7151
+0x0042beb7,FUN_0042beb7,11,(unnamed),unattributed,7151
+0x0042bec2,FUN_0042bec2,11,(unnamed),unattributed,7151
 0x0042becd,_XOnlineTitleIdIsSameTitle@4,11,(other named),name only,2172
 0x0042bed8,_XOnlineNotificationSetState@24,36,(other named),name only,2172
 0x0042befc,_XOnlineGetNotification@8,11,(other named),name only,2172
@@ -13901,19 +13893,19 @@ address,name,size,module,attributed_by,run
 0x0042bf49,_XOnlineFriendsRemove@8,11,(other named),name only,2172
 0x0042bf54,_XOnlineFriendsRequest@16,34,(other named),name only,2172
 0x0042bf76,_XOnlineFriendsGameInvite@20,33,(other named),name only,2172
-0x0042bf97,FUN_0042bf97,33,(unnamed),unattributed,7158
+0x0042bf97,FUN_0042bf97,33,(unnamed),unattributed,7152
 0x0042bfb8,_XOnlineFriendsAnswerRequest@12,11,(other named),name only,2173
-0x0042bfc3,FUN_0042bfc3,11,(unnamed),unattributed,7159
-0x0042bfce,FUN_0042bfce,11,(unnamed),unattributed,7159
+0x0042bfc3,FUN_0042bfc3,11,(unnamed),unattributed,7153
+0x0042bfce,FUN_0042bfce,11,(unnamed),unattributed,7153
 0x0042bfd9,_XOnlineMutelistGet@24,15,(other named),name only,2174
-0x0042bfe8,FUN_0042bfe8,11,(unnamed),unattributed,7160
-0x0042bff3,FUN_0042bff3,34,(unnamed),unattributed,7160
-0x0042c015,FUN_0042c015,34,(unnamed),unattributed,7160
+0x0042bfe8,FUN_0042bfe8,11,(unnamed),unattributed,7154
+0x0042bff3,FUN_0042bff3,34,(unnamed),unattributed,7154
+0x0042c015,FUN_0042c015,34,(unnamed),unattributed,7154
 0x0042c037,_XOnlineFeedbackSend@32,48,(other named),name only,2175
-0x0042c067,FUN_0042c067,11,(unnamed),unattributed,7161
-0x0042c072,FUN_0042c072,15,(unnamed),unattributed,7161
-0x0042c081,FUN_0042c081,15,(unnamed),unattributed,7161
-0x0042c090,FUN_0042c090,15,(unnamed),unattributed,7161
+0x0042c067,FUN_0042c067,11,(unnamed),unattributed,7155
+0x0042c072,FUN_0042c072,15,(unnamed),unattributed,7155
+0x0042c081,FUN_0042c081,15,(unnamed),unattributed,7155
+0x0042c090,FUN_0042c090,15,(unnamed),unattributed,7155
 0x0042c09f,_XOnlineStatReset@24,42,(other named),name only,2176
 0x0042c0c9,?_XOnlineGetMachineID@CXo@@QAEJPA_K@Z,31,(other named),name only,2176
 0x0042c0e8,?Init@CXo@@QAEJPBU_XONLINE_STARTUP_PARAMS@@@Z,411,(other named),name only,2176
@@ -13927,7 +13919,7 @@ address,name,size,module,attributed_by,run
 0x0042c639,?ValidateUserIndex@CXo@@IAEJPBDK@Z,61,(other named),name only,2176
 0x0042c676,?PresMsgHandleAddByNameDequeueComplete@CXo@@IAEXPAUXONLINETASK_HANDLE__@@J@Z,99,(other named),name only,2176
 0x0042c6d9,?PresMsgPrivateSendContinue@CXo@@IAEJPAUXONLINETASK_HANDLE__@@@Z,336,(other named),name only,2176
-0x0042c829,FUN_0042c829,11,(unnamed),unattributed,7162
+0x0042c829,FUN_0042c829,11,(unnamed),unattributed,7156
 0x0042c834,?PresMsgPrivateSendClose@CXo@@IAEXPAUXONLINETASK_HANDLE__@@@Z,43,(other named),name only,2177
 0x0042c85f,?PresMsgPrivateSendCreateContext@CXo@@IAEJKKKKKKPAUXONLINE_MSG_HANDLE__@@PAXPAPAUXONLINETASK_HANDLE__@@PAPAUXPRESMSG_PRIVATE_SEND_TASK@@PAPAUBASE_MSG_HEADER@@@Z,173,(other named),name only,2177
 0x0042c90c,?XOnlineGameInviteSend@CXo@@QAEJKKPBU_XUID@@UXNKID@@KPAUXONLINE_MSG_HANDLE__@@PAXPAPAUXONLINETASK_HANDLE__@@@Z,689,(other named),name only,2177
@@ -13944,10 +13936,10 @@ address,name,size,module,attributed_by,run
 0x0042d219,?XOnlineQuerySearch@CXo@@QAEJKKKKKPBU_XONLINE_ATTRIBUTE_SPEC@@KPBU_XONLINE_ATTRIBUTE@@PAXPAPAUXONLINETASK_HANDLE__@@@Z,330,(other named),name only,2177
 0x0042d363,?XOnlineQuerySearchGetResults@CXo@@QAEJPAUXONLINETASK_HANDLE__@@PAK11PAE@Z,383,(other named),name only,2177
 0x0042d4e2,?XOnlineQueryRemove@CXo@@QAEJK_KKKKPBU_XONLINE_ATTRIBUTE@@PAXPAPAUXONLINETASK_HANDLE__@@@Z,376,(other named),name only,2177
-0x0042d65a,FUN_0042d65a,42,(unnamed),unattributed,7163
-0x0042d684,FUN_0042d684,15,(unnamed),unattributed,7163
-0x0042d693,FUN_0042d693,15,(unnamed),unattributed,7163
-0x0042d6a2,FUN_0042d6a2,45,(unnamed),unattributed,7163
+0x0042d65a,FUN_0042d65a,42,(unnamed),unattributed,7157
+0x0042d684,FUN_0042d684,15,(unnamed),unattributed,7157
+0x0042d693,FUN_0042d693,15,(unnamed),unattributed,7157
+0x0042d6a2,FUN_0042d6a2,45,(unnamed),unattributed,7157
 0x0042d6cf,?StatsGetStatSize@@YGKPBU_XONLINE_STAT@@@Z,39,(other named),name only,2178
 0x0042d6f6,?WriteStatPostParameter@@YGXPAPAEEPBXK@Z,54,(other named),name only,2178
 0x0042d72c,?WriteStatPostParameterStat@@YGXPAPAEPBU_XONLINE_STAT@@K@Z,87,(other named),name only,2178
@@ -13967,7 +13959,7 @@ address,name,size,module,attributed_by,run
 0x0042e9a2,?XOnlineStatRead@CXo@@QAEJKPBU_XONLINE_STAT_SPEC@@PAXPAPAUXONLINETASK_HANDLE__@@@Z,346,(other named),name only,2180
 0x0042eafc,?XOnlineStatLeaderEnumerate@CXo@@QAEJPBU_XUID@@KKKKPBGPAXPAPAUXONLINETASK_HANDLE__@@@Z,277,(other named),name only,2180
 0x0042ec11,?XOnlineStatReset@CXo@@QAEJU_XUID@@KPAXPAPAUXONLINETASK_HANDLE__@@@Z,150,(other named),name only,2180
-0x0042eca7,FUN_0042eca7,11,(unnamed),unattributed,7164
+0x0042eca7,FUN_0042eca7,11,(unnamed),unattributed,7158
 0x0042ecb2,?MsgTimeToFileTime@@YG?AU_FILETIME@@K@Z,31,(other named),name only,2181
 0x0042ecd1,?MessagingQMessageToXOnlineMsgSummary@@YGXPAUQ_MESSAGE_SUMMARY@@PAU_XONLINE_MSG_SUMMARY@@H@Z,133,(other named),name only,2181
 0x0042ed56,?MessagingGetAttachmentExpiration@@YGXGPAU_FILETIME@@@Z,71,(other named),name only,2181
@@ -13989,7 +13981,7 @@ address,name,size,module,attributed_by,run
 0x0042f8c5,?MessagingWriteMsgBlobToBuffer@CXo@@IAEXPAUXONLINETASK_HANDLE__@@KPAE@Z,96,(other named),name only,2184
 0x0042f925,?MessagingStartPrivateSendTask@CXo@@IAEJPAUXONLINETASK_HANDLE__@@@Z,305,(other named),name only,2184
 0x0042fa56,?MessagingGetPrivateTaskDataBuffer@CXo@@IAEPAEPAUXONLINETASK_HANDLE__@@@Z,12,(other named),name only,2184
-0x0042fa62,FUN_0042fa62,10,(unnamed),unattributed,7165
+0x0042fa62,FUN_0042fa62,10,(unnamed),unattributed,7159
 0x0042fa6c,?MessagingGetPrivateTaskResponse@CXo@@IAEJPAUXONLINETASK_HANDLE__@@PAPAEPAK@Z,61,(other named),name only,2185
 0x0042faa9,?MessagingIsNotificationSafeForTitle@CXo@@QAEHEK@Z,74,(other named),name only,2185
 0x0042faf3,?MessagingCreateContextInternal@CXo@@IAEJHKKKKP81@AEJPAUXONLINETASK_HANDLE__@@@ZP81@AEX0@ZPAXPAPAUXMESSAGING_EXTENDED_HANDLE@@PAPAE55@Z,213,(other named),name only,2185
@@ -14060,7 +14052,7 @@ address,name,size,module,attributed_by,run
 0x00433fc7,?GetServiceTicketClose@CXo@@IAEXPAUXONLINETASK_HANDLE__@@@Z,125,(other named),name only,2186
 0x00434044,?GetServiceTicket@CXo@@IAEJPAUXKERB_TGT_CONTEXT@@PBKKHPAXPAPAUXONLINETASK_HANDLE__@@@Z,640,(other named),name only,2186
 0x004342c4,?ClearServiceTicketCache@CXo@@IAEXXZ,19,(other named),name only,2186
-0x004342d7,FUN_004342d7,395,(unnamed),unattributed,7166
+0x004342d7,FUN_004342d7,395,(unnamed),unattributed,7160
 0x00434462,?IsUserLoggedOn@CXo@@IAEH_K@Z,26,(other named),name only,2187
 0x0043447c,?XOnlineGetServiceInfo@CXo@@QAEJKPAU_XONLINE_SERVICE_INFO@@@Z,102,(other named),name only,2187
 0x004344e2,?XkerbGetInfo@CXo@@IAEPAUXOKERBINFO@@K@Z,64,(other named),name only,2187
@@ -14069,7 +14061,7 @@ address,name,size,module,attributed_by,run
 0x004345cb,thunk_?XkerbGetInfo@CXo@@IAEPAUXOKERBINFO@@K@Z,5,(other named),name only,2187
 0x004345d0,?XoKerbBuildApReq@CXoBase@@QAEHKPAT_LARGE_INTEGER@@PAEI1PAI@Z,39,(other named),name only,2187
 0x004345f7,?XoKerbCrackApRep@CXoBase@@QAEHKPAT_LARGE_INTEGER@@IPAEI1I@Z,42,(other named),name only,2187
-0x00434621,FUN_00434621,5422,(unnamed),unattributed,7167
+0x00434621,FUN_00434621,5422,(unnamed),unattributed,7161
 0x00435b4f,?XOnlineLogon@CXo@@QAEJPBU_XONLINE_USER@@PBKKPAXPAPAUXONLINETASK_HANDLE__@@@Z,1586,(other named),name only,2188
 0x00436181,?XOnlineSilentLogon@CXo@@QAEJPBKKPAXPAPAUXONLINETASK_HANDLE__@@@Z,165,(other named),name only,2188
 0x00436226,_XoUpdateLaunchNewImageInternal@16,765,(other named),name only,2188
@@ -14117,13 +14109,13 @@ address,name,size,module,attributed_by,run
 0x004382bb,?PresenceGetPresenceThrottleType@@YGKW4P_MSG_TYPES@@@Z,38,(other named),name only,2191
 0x004382e1,?PresenceGetNotificationThrottleType@@YGKW4Q_MSG_TYPES@@@Z,6,(other named),name only,2191
 0x004382e7,?PresenceGetThrottleType@@YGKW4XPRESENCE_SERVER_TYPE@@K@Z,24,(other named),name only,2191
-0x004382ff,FUN_004382ff,15,(unnamed),unattributed,7168
+0x004382ff,FUN_004382ff,15,(unnamed),unattributed,7162
 0x0043830e,?XOnlineGetNotificationEx@CXo@@QAEHKPAUXONLINE_NOTIFICATION_EX_INFO@@PAK@Z,20,(other named),name only,2192
 0x00438322,?XOnlineGetNotification@CXo@@QAEHKW4XONLINE_NOTIFICATION_TYPE@@@Z,185,(other named),name only,2192
 0x004383db,?NotificationSendDequeue@CXo@@IAEJKGPAUXPRESENCE_EXTENDED_HANDLE@@@Z,287,(other named),name only,2192
 0x004384fa,?GetPeerSessionContinue@CXo@@IAEJPAUXONLINETASK_HANDLE__@@@Z,260,(other named),name only,2192
 0x004385fe,?XOnlineFriendsEnumerateFinish@CXo@@QAEJPAUXONLINETASK_HANDLE__@@@Z,35,(other named),name only,2192
-0x00438621,FUN_00438621,17,(unnamed),unattributed,7169
+0x00438621,FUN_00438621,17,(unnamed),unattributed,7163
 0x00438632,?XOnlineFriendsGetAcceptedGameInvite@CXo@@QAEJPAU_XONLINE_ACCEPTED_GAMEINVITE@@@Z,501,(other named),name only,2193
 0x00438827,?PresenceCreateMsg@CXo@@IAEJKKPAPAUBASE_MSG_HEADER@@@Z,82,(other named),name only,2193
 0x00438879,?PresenceSendMsg@CXo@@IAEJPAUBASE_MSG_HEADER@@IKPAUXPRESENCE_EXTENDED_HANDLE@@W4XPRESENCE_SERVER_TYPE@@H@Z,228,(other named),name only,2193
@@ -14163,7 +14155,7 @@ address,name,size,module,attributed_by,run
 0x00439e0e,?OrderFriends@CXo@@IAEHPBUXONLINE_FRIEND_INTERNAL@@0@Z,256,(other named),name only,2194
 0x00439f0e,?SortFriends@CXo@@IAEJPAUXPRESENCE_FRIEND_LIST@@@Z,284,(other named),name only,2194
 0x0043a02a,?ResortFriend@CXo@@IAEJPAUXPRESENCE_FRIEND_LIST@@K@Z,214,(other named),name only,2194
-0x0043a100,FUN_0043a100,174,(unnamed),unattributed,7170
+0x0043a100,FUN_0043a100,174,(unnamed),unattributed,7164
 0x0043a1ae,?XOnlineFriendsGetLatest@CXo@@QAEKKKPAU_XONLINE_FRIEND@@@Z,34,(other named),name only,2195
 0x0043a1d0,?FriendsEnumerateClose@CXo@@IAEXPAUXONLINETASK_HANDLE__@@@Z,155,(other named),name only,2195
 0x0043a26b,?ResetFriendlist@CXo@@IAEJPAUXPRESENCE_FRIEND_LIST@@GKPAPAEPAE@Z,269,(other named),name only,2195
@@ -14195,10 +14187,10 @@ address,name,size,module,attributed_by,run
 0x0043c9ac,?FeedbackCreateContext@CXo@@IAEJPAPAUXONFEEDBACK_EXTENDED_HANDLE@@KPAX@Z,169,(other named),name only,2195
 0x0043ca55,?XOnlineFeedbackSend@CXo@@QAEJKU_XUID@@W4XONLINE_FEEDBACK_TYPE@@PBUXONLINE_FEEDBACK_PARAMS@@PAXPAPAUXONLINETASK_HANDLE__@@@Z,376,(other named),name only,2195
 0x0043cbcd,?xrldlPreConnectHandler@CXo@@IAEJPAUXRL_ASYNC@@@Z,143,(other named),name only,2195
-0x0043cc5c,FUN_0043cc5c,49,(unnamed),unattributed,7171
+0x0043cc5c,FUN_0043cc5c,49,(unnamed),unattributed,7165
 0x0043cc8d,?xrldlPostDownloadHandler@CXo@@IAEJPAUXRL_ASYNC@@@Z,38,(other named),name only,2196
 0x0043ccb3,?xrldlCleanupHandler@CXo@@IAEJPAUXRL_ASYNC@@@Z,24,(other named),name only,2196
-0x0043ccde,FUN_0043ccde,33,(unnamed),unattributed,7172
+0x0043ccde,FUN_0043ccde,33,(unnamed),unattributed,7166
 0x0043ccff,?Download@CXo@@IAEJPBDPBEKPAEKPBU_FILETIME@@T_LARGE_INTEGER@@PAUXRL_ASYNC@@@Z,384,(other named),name only,2197
 0x0043ceff,?XOnlineDownloadGetProgress@CXo@@QAEJPAUXONLINETASK_HANDLE__@@PAKPAT_ULARGE_INTEGER@@2@Z,158,(other named),name only,2198
 0x0043cf9d,?xrldlConnectHandler@CXo@@IAEJPAUXRL_ASYNC@@@Z,157,(other named),name only,2198
@@ -14240,7 +14232,7 @@ address,name,size,module,attributed_by,run
 0x0043eb6f,?ASN1Dec_KERB_PRINCIPAL_NAME_name_string@@YGHPAUASN1decoding_s@@KPAPAUKERB_PRINCIPAL_NAME_name_string_s@@@Z,187,(other named),name only,2206
 0x0043ec2a,?ASN1Dec_PKERB_LAST_REQUEST_Seq@@YGHPAUASN1decoding_s@@KPAUPKERB_LAST_REQUEST_Seq@@@Z,188,(other named),name only,2206
 0x0043ece6,?ASN1Dec_KERB_ENCRYPTION_KEY@@YGHPAUASN1decoding_s@@KPAUKERB_ENCRYPTION_KEY@@@Z,188,(other named),name only,2206
-0x0043eda2,FUN_0043eda2,137,(unnamed),unattributed,7173
+0x0043eda2,FUN_0043eda2,137,(unnamed),unattributed,7167
 0x0043ee2b,?ASN1Dec_PKERB_LAST_REQUEST@@YGHPAUASN1decoding_s@@KPAPAUPKERB_LAST_REQUEST_s@@@Z,137,(other named),name only,2207
 0x0043eeb4,?ASN1Dec_KERB_PRINCIPAL_NAME@@YGHPAUASN1decoding_s@@KPAUKERB_PRINCIPAL_NAME@@@Z,142,(other named),name only,2207
 0x0043ef42,?ASN1Dec_KERB_PA_DATA@@YGHPAUASN1decoding_s@@KPAUKERB_PA_DATA@@@Z,188,(other named),name only,2207
@@ -14259,7 +14251,7 @@ address,name,size,module,attributed_by,run
 0x0044037d,?ASN1Dec_KERB_ENCRYPTED_AS_REPLY@@YGHPAUASN1decoding_s@@KPAUKERB_ENCRYPTED_KDC_REPLY@@@Z,82,(other named),name only,2207
 0x004403cf,?ASN1Dec_KERB_ENCRYPTED_TGS_REPLY@@YGHPAUASN1decoding_s@@KPAUKERB_ENCRYPTED_KDC_REPLY@@@Z,82,(other named),name only,2207
 0x00440421,?ASN1Enc_KERB_PRINCIPAL_NAME_name_string@@YGHPAUASN1encoding_s@@KPAPAUKERB_PRINCIPAL_NAME_name_string_s@@@Z,124,(other named),name only,2207
-0x0044049d,FUN_0044049d,150,(unnamed),unattributed,7174
+0x0044049d,FUN_0044049d,150,(unnamed),unattributed,7168
 0x00440533,?ASN1Enc_KERB_PRINCIPAL_NAME@@YGHPAUASN1encoding_s@@KPAUKERB_PRINCIPAL_NAME@@@Z,117,(other named),name only,2208
 0x004405a8,?ASN1Enc_PKERB_HOST_ADDRESSES@@YGHPAUASN1encoding_s@@KPAPAUPKERB_HOST_ADDRESSES_s@@@Z,82,(other named),name only,2208
 0x004405fa,?ASN1Enc_KERB_PA_DATA@@YGHPAUASN1encoding_s@@KPAUKERB_PA_DATA@@@Z,150,(other named),name only,2208
@@ -14312,7 +14304,7 @@ address,name,size,module,attributed_by,run
 0x004423a2,?CacheClose@CXo@@IAEJPAX@Z,30,(other named),name only,2209
 0x004423c0,?CacheTaskClose@CXo@@IAEXPAUXONLINETASK_HANDLE__@@@Z,47,(other named),name only,2209
 0x004423ef,?DoIndexFlushBegin@CCacheTask@@QAEJXZ,127,(other named),name only,2209
-0x0044246e,FUN_0044246e,78,(unnamed),unattributed,7175
+0x0044246e,FUN_0044246e,78,(unnamed),unattributed,7169
 0x004424bc,?DoCloseCacheBegin@CCacheTask@@QAEJXZ,142,(other named),name only,2210
 0x0044254a,?DoCloseCache@CCacheTask@@QAEJXZ,90,(other named),name only,2210
 0x004425a4,?DoUpdateMRUListPriv@CCacheTask@@QAEJXZ,80,(other named),name only,2210
@@ -14557,7 +14549,7 @@ address,name,size,module,attributed_by,run
 0x0044dd88,?ASN1_Encode@@YG?AW4tagASN1error_e@@PAUASN1encoding_s@@PAXKKPAEK@Z,314,(other named),name only,2221
 0x0044dec2,?ASN1BERDecGeneralizedTime@@YGHPAUASN1decoding_s@@KPAUtagASN1generalizedtime_t@@@Z,66,(other named),name only,2221
 0x0044df04,?ASN1BEREncCharString@@YGHPAUASN1encoding_s@@KKPAD@Z,75,(other named),name only,2221
-0x0044df4f,FUN_0044df4f,203,(unnamed),unattributed,7176
+0x0044df4f,FUN_0044df4f,203,(unnamed),unattributed,7170
 0x0044e01a,?ASN1BEREncBitString@@YGHPAUASN1encoding_s@@KKPAE@Z,124,(other named),name only,2222
 0x0044e096,?ASN1CEREncGeneralizedTime@@YGHPAUASN1encoding_s@@KPAUtagASN1generalizedtime_t@@@Z,48,(other named),name only,2222
 0x0044e0c6,?ASN1BEREncS32@@YGHPAUASN1encoding_s@@KJ@Z,217,(other named),name only,2222
@@ -14616,7 +14608,7 @@ address,name,size,module,attributed_by,run
 0x00450cf0,_D3DDevice_PersistDisplay@0,302,(other named),name only,2259
 0x00450e20,_D3DDevice_SetScreenSpaceOffset@8,73,(other named),name only,2260
 0x004510c0,?SwapSaveState@D3D@@YGXPAUSwapSavedState@1@@Z,208,(other named),name only,2261
-0x004511a0,FUN_004511a0,278,(unnamed),unattributed,7177
+0x004511a0,FUN_004511a0,278,(unnamed),unattributed,7171
 0x004512c0,?SwapSetState@D3D@@YGXPAUSwapSavedState@1@@Z,279,(other named),name only,2262
 0x004513e0,?SwapRestoreState@D3D@@YGXPAUSwapSavedState@1@@Z,381,(other named),name only,2263
 0x00451560,?SwapSaveSurfaces@D3D@@YGXPAVCDevice@1@@Z,132,(other named),name only,2264
@@ -14624,8 +14616,8 @@ address,name,size,module,attributed_by,run
 0x00451660,?SwapCopyBlt@D3D@@YGXPAVCDevice@1@@Z,379,(other named),name only,2266
 0x004517e0,?SwapCopy@D3D@@YGXPAVCDevice@1@K@Z,485,(other named),name only,2267
 0x004519d0,?SwapFlip@D3D@@YGXPAVCDevice@1@@Z,260,(other named),name only,2268
-0x00451ae0,FUN_00451ae0,64,(unnamed),unattributed,7178
-0x00451b20,FUN_00451b20,229,(unnamed),unattributed,7178
+0x00451ae0,FUN_00451ae0,64,(unnamed),unattributed,7172
+0x00451b20,FUN_00451b20,229,(unnamed),unattributed,7172
 0x00451c10,?GPUScale@D3D@@YGXPAUD3DSurface@@0M@Z,183,(other named),name only,2269
 0x00451cd0,?CleanPrivateData@D3D@@YGXPAX@Z,75,(other named),name only,2270
 0x00451d20,?DestroyResource@D3D@@YGXPAUD3DResource@@@Z,145,(other named),name only,2271
@@ -14641,10 +14633,10 @@ address,name,size,module,attributed_by,run
 0x00452090,_D3DDevice_CreateSurface2@16,144,(other named),name only,2280
 0x00452120,_D3DSurface_GetDesc@8,20,(other named),name only,2280
 0x00452140,_D3DSurface_LockRect@16,32,(other named),name only,2281
-0x00452160,FUN_00452160,8,(unnamed),unattributed,7179
+0x00452160,FUN_00452160,8,(unnamed),unattributed,7173
 0x00452170,_Direct3D_GetAdapterIdentifier@12,41,(other named),name only,2282
 0x004521a0,_Direct3D_GetAdapterModeCount@4,159,(other named),name only,2283
-0x00452240,FUN_00452240,321,(unnamed),unattributed,7180
+0x00452240,FUN_00452240,321,(unnamed),unattributed,7174
 0x004523a0,_Direct3D_GetDeviceCaps@12,46,(other named),name only,2284
 0x004523d0,_Direct3D_GetAdapterDisplayMode@8,185,(other named),name only,2285
 0x00452490,_Direct3D_CheckDeviceFormat@24,126,(other named),name only,2286
@@ -14728,19 +14720,19 @@ address,name,size,module,attributed_by,run
 0x004554f0,_D3DDevice_GetPixelShader@4,20,(other named),name only,2361
 0x00455510,_D3DDevice_GetPixelShaderFunction@8,25,(other named),name only,2362
 0x00455530,_D3DDevice_SetPixelShader@4,499,(other named),name only,2363
-0x00455730,FUN_00455730,702,(unnamed),unattributed,7181
+0x00455730,FUN_00455730,702,(unnamed),unattributed,7175
 0x00455a00,_D3DDevice_CreateTexture2@28,176,(other named),name only,2364
 0x00455ab0,_D3DBaseTexture_GetLevelCount@4,14,(other named),name only,2364
 0x00455ac0,thunk_?Get2DSurfaceDesc@PixelJar@D3D@@YGXPAUD3DPixelContainer@@IPAU_D3DSURFACE_DESC@@@Z,5,(other named),name only,2365
 0x00455ad0,_D3DTexture_GetSurfaceLevel2@8,74,(other named),name only,2366
-0x00455b20,FUN_00455b20,35,(unnamed),unattributed,7182
+0x00455b20,FUN_00455b20,35,(unnamed),unattributed,7176
 0x00455b50,_D3DCubeTexture_GetCubeMapSurface2@12,77,(other named),name only,2367
 0x00455ba0,thunk_?Lock2DSurface@PixelJar@D3D@@YGXPAUD3DPixelContainer@@W4_D3DCUBEMAP_FACES@@IPAU_D3DLOCKED_RECT@@PBUtagRECT@@K@Z,5,(other named),name only,2368
 0x00455bb0,_D3DDevice_CreateIndexBuffer2@4,52,(other named),name only,2369
 0x00455bf0,_D3DDevice_CreateVertexBuffer2@4,75,(other named),name only,2370
 0x00455c40,_D3DVertexBuffer_Lock2@8,75,(other named),name only,2371
 0x00455c90,_D3DPalette_Lock2@8,30,(other named),name only,2372
-0x00455cb0,FUN_00455cb0,12,(unnamed),unattributed,7183
+0x00455cb0,FUN_00455cb0,12,(unnamed),unattributed,7177
 0x00455cc0,_D3D_AllocContiguousMemory@8,54,(other named),name only,2373
 0x00455d00,_D3D_FreeContiguousMemory@4,18,(other named),name only,2374
 0x00455d20,?InitializeKelvin@D3D@@YGXXZ,227,(other named),name only,2375
@@ -14769,7 +14761,7 @@ address,name,size,module,attributed_by,run
 0x00457990,?GpuGetOrNewer@D3D@@YGPCKPAVCDevice@1@H@Z,116,(other named),name only,2394
 0x00457a10,?FlushWCCache@D3D@@YGXXZ,45,(other named),name only,2395
 0x00457a40,?KickOff@CDevice@D3D@@QAEXXZ,176,(other named),name only,2396
-0x00457af0,FUN_00457af0,97,(unnamed),unattributed,7184
+0x00457af0,FUN_00457af0,97,(unnamed),unattributed,7178
 0x00457b60,?SetFence@D3D@@YGKK@Z,184,(other named),name only,2397
 0x00457c20,?BlockOnTime@D3D@@YGXKK@Z,362,(other named),name only,2398
 0x00457d90,?MakeRequestedSpace@D3D@@YGPCKKK@Z,311,(other named),name only,2399
@@ -14808,7 +14800,7 @@ address,name,size,module,attributed_by,run
 0x004592e0,?SoftwareMethod@CMiniport@D3D@@AAEXK@Z,511,(other named),name only,2427
 0x00459550,?ServiceGrInterrupt@CMiniport@D3D@@AAEKXZ,171,(other named),name only,2428
 0x00459600,?ServiceFifoInterrupt@CMiniport@D3D@@AAEKXZ,295,(other named),name only,2429
-0x00459790,FUN_00459790,206,(unnamed),unattributed,7185
+0x00459790,FUN_00459790,206,(unnamed),unattributed,7179
 0x00459867,?ReserveInstMem@CMiniport@D3D@@AAEKK@Z,19,(other named),name only,2430
 0x0045987a,?InitGammaRamp@CMiniport@D3D@@AAEXK@Z,64,(other named),name only,2430
 0x004598ba,?InitDMAChannel@CMiniport@D3D@@QAEHKPAUOBJECTINFO@12@0KPAPAX@Z,99,(other named),name only,2430
@@ -14845,8 +14837,8 @@ address,name,size,module,attributed_by,run
 0x0045bca0,?LazySetStateUP@CDevice@D3D@@QAEXXZ,318,(other named),name only,2444
 0x0045bde0,?InitSurfaceHeader@D3D@@YGXIIW4_D3DFORMAT@@PAUD3DSurface@@II@Z,77,(other named),name only,2445
 0x0045be30,?HandleShaderSnapshotPreSwap@D3D@@YGXXZ,140,(other named),name only,2446
-0x0045bee0,FUN_0045bee0,869,(unnamed),unattributed,7186
-0x0045c260,FUN_0045c260,1334,(unnamed),unattributed,7187
+0x0045bee0,FUN_0045bee0,869,(unnamed),unattributed,7180
+0x0045c260,FUN_0045c260,1334,(unnamed),unattributed,7181
 0x0045c7d0,?DBGPRINT@D3D@@YAXPADZZ,51,(other named),name only,2447
 0x0045c810,?FixupPushBuffer@D3D@@YGXPAUPushBufferFixup@1@@Z,145,(other named),name only,2448
 0x0045c8a1,?HalMcControlInit@CMiniport@D3D@@AAEXXZ,359,(other named),name only,2448
@@ -14866,23 +14858,23 @@ address,name,size,module,attributed_by,run
 0x0045db4d,?HalGrLoadChannelContext@CMiniport@D3D@@AAEXK@Z,291,(other named),name only,2448
 0x0045dc70,?HalFifoControlLoad@CMiniport@D3D@@AAEXXZ,129,(other named),name only,2448
 0x0045dcf1,?HalGrControlLoad@CMiniport@D3D@@AAEXXZ,629,(other named),name only,2448
-0x0045df70,FUN_0045df70,129,(unnamed),unattributed,7188
+0x0045df70,FUN_0045df70,129,(unnamed),unattributed,7182
 0x0045e010,?LazySetCombiners@D3D@@YGKPAVCDevice@1@K@Z,181,(other named),name only,2449
-0x0045f400,FUN_0045f400,1826,(unnamed),unattributed,7189
-0x00460020,FUN_00460020,12,(unnamed),unattributed,7190
-0x0046002c,FUN_0046002c,21,(unnamed),unattributed,7190
-0x00460045,FUN_00460045,9,(unnamed),unattributed,7191
-0x0046004f,FUN_0046004f,5,(unnamed),unattributed,7192
-0x00460055,FUN_00460055,10,(unnamed),unattributed,7193
-0x0046005f,FUN_0046005f,4,(unnamed),unattributed,7193
-0x00460063,FUN_00460063,2,(unnamed),unattributed,7193
-0x00460065,FUN_00460065,2,(unnamed),unattributed,7193
-0x00460073,FUN_00460073,33,(unnamed),unattributed,7194
+0x0045f400,FUN_0045f400,1826,(unnamed),unattributed,7183
+0x00460020,FUN_00460020,12,(unnamed),unattributed,7184
+0x0046002c,FUN_0046002c,21,(unnamed),unattributed,7184
+0x00460045,FUN_00460045,9,(unnamed),unattributed,7185
+0x0046004f,FUN_0046004f,5,(unnamed),unattributed,7186
+0x00460055,FUN_00460055,10,(unnamed),unattributed,7187
+0x0046005f,FUN_0046005f,4,(unnamed),unattributed,7187
+0x00460063,FUN_00460063,2,(unnamed),unattributed,7187
+0x00460065,FUN_00460065,2,(unnamed),unattributed,7187
+0x00460073,FUN_00460073,33,(unnamed),unattributed,7188
 0x004636e0,?WithinEpsilon@@YAHMM@Z,45,(other named),name only,2450
 0x0046370d,_D3DXVec3Transform@12,139,(other named),name only,2450
 0x00463798,_D3DXVec3TransformNormal@12,95,(other named),name only,2450
 0x004637f7,_D3DXMatrixTranspose@8,109,(other named),name only,2450
-0x00463864,FUN_00463864,909,(unnamed),unattributed,7195
+0x00463864,FUN_00463864,909,(unnamed),unattributed,7189
 0x00463bf1,?D3DXVec3LengthSq@@YAMPBUD3DXVECTOR3@@@Z,35,(other named),name only,2451
 0x00463c14,?D3DXVec3Subtract@@YAPAUD3DXVECTOR3@@PAU1@PBU1@1@Z,37,(other named),name only,2451
 0x00463c39,_D3DXVec3Normalize@8,124,(other named),name only,2451
@@ -14982,30 +14974,30 @@ address,name,size,module,attributed_by,run
 0x0046b68e,?Fetch@CD3DXCodecDXT@@QAEJIIH@Z,642,(other named),name only,2457
 0x0046b910,?Encode@CD3DXCodecDXT@@UAEXIIPAUD3DXCOLOR@@@Z,134,(other named),name only,2457
 0x0046ba0a,??0CD3DXCodec_R8G8B8@@QAE@PAUD3DX_BLT@@@Z,28,(other named),name only,2458
-0x0046ba26,FUN_0046ba26,28,(unnamed),unattributed,7196
-0x0046ba42,FUN_0046ba42,28,(unnamed),unattributed,7196
-0x0046ba5e,FUN_0046ba5e,28,(unnamed),unattributed,7196
-0x0046ba7a,FUN_0046ba7a,28,(unnamed),unattributed,7196
-0x0046ba96,FUN_0046ba96,33,(unnamed),unattributed,7196
-0x0046bab7,FUN_0046bab7,28,(unnamed),unattributed,7196
-0x0046bad3,FUN_0046bad3,28,(unnamed),unattributed,7196
-0x0046baef,FUN_0046baef,28,(unnamed),unattributed,7196
+0x0046ba26,FUN_0046ba26,28,(unnamed),unattributed,7190
+0x0046ba42,FUN_0046ba42,28,(unnamed),unattributed,7190
+0x0046ba5e,FUN_0046ba5e,28,(unnamed),unattributed,7190
+0x0046ba7a,FUN_0046ba7a,28,(unnamed),unattributed,7190
+0x0046ba96,FUN_0046ba96,33,(unnamed),unattributed,7190
+0x0046bab7,FUN_0046bab7,28,(unnamed),unattributed,7190
+0x0046bad3,FUN_0046bad3,28,(unnamed),unattributed,7190
+0x0046baef,FUN_0046baef,28,(unnamed),unattributed,7190
 0x0046bb0b,??0CD3DXCodec_P8@@QAE@PAUD3DX_BLT@@@Z,28,(other named),name only,2459
-0x0046bb27,FUN_0046bb27,28,(unnamed),unattributed,7197
-0x0046bb43,FUN_0046bb43,28,(unnamed),unattributed,7197
-0x0046bb5f,FUN_0046bb5f,28,(unnamed),unattributed,7197
-0x0046bb7b,FUN_0046bb7b,28,(unnamed),unattributed,7197
-0x0046bb97,FUN_0046bb97,28,(unnamed),unattributed,7197
-0x0046bbb3,FUN_0046bbb3,28,(unnamed),unattributed,7197
+0x0046bb27,FUN_0046bb27,28,(unnamed),unattributed,7191
+0x0046bb43,FUN_0046bb43,28,(unnamed),unattributed,7191
+0x0046bb5f,FUN_0046bb5f,28,(unnamed),unattributed,7191
+0x0046bb7b,FUN_0046bb7b,28,(unnamed),unattributed,7191
+0x0046bb97,FUN_0046bb97,28,(unnamed),unattributed,7191
+0x0046bbb3,FUN_0046bbb3,28,(unnamed),unattributed,7191
 0x0046bbcf,??1CD3DXCodecYUV@@UAE@XZ,43,(other named),name only,2460
 0x0046bbfa,??1CD3DXCodecDXT@@UAE@XZ,58,(other named),name only,2460
-0x0046bc34,FUN_0046bc34,24,(unnamed),unattributed,7198
-0x0046bc4c,FUN_0046bc4c,24,(unnamed),unattributed,7198
-0x0046bc64,FUN_0046bc64,24,(unnamed),unattributed,7198
-0x0046bc7c,FUN_0046bc7c,24,(unnamed),unattributed,7198
-0x0046bc94,FUN_0046bc94,24,(unnamed),unattributed,7198
+0x0046bc34,FUN_0046bc34,24,(unnamed),unattributed,7192
+0x0046bc4c,FUN_0046bc4c,24,(unnamed),unattributed,7192
+0x0046bc64,FUN_0046bc64,24,(unnamed),unattributed,7192
+0x0046bc7c,FUN_0046bc7c,24,(unnamed),unattributed,7192
+0x0046bc94,FUN_0046bc94,24,(unnamed),unattributed,7192
 0x0046bcac,?Create@CD3DXCodec@@SAPAV1@PAUD3DX_BLT@@@Z,701,(other named),name only,2461
-0x0046c00d,FUN_0046c00d,36,(unnamed),unattributed,7199
+0x0046c00d,FUN_0046c00d,36,(unnamed),unattributed,7193
 0x0046c031,?png_format_buffer@D3DX@@YAXPAUpng_struct_def@1@PADPBD@Z,135,(other named),name only,2462
 0x0046c0b8,_png_set_error_fn,26,(other named),name only,2462
 0x0046c0d2,_png_error,29,(other named),name only,2462
@@ -15059,7 +15051,7 @@ address,name,size,module,attributed_by,run
 0x0046e9f7,_png_do_bgr,191,(other named),name only,2466
 0x0046eab6,_png_set_strip_16,9,(other named),name only,2466
 0x0046eabf,_png_set_gamma,54,(other named),name only,2466
-0x0046eaf5,FUN_0046eaf5,9,(unnamed),unattributed,7200
+0x0046eaf5,FUN_0046eaf5,9,(unnamed),unattributed,7194
 0x0046eafe,_png_read_transform_info,235,(other named),name only,2467
 0x0046ebe9,_png_do_unpack,272,(other named),name only,2467
 0x0046ecf9,_png_do_unshift,378,(other named),name only,2467
@@ -15216,7 +15208,7 @@ address,name,size,module,attributed_by,run
 0x00476fc4,?MYCbCr2RGB@D3DX@@YAXHPAE000@Z,316,(other named),name only,2476
 0x00477100,?ycc_rgb_convert@D3DX@@YAXPAUjpeg_decompress_struct@1@PAPAPAEIPAPAEH@Z,542,(other named),name only,2476
 0x0047731e,?jinit_color_deconverter@D3DX@@YAXPAUjpeg_decompress_struct@1@@Z,289,(other named),name only,2476
-0x0047743f,FUN_0047743f,176,(unnamed),unattributed,7201
+0x0047743f,FUN_0047743f,176,(unnamed),unattributed,7195
 0x00477504,?merged_2v_upsample@D3DX@@YAXPAUjpeg_decompress_struct@1@PAPAPAEPAIIPAPAE2I@Z,166,(other named),name only,2477
 0x004775aa,?merged_1v_upsample@D3DX@@YAXPAUjpeg_decompress_struct@1@PAPAPAEPAIIPAPAE2I@Z,49,(other named),name only,2477
 0x004775db,?h2v1_merged_upsample@D3DX@@YAXPAUjpeg_decompress_struct@1@PAPAPAEIPAPAE@Z,342,(other named),name only,2477
@@ -15438,12 +15430,12 @@ address,name,size,module,attributed_by,run
 0x00485afb,?SwizzleV@Swizzler@@QAEKK@Z,41,(other named),name only,2486
 0x00485b24,?SwizzleW@Swizzler@@QAEKK@Z,41,(other named),name only,2486
 0x00485b4d,?GetMasks2@XGRAPHICS@@YGXHHPAK0@Z,116,(other named),name only,2486
-0x00485bc1,FUN_00485bc1,28,(unnamed),unattributed,7202
-0x00485cc1,FUN_00485cc1,28,(unnamed),unattributed,7203
-0x00485dbf,FUN_00485dbf,28,(unnamed),unattributed,7204
-0x00485eb8,FUN_00485eb8,28,(unnamed),unattributed,7205
-0x00485f9b,FUN_00485f9b,28,(unnamed),unattributed,7206
-0x004860ad,FUN_004860ad,28,(unnamed),unattributed,7207
+0x00485bc1,FUN_00485bc1,28,(unnamed),unattributed,7196
+0x00485cc1,FUN_00485cc1,28,(unnamed),unattributed,7197
+0x00485dbf,FUN_00485dbf,28,(unnamed),unattributed,7198
+0x00485eb8,FUN_00485eb8,28,(unnamed),unattributed,7199
+0x00485f9b,FUN_00485f9b,28,(unnamed),unattributed,7200
+0x004860ad,FUN_004860ad,28,(unnamed),unattributed,7201
 0x004861a3,_XGIsSwizzledFormat@4,68,(other named),name only,2487
 0x004861e7,_XGBytesPerPixelFromFormat@4,42,(other named),name only,2487
 0x00486263,?Swizzle1x1Column@?$XGInternalSwizzler@K@XGRAPHICS@@SGXPAUXGINTERNALSWIZZLE@2@@Z,129,(other named),name only,2488
@@ -15507,14 +15499,14 @@ address,name,size,module,attributed_by,run
 0x004886d2,?NegateResult@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NPAVRegister@23@@Z,89,(other named),name only,2493
 0x0048872b,?SwapResultComps@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NPAVRegister@23@W4CompIndex@23@1_N@Z,470,(other named),name only,2493
 0x00488901,?FixUnusedIndexes@InstructionSequence@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXPAU_D3DVertexShaderProgram@@@Z,232,(other named),name only,2493
-0x004889e9,FUN_004889e9,41,(unnamed),unattributed,7208
+0x004889e9,FUN_004889e9,41,(unnamed),unattributed,7202
 0x00488a12,??Eiterator@?$set@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEAAV0123@XZ,46,(other named),name only,2494
-0x00488a40,FUN_00488a40,41,(unnamed),unattributed,7209
+0x00488a40,FUN_00488a40,41,(unnamed),unattributed,7203
 0x00488a69,?erase@?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@AAEXPAVnode@123@@Z,50,(other named),name only,2495
 0x00488a9b,?find_node@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBEPAVnode@123@PAVInstruction@23@@Z,72,(other named),name only,2495
 0x00488ae3,?clear_node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@SGXPAVnode@123@@Z,41,(other named),name only,2495
 0x00488b0c,??0node@?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE@PAVInstruction@23@PAV0123@1@Z,46,(other named),name only,2495
-0x00488b3a,FUN_00488b3a,36,(unnamed),unattributed,7210
+0x00488b3a,FUN_00488b3a,36,(unnamed),unattributed,7204
 0x00488b5e,??1node@?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAE@XZ,33,(other named),name only,2496
 0x00488b7f,?clear_node@?$set@PAVGraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVGraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@SGXPAVnode@123@@Z,41,(other named),name only,2496
 0x00488ba8,?clear_node@?$set@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@SGXPAVnode@123@@Z,41,(other named),name only,2496
@@ -15546,31 +15538,31 @@ address,name,size,module,attributed_by,run
 0x00489834,?StallsOnlyForA0x@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBE_NPBV123@@Z,123,(other named),name only,2498
 0x004898af,?PutMoveInMAC@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NXZ,126,(other named),name only,2498
 0x0048992d,?PutMoveInILU@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NXZ,256,(other named),name only,2498
-0x00489a2d,FUN_00489a2d,21,(unnamed),unattributed,7211
-0x00489a42,FUN_00489a42,21,(unnamed),unattributed,7211
+0x00489a2d,FUN_00489a2d,21,(unnamed),unattributed,7205
+0x00489a42,FUN_00489a42,21,(unnamed),unattributed,7205
 0x00489a57,?push_back@?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXPAVInstruction@23@@Z,58,(other named),name only,2499
 0x00489a91,?begin@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE?AViterator@123@XZ,27,(other named),name only,2499
 0x00489aac,?clear@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,21,(other named),name only,2499
-0x00489ac1,FUN_00489ac1,21,(unnamed),unattributed,7212
-0x00489ad6,FUN_00489ad6,40,(unnamed),unattributed,7212
+0x00489ac1,FUN_00489ac1,21,(unnamed),unattributed,7206
+0x00489ad6,FUN_00489ad6,40,(unnamed),unattributed,7206
 0x00489b1f,?clear@?$set@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,21,(other named),name only,2500
-0x00489b34,FUN_00489b34,40,(unnamed),unattributed,7213
-0x00489b7d,FUN_00489b7d,40,(unnamed),unattributed,7214
-0x00489bc6,FUN_00489bc6,40,(unnamed),unattributed,7215
+0x00489b34,FUN_00489b34,40,(unnamed),unattributed,7207
+0x00489b7d,FUN_00489b7d,40,(unnamed),unattributed,7208
+0x00489bc6,FUN_00489bc6,40,(unnamed),unattributed,7209
 0x00489c0f,?clear@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,21,(other named),name only,2501
 0x00489c24,??Fiterator@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEAAV0123@XZ,57,(other named),name only,2501
 0x00489c5d,?find_node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBEPAVnode@123@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@Z,31,(other named),name only,2501
 0x00489c7c,??Econst_iterator@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEAAV0123@XZ,61,(other named),name only,2501
-0x00489cb9,FUN_00489cb9,21,(unnamed),unattributed,7216
+0x00489cb9,FUN_00489cb9,21,(unnamed),unattributed,7210
 0x00489cce,??0node@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE@PAVInstruction@23@PAV0123@@Z,40,(other named),name only,2502
-0x00489d17,FUN_00489d17,40,(unnamed),unattributed,7217
+0x00489d17,FUN_00489d17,40,(unnamed),unattributed,7211
 0x00489d60,??0node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@PAV0123@@Z,47,(other named),name only,2503
-0x00489db0,FUN_00489db0,33,(unnamed),unattributed,7218
-0x00489dd1,FUN_00489dd1,56,(unnamed),unattributed,7218
+0x00489db0,FUN_00489db0,33,(unnamed),unattributed,7212
+0x00489dd1,FUN_00489dd1,56,(unnamed),unattributed,7212
 0x00489e09,?depth_check@node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEHXZ,56,(other named),name only,2504
 0x00489e41,?depth_fix@node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,33,(other named),name only,2504
-0x00489e62,FUN_00489e62,75,(unnamed),unattributed,7219
-0x00489ead,FUN_00489ead,75,(unnamed),unattributed,7219
+0x00489e62,FUN_00489e62,75,(unnamed),unattributed,7213
+0x00489ead,FUN_00489ead,75,(unnamed),unattributed,7213
 0x00489ef8,?rotate_lesswise@node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,75,(other named),name only,2505
 0x00489f43,?rotate_morewise@node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,75,(other named),name only,2505
 0x00489f8e,?RemoveAllCollections@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@SGXXZ,26,(other named),name only,2505
@@ -15587,16 +15579,16 @@ address,name,size,module,attributed_by,run
 0x0048a1e9,?RemoveResultComp@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXW4CompIndex@23@PAVRegister@23@@Z,170,(other named),name only,2505
 0x0048a29e,??1?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAE@XZ,29,(other named),name only,2506
 0x0048a2d1,?begin@?$set@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE?AViterator@123@XZ,27,(other named),name only,2507
-0x0048a2ec,FUN_0048a2ec,38,(unnamed),unattributed,7220
-0x0048a312,FUN_0048a312,38,(unnamed),unattributed,7220
-0x0048a338,FUN_0048a338,38,(unnamed),unattributed,7220
-0x0048a35e,FUN_0048a35e,38,(unnamed),unattributed,7220
-0x0048a384,FUN_0048a384,36,(unnamed),unattributed,7220
-0x0048a3a8,FUN_0048a3a8,38,(unnamed),unattributed,7220
-0x0048a3ce,FUN_0048a3ce,38,(unnamed),unattributed,7220
-0x0048a3f4,FUN_0048a3f4,38,(unnamed),unattributed,7220
+0x0048a2ec,FUN_0048a2ec,38,(unnamed),unattributed,7214
+0x0048a312,FUN_0048a312,38,(unnamed),unattributed,7214
+0x0048a338,FUN_0048a338,38,(unnamed),unattributed,7214
+0x0048a35e,FUN_0048a35e,38,(unnamed),unattributed,7214
+0x0048a384,FUN_0048a384,36,(unnamed),unattributed,7214
+0x0048a3a8,FUN_0048a3a8,38,(unnamed),unattributed,7214
+0x0048a3ce,FUN_0048a3ce,38,(unnamed),unattributed,7214
+0x0048a3f4,FUN_0048a3f4,38,(unnamed),unattributed,7214
 0x0048a41a,?find_node@?$map@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@ABEPAVnode@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@23@H@Z,21,(other named),name only,2508
-0x0048a42f,FUN_0048a42f,182,(unnamed),unattributed,7221
+0x0048a42f,FUN_0048a42f,182,(unnamed),unattributed,7215
 0x0048a4e5,?balance@node@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,182,(other named),name only,2509
 0x0048a59b,?Init@GraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@SGXXZ,19,(other named),name only,2509
 0x0048a5ae,?AReader@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVReader@23@XZ,27,(other named),name only,2509
@@ -15610,21 +15602,21 @@ address,name,size,module,attributed_by,run
 0x0048aab0,?SwizzleComps@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NVSwizzle@23@@Z,623,(other named),name only,2509
 0x0048ad1f,?DontWriteHere@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NVCompMask@23@_N1@Z,131,(other named),name only,2509
 0x0048ada2,??0?$map@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE@XZ,31,(other named),name only,2509
-0x0048adc1,FUN_0048adc1,11,(unnamed),unattributed,7222
-0x0048adcc,FUN_0048adcc,36,(unnamed),unattributed,7222
+0x0048adc1,FUN_0048adc1,11,(unnamed),unattributed,7216
+0x0048adcc,FUN_0048adcc,36,(unnamed),unattributed,7216
 0x0048adf0,?ToUCode@InstructionSequence@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAE_NPAU_D3DVertexShaderProgram@@@Z,92,(other named),name only,2510
 0x0048ae4c,?erase@?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAEXPAVInstruction@23@@Z,40,(other named),name only,2510
 0x0048ae74,?find@?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE?AViterator@123@PAVInstruction@23@@Z,30,(other named),name only,2510
-0x0048ae92,FUN_0048ae92,197,(unnamed),unattributed,7223
-0x0048af57,FUN_0048af57,197,(unnamed),unattributed,7223
-0x0048b01c,FUN_0048b01c,197,(unnamed),unattributed,7223
-0x0048b0e1,FUN_0048b0e1,197,(unnamed),unattributed,7223
+0x0048ae92,FUN_0048ae92,197,(unnamed),unattributed,7217
+0x0048af57,FUN_0048af57,197,(unnamed),unattributed,7217
+0x0048b01c,FUN_0048b01c,197,(unnamed),unattributed,7217
+0x0048b0e1,FUN_0048b0e1,197,(unnamed),unattributed,7217
 0x0048b1a6,?balance@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@IAEXPAVnode@123@@Z,45,(other named),name only,2511
-0x0048b1d3,FUN_0048b1d3,197,(unnamed),unattributed,7224
+0x0048b1d3,FUN_0048b1d3,197,(unnamed),unattributed,7218
 0x0048b298,?balance@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@IAEXPAVnode@123@@Z,45,(other named),name only,2512
 0x0048b2c5,?fill_hole@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@IAEPAVnode@123@PAV4123@00@Z,197,(other named),name only,2512
 0x0048b38a,?insert@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@PAV4123@@Z,154,(other named),name only,2512
-0x0048b424,FUN_0048b424,197,(unnamed),unattributed,7225
+0x0048b424,FUN_0048b424,197,(unnamed),unattributed,7219
 0x0048b4e9,?CompIsReadNext@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBE_NW4CompIndex@23@@Z,42,(other named),name only,2513
 0x0048b513,?SetSource@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXVCompMask@23@PAVInstruction@23@@Z,60,(other named),name only,2513
 0x0048b54f,?RemoveRedundantComps@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,45,(other named),name only,2513
@@ -15635,20 +15627,20 @@ address,name,size,module,attributed_by,run
 0x0048b797,?ReadRReg@InstructionSequence@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVRegister@23@HVCompMask@23@@Z,52,(other named),name only,2513
 0x0048b7cb,?WriteA0x@InstructionSequence@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVRegister@23@PAV423@@Z,61,(other named),name only,2513
 0x0048b808,?TempIndexForVirtualReg@InstructionGraph@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBEHPBVRegister@23@@Z,74,(other named),name only,2513
-0x0048b852,FUN_0048b852,113,(unnamed),unattributed,7226
-0x0048b8c3,FUN_0048b8c3,143,(unnamed),unattributed,7226
+0x0048b852,FUN_0048b852,113,(unnamed),unattributed,7220
+0x0048b8c3,FUN_0048b8c3,143,(unnamed),unattributed,7220
 0x0048b952,?erase@?$set@PAV?$collection@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAV?$collection@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAV4123@@Z,113,(other named),name only,2514
-0x0048b9c3,FUN_0048b9c3,143,(unnamed),unattributed,7227
+0x0048b9c3,FUN_0048b9c3,143,(unnamed),unattributed,7221
 0x0048ba52,?erase@?$set@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAV4123@@Z,113,(other named),name only,2515
-0x0048bac3,FUN_0048bac3,143,(unnamed),unattributed,7228
+0x0048bac3,FUN_0048bac3,143,(unnamed),unattributed,7222
 0x0048bb52,?erase@?$set@PAV?$collection@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAV?$collection@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAV4123@@Z,113,(other named),name only,2516
-0x0048bbc3,FUN_0048bbc3,143,(unnamed),unattributed,7229
+0x0048bbc3,FUN_0048bbc3,143,(unnamed),unattributed,7223
 0x0048bc52,?erase@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAV4123@@Z,113,(other named),name only,2517
 0x0048bcc3,?insert@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAVInstruction@23@PAV4123@@Z,174,(other named),name only,2517
 0x0048bd71,?erase@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAV4123@@Z,113,(other named),name only,2517
 0x0048bde2,?insert@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@Z,79,(other named),name only,2517
 0x0048be31,?erase@?$set@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAV4123@@Z,113,(other named),name only,2517
-0x0048bea2,FUN_0048bea2,143,(unnamed),unattributed,7230
+0x0048bea2,FUN_0048bea2,143,(unnamed),unattributed,7224
 0x0048bf31,?ForcedInR1@InstructionGraph@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBE_NPAVRegister@23@@Z,44,(other named),name only,2518
 0x0048bf5d,?insert@?$set@PAVGraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVGraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAVGraphOptimizerObject@23@@Z,71,(other named),name only,2518
 0x0048bfa4,?erase@?$set@PAVGraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVGraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAEXPAVGraphOptimizerObject@23@@Z,24,(other named),name only,2518
@@ -15660,7 +15652,7 @@ address,name,size,module,attributed_by,run
 0x0048c0d9,?insert@?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAVInstruction@23@@Z,71,(other named),name only,2519
 0x0048c138,?insert@?$map@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE?AViterator@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@23@HPAVRegister@23@@Z,51,(other named),name only,2520
 0x0048c187,?insert@?$set@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVnode@123@PAVRegister@23@@Z,71,(other named),name only,2521
-0x0048c1e6,FUN_0048c1e6,31,(unnamed),unattributed,7231
+0x0048c1e6,FUN_0048c1e6,31,(unnamed),unattributed,7225
 0x0048c205,??0GraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE@XZ,24,(other named),name only,2522
 0x0048c22f,??_GGraphOptimizerObject@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAEPAXI@Z,44,(other named),name only,2523
 0x0048c25b,??0Reader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE@PAVInstruction@12@PAVRegister@12@W4InputIndex@12@1_N@Z,131,(other named),name only,2523
@@ -15686,24 +15678,24 @@ address,name,size,module,attributed_by,run
 0x0048d036,??Eiterator@?$set@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$pair_less@V?$pair@HPAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEAAV0123@XZ,46,(other named),name only,2523
 0x0048d064,?CleanSwizzle@Reader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NXZ,95,(other named),name only,2523
 0x0048d0c3,?CleanSwizzles@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NXZ,60,(other named),name only,2523
-0x0048d0ff,FUN_0048d0ff,36,(unnamed),unattributed,7232
+0x0048d0ff,FUN_0048d0ff,36,(unnamed),unattributed,7226
 0x0048d123,??1Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAE@XZ,273,(other named),name only,2524
 0x0048d234,?GetAllDependants@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBEPAV?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@23@PAV423@VCompMask@23@@Z,307,(other named),name only,2524
 0x0048d367,?MoveReadersToPrevForUnlink@Register@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEXXZ,380,(other named),name only,2524
 0x0048d4e3,??1Reader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAE@XZ,110,(other named),name only,2524
 0x0048d551,?ConformInputToSwizzle@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NW4InputIndex@23@VSwizzle@23@@Z,26,(other named),name only,2524
 0x0048d56b,?GetAllDependants@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAV?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@23@XZ,396,(other named),name only,2524
-0x0048d6f7,FUN_0048d6f7,36,(unnamed),unattributed,7233
+0x0048d6f7,FUN_0048d6f7,36,(unnamed),unattributed,7227
 0x0048d71b,?ReadReg@InstructionSequence@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVRegister@23@W4RegType@23@HHH_NVCompMask@23@@Z,94,(other named),name only,2525
 0x0048d779,?WriteRReg@InstructionSequence@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAEPAVRegister@23@PAV423@@Z,108,(other named),name only,2525
-0x0048d7e5,FUN_0048d7e5,36,(unnamed),unattributed,7234
+0x0048d7e5,FUN_0048d7e5,36,(unnamed),unattributed,7228
 0x0048d809,?FreeTempIndex@InstructionGraph@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NHPBV?$set@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVReader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@23@@Z,168,(other named),name only,2526
 0x0048d8b1,?UnPairAll@InstructionGraph@VS_GRAPH_OPTIMIZER@XGRAPHICS@@AAEXXZ,54,(other named),name only,2526
-0x0048d8e7,FUN_0048d8e7,36,(unnamed),unattributed,7235
+0x0048d8e7,FUN_0048d8e7,36,(unnamed),unattributed,7229
 0x0048d90b,?IsDependant@Instruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NPAV123@@Z,30,(other named),name only,2527
 0x0048d929,?SortInstrByScheduling@VS_GRAPH_OPTIMIZER@XGRAPHICS@@YG_NPBVInstruction@12@0@Z,69,(other named),name only,2527
 0x0048d96e,?GetNextInstructionByPriority@VS_GRAPH_OPTIMIZER@XGRAPHICS@@YGPAVInstruction@12@Viterator@?$list@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@12@0@Z,65,(other named),name only,2527
-0x0048d9af,FUN_0048d9af,36,(unnamed),unattributed,7236
+0x0048d9af,FUN_0048d9af,36,(unnamed),unattributed,7230
 0x0048d9d3,?CanRead@Reader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBE_NPAVRegister@23@VCompMask@23@@Z,613,(other named),name only,2528
 0x0048dc38,?Combinable@Reader@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QBE_NPBV123@@Z,188,(other named),name only,2528
 0x0048dcf4,?ReduceInstruction@InstructionGraph@VS_GRAPH_OPTIMIZER@XGRAPHICS@@AAEXPAVInstruction@23@PAV?$set@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@U?$less@PAVRegister@VS_GRAPH_OPTIMIZER@XGRAPHICS@@@23@@23@PAV?$set@PAVInstruction@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UInstructionLess@23@@23@@Z,2373,(other named),name only,2528
@@ -15735,9 +15727,9 @@ address,name,size,module,attributed_by,run
 0x00490b63,?Optimize@VS_GRAPH_OPTIMIZER@XGRAPHICS@@YG_NPAU_D3DVertexShaderProgram@@@Z,425,(other named),name only,2528
 0x00490d18,?Schedule@InstructionGraph@VS_GRAPH_OPTIMIZER@XGRAPHICS@@QAE_NXZ,1699,(other named),name only,2529
 0x004913bb,?ToUCode@InstructionGraph@VS_GRAPH_OPTIMIZER@XGRAPHICS@@UAE_NPAU_D3DVertexShaderProgram@@@Z,27,(other named),name only,2529
-0x004913fa,FUN_004913fa,36,(unnamed),unattributed,7237
-0x0049141e,FUN_0049141e,36,(unnamed),unattributed,7237
-0x00491442,FUN_00491442,36,(unnamed),unattributed,7237
+0x004913fa,FUN_004913fa,36,(unnamed),unattributed,7231
+0x0049141e,FUN_0049141e,36,(unnamed),unattributed,7231
+0x00491442,FUN_00491442,36,(unnamed),unattributed,7231
 0x00491466,?RGBSwizzleToChannel@XGRAPHICS@@YGKK@Z,20,(other named),name only,2530
 0x0049147a,?AlphaSwizzleToChannel@XGRAPHICS@@YGKK@Z,24,(other named),name only,2530
 0x00491492,?InstructionMOV@XGRAPHICS@@YGXKKPAK00000@Z,155,(other named),name only,2530
@@ -15752,7 +15744,7 @@ address,name,size,module,attributed_by,run
 0x00491be3,?InstructionXMMC@XGRAPHICS@@YGXKKPAK00000@Z,278,(other named),name only,2530
 0x00491cf9,?InstructionXDM@XGRAPHICS@@YGXKKPAK00000@Z,275,(other named),name only,2530
 0x00491e0c,?InstructionXDD@XGRAPHICS@@YGXKKPAK00000@Z,290,(other named),name only,2530
-0x00491fd6,FUN_00491fd6,60,(unnamed),unattributed,7238
+0x00491fd6,FUN_00491fd6,60,(unnamed),unattributed,7232
 0x00492012,?DSTdecode@XGRAPHICS@@YGKPAK00K@Z,83,(other named),name only,2531
 0x00492065,?SRCdecode@XGRAPHICS@@YGKPAK00KK@Z,407,(other named),name only,2531
 0x004921fc,?PrintPixelShaderDef@XGRAPHICS@@YGXPAU_D3DPixelShaderDef@@PAVBuffer@1@@Z,2243,(other named),name only,2531
@@ -15880,23 +15872,23 @@ address,name,size,module,attributed_by,run
 0x0049b1f5,?SetCombinerInputRegister@D3DPIXELSHADERDEF_OPT@XGRAPHICS@@QAEXKKKK@Z,97,(other named),name only,2537
 0x0049b256,?SetCombinerOutputRegister@D3DPIXELSHADERDEF_OPT@XGRAPHICS@@QAEXKKKK@Z,89,(other named),name only,2537
 0x0049b2f1,?SetCombinerOutputFlagsRaw@D3DPIXELSHADERDEF_OPT@XGRAPHICS@@QAEXKKK@Z,71,(other named),name only,2538
-0x0049b3b9,FUN_0049b3b9,7,(unnamed),unattributed,7239
+0x0049b3b9,FUN_0049b3b9,7,(unnamed),unattributed,7233
 0x0049b3c3,?OptimizeImp@PSORemoveEmptyStages@XGRAPHICS@@UAEXAAVOptContext@2@@Z,140,(other named),name only,2539
 0x0049b44f,?CopyCombinerStage@D3DPIXELSHADERDEF_OPT@XGRAPHICS@@QAEXKK@Z,123,(other named),name only,2539
 0x0049b4ca,?ClearCombinerStage@D3DPIXELSHADERDEF_OPT@XGRAPHICS@@QAEXK@Z,60,(other named),name only,2539
 0x0049b506,?Initialize@OptContext@XGRAPHICS@@QAEXPAUD3DPIXELSHADERDEF_OPT@2@_N1PAUXD3DXErrorLog@2@@Z,123,(other named),name only,2539
 0x0049b581,??_GPixelShaderVerifier@XGRAPHICS@@QAEPAXI@Z,36,(other named),name only,2539
-0x0049b5c6,FUN_0049b5c6,36,(unnamed),unattributed,7240
+0x0049b5c6,FUN_0049b5c6,36,(unnamed),unattributed,7234
 0x0049b5f9,?Optimize@XGRAPHICS@@YGJAAUD3DPIXELSHADERDEF_OPT@1@_N1PAUXD3DXErrorLog@1@@Z,204,(other named),name only,2540
 0x0049b6c5,??0XAsmCD3DXDwStack@XGRAPHICS@@QAE@XZ,16,(other named),name only,2540
 0x0049b6d5,?Pop@XAsmCD3DXDwStack@XGRAPHICS@@QAEJPAK@Z,52,(other named),name only,2540
-0x0049b709,FUN_0049b709,8,(unnamed),unattributed,7241
+0x0049b709,FUN_0049b709,8,(unnamed),unattributed,7235
 0x0049b711,??1XAsmCD3DXDwStack@XGRAPHICS@@QAE@XZ,18,(other named),name only,2541
 0x0049b723,?Push@XAsmCD3DXDwStack@XGRAPHICS@@QAEJK@Z,123,(other named),name only,2541
 0x0049b79e,??1XAsmCD3DXSzStack@XGRAPHICS@@QAE@XZ,61,(other named),name only,2541
 0x0049b7db,?Push@XAsmCD3DXSzStack@XGRAPHICS@@QAEJPAD@Z,194,(other named),name only,2541
 0x0049b89d,??0PixelShaderVerifier@XGRAPHICS@@QAE@XZ,3,(other named),name only,2541
-0x0049b8a0,FUN_0049b8a0,1,(unnamed),unattributed,7242
+0x0049b8a0,FUN_0049b8a0,1,(unnamed),unattributed,7236
 0x0049b8a1,?SetOriginal@PixelShaderVerifier@XGRAPHICS@@QAEJABUD3DPIXELSHADERDEF_OPT@2@@Z,5,(other named),name only,2542
 0x0049b8a6,?Compare@PixelShaderVerifier@XGRAPHICS@@QAEJABUD3DPIXELSHADERDEF_OPT@2@AA_NPAUXD3DXErrorLog@2@@Z,5,(other named),name only,2542
 0x0049f360,?RemoveEntryList@@YGPAU_LIST_ENTRY@@PAU1@@Z,31,(other named),name only,2543
@@ -15905,8 +15897,8 @@ address,name,size,module,attributed_by,run
 0x0049f3b2,?Lower@CIrql@DirectSound@@QAEXXZ,23,(other named),name only,2543
 0x0049f3c9,?Save@CFpState@DirectSound@@QAEXXZ,37,(other named),name only,2543
 0x0049f3ee,?Restore@CFpState@DirectSound@@QAEXXZ,30,(other named),name only,2543
-0x0049f40c,FUN_0049f40c,13,(unnamed),unattributed,7243
-0x0049f419,FUN_0049f419,17,(unnamed),unattributed,7243
+0x0049f40c,FUN_0049f40c,13,(unnamed),unattributed,7237
+0x0049f419,FUN_0049f419,17,(unnamed),unattributed,7237
 0x0049f42a,?Release@CRefCount@DirectSound@@UAGKXZ,33,(other named),name only,2544
 0x0049f44b,?AmplitudeToVolume@Math@DirectSound@@YGJM@Z,73,(other named),name only,2544
 0x0049f494,?lsb@Math@DirectSound@@YIII@Z,4,(other named),name only,2544
@@ -15920,9 +15912,9 @@ address,name,size,module,attributed_by,run
 0x0049f5b3,?DownloadEffectsImage@CMcpxAPU@DirectSound@@QAEJPBXKPAPAU_DSEFFECTIMAGEDESC@@@Z,47,(other named),name only,2544
 0x0049f5e2,?GetLowWatermark@CMcpxStream@DirectSound@@QAEKXZ,63,(other named),name only,2544
 0x0049f621,?Initialize@CWaveFileMediaObject@DirectSound@@QAGJPBD@Z,21,(other named),name only,2544
-0x0049f636,FUN_0049f636,22,(unnamed),unattributed,7244
+0x0049f636,FUN_0049f636,22,(unnamed),unattributed,7238
 0x0049f64c,_IDirectSoundBuffer_Release@4,22,(other named),name only,2545
-0x0049f662,FUN_0049f662,31,(unnamed),unattributed,7245
+0x0049f662,FUN_0049f662,31,(unnamed),unattributed,7239
 0x0049f681,_XAudioCalculatePitch@4,74,(other named),name only,2546
 0x0049f6cb,thunk_?CreatePcmFormat@WaveFormat@DirectSound@@YGXGKGPAUtWAVEFORMATEX@@@Z,5,(other named),name only,2546
 0x0049f6d0,?SetEffectImageLocations@CDirectSoundSettings@DirectSound@@QAEXPBU_DSEFFECTIMAGELOC@@@Z,34,(other named),name only,2546
@@ -15938,66 +15930,66 @@ address,name,size,module,attributed_by,run
 0x0049f97f,?SetPitch@CDirectSoundVoice@DirectSound@@QAGJJ@Z,25,(other named),name only,2546
 0x0049f998,?SetVolume@CDirectSoundVoice@DirectSound@@QAGJJ@Z,28,(other named),name only,2546
 0x0049f9b4,?SetHeadroom@CDirectSoundVoice@DirectSound@@QAGJK@Z,35,(other named),name only,2546
-0x0049f9d7,FUN_0049f9d7,29,(unnamed),unattributed,7246
+0x0049f9d7,FUN_0049f9d7,29,(unnamed),unattributed,7240
 0x0049f9f4,?CommitDeferredSettings@CDirectSoundVoice@DirectSound@@QAGJXZ,17,(other named),name only,2547
 0x0049fa05,?SetNotificationPositions@CDirectSoundBufferSettings@DirectSound@@QAEJKPBU_DSBPOSITIONNOTIFY@@@Z,213,(other named),name only,2547
 0x0049fada,??1CDirectSoundBuffer@DirectSound@@UAE@XZ,51,(other named),name only,2547
 0x0049fb9e,?Play@CDirectSoundBuffer@DirectSound@@QAGJKKK@Z,81,(other named),name only,2548
 0x0049fbef,?Stop@CDirectSoundBuffer@DirectSound@@QAGJXZ,79,(other named),name only,2548
-0x0049fc3e,FUN_0049fc3e,81,(unnamed),unattributed,7247
+0x0049fc3e,FUN_0049fc3e,81,(unnamed),unattributed,7241
 0x0049fc8f,??1CDirectSoundStream@DirectSound@@UAE@XZ,62,(other named),name only,2549
 0x0049feb2,?Process@CDirectSoundStream@DirectSound@@UAGJPBU_XMEDIAPACKET@@0@Z,119,(other named),name only,2550
-0x0049ff29,FUN_0049ff29,81,(unnamed),unattributed,7248
+0x0049ff29,FUN_0049ff29,81,(unnamed),unattributed,7242
 0x0049ff7a,?FlushEx@CDirectSoundStream@DirectSound@@QAGJ_JK@Z,106,(other named),name only,2551
 0x0049ffe4,?GetVoiceData@CDirectSound3DCalculator@DirectSound@@SGXPBU_DS3DCALCLISTENER@@PBU_DS3DCALCBUFFER@@PBU_DS3DCALCI3DL2LISTENER@@PBU_DS3DCALCI3DL2BUFFER@@PAU_DS3DCALCVOICEDATA@@@Z,737,(other named),name only,2551
 0x004a02c5,?CalculateI3DL2Reverb@CDirectSound3DCalculator@DirectSound@@SGXPBU_DS3DCALCI3DL2LISTENER@@PAU_DSFX_I3DL2REVERB_PARAMS@@@Z,55,(other named),name only,2551
 0x004a02fc,??$__AddRef@VCWaveFileMediaObject@DirectSound@@@DirectSound@@YGPAVCWaveFileMediaObject@0@PAV10@@Z,20,(other named),name only,2551
-0x004a0324,FUN_004a0324,78,(unnamed),unattributed,7249
-0x004a0372,FUN_004a0372,82,(unnamed),unattributed,7249
-0x004a03c4,FUN_004a03c4,82,(unnamed),unattributed,7249
-0x004a0416,FUN_004a0416,82,(unnamed),unattributed,7249
+0x004a0324,FUN_004a0324,78,(unnamed),unattributed,7243
+0x004a0372,FUN_004a0372,82,(unnamed),unattributed,7243
+0x004a03c4,FUN_004a03c4,82,(unnamed),unattributed,7243
+0x004a0416,FUN_004a0416,82,(unnamed),unattributed,7243
 0x004a0468,_IDirectSound_SetEffectData@24,42,(other named),name only,2552
 0x004a0492,_IDirectSound_SetMixBinHeadroom@12,32,(other named),name only,2552
-0x004a04b2,FUN_004a04b2,28,(unnamed),unattributed,7250
+0x004a04b2,FUN_004a04b2,28,(unnamed),unattributed,7244
 0x004a04ce,_IDirectSoundBuffer_Play@16,36,(other named),name only,2553
 0x004a04f2,_IDirectSoundBuffer_Stop@4,24,(other named),name only,2553
 0x004a050a,_IDirectSoundBuffer_GetStatus@8,28,(other named),name only,2553
-0x004a0526,thunk_FUN_004a0372,5,(unnamed),unattributed,7251
-0x004a052b,thunk_FUN_004a03c4,5,(unnamed),unattributed,7251
-0x004a0530,thunk_FUN_004a0416,5,(unnamed),unattributed,7251
-0x004a0535,thunk_FUN_0049ff29,5,(unnamed),unattributed,7251
+0x004a0526,thunk_FUN_004a0372,5,(unnamed),unattributed,7245
+0x004a052b,thunk_FUN_004a03c4,5,(unnamed),unattributed,7245
+0x004a0530,thunk_FUN_004a0416,5,(unnamed),unattributed,7245
+0x004a0535,thunk_FUN_0049ff29,5,(unnamed),unattributed,7245
 0x004a053a,_IDirectSoundStream_FlushEx@16,24,(other named),name only,2554
 0x004a0552,_DirectSoundDoWork@0,41,(other named),name only,2554
 0x004a057b,_XAudioDownloadEffectsImage@16,514,(other named),name only,2554
 0x004a077d,_XWaveFileCreateMediaObject@12,115,(other named),name only,2554
-0x004a07f0,FUN_004a07f0,27,(unnamed),unattributed,7252
+0x004a07f0,FUN_004a07f0,27,(unnamed),unattributed,7246
 0x004a080b,?SetMixBins@CDirectSoundVoiceSettings@DirectSound@@QAEXPBU_DSMIXBINS@@@Z,203,(other named),name only,2555
 0x004a08d6,?SetOutputBuffer@CDirectSoundVoiceSettings@DirectSound@@QAEXPAVCDirectSoundBuffer@2@@Z,211,(other named),name only,2555
 0x004a09a9,??0CDirectSoundVoice@DirectSound@@QAE@PAVCDirectSound@1@@Z,42,(other named),name only,2555
-0x004a09d3,FUN_004a09d3,27,(unnamed),unattributed,7253
+0x004a09d3,FUN_004a09d3,27,(unnamed),unattributed,7247
 0x004a09ee,?Initialize@CDirectSoundVoice@DirectSound@@QAGXPAVCMcpxVoiceClient@2@PAVCDirectSoundVoiceSettings@2@@Z,151,(other named),name only,2556
 0x004a0a85,?SetFrequency@CDirectSoundVoice@DirectSound@@QAGJK@Z,36,(other named),name only,2556
-0x004a0aa9,FUN_004a0aa9,29,(unnamed),unattributed,7254
+0x004a0aa9,FUN_004a0aa9,29,(unnamed),unattributed,7248
 0x004a0ac6,?SetMaxDistance@CDirectSoundVoice@DirectSound@@QAGJMK@Z,51,(other named),name only,2557
 0x004a0af9,?SetMinDistance@CDirectSoundVoice@DirectSound@@QAGJMK@Z,51,(other named),name only,2557
 0x004a0b2c,?SetPosition@CDirectSoundVoice@DirectSound@@QAGJMMMK@Z,82,(other named),name only,2557
 0x004a0b7e,?SetVelocity@CDirectSoundVoice@DirectSound@@QAGJMMMK@Z,82,(other named),name only,2557
 0x004a0bd0,?SetPlayRegion@CDirectSoundBufferSettings@DirectSound@@QAEXKK@Z,36,(other named),name only,2557
 0x004a0bf4,??0CDirectSoundBuffer@DirectSound@@QAE@PAVCDirectSound@1@@Z,24,(other named),name only,2557
-0x004a0c0c,FUN_004a0c0c,27,(unnamed),unattributed,7255
-0x004a0c27,FUN_004a0c27,27,(unnamed),unattributed,7255
-0x004a0c42,FUN_004a0c42,78,(unnamed),unattributed,7255
-0x004a0c90,FUN_004a0c90,86,(unnamed),unattributed,7255
-0x004a0ce6,FUN_004a0ce6,86,(unnamed),unattributed,7255
-0x004a0d3c,FUN_004a0d3c,103,(unnamed),unattributed,7255
-0x004a0da3,FUN_004a0da3,103,(unnamed),unattributed,7255
-0x004a0e0a,FUN_004a0e0a,82,(unnamed),unattributed,7255
-0x004a0e5c,FUN_004a0e5c,28,(unnamed),unattributed,7255
-0x004a0e78,FUN_004a0e78,36,(unnamed),unattributed,7255
-0x004a0e9c,FUN_004a0e9c,36,(unnamed),unattributed,7255
-0x004a0ec0,FUN_004a0ec0,53,(unnamed),unattributed,7255
-0x004a0ef5,FUN_004a0ef5,53,(unnamed),unattributed,7255
-0x004a0f2a,thunk_FUN_004a0e0a,5,(unnamed),unattributed,7255
+0x004a0c0c,FUN_004a0c0c,27,(unnamed),unattributed,7249
+0x004a0c27,FUN_004a0c27,27,(unnamed),unattributed,7249
+0x004a0c42,FUN_004a0c42,78,(unnamed),unattributed,7249
+0x004a0c90,FUN_004a0c90,86,(unnamed),unattributed,7249
+0x004a0ce6,FUN_004a0ce6,86,(unnamed),unattributed,7249
+0x004a0d3c,FUN_004a0d3c,103,(unnamed),unattributed,7249
+0x004a0da3,FUN_004a0da3,103,(unnamed),unattributed,7249
+0x004a0e0a,FUN_004a0e0a,82,(unnamed),unattributed,7249
+0x004a0e5c,FUN_004a0e5c,28,(unnamed),unattributed,7249
+0x004a0e78,FUN_004a0e78,36,(unnamed),unattributed,7249
+0x004a0e9c,FUN_004a0e9c,36,(unnamed),unattributed,7249
+0x004a0ec0,FUN_004a0ec0,53,(unnamed),unattributed,7249
+0x004a0ef5,FUN_004a0ef5,53,(unnamed),unattributed,7249
+0x004a0f2a,thunk_FUN_004a0e0a,5,(unnamed),unattributed,7249
 0x004a0f2f,?Release@CDirectSound@DirectSound@@UAGKXZ,201,(other named),name only,2558
 0x004a0ff8,??1CDirectSoundVoiceSettings@DirectSound@@UAE@XZ,77,(other named),name only,2558
 0x004a1045,?SetFormat@CDirectSoundVoiceSettings@DirectSound@@QAEHPBUtWAVEFORMATEX@@H@Z,134,(other named),name only,2558
@@ -16008,15 +16000,15 @@ address,name,size,module,attributed_by,run
 0x004a146a,_IDirectSoundBuffer_SetBufferData@12,32,(other named),name only,2558
 0x004a148a,??0CDirectSoundSettings@DirectSound@@QAE@XZ,143,(other named),name only,2558
 0x004a1535,?CommitDeferredSettings@CDirectSound@DirectSound@@QAGJXZ,154,(other named),name only,2559
-0x004a15cf,FUN_004a15cf,27,(unnamed),unattributed,7256
+0x004a15cf,FUN_004a15cf,27,(unnamed),unattributed,7250
 0x004a15ea,?Initialize@CDirectSoundVoiceSettings@DirectSound@@QAEJKPBUtWAVEFORMATEX@@PBU_DSMIXBINS@@@Z,258,(other named),name only,2560
 0x004a16ec,??1CDirectSoundBufferSettings@DirectSound@@UAE@XZ,37,(other named),name only,2560
 0x004a1711,?Initialize@CDirectSoundBufferSettings@DirectSound@@QAEJPBU_DSBUFFERDESC@@@Z,101,(other named),name only,2560
 0x004a1776,?Initialize@CDirectSoundBuffer@DirectSound@@QAGJPBU_DSBUFFERDESC@@@Z,231,(other named),name only,2560
-0x004a185d,FUN_004a185d,33,(unnamed),unattributed,7257
+0x004a185d,FUN_004a185d,33,(unnamed),unattributed,7251
 0x004a187e,?Initialize@CDirectSoundStreamSettings@DirectSound@@QAEJPBU_DSSTREAMDESC@@@Z,57,(other named),name only,2561
 0x004a18b7,?Initialize@CDirectSoundStream@DirectSound@@QAGJPBU_DSSTREAMDESC@@@Z,170,(other named),name only,2561
-0x004a1961,FUN_004a1961,24,(unnamed),unattributed,7258
+0x004a1961,FUN_004a1961,24,(unnamed),unattributed,7252
 0x004a1979,?CreateSoundBuffer@CDirectSound@DirectSound@@QAGJPBU_DSBUFFERDESC@@PAPAUIDirectSoundBuffer@@PAUIUnknown@@@Z,156,(other named),name only,2562
 0x004a1a15,?CreateSoundStream@CDirectSound@DirectSound@@QAGJPBU_DSSTREAMDESC@@PAPAUIDirectSoundStream@@PAUIUnknown@@@Z,145,(other named),name only,2562
 0x004a1aa6,?SetDistanceFactor@CDirectSound@DirectSound@@QAGJMK@Z,95,(other named),name only,2562
@@ -16024,13 +16016,13 @@ address,name,size,module,attributed_by,run
 0x004a1b64,?SetOrientation@CDirectSound@DirectSound@@QAGJMMMMMMK@Z,141,(other named),name only,2562
 0x004a1bf1,?SetPosition@CDirectSound@DirectSound@@QAGJMMMK@Z,115,(other named),name only,2562
 0x004a1c64,?SetVelocity@CDirectSound@DirectSound@@QAGJMMMK@Z,115,(other named),name only,2562
-0x004a1ddf,FUN_004a1ddf,27,(unnamed),unattributed,7259
-0x004a1dfa,FUN_004a1dfa,36,(unnamed),unattributed,7259
-0x004a1e1e,FUN_004a1e1e,36,(unnamed),unattributed,7259
+0x004a1ddf,FUN_004a1ddf,27,(unnamed),unattributed,7253
+0x004a1dfa,FUN_004a1dfa,36,(unnamed),unattributed,7253
+0x004a1e1e,FUN_004a1e1e,36,(unnamed),unattributed,7253
 0x004a1e42,_IDirectSound_SetOrientation@32,74,(other named),name only,2563
-0x004a1e8c,FUN_004a1e8c,53,(unnamed),unattributed,7260
-0x004a1ec1,FUN_004a1ec1,36,(unnamed),unattributed,7260
-0x004a1ee5,FUN_004a1ee5,53,(unnamed),unattributed,7260
+0x004a1e8c,FUN_004a1e8c,53,(unnamed),unattributed,7254
+0x004a1ec1,FUN_004a1ec1,36,(unnamed),unattributed,7254
+0x004a1ee5,FUN_004a1ee5,53,(unnamed),unattributed,7254
 0x004a1f3a,?Initialize@CDirectSound@DirectSound@@QAGJXZ,313,(other named),name only,2564
 0x004a2073,?DirectSoundCreateInternal@@YGJPAPAVCDirectSound@DirectSound@@@Z,109,(other named),name only,2564
 0x004a20e0,_DirectSoundCreate@12,71,(other named),name only,2564
@@ -16117,7 +16109,7 @@ address,name,size,module,attributed_by,run
 0x004a4460,?ServiceApuInterruptDpc@CMcpxAPU@DirectSound@@IAEXXZ,66,(other named),name only,2566
 0x004a44a2,?HandleSoftwareMethod@CMcpxAPU@DirectSound@@IAEXKK@Z,22,(other named),name only,2566
 0x004a44b8,?RemoveDeferredCommand@CMcpxAPU@DirectSound@@QAEXPAUMCPX_DEFERRED_COMMAND@@@Z,68,(other named),name only,2566
-0x004a4508,FUN_004a4508,27,(unnamed),unattributed,7261
+0x004a4508,FUN_004a4508,27,(unnamed),unattributed,7255
 0x004a4523,?HandleFETrap@CMcpxAPU@DirectSound@@IAEXXZ,71,(other named),name only,2567
 0x004a456a,?ScheduleDeferredCommandHigh@CMcpxAPU@DirectSound@@IAEHPAUMCPX_DEFERRED_COMMAND@@@Z,214,(other named),name only,2567
 0x004a4640,?ServiceApuInterrupt@CMcpxAPU@DirectSound@@IAEHXZ,85,(other named),name only,2567
@@ -16154,7 +16146,7 @@ address,name,size,module,attributed_by,run
 0x004a5307,?SetFormat@CMcpxStream@DirectSound@@UAEJXZ,239,(other named),name only,2569
 0x004a53f6,?SubmitPacket@CMcpxStream@DirectSound@@QAEJABU_XMEDIAPACKET@@@Z,206,(other named),name only,2569
 0x004a54c4,?Pause@CMcpxStream@DirectSound@@QAEJK@Z,142,(other named),name only,2569
-0x004a559d,FUN_004a559d,27,(unnamed),unattributed,7262
+0x004a559d,FUN_004a559d,27,(unnamed),unattributed,7256
 0x004a55b8,?NormalizeVector3@Math@DirectSound@@YGMPAU_D3DVECTOR@@@Z,137,(other named),name only,2570
 0x004a5641,?RatioToPitch@Math@DirectSound@@YGJM@Z,30,(other named),name only,2570
 0x004a565f,?CreateMarker@CMcpxBufferSgeHeap@DirectSound@@IAEPAUSGEHEAPRUNMARKER@@PAU3@GGPAU_LIST_ENTRY@@@Z,54,(other named),name only,2570
@@ -16171,10 +16163,10 @@ address,name,size,module,attributed_by,run
 0x004a5985,?AddRun@CMcpxSlopMemoryHeap@DirectSound@@QAEHPAXKK@Z,132,(other named),name only,2570
 0x004a5a09,?Alloc@CMcpxSlopMemoryHeap@DirectSound@@QAEPAXK@Z,225,(other named),name only,2570
 0x004a5aea,?CoalesceRuns@CMcpxSlopMemoryHeap@DirectSound@@IAEPAUSLOPRUNMARKER@@PAU3@0@Z,27,(other named),name only,2570
-0x004a5b05,FUN_004a5b05,27,(unnamed),unattributed,7263
+0x004a5b05,FUN_004a5b05,27,(unnamed),unattributed,7257
 0x004a5b20,?Alloc@CMcpxBufferSgeHeap@DirectSound@@QAEPAUSGEHEAPRUNMARKER@@PAXK@Z,143,(other named),name only,2571
 0x004a5baf,?FreeRun@CMcpxBufferSgeHeap@DirectSound@@IAEXPAUSGEHEAPRUNMARKER@@@Z,92,(other named),name only,2571
-0x004a5c0b,FUN_004a5c0b,27,(unnamed),unattributed,7264
+0x004a5c0b,FUN_004a5c0b,27,(unnamed),unattributed,7258
 0x004a5c26,?Free@CMcpxSlopMemoryHeap@DirectSound@@QAEXPAX@Z,153,(other named),name only,2572
 0x004a5cbf,?Free@CMcpxBufferSgeHeap@DirectSound@@QAEXPAUSGEHEAPRUNMARKER@@@Z,75,(other named),name only,2572
 0x004a5d20,?and@@YIXPCGG@Z,4,(other named),name only,2573
@@ -16210,7 +16202,7 @@ address,name,size,module,attributed_by,run
 0x004a70cd,?DisconnectVoice@CMcpxVoiceClient@DirectSound@@QAEJXZ,263,(other named),name only,2573
 0x004a71d4,??1CMcpxVoiceClient@DirectSound@@UAE@XZ,56,(other named),name only,2573
 0x004a720c,?ActivateVoice@CMcpxVoiceClient@DirectSound@@IAEXXZ,460,(other named),name only,2573
-0x004a73d8,FUN_004a73d8,27,(unnamed),unattributed,7265
+0x004a73d8,FUN_004a73d8,27,(unnamed),unattributed,7259
 0x004a73f3,?MapBuffer@CMcpxBuffer@DirectSound@@IAEXK@Z,114,(other named),name only,2574
 0x004a7465,?UnmapBuffer@CMcpxBuffer@DirectSound@@IAEXXZ,67,(other named),name only,2574
 0x004a74a8,?PlayFromCurrent@CMcpxBuffer@DirectSound@@IAEXK@Z,321,(other named),name only,2574
@@ -16222,7 +16214,7 @@ address,name,size,module,attributed_by,run
 0x004a7943,?NotifyToPosition@CMcpxBuffer@DirectSound@@IAEXKH@Z,97,(other named),name only,2574
 0x004a79a4,?NotifyStop@CMcpxBuffer@DirectSound@@IAEXXZ,58,(other named),name only,2574
 0x004a7a0d,?RemoveDeferredCommand@CMcpxBuffer@DirectSound@@MAEXK@Z,26,(other named),name only,2575
-0x004a7a27,FUN_004a7a27,21,(unnamed),unattributed,7266
+0x004a7a27,FUN_004a7a27,21,(unnamed),unattributed,7260
 0x004a7a3c,??0CMcpxBuffer@DirectSound@@QAE@PAVCMcpxAPU@1@PAVCDirectSoundBufferSettings@1@@Z,92,(other named),name only,2576
 0x004a7a98,?MapInputBuffer@CMcpxBuffer@DirectSound@@IAEJXZ,101,(other named),name only,2576
 0x004a7afd,?MapEffectsBuffer@CMcpxBuffer@DirectSound@@IAEXXZ,82,(other named),name only,2576
@@ -16237,7 +16229,7 @@ address,name,size,module,attributed_by,run
 0x004a7e5f,?OnDeferredTerminate@CMcpxBuffer@DirectSound@@IAEXXZ,27,(other named),name only,2576
 0x004a7e7a,??1CMcpxBuffer@DirectSound@@UAE@XZ,61,(other named),name only,2576
 0x004a7eb7,?ReleaseBufferData@CMcpxBuffer@DirectSound@@QAEJH@Z,49,(other named),name only,2576
-0x004a7f37,FUN_004a7f37,27,(unnamed),unattributed,7267
+0x004a7f37,FUN_004a7f37,27,(unnamed),unattributed,7261
 0x004a7f52,?FloatToLong@Math@DirectSound@@YGJM@Z,9,(other named),name only,2577
 0x004a7f5b,?mBToLinear@@YGMJ@Z,78,(other named),name only,2577
 0x004a7fa9,?SetSize@CI3DL2Listener@DirectSound@@AAEXM@Z,142,(other named),name only,2577
@@ -16255,10 +16247,10 @@ address,name,size,module,attributed_by,run
 0x004a85ae,?SetDecayTimes@CI3DL2Listener@DirectSound@@AAEXMMM@Z,234,(other named),name only,2577
 0x004a8698,?CalculateI3DL2@CI3DL2Listener@DirectSound@@QAEXPBU_DS3DCALCI3DL2LISTENER@@PAU_DSFX_I3DL2REVERB_PARAMS@@@Z,904,(other named),name only,2577
 0x004a8a20,??1CWaveFileMediaObject@DirectSound@@UAE@XZ,33,(other named),name only,2577
-0x004a8a41,FUN_004a8a41,13,(unnamed),unattributed,7268
-0x004a8a4e,FUN_004a8a4e,16,(unnamed),unattributed,7268
+0x004a8a41,FUN_004a8a41,13,(unnamed),unattributed,7262
+0x004a8a4e,FUN_004a8a4e,16,(unnamed),unattributed,7262
 0x004a8ae7,?Process@CWaveFileMediaObject@DirectSound@@UAGJPBU_XMEDIAPACKET@@0@Z,118,(other named),name only,2578
-0x004a8ba7,FUN_004a8ba7,27,(unnamed),unattributed,7269
+0x004a8ba7,FUN_004a8ba7,27,(unnamed),unattributed,7263
 0x004a8bc2,??0CWaveFileMediaObject@DirectSound@@QAE@XZ,46,(other named),name only,2579
 0x004a8bf0,??0CMcpxDspScratchDma@DirectSound@@QAE@H@Z,26,(other named),name only,2579
 0x004a8c0a,??1CMcpxDspScratchDma@DirectSound@@QAE@XZ,46,(other named),name only,2579
@@ -16287,13 +16279,13 @@ address,name,size,module,attributed_by,run
 0x004a97ad,?SetupFrontEndProcessor@CMcpxCore@DirectSound@@IAEJXZ,205,(other named),name only,2579
 0x004a987a,?AllocateApuMemory@CMcpxCore@DirectSound@@IAEJXZ,384,(other named),name only,2579
 0x004a99fa,?IdleVoiceProcessor@CMcpxCore@DirectSound@@QAEHH@Z,221,(other named),name only,2579
-0x004a9ad7,FUN_004a9ad7,27,(unnamed),unattributed,7270
+0x004a9ad7,FUN_004a9ad7,27,(unnamed),unattributed,7264
 0x004a9af2,?Reset@CMcpxCore@DirectSound@@IAEXXZ,125,(other named),name only,2580
 0x004a9b6f,?Initialize@CMcpxCore@DirectSound@@QAEJXZ,108,(other named),name only,2580
 0x004a9bdb,??0CAc97Device@DirectSound@@QAE@XZ,8,(other named),name only,2580
 0x004a9be3,?AcquireCodecSemaphore@CAc97Device@DirectSound@@KGHXZ,45,(other named),name only,2580
 0x004a9c10,?CodecReady@CAc97Device@DirectSound@@IAEHXZ,80,(other named),name only,2580
-0x004a9c60,FUN_004a9c60,20,(unnamed),unattributed,7271
+0x004a9c60,FUN_004a9c60,20,(unnamed),unattributed,7265
 0x004a9c74,?PokeAc97Register@CAc97Device@DirectSound@@KGHW4AC97REGISTER@@G@Z,29,(other named),name only,2581
 0x004a9c91,?PowerUp@CAc97Device@DirectSound@@IAEJXZ,24,(other named),name only,2581
 0x004a9ca9,?Pause@CAc97Channel@DirectSound@@QAEXXZ,47,(other named),name only,2581
@@ -16323,9 +16315,9 @@ address,name,size,module,attributed_by,run
 0x004aa576,?AC3SetDigitalOutput@CMcpxEPDspManager@DirectSound@@QAEXKK@Z,69,(other named),name only,2584
 0x004aa5bb,??1CMcpxEPDspManager@DirectSound@@QAE@XZ,29,(other named),name only,2584
 0x004aa5d8,?Initialize@CMcpxEPDspManager@DirectSound@@QAEXPAVCMcpxGPDspManager@2@@Z,306,(other named),name only,2584
-0x004b0020,FUN_004b0020,8,(unnamed),unattributed,7272
-0x004b0028,FUN_004b0028,57,(unnamed),unattributed,7272
-0x004b0063,FUN_004b0063,342,(unnamed),unattributed,7273
+0x004b0020,FUN_004b0020,8,(unnamed),unattributed,7266
+0x004b0028,FUN_004b0028,57,(unnamed),unattributed,7266
+0x004b0063,FUN_004b0063,342,(unnamed),unattributed,7267
 0x004bdee4,_XID_Init@4,523,(other named),name only,2585
 0x004be0ef,_USBD_Init@8,121,(other named),name only,2585
 0x004be168,_USBD_NewHostController@8,125,(other named),name only,2585
@@ -16345,7 +16337,7 @@ address,name,size,module,attributed_by,run
 0x004beb8e,?InitializeClass@XHawkMediaObject@@SGXKK@Z,103,(other named),name only,2586
 0x004bebf5,_HawkInit@4,163,(other named),name only,2586
 0x004bec98,_XInputOpen@16,86,(other named),name only,2586
-0x004becee,FUN_004becee,12,(unnamed),unattributed,7274
+0x004becee,FUN_004becee,12,(unnamed),unattributed,7268
 0x004becfa,_XInputGetState@8,115,(other named),name only,2587
 0x004bed6d,_XdReportDeviceInsertionRemoval@12,34,(other named),name only,2587
 0x004bed8f,_XPeekDevices@12,60,(other named),name only,2587
@@ -16378,14 +16370,14 @@ address,name,size,module,attributed_by,run
 0x004bfbe4,?XID_EnumLegacy1@@YGXPAT_URB@@PAU_XID_DEVICE_NODE@@@Z,222,(other named),name only,2593
 0x004bfcc2,?XID_EnumStage1@@YGXPAT_URB@@PAU_XID_DEVICE_NODE@@@Z,244,(other named),name only,2593
 0x004bfdb6,?XID_fOpenDevice@@YIKPAU_XID_TYPE_INFORMATION@@KPAPAU_XID_OPEN_DEVICE@@PAU_XINPUT_POLLING_PARAMETERS@@@Z,592,(other named),name only,2593
-0x004c0020,FUN_004c0020,34,(unnamed),unattributed,7275
-0x004c0043,FUN_004c0043,1,(unnamed),unattributed,7276
-0x004c0045,FUN_004c0045,1,(unnamed),unattributed,7277
-0x004c0046,FUN_004c0046,15,(unnamed),unattributed,7277
-0x004c005b,FUN_004c005b,16,(unnamed),unattributed,7278
-0x004c006e,FUN_004c006e,3,(unnamed),unattributed,7279
-0x004c0073,FUN_004c0073,4,(unnamed),unattributed,7280
-0x004c0078,FUN_004c0078,211,(unnamed),unattributed,7281
+0x004c0020,FUN_004c0020,34,(unnamed),unattributed,7269
+0x004c0043,FUN_004c0043,1,(unnamed),unattributed,7270
+0x004c0045,FUN_004c0045,1,(unnamed),unattributed,7271
+0x004c0046,FUN_004c0046,15,(unnamed),unattributed,7271
+0x004c005b,FUN_004c005b,16,(unnamed),unattributed,7272
+0x004c006e,FUN_004c006e,3,(unnamed),unattributed,7273
+0x004c0073,FUN_004c0073,4,(unnamed),unattributed,7274
+0x004c0078,FUN_004c0078,211,(unnamed),unattributed,7275
 0x004c015a,?GetParent@IUsbDevice@@QBEPAV1@XZ,23,(other named),name only,2594
 0x004c0171,?GetFirstChild@IUsbDevice@@QBEPAV1@XZ,23,(other named),name only,2594
 0x004c0188,?GetSibling@IUsbDevice@@QBEPAV1@XZ,23,(other named),name only,2594
@@ -16568,351 +16560,351 @@ address,name,size,module,attributed_by,run
 0x004c68ca,?CloseEndpoint@XHawkMediaObject@@AAEXXZ,91,(other named),name only,2612
 0x004c6925,?FreeStreamingResources@XHawkMediaObject@@AAEXXZ,199,(other named),name only,2612
 0x004c6a33,?Release@XHawkMediaObject@@UAGKXZ,51,(other named),name only,2613
-0x004d0041,FUN_004d0041,5,(unnamed),unattributed,7282
-0x004f0042,FUN_004f0042,1,(unnamed),unattributed,7283
-0x004f0044,FUN_004f0044,5,(unnamed),unattributed,7284
-0x00507000,FUN_00507000,4,(unnamed),unattributed,7285
-0x00530041,FUN_00530041,3,(unnamed),unattributed,7286
-0x00530045,FUN_00530045,2,(unnamed),unattributed,7287
-0x00530047,FUN_00530047,5,(unnamed),unattributed,7287
-0x0053004f,FUN_0053004f,1,(unnamed),unattributed,7288
-0x00530054,FUN_00530054,4,(unnamed),unattributed,7289
-0x0053005b,FUN_0053005b,1,(unnamed),unattributed,7290
-0x00540020,FUN_00540020,23,(unnamed),unattributed,7291
-0x00540041,FUN_00540041,2,(unnamed),unattributed,7292
-0x00540043,FUN_00540043,2,(unnamed),unattributed,7292
-0x00540045,FUN_00540045,1,(unnamed),unattributed,7292
-0x00540050,FUN_00540050,1,(unnamed),unattributed,7293
-0x00540052,FUN_00540052,1,(unnamed),unattributed,7294
-0x00540053,FUN_00540053,2,(unnamed),unattributed,7294
-0x00540055,FUN_00540055,5,(unnamed),unattributed,7294
-0x00540063,FUN_00540063,14,(unnamed),unattributed,7295
-0x00540074,FUN_00540074,1,(unnamed),unattributed,7296
-0x00540079,FUN_00540079,35,(unnamed),unattributed,7297
-0x00545800,FUN_00545800,518,(unnamed),unattributed,7298
-0x00545a58,FUN_00545a58,2,(unnamed),unattributed,7299
-0x00547000,FUN_00547000,91,(unnamed),unattributed,7300
-0x00550020,FUN_00550020,23,(unnamed),unattributed,7301
-0x00550041,FUN_00550041,2,(unnamed),unattributed,7302
-0x00550044,FUN_00550044,3,(unnamed),unattributed,7303
-0x00550047,FUN_00550047,1,(unnamed),unattributed,7303
-0x00550048,FUN_00550048,6,(unnamed),unattributed,7303
-0x0055004e,FUN_0055004e,19,(unnamed),unattributed,7303
-0x00550063,FUN_00550063,17,(unnamed),unattributed,7304
-0x00550074,FUN_00550074,190,(unnamed),unattributed,7304
-0x00557000,FUN_00557000,346,(unnamed),unattributed,7305
-0x00560020,FUN_00560020,33,(unnamed),unattributed,7306
-0x00560041,FUN_00560041,3380,(unnamed),unattributed,7306
-0x0056005b,FUN_0056005b,4,(unnamed),unattributed,7307
-0x0056005f,FUN_0056005f,6,(unnamed),unattributed,7307
-0x00560065,FUN_00560065,4,(unnamed),unattributed,7307
-0x00560072,FUN_00560072,4,(unnamed),unattributed,7308
-0x00577000,FUN_00577000,13,(unnamed),unattributed,7309
-0x0057d800,FUN_0057d800,21,(unnamed),unattributed,7310
-0x0057f000,FUN_0057f000,5,(unnamed),unattributed,7311
-0x0057f400,FUN_0057f400,8,(unnamed),unattributed,7312
-0x00580020,FUN_00580020,32,(unnamed),unattributed,7313
-0x00580044,FUN_00580044,1,(unnamed),unattributed,7314
-0x00580045,FUN_00580045,4,(unnamed),unattributed,7314
-0x00580049,FUN_00580049,1,(unnamed),unattributed,7314
-0x0058004f,FUN_0058004f,2,(unnamed),unattributed,7315
-0x00580055,FUN_00580055,30,(unnamed),unattributed,7316
-0x00590052,FUN_00590052,127,(unnamed),unattributed,7317
-0x005b0020,FUN_005b0020,34,(unnamed),unattributed,7318
-0x005c0073,FUN_005c0073,34,(unnamed),unattributed,7319
-0x005c1a30,FUN_005c1a30,16,(unnamed),unattributed,7320
-0x005d004d,FUN_005d004d,27,(unnamed),unattributed,7321
-0x005d0069,FUN_005d0069,6,(unnamed),unattributed,7322
-0x005d0073,FUN_005d0073,34,(unnamed),unattributed,7323
-0x005f004f,FUN_005f004f,32,(unnamed),unattributed,7324
-0x005f0073,FUN_005f0073,6,(unnamed),unattributed,7325
-0x005f0079,FUN_005f0079,28,(unnamed),unattributed,7325
-0x00607000,FUN_00607000,34,(unnamed),unattributed,7326
-0x0060f400,FUN_0060f400,33,(unnamed),unattributed,7327
-0x00610020,FUN_00610020,34,(unnamed),unattributed,7328
-0x00610042,FUN_00610042,1,(unnamed),unattributed,7328
-0x00610044,FUN_00610044,2,(unnamed),unattributed,7329
-0x00610046,FUN_00610046,1,(unnamed),unattributed,7329
-0x00610048,FUN_00610048,3,(unnamed),unattributed,7330
-0x0061004c,FUN_0061004c,1,(unnamed),unattributed,7331
-0x0061004e,FUN_0061004e,2,(unnamed),unattributed,7332
-0x00610050,FUN_00610050,2,(unnamed),unattributed,7332
-0x00610052,FUN_00610052,1,(unnamed),unattributed,7332
-0x00610054,FUN_00610054,2,(unnamed),unattributed,7333
-0x00610056,FUN_00610056,11,(unnamed),unattributed,7333
-0x00610062,FUN_00610062,1,(unnamed),unattributed,7334
-0x00610064,FUN_00610064,1,(unnamed),unattributed,7335
-0x00610066,FUN_00610066,1,(unnamed),unattributed,7336
-0x00610068,FUN_00610068,2,(unnamed),unattributed,7337
-0x0061006c,FUN_0061006c,1,(unnamed),unattributed,7338
-0x0061006e,FUN_0061006e,1,(unnamed),unattributed,7339
-0x00610070,FUN_00610070,2,(unnamed),unattributed,7340
-0x00610072,FUN_00610072,1,(unnamed),unattributed,7340
-0x00610074,FUN_00610074,1,(unnamed),unattributed,7341
-0x00610076,FUN_00610076,3,(unnamed),unattributed,7342
-0x0061007a,FUN_0061007a,12,(unnamed),unattributed,7343
-0x0061f400,FUN_0061f400,34,(unnamed),unattributed,7344
-0x00620020,FUN_00620020,33,(unnamed),unattributed,7345
-0x0062004f,FUN_0062004f,17,(unnamed),unattributed,7346
-0x00620061,FUN_00620061,4,(unnamed),unattributed,7347
-0x00620065,FUN_00620065,4,(unnamed),unattributed,7347
-0x00620069,FUN_00620069,3,(unnamed),unattributed,7347
-0x0062006d,FUN_0062006d,2,(unnamed),unattributed,7348
-0x0062006f,FUN_0062006f,2,(unnamed),unattributed,7348
-0x00620072,FUN_00620072,33,(unnamed),unattributed,7349
-0x0062f000,FUN_0062f000,34,(unnamed),unattributed,7350
-0x0062f400,FUN_0062f400,34,(unnamed),unattributed,7351
-0x00630020,FUN_00630020,33,(unnamed),unattributed,7352
-0x0063004f,FUN_0063004f,4,(unnamed),unattributed,7353
-0x00630053,FUN_00630053,13,(unnamed),unattributed,7353
-0x00630061,FUN_00630061,2,(unnamed),unattributed,7354
-0x00630063,FUN_00630063,2,(unnamed),unattributed,7354
-0x00630065,FUN_00630065,4,(unnamed),unattributed,7354
-0x00630069,FUN_00630069,5,(unnamed),unattributed,7354
-0x0063006f,FUN_0063006f,2,(unnamed),unattributed,7355
-0x00630072,FUN_00630072,1,(unnamed),unattributed,7356
-0x00630074,FUN_00630074,31,(unnamed),unattributed,7357
-0x00640020,FUN_00640020,23,(unnamed),unattributed,7358
-0x00640038,FUN_00640038,9,(unnamed),unattributed,7359
-0x00640045,FUN_00640045,28,(unnamed),unattributed,7360
-0x00640061,FUN_00640061,3,(unnamed),unattributed,7360
-0x00640065,FUN_00640065,2,(unnamed),unattributed,7361
-0x00640069,FUN_00640069,4,(unnamed),unattributed,7362
-0x0064006f,FUN_0064006f,25,(unnamed),unattributed,7363
-0x0064f400,FUN_0064f400,34,(unnamed),unattributed,7364
-0x00650020,FUN_00650020,26,(unnamed),unattributed,7365
-0x0065003a,FUN_0065003a,8,(unnamed),unattributed,7365
-0x00650042,FUN_00650042,2,(unnamed),unattributed,7365
-0x00650044,FUN_00650044,3,(unnamed),unattributed,7365
-0x00650048,FUN_00650048,3,(unnamed),unattributed,7366
-0x0065004c,FUN_0065004c,1,(unnamed),unattributed,7367
-0x0065004e,FUN_0065004e,2,(unnamed),unattributed,7368
-0x00650050,FUN_00650050,2,(unnamed),unattributed,7368
-0x00650052,FUN_00650052,1,(unnamed),unattributed,7368
-0x00650054,FUN_00650054,2,(unnamed),unattributed,7369
-0x00650056,FUN_00650056,11,(unnamed),unattributed,7369
-0x00650062,FUN_00650062,1,(unnamed),unattributed,7370
-0x00650064,FUN_00650064,1,(unnamed),unattributed,7371
-0x00650066,FUN_00650066,1,(unnamed),unattributed,7372
-0x00650068,FUN_00650068,1,(unnamed),unattributed,7373
-0x0065006a,FUN_0065006a,1,(unnamed),unattributed,7374
-0x0065006c,FUN_0065006c,1,(unnamed),unattributed,7375
-0x0065006e,FUN_0065006e,1,(unnamed),unattributed,7376
-0x00650070,FUN_00650070,2,(unnamed),unattributed,7377
-0x00650072,FUN_00650072,1,(unnamed),unattributed,7377
-0x00650074,FUN_00650074,1,(unnamed),unattributed,7378
-0x00650076,FUN_00650076,1,(unnamed),unattributed,7379
-0x00650078,FUN_00650078,1,(unnamed),unattributed,7380
-0x0065007a,FUN_0065007a,12,(unnamed),unattributed,7381
-0x0065f400,FUN_0065f400,34,(unnamed),unattributed,7382
-0x00660020,FUN_00660020,16,(unnamed),unattributed,7383
-0x00660032,FUN_00660032,16,(unnamed),unattributed,7384
-0x0066004f,FUN_0066004f,22,(unnamed),unattributed,7385
-0x00660065,FUN_00660065,3,(unnamed),unattributed,7385
-0x00660069,FUN_00660069,5,(unnamed),unattributed,7386
-0x0066006f,FUN_0066006f,2,(unnamed),unattributed,7387
-0x00660072,FUN_00660072,33,(unnamed),unattributed,7388
-0x0066f000,FUN_0066f000,34,(unnamed),unattributed,7389
-0x0066f400,FUN_0066f400,34,(unnamed),unattributed,7390
-0x00670020,FUN_00670020,34,(unnamed),unattributed,7391
-0x00670061,FUN_00670061,3,(unnamed),unattributed,7392
-0x00670065,FUN_00670065,2,(unnamed),unattributed,7393
-0x00670067,FUN_00670067,2,(unnamed),unattributed,7393
-0x00670069,FUN_00670069,5,(unnamed),unattributed,7393
-0x0067006f,FUN_0067006f,5,(unnamed),unattributed,7394
-0x00670075,FUN_00670075,14,(unnamed),unattributed,7395
-0x00680020,FUN_00680020,34,(unnamed),unattributed,7396
-0x00680043,FUN_00680043,15,(unnamed),unattributed,7397
-0x00680053,FUN_00680053,15,(unnamed),unattributed,7398
-0x00680063,FUN_00680063,2,(unnamed),unattributed,7399
-0x00680065,FUN_00680065,2,(unnamed),unattributed,7399
-0x00680067,FUN_00680067,11,(unnamed),unattributed,7399
-0x00680073,FUN_00680073,3,(unnamed),unattributed,7400
-0x00680077,FUN_00680077,16,(unnamed),unattributed,7401
-0x00690020,FUN_00690020,13,(unnamed),unattributed,7402
-0x0069002e,FUN_0069002e,20,(unnamed),unattributed,7403
-0x00690042,FUN_00690042,2,(unnamed),unattributed,7403
-0x00690044,FUN_00690044,2,(unnamed),unattributed,7403
-0x00690046,FUN_00690046,2,(unnamed),unattributed,7403
-0x00690048,FUN_00690048,4,(unnamed),unattributed,7403
-0x0069004c,FUN_0069004c,3,(unnamed),unattributed,7403
-0x00690050,FUN_00690050,3,(unnamed),unattributed,7404
-0x00690054,FUN_00690054,2,(unnamed),unattributed,7405
-0x00690056,FUN_00690056,10,(unnamed),unattributed,7405
-0x00690062,FUN_00690062,1,(unnamed),unattributed,7406
-0x00690064,FUN_00690064,1,(unnamed),unattributed,7407
-0x00690066,FUN_00690066,1,(unnamed),unattributed,7408
-0x00690068,FUN_00690068,3,(unnamed),unattributed,7409
-0x0069006c,FUN_0069006c,1,(unnamed),unattributed,7410
-0x0069006e,FUN_0069006e,1,(unnamed),unattributed,7411
-0x00690070,FUN_00690070,2,(unnamed),unattributed,7412
-0x00690072,FUN_00690072,1,(unnamed),unattributed,7412
-0x00690074,FUN_00690074,1,(unnamed),unattributed,7413
-0x00690076,FUN_00690076,1,(unnamed),unattributed,7414
-0x00690078,FUN_00690078,13,(unnamed),unattributed,7415
-0x006a0062,FUN_006a0062,33,(unnamed),unattributed,7416
-0x006b0053,FUN_006b0053,14,(unnamed),unattributed,7417
-0x006b0061,FUN_006b0061,2,(unnamed),unattributed,7417
-0x006b0063,FUN_006b0063,11,(unnamed),unattributed,7417
-0x006b006f,FUN_006b006f,3,(unnamed),unattributed,7418
-0x006b0073,FUN_006b0073,2,(unnamed),unattributed,7419
-0x006c0020,FUN_006c0020,32,(unnamed),unattributed,7420
-0x006c0042,FUN_006c0042,3,(unnamed),unattributed,7421
-0x006c0046,FUN_006c0046,9,(unnamed),unattributed,7422
-0x006c0050,FUN_006c0050,17,(unnamed),unattributed,7423
-0x006c0062,FUN_006c0062,1,(unnamed),unattributed,7424
-0x006c0064,FUN_006c0064,1,(unnamed),unattributed,7425
-0x006c0066,FUN_006c0066,5,(unnamed),unattributed,7426
-0x006c006c,FUN_006c006c,2,(unnamed),unattributed,7427
-0x006c006e,FUN_006c006e,1,(unnamed),unattributed,7427
-0x006c0070,FUN_006c0070,2,(unnamed),unattributed,7428
-0x006c0072,FUN_006c0072,1,(unnamed),unattributed,7428
-0x006c0074,FUN_006c0074,17,(unnamed),unattributed,7429
-0x006d0020,FUN_006d0020,34,(unnamed),unattributed,7430
-0x006d0045,FUN_006d0045,4,(unnamed),unattributed,7431
-0x006d0049,FUN_006d0049,24,(unnamed),unattributed,7431
-0x006d0061,FUN_006d0061,4,(unnamed),unattributed,7431
-0x006d0065,FUN_006d0065,2,(unnamed),unattributed,7431
-0x006d0069,FUN_006d0069,4,(unnamed),unattributed,7432
-0x006d006d,FUN_006d006d,2,(unnamed),unattributed,7432
-0x006d006f,FUN_006d006f,5,(unnamed),unattributed,7432
-0x006d0075,FUN_006d0075,22,(unnamed),unattributed,7433
-0x006e0020,FUN_006e0020,33,(unnamed),unattributed,7434
-0x006e0045,FUN_006e0045,4,(unnamed),unattributed,7435
-0x006e0049,FUN_006e0049,6,(unnamed),unattributed,7435
-0x006e004f,FUN_006e004f,6,(unnamed),unattributed,7435
-0x006e0055,FUN_006e0055,12,(unnamed),unattributed,7435
-0x006e0061,FUN_006e0061,3,(unnamed),unattributed,7435
-0x006e0065,FUN_006e0065,2,(unnamed),unattributed,7436
-0x006e0067,FUN_006e0067,2,(unnamed),unattributed,7436
-0x006e0069,FUN_006e0069,2,(unnamed),unattributed,7436
-0x006e006b,FUN_006e006b,2,(unnamed),unattributed,7436
-0x006e006d,FUN_006e006d,1,(unnamed),unattributed,7436
-0x006e006f,FUN_006e006f,5,(unnamed),unattributed,7437
-0x006e0075,FUN_006e0075,2,(unnamed),unattributed,7438
-0x006e0077,FUN_006e0077,2,(unnamed),unattributed,7438
-0x006e0079,FUN_006e0079,16,(unnamed),unattributed,7438
-0x006e6f69,FUN_006e6f69,34,(unnamed),unattributed,7439
-0x006f0020,FUN_006f0020,34,(unnamed),unattributed,7440
-0x006f0042,FUN_006f0042,1,(unnamed),unattributed,7440
-0x006f0044,FUN_006f0044,2,(unnamed),unattributed,7441
-0x006f0046,FUN_006f0046,1,(unnamed),unattributed,7441
-0x006f0048,FUN_006f0048,4,(unnamed),unattributed,7442
-0x006f004c,FUN_006f004c,1,(unnamed),unattributed,7442
-0x006f004e,FUN_006f004e,2,(unnamed),unattributed,7443
-0x006f0050,FUN_006f0050,2,(unnamed),unattributed,7443
-0x006f0052,FUN_006f0052,1,(unnamed),unattributed,7443
-0x006f0054,FUN_006f0054,2,(unnamed),unattributed,7444
-0x006f0056,FUN_006f0056,3,(unnamed),unattributed,7444
-0x006f005a,FUN_006f005a,8,(unnamed),unattributed,7445
-0x006f0062,FUN_006f0062,1,(unnamed),unattributed,7445
-0x006f0064,FUN_006f0064,1,(unnamed),unattributed,7446
-0x006f0066,FUN_006f0066,1,(unnamed),unattributed,7447
-0x006f0068,FUN_006f0068,3,(unnamed),unattributed,7448
-0x006f006c,FUN_006f006c,1,(unnamed),unattributed,7449
-0x006f006e,FUN_006f006e,1,(unnamed),unattributed,7450
-0x006f0070,FUN_006f0070,2,(unnamed),unattributed,7451
-0x006f0072,FUN_006f0072,1,(unnamed),unattributed,7451
-0x006f0074,FUN_006f0074,2,(unnamed),unattributed,7452
-0x006f0076,FUN_006f0076,15,(unnamed),unattributed,7452
-0x00700020,FUN_00700020,34,(unnamed),unattributed,7453
-0x00700049,FUN_00700049,6,(unnamed),unattributed,7454
-0x0070004f,FUN_0070004f,4,(unnamed),unattributed,7454
-0x00700053,FUN_00700053,2,(unnamed),unattributed,7454
-0x00700055,FUN_00700055,12,(unnamed),unattributed,7454
-0x00700061,FUN_00700061,2,(unnamed),unattributed,7454
-0x00700063,FUN_00700063,2,(unnamed),unattributed,7454
-0x00700065,FUN_00700065,4,(unnamed),unattributed,7454
-0x00700069,FUN_00700069,2,(unnamed),unattributed,7454
-0x0070006c,FUN_0070006c,1,(unnamed),unattributed,7455
-0x0070006e,FUN_0070006e,1,(unnamed),unattributed,7456
-0x00700070,FUN_00700070,2,(unnamed),unattributed,7457
-0x00700072,FUN_00700072,3,(unnamed),unattributed,7457
-0x00700078,FUN_00700078,21,(unnamed),unattributed,7458
-0x00707063,FUN_00707063,34,(unnamed),unattributed,7459
-0x0070f000,FUN_0070f000,34,(unnamed),unattributed,7460
-0x0070f400,FUN_0070f400,34,(unnamed),unattributed,7461
-0x00710045,FUN_00710045,32,(unnamed),unattributed,7462
-0x00710065,FUN_00710065,2,(unnamed),unattributed,7462
-0x00720020,FUN_00720020,33,(unnamed),unattributed,7463
-0x00720042,FUN_00720042,1,(unnamed),unattributed,7464
-0x00720044,FUN_00720044,1,(unnamed),unattributed,7465
-0x00720046,FUN_00720046,8,(unnamed),unattributed,7466
-0x00720050,FUN_00720050,4,(unnamed),unattributed,7467
-0x00720054,FUN_00720054,13,(unnamed),unattributed,7467
-0x00720064,FUN_00720064,1,(unnamed),unattributed,7468
-0x00720066,FUN_00720066,4,(unnamed),unattributed,7469
-0x0072006c,FUN_0072006c,2,(unnamed),unattributed,7470
-0x0072006e,FUN_0072006e,1,(unnamed),unattributed,7470
-0x00720070,FUN_00720070,2,(unnamed),unattributed,7471
-0x00720072,FUN_00720072,2,(unnamed),unattributed,7471
-0x00720074,FUN_00720074,16,(unnamed),unattributed,7471
-0x00730020,FUN_00730020,7,(unnamed),unattributed,7472
-0x00730028,FUN_00730028,25,(unnamed),unattributed,7473
-0x00730049,FUN_00730049,12,(unnamed),unattributed,7474
-0x00730055,FUN_00730055,12,(unnamed),unattributed,7474
-0x00730061,FUN_00730061,1,(unnamed),unattributed,7474
-0x00730063,FUN_00730063,1,(unnamed),unattributed,7475
-0x00730065,FUN_00730065,3,(unnamed),unattributed,7476
-0x00730069,FUN_00730069,2,(unnamed),unattributed,7477
-0x0073006c,FUN_0073006c,1,(unnamed),unattributed,7478
-0x0073006e,FUN_0073006e,1,(unnamed),unattributed,7479
-0x00730070,FUN_00730070,2,(unnamed),unattributed,7480
-0x00730072,FUN_00730072,1,(unnamed),unattributed,7480
-0x00730074,FUN_00730074,24,(unnamed),unattributed,7481
-0x00740020,FUN_00740020,32,(unnamed),unattributed,7482
-0x00740049,FUN_00740049,10,(unnamed),unattributed,7483
-0x00740053,FUN_00740053,14,(unnamed),unattributed,7483
-0x00740061,FUN_00740061,1,(unnamed),unattributed,7483
-0x00740063,FUN_00740063,2,(unnamed),unattributed,7484
-0x00740065,FUN_00740065,2,(unnamed),unattributed,7484
-0x00740069,FUN_00740069,2,(unnamed),unattributed,7485
-0x0074006c,FUN_0074006c,2,(unnamed),unattributed,7486
-0x0074006e,FUN_0074006e,1,(unnamed),unattributed,7486
-0x00740070,FUN_00740070,2,(unnamed),unattributed,7487
-0x00740072,FUN_00740072,1,(unnamed),unattributed,7487
-0x00740074,FUN_00740074,3,(unnamed),unattributed,7488
-0x00740078,FUN_00740078,21,(unnamed),unattributed,7489
-0x00750020,FUN_00750020,13,(unnamed),unattributed,7490
-0x0075002e,FUN_0075002e,19,(unnamed),unattributed,7491
-0x00750042,FUN_00750042,3,(unnamed),unattributed,7492
-0x00750046,FUN_00750046,4,(unnamed),unattributed,7493
-0x0075004a,FUN_0075004a,3,(unnamed),unattributed,7493
-0x0075004e,FUN_0075004e,1,(unnamed),unattributed,7494
-0x00750050,FUN_00750050,15,(unnamed),unattributed,7495
-0x00750062,FUN_00750062,1,(unnamed),unattributed,7496
-0x00750064,FUN_00750064,2,(unnamed),unattributed,7497
-0x00750066,FUN_00750066,1,(unnamed),unattributed,7497
-0x00750068,FUN_00750068,2,(unnamed),unattributed,7498
-0x0075006c,FUN_0075006c,1,(unnamed),unattributed,7499
-0x0075006e,FUN_0075006e,1,(unnamed),unattributed,7500
-0x00750070,FUN_00750070,1,(unnamed),unattributed,7501
-0x00750072,FUN_00750072,1,(unnamed),unattributed,7502
-0x00750074,FUN_00750074,18,(unnamed),unattributed,7503
-0x00760020,FUN_00760020,34,(unnamed),unattributed,7504
-0x0076004f,FUN_0076004f,18,(unnamed),unattributed,7505
-0x00760061,FUN_00760061,4,(unnamed),unattributed,7505
-0x00760065,FUN_00760065,4,(unnamed),unattributed,7505
-0x00760069,FUN_00760069,4,(unnamed),unattributed,7505
-0x0076006f,FUN_0076006f,2,(unnamed),unattributed,7506
-0x00760072,FUN_00760072,34,(unnamed),unattributed,7507
-0x00770020,FUN_00770020,34,(unnamed),unattributed,7508
-0x00770061,FUN_00770061,4,(unnamed),unattributed,7509
-0x00770065,FUN_00770065,10,(unnamed),unattributed,7509
-0x0077006f,FUN_0077006f,19,(unnamed),unattributed,7509
-0x00780030,FUN_00780030,33,(unnamed),unattributed,7510
-0x00780065,FUN_00780065,4,(unnamed),unattributed,7511
-0x00780069,FUN_00780069,6,(unnamed),unattributed,7511
-0x0078006f,FUN_0078006f,24,(unnamed),unattributed,7511
-0x00790042,FUN_00790042,2,(unnamed),unattributed,7512
-0x00790044,FUN_00790044,28,(unnamed),unattributed,7512
-0x00790062,FUN_00790062,2,(unnamed),unattributed,7513
-0x00790064,FUN_00790064,1,(unnamed),unattributed,7513
-0x00790066,FUN_00790066,2,(unnamed),unattributed,7514
-0x00790068,FUN_00790068,4,(unnamed),unattributed,7514
-0x0079006c,FUN_0079006c,2,(unnamed),unattributed,7514
-0x0079006e,FUN_0079006e,1,(unnamed),unattributed,7514
-0x00790070,FUN_00790070,2,(unnamed),unattributed,7515
-0x00790072,FUN_00790072,1,(unnamed),unattributed,7515
-0x00790074,FUN_00790074,18,(unnamed),unattributed,7516
-0x007a0069,FUN_007a0069,34,(unnamed),unattributed,7517
+0x004d0041,FUN_004d0041,5,(unnamed),unattributed,7276
+0x004f0042,FUN_004f0042,1,(unnamed),unattributed,7277
+0x004f0044,FUN_004f0044,5,(unnamed),unattributed,7278
+0x00507000,FUN_00507000,4,(unnamed),unattributed,7279
+0x00530041,FUN_00530041,3,(unnamed),unattributed,7280
+0x00530045,FUN_00530045,2,(unnamed),unattributed,7281
+0x00530047,FUN_00530047,5,(unnamed),unattributed,7281
+0x0053004f,FUN_0053004f,1,(unnamed),unattributed,7282
+0x00530054,FUN_00530054,4,(unnamed),unattributed,7283
+0x0053005b,FUN_0053005b,1,(unnamed),unattributed,7284
+0x00540020,FUN_00540020,23,(unnamed),unattributed,7285
+0x00540041,FUN_00540041,2,(unnamed),unattributed,7286
+0x00540043,FUN_00540043,2,(unnamed),unattributed,7286
+0x00540045,FUN_00540045,1,(unnamed),unattributed,7286
+0x00540050,FUN_00540050,1,(unnamed),unattributed,7287
+0x00540052,FUN_00540052,1,(unnamed),unattributed,7288
+0x00540053,FUN_00540053,2,(unnamed),unattributed,7288
+0x00540055,FUN_00540055,5,(unnamed),unattributed,7288
+0x00540063,FUN_00540063,14,(unnamed),unattributed,7289
+0x00540074,FUN_00540074,1,(unnamed),unattributed,7290
+0x00540079,FUN_00540079,35,(unnamed),unattributed,7291
+0x00545800,FUN_00545800,518,(unnamed),unattributed,7292
+0x00545a58,FUN_00545a58,2,(unnamed),unattributed,7293
+0x00547000,FUN_00547000,91,(unnamed),unattributed,7294
+0x00550020,FUN_00550020,23,(unnamed),unattributed,7295
+0x00550041,FUN_00550041,2,(unnamed),unattributed,7296
+0x00550044,FUN_00550044,3,(unnamed),unattributed,7297
+0x00550047,FUN_00550047,1,(unnamed),unattributed,7297
+0x00550048,FUN_00550048,6,(unnamed),unattributed,7297
+0x0055004e,FUN_0055004e,19,(unnamed),unattributed,7297
+0x00550063,FUN_00550063,17,(unnamed),unattributed,7298
+0x00550074,FUN_00550074,190,(unnamed),unattributed,7298
+0x00557000,FUN_00557000,346,(unnamed),unattributed,7299
+0x00560020,FUN_00560020,33,(unnamed),unattributed,7300
+0x00560041,FUN_00560041,3380,(unnamed),unattributed,7300
+0x0056005b,FUN_0056005b,4,(unnamed),unattributed,7301
+0x0056005f,FUN_0056005f,6,(unnamed),unattributed,7301
+0x00560065,FUN_00560065,4,(unnamed),unattributed,7301
+0x00560072,FUN_00560072,4,(unnamed),unattributed,7302
+0x00577000,FUN_00577000,13,(unnamed),unattributed,7303
+0x0057d800,FUN_0057d800,21,(unnamed),unattributed,7304
+0x0057f000,FUN_0057f000,5,(unnamed),unattributed,7305
+0x0057f400,FUN_0057f400,8,(unnamed),unattributed,7306
+0x00580020,FUN_00580020,32,(unnamed),unattributed,7307
+0x00580044,FUN_00580044,1,(unnamed),unattributed,7308
+0x00580045,FUN_00580045,4,(unnamed),unattributed,7308
+0x00580049,FUN_00580049,1,(unnamed),unattributed,7308
+0x0058004f,FUN_0058004f,2,(unnamed),unattributed,7309
+0x00580055,FUN_00580055,30,(unnamed),unattributed,7310
+0x00590052,FUN_00590052,127,(unnamed),unattributed,7311
+0x005b0020,FUN_005b0020,34,(unnamed),unattributed,7312
+0x005c0073,FUN_005c0073,34,(unnamed),unattributed,7313
+0x005c1a30,FUN_005c1a30,16,(unnamed),unattributed,7314
+0x005d004d,FUN_005d004d,27,(unnamed),unattributed,7315
+0x005d0069,FUN_005d0069,6,(unnamed),unattributed,7316
+0x005d0073,FUN_005d0073,34,(unnamed),unattributed,7317
+0x005f004f,FUN_005f004f,32,(unnamed),unattributed,7318
+0x005f0073,FUN_005f0073,6,(unnamed),unattributed,7319
+0x005f0079,FUN_005f0079,28,(unnamed),unattributed,7319
+0x00607000,FUN_00607000,34,(unnamed),unattributed,7320
+0x0060f400,FUN_0060f400,33,(unnamed),unattributed,7321
+0x00610020,FUN_00610020,34,(unnamed),unattributed,7322
+0x00610042,FUN_00610042,1,(unnamed),unattributed,7322
+0x00610044,FUN_00610044,2,(unnamed),unattributed,7323
+0x00610046,FUN_00610046,1,(unnamed),unattributed,7323
+0x00610048,FUN_00610048,3,(unnamed),unattributed,7324
+0x0061004c,FUN_0061004c,1,(unnamed),unattributed,7325
+0x0061004e,FUN_0061004e,2,(unnamed),unattributed,7326
+0x00610050,FUN_00610050,2,(unnamed),unattributed,7326
+0x00610052,FUN_00610052,1,(unnamed),unattributed,7326
+0x00610054,FUN_00610054,2,(unnamed),unattributed,7327
+0x00610056,FUN_00610056,11,(unnamed),unattributed,7327
+0x00610062,FUN_00610062,1,(unnamed),unattributed,7328
+0x00610064,FUN_00610064,1,(unnamed),unattributed,7329
+0x00610066,FUN_00610066,1,(unnamed),unattributed,7330
+0x00610068,FUN_00610068,2,(unnamed),unattributed,7331
+0x0061006c,FUN_0061006c,1,(unnamed),unattributed,7332
+0x0061006e,FUN_0061006e,1,(unnamed),unattributed,7333
+0x00610070,FUN_00610070,2,(unnamed),unattributed,7334
+0x00610072,FUN_00610072,1,(unnamed),unattributed,7334
+0x00610074,FUN_00610074,1,(unnamed),unattributed,7335
+0x00610076,FUN_00610076,3,(unnamed),unattributed,7336
+0x0061007a,FUN_0061007a,12,(unnamed),unattributed,7337
+0x0061f400,FUN_0061f400,34,(unnamed),unattributed,7338
+0x00620020,FUN_00620020,33,(unnamed),unattributed,7339
+0x0062004f,FUN_0062004f,17,(unnamed),unattributed,7340
+0x00620061,FUN_00620061,4,(unnamed),unattributed,7341
+0x00620065,FUN_00620065,4,(unnamed),unattributed,7341
+0x00620069,FUN_00620069,3,(unnamed),unattributed,7341
+0x0062006d,FUN_0062006d,2,(unnamed),unattributed,7342
+0x0062006f,FUN_0062006f,2,(unnamed),unattributed,7342
+0x00620072,FUN_00620072,33,(unnamed),unattributed,7343
+0x0062f000,FUN_0062f000,34,(unnamed),unattributed,7344
+0x0062f400,FUN_0062f400,34,(unnamed),unattributed,7345
+0x00630020,FUN_00630020,33,(unnamed),unattributed,7346
+0x0063004f,FUN_0063004f,4,(unnamed),unattributed,7347
+0x00630053,FUN_00630053,13,(unnamed),unattributed,7347
+0x00630061,FUN_00630061,2,(unnamed),unattributed,7348
+0x00630063,FUN_00630063,2,(unnamed),unattributed,7348
+0x00630065,FUN_00630065,4,(unnamed),unattributed,7348
+0x00630069,FUN_00630069,5,(unnamed),unattributed,7348
+0x0063006f,FUN_0063006f,2,(unnamed),unattributed,7349
+0x00630072,FUN_00630072,1,(unnamed),unattributed,7350
+0x00630074,FUN_00630074,31,(unnamed),unattributed,7351
+0x00640020,FUN_00640020,23,(unnamed),unattributed,7352
+0x00640038,FUN_00640038,9,(unnamed),unattributed,7353
+0x00640045,FUN_00640045,28,(unnamed),unattributed,7354
+0x00640061,FUN_00640061,3,(unnamed),unattributed,7354
+0x00640065,FUN_00640065,2,(unnamed),unattributed,7355
+0x00640069,FUN_00640069,4,(unnamed),unattributed,7356
+0x0064006f,FUN_0064006f,25,(unnamed),unattributed,7357
+0x0064f400,FUN_0064f400,34,(unnamed),unattributed,7358
+0x00650020,FUN_00650020,26,(unnamed),unattributed,7359
+0x0065003a,FUN_0065003a,8,(unnamed),unattributed,7359
+0x00650042,FUN_00650042,2,(unnamed),unattributed,7359
+0x00650044,FUN_00650044,3,(unnamed),unattributed,7359
+0x00650048,FUN_00650048,3,(unnamed),unattributed,7360
+0x0065004c,FUN_0065004c,1,(unnamed),unattributed,7361
+0x0065004e,FUN_0065004e,2,(unnamed),unattributed,7362
+0x00650050,FUN_00650050,2,(unnamed),unattributed,7362
+0x00650052,FUN_00650052,1,(unnamed),unattributed,7362
+0x00650054,FUN_00650054,2,(unnamed),unattributed,7363
+0x00650056,FUN_00650056,11,(unnamed),unattributed,7363
+0x00650062,FUN_00650062,1,(unnamed),unattributed,7364
+0x00650064,FUN_00650064,1,(unnamed),unattributed,7365
+0x00650066,FUN_00650066,1,(unnamed),unattributed,7366
+0x00650068,FUN_00650068,1,(unnamed),unattributed,7367
+0x0065006a,FUN_0065006a,1,(unnamed),unattributed,7368
+0x0065006c,FUN_0065006c,1,(unnamed),unattributed,7369
+0x0065006e,FUN_0065006e,1,(unnamed),unattributed,7370
+0x00650070,FUN_00650070,2,(unnamed),unattributed,7371
+0x00650072,FUN_00650072,1,(unnamed),unattributed,7371
+0x00650074,FUN_00650074,1,(unnamed),unattributed,7372
+0x00650076,FUN_00650076,1,(unnamed),unattributed,7373
+0x00650078,FUN_00650078,1,(unnamed),unattributed,7374
+0x0065007a,FUN_0065007a,12,(unnamed),unattributed,7375
+0x0065f400,FUN_0065f400,34,(unnamed),unattributed,7376
+0x00660020,FUN_00660020,16,(unnamed),unattributed,7377
+0x00660032,FUN_00660032,16,(unnamed),unattributed,7378
+0x0066004f,FUN_0066004f,22,(unnamed),unattributed,7379
+0x00660065,FUN_00660065,3,(unnamed),unattributed,7379
+0x00660069,FUN_00660069,5,(unnamed),unattributed,7380
+0x0066006f,FUN_0066006f,2,(unnamed),unattributed,7381
+0x00660072,FUN_00660072,33,(unnamed),unattributed,7382
+0x0066f000,FUN_0066f000,34,(unnamed),unattributed,7383
+0x0066f400,FUN_0066f400,34,(unnamed),unattributed,7384
+0x00670020,FUN_00670020,34,(unnamed),unattributed,7385
+0x00670061,FUN_00670061,3,(unnamed),unattributed,7386
+0x00670065,FUN_00670065,2,(unnamed),unattributed,7387
+0x00670067,FUN_00670067,2,(unnamed),unattributed,7387
+0x00670069,FUN_00670069,5,(unnamed),unattributed,7387
+0x0067006f,FUN_0067006f,5,(unnamed),unattributed,7388
+0x00670075,FUN_00670075,14,(unnamed),unattributed,7389
+0x00680020,FUN_00680020,34,(unnamed),unattributed,7390
+0x00680043,FUN_00680043,15,(unnamed),unattributed,7391
+0x00680053,FUN_00680053,15,(unnamed),unattributed,7392
+0x00680063,FUN_00680063,2,(unnamed),unattributed,7393
+0x00680065,FUN_00680065,2,(unnamed),unattributed,7393
+0x00680067,FUN_00680067,11,(unnamed),unattributed,7393
+0x00680073,FUN_00680073,3,(unnamed),unattributed,7394
+0x00680077,FUN_00680077,16,(unnamed),unattributed,7395
+0x00690020,FUN_00690020,13,(unnamed),unattributed,7396
+0x0069002e,FUN_0069002e,20,(unnamed),unattributed,7397
+0x00690042,FUN_00690042,2,(unnamed),unattributed,7397
+0x00690044,FUN_00690044,2,(unnamed),unattributed,7397
+0x00690046,FUN_00690046,2,(unnamed),unattributed,7397
+0x00690048,FUN_00690048,4,(unnamed),unattributed,7397
+0x0069004c,FUN_0069004c,3,(unnamed),unattributed,7397
+0x00690050,FUN_00690050,3,(unnamed),unattributed,7398
+0x00690054,FUN_00690054,2,(unnamed),unattributed,7399
+0x00690056,FUN_00690056,10,(unnamed),unattributed,7399
+0x00690062,FUN_00690062,1,(unnamed),unattributed,7400
+0x00690064,FUN_00690064,1,(unnamed),unattributed,7401
+0x00690066,FUN_00690066,1,(unnamed),unattributed,7402
+0x00690068,FUN_00690068,3,(unnamed),unattributed,7403
+0x0069006c,FUN_0069006c,1,(unnamed),unattributed,7404
+0x0069006e,FUN_0069006e,1,(unnamed),unattributed,7405
+0x00690070,FUN_00690070,2,(unnamed),unattributed,7406
+0x00690072,FUN_00690072,1,(unnamed),unattributed,7406
+0x00690074,FUN_00690074,1,(unnamed),unattributed,7407
+0x00690076,FUN_00690076,1,(unnamed),unattributed,7408
+0x00690078,FUN_00690078,13,(unnamed),unattributed,7409
+0x006a0062,FUN_006a0062,33,(unnamed),unattributed,7410
+0x006b0053,FUN_006b0053,14,(unnamed),unattributed,7411
+0x006b0061,FUN_006b0061,2,(unnamed),unattributed,7411
+0x006b0063,FUN_006b0063,11,(unnamed),unattributed,7411
+0x006b006f,FUN_006b006f,3,(unnamed),unattributed,7412
+0x006b0073,FUN_006b0073,2,(unnamed),unattributed,7413
+0x006c0020,FUN_006c0020,32,(unnamed),unattributed,7414
+0x006c0042,FUN_006c0042,3,(unnamed),unattributed,7415
+0x006c0046,FUN_006c0046,9,(unnamed),unattributed,7416
+0x006c0050,FUN_006c0050,17,(unnamed),unattributed,7417
+0x006c0062,FUN_006c0062,1,(unnamed),unattributed,7418
+0x006c0064,FUN_006c0064,1,(unnamed),unattributed,7419
+0x006c0066,FUN_006c0066,5,(unnamed),unattributed,7420
+0x006c006c,FUN_006c006c,2,(unnamed),unattributed,7421
+0x006c006e,FUN_006c006e,1,(unnamed),unattributed,7421
+0x006c0070,FUN_006c0070,2,(unnamed),unattributed,7422
+0x006c0072,FUN_006c0072,1,(unnamed),unattributed,7422
+0x006c0074,FUN_006c0074,17,(unnamed),unattributed,7423
+0x006d0020,FUN_006d0020,34,(unnamed),unattributed,7424
+0x006d0045,FUN_006d0045,4,(unnamed),unattributed,7425
+0x006d0049,FUN_006d0049,24,(unnamed),unattributed,7425
+0x006d0061,FUN_006d0061,4,(unnamed),unattributed,7425
+0x006d0065,FUN_006d0065,2,(unnamed),unattributed,7425
+0x006d0069,FUN_006d0069,4,(unnamed),unattributed,7426
+0x006d006d,FUN_006d006d,2,(unnamed),unattributed,7426
+0x006d006f,FUN_006d006f,5,(unnamed),unattributed,7426
+0x006d0075,FUN_006d0075,22,(unnamed),unattributed,7427
+0x006e0020,FUN_006e0020,33,(unnamed),unattributed,7428
+0x006e0045,FUN_006e0045,4,(unnamed),unattributed,7429
+0x006e0049,FUN_006e0049,6,(unnamed),unattributed,7429
+0x006e004f,FUN_006e004f,6,(unnamed),unattributed,7429
+0x006e0055,FUN_006e0055,12,(unnamed),unattributed,7429
+0x006e0061,FUN_006e0061,3,(unnamed),unattributed,7429
+0x006e0065,FUN_006e0065,2,(unnamed),unattributed,7430
+0x006e0067,FUN_006e0067,2,(unnamed),unattributed,7430
+0x006e0069,FUN_006e0069,2,(unnamed),unattributed,7430
+0x006e006b,FUN_006e006b,2,(unnamed),unattributed,7430
+0x006e006d,FUN_006e006d,1,(unnamed),unattributed,7430
+0x006e006f,FUN_006e006f,5,(unnamed),unattributed,7431
+0x006e0075,FUN_006e0075,2,(unnamed),unattributed,7432
+0x006e0077,FUN_006e0077,2,(unnamed),unattributed,7432
+0x006e0079,FUN_006e0079,16,(unnamed),unattributed,7432
+0x006e6f69,FUN_006e6f69,34,(unnamed),unattributed,7433
+0x006f0020,FUN_006f0020,34,(unnamed),unattributed,7434
+0x006f0042,FUN_006f0042,1,(unnamed),unattributed,7434
+0x006f0044,FUN_006f0044,2,(unnamed),unattributed,7435
+0x006f0046,FUN_006f0046,1,(unnamed),unattributed,7435
+0x006f0048,FUN_006f0048,4,(unnamed),unattributed,7436
+0x006f004c,FUN_006f004c,1,(unnamed),unattributed,7436
+0x006f004e,FUN_006f004e,2,(unnamed),unattributed,7437
+0x006f0050,FUN_006f0050,2,(unnamed),unattributed,7437
+0x006f0052,FUN_006f0052,1,(unnamed),unattributed,7437
+0x006f0054,FUN_006f0054,2,(unnamed),unattributed,7438
+0x006f0056,FUN_006f0056,3,(unnamed),unattributed,7438
+0x006f005a,FUN_006f005a,8,(unnamed),unattributed,7439
+0x006f0062,FUN_006f0062,1,(unnamed),unattributed,7439
+0x006f0064,FUN_006f0064,1,(unnamed),unattributed,7440
+0x006f0066,FUN_006f0066,1,(unnamed),unattributed,7441
+0x006f0068,FUN_006f0068,3,(unnamed),unattributed,7442
+0x006f006c,FUN_006f006c,1,(unnamed),unattributed,7443
+0x006f006e,FUN_006f006e,1,(unnamed),unattributed,7444
+0x006f0070,FUN_006f0070,2,(unnamed),unattributed,7445
+0x006f0072,FUN_006f0072,1,(unnamed),unattributed,7445
+0x006f0074,FUN_006f0074,2,(unnamed),unattributed,7446
+0x006f0076,FUN_006f0076,15,(unnamed),unattributed,7446
+0x00700020,FUN_00700020,34,(unnamed),unattributed,7447
+0x00700049,FUN_00700049,6,(unnamed),unattributed,7448
+0x0070004f,FUN_0070004f,4,(unnamed),unattributed,7448
+0x00700053,FUN_00700053,2,(unnamed),unattributed,7448
+0x00700055,FUN_00700055,12,(unnamed),unattributed,7448
+0x00700061,FUN_00700061,2,(unnamed),unattributed,7448
+0x00700063,FUN_00700063,2,(unnamed),unattributed,7448
+0x00700065,FUN_00700065,4,(unnamed),unattributed,7448
+0x00700069,FUN_00700069,2,(unnamed),unattributed,7448
+0x0070006c,FUN_0070006c,1,(unnamed),unattributed,7449
+0x0070006e,FUN_0070006e,1,(unnamed),unattributed,7450
+0x00700070,FUN_00700070,2,(unnamed),unattributed,7451
+0x00700072,FUN_00700072,3,(unnamed),unattributed,7451
+0x00700078,FUN_00700078,21,(unnamed),unattributed,7452
+0x00707063,FUN_00707063,34,(unnamed),unattributed,7453
+0x0070f000,FUN_0070f000,34,(unnamed),unattributed,7454
+0x0070f400,FUN_0070f400,34,(unnamed),unattributed,7455
+0x00710045,FUN_00710045,32,(unnamed),unattributed,7456
+0x00710065,FUN_00710065,2,(unnamed),unattributed,7456
+0x00720020,FUN_00720020,33,(unnamed),unattributed,7457
+0x00720042,FUN_00720042,1,(unnamed),unattributed,7458
+0x00720044,FUN_00720044,1,(unnamed),unattributed,7459
+0x00720046,FUN_00720046,8,(unnamed),unattributed,7460
+0x00720050,FUN_00720050,4,(unnamed),unattributed,7461
+0x00720054,FUN_00720054,13,(unnamed),unattributed,7461
+0x00720064,FUN_00720064,1,(unnamed),unattributed,7462
+0x00720066,FUN_00720066,4,(unnamed),unattributed,7463
+0x0072006c,FUN_0072006c,2,(unnamed),unattributed,7464
+0x0072006e,FUN_0072006e,1,(unnamed),unattributed,7464
+0x00720070,FUN_00720070,2,(unnamed),unattributed,7465
+0x00720072,FUN_00720072,2,(unnamed),unattributed,7465
+0x00720074,FUN_00720074,16,(unnamed),unattributed,7465
+0x00730020,FUN_00730020,7,(unnamed),unattributed,7466
+0x00730028,FUN_00730028,25,(unnamed),unattributed,7467
+0x00730049,FUN_00730049,12,(unnamed),unattributed,7468
+0x00730055,FUN_00730055,12,(unnamed),unattributed,7468
+0x00730061,FUN_00730061,1,(unnamed),unattributed,7468
+0x00730063,FUN_00730063,1,(unnamed),unattributed,7469
+0x00730065,FUN_00730065,3,(unnamed),unattributed,7470
+0x00730069,FUN_00730069,2,(unnamed),unattributed,7471
+0x0073006c,FUN_0073006c,1,(unnamed),unattributed,7472
+0x0073006e,FUN_0073006e,1,(unnamed),unattributed,7473
+0x00730070,FUN_00730070,2,(unnamed),unattributed,7474
+0x00730072,FUN_00730072,1,(unnamed),unattributed,7474
+0x00730074,FUN_00730074,24,(unnamed),unattributed,7475
+0x00740020,FUN_00740020,32,(unnamed),unattributed,7476
+0x00740049,FUN_00740049,10,(unnamed),unattributed,7477
+0x00740053,FUN_00740053,14,(unnamed),unattributed,7477
+0x00740061,FUN_00740061,1,(unnamed),unattributed,7477
+0x00740063,FUN_00740063,2,(unnamed),unattributed,7478
+0x00740065,FUN_00740065,2,(unnamed),unattributed,7478
+0x00740069,FUN_00740069,2,(unnamed),unattributed,7479
+0x0074006c,FUN_0074006c,2,(unnamed),unattributed,7480
+0x0074006e,FUN_0074006e,1,(unnamed),unattributed,7480
+0x00740070,FUN_00740070,2,(unnamed),unattributed,7481
+0x00740072,FUN_00740072,1,(unnamed),unattributed,7481
+0x00740074,FUN_00740074,3,(unnamed),unattributed,7482
+0x00740078,FUN_00740078,21,(unnamed),unattributed,7483
+0x00750020,FUN_00750020,13,(unnamed),unattributed,7484
+0x0075002e,FUN_0075002e,19,(unnamed),unattributed,7485
+0x00750042,FUN_00750042,3,(unnamed),unattributed,7486
+0x00750046,FUN_00750046,4,(unnamed),unattributed,7487
+0x0075004a,FUN_0075004a,3,(unnamed),unattributed,7487
+0x0075004e,FUN_0075004e,1,(unnamed),unattributed,7488
+0x00750050,FUN_00750050,15,(unnamed),unattributed,7489
+0x00750062,FUN_00750062,1,(unnamed),unattributed,7490
+0x00750064,FUN_00750064,2,(unnamed),unattributed,7491
+0x00750066,FUN_00750066,1,(unnamed),unattributed,7491
+0x00750068,FUN_00750068,2,(unnamed),unattributed,7492
+0x0075006c,FUN_0075006c,1,(unnamed),unattributed,7493
+0x0075006e,FUN_0075006e,1,(unnamed),unattributed,7494
+0x00750070,FUN_00750070,1,(unnamed),unattributed,7495
+0x00750072,FUN_00750072,1,(unnamed),unattributed,7496
+0x00750074,FUN_00750074,18,(unnamed),unattributed,7497
+0x00760020,FUN_00760020,34,(unnamed),unattributed,7498
+0x0076004f,FUN_0076004f,18,(unnamed),unattributed,7499
+0x00760061,FUN_00760061,4,(unnamed),unattributed,7499
+0x00760065,FUN_00760065,4,(unnamed),unattributed,7499
+0x00760069,FUN_00760069,4,(unnamed),unattributed,7499
+0x0076006f,FUN_0076006f,2,(unnamed),unattributed,7500
+0x00760072,FUN_00760072,34,(unnamed),unattributed,7501
+0x00770020,FUN_00770020,34,(unnamed),unattributed,7502
+0x00770061,FUN_00770061,4,(unnamed),unattributed,7503
+0x00770065,FUN_00770065,10,(unnamed),unattributed,7503
+0x0077006f,FUN_0077006f,19,(unnamed),unattributed,7503
+0x00780030,FUN_00780030,33,(unnamed),unattributed,7504
+0x00780065,FUN_00780065,4,(unnamed),unattributed,7505
+0x00780069,FUN_00780069,6,(unnamed),unattributed,7505
+0x0078006f,FUN_0078006f,24,(unnamed),unattributed,7505
+0x00790042,FUN_00790042,2,(unnamed),unattributed,7506
+0x00790044,FUN_00790044,28,(unnamed),unattributed,7506
+0x00790062,FUN_00790062,2,(unnamed),unattributed,7507
+0x00790064,FUN_00790064,1,(unnamed),unattributed,7507
+0x00790066,FUN_00790066,2,(unnamed),unattributed,7508
+0x00790068,FUN_00790068,4,(unnamed),unattributed,7508
+0x0079006c,FUN_0079006c,2,(unnamed),unattributed,7508
+0x0079006e,FUN_0079006e,1,(unnamed),unattributed,7508
+0x00790070,FUN_00790070,2,(unnamed),unattributed,7509
+0x00790072,FUN_00790072,1,(unnamed),unattributed,7509
+0x00790074,FUN_00790074,18,(unnamed),unattributed,7510
+0x007a0069,FUN_007a0069,34,(unnamed),unattributed,7511
