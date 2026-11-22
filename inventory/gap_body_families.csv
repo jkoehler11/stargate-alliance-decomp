@@ -195,6 +195,7 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x000bd860,589,arg-load,ret,,0,,,,,,,,,silent,FUN_000bd720,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000bdab0,52,arg-load,ret,,0,,,,,,,,,silent,FUN_000bd720,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000bdaf0,43,arg-load,ret,,1,table,row,0x00012620,Core_UnObjBas,Core,,,,table-in-row,FUN_000bd720,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0x000bdf60,15,arg-load,ret,,0,,,,,,,,,silent,FUN_000bdb20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000bf740,982,arg-load,ret,,0,,,,,,,,,silent,FUN_000bef90,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000c1c30,90,sse-load,ret-imm,,0,,,,,,,,,silent,FUN_000c1bd0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000c4910,8,zero-return,ret,,0,,,,,,,,,silent,FUN_000c4800,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -234,7 +235,6 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x00171b50,412,seh,ret-imm,Engine,0,,,,,,,,,silent,FUN_00171ac0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00172c20,77,arg-load,ret,,0,,,,,,,,,silent,FUN_00172b10,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00180080,80,push-reg,ret-imm,,0,,,,,,,,,silent,FUN_0017ffb0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-0x001811b5,81,alloc,ret-imm,FlyingPathNode:***********added new spec,0,,,,,,,,,silent,FUN_001800d0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00183a00,73,sse-load,ret,,0,,,,,,,,,silent,ctor_PackageMapLevel,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00183b50,96,sse-load,ret,,0,,,,,,,,,silent,FUN_00183a50,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00183bb0,114,sse-load,ret,,0,,,,,,,,,silent,FUN_00183a50,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -416,6 +416,8 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x0037025e,128,hotpatch,jmp,,0,,,,,,,,,silent,FUN_0036fd40,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x003702de,632,hotpatch,jmp,,0,,,,,,,,,silent,FUN_0036fd40,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00370556,110,hotpatch,ret,,0,,,,,,,,,silent,FUN_0036fd40,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0x0037a74d,80,arg-load,ret,,0,,,,,,,,,silent,FUN_0037a6fd,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0x0037a79d,80,arg-load,ret,,0,,,,,,,,,silent,FUN_0037a6fd,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00382ef0,84,arg-load,ret-imm,,1,operand,row,0x00382fe0,FUN_00382fe0,,,,,operand-in-row,FUN_00382ed0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00390520,14710,alloc,ret-imm,,1,operand,row,0x003e3c40,FUN_003e3c40,,,,,operand-in-row,FUN_00390000,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00394410,5022,alloc,ret-imm,,1,operand,row,0x003e3bd0,FUN_003e3bd0,,,,,operand-in-row,FUN_00393ea0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -467,4 +469,4 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x00405c41,283,push-reg,jmp,,0,,,,,,,,,silent,FUN_00404f90,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00406e92,105,add-reg-imm8,jmp,,0,,,,,,,,,silent,FUN_00406330,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x0040a736,18,push-reg,jmp,,0,,,,,,,,,silent,FUN_00409100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,census,,,2110,468,98339,73,7,7,2,0x005ccadc,0x005ccae0,0,0,6,0,297,0,0,0,0,0,0,58,54,6,52,3,2,0,0,1,410,16935,466,295,183,2,2000,23,?=52 Core=2 head=2 XboxAudio=1 gap=1,46060,18
+,,,,,,,,,,,,,,census,,,2114,470,98433,71,7,7,2,0x005ccadc,0x005ccae0,0,0,6,0,297,0,0,0,0,0,0,58,54,6,52,3,2,0,0,1,412,16935,466,295,183,2,2000,23,?=52 Core=2 head=2 XboxAudio=1 gap=1,46154,18

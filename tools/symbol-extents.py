@@ -67,26 +67,46 @@ DOC_MARKS = ("<!-- generated:symbol-extents -->", "<!-- /generated:symbol-extent
 
 ROW = ("row_va", "row_name", "row_size", "last_va", "last_length", "last_insn", "end_kind",
        "tail_bytes", "close_va", "close_insn", "head_va", "head_size", "head_prologue",
-       "head_verdict", "new_size", "verdict", "reason", "note")
-CENSUS = ("text_rows", "sized_rows", "terminator", "short", "undecoded", "nonterm", "continuation",
-          "continuation_bytes", "head_family", "tail_family", "head_bytes", "tail_bytes_total",
-          "pad_family", "pad_bytes", "jump_family", "jump_bytes", "complete_family", "complete_bytes",
-          "complete_term", "complete_fill", "bounded", "split", "refused", "refused_no_close",
-          "refused_jump", "refused_then_code", "refused_undecoded", "refused_no_room",
-          "short_overlap", "short_nostraddle", "short_refused", "short_split",
-          "null_hits", "null_trials")
+       "head_verdict", "new_size", "target_va", "verdict", "reason", "note")
+CENSUS = ("text_rows", "sized_rows", "terminator", "short", "undecoded", "undecoded_cut", "nonterm",
+          "continuation", "continuation_bytes", "head_family", "tail_family", "head_bytes",
+          "tail_bytes_total", "pad_family", "pad_bytes", "jump_family", "jump_bytes", "complete_family",
+          "complete_bytes", "complete_term", "complete_fill", "bounded", "split", "split_fold",
+          "split_folded", "fold_bytes", "refused", "refused_no_close", "refused_jump", "refused_then_code",
+          "refused_undecoded", "refused_no_room", "padding_family", "padding_bytes", "behind_family",
+          "behind_bytes", "follow_family", "follow_bytes", "short_overlap", "short_nostraddle",
+          "short_refused", "short_split", "fold_trials", "fold_agree", "null_hits", "null_trials")
 # the reason's first token is its family, so a carried row needs no second column
-FAMILIES = ("head", "tail", "pad", "jump", "complete")
+FAMILIES = ("head", "tail", "pad", "jump", "complete", "padding", "behind", "follow")
 
 OBJ_LINE = re.compile(r"^\s*([0-9a-f]+):\t([0-9a-f ]+?)\s*\t(.*)$")
+WRITES_EBP = re.compile(r"^(mov|lea|xor|add|sub|and|or|pop|imul|movzx|movsx|and)\s+ebp\b")
 TERM = ("ret", "jmp", "int3", "hlt", "iret")
 FILL = (0xCC, 0x90)
 MAX_TAIL = 256
 MAX_CUT = 16          # the longest x86 instruction: a cut cannot reach further
+MAX_FOLD = 2048       # how far a fragment's body is followed to its close
+WINDOW = 512          # bytes per decode pass: the walk's cost is one objdump spawn per window, and a
+                      # 64-byte window made a whole-image measurement overrun twelve minutes
+# The shared opening table (`native-census.PROLOGUES` plus the measured ones in `gap-heads`), tested on a
+# body's first bytes. It is what "a new body opens here" means in this tool: the code behind a close that
+# matches one of these opens a body of its own, so the close bounds the run in front of it.
+PROLOGUE_PAT = (
+    (b"\x8b\xff", "hotpatch"), (b"\x55\x8b\xec", "frame"), (b"\x64\xa1", "seh"),
+    (b"\x8b\x44\x24", "arg-load"), (b"\x8b\x4c\x24", "arg-load"), (b"\x8b\x54\x24", "arg-load"),
+    (b"\x81\xec", "alloc"), (b"\x83\xec", "alloc"), (b"\xc2", "empty-return"),
+    (b"\x6a", "push-imm"), (b"\x68", "push-imm"), (b"\x51", "push-reg"), (b"\x53", "push-reg"),
+    (b"\x55", "push-reg"), (b"\x56", "push-reg"), (b"\x57", "push-reg"), (b"\xb8", "mov-eax"),
+    (b"\xa1", "global-load-eax"), (b"\x8b\x0d", "global-load-ecx"), (b"\x8b\xd1", "self-return"),
+    (b"\x33\xc0", "zero-return"),
+)
 REPAIRS = ("row ends on a non-terminator and a gap head closes at its end",
            "row ends on a non-terminator and a decode from its end reaches a `ret` with only fill after it",
            "the row's size cuts an instruction, and completing it lands on a terminator or a close",
-           "the tail's first terminator is a `jmp` tail call, or a close with a two-byte pad behind it")
+           "the tail's first terminator is a `jmp` tail call, or a close with a two-byte pad behind it",
+           "the close is followed by alignment padding, by a body's own opening, or by the same frame's "
+           "shared epilogue")
+
 
 
 def read_csv(path):
@@ -186,8 +206,12 @@ def tail_rule(reader, decode_fn, start, limit):
 
     The first terminator closes the row when **only fill** follows it (`tail` for a `ret`, `jump` for a
     tail call) or when a **pad of two or more `0xcc`** does (`pad`) -- only a run of two or more `int3`
-    bounds a body, so a single `int3` in front of code is interior. A terminator with code behind it
-    refuses the read, and so does a run with no terminator at all.
+    bounds a body, so a single `int3` in front of code is interior. A terminator with *code* behind it
+    is read three ways, because the code behind a close is not the body's own code by definition:
+    `padding` when the next instructions are alignment filler (`nop`, `int3`, `lea r,[r+0x0]`), `behind`
+    when they open a body of their own (the shared prologue table), and `follow` when they read the frame
+    the close's own body built -- the shared epilogue an early return jumps into. Anything else refuses
+    the read, and so does a run with no terminator at all.
     """
     room = limit - start
     tail = decode_fn(reader(start, min(room, MAX_TAIL)), start) if room > 0 else []
@@ -200,11 +224,28 @@ def tail_rule(reader, decode_fn, start, limit):
             break
     if first is None:
         return tail, None, "no-close"
-    after_va = first[0] + first[1]
+    why = close_kind(reader, decode_fn, first, limit)
+    if why in ("tail", "jump", "pad"):
+        return tail, first, why
+    if why == "jump-open":
+        return tail, None, "jump"
+    if why in ("padding", "behind"):
+        return tail, first, why
+    if why == "follow":
+        close, fwhy = close_ahead(reader, decode_fn, first[0] + first[1], limit)
+        if close is not None and mnemonic(close[2]) != "jmp":
+            return tail, close, "follow"
+        return tail, None, "then-code"
+    return tail, None, "then-code"
+
+
+def close_kind(reader, decode_fn, step, limit):
+    """How the bytes behind one terminator bound it: `tail`, `pad`, `padding`, `behind`, `follow`, or a
+    refusal (`jump-open`, `then-code`)."""
+    after_va = step[0] + step[1]
     after = reader(after_va, max(0, limit - after_va))
     if all(b in FILL for b in after):
-        return tail, first, ("jump" if mnemonic(first[2]) == "jmp" else
-                             ("pad" if mnemonic(first[2]) == "int3" else "tail"))
+        return ("jump" if mnemonic(step[2]) == "jmp" else "tail")
     pad = 0
     for b in after:
         if b == 0xCC:
@@ -212,9 +253,94 @@ def tail_rule(reader, decode_fn, start, limit):
         else:
             break
     if pad >= 2:
-        return tail, first, ("pad" if mnemonic(first[2]) == "int3" else
-                             ("jump" if mnemonic(first[2]) == "jmp" else "pad"))
-    return tail, None, ("jump" if mnemonic(first[2]) == "jmp" else "then-code")
+        return ("jump" if mnemonic(step[2]) == "jmp" else "pad")
+    if mnemonic(step[2]) == "jmp":
+        return "jump-open"
+    kind, _first = after_kind(reader, decode_fn, after_va, limit)
+    return kind
+
+
+def after_kind(reader, decode_fn, va, limit):
+    """(`padding` | `behind` | `follow` | `then-code`, first instruction) for the code at `va`.
+
+    `padding` is alignment filler, `behind` a body's own opening, and `follow` a run that reads a frame
+    (`[ebp...]`, `leave`) it never writes in its opening window -- the shared epilogue an early return
+    jumps into. Anything else is code this rule cannot attribute."""
+    ins = decode_fn(reader(va, min(limit - va, 24)), va)
+    if not ins:
+        return "then-code", None
+    if is_fill_insn(ins[0][2]):
+        return "padding", ins[0]
+    if opens_body(reader(va, 8)):
+        return "behind", ins[0]
+    for _a, _l, t in ins[:4]:
+        if WRITES_EBP.match(t) or mnemonic(t) == "leave":
+            return "then-code", ins[0]
+    for _a, _l, t in ins[:4]:
+        if "[ebp" in t or mnemonic(t) == "leave":
+            return "follow", ins[0]
+    return "then-code", ins[0]
+
+
+def opens_body(first):
+    """Does this opening match the shared prologue table? `first` is the bytes at the address."""
+    if not first:
+        return False
+    for pat, _name in PROLOGUE_PAT:
+        if first.startswith(pat):
+            return True
+    return False
+
+
+def is_fill_insn(text):
+    """Alignment filler: `nop`, `int3`, or a `lea r,[r+0x0]` that writes nothing."""
+    m = mnemonic(text)
+    if m in ("nop", "int3"):
+        return True
+    if m == "lea":
+        q = re.match(r"^lea\s+(\w+),\[\1\+0x0\]$", text.replace("  ", " "))
+        return bool(q)
+    return False
+
+
+def close_ahead(reader, decode_fn, start, limit, cap=600):
+    """(close instruction, kind) for the first close at or after `start`, following a shared epilogue.
+
+    A close is a terminator with fill, a two-byte pad, alignment padding or a body's own opening behind
+    it. When the code behind a close reads the same frame, the walk continues past it -- the early
+    return's shared epilogue -- so the answer is the close that ends the body, not the first one it
+    reaches. `None` when nothing closes before `limit`.
+    """
+    va = start
+    steps = 0
+    while va < limit and steps < cap:
+        n = min(limit - va, WINDOW)
+        ins = decode_fn(reader(va, n), va)
+        if not ins:
+            return None, "undecoded"
+        moved = False
+        for step in ins:
+            steps += 1
+            if step[0] + step[1] > va + n:
+                break                     # the window's last instruction is truncated: re-read it
+            if not is_term(step[2]):
+                continue
+            kind = close_kind(reader, decode_fn, step, limit)
+            if kind in ("tail", "pad", "padding", "behind"):
+                return step, kind
+            if kind == "jump-open":
+                return None, "jump"
+            va = step[0] + step[1]        # a shared epilogue: keep walking
+            moved = True
+            break
+        if moved:
+            continue
+        nxt = [s for s in ins if s[0] + s[1] <= va + n]
+        if not nxt:
+            return None, "undecoded"
+        va = nxt[-1][0] + nxt[-1][1]
+    return None, "no-close"
+
 
 
 def _family(cen, reason, tail_bytes):
@@ -226,8 +352,35 @@ def _family(cen, reason, tail_bytes):
         cen["complete_%s" % ("term" if (reason or "").endswith("term") else "fill")] += 1
 
 
-def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_trials=0):
-    """(artifact rows, census). `reader(va, size)` returns bytes; `known` carries repaired rows."""
+def fold_end(reader, decode_fn, start, size, limit, starts, names):
+    """(close address, close instruction, kind, refusal) for a row the map split from its own body.
+
+    The row's head is a real instruction boundary, so the body is read forward from there: the first
+    close is where it ends. A map row that starts inside that span is a fragment of the same body unless
+    its own head opens a body (the shared prologue table), and then the read is refused rather than
+    swallowing a function.
+    """
+    close, kind = close_ahead(reader, decode_fn, start, limit)
+    if close is None:
+        return None, None, kind, kind
+    cend = close[0] if mnemonic(close[2]) == "int3" else close[0] + close[1]
+    if cend <= start + size:
+        return None, close, kind, "no-wider"
+    k = bisect.bisect_right(starts, start)
+    while k < len(starts) and starts[k] < cend:
+        if opens_body(reader(starts[k], 8)):
+            return None, close, kind, "body-inside"
+        k += 1
+    return cend, close, kind, None
+
+
+
+def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_trials=0, progress=False):
+    """(artifact rows, census). `reader(va, size)` returns bytes; `known` carries repaired rows.
+
+    `progress` writes a row counter to stderr every 2,000 rows: the whole-image read is a few minutes
+    of objdump spawns, and without it a slow run and a hung one look the same.
+    """
     lo, hi = text or (0x00010000, 0x00500000)
     starts = [r["va"] for r in rows if r["size"]]
     head_at = {}
@@ -236,6 +389,7 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
     known = known or {}
     cen = collections.Counter()
     out = []
+    cover = []          # (end va, target va) of the folds this walk has already measured
 
     def continuation(r, last, end_kind, tail_bytes, close_va, reason, note, new_size, head=None, close=None):
         cen["nonterm"] += 1
@@ -245,6 +399,44 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         out.append(_row(r, last, end_kind, tail_bytes, close_va, "continuation", reason, note,
                         head=head, close=close, new_size=new_size))
 
+    def split_row(r, last, end_kind, cut=False):
+        """A row whose end is the next row's start: is the next map row interior code of this one?
+
+        A split is only read as a fold when this row's head is a body's own start -- a measured prologue
+        shape, or a name the build gave it (an assert or a registration) rather than `FUN_*`/`thunk_*`
+        -- and the body read forward from that head reaches a close that the next row starts inside.
+        Every map row inside the repaired span becomes a `drop`."""
+        cen["nonterm"] += 1
+        cen["split"] += 1
+        if cut:
+            cen["short_split"] += 1
+        end = r["va"] + r["size"]
+        note = ("the completed instruction ends where the next map row starts" if cut
+                else "the next map row starts at this row's end")
+        named = bool(r["name"]) and not r["name"].startswith(("FUN_", "thunk_"))
+        if not (named or opens_body(reader(r["va"], 8))):
+            out.append(_row(r, last, end_kind, 0, "", "split", "next-row",
+                            note + ", so the map split one body in two; this row's head is neither a "
+                            "measured prologue nor a name the build gave it, so the split is left to a "
+                            "review that this rule cannot supply"))
+            return
+        cend, close, kind, why = fold_end(reader, decode_fn, r["va"], r["size"],
+                                          min(end + MAX_FOLD, hi), starts, None)
+        if cend is None:
+            out.append(_row(r, last, end_kind, 0, "", "split", "next-row",
+                            note + ", so the map split one body in two, and the head reads as a body "
+                            "but the run forward does not close (%s)" % why))
+            return
+        cen["split_fold"] += 1
+        cen["fold_bytes"] += cend - end
+        cover.append((cend, r["va"]))
+        out.append(_row(r, last, end_kind, cend - end, "0x%08x" % close[0], "interior", "fold",
+                        note + "; read forward from this row's head the body closes on `%s` at 0x%08x "
+                        "(%s behind it), so the rows that start inside that span are its interior code"
+                        % (close[2], close[0], kind), close=close, new_size=cend - r["va"]))
+
+
+    seen = 0
     for r in rows:
         if not (lo <= r["va"] < hi):
             continue
@@ -252,6 +444,19 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         if not r["size"]:
             continue
         cen["sized_rows"] += 1
+        seen += 1
+        if progress and seen % 2000 == 0:
+            sys.stderr.write("  %d/%d rows\n" % (seen, len(rows)))
+            sys.stderr.flush()
+        hit = next((c for c in cover if r["va"] < c[0]), None)
+        if hit is not None:
+            cen["nonterm"] += 1
+            cen["split"] += 1
+            cen["split_folded"] += 1
+            out.append(_row(r, None, "fold:inside", 0, "0x%08x" % hit[1], "folded", "folded",
+                            "this row starts inside the body the row at 0x%08x runs to, so it is "
+                            "interior code of it and the repair is a `drop`" % hit[1], target=hit[1]))
+            continue
         k = bisect.bisect_right(starts, r["va"])
         nxt = starts[k] if k < len(starts) else None
         held = known.get(r["va"]) or known.get("0x%08x" % r["va"])
@@ -266,10 +471,18 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         ins = decode_fn(reader(r["va"], r["size"]), r["va"])
         end = r["va"] + r["size"]
         if not ins:
-            cen["undecoded"] += 1
-            out.append(_row(r, None, "decode:none", 0, "", "undecoded", "decode-none",
-                            "objdump decodes nothing from this row's head"))
-            continue
+            # The row's whole extent is shorter than its first instruction, so objdump refuses the blob.
+            # Read across it: an instruction that *starts* at the row's head and runs past its size is
+            # the cut case, not an unreadable row.
+            wide0 = decode_fn(reader(r["va"], r["size"] + MAX_CUT), r["va"])
+            head = next((i for i in wide0 if i[0] == r["va"]), None)
+            if head is None:
+                cen["undecoded"] += 1
+                out.append(_row(r, None, "decode:none", 0, "", "undecoded", "decode-none",
+                                "objdump decodes nothing from this row's head"))
+                continue
+            cen["undecoded_cut"] += 1
+            ins = [head]
         last = ins[-1]
         if last[0] + last[1] != end:
             # the size cuts an instruction: the row's end is a byte count, not a boundary. Read across
@@ -298,12 +511,7 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                              % (cut[1], cut[2]), cend - r["va"], close=cut)
                 continue
             if nxt == cend:
-                cen["nonterm"] += 1
-                cen["split"] += 1
-                cen["short_split"] += 1
-                out.append(_row(r, cut, "cut:next-row", 0, "", "split", "next-row",
-                                "the completed instruction ends where the next map row starts, so the map "
-                                "split one body in two -- a `drop` repair, not a resize"))
+                split_row(r, cut, "cut:next-row", cut=True)
                 continue
             tail, close, why = tail_rule(reader, decode_fn, cend, nxt if nxt else cend + MAX_TAIL)
             if close is None:
@@ -323,11 +531,7 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
             continue
         h = head_at.get(end)
         if nxt == end:
-            cen["nonterm"] += 1
-            cen["split"] += 1
-            out.append(_row(r, last, "next-row", 0, "", "split", "next-row",
-                            "the next map row starts here, so the map split one body in two -- a `drop` "
-                            "repair, not a resize"))
+            split_row(r, last, "next-row")
         elif h and h["size"] and h["verdict"] in ("body", "island"):
             continuation(r, last, "head:%s" % h["verdict"], h["size"], "0x%08x" % (h["va"] + h["size"]),
                          "head", "the %d-byte %s at the row's end closes on `%s`" % (
@@ -339,17 +543,28 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                 # a pad *is* the boundary: the body ends where the pad's first `int3` begins
                 cclose = close[0] if mnemonic(close[2]) == "int3" else close[0] + close[1]
                 tail_bytes = cclose - end
-                if mnemonic(close[2]) == "int3" and tail_bytes == 0:
+                if tail_bytes <= 0:
                     cen["nonterm"] += 1
                     cen["bounded"] += 1
-                    out.append(_row(r, last, "tail:pad", 0, "", "bounded", "pad",
-                                    "the row's own end is where the pad begins, so the body is bounded "
-                                    "there and nothing is missing"))
+                    out.append(_row(r, last, "tail:%s" % why, 0, "", "bounded", "pad",
+                                    "the terminator at the row's own end closes it, so the body is "
+                                    "bounded there and nothing is missing"))
                 else:
-                    note = ("a decode from the row's end reaches `%s` and only fill follows" % close[2]
-                            if why == "tail" else
-                            "a decode from the row's end reaches `%s`, which closes the run (%s)"
-                            % (close[2], "a tail call" if why == "jump" else "a pad behind it bounds it"))
+                    note = {
+                        "tail": "a decode from the row's end reaches `%s` and only fill follows",
+                        "jump": "a decode from the row's end reaches `%s`, which closes the run (a tail "
+                                "call -- its target code is elsewhere)",
+                        "pad": "a decode from the row's end reaches `%s`, which closes the run (a pad "
+                               "behind it bounds it)",
+                        "padding": "a decode from the row's end reaches `%s` and the bytes behind it are "
+                                   "alignment padding, not code",
+                        "behind": "a decode from the row's end reaches `%s` and the code behind it opens "
+                                  "a body of its own, so the close bounds this one",
+                        "follow": "a decode from the row's end reaches `%s`, and the code behind it reads "
+                                  "the same frame -- the shared epilogue an early return jumps into -- so "
+                                  "the body runs on to the close at 0x%08x",
+                    }[why]
+                    note = note % ((close[2], cclose) if why == "follow" else (close[2],))
                     continuation(r, last, "tail:%s" % why, tail_bytes, "0x%08x" % cclose, why, note,
                                  cclose - r["va"], close=close)
             else:
@@ -362,6 +577,32 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                                 else "nothing decodes from the row's end" if why == "undecoded"
                                 else "the row ends where the next map row starts" if why == "no-room"
                                 else "the close is followed by code, not fill or a pad"))
+    # control: the same forward read on rows that already end on a terminator. It must reproduce the
+    # map's own size, or a fold would be inventing an extent rather than reading one.
+    sampled = [r for r in rows if lo <= r["va"] < hi and r["size"]][::30][:400]
+    for r in sampled:
+        ins = decode_fn(reader(r["va"], r["size"]), r["va"])
+        end = r["va"] + r["size"]
+        if not ins or not is_term(ins[-1][2]) or ins[-1][0] + ins[-1][1] != end:
+            continue
+        cen["fold_trials"] += 1
+        close, _kind = close_ahead(reader, decode_fn, r["va"], min(end + MAX_FOLD, hi))
+        if close is not None:
+            cend = close[0] if mnemonic(close[2]) == "int3" else close[0] + close[1]
+            if cend == end:
+                cen["fold_agree"] += 1
+    # a dropped row is gone from the map, so its record is carried from the artifact or the family's
+    # count would read zero on the next run and the doc would change under it
+    inmap = set(starts)
+    for key, held in known.items():
+        if (held.get("verdict") or "") != "folded":
+            continue
+        if int(held["row_va"], 16) in inmap:
+            continue
+        out.append(dict(held))
+        cen["nonterm"] += 1
+        cen["split"] += 1
+        cen["split_folded"] += 1
     # control: the same tail rule over the image's data sections
     for i in range(null_trials):
         va = null_addresses[i] if i < len(null_addresses) else None
@@ -382,7 +623,7 @@ null_addresses = []
 
 
 def _row(r, last, end_kind, tail_bytes, close_va, verdict, reason, note, head=None, close=None,
-         new_size=0):
+         new_size=0, target=0):
     return {"row_va": "0x%08x" % r["va"], "row_name": r["name"], "row_size": r["size"],
             "last_va": "0x%08x" % last[0] if last else "", "last_length": last[1] if last else "",
             "last_insn": last[2] if last else "", "end_kind": end_kind,
@@ -392,7 +633,8 @@ def _row(r, last, end_kind, tail_bytes, close_va, verdict, reason, note, head=No
             "head_size": head["size"] if head else "",
             "head_prologue": head["prologue"] if head else "",
             "head_verdict": head["verdict"] if head else "",
-            "new_size": new_size or "", "verdict": verdict, "reason": reason, "note": note}
+            "new_size": new_size or "", "target_va": ("0x%08x" % target) if target else "",
+            "verdict": verdict, "reason": reason, "note": note}
 
 
 def pct(a, b):
@@ -425,18 +667,24 @@ def render(rows, cen):
         "is a terminator itself (**%d**) or where the run behind it reaches its first terminator "
         "(**%d**, %d bytes). The first terminator closes the run when only fill follows it, when it is a "
         "`jmp` -- a tail call, its target code elsewhere -- or when it is a `ret` with a pad of two or "
-        "more `0xCC` behind it (**%d rows, %d bytes**), because only a run of two or more `int3` bounds a "
-        "body. Together **%d rows and %d bytes**: %d of them grow by one instruction or less (a row that "
+        "`CC` behind it (**%d rows, %d bytes**), because only a run of two or more `int3` bounds a "
+        "body. The code behind a close is not the body's own code, so a close with code behind it is "
+        "read three ways: **%d rows** end where the next instructions are alignment padding, **%d** "
+        "where they open a body of their own, and **%d** where they read the same frame -- the shared "
+        "epilogue an early return jumps into -- and the body runs on to the next close (**%d bytes**). "
+        "Together **%d rows and %d bytes**: %d of them grow by one instruction or less (a row that "
         "stops on `pop ebp`/`add esp,N` before its own `ret`), and the largest is `%s`, a %s-byte row "
         "continued by %s bytes." % (
-            n("head_family"), n("head_bytes"), n("tail_family"), n("tail_bytes_total"),
-            len(cut_rows), n("complete_term"), n("complete_fill"), fill_bytes,
-            n("pad_family") + n("jump_family"), n("pad_bytes") + n("jump_bytes"),
-            n("continuation"), n("continuation_bytes"),
-            sum(1 for r in cont if int(r["tail_bytes"] or 0) <= 4),
-            (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["row_va"] if cont else "-"),
-            (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["row_size"] if cont else "-"),
-            (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["tail_bytes"] if cont else "-")))
+        n("head_family"), n("head_bytes"), n("tail_family"), n("tail_bytes_total"),
+        len(cut_rows), n("complete_term"), n("complete_fill"), fill_bytes,
+        n("pad_family") + n("jump_family"), n("pad_bytes") + n("jump_bytes"),
+        n("padding_family"), n("behind_family"), n("follow_family"),
+        n("padding_bytes") + n("behind_bytes") + n("follow_bytes"),
+        n("continuation"), n("continuation_bytes"),
+        sum(1 for r in cont if int(r["tail_bytes"] or 0) <= 4),
+        (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["row_va"] if cont else "-"),
+        (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["row_size"] if cont else "-"),
+        (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["tail_bytes"] if cont else "-")))
     lines.append("")
     lines.append(
         "**The control is the same rule over data.** Decoding from **%d** fixed addresses in the image's "
@@ -455,9 +703,12 @@ def render(rows, cen):
                 r["row_va"], r["row_name"], r["row_size"], r["last_insn"], ev, r["tail_bytes"],
                 r["new_size"]))
         lines.append("")
-    rest = [r for r in rows if r["verdict"] in ("split", "refused", "bounded", "short", "undecoded")]
+    rest = [r for r in rows if r["verdict"] in ("split", "refused", "bounded", "short", "undecoded",
+                                                "interior", "folded")]
     if rest:
         splits = [r for r in rest if r["verdict"] == "split"]
+        folds = [r for r in rest if r["verdict"] == "interior"]
+        folded = [r for r in rest if r["verdict"] == "folded"]
         short = [r for r in rest if r["verdict"] == "short"]
         lines.append(
             "**What this does not repair.** **%d** rows still end mid-instruction (`short`): nothing "
@@ -467,14 +718,29 @@ def render(rows, cen):
             "bounded where the map says they end -- a pad of two or more `0xcc` begins exactly there, so "
             "the body has no tail and nothing is missing. Of the rest, **%d** stop on live code with no "
             "close before the next row (**%d** a `jmp` with code behind it, **%d** a `ret` followed by "
-            "code rather than a pad, **%d** no terminator at all, **%d** no byte behind them), and **%d** "
-            "are a body the map already split from its own continuation -- %s -- which is a `drop` "
-            "repair and needs a review this rule cannot supply." % (
+            "code that is neither padding, a body's opening nor the same frame, **%d** no terminator at "
+            "all, **%d** no byte behind them), and **%d** are a body the map already split from its own "
+            "continuation -- %s -- which is a `drop` repair and needs a review this rule cannot supply." % (
                 len(short), n("short_nostraddle"), n("short_overlap"), n("short_refused"),
                 n("short_split"), n("undecoded"), n("bounded"), n("refused"), n("refused_jump"),
                 n("refused_then_code"), n("refused_no_close"),
                 n("refused_undecoded") + n("refused_no_room"),
                 len(splits), ", ".join("`%s`" % r["row_va"] for r in splits) or "none"))
+        lines.append("")
+    if folds or folded:
+        lines.append(
+            "**The splits this rule does repair are folds.** %d rows the map split from their own "
+            "continuation read forward from their **own head** -- a measured prologue, or a name the "
+            "build gave them -- to the close that ends the body (**%d bytes** past the row's end), and "
+            "every map row that starts inside that span is interior code of it: **%d rows** drop into "
+            "the row above, each a `drop` row in `symbols/xbe_boundaries.csv` beside the fold's "
+            "`resize`. A split whose head is neither a prologue nor a name (`FUN_*`) is left alone: "
+            "reading it forward would be a guess about where a body began, not a measurement. **The "
+            "control is the same read on rows that already close**: from its head, **%d of the %d "
+            "rows sampled** land on the map's own end (%.1f%%), so the read reproduces a size it was "
+            "not given." % (
+            len(folds), n("fold_bytes"), len(folded), n("fold_agree"), n("fold_trials"),
+            pct(n("fold_agree"), n("fold_trials"))))
         lines.append("")
     lines.append(
         "**The repairs are in the file, not in this tool's output.** `--write-boundaries` appends one "
@@ -534,19 +800,44 @@ def evidence_for(r):
     if r["reason"] in ("jump", "pad"):
         return ("%s; `%s` closes the run %s bytes past the row's end, and what follows it is fill or a pad "
                 "rather than code" % (REPAIRS[3], r["close_insn"], r["tail_bytes"]))
+    if r["reason"] in ("padding", "behind", "follow"):
+        return ("%s; `%s` at %s is the first terminator behind the row's end and the bytes behind it are "
+                "%s, so the body runs to %s" % (
+                    REPAIRS[4], r["close_insn"], r["close_va"],
+                    {"padding": "alignment filler", "behind": "a body's own opening",
+                     "follow": "the same frame's shared epilogue"}[r["reason"]], r["new_size"]))
+    if r["verdict"] == "interior":
+        return ("%s; the row's head is a body's own start and the body read forward from it closes on `%s` "
+                "at %s with %s behind it, so the %s bytes to that close are one body and the map rows "
+                "inside it are interior code" % (
+                    REPAIRS[4], r["close_insn"], r["close_va"], r["reason"], r["tail_bytes"]))
     return ("%s; `%s` closes the run %s bytes past the row's end and only fill follows before the next "
             "row" % (REPAIRS[1], r["close_insn"], r["tail_bytes"]))
 
 
 def write_boundaries(rows, path=BOUNDARIES):
-    """Append one `resize` row per continuation. Refuses a conflicting repair on the same address."""
+    """Append one `resize` row per continuation and per fold, and one `drop` per folded row."""
     with open(path, newline="", encoding="utf-8") as fh:
         text = fh.read()
     have = {b["address"]: b for b in read_boundaries(path)}
     added, kept, bad = 0, 0, []
     lines = []
     for r in rows:
-        if r["verdict"] != "continuation":
+        if r["verdict"] == "folded":
+            va, target = int(r["row_va"], 16), int(r["target_va"], 16)
+            b = have.get(va)
+            if b:
+                if b["action"] != "drop":
+                    bad.append("%s already carries a %s" % (r["row_va"], b["action"]))
+                else:
+                    kept += 1
+                continue
+            lines.append('0x%08x,drop,0x%08x,,"%s"' % (
+                va, target, ("the body at 0x%08x reads forward from its own head to a close this row "
+                             "starts inside, so this row is interior code of it" % target)))
+            added += 1
+            continue
+        if r["verdict"] not in ("continuation", "interior"):
             continue
         va, size = int(r["row_va"], 16), int(r["new_size"])
         b = have.get(va)
@@ -581,7 +872,8 @@ def write_overrides(rows, path=OVERRIDES):
     """
     with open(path, newline="", encoding="utf-8") as fh:
         text = fh.read()
-    new = {r["row_va"]: int(r["new_size"]) for r in rows if r["verdict"] == "continuation"}
+    new = {r["row_va"]: int(r["new_size"]) for r in rows
+           if r["verdict"] in ("continuation", "interior")}
     lines = text.splitlines(keepends=True)
     head = lines[0].rstrip("\r\n").split(",")
     try:
@@ -616,15 +908,33 @@ def check():
     if not rows or not cen:
         bad.append("%s is missing or holds no census row" % ARTIFACT)
     by_addr = {r["va"]: r for r in read_map()}
-    repairs = {b["address"]: b for b in read_boundaries() if b["action"] == "resize"}
+    bounds = {b["address"]: b for b in read_boundaries()}
+    repairs = {a: b for a, b in bounds.items() if b["action"] == "resize"}
+    drops = {a: b for a, b in bounds.items() if b["action"] == "drop"}
     counts = collections.Counter(r["verdict"] for r in rows)
     for r in rows:
         va = int(r["row_va"], 16)
         row = by_addr.get(va)
+        if r["verdict"] == "folded":
+            if row:
+                bad.append("%s is a folded row but the map still has it" % r["row_va"])
+            d = drops.get(va)
+            target = by_addr.get(int(r["target_va"], 16)) if r.get("target_va") else None
+            if not d:
+                bad.append("%s is folded with no `drop` in symbols/xbe_boundaries.csv" % r["row_va"])
+            elif int(d["target"] or "0", 16) != int(r["target_va"], 16):
+                bad.append("%s drops into %s, the artifact names %s" % (r["row_va"], d["target"],
+                                                                       r["target_va"]))
+            elif not target:
+                bad.append("%s is folded into %s, which is not a map row" % (r["row_va"], r["target_va"]))
+            elif not (target["va"] <= va < target["va"] + target["size"]):
+                bad.append("%s is folded into %s, whose span does not hold it" % (r["row_va"],
+                                                                                 r["target_va"]))
+            continue
         if not row:
             bad.append("%s has no row in the map" % r["row_va"])
             continue
-        if r["verdict"] == "continuation":
+        if r["verdict"] in ("continuation", "interior"):
             want = int(r["new_size"])
             if row["size"] != want:
                 bad.append("%s is %d in the map, the artifact measured %d" % (r["row_va"], row["size"], want))
@@ -635,6 +945,8 @@ def check():
                 bad.append("%s repairs to %d, the artifact measured %d" % (r["row_va"], b["size"], want))
             elif not any(b["evidence"].startswith(p) for p in REPAIRS):
                 bad.append("%s repair carries no evidence of the rule" % r["row_va"])
+            if va in drops:
+                bad.append("%s is a %s row and also dropped" % (r["row_va"], r["verdict"]))
         elif va in repairs:
             bad.append("%s is a %s row but carries a resize repair" % (r["row_va"], r["verdict"]))
     if cen.get("continuation") != counts.get("continuation", 0):
@@ -645,6 +957,12 @@ def check():
         bad.append("census continuation_bytes does not equal the rows' tails")
     if cen.get("nonterm", 0) + cen.get("short", 0) + cen.get("undecoded", 0) != len(rows):
         bad.append("census population does not equal the %d rows" % len(rows))
+    if counts.get("interior", 0) + counts.get("folded", 0) != int(cen.get("split_fold") or 0) + \
+            int(cen.get("split_folded") or 0):
+        bad.append("the fold's rows do not match the census")
+    if int(cen.get("fold_bytes") or 0) != sum(int(r["tail_bytes"] or 0) for r in rows
+                                              if r["verdict"] == "interior"):
+        bad.append("census fold_bytes does not equal the folds' tails")
     fam_rows = sum(int(cen.get("%s_family" % f) or 0) for f in FAMILIES)
     fam_bytes = sum(int(cen.get("%s_bytes" % f if f != "tail" else "tail_bytes_total") or 0)
                     for f in FAMILIES)
@@ -675,12 +993,15 @@ def check():
         for b in bad[:8]:
             print("FAIL symbol-extents: " + b)
         return 1
-    print("ok   symbol-extents: %d rows, %d continuation(s) (%d head, %d tail, %d cut, %d pad/jump), %d "
-          "byte(s), %d bounded, every repair applied" % (
+    print("ok   symbol-extents: %d rows, %d continuation(s) (%d head, %d tail, %d cut, %d pad/jump, %d "
+          "padding, %d behind, %d follow), %d byte(s), %d bounded, %d fold(s)/%d folded, every repair "
+          "applied" % (
               len(rows), counts.get("continuation", 0), cen.get("head_family", 0),
               cen.get("tail_family", 0), cen.get("complete_family", 0),
               int(cen.get("pad_family") or 0) + int(cen.get("jump_family") or 0),
-              cen.get("continuation_bytes", 0), cen.get("bounded", 0)))
+              cen.get("padding_family", 0), cen.get("behind_family", 0), cen.get("follow_family", 0),
+              cen.get("continuation_bytes", 0), cen.get("bounded", 0),
+              counts.get("interior", 0), counts.get("folded", 0)))
     return 0
 
 
@@ -818,12 +1139,82 @@ def self_check():
             bad.append("render returns nothing")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    # --- the three closes behind a `ret`, the fold, and a head shorter than its own instruction ------
+    im2 = bytearray(b"\xcc" * 0x1000)
+
+    def put2(va, data):
+        im2[va - 0x10000:va - 0x10000 + len(data)] = data
+
+    def r2(va, size):
+        o = va - 0x10000
+        return bytes(im2[o:o + size]) if 0 <= o < len(im2) else b""
+
+    DEC = {
+        0x10100: [(0x10100, 1, "ret")],
+        0x10101: [(0x10101, 3, "lea    ecx,[ecx+0x0]")],
+        0x10200: [(0x10200, 1, "ret")],
+        0x10201: [(0x10201, 3, "sub    esp,0xf0")],
+        0x10300: [(0x10300, 1, "ret")],
+        0x10301: [(0x10301, 3, "mov    ecx,DWORD PTR [ebp-0xc]"), (0x10304, 1, "pop    edi"),
+                  (0x10305, 1, "ret")],
+        0x10400: [(0x10400, 1, "push   ebp"), (0x10401, 2, "mov    ebp,esp"),
+                  (0x10403, 3, "mov    eax,DWORD PTR [ebp+0x8]")],
+        0x10406: [(0x10406, 1, "pop    ebp"), (0x10407, 1, "ret")],
+        0x10502: [(0x10502, 1, "ret")],
+    }
+
+    def d2(blob, base):
+        if base == 0x10500:
+            return [] if len(blob) < 2 else [(0x10500, 2, "mov    eax,DWORD PTR [eax]")]
+        return DEC.get(base, [])
+
+    put2(0x10101, b"\x8d\x49\x00\x90")
+    put2(0x10201, b"\x83\xec\xf0")
+    put2(0x10301, b"\x8b\x4d\xf4\x5f\xc3")
+    put2(0x10400, b"\x55\x8b\xec\x8b\x45\x08\x5d\xc3")
+    put2(0x10500, b"\x8b\x00\xc3")
+    _t, c1, w1 = tail_rule(r2, d2, 0x10100, 0x10110)
+    if w1 != "padding":
+        bad.append("a close followed by alignment filler is a `padding` close (got %s)" % w1)
+    _t, c2, w2 = tail_rule(r2, d2, 0x10200, 0x10210)
+    if w2 != "behind" or c2 is None or c2[0] != 0x10200:
+        bad.append("a close followed by a body's own opening is a `behind` close (got %s)" % w2)
+    _t, c3, w3 = tail_rule(r2, d2, 0x10300, 0x10310)
+    if w3 != "follow" or c3 is None or c3[0] != 0x10305:
+        bad.append("a close followed by the same frame's epilogue runs on to the next close (got %s %s)"
+                   % (w3, c3))
+    fold_rows = [{"va": 0x10400, "name": "FUN_00010400", "size": 6},
+                 {"va": 0x10406, "name": "FUN_00010406", "size": 4},
+                 {"va": 0x10500, "name": "FUN_00010500", "size": 1}]
+    fout, fcen = measure(fold_rows, [], r2, d2, text=(0x10000, 0x11000))
+    fv = {r["row_va"]: r for r in fout}
+    if fv.get("0x00010400", {}).get("verdict") != "interior" or \
+            fv["0x00010400"]["new_size"] != 8:
+        bad.append("a split whose head is a frame reads forward to its close and folds (got %s)"
+                   % fv.get("0x00010400", {}).get("verdict"))
+    if fv.get("0x00010406", {}).get("verdict") != "folded" or \
+            fv["0x00010406"]["target_va"] != "0x00010400":
+        bad.append("a row inside a fold is `folded` into the row above")
+    if fv.get("0x00010500", {}).get("verdict") != "continuation" or fcen.get("undecoded_cut") != 1:
+        bad.append("a row shorter than its own first instruction is read across the cut (got %s)"
+                   % fv.get("0x00010500", {}).get("verdict"))
+    tmp2 = tempfile.mkdtemp()
+    try:
+        p2 = os.path.join(tmp2, "symbol_extents.csv")
+        write_artifact(fout, fcen, p2)
+        again, cen4 = measure([fold_rows[0], fold_rows[2]], [], r2, d2,
+                              known={r["row_va"]: r for r in fout}, text=(0x10000, 0x11000))
+        if cen4.get("split_folded") != 1 or not [r for r in again if r["verdict"] == "folded"]:
+            bad.append("a dropped row's record is carried from the artifact")
+    finally:
+        shutil.rmtree(tmp2, ignore_errors=True)
     if bad:
         for b in bad:
             print("FAIL selftest: " + b)
         return 1
     print("ok   symbol-extents selftest: both tail families, the cut repairs, the pad and `jmp` closes, "
-          "the `bounded` row, the split, the refusals, the carry and both round trips")
+          "the `bounded` row, the split, the refusals, the three closes behind a `ret`, the fold, the "
+          "undecoded cut, the carry and both round trips")
     return 0
 
 
@@ -894,7 +1285,7 @@ def main():
             null_addresses.append(va)
             va += 2048
     rows, cen = measure(read_map(), read_heads(), image.read_va, known=_known(), text=text,
-                        null_trials=len(null_addresses))
+                        null_trials=len(null_addresses), progress=True)
     write_artifact(rows, cen, os.path.join(a.out, "symbol_extents.csv"))
     print("%d rows, %d continuation(s) (%d head, %d tail), %d byte(s); null %d/%d" % (
         len(rows), cen.get("continuation", 0), cen.get("head_family", 0), cen.get("tail_family", 0),
@@ -903,7 +1294,7 @@ def main():
 
 def _known():
     rows, _ = read_artifact()
-    return {r["row_va"]: r for r in rows if r.get("verdict") == "continuation"}
+    return {r["row_va"]: r for r in rows if r.get("verdict") in ("continuation", "interior", "folded")}
 
 
 if __name__ == "__main__":

@@ -6382,3 +6382,18 @@ now accepts the two closes it was reading as refusals -- a first terminator foll
 rows that end where a pad begins `bounded`. What remains is one question, not two: **13 rows are a body the map
 split in two** (7 at the row own end, 6 only visible once the cut instruction is completed), each a `drop`
 repair whose review is whether the second body is interior code, and no rule in this tool can supply it.
+
+**Answered since (2026-11-21, the close read three ways, and the split review is a rule that refuses).** A `ret`
+with code behind it was the refusal that kept 60 tails open; the code behind a close is not the body's own code, so
+it is now read three ways -- alignment filler (**12 rows**), a body's own opening (**7**) or the same frame the
+close's body built, i.e. the shared epilogue an early return jumps into (**3**, and the body runs on to the next
+close) -- which repairs **22 rows and 339 bytes** and leaves **38** refused. The 6 rows objdump could not decode at
+all were heads shorter than their own first instruction, not unreadable rows: read across the cut they join the cut
+family (**254 -> 280**, 2,276 -> 2,627 bytes) and `undecoded` is **0**. The split question is answered as a measured
+zero rather than a review: `tools/symbol-extents.py` reads forward from a fragment's own head to the close that ends
+the body, and of the **14** splits **11** have neither a measured prologue nor a name to start from, while the three
+that do refuse for a stated reason (an unconditional `jmp` with code behind it, which a branch inside the body looks
+like too; and a map row inside the span whose head opens a body). The map holds the result (16,935 functions,
+4,264,156 bytes) and the walk that measures it is **66 s** instead of twelve minutes, one objdump pass per 512 bytes.
+What is left of the entry is 38 refused tails and those 14 splits, each named with its reason in
+`inventory/symbol_extents.csv`.
