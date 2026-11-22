@@ -41,6 +41,16 @@ is inside another instruction is not a body at all (`no-boundary`): no branch ca
 made a fragment inside a body it has no row for.
 
 
+**The fragment's holder is a body the map has no row for, and the gap's own opening is what proves it.**
+A fragment whose head is inside another instruction cannot be a body, and the body that holds it is
+reachable from the gap in front: decoded from the first non-fill byte there, the stream runs an
+instruction **across** the fragment's head and closes behind it, so the gap holds exactly one body. That
+is an `add` row at the opening and a `drop` for every map row inside the span it decodes to -- including
+the fragment -- plus a creation row in `symbols/xbe_overrides.csv`, because that file is what
+`XbePost.java` builds a function from (U37). The opening is not a container just because it is first:
+`0x0040c2c8` opens a 10-byte `jmp` thunk whose body closes 15,690 bytes in front of the fragment it would
+have to hold, and its decode never crosses the fragment's head.
+
 **A `ret` is a boundary too, and the code behind it is read by what it *is*, not only by what it
 reads.** Nothing falls through a `ret` either, so code behind one is reached only by a branch, and the
 rule refuses it because the branch could be the row's own early return. Two shapes settle that without
@@ -63,7 +73,8 @@ fixed addresses in the image's data (a `ret` with only fill after it) finds almo
 `ret`-into-fill is a shape code has and data does not; the hits and trials are in the census row.
 
     tools/symbol-extents.py --xbe "$SG1_DUMP/default.xbe" -o inventory   # measure (needs the image)
-    tools/symbol-extents.py --write-boundaries   # append the resizes to symbols/xbe_boundaries.csv
+    tools/symbol-extents.py --write-boundaries   # append the resizes and adds to symbols/xbe_boundaries.csv
+    tools/symbol-extents.py --write-overrides    # ... and the creation rows an `add` needs
     tools/symbol-extents.py --write-doc docs/SYMBOLS.md
     tools/symbol-extents.py --check-doc docs/SYMBOLS.md
     tools/symbol-extents.py --check              # dump-free gate (in `make ci`)
@@ -78,6 +89,7 @@ import argparse
 import bisect
 import collections
 import csv
+import io
 import os
 import re
 import shutil
@@ -107,7 +119,7 @@ CENSUS = ("text_rows", "sized_rows", "terminator", "short", "undecoded", "undeco
           "follow_bytes", "epilogue_family", "epilogue_bytes", "short_overlap", "short_nostraddle",
           "short_refused", "short_split", "fold_trials", "fold_short",
           "split_noboundary", "fragment_head", "fold_agree", "null_hits", "null_trials", "over", "over_bytes",
-          "refused_over_code", "refused_over_close", "reread")
+          "refused_over_code", "refused_over_close", "reread", "add", "add_bytes")
 # the reason's first token is its family, so a carried row needs no second column
 FAMILIES = ("head", "tail", "pad", "jump", "complete", "padding", "behind", "body", "data", "follow",
             "epilogue")
@@ -801,6 +813,29 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
             head, hclose = containing_head(reader, decode_fn, r["va"], prev_end_of.get(r["va"]))
             if head is not None:
                 cen["fragment_head"] += 1
+            if head is not None and hclose is not None:
+                # The gap in front of the fragment opens on a body, so the fragment is interior code of
+                # a body the map has no row for: the repair is an `add` at that opening, and every map
+                # row that starts inside the body it decodes to drops into it.
+                hend = hclose[0] + hclose[1]
+                holder = {"va": head, "name": "FUN_%08x" % head, "size": 0}
+                cen["nonterm"] += 1
+                cen["split"] += 1
+                cen["split_folded"] += 1
+                cen["add"] += 1
+                cen["add_bytes"] += hend - head
+                out.append(_row(holder, None, "add:holder", hend - head, "0x%08x" % hend, "add", "holder",
+                                "the gap in front of 0x%08x ends its padding at 0x%08x, and a decode from "
+                                "that opening runs an instruction across the fragment's head and closes on "
+                                "`%s` at 0x%08x, %d byte(s) in: the gap holds one body, the map has no row "
+                                "for it, and that is an `add`" % (
+                                    r["va"], head, hclose[2], hend, hend - head),
+                                target=head, close=hclose, new_size=hend - head))
+                out.append(_row(r, last, end_kind, 0, "", "folded", "folded",
+                                note + ", and the gap's opening at 0x%08x holds it, so it is interior code "
+                                "of the body an `add` row at that opening creates" % head, target=head))
+                cover.append((hend, head))
+                return
             out.append(_row(r, last, end_kind, 0, "", "split", "no-boundary",
                             note + ", so the map split one body in two; but no instruction ends at this "
                             "row's head -- the bytes in front of it are inside one -- so nothing can "
@@ -921,6 +956,14 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         nxt = starts[k] if k < len(starts) else None
         held = known.get(r["va"]) or known.get("0x%08x" % r["va"])
         if held and held.get("new_size") and int(held["new_size"]) == r["size"]:
+            if (held.get("verdict") or "") == "add":
+                # the holder is a row now, so its own decode ends on a terminator and no measurement
+                # re-derives it: carry the record, and count it as the terminator row it is
+                cen["terminator"] += 1
+                cen["add"] += 1
+                cen["add_bytes"] += int(held.get("new_size") or 0)
+                out.append(dict(held))
+                continue
             if (held.get("verdict") or "") == "interior":
                 # a fold's head row is still in the map: carry the fold itself, not a continuation, or the
                 # census would grow a `fold` family the header has no column for
@@ -1365,24 +1408,40 @@ def render(rows, cen):
                 len(folds), n("fold_bytes"), len(folded), n("fold_agree"), n("fold_trials"),
                 pct(n("fold_agree"), n("fold_trials"))))
         lines.append("")
+    holders = [r for r in rows if r["verdict"] == "add"]
+    if holders:
+        held = [r for r in rows if r["verdict"] == "folded" and r.get("target_va") and
+                int(r["target_va"], 16) in {int(h["row_va"], 16) for h in holders}]
+        big = max(holders, key=lambda r: int(r["new_size"] or 0))
+        lines.append(
+            "**A gap that holds a fragment holds one body, and that body becomes a row.** %d holder(s) "
+            "(%s): the gap's own opening, proved by a decode from it that runs an instruction **across** "
+            "the fragment's head and closes behind it, which is what separates a holder from the first "
+            "non-fill byte of a hole. The repair is an `add` row at the opening (**%d bytes**, the largest "
+            "`%s` at %s bytes), a `drop` for each of the **%d map rows** inside the span it decodes to -- a "
+            "body is entered by a `call` or a jump, never by falling into the middle of its neighbour's "
+            "instruction stream, so a row that starts there is interior code -- and a creation row in "
+            "`symbols/xbe_overrides.csv`, because that file is what `XbePost.java` builds a function from "
+            "and an `add` alone is a body a fresh import cannot see (U37)."
+            % (len(holders), ", ".join("`%s`" % h["row_va"] for h in holders), n("add_bytes"),
+               big["row_va"], big["new_size"], len(held)))
+        lines.append("")
     if n("split_noboundary") or n("split"):
         rows_split = [r for r in rows if r["verdict"] == "split"]
         rows_nobd = [r for r in rows_split if r["reason"] == "no-boundary"]
-        heads = sorted({r["target_va"] for r in rows_nobd if r.get("target_va")})
+        named = [r for r in rows_nobd if r.get("target_va")]
+        rest = ("%d of them name the holder their gap opens on (%s), which is an `add` row above."
+                % (len(named), ", ".join("`%s`" % r["target_va"] for r in named)) if named
+                else "None of them is held: the gap in front of each opens on code whose own decode "
+                     "closes in front of the fragment -- a thunk, or a body that ends before it -- so "
+                     "the body that holds it is not the gap's opening.")
         lines.append(
             "**A split whose head is inside another instruction is not a split at all.** %d rows end "
             "exactly where the next map row starts, and no instruction ends at their head -- the bytes "
             "in front of it are the middle of one -- so nothing can branch to it and it is a fragment "
-            "the map made inside a body it has no row for. That body is not unmeasured: decoded from the "
-            "previous row's end, **%d of the %d fragments** sit in a gap whose first code byte **holds "
-            "them** -- a decode from that opening runs an instruction across the fragment's head and its "
-            "body closes behind it (%s), which is what separates a holder from the first non-fill byte of "
-            "a hole. Their bytes are "
-            "left where they are: a `drop` needs a containing row, and the gap has none, which is the "
-            "`add` repair this rule does not write. %d further splits end on "
-            "a real boundary and are left to the review above."
-            % (len(rows_nobd), n("fragment_head"), len(rows_nobd), ", ".join("`%s`" % h for h in heads)
-               or "none found", len(rows_split) - len(rows_nobd)))
+            "the map made inside a body it has no row for. %s %d further splits end on a real boundary "
+            "and are left to the review above."
+            % (len(rows_nobd), rest, len(rows_split) - len(rows_nobd)))
         lines.append("")
     lines.append(
         "**The repairs are in the file, not in this tool's output.** `--write-boundaries` appends one "
@@ -1469,7 +1528,8 @@ def evidence_for(r):
 
 
 def write_boundaries(rows, path=BOUNDARIES):
-    """Append one `resize` row per continuation and per fold, and one `drop` per folded row."""
+    """Append one `resize` row per continuation and per fold, one `drop` per folded row, and one `add`
+    per holder -- a gap body that holds a fragment now gets a row of its own."""
     with open(path, newline="", encoding="utf-8") as fh:
         text = fh.read()
     have = {b["address"]: b for b in read_boundaries(path)}
@@ -1487,7 +1547,9 @@ def write_boundaries(rows, path=BOUNDARIES):
                     # the row was a continuation in an earlier measurement and is interior code of a
                     # fold now: the resize it carried is superseded by the drop, so its line is
                     # rewritten rather than refused
-                    repl[va] = '0x%08x,drop,0x%08x,,"%s"' % (
+                    # keyed by the address the file prints, not by the integer: the rewrite below matches
+                    # the line's own first field, and a dict keyed by `va` never matched it
+                    repl['0x%08x' % va] = '0x%08x,drop,0x%08x,,"%s"' % (
                         va, target,
                         "the body at 0x%08x reads forward from its own head to a close this row starts "
                         "inside, so this row is interior code of it" % target)
@@ -1498,6 +1560,22 @@ def write_boundaries(rows, path=BOUNDARIES):
             lines.append('0x%08x,drop,0x%08x,,"%s"' % (
                 va, target, ("the body at 0x%08x reads forward from its own head to a close this row "
                              "starts inside, so this row is interior code of it" % target)))
+            added += 1
+            continue
+        if r["verdict"] == "add":
+            va, size = int(r["row_va"], 16), int(r["new_size"])
+            b = have.get(va)
+            if b:
+                if b["action"] != "add" or b["size"] != size:
+                    bad.append("%s already carries a %s to %s" % (r["row_va"], b["action"], b["size"]))
+                else:
+                    kept += 1
+                continue
+            lines.append('0x%08x,add,FUN_%08x,%d,"%s"' % (
+                va, va, size, ("%s; the holder is the gap's own opening at 0x%08x, and a decode from it "
+                               "runs an instruction across the fragment's head and closes on `%s` at %s, "
+                               "%d byte(s) in, so the gap holds one body" % (
+                                   REPAIRS[4], va, r["close_insn"], r["close_va"], size)).replace('"', "'")))
             added += 1
             continue
         if r["verdict"] not in ("continuation", "interior", "over"):
@@ -1522,13 +1600,16 @@ def write_boundaries(rows, path=BOUNDARIES):
                 line = repl[addr] + ("\r\n" if line.endswith("\r\n") else "\n")
             out.append(line)
         text = "".join(out)
-    if lines:
-        if not text.endswith(("\n", "\r\n")):
-            text += "\r\n"
-        text += "\r\n".join(line.replace("\r", "") for line in lines) + "\r\n"
+    if lines or repl:
+        # a rewrite alone still has to be written: the `resize -> drop` replacement of a row an earlier
+        # measurement called a continuation is the only change when the file is otherwise current
+        if lines:
+            if not text.endswith(("\n", "\r\n")):
+                text += "\r\n"
+            text += "\r\n".join(line.replace("\r", "") for line in lines) + "\r\n"
         with open(path, "w", newline="", encoding="utf-8") as fh:
             fh.write(text)
-    print("boundaries: %d resize row(s) added, %d already present" % (added, kept))
+    print("boundaries: %d row(s) added, %d already present" % (added, kept))
     return added, kept
 
 
@@ -1569,8 +1650,31 @@ def write_overrides(rows, path=OVERRIDES):
     if moved:
         with open(path, "w", newline="", encoding="utf-8") as fh:
             fh.write("".join(lines))
-    print("overrides: %d function_size row(s) followed their row" % moved)
-    return moved
+        with open(path, newline="", encoding="utf-8") as fh:
+            lines = fh.read().splitlines(keepends=True)
+    # An `add` repair is a function `XbePost.java` builds from this file, so the holder needs a creation
+    # row or a fresh import cannot see it (U37). The row is written by `csv.writer`, never by string
+    # concatenation: the evidence holds commas and a hand-built row shifts every column behind it.
+    have = {row.get("address") for row in read_csv(path)}
+    made = 0
+    for r in rows:
+        if r["verdict"] != "add" or r["row_va"] in have:
+            continue
+        if lines and not lines[-1].endswith(("\n", "\r\n")):
+            lines[-1] += "\r\n"
+        buf = io.StringIO()
+        csv.writer(buf, lineterminator="\r\n").writerow([
+            r["row_va"], "FUN_%08x" % int(r["row_va"], 16),
+            "added to the map by symbols/xbe_boundaries.csv: %s" % r["note"],
+            "", "", "", "", "", "", r["new_size"]])
+        lines.append(buf.getvalue())
+        made += 1
+    if made:
+        with open(path, "w", newline="", encoding="utf-8") as fh:
+            fh.write("".join(lines))
+    print("overrides: %d function_size row(s) followed their row, %d creation row(s) added"
+          % (moved, made))
+    return moved + made
 
 
 def check():
@@ -1582,6 +1686,12 @@ def check():
     bounds = {b["address"]: b for b in read_boundaries()}
     repairs = {a: b for a, b in bounds.items() if b["action"] == "resize"}
     drops = {a: b for a, b in bounds.items() if b["action"] == "drop"}
+    creations = set()
+    for row in read_csv(OVERRIDES):
+        try:
+            creations.add(int(row["address"], 16))
+        except (KeyError, TypeError, ValueError):
+            continue
     counts = collections.Counter(r["verdict"] for r in rows)
     for r in rows:
         va = int(r["row_va"], 16)
@@ -1601,6 +1711,22 @@ def check():
             elif not (target["va"] <= va < target["va"] + target["size"]):
                 bad.append("%s is folded into %s, whose span does not hold it" % (r["row_va"],
                                                                                  r["target_va"]))
+            continue
+        if r["verdict"] == "add":
+            want = int(r["new_size"])
+            b = bounds.get(va)
+            if not b or b["action"] != "add":
+                bad.append("%s is an `add` repair with no `add` row in symbols/xbe_boundaries.csv"
+                           % r["row_va"])
+            elif b["size"] != want:
+                bad.append("%s adds %d bytes, the artifact measured %d" % (r["row_va"], b["size"], want))
+            if not row:
+                bad.append("%s is an `add` repair but the map has no row there" % r["row_va"])
+            elif row["size"] != want:
+                bad.append("%s is %d in the map, the artifact measured %d" % (r["row_va"], row["size"], want))
+            if va not in creations:
+                bad.append("%s has no row in symbols/xbe_overrides.csv, so a fresh import would not "
+                           "create it" % r["row_va"])
             continue
         if not row:
             bad.append("%s has no row in the map" % r["row_va"])
@@ -1626,7 +1752,8 @@ def check():
     if cen.get("continuation_bytes") != sum(int(r["tail_bytes"] or 0) for r in rows
                                             if r["verdict"] == "continuation"):
         bad.append("census continuation_bytes does not equal the rows' tails")
-    if cen.get("nonterm", 0) + cen.get("short", 0) + cen.get("undecoded", 0) != len(rows):
+    if cen.get("nonterm", 0) + cen.get("short", 0) + cen.get("undecoded", 0) + \
+            cen.get("add", 0) != len(rows):
         bad.append("census population does not equal the %d rows" % len(rows))
     if counts.get("interior", 0) + counts.get("folded", 0) != int(cen.get("split_fold") or 0) + \
             int(cen.get("split_folded") or 0):
@@ -1671,7 +1798,13 @@ def check():
         bad.append("the short sub-families exceed the short population")
     if int(cen.get("short_split") or 0) > int(cen.get("split") or 0):
         bad.append("the cut splits exceed the split population")
-    if int(cen.get("fragment_head") or 0) > int(cen.get("split_noboundary") or 0):
+    if int(cen.get("add") or 0) != counts.get("add", 0):
+        bad.append("census says %s holders, %d rows carry that verdict" % (cen.get("add"),
+                                                                           counts.get("add", 0)))
+    if int(cen.get("add_bytes") or 0) != sum(int(r["new_size"] or 0) for r in rows
+                                            if r["verdict"] == "add"):
+        bad.append("census add_bytes does not equal the holders' extents")
+    if int(cen.get("fragment_head") or 0) > int(cen.get("split_noboundary") or 0) + counts.get("add", 0):
         bad.append("the %s fragments with a measured holder exceed the %s fragments"
                    % (cen.get("fragment_head"), cen.get("split_noboundary")))
     map_starts = {r["va"] for r in read_map() if r["size"]}
@@ -1723,7 +1856,10 @@ def self_check():
             {"va": 0x4000, "name": "FUN_00004000", "size": 0x10},   # ends on live code, nothing after
             {"va": 0x5500, "name": "FUN_00005500", "size": 0x10},   # a size that runs into the next row
             {"va": 0x5508, "name": "FUN_00005508", "size": 0x10},   # the row it runs into
-            {"va": 0x3800, "name": "FUN_00003800", "size": 0x10}]   # an early return into its own epilogue
+            {"va": 0x3800, "name": "FUN_00003800", "size": 0x10},  # an early return into its own epilogue
+            {"va": 0x4200, "name": "FUN_00004200", "size": 0x10},  # a row that closes, before the gap
+            {"va": 0x4220, "name": "FUN_00004220", "size": 0x10},  # a fragment the gap's opening holds
+            {"va": 0x4230, "name": "FUN_00004230", "size": 0x10}]  # the row the fragment abuts
     heads = [{"va": 0x3010, "size": 3, "boundary": "start", "verdict": "island",
               "prologue": "bare-ret", "tail": "pad"}]
     im = bytearray(b"\xcc" * (0x6000 - 0x2000))
@@ -1757,6 +1893,10 @@ def self_check():
     # by an early `ret` into the body's own epilogue (`pop ebx`, `add esp,0x10`, `ret`)
     put(0x3800, b"\x53" + b"\x81\xec\x10\x00\x00\x00" + b"\x90" * 9)
     put(0x3810, b"\xc3" + b"\x5b" + b"\x83\xc4\x10" + b"\xc3" + b"\xcc" * 8)
+    # the gap at 0x4210 opens on a body whose first instruction runs across the fragment head at 0x4220
+    # and closes on `ret` at 0x4224, with fill behind it up to the next row
+    put(0x4200, b"\x90" * 0x0f + b"\xc3")
+    put(0x4210, b"\x8b\x43\x04" + b"\x0f" * 16 + b"\xc3" + b"\xcc" * 16)
 
     def reader(va, size):
         return bytes(im[va - 0x2000:va - 0x2000 + size]) if va >= 0x2000 else b""
@@ -1799,6 +1939,17 @@ def self_check():
         if base == 0x3810:
             return [(0x3810, 1, "ret"), (0x3811, 1, "pop    ebx"), (0x3812, 3, "add    esp,0x10"),
                     (0x3815, 1, "ret")]
+        if base == 0x4210:
+            # a 20-byte load that spans the fragment head at 0x4220, then the body's close
+            return [(0x4210, 20, "mov    eax,DWORD PTR [ebx+0x4]"), (0x4224, 1, "ret")]
+        if base == 0x4225:
+            return [(0x4225, 1, "int3")]
+        if base == 0x4200:
+            return [(0x4200, 15, "nop"), (0x420f, 1, "ret")]
+        if base == 0x4220:
+            return [(0x4220, 0x10, "mov    eax,DWORD PTR [ebx+0x4]")]
+        if base == 0x4230:
+            return [(0x4230, 15, "nop"), (0x423f, 1, "ret")]
         if base == 0x3811:
             # the run behind the early return: the body's own epilogue
             return [(0x3811, 1, "pop    ebx"), (0x3812, 3, "add    esp,0x10"), (0x3815, 1, "ret"),
@@ -1865,8 +2016,18 @@ def self_check():
         bad.append("a row whose end is the next row's start is a split")
     if verdicts.get("0x00004000", {}).get("verdict") != "refused":
         bad.append("a row with no close behind it is refused")
-    if cen.get("terminator") != 2:
-        bad.append("the two rows that close on `ret` must not enter the population")
+    if verdicts.get("0x00004210", {}).get("verdict") != "add" or \
+            verdicts["0x00004210"]["new_size"] != 0x15:
+        bad.append("a fragment whose gap opens on a holding body gets that body as an `add` (got %s %s)"
+                   % (verdicts.get("0x00004210", {}).get("verdict"),
+                      verdicts.get("0x00004210", {}).get("new_size")))
+    if verdicts.get("0x00004220", {}).get("verdict") != "folded" or \
+            verdicts["0x00004220"]["target_va"] != "0x00004210":
+        bad.append("the fragment the holder runs across is dropped into it")
+    if int(cen.get("add") or 0) != 1 or int(cen.get("add_bytes") or 0) != 0x15:
+        bad.append("the holder family counts the row and its extent")
+    if cen.get("terminator") != 4:
+        bad.append("the four rows that close on `ret` must not enter the population")
     tmp = tempfile.mkdtemp()
     try:
         path = os.path.join(tmp, "symbol_extents.csv")
@@ -1885,6 +2046,12 @@ def self_check():
                       known={r["row_va"]: r for r in out}, text=(0x4000, 0x6000))
         if cut[0] and [r for r in cut[0] if r["row_va"] == "0x00005000"][0]["reason"] != "complete-fill":
             bad.append("a carried cut repair keeps its family")
+        addrec = [r for r in out if r["verdict"] == "add"][0]
+        foldrec = [r for r in out if r["verdict"] == "folded" and r["row_va"] == "0x00004220"][0]
+        kept, cen4 = measure([{"va": 0x4210, "name": "FUN_00004210", "size": 0x15}], [], reader, fake,
+                             known={"0x00004210": addrec, "0x00004220": foldrec}, text=(0x4000, 0x6000))
+        if not [r for r in kept if r["verdict"] == "add"] or int(cen4.get("add") or 0) != 1:
+            bad.append("a holder the map now carries is carried, not re-measured")
         if set(cen) - set(CENSUS):
             bad.append("census holds keys the header does not write: %s" % ", ".join(sorted(set(cen) - set(CENSUS))))
         if not render(back, cen2):
@@ -2127,7 +2294,8 @@ def self_check():
     print("ok   symbol-extents selftest: both tail families, the cut repairs, the pad and `jmp` closes "
           "(a tail call, a branch inside the gap, and a refusal), the `bounded` row, the split, the "
           "refusals, the three closes behind a `ret` (a filler no-op, a whole body, and bytes no ring-3 "
-          "program can run), the fold and its frame test, the undecoded cut, the row whose size runs "
+          "program can run), the fold and its frame test, the fragment a gap opening holds and the "
+          "`add` it earns, the undecoded cut, the row whose size runs "
           "into the next one, the cut the truncated decode hides, a body that closes past 64 bytes, "
           "the carry and both round trips")
     return 0
@@ -2210,7 +2378,9 @@ def main():
 def _known():
     rows, _ = read_artifact()
     return {r["row_va"]: r for r in rows
-            if r.get("verdict") in ("continuation", "interior", "folded", "over")}
+            # every family the artifact is the only record of must be here: a repaired row is gone from
+            # the map, or ends on a terminator, so nothing else can re-derive its record
+            if r.get("verdict") in ("continuation", "interior", "folded", "over", "add")}
 
 
 if __name__ == "__main__":

@@ -1571,7 +1571,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00059650,FUN_00059650,211,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00059250
 0x000597f0,FUN_000597f0,367,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00059250
 0x000599e0,FUN_000599e0,1591,(unnamed),Core,propagated,locality,1,2.00,1.000,0x00059250
-0x0005a020,FUN_0005a020,2385,(unnamed),(unnamed),none,,,,,
+0x0005a020,FUN_0005a020,2411,(unnamed),(unnamed),none,,,,,
 0x0005a990,Core_UnMisc,3190,Core,Core,assert,,0,,,
 0x0005b610,FUN_0005b610,67,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0005b730
 0x0005b660,FUN_0005b660,202,(unnamed),Core,propagated,locality,1,2.00,1.000,0x0005b730
@@ -4482,7 +4482,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x00132a80,GameEngine_vt39,141,Engine,Engine,assert,,0,,,
 0x00132b10,FUN_00132b10,852,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00132a80
 0x00132e70,FUN_00132e70,979,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00132a80
-0x00133250,FUN_00133250,4429,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00132a80
+0x00133250,FUN_00133250,4457,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x00132a80
 0x001343c0,FUN_001343c0,518,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001345d0
 0x001345d0,Engine_UnGame,188,Engine,Engine,assert,,0,,,
 0x00134690,FUN_00134690,311,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x001345d0
@@ -5324,7 +5324,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0017e350,FUN_0017e350,343,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0017e210
 0x0017e4b0,FUN_0017e4b0,50,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0017e4f0
 0x0017e4f0,Ladder_vt123,58,Engine,Engine,assert,,0,,,
-0x0017e530,FUN_0017e530,2579,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0017e4f0
+0x0017e530,FUN_0017e530,2586,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0017e4f0
 0x0017ef50,Door_vt126,338,Engine,Engine,assert,,0,,,
 0x0017f0b0,FUN_0017f0b0,349,(unnamed),Engine,propagated,locality,1,2.00,1.000,0x0017ef50
 0x0017f2b0,LiftCenter_vt129,399,Engine,Engine,assert,,0,,,
@@ -9282,8 +9282,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0030ff20,Electrocutor_lookup_4,78,(other named),(other named),none,,,,,
 0x0030ff70,SGOrder_lookup_4,78,(other named),(other named),none,,,,,
 0x0030ffc0,BotEnemy_lookup_4,78,(other named),stargatevehicles,propagated,locality,1,2.00,1.000,0x003107b0
-0x00310020,FUN_00310020,15,(unnamed),stargatevehicles,propagated,locality,1,2.00,1.000,0x003107b0
-0x00310030,FUN_00310030,1,(unnamed),stargatevehicles,propagated,locality,1,2.00,1.000,0x003107b0
+0x00310010,FUN_00310010,78,(unnamed),stargatevehicles,propagated,locality,1,2.00,1.000,0x003107b0
 0x00310060,SGFontInfo_lookup_4,78,(other named),stargatevehicles,propagated,locality,1,2.00,1.000,0x003107b0
 0x003100b0,SGScreenBloom_lookup_4,78,(other named),stargatevehicles,propagated,locality,1,2.00,1.000,0x003107b0
 0x00310150,DeathGlider_lookup_4,78,(other named),stargatevehicles,propagated,locality,1,2.00,1.000,0x003107b0
@@ -11640,19 +11639,7 @@ address,name,size,asserted_module,module,method,rule,depth,votes,share,evidence
 0x0039f610,FUN_0039f610,89,(unnamed),(unnamed),none,,,,,
 0x0039f670,FUN_0039f670,89,(unnamed),(unnamed),none,,,,,
 0x0039f6d0,FUN_0039f6d0,2293,(unnamed),(unnamed),none,,,,,
-0x003a0020,FUN_003a0020,25,(unnamed),(unnamed),none,,,,,
-0x003a003a,FUN_003a003a,9,(unnamed),(unnamed),none,,,,,
-0x003a0044,FUN_003a0044,19,(unnamed),(unnamed),none,,,,,
-0x003a005a,FUN_003a005a,6,(unnamed),(unnamed),none,,,,,
-0x003a0061,FUN_003a0061,3,(unnamed),(unnamed),none,,,,,
-0x003a0064,FUN_003a0064,2,(unnamed),(unnamed),none,,,,,
-0x003a0067,FUN_003a0067,1,(unnamed),(unnamed),none,,,,,
-0x003a0068,FUN_003a0068,1,(unnamed),(unnamed),none,,,,,
-0x003a0069,FUN_003a0069,2,(unnamed),(unnamed),none,,,,,
-0x003a006d,FUN_003a006d,2,(unnamed),(unnamed),none,,,,,
-0x003a0070,FUN_003a0070,2,(unnamed),(unnamed),none,,,,,
-0x003a0073,FUN_003a0073,5,(unnamed),(unnamed),none,,,,,
-0x003a0079,FUN_003a0079,1254,(unnamed),(unnamed),none,,,,,
+0x0039ffd0,FUN_0039ffd0,1423,(unnamed),(unnamed),none,,,,,
 0x003a0560,FUN_003a0560,67,(unnamed),(unnamed),none,,,,,
 0x003a05b0,FUN_003a05b0,169,(unnamed),(unnamed),none,,,,,
 0x003a0660,FUN_003a0660,220,(unnamed),(unnamed),none,,,,,
