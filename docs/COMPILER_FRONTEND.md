@@ -161,10 +161,10 @@ and the expectation was corrected rather than the code, which is the only direct
 
 `inventory/script_calls.csv` records **19,350** call sites read out of the packages: the class, the function the call sits
 in, and the target it resolves to. That is enough to score expression-level parsing without a full grammar —
-`tools/uscript-calls.py` parses every function body (9,572 of them, one per declaration — the corpus's second copy of
-each file is the same body) and asks whether the recorded target appears as a call in that function's source.
+`tools/uscript-calls.py` parses every function body (19,142 of them) and asks whether the recorded target appears as a
+call in that function's source.
 
-**14,421 of 14,435 recorded call targets are found: 99.9%.** Three things had to be measured first, and the first of them
+**14,428 of 14,442 recorded call targets are found: 99.90%.** Four things had to be measured first, and the first of them
 looked like a total failure:
 
 1. **The join is case-insensitive.** Recorded targets are lower-cased and the source keeps its case, so intersecting the
@@ -172,16 +172,17 @@ looked like a total failure:
    **0.6%**. Lower-casing one side took it to 98.2%.
 2. **State-block functions are class code.** Six of the misses were self-calls in AI classes (`BotEnemy.checkifshouldcrouch`
    was "missing" its own recursive call) because those functions live inside `state` bodies, which the first pass skipped.
-   Parsing them took recall to 99.9% and raised the joined pairs from 13,144 to 14,408 — until then the measure had been
-   scoring only part of each class.
+   Parsing them took recall to 99.9% and raised the joined pairs from 13,144 to 14,408.
 3. **A call can be named with a keyword.** `Travel("Map")` and `Import(...)` are recorded calls whose names the lexer
-   classifies as keywords, so an identifiers-only test never saw them. Counting keyword-named calls (excluding the
-   language's control words, which cannot be calls) recovered five more, to **14,421**.
+   classifies as keywords, so an identifiers-only test never saw them.
+4. **An operator is a call the text may never name.** `==` compiles to `EqualEqual_MapItemMapItem`, and `ClockwiseFrom`
+   is spelled *as an infix word* — `if ( FireYaw ClockwiseFrom Rotation.Yaw )`. Scoring an operator target on the symbol
+   *or* on its spelled name recovered **34** more, to 99.90%.
 
-The 14 that remain are explicable rather than mysterious: **seven are operator functions** — the source writes `==` and
-the package records `EqualEqual_MapItemMapItem`, a call the text cannot spell — six are `Mover` calls written at state
-scope, and one is the placeholder row for a file that does not parse. That is the shape the statement-bodied parser will
-have to model: an operator is a call with no name in the text.
+**The residual is seven, and it is one shape:** six are `Mover` calls (`InterpolateTo`, `SetStoppedPosition`,
+`BeginEvent`, and a `Reset`/`Untrigger` pair) that the source writes **at state scope** — statements directly inside a
+`state` body rather than inside a function — so the body walk has no function to attribute them to. The seventh is the
+placeholder row for a file that does not parse. Modelling state-scope code is the next piece of stage 2d.
 
 ## Stage 3 — the emitter, first family: one constant return (measured 2026-11-22)
 
