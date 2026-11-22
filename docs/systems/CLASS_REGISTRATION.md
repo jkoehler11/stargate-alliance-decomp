@@ -1991,7 +1991,7 @@ corroborates -- it is the same reference, one level out.
 | `0x00034160` | 25 | `FMallocError::Init` | FMallocError::Init | Called %s before memory init |
 | `0x00034180` | 25 | `FMallocError::Exit` | FMallocError::Exit | Called %s before memory init |
 
-**2199 heads decode as 1879 bodies and 239 islands; of the bodies 0 hold an assert path, 105 a printable string and 487 a call into a body the map names, and 1732 hold none of the three. The other 81 heads the census lists hold no extent at all -- 81 of the 2199 -- so a per-body read can never visit them.**
+**2200 heads decode as 1880 bodies and 239 islands; of the bodies 0 hold an assert path, 105 a printable string and 487 a call into a body the map names, and 1733 hold none of the three. The other 81 heads the census lists hold no extent at all -- 81 of the 2200 -- so a per-body read can never visit them.**
 
 **Control: 1336 of the map's 16933 bodies hold an assert site, and 1278 of the 1326 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 48 reference no assert path at all -- so the name is that reference read one level out.**
 
@@ -3338,13 +3338,13 @@ the map's `<Module>_<File>` names are built from.
 | `operand-in-head` | 2 | 6594 | an unnamed gap body's instruction loads it |
 | `table-in-row` | 3 | 169 | a data word inside a named body (a jump or dispatch table) |
 | `table-in-gap` | 1 | 535 | a data word in a gap and inside no body at all |
-| `silent` | 415 | 46972 | nothing in `.text` spells the address |
+| `silent` | 416 | 47053 | nothing in `.text` spells the address |
 
 The modules the `operand-in-row` owners belong to: ?=52 Core=2 head=2 XboxAudio=1 gap=1 (the `?` entries are owners the map has no name for, and the two `head`/`gap` entries are the other two families).
 
 **The 199 names this read derived are rows of the symbol map, and the record outlives the population.** The add (`--apply-symbols`) wrote them into `symbols/xbox_functions.csv` at the census's own address and size, and `inventory/gap_walker_names.csv` is that add's own record. The census re-read after the add no longer sees these bodies -- they are map rows, not gap heads, so they have left this population -- which is why the `derived_name` column above now reads empty while the class each copy binds is still on the record. `--check-symbols` is the dump-free gate in `make ci`: a recorded name that leaves the map, or an address the map holds under another name or size, fails the build.
 
-**7 of these bodies are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **2** of the 7 slots are consecutive dword globals at `0x005ccadc`..`0x005ccae0` -- one static array of 2 function pointers, written entry by entry by the registration body at startup.** The remaining 5 are singletons spread over 7 distinct globals. A body reachable only through that array cannot be called by a name in code, and nothing in the image spells the array's own meaning, so the census places them and does not name them -- what it can now say is which 2 of the 473 bodies nothing names are entries of it.
+**7 of these bodies are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **2** of the 7 slots are consecutive dword globals at `0x005ccadc`..`0x005ccae0` -- one static array of 2 function pointers, written entry by entry by the registration body at startup.** The remaining 5 are singletons spread over 7 distinct globals. A body reachable only through that array cannot be called by a name in code, and nothing in the image spells the array's own meaning, so the census places them and does not name them -- what it can now say is which 2 of the 474 bodies nothing names are entries of it.
 
 | gap body | size | family | owner | the string in it |
 |---|---|---|---|---|
@@ -3388,9 +3388,9 @@ The modules the `operand-in-row` owners belong to: ?=52 Core=2 head=2 XboxAudio=
 | `0x000ad8c0` | 61 | `operand-in-row` | FUN_0008ded0 | - |
 | `0x000bdaf0` | 43 | `table-in-row` | Core_UnObjBas | - |
 | `0x000ad920` | 41 | `operand-in-row` | FUN_0008ded0 | - |
-| ... | | | 433 more | |
+| ... | | | 434 more | |
 
-**Of the 2118 decoded heads, 473 bodies and 99251 bytes nothing names -- and 71 islands besides.** The census's pointer channel looks for a dword *outside* the section, so a switch table laid behind a body and a `mov eax,<fn>` that hands a pointer to a caller are invisible to it by construction. Read inside, **58** of the 473 are referenced from `.text` -- **54** by an instruction that carries the address and **6** by a data word -- and **415** (46972 bytes) are spelled nowhere in the section at all.
+**Of the 2119 decoded heads, 474 bodies and 99332 bytes nothing names -- and 71 islands besides.** The census's pointer channel looks for a dword *outside* the section, so a switch table laid behind a body and a `mov eax,<fn>` that hands a pointer to a caller are invisible to it by construction. Read inside, **58** of the 474 are referenced from `.text` -- **54** by an instruction that carries the address and **6** by a data word -- and **416** (47053 bytes) are spelled nowhere in the section at all.
 
 **The control is the map's own rows: 466 of its 16933 bodies are spelled inside `.text`, 295 by an operand and 183 by a table word** (2 of them by an operand inside their own span, which is recursion or a self-laid table and counted apart). A row is in the map because something names it -- a symbol, a slot, a `push` -- and half of them also handle their own address in code, so the channel is a floor on this population too. A random gap byte's address is spelled in `.text` **23 of 2000** times (1.1%), and no family below is smaller than that rate.
 
@@ -3880,11 +3880,11 @@ a `verdict` that is the answer rather than a name -- and it adds nothing to the 
 references has no owner to take a name from.
 
 <!-- generated:silent-bodies -->
-**415 bodies, 46972 bytes, and three answers rather than one** -- the residue `tools/gap-body-families.py` calls silent, read at its own bytes (`inventory/silent_bodies.csv`).
+**416 bodies, 47053 bytes, and three answers rather than one** -- the residue `tools/gap-body-families.py` calls silent, read at its own bytes (`inventory/silent_bodies.csv`).
 
-**0 are the continuation of the named row above them**: no padding between the two and the row's last instruction is not a terminator, so the extents are one function's code and the map's size column stops short (0 bytes of it). **74 are a second address of a body the artifacts already hold** -- 20 byte-identical groups of at least 8 bytes, from a 10-address body down to pairs -- and **341 (42337 bytes) are unique**: no twin, no padding-free predecessor, and nothing anywhere in the image that spells their address.
+**0 are the continuation of the named row above them**: no padding between the two and the row's last instruction is not a terminator, so the extents are one function's code and the map's size column stops short (0 bytes of it). **74 are a second address of a body the artifacts already hold** -- 20 byte-identical groups of at least 8 bytes, from a 10-address body down to pairs -- and **342 (42418 bytes) are unique**: no twin, no padding-free predecessor, and nothing anywhere in the image that spells their address.
 
-**The population is unreachable by any absolute reference, and the control says the channel works**: the address of **0 of 415** of the population occurs somewhere outside `.text`, against **5125 of 16933** map rows (30.3%) -- and the same read finds a resolving section-relative table entry for **20** of the population against **497 of 16933** map rows (2.9%), of which **0** sit in a run of three consecutive entries resolving into one function. So a relative `switch` table is not the missing channel either: one resolving dword among unrelated bytes is the base rate, not a table.
+**The population is unreachable by any absolute reference, and the control says the channel works**: the address of **0 of 416** of the population occurs somewhere outside `.text`, against **5125 of 16933** map rows (30.3%) -- and the same read finds a resolving section-relative table entry for **20** of the population against **497 of 16933** map rows (2.9%), of which **0** sit in a run of three consecutive entries resolving into one function. So a relative `switch` table is not the missing channel either: one resolving dword among unrelated bytes is the base rate, not a table.
 
 | bytes | what the body does | bodies here | addresses each | one of them |
 |---:|---|---:|---:|---|
@@ -3911,7 +3911,7 @@ references has no owner to take a name from.
 
 **The copied shapes are one vector-math header**: three-float dot product 16, three-float subtract 9, three-float scale in place 8, three-float cross product 8, zero-init (3 fields) 7, three-float add scaled 7, three-float normalize (sqrt + divide) 4, virtual-slot wrapper 2, struct copy (16 dwords) 1, zero-init (9 fields) 1 -- the float3 operators a `static` inline in a header compiles once per object file and inlines at every call site, which is exactly why the out-of-line copies are the bodies nothing reaches.
 
-**The 341 unique bodies are helper-shaped, not class-shaped**: `arg-load` 126, `push-reg` 84, `sse-load` 21, `getter-disp8` 20, `global-load-eax` 15, `self-return` 12, `global-load-ecx` 9, `seh` 9, and 11 of the 415 population are 13 bytes or shorter. **173 call at least one body the map names** and 242 call none, so the larger part of the population reaches the engine's own functions while no table reaches it. **31 push a printable literal**, and it is an assert message rather than a symbol -- `[LIPSinc]: LIPSincShutdownEditor`, `Unpopulated box!`, `FlyingPathNode:` -- so the literal channel places the subsystem and never the name, which is why nothing here is added to the symbol map.
+**The 342 unique bodies are helper-shaped, not class-shaped**: `arg-load` 126, `push-reg` 84, `sse-load` 21, `getter-disp8` 20, `global-load-eax` 15, `self-return` 12, `global-load-ecx` 9, `seh` 9, and 11 of the 416 population are 13 bytes or shorter. **173 call at least one body the map names** and 243 call none, so the larger part of the population reaches the engine's own functions while no table reaches it. **31 push a printable literal**, and it is an assert message rather than a symbol -- `[LIPSinc]: LIPSincShutdownEditor`, `Unpopulated box!`, `FlyingPathNode:` -- so the literal channel places the subsystem and never the name, which is why nothing here is added to the symbol map.
 
 **What this does not do.** It writes no name: a body nothing references has no owner to take one from, and the copies are `FUN_` on both sides. It does not correct the **0** short rows either -- that moves **0** bytes of extents and every artifact cut from them, so it is its own bundle -- and the interface-held bodies stay a separate count in `docs/UNKNOWNS.md` U40.
 <!-- /generated:silent-bodies -->
