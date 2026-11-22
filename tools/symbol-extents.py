@@ -43,6 +43,12 @@ front bounds this one (`body`). The same two readings serve a `jmp` whose bytes 
 match the opening table: data behind a dispatch ends the body at the jump (`jump-data`), and a complete
 body behind it is the tail call `jump-behind` already names.
 
+**A size can be too long as well as too short.** A row whose declared size crosses the next map row's
+start holds two bodies at once, and the second one is the map's. Its own decode still ends where the body
+ends, so the last terminator in front of the next row's start with nothing but fill between the two is the
+boundary and the row is **resized down** to it (`over`); a terminator with code behind it, or none at all,
+refuses (`refused over-code` / `over-close`) because resizing would cut a body the map already carries.
+
 **The rule has a control, and it is the same rule over the data sections.** The same decode from 3,000
 fixed addresses in the image's data (a `ret` with only fill after it) finds almost nothing, because a
 `ret`-into-fill is a shape code has and data does not; the hits and trials are in the census row.
@@ -89,7 +95,8 @@ CENSUS = ("text_rows", "sized_rows", "terminator", "short", "undecoded", "undeco
           "refused_undecoded", "refused_no_room", "padding_family", "padding_bytes", "behind_family",
           "behind_bytes", "body_family", "body_bytes", "data_family", "data_bytes", "follow_family",
           "follow_bytes", "short_overlap", "short_nostraddle", "short_refused", "short_split", "fold_trials",
-          "fold_agree", "null_hits", "null_trials")
+          "fold_agree", "null_hits", "null_trials", "over", "over_bytes", "refused_over_code",
+          "refused_over_close")
 # the reason's first token is its family, so a carried row needs no second column
 FAMILIES = ("head", "tail", "pad", "jump", "complete", "padding", "behind", "body", "data", "follow")
 
@@ -128,7 +135,9 @@ REPAIRS = ("row ends on a non-terminator and a gap head closes at its end",
            "the tail's first terminator is a `jmp` tail call, or a close with a two-byte pad behind it",
            "the close is followed by alignment padding, by a body's own opening, or by the same frame's "
            "shared epilogue",
-           "the close is followed by a complete body of its own, or by bytes no ring-3 code can execute")
+           "the close is followed by a complete body of its own, or by bytes no ring-3 code can execute",
+           "the row's declared size runs into the next map row, and its last terminator in front of that "
+           "row has only fill behind it")
 
 
 
@@ -614,6 +623,54 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                         "(%s behind it), so the rows that start inside that span are its interior code"
                         % (close[2], close[0], kind), close=close, new_size=cend - r["va"]))
 
+    def over_row(r, ins, end, nxt):
+        """A row whose declared size crosses the next row's start is too long, not short.
+
+        The map says this body runs into the next one, so two rows claim the same bytes. The row's own
+        decode still ends where the body does: the last terminator that starts and ends in front of the
+        next row's start, with nothing but fill (`0xcc`/`0x90`) between the two, is the boundary, and the
+        row is resized down to it. A terminator with code behind it says the body is entered again behind
+        the close (the early-return shape) and the size may be right; no terminator at all says the row's
+        own decode is not a body. Both refuse rather than cut a body the map already carries.
+        """
+        cen["nonterm"] += 1
+        cand = None
+        for t in ins:
+            if t[0] + t[1] > nxt:
+                break
+            if is_term(t[2]) and t[0] < nxt:
+                cand = t
+        if cand is None:
+            cen["refused"] += 1
+            cen["refused_over_close"] += 1
+            out.append(_row(r, ins[-1] if ins else None, "over:no-close", 0, "", "refused", "over-close",
+                            "the row's declared size runs %d byte(s) into the next map row and its own "
+                            "decode reaches no terminator before that row's start" % (end - nxt)))
+            return
+        cend = cand[0] + cand[1]
+        fill = reader(cend, nxt - cend)
+        if not all(b in FILL for b in fill):
+            cen["refused"] += 1
+            cen["refused_over_code"] += 1
+            out.append(_row(r, cand, "over:then-code", 0, "0x%08x" % cend, "refused", "over-code",
+                            "the row's declared size runs %d byte(s) into the next map row; its last "
+                            "terminator before that row (`%s` at 0x%08x) has code behind it, so the "
+                            "close does not bound the body" % (end - nxt, cand[2], cand[0]), close=cand))
+            return
+        new_size = cend - r["va"]
+        gap = nxt - cend
+        cen["over"] += 1
+        cen["over_bytes"] += end - cend
+        out.append(_row(r, cand, "over:fill", end - cend, "0x%08x" % cend, "over", "over-fill",
+                        ("the row's declared size runs %d byte(s) into the next map row (%d past its "
+                         "close); its own decode reaches `%s` at 0x%08x and %d byte(s) of fill follow it "
+                         "up to the next row's start, so the row ends where that close does")
+                        % (end - nxt, end - cend, cand[2], cand[0], gap) if gap else
+                        ("the row's declared size runs %d byte(s) into the next map row and ends on an "
+                         "`%s` that closes the body %d byte(s) in, with the next row starting exactly "
+                         "where it ends") % (end - nxt, cand[2], cend - r["va"]),
+                        close=cand, new_size=new_size))
+
 
     seen = 0
     for r in rows:
@@ -650,6 +707,12 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                 cover.append((r["va"] + r["size"], r["va"]))
                 out.append(dict(held))
                 continue
+            if (held.get("verdict") or "") == "over":
+                cen["nonterm"] += 1
+                cen["over"] += 1
+                cen["over_bytes"] += int(held.get("tail_bytes") or 0)
+                out.append(dict(held))
+                continue
             cen["nonterm"] += 1
             cen["continuation"] += 1
             tail_bytes = int(held.get("tail_bytes") or 0)
@@ -673,6 +736,11 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
             cen["undecoded_cut"] += 1
             ins = [head]
         last = ins[-1]
+        if nxt is not None and nxt < end:
+            # the declared size crosses the next map row's start: too long, and the read is the same
+            # terminator search from the row's own head
+            over_row(r, ins, end, nxt)
+            continue
         if last[0] + last[1] != end:
             # the size cuts an instruction: the row's end is a byte count, not a boundary. Read across
             # the cut -- the completed instruction is where the body runs at least, and the run behind it
@@ -965,13 +1033,29 @@ def render(rows, cen):
             "the body has no tail and nothing is missing. Of the rest, **%d** stop on live code with no "
             "close before the next row (**%d** a `jmp` with code behind it, **%d** a `ret` followed by "
             "code that is neither padding, a body's opening nor the same frame, **%d** no terminator at "
-            "all, **%d** no byte behind them), and **%d** are a body the map already split from its own "
-            "continuation -- %s -- which is a `drop` repair%s." % (
+            "all, **%d** that run into the next row and hold a close with code behind it, **%d** whose "
+            "size runs into the next row with no close in front of it), and **%d** are a body the map "
+            "already split from its own continuation -- %s -- which is a `drop` repair%s." % (
                 len(short), n("short_nostraddle"), n("short_overlap"), n("short_refused"),
                 n("short_split"), n("undecoded"), n("bounded"), n("refused"), n("refused_jump"),
                 n("refused_then_code"), n("refused_no_close"),
-                n("refused_undecoded") + n("refused_no_room"),
+                n("refused_over_code"), n("refused_over_close"),
                 len(splits), ", ".join("`%s`" % r["row_va"] for r in splits) or "none", suffix))
+        lines.append("")
+    over = [r for r in rows if r["verdict"] == "over"]
+    if over or n("refused_over_code") or n("refused_over_close"):
+        lines.append(
+            "**A size can be too long, and the map says so wherever it runs into the next row.** **%d** "
+            "rows declare a size that crosses the next map row's start, so two rows claim the same "
+            "bytes; each one's own decode reaches its close before that start and only fill follows it, "
+            "so the row is **resized down** to where it closes (**%d bytes** given back) -- the largest "
+            "is `%s`, %s bytes cut to %s. **%d** refuse because a close has code behind it and **%d** "
+            "because no close is reached at all: resizing those would cut a body the map already carries."
+            % (len(over), n("over_bytes"),
+               (max(over, key=lambda r: int(r["tail_bytes"] or 0))["row_va"] if over else "none"),
+               (max(over, key=lambda r: int(r["tail_bytes"] or 0))["row_size"] if over else "0"),
+               (max(over, key=lambda r: int(r["tail_bytes"] or 0))["new_size"] if over else "0"),
+               n("refused_over_code"), n("refused_over_close")))
         lines.append("")
     if folds or folded:
         lines.append(
@@ -1038,6 +1122,10 @@ def write_artifact(rows, cen, path=None):
 
 
 def evidence_for(r):
+    if r["reason"] == "over-fill":
+        return ("%s; the row's own decode reaches `%s` at %s and only fill follows it up to the next "
+                "row's start, so the row ends at %s and not at the next row's head"
+                % (REPAIRS[6], r["close_insn"], r["close_va"], r["new_size"]))
     if r["reason"] == "head":
         return ("%s; the head at %s is a %s-byte %s, so the extents are one function and the row is short "
                 "by the whole tail" % (REPAIRS[0], r["head_va"], r["head_size"], r["head_verdict"]))
@@ -1092,7 +1180,7 @@ def write_boundaries(rows, path=BOUNDARIES):
                              "starts inside, so this row is interior code of it" % target)))
             added += 1
             continue
-        if r["verdict"] not in ("continuation", "interior"):
+        if r["verdict"] not in ("continuation", "interior", "over"):
             continue
         va, size = int(r["row_va"], 16), int(r["new_size"])
         b = have.get(va)
@@ -1128,7 +1216,7 @@ def write_overrides(rows, path=OVERRIDES):
     with open(path, newline="", encoding="utf-8") as fh:
         text = fh.read()
     new = {r["row_va"]: int(r["new_size"]) for r in rows
-           if r["verdict"] in ("continuation", "interior")}
+           if r["verdict"] in ("continuation", "interior", "over")}
     lines = text.splitlines(keepends=True)
     head = lines[0].rstrip("\r\n").split(",")
     try:
@@ -1189,7 +1277,7 @@ def check():
         if not row:
             bad.append("%s has no row in the map" % r["row_va"])
             continue
-        if r["verdict"] in ("continuation", "interior"):
+        if r["verdict"] in ("continuation", "interior", "over"):
             want = int(r["new_size"])
             if row["size"] != want:
                 bad.append("%s is %d in the map, the artifact measured %d" % (r["row_va"], row["size"], want))
@@ -1231,8 +1319,14 @@ def check():
             int(cen.get("complete_family") or 0):
         bad.append("the cut repairs do not add up to the `complete` family")
     if int(cen.get("continuation") or 0) + int(cen.get("split") or 0) + int(cen.get("refused") or 0) + \
-            int(cen.get("bounded") or 0) != int(cen.get("nonterm") or 0):
-        bad.append("continuation + split + refused + bounded does not equal the non-terminating rows")
+            int(cen.get("bounded") or 0) + int(cen.get("over") or 0) != int(cen.get("nonterm") or 0):
+        bad.append("continuation + split + refused + bounded + over does not equal the non-terminating rows")
+    if int(cen.get("over") or 0) != counts.get("over", 0):
+        bad.append("census says %s over-long repairs, %d rows carry that verdict"
+                   % (cen.get("over"), counts.get("over", 0)))
+    if int(cen.get("over_bytes") or 0) != sum(int(r["tail_bytes"] or 0) for r in rows
+                                              if r["verdict"] == "over"):
+        bad.append("census over_bytes does not equal the over-long rows' overruns")
     if int(cen.get("short_nostraddle") or 0) + int(cen.get("short_overlap") or 0) + \
             int(cen.get("short_refused") or 0) > int(cen.get("short") or 0):
         bad.append("the short sub-families exceed the short population")
@@ -1275,7 +1369,9 @@ def self_check():
             {"va": 0x3700, "name": "FUN_00003700", "size": 0x10},   # a `jmp` whose target is inside
             {"va": 0x5000, "name": "FUN_00005000", "size": 3},      # the size cuts an instruction
             {"va": 0x5100, "name": "FUN_00005100", "size": 2},      # ... and the cut instruction is a `ret`
-            {"va": 0x4000, "name": "FUN_00004000", "size": 0x10}]   # ends on live code, nothing after
+            {"va": 0x4000, "name": "FUN_00004000", "size": 0x10},   # ends on live code, nothing after
+            {"va": 0x5500, "name": "FUN_00005500", "size": 0x10},   # a size that runs into the next row
+            {"va": 0x5508, "name": "FUN_00005508", "size": 0x10}]   # the row it runs into
     heads = [{"va": 0x3010, "size": 3, "boundary": "start", "verdict": "island",
               "prologue": "bare-ret", "tail": "pad"}]
     im = bytearray(b"\xcc" * (0x6000 - 0x2000))
@@ -1304,6 +1400,7 @@ def self_check():
     put(0x5000, b"\x90" + b"\x05" * 5 + b"\xc3" + b"\x90" * 8)
     put(0x5100, b"\x90" + b"\xc2\x08\x00" + b"\x90" * 6)
     put(0x4000, b"\x90" * 0x0f + b"\x5d")
+    put(0x5500, b"\x90" * 6 + b"\xc3" + b"\xcc" * 9)
 
     def reader(va, size):
         return bytes(im[va - 0x2000:va - 0x2000 + size]) if va >= 0x2000 else b""
@@ -1355,6 +1452,11 @@ def self_check():
 
     out, cen = measure(rows, heads, reader, fake, text=(0x2000, 0x6000))
     verdicts = {r["row_va"]: r for r in out}
+    if verdicts.get("0x00005500", {}).get("verdict") != "over" or \
+            verdicts["0x00005500"]["new_size"] != 7 or verdicts["0x00005500"]["tail_bytes"] != 9:
+        bad.append("a row whose size runs into the next row is resized down to its own close")
+    if verdicts.get("0x00005508", {}).get("verdict") == "over":
+        bad.append("the row the over-long row runs into is not itself resized")
     if verdicts.get("0x00003000", {}).get("verdict") != "continuation" or \
             verdicts["0x00003000"]["reason"] != "head":
         bad.append("a row with a head at its end is a head continuation")
@@ -1584,8 +1686,8 @@ def self_check():
     print("ok   symbol-extents selftest: both tail families, the cut repairs, the pad and `jmp` closes "
           "(a tail call, a branch inside the gap, and a refusal), the `bounded` row, the split, the "
           "refusals, the three closes behind a `ret` (a filler no-op, a whole body, and bytes no ring-3 "
-          "program can run), the fold and its frame test, the undecoded cut, "
-          "the carry and both round trips")
+          "program can run), the fold and its frame test, the undecoded cut, the row whose size runs "
+          "into the next one, the carry and both round trips")
     return 0
 
 
