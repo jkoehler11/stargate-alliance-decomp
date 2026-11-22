@@ -96,7 +96,7 @@ CENSUS = ("text_rows", "sized_rows", "terminator", "short", "undecoded", "undeco
           "behind_bytes", "body_family", "body_bytes", "data_family", "data_bytes", "follow_family",
           "follow_bytes", "short_overlap", "short_nostraddle", "short_refused", "short_split", "fold_trials",
           "fold_agree", "null_hits", "null_trials", "over", "over_bytes", "refused_over_code",
-          "refused_over_close")
+          "refused_over_close", "reread")
 # the reason's first token is its family, so a carried row needs no second column
 FAMILIES = ("head", "tail", "pad", "jump", "complete", "padding", "behind", "body", "data", "follow")
 
@@ -115,6 +115,7 @@ RING0 = ("in", "out", "ins", "outs", "cli", "sti", "lgdt", "lidt", "lldt", "ltr"
 MAX_TAIL = 256
 MAX_CUT = 16          # the longest x86 instruction: a cut cannot reach further
 MAX_FOLD = 2048       # how far a fragment's body is followed to its close
+MAX_BEHIND = 256      # how far the code behind a close is followed for a body of its own
 WINDOW = 512          # bytes per decode pass: the walk's cost is one objdump spawn per window, and a
                       # 64-byte window made a whole-image measurement overrun twelve minutes
 # The shared opening table (`native-census.PROLOGUES` plus the measured ones in `gap-heads`), tested on a
@@ -384,8 +385,10 @@ def body_behind(reader, decode_fn, va, limit, cap=64):
     """(close instruction, kind) when the run at `va` is a whole body of its own.
 
     A body is a run that closes on a terminator with fill, a pad, alignment padding, a tail call or a
-    dispatch behind it inside `cap` bytes. Anything longer is not this reading's to settle: it could be
-    the enclosing row's own code, reached by a branch the decode cannot see.
+    dispatch behind it inside `cap` bytes. The caller passes the horizon: `after_kind` reads to the next
+    map row (`MAX_BEHIND`), because a body between this row's close and the next row's head cannot be the
+    row's own code however long it is -- and a 64-byte window reported 79-byte bodies as "code this rule
+    cannot attribute" (0x00159610, measured 2026-11-22).
     """
     room = max(0, min(limit - va, cap))
     if room <= 0:
@@ -400,6 +403,10 @@ def body_behind(reader, decode_fn, va, limit, cap=64):
         if kind in ("tail", "pad", "padding", "jump", "jump-pad", "jump-behind", "jump-table",
                     "jump-data"):
             return step, kind
+        if kind == "jump-inside":
+            # a branch whose target lands forward inside the run is the candidate body's own
+            # control flow, not its close: the read goes on to the terminator behind it
+            continue
         return None, kind
     return None, "no-close"
 
@@ -411,7 +418,7 @@ def after_kind(reader, decode_fn, va, limit, deep=True):
     (`[ebp...]`, `leave`) it never writes in its opening window -- the shared epilogue an early return
     jumps into. The two readings a `ret` needs beyond those are `data` (a run that holds an instruction no
     ring-3 program can execute: the bytes are a table the size overran) and `body` (a whole body closes
-    inside 64 bytes, so the code belongs to it, not to the row in front). Anything else is code this rule
+    before the next map row, so the code belongs to it, not to the row in front). Anything else is code this rule
     cannot attribute.
     """
     ins = decode_fn(reader(va, min(limit - va, 24)), va)
@@ -430,7 +437,8 @@ def after_kind(reader, decode_fn, va, limit, deep=True):
     if deep:
         if not_code(decode_fn(reader(va, min(limit - va, 48)), va)[:8]) is not None:
             return "data", ins[0]
-        body, _why = body_behind(reader, decode_fn, va, limit)
+        body, _why = body_behind(reader, decode_fn, va, limit,
+                                 cap=min(MAX_BEHIND, max(64, limit - va)))
         if body is not None:
             return "body", ins[0]
     return "then-code", ins[0]
@@ -820,8 +828,8 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                         "behind": "a decode from the row's end reaches `%s` and the code behind it opens "
                                   "a body of its own, so the close bounds this one",
                         "body": "a decode from the row's end reaches `%s`, and the code behind it is a "
-                                "complete body of its own -- it closes inside 64 bytes with a pad or fill "
-                                "behind it -- so the close bounds this row",
+                                "complete body of its own -- it closes before the next map row with a "
+                                "pad or fill behind it -- so the close bounds this row",
                         "data": "a decode from the row's end reaches `%s`, and the bytes behind it hold an "
                                 "instruction no ring-3 program can execute, so they are a table the row's "
                                 "size overran rather than code, and the close bounds the row",
@@ -847,6 +855,41 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                     continuation(r, last, "tail:%s" % why, tail_bytes, "0x%08x" % cclose, why, note,
                                  cclose - r["va"], close=close)
             else:
+                # The truncated decode desynced at the row's end. objdump cannot finish the instruction
+                # the size cuts, so it re-splits the bytes of that instruction and everything after it,
+                # and the last "instruction" it reports reaches the row's end -- which is why the cut
+                # branch above never sees the cut. Read the row again over one more instruction and run
+                # the cut rule on the instruction that actually spans `end - 1`.
+                room = r["size"] + MAX_CUT
+                if nxt and nxt - r["va"] < room:
+                    room = max(r["size"], nxt - r["va"])
+                span = None
+                if room > r["size"]:
+                    wide = decode_fn(reader(r["va"], room), r["va"])
+                    span = next((t for t in wide if t[0] <= end - 1 < t[0] + t[1]), None)
+                if span is not None and span[0] + span[1] != end:
+                    cen["reread"] += 1
+                    scend = span[0] + span[1]
+                    if is_term(span[2]):
+                        continuation(r, span, "cut:reread", scend - end, "0x%08x" % scend,
+                                     "complete-term",
+                                     "the row's end cuts `%s` -- the truncated decode could not finish "
+                                     "it, so it re-split the bytes and the cut was invisible -- and that "
+                                     "instruction is a terminator, so the row ends where it does"
+                                     % span[2], scend - r["va"], close=span)
+                        continue
+                    tail2, close2, _why2 = tail_rule(reader, decode_fn, scend,
+                                                     nxt if nxt else scend + MAX_TAIL,
+                                                     targets=branch_targets(wide))
+                    if close2 is not None:
+                        c2 = close2[0] + close2[1]
+                        continuation(r, close2, "cut:reread", c2 - end, "0x%08x" % c2,
+                                     "complete-fill",
+                                     "the row's end cuts `%s` -- the truncated decode could not finish "
+                                     "it, so it re-split the bytes and the cut was invisible -- and the "
+                                     "run behind it closes on `%s` at 0x%08x"
+                                     % (span[2], close2[2], close2[0]), c2 - r["va"], close=close2)
+                        continue
                 cen["nonterm"] += 1
                 cen["refused"] += 1
                 cen["refused_%s" % why.replace("-", "_")] += 1
@@ -944,7 +987,11 @@ def render(rows, cen):
         "**%d rows are cut mid-instruction by a size that is a byte count rather than a boundary**: the "
         "decode is read across the cut, and the row ends where the completed instruction lands when that "
         "is a terminator itself (**%d**) or where the run behind it reaches its first terminator "
-        "(**%d**, %d bytes). The first terminator closes the run when only fill follows it, when it is a "
+        "(**%d**, %d bytes). **%d** of those cuts are invisible to the truncated decode -- objdump cannot "
+        "finish the instruction the size cuts, so it re-splits the bytes and the last instruction it "
+        "reports reaches the row's end -- and the row is read a second time over one more instruction to "
+        "find the instruction that actually spans the cut. The first terminator closes the run when only "
+        "fill follows it, when it is a "
         "`jmp` -- a tail call, its target code elsewhere -- or when it is a `ret` with a pad of two or "
         "`CC` behind it (**%d rows, %d bytes**), because only a run of two or more `int3` bounds a "
         "body. The code behind a close is not the body's own code, so a close with code behind it is "
@@ -961,7 +1008,7 @@ def render(rows, cen):
         "stops on `pop ebp`/`add esp,N` before its own `ret`), and the largest is `%s`, a %s-byte row "
         "continued by %s bytes." % (
         n("head_family"), n("head_bytes"), n("tail_family"), n("tail_bytes_total"),
-        len(cut_rows), n("complete_term"), n("complete_fill"), fill_bytes,
+        len(cut_rows), n("complete_term"), n("complete_fill"), fill_bytes, n("reread"),
         n("pad_family") + n("jump_family"), n("pad_bytes") + n("jump_bytes"),
         n("padding_family"), n("behind_family"), n("follow_family"),
         n("padding_bytes") + n("behind_bytes") + n("follow_bytes"),
@@ -1144,7 +1191,7 @@ def evidence_for(r):
                 r["close_insn"], r["close_va"],
                 {"padding": "alignment filler", "behind": "a body's own opening",
                  "follow": "the same frame's shared epilogue",
-                 "body": "a complete body of their own, which closes inside 64 bytes",
+                 "body": "a complete body of their own, which closes before the next map row",
                  "data": "not code -- an instruction no ring-3 program can execute is in the run, so "
                          "they are a table the size overran",
                  "jump-data": "not code -- an instruction no ring-3 program can execute is in the run, "
@@ -1318,6 +1365,9 @@ def check():
     if int(cen.get("complete_term") or 0) + int(cen.get("complete_fill") or 0) != \
             int(cen.get("complete_family") or 0):
         bad.append("the cut repairs do not add up to the `complete` family")
+    if int(cen.get("reread") or 0) > int(cen.get("complete_family") or 0):
+        bad.append("the %s re-read repairs exceed the %s in the complete family"
+                   % (cen.get("reread"), cen.get("complete_family")))
     if int(cen.get("continuation") or 0) + int(cen.get("split") or 0) + int(cen.get("refused") or 0) + \
             int(cen.get("bounded") or 0) + int(cen.get("over") or 0) != int(cen.get("nonterm") or 0):
         bad.append("continuation + split + refused + bounded + over does not equal the non-terminating rows")
@@ -1351,6 +1401,8 @@ def check():
               cen.get("padding_family", 0), cen.get("behind_family", 0), cen.get("follow_family", 0),
               cen.get("continuation_bytes", 0), cen.get("bounded", 0),
               counts.get("interior", 0), counts.get("folded", 0)))
+    print("ok   symbol-extents: %d of the cut repairs were invisible to the truncated decode (re-read)"
+          % int(cen.get("reread") or 0))
     return 0
 
 
@@ -1679,6 +1731,53 @@ def self_check():
         bad.append("a `ret` a branch of the row lands behind is the row's own code, not a close (got "
                    "%s / %s)" % (rv.get("0x00010c00", {}).get("verdict"),
                                  rv.get("0x00010c00", {}).get("reason")))
+    # --- the cut the truncated decode hides, and a body behind the close longer than 64 bytes ----
+    im6 = bytearray(b"\xcc" * (0x21000 - 0x20000))
+
+    def put6(va, data):
+        im6[va - 0x20000:va - 0x20000 + len(data)] = data
+
+    put6(0x20000, b"\x90" + b"\x05\x00\x00\x00" + b"\xc3" + b"\xcc" * 3)   # `nop` + a cut `add`
+    put6(0x20100, b"\x90" * 0x0f + b"\x5d" + b"\xc3")                        # close, then a body
+    put6(0x20111, b"\x8b\xc3" * 0x20 + b"\xc3" + b"\xcc" * 8)                 # ... 64 bytes behind it
+
+    def reader6(va, size):
+        return bytes(im6[va - 0x20000:va - 0x20000 + size]) if va >= 0x20000 else b""
+
+    d6 = {
+        # the row's size cuts `add eax,0x0` (5 bytes): the short read re-splits it and never sees the cut
+        0x20000: lambda n: ([(0x20000, 1, "nop"), (0x20001, 4, "(bad)")] if n < 6
+                            else [(0x20000, 1, "nop"), (0x20001, 5, "add    eax,0x0")]),
+        0x20006: lambda n: [(0x20006, 1, "ret")],
+        0x20100: lambda n: [(0x20100, 0x0f, "nop"), (0x2010f, 1, "pop    ebp")],
+        0x20110: lambda n: [(0x20110, 1, "ret")],
+        0x20111: lambda n: ([(0x20111, 0x40, "mov    eax,ebx")] if n <= 0x40
+                            else [(0x20111, 0x40, "mov    eax,ebx"), (0x20151, 1, "ret")]),
+    }
+
+    def d6f(blob, base):
+        fn = d6.get(base)
+        return fn(len(blob)) if fn else []
+
+    six_rows = [{"va": 0x20000, "name": "FUN_00020000", "size": 5},
+                {"va": 0x20010, "name": "FUN_00020010", "size": 1},
+                {"va": 0x20100, "name": "FUN_00020100", "size": 0x10},
+                {"va": 0x20180, "name": "FUN_00020180", "size": 1}]
+    s6out, s6cen = measure(six_rows, [], reader6, d6f, text=(0x20000, 0x21000))
+    s6 = {r["row_va"]: r for r in s6out}
+    if s6.get("0x00020000", {}).get("verdict") != "continuation" or \
+            s6["0x00020000"]["reason"] != "complete-fill" or \
+            s6["0x00020000"]["new_size"] != 7 or s6cen.get("reread") != 1:
+        bad.append("a cut the truncated decode hides is read again over one more instruction (got %s / "
+                   "%s / %s / reread %s)" % (s6.get("0x00020000", {}).get("verdict"),
+                                             s6.get("0x00020000", {}).get("reason"),
+                                             s6.get("0x00020000", {}).get("new_size"),
+                                             s6cen.get("reread")))
+    if s6.get("0x00020100", {}).get("verdict") != "continuation" or \
+            s6["0x00020100"]["reason"] != "body":
+        bad.append("a body that closes more than 64 bytes behind the close still bounds the row (got "
+                   "%s / %s)" % (s6.get("0x00020100", {}).get("verdict"),
+                                 s6.get("0x00020100", {}).get("reason")))
     if bad:
         for b in bad:
             print("FAIL selftest: " + b)
@@ -1687,7 +1786,8 @@ def self_check():
           "(a tail call, a branch inside the gap, and a refusal), the `bounded` row, the split, the "
           "refusals, the three closes behind a `ret` (a filler no-op, a whole body, and bytes no ring-3 "
           "program can run), the fold and its frame test, the undecoded cut, the row whose size runs "
-          "into the next one, the carry and both round trips")
+          "into the next one, the cut the truncated decode hides, a body that closes past 64 bytes, "
+          "the carry and both round trips")
     return 0
 
 

@@ -962,7 +962,7 @@
 0x0003b2c0 Core_UnClass                                  182 
 0x0003b380 Core_UnClass                                  186 
 0x0003b440 Core_UnClass                                  182 
-0x0003b500 Core_UnClass                                 1530 
+0x0003b500 Core_UnClass                                 1536 
 0x0003bb00 FUN_0003bb00                                  180 
 0x0003bbd0 FUN_0003bbd0                                   65 
 0x0003bc20 FUN_0003bc20                                  264 
@@ -4723,7 +4723,7 @@
 0x001592d0 FUN_001592d0                                  208 
 0x001593a0 Engine_UnLevAct                               237 
 0x00159490 FUN_00159490                                  379 
-0x00159610 FUN_00159610                                   86 
+0x00159610 FUN_00159610                                   96 
 0x00159720 Engine_UnLevAct                              1579 
 0x00159d50 Engine_UnLevAct                              1189 
 0x0015a200 FUN_0015a200                                 1109 
@@ -5662,7 +5662,7 @@
 0x001b3550 FUN_001b3550                                 2464 
 0x001b3ef0 FUN_001b3ef0                                 1080 
 0x001b4330 FUN_001b4330                                 1090 
-0x001b4780 FUN_001b4780                                 4362 
+0x001b4780 FUN_001b4780                                 4368 
 0x001b5890 FUN_001b5890                                 5878 
 0x001b6f90 FUN_001b6f90                                 6308 
 0x001b8840 FUN_001b8840                                  264 
@@ -10308,7 +10308,7 @@
 0x00340687 _XGetParentalControlSetting@0                  37 
 0x003406ac _lstrcmpiA@8                                   69 
 0x003406f1 _lstrcpynA@12                                 101 
-0x00340756 _lstrlenA@4                                    51 
+0x00340756 _lstrlenA@4                                    62 
 0x00340794 _XComputeContentSignatureKey@8                 31 
 0x003407b3 _XapiComputeContentHeaderSignature@16         229 
 0x00340898 _XapiLoadContentMetadataHeader@16             225 
@@ -10326,7 +10326,7 @@
 0x00341581 _RtlpInitializeHeapSegment@28                 286 
 0x0034169f _RtlpExtendHeap@8                             391 
 0x00341826 _RtlpDeCommitFreeBlock@12                     682 
-0x00341ad0 _RtlCreateHeap@24                            1034 
+0x00341ad0 _RtlCreateHeap@24                            1060 
 0x00341ef4 _RtlAllocateHeap@12                          1887 
 0x0034265c FUN_0034265c                                   19 
 0x0034266f _RtlFreeHeap@12                               478 
@@ -12380,9 +12380,9 @@
 0x003e2720 FUN_003e2720                                  158 
 0x003e27c0 FUN_003e27c0                                  147 
 0x003e2860 FUN_003e2860                                   73 
-0x003e28b0 FUN_003e28b0                                  364 
+0x003e28b0 FUN_003e28b0                                  366 
 0x003e2a20 FUN_003e2a20                                  442 
-0x003e2be0 FUN_003e2be0                                  812 
+0x003e2be0 FUN_003e2be0                                  818 
 0x003e2f20 FUN_003e2f20                                  121 
 0x003e2fa0 FUN_003e2fa0                                   17 
 0x003e2fc0 FUN_003e2fc0                                   13 

@@ -17670,3 +17670,39 @@ sequence.
   `--check-doc` rebuilds the SYMBOLS.md block from the committed CSV, `--selftest` covers the three closes, the
   fold, the untrusted-short row, the carried `drop`, the undecoded cut and both round trips. No boot, no Ghidra,
   no xemu.
+
+### Execution notes (2026-11-22, the extents' cut the truncated decode hides: 7 rows, 67 bytes)
+
+- **Task.** The `no-close` twelve and the `short` thirteen were the same question: where a body ends.
+  Reading them by hand showed the largest family is not about the tail at all -- it is about **where the
+  read starts**. `objdump` cannot finish an instruction that a truncated blob cuts in half, so it re-splits
+  that instruction's bytes and everything behind it, and the last instruction it reports then *reaches*
+  the row's end. The row never enters the cut branch, and the tail read starts four bytes inside
+  `add esp,0x94` and desyncs. Six of the twelve `no-close` rows are that shape.
+- **The re-read.** When the tail read from the row's own end reaches no close, the row is read a second
+  time over one more instruction (`size + 16`, never past the next map row) and the instruction that
+  actually spans `end - 1` is the cut. The cut rule then runs as it does for any `short` row: a
+  terminator closes the row itself (`complete-term`), otherwise the run behind it is read
+  (`complete-fill`). **7 rows** repair: `0x0003b500` 1,530 -> 1,536, `0x001b4780` 4,362 -> 4,368
+  (both `ret 0x8` landing exactly on the next row's head), `0x00340756 _lstrlenA@4` 51 -> 62,
+  `0x00341ad0 _RtlCreateHeap@24` 1,034 -> 1,060, `0x003e2be0` 812 -> 818 (a `ret 0x10` and 14 `nop`s),
+  `0x003e28b0` 364 -> 366 (the cut instruction is itself a `jmp 0x3e2956`, so the row ends where it does)
+  and `0x00159610` 86 -> 96.
+- **A body's own branch is not its close.** `body_behind` stopped at the first terminator of the run
+  behind a close, and a candidate body that branches internally (`jmp` whose target lands forward inside
+  its own span, `jump-inside`) was read as "code this rule cannot attribute" -- which is why
+  `0x00159610`'s 79-byte neighbour body (0x00159670..0x001596be, a `ret 0x8` in front of a pad) was
+  invisible. A `jump-inside` now continues the read instead of refusing it, and the same read is taken
+  over the whole gap to the next map row (`MAX_BEHIND` 256) rather than a 64-byte window.
+- **The map.** 4,263,513 -> **4,263,580 bytes** (+67), same 16,933 rows; `symbols/xbe_boundaries.csv`
+  gains 7 `resize` rows (686 now; `--check` proves all of them are applied). No `xbe_overrides.csv` row
+  moved: none of the seven is a row the registration pass sized.
+- **What is left in this thread.** 6 `no-close` tails (`0x003b0ef0` with a 707-byte gap, `0x002e0020`
+  and `0x002e002e` inside one body, `0x003a003a`, `0x00410047`, and `0x003a0064`), the 12 `split` rows
+  (`0x003a003a`/`0x003a0044`/`0x003a005a`/`0x003a0061`/`0x003a0069`, `0x002e0072`, `0x00310020`,
+  `0x00410020`, `0x0041004d`, `0x003ee1ea`, `0x002c4f10`), and the 3 `no-straddle` rows whose head
+  decode desyncs mid-body (`0x0005a020`, `0x00133250`, `0x0017e530`): a resync read finds a close in all
+  three, but the candidate starts disagree and that read needs its own rule.
+- **Not in this commit.** The cascade regeneration (`gap_heads`, `gap_body_*`, `silent_bodies`,
+  `function_modules` and the rest) and `make ci`: the map moved after the artifact was measured, so the
+  next run must regenerate them before the gate is green.
