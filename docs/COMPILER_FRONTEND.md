@@ -58,34 +58,50 @@ An AST per file, with two gates:
 ## Stage 2a — declarations, scored against the packages (measured 2026-11-21)
 
 `tools/uscript-decls.py` parses each file's class header and its `var` / `function` / `event` / `state` / `struct` /
-`enum` / `const` declarations, and scores them against `inventory/classes.csv` — six counts and a super name per class,
-each side measured independently. **4,543 files join to a package row**, and agreement is:
+`enum` / `const` declarations, and scores them against `inventory/classes.csv` — a super name and six counts per class,
+each side measured independently. **4,545 files join to a package row.**
 
-| column | agree | share |
-|---|---|---|
-| class name | 4,543 / 4,543 | **100.0%** |
-| `const` | 4,539 | 99.9% |
-| `state` | 4,473 | 98.5% |
-| `enum` | 4,467 | 98.3% |
-| `super` | 4,443 | 97.8% |
-| `var` (properties) | 4,425 | 97.4% |
-| `native function` | 4,425 | 97.4% |
-| `function` | 4,389 | 96.6% |
-| `struct` | 4,369 | 96.2% |
+Agreement, with the number of package rows that carry a non-zero value — a column of zeros agrees with a parser that
+finds nothing, and proves nothing:
 
-**Two counting conventions were settled by measuring, not by assuming, and both came from the *direction* of the
-disagreement rather than its size:**
+| column | agree | share | package rows non-zero |
+|---|---|---|---|
+| class name | 4,545 / 4,545 | **100.0%** | 2,319 |
+| `super` | 4,545 / 4,545 | **100.0%** | 2,318 |
+| `const` | 4,541 | 99.9% | 98 |
+| `state` | 4,507 | 99.2% | 185 |
+| `enum` | 4,471 | 98.4% | 114 |
+| `var` (properties) | 4,429 | 97.4% | **1,104** |
+| `native function` | 4,427 | 97.4% | 92 |
+| `function` | 4,397 | 96.7% | **1,204** |
+| `struct` | 4,371 | *void* | **0** |
 
-1. **`event` counts as a function.** With only `function` counted, agreement sat at **82.4%**, and the package had more
-   functions than the source in **794** classes against only **6** the other way — a one-sided gap, which is what a missing
-   declaration form looks like. Adding `event` raises it to **96.6%**, and the asymmetry nearly disappears.
-2. **State functions do *not* count.** The obvious next guess — that a `function` inside a `state` body also lands in the
-   table — was tested and **refuted**: counting them drops agreement from 82.4% to **79.3%**, because it overshoots the
-   classes that were already right.
+### What the scoring settled, and what it retracted
 
-The residual 2–4% per column is the next question, and it now has a shape: it is a spread of small disagreements rather
-than one missing form, so the next step is to sample the disagreeing classes rather than to add another rule and watch the
-average move.
+1. **`event` counts as a function.** With only `function` counted, agreement was **82.4%**, and the package had more
+   functions than the source in **794** classes against **6** the other way — a one-sided gap, which is what a missing
+   declaration form looks like. Counting `event` raises it to **96.6%**.
+2. **State functions do *not* count.** The follow-up guess — that a `function` inside a `state` body also lands in the
+   table — was tested and **refuted**: counting them drops agreement from 82.4% to **79.3%**.
+3. **UnrealScript is case-insensitive, and the source uses it.** This one bug wore three costumes and each was measured:
+   `super` agreement was 97.8% on case alone (`KeyPoint` vs `Keypoint`, `STAFFWEAPON`); the header scan missed
+   `class ClientMover Extends Mover`; and the lexer classified `Var config int FearRadius;` as an *identifier*, which
+   made `AlkeshBombProjectile` read 5 properties against the table's 10. Keywords are now matched case-insensitively
+   everywhere, and `super` is **100.0%** while that class reads 10 of 10.
+4. **Retracted: the `struct` column proves nothing.** Its 96.2% was a both-sides-zero artefact — `inventory/classes.csv`
+   carries `structs = 0` in **all 2,319** rows, while `Actor` alone declares eleven in its source. The comparison is marked
+   void rather than left as a number. `const`, `state` and `enum` carry the same caution at lower strength: 98, 185 and
+   114 of 2,319 rows are non-zero, so most of their agreement is two zeroes matching.
+
+### The residue, sampled rather than averaged
+
+The substantive disagreements are `var` (116) and `function` (148). Sampling the `var` classes against
+`inventory/class_properties.csv` — which lists properties by name — gives the cause for the first block of them:
+**38 of the 116 are `delegate` properties**. The source writes `delegate OnClick(...)`, the export table carries a
+property named `__onclick__delegate`, and the parser counts neither as a `var`. The remaining 78 are a spread, and at
+least one shape is already visible: `GUIHorzScrollZone` declares no `var` at all in its source while the table carries
+one, so part of the residue is properties the shipped text does not spell. That is the next thing to price, one cause at
+a time, rather than one rule at a time.
 
 ## Stage 3 — the emitter
 
