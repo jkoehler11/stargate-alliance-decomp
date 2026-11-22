@@ -55,23 +55,25 @@ An AST per file, with two gates:
   export table for that class — the packages already carry it (`inventory/classes.csv`, `inventory/natives.csv`), so a
   parser that invents or drops a declaration fails against data rather than against opinion.
 
-## Stage 2a — declarations, scored against the packages (measured 2026-11-21)
+## Stage 2a — declarations, scored against the packages (measured 2026-11-22)
 
 `tools/uscript-decls.py` parses each file's class header and its `var` / `function` / `event` / `delegate` / `state` /
 `struct` / `enum` / `const` declarations, and scores them against `inventory/classes.csv` — a super name and six counts per
-class, each side measured independently. **2,272 classes are scored, one row each.**
+class, each side measured independently. **2,317 classes are scored, one row each.** The read is at *name* level: the
+parser returns the declared names per kind and the counts are their lengths, so a column and a name list can never
+disagree — the two computed separately is how a rename scores as agreement.
 
 | column | agree | share | package rows non-zero |
 |---|---|---|---|
-| class name | 2,272 / 2,272 | **100.0%** | 2,319 |
-| `super` | 2,272 / 2,272 | **100.0%** | 2,318 |
-| `const` | 2,271 | 100.0% | 98 |
-| `var` (properties) | 2,267 | **99.8%** | **1,104** |
-| `native function` | 2,267 | **99.8%** | 92 |
-| `state` | 2,253 | 99.2% | 185 |
-| `function` (non-native) | 2,246 | 98.9% | **1,204** |
-| `enum` | 2,237 | 98.5% | 114 |
-| `struct` | 2,187 | *void* | **0** |
+| class name | 2,317 / 2,317 | **100.0%** | 2,318 |
+| `super` | 2,317 / 2,317 | **100.0%** | 2,317 |
+| `var` (properties) | 2,317 | **100.0%** | **1,103** |
+| `state` | 2,317 | **100.0%** | 184 |
+| `enum` | 2,317 | **100.0%** | 114 |
+| `const` | 2,316 | 100.0% | 98 |
+| `native function` | 2,313 | **99.8%** | 92 |
+| `function` (non-native) | 2,310 | **99.7%** | **1,188** |
+| `struct` | 2,230 | *void* | **0** |
 
 ### Eight things the scoring settled, and one it retracted
 
@@ -96,12 +98,37 @@ class, each side measured independently. **2,272 classes are scored, one row eac
    rows while `Actor` declares eleven. The comparison is marked void, and the table's non-zero column shows the same
    caution applies to `const` (98), `state` (185) and `enum` (114).
 
-### What is left
+### The residue, named at name level (measured 2026-11-22)
 
-Five `var`, 26 `function`, five `native function`, 19 `state`, 35 `enum` and one `const` disagreement, plus 47 of the
-table's 2,319 classes with no source file in the corpus. Every one of the eight findings above came from sampling a
-residue rather than adding a rule and watching an average — four of them were defects in *how the parser was being
-scored*, which is why fixing them moved several columns at once.
+A count comparison cannot see a rename. `var HaakenPodDoor Doors[NUM_DOORS];` read as a property called `NUM_DOORS` has
+the same *count* as `Doors`, and `delegate bool OnClick(...)` read as a property called `bool` has the same count as
+`__OnClick__delegate` — the old score called those classes agreement. Joined against the package's own export names,
+**126 (class, column) pairs disagreed while their counts agreed** (88 `var`, 28 `function`, 9 `state`, 1 `const`).
+Seven rules closed all but ten of them, and every one came from reading a sample rather than from adding a rule and
+watching an average:
+
+| the text says | what it was read as | cost |
+|---|---|---|
+| `class` inside a comment whose `//` is not in the buffer: `class is used to indicate the selected menu item` | a class named `is` | 6 classes mis-named; the file's stem is what names the declaration |
+| `ACTION_KillInstigator` in the text, `ACTION_Killinstigator` in the table | no join at all | **40** of the table's classes reported as "no source file" |
+| `state() LoopMove` — a state with an empty label | no state | 12 of Mover's 19 |
+| `out byte State` — a parameter named after a keyword | a state | 19 classes, one each |
+| `var(Display) enum EPhysics { … } Physics;` | no enum, and `EPhysics` as the property | 7 of Actor's 23 enums, 35 classes |
+| `var HaakenPodDoor Doors[NUM_DOORS];` | a property called `NUM_DOORS` | most of the 88 `var` pairs |
+| `delegate bool OnClick(...)` | a property called `bool` | 12 in `GUIComponent` alone |
+| `operator(20) color + (color A, color B)` | no function | 111 names: a delegate is *also* a Function in the package, and an operator is a native Function named `Add_ColorColor` |
+
+Two of the eight were not parser bugs but reporting bugs: `BotScarab`'s shipped `ScriptText` carries **no class header at
+all** (it opens inside a function comment, so the text is a fragment of the file), and the 47 classes the earlier note
+called "no source file in the corpus" were 40 spellings and 6 prose headers — the corpus has a file for every one.
+
+Ten classes still disagree, and they are named here rather than left as a percentage: `Object` (13 native functions the
+text does not declare), `MaplistRecord` (2 more operators whose operand types are structs declared in another class),
+`Mover` (`detach`, declared in the text and not in the package), `PlayerController`, `StargatePawn` and `UIWidget` (one
+function each, same shape), `UPreviewMapListClient` and `UPreviewSkinnedButton` (a `native` declaration the walk-back
+does not reach), and `ObjectivesPanel`'s `const COLUMN_INDENT`, which is declared **inside a function body** and hoisted
+to the class by the compiler. `inventory/uscript_decls_residue.csv` carries every one of them, with the cause, so the
+list is reproducible and a fix has a row to close.
 
 ## Stage 2b — signatures, scored against the package records (measured 2026-11-21)
 
@@ -109,7 +136,11 @@ A signature is finer than a count: a name, a return type and an ordered paramete
 one per native — **797** rows of class, function and `parameter_count` read from the package's function records, not from
 the text — so `tools/uscript-signatures.py` parses every `function`/`event` declaration and joins on (class, function).
 
-**20,292 declarations parsed; 1,358 join to a package record; the parameter slots agree on 1,358 of 1,358 — 100.0%.**
+**10,147 declarations parsed; 687 join to a package record; the parameter slots agree on 687 of 687 — 100.0%.**
+
+The corpus is **two copies of the same 2,319 files** — the extracted tree holds a flat `<Class>.uc` and a
+`<Package>/<Class>.uc` for every class — so the earlier figures here (20,292 declarations, 1,358 joined) walked each
+class twice; the populations are half of that, and the join gained 8 rows from stage 2a's class-name fix.
 
 Two facts had to be measured to get there, and both looked like parser bugs until the source was read:
 
@@ -130,10 +161,10 @@ and the expectation was corrected rather than the code, which is the only direct
 
 `inventory/script_calls.csv` records **19,350** call sites read out of the packages: the class, the function the call sits
 in, and the target it resolves to. That is enough to score expression-level parsing without a full grammar —
-`tools/uscript-calls.py` parses every function body (19,142 of them) and asks whether the recorded target appears as a
-call in that function's source.
+`tools/uscript-calls.py` parses every function body (9,572 of them, one per declaration — the corpus's second copy of
+each file is the same body) and asks whether the recorded target appears as a call in that function's source.
 
-**14,394 of 14,408 recorded call targets are found: 99.9%.** Three things had to be measured first, and the first of them
+**14,421 of 14,435 recorded call targets are found: 99.9%.** Three things had to be measured first, and the first of them
 looked like a total failure:
 
 1. **The join is case-insensitive.** Recorded targets are lower-cased and the source keeps its case, so intersecting the
@@ -145,7 +176,7 @@ looked like a total failure:
    scoring only part of each class.
 3. **A call can be named with a keyword.** `Travel("Map")` and `Import(...)` are recorded calls whose names the lexer
    classifies as keywords, so an identifiers-only test never saw them. Counting keyword-named calls (excluding the
-   language's control words, which cannot be calls) recovered five more, to **14,394**.
+   language's control words, which cannot be calls) recovered five more, to **14,421**.
 
 The 14 that remain are explicable rather than mysterious: **seven are operator functions** — the source writes `==` and
 the package records `EqualEqual_MapItemMapItem`, a call the text cannot spell — six are `Mover` calls written at state

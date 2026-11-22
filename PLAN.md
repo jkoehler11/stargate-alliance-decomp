@@ -17598,6 +17598,48 @@ sequence.
   `0x00024c80`, are twins whose second body opens `push esi` and reads `[ebp+8]` without setting `ebp`, so it
   is interior code of the row above.
 
+### Execution notes (2026-11-22, the front end's declaration score read at name level: seven rules, 46 classes recovered, and the corpus counted twice)
+
+- **Task.** Stage 2a's residue had never been sampled: the page carried "five `var`, 26 `function`, five `native
+  function`, 19 `state`, 35 `enum` and one `const` disagreement, plus 47 of the table's 2,319 classes with no source
+  file in the corpus" as a spread. Read at *name* level against the package's own export names, **126 (class, column)
+  pairs disagreed while their counts agreed** (88 `var`, 28 `function`, 9 `state`, 1 `const`) -- a count cannot see a
+  rename, and every one of the seven rules below came from reading a sample.
+- **The join key was case-sensitive, and 40 classes are spelled differently in the two places.** `ACTION_KillInstigator`
+  in the text, `ACTION_Killinstigator` in the table: no join, so the page reported them as "no source file". Folding the
+  key takes joined classes **2,272 -> 2,312** before the header rule below adds the rest.
+- **The class header was taken from prose.** Six files' `ScriptText` opens inside a comment whose `//` is not in the
+  buffer, so `class is used to indicate the selected menu item` read as a class named `is` (`StatsQuery` read as
+  `performs`, `StatsWrite` as `posts`). The file is named after the class, so the declaration is the one whose name
+  matches the file's stem; the remaining file, `BotScarab`, ships a fragment with **no class header at all** and is now
+  refused with its own status instead of guessed.
+- **`state()` is a state, and `out byte State` is not.** Twelve of Mover's 19 states are written `state() LoopMove`, and
+  a parser that wants an identifier straight after the keyword misses all twelve; a parameter named `State` made 19
+  classes declare a state they do not have. The state column goes **99.2% -> 100.0%** (12 table-higher and 19
+  source-higher rows to 0).
+- **A `var` statement can declare an enum.** `var(Display) enum EPhysics { ... } Physics;` is 7 of Actor's 23 enums, and
+  the old parse both missed the enum and read the enum's *name* as the property. Enum goes **98.5% -> 100.0%** (35
+  rows) and the property name is the word after the block.
+- **A property's name is not the last identifier in its statement.** `var HaakenPodDoor Doors[NUM_DOORS];` declares
+  `Doors`; the array size is another declaration's name. Stripping the bracket group takes the `var` column's last 7
+  count rows and most of its 88 name pairs.
+- **A delegate is a property *and* a function, and an operator is a function with a name the text cannot spell.** The
+  package carries `__OnClick__delegate` as a property *and* a `Function` named `OnClick` (75 such names), and an
+  `operator(20) color + (color A, color B)` declaration is the native `Add_ColorColor` (111 names; Object's natives
+  **189/202 -> 202/202**). Delegate and operator both count on the function side.
+- **The corpus is two copies of the same 2,319 files** (a flat `<Class>.uc` and a `<Package>/<Class>.uc`), so stages 2b
+  and 2c -- which walk every file -- counted each class twice: signatures **20,292 -> 10,147** declarations and
+  **1,358 -> 687** joined, call bodies **19,142 -> 9,572** pairs and **14,394 of 14,408 -> 14,421 of 14,435** found.
+  Stage 2a was never doubled, because it already de-duplicated by class name.
+- **Result.** class, `super`, `var`, `state` and `enum` agree on **every** scored class (2,317 of 2,317); `const` 2,316,
+  `native function` 2,313, `function` 2,310. Ten classes still disagree and are named in
+  `docs/COMPILER_FRONTEND.md` (`Object`, `MaplistRecord`, `Mover`, `PlayerController`, `StargatePawn`, `UIWidget`, two
+  `UPreview` classes and `ObjectivesPanel`'s `const` declared inside a function body).
+- **Artifacts.** `inventory/uscript_decls.csv` (2,319 rows, now carrying the table's spelling), the new
+  `inventory/uscript_decls_residue.csv` (113 rows: 111 operators, 1 function, 1 const), and regenerated
+  `inventory/uscript_calls.csv` / `inventory/uscript_signatures.csv`. `--check` covers the prose header, the
+  array-size name, the enum-in-var, the `state()` form and the no-header refusal, each of which the old code fails.
+
 ### Execution notes (2026-11-22, the extents' tail read past its window, the loop back-edge, and the fragment in a hole the map never entered: 4 rows and 720 bytes)
 
 - **Task.** The last note left the `no-close`/long-tail window (`0x003b0ef0`, a 707-byte gap behind it) and the
