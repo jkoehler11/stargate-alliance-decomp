@@ -59,11 +59,7 @@ An AST per file, with two gates:
 
 `tools/uscript-decls.py` parses each file's class header and its `var` / `function` / `event` / `delegate` / `state` /
 `struct` / `enum` / `const` declarations, and scores them against `inventory/classes.csv` — a super name and six counts per
-class, each side measured independently.
-
-**2,272 classes are scored**, one row each. Reporting per *file* was the first mistake and it was not small: 4,545 files
-join to those classes because a class can ship in two directories (`Actor`, `Object`, `Canvas`), so half the old
-denominator was repeats of the other half.
+class, each side measured independently. **2,272 classes are scored, one row each.**
 
 | column | agree | share | package rows non-zero |
 |---|---|---|---|
@@ -71,13 +67,13 @@ denominator was repeats of the other half.
 | `super` | 2,272 / 2,272 | **100.0%** | 2,318 |
 | `const` | 2,271 | 100.0% | 98 |
 | `var` (properties) | 2,267 | **99.8%** | **1,104** |
+| `native function` | 2,267 | **99.8%** | 92 |
 | `state` | 2,253 | 99.2% | 185 |
+| `function` (non-native) | 2,246 | 98.9% | **1,204** |
 | `enum` | 2,237 | 98.5% | 114 |
-| `native function` | 2,215 | 97.5% | 92 |
-| `function` (non-native) | 2,206 | 97.1% | **1,204** |
 | `struct` | 2,187 | *void* | **0** |
 
-### Seven things the scoring settled, and one it retracted
+### Eight things the scoring settled, and one it retracted
 
 1. **`event` counts as a function.** Counting only `function` gave 82.4% at the time, with the package higher in 794
    classes and lower in 6 — a one-sided gap is what a missing declaration form looks like.
@@ -88,21 +84,24 @@ denominator was repeats of the other half.
    `Var config int FearRadius;` as an identifier, which made one class read 5 properties against the table's 10.
 4. **A `delegate` is a property.** The table names it `__<name>__delegate`, the source writes `delegate OnClick(...)`.
 5. **The build guards must be evaluated, not counted.** This corpus is the Xbox image, so `XBox` and `DEBUG` are defined
-   and the `PC`/`PS2` branches were never compiled — the same rule `tools/text-branches.py` measured for keywords, with
-   case-folded macro names and `#ifdefPS2` read as a whole word. Counting the unbuilt branches over-counted badly:
-   `Actor` alone carried **173** excess functions and the table's own total had them nowhere.
+   and the `PC`/`PS2` branches were never compiled — the rule `tools/text-branches.py` measured for keywords, with
+   case-folded macro names and `#ifdefPS2` read as a whole word. Counting the unbuilt branches over-counted `Actor` by
+   **173** functions.
 6. **`functions` is the total, with natives inside it**, so the non-native count is `functions − native_functions`.
-   Pairing it against the total inflated every class that has a native.
-7. **Retracted: the `struct` column proves nothing.** Its 96.3% is two zeroes matching — `structs = 0` in **all 2,319**
-   rows while `Actor` declares eleven. The comparison is marked void rather than left as a number, and the table's
-   non-zero column shows the same caution is needed for `const` (98), `state` (185) and `enum` (114).
+7. **A native declaration can carry an index and modifiers**: `native(881) final simulated static function …`. Six tokens
+   separate the two words, so a check at `i-1` misses them — which is why the native column read 97.5% and the non-native
+   column absorbed the difference. Walking back to the statement boundary takes `native function` to **99.8%** and
+   `function` to **98.9%**.
+8. **Retracted: the `struct` column proves nothing.** Its 96.3% is two zeroes matching — `structs = 0` in **all 2,319**
+   rows while `Actor` declares eleven. The comparison is marked void, and the table's non-zero column shows the same
+   caution applies to `const` (98), `state` (185) and `enum` (114).
 
 ### What is left
 
-Five `var` disagreements, 66 `function`, 57 `native function`, 19 `state`, 35 `enum`, one `const` — and 47 of the
-table's 2,319 classes have no source file in the corpus at all. That is a spread rather than a form, so the next step is
-to sample the remaining classes one cause at a time; the two defects that produced most of the old residue were in the
-*scoring*, not the parser, which is why the fix moved four columns at once.
+Five `var`, 26 `function`, five `native function`, 19 `state`, 35 `enum` and one `const` disagreement, plus 47 of the
+table's 2,319 classes with no source file in the corpus. Every one of the eight findings above came from sampling a
+residue rather than adding a rule and watching an average — four of them were defects in *how the parser was being
+scored*, which is why fixing them moved several columns at once.
 
 ## Stage 3 — the emitter
 

@@ -78,6 +78,22 @@ def tokens_of(text):
     return out
 
 
+def is_native(toks, i):
+    """True when the declaration at `i` is native.
+
+    `native(881) final simulated static function ...` puts six tokens between the two words, and the tokens between
+    include the `native(<index>)` group, so the check walks back to the statement boundary rather than looking at `i-1`.
+    """
+    j = i - 1
+    while j >= 0 and i - j <= 14:
+        kind, val = toks[j]
+        if kind == "op" and val in (";", "{", "}"):
+            return False
+        if val.lower() == "native":
+            return True
+        j -= 1
+    return False
+
 def declarations(text):
     """Return (class, super, counts) for one file, counting only declarations at class scope."""
     toks = tokens_of(text)
@@ -145,12 +161,10 @@ def declarations(text):
             continue
         if val in ("function", "event"):
             # `native function` is a separate column in the package table
-            native = i > 0 and toks[i - 1][1].lower() == "native"
-            counts["native_function" if native else "function"] += 1
+            counts["native_function" if is_native(toks, i) else "function"] += 1
             i += 1
             continue
         if val == "var":
-            native = i > 0 and toks[i - 1][1].lower() == "native"
             # the statement runs to `;` at this depth; each comma-separated segment ends on its name
             j = i + 1
             segment = []
