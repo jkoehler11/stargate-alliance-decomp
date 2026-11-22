@@ -612,3 +612,14 @@ string finds **0**. The reason is not that the messages are absent: `R6025 - pur
 table, and an immediate scan cannot see it. The bodies behind those messages are already named by other routes:
 `__purecall` (`0x003e5501`, 20 bytes), `__matherr` (`0x00344e79`, 3 bytes) and `___crtFindFirstFileW` (`0x003ee7d4`, 93
 bytes). A table-walking version of this scan would still be possible, but it would be looking for names that exist.
+
+**Other SDK builds do not name these bodies, and the reason is version rather than luck (2026-11-21).** Three further Xbox
+SDK builds were fetched from the same archive.org collection and measured against the gap population. `5849` (2003-12) and
+`5933` (2004-02) are installers whose CAB carries only **12** libraries -- `d3dxof`, `dxguid`, `xgraphics`, `xonservr`,
+`D3DX8` and their debug variants, with no `libc`, `d3d8` or `dsound` -- and both name **0** gap bodies. `5558.2` (2003-06)
+is a complete tree: **66** library files, 55 distinct names including `libc`, `libcmt`, `d3d8`, `dsound`, `dmusic`,
+`xapilib`, `xnet` and `xonline`. It also names **0** gap bodies, and 5 on the whole map, all of them `xgraphics` or
+`D3DX8` -- a set the 2005-03 tree already names. So the masked-body match is version-sensitive: the **5849.17** set of
+2005-03 is the one this build linked (the XBE header lists `XAPILIB 1.0.5849` and `D3D8 1.00.5849.1`), and other builds are
+not a route to more names. The trees live at `~/sg1/work/xdk/versions/<build>/setup/XDK/lib` and are never committed; the
+four `MicrosoftXboxSDK*` zips the collection also offers are Preview Pipeline tooling and contain **no** libraries at all.
