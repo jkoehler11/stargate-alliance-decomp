@@ -17638,6 +17638,31 @@ sequence.
 - **Not in this PR:** the statement walk. One assignment or one call needs the property and local indices the emitter
   does not read, and that is the population the 9,613 refusals are made of.
 
+### Execution notes (2026-11-22, the front end's emitter: the argument list lands, and one differing body is left)
+
+- **Task.** The front end's emitter carried a one-call family with no arguments, and this thread's first read of them
+  named two rules it had not applied. Both are in: an exec native's token at `0x70` and above is its own opcode (135
+  declarers), and a `bool` parameter is a local -- the score loop had handed `_scope` the index left by the
+  name-table sweep, so no local was built and every parameter read fell back to the property table.
+- **The argument list.** Each argument is emitted from the *callee declaration's* parameter type, an `optional`
+  parameter may be left off, a `delegate` call is a `DelegateFunction` naming both records, and a read whose declared
+  type is not the slot's is wrapped in `PrimitiveCast` with the slot taken from `inventory/cast_operands.csv`.
+  **2,819 bodies are modelled and 2,818 are byte-identical: 1 differs** (2,510 / 2,417 / 93 at the start of this
+  thread, 2,200 / 2,196 / 4 as the page stood).
+- **The 14 differs the page called "code the package did not compile" were a state body filling the class-level
+  key.** `Mover` declares `function DisableTrigger();` and a state carries `Disable('Trigger')`; the source index kept
+  the longer body for the class-level key, so the stub was scored against the state's bytes. Class-level keys now come
+  from class-level declarations only, gated by a one-file synthetic tree, and the page's "53 whose text declares code
+  the package did not compile" is corrected in place (1,096 bodies are that stub and the trailer alone).
+- **Three rules out of the residue's small families.** `_split_commas` was not depth-aware (10 bodies: a comma inside
+  `vect(0,0,0)` moved the argument count); the empty name literal is name index 0 (8 bodies); a native an ancestor in
+  another package declares now resolves (1 body, `burnProjector.UnTouch` -- the 51 still refused name a *cast* at the
+  call site, which is the next family).
+- **Not in this PR.** The one differing body (`PlayerInput.ChangeSnapView`: six bytes, `19 01 8e 05 00 04`, between
+  the `LetBool` and the target's `BoolVariable`, cause not named) and the cast/`assert` family above.
+- **Files.** `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`. 41 synthetic bodies,
+  five of them new; residue 8,929 -> 8,859.
+
 ### Execution notes (2026-11-22, the front end's declaration score read at name level: seven rules, 46 classes recovered, and the corpus counted twice)
 
 - **Task.** Stage 2a's residue had never been sampled: the page carried "five `var`, 26 `function`, five `native
