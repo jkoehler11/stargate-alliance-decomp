@@ -72,6 +72,7 @@ def declarations(text):
         if kind != "keyword":
             i += 1
             continue
+        val = val.lower()   # UnrealScript is case-insensitive: `class ClientMover Extends Mover` is valid
         # Counting state functions as `functions` drops agreement 82.4% -> 79.3% (measured), so this table excludes
         # them and the count stays at class scope.
         if depth != 0:
@@ -82,7 +83,7 @@ def declarations(text):
             while j < len(toks) and toks[j][0] in ("ident", "keyword"):
                 if toks[j][0] == "ident" and cls is None:
                     cls = toks[j][1]
-                elif toks[j][1] == "extends" and j + 1 < len(toks):
+                elif toks[j][1].lower() == "extends" and j + 1 < len(toks):
                     super_name = toks[j + 1][1]
                     break
                 j += 1
@@ -103,12 +104,12 @@ def declarations(text):
             continue
         if val in ("function", "event"):
             # `native function` is a separate column in the package table
-            native = i > 0 and toks[i - 1][1] == "native"
+            native = i > 0 and toks[i - 1][1].lower() == "native"
             counts["native_function" if native else "function"] += 1
             i += 1
             continue
         if val == "var":
-            native = i > 0 and toks[i - 1][1] == "native"
+            native = i > 0 and toks[i - 1][1].lower() == "native"
             # the statement runs to `;` at this depth; each comma-separated segment ends on its name
             j = i + 1
             segment = []
@@ -161,7 +162,7 @@ def run(tree, out_dir):
                 scored += 1
                 row["package_super"] = pkg["super"]
                 row["status"] = "scored"
-                if (sup or "") == (pkg["super"] or ""):
+                if (sup or "").lower() == (pkg["super"] or "").lower():
                     agree["super"] += 1
                 agree["class"] += 1
                 for col, key in (("function", "functions"), ("native_function", "native_functions"),

@@ -124,7 +124,8 @@ def lex(text):
             continue
         m = IDENT.match(text, i)
         if m:
-            kind = "keyword" if m.group() in KEYWORDS else "ident"
+            # UnrealScript is case-insensitive and the source uses it: `Var config int FearRadius;` is a var
+            kind = "keyword" if m.group().lower() in KEYWORDS else "ident"
             tokens.append((kind, i, m.end()))
             i = m.end()
             continue
