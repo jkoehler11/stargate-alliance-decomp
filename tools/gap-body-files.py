@@ -64,8 +64,10 @@ DOC = os.path.join(ROOT, "docs", "systems", "CLASS_REGISTRATION.md")
 DOC_A = ("<!-- generated:gap-body-files -->", "<!-- /generated:gap-body-files -->")
 
 BODY = ("body_va", "size", "assert_file", "assert_sites", "string_sites", "string_head", "string_aligned",
-        "callee_file", "callee_files", "callee_insn", "literal_file", "method_token", "verdict")
+        "callee_file", "callee_files", "callee_insn", "literal_file", "literal_kind", "method_token", "verdict")
 CENSUS = ("heads", "bodies", "islands", "unclosed", "with_assert", "with_string", "with_callee", "silent",
+          "with_literal_src", "with_literal_inc", "map_literal_src", "map_literal_src_agree",
+          "map_literal_inc", "map_literal_inc_agree",
           "rep_heads", "rep_bodies", "rep_islands", "rep_assert", "rep_string", "rep_callee", "map_bodies", "map_assert",
           "map_string", "map_callee", "name_pairs", "name_agree", "name_other", "name_wrong", "multi_files",
           "with_assert_any", "with_string_aligned", "string_both", "string_operand_only", "string_aligned_only",
@@ -82,7 +84,7 @@ IMM_VA = re.compile(r"(?<!-)0x([0-9a-f]{5,8})\b")
 # A build path inside a literal: the assert text often carries the file *and* the expression in one
 # string (`..\\..\\Core\\Inc\\FFileManagerXbox.h | InPos<=Size`), where the reference points at the
 # combined literal and not at the path's own first byte.
-SRC_IN_LITERAL = re.compile(r"([A-Za-z][A-Za-z0-9_]*)[\\/](?:Src|Inc)[\\/]([A-Za-z0-9_]+)\.(?:cpp|hpp|cxx|h)")
+SRC_IN_LITERAL = re.compile(r"([A-Za-z][A-Za-z0-9_]*)[\\/](Src|Inc)[\\/]([A-Za-z0-9_]+)\.(?:cpp|hpp|cxx|h)")
 # UE2's log and assert text names the method that emitted it: `FMallocError::Init`, `CPlayer::Tick`.
 METHOD = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_~][A-Za-z0-9_]*)+$")
 MAX_HEAD = 40
@@ -350,7 +352,8 @@ def measure(image, names, sizes, heads, modules):
         files = [a_by_va[sva] for _, sva in hits.get((va, "assert"), [])]
         assert_set = sorted({f"{m}/{f}" for m, f in files})
         strs = [strings[sva] for _, sva in hits.get((va, "string"), [])]
-        literal_files = sorted({f"{m}_{f}" for s in strs for m, f in SRC_IN_LITERAL.findall(s)})
+        literal_files = sorted({f"{m}_{f}" for s in strs for m, _, f in SRC_IN_LITERAL.findall(s)})
+        literal_kinds = sorted({kind for s in strs for _, kind, _ in SRC_IN_LITERAL.findall(s)})
         found = sorted({s for s in strs if METHOD.match(s)})
         method = found[0] if len(found) == 1 else ""
         method_of[va] = (len(found), method)
@@ -376,6 +379,8 @@ def measure(image, names, sizes, heads, modules):
                      "callee_files": " ".join(tokens[:3]),
                      "callee_insn": str(len({t for _, t in callee.get(va, [])})),
                      "literal_file": " ".join(literal_files[:2]),
+                     "literal_kind": "both" if len(literal_kinds) > 1 else
+                                     (literal_kinds[0].lower() if literal_kinds else ""),
                      "method_token": method, "verdict": verdict})
 
     def count(pop, channel):
@@ -444,20 +449,37 @@ def measure(image, names, sizes, heads, modules):
                    "map_method_other": m_named - m_agree})
     # The literal path's control: a `<Module>_<File>` body that pushes a build path should push its own
     # file, and a body that pushes another file's is the channel's failure rate.
+    # The control splits on the kind of path, because the two kinds are not the same claim: a `Src\\*.cpp`
+    # path is the translation unit that was compiled, an `Inc\\*.h` path is a header the code was inlined
+    # from or asserted through, and only the first is a name.
     l_named = l_agree = 0
+    src_named = src_agree = inc_named = inc_agree = 0
     for va in map_bodies:
         name = names.get(va) or ""
         if not name:
             continue
-        got = {f"{m}_{f}" for _, s in hits.get((va, "string"), [])
-               for m, f in SRC_IN_LITERAL.findall(strings[s])}
+        got = collections.defaultdict(set)
+        for _, s in hits.get((va, "string"), []):
+            for m, kind, f in SRC_IN_LITERAL.findall(strings[s]):
+                got[f].add(kind)
         if not got:
             continue
         l_named += 1
-        if any(tok.split("_", 1)[-1] in name for tok in got):
+        if any(f in name for f in got):
             l_agree += 1
+        for f, kinds in got.items():
+            if "Src" in kinds:
+                src_named += 1
+                src_agree += 1 if f in name else 0
+            if "Inc" in kinds:
+                inc_named += 1
+                inc_agree += 1 if f in name else 0
     census.update({"map_literal_file": l_named, "map_literal_agree": l_agree,
-                   "map_literal_other": l_named - l_agree})
+                   "map_literal_other": l_named - l_agree,
+                   "map_literal_src": src_named, "map_literal_src_agree": src_agree,
+                   "map_literal_inc": inc_named, "map_literal_inc_agree": inc_agree})
+    census["with_literal_src"] = sum(1 for r in rows if "src" in (r["literal_kind"] or ""))
+    census["with_literal_inc"] = sum(1 for r in rows if "inc" in (r["literal_kind"] or ""))
     rep = {int(r["body_va"], 16) for r in read_csv(REP)
            if r.get("kind") == "gap" and r.get("body_va")}
     rep_body = rep & set(gap)
@@ -556,10 +578,16 @@ def render(rows, census):
         f"**{census['with_literal_file']} gap bodies push a literal that carries a build path** -- the assert "
         f"text of this build often holds the file and the expression in one string "
         f"(`..\\..\\Core\\Inc\\FFileManagerXbox.h | InPos<=Size`), so the reference points at the combined "
-        f"literal and not at the path's first byte. The control is the map's own names: {census['map_literal_file']} "
-        f"named bodies push such a path and {census['map_literal_agree']} of them push their own file "
-        f"({census['map_literal_other']} another file's), so the path inside the literal is the same reference "
-        f"read one level out.")
+        f"literal and not at the path's first byte. The control splits by the kind of path, because the two "
+        f"kinds are not the same claim: of the **{census['map_literal_src']}** named bodies that push a `Src\\` "
+        f"path **{census['map_literal_src_agree']}** push their own file and "
+        f"{census['map_literal_src'] - census['map_literal_src_agree']} another file's, while of the "
+        f"**{census['map_literal_inc']}** that push an `Inc\\` path only "
+        f"**{census['map_literal_inc_agree']}** do. A `.cpp` under `Src` is the translation unit that was "
+        f"compiled; a `.h` under `Inc` is the header the inlined or asserted code came from, so its name is the "
+        f"header's owner and not the body's file. The channel therefore names where the path is `Src` and only "
+        f"places where it is `Inc`, and the gap population's {census['with_literal_file']} bodies split "
+        f"**{census['with_literal_src']} `Src`** / {census['with_literal_inc']} `Inc`.")
     lines.append("")
     lines.append(
         f"**The callee channel's `E8` byte scan is exact, and it is the byte scan that had the doubt.** Read at "
@@ -663,6 +691,8 @@ def self_check():
             {"body_va": "0x00000500", "size": "3", "assert_file": "", "assert_sites": "0",
              "string_sites": "0", "string_head": "", "string_aligned": "0", "callee_file": "", "callee_files": "",
              "callee_insn": "0", "literal_file": "", "method_token": "", "verdict": "island"}]
+    for r in rows:
+        r.setdefault("literal_kind", "inc" if r["verdict"] == "literal-file" else "")
     census = {"heads": 7, "bodies": 6, "islands": 1, "unclosed": 0, "with_assert": 1, "with_string": 2,
               "with_callee": 1, "silent": 1, "rep_heads": 2, "rep_bodies": 1, "rep_islands": 1, "rep_assert": 0,
               "rep_string": 1, "rep_callee": 0, "map_bodies": 9, "map_assert": 3, "map_string": 4,
@@ -672,7 +702,9 @@ def self_check():
               "map_assert_any": 3, "map_assert_operand": 3, "callee_byte_only": 0, "callee_insn_only": 0,
               "with_method": 1, "method_ambiguous": 0, "map_method": 4, "map_method_agree": 3,
               "map_method_other": 1, "with_literal_file": 2, "map_literal_file": 2,
-              "map_literal_agree": 2, "map_literal_other": 0}
+              "map_literal_agree": 2, "map_literal_other": 0, "map_literal_src": 1,
+              "map_literal_src_agree": 1, "map_literal_inc": 1, "map_literal_inc_agree": 0,
+              "with_literal_src": 0, "with_literal_inc": 1}
     text = render(rows, census)
     for want in ("`0x00000100`", "invalid stencil op", "Control: 3 of the map's 9", "5 of the 6",
                  "0 carry a different one", "2 a printable string and 1 a call",

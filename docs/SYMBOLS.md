@@ -318,11 +318,11 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 1128 in 944 runs |
 | bodies a split ends (a terminator no branch in the run targets) | 190 |
 | bodies in a generated family (`register-once` / `_atexit`) | 0 / 0 |
-| named by a dword outside `.text` | 815 |
-| ...of those, in a class-table slot (370 bodies; 724 tables, 2 of them class-named) | 370 |
-| named by an `E8`/`E9` branch | 68 |
-| named by a `68` push | 718 |
-| named by any channel / by none | 1584 / 814 |
+| named by a dword outside `.text` | 805 |
+| ...of those, in a class-table slot (370 bodies; 724 tables, 2 of them class-named) | 362 |
+| named by an `E8`/`E9` branch | 66 |
+| named by a `68` push | 717 |
+| named by any channel / by none (of them bodies / islands) | 1571 / 827 (686 / 141) |
 | boundaries: the gap's start / fill / a split | 207 / 2079 / 190 |
 | heads a measured opening adds (not in the shared prologue table) / of them decode | 1022 / 1006 |
 | ...of those, named by no channel | 416 |
@@ -364,7 +364,7 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | `push-arg` | 33 | 0 |
 | `bare-ret` | 30 | 4 |
 
-370 of the 2088 bodies sit in a class-table slot; 367 of those are in the 232 tables no registration names, and 814 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+370 of the 2088 bodies sit in a class-table slot; 367 of those are in the 232 tables no registration names, and 827 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
 
 The split rule does not hold on the map's own rows the way it holds on the gaps: 76 rows read as two bodies with relative branches alone, and **357 of their 386 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 190 split heads**, which is what makes the 190 splits bodies rather than case blocks.
 <!-- /generated:gap-heads -->

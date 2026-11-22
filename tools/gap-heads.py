@@ -737,12 +737,22 @@ def measure(args):
     meta["family_register_once"] = sum(1 for r in rows if r["family"] == "register-once")
     meta["family_atexit"] = sum(1 for r in rows if r["family"] == "atexit")
     meta["slot_named"] = sum(1 for r in rows if int(r["slots"]))
-    meta["named_pointer"] = ch["pointer"]
-    meta["named_slot"] = ch["slot"]
-    meta["named_branch"] = ch["branch"]
-    meta["named_imm"] = ch["imm"]
-    meta["named_any"] = ch["any"]
-    meta["unnamed"] = len(bodies) - ch["any"]
+    # The channel counts are read over the decoded population (`bodies` is the body + island rows), not
+    # over every head: an `undecoded`/`no-close` head can carry a channel of its own, and subtracting a
+    # whole-population count from a decoded-population size left `unnamed` thirteen short of the rows it
+    # claims to count -- 814 against 827 read off the artifact (2026-11-21).
+    def _any(r):
+        return (int(r["pointers"] or 0) or int(r["imms"] or 0) or int(r["calls"] or 0)
+                or int(r["jumps"] or 0))
+
+    meta["named_pointer"] = sum(1 for r in bodies if int(r["pointers"] or 0))
+    meta["named_slot"] = sum(1 for r in bodies if int(r["slots"] or 0))
+    meta["named_branch"] = sum(1 for r in bodies if int(r["calls"] or 0) or int(r["jumps"] or 0))
+    meta["named_imm"] = sum(1 for r in bodies if int(r["imms"] or 0))
+    meta["named_any"] = sum(1 for r in bodies if _any(r))
+    meta["unnamed"] = len(bodies) - meta["named_any"]
+    meta["islands_unnamed"] = sum(1 for r in bodies if r["verdict"] == "island" and not _any(r))
+    meta["bodies_unnamed"] = meta["unnamed"] - meta["islands_unnamed"]
     meta["map_rows"] = sum(v for k, v in ctl.items() if k in ("both", "pad", "prologue", "neither"))
     meta["map_rows_head"] = ctl["both"]
     meta["map_rows_pad_only"] = ctl["pad"]
@@ -1057,7 +1067,8 @@ def render(rows):
             % (m["slot_named"], m["tables"], m["slot_classes"], m["named_slot"]),
             "| named by an `E8`/`E9` branch | %d |" % m["named_branch"],
             "| named by a `68` push | %d |" % m["named_imm"],
-            "| named by any channel / by none | %d / %d |" % (m["named_any"], m["unnamed"]),
+            "| named by any channel / by none (of them bodies / islands) | %d / %d (%d / %d) |"
+            % (m["named_any"], m["unnamed"], m.get("bodies_unnamed", 0), m.get("islands_unnamed", 0)),
             "| boundaries: the gap's start / fill / a split | %d / %d / %d |"
             % (m.get("heads_start", 0),
                m["heads"] - m.get("heads_start", 0) - m.get("heads_after_ret", 0), m.get("heads_after_ret", 0)),
