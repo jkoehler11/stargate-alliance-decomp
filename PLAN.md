@@ -17598,6 +17598,39 @@ sequence.
   `0x00024c80`, are twins whose second body opens `push esi` and reads `[ebp+8]` without setting `ebp`, so it
   is interior code of the row above.
 
+### Execution notes (2026-11-22, the extents that run too long: 9 rows and 1,832 bytes given back)
+
+- **Task.** The thread's rows that refuse a close were exhausted one family at a time, and the last one was
+  the mirror image of every earlier repair: a row whose **declared size crosses the next map row's start**, so
+  two rows claim the same bytes. Nothing had read that shape, and `write_boundaries` had no verb for it.
+- **The rule.** The second body is the map's, so the long row is the one at fault. Its own decode still ends
+  where its body ends: the last terminator that starts and ends before the next row's start, with nothing but
+  fill (`0xcc`/`0x90`) behind it, is the boundary, and the row is **resized down** to it. A terminator with
+  code behind it refuses (`over-code`), as does a row whose decode reaches no terminator at all (`over-close`):
+  resizing those would cut a body the map already carries. **9 rows adopt** (1,832 bytes given back; the largest
+  `0x00195830` 5,845 -> 5,186) and **1 refuses** (`0x00410045`, 6 bytes, no close in front of the next row).
+- **The artifact carries a repair it can no longer re-measure, and the carry list is where that lives.**
+  `_known()` fed the tool its own previous rows for `continuation`/`interior`/`folded` only, so the first run
+  after applying the resizes re-measured the nine as ordinary rows, dropped them out of the artifact and
+  reported `over 0` -- a census that quietly forgot the family it had just repaired, with `--check` green
+  because it only iterates the rows the artifact still holds. `over` is in that tuple now, and restoring the
+  artifact from the previous commit and re-running reproduces **728 rows, over 9, over_bytes 1,832**. The
+  lesson for every tool here: a family the artifact is the only record of must be in the carry list.
+- **The map had never carried #849's resizes either.** `--apply` on this branch moved **20** rows, not 9:
+  the eleven `resize` rows the previous bundle wrote were still absent from `symbols/xbox_functions.csv`, so
+  the map goes 4,265,132 -> **4,263,513 bytes** (-1,619 = +213 from those eleven and -1,832 from the nine).
+  A PR that writes a boundary row without applying it leaves the artifact and the map disagreeing, and
+  `--check` catches it only once the values differ.
+- **Cascade, regenerated on the repaired map:** `gap_heads`, `gap_body_families`, `gap_body_files`,
+  `silent_bodies`, `class_slot_declarers`, `function_modules`, `module_export_plan`,
+  `xbe_functions_by_module`, `symbols/xbox.map` + `xbox.sym.s`, `docs/NATIVE.md`, `docs/ARTIFACTS.md`,
+  `docs/systems/CLASS_REGISTRATION.md` and the generated block in `docs/SYMBOLS.md`.
+- **What is left in this thread:** 12 `no-close` tails (a row whose decode reaches no terminator before the
+  next row) and 12 `split` rows, each waiting on a `drop` review the fold walk cannot supply; 13 `short` rows
+  whose completed instruction lands on the next row's start.
+- **Gates.** `--selftest` covers the too-long row and the row it runs into; `--check` proves the nine resizes
+  are in the map and carried by the artifact.
+
 ### Execution notes (2026-11-21, the extents: the code behind a close read three ways, a head shorter than its own instruction, and the fold rule's three refusals)
 
 - **Task.** The cut note above left three open items: 60 tails that refused a close, 43 rows that still ended

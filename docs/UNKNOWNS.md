@@ -5609,6 +5609,14 @@ creation row, both printed by `native-census --gap-add 0x002b7aa0 --name FUN_002
 
 ## U40. The map's `.text` gaps hold 1,451 decodable bodies, and 399 of them nothing names
 
+**Answered since (2026-11-22, the size that runs too long).** The gap walk measures a body that stops
+short; the mirror shape is a map row whose declared size crosses the next row's start, and the second
+body is the map's. `tools/symbol-extents.py` resizes such a row down to its own last terminator when only
+fill follows it: **9 rows, 1,832 bytes given back**, map 4,265,132 -> 4,263,513 bytes, and **1 refusal**
+(`0x00410045`, no close in front of the next row). The artifact is the only record of those resizes, so
+its carry list has to name the `over` verdict -- without it a re-measurement drops the family and reports
+`over 0` while `--check` stays green.
+
 **Observed.** `tools/gap-heads.py` (`inventory/gap_heads.csv`) censuses every gap in
 `symbols/xbox_functions.csv`'s coverage of `.text`. After this bundle's 595 adds the gaps are **11,070
 holding 611,132 bytes** (14.5% of the section) and the rule finds **1,527 heads, 1,451 decoding (1,249

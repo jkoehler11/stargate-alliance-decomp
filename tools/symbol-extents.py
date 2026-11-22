@@ -1767,7 +1767,8 @@ def main():
 
 def _known():
     rows, _ = read_artifact()
-    return {r["row_va"]: r for r in rows if r.get("verdict") in ("continuation", "interior", "folded")}
+    return {r["row_va"]: r for r in rows
+            if r.get("verdict") in ("continuation", "interior", "folded", "over")}
 
 
 if __name__ == "__main__":
