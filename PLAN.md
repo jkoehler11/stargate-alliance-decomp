@@ -17491,3 +17491,54 @@ sequence.
   install), not another slot index.
 - **Not in this bundle.** The 427 silent bodies, the 4 linker folds, and the interface's own name for the 212
   anonymous tables (the slot vocabulary names 20; that is a naming question, not a slot one).
+
+### Execution notes (2026-11-21, the 427 silent bodies read at their own bytes: a map tail, a copied header, and nothing in the image)
+
+- **Task.** U40's oldest count -- **427 bodies (52,485 bytes)** that no `.text` operand, table word, call, jump,
+  pushed immediate or outside pointer names -- which five bundles had carried forward because every attempt added
+  another *reference* channel. This round stops looking for a reference: a body nothing references is not missing
+  one. It reads what the body says about itself.
+- **The read.** `tools/silent-bodies.py` takes its population from `inventory/gap_body_families.csv`'s `silent`
+  rows and answers four questions per body: the padding before it and the body that ends at its first byte; the
+  same bytes at another address; the literal it pushes; the instructions it is made of. Its `verdict` is
+  `continuation`, `copy` or `unique`.
+- **The reach negative, with two controls.** The address of **0 of 427** occurs anywhere in the image outside
+  `.text`, against **5,125 of 16,935** map rows (**30.3%**) -- the scanner is not blind. And the channel that would
+  survive every absolute scan, a **section-relative** `switch` table (an entry is the target minus its own site),
+  resolves **21** of the 427 against **497 of 16,935** map rows (**2.9%**) and puts **0** of the 21 in a run of
+  three consecutive entries resolving into one function: the hits are one dword among unrelated bytes, the base
+  rate, not a table. The 21 resolve at 21 different sites, each with unrelated neighbours.
+- **16 are a row's tail: the map's size column stops early.** An unpadded head whose predecessor's last
+  instruction is not a terminator cannot be a function (MSVC pads between functions), so the two extents are one
+  function's code. **9** of the 16 stop the row on an epilogue (`pop ebp`, `pop ebx`, `add esp,N`) and the body
+  opens on the `ret` that closes it; **7** stop mid-expression. The largest is the one to read: `FUN_002a002a` is a
+  **20-byte row** opening on `addss xmm1,xmm4` -- no prologue, a fragment of an SSE float function -- and
+  `0x002a003e` is its **4,501-byte** continuation. **6,394 bytes** of extents are short over the 16, and the
+  correction is deliberately not in this bundle: it moves every artifact cut from the extents.
+- **74 are a copy, and the shape names the family.** 20 byte-identical groups of at least 8 bytes, from a
+  **ten-address** body down to pairs: a 44-byte dot product (10 addresses), a 43-byte subtract (9), a 41-byte scale
+  (8), a 37-byte dot product (7), an 83-byte cross product (6), a 15-byte zero-init (6), a 55-byte add-scaled (4),
+  a 140-byte add-scaled (3), a 148-byte normalize (7, the `fsqrt`/`divss` form), a 103-byte 16-dword struct copy, a
+  32-byte and a 14-byte zero-init, a 23-byte and a 15-byte virtual-slot wrapper. One float3 operator set, a
+  `static` inline in a header compiled once per object file and inlined at every call site -- the same relation as
+  the declarer walk's **4 folds** (two 21-byte getters at indices 34/35 of seven tables, a 1-byte `ret` at index 17
+  of 489, a 4-byte getter at 7/8/30 of seven) and as the map's **108 duplicate groups over 813 bodies**. A fold is
+  a header helper with more than one copy, not a naming failure.
+- **337 are unique, helper-shaped, and their literals place them.** `arg-load` 124, `push-reg` 84,
+  `getter-disp8` 20, `sse-load` 20, `global-load-eax` 15; **176 call a body the map names**, 251 call none; **32
+  push a printable literal** and it is an **assert message** -- `[LIPSinc]: LIPSincShutdownEditor`,
+  `Unpopulated box!`, `FlyingPathNode:***********added new spec` -- so the literal channel names the subsystem and
+  never the function. No map row is written: a body nothing references has no owner.
+- **Files.** `tools/silent-bodies.py` (new), `inventory/silent_bodies.csv` (new, 427 rows + a census row),
+  `docs/systems/CLASS_REGISTRATION.md` (the new section and its block), `docs/UNKNOWNS.md` (U40 closed),
+  `Makefile` (the target, the `--check-doc` gate, the help line), `inventory/artifact_hashes.csv`,
+  `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green; `--check` synthetic and writes nothing (three verdicts from synthetic extents, the
+  reach counter, a relative entry in and out of range, the run test on three neighbouring entries and on one, the
+  float and structural copy shapes, the render and both artifact round trips); `--check-doc` rebuilds the block
+  from the committed CSV; the artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
+- **Next measurement:** the 16 short rows corrected -- the 16 sizes, then `gap_heads`, `gap_body_families`,
+  `gap_body_files`, `silent_bodies` and every census cut from them regenerated in one commit, so the correction
+  cannot land half-way.
+- **Not in this bundle.** The 16 size corrections (above), and any name for the 337 unique bodies: the literals
+  place their subsystem, and no channel in the image reaches an owner.
