@@ -24,7 +24,7 @@
 0x00012110 FUN_00012110                                  450 
 0x000122e0 FUN_000122e0                                  300 
 0x000124c0 FUN_000124c0                                  342 
-0x00012620 Core_UnObjBas                               18359 
+0x00012620 Core_UnObjBas                               18384 
 0x00016e00 FUN_00016e00                                   28 
 0x00016e20 FUN_00016e20                                   94 
 0x00016e80 ??2@YAPAXI@Z                                   21 
@@ -763,7 +763,7 @@
 0x00033060 FUN_00033060                                  171 
 0x00033110 XHVVoiceSubsystem_vt36                         91 
 0x0003316b FUN_0003316b                                   96 
-0x00033329 Engine_UnController                           159 
+0x00033329 Engine_UnController                           135 
 0x000333b0 FUN_000333b0                                  149 
 0x00033450 ctor_XHVVoiceSubsystem                         56 
 0x00033490 XHVVoiceSubsystem_member_0x28_vt0            1083 
@@ -941,7 +941,7 @@
 0x00039520 Core_UnClass                                  644 
 0x000397b0 Core_UnClass                                   67 
 0x00039860 Core_UnClass                                  117 
-0x000398e0 Core_UnClass                                 1373 
+0x000398e0 Core_UnClass                                 1380 
 0x00039f10 FUN_00039f10                                  283 
 0x0003a030 Core_UnClass                                  283 
 0x0003a1b0 FUN_0003a1b0                                  112 
@@ -2110,7 +2110,7 @@
 0x0007eef0 ctor_new                                       39 
 0x0007ef20 FUN_0007ef20                                 1459 
 0x0007f4e0 Core_UnVcWin32                                183 
-0x0007f5a0 FUN_0007f5a0                                 2260 
+0x0007f5a0 FUN_0007f5a0                                 2370 
 0x0007ff00 FUN_0007ff00                                   24 
 0x0007ff20 FUN_0007ff20                                   65 
 0x0007ff70 FUN_0007ff70                                   33 
@@ -2355,7 +2355,7 @@
 0x00095540 FUN_00095540                                  469 
 0x00095720 FUN_00095720                                  627 
 0x000959a0 FUN_000959a0                                   95 
-0x00095a00 FUN_00095a00                                  624 
+0x00095a00 FUN_00095a00                                  144 
 0x00095a90 FUN_00095a90                                  561 
 0x00095cd0 FUN_00095cd0                                 3448 
 0x00096a50 FUN_00096a50                                 7449 
@@ -5520,7 +5520,7 @@
 0x001954d0 FUN_001954d0                                  364 
 0x00195640 FUN_00195640                                   99 
 0x001956b0 FUN_001956b0                                  384 
-0x00195830 FUN_00195830                                 5845 
+0x00195830 FUN_00195830                                 5186 
 0x00196c72 FUN_00196c72                                   84 
 0x00196f60 Scout_vt131                                     5 
 0x00196f70 FUN_00196f70                                   85 
@@ -6347,7 +6347,7 @@
 0x001f75c0 FUN_001f75c0                                   93 
 0x001f7620 FUN_001f7620                                   88 
 0x001f7680 FUN_001f7680                                   35 
-0x001f76b0 FUN_001f76b0                                  898 
+0x001f76b0 FUN_001f76b0                                  912 
 0x001f7a70 FUN_001f7a70                                  339 
 0x001f7bd0 FUN_001f7bd0                                  222 
 0x001f7cb0 Core_UnObjBas                                 131 
@@ -6479,7 +6479,7 @@
 0x00207640 FUN_00207640                                  392 
 0x002077d0 FUN_002077d0                                  264 
 0x002078e0 FUN_002078e0                                  264 
-0x002079f0 Core_UnObjBas                                4603 
+0x002079f0 Core_UnObjBas                                4609 
 0x00208c10 FUN_00208c10                                 1090 
 0x00209130 FUN_00209130                                  264 
 0x00209240 FUN_00209240                                  157 
@@ -7149,7 +7149,7 @@
 0x0023f1f0 FUN_0023f1f0                                 1274 
 0x0023f6f0 FUN_0023f6f0                                  319 
 0x0023f830 FUN_0023f830                                 1852 
-0x00240000 FUN_00240000                                  722 
+0x00240000 FUN_00240000                                  688 
 0x002402b0 FUN_002402b0                                  648 
 0x00240540 FUN_00240540                                 1009 
 0x00240940 Core_UnTemplate                              1748 
@@ -7324,7 +7324,7 @@
 0x0024f930 FUN_0024f930                                  146 
 0x0024f9d0 Engine_UnStaticMeshBuild                     1331 
 0x0024ff10 FUN_0024ff10                                  703 
-0x002501d0 FUN_002501d0                                 6396 
+0x002501d0 FUN_002501d0                                 6422 
 0x00251b10 Core_UnTemplate                               171 
 0x00251bc0 Core_UnTemplate                               171 
 0x00251c70 Core_UnTemplate                               171 
@@ -7568,7 +7568,7 @@
 0x0027c690 Engine_UnTex                                  435 
 0x0027c850 FUN_0027c850                                  496 
 0x0027ca40 Engine_UnTex                                  350 
-0x0027cba0 Engine_UnTex                                 3743 
+0x0027cba0 Engine_UnTex                                 3752 
 0x0027da70 Engine_UnTex                                  833 
 0x0027ddf0 Engine_UnTex                                  595 
 0x0027e060 Engine_UnTex                                  619 
@@ -7791,7 +7791,7 @@
 0x00295020 Engine_UStreamInterface                       179 
 0x002950e0 FUN_002950e0                                  167 
 0x00295190 FUN_00295190                                  229 
-0x002954b0 FUN_002954b0                                  596 
+0x002954b0 FUN_002954b0                                  144 
 0x00295540 Engine_UStreamInterface                        33 
 0x00295570 FUN_00295570                                  614 
 0x002957e0 FUN_002957e0                                   52 
@@ -8940,7 +8940,7 @@
 0x002f8090 FUN_002f8090                                  403 
 0x002f8230 FUN_002f8230                                   51 
 0x002f8270 FUN_002f8270                                   93 
-0x002f82d0 FUN_002f82d0                                  120 
+0x002f82d0 FUN_002f82d0                                  125 
 0x002f8360 FUN_002f8360                                  277 
 0x002f8480 FUN_002f8480                                  152 
 0x002f8520 FUN_002f8520                                  149 
@@ -9592,7 +9592,7 @@
 0x00324cf0 FUN_00324cf0                                   31 
 0x00324d10 FUN_00324d10                                   31 
 0x00324d60 FUN_00324d60                                 2854 
-0x00325b24 XboxLive_XboxLiveMatchMaking                  189 
+0x00325b24 XboxLive_XboxLiveMatchMaking                  124 
 0x00325ba0 XboxLive_XboxLiveMatchMaking                  512 
 0x00325da0 StatsReadTask_Finished                        429 
 0x00325f50 XboxLive_XboxLiveMatchMaking                  965 
@@ -11147,7 +11147,7 @@
 0x0036fd40 FUN_0036fd40                                  317 
 0x003705c4 FUN_003705c4                                  242 
 0x003706c4 FUN_003706c4                                  161 
-0x00370774 FUN_00370774                                  185 
+0x00370774 FUN_00370774                                  190 
 0x00370834 FUN_00370834                                  556 
 0x00370a64 FUN_00370a64                                  306 
 0x00370ba4 FUN_00370ba4                                  306 
@@ -11208,7 +11208,7 @@
 0x0037d490 _GenFcbIndex                                  187 
 0x0037d54b _search_tracks                               1064 
 0x0037d980 FUN_0037d980                                 1394 
-0x0037e4f0 FUN_0037e4f0                                  423 
+0x0037e4f0 FUN_0037e4f0                                  427 
 0x0037e790 FUN_0037e790                                 1087 
 0x0037ebd0 FUN_0037ebd0                                 1087 
 0x0037f010 FUN_0037f010                                  581 
@@ -11846,7 +11846,7 @@
 0x003b7040 FUN_003b7040                                  112 
 0x003b70b0 FUN_003b70b0                                   38 
 0x003b70e0 FUN_003b70e0                                  486 
-0x003b72d0 FUN_003b72d0                                  827 
+0x003b72d0 FUN_003b72d0                                  727 
 0x003b75b0 FUN_003b75b0                                   88 
 0x003b7610 FUN_003b7610                                  332 
 0x003b7760 FUN_003b7760                                  130 
@@ -12533,7 +12533,7 @@
 0x003e7df5 ___wdtoxmode                                  195 
 0x003e7eb8 __wstat                                       568 
 0x003e80f0 FUN_003e80f0                                   20 
-0x003e810d FUN_003e810d                                  170 
+0x003e810d FUN_003e810d                                  157 
 0x003e81aa _wcstombs                                     413 
 0x003e8347 _swprintf                                     111 
 0x003e83b6 _vsprintf                                      87 
@@ -12572,7 +12572,7 @@
 0x003e90c3 __snprintf                                     87 
 0x003e9120 __allrem                                      178 
 0x003e91d2 _toupper                                       49 
-0x003e9220 _strchr                                       195 
+0x003e9220 _strchr                                       190 
 0x003e92de _strtok                                       157 
 0x003e937b _towlower                                      71 
 0x003e93c4 __SEH_prolog                                   59 
@@ -12632,7 +12632,7 @@
 0x003eaef6 FUN_003eaef6                                  474 
 0x003eb0d0 ___InternalCxxFrameHandler                    162 
 0x003eb172 FUN_003eb172                                   51 
-0x003eb1a6 ?_inconsistency@@YAXXZ                         38 
+0x003eb1a6 ?_inconsistency@@YAXXZ                         40 
 0x003eb1e0 __CallSettingFrame@12                          76 
 0x003eb22c __forcdecpt                                    88 
 0x003eb284 __cropzeros                                    75 
