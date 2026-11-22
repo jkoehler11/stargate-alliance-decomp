@@ -347,10 +347,10 @@ slot31,0x00133250,FUN_00133250,4429,,.text,0x00133a31,call [edx+0x7c],0x004d2274
 slot31,0x00136e60,Engine_UnGame,2410,Engine,.text,0x001375b5,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x00139030,Engine_UnGame,3348,Engine,.text,0x00139174,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
 slot31,0x00139030,Engine_UnGame,3348,Engine,.text,0x00139b3c,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
-slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x0013bffb,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
-slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x0013c59f,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
-slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x0013c8f0,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
-slot31,0x0013be80,Core_UnClass,47779,Core,.text,0x001466f8,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,48307,Core,.text,0x0013bffb,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,48307,Core,.text,0x0013c59f,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,48307,Core,.text,0x0013c8f0,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
+slot31,0x0013be80,Core_UnClass,48307,Core,.text,0x001466f8,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,also dispatches +0x88
 slot31,0x00150180,FUN_00150180,410,,.text,0x00150240,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x00156ee0,Engine_UnLevAct,5603,Engine,.text,0x001583ce,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,
 slot31,0x001584d0,Engine_UnLevAct,2428,Engine,.text,0x00158720,call [edx+0x7c],0x004d2274,XBoxAudioSubsystem +0x7c,outside,

@@ -292,8 +292,7 @@
 0x0001e100 FUN_0001e100                                 2024 
 0x0001e8f0 FUN_0001e8f0                                  791 
 0x0001ec10 FUN_0001ec10                                 1673 
-0x0001f2a0 FUN_0001f2a0                                   35 
-0x0001f2c3 FUN_0001f2c3                                  446 
+0x0001f2a0 FUN_0001f2a0                                  481 
 0x0001f490 FUN_0001f490                                  289 
 0x0001f5c0 FUN_0001f5c0                                  381 
 0x0001f7b0 FUN_0001f7b0                                   67 
@@ -479,8 +478,7 @@
 0x00024b00 FUN_00024b00                                  242 
 0x00024c00 FUN_00024c00                                   49 
 0x00024c40 FUN_00024c40                                   64 
-0x00024c80 FUN_00024c80                                   35 
-0x00024ca3 FUN_00024ca3                                  455 
+0x00024c80 FUN_00024c80                                  490 
 0x00024e70 FUN_00024e70                                  724 
 0x00025150 FUN_00025150                                   45 
 0x00025180 FUN_00025180                                  110 
@@ -1735,7 +1733,7 @@
 0x00070b30 Core_UnObj                                    382 
 0x00070cb0 FUN_00070cb0                                 7866 
 0x00072b70 Core_UnObj                                   1529 
-0x00073250 Core_UnObj                                    458 
+0x00073250 Core_UnObj                                    694 
 0x00073550 FUN_00073550                                  183 
 0x00073660 FUN_00073660                                  197 
 0x00073780 Core_UnObj                                    135 
@@ -4513,7 +4511,7 @@
 0x00139d50 FUN_00139d50                                 4839 
 0x0013b040 FUN_0013b040                                 3472 
 0x0013bdd0 Engine_UnGame                                 176 
-0x0013be80 Core_UnClass                                47779 
+0x0013be80 Core_UnClass                                48307 
 0x00147b40 FUN_00147b40                                   85 
 0x00147ba0 FUN_00147ba0                                   85 
 0x00147c00 FUN_00147c00                                   85 
@@ -8493,7 +8491,7 @@
 0x002dc840 FUN_002dc840                                  132 
 0x002dc8d0 ?inflate_set_dictionary@D3DX@@YAXPAUinflate_blocks_state@1@PBEI@Z     49 
 0x002dc920 FUN_002dc920                                   57 
-0x002dc960 FUN_002dc960                                 1752 
+0x002dc960 FUN_002dc960                                 1761 
 0x002dd070 FUN_002dd070                                   20 
 0x002dd090 FUN_002dd090                                  866 
 0x002dd400 _inflateReset                                  66 
@@ -9063,7 +9061,7 @@
 0x00302e10 FUN_00302e10                                  220 
 0x00302ef0 FUN_00302ef0                                  174 
 0x00302fa0 FUN_00302fa0                                  137 
-0x00303030 FUN_00303030                                    1 
+0x00303030 FUN_00303030                                  121 
 0x003030b0 FUN_003030b0                                  483 
 0x003032a0 FUN_003032a0                                  287 
 0x003033c0 FUN_003033c0                                  327 
@@ -11161,7 +11159,7 @@
 0x00371604 FUN_00371604                                  107 
 0x00371674 FUN_00371674                                  737 
 0x00371964 FUN_00371964                                  107 
-0x003719d4 FUN_003719d4                                 1213 
+0x003719d4 FUN_003719d4                                 1222 
 0x00371eb4 FUN_00371eb4                                   56 
 0x00371ef4 FUN_00371ef4                                   60 
 0x00371f34 FUN_00371f34                                   33 
@@ -11215,7 +11213,7 @@
 0x0037ebd0 FUN_0037ebd0                                 1087 
 0x0037f010 FUN_0037f010                                  581 
 0x0037f5a0 _ownippsMin_64f                               502 
-0x0037f870 FUN_0037f870                                  235 
+0x0037f870 FUN_0037f870                                  239 
 0x0037fc30 _NuRand                                        77 
 0x0037fc80 FUN_0037fc80                                   65 
 0x0037fcd0 FUN_0037fcd0                                   69 
@@ -12474,7 +12472,7 @@
 0x003e6129 __flushall                                      9 
 0x003e6132 ??_L@YGXPAXIHP6EX0@Z1@Z                        74 
 0x003e617c FUN_003e617c                                   24 
-0x003e61a0 _memmove                                      672 
+0x003e61a0 _memmove                                      742 
 0x003e64e0 __ftol2                                       117 
 0x003e6555 FUN_003e6555                                   17 
 0x003e6566 ??0exception@@QAE@ABV0@@Z                      79 

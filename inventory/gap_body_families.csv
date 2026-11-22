@@ -92,6 +92,7 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x00068ac0,95,seh,ret,,0,,,,,,,,,silent,Core,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x000695c0,177,arg-load,ret,,0,,,,,,,,,silent,Core,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x0006cef0,54,arg-load,ret-imm,,0,,,,,,,,,silent,Core,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0x00073506,72,mov-eax,ret,,0,,,,,,,,,silent,Core,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x0007e600,47,push-reg,ret,,0,,,,,,,,,silent,FUN_0007e590,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x0007e7b0,24,arg-load,ret-imm,,0,,,,,,,,,silent,FUN_0007e7a0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x0007e8c0,49,global-load-eax,ret-imm,Aborted!,0,,,,,,,,,silent,FUN_0007e890,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -450,6 +451,7 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x003e3050,879,alloc,ret-imm,"line %d, char %d: Expected int, found %s / line ",2,operand,head,0x003e0a30,,,,,,operand-in-head,FUN_003e3040,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x003e36f0,65,arg-load,ret-imm,,1,operand,row,0x003e37a0,FUN_003e37a0,,,,,operand-in-row,FUN_003e36d0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x003e38d0,384,alloc,ret-imm,,1,operand,row,0x003e3a50,FUN_003e3a50,,,,,operand-in-row,FUN_003e38b0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0x003e6486,87,hotpatch,ret,,0,,,,,,,,,silent,_memmove,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x003e9410,218,push-reg,ret,,0,,,,,,,,,silent,__SEH_epilog,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x003ebf2d,102,mov-eax,ret-imm,,1,operand,row,0x003eb7c6,__output,,,,,operand-in-row,__output,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x003ee085,20,alloc,jmp,,0,,,,,,,,,silent,__math_exit,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -469,4 +471,4 @@ body_va,size,prologue,terminator,string_head,text_sites,site_kind,owner_kind,own
 0x00405c41,283,push-reg,jmp,,0,,,,,,,,,silent,FUN_00404f90,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x00406e92,105,add-reg-imm8,jmp,,0,,,,,,,,,silent,FUN_00406330,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 0x0040a736,18,push-reg,jmp,,0,,,,,,,,,silent,FUN_00409100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,census,,,2114,470,98433,71,7,7,2,0x005ccadc,0x005ccae0,0,0,6,0,297,0,0,0,0,0,0,58,54,6,52,3,2,0,0,1,412,16935,466,295,183,2,2000,23,?=52 Core=2 head=2 XboxAudio=1 gap=1,46154,18
+,,,,,,,,,,,,,,census,,,2116,472,98592,71,7,7,2,0x005ccadc,0x005ccae0,0,0,6,0,297,0,0,0,0,0,0,58,54,6,52,3,2,0,0,1,414,16933,466,295,183,2,2000,23,?=52 Core=2 head=2 XboxAudio=1 gap=1,46313,18
