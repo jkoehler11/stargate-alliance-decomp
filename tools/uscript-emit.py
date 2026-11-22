@@ -143,10 +143,12 @@ def _brace_end(toks, i):
 
 
 def params_of(toks, i):
-    """`[(type, name)]` for a declaration's parameter list; `toks[i]` is its `(`.
+    """`[(type, name, optional)]` for a declaration's parameter list; `toks[i]` is its `(`.
 
     The declared type is what picks an argument's token (`PHYS_Swimming` is a byte, `1.0` a float), so the join to
     the callee's declaration has to carry it: `inventory/natives.csv` holds a parameter *count* and no types.
+    `optional` is the third field because a call may stop short of it: `GotoState('FadeOut')` passes one of
+    `GotoState(name NewState, optional name Label)`'s two and the package writes no placeholder for the other.
     """
     close = _paren_end(toks, i)
     if close is None:
@@ -171,10 +173,12 @@ def params_of(toks, i):
                 name, end = words[n][1], n
                 break
         typ = "".join(v for _k, v in words[:end])
+        optional = False
         for mod in ("out", "optional", "coerce", "const", "init"):
             if typ.lower().startswith(mod):
                 typ = typ[len(mod):]
-        out.append((typ, name))
+                optional = optional or mod == "optional"
+        out.append((typ, name, optional))
     return out
 
 
@@ -401,11 +405,41 @@ def _is_call(expr):
             and _paren_end(expr, 1) == len(expr) - 1)
 
 
-def _emit_var(name, env):
+CAST_SLOTS = {}
+
+
+def _cast_slots():
+    """`{(from, to): slot}` from `inventory/cast_operands.csv` -- the image's own cast table, named `IntToFloat`.
+
+    The operand of `0x39 PrimitiveCast` *is* one of those slot numbers: the three casts this corpus exercises at an
+    expression site are `3a` (58 `ByteToInt`), `3d` (61 `IntToByte`) and `3f` (63 `IntToFloat`), which is how the
+    table identifies the byte rather than a guess about the operand's meaning.
+    """
+    if CAST_SLOTS:
+        return CAST_SLOTS
+    path = os.path.join(ROOT, "inventory", "cast_operands.csv")
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                m = re.match(r"^([A-Z][a-z]+)To([A-Z][a-z]+)$", r["name"] or "")
+                if not m or not int(r["tokens"] or 0):
+                    continue
+                CAST_SLOTS[(m.group(1).lower(), m.group(2).lower())] = int(r["slot"])
+    except OSError:
+        pass
+    return CAST_SLOTS
+
+
+def _emit_var(name, env, want=""):
     """One variable read: its own token and the record index the package holds, bools behind `2D` (BoolVariable).
 
     `bGodMode = NewGodModeValue;` is `14 2D 01 <idx> 2D 00 <idx>`: the *value*'s bool flag is the variable's own,
     which is why a read is emitted here and not by the caller.
+
+    A read whose declared type is not the type the site wants is wrapped in `PrimitiveCast` (`39 <slot>`), slot from
+    the image's own cast table: `return Damage;` in a `float` function whose parameter is an `int` writes
+    `04 39 3f 00 697e` (`IntToFloat`), and `GetMaxDistToTarget`'s int property the same. Only pairs the table has a
+    *used* slot for are cast; a type the package records only as `object` or `struct` is emitted as it is.
     """
     low = name.lower()
     scope = env["scope"]
@@ -416,7 +450,13 @@ def _emit_var(name, env):
     else:
         return None
     out = bytes([token]) + write_index(index)
-    return bytes([0x2D]) + out if ptype == "bool" else out
+    body = bytes([0x2D]) + out if ptype == "bool" else out
+    want = (want or "").lower()
+    if ptype in ("byte", "int", "float") and want in ("byte", "int", "float") and want != ptype:
+        slot = _cast_slots().get((ptype, want))
+        if slot is not None:
+            return bytes([0x39, slot]) + body
+    return body
 
 
 def _emit_enum(name, env):
@@ -449,7 +489,7 @@ def emit_expr(expr, rettype, env):
         raise Refused("a compound expression, which needs the statement walk")
     kind, val = expr[0]
     if kind in ("ident", "keyword") and val.lower() not in ("true", "false", "none", "self"):
-        read = _emit_var(val, env)
+        read = _emit_var(val, env, rettype)
         if read is not None:
             return read, "variable"
         token, enum = _emit_enum(val, env)
@@ -556,27 +596,45 @@ def emit_call(stmt, env):
     args = _split_commas(stmt[2:close]) if stmt[2:close] else []
     scope = env["scope"]
     how = (scope or {}).get("funcs", {}).get(stmt[0][1].lower())
-    if how is None:
+    dele = (scope or {}).get("delegates", {}).get(stmt[0][1].lower())
+    if dele is not None:
+        # `DelegateFunction`: the DelegateProperty's export index, then the callee's name index, then the arguments.
+        idx = how[1] if how and how[0] == "virtual" else env["names"].get(stmt[0][1].lower())
+        if idx is None:
+            raise Refused("a delegate call whose name the name table does not carry")
+        head = bytes([0x43]) + write_index(dele) + write_index(idx)
+    elif how is None:
         raise Refused("a call to a name the class chain does not declare")
-    kind, value = how
-    if kind == "native":
-        op = 0x60 + (value >> 8)
-        if op > 0x6F:
-            raise Refused("a native token outside the six opcode groups")
-        head = bytes([op, value & 0xFF])
-    elif kind == "final":
-        head = bytes([0x1C]) + write_index(value)
+    elif how[0] == "native":
+        # An exec native's *token is its own opcode* once it reaches 0x70: the compiler writes `71 21 ... 16` for
+        # `GotoState(...)`, `75` for `Enable(113)` and `76` for `Disable(118)` -- one byte, not the HighNative pair
+        # (measured on 135 declarers in this build; emitting `60 71` cost a whole family of differences).
+        value = how[1]
+        if 0x70 <= value <= 0xFF:
+            head = bytes([value])
+        elif value >= 0x100:
+            head = bytes([0x60 + (value >> 8), value & 0xFF])
+        else:
+            raise Refused("a native token below 0x70 (%d), which collides with a real opcode" % value)
+    elif how[0] == "final":
+        head = bytes([0x1C]) + write_index(how[1])
     else:
-        head = bytes([0x1B]) + write_index(value)
-    if not args:
-        return head + b"\x16"
+        head = bytes([0x1B]) + write_index(how[1])
     params = _callee_params(stmt[0][1], env)
     if params is None:
-        raise Refused("a call whose callee declaration the text does not carry")
-    if len(params) != len(args):
+        if args:
+            raise Refused("a call whose callee declaration the text does not carry")
+        return head + b"\x16"
+    if len(args) > len(params):
         raise Refused("a call with %d argument(s) to a %d-parameter callee" % (len(args), len(params)))
+    short = [p for p in params[len(args):] if not p[2]]
+    if short:
+        raise Refused("a call with %d argument(s) to a %d-parameter callee (%d required)"
+                      % (len(args), len(params), len(params) - len(short)))
+    if not args:
+        return head + b"\x16"
     out = head
-    for arg, (ptype, _pname) in zip(args, params):
+    for arg, (ptype, _pname, _optional) in zip(args, params):
         if not arg:
             raise Refused("a call that leaves an optional argument empty")
         out += emit_expr(arg, ptype, env)[0]
@@ -719,6 +777,22 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                 picked = cands[0]
         if picked is not None:
             scope["props"][nm] = (INSTANCE_TOKEN, picked[0], PROP_TYPE.get(picked[2], ""))
+    # A `delegate` is *two* records: a DelegateProperty named `__X__delegate` and a Function named `X`, so the call
+    # `OnChange(Self)` is a `DelegateFunction` naming **both** -- `43 33 1a 17 16` is export 51
+    # (`GUI.GUIComponent.__OnChange__Delegate`) and name index 26 (`OnChange`), which is why the base name has to be
+    # recovered from the mangled one rather than looked up as a property.
+    scope["delegates"] = {}
+    for nm, cands in props.items():
+        if not (nm.startswith("__") and nm.endswith("__delegate")):
+            continue
+        picked = None
+        for anc in order:
+            hit = [c for c in cands if c[1] == anc]
+            if hit:
+                picked = hit[0]
+                break
+        if picked is not None:
+            scope["delegates"][nm[2:-len("__delegate")]] = picked[0]
     declared = set(funcs) | {f for (p2, c2, f) in natives if p2 == pack and c2 in order}
     for c in order:
         declared |= set((final_of or {}).get(c, ()))
@@ -845,7 +919,10 @@ def score(tree, dump, out_dir, residue_dir=None):
             table_index.setdefault(str(pkg.name(i)).lower(), i)
         tables = _class_tables(pkg, kinds, names)
         pack = os.path.splitext(fn)[0].lower()
-        for e in pkg.exports:
+        # the body's own export index: `_scope` reads locals off the export whose outer is this function, so the
+        # index has to be the loop's own -- reusing `i` from the name-table sweep above scoped every body to the
+        # last name index, so no local was ever built and a parameter read fell back to the property table
+        for ei, e in enumerate(pkg.exports):
             if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
                 continue
             status, body, _s, _e, _ne, _front = dis.locate(e, pkg.data)
@@ -878,7 +955,7 @@ def score(tree, dump, out_dir, residue_dir=None):
                                 "cause": _residue_cause(src_texts.get(cls.lower(), []), fname, state)})
                 continue
             rettype, src_body, _text, is_native, _is_final = got
-            scope = _scope(pkg, kinds, names, tables, pack, cls, i + 1, chain, natives, table_index, final_of)
+            scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
                    "enum_names": enum_names, "class_names": class_names, "order": scope["order"]}
             try:
@@ -988,27 +1065,38 @@ function CallArgs() { Foo(1); }
 function CallBool() { Bar(bDead); }
 function CallEnum() { Baz(PROBE_SWIMMING); }
 function CallMix() { Mix(false, 1.5); }
+function CallShort() { Mix(false); }
+function CallMissing() { Foo(); }
 function Bump() { Health = Bump(7); }
 function FromVar() { Health = Slot; }
+function int FromByte() { return Count; }
 function FromFlag() { bDead = Flag2; }
 function CompoundArg() { Foo(1 + 2); }
 function FloatArg() { Foo(1.5); }
 function WrongArgc() { Foo(1, 2); }
 function IfStmt() { if (bDead) Health = 1; }
+function CallExec() { GotoState('Probe'); }
+function CallDelegate() { OnChange(Self); }
+function CallBadNative() { TinyToken(); }
 """
 
 # The package's own tables, as `_scope()` builds them: a property's index, a local's, and a callee's token.
 SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool")},
-         "locals": {"slot": (0x00, 611, "int")},
+         "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte")},
          "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39),
                    "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
-                   "mix": ("virtual", 46), "bump": ("virtual", 47)}}
+                   "mix": ("virtual", 46), "bump": ("virtual", 47), "gotostate": ("native", 113),
+                   "tinytoken": ("native", 2), "onchange": ("virtual", 26)},
+         "delegates": {"onchange": 51}}
 
 # The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
-PARAMS = {("probe", "foo"): [("int", "A")], ("probe", "bar"): [("bool", "Flag")],
-          ("probe", "baz"): [("EProbe", "Mode")], ("probe", "mix"): [("bool", "Flag"), ("float", "Time")],
-          ("probe", "bump"): [("int", "A")]}
+# The third field is `optional`: `Mix(false)` legitimately stops short of `Time`, `Foo()` does not.
+PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "Flag", False)],
+          ("probe", "baz"): [("EProbe", "Mode", False)],
+          ("probe", "mix"): [("bool", "Flag", False), ("float", "Time", True)],
+          ("probe", "bump"): [("int", "A", False)], ("probe", "gotostate"): [("name", "NewState", False)],
+          ("probe", "onchange"): [("object", "Sender", False)]}
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
 ENV = {"names": {}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS, "enum_names": {"eprobe"},
        "class_names": {"probe"}, "order": ["probe"]}
@@ -1045,18 +1133,22 @@ WANT = {
     "callbool": "1b2c2d012d16040b47",              # Bar(bDead) -- a bool argument behind BoolVariable
     "callenum": "62c1240316040b47",                # Baz(PROBE_SWIMMING) -- native token 705, ByteConst 3
     "callmix": "1b2e281e0000c03f16040b47",         # Mix(false, 1.5) -- False, FloatConst
+    "callshort": "1b2e2816040b47",                  # Mix(false) -- the optional `Time` gets no placeholder
     "bump": "0f016e041b2f2c0716040b47",      # Health = Bump(7);
     "fromvar": "0f016e04006309040b47",       # Health = Slot; -- a local's own index
+    "frombyte": "04393a006409040b47",        # return Count; -- a byte local in an int function: PrimitiveCast ByteToInt
     "fromflag": "142d012d2d012e040b47",      # bDead = Flag2; -- bool property read as the value
+    "callexec": "71210516040b47",            # GotoState('Probe') -- token 113 *is* the opcode; name index 5
+    "calldelegate": "43331a1716040b47",      # OnChange(Self) -- DelegateFunction: export 51, name index 26
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
-REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub")
+REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub", "callbadnative", "callmissing")
 
 
 def check(args):
     """Synthetic corpus plus the committed artifact's own consistency: no dump, no writes."""
-    names = {"weapon_bone": 2063}
+    names = {"weapon_bone": 2063, "probe": 5}
     for value, want in ((0, b"\x00"), (1, b"\x01"), (63, b"\x3f"), (64, b"\x40\x01"),
                         (2063, b"\x4f\x20"), (8191, b"\x7f\x7f")):
         got = write_index(value)
@@ -1098,6 +1190,29 @@ def check(args):
         except Refused:
             continue
         print("FAIL uscript-emit: %s was emitted instead of refused" % case)
+        return 1
+    # `_scope` reads a body's locals off the export whose `outer` is the body's own export index. The score loop
+    # once handed it the index left by the name-table sweep, so no local was built and a *parameter* read fell back
+    # to the property table -- `2d 01` where the package wrote `2d 00`. Gate the index itself: the same record must
+    # read as a local for its own index and as nothing for a stale one.
+    class _Pkg:
+        def __init__(self):
+            self.exports = [{"name": 0, "outer": 0}, {"name": 1, "outer": 1}, {"name": 2, "outer": 2}]
+            self.imports = []
+            self._names = ["Probe", "Fn", "Slot"]
+        def name(self, i):
+            return self._names[i]
+    pkg = _Pkg()
+    kinds = {1: "Class", 2: "Function", 3: "IntProperty"}
+    exp_names = {i + 1: pkg.name(e["name"]) for i, e in enumerate(pkg.exports)}
+    tables = _class_tables(pkg, kinds, exp_names)
+    here = _scope(pkg, kinds, exp_names, tables, "probe", "probe", 2, {("probe", "probe"): ("", "")}, {}, {})
+    if here["locals"].get("slot") != (0x00, 3, "int"):
+        print("FAIL uscript-emit: the body's own export index does not scope its local (%r)" % (here["locals"],))
+        return 1
+    stale = _scope(pkg, kinds, exp_names, tables, "probe", "probe", 3, {("probe", "probe"): ("", "")}, {}, {})
+    if stale["locals"]:
+        print("FAIL uscript-emit: a stale export index still scopes a local (%r)" % (stale["locals"],))
         return 1
     if not os.path.exists(ARTIFACT):
         print("ok uscript-emit: %d synthetic bodies, no artifact to check" % len(WANT))
