@@ -69,6 +69,19 @@ class Refused(Exception):
     pass
 
 
+# The record classes an `InstanceVariable`/`LocalVariable` operand can name. The operand is the record's *index* --
+# positive for an export, negative for an import -- so a property needs no order rebuilt, just its own row found.
+PROPERTY_CLASSES = {"IntProperty", "ByteProperty", "BoolProperty", "FloatProperty", "ObjectProperty",
+                    "NameProperty", "StrProperty", "StringProperty", "StructProperty", "ArrayProperty",
+                    "ClassProperty", "DelegateProperty", "PointerProperty", "InterfaceProperty"}
+PROP_TYPE = {"IntProperty": "int", "ByteProperty": "byte", "BoolProperty": "bool", "FloatProperty": "float",
+             "ObjectProperty": "object", "ClassProperty": "object", "NameProperty": "name",
+             "StrProperty": "string", "StringProperty": "string", "StructProperty": "struct",
+             "ArrayProperty": "array", "DelegateProperty": "delegate", "PointerProperty": "pointer",
+             "InterfaceProperty": "object"}
+LOCAL_TOKEN, INSTANCE_TOKEN, DEFAULT_TOKEN = 0x00, 0x01, 0x02
+
+
 # ----------------------------------------------------------------------------------------------------------------
 # the archive's compact index, written the way `uscript-dis.read_index` reads it
 
@@ -168,31 +181,61 @@ def functions_of(text):
     if toks is None:
         return []
     out = []
-    i, depth, state, state_depth = 0, 0, "", None
+    # The brace depth of every token, computed once. Skipping a body whole (`i = end + 1`) is what makes a running
+    # counter wrong: Mover's walk lost one level after a state and then read every later class-scope function as
+    # nested, so `SetStoppedPosition`, `MoverLooped`, `UpdatePrecacheStaticMeshes` and `DisplayDebug` were missing
+    # from a file whose braces balance. A table cannot drift.
+    depth_at, d = [], 0
+    for kind, val in toks:
+        depth_at.append(d)
+        if kind == "op" and val == "{":
+            d += 1
+        elif kind == "op" and val == "}":
+            d -= 1
+    i, state, state_depth = 0, "", None
     while i < len(toks):
         kind, val = toks[i]
         low = val.lower() if kind in ("keyword", "ident") else None
-        if kind == "op" and val == "{":
-            depth += 1
+        if kind == "op" and val in ("{", "}"):
+            if val == "}" and state_depth is not None and depth_at[i] == state_depth:
+                state, state_depth = "", None
             i += 1
             continue
-        if kind == "op" and val == "}":
-            if state_depth is not None and depth == state_depth:
-                state, state_depth = "", None
-            depth = max(0, depth - 1)
-            i += 1
+        if kind == "keyword" and low == "ignores" and (depth_at[i] == 0 or depth_at[i] == state_depth):
+            # `ignores SeePlayer, HearNoise, KilledBy;` is not a comment: the compiler emits one bodyless Function
+            # for each name, in the scope that writes the clause, and the package's script for it is the trailer.
+            j = i + 1
+            while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] == ";"):
+                if toks[j][0] in ("ident", "keyword"):
+                    out.append((state if depth_at[i] == state_depth and state else "", toks[j][1], "", None, False,
+                                False))
+                j += 1
+            i = j + 1
             continue
         if kind == "keyword" and low == "state" and i + 1 < len(toks):
             j = i + 1
+            # `state() LoopMove` is a state whose label is empty -- Mover writes twelve of its nineteen that way -- so
+            # the name comes after the group, not immediately after the keyword (stage 2a measured the same form).
+            if toks[j][0] == "op" and toks[j][1] == "(":
+                close = _paren_end(toks, j)
+                if close is None:
+                    i += 1
+                    continue
+                j = close + 1
+            label = toks[j][1] if j < len(toks) and toks[j][0] in ("ident", "keyword") else ""
             while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] in ("{", ";")):
                 j += 1
-            if j < len(toks) and toks[j][1] == "{":
-                state, state_depth = toks[i + 1][1], depth + 1
+            if label and j < len(toks) and toks[j][1] == "{":
+                state, state_depth = label, depth_at[i] + 1
                 i = j
             else:
                 i = j + 1
             continue
-        if kind == "keyword" and low in ("function", "event") and (depth == 0 or depth == state_depth):
+        # A `delegate` declaration is one property (`__X__delegate`) *and* one Function named after it (75 names
+        # across 20 classes), so it is a declaration this walk must read: its text carries no body and the package's
+        # script is the stub.
+        if (kind == "keyword" and low in ("function", "event", "delegate")
+                and (depth_at[i] == 0 or depth_at[i] == state_depth)):
             j = i + 1
             words = []
             while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] == "("):
@@ -204,19 +247,25 @@ def functions_of(text):
                 i += 1
                 continue
             name, rettype = words[-1], rettype_of(words[:-1])
-            is_native = any(w.lower() == "native" for w in words[:-1] + _modifiers_before(toks, i))
+            mods = [w.lower() for w in words[:-1] + _modifiers_before(toks, i)]
+            is_native = "native" in mods
+            # `final function X()` is a call the compiler binds to the Function record itself (`1c <index>`) rather
+            # than resolving by name: `DestroyPlayerStatCache` and `myOnDeactivate` are the two bodies that say so.
+            is_final = "final" in mods
             k = close + 1
             while k < len(toks) and not (toks[k][0] == "op" and toks[k][1] in ("{", ";")):
                 k += 1
             if k >= len(toks) or toks[k][1] == ";":
                 # a bodyless declaration is how the source spells an empty stub: the package holds `04 0b 47`
-                out.append((state if depth == state_depth and state else "", name, rettype, None, is_native))
+                out.append((state if depth_at[i] == state_depth and state else "", name, rettype, None, is_native,
+                            is_final))
                 i = k + 1
                 continue
             end = _brace_end(toks, k)
             if end is None:
                 break
-            out.append((state if depth == state_depth and state else "", name, rettype, toks[k + 1:end], is_native))
+            out.append((state if depth_at[i] == state_depth and state else "", name, rettype, toks[k + 1:end],
+                        is_native, is_final))
             i = end + 1
             continue
         i += 1
@@ -342,7 +391,63 @@ def _split_commas(tokens):
     return out
 
 
-def emit_body(body, rettype, names, is_native=False):
+def _assign_at(stmt):
+    """The index of the statement's own `=` (depth 0), or None. `==`/`!=`/`+=` are one token, so they do not match."""
+    depth = 0
+    for i, (kind, val) in enumerate(stmt):
+        if kind == "op" and val in "([{":
+            depth += 1
+        elif kind == "op" and val in ")]}":
+            depth -= 1
+        elif kind == "op" and val == "=" and depth == 0:
+            return i
+    return None
+
+
+def emit_call(stmt, names, scope):
+    """`Name()` -> the token its declaration earned, `16` (EndFunctionParms); no trailer."""
+    close = _paren_end(stmt, 1) if len(stmt) > 1 and stmt[1] == ("op", "(") else None
+    if close is None or close != len(stmt) - 1:
+        raise Refused("a call the statement walk cannot bound (a receiver, or a statement after the call)")
+    if stmt[2:close]:
+        raise Refused("a call with arguments: the argument list is a separate family")
+    how = (scope or {}).get("funcs", {}).get(stmt[0][1].lower())
+    if how is None:
+        raise Refused("a call to a name the class chain does not declare")
+    kind, value = how
+    if kind == "native":
+        op = 0x60 + (value >> 8)
+        if op > 0x6F:
+            raise Refused("a native token outside the six opcode groups")
+        return bytes([op, value & 0xFF, 0x16])
+    if kind == "final":
+        return bytes([0x1C]) + write_index(value) + b"\x16"
+    return bytes([0x1B]) + write_index(value) + b"\x16"
+
+
+def emit_assign(stmt, at, names, scope):
+    """`X = value;` -> `0F <InstanceVariable> <index> <value>`, or `14 2D <InstanceVariable> <index> <bool>`."""
+    lhs, rhs = stmt[:at], stmt[at + 1:]
+    if len(lhs) != 1 or lhs[0][0] not in ("ident", "keyword"):
+        raise Refused("an assignment whose target is not one name (a receiver chain, or an index)")
+    nm = lhs[0][1].lower()
+    scope = scope or {}
+    if nm in scope.get("locals", {}):
+        token, index, ptype = scope["locals"][nm]
+    elif nm in scope.get("props", {}):
+        token, index, ptype = scope["props"][nm]
+    else:
+        raise Refused("an assignment to a name neither a local nor a property of the class chain")
+    if ptype == "bool":
+        if len(rhs) != 1 or rhs[0][1].lower() not in ("true", "false"):
+            raise Refused("a bool assignment whose value is not a literal")
+        return bytes([0x14, 0x2D, token]) + write_index(index) + emit_expr(rhs, "bool", names)[0]
+    if ptype in ("struct", "array", "delegate", "pointer", ""):
+        raise Refused("an assignment to a %s property" % (ptype or "typeless"))
+    return bytes([0x0F, token]) + write_index(index) + emit_expr(rhs, ptype, names)[0]
+
+
+def emit_body(body, rettype, names, is_native=False, scope=None):
     """`(bytes, model, shape)` for a modelled body, or Refused naming what is not modelled."""
     if body is None:
         if is_native:
@@ -354,14 +459,157 @@ def emit_body(body, rettype, names, is_native=False):
     if len(stmts) > 1:
         raise Refused("%d statements, which needs control flow" % len(stmts))
     stmt = stmts[0]
-    if stmt[0][0] != "keyword" or stmt[0][1].lower() != "return":
-        raise Refused("a body whose statement is not a return: not modelled")
-    expr, shape = emit_expr(stmt[1:], rettype, names)
-    return bytes([0x04]) + expr + TRAILER, "return", shape
+    if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "return":
+        expr, shape = emit_expr(stmt[1:], rettype, names)
+        return bytes([0x04]) + expr + TRAILER, "return", shape
+    if any(k == "keyword" and v.lower() in ("if", "for", "while", "do", "switch", "case", "else", "foreach")
+           for k, v in stmt):
+        raise Refused("a statement that is control flow")
+    at = _assign_at(stmt)
+    if at is not None:
+        return emit_assign(stmt, at, names, scope) + TRAILER, "assign", "assign"
+    return emit_call(stmt, names, scope) + TRAILER, "call", "call"
 
 
 # ----------------------------------------------------------------------------------------------------------------
 # scoring against the dump
+
+JOIN_FIELDS = ["package", "class", "state", "function", "cause"]
+
+
+def _chain():
+    """{(package, class): (super, super's package)} -- the ancestor walk, from the committed class table."""
+    chain = {}
+    path = os.path.join(ROOT, "inventory", "classes.csv")
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            # stored in the walk's own order: the super's package first, then the super
+            chain[(r["package"].lower(), r["class"].lower())] = (r["package_of_super"].lower(), r["super"].lower())
+    return chain
+
+
+def _natives():
+    """{(package, class, function): (native_token, function_flags)} -- where a native's opcode comes from."""
+    out = {}
+    path = os.path.join(ROOT, "inventory", "natives.csv")
+    with open(path, newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            out[(r["package"].lower(), r["class"].lower(), r["function"].lower())] = (
+                int(r["native_token"]), r["function_flags"])
+    return out
+
+
+def _ancestors(chain, pack, cls):
+    """[(package, class)] from the class outwards. `classes.csv` keys a super by its own package, so the walk
+    crosses a package boundary where the build did."""
+    out, seen, p, c = [], set(), pack, cls.lower()
+    while c and (p, c) not in seen:
+        seen.add((p, c))
+        out.append((p, c))
+        p, c = chain.get((p, c), ("", ""))
+    return out
+
+
+def _class_tables(pkg, kinds, names):
+    """The package's own records as the compiler addressed them: property and function exports, and the imports."""
+    props, funcs, imports = {}, {}, {}
+    for i, e in enumerate(pkg.exports):
+        kind = kinds.get(i + 1, "")
+        nm = names.get(i + 1, "").lower()
+        owner = names.get(e["outer"], "").lower() if e["outer"] > 0 else ""
+        if kind in PROPERTY_CLASSES:
+            props.setdefault(nm, []).append((i + 1, owner, kind))
+        elif kind == "Function":
+            funcs.setdefault(nm, []).append((i + 1, owner))
+    for j, im in enumerate(pkg.imports):
+        # an import's `class` field is a name index, not an export index, so `class_name_of` cannot read it
+        imports.setdefault(str(pkg.name(im["name"])).lower(), []).append((-(j + 1), pkg.name(im["class"])))
+    return props, funcs, imports
+
+
+def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, table_index, final_of=None):
+    """The names one body may mention, each with the index and token the package's own record earns.
+
+    A property is found by *name and owner*: the record's index is what the compiler wrote, so nothing is rebuilt.
+    A callee is resolved by walking the ancestor chain to the class that declares it -- the native table says the
+    token (0 means "not a native opcode, call it by name"), and its `final` flag picks the call token.
+    """
+    props, funcs, imports = tables
+    scope = {"props": {}, "locals": {}, "funcs": {}}
+    for i, e in enumerate(pkg.exports):
+        if e["outer"] == func_index and kinds.get(i + 1) in PROPERTY_CLASSES:
+            scope["locals"][names[i + 1].lower()] = (LOCAL_TOKEN, i + 1, PROP_TYPE.get(kinds[i + 1], ""))
+    order = [c for _p, c in _ancestors(chain, pack, cls)]
+    for nm, cands in props.items():
+        picked = None
+        for anc in order:
+            hit = [c for c in cands if c[1] == anc]
+            if hit:
+                picked = hit[0]
+                break
+        if picked is None:
+            # A property an ancestor in *another* package declares is an import here, and the compiler wrote its
+            # index as a negative number: `InteractionHands.EndState` reads `fc 07` (-508), not the export of a
+            # same-named property some unrelated class in this package declares.
+            imp = [c for c in imports.get(nm, []) if c[1] in PROPERTY_CLASSES]
+            if len(imp) == 1:
+                scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
+                continue
+            if len(cands) == 1:
+                picked = cands[0]
+        if picked is not None:
+            scope["props"][nm] = (INSTANCE_TOKEN, picked[0], PROP_TYPE.get(picked[2], ""))
+    declared = set(funcs) | {f for (p2, c2, f) in natives if p2 == pack and c2 in order}
+    for c in order:
+        declared |= set((final_of or {}).get(c, ()))
+    for nm in declared:
+        for p, c in _ancestors(chain, pack, cls):
+            hit = natives.get((p, c, nm))
+            if hit is None:
+                continue
+            token, flags = hit
+            if token:
+                scope["funcs"][nm] = ("native", token)
+                break
+            if "0x1:Final" in flags:
+                own = [x for x in funcs.get(nm, []) if x[1] == c]
+                imp = [x for x in imports.get(nm, []) if x[1] == "Function"]
+                if own:
+                    scope["funcs"][nm] = ("final", own[0][0])
+                    break
+                if len(imp) == 1:
+                    scope["funcs"][nm] = ("final", imp[0][0])
+                    break
+                continue
+            scope["funcs"][nm] = ("virtual", table_index.get(nm))
+            break
+        else:
+            if any(nm in (final_of or {}).get(k, ()) for k in order):
+                own = [x for x in funcs.get(nm, []) if x[1] in order]
+                imp = [x for x in imports.get(nm, []) if x[1] == "Function"]
+                if own:
+                    scope["funcs"][nm] = ("final", own[0][0])
+                    continue
+                if len(imp) == 1:
+                    scope["funcs"][nm] = ("final", imp[0][0])
+                    continue
+            if nm in funcs and nm not in scope["funcs"]:
+                scope["funcs"][nm] = ("virtual", table_index.get(nm))
+    return scope
+
+
+def _residue_cause(texts, name, state):
+    """Why a shipped body has no declaration to join: named, never a percentage."""
+    if not texts:
+        return "the text has no file for this class"
+    if any(re.search(r"\bdelegate\b[^;{}]*\b%s\b" % re.escape(name), t, re.I) for t in texts):
+        return "a delegate declaration"
+    if any(re.search(r"\b%s\b" % re.escape(name), t, re.I) for t in texts):
+        return "the text spells the name, but not as a declaration"
+    if state:
+        return "the text does not declare it in state %s" % state
+    return "the text does not carry the name"
+
 
 def _dis():
     """`uscript-dis.py` as a module: the locator and the token walk are its own, one answer for both halves."""
@@ -384,13 +632,13 @@ def _source_index(tree):
                 text = fh.read()
             files += 1
             cls = os.path.splitext(os.path.basename(path))[0].lower()
-            for state, fn, rettype, body, is_native in functions_of(text):
+            for state, fn, rettype, body, is_native, is_final in functions_of(text):
                 for key in ((cls, state.lower(), fn.lower()), (cls, "", fn.lower())):
                     old = index.get(key)
                     if old is None or len(body or ()) > len(old[1] or ()):
                         # a class that ships two declarations of one name (an `#if` branch, or a stub beside its
                         # body) compiled the longer one: prefer it, so the comparison is not scored against a stub
-                        index[key] = (rettype, body, text, is_native)
+                        index[key] = (rettype, body, text, is_native, is_final)
     return index, files
 
 
@@ -399,8 +647,16 @@ def score(tree, dump, out_dir):
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
     index, files = _source_index(tree)
+    src_texts = {}
+    for key, value in index.items():
+        src_texts.setdefault(key[0], []).append(value[2])
+    chain, natives = _chain(), _natives()
+    final_of = {}
+    for key, value in index.items():
+        if value[4]:
+            final_of.setdefault(key[0], set()).add(key[2])
     table = dis.Table()
-    rows = []
+    rows, residue = [], []
     tally = collections.Counter()
     shapes = collections.Counter()
     reasons = collections.Counter()
@@ -416,6 +672,8 @@ def score(tree, dump, out_dir):
         table_index = {}
         for i in range(len(pkg.names or [])):
             table_index.setdefault(str(pkg.name(i)).lower(), i)
+        tables = _class_tables(pkg, kinds, names)
+        pack = os.path.splitext(fn)[0].lower()
         for e in pkg.exports:
             if pkg.class_name_of(e) != "Function" or e["outer"] <= 0:
                 continue
@@ -445,10 +703,13 @@ def score(tree, dump, out_dir):
                 got = index.get((cls.lower(), "", fname.lower()))
             if not got:
                 tally["no-source" if not state else "no-state-source"] += 1
+                residue.append({"package": fn, "class": cls, "state": state, "function": fname,
+                                "cause": _residue_cause(src_texts.get(cls.lower(), []), fname, state)})
                 continue
-            rettype, src_body, _text, is_native = got
+            rettype, src_body, _text, is_native, _is_final = got
+            scope = _scope(pkg, kinds, names, tables, pack, cls, i + 1, chain, natives, table_index, final_of)
             try:
-                ours, model, shape = emit_body(src_body, rettype, table_index, is_native)
+                ours, model, shape = emit_body(src_body, rettype, table_index, is_native, scope)
             except Refused as exc:
                 tally["not-modelled"] += 1
                 reasons[str(exc).split("(")[0].strip()] += 1
@@ -473,6 +734,18 @@ def score(tree, dump, out_dir):
         w.writerow({k: census.get(k, "") for k in FIELDS})
         for r in rows:
             w.writerow({k: r.get(k, "") for k in FIELDS})
+    residue.sort(key=lambda r: (r["package"], r["class"].lower(), r["state"].lower(), r["function"].lower()))
+    causes = collections.Counter(r["cause"] for r in residue)
+    jpath = os.path.join(out_dir, "uscript_emit_join.csv")
+    with open(jpath, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=JOIN_FIELDS, lineterminator="\n")
+        w.writeheader()
+        w.writerow({"package": "(census)", "class": "", "state": "", "function": "",
+                    "cause": "%d bodies: %d joined, %d not (%s)"
+                             % (tally["walked"], tally["walked"] - len(residue), len(residue),
+                                "; ".join("%s %d" % kv for kv in causes.most_common()))})
+        for r in residue:
+            w.writerow(r)
     joined = tally["walked"] - tally["no-source"] - tally["no-state-source"]
     print("%d source file(s); %d bod(ies) walked, %d joined to a declaration (%d class-scope names and %d state "
           "names the text does not carry), %d not modelled"
@@ -482,7 +755,7 @@ def score(tree, dump, out_dir):
     print("modelled %d: %d identical, %d differ" % (tally["modelled"], tally["identical"], tally["differ"]))
     print("shapes: %s" % ", ".join("%s %d" % kv for kv in shapes.most_common()))
     print("not modelled: %s" % ", ".join("%s %d" % kv for kv in reasons.most_common()))
-    print("wrote %s" % os.path.relpath(path, ROOT))
+    print("wrote %s and %s" % (os.path.relpath(path, ROOT), os.path.relpath(jpath, ROOT)))
     return 0
 
 
@@ -512,7 +785,22 @@ event bool Paren() { return(true); }
 function int Call() { return Foo(1); }
 function Stub();
 function native int NativeStub(int A, int B);
+function SetHealth() { Health = 100; }
+function SetFlag() { bDead = true; }
+function SetLocal() { Slot = 7; }
+function SetObject() { Target = None; }
+function CallNative() { Destroy(); }
+function CallFinal() { MyFinal(); }
+function CallVirtual() { MyVirtual(); }
+function CallArgs() { Foo(1); }
+function IfStmt() { if (bDead) Health = 1; }
 """
+
+# The package's own tables, as `_scope()` builds them: a property's index, a local's, and a callee's token.
+SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
+                   "target": (0x01, 611, "object")},
+         "locals": {"slot": (0x00, 611, "int")},
+         "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39)}}
 
 WANT = {
     "yes": "0427040b47",
@@ -534,6 +822,13 @@ WANT = {
     "nothing2": "040b040b47",
     "paren": "0427040b47",
     "stub": "040b47",
+    "sethealth": "0f016e042c64040b47",       # Let, InstanceVariable 302 (6e 04), IntConstByte 100
+    "setflag": "142d012d27040b47",           # LetBool, BoolVariable, InstanceVariable 45, True
+    "setlocal": "0f0063092c07040b47",        # Let, LocalVariable 611 (63 09), IntConstByte 7
+    "setobject": "0f0163092a040b47",         # Let, InstanceVariable 611 (63 09), NoObject
+    "callnative": "611716040b47",            # native token 279: opcode 0x61, operand 0x17, EndFunctionParms
+    "callfinal": "1c7b0b16040b47",           # FinalFunction, export index 763 (7b 0b), EndFunctionParms
+    "callvirtual": "1b2716040b47",           # VirtualFunction, name index 39, EndFunctionParms
 }
 
 
@@ -555,14 +850,14 @@ def check(args):
         if back != value:
             print("FAIL uscript-emit: the reader answers %d for a written %d" % (back, value))
             return 1
-    got = {fn.lower(): (rettype, body, nat) for _state, fn, rettype, body, nat in functions_of(SYNTH)}
+    got = {f[1].lower(): (f[2], f[3], f[4]) for f in functions_of(SYNTH)}
     for fn, want in WANT.items():
         if fn not in got:
             print("FAIL uscript-emit: the synthetic class does not declare %s" % fn)
             return 1
         rettype, body, is_native = got[fn]
         try:
-            ours, _model, _shape = emit_body(body, rettype, names, is_native)
+            ours, _model, _shape = emit_body(body, rettype, names, is_native, SCOPE)
         except Refused as exc:
             print("FAIL uscript-emit: %s refused: %s" % (fn, exc))
             return 1
@@ -576,6 +871,14 @@ def check(args):
         pass
     else:
         print("FAIL uscript-emit: a call expression was emitted instead of refused")
+        return 1
+    for case in ("callargs", "ifstmt"):
+        try:
+            rettype, body, is_native = got[case]
+            emit_body(body, rettype, names, is_native, SCOPE)
+        except Refused:
+            continue
+        print("FAIL uscript-emit: %s was emitted instead of refused" % case)
         return 1
     try:
         rettype, body, is_native = got["nativestub"]
@@ -612,6 +915,26 @@ def check(args):
             return 1
         if not r["ours"].endswith("040b47"):
             print("FAIL uscript-emit: %s.%s does not end on the trailer" % (r["class"], r["function"]))
+            return 1
+    jpath = os.path.join(ROOT, "inventory", "uscript_emit_join.csv")
+    if os.path.exists(jpath):
+        with open(jpath, newline="", encoding="utf-8") as fh:
+            jrows = list(csv.DictReader(fh))
+        jcensus = [r for r in jrows if r["package"] == "(census)"]
+        if len(jcensus) != 1:
+            print("FAIL uscript-emit: the join artifact carries %d census rows" % len(jcensus))
+            return 1
+        unjoined = [r for r in jrows if r["package"] != "(census)"]
+        for r in unjoined:
+            if not r["cause"]:
+                print("FAIL uscript-emit: %s.%s is unjoined with no cause" % (r["class"], r["function"]))
+                return 1
+        if not jcensus[0]["cause"].startswith("%d bodies" % int(c["walked"])):
+            print("FAIL uscript-emit: the join census reads %r against a walk of %s"
+                  % (jcensus[0]["cause"][:40], c["walked"]))
+            return 1
+        if " %d not " % len(unjoined) not in jcensus[0]["cause"]:
+            print("FAIL uscript-emit: the join census does not count its %d row(s)" % len(unjoined))
             return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
