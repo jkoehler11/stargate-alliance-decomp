@@ -816,14 +816,14 @@ def _emit_operator(expr, rettype, env):
     if _is_literal(left) and _is_literal(right):
         raise Refused("an operator whose two operands are literals, which the compiler folds")
     if sym in ("&&", "||", "^^"):
-        # the right operand of a short-circuit operator is wrapped in `Skip` (`18 <uint16> <expr>`), and the word is
-        # not the right operand's own length: `a && b` writes 0x0d for a 4- and an 8-byte operand, and the nested
-        # case in `xAdminGroup.HasPrivilege` writes 40 for a pair that sums to less. Refused until it is measured.
+        # The right operand of a short-circuit operator is wrapped in `Skip` (`18 <uint16> <expr>`) and the word is
+        # not the operand's length. The image says what it is: `execAndAnd_BoolBool` (GNatives[0x82] = 0x00041120)
+        # evaluates the left operand, reads the word and, when that operand is false, sets `Code = <first byte of the
+        # right operand> + word` (0x000411a4..0xad). So the word is a byte distance to the enclosing expression's
+        # end -- and over this corpus it lands 1..3 bytes *past* the body's last token (`Pawn.PressingFire` writes 20
+        # where the body holds 17 more bytes), i.e. it is a compiler code-array position this corpus does not
+        # reproduce from the emitted bytes. Refused, with the measurement in `docs/COMPILER_FRONTEND.md`.
         raise Refused("a short-circuit operator, whose right operand is a `Skip` node")
-    if sym in ("@", "$"):
-        # `ConsoleCommand("LoadSaveGame"@Filename)` is `0e` (`EatString`) and then the ordinary call node: the
-        # compiler marks a string expression it eats, and the mark is not modelled.
-        raise Refused("a string operator, which the compiler prefixes with `EatString`")
     if 0x70 <= token <= 0xFF:
         head = bytes([token])
     elif token >= 0x100:
@@ -917,6 +917,22 @@ def _emit_member(expr, rettype, env):
     if len(member) != 1 or member[0][0] not in ("ident", "keyword"):
         raise Refused("a receiver chain whose member is not one name")
     nm = member[0][1].lower()
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "default":
+        # `Default.X` is the class default object's own record, written with `DefaultVariable` (0x02) in place of
+        # `InstanceVariable`: `return Default.PickupMessage;` is `04 02 47 7f` and `return default.bIsConsoleMessage;`
+        # is `04 2d 02 5c 65`. The index is therefore the same record the bare name names on this class -- the
+        # chain's own property table, not a receiver's.
+        hit = _prop_by_name(nm, env)
+        if hit is None:
+            raise Refused("a default member the class chain does not declare")
+        token, index, ptype, _friendly_type = hit
+        if token != INSTANCE_TOKEN:
+            raise Refused("a default member reached through a local")
+        if ptype not in PROP_SIZE:
+            raise Refused("a %s default member, whose value size this walk does not carry" % (ptype or "typeless"))
+        if ptype == "bool":
+            return _converted(bytes([0x2D, 0x02]) + write_index(index), "bool", rettype), "default-bool"
+        return _converted(bytes([0x02]) + write_index(index), ptype, rettype), "default"
     objtype = _type_of(obj, env).lower()
     # The node is chosen by the receiver's *record kind*, not by its declared type word: `PathName` is a `FilePath`
     # struct (a `StructMember`), while a cast or an operator wants that word (`SquadDir` is a `Vector`).
@@ -1185,7 +1201,19 @@ def emit_assign(stmt, at, env):
     """`X = value;` -> `0F <InstanceVariable> <index> <value>`, or `14 2D <InstanceVariable> <index> <bool>`."""
     lhs, rhs = stmt[:at], stmt[at + 1:]
     if len(lhs) != 1 or lhs[0][0] not in ("ident", "keyword"):
-        raise Refused("an assignment whose target is not one name (a receiver chain, or an index)")
+        # The target is itself an expression: `H.LastPickupTime = H.Level.TimeSeconds;` is `0f <Context read> <value>`
+        # and `Level.bClassicView = true;` is `14 <Context read> 27` -- Let versus LetBool is the *target's* declared
+        # type, and the target is written exactly as a read of the same chain. Shapes that are not a plain member
+        # (`modifiers.Length = 0;` writes `0f 37 <read> 0f 25`, an extra token this walk does not model) are refused.
+        ptype = _type_of(lhs, env).lower()
+        node, shape = emit_expr(lhs, "", env)
+        if shape not in ("context", "bool-context", "struct-member"):
+            raise Refused("an assignment whose target is a %s expression" % shape)
+        if ptype == "bool" or shape == "bool-context":
+            return bytes([0x14]) + node + emit_expr(rhs, "bool", env)[0]
+        if ptype in ("struct", "array", "delegate", "pointer", ""):
+            raise Refused("an assignment to a %s member" % (ptype or "typeless"))
+        return bytes([0x0F]) + node + emit_expr(rhs, ptype, env)[0]
     nm = lhs[0][1].lower()
     scope = env["scope"] or {}
     if nm in scope.get("locals", {}):
@@ -1202,6 +1230,16 @@ def emit_assign(stmt, at, env):
     if ptype in ("struct", "array", "delegate", "pointer", ""):
         raise Refused("an assignment to a %s property" % (ptype or "typeless"))
     return bytes([0x0F, token]) + write_index(index) + emit_expr(rhs, ptype, env)[0]
+
+
+def _callee_return_type(name, env):
+    """The declared return type of a callee the class chain carries, or "" when the text does not say."""
+    low = name.lower()
+    for cls in env.get("order") or []:
+        hit = (env.get("rets") or {}).get((cls, low))
+        if hit:
+            return hit.lower()
+    return ""
 
 
 def emit_body(body, rettype, env, is_native=False):
@@ -1236,7 +1274,15 @@ def emit_body(body, rettype, env, is_native=False):
     at = _assign_at(stmt)
     if at is not None:
         return emit_assign(stmt, at, env) + TRAILER, "assign", "assign"
-    return emit_call(stmt, env) + TRAILER, "call", "call"
+    call = emit_call(stmt, env)
+    if stmt and stmt[0][0] in ("ident", "keyword") and _callee_return_type(stmt[0][1], env) == "string":
+        # A statement call whose declaration returns `string` is prefixed with `EatString` (0x0e):
+        # `PlayerController.LoadGame` is `0e 1b 11 a8 1f "LoadSaveGame" 00 01 5e 6e 16 16` and the two calls this
+        # walk emits without the prefix (`Logf(... $ ...)`, `log(... $ ...)`) return nothing. The temporary the call
+        # produces is eaten instead of copied. `$`/`@` themselves are ordinary operator nodes (0x70/0xa8) -- the
+        # previous note credited them with the prefix, which this reading corrects.
+        return bytes([0x0E]) + call + TRAILER, "call", "eat-string-call"
+    return call + TRAILER, "call", "call"
 
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -1718,6 +1764,14 @@ function AndInt() { return Count & 2; }
 function OpNoSlot() { return Health & 2.0; }
 function BoolMember() { return Target.bFlag; }
 function AsRotator() { return rotator(SquadDir); }
+function string ConcatOp() { return Caption $ Suffix; }
+function string AtOp() { return Caption @ Suffix; }
+function string DefaultText() { return default.Caption; }
+function bool DefaultFlag() { return default.bDead; }
+function SetMember() { Target.Health = 7; }
+function SetMemberFlag() { Target.bFlag = true; }
+function Speak() { MyText(Caption); }
+function SetLength() { Items.Length = 0; }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -1738,7 +1792,9 @@ state OpenTimedMover
 # The package's own tables, as `_scope()` builds them: a property's index, a local's, and a callee's token.
 SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool"),
-                   "bflag": (0x01, 47, "bool"), "squaddir": (0x01, 620, "struct")},
+                   "bflag": (0x01, 47, "bool"), "squaddir": (0x01, 620, "struct"),
+                   "caption": (0x01, 5, "string"), "suffix": (0x01, 6, "string"),
+                   "items": (0x01, 700, "array")},
          "chain": {("probe", "probe"): ("", "")}, "pack": "probe", "cls": "probe",
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte")},
          "classrefs": {"probe": 4, "actor": -77},
@@ -1746,7 +1802,7 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
                    "mix": ("virtual", 46), "bump": ("virtual", 47), "gotostate": ("native", 113),
                    "tinytoken": ("native", 2), "onchange": ("virtual", 26),
-                   "mix3": ("virtual", 48), "mixbyte": ("virtual", 49)},
+                   "mix3": ("virtual", 48), "mixbyte": ("virtual", 49), "mytext": ("virtual", 50)},
          "delegates": {"onchange": 51}}
 
 # The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
@@ -1771,10 +1827,12 @@ PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "
           ("probe", "bump"): [("int", "A", False)], ("probe", "gotostate"): [("name", "NewState", False)],
           ("probe", "onchange"): [("object", "Sender", False)],
           ("probe", "mix3"): [("bool", "Flag", False), ("vector", "V", False)],
-          ("probe", "mixbyte"): [("byte", "Mode", False)]}
+          ("probe", "mixbyte"): [("byte", "Mode", False)],
+          ("probe", "mytext"): [("string", "S", False)]}
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
 ENV = {"names": {}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS, "enum_names": {"eprobe"},
-       "class_names": {"probe"}, "order": ["probe"], "rets": {("probe", "bump"): "int"},
+       "class_names": {"probe"}, "order": ["probe"],
+       "rets": {("probe", "bump"): "int", ("probe", "mytext"): "string"},
        "assert_line": 2086, "paramtypes": {}}
 
 WANT = {
@@ -1829,11 +1887,18 @@ WANT = {
     "andint": "049c393a0064092c0216040b47",        # return Count & 2; -- And_IntInt, ByteToInt, IntConstByte
     "boolmember": "04190163090600042d012f040b47",  # return Target.bFlag; -- Context skip 6, size 4, BoolVariable
     "asrotator": "043950016c09040b47",             # return rotator(SquadDir); -- a Vector property: VectorToRotator
+    "concatop": "04700105010616040b47",            # return Caption $ Suffix; -- Concat_StringString (0x70), operand, operand, 16
+    "atop": "04a80105010616040b47",                # return Caption @ Suffix; -- At_StringString is token 168, its own opcode
+    "defaulttext": "040205040b47",                 # return default.Caption; -- DefaultVariable (0x02) + the record's index
+    "defaultflag": "042d022d040b47",               # return default.bDead; -- BoolVariable around DefaultVariable + index 45
+    "setmember": "0f19016309050004016e042c07" "040b47",   # Target.Health = 7; -- Let + the Context read + the value
+    "setmemberflag": "14190163090600042d012f" "27040b47",  # Target.bFlag = true; -- LetBool + the bool Context + True
+    "speak": "0e1b32010516040b47",                 # MyText(Caption); -- a call returning `string` is prefixed with EatString
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot")
+          "castnoslot", "opnoslot", "setlength")
 
 
 def check(args):
