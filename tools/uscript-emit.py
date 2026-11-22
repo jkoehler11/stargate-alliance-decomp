@@ -142,6 +142,42 @@ def _brace_end(toks, i):
     return None
 
 
+def params_of(toks, i):
+    """`[(type, name)]` for a declaration's parameter list; `toks[i]` is its `(`.
+
+    The declared type is what picks an argument's token (`PHYS_Swimming` is a byte, `1.0` a float), so the join to
+    the callee's declaration has to carry it: `inventory/natives.csv` holds a parameter *count* and no types.
+    """
+    close = _paren_end(toks, i)
+    if close is None:
+        return []
+    out = []
+    for seg in _split_commas(toks[i + 1:close]):
+        if not seg:
+            continue
+        words = [(k, v) for k, v in seg if k in ("ident", "keyword", "op")]
+        cut = len(words)
+        for n, (k, v) in enumerate(words):
+            if k == "op" and v in ("=", "[", "."):
+                cut = n
+                break
+        words = words[:cut]
+        if not words:
+            continue
+        name = ""
+        end = len(words)
+        for n in range(len(words) - 1, -1, -1):
+            if words[n][0] in ("ident", "keyword"):
+                name, end = words[n][1], n
+                break
+        typ = "".join(v for _k, v in words[:end])
+        for mod in ("out", "optional", "coerce", "const", "init"):
+            if typ.lower().startswith(mod):
+                typ = typ[len(mod):]
+        out.append((typ, name))
+    return out
+
+
 def rettype_of(word_tokens):
     """The words between `function` and its name, minus modifiers: `int`, `float`, `VoiceChatRoom.EJoinChatResult`."""
     kept = [w for w in word_tokens if w.lower() not in MODIFIERS]
@@ -175,8 +211,47 @@ def _modifiers_before(toks, i):
     return words
 
 
+def enums_of(text):
+    """`[(enum name, [(constant, ordinal)])]` -- a constant compiles to `24 <ordinal>` (measured: PHYS_Swimming).
+
+    An enum is declared at class scope and is visible in every subclass, so the constant is looked up along the
+    class chain, not in the body's own text.
+    """
+    toks = tokens_of(text)
+    if toks is None:
+        return []
+    out = []
+    for i, (kind, val) in enumerate(toks):
+        if kind != "keyword" or val.lower() != "enum":
+            continue
+        j = i + 1
+        if j >= len(toks) or toks[j][0] not in ("ident", "keyword"):
+            continue
+        name = toks[j][1]
+        while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] == "{"):
+            if toks[j][0] == "op" and toks[j][1] == ";":
+                break
+            j += 1
+        if j >= len(toks) or toks[j][1] != "{":
+            continue
+        end = _brace_end(toks, j)
+        if end is None:
+            continue
+        consts, ordinal = [], 0
+        for seg in _split_commas(toks[j + 1:end]):
+            if not seg:
+                continue
+            cname = seg[0][1]
+            if len(seg) >= 3 and seg[1] == ("op", "=") and seg[2][0] == "number":
+                ordinal = _number(seg[2][1])
+            consts.append((cname, ordinal))
+            ordinal += 1
+        out.append((name, consts))
+    return out
+
+
 def functions_of(text):
-    """`[(state, name, rettype, body_tokens)]` for every function/event with a body."""
+    """`[(state, name, rettype, body_tokens, is_native, is_final, params)]` for every function/event."""
     toks = tokens_of(text)
     if toks is None:
         return []
@@ -208,7 +283,7 @@ def functions_of(text):
             while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] == ";"):
                 if toks[j][0] in ("ident", "keyword"):
                     out.append((state if depth_at[i] == state_depth and state else "", toks[j][1], "", None, False,
-                                False))
+                                False, []))
                 j += 1
             i = j + 1
             continue
@@ -247,6 +322,7 @@ def functions_of(text):
                 i += 1
                 continue
             name, rettype = words[-1], rettype_of(words[:-1])
+            params = params_of(toks, j)
             mods = [w.lower() for w in words[:-1] + _modifiers_before(toks, i)]
             is_native = "native" in mods
             # `final function X()` is a call the compiler binds to the Function record itself (`1c <index>`) rather
@@ -258,14 +334,14 @@ def functions_of(text):
             if k >= len(toks) or toks[k][1] == ";":
                 # a bodyless declaration is how the source spells an empty stub: the package holds `04 0b 47`
                 out.append((state if depth_at[i] == state_depth and state else "", name, rettype, None, is_native,
-                            is_final))
+                            is_final, params))
                 i = k + 1
                 continue
             end = _brace_end(toks, k)
             if end is None:
                 break
             out.append((state if depth_at[i] == state_depth and state else "", name, rettype, toks[k + 1:end],
-                        is_native, is_final))
+                        is_native, is_final, params))
             i = end + 1
             continue
         i += 1
@@ -319,18 +395,72 @@ def _number(text):
     return int(t)
 
 
-def emit_expr(expr, rettype, names):
-    """The bytes of one constant expression, or Refused with the reason. `names` maps lower name -> table index."""
+def _is_call(expr):
+    """`Name(...)` -- the whole expression is one call."""
+    return (len(expr) >= 3 and expr[0][0] in ("ident", "keyword") and expr[1] == ("op", "(")
+            and _paren_end(expr, 1) == len(expr) - 1)
+
+
+def _emit_var(name, env):
+    """One variable read: its own token and the record index the package holds, bools behind `2D` (BoolVariable).
+
+    `bGodMode = NewGodModeValue;` is `14 2D 01 <idx> 2D 00 <idx>`: the *value*'s bool flag is the variable's own,
+    which is why a read is emitted here and not by the caller.
+    """
+    low = name.lower()
+    scope = env["scope"]
+    if low in scope["locals"]:
+        token, index, ptype = scope["locals"][low]
+    elif low in scope["props"]:
+        token, index, ptype = scope["props"][low]
+    else:
+        return None
+    out = bytes([token]) + write_index(index)
+    return bytes([0x2D]) + out if ptype == "bool" else out
+
+
+def _emit_enum(name, env):
+    """`PHYS_Swimming` -> `24 03`: the ordinal of the constant in the enum the class chain declares."""
+    low = name.lower()
+    for cls in env["order"]:
+        hit = env["enums"].get((cls, low))
+        if hit is None:
+            continue
+        ordinal, enum = hit
+        if not 0 <= ordinal <= 255:
+            return None, enum
+        return bytes([0x24, ordinal]), enum
+    return None, ""
+
+
+def emit_expr(expr, rettype, env):
+    """The bytes of one expression, or Refused with the reason."""
+    names = env["names"]
     expr = _strip_parens(expr)
     if not expr:
         return bytes([0x0B]), "nothing"                  # Return; -> Return Nothing
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
         expr = [("number", "-" + expr[1][1])]
     if len(expr) != 1:
-        if expr[0][1].lower() == "vect":
+        if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
+        if _is_call(expr):
+            return emit_call(expr, env), "call-value"
         raise Refused("a compound expression, which needs the statement walk")
     kind, val = expr[0]
+    if kind in ("ident", "keyword") and val.lower() not in ("true", "false", "none", "self"):
+        read = _emit_var(val, env)
+        if read is not None:
+            return read, "variable"
+        token, enum = _emit_enum(val, env)
+        if token is not None:
+            # An enum constant is a byte and the compiler writes ByteConst there; passed where neither a byte nor
+            # its own enum is the declared type, the token would be a guess, so it is refused by name.
+            want = (rettype or "").lower()
+            if want != "byte" and want != (enum or "").lower():
+                raise Refused("an enum constant passed as %s" % (rettype or "typeless"))
+            return token, "enum-const"
+        raise Refused("a name neither a local, a property nor an enum constant of the class chain")
     low = val.lower()
     t = (rettype or "").lower()
     if kind == "keyword" and low in ("true", "false"):
@@ -344,6 +474,10 @@ def emit_expr(expr, rettype, names):
     if kind == "number":
         v = _number(val)
         if t == "int":
+            if isinstance(v, float):
+                if not v.is_integer():
+                    raise Refused("a fractional literal in an int slot (%s)" % val)
+                v = int(v)
             if v == 0:
                 return bytes([0x25]), "int-zero"
             if v == 1:
@@ -404,13 +538,23 @@ def _assign_at(stmt):
     return None
 
 
-def emit_call(stmt, names, scope):
-    """`Name()` -> the token its declaration earned, `16` (EndFunctionParms); no trailer."""
+def _callee_params(name, env):
+    """`[(type, name)]` from the declaration of the callee the class chain inherits it from."""
+    low = name.lower()
+    for cls in env["order"]:
+        hit = env["params"].get((cls, low))
+        if hit:
+            return hit
+    return None
+
+
+def emit_call(stmt, env):
+    """`Name(a, b)` -> the token its declaration earned, each argument, `16` (EndFunctionParms); no trailer."""
     close = _paren_end(stmt, 1) if len(stmt) > 1 and stmt[1] == ("op", "(") else None
     if close is None or close != len(stmt) - 1:
         raise Refused("a call the statement walk cannot bound (a receiver, or a statement after the call)")
-    if stmt[2:close]:
-        raise Refused("a call with arguments: the argument list is a separate family")
+    args = _split_commas(stmt[2:close]) if stmt[2:close] else []
+    scope = env["scope"]
     how = (scope or {}).get("funcs", {}).get(stmt[0][1].lower())
     if how is None:
         raise Refused("a call to a name the class chain does not declare")
@@ -419,19 +563,33 @@ def emit_call(stmt, names, scope):
         op = 0x60 + (value >> 8)
         if op > 0x6F:
             raise Refused("a native token outside the six opcode groups")
-        return bytes([op, value & 0xFF, 0x16])
-    if kind == "final":
-        return bytes([0x1C]) + write_index(value) + b"\x16"
-    return bytes([0x1B]) + write_index(value) + b"\x16"
+        head = bytes([op, value & 0xFF])
+    elif kind == "final":
+        head = bytes([0x1C]) + write_index(value)
+    else:
+        head = bytes([0x1B]) + write_index(value)
+    if not args:
+        return head + b"\x16"
+    params = _callee_params(stmt[0][1], env)
+    if params is None:
+        raise Refused("a call whose callee declaration the text does not carry")
+    if len(params) != len(args):
+        raise Refused("a call with %d argument(s) to a %d-parameter callee" % (len(args), len(params)))
+    out = head
+    for arg, (ptype, _pname) in zip(args, params):
+        if not arg:
+            raise Refused("a call that leaves an optional argument empty")
+        out += emit_expr(arg, ptype, env)[0]
+    return out + b"\x16"
 
 
-def emit_assign(stmt, at, names, scope):
+def emit_assign(stmt, at, env):
     """`X = value;` -> `0F <InstanceVariable> <index> <value>`, or `14 2D <InstanceVariable> <index> <bool>`."""
     lhs, rhs = stmt[:at], stmt[at + 1:]
     if len(lhs) != 1 or lhs[0][0] not in ("ident", "keyword"):
         raise Refused("an assignment whose target is not one name (a receiver chain, or an index)")
     nm = lhs[0][1].lower()
-    scope = scope or {}
+    scope = env["scope"] or {}
     if nm in scope.get("locals", {}):
         token, index, ptype = scope["locals"][nm]
     elif nm in scope.get("props", {}):
@@ -439,15 +597,16 @@ def emit_assign(stmt, at, names, scope):
     else:
         raise Refused("an assignment to a name neither a local nor a property of the class chain")
     if ptype == "bool":
-        if len(rhs) != 1 or rhs[0][1].lower() not in ("true", "false"):
-            raise Refused("a bool assignment whose value is not a literal")
-        return bytes([0x14, 0x2D, token]) + write_index(index) + emit_expr(rhs, "bool", names)[0]
+        # The value is one expression: a literal, a variable read (the bool flag is the read's own) or a call.
+        if len(rhs) != 1 and not _is_call(rhs):
+            raise Refused("a bool assignment whose value is a compound expression")
+        return bytes([0x14, 0x2D, token]) + write_index(index) + emit_expr(rhs, "bool", env)[0]
     if ptype in ("struct", "array", "delegate", "pointer", ""):
         raise Refused("an assignment to a %s property" % (ptype or "typeless"))
-    return bytes([0x0F, token]) + write_index(index) + emit_expr(rhs, ptype, names)[0]
+    return bytes([0x0F, token]) + write_index(index) + emit_expr(rhs, ptype, env)[0]
 
 
-def emit_body(body, rettype, names, is_native=False, scope=None):
+def emit_body(body, rettype, env, is_native=False):
     """`(bytes, model, shape)` for a modelled body, or Refused naming what is not modelled."""
     if body is None:
         if is_native:
@@ -460,15 +619,15 @@ def emit_body(body, rettype, names, is_native=False, scope=None):
         raise Refused("%d statements, which needs control flow" % len(stmts))
     stmt = stmts[0]
     if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "return":
-        expr, shape = emit_expr(stmt[1:], rettype, names)
+        expr, shape = emit_expr(stmt[1:], rettype, env)
         return bytes([0x04]) + expr + TRAILER, "return", shape
     if any(k == "keyword" and v.lower() in ("if", "for", "while", "do", "switch", "case", "else", "foreach")
            for k, v in stmt):
         raise Refused("a statement that is control flow")
     at = _assign_at(stmt)
     if at is not None:
-        return emit_assign(stmt, at, names, scope) + TRAILER, "assign", "assign"
-    return emit_call(stmt, names, scope) + TRAILER, "call", "call"
+        return emit_assign(stmt, at, env) + TRAILER, "assign", "assign"
+    return emit_call(stmt, env) + TRAILER, "call", "call"
 
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -540,6 +699,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
         if e["outer"] == func_index and kinds.get(i + 1) in PROPERTY_CLASSES:
             scope["locals"][names[i + 1].lower()] = (LOCAL_TOKEN, i + 1, PROP_TYPE.get(kinds[i + 1], ""))
     order = [c for _p, c in _ancestors(chain, pack, cls)]
+    scope["order"] = order
     for nm, cands in props.items():
         picked = None
         for anc in order:
@@ -620,8 +780,11 @@ def _dis():
 
 
 def _source_index(tree):
-    """`{(class.lower(), state.lower(), function.lower()): (rettype, body)}` from the extracted corpus."""
+    """`{(class, state, function): (rettype, body, text, native, final)}` from the extracted corpus, plus every
+    declaration's parameter list and every enum constant -- the two joins an argument's token needs."""
     index = {}
+    params = {}
+    enums, enum_names = {}, set()
     files = 0
     for dirpath, _dirs, names in os.walk(tree):
         for name in sorted(names):
@@ -632,31 +795,39 @@ def _source_index(tree):
                 text = fh.read()
             files += 1
             cls = os.path.splitext(os.path.basename(path))[0].lower()
-            for state, fn, rettype, body, is_native, is_final in functions_of(text):
+            for state, fn, rettype, body, is_native, is_final, decl_params in functions_of(text):
+                if decl_params:
+                    params.setdefault((cls, fn.lower()), decl_params)
                 for key in ((cls, state.lower(), fn.lower()), (cls, "", fn.lower())):
                     old = index.get(key)
                     if old is None or len(body or ()) > len(old[1] or ()):
                         # a class that ships two declarations of one name (an `#if` branch, or a stub beside its
                         # body) compiled the longer one: prefer it, so the comparison is not scored against a stub
                         index[key] = (rettype, body, text, is_native, is_final)
-    return index, files
+            if "enum" in text.lower():
+                for enum, consts in enums_of(text):
+                    enum_names.add(enum.lower())
+                    for cname, ordinal in consts:
+                        enums.setdefault((cls, cname.lower()), (ordinal, enum))
+    return index, files, params, enums, enum_names
 
 
-def score(tree, dump, out_dir):
+def score(tree, dump, out_dir, residue_dir=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
-    index, files = _source_index(tree)
+    index, files, params, enums, enum_names = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
     chain, natives = _chain(), _natives()
+    class_names = {c for (_p, c) in chain}
     final_of = {}
     for key, value in index.items():
         if value[4]:
             final_of.setdefault(key[0], set()).add(key[2])
     table = dis.Table()
-    rows, residue = [], []
+    rows, residue, refused, examples = [], [], [], {}
     tally = collections.Counter()
     shapes = collections.Counter()
     reasons = collections.Counter()
@@ -708,11 +879,20 @@ def score(tree, dump, out_dir):
                 continue
             rettype, src_body, _text, is_native, _is_final = got
             scope = _scope(pkg, kinds, names, tables, pack, cls, i + 1, chain, natives, table_index, final_of)
+            env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
+                   "enum_names": enum_names, "class_names": class_names, "order": scope["order"]}
             try:
-                ours, model, shape = emit_body(src_body, rettype, table_index, is_native, scope)
+                ours, model, shape = emit_body(src_body, rettype, env, is_native)
             except Refused as exc:
                 tally["not-modelled"] += 1
                 reasons[str(exc).split("(")[0].strip()] += 1
+                if residue_dir:
+                    examples.setdefault(str(exc).split("(")[0].strip(), []).append(
+                        "%s.%s" % (cls, fname))
+                    refused.append({"package": fn, "class": cls, "state": state, "function": fname,
+                                    "rettype": rettype, "reason": str(exc),
+                                    "source": " ".join(v for _k, v in (src_body or ()))[:300],
+                                    "theirs": body.hex()})
                 continue
             tally["modelled"] += 1
             shapes[shape] += 1
@@ -755,6 +935,18 @@ def score(tree, dump, out_dir):
     print("modelled %d: %d identical, %d differ" % (tally["modelled"], tally["identical"], tally["differ"]))
     print("shapes: %s" % ", ".join("%s %d" % kv for kv in shapes.most_common()))
     print("not modelled: %s" % ", ".join("%s %d" % kv for kv in reasons.most_common()))
+    if residue_dir:
+        os.makedirs(residue_dir, exist_ok=True)
+        rpath = os.path.join(residue_dir, "residue.csv")
+        with open(rpath, "w", newline="", encoding="utf-8") as fh:
+            fields = ["package", "class", "state", "function", "rettype", "reason", "source", "theirs"]
+            w = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
+            w.writeheader()
+            for r in refused:
+                w.writerow(r)
+        print("wrote %s (%d rows)" % (rpath, len(refused)))
+        for reason, names in examples.items():
+            print("  %-60s %s" % (reason[:60], ", ".join(names[:4])))
     print("wrote %s and %s" % (os.path.relpath(path, ROOT), os.path.relpath(jpath, ROOT)))
     return 0
 
@@ -793,14 +985,33 @@ function CallNative() { Destroy(); }
 function CallFinal() { MyFinal(); }
 function CallVirtual() { MyVirtual(); }
 function CallArgs() { Foo(1); }
+function CallBool() { Bar(bDead); }
+function CallEnum() { Baz(PROBE_SWIMMING); }
+function CallMix() { Mix(false, 1.5); }
+function Bump() { Health = Bump(7); }
+function FromVar() { Health = Slot; }
+function FromFlag() { bDead = Flag2; }
+function CompoundArg() { Foo(1 + 2); }
+function FloatArg() { Foo(1.5); }
+function WrongArgc() { Foo(1, 2); }
 function IfStmt() { if (bDead) Health = 1; }
 """
 
 # The package's own tables, as `_scope()` builds them: a property's index, a local's, and a callee's token.
 SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
-                   "target": (0x01, 611, "object")},
+                   "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool")},
          "locals": {"slot": (0x00, 611, "int")},
-         "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39)}}
+         "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39),
+                   "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
+                   "mix": ("virtual", 46), "bump": ("virtual", 47)}}
+
+# The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
+PARAMS = {("probe", "foo"): [("int", "A")], ("probe", "bar"): [("bool", "Flag")],
+          ("probe", "baz"): [("EProbe", "Mode")], ("probe", "mix"): [("bool", "Flag"), ("float", "Time")],
+          ("probe", "bump"): [("int", "A")]}
+ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
+ENV = {"names": {}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS, "enum_names": {"eprobe"},
+       "class_names": {"probe"}, "order": ["probe"]}
 
 WANT = {
     "yes": "0427040b47",
@@ -828,8 +1039,19 @@ WANT = {
     "setobject": "0f0163092a040b47",         # Let, InstanceVariable 611 (63 09), NoObject
     "callnative": "611716040b47",            # native token 279: opcode 0x61, operand 0x17, EndFunctionParms
     "callfinal": "1c7b0b16040b47",           # FinalFunction, export index 763 (7b 0b), EndFunctionParms
-    "callvirtual": "1b2716040b47",           # VirtualFunction, name index 39, EndFunctionParms
+    "callvirtual": "1b2716040b47",           # VirtualFunction, name index 39
+    "call": "041b292616040b47",              # return Foo(1); -- int parameter, IntOne
+    "callargs": "1b292616040b47",            # Foo(1); as a statement
+    "callbool": "1b2c2d012d16040b47",              # Bar(bDead) -- a bool argument behind BoolVariable
+    "callenum": "62c1240316040b47",                # Baz(PROBE_SWIMMING) -- native token 705, ByteConst 3
+    "callmix": "1b2e281e0000c03f16040b47",         # Mix(false, 1.5) -- False, FloatConst
+    "bump": "0f016e041b2f2c0716040b47",      # Health = Bump(7);
+    "fromvar": "0f016e04006309040b47",       # Health = Slot; -- a local's own index
+    "fromflag": "142d012d2d012e040b47",      # bDead = Flag2; -- bool property read as the value
 }
+
+# Bodies the emitter must refuse, each for a named reason rather than a guess.
+REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub")
 
 
 def check(args):
@@ -850,6 +1072,8 @@ def check(args):
         if back != value:
             print("FAIL uscript-emit: the reader answers %d for a written %d" % (back, value))
             return 1
+    env = dict(ENV)
+    env["names"] = names
     got = {f[1].lower(): (f[2], f[3], f[4]) for f in functions_of(SYNTH)}
     for fn, want in WANT.items():
         if fn not in got:
@@ -857,36 +1081,23 @@ def check(args):
             return 1
         rettype, body, is_native = got[fn]
         try:
-            ours, _model, _shape = emit_body(body, rettype, names, is_native, SCOPE)
+            ours, _model, _shape = emit_body(body, rettype, env, is_native)
         except Refused as exc:
             print("FAIL uscript-emit: %s refused: %s" % (fn, exc))
             return 1
         if ours.hex() != want:
             print("FAIL uscript-emit: %s emits %s, expected %s" % (fn, ours.hex(), want))
             return 1
-    try:
-        rettype, body, is_native = got["call"]
-        emit_body(body, rettype, names, is_native)
-    except Refused:
-        pass
-    else:
-        print("FAIL uscript-emit: a call expression was emitted instead of refused")
-        return 1
-    for case in ("callargs", "ifstmt"):
+    for case in REFUSE:
+        if case not in got:
+            print("FAIL uscript-emit: the synthetic class does not declare %s" % case)
+            return 1
+        rettype, body, is_native = got[case]
         try:
-            rettype, body, is_native = got[case]
-            emit_body(body, rettype, names, is_native, SCOPE)
+            emit_body(body, rettype, env, is_native)
         except Refused:
             continue
         print("FAIL uscript-emit: %s was emitted instead of refused" % case)
-        return 1
-    try:
-        rettype, body, is_native = got["nativestub"]
-        emit_body(body, rettype, names, is_native)
-    except Refused:
-        pass
-    else:
-        print("FAIL uscript-emit: a native declaration was emitted instead of refused")
         return 1
     if not os.path.exists(ARTIFACT):
         print("ok uscript-emit: %d synthetic bodies, no artifact to check" % len(WANT))
@@ -947,13 +1158,14 @@ def main():
     ap.add_argument("--dump", help="the dump's System directory")
     ap.add_argument("-o", "--out", default=os.path.join(ROOT, "inventory"))
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--residue-out", metavar="DIR", help="write the refused bodies and their reasons here")
     args = ap.parse_args()
     if args.check:
         return check(args)
     if not args.tree or not args.dump:
         print("FAIL uscript-emit: --tree and --dump are required (the corpus and the dump stay outside the repo)")
         return 2
-    return score(args.tree, args.dump, args.out)
+    return score(args.tree, args.dump, args.out, args.residue_out)
 
 
 if __name__ == "__main__":
