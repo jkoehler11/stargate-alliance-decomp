@@ -20,7 +20,9 @@ So this read takes the population the census calls *named by no channel* and ask
 
 One family answers the naming question the rest cannot: the generated walker's keys are
 `int[AU]<Class>exec<Func>` names, so the table states the class, and the copy takes `<Class>_lookup`
-(numbered when two copies bind the same class). The derivation is a column, not an edit -- see
+(numbered when two copies bind the same class). The derivation is a column of this artifact and also a
+row of the symbol map: `--apply-symbols` writes the 199 rows the map never had (the map has no extent over a
+gap head, so an insert is not a rename) and `--check-symbols` is the gate that keeps them there -- see
 `--report`'s block in `docs/systems/CLASS_REGISTRATION.md`.
 
 The controls are what makes the second question a measurement: the same `.text` dword read over the map's
@@ -33,6 +35,8 @@ has to beat.
     python3 tools/gap-body-families.py --report
     python3 tools/gap-body-families.py --write-doc docs/systems/CLASS_REGISTRATION.md
     python3 tools/gap-body-families.py --check-doc docs/systems/CLASS_REGISTRATION.md
+    python3 tools/gap-body-families.py --apply-symbols    # insert a symbols/xbox_functions.csv row per name
+    python3 tools/gap-body-families.py --check-symbols   # every derived name is a map row (dump-free, in ci)
     python3 tools/gap-body-families.py --check          # synthetic, no dump, writes nothing
 
 Addresses, names, string heads and counts only; no package or image content is written.
@@ -58,6 +62,10 @@ SYMBOLS = os.path.join(ROOT, "symbols", "xbox_functions.csv")
 HEADS = os.path.join(ROOT, "inventory", "gap_heads.csv")
 BODIES = os.path.join(ROOT, "inventory", "gap_body_files.csv")
 OUT = os.path.join(ROOT, "inventory", "gap_body_families.csv")
+# The add's own record. The census re-read after the add no longer sees these bodies (they are map rows),
+# so the derivation would leave the repository with the population -- this file is what the gate reads.
+WALKERS = os.path.join(ROOT, "inventory", "gap_walker_names.csv")
+WALK = ("body_va", "size", "table_va", "derived_name")
 DOC = os.path.join(ROOT, "docs", "systems", "CLASS_REGISTRATION.md")
 DOC_A = ("<!-- generated:gap-body-families -->", "<!-- /generated:gap-body-families -->")
 
@@ -507,6 +515,133 @@ def derive_names(pairs, taken):
     return out
 
 
+def write_walker_names(rows, path=None):
+    """The add's own record, one row per derived name: address, size, the table it walks, the name.
+
+    A census re-read after the add no longer sees these bodies -- they are map rows now, so they leave the
+    gap population -- and a derivation that is only a column of the census would then be rewritten to empty.
+    So the add records itself here, and the gate reads this file rather than the artifact's column.
+    """
+    path = path or WALKERS
+    out = {}
+    for r in read_csv(path):
+        try:
+            out[int(r["body_va"], 16)] = {k: r.get(k) or "" for k in WALK}
+        except (KeyError, ValueError):
+            continue
+    for r in rows:
+        name = (r.get("derived_name") or "").strip()
+        if not name:
+            continue
+        try:
+            va = int(r["body_va"], 16)
+        except (KeyError, ValueError):
+            continue
+        out[va] = {"body_va": r["body_va"], "size": r.get("size") or "", "table_va": r.get("table_va") or "",
+                   "derived_name": name}
+    if not out:
+        return 0
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(WALK), lineterminator="\r\n")
+        w.writeheader()
+        for va in sorted(out):
+            w.writerow(out[va])
+    return len(out)
+
+
+def walker_population(rows, path=None):
+    """The rows the add is checked against: the record, plus anything the artifact derives that is not in it."""
+    path = path or WALKERS
+    known = {r["body_va"]: r for r in read_csv(path)}
+    out = list(known.values())
+    for r in rows:
+        if (r.get("derived_name") or "").strip() and r.get("body_va") not in known:
+            out.append({k: r.get(k) or "" for k in WALK})
+    return out
+
+
+def derived_state(rows, symbols_path=None):
+    """How many of the artifact's `derived_name` values are rows of the symbol map.
+
+    Returns `(state, missing, misfiled)`. `present` is a derived name held at its own address with its own
+    spelling; `missing` a derivation the map has no row for (the add); `misfiled` an address the map already
+    holds under another name, which is a disagreement between two reads and never an insertion. `map_rows`
+    and `after` frame the change the add would make to the map's own row count.
+    """
+    rows_in_map = read_csv(symbols_path or SYMBOLS)
+    have, sizes = {}, {}
+    for row in rows_in_map:
+        try:
+            va = int(row["address"], 16)
+        except (KeyError, ValueError):
+            continue
+        have[va] = row.get("name") or ""
+        try:
+            sizes[va] = int(row.get("size") or 0)
+        except ValueError:
+            sizes[va] = 0
+    state = {"present": 0, "missing": 0, "misfiled": 0, "map_rows": len(have), "after": len(have)}
+    missing, misfiled = [], []
+    for r in rows:
+        name = (r.get("derived_name") or "").strip()
+        if not name:
+            continue
+        try:
+            va = int(r["body_va"], 16)
+        except (KeyError, ValueError):
+            continue
+        if va not in have:
+            state["missing"] += 1
+            missing.append(r)
+        elif have[va] == name and (not r.get("size") or sizes.get(va) == int(r["size"])):
+            state["present"] += 1
+        else:
+            state["misfiled"] += 1
+            misfiled.append(r)
+    state["after"] = len(have) + state["missing"]
+    return state, missing, misfiled
+
+
+def insert_symbols(rows, path=None, missing=None):
+    """Write one `address,name,size,module` row per missing derivation, at the census's own address and size.
+
+    The module is empty: the name states a class, not a translation unit. Existing lines are copied verbatim
+    -- the map is a published artifact and a re-serialisation would rewrite rows this read never measured --
+    so only the inserted lines are new. The result is sorted by address, which is the map's own rule, and a
+    derivation whose address the map already holds is left alone.
+    """
+    path = path or SYMBOLS
+    if missing is None:
+        _, missing, _ = derived_state(rows, path)
+    with open(path, newline="", encoding="utf-8") as fh:
+        lines = fh.readlines()
+    if not lines:
+        raise SystemExit("FAIL gap-body-families: %s is empty" % path)
+    nl = "\r\n" if lines[0].endswith("\r\n") else "\n"
+    header, body = lines[0], [l for l in lines[1:] if l.strip()]
+    held = set()
+    for line in body:
+        try:
+            held.add(int(line.split(",", 1)[0], 16))
+        except ValueError:
+            continue
+    added = []
+    for r in sorted(missing, key=lambda r: int(r["body_va"], 16)):
+        va = int(r["body_va"], 16)
+        if va in held:
+            continue
+        held.add(va)
+        added.append("0x%08x,%s,%d,%s%s" % (va, r["derived_name"], int(r["size"]), "", nl))
+    if added:
+        merged = sorted([(int(l.split(",", 1)[0], 16), l) for l in body + added])
+        with open(path, "w", newline="", encoding="utf-8") as fh:
+            fh.write(header)
+            for _, line in merged:
+                fh.write(line if line.endswith(nl) else line + nl)
+    return len(added)
+
+
 def nearest_module(va, names, modules, starts=None):
     """The module of the nearest named row at or below the body -- placement, never a name."""
     starts = starts if starts is not None else sorted(names)
@@ -550,7 +685,7 @@ FAMILIES = (("operand-in-row", "a named body's instruction loads the address"),
             ("silent", "nothing in `.text` spells the address"))
 
 
-def render(rows, census):
+def render(rows, census, state=None):
     by_fam = collections.defaultdict(list)
     for r in rows:
         by_fam[r["family"]].append(r)
@@ -602,8 +737,42 @@ def render(rows, census):
                                                             "exists" if clash == 1 else "exist")
                if clash else "No base name collides with a symbol the map already carries.",
                "%d copies take no name." % unclassed if unclassed else
-               "The list is the artifact's `derived_name` column -- this read derives the names and "
-               "writes none of them into the symbol map."))
+               "The list is the artifact's `derived_name` column."))
+        lines.append("")
+        if state is None:
+            state, _, _ = derived_state(rows)
+        if state["missing"]:
+            lines.append(
+                "**The list is not yet in the symbol map.** `derived_state` reads **%d present, %d missing, "
+                "%d misfiled** against `symbols/xbox_functions.csv`; `--apply-symbols` writes the %d missing "
+                "rows at the census's own address and size (module empty: a name states a class, not a "
+                "translation unit), taking the map from %d to %d rows."
+                % (state["present"], state["missing"], state["misfiled"], state["missing"],
+                   state["map_rows"], state["after"]))
+        else:
+            lines.append(
+                "**The add is made, and it is an insert: %d of %d names are rows of the symbol map.** "
+                "`derived_state` reads **%d present, %d missing, %d misfiled** against "
+                "`symbols/xbox_functions.csv` -- one row per copy, at the census's own address and size, "
+                "module empty because a name states a class and not a translation unit -- and the map goes "
+                "**%d -> %d rows**, which is why the add is a symbols cascade and not a column write. "
+                "`--check-symbols` is the dump-free gate in `make ci`: a derivation that leaves the map, or "
+                "an address the map already holds under another name, fails the build."
+                % (state["present"], state["present"] + state["misfiled"], state["present"],
+                   state["missing"], state["misfiled"], state["map_rows"] - state["missing"],
+                   state["map_rows"]))
+        lines.append("")
+    walk = read_csv(WALKERS)
+    if walk and not census.get("derived_named"):
+        lines.append(
+            "**The %d names this read derived are rows of the symbol map, and the record outlives the "
+            "population.** The add (`--apply-symbols`) wrote them into `symbols/xbox_functions.csv` at the "
+            "census's own address and size, and `inventory/gap_walker_names.csv` is that add's own record. The "
+            "census re-read after the add no longer sees these bodies -- they are map rows, not gap heads, so "
+            "they have left this population -- which is why the `derived_name` column above now reads empty "
+            "while the class each copy binds is still on the record. `--check-symbols` is the dump-free gate "
+            "in `make ci`: a recorded name that leaves the map, or an address the map holds under another "
+            "name or size, fails the build." % len(walk))
         lines.append("")
     if census.get("slot_movs"):
         lines.append(
@@ -757,11 +926,50 @@ def self_check():
         bad.append("the artifact round trip differs")
     if back_c != census:
         bad.append("the census row does not round trip")
+    # The add: one derivation already a row, one not, one conflicting -- then the insert and its idempotence.
+    smap = os.path.join(tmp, "xbox_functions.csv")
+    with open(smap, "wb") as fh:
+        fh.write(b"address,name,size,module\r\n0x00001000,Kept,4,\r\n"
+                 b"0x00002000,ShadowManager_lookup,9,\r\n")
+    sym_rows = [{"body_va": "0x00002000", "size": "9", "derived_name": "ShadowManager_lookup"},
+                {"body_va": "0x00003000", "size": "5", "derived_name": "Alpha_lookup"}]
+    st, miss, mis = derived_state(sym_rows, smap)
+    if (st["present"], st["missing"], st["misfiled"], st["map_rows"], st["after"]) != (1, 1, 0, 2, 3):
+        bad.append("derived_state reads the present, missing and row counts off a map")
+    if len(miss) != 1 or mis:
+        bad.append("derived_state hands back the missing row and no misfiled one")
+    st2, _, mis2 = derived_state([{"body_va": "0x00001000", "size": "4", "derived_name": "Other"}], smap)
+    if st2["misfiled"] != 1 or len(mis2) != 1:
+        bad.append("an address the map holds under another name is misfiled, not missing")
+    if insert_symbols(sym_rows, smap) != 1:
+        bad.append("insert_symbols writes one row for one missing derivation")
+    want = (b"address,name,size,module\r\n0x00001000,Kept,4,\r\n"
+            b"0x00002000,ShadowManager_lookup,9,\r\n0x00003000,Alpha_lookup,5,\r\n")
+    if open(smap, "rb").read() != want:
+        bad.append("the insert keeps every existing line verbatim and sorts the new row in")
+    if derived_state(sym_rows, smap)[0]["missing"] != 0:
+        bad.append("the inserted rows are map rows on the second read")
+    if insert_symbols(sym_rows, smap) != 0:
+        bad.append("the insert is idempotent")
+    wpath = os.path.join(tmp, "gap_walker_names.csv")
+    if write_walker_names(sym_rows, wpath) != 2:
+        bad.append("the add records one row per derived name")
+    if len(walker_population([], wpath)) != 2:
+        bad.append("the record is the population the gate checks once the census has re-read")
+    if walker_population(sym_rows, wpath)[0]["derived_name"] != "ShadowManager_lookup":
+        bad.append("a derivation the record already holds is not duplicated")
+    if "The add is made" not in render(rows, census, {"present": 1, "missing": 0, "misfiled": 0,
+                                                      "map_rows": 101, "after": 101}):
+        bad.append("the render says the add is made when every derivation is a row")
+    if "not yet in the symbol map" not in render(rows, census, {"present": 0, "missing": 1, "misfiled": 0,
+                                                                "map_rows": 100, "after": 101}):
+        bad.append("the render says the list is unwritten when a derivation has no row")
     if bad:
         print("FAIL gap-body-families: " + "; ".join(bad))
         return 1
     print("ok   gap-body-families: the body lookup, the instruction ownership, all six families, the module "
-          "token, the wanted-value scan, the render and both artifact round trips agree with the synthetic rows")
+          "token, the wanted-value scan, the derivation's add (state, insert, idempotence, verbatim lines), "
+          "the render and both artifact round trips agree with the synthetic rows")
     return 0
 
 
@@ -773,9 +981,39 @@ def main():
     ap.add_argument("--write-doc")
     ap.add_argument("--check-doc")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--apply-symbols", action="store_true",
+                    help="insert a symbols/xbox_functions.csv row per derived name (no dump)")
+    ap.add_argument("--check-symbols", action="store_true",
+                    help="every derived name is a map row, with its own spelling, and none is misfiled (no dump)")
     args = ap.parse_args()
     if args.check:
         return self_check()
+    if args.check_symbols or args.apply_symbols:
+        rows, census = read_artifact(OUT)
+        if not rows or not census:
+            print("FAIL gap-body-families: %s is missing or has no census row" % OUT)
+            return 1
+        population = walker_population(rows)
+        state, missing, misfiled = derived_state(population)
+        if misfiled:
+            print("FAIL gap-body-families: %d derived address(es) the map holds under another name or size, "
+                  "first %s (%s)" % (len(misfiled), misfiled[0]["body_va"], misfiled[0]["derived_name"]))
+            return 1
+        if args.apply_symbols:
+            recorded = write_walker_names(rows)
+            added = insert_symbols(population, None, missing)
+            print("inserted %d rows into %s and recorded %d names in %s (%d present, %d missing, %d misfiled)"
+                  % (added, os.path.relpath(SYMBOLS, ROOT), recorded, os.path.relpath(WALKERS, ROOT),
+                     state["present"], state["missing"], state["misfiled"]))
+            return 0
+        if state["missing"]:
+            print("FAIL gap-body-families: %d derived name(s) are not map rows, first %s (%s)"
+                  % (state["missing"], missing[0]["body_va"], missing[0]["derived_name"]))
+            return 1
+        print("ok   gap-body-families: all %d derived names are rows of symbols/xbox_functions.csv at the "
+              "recorded address and size, none misfiled (map %d rows)"
+              % (state["present"], state["map_rows"]))
+        return 0
     if args.check_doc:
         rows, census = read_artifact(OUT)
         if not rows or not census:
