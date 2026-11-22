@@ -17438,3 +17438,56 @@ sequence.
 - **Not in this bundle.** The 4 linker folds (identical-code folds, one body serving unrelated classes,
   already read in `inventory/declarer_residue.csv`), the 427 silent bodies, the 359 interface-only bodies,
   and the `Core_UnVcWin32` family's remaining siblings.
+
+### Execution notes (2026-11-21, the interface-held bodies read at their table, and the one class with two parents)
+
+- **Task.** Two items the last bundles left as counts. U40's `359` bodies only an interface table holds and
+  the `5` a named interface inherits had a stated question -- per-interface defaults, or methods the declarer
+  walk missed -- and the page's *parent, from the image* section ended on `PendingLevel`, the one class where
+  the class object's `Super` and the installer's call name different parents, with the call at `0x0011bf20`
+  as its "next instrument".
+- **The interface population is 364 bodies, and none of them is a class's method.** `tools/interface-slot-bodies.py`
+  indexes all 232 interface tables from the image's own slot dwords, so every body's holders are the
+  `(table, index)` pairs that point at it. **301 are one table's own method at its own index, 5 are one table
+  emitted twice (identical slot tuples), 58 are one implementation under 2-6 tables that differ elsewhere,
+  and 0 sits in a class table.** The holder control reproduces the declarer census's `tables`/`indices` for
+  all 364 rows, so the declarer walk missed nothing: the residue was never a missing declarer, it is the
+  interface's own missing name. 138 of the 232 tables hold one of the 364; 94 hold none.
+- **The sharing is not "defaults across unrelated tables", it is one implementation per family.** The five a
+  named interface inherits are two shared bases: four of them at slots 7, 15, 16 and 18 of the Xbox Live
+  feature interfaces (`CAlertFeature`, `CPlayersFeature`, `CFriendsFeature`, `CLogonFeature`, with
+  `CVoiceMailPseudoFeature` holding only slot 7's) and the fifth at slot 3 of two `CEncoderXMO` and two
+  `CDecoderXMO` tables. Three of the five are `mov eax,0x80004001` with `ret 0x2c`, `ret` and `ret 0x10`,
+  which the shape column now states from the bytes. The 53 unnamed shared bodies are the same shape without
+  a named holder.
+- **The shapes are why "defaults" is the wrong word for the population.** 244 of the 364 are bodies; 80 are
+  eight-byte-or-shorter stubs, 34 constant returns, 3 `E_NOTIMPL` and 3 bare `ret`s, and they cluster in the
+  sole population as much as in the shared one (59/21), so a body's size says nothing about sharing.
+- **`PendingLevel`'s two parents are two relations, and the call the page named is read.** `0x0011bf20`
+  (112 bytes) stores `0x4fc4f0` at `[this]` (`0x0011bf3d`) and `0x4fc4cc` at `+0x28` (`0x0011bf43`), then
+  calls `0x63ee0` -- the thunk that installs `Object`'s table -- so it is `LevelBase`'s installer.
+  `PendingLevel`'s installer `0x0011c050` stores `0x4fc588` at `0x0011c06d` and calls `0x0011bf20` at
+  `0x0011c0a1`, so its object is a `LevelBase` by construction, while its class object's `+0x28` store
+  (`0x001a5220`, store `0x001a5275`) writes `Object`'s class cell. **The control is `Level`:** its installer
+  `0x163090` calls the same `0x0011bf20` at `0x00163181` and its `Super` is `LevelBase`, so the body is
+  `LevelBase`'s and the two reads agree there.
+- **The join is a census now, not a sentence.** `tools/class-parent-relations.py` joins the two committed
+  reads over all 492 class tables: **489 agree, 1 differs (`PendingLevel`), 2 have no native edge (`Object`
+  itself and `GameInfo`), 0 have no `Super` store.** `class_table_parent_edges.csv`'s `parent_class` is the
+  native base (what a vtable inherits) and its `script_super` column only ever held the 18 packages' classes;
+  the script side of every class is the class object's store, and the join records both.
+- **Files.** `tools/interface-slot-bodies.py` and `tools/class-parent-relations.py` (new), their two
+  artifacts (`inventory/interface_slot_bodies.csv` 364 rows + census, `inventory/class_parent_relations.csv`
+  492 rows + census), two sections and their blocks on `docs/systems/CLASS_REGISTRATION.md`, `docs/UNKNOWNS.md`
+  (U40), `Makefile` (two targets, two `--check-doc` gates, the help lines), `inventory/artifact_hashes.csv`,
+  `docs/ARTIFACTS.md`, this note.
+- **Gates.** `make ci` green (402 artifacts); both `--check` paths are synthetic and write nothing (the
+  copy/shared rule and the four verdicts from synthetic tables and reads, the renders, both artifact round
+  trips), and `class-parent-relations --check` also re-derives all 492 rows from the two committed censuses;
+  both `--check-doc` paths rebuild their blocks from the committed CSVs; both artifacts reproduce byte for
+  byte on a second run. No boot, no xemu, no Ghidra; the parent join reads no image at all.
+- **Next measurement:** the 427 silent bodies, with the interface read's lesson applied -- nothing in the
+  image names them, so the next channel is their own reference structure (a static array, a callback
+  install), not another slot index.
+- **Not in this bundle.** The 427 silent bodies, the 4 linker folds, and the interface's own name for the 212
+  anonymous tables (the slot vocabulary names 20; that is a naming question, not a slot one).

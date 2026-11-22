@@ -3777,8 +3777,8 @@ say so from the bytes rather than from the argument count alone.
 only 120 are a `ret`, an `E_NOTIMPL` return, a constant return or an eight-byte stub; the stubs cluster in
 the sole population (59) as much as in the shared one (21), so a body's size says nothing about whether its
 interface shares it. What the read does **not** do is name any of them: the name would be the interface's
-own, and the image carries no name for 214 of the 232 tables -- the library section holds the 18 that are
-named -- while a shared base's table is not one of the 232 at all (the five's holders are the *interfaces*,
+own, and the image's slot vocabulary names 20 of the 232 tables and the other 212 are anonymous, while a shared
+base's table is not one of the 232 at all (the five's holders are the *interfaces*,
 and no table holds all five at their indices). The naming residue is therefore the interface's identity,
 which is the library's question, not a slot-index one.
 
