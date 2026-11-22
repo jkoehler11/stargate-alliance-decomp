@@ -6372,3 +6372,13 @@ addresses -- fires twice. The 313 resizes are rows in `symbols/xbe_boundaries.cs
 and holds no continuation. What that leaves is not U40: 7 rows the map already split from their continuation
 (a `drop` review), 97 tails that do not close before the next row, and 303 sizes that land mid-instruction.
 
+
+**Answered since (2026-11-21, the mid-instruction sizes are boundaries after all).** For the 303 rows whose
+size cuts an instruction the size is a byte count and not a boundary, so the map was not short by an unknown
+amount: decoding across the cut (the instruction that contains `end - 1`) lands on a terminator in 8 and on a
+close with only fill behind it in 246, and 254 rows repair (2,276 bytes). The tail rule that refused 97 rows
+now accepts the two closes it was reading as refusals -- a first terminator followed by a pad of two or more
+`0xcc` (28 rows) and a first terminator that is a `jmp` with only fill behind it (5 rows) -- and calls the 4
+rows that end where a pad begins `bounded`. What remains is one question, not two: **13 rows are a body the map
+split in two** (7 at the row own end, 6 only visible once the cut instruction is completed), each a `drop`
+repair whose review is whether the second body is interior code, and no rule in this tool can supply it.

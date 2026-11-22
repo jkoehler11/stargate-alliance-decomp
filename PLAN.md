@@ -17571,3 +17571,29 @@ sequence.
   artifact, `--check-doc` rebuilds the SYMBOLS.md block from the committed CSV, `--selftest` covers both
   evidence families, the split, the `jmp` refusal, the carry and both artifact round trips. No boot, no
   Ghidra, no xemu.
+
+### Execution notes (2026-11-21, the extents cut mid-instruction: 287 rows the rule could not read)
+
+- **Task.** The 303 sizes that landed mid-instruction, the 97 tails that refused a close, and the 7 rows the
+  map split from their continuation are the same question asked three ways: where a body actually ends.
+- **The cut family.** `tools/symbol-extents.py` now decodes across the cut (`size + 16` bytes, the instruction
+  containing `end - 1`) instead of stopping at the byte count: **254 rows** repair, 8 where the cut instruction
+  is itself a terminator and 246 where the run behind it closes into fill (2,276 bytes). 43 rows still end
+  mid-instruction (34 behind a `ret` with code rather than a pad, 3 whose completed instruction runs past the
+  next row, 3 with no instruction spanning the cut).
+- **The tail rule.** The first terminator now closes the run when a **pad of two or more `0xcc`** follows it
+  (**28 rows**) or when it is a **`jmp`** with only fill behind it (**5 rows**, a tail call). The 4 rows whose own
+  end is where the pad begins are `bounded` and need no resize. Refused tails fall from 97 to 60.
+- **The census carry was losing bytes.** The carried path counted a family rows but not its bytes, which is why
+  the page printed "(0 bytes)"; `_family()` counts both and `--check` now sums the families against
+  `continuation_bytes`.
+- **The map.** 4,260,865 -> **4,263,466 bytes** (+2,601), same 16,935 rows. `make boundaries` refused the first
+  attempt over `xbe_overrides.csv` (`XboxAudio_StopAllSounds` 91 vs 98), so the tool gained
+  `--write-overrides`: a repair that grows a row the registration pass sized must move that column too.
+- **Cascade, regenerated on the corrected map:** `gap_heads`, `gap_body_families`, `gap_body_files`,
+  `silent_bodies`, `function_modules`, `module_export_plan`, `xbe_functions_by_module`, `xboxaudio_chain`,
+  `docs/NATIVE.md`, `docs/ARTIFACTS.md`, and the generated block in `docs/SYMBOLS.md`. `make ci` green.
+- **What is left in this thread:** the 13 split rows (7 the map already split at its own end, 6 only visible
+  after completing a cut instruction) need one `drop` review each -- the first two, `0x0001f2a0` and
+  `0x00024c80`, are twins whose second body opens `push esi` and reads `[ebp+8]` without setting `ebp`, so it
+  is interior code of the row above.
