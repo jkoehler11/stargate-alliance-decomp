@@ -2373,7 +2373,7 @@
 0x00099560 FUN_00099560                                 1415 
 0x00099af0 FUN_00099af0                                  753 
 0x00099df0 FUN_00099df0                                 1328 
-0x0009a320 Engine_KDynStep                              1759 
+0x0009a320 Engine_KDynStep                              1771 
 0x0009aa10 Engine_KDynStep                               215 
 0x0009aaf0 Engine_KDynStep                               196 
 0x0009abc0 Engine_KDynStep                              3532 
@@ -5438,7 +5438,7 @@
 0x0018a490 FUN_0018a490                                  705 
 0x0018a760 FUN_0018a760                                  340 
 0x0018a8c0 FUN_0018a8c0                                   58 
-0x0018a900 Core_UnTemplate                             11127 
+0x0018a900 Core_UnTemplate                             11156 
 0x0018d4a0 Engine_UnParticleEmitter                      179 
 0x0018d560 FUN_0018d560                                   53 
 0x0018d5a0 Core_UnTemplate                               136 
@@ -8525,10 +8525,7 @@
 0x002dfec0 FUN_002dfec0                                  156 
 0x002dff90 FUN_002dff90                                   19 
 0x002dffc0 FUN_002dffc0                                   94 
-0x002e0020 FUN_002e0020                                   12 
-0x002e002e FUN_002e002e                                   63 
-0x002e0072 FUN_002e0072                                    1 
-0x002e0073 FUN_002e0073                                   27 
+0x002e0020 FUN_002e0020                                  110 
 0x002e01a0 FUN_002e01a0                                  620 
 0x002e0410 FUN_002e0410                                  449 
 0x002e05e0 FUN_002e05e0                                  697 
