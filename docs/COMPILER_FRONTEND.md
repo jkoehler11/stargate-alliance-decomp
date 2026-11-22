@@ -179,10 +179,15 @@ looked like a total failure:
    is spelled *as an infix word* — `if ( FireYaw ClockwiseFrom Rotation.Yaw )`. Scoring an operator target on the symbol
    *or* on its spelled name recovered **34** more, to 99.90%.
 
-**The residual is seven, and it is one shape:** six are `Mover` calls (`InterpolateTo`, `SetStoppedPosition`,
-`BeginEvent`, and a `Reset`/`Untrigger` pair) that the source writes **at state scope** — statements directly inside a
-`state` body rather than inside a function — so the body walk has no function to attribute them to. The seventh is the
-placeholder row for a file that does not parse. Modelling state-scope code is the next piece of stage 2d.
+**The residual is seven, and it is *not* a parser gap — it is the oracle's attribution.** Six are recorded against
+`Mover.Trigger`, `Mover.Reset` and `Mover.Untrigger`, and reading those bodies shows what they actually call:
+`Trigger` holds `BeginEvent`, `Disable`, `Enable`, `GotoState` and `PlaySound`. The targets that read as missing
+(`InterpolateTo`, `SetStoppedPosition`) are **virtual-dispatch resolutions** the package records on that site; `InterpolateTo`
+is spelled in `DoOpen`/`DoClose`, not in `Trigger`. A first draft of this section blamed state-scope code, and checking the
+body is what refuted it. The seventh is the placeholder row for a file that does not parse.
+
+So the call measure is closed at **99.90%**, and the next piece of stage 2d is statement and expression structure — the
+conditions, assignments and operator expressions inside those bodies — not more call extraction.
 
 ## Stage 3 — the emitter, first family: one constant return (measured 2026-11-22)
 
