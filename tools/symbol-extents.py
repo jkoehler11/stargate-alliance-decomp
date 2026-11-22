@@ -13,9 +13,12 @@ terminator.** A body never falls out of its own end -- the bytes that follow a `
 * **`tail`** -- no head opens there, so the bytes are decoded from the row's own end: the first `ret` is
   the body's close, and it is a close only if **everything between it and the next map row is fill**
   (`0xCC`/`0x90`). A `jmp` is unconditional, so what follows it is never falling through: a jump whose
-  target lands forward inside the row's own gap is a branch and the read continues past it, and one whose
-  target is elsewhere closes the run when fill, a pad, alignment padding or a body's own opening follows
-  it. Only a `jmp` with code behind it that none of those explain refuses the read.
+  target lands inside the run -- forward in the gap, or **backwards** into the run already read, which is
+  a loop back-edge -- is a branch and the read continues past it, and one whose target is elsewhere
+  closes the run when fill, a pad, alignment padding or a body's own opening follows it. Only a `jmp`
+  with code behind it that none of those explain refuses the read. The tail is read to the **next map
+  row**, in `WINDOW` chunks, not to a fixed 256-byte horizon: a 77-byte row whose body runs 693 bytes
+  further (`0x003b0ef0`) reached no terminator inside the shorter read and was reported as having none.
 
 Both are resizes to `row size + tail`. Three more shapes close a row and are repaired by the same
 rule: a **`short`** row (the size cuts an instruction in half -- a byte count, not a boundary) is read
@@ -47,7 +50,11 @@ reachable from the gap in front: decoded from the first non-fill byte there, the
 instruction **across** the fragment's head and closes behind it, so the gap holds exactly one body. That
 is an `add` row at the opening and a `drop` for every map row inside the span it decodes to -- including
 the fragment -- plus a creation row in `symbols/xbe_overrides.csv`, because that file is what
-`XbePost.java` builds a function from (U37). The opening is not a container just because it is first:
+`XbePost.java` builds a function from (U37). **A hole the map never entered holds more than one body**,
+so its own opening cannot be the holder: the fragment at `0x00410020` sits 15,704 bytes into one whose
+first instruction is a 10-byte `jmp` thunk, and the body that holds it opens on the nearest pad behind
+it (`0x00410010`, which closes 89 bytes later -- exactly the size the map already gives its twin at
+`0x00410070`). The opening is not a container just because it is first:
 `0x0040c2c8` opens a 10-byte `jmp` thunk whose body closes 15,690 bytes in front of the fragment it would
 have to hold, and its decode never crosses the fragment's head.
 
@@ -264,6 +271,35 @@ def tail_close(ins):
     return None, "no-close"
 
 
+def tail_run(reader, decode_fn, start, limit, cap=8192):
+    """Decoded instructions from `start` to the first terminator, read in `WINDOW` chunks.
+
+    A fixed 256-byte window is a claim about the window, not about the tail: `0x003b0ef0`'s body runs 693
+    bytes past the map's end and its first terminator is past the shorter read, so the row was reported as
+    reaching no close when it reaches one. Chunking keeps one objdump spawn per window and lets the read go
+    where it has to -- the next map row.
+    """
+    out = []
+    va = start
+    while va < limit and len(out) < cap:
+        n = min(limit - va, WINDOW)
+        ins = decode_fn(reader(va, n), va)
+        if not ins:
+            break
+        moved = False
+        for step in ins:
+            if step[0] + step[1] > va + n:
+                break                     # truncated by the window: re-read from here
+            out.append(step)
+            moved = True
+            if is_term(step[2]):
+                return out
+        if not moved:
+            break
+        va = out[-1][0] + out[-1][1]
+    return out
+
+
 def tail_rule(reader, decode_fn, start, limit, targets=None):
     """(tail instructions, close instruction, family-or-refusal) for the run after a row's end.
 
@@ -277,7 +313,7 @@ def tail_rule(reader, decode_fn, start, limit, targets=None):
     the read, and so does a run with no terminator at all.
     """
     room = limit - start
-    tail = decode_fn(reader(start, min(room, MAX_TAIL)), start) if room > 0 else []
+    tail = tail_run(reader, decode_fn, start, limit) if room > 0 else []
     if not tail:
         return tail, None, ("no-room" if room <= 0 else "undecoded")
     first = None
@@ -289,7 +325,7 @@ def tail_rule(reader, decode_fn, start, limit, targets=None):
         targets |= branch_targets([t])
     if first is None:
         return tail, None, "no-close"
-    why = close_kind(reader, decode_fn, first, limit)
+    why = close_kind(reader, decode_fn, first, limit, start=start)
     if why in ("body", "data", "behind") and (first[0] + first[1]) in targets:
         # the row branches to the bytes behind this close, so they are the row's own code -- the
         # early-return shape -- whatever they look like
@@ -301,12 +337,12 @@ def tail_rule(reader, decode_fn, start, limit, targets=None):
     if why in ("padding", "behind", "data", "body"):
         return tail, first, why
     if why == "jump-inside":
-        close, _jwhy = close_ahead(reader, decode_fn, first[0] + first[1], limit)
+        close, _jwhy = close_ahead(reader, decode_fn, first[0] + first[1], limit, origin=start)
         if close is not None and mnemonic(close[2]) != "jmp":
             return tail, close, "jump-inside"
         return tail, None, "jump"
     if why in ("follow", "epilogue"):
-        close, fwhy = close_ahead(reader, decode_fn, first[0] + first[1], limit)
+        close, fwhy = close_ahead(reader, decode_fn, first[0] + first[1], limit, origin=start)
         if close is not None and mnemonic(close[2]) != "jmp":
             return tail, close, why
         return tail, None, "then-code"
@@ -340,14 +376,15 @@ def jmp_target(text):
     return int(m.group(1), 16) if m and m.group(1) else None
 
 
-def jump_kind(reader, decode_fn, step, after_va, limit, deep=True):
+def jump_kind(reader, decode_fn, step, after_va, limit, deep=True, start=None):
     """How the bytes behind one `jmp` bound it: `jump-pad`, `jump-behind`, `jump-inside` or `jump-open`.
 
     A `jmp` is unconditional, so nothing falls through it: the bytes behind it are reached only by
     another branch or by the jump itself, and that makes its **target** the discriminator. A target that
     lands forward inside the row's own gap is a branch -- the `if`/`else` shape, whose else-arm sits
     behind the jump, or a loop back into the body -- so those bytes are this body's own code and the read
-    continues (`jump-inside`). A target elsewhere closes the run when alignment padding (`jump-pad`) or a
+    continues (`jump-inside`), and a target **behind** the `jmp` but inside the run being read is the
+    loop's back-edge, which is the same case. A target elsewhere closes the run when alignment padding (`jump-pad`) or a
     body's own opening (`jump-behind`, a tail call into that body) follows it, exactly as fill or a pad
     behind a `ret` does. Code the rule cannot attribute refuses (`jump-open`), which is what a branch
     whose target the decode cannot see looks like too.
@@ -359,6 +396,11 @@ def jump_kind(reader, decode_fn, step, after_va, limit, deep=True):
         return "jump-table"
     target = jmp_target(step[2])
     if target is not None and after_va <= target < limit:
+        return "jump-inside"
+    if target is not None and start is not None and start <= target < after_va:
+        # a loop back-edge into the run being read: the bytes behind the `jmp` are the loop's other half,
+        # so the jump is a branch, not the body's exit. Reading it as an exit is what refused the 693-byte
+        # tail of `0x003b0ef0`, whose only `jmp` before its close goes back to the top of its own loop.
         return "jump-inside"
     kind, _first = after_kind(reader, decode_fn, after_va, limit, deep=deep)
     if kind == "padding":
@@ -374,11 +416,12 @@ def jump_kind(reader, decode_fn, step, after_va, limit, deep=True):
     return "jump-open"
 
 
-def close_kind(reader, decode_fn, step, limit, deep=True):
+def close_kind(reader, decode_fn, step, limit, deep=True, start=None):
     """How the bytes behind one terminator bound it: `tail`, `pad`, `padding`, `behind`, `body`, `data`,
     `follow`, the `jump` family (`jump-pad`, `jump-behind`, `jump-table`, `jump-data`, `jump-inside`), or
     a refusal (`jump-open`, `then-code`). `deep` is off for the nested read the `body` test makes, so the
-    two tests cannot call each other."""
+    two tests cannot call each other. `start` is where the run being read begins, which is what makes a
+    `jmp` back into it a branch rather than an exit."""
     after_va = step[0] + step[1]
     after = reader(after_va, max(0, limit - after_va))
     if all(b in FILL for b in after):
@@ -392,7 +435,7 @@ def close_kind(reader, decode_fn, step, limit, deep=True):
     if pad >= 2:
         return ("jump" if mnemonic(step[2]) == "jmp" else "pad")
     if mnemonic(step[2]) == "jmp":
-        return jump_kind(reader, decode_fn, step, after_va, limit, deep=deep)
+        return jump_kind(reader, decode_fn, step, after_va, limit, deep=deep, start=start)
     kind, _first = after_kind(reader, decode_fn, after_va, limit, deep=deep)
     return kind
 
@@ -485,6 +528,41 @@ def containing_head(reader, decode_fn, head_va, prev_end, limit=None):
         close, _why = close_ahead(reader, decode_fn, a, limit or head_va + MAX_FOLD)
         if close is None or close[0] + close[1] <= head_va:
             break
+        return a, close
+    return None, None
+
+
+def holder_behind(reader, decode_fn, head_va, prev_end, limit=None, span=4096):
+    """(the opening of the body that holds a fragment, its close) when the hole in front holds many bodies.
+
+    `containing_head` reads the hole from its own opening, which proves a hole that holds **exactly one**
+    body. A hole the map never entered holds many, so the first instruction there is a thunk or a body that
+    closes in front of the fragment and the holder is never found: the fragment at `0x00410020` sits 15,704
+    bytes into one whose gap opens on a 10-byte `jmp` thunk at `0x0040c2c8`. A body still opens only where
+    nothing falls through it, so the candidates are the first bytes after a pad of two or more fill bytes in
+    front of the fragment, read from the nearest backwards; the holder is the first whose decode runs an
+    instruction **across** the fragment's head and closes **behind** it. The scan is deliberately local --
+    it looks `span` bytes back, not to the hole's opening -- because that is what a multi-body hole needs.
+    """
+    if not prev_end or head_va - prev_end < 8:
+        return None, None
+    room = min(head_va - prev_end, span)
+    lo = head_va - room
+    blob = reader(lo, room)
+    openers, run = [], 0
+    for i, b in enumerate(blob):
+        if b in FILL:
+            run += 1
+            continue
+        if run >= 2:
+            openers.append(lo + i)
+        run = 0
+    for a in reversed(openers):
+        if not spans(reader, decode_fn, a, head_va):
+            continue
+        close, _why = close_ahead(reader, decode_fn, a, limit or head_va + MAX_FOLD)
+        if close is None or close[0] + close[1] <= head_va:
+            continue
         return a, close
     return None, None
 
@@ -616,8 +694,12 @@ def is_fill_insn(text):
     return bool(re.match(r"^(add|sub|or|and|xor)\s+\w+,0x0$", t))
 
 
-def close_ahead(reader, decode_fn, start, limit, cap=600):
+def close_ahead(reader, decode_fn, start, limit, cap=600, origin=None):
     """(close instruction, kind) for the first close at or after `start`, following a shared epilogue.
+
+    `origin` is where the **body** being read begins, when the walk resumes somewhere inside it (a row's
+    tail, or the code behind a `jmp`): a `jmp` back to a point between the body's head and the walk's
+    resume is the body's own loop, not an exit, so the two cannot share one `start`.
 
     A close is a terminator with fill, a two-byte pad, alignment padding or a body's own opening behind
     it. When the code behind a close reads the same frame, the walk continues past it -- the early
@@ -627,6 +709,7 @@ def close_ahead(reader, decode_fn, start, limit, cap=600):
     when nothing closes before `limit`.
     """
     va = start
+    origin = start if origin is None else origin
     steps = 0
     targets = set()
     while va < limit and steps < cap:
@@ -642,7 +725,7 @@ def close_ahead(reader, decode_fn, start, limit, cap=600):
             if not is_term(step[2]):
                 targets |= branch_targets([step])
                 continue
-            kind = close_kind(reader, decode_fn, step, limit)
+            kind = close_kind(reader, decode_fn, step, limit, start=origin)
             if kind in ("behind", "follow", "body", "data", "epilogue") and (step[0] + step[1]) in targets:
                 kind = "then-code"
             if kind in ("tail", "pad", "padding", "behind", "body", "data", "jump", "jump-pad",
@@ -810,7 +893,13 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         entry = start_kind(reader, r["va"], lo)
         if not entry:
             cen["split_noboundary"] += 1
+            how = "the hole in front"
             head, hclose = containing_head(reader, decode_fn, r["va"], prev_end_of.get(r["va"]))
+            if head is None:
+                # the hole holds more than one body, so its own opening cannot be the holder: the body
+                # that holds the fragment opens on the nearest pad behind it
+                how = "the nearest pad behind it"
+                head, hclose = holder_behind(reader, decode_fn, r["va"], prev_end_of.get(r["va"]))
             if head is not None:
                 cen["fragment_head"] += 1
             if head is not None and hclose is not None:
@@ -825,15 +914,15 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                 cen["add"] += 1
                 cen["add_bytes"] += hend - head
                 out.append(_row(holder, None, "add:holder", hend - head, "0x%08x" % hend, "add", "holder",
-                                "the gap in front of 0x%08x ends its padding at 0x%08x, and a decode from "
+                                "0x%08x is a fragment: %s ends its padding at 0x%08x, and a decode from "
                                 "that opening runs an instruction across the fragment's head and closes on "
-                                "`%s` at 0x%08x, %d byte(s) in: the gap holds one body, the map has no row "
-                                "for it, and that is an `add`" % (
-                                    r["va"], head, hclose[2], hend, hend - head),
+                                "`%s` at 0x%08x, %d byte(s) in. No branch can enter the fragment, the map "
+                                "has no row for the body that holds it, and the repair is an `add`" % (
+                                    r["va"], how, head, hclose[2], hend, hend - head),
                                 target=head, close=hclose, new_size=hend - head))
                 out.append(_row(r, last, end_kind, 0, "", "folded", "folded",
-                                note + ", and the gap's opening at 0x%08x holds it, so it is interior code "
-                                "of the body an `add` row at that opening creates" % head, target=head))
+                                note + ", and the body at 0x%08x holds it, so it is interior code of the "
+                                "row an `add` repair at that opening creates" % head, target=head))
                 cover.append((hend, head))
                 return
             out.append(_row(r, last, end_kind, 0, "", "split", "no-boundary",
@@ -1126,8 +1215,8 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                         "jump-table": "a decode from the row's end reaches `%s`, an indirect jump: "
                                       "the body ends at the dispatch and its table follows",
                         "jump-inside": "a decode from the row's end reaches `%s`, whose target lies "
-                                       "forward inside this row's own gap -- a branch, not an exit -- so "
-                                       "the read continues to the close at 0x%08x",
+                                       "inside this row's own gap -- a branch, not an exit -- so the "
+                                       "read continues to the close at 0x%08x",
                     }[why]
                     note = note % ((close[2], cclose)
                                    if why in ("follow", "epilogue", "jump-inside") else (close[2],))
@@ -1572,9 +1661,9 @@ def write_boundaries(rows, path=BOUNDARIES):
                     kept += 1
                 continue
             lines.append('0x%08x,add,FUN_%08x,%d,"%s"' % (
-                va, va, size, ("%s; the holder is the gap's own opening at 0x%08x, and a decode from it "
-                               "runs an instruction across the fragment's head and closes on `%s` at %s, "
-                               "%d byte(s) in, so the gap holds one body" % (
+                va, va, size, ("%s; the holder opens at 0x%08x after a pad in front of the fragment, and "
+                               "a decode from it runs an instruction across the fragment's head and closes "
+                               "on `%s` at %s, %d byte(s) in, so the map has no row for that body" % (
                                    REPAIRS[4], va, r["close_insn"], r["close_va"], size)).replace('"', "'")))
             added += 1
             continue
@@ -1851,6 +1940,8 @@ def self_check():
             {"va": 0x3500, "name": "FUN_00003500", "size": 0x10},   # a pad at the row's own end
             {"va": 0x3600, "name": "FUN_00003600", "size": 0x10},   # a `jmp` with code it cannot place
             {"va": 0x3700, "name": "FUN_00003700", "size": 0x10},   # a `jmp` whose target is inside
+            {"va": 0x3900, "name": "FUN_00003900", "size": 0x10},   # a `jmp` back into the run (a loop)
+            {"va": 0x3920, "name": "FUN_00003920", "size": 0x10},   # the row behind that loop
             {"va": 0x5000, "name": "FUN_00005000", "size": 3},      # the size cuts an instruction
             {"va": 0x5100, "name": "FUN_00005100", "size": 2},      # ... and the cut instruction is a `ret`
             {"va": 0x4000, "name": "FUN_00004000", "size": 0x10},   # ends on live code, nothing after
@@ -1882,6 +1973,10 @@ def self_check():
     put(0x3610, b"\xe9" + b"\x00" * 4 + b"\x8b\x06")
     put(0x3700, b"\x90" * 0x0f + b"\x5d")
     put(0x3710, b"\xe9" + b"\x01" * 4 + b"\xc3")
+    # a tail whose only `jmp` goes back into the run already read: a loop back-edge, not an exit
+    put(0x3900, b"\x90" * 0x0f + b"\x5d")
+    put(0x3910, b"\x90\x90\xe9\xfb\xff\xff\xff\xc3" + b"\xcc" * 8)
+    put(0x3920, b"\x90" * 0x0f + b"\xc3")
     put(0x3400, b"\x90" * 0x0f + b"\x5d")
     put(0x3410, b"\xc3" + b"\xcc" * 2 + b"\x55\x8b")
     put(0x3500, b"\x90" * 0x0f + b"\x5d")
@@ -1919,6 +2014,10 @@ def self_check():
             return [(0x3615, 2, "mov    eax,DWORD PTR [esi]")]
         if base == 0x3710:
             return [(0x3710, 5, "jmp    0x3716")]
+        if base == 0x3910:
+            return [(0x3910, 2, "nop"), (0x3912, 5, "jmp    0x3910"), (0x3917, 1, "ret")]
+        if base == 0x3920:
+            return [(0x3920, 15, "nop"), (0x392f, 1, "ret")]
         if base == 0x3715:
             return [(0x3715, 1, "ret")]
         if base == 0x3410:
@@ -2001,6 +2100,13 @@ def self_check():
         bad.append("a `jmp` whose target is inside the row's own gap is a branch: the read runs on to "
                    "the close behind it (got %s %s)" % (verdicts.get("0x00003700", {}).get("reason"),
                                                         verdicts.get("0x00003700", {}).get("new_size")))
+    if verdicts.get("0x00003900", {}).get("reason") != "jump-inside" or \
+            verdicts["0x00003900"]["verdict"] != "continuation" or \
+            verdicts["0x00003900"]["new_size"] != 0x18:
+        bad.append("a `jmp` whose target is a loop back into the run is a branch, not an exit (got %s %s %s)"
+                   % (verdicts.get("0x00003900", {}).get("reason"),
+                      verdicts.get("0x00003900", {}).get("verdict"),
+                      verdicts.get("0x00003900", {}).get("new_size")))
     if verdicts.get("0x00003400", {}).get("reason") != "pad" or \
             verdicts["0x00003400"]["verdict"] != "continuation":
         bad.append("a `ret` with a two-byte pad behind it is a pad continuation")
@@ -2024,10 +2130,35 @@ def self_check():
     if verdicts.get("0x00004220", {}).get("verdict") != "folded" or \
             verdicts["0x00004220"]["target_va"] != "0x00004210":
         bad.append("the fragment the holder runs across is dropped into it")
+    # A hole the map never entered holds more than one body, so its own opening cannot be the holder: the
+    # fragment at 0x4020 sits behind a `jmp` thunk the hole opens on, and the body that holds it starts on
+    # the pad at 0x4018 and closes at 0x4030.
+    hole = bytearray(b"\xcc" * 0x200)
+    hole[0x08:0x0d] = b"\xe9\x00\x00\x00\x00"                 # the hole's opening: a 10-byte thunk
+    hole[0x18:0x28] = b"\x8b\x43\x04" + b"\x0f" * 16           # runs across the fragment head at 0x4020
+    hole[0x30] = 0xc3                                            # its close, fill behind it
+
+    def hreader(va, size):
+        return bytes(hole[max(0, va - 0x4000):max(0, va - 0x4000) + size])
+
+    def hdecode(blob, base):
+        if base == 0x4008:
+            return [(0x4008, 5, "jmp    0x400d")]
+        if base == 0x4018:
+            return [(0x4018, 0x18, "mov    eax,DWORD PTR [ebx+0x4]"), (0x4030, 1, "ret")]
+        return []
+
+    got, gclose = holder_behind(hreader, hdecode, 0x4020, 0x4000, 0x4200)
+    if got != 0x4018 or gclose is None or gclose[0] != 0x4030:
+        bad.append("a fragment in a hole that holds more than one body is held by the body on the pad "
+                   "behind it (got %s %s)" % (hex(got) if got else got,
+                                              hex(gclose[0]) if gclose else gclose))
+    if holder_behind(hreader, hdecode, 0x4020, 0x4018, 0x4200) != (None, None):
+        bad.append("a fragment whose hole opens right in front of it has no holder behind it")
     if int(cen.get("add") or 0) != 1 or int(cen.get("add_bytes") or 0) != 0x15:
         bad.append("the holder family counts the row and its extent")
-    if cen.get("terminator") != 4:
-        bad.append("the four rows that close on `ret` must not enter the population")
+    if cen.get("terminator") != 5:
+        bad.append("the five rows that close on `ret` must not enter the population")
     tmp = tempfile.mkdtemp()
     try:
         path = os.path.join(tmp, "symbol_extents.csv")
@@ -2292,12 +2423,12 @@ def self_check():
             print("FAIL selftest: " + b)
         return 1
     print("ok   symbol-extents selftest: both tail families, the cut repairs, the pad and `jmp` closes "
-          "(a tail call, a branch inside the gap, and a refusal), the `bounded` row, the split, the "
-          "refusals, the three closes behind a `ret` (a filler no-op, a whole body, and bytes no ring-3 "
-          "program can run), the fold and its frame test, the fragment a gap opening holds and the "
-          "`add` it earns, the undecoded cut, the row whose size runs "
-          "into the next one, the cut the truncated decode hides, a body that closes past 64 bytes, "
-          "the carry and both round trips")
+          "(a tail call, a branch inside the gap, a loop back into the run, and a refusal), the `bounded` "
+          "row, the split, the refusals, the three closes behind a `ret` (a filler no-op, a whole body, and "
+          "bytes no ring-3 program can run), the fold and its frame test, the fragment a gap opening holds "
+          "and the `add` it earns, the fragment a multi-body hole holds and the holder behind it, the "
+          "undecoded cut, the row whose size runs into the next one, the cut the truncated decode hides, a "
+          "body that closes past 64 bytes, the carry and both round trips")
     return 0
 
 
