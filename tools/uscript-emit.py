@@ -399,6 +399,17 @@ def _number(text):
     return int(t)
 
 
+def _int_literal(expr):
+    """The integer an expression is literally, or None: `255`, `-1`, `0x10`, `(7)` -- a leaf, not a compound."""
+    expr = _strip_parens(expr)
+    if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
+        expr = [("number", "-" + expr[1][1])]
+    if len(expr) == 1 and expr[0][0] == "number":
+        v = _number(expr[0][1])
+        return v if isinstance(v, int) else None
+    return None
+
+
 def _is_call(expr):
     """`Name(...)` -- the whole expression is one call."""
     return (len(expr) >= 3 and expr[0][0] in ("ident", "keyword") and expr[1] == ("op", "(")
@@ -537,7 +548,10 @@ def emit_expr(expr, rettype, env):
         if t == "string":
             return bytes([0x1F]) + text.encode("latin-1") + b"\x00", "string-const"
         if t == "name":
-            idx = names.get(text.lower())
+            # The empty name is index 0: `Vehicle.GetWeaponBoneFor` is `return '';` and the package writes
+            # `04 21 00 04 0b 47`, so the literal is the name table's zero entry rather than an absent string (8
+            # bodies).
+            idx = 0 if not text else names.get(text.lower())
             if idx is None:
                 raise Refused("a name literal the package does not carry (%d chars)" % len(text))
             return bytes([0x21]) + write_index(idx), "name-const"
@@ -554,9 +568,19 @@ def _emit_vector(expr):
 
 
 def _split_commas(tokens):
-    out, cur = [], []
+    """Split at *depth-0* commas: `Explode(HitLocation, vect(0,0,0), none)` is three arguments, not five.
+
+    The split is shared with `params_of` and `enums_of`, and without the depth a comma inside a nested call moved the
+    argument count of every call that carries one -- 10 bodies were refused as "2 argument(s) to a 1-parameter
+    callee" (`SetDrawScale(FMax(0.01, DrawScale - ...))`).
+    """
+    out, cur, depth = [], [], 0
     for t in tokens:
-        if t == ("op", ","):
+        if t[0] == "op" and t[1] in "([{":
+            depth += 1
+        elif t[0] == "op" and t[1] in ")]}":
+            depth -= 1
+        if t == ("op", ",") and depth == 0:
             out.append(cur)
             cur = []
             continue
@@ -637,6 +661,15 @@ def emit_call(stmt, env):
     for arg, (ptype, _pname, _optional) in zip(args, params):
         if not arg:
             raise Refused("a call that leaves an optional argument empty")
+        if ptype.lower() == "byte" and _int_literal(arg) is not None:
+            # An integer literal is typed `int` even at a `byte` parameter: the compiler writes `39 3d`
+            # (IntToByte, the image's cast table) and then the *int* constant (`2c ff` IntConstByte), not `24 ff`
+            # (ByteConst). Measured on `GUIController.GetFocusedControl`/`SetFocusedControl`, whose only difference
+            # is those three bytes.
+            slot = _cast_slots().get(("int", "byte"))
+            if slot is not None:
+                out += bytes([0x39, slot]) + emit_expr(arg, "int", env)[0]
+                continue
         out += emit_expr(arg, ptype, env)[0]
     return out + b"\x16"
 
@@ -793,7 +826,11 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                 break
         if picked is not None:
             scope["delegates"][nm[2:-len("__delegate")]] = picked[0]
-    declared = set(funcs) | {f for (p2, c2, f) in natives if p2 == pack and c2 in order}
+    # A native that an *ancestor in another package* declares is still in this class's chain: `Object` lives in
+    # `Core.u`, so `GetItemName`/`GetStateName` were refused as "not declared by the class chain" for every class
+    # outside Core (51 bodies). The filter is the class in the chain, not the package: the lookup below still keys
+    # the token by (package, class, name), so a same-named native of another class cannot answer.
+    declared = set(funcs) | {f for (_p2, c2, f) in natives if c2 in order}
     for c in order:
         declared |= set((final_of or {}).get(c, ()))
     for nm in declared:
@@ -872,11 +909,19 @@ def _source_index(tree):
             for state, fn, rettype, body, is_native, is_final, decl_params in functions_of(text):
                 if decl_params:
                     params.setdefault((cls, fn.lower()), decl_params)
-                for key in ((cls, state.lower(), fn.lower()), (cls, "", fn.lower())):
+                keys = [(cls, state.lower(), fn.lower())]
+                if not state:
+                    # The class-level key is filled by class-level declarations only. A state function of the same
+                    # name is a *different* export -- Mover declares a bodyless `DisableTrigger()` at class scope and
+                    # a `Disable('Trigger')` inside a state -- and letting the state body fill this key scored the
+                    # stub against the state's bytes: 14 shipped bodies read as "differ" that way.
+                    keys.append((cls, "", fn.lower()))
+                for key in keys:
                     old = index.get(key)
                     if old is None or len(body or ()) > len(old[1] or ()):
-                        # a class that ships two declarations of one name (an `#if` branch, or a stub beside its
-                        # body) compiled the longer one: prefer it, so the comparison is not scored against a stub
+                        # a class that ships two *class-level* declarations of one name (an `#if` branch, or a stub
+                        # beside its body) compiled the longer one: prefer it, so the comparison is not scored
+                        # against a stub
                         index[key] = (rettype, body, text, is_native, is_final)
             if "enum" in text.lower():
                 for enum, consts in enums_of(text):
@@ -1078,6 +1123,24 @@ function IfStmt() { if (bDead) Health = 1; }
 function CallExec() { GotoState('Probe'); }
 function CallDelegate() { OnChange(Self); }
 function CallBadNative() { TinyToken(); }
+function name EmptyName() { return ''; }
+function CallNested() { Mix3(false, vect(0, 0, 0)); }
+function CallByteLit() { MixByte(255); }
+"""
+
+# A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
+# different exports, and the class-level one is the stub (Mover.DisableTrigger).
+STUB_STATE = """class Probe extends Actor;
+
+function DisableTrigger();
+
+state OpenTimedMover
+{
+    function DisableTrigger()
+    {
+        Disable('Trigger');
+    }
+}
 """
 
 # The package's own tables, as `_scope()` builds them: a property's index, a local's, and a callee's token.
@@ -1087,7 +1150,8 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
          "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39),
                    "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
                    "mix": ("virtual", 46), "bump": ("virtual", 47), "gotostate": ("native", 113),
-                   "tinytoken": ("native", 2), "onchange": ("virtual", 26)},
+                   "tinytoken": ("native", 2), "onchange": ("virtual", 26),
+                   "mix3": ("virtual", 48), "mixbyte": ("virtual", 49)},
          "delegates": {"onchange": 51}}
 
 # The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
@@ -1096,7 +1160,9 @@ PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "
           ("probe", "baz"): [("EProbe", "Mode", False)],
           ("probe", "mix"): [("bool", "Flag", False), ("float", "Time", True)],
           ("probe", "bump"): [("int", "A", False)], ("probe", "gotostate"): [("name", "NewState", False)],
-          ("probe", "onchange"): [("object", "Sender", False)]}
+          ("probe", "onchange"): [("object", "Sender", False)],
+          ("probe", "mix3"): [("bool", "Flag", False), ("vector", "V", False)],
+          ("probe", "mixbyte"): [("byte", "Mode", False)]}
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
 ENV = {"names": {}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS, "enum_names": {"eprobe"},
        "class_names": {"probe"}, "order": ["probe"]}
@@ -1140,6 +1206,9 @@ WANT = {
     "fromflag": "142d012d2d012e040b47",      # bDead = Flag2; -- bool property read as the value
     "callexec": "71210516040b47",            # GotoState('Probe') -- token 113 *is* the opcode; name index 5
     "calldelegate": "43331a1716040b47",      # OnChange(Self) -- DelegateFunction: export 51, name index 26
+    "emptyname": "042100040b47",             # return ''; -- the name table's zero entry
+    "callnested": "1b30282300000000000000000000000016" "040b47",   # Mix3(false, vect(0,0,0)): three arguments at
+    "callbytelit": "1b31393d2cff16040b47",   # MixByte(255): IntToByte, then the int constant -- not ByteConst
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
@@ -1213,6 +1282,37 @@ def check(args):
     stale = _scope(pkg, kinds, exp_names, tables, "probe", "probe", 3, {("probe", "probe"): ("", "")}, {}, {})
     if stale["locals"]:
         print("FAIL uscript-emit: a stale export index still scopes a local (%r)" % (stale["locals"],))
+        return 1
+    # P1: a state body of the same name must not fill the class-level key. One file, one stub, one state body.
+    import shutil
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix="sg1-emit-")
+    try:
+        with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
+            fh.write(STUB_STATE)
+        sidx, _f, _p, _e, _en = _source_index(tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]
+    state = (sidx.get(("probe", "opentimedmover", "disabletrigger")) or (None, None))[1]
+    if stub is not None:
+        print("FAIL uscript-emit: a state body fills the class-level stub key (%r)" % (stub,))
+        return 1
+    if not state:
+        print("FAIL uscript-emit: the state body did not land under its own state name")
+        return 1
+    # P3: a native of an ancestor in *another* package answers, and a same-named native of a class outside the
+    # chain does not.
+    cross = {("probe", "probe"): ("engine", "actor"), ("engine", "actor"): ("core", "object")}
+    nat = {("core", "object", "getitemname"): (10, ""), ("core", "text", "otherfn"): (11, "")}
+    sc = _scope(pkg, kinds, exp_names, tables, "probe", "probe", 2, cross, nat, {})
+    if sc["funcs"].get("getitemname") != ("native", 10):
+        print("FAIL uscript-emit: a native of an ancestor in another package does not resolve (%r)"
+              % (sc["funcs"].get("getitemname"),))
+        return 1
+    if "otherfn" in sc["funcs"]:
+        print("FAIL uscript-emit: a native of a class outside the chain resolves anyway (%r)"
+              % (sc["funcs"]["otherfn"],))
         return 1
     if not os.path.exists(ARTIFACT):
         print("ok uscript-emit: %d synthetic bodies, no artifact to check" % len(WANT))

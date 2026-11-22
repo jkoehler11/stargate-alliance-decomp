@@ -209,7 +209,9 @@ as a percentage.
 three bytes alone**: 801 declarations with no body, 352 whose source body is comments only, 263 state functions whose
 text names another state, and **53 whose text declares code the package did not compile** — `Mover.EnableTrigger` is
 one statement in the source and the trailer in the package. The stage-2 counts could not see that population, because
-both sides agreed on the count.
+both sides agreed on the count. (`Mover.EnableTrigger` is the same collision named below: the class-level declaration
+carries no body and the statement is a state function's. 1,096 bodies are now modelled as that stub and the trailer
+alone, every one identical.)
 
 Six rules had to be measured before the comparison was exact, and every one came from a body that differed:
 
@@ -240,9 +242,11 @@ positive and negative forms, because writing that index wrong would score as a w
 
 ## Stage 3, continued -- the join closes and two statement families land (measured 2026-11-22)
 
-**2,200 bodies are modelled and 2,196 are byte-identical.** The four that differ are the population stage 3's first
-run already named: the text declares a call the package did not compile (`Weapon.ForceReload` calls
-`ServerForceReload()`, and the shipped script for that body is the bare trailer).
+**2,200 bodies are modelled and 2,196 are byte-identical.** The four that differed were read at the time as "the
+text declares a call the package did not compile" (`Weapon.ForceReload` calls `ServerForceReload()`, and the shipped
+script for that body is the bare trailer). Measured later, below: the class-level `ForceReload` is a *bodyless
+declaration* and the call belongs to a function of the same name inside a state, so the comparison was reading the
+wrong declaration.
 
 ### The join's residue was 350, and it was three declaration forms the walk did not read
 
@@ -292,13 +296,55 @@ comes from its own declaration in the text. Two of those four rows cost a run ea
 `myOnDeactivate` are scripted and `final`, which no native table can say. 114 one-call bodies are modelled, all
 byte-identical.
 
+## Stage 3, continued -- the argument list lands, and one differing body is left (measured 2026-11-22)
+
+**2,819 bodies are modelled and 2,818 are byte-identical: 1 differs**, from 2,510 / 2,417 / 93 as this thread first
+read the argument list. A modelled body is one stub (1,096), an empty body (373), one constant return (780), one
+assignment (162) or one call (408), and the join is unchanged at 11,678 of 11,687.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| a call to a native whose token is `0x70`..`0xFF` (`GotoState('FadeOut')`) | `71 21 <idx> 16` | the token **is** the opcode: one byte, no operand, not a `HighNative` pair (`0x60 + token>>8`). **135** declarers in this build carry such a token -- `71` GotoState, `75` Enable, `76` Disable |
+| a `bool` parameter read | `2d 00 <index>` | a parameter is a **local**. The score loop once handed `_scope` the index left by the name-table sweep instead of the body's own export index, so no local was built and every parameter read fell back to the property table (`2d 01` where the package wrote `2d 00`) |
+| `Mix(false)` for `Mix(bool Flag, optional float Time)` | `1b 2e 28 16` | an `optional` parameter may be left off: the package writes no placeholder for it, and a call short of a *required* parameter is refused by name |
+| `OnChange(Self)`, where `__OnChange__delegate` is a property | `43 33 1a 17 16` | a `delegate` is two records; `DelegateFunction` names the DelegateProperty's export and then the function's name index |
+| `return Count;` in an `int` function whose `Count` is a `byte` | `04 39 3a 00 64 09` | a read whose declared type is not the slot's is wrapped in `PrimitiveCast` (`39 <slot>`), the slot read from the image's own cast table (`inventory/cast_operands.csv`) |
+| `GetFocusedControl(...)`, `SetFocusedControl(...)` | `39 3d 2c ff` | a numeric literal is typed `int` even at a `byte` parameter: `IntToByte`, then `IntConstByte` -- not `ByteConst` |
+
+### A class-level stub and a state body of the same name are two exports
+
+`Mover` declares `function DisableTrigger();` at class scope and a `Disable('Trigger')` inside a state; `Weapon`
+declares `function ForceReload();` and a state function of that name carries the call. The source index filled the
+class-level key from *any* declaration of the name and kept the longer body, so the stub was scored against the
+state's bytes and read as "differ": 14 shipped bodies. The key now takes class-level declarations only, and a state
+body stays under its own state name; a one-file synthetic tree gates both halves.
+
+### The residue's small families were three rules, not new shapes
+
+* `_split_commas` counted a comma inside a nested call as a separator, so `Explode(HitLocation, vect(0,0,0), none)`
+  was five arguments to a three-parameter callee: the family (10 bodies) is gone, and the split is shared with
+  `params_of` and `enums_of`.
+* `return '';` is **name index 0** (`04 21 00`), not a name the package lacks: 8 bodies, all identical.
+* a native that an ancestor **in another package** declares is still in this class's chain (`Object` lives in
+  `Core.u`): 1 body, `burnProjector.UnTouch`. The 51 that still refuse that way name a **cast** at the call site --
+  `AIController(Controller)`, `string(class)`, `GetItemName(string(self))` -- or `assert(...)`, which is the next
+  family and not a resolution failure.
+
+### The one body that still differs
+
+`PlayerInput.ChangeSnapView` (`bSnapToLevel = B;`): the package writes six bytes (`19 01 8e 05 00 04`) between the
+`LetBool` and the target's `BoolVariable` that the model does not write, and the rest of the body matches byte for
+byte. Named, not explained.
+
 ## What the statement walk has left
 
-Its own residue, named by count and not by rate: 405 bodies whose single call carries **arguments** (the argument
-list is the next family -- the call token, then each argument's expression), 283 whose call has a **receiver**
-(`Pawn.SwitchWeapon(F)`, a `Context` chain), 58 whose assignment target is a **receiver chain or an index**
-(`H.LastPickupTime`, `Skins[0]`), 32 bool assignments whose value is not a literal, and 3,934 + 1,434 + 764 bodies
-with **control flow** (a nested block, or two or three statements).
+Its own residue, named by count and not by rate: **3,893** bodies with a nested block and **3,690** with two or more
+statements (control flow, the next stage), 462 whose one expression is **compound**, 322 whose one statement is
+control flow, 283 whose call has a **receiver** (`Pawn.SwitchWeapon(F)`, a `Context` chain), 58 whose assignment
+target is a receiver chain or an index (`H.LastPickupTime`, `Skins[0]`), 51 that call a **cast**
+(`AIController(Controller)`) or `assert(...)`, 32 names that are neither a local, a property nor an enum constant, 28
+assignment targets of that kind, 16 bool assignments whose value is not a literal, 12 native declarations that relay
+their parameters, and 7 assignments to a struct property.
 
 ## What this project does not need
 
