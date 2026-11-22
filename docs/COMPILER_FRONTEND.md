@@ -103,6 +103,29 @@ table's 2,319 classes with no source file in the corpus. Every one of the eight 
 residue rather than adding a rule and watching an average — four of them were defects in *how the parser was being
 scored*, which is why fixing them moved several columns at once.
 
+## Stage 2b — signatures, scored against the package records (measured 2026-11-21)
+
+A signature is finer than a count: a name, a return type and an ordered parameter list. `inventory/natives.csv` carries
+one per native — **797** rows of class, function and `parameter_count` read from the package's function records, not from
+the text — so `tools/uscript-signatures.py` parses every `function`/`event` declaration and joins on (class, function).
+
+**20,292 declarations parsed; 1,358 join to a package record; the parameter slots agree on 1,358 of 1,358 — 100.0%.**
+
+Two facts had to be measured to get there, and both looked like parser bugs until the source was read:
+
+1. **The return value occupies a parameter slot.** The first run agreed on 51.3%, and every miss was *exactly one* low —
+   `ShouldBeHidden` read 0 against 1, `Move` 1 against 2. A uniform off-by-one is a modelling error, not a parsing one:
+   the package counts the return value as a parameter. Counting slots as `params + (returns ? 1 : 0)` took it to 99.1%.
+2. **A parameter can be *named* with a type word.** `StrLen( coerce string String, out float XL, out float YL )` names its
+   first parameter `String`, which the lexer calls a **keyword** now that keywords are case-insensitive — so an
+   identifiers-only scan dropped that parameter and read two slots instead of three. Reading the last *word* of each
+   comma-separated segment, and removing an identifiers-only guard that skipped the segment before it could be named,
+   took the last twelve cases to **100.0%**.
+
+The self-test also caught an error of mine: it required an `event` to carry three slots *and* to have no return slot, two
+things that cannot both hold. The parser was right — an `event` has no return type, so its slots are its parameters —
+and the expectation was corrected rather than the code, which is the only direction that leaves the gate meaningful.
+
 ## Stage 3 — the emitter
 
 Bytecode out, compared against the shipped function bodies at the tiers `AGENTS.md` defines: the oracle is
