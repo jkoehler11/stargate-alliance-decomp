@@ -1,17 +1,17 @@
 module,functions,named_from_asserts,bytes,mean_size
-(unnamed),8079,0,2253567,278.9
-(other named),6327,6327,952277,150.5
-Engine,1048,1048,432574,412.8
-Core,705,705,397789,564.2
+(unnamed),8079,0,2255456,279.2
+(other named),6327,6327,952344,150.5
+Engine,1048,1048,432855,413.0
+Core,705,705,398126,564.7
 (dispatch: declared),273,273,84397,309.1
 Gui,86,86,27362,318.2
 (dispatch: slot only),83,83,9860,118.8
 stargategame,75,75,19249,256.7
-XboxAudio,48,48,17655,367.8
-IpDrv,45,45,11897,264.4
+XboxAudio,48,48,17662,368.0
+IpDrv,45,45,11907,264.6
 Fire,35,35,6240,178.3
-D3DDrv,32,32,20700,646.9
+D3DDrv,32,32,20703,647.0
 stargatevehicles,30,30,11815,393.8
 XboxDrv,29,29,2191,75.6
-XboxLive,21,21,10370,493.8
+XboxLive,21,21,10377,494.1
 Gameplay,19,19,2922,153.8
