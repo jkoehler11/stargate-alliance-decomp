@@ -239,6 +239,27 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the operator node, the `assert` statement and three types the member walk could not name:
+  **2,902 modelled / 2,901 byte-identical / 1 differs** (from 2,856 / 2,855 / 1; 46 bodies gained, none lost).
+  (1) An operator is `<token> A B 16` -- the native's own opcode **first**, then the left and right operands and
+  `EndFunctionParms` -- and the token is chosen by the *pair of operand types* from `inventory/native_operators.csv`
+  (`DirtyMask & 254` is `And_IntInt` 156 with the byte read wrapped in `39 3a`; `Momentum / Mass` is
+  `Divide_VectorFloat` 214), the loosest `operator(N)` at depth 0 being the root; an operator whose two operands are
+  literals is refused because the compiler folds it, and `&&`/`||`/`^^` are refused because their right operand is a
+  `Skip` node whose word is not the operand's length (a 6- and a 7-byte operand write 0x0e in one body while their sum
+  is 13, and a nested pair writes 0x28). (2) `assert(false);` is `09 <line:uint16> <expr>` and the line is the corpus's
+  own numbering: `Actor.Crash`'s assert sits on line 2086 of the shipped text and the package writes `26 08`, so
+  `tools/uscript-emit.py` reads it from the file's span-carrying token stream and **refuses an ambiguous body** rather
+  than numbering it by the first hit. (3) A `bool` member is `19 <obj> <skip> 04 2d 01 <index>`: the skip word is **6**
+  in 2,212 of the 2,272 `Context` nodes whose member is a `BoolVariable` and **5** in the other 60, and all 60 are
+  `Outer.<bool>` -- the object is a property *import*, which is the shape `PlayerInput` writes. (4) A struct-typed read
+  is typed by the struct's own name (`SquadDir` is a `Vector`, `Momentum` a `Vector` parameter) so `rotator(SquadDir)`
+  finds `VectorToRotator`, while the member *node* is still chosen by the record kind (`PathName` is a `FilePath` struct
+  and writes `StructMember`). (5) A receiver chain's member type is read through the **receiver's** class
+  (`moNumericEdit.MyNumericEdit.Value` is a `string`, so `int(...)` is `StringToInt`). (6) A string literal is the
+  *value*: `"d:\\Music\\"` writes one backslash per escape. Doc: `docs/COMPILER_FRONTEND.md` gains the section; the
+  `--check` gate carries 51 synthetic bodies (`assert`, the operator node, the bool member, the struct cast, and two
+  refusals: an assert with no line, an operator pair the table does not install).
 - [~] 3.6 the cast family and the member node: **2,856 modelled / 2,855 byte-identical / 1 differs** (from
   2,819 / 2,818 / 1). (1) `AIController(Controller)` is `DynamicCast` naming the class as a **compact object
   reference** -- its export in this package (89) or a **negative import** (-72 for `Material`) -- not a name index.

@@ -436,12 +436,17 @@ CAST_SLOTS = {}
 
 
 def _obj_classes():
-    """`{(package, class, property): declared object class}` from `inventory/class_properties.csv`.
+    """`{(package, class, property): declared type}` from `inventory/class_properties.csv`.
 
     A receiver chain's member is a property of the *receiver's* class, not of the class the body is in. `List.Index`
     in `GUIComboBox.GetIndex` names `GUIComboBox.List` (an object of class `GUIListBase`) and then `GUIListBase.Index`
     -- resolving `Index` through the body's own chain instead wrote export 8263 rather than 13.
+
+    The same table spells a struct property's type (`SquadDir` is a `Vector`, not a nameless struct), which is what a
+    cast's slot is chosen by, so it is read once for the whole walk: rebuilding it per body was most of a run's time.
     """
+    if OBJ_CLASSES:
+        return OBJ_CLASSES
     path = os.path.join(ROOT, "inventory", "class_properties.csv")
     out = {}
     try:
@@ -450,10 +455,10 @@ def _obj_classes():
                 friendly = (r.get("friendly_type") or "").strip()
                 if not friendly or friendly.lower() == "none":
                     continue
-                out[(r["package"].lower(), r["class"].lower(), r["property"].lower())] = friendly.lower()
+                OBJ_CLASSES[(r["package"].lower(), r["class"].lower(), r["property"].lower())] = friendly.lower()
     except OSError:
         pass
-    return out
+    return OBJ_CLASSES
 
 
 OBJ_CLASSES = {}
@@ -494,6 +499,116 @@ def _converted(body, ptype, want=""):
         if slot is not None:
             return bytes([0x39, slot]) + body
     return body
+
+
+def _operators():
+    """`{(symbol, A type, B type): (native token, result type)}` from `inventory/native_operators.csv`.
+
+    An operator's symbol does not name its token: `+` is `Add_IntInt` (146), `Add_FloatFloat` (174) and
+    `Add_VectorVector` (215), so the *pair of operand types* is part of the key. The table's own declaration spells
+    all three -- `native(156) static final operator(28) int & ( int A, int B )` -- so the symbol, the two operand types
+    and the return type are read from it rather than composed by a naming rule.
+
+    The precedence is the operator's own `operator(28)` value: smaller binds tighter, so the *loosest* operator at
+    depth 0 is the expression's root (`a + b * c` is `a + (b * c)`).
+    """
+    if OPERATORS:
+        return OPERATORS
+    path = os.path.join(ROOT, "inventory", "native_operators.csv")
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                decl = (r.get("declaration") or "").strip()
+                token = (r.get("native_token") or "").strip()
+                if not token.isdigit():
+                    continue
+                m = re.match(r"^.*?\boperator\((\d+)\)\s+([A-Za-z<>]+)\s+(\S+?)\s*"
+                             r"\(\s*((?:out\s+|skip\s+|coerce\s+)*)([A-Za-z<>]+)\s+\w+\s*,\s*"
+                             r"((?:out\s+|skip\s+|coerce\s+)*)([A-Za-z<>]+)\s+\w+\s*\)", decl)
+                if not m:
+                    continue
+                prec, ret, sym = int(m.group(1)), m.group(2).lower(), m.group(3)
+                a, b = m.group(5).lower(), m.group(7).lower()
+                OPERATORS[(sym, a, b)] = (int(token), ret)
+                OPERATOR_PREC.setdefault(sym, prec)
+    except OSError:
+        pass
+    return OPERATORS
+
+
+OPERATORS = {}
+OPERATOR_PREC = {}
+
+
+def _operator_types(expr, env):
+    """`(symbol, left type, right type, result type, token, position)` for the loosest depth-0 operator, or None.
+
+    A `byte` operand is promoted to `int` before the pair is looked up -- `DirtyMask & 254` is `And_IntInt` with the
+    read wrapped in `39 3a` (`ByteToInt`), not a byte operator -- and an exact pair is preferred when the table has
+    one.
+    """
+    ops = _operators()
+    if not ops:
+        return None
+    spelled = {"dot", "cross", "clockwisefrom"}
+    symbols = {sym for (sym, _a, _b) in ops if not sym[:1].isalpha()}
+    depth, best = 0, None
+    for i, (kind, val) in enumerate(expr):
+        if kind == "op" and val in "([{":
+            depth += 1
+            continue
+        if kind == "op" and val in ")]}":
+            depth -= 1
+            continue
+        if depth != 0:
+            continue
+        if kind == "op" and val in symbols:
+            sym = val
+        elif kind in ("ident", "keyword") and val.lower() in spelled:
+            sym = val  # spelled as an infix word: `FireYaw ClockwiseFrom Rotation.Yaw`
+        else:
+            continue
+        if i == 0 or i == len(expr) - 1:
+            continue                    # a unary position: the sign of a literal, or a lone symbol
+        prec = OPERATOR_PREC.get(sym, 0)
+        # the loosest operator wins, and the rightmost on a tie (left-associative: `a - b - c` is `(a - b) - c`)
+        if best is None or prec >= best[0]:
+            best = (prec, i, sym)
+    if best is None:
+        return None
+    _prec, at, sym = best
+    left, right = expr[:at], expr[at + 1:]
+    if not left or not right:
+        return None
+    t1, t2 = _type_of(left, env).lower(), _type_of(right, env).lower()
+    for a, b in ((_numeric(t1), _numeric(t2)), (t1, t2)):
+        hit = _operators().get((sym, a, b))
+        if hit is not None:
+            token, ret = hit
+            return sym, a, b, ret, token, at
+    return sym, t1, t2, "", None, at
+
+
+def _numeric(t):
+    """`byte` operands are promoted to `int` by the compiler: `DirtyMask & 254` is `And_IntInt`."""
+    return "int" if t == "byte" else t
+
+
+def _is_literal(expr):
+    """A leaf literal: a number, a string, a quoted name, `true`/`false`/`None`, or a `vect(...)`.
+
+    An operator whose *both* operands are literals is folded by the compiler at build time (`Foo(1 + 2)` holds `2c
+    03`), so the emitter refuses it rather than writing the unfolded node.
+    """
+    expr = _strip_parens(expr)
+    if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
+        return True
+    if len(expr) == 1:
+        kind, val = expr[0]
+        if kind in ("number", "string", "quoted"):
+            return True
+        return kind in ("ident", "keyword") and val.lower() in ("true", "false", "none")
+    return bool(expr) and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect"
 
 
 def _emit_var(name, env, want=""):
@@ -542,6 +657,34 @@ def _dot_at(expr):
     return pos
 
 
+def _record_kind(expr, env):
+    """The package record's own kind for a simple name (`StructProperty`, `StrProperty`, ...), or ""."""
+    expr = _strip_parens(expr)
+    if len(expr) != 1 or expr[0][0] not in ("ident", "keyword"):
+        return ""
+    nm = expr[0][1].lower()
+    scope = env.get("scope") or {}
+    for table in ("locals", "props"):
+        hit = scope.get(table, {}).get(nm)
+        if hit is not None:
+            return hit[2]
+    return ""
+
+
+def _is_import_read(expr, env):
+    """True when the expression is one name whose record is a *property import* of this package."""
+    expr = _strip_parens(expr)
+    if len(expr) != 1 or expr[0][0] not in ("ident", "keyword"):
+        return False
+    nm = expr[0][1].lower()
+    scope = env.get("scope") or {}
+    for table in ("locals", "props"):
+        hit = scope.get(table, {}).get(nm)
+        if hit is not None:
+            return hit[1] < 0
+    return False
+
+
 def _cast_kind(name, env):
     """`primitive` for `int(x)`, `object` for `AIController(x)`, and "" when the name is neither.
 
@@ -557,10 +700,41 @@ def _cast_kind(name, env):
     return ""
 
 
+def _friendly(nm, env):
+    """The type word the package artifact spells for a property: `vector`/`rotator` for a struct, `string` for a
+    `StrProperty`. `_type_of` needs the *declared* type (`SquadDir` is a `Vector`), not the record kind."""
+    scope = env.get("scope") or {}
+    table = scope.get("friendly") or {}
+    for p, c in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", scope.get("cls") or ""):
+        hit = table.get((p, c, nm))
+        if hit:
+            return hit
+    return ""
+
+
+def _declared_type(nm, env):
+    """A read's declared type: the record's kind, spelled out when the record only says `struct`.
+
+    A parameter's struct name is in its declaration (`Vector momentum`), a property's in
+    `inventory/class_properties.csv` (`SquadDir` is a `Vector`); a local `local Vector V;` is neither, and stays
+    `struct` -- which refuses rather than guesses.
+    """
+    scope = env.get("scope") or {}
+    ptype = ""
+    for table in ("locals", "props"):
+        if nm in scope.get(table, {}):
+            ptype = scope[table][nm][2]
+            break
+    if ptype != "struct":
+        return ptype
+    return _friendly(nm, env) or (env.get("paramtypes") or {}).get(nm, "") or ptype
+
+
 def _type_of(expr, env):
     """The declared type of an expression, as the cast table keys it: a variable's own type, a call's return type,
-    `object` for `self`/`class`/a class name, `vector` for `vect(...)`, a literal's own type, and the member's type
-    for a receiver chain."""
+    `object` for `self`/`class`/a class name, `vector` for `vect(...)`, a literal's own type, the member's type
+    through the *receiver's* class for a receiver chain, and an operator's result type.
+    """
     expr = _strip_parens(expr)
     if not expr:
         return ""
@@ -577,7 +751,7 @@ def _type_of(expr, env):
             scope = env["scope"] or {}
             for table in ("locals", "props"):
                 if low in scope.get(table, {}):
-                    return scope[table][low][2]
+                    return _declared_type(low, env)
             token, enum = _emit_enum(val, env)
             if token is not None:
                 return (enum or "").lower() or "byte"
@@ -604,14 +778,60 @@ def _type_of(expr, env):
             if hit:
                 return hit.lower()
         return ""
+    op = _operator_types(expr, env)
+    if op is not None:
+        # an operator's own result type: `DirtyMask & 2` is an `int`, which is what `bool(...)` casts *from*
+        return op[3]
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
-            hit = (env["scope"] or {}).get("props", {}).get(member[0][1].lower())
+            nm = member[0][1].lower()
+            obj = expr[:at]
+            hit = (_member_record(obj, nm, env) if _type_of(obj, env).lower() != "struct"
+                   else _prop_by_name(nm, env))
             if hit is not None:
+                if hit[2] == "struct" and len(hit) > 3 and hit[3]:
+                    return hit[3]
                 return hit[2]
     return ""
+
+
+def _emit_operator(expr, rettype, env):
+    """`A op B` -> `<token> A B 16`: the operator's token comes **first**, its operands after it.
+
+    Measured on `PlayerProfile.SetDirty` (`DirtyMask = DirtyMask | 1;` -> `0f 01 48 11 | 39 3d | 9c 39 3a 01 48 11 26
+    16`): the token is the native's own opcode (`Or_IntInt` 158), the left operand comes before the right, and the
+    node ends on `16` (EndFunctionParms) like any other call. `PteroBoss.TakeDamage` (`AddVelocity(Momentum / Mass)`)
+    is the same shape one level in, with `d6` (`Divide_VectorFloat` 214).
+    """
+    op = _operator_types(expr, env)
+    if op is None:
+        raise Refused("a compound expression, which needs the statement walk")
+    sym, t1, t2, result, token, at = op
+    if not token:
+        raise Refused("an operator the image's table does not install (%s %s %s)"
+                      % (t1 or "an unknown type", sym, t2 or "an unknown type"))
+    left, right = expr[:at], expr[at + 1:]
+    if _is_literal(left) and _is_literal(right):
+        raise Refused("an operator whose two operands are literals, which the compiler folds")
+    if sym in ("&&", "||", "^^"):
+        # the right operand of a short-circuit operator is wrapped in `Skip` (`18 <uint16> <expr>`), and the word is
+        # not the right operand's own length: `a && b` writes 0x0d for a 4- and an 8-byte operand, and the nested
+        # case in `xAdminGroup.HasPrivilege` writes 40 for a pair that sums to less. Refused until it is measured.
+        raise Refused("a short-circuit operator, whose right operand is a `Skip` node")
+    if sym in ("@", "$"):
+        # `ConsoleCommand("LoadSaveGame"@Filename)` is `0e` (`EatString`) and then the ordinary call node: the
+        # compiler marks a string expression it eats, and the mark is not modelled.
+        raise Refused("a string operator, which the compiler prefixes with `EatString`")
+    if 0x70 <= token <= 0xFF:
+        head = bytes([token])
+    elif token >= 0x100:
+        head = bytes([0x60 + (token >> 8), token & 0xFF])
+    else:
+        raise Refused("an operator token below 0x70 (%d), which collides with a real opcode" % token)
+    node = head + emit_expr(left, t1, env)[0] + emit_expr(right, t2, env)[0] + b"\x16"
+    return _converted(node, result, rettype), "operator"
 
 
 def _emit_cast(name, inner, env):
@@ -640,7 +860,10 @@ def _emit_cast(name, inner, env):
 
 def _prop_by_name(nm, env):
     """A property record by name through the body's own class chain -- what a struct member and a bare read use."""
-    return (env["scope"] or {}).get("props", {}).get(nm)
+    hit = (env["scope"] or {}).get("props", {}).get(nm)
+    if hit is None:
+        return None
+    return (hit[0], hit[1], hit[2], _friendly(nm, env))
 
 
 def _member_record(obj, nm, env):
@@ -669,7 +892,8 @@ def _member_record(obj, nm, env):
     for p, c in _ancestors(chain, pack, target):
         hit = [x for x in cands if x[1] == c]
         if hit:
-            return (INSTANCE_TOKEN, hit[0][0], PROP_TYPE.get(hit[0][2], ""))
+            friendly = (scope.get("friendly") or {}).get((p, c, nm), "")
+            return (INSTANCE_TOKEN, hit[0][0], PROP_TYPE.get(hit[0][2], ""), friendly)
     return None
 
 
@@ -694,19 +918,22 @@ def _emit_member(expr, rettype, env):
         raise Refused("a receiver chain whose member is not one name")
     nm = member[0][1].lower()
     objtype = _type_of(obj, env).lower()
-    if objtype in ("array", "string"):
+    # The node is chosen by the receiver's *record kind*, not by its declared type word: `PathName` is a `FilePath`
+    # struct (a `StructMember`), while a cast or an operator wants that word (`SquadDir` is a `Vector`).
+    objkind = _record_kind(obj, env) or objtype
+    if objkind in ("array", "string"):
         if nm != "length":
-            raise Refused("a %s member that is not its length" % objtype)
+            raise Refused("a %s member that is not its length" % objkind)
         return _converted(bytes([0x37]) + emit_expr(obj, "", env)[0], "int", rettype), "length"
-    hit = _member_record(obj, nm, env) if objtype != "struct" else _prop_by_name(nm, env)
+    hit = _member_record(obj, nm, env) if objkind != "struct" else _prop_by_name(nm, env)
     if hit is None:
         # No fallback to the body's own chain: `Index` is declared on half the GUI classes, and resolving it that way
         # wrote export 8263 for a property whose record is 13. Two bodies also resolve the name to a same-named
         # export of *this* package while the package names an import (`InitFor` writes -20), which is wrong bytes
         # that look right -- the receiver's class is the only honest join.
         raise Refused("a member that is not a property of the receiver's class")
-    token, index, ptype = hit
-    if objtype == "struct":
+    token, index, ptype, friendly = hit
+    if objkind == "struct":
         if ptype not in PROP_SIZE:
             raise Refused("a struct member of type %s, whose value size this walk does not carry"
                           % (ptype or "typeless"))
@@ -717,9 +944,14 @@ def _emit_member(expr, rettype, env):
     if ptype not in PROP_SIZE:
         raise Refused("a %s member, whose value size this walk does not carry" % (ptype or "typeless"))
     if ptype == "bool":
-        # A bool member's own node writes 6 in the corpus (`2d 01 <idx>` as the member) while the one LetBool target
-        # the emitter has seen writes 5, so the word is not settled for this shape.
-        raise Refused("a bool member of a receiver chain")
+        # A bool member is `19 <obj> <skip> 04 2d 01 <index>`: the size byte is 4 like every other pointer-sized
+        # member, and the read is a `BoolVariable` around the property. The skip word is 6 in 2,212 of the corpus's
+        # 2,272 such nodes and 5 in the other 60, and those 60 are all `Outer.<bool>` -- the object is a property
+        # *import* (`01 8e`, import 14), which is the shape PlayerInput writes in its own bodies.
+        skip = 5 if _is_import_read(obj, env) else 6
+        read = bytes([0x2D, INSTANCE_TOKEN]) + write_index(index)
+        node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", skip) + bytes([4]) + read)
+        return _converted(node, "bool", rettype), "bool-context"
     read = bytes([INSTANCE_TOKEN]) + write_index(index)
     node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", CONTEXT_SKIP)
             + bytes([PROP_SIZE[ptype]]) + read)
@@ -737,6 +969,10 @@ def emit_expr(expr, rettype, env):
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
         expr = [("number", "-" + expr[1][1])]
     if len(expr) != 1:
+        if _operator_types(expr, env) is not None:
+            # the loosest depth-0 operator is the expression's root, so it is tried before a call or a member:
+            # `Foo(1) + 2` is an `Add_IntInt`, not a call
+            return _emit_operator(expr, rettype, env)
         if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
         if _is_call(expr) and _cast_kind(expr[0][1], env):
@@ -796,7 +1032,7 @@ def emit_expr(expr, rettype, env):
             return bytes([0x1E]) + struct.pack("<f", float(v)), "float-const"
         raise Refused("a numeric literal in a %s function" % (rettype or "typeless"))
     if kind in ("string", "quoted"):
-        text = val[1:-1]
+        text = _literal_text(val[1:-1])
         if t == "string":
             return bytes([0x1F]) + text.encode("latin-1") + b"\x00", "string-const"
         if t == "name":
@@ -809,6 +1045,25 @@ def emit_expr(expr, rettype, env):
             return bytes([0x21]) + write_index(idx), "name-const"
         raise Refused("a quoted literal in a %s function" % (rettype or "typeless"))
     raise Refused("an expression the emitter does not model (%s)" % (val if kind != "string" else "a string"))
+
+
+def _literal_text(raw):
+    """The value a string literal spells: an escape in the text is one byte in the package.
+
+    `IMusicActor.ResolveName` writes `1f 64 3a 5c 4d 55 53 49 43 5c 00` for `"d:\\Music\\"`, so `\\` is a single
+    backslash -- the quoted form is the source's, not the value's.
+    """
+    out, i = [], 0
+    while i < len(raw):
+        ch = raw[i]
+        if ch == "\\" and i + 1 < len(raw):
+            nxt = raw[i + 1]
+            out.append({"n": "\n", "r": "\r", "t": "\t", "0": "\x00"}.get(nxt, nxt))
+            i += 2
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
 
 
 def _emit_vector(expr):
@@ -964,6 +1219,17 @@ def emit_body(body, rettype, env, is_native=False):
     if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "return":
         expr, shape = emit_expr(stmt[1:], rettype, env)
         return bytes([0x04]) + expr + TRAILER, "return", shape
+    if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "assert":
+        # `assert(false);` is `09 26 08 28`: the opcode, the **source line as uint16**, then the expression -- and a
+        # `bool` slot, so `false` is `28`. `Actor.Crash`'s assert sits on line 2086 of the shipped text and the
+        # package writes 0x0826, so the extracted text keeps the compiler's own numbering.
+        line = env.get("assert_line")
+        if not line or not 1 <= line <= 0xFFFF:
+            raise Refused("an assert whose source line the corpus does not pin")
+        if len(stmt) < 4 or stmt[1] != ("op", "(") or _paren_end(stmt, 1) != len(stmt) - 1:
+            raise Refused("an assert whose argument the walk cannot bound")
+        expr, shape = emit_expr(stmt[2:-1], "bool", env)
+        return bytes([0x09]) + struct.pack("<H", line) + expr + TRAILER, "assert", "assert"
     if any(k == "keyword" and v.lower() in ("if", "for", "while", "do", "switch", "case", "else", "foreach")
            for k, v in stmt):
         raise Refused("a statement that is control flow")
@@ -1044,7 +1310,10 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     """
     props, funcs, imports, classes = tables
     scope = {"props": {}, "locals": {}, "funcs": {}, "classrefs": {}, "props_all": props, "chain": chain,
-             "pack": pack,
+             "pack": pack, "cls": cls.lower(),
+             # the type word the package artifact spells for every property record, keyed by (package, class, name):
+             # a cast's slot needs `SquadDir` as `Vector`, and a receiver's member may live in another package
+             "friendly": _obj_classes(),
              # the declared class of every object property of this package: what a receiver chain's member is
              # resolved through (`GUIComboBox.List` is a `GUIListBase`, so `List.Index` is `GUIListBase.Index`)
              "objclass": {(c, pr): t for (pk, c, pr), t in _obj_classes().items() if pk == pack.lower()}}
@@ -1162,6 +1431,30 @@ def _dis():
     return mod
 
 
+def _assert_line(text, body):
+    """The source line the compiler recorded for the `assert` in `body`, or None when the text does not pin it.
+
+    The body's tokens are matched against the file's own span-carrying token stream and the match must be **unique**:
+    `assert(false);` occurs once in `Actor.uc`, so its line (2086) is the compiler's operand; a body whose token run
+    occurs twice is refused rather than numbered by the first hit.
+    """
+    toks, bad = lexer.lex(text)
+    if bad is not None:
+        return None
+    spans = [(k, text[a:b], a) for k, a, b in toks if k not in ("space", "comment", "high")]
+    want = list(body or ())
+    n = len(want)
+    if not n:
+        return None
+    hits = [i for i in range(len(spans) - n + 1) if [(k, v) for k, v, _a in spans[i:i + n]] == want]
+    if len(hits) != 1:
+        return None
+    for j in range(n):
+        if want[j][0] == "keyword" and want[j][1].lower() == "assert":
+            return text.count("\n", 0, spans[hits[0] + j][2]) + 1
+    return None
+
+
 def _source_index(tree):
     """`{(class, state, function): (rettype, body, text, native, final)}` from the extracted corpus, plus every
     declaration's parameter list, every enum constant and every callee's return type -- the three joins a cast's
@@ -1194,13 +1487,17 @@ def _source_index(tree):
                     # a `Disable('Trigger')` inside a state -- and letting the state body fill this key scored the
                     # stub against the state's bytes: 14 shipped bodies read as "differ" that way.
                     keys.append((cls, "", fn.lower()))
+                # the `assert` statement's line operand is the compiler's own source line, so it is read here, from
+                # the text, once per declaration -- and only for a body that carries one
+                aline = _assert_line(text, body) if body and any(
+                    k == "keyword" and v.lower() == "assert" for k, v in body) else None
                 for key in keys:
                     old = index.get(key)
                     if old is None or len(body or ()) > len(old[1] or ()):
                         # a class that ships two *class-level* declarations of one name (an `#if` branch, or a stub
                         # beside its body) compiled the longer one: prefer it, so the comparison is not scored
                         # against a stub
-                        index[key] = (rettype, body, text, is_native, is_final)
+                        index[key] = (rettype, body, text, is_native, is_final, decl_params, aline)
             if "enum" in text.lower():
                 for enum, consts in enums_of(text):
                     enum_names.add(enum.lower())
@@ -1277,11 +1574,14 @@ def score(tree, dump, out_dir, residue_dir=None):
                 residue.append({"package": fn, "class": cls, "state": state, "function": fname,
                                 "cause": _residue_cause(src_texts.get(cls.lower(), []), fname, state)})
                 continue
-            rettype, src_body, _text, is_native, _is_final = got
+            rettype, src_body, _text, is_native, _is_final, decl_params, aline = got
             scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
                    "enum_names": enum_names, "class_names": class_names, "order": scope["order"],
-                   "rets": rets}
+                   "rets": rets, "assert_line": aline,
+                   # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
+                   # record only says `StructProperty`
+                   "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])}}
             try:
                 ours, model, shape = emit_body(src_body, rettype, env, is_native)
             except Refused as exc:
@@ -1412,6 +1712,12 @@ function string AsClassText() { return string(class); }
 function int AsInt() { return int(bDead); }
 function bool CastNoSlot() { return bool(vect(0,0,0)); }
 function CallCast() { Foo(int(bDead)); }
+function Asserted() { assert(false); }
+function AssertNoLine() { assert(true); }
+function AndInt() { return Count & 2; }
+function OpNoSlot() { return Health & 2.0; }
+function BoolMember() { return Target.bFlag; }
+function AsRotator() { return rotator(SquadDir); }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -1431,7 +1737,9 @@ state OpenTimedMover
 
 # The package's own tables, as `_scope()` builds them: a property's index, a local's, and a callee's token.
 SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
-                   "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool")},
+                   "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool"),
+                   "bflag": (0x01, 47, "bool"), "squaddir": (0x01, 620, "struct")},
+         "chain": {("probe", "probe"): ("", "")}, "pack": "probe", "cls": "probe",
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte")},
          "classrefs": {"probe": 4, "actor": -77},
          "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39),
@@ -1446,8 +1754,14 @@ SCOPE["objclass"] = {("probe", "target"): "probe"}
 
 # The raw record table the receiver walk reads: `{name: [(index, owner, kind)]}`.
 SCOPE["props_all"] = {nm: [(v[1], "probe", "ObjectProperty" if v[2] == "object" else
-                            "BoolProperty" if v[2] == "bool" else "IntProperty")]
+                            "BoolProperty" if v[2] == "bool" else
+                            "StructProperty" if v[2] == "struct" else "IntProperty")]
                       for nm, v in SCOPE["props"].items()}
+
+# The type words the package artifact spells: `SquadDir` is a `Vector`, and `bFlag` is a `bool` member.
+SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe", "bflag"): "bool",
+                     ("probe", "probe", "health"): "int", ("probe", "probe", "bdead"): "bool",
+                     ("probe", "probe", "flag2"): "bool", ("probe", "probe", "target"): "probe"}
 
 # The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
 # The third field is `optional`: `Mix(false)` legitimately stops short of `Time`, `Foo()` does not.
@@ -1460,7 +1774,8 @@ PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "
           ("probe", "mixbyte"): [("byte", "Mode", False)]}
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
 ENV = {"names": {}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS, "enum_names": {"eprobe"},
-       "class_names": {"probe"}, "order": ["probe"], "rets": {("probe", "bump"): "int"}}
+       "class_names": {"probe"}, "order": ["probe"], "rets": {("probe", "bump"): "int"},
+       "assert_line": 2086, "paramtypes": {}}
 
 WANT = {
     "yes": "0427040b47",
@@ -1510,11 +1825,15 @@ WANT = {
     "asclasstext": "04395617040b47",              # return string(class); -- `class` is Self: the same seven bytes
     "asint": "0439412d012d040b47",                # return int(bDead); -- BoolToInt
     "callcast": "1b2939412d012d16040b47",       # Foo(int(bDead)): the cast is the argument -- BoolToInt + the read
+    "asserted": "09260828040b47",                  # assert(false); -- Assert, line 2086, False
+    "andint": "049c393a0064092c0216040b47",        # return Count & 2; -- And_IntInt, ByteToInt, IntConstByte
+    "boolmember": "04190163090600042d012f040b47",  # return Target.bFlag; -- Context skip 6, size 4, BoolVariable
+    "asrotator": "043950016c09040b47",             # return rotator(SquadDir); -- a Vector property: VectorToRotator
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub", "callbadnative", "callmissing",
-          "castnoslot")
+          "castnoslot", "opnoslot")
 
 
 def check(args):
@@ -1561,6 +1880,26 @@ def check(args):
         except Refused:
             continue
         print("FAIL uscript-emit: %s was emitted instead of refused" % case)
+        return 1
+    # An `assert` is numbered from the corpus, so a body the walk cannot pin a line for is refused rather than
+    # given the first line that looks plausible.
+    rettype, body, is_native = got["assertnoline"]
+    try:
+        emit_body(body, rettype, dict(env, assert_line=None), is_native)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: assertnoline was emitted with no source line")
+        return 1
+    # `_assert_line` is the line reader itself: the same body twice in one file is ambiguous and must answer None.
+    one = "class P;\nfunction A()\n{\n\tassert(false);\n}\n"
+    stmt_tokens = [("keyword", "assert"), ("op", "("), ("keyword", "false"), ("op", ")"), ("op", ";")]
+    if _assert_line(one, stmt_tokens) != 4:
+        print("FAIL uscript-emit: _assert_line does not read line 4 of a one-assert file")
+        return 1
+    two = one + "function B()\n{\n\tassert(false);\n}\n"
+    if _assert_line(two, stmt_tokens) is not None:
+        print("FAIL uscript-emit: _assert_line numbers an ambiguous body")
         return 1
     # `_scope` reads a body's locals off the export whose `outer` is the body's own export index. The score loop
     # once handed it the index left by the name-table sweep, so no local was built and a *parameter* read fell back

@@ -399,3 +399,35 @@ declare` 51 -> 29), and the 29 are no longer one family: the `assert(...)` bodie
 expression, 4 bool members, 2 pairs the cast table does not install, 2 casts of a struct. The
 `assert` statement (`Actor.Crash` writes `09 26 08 28` -- opcode, **source line 2086**, expression) is its own next
 item, because the line number is the only operand the emitter would have to read from the text.
+
+## Stage 3, continued -- the operator node, the assert, and the types a read did not name (measured 2026-11-22)
+
+**2,902 bodies are modelled and 2,901 are byte-identical: the one that differs is still
+`PlayerInput.ChangeSnapView`.** 46 bodies were gained and none lost.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `DirtyMask = DirtyMask \| 1;` | `0f 01 48 11 / 39 3d / 9c 39 3a 01 48 11 26 16` | an operator's token comes **first**: `9c` (`And_IntInt`), left, right, `16`; the node is then cast by the slot the assignment wants (`39 3d` IntToByte) and a `byte` operand is promoted (`39 3a` ByteToInt) |
+| `return bool(DirtyMask & 2);` | `04 39 3e 9c 39 3a 01 48 11 2c 02 16` | the cast wraps the node and chooses its slot from the operator's **result** type (`IntToBool`), which is the operator declaration's return type |
+| `AddVelocity(Momentum / Mass);` | `1b 76 / d6 00 4a 2c 01 e9 07 16 / 16` | `d6` is `Divide_VectorFloat` 214: the pair of operand types, not the symbol, picks the token |
+| `assert(false);` | `09 26 08 28` | `Assert`, the **source line as uint16**, the expression; line 2086 of `Actor.uc` is `0x0826`, so the extracted text keeps the compiler's numbering |
+| `return PlayerInput.bInvertMouse;` | `04 19 01 49 02 06 00 04 2d 01 49 09` | a bool member writes skip **6** (2,212 of 2,272 nodes) and `2d 01 <index>` as the member |
+| `Outer.bSnapToLevel` | `19 01 8e 05 00 04 2d 01 6c 28` | the 60 nodes that write skip **5** are all this shape: the object is a property *import* (`01 8e`, import 14) |
+| `return rotator(SquadDir);` | `04 39 50 01 48 21` | `SquadDir` is a `Vector` **property** (`inventory/class_properties.csv`), so the slot is `VectorToRotator` 80, not "struct" |
+| `return int(MyNumericEdit.Value);` | `04 39 4a 19 01 69 04 05 00 00 01 4a 07` | the member's type is read through the **receiver's** class (`GUINumericEdit.Value` is a `StringProperty`) |
+| `return PathName.Directory;` | `04 36 7e 2e 01 70 27` | the member *node* is chosen by the record kind (`PathName` is a `FilePath` struct -> `StructMember`), not by the type word a cast wants |
+
+Three refusals came out of the residue, each named rather than guessed:
+
+* **an operator on two literals** is folded by the compiler (`Foo(1 + 2)`), so the unfolded node is not written;
+* **`&&` / `||` / `^^`** wrap their right operand in `Skip` (`18 <uint16> <expr>`) and the word is not the operand's
+  length: `GUIListBase.IsValidIndex` writes `0x0e` for a 6- and a 7-byte operand while their sum is 13, and
+  `xAdminGroup.HasPrivilege` writes `0x28` for a nested pair that sums to less. 8 bodies;
+* **`@` and `$`** are prefixed by `0e` (`EatString`) -- `ConsoleCommand("LoadSaveGame"@Filename)` is
+  `0e 1b 11 a8 ...` and the mark is not modelled. 2 bodies.
+
+The `Context` skip word is now settled for every member kind the walk emits: **5** for an `InstanceVariable` member
+(17,710 of 17,710) and for a bool member behind a property import, **6** for a bool member behind an export or a
+local. The 4 bool-member bodies this page named are emitted and identical; the member walk reads a property's declared
+type from `inventory/class_properties.csv` once per run instead of once per body, which is what kept a corpus walk at
+8 minutes and now runs it in 2.
