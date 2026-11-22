@@ -6258,3 +6258,21 @@ numbered by ascending address, no base name colliding with a symbol the map carr
 `inventory/gap_body_families.csv`). What is left of this entry: the add itself (writing those 199 names into
 `symbols/xbox_functions.csv`), the 65 array entries, the 540 silent bodies, the 2 bodies in `0x0051724c`, the 4
 linker folds and the 359 interface-only bodies.
+
+**Answered since (2026-11-21, the add is made and the residue re-read is 487 bodies).** The add was an insert,
+not a column write: a gap head has no row in the map, so `--apply-symbols` wrote **199 rows** at the census's
+own address and size (module empty -- a class is not a translation unit) and left every existing line of
+`symbols/xbox_functions.csv` verbatim. Measured: **map 16,734 -> 16,933 rows, 4,236,686 -> 4,252,208 bytes**,
+published map **17,425 symbols**; native naming **8,683 -> 8,882** of 16,933 (**51.89% -> 52.45%**) with module
+attribution fixed at 7,767 (**46.41% -> 45.87%**, because a class says nothing about a unit). The add also
+proves what the families were: the store that installs a walker copy into a global slot *is* the operand that
+references it, so **86 of the 95 slot installs and 86 of the 146 `.text`-referenced bodies were the walkers
+themselves** -- 65 of them the consecutive run at `0x00630e20`..`0x00630f20` -- and one body read three ways was
+three families. The census re-read over the post-add map (2,277 heads / 1,889 bodies / 310 islands, the same 78
+refused) leaves **487 bodies (104,817 bytes) and 141 islands**: 427 silent (52,485), 54 `operand-in-row`
+(45,034), 2 `operand-in-head`, 3 `table-in-row`, 1 `table-in-gap` and 9 global-slot stores, 3 of them a run at
+`0x005ccb1c`..`0x005ccb24`. The derivation survives the population as `inventory/gap_walker_names.csv` (199
+rows) and `--check-symbols` gates it in `make ci`: a recorded name that leaves the map, or an address the map
+holds under another name or size, fails. What is left of this entry: the 9 slot stores, the 65 array entries
+(the array's meaning is still not in the image), the 427 silent bodies, the 2 bodies in `0x0051724c`, the 4
+linker folds and the 359 interface-only bodies.

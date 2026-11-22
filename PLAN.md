@@ -17293,3 +17293,48 @@ sequence.
 - **Not in this bundle.** The add itself (the 199 names into `symbols/xbox_functions.csv` and `symbols/xbox.map`),
   the 65 array entries (the array's meaning is not in the image), the 540 silent bodies, the 2 bodies in
   `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.
+
+### Execution notes (2026-11-21, the add is 199 map rows and the residue re-read is 487 bodies)
+
+- **Task.** U40's last open item, the add. The previous read had settled the list -- 199 copies, `<Class>_lookup`
+  from the class each table states, no base name colliding -- but it is an *insert*: a gap head has no row in
+  `symbols/xbox_functions.csv`, so `derived_state` read **199 missing, 0 misfiled**. This bundle writes the rows,
+  gates them, and re-reads the census the add empties.
+- **The add.** `tools/gap-body-families.py --apply-symbols` inserts one row per copy at the census's own address
+  and size, module empty (a name states a class, not a translation unit), and copies every existing line verbatim
+  -- a re-serialisation would rewrite 16,734 rows this read never measured. **Map 16,734 -> 16,933 rows,
+  4,236,686 -> 4,252,208 bytes; published map 17,425 symbols (16,933 functions + 492 class tables), every
+  address inside the image; native naming 8,683 -> 8,882 of 16,933 (51.89% -> 52.45%); module attribution stays
+  7,767 and so reads 46.41% -> 45.87%** -- a class says nothing about a unit, and the status table now says so.
+  Idempotent: a second run inserts 0.
+- **The gate is a list, not a column.** The re-read census no longer sees these bodies (they are map rows), so a
+  derivation that only lived in its `derived_name` column would be rewritten to nothing.
+  `inventory/gap_walker_names.csv` (199 rows: address, size, table, name) is the add's own record, and
+  `--check-symbols` reads it: every recorded name must be a map row at the recorded address and size, and an
+  address the map holds under another name or size fails. Dump-free, so it is in `make ci`.
+- **The families were the same bodies, and the add is what shows it.** Re-read against the post-add map the
+  residue is **487 bodies (104,817 bytes) and 141 islands** (from 686 / 120,339), but two families fall by 86
+  rather than 199: **86 of the 95 global-slot installs and 86 of the 146 `.text`-referenced bodies** were the
+  same walker copies, because the `mov ds:<global>,<body>` that installs a copy *is* the operand that references
+  it -- and 65 of the 86 are the consecutive dword run at `0x00630e20`..`0x00630f20`. What is left: **427
+  silent** (52,485), **54 `operand-in-row`** (45,034), 2 `operand-in-head`, 3 `table-in-row`, 1 `table-in-gap`
+  and **9 slot stores, 3 of them a run** at `0x005ccb1c`..`0x005ccb24`. The gap census re-read follows: **2,277
+  heads / 1,889 bodies / 310 islands** (2,476 / 2,088 / 310), the same 78 refused, gaps re-cut to 11,469 /
+  549,247 bytes (11,270 / 564,769).
+- **Files.** `tools/gap-body-families.py` (the derived state, the insert, the record, the gate, `--check`
+  synthetic), `symbols/xbox_functions.csv` + `symbols/xbox.map` (the 199 rows), `inventory/gap_walker_names.csv`
+  (new), `inventory/gap_body_families.csv`, `inventory/gap_heads.csv`, `inventory/gap_body_files.csv` (re-read),
+  `inventory/function_modules.csv`, `inventory/function_module_attribution.csv` (16,933 rows),
+  `docs/SYMBOLS.md`, `docs/NATIVE.md`, `docs/STATUS.md`, `README.md`, `docs/ARTIFACTS.md`, `inventory/
+  artifact_hashes.csv`, `docs/systems/CLASS_REGISTRATION.md` (the new section and both regenerated blocks),
+  `docs/UNKNOWNS.md` (U40), `Makefile` (the `ci` gate and the help line), this note.
+- **Gates.** `make ci` green; `--check` synthetic and writes nothing (the derived state, the insert's verbatim
+  lines and idempotence, the record, both render branches); `--check-symbols` fails on a missing or misfiled
+  name; `--check-doc` rebuilds both blocks from committed files with no dump; the map regenerates byte for byte;
+  the three census artifacts reproduce byte for byte on a second run. No boot, no xemu, no Ghidra.
+- **Next measurement:** the 9 slot stores. The walker family is gone, so what is left in that channel is small
+  enough to read body by body: who stores each one (the same registration body that filled the 65-entry array?),
+  and whether the 3-entry run at `0x005ccb1c` is a class's table the same `int[AU]<Class>exec<Func>` read can
+  name -- the key grammar applied to a table instead of to a walker.
+- **Not in this bundle.** The 65 array entries (the array's meaning is not in the image), the 427 silent bodies,
+  the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.

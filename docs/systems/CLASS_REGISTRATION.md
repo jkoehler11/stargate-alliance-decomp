@@ -1991,15 +1991,15 @@ corroborates -- it is the same reference, one level out.
 | `0x00034160` | 25 | `FMallocError::Init` | FMallocError::Init | Called %s before memory init |
 | `0x00034180` | 25 | `FMallocError::Exit` | FMallocError::Exit | Called %s before memory init |
 
-**2476 heads decode as 2088 bodies and 310 islands; of the bodies 0 hold an assert path, 104 a printable string and 688 a call into a body the map names, and 1942 hold none of the three. The other 78 heads the census lists hold no extent at all -- 78 of the 2476 -- so a per-body read can never visit them.**
+**2277 heads decode as 1889 bodies and 310 islands; of the bodies 0 hold an assert path, 104 a printable string and 489 a call into a body the map names, and 1743 hold none of the three. The other 78 heads the census lists hold no extent at all -- 78 of the 2277 -- so a per-body read can never visit them.**
 
-**Control: 1336 of the map's 16734 bodies hold an assert site, and 1278 of the 1325 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 47 reference no assert path at all -- so the name is that reference read one level out.**
+**Control: 1336 of the map's 16933 bodies hold an assert site, and 1278 of the 1326 `<Module>_<File>` bodies carry the file their own name is built from, 0 carry a different one and 48 reference no assert path at all -- so the name is that reference read one level out.**
 
-**The read is at instruction boundaries, and the alignment the old one assumed cost it most of its names.** An operand is the value the instruction carries whether or not its own address is 4-aligned, so the string channel reads **3154** of the map's 16734 bodies against **1744** from a 4-aligned dword scan (3 of those bodies also log a `Class::Method` literal, and 3 of them carry a name that holds one of its parts). On the gap population the same read is **104 bodies against 41**: 41 both, 63 only at an instruction and 0 only at an aligned dword -- an aligned dword no instruction owns is a data word inside code, not a reference. The assert channel is unchanged (1337 of the map's bodies by any offset, 1336 as an operand), because that one was always read at every byte.
+**The read is at instruction boundaries, and the alignment the old one assumed cost it most of its names.** An operand is the value the instruction carries whether or not its own address is 4-aligned, so the string channel reads **3154** of the map's 16933 bodies against **1744** from a 4-aligned dword scan (3 of those bodies also log a `Class::Method` literal, and 3 of them carry a name that holds one of its parts). On the gap population the same read is **104 bodies against 41**: 41 both, 63 only at an instruction and 0 only at an aligned dword -- an aligned dword no instruction owns is a data word inside code, not a reference. The assert channel is unchanged (1337 of the map's bodies by any offset, 1336 as an operand), because that one was always read at every byte.
 
 **4 gap bodies push a literal that carries a build path** -- the assert text of this build often holds the file and the expression in one string (`..\..\Core\Inc\FFileManagerXbox.h | InPos<=Size`), so the reference points at the combined literal and not at the path's first byte. The control splits by the kind of path, because the two kinds are not the same claim: of the **0** named bodies that push a `Src\` path **0** push their own file and 0 another file's, while of the **36** that push an `Inc\` path only **10** do. A `.cpp` under `Src` is the translation unit that was compiled; a `.h` under `Inc` is the header the inlined or asserted code came from, so its name is the header's owner and not the body's file. The channel therefore names where the path is `Src` and only places where it is `Inc`, and the gap population's 4 bodies split **0 `Src`** / 4 `Inc`.
 
-**The callee channel's `E8` byte scan is exact, and it is the byte scan that had the doubt.** Read at instruction boundaries the gap population holds **688** bodies with a direct call into a body the map names, the same count the byte scan gives: 0 bodies are named by a byte scan alone and 0 by an instruction alone, so no `E8` inside another instruction's displacement reached a mapped body here.
+**The callee channel's `E8` byte scan is exact, and it is the byte scan that had the doubt.** Read at instruction boundaries the gap population holds **489** bodies with a direct call into a body the map names, the same count the byte scan gives: 0 bodies are named by a byte scan alone and 0 by an instruction alone, so no `E8` inside another instruction's displacement reached a mapped body here.
 
 **2 gap bodies carry exactly one `Class::Method` literal and 0 carry two or more.** The literal is UE2's log or assert text naming the method that emitted it, so a body with one is named by the image itself; a body that logs about another object is the ambiguous case and is refused rather than guessed.
 
@@ -3334,19 +3334,17 @@ the map's `<Module>_<File>` names are built from.
 <!-- generated:gap-body-families -->
 | family | bodies | bytes | what the reference is |
 |---|---|---|---|
-| `operand-in-row` | 140 | 51742 | a named body's instruction loads the address |
+| `operand-in-row` | 54 | 45034 | a named body's instruction loads the address |
 | `operand-in-head` | 2 | 6594 | an unnamed gap body's instruction loads it |
 | `table-in-row` | 3 | 169 | a data word inside a named body (a jump or dispatch table) |
 | `table-in-gap` | 1 | 535 | a data word in a gap and inside no body at all |
-| `silent` | 540 | 61299 | nothing in `.text` spells the address |
+| `silent` | 427 | 52485 | nothing in `.text` spells the address |
 
-The modules the `operand-in-row` owners belong to: Core=88 ?=54 head=2 XboxAudio=1 gap=1 (the `?` entries are owners the map has no name for, and the two `head`/`gap` entries are the other two families).
+The modules the `operand-in-row` owners belong to: ?=54 Core=2 head=2 XboxAudio=1 gap=1 (the `?` entries are owners the map has no name for, and the two `head`/`gap` entries are the other two families).
 
-**199 of these bodies are the same generated walker: `mov eax,ds:<global>`, walk the `{UTF-16 name, handler}` pairs the global points at, compare the argument against each name.** The tables they walk are the intrinsic-name tables, and the first name in each one says so -- `intAAIControllerexecWaitToSeeEnemy`, `intAActorexecMultiply_ColorFloat`, `intABotBaseexecCoverActors`, `intABotEnemyexecFindBestHideNode` ... -- so the family is a name-keyed intrinsic lookup, one copy per table. The 93 tables hold 1071 entries and **every one of them names exactly one class** (0 tables state two or more), which is the name a copy does not carry: the table it walks says whose natives it binds. 123 of the 199 copies share a table with another copy, and **113 of the 199 copies are named by nothing at all** -- the largest single family in the residue, and the reason a body count alone could not explain it.
+**The 199 names this read derived are rows of the symbol map, and the record outlives the population.** The add (`--apply-symbols`) wrote them into `symbols/xbox_functions.csv` at the census's own address and size, and `inventory/gap_walker_names.csv` is that add's own record. The census re-read after the add no longer sees these bodies -- they are map rows, not gap heads, so they have left this population -- which is why the `derived_name` column above now reads empty while the class each copy binds is still on the record. `--check-symbols` is the dump-free gate in `make ci`: a recorded name that leaves the map, or an address the map holds under another name or size, fails the build.
 
-**The family is nameable, and the grammar that names it is `int[AU]<Class>exec<Func>` -- the class follows a letter that says whether it is an actor, and the census read only the `intA` half.** Over both prefixes every one of the 93 tables states one class (87 distinct, none stating two) and **199 of the 199 copies take a name**: `<Class>_lookup`, the class the table states, with **112 numbered** (`_2` by ascending address) because that many copies bind a class another copy already holds. No base name collides with a symbol the map already carries. The list is the artifact's `derived_name` column -- this read derives the names and writes none of them into the symbol map.
-
-**95 of these bodies are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **65** of the 95 slots are consecutive dword globals at `0x00630e20`..`0x00630f20` -- one static array of 65 function pointers, written entry by entry by the registration body at startup.** The remaining 30 are singletons spread over 95 distinct globals. A body reachable only through that array cannot be called by a name in code, and nothing in the image spells the array's own meaning, so the census places them and does not name them -- what it can now say is which 65 of the 686 bodies nothing names are entries of it.
+**9 of these bodies are stored into a global function-pointer slot** (`mov DWORD PTR ds:<global>,<body>`), and **3** of the 9 slots are consecutive dword globals at `0x005ccb1c`..`0x005ccb24` -- one static array of 3 function pointers, written entry by entry by the registration body at startup.** The remaining 6 are singletons spread over 9 distinct globals. A body reachable only through that array cannot be called by a name in code, and nothing in the image spells the array's own meaning, so the census places them and does not name them -- what it can now say is which 3 of the 487 bodies nothing names are entries of it.
 
 | gap body | size | family | owner | the string in it |
 |---|---|---|---|---|
@@ -3382,19 +3380,19 @@ The modules the `operand-in-row` owners belong to: Core=88 ?=54 head=2 XboxAudio
 | `0x003ebf2d` | 102 | `operand-in-row` | __output | - |
 | `0x0002d2e0` | 92 | `table-in-row` | FUN_00035e00 | - |
 | `0x00382ef0` | 84 | `operand-in-row` | FUN_00382fe0 | - |
-| `0x00011420` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| `0x00011470` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| `0x000114c0` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| `0x00011510` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| `0x00011560` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| `0x000115b0` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| `0x00011650` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| `0x000116a0` | 78 | `operand-in-row` | Core_UnObjBas | - |
-| ... | | | 646 more | |
+| `0x0008ff90` | 67 | `operand-in-row` | FUN_00090030 | - |
+| `0x0034a161` | 67 | `operand-in-row` | ?Init@COneToOneEncoder@@UAEJXZ | - |
+| `0x0034a318` | 67 | `operand-in-row` | ?Init@COneToOneDecoder@@UAEJXZ | - |
+| `0x003b02c0` | 67 | `operand-in-row` | FUN_003ade10 | - |
+| `0x003e36f0` | 65 | `operand-in-row` | FUN_003e37a0 | - |
+| `0x000ad8c0` | 61 | `operand-in-row` | FUN_0008ded0 | - |
+| `0x000bdaf0` | 43 | `table-in-row` | Core_UnObjBas | - |
+| `0x000ad920` | 41 | `operand-in-row` | FUN_0008ded0 | - |
+| ... | | | 447 more | |
 
-**Of the 2398 decoded heads, 686 bodies and 120339 bytes nothing names -- and 141 islands besides.** The census's pointer channel looks for a dword *outside* the section, so a switch table laid behind a body and a `mov eax,<fn>` that hands a pointer to a caller are invisible to it by construction. Read inside, **146** of the 686 are referenced from `.text` -- **142** by an instruction that carries the address and **7** by a data word -- and **540** (61299 bytes) are spelled nowhere in the section at all.
+**Of the 2199 decoded heads, 487 bodies and 104817 bytes nothing names -- and 141 islands besides.** The census's pointer channel looks for a dword *outside* the section, so a switch table laid behind a body and a `mov eax,<fn>` that hands a pointer to a caller are invisible to it by construction. Read inside, **60** of the 487 are referenced from `.text` -- **56** by an instruction that carries the address and **6** by a data word -- and **427** (52485 bytes) are spelled nowhere in the section at all.
 
-**The control is the map's own rows: 378 of its 16734 bodies are spelled inside `.text`, 207 by an operand and 182 by a table word** (2 of them by an operand inside their own span, which is recursion or a self-laid table and counted apart). A row is in the map because something names it -- a symbol, a slot, a `push` -- and half of them also handle their own address in code, so the channel is a floor on this population too. A random gap byte's address is spelled in `.text` **23 of 2000** times (1.1%), and no family below is smaller than that rate.
+**The control is the map's own rows: 464 of its 16933 bodies are spelled inside `.text`, 293 by an operand and 183 by a table word** (2 of them by an operand inside their own span, which is recursion or a self-laid table and counted apart). A row is in the map because something names it -- a symbol, a slot, a `push` -- and half of them also handle their own address in code, so the channel is a floor on this population too. A random gap byte's address is spelled in `.text` **23 of 2000** times (1.1%), and no family below is smaller than that rate.
 
 **18 of the silent bodies are 13 bytes or shorter**, and the heads' own prologue column says what they open on: a `ret`, a `xor eax,eax; ret`, a `mov eax,[ecx+d]`. A short body with no reference anywhere is the shape of a virtual method an unregistered class's table holds, or of a CRT stub reached through a pointer the image spells in a form these four channels do not read.
 
@@ -3416,3 +3414,56 @@ dump; the artifact reproduces byte for byte on a second run; `gap-heads`' `--che
 123 of them share a table and a row needs a duplicate policy), the 65 array entries' add (the array's meaning
 is not in the image), the 540 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359
 interface-only bodies.
+
+## The add: 199 walker names become map rows, and the residue re-read is 487 bodies (2026-11-21)
+
+**Task.** The previous read settled the list -- 199 copies, every one deriving `<Class>_lookup` from the class
+its table states, no base name colliding with a symbol the map already carried -- and left the add itself. It is
+an *insert* and not a rename: a gap head has no row in `symbols/xbox_functions.csv` at all, so `derived_state`
+over the map read **199 missing, 0 misfiled**.
+
+**The add.** `tools/gap-body-families.py --apply-symbols` writes one row per copy at the census's own address
+and size, module empty (the name states a class, not a translation unit), and copies every existing line of the
+map verbatim -- the map is a published artifact and a re-serialisation would rewrite 16,734 rows this read never
+measured. Measured: **map 16,734 -> 16,933 rows, 4,236,686 -> 4,252,208 bytes**, the published map 16,226 ->
+**17,425 symbols** (16,933 functions + 492 class tables), every address inside the image; native naming **8,683
+-> 8,882** of 16,933 (**51.89% -> 52.45%**); module attribution stays 7,767 and so falls **46.41% -> 45.87%**,
+which is the add's own statement -- a name that states a class says nothing about a translation unit.
+`inventory/gap_walker_names.csv` records the 199 rows (address, size, the table, the name): the add's own
+record, because the next read of the census cannot see these bodies any more.
+
+**The families were the same bodies, and the add proves it.** Re-read against the post-add map the residue is
+**487 bodies (104,817 bytes) and 141 islands** where it was 686 (120,339), and the drop is larger than 199 in
+two families: **86 of the 95 global-slot installs** and **86 of the 146 `.text`-referenced bodies** went with
+the walkers, because the store that installs a copy into the array *is* the operand that references it -- three
+families that looked independent were one body read three times, and 65 of those 86 were the consecutive dword
+run at `0x00630e20`..`0x00630f20`. What is left: **427 silent** (52,485 bytes), **54 `operand-in-row`**
+(45,034), 2 `operand-in-head`, 3 `table-in-row`, 1 `table-in-gap`, and **9 global-slot stores, 3 of them a run**
+at `0x005ccb1c`..`0x005ccb24`. The `.text` channel now reads **60 of the 487** (56 by an operand, 6 by a table
+word) against a control of **464 of the map's 16,933 rows** (2.7%), and the gap census re-read follows it:
+**2,277 heads / 1,889 bodies / 310 islands** where it read 2,476 / 2,088 / 310, with the same 78 refused
+(36 `no-close`, 42 `undecoded`) and the gaps re-cut to 11,469 covering 549,247 bytes (from 11,270 / 564,769),
+because 199 new rows end 199 gaps.
+
+**The gate is a list, not a column.** The re-read leaves the artifact's `derived_name` column empty -- a
+derivation that only lived in the census would be rewritten to nothing the moment the population lost it -- so
+`--apply-symbols` records the add in `inventory/gap_walker_names.csv` and `--check-symbols` reads *that*: every
+recorded name must be a row of `symbols/xbox_functions.csv` at the recorded address and size, and an address
+the map holds under another name or another size fails. It is dump-free and in `make ci`, so the add cannot be
+undone by a later map regeneration without the build saying so.
+
+**Files.** `tools/gap-body-families.py` (the derived state, the insert, the record, the gate, `--check`
+synthetic), `symbols/xbox_functions.csv` and `symbols/xbox.map` (the 199 rows), `inventory/gap_walker_names.csv`
+(new, 199 rows), `inventory/gap_body_families.csv`, `inventory/gap_heads.csv` and `inventory/gap_body_files.csv`
+(re-read), `inventory/function_modules.csv` and `inventory/function_module_attribution.csv` (re-cast over
+16,933 rows), `docs/SYMBOLS.md`, `docs/NATIVE.md`, `docs/STATUS.md`, `README.md` (counts), `Makefile` (the gate
+and the help line), `docs/UNKNOWNS.md` (U40), this page, `PLAN.md`.
+
+**Gates.** `make ci` green; `--check` synthetic and writes nothing (the derived state, the insert's
+idempotence, the record, the render's two branches); `--check-symbols` fails on a missing or misfiled name;
+`--check-doc` rebuilds this page's block from the committed CSV and the committed record; the map regenerates
+byte for byte; the three census artifacts reproduce byte for byte on a second run. No boot, no xemu, no Ghidra.
+
+**Not in this bundle.** The 9 global-slot stores (nothing in the image spells the array's meaning), the 65 array
+entries, the 427 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only
+bodies.
