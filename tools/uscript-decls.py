@@ -18,6 +18,7 @@ rather than a bug to hide.
 import argparse
 import csv
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +30,40 @@ _spec = importlib.util.spec_from_file_location("uscript_lex", os.path.join(ROOT,
 lexer = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(lexer)
 
-SKIP = {"space", "comment", "directive", "macro", "high"}
+SKIP = {"space", "comment", "macro", "high"}
+
+# The same build guard `tools/text-branches.py` measured: this corpus is the Xbox image, so XBox and DEBUG are defined
+# and the PS2/PC branches were never compiled. `#ifdefPS2` spells the directive with no space, so the macro is the rest
+# of the word, and names are case-folded (reading `#ifdefXBOX` case-sensitively breaks 8 functions there).
+BUILD_DEFINED = frozenset({"xbox", "debug"})
+GUARD = re.compile(r"^\s*#\s*(ifdef|ifndef|else|endif)\s*(\w*)", re.I)
+
+
+def unbuilt_removed(toks):
+    """Drop every token inside a branch this build did not compile."""
+    out = []
+    stack = []
+    active = True
+    for kind, val in toks:
+        if kind == "directive":
+            m = GUARD.match(val)
+            if not m:
+                continue
+            what, name = m.group(1).lower(), m.group(2).lower()
+            if what in ("ifdef", "ifndef"):
+                cond = (name in BUILD_DEFINED) if what == "ifdef" else (name not in BUILD_DEFINED)
+                stack.append((active, cond))
+                active = active and cond
+            elif what == "else" and stack:
+                parent, cond = stack[-1]
+                active = parent and not cond
+                stack[-1] = (parent, not cond)
+            elif what == "endif" and stack:
+                active = stack.pop()[0]
+            continue
+        if active:
+            out.append((kind, val))
+    return out
 
 
 def tokens_of(text):
@@ -49,6 +83,7 @@ def declarations(text):
     toks = tokens_of(text)
     if toks is None:
         return None
+    toks = unbuilt_removed(toks)
     cls = super_name = None
     counts = {"var": 0, "function": 0, "native_function": 0, "state": 0, "struct": 0, "enum": 0, "const": 0}
     depth = 0
@@ -149,6 +184,7 @@ def run(tree, out_dir):
     agree = {"class": 0, "super": 0, "var": 0, "function": 0, "native_function": 0,
              "state": 0, "struct": 0, "enum": 0, "const": 0}
     scored = 0
+    seen = {}
     for dirpath, _dirs, files in os.walk(tree):
         for name in sorted(files):
             if not name.endswith(".uc"):
@@ -163,6 +199,12 @@ def run(tree, out_dir):
                 continue
             cls, sup, counts = got
             row = {"file": rel, "class": cls or "", "super": sup or "", "status": "parsed", **counts}
+            if cls and cls in seen:
+                row["status"] = "duplicate"
+                rows.append(row)
+                continue
+            if cls:
+                seen[cls] = rel
             pkg = pkgs.get(cls) if cls else None
             if pkg:
                 scored += 1
@@ -171,11 +213,16 @@ def run(tree, out_dir):
                 if (sup or "").lower() == (pkg["super"] or "").lower():
                     agree["super"] += 1
                 agree["class"] += 1
+                # `functions` is the total (natives included) and `native_functions` a subset of it, so the
+                # non-native count is the difference -- pairing it against the total over-counts by every native.
                 for col, key in (("function", "functions"), ("native_function", "native_functions"),
                                  ("var", "properties"), ("state", "states"), ("struct", "structs"),
                                  ("enum", "enums"), ("const", "consts")):
                     try:
-                        if int(pkg[key]) == counts[col]:
+                        theirs = int(pkg[key])
+                        if col == "function":
+                            theirs -= int(pkg.get("native_functions") or 0)
+                        if theirs == counts[col]:
                             agree[col] += 1
                     except (KeyError, ValueError):
                         pass
