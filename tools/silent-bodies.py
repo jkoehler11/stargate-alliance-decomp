@@ -671,7 +671,7 @@ def main():
     out = os.path.join(args.out, os.path.basename(OUT)) if args.out else OUT
     write_artifact(rows, cen, out)
     print("wrote %s (%d rows: %d continuation, %d copy, %d unique)" % (
-        out, len(rows), cen["continuation"], cen["copy"], cen["unique"]))
+        out, len(rows), cen.get("continuation", 0), cen.get("copy", 0), cen.get("unique", 0)))
     return 0
 
 

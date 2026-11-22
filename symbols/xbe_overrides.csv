@@ -262,8 +262,8 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x000a7270,dtor_KarmaParamsRBFull,class table installed before any call; the body does not return this,,,,,,,
 0x000a7380,ctor_KMeshProps,class table installed after a call into the base constructor; the body returns this,,,,,,,
 0x000a7be0,dtor_KMeshProps,class table installed before any call; the body does not return this,,,,,,,
-0x000b7260,LIPSincReadControllerFile,logs [LIPSinc]: Parsed %s and [LIPSinc]: Attempt to import an obsolete .LBP file!,,,,,Engine,,4290
-0x000b8340,LIPSincReadAnimFile,the track reader: logs [LIPSinc]: Read Track %s and Parsed %s plus the LTF version/validity errors,,,,,Engine,,4977
+0x000b7260,LIPSincReadControllerFile,logs [LIPSinc]: Parsed %s and [LIPSinc]: Attempt to import an obsolete .LBP file!,,,,,Engine,,4313
+0x000b8340,LIPSincReadAnimFile,the track reader: logs [LIPSinc]: Read Track %s and Parsed %s plus the LTF version/validity errors,,,,,Engine,,4980
 0x000b9e90,LIPSincLoadDBFromDisk,its own log line [LIPSinc]: LoadLIPSincDBFromDisk with %i files,,,,,Engine,,1015
 0x000ba290,LIPSincInitGame,its own log line [LIPSinc]: LIPSincInitGame,,,,,Engine,,563
 0x000ba520,LIPSincShutdownLevel,its own log lines [LIPSinc]: LIPSincShutdownLevel and UnBinding Controller for %s,,,,,Engine,,370
@@ -997,7 +997,7 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x00322cd0,ucpp_Register_UnrealPlayer,ucpp class registration stub: class literal + System outer + ReturnClass assert,UnrealPlayer,System,4012,5,stargategame,StargateGame.cpp,180
 0x00322d90,ucpp_Register_StargatePlayer,ucpp class registration stub: class literal + System outer + ReturnClass assert,StargatePlayer,System,4344,6,stargategame,StargateGame.cpp,180
 0x003233b0,ucpp_Register_SubActionDepthOfField,ucpp class registration stub: class literal + System outer + ReturnClass assert,SubActionDepthOfField,System,132,3,stargategame,USubActionDepthOfField.cpp,179
-0x00325da0,StatsReadTask_Finished,own method literal StatsReadTask::Finished,StatsReadTask,,,,XboxLive,,420
+0x00325da0,StatsReadTask_Finished,own method literal StatsReadTask::Finished,StatsReadTask,,,,XboxLive,,429
 0x00327600,XboxLiveManager_StartStatsWrite,own method literal XboxLiveManager::StartStatsWrite,XboxLiveManager,,,,XboxLive,XboxLive.h,222
 0x003276e0,XboxLiveManager_StartStatsRead,own method literal XboxLiveManager::StartStatsRead,XboxLiveManager,,,,XboxLive,XboxLive.h,211
 0x003277c0,XboxLiveManager_StartStatsEnumerate,own method literal XboxLiveManager::StartStatsEnumerate,XboxLiveManager,,,,XboxLive,XboxLive.h,226
@@ -5218,8 +5218,8 @@ address,name,evidence,class,outer,object_size,assert_line,module,source_file,fun
 0x0002dff0,XboxAudio_SetNextStream,"audio chain: XBoxAudioSubsystem +0xd0 (slot 52) and no direct caller; its own literal SetNextStream, and it calls _XWaveFileCreateMediaObject@12",,,,,XboxAudio,,531
 0x0002a2f0,XboxAudio_CreateVoiceCodecs,audio chain: two _XVoiceCreateMediaObjectEx@28 calls with two callbacks into one slot object,,,,,XboxAudio,,104
 0x0002a9b0,XboxAudio_InitBufferDesc,"audio chain: zeroes a six-dword descriptor, fills pointer/length/index from [this+0x38] and the caller's buffer, then memsets the length",,,,,XboxAudio,,80
-0x0002db10,XboxAudio_UnregisterSoundBytes,audio chain: its own literals Sound Data Freed and UnRegSoundBytesAlloc; calls the streaming stop first,,,,,XboxAudio,,198
-0x0002fa90,XboxAudio_SetSoundDevice,"audio chain: slot 32 (+0x80) of XBoxAudioSubsystem's table 0x004d21f8; stops the old device's streaming sounds, stores the new device at +0x98 (the field the pump's first gate tests), applies two mix-bin settings and rebuilds the 0x6c21b0 list",,,,,XboxAudio,,278
+0x0002db10,XboxAudio_UnregisterSoundBytes,audio chain: its own literals Sound Data Freed and UnRegSoundBytesAlloc; calls the streaming stop first,,,,,XboxAudio,,204
+0x0002fa90,XboxAudio_SetSoundDevice,"audio chain: slot 32 (+0x80) of XBoxAudioSubsystem's table 0x004d21f8; stops the old device's streaming sounds, stores the new device at +0x98 (the field the pump's first gate tests), applies two mix-bin settings and rebuilds the 0x6c21b0 list",,,,,XboxAudio,,286
 0x0002b5c0,XboxAudio_ShutdownSlots,"audio chain: stops every registered sound (0x2b500), then eight vtable-slot-4 releases and six operator-delete frees",,,,,XboxAudio,,358
 0x00032040,XboxAudio_ResetStreamArray,"audio chain: walks the 0x50-byte records (count +0x4) calling 0x31df0 on each, sets the count to 0 and reallocates one record through 0x55ed0",,,,,XboxAudio,,65
 0x0002e900,XboxAudio_RegisterCounters,"audio chain: eight registrations, each pushing the wide literal Audio then a name (PlaySound twice, Occlusion twice, Update, Streaming, Regular, StoppedSounds), building two FStrings and calling 0x2530f0 on the counter block 0x7b5dd8; returns kept at +0x10/+0x04/+0x14/+0x0c/+0x08/+0x18/+0x1c/+0x20, once-only flag 0x7b5df4",,,,,XboxAudio,,691

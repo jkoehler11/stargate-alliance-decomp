@@ -6360,3 +6360,15 @@ channel's negative measured above (12 of the 232 tables named from the supplied 
 `thin`/`split`, 210 with no vote because their slots are game code), and the 4 folds are the copy relation this
 round measures over the gap as well as the map. What remains of U40 is the 16-row extent correction, which is a
 map-size change and not an open question.
+
+**Answered since (2026-11-21, the extents corrected, and the entry closes for good).** The 16 short rows
+were the silent subset of a **313-row** family: every `.text` row that stops on an instruction which is not
+a terminator and leaves a tail that closes before the next boundary (`tools/symbol-extents.py`,
+`inventory/symbol_extents.csv`). **85** are closed by a gap head at the row's end and **228** by a decode
+from the row's own end into fill (2,005 bytes); the null -- the same rule over 955 fixed data-section
+addresses -- fires twice. The 313 resizes are rows in `symbols/xbe_boundaries.csv`, the map holds them
+(16,935 functions, 4,260,865 bytes), and `gap_heads`, `gap_body_families`, `gap_body_files` and
+`silent_bodies` are regenerated on the corrected map in the same commit -- the silent population is **410**
+and holds no continuation. What that leaves is not U40: 7 rows the map already split from their continuation
+(a `drop` review), 97 tails that do not close before the next row, and 303 sizes that land mid-instruction.
+

@@ -109,7 +109,8 @@ make symbols           # then regenerate the map and the assembler form
 | `add` | a body the map has no row for; `target` carries its name | may not land inside any row, and needs a matching `xbe_overrides.csv` row — that file is what creates the function |
 | `rename` | the name this row's own instruction settles; `target` carries it | the map must have the row; moves no edge, so it cannot join an overlap |
 
-**1,777 rows** are in the file: 1,656 `add`s, 53 `rename`s, 57 `resize`s and 11 `drop`s. Each is one measured
+**2,221 rows** are in the file: 1,780 `add`s, 53 `rename`s, 369 `resize`s and 19 `drop`s, and 313
+of the resizes are one family -- the row that stops on its own epilogue (`tools/symbol-extents.py`). Each is one measured
 thing, and most of the adds are one family: 537 slot-named bodies, 590 register-once thunks and 5 `_atexit`
 destructor registrations, the registration table's 268 native bodies, 595 generated stubs, and the 243 the
 declaration walk named after the class that declares each slot. The rest are one at a time:
@@ -120,7 +121,7 @@ that stopped inside the slot load or the `rdtsc` pair of a scope close resized t
 CRT's `sinh` stub added with `ULevel::MultiLineCheck` and one 63-byte BSP getter, the registration table's 268
 native bodies and the six a false split sat inside, four more false splits the sweep found from a row the map
 already had (a `resize` plus the `drop` of the fragment inside it), and four rows that stopped short. The map is
-**16,618 functions and 4,215,924 bytes**, 8,055 of them still `FUN_*`.
+**16,935 functions and 4,260,865 bytes**, 8,051 of them still `FUN_*`.
 
 `--check` runs in `make ci` through the tool contract: it re-applies the file to the committed csv in memory and
 fails if the bytes differ, so a Ghidra re-import that undoes a repair is red instead of silently reverting the map.
@@ -128,6 +129,41 @@ It also refuses a boundary row whose `function_size` in `symbols/xbe_overrides.c
 column was written by the registration pass and read by nothing — and refuses an `add` with no row in that file,
 because `XbePost.java` builds a function from an override row and an `add` alone is a body the next import cannot
 see (U37).
+
+## The extents the map stops short of
+
+A `size` is Ghidra's inference like every other boundary, and the map's largest extent defect is a family
+rather than a correction: a row whose last instruction is not a terminator. A body does not fall out of its
+own end, so the bytes after such a row are its own epilogue, and the repair is a `resize` to where they
+close. `tools/symbol-extents.py` measures the population over every `.text` row and writes the resizes into
+`symbols/xbe_boundaries.csv` (`make symbol-extents`, then `make boundaries`).
+
+<!-- generated:symbol-extents -->
+**726 of the map's 13478 `.text` rows do not end on a terminator: 12752 close on one, and 313 of the rest leave a tail the map never counted** -- read by decoding every row at its own head and classifying its last instruction (`inventory/symbol_extents.csv`).
+
+**The rule.** A body does not fall out of its own end: what follows a `pop ebp` or an `add esp,0x10` is the same function's epilogue. So a row whose last instruction is not `ret`/`jmp`/`int3` is unfinished, and the tail is measured two ways. **85 rows carry a gap head at their end** -- the head rule's own sweep closes it, so the head's measured size is the tail (**0 bytes**). **228 more have no head there**, and a decode from the row's own end reaches a `ret` with nothing but fill (`0xCC`/`0x90`) between it and the next map row (**0 bytes**) -- a `jmp` before that `ret` refuses the read, because the tail-call's target code would sit behind it. Together **313 rows and 8604 bytes**: 120 of them are short by one instruction (a row that stops on `pop ebp`/`add esp,N` before its own `ret`), and the largest is `0x002a002a`, a 20-byte row continued by 4501 bytes.
+
+**The control is the same rule over data.** Decoding from **955** fixed addresses in the image's data sections finds a `ret` with only fill after it **2** time(s) -- 0.2% -- because that shape is what code has and data does not. The population it is compared against is the 313 rows above, whose tails are code by construction (the row's own head decodes into them).
+
+| the row | its size | last instruction | evidence | tail | repaired size |
+|---|---:|---|---|---:|---:|
+| `0x002a002a` FUN_002a002a | 20 | `movss  DWORD PTR [esp+0x14],xmm0` | head `0x002a003e` body | 4501 | 4521 |
+| `0x003873a0` FUN_003873a0 | 1375 | `add    esp,0x14` | head `0x003878ff` body | 599 | 1974 |
+| `0x00378f00` FUN_00378f00 | 142 | `jge    0x378f72` | head `0x00378f8e` body | 539 | 681 |
+| `0x00381f90` FUN_00381f90 | 347 | `pop    ebx` | head `0x003820eb` body | 263 | 610 |
+| `0x0038c4f0` FUN_0038c4f0 | 1190 | `add    esp,0x10` | head `0x0038c996` body | 229 | 1419 |
+| `0x000a2f00` Engine_KPhysic | 1911 | `je     0xa3686` | head `0x000a3677` body | 73 | 1984 |
+| `0x000bdf70` FUN_000bdf70 | 2026 | `mov    ecx,DWORD PTR [esp+0x10]` | head `0x000be75a` body | 70 | 2096 |
+| `0x00241e70` FUN_00241e70 | 2123 | `mov    ecx,edi` | `ret` at `0x002426f8` | 61 | 2184 |
+| `0x00342863` _RtlReAllocateHeap@16 | 1759 | `mov    ecx,DWORD PTR [ebp+0x10]` | `ret    0x10` at `0x00342f7b` | 57 | 1816 |
+| `0x0032daf0` FUN_0032daf0 | 354 | `les    edx,FWORD PTR [eax]` | `ret    0x8` at `0x0032dc7f` | 45 | 399 |
+| `0x001520d0` FUN_001520d0 | 1342 | `add    eax,ecx` | head `0x0015260e` body | 43 | 1385 |
+| `0x002bf960` D3DDrv_D3DResource | 349 | `mov    ebx,DWORD PTR [ebp+0x8]` | `ret    0x4` at `0x002bfae7` | 42 | 391 |
+
+**What this does not repair.** **303** rows end mid-instruction (`short`: the size cuts an instruction in half) and **6** do not decode at all -- both a byte count, not a boundary. Of the rest, **97** stop on live code with no close before the next row (**12** open a `jmp`, **49** close and then fall into code, **26** reach nothing that decodes, **10** have no byte behind them), and **7** are a body the map already split from its own continuation -- `0x0001f2a0`, `0x00024c80`, `0x002c4f10`, `0x002e0072`, `0x003a0061`, `0x003a0068`, `0x003ee1ea` -- which is a `drop` repair and needs a review this rule cannot supply.
+
+**The repairs are in the file, not in this tool's output.** `--write-boundaries` appends one `resize` row per continuation to `symbols/xbe_boundaries.csv`, and `tools/symbol-boundaries.py --apply` moves the map; `--check` proves every continuation's repair is still applied, so a Ghidra re-import that reverts one is red instead of silently restoring the short extent.
+<!-- /generated:symbol-extents -->
 
 ## The bodies no call graph can see: the registration table's 883
 
@@ -316,37 +352,37 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | measure | value |
 |---|---|
 | `.text` | `0x00011000`..`0x004190fc` (4227324 bytes) |
-| gaps between map rows / bytes they cover | 11471 / 549194 (3851 gaps under 8 bytes) |
-| heads the pad-before + prologue rule finds | 2275 |
-| ...decode to a body / are a 1-2 instruction island | 1887 / 310 |
+| gaps between map rows / bytes they cover | 11444 / 540590 (3945 gaps under 8 bytes) |
+| heads the pad-before + prologue rule finds | 2188 |
+| ...decode to a body / are a 1-2 instruction island | 1869 / 241 |
 | ...refused (`no-close` / `undecoded`) | 36 / 42 |
-| bytes the bodies cover | 257003 (47.0% of the gap bytes) |
-| runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 1128 in 944 runs |
-| bodies a split ends (a terminator no branch in the run targets) | 190 |
+| bytes the bodies cover | 250349 (46.0% of the gap bytes) |
+| runs holding an inner strong opening (a branch rejoins it, so it stays merged) | 1123 in 941 runs |
+| bodies a split ends (a terminator no branch in the run targets) | 189 |
 | bodies in a generated family (`register-once` / `_atexit`) | 0 / 0 |
-| named by a dword outside `.text` | 805 |
+| named by a dword outside `.text` | 803 |
 | ...of those, in a class-table slot (370 bodies; 724 tables, 2 of them class-named) | 362 |
 | named by an `E8`/`E9` branch | 66 |
 | named by a `68` push | 717 |
-| named by any channel / by none (of them bodies / islands) | 1571 / 626 (485 / 141) |
-| boundaries: the gap's start / fill / a split | 207 / 1878 / 190 |
-| heads a measured opening adds (not in the shared prologue table) / of them decode | 823 / 807 |
-| ...of those, named by no channel | 217 |
-| control: map rows passing the head rule / decoding to their size | 10889 of 13478 / 12730 |
+| named by any channel / by none (of them bodies / islands) | 1569 / 541 (468 / 73) |
+| boundaries: the gap's start / fill / a split | 123 / 1876 / 189 |
+| heads a measured opening adds (not in the shared prologue table) / of them decode | 817 / 801 |
+| ...of those, named by no channel | 211 |
+| control: map rows passing the head rule / decoding to their size | 10889 of 13478 / 13034 |
 | ...the two tests apart: both / fill only (prologue miss) / opening only (boundary miss) / neither | 10889 / 322 / 2031 / 236 |
 | ...the same four cells with the shared prologue table alone | 9270 / 1941 / 1823 / 444 |
 | ...of the no-fill rows, the successor of a terminator (what the split arm reads) / of nothing | 1954 / 313 |
 | ...rows the measured openings name that the shared table refuses: behind fill / behind code | 1619 / 208 |
-| ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | 76 / 4 |
-| ...split points that reading means / of those, entries of a `.text` jump table | 386 / 357 |
-| ...of the rows still cut, a class-table slot names the opening / nothing names it | 0 / 4 |
+| ...whose declared span the split rule reads as two bodies: relative branches alone / with the inline tables | 83 / 11 |
+| ...split points that reading means / of those, entries of a `.text` jump table | 387 / 357 |
+| ...of the rows still cut, a class-table slot names the opening / nothing names it | 0 / 11 |
 | inline jump tables in `.text` (aligned runs of >=3 code addresses) / entries | 144 / 1510 |
 | control: the same rule over `.rdata`, `.data`, XNET, DSOUND (646 head-shaped runs, 3.3 MB of data) | 0 / 0 / 0 / 403 bodies |
-| base rate: a dword outside `.text` names a random gap byte / a map row's start | 39 of 2000 (1.9%) / 659 of 2000 (33.0%) |
+| base rate: a dword outside `.text` names a random gap byte / a map row's start | 40 of 2000 (2.0%) / 652 of 2000 (32.6%) |
 
 | gap | heads | bodies | first head |
 |---|---:|---:|---|
-| `0x004100c8`..`0x00413c40` | 183 | 183 | `0x004100c8` |
+| `0x004100c9`..`0x00413c40` | 182 | 182 | `0x004100d0` |
 | `0x0040c2c8`..`0x00410020` | 158 | 157 | `0x0040c2c8` |
 | `0x003f28b8`..`0x003f6d70` | 87 | 87 | `0x003f28b8` |
 | `0x000e031f`..`0x000e06a0` | 56 | 56 | `0x000e0320` |
@@ -370,9 +406,9 @@ and 17 bytes) are heads now, at exactly those sizes, because all three open `8b 
 | `push-arg` | 33 | 0 |
 | `bare-ret` | 30 | 4 |
 
-370 of the 1887 bodies sit in a class-table slot; 367 of those are in the 232 tables no registration names, and 626 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
+370 of the 1869 bodies sit in a class-table slot; 367 of those are in the 232 tables no registration names, and 541 are named by no channel at all: nothing calls them, nothing points at them, and the map has no row for them.
 
-The split rule does not hold on the map's own rows the way it holds on the gaps: 76 rows read as two bodies with relative branches alone, and **357 of their 386 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 190 split heads**, which is what makes the 190 splits bodies rather than case blocks.
+The split rule does not hold on the map's own rows the way it holds on the gaps: 83 rows read as two bodies with relative branches alone, and **357 of their 387 openings are entries of the 144 inline jump tables** (`switch` case blocks, reached by an indirect branch no relative read sees) -- so they are one body each, and the rule now consults the table. Over the gap population the same channel names **0 of its 189 split heads**, which is what makes the 189 splits bodies rather than case blocks.
 <!-- /generated:gap-heads -->
 
 **What is left is what no channel names.** 279 bodies still sit in a table slot -- **264 of them in the 246
