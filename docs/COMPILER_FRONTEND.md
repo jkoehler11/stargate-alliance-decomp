@@ -126,6 +126,32 @@ The self-test also caught an error of mine: it required an `event` to carry thre
 things that cannot both hold. The parser was right — an `event` has no return type, so its slots are its parameters —
 and the expectation was corrected rather than the code, which is the only direction that leaves the gate meaningful.
 
+## Stage 2c — call sites, the first expression-level measure (measured 2026-11-21)
+
+`inventory/script_calls.csv` records **19,350** call sites read out of the packages: the class, the function the call sits
+in, and the target it resolves to. That is enough to score expression-level parsing without a full grammar —
+`tools/uscript-calls.py` parses every function body (19,142 of them) and asks whether the recorded target appears as a
+call in that function's source.
+
+**14,394 of 14,408 recorded call targets are found: 99.9%.** Three things had to be measured first, and the first of them
+looked like a total failure:
+
+1. **The join is case-insensitive.** Recorded targets are lower-cased and the source keeps its case, so intersecting the
+   raw sets matched only names the source happens to spell in lower case (`initialise`) — a correct extractor scored
+   **0.6%**. Lower-casing one side took it to 98.2%.
+2. **State-block functions are class code.** Six of the misses were self-calls in AI classes (`BotEnemy.checkifshouldcrouch`
+   was "missing" its own recursive call) because those functions live inside `state` bodies, which the first pass skipped.
+   Parsing them took recall to 99.9% and raised the joined pairs from 13,144 to 14,408 — until then the measure had been
+   scoring only part of each class.
+3. **A call can be named with a keyword.** `Travel("Map")` and `Import(...)` are recorded calls whose names the lexer
+   classifies as keywords, so an identifiers-only test never saw them. Counting keyword-named calls (excluding the
+   language's control words, which cannot be calls) recovered five more, to **14,394**.
+
+The 14 that remain are explicable rather than mysterious: **seven are operator functions** — the source writes `==` and
+the package records `EqualEqual_MapItemMapItem`, a call the text cannot spell — six are `Mover` calls written at state
+scope, and one is the placeholder row for a file that does not parse. That is the shape the statement-bodied parser will
+have to model: an operator is a call with no name in the text.
+
 ## Stage 3 — the emitter
 
 Bytecode out, compared against the shipped function bodies at the tiers `AGENTS.md` defines: the oracle is
