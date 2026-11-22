@@ -108,3 +108,26 @@ declared. It is the list PLAN 5.1's acceptance asks to have a documented path fo
 - `WormholeSFX` — fail: ialized in 2 calls. Loading Sound wormhole_sound from package Sounds/WormholeSFX.uax  ******** Loading object Sound'WormholeSFX.wormhole_sound' ******** *** ERR
 - `haakensounds` — fail: ng object Sound'haakensounds.Pain3' ******** *** ERROR: Memory: bad allocation size -45 bytes appMalloc: size=-45 (total=0 Mbytes) <- FArray::Empty: -45 x 1 <- 
 - `jaffasounds` — fail: heja_wounded_ge_c_12' ******** *** ERROR: Memory: bad allocation size -44 bytes appMalloc: size=-44 (total=0 Mbytes) <- FArray::Empty: -44 x 1 <- TArray::Serial
+
+## What the 84.96% asset-export headline actually counts (measured 2026-11-22)
+
+`docs/STATUS.md` reports **339 of 399 asset packages exported (84.96%)**. Read by directory, from
+`inventory/assets.csv`, the shortfall is one class:
+
+| directory | packages | exported | failed |
+|---|---:|---:|---:|
+| Animations | 82 | 81 | 1 |
+| Sounds | 55 | 2 | 53 |
+| StaticMeshes | 91 | 89 | 2 |
+| Textures | 171 | 167 | 4 |
+| **total** | **399** | **339** | **60** |
+
+**53 of the 60 failures are `Sounds`, and umodel cannot read them by design** — every `.uax` leaves unread bytes
+in `USound::Serialize` (the per-package errors are `Memory: bad allocation size`, not a parse the project could fix). Those
+packages are not unexported: they go through this project's own reader, which indexes **1,364 speech WAVs and 1,923 music
+WAVs** (PLAN 5.3). Counting them in the same fraction mixes two routes with two different tools.
+
+Excluding that one class, **337 of 344 packages export — 97.97%** — and the real remainder is four
+textures, two static meshes and one animation, of which `Goa_Vehicles` names its own cause (`wrong import index 31`). The
+headline number is left as `status.py` generates it; this section says what is inside it, so the gap is not read as ten
+times larger than it is.
