@@ -13,6 +13,15 @@ independently.
 class name, super, and each count. Agreement is reported, not assumed: a convention mismatch (does `properties` count
 `var` names or statements?) shows up as a column that agrees less than the others, which is a measurement to read
 rather than a bug to hide.
+
+`inventory/uscript_decls_residue.csv` names every disagreement (class, column, ours, theirs, file) so a residue is read
+one row at a time instead of inferred from a percentage. The `struct` column is **void**: the packages export no
+`UScriptStruct` at all -- `structs` is 0 in every one of the 2,319 rows -- so the count is reported and never scored.
+
+Three lexer facts the residue taught: a *name* can be a keyword (`var String Name;` -- `Name` is the `name` type),
+a `var` statement can put its names *after* an inline enum body (`var enum EMode { A, B } UClampMode, VClampMode;`),
+and `state` is used as an identifier (a native parameter `out byte state`, a member `Segment.state`) as well as a
+declaration.
 """
 
 import argparse
@@ -94,6 +103,79 @@ def is_native(toks, i):
         j -= 1
     return False
 
+
+def is_state_decl(toks, i):
+    """True when the `state` at `i` opens a state block rather than naming something.
+
+    `state` is a keyword, and this corpus also uses it as an identifier: a native declaration's parameter
+    (`out byte Key, out byte state`) and a member (`Segment.state`) both lex as keywords, and 19 GUI classes read as
+    one state they do not have. A state header is `[auto] state [()] Name`, so the token after the optional empty
+    parameter list decides, and a `.`/`,`/`(`/identifier in front rules the read out.
+    """
+    if i:
+        kind, val = toks[i - 1]
+        if kind == "ident" or (kind == "op" and val in (".", ",", "(")):
+            return False
+    j = i + 1
+    if j < len(toks) and toks[j] == ("op", "("):
+        if j + 1 >= len(toks) or toks[j + 1] != ("op", ")"):
+            return False
+        j += 2
+    return j < len(toks) and toks[j][0] in ("ident", "keyword")   # `state Default`, `state Protected`
+
+
+def var_declaration(toks, i, counts):
+    """Count one `var` statement's declared names; returns the index of its `;`.
+
+    Two shapes defeat a walk that stops at the first `;`/`{`. `var enum EMode { A, B } UClampMode, VClampMode;`
+    declares its names *after* the brace group, and the inline enum is a declaration of its own (the package carries
+    one `UEnum` per class). And a name can be a keyword: `var String Name;` names the property `Name`, which the
+    lexer calls the `name` type.
+    """
+    j = i + 1
+    depth = 0
+    segments = []
+    segment = []
+    while j < len(toks):
+        kind, val = toks[j]
+        if kind == "op" and val == "{":
+            depth += 1
+            segment = []        # the enum/struct header declares no name; the names follow its close
+        elif kind == "op" and val == "}":
+            depth = max(0, depth - 1)
+            if depth == 0:
+                segment = []
+        elif depth == 0 and kind == "op" and val == ";":
+            break
+        elif depth == 0 and kind == "op" and val == ",":
+            segments.append(segment)
+            segment = []
+        elif depth == 0:
+            if kind == "keyword" and val.lower() in ("enum", "struct"):
+                counts[val.lower()] += 1
+            segment.append((kind, val))
+        j += 1
+    segments.append(segment)
+    for seg in segments:
+        # a segment declares a name when its last *word* is one -- ident or keyword, since `Name` is a type too,
+        # and an array suffix (`Ordered[32]`) sits behind the name it belongs to
+        k = len(seg) - 1
+        while k >= 0 and seg[k] == ("op", "]"):
+            depth = 0
+            while k >= 0:
+                if seg[k] == ("op", "]"):
+                    depth += 1
+                elif seg[k] == ("op", "["):
+                    depth -= 1
+                    if depth == 0:
+                        break
+                k -= 1
+            k -= 1
+        if k >= 0 and seg[k][0] in ("ident", "keyword"):
+            counts["var"] += 1
+    return j
+
+
 def declarations(text):
     """Return (class, super, counts) for one file, counting only declarations at class scope."""
     toks = tokens_of(text)
@@ -141,8 +223,9 @@ def declarations(text):
             i = j
             continue
         if val == "state":
-            counts["state"] += 1
-            pending_state = True
+            if is_state_decl(toks, i):
+                counts["state"] += 1
+                pending_state = True
             i += 1
             continue
         if val in ("struct", "enum"):
@@ -164,19 +247,15 @@ def declarations(text):
             counts["native_function" if is_native(toks, i) else "function"] += 1
             i += 1
             continue
+        if val in ("operator", "preoperator", "postoperator"):
+            # `native(129) static final preoperator bool !( bool A );` never says `function`, but the package carries
+            # one UFunction per operator: Object's 103 and Actor's 4 are the whole difference in their native column.
+            if is_native(toks, i):
+                counts["native_function"] += 1
+            i += 1
+            continue
         if val == "var":
-            # the statement runs to `;` at this depth; each comma-separated segment ends on its name
-            j = i + 1
-            segment = []
-            while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] in (";", "{")):
-                if toks[j][0] == "op" and toks[j][1] == ",":
-                    counts["var"] += 1 if any(t[0] == "ident" for t in segment) else 0
-                    segment = []
-                else:
-                    segment.append(toks[j])
-                j += 1
-            counts["var"] += 1 if any(t[0] == "ident" for t in segment) else 0
-            i = j
+            i = var_declaration(toks, i, counts)
             continue
         i += 1
     return (cls, super_name, counts)
@@ -197,6 +276,9 @@ def run(tree, out_dir):
     rows = []
     agree = {"class": 0, "super": 0, "var": 0, "function": 0, "native_function": 0,
              "state": 0, "struct": 0, "enum": 0, "const": 0}
+    counted = {"class": 0, "super": 0, "var": 0, "function": 0, "native_function": 0,
+               "state": 0, "enum": 0, "const": 0}     # `struct` is void: no package exports one
+    residue = []
     scored = 0
     seen = {}
     for dirpath, _dirs, files in os.walk(tree):
@@ -224,6 +306,8 @@ def run(tree, out_dir):
                 scored += 1
                 row["package_super"] = pkg["super"]
                 row["status"] = "scored"
+                counted["class"] += 1
+                counted["super"] += 1
                 if (sup or "").lower() == (pkg["super"] or "").lower():
                     agree["super"] += 1
                 agree["class"] += 1
@@ -234,12 +318,20 @@ def run(tree, out_dir):
                                  ("enum", "enums"), ("const", "consts")):
                     try:
                         theirs = int(pkg[key])
-                        if col == "function":
-                            theirs -= int(pkg.get("native_functions") or 0)
-                        if theirs == counts[col]:
-                            agree[col] += 1
                     except (KeyError, ValueError):
-                        pass
+                        continue
+                    if col == "function":
+                        theirs -= int(pkg.get("native_functions") or 0)
+                    if col == "struct":
+                        # void: `structs` is 0 in all 2,319 package rows, so scoring this column scores two zeroes
+                        if counts[col]:
+                            residue.append((col, cls, counts[col], theirs, rel))
+                        continue
+                    counted[col] += 1
+                    if theirs == counts[col]:
+                        agree[col] += 1
+                    else:
+                        residue.append((col, cls, counts[col], theirs, rel))
             rows.append(row)
     fields = ["file", "class", "super", "status", "var", "function", "native_function", "state",
               "struct", "enum", "const", "package_super"]
@@ -252,9 +344,25 @@ def run(tree, out_dir):
             w.writerow({k: row.get(k, "") for k in fields})
     print("%d file(s), %d joined to a package row" % (len(rows), scored))
     if scored:
-        for key in ("class", "super", "var", "function", "native_function", "state", "struct", "enum", "const"):
-            print("   %-16s %5d / %5d  %5.1f%%" % (key, agree[key], scored, 100.0 * agree[key] / scored))
+        for key in ("class", "super", "var", "function", "native_function", "state", "enum", "const"):
+            print("   %-16s %5d / %5d  %5.1f%%" % (key, agree[key], counted[key],
+                                                   100.0 * agree[key] / counted[key] if counted[key] else 0.0))
+        print("   %-16s %s" % ("struct", "void -- the packages export none (0 in every package row)"))
+    res_path = os.path.join(out_dir, "uscript_decls_residue.csv")
+    with open(res_path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh, lineterminator="\n")
+        w.writerow(["column", "class", "ours", "theirs", "file"])
+        for col, cls, ours, theirs, rel in residue:
+            w.writerow([col, cls, ours, theirs, rel])
+    by_col = {}
+    for col, _cls, _ours, _theirs, _rel in residue:
+        by_col[col] = by_col.get(col, 0) + 1
+    if residue:
+        print("residue: %s" % ", ".join("%s %d" % (c, by_col[c]) for c in
+                                        ("var", "function", "native_function", "state", "enum", "const", "struct")
+                                        if c in by_col))
     print("wrote %s" % os.path.relpath(path, ROOT))
+    print("wrote %s" % os.path.relpath(res_path, ROOT))
     return 0
 
 
@@ -263,12 +371,18 @@ SYNTH = """class Probe extends Actor
 var int Count, Other;
 var() string Label;
 var array<int> Items;
+var String Name;
+var(Texture) enum ETexClampMode { TC_Wrap, TC_Clamp } UClampMode, VClampMode;
 native function bool Check(optional int N);
-function DoIt() { local int T; T = 1; }
+native(129) static final preoperator bool !( bool A );
+function DoIt( out byte state ) { local int T; T = 1; }
 state Idle { function Tick() { } }
+state() Toggle { }
+state Protected { }
 struct Point { var float X, Y; };
 enum EFlag { A, B };
 const Limit = 4;
+function Hidden() { const Inner = 1; }
 """
 
 
@@ -278,8 +392,11 @@ def check(_args):
         print("FAIL uscript-decls: the synthetic corpus does not lex")
         return 1
     cls, sup, counts = got
-    # `Tick` lives inside `state Idle` and is *not* counted: the measured convention excludes state functions
-    want = {"var": 4, "function": 1, "native_function": 1, "state": 1, "struct": 1, "enum": 1, "const": 1}
+    # `Tick` lives inside `state Idle` and is *not* counted: the measured convention excludes state functions.
+    # `Name` is a property whose name is a type word; the two clamp modes are named after an inline enum body; the
+    # `state` parameter of `DoIt` is an identifier, not a state; the operator is a native function with no `function`;
+    # `Inner` is a const inside a body and the package stores none, so class scope only (measured on CacheManager's 53).
+    want = {"var": 7, "function": 2, "native_function": 2, "state": 3, "struct": 1, "enum": 2, "const": 1}
     if cls != "Probe" or sup != "Actor":
         print("FAIL uscript-decls: header parsed as %r extends %r" % (cls, sup))
         return 1

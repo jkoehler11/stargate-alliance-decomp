@@ -66,12 +66,12 @@ class, each side measured independently. **2,272 classes are scored, one row eac
 | class name | 2,272 / 2,272 | **100.0%** | 2,319 |
 | `super` | 2,272 / 2,272 | **100.0%** | 2,318 |
 | `const` | 2,271 | 100.0% | 98 |
-| `var` (properties) | 2,267 | **99.8%** | **1,104** |
-| `native function` | 2,267 | **99.8%** | 92 |
-| `state` | 2,253 | 99.2% | 185 |
+| `var` (properties) | 2,272 | **100.0%** | **1,104** |
+| `native function` | 2,270 | **99.9%** | 92 |
+| `state` | 2,272 | **100.0%** | 185 |
 | `function` (non-native) | 2,246 | 98.9% | **1,204** |
-| `enum` | 2,237 | 98.5% | 114 |
-| `struct` | 2,187 | *void* | **0** |
+| `enum` | 2,272 | **100.0%** | 114 |
+| `struct` | — | *void* | **0** |
 
 ### Eight things the scoring settled, and one it retracted
 
@@ -96,12 +96,46 @@ class, each side measured independently. **2,272 classes are scored, one row eac
    rows while `Actor` declares eleven. The comparison is marked void, and the table's non-zero column shows the same
    caution applies to `const` (98), `state` (185) and `enum` (114).
 
+### The residue, read one row at a time (measured 2026-11-22)
+
+The percentages above were the only view of the disagreements, so this pass started by naming them:
+`inventory/uscript_decls_residue.csv` carries every row that disagrees (`column, class, ours, theirs, file`) — **116
+rows** where the page had counts. Reading it family by family closed 60 of them, and each closure is a lexer fact:
+
+1. **A declared name can be a keyword.** `var String Name;` names the property `Name`, which lexes as the `name` type,
+   so a rule that wants an identifier after the type reads 4 properties in `SavedGameInfo` where the package has 5. All
+   five `var` disagreements were this family; accepting a keyword as the last word of a declaration takes `var` to
+   **2,272 / 2,272**.
+2. **A `var` statement can declare its names after an inline enum body.**
+   `var(Texture) enum ETexClampMode { … } UClampMode, VClampMode;` declares two properties *after* the brace group —
+   `BitmapMaterial` read 8 against 9 — and the inline enum is a declaration of its own (a `UEnum` whose outer is the
+   class). Counting both takes the `enum` column from 2,237 to **2,272 / 2,272** in one rule.
+3. **`state` is used as an identifier.** 19 GUI classes read one state they do not have because a native parameter is
+   named `state` (`out byte Key, out byte state`) or a member is (`Segment.state`); `TextGameInfo` reads one for
+   `Key == 0x7A && state == 1`. A state header is `[auto] state [()] Name`, so the token after the optional empty
+   parameter list decides — `state` goes to **2,272 / 2,272**.
+4. **A state's name can be a keyword too.** The first cut of that rule required an identifier, and then under-counted
+   `KHinge` (4 against 5, `state Default`) and `PteroBossBot` (6 against 7, `state Protected`).
+5. **A native operator never says `function`.** `native(129) static final preoperator bool !( bool A );` is a
+   `UFunction` with the native flag: `Object` carries **103** of them and `Actor` **4**, which is the whole difference
+   between those two classes' text and package counts. Counting a class-scope `operator`/`preoperator`/`postoperator`
+   whose statement carries `native` takes the column from 2,267 to **2,270 / 2,272**.
+6. **The `struct` column is void in the tool, not only in this page.** The packages export no `UScriptStruct` at all
+   (0 in all 2,319 rows), so a class declaring eleven `struct`s scored as a disagreement against a zero. The tool now
+   reports the column as `void` and never scores it; its 87 rows stay in the residue, labelled, because the count of
+   declarations the package cannot confirm is itself a measurement.
+
 ### What is left
 
-Five `var`, 26 `function`, five `native function`, 19 `state`, 35 `enum` and one `const` disagreement, plus 47 of the
-table's 2,319 classes with no source file in the corpus. Every one of the eight findings above came from sampling a
-residue rather than adding a rule and watching an average — four of them were defects in *how the parser was being
-scored*, which is why fixing them moved several columns at once.
+**26 `function` rows, 2 `native function` and one `const`** — 116 residue rows in all, 87 of them the void `struct`
+column. The function residue is one-sided for 23 of the 26 (the package carries 1 to 29 more non-native functions than
+the text declares; `GUIComponent` is 75 against 104) and three classes declare one more than the package (`Mover` 31
+against 30, `UPreviewMapListClient` 4 against 3, `UPreviewSkinnedButton` 2 against 1). Both native rows
+(`UPreviewMapListClient`, `UPreviewSkinnedButton`) have no `native` word in their text at all, so the package marks a
+function native that the source does not — the one place that question has been read before is `U3` on the same page.
+`const` is one class (`ObjectivesPanel`), whose only `const` sits inside a function body: counting body consts fixed
+that row and broke `CacheManager` (53 body consts, 0 in the package), so the column stays at class scope. Plus 47 of
+the table's 2,319 classes with no source file in the corpus.
 
 ## Stage 2b — signatures, scored against the package records (measured 2026-11-21)
 
