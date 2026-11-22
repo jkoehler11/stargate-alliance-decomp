@@ -81,6 +81,22 @@ PROP_TYPE = {"IntProperty": "int", "ByteProperty": "byte", "BoolProperty": "bool
              "InterfaceProperty": "object"}
 LOCAL_TOKEN, INSTANCE_TOKEN, DEFAULT_TOKEN = 0x00, 0x01, 0x02
 
+# The types a source cast can name as a primitive: `string(x)`/`int(x)`/`bool(x)`/`rotator(x)` are `PrimitiveCast`,
+# and anything else in front of a parenthesised expression that names a class is a `DynamicCast`.
+CAST_TYPES = ("byte", "int", "bool", "float", "string", "name", "vector", "rotator", "class")
+
+# The type byte a `Context` node writes is the *member's* value size, measured on 31,622 nodes: 4 for the
+# pointer-sized types, 1 for a byte, 12 for a vector and 0 for a string (`MyNumericEdit.Value` is a string and its
+# node writes `05 00 00`, `Items.Next` is an object and writes `05 00 04`).
+PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4, "byte": 1, "vector": 12,
+             "string": 0}
+
+# The skip word a `Context` writes before its type byte. For a member that is an `InstanceVariable` it is 5 in all
+# 17,710 such nodes, whatever width the member's index was written with (`01 18` and `01 69 04` both write 5). A
+# *call* member is not this constant -- over `VirtualFunction` members of one shape the word ranges 1..6 -- so the
+# emitter refuses to compute it for one and models only the property chain.
+CONTEXT_SKIP = 5
+
 
 # ----------------------------------------------------------------------------------------------------------------
 # the archive's compact index, written the way `uscript-dis.read_index` reads it
@@ -419,6 +435,30 @@ def _is_call(expr):
 CAST_SLOTS = {}
 
 
+def _obj_classes():
+    """`{(package, class, property): declared object class}` from `inventory/class_properties.csv`.
+
+    A receiver chain's member is a property of the *receiver's* class, not of the class the body is in. `List.Index`
+    in `GUIComboBox.GetIndex` names `GUIComboBox.List` (an object of class `GUIListBase`) and then `GUIListBase.Index`
+    -- resolving `Index` through the body's own chain instead wrote export 8263 rather than 13.
+    """
+    path = os.path.join(ROOT, "inventory", "class_properties.csv")
+    out = {}
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                friendly = (r.get("friendly_type") or "").strip()
+                if not friendly or friendly.lower() == "none":
+                    continue
+                out[(r["package"].lower(), r["class"].lower(), r["property"].lower())] = friendly.lower()
+    except OSError:
+        pass
+    return out
+
+
+OBJ_CLASSES = {}
+
+
 def _cast_slots():
     """`{(from, to): slot}` from `inventory/cast_operands.csv` -- the image's own cast table, named `IntToFloat`.
 
@@ -441,16 +481,26 @@ def _cast_slots():
     return CAST_SLOTS
 
 
+def _converted(body, ptype, want=""):
+    """`39 <slot>` in front of a read whose declared type is not the type the site wants.
+
+    A read whose declared type is not the type the site wants is wrapped in `PrimitiveCast`, slot from the image's
+    own cast table: `return Damage;` in a `float` function whose parameter is an `int` writes `04 39 3f 00 697e`
+    (`IntToFloat`). Only pairs the table has a *used* slot for are cast.
+    """
+    want = (want or "").lower()
+    if ptype in ("byte", "int", "float") and want in ("byte", "int", "float") and want != ptype:
+        slot = _cast_slots().get((ptype, want))
+        if slot is not None:
+            return bytes([0x39, slot]) + body
+    return body
+
+
 def _emit_var(name, env, want=""):
     """One variable read: its own token and the record index the package holds, bools behind `2D` (BoolVariable).
 
     `bGodMode = NewGodModeValue;` is `14 2D 01 <idx> 2D 00 <idx>`: the *value*'s bool flag is the variable's own,
     which is why a read is emitted here and not by the caller.
-
-    A read whose declared type is not the type the site wants is wrapped in `PrimitiveCast` (`39 <slot>`), slot from
-    the image's own cast table: `return Damage;` in a `float` function whose parameter is an `int` writes
-    `04 39 3f 00 697e` (`IntToFloat`), and `GetMaxDistToTarget`'s int property the same. Only pairs the table has a
-    *used* slot for are cast; a type the package records only as `object` or `struct` is emitted as it is.
     """
     low = name.lower()
     scope = env["scope"]
@@ -462,12 +512,7 @@ def _emit_var(name, env, want=""):
         return None
     out = bytes([token]) + write_index(index)
     body = bytes([0x2D]) + out if ptype == "bool" else out
-    want = (want or "").lower()
-    if ptype in ("byte", "int", "float") and want in ("byte", "int", "float") and want != ptype:
-        slot = _cast_slots().get((ptype, want))
-        if slot is not None:
-            return bytes([0x39, slot]) + body
-    return body
+    return _converted(body, ptype, want)
 
 
 def _emit_enum(name, env):
@@ -484,6 +529,205 @@ def _emit_enum(name, env):
     return None, ""
 
 
+def _dot_at(expr):
+    """The last depth-0 `.` in an expression, or None: `Gun.GetAimingBoneCoords()` keeps its dot inside the call."""
+    depth, pos = 0, None
+    for i, (kind, val) in enumerate(expr):
+        if kind == "op" and val in "([{":
+            depth += 1
+        elif kind == "op" and val in ")]}":
+            depth -= 1
+        elif kind == "op" and val == "." and depth == 0:
+            pos = i
+    return pos
+
+
+def _cast_kind(name, env):
+    """`primitive` for `int(x)`, `object` for `AIController(x)`, and "" when the name is neither.
+
+    A name that is *both* a class and a function in scope is not decided here: the call wins, because a call the
+    package declares is a call, and a class of the same name would have to be refused rather than guessed.
+    """
+    low = name.lower()
+    if low in CAST_TYPES:
+        return "primitive"
+    scope = env["scope"] or {}
+    if low in scope.get("classrefs", {}) and low not in scope.get("funcs", {}):
+        return "object"
+    return ""
+
+
+def _type_of(expr, env):
+    """The declared type of an expression, as the cast table keys it: a variable's own type, a call's return type,
+    `object` for `self`/`class`/a class name, `vector` for `vect(...)`, a literal's own type, and the member's type
+    for a receiver chain."""
+    expr = _strip_parens(expr)
+    if not expr:
+        return ""
+    if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
+        expr = [expr[1]]
+    if len(expr) == 1:
+        kind, val = expr[0]
+        low = val.lower()
+        if kind in ("ident", "keyword"):
+            if low in ("true", "false"):
+                return "bool"
+            if low in ("none", "self", "class"):
+                return "object"
+            scope = env["scope"] or {}
+            for table in ("locals", "props"):
+                if low in scope.get(table, {}):
+                    return scope[table][low][2]
+            token, enum = _emit_enum(val, env)
+            if token is not None:
+                return (enum or "").lower() or "byte"
+            if _cast_kind(val, env) == "object":
+                return "class"
+            return ""
+        if kind == "number":
+            return "float" if isinstance(_number(val), float) else "int"
+        if kind == "quoted":
+            return "name"
+        if kind == "string":
+            return "string"
+        return ""
+    if _is_call(expr):
+        low = expr[0][1].lower()
+        if low in CAST_TYPES:
+            return low
+        if _cast_kind(expr[0][1], env) == "object":
+            return "class"
+        if low == "vect":
+            return "vector"
+        for cls in env["order"]:
+            hit = (env.get("rets") or {}).get((cls, low))
+            if hit:
+                return hit.lower()
+        return ""
+    at = _dot_at(expr)
+    if at is not None:
+        member = expr[at + 1:]
+        if len(member) == 1 and member[0][0] in ("ident", "keyword"):
+            hit = (env["scope"] or {}).get("props", {}).get(member[0][1].lower())
+            if hit is not None:
+                return hit[2]
+    return ""
+
+
+def _emit_cast(name, inner, env):
+    """`Type(expr)` -> `39 <slot> <expr>` when the type is a primitive, `2E <class ref> <expr>` when it is a class.
+
+    The slot is the image's own cast table read backwards: the row*named* `<From>To<To>` for the operand's declared
+    type and the cast's target (`StringToInt` is slot 74, `FloatToString` 85, `ObjectToString` 86), and only a row
+    the build installs is used -- a pair with no tokens in the artifact has no slot to write.
+    """
+    kind = _cast_kind(name, env)
+    low = name.lower()
+    if kind == "primitive":
+        src = _type_of(inner, env).lower()
+        slot = _cast_slots().get((src, low))
+        if slot is None:
+            raise Refused("a cast from %s to %s the image's cast table does not install"
+                          % (src or "an unknown type", low))
+        return bytes([0x39, slot]) + emit_expr(inner, src, env)[0], "primitive-cast"
+    if kind == "object":
+        ref = (env["scope"] or {}).get("classrefs", {}).get(low)
+        if ref is None:
+            raise Refused("a cast to a class this package neither exports nor imports")
+        return bytes([0x2E]) + write_index(ref) + emit_expr(inner, "", env)[0], "object-cast"
+    raise Refused("a call the class chain does not declare")
+
+
+def _prop_by_name(nm, env):
+    """A property record by name through the body's own class chain -- what a struct member and a bare read use."""
+    return (env["scope"] or {}).get("props", {}).get(nm)
+
+
+def _member_record(obj, nm, env):
+    """The property record of `nm` on the *receiver's* class, or None.
+
+    The receiver's declared class comes from `inventory/class_properties.csv` (`GUIComboBox.List` is a `GUIListBase`),
+    and the record is then the one that class or its nearest ancestor declares -- the same walk `_scope` does for the
+    body, one level out. A member the package declares on more than one class in the chain is refused rather than
+    guessed: a wrong index emits plausible bytes.
+    """
+    scope = env["scope"] or {}
+    if len(obj) != 1 or obj[0][0] not in ("ident", "keyword"):
+        return None
+    pack = (scope.get("pack") or "").lower()
+    classes = scope.get("objclass") or {}
+    target = ""
+    for anc in env.get("order") or []:
+        target = classes.get((anc, obj[0][1].lower()), "")
+        if target:
+            break
+    if not target:
+        return None
+    chain = scope.get("chain") or {}
+    props = scope.get("props_all") or {}
+    cands = props.get(nm) or []
+    for p, c in _ancestors(chain, pack, target):
+        hit = [x for x in cands if x[1] == c]
+        if hit:
+            return (INSTANCE_TOKEN, hit[0][0], PROP_TYPE.get(hit[0][2], ""))
+    return None
+
+
+def _emit_member(expr, rettype, env):
+    """The member node: a receiver chain is one of three different tokens, decided by the receiver's type.
+
+    | the source | the bytes | why |
+    |---|---|---|
+    | `Target.Health` (an object) | `19 <obj> 05 00 04 <member>` | `Context`: object, skip word, member's value size, member |
+    | `PathName.FullPath` (a struct) | `36 <member> <struct read>` | `StructMember` names the **field first** and the value after it |
+    | `Recipients.Length` (an array) | `37 <array read>` | the length operator, no property at all |
+
+    Only a property member is modelled. The size byte is the *member's* value size (see `PROP_SIZE`) and the skip word
+    is `CONTEXT_SKIP` for an `InstanceVariable` member; a *call* member's word is not that constant, so `A.F()` and
+    `A.F().B` are refused by name rather than written with a number the corpus does not support.
+    """
+    at = _dot_at(expr)
+    if at is None:
+        raise Refused("a compound expression, which needs the statement walk")
+    obj, member = expr[:at], expr[at + 1:]
+    if len(member) != 1 or member[0][0] not in ("ident", "keyword"):
+        raise Refused("a receiver chain whose member is not one name")
+    nm = member[0][1].lower()
+    objtype = _type_of(obj, env).lower()
+    if objtype in ("array", "string"):
+        if nm != "length":
+            raise Refused("a %s member that is not its length" % objtype)
+        return _converted(bytes([0x37]) + emit_expr(obj, "", env)[0], "int", rettype), "length"
+    hit = _member_record(obj, nm, env) if objtype != "struct" else _prop_by_name(nm, env)
+    if hit is None:
+        # No fallback to the body's own chain: `Index` is declared on half the GUI classes, and resolving it that way
+        # wrote export 8263 for a property whose record is 13. Two bodies also resolve the name to a same-named
+        # export of *this* package while the package names an import (`InitFor` writes -20), which is wrong bytes
+        # that look right -- the receiver's class is the only honest join.
+        raise Refused("a member that is not a property of the receiver's class")
+    token, index, ptype = hit
+    if objtype == "struct":
+        if ptype not in PROP_SIZE:
+            raise Refused("a struct member of type %s, whose value size this walk does not carry"
+                          % (ptype or "typeless"))
+        return (_converted(bytes([0x36]) + write_index(index) + emit_expr(obj, "", env)[0], ptype, rettype),
+                "struct-member")
+    if token != INSTANCE_TOKEN:
+        raise Refused("a member reached through a local")
+    if ptype not in PROP_SIZE:
+        raise Refused("a %s member, whose value size this walk does not carry" % (ptype or "typeless"))
+    if ptype == "bool":
+        # A bool member's own node writes 6 in the corpus (`2d 01 <idx>` as the member) while the one LetBool target
+        # the emitter has seen writes 5, so the word is not settled for this shape.
+        raise Refused("a bool member of a receiver chain")
+    read = bytes([INSTANCE_TOKEN]) + write_index(index)
+    node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", CONTEXT_SKIP)
+            + bytes([PROP_SIZE[ptype]]) + read)
+    # the cast sits *outside* the node: `return w.Default.AutoSwitchPriority;` in a float function is
+    # `04 39 3f 19 ...` -- IntToFloat, then the Context
+    return _converted(node, ptype, rettype), "context"
+
+
 def emit_expr(expr, rettype, env):
     """The bytes of one expression, or Refused with the reason."""
     names = env["names"]
@@ -495,10 +739,18 @@ def emit_expr(expr, rettype, env):
     if len(expr) != 1:
         if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
+        if _is_call(expr) and _cast_kind(expr[0][1], env):
+            return _emit_cast(expr[0][1], expr[2:-1], env)
         if _is_call(expr):
             return emit_call(expr, env), "call-value"
+        if _dot_at(expr) is not None:
+            return _emit_member(expr, rettype, env)
         raise Refused("a compound expression, which needs the statement walk")
     kind, val = expr[0]
+    if kind in ("ident", "keyword") and val.lower() == "class":
+        # `class` (bare) compiles to `Self`: `GetItemName(string(class))` and `GetItemName(string(self))` are the
+        # same seven bytes (`1b 31 39 56 17 16`), so the token is Self and the conversion names the object.
+        return bytes([0x17]), "self-class"
     if kind in ("ident", "keyword") and val.lower() not in ("true", "false", "none", "self"):
         read = _emit_var(val, env, rettype)
         if read is not None:
@@ -761,8 +1013,9 @@ def _ancestors(chain, pack, cls):
 
 
 def _class_tables(pkg, kinds, names):
-    """The package's own records as the compiler addressed them: property and function exports, and the imports."""
-    props, funcs, imports = {}, {}, {}
+    """The package's own records as the compiler addressed them: property and function exports, the imports, and
+    the classes an object cast can name."""
+    props, funcs, imports, classes = {}, {}, {}, {}
     for i, e in enumerate(pkg.exports):
         kind = kinds.get(i + 1, "")
         nm = names.get(i + 1, "").lower()
@@ -771,10 +1024,15 @@ def _class_tables(pkg, kinds, names):
             props.setdefault(nm, []).append((i + 1, owner, kind))
         elif kind == "Function":
             funcs.setdefault(nm, []).append((i + 1, owner))
+        elif kind == "Class":
+            classes.setdefault(nm, []).append((i + 1, "Class"))
     for j, im in enumerate(pkg.imports):
         # an import's `class` field is a name index, not an export index, so `class_name_of` cannot read it
-        imports.setdefault(str(pkg.name(im["name"])).lower(), []).append((-(j + 1), pkg.name(im["class"])))
-    return props, funcs, imports
+        iname, ikind = str(pkg.name(im["name"])).lower(), pkg.name(im["class"])
+        imports.setdefault(iname, []).append((-(j + 1), ikind))
+        if ikind == "Class":
+            classes.setdefault(iname, []).append((-(j + 1), "Class"))
+    return props, funcs, imports, classes
 
 
 def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, table_index, final_of=None):
@@ -784,8 +1042,22 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     A callee is resolved by walking the ancestor chain to the class that declares it -- the native table says the
     token (0 means "not a native opcode, call it by name"), and its `final` flag picks the call token.
     """
-    props, funcs, imports = tables
-    scope = {"props": {}, "locals": {}, "funcs": {}}
+    props, funcs, imports, classes = tables
+    scope = {"props": {}, "locals": {}, "funcs": {}, "classrefs": {}, "props_all": props, "chain": chain,
+             "pack": pack,
+             # the declared class of every object property of this package: what a receiver chain's member is
+             # resolved through (`GUIComboBox.List` is a `GUIListBase`, so `List.Index` is `GUIListBase.Index`)
+             "objclass": {(c, pr): t for (pk, c, pr), t in _obj_classes().items() if pk == pack.lower()}}
+    # The class an object cast names is a compact *object reference*: `AIController(Controller)` writes `2e 59 01`,
+    # and 89 is that class's export in Engine.u; `Material(...)` in StargateGame writes `2e c8 01`, which is import
+    # 72 (-72) -- the class is named the way the compiler names any object, not by its name-table index.
+    for nm, cands in classes.items():
+        own = [idx for idx, _k in cands if idx > 0]
+        imp = [idx for idx, _k in cands if idx < 0]
+        if own:
+            scope["classrefs"][nm] = own[0]
+        elif len(imp) == 1:
+            scope["classrefs"][nm] = imp[0]
     for i, e in enumerate(pkg.exports):
         if e["outer"] == func_index and kinds.get(i + 1) in PROPERTY_CLASSES:
             scope["locals"][names[i + 1].lower()] = (LOCAL_TOKEN, i + 1, PROP_TYPE.get(kinds[i + 1], ""))
@@ -892,9 +1164,11 @@ def _dis():
 
 def _source_index(tree):
     """`{(class, state, function): (rettype, body, text, native, final)}` from the extracted corpus, plus every
-    declaration's parameter list and every enum constant -- the two joins an argument's token needs."""
+    declaration's parameter list, every enum constant and every callee's return type -- the three joins a cast's
+    slot and an argument's token need."""
     index = {}
     params = {}
+    rets = {}
     enums, enum_names = {}, set()
     files = 0
     for dirpath, _dirs, names in os.walk(tree):
@@ -909,6 +1183,10 @@ def _source_index(tree):
             for state, fn, rettype, body, is_native, is_final, decl_params in functions_of(text):
                 if decl_params:
                     params.setdefault((cls, fn.lower()), decl_params)
+                if rettype and not state:
+                    # a cast's slot is chosen by the operand's type, and an operand that is a call is typed by the
+                    # callee's declared return type: `string(GetValue())` is FloatToString, not a guess
+                    rets.setdefault((cls, fn.lower()), rettype)
                 keys = [(cls, state.lower(), fn.lower())]
                 if not state:
                     # The class-level key is filled by class-level declarations only. A state function of the same
@@ -928,14 +1206,14 @@ def _source_index(tree):
                     enum_names.add(enum.lower())
                     for cname, ordinal in consts:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
-    return index, files, params, enums, enum_names
+    return index, files, params, enums, enum_names, rets
 
 
 def score(tree, dump, out_dir, residue_dir=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
-    index, files, params, enums, enum_names = _source_index(tree)
+    index, files, params, enums, enum_names, rets = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -1002,7 +1280,8 @@ def score(tree, dump, out_dir, residue_dir=None):
             rettype, src_body, _text, is_native, _is_final = got
             scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
-                   "enum_names": enum_names, "class_names": class_names, "order": scope["order"]}
+                   "enum_names": enum_names, "class_names": class_names, "order": scope["order"],
+                   "rets": rets}
             try:
                 ours, model, shape = emit_body(src_body, rettype, env, is_native)
             except Refused as exc:
@@ -1126,6 +1405,13 @@ function CallBadNative() { TinyToken(); }
 function name EmptyName() { return ''; }
 function CallNested() { Mix3(false, vect(0, 0, 0)); }
 function CallByteLit() { MixByte(255); }
+function HealthOf() { return Target.Health; }
+function Probe AsProbe() { return Probe(Target); }
+function string AsText() { return string(self); }
+function string AsClassText() { return string(class); }
+function int AsInt() { return int(bDead); }
+function bool CastNoSlot() { return bool(vect(0,0,0)); }
+function CallCast() { Foo(int(bDead)); }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -1147,12 +1433,21 @@ state OpenTimedMover
 SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool")},
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte")},
+         "classrefs": {"probe": 4, "actor": -77},
          "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39),
                    "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
                    "mix": ("virtual", 46), "bump": ("virtual", 47), "gotostate": ("native", 113),
                    "tinytoken": ("native", 2), "onchange": ("virtual", 26),
                    "mix3": ("virtual", 48), "mixbyte": ("virtual", 49)},
          "delegates": {"onchange": 51}}
+
+# The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
+SCOPE["objclass"] = {("probe", "target"): "probe"}
+
+# The raw record table the receiver walk reads: `{name: [(index, owner, kind)]}`.
+SCOPE["props_all"] = {nm: [(v[1], "probe", "ObjectProperty" if v[2] == "object" else
+                            "BoolProperty" if v[2] == "bool" else "IntProperty")]
+                      for nm, v in SCOPE["props"].items()}
 
 # The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
 # The third field is `optional`: `Mix(false)` legitimately stops short of `Time`, `Foo()` does not.
@@ -1165,7 +1460,7 @@ PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "
           ("probe", "mixbyte"): [("byte", "Mode", False)]}
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
 ENV = {"names": {}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS, "enum_names": {"eprobe"},
-       "class_names": {"probe"}, "order": ["probe"]}
+       "class_names": {"probe"}, "order": ["probe"], "rets": {("probe", "bump"): "int"}}
 
 WANT = {
     "yes": "0427040b47",
@@ -1209,10 +1504,17 @@ WANT = {
     "emptyname": "042100040b47",             # return ''; -- the name table's zero entry
     "callnested": "1b30282300000000000000000000000016" "040b47",   # Mix3(false, vect(0,0,0)): three arguments at
     "callbytelit": "1b31393d2cff16040b47",   # MixByte(255): IntToByte, then the int constant -- not ByteConst
+    "healthof": "0419016309050004016e04040b47",   # return Target.Health; -> Context: 19, obj, 05 00, size 4, member
+    "asprobe": "042e04016309040b47",              # return Probe(Target); -- DynamicCast names the class's export (4)
+    "astext": "04395617040b47",                   # return string(self); -- ObjectToString
+    "asclasstext": "04395617040b47",              # return string(class); -- `class` is Self: the same seven bytes
+    "asint": "0439412d012d040b47",                # return int(bDead); -- BoolToInt
+    "callcast": "1b2939412d012d16040b47",       # Foo(int(bDead)): the cast is the argument -- BoolToInt + the read
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
-REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub", "callbadnative", "callmissing")
+REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub", "callbadnative", "callmissing",
+          "castnoslot")
 
 
 def check(args):
@@ -1290,7 +1592,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]

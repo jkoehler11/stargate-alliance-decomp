@@ -239,6 +239,21 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the cast family and the member node: **2,856 modelled / 2,855 byte-identical / 1 differs** (from
+  2,819 / 2,818 / 1). (1) `AIController(Controller)` is `DynamicCast` naming the class as a **compact object
+  reference** -- its export in this package (89) or a **negative import** (-72 for `Material`) -- not a name index.
+  (2) an explicit `int(x)`/`string(x)`/`bool(x)`/`rotator(x)` is `PrimitiveCast` + the slot of its (from, to) pair
+  from `inventory/cast_operands.csv`, and a pair with 0 tokens is refused. (3) bare `class` compiles to `Self`
+  (`GetItemName(string(class))` is byte-identical to `(string(self))`). (4) a member node is three tokens by the
+  receiver's type: `Context` (`19 obj 05 00 <member size> member`) for an object, `StructMember` (`36 member obj`,
+  field first) for a struct, and `37 obj` for `.Length`. (5) the member resolves through the **receiver's** class
+  (`inventory/class_properties.csv`), not the body's -- `List.Index` is `GUIListBase.Index`, and the fallback was
+  removed because two bodies name an import where the body's chain names an own export. (6) the `Context` skip word
+  is 5 for every `InstanceVariable` member (17,710 of 17,710) and is not a byte length, so a call member is refused.
+  (7) `PlayerInput.ChangeSnapView`'s six bytes are `Context(Outer).bSnapToLevel` -- export 2604 is declared on
+  `PlayerController`, which is not on `PlayerInput`'s chain, so the text spells a property the compiled code cannot
+  resolve bare. 22 of the 51 cast/`assert` sites are emitted and the 29 that remain are named by family in the doc.
+  Doc: `docs/COMPILER_FRONTEND.md` gains the section; the artifact and `--check`'s 47 synthetic bodies move with it.
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`
