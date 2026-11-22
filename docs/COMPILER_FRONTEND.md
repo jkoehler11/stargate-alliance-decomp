@@ -183,12 +183,57 @@ the package records `EqualEqual_MapItemMapItem`, a call the text cannot spell �
 scope, and one is the placeholder row for a file that does not parse. That is the shape the statement-bodied parser will
 have to model: an operator is a call with no name in the text.
 
-## Stage 3 — the emitter
+## Stage 3 — the emitter, first family: one constant return (measured 2026-11-22)
 
-Bytecode out, compared against the shipped function bodies at the tiers `AGENTS.md` defines: the oracle is
-`inventory/matching_baseline.csv`, and `tools/uscript-dis.py --compare` already scores two packages against each other.
-The first target is a class whose source is short and whose body is already disassembled, so a mismatch has one plausible
-cause rather than six.
+Bytecode out, compared against the shipped function bodies at the tiers `AGENTS.md` defines. `tools/uscript-emit.py`
+emits a body from its parsed source and compares the bytes with that function's own script in the package, so this is
+the first stage with no recall knob: a body either equals the shipped bytes or it does not, and there is no percentage
+to hide a rename behind.
+
+**1,724 bodies are modelled and 1,724 are byte-identical: 0 differ.** The family is the smallest one that is still
+real — a body that is one constant return (`return true;`, `return -1;`, `return "";`, `return None;`, `return self;`,
+`return vect(0,0,0);`), `return;`, an empty body, or a declaration whose text carries no body at all (**801** of the
+1,724). Of the 11,687 shipped bodies that walk cleanly, **11,337 join to a declaration** in the extracted text (the
+join's own residue is 80 class-scope names and 270 state names the text does not carry) and **9,613 are refused by
+name**: 3,919 with a nested block, 1,429 with two statements, 1,412 whose one statement is not a return, 758 with
+three, 445 whose expression is compound. That residue is the statement walk's work, and it is named rather than left
+as a percentage.
+
+**All 11,687 bodies end on the same three bytes, `04 0b 47`** (Return Nothing; EndOfScript), and **1,469 are those
+three bytes alone**: 801 declarations with no body, 352 whose source body is comments only, 263 state functions whose
+text names another state, and **53 whose text declares code the package did not compile** — `Mover.EnableTrigger` is
+one statement in the source and the trailer in the package. The stage-2 counts could not see that population, because
+both sides agreed on the count.
+
+Six rules had to be measured before the comparison was exact, and every one came from a body that differed:
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `return 0;` in an `int` function | `04 25` | `IntZero` is a token of its own |
+| `return 1;` / `return 2;` | `04 26` / `04 2c 02` | `IntOne`, then `IntConstByte` up to 255 |
+| `return -1;` / `return 666;` | `04 1d ff ff ff ff` / `04 1d 9a 02 00 00` | everything else is `IntConst` + int32 |
+| `return 0;` in a `float` function | `04 1e 00 00 00 00` | the **declared return type** picks the token, not the value: `return 1` in a float function is `1e 00 00 80 3f` |
+| `return 0;` in a `byte` function | `04 24 00` | `ByteConst` — and an enum constant is the same token with its ordinal |
+| `return "";` / `return 'weapon_bone';` | `04 1f 00` / `04 21 4f 20` | a string is NUL-terminated; a `name` literal is a **name-table index** in the archive's compact form (2,063 → `4f 20`), so the emitter has to write that index and read the package's own name table |
+
+`return None;` is `04 2a`, `return self;` is `04 17`, and `return vect(0,0,0);` is `04 23` + twelve zero bytes.
+
+Two refusals came out of the first run's residue, and both are facts about the build rather than about the parser:
+
+* **A `native` declaration with no body still ships a script**: it relays its parameters — `Object.Clamp` is three
+  `29 <index>` `NativeParm` tokens and then the trailer, one per argument. Emitting the plain stub would be wrong, so
+  the emitter refuses a native declaration, and the 12 bodies of that shape stay in the residue by name.
+* **A class whose extracted text carries two declarations of one name** (an `#if` branch, or a stub beside its body)
+  compiled the longer one: preferring the declaration that has a body turned four `Pawn`/`UnrealPawn` bodies from
+  differ to identical. That is the measurement, not a rule assumed in advance.
+
+`inventory/uscript_emit.csv` is one row per modelled body — what was emitted, what the package holds, and the verdict
+— with a census row that `--check` re-derives from the rows. The gate is dump-free: 19 synthetic bodies, one per
+shape plus the two refusals, and the compact-index writer is round-tripped against `uscript-dis.read_index` for the
+positive and negative forms, because writing that index wrong would score as a whole family of mismatches.
+
+The next stage is the statement walk: a body of one assignment or one call, with the property and local indices the
+emitter does not read yet.
 
 ## What this project does not need
 
