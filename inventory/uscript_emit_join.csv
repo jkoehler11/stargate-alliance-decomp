@@ -1,0 +1,11 @@
+package,class,state,function,cause
+(census),,,,"11687 bodies: 11678 joined, 9 not (the text spells the name, but not as a declaration 8; the text does not carry the name 1)"
+Engine.u,Mover,TriggerToggle,Reset,"the text spells the name, but not as a declaration"
+Engine.u,Mover,TriggerToggle,SelfTriggered,"the text spells the name, but not as a declaration"
+Engine.u,Mover,TriggerToggle,Trigger,"the text spells the name, but not as a declaration"
+StargateContent.u,BotScarab,,DoBury,the text does not carry the name
+StargateContent.u,TeamVoicePack,,GetAckString,"the text spells the name, but not as a declaration"
+StargateContent.u,TeamVoicePack,,GetFFireString,"the text spells the name, but not as a declaration"
+StargateContent.u,TeamVoicePack,,GetOtherString,"the text spells the name, but not as a declaration"
+StargateContent.u,TeamVoicePack,,GetTauntString,"the text spells the name, but not as a declaration"
+StargateContent.u,TeamVoicePack,,PlayerSpeech,"the text spells the name, but not as a declaration"

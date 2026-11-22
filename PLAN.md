@@ -221,6 +221,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       (a moved character, so every file keeps its size), and re-reading the result with the census returns **2,063
       prefix / 0 postfix** with a second pass moving 0 -- the reconstruction is then valid UnrealScript as far as this
       operator goes, which is what PLAN 6.1's compile loop was missing.
+- **Stage 3 reaches the statement walk: the join closes to 9 bodies and two one-statement families land.** The
+  emitter now reproduces **2,200 bodies, 2,196 byte-identical**; the four that differ are the population stage 3
+  already named (the text declares a call the package did not compile). Three items, one thread: (1) the join's
+  residue of 350 was three declaration forms the walk did not read -- `state() LoopMove` (194 of the 270 state
+  names), the `ignores` clause (one bodyless Function per name), and `delegate` (one property *and* one Function)
+  -- plus a brace counter that, having skipped a body whole, read every later class-scope function as nested
+  (Mover's four: `SetStoppedPosition`, `MoverLooped`, `UpdatePrecacheStaticMeshes`, `DisplayDebug`); the depth is
+  now precomputed per token. **11,678 of 11,687 join, and the 9 that do not are named with a cause in
+  `inventory/uscript_emit_join.csv`.** (2) `X = value;` is `Let` + the property's own record index -- an export
+  index when the declaring class is in this package, a **negative import** when it is not
+  (`InteractionHands.EndState` writes -508) -- and `bFlag = true` is `LetBool` + `BoolVariable` + the same index:
+  the artifact's shape column carries 76 Let/LetBool bodies and 424 bool assignments, all identical. (3) a
+  one-call body takes its token from the declaration: `HighNative` for a native token, `FinalFunction` for a
+  `final` callee (two of them *scripted* finals no native table names), else `VirtualFunction` by name index;
+  114 bodies identical. That is the property/local index the last note named as the next instrument, measured.
+  Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
+  with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
+  bodies).
 - [~] 3.6 Set up the compile loop: matching `ucc` (UT2004 / UE2 Runtime under Wine) with the engine's
       flags, so recompiled script can be compared byte-for-byte.
       **Input problem solved, tool still missing**: the packages ship their own source, and `make extract-script`

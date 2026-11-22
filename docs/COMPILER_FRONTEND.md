@@ -238,8 +238,67 @@ Two refusals came out of the first run's residue, and both are facts about the b
 shape plus the two refusals, and the compact-index writer is round-tripped against `uscript-dis.read_index` for the
 positive and negative forms, because writing that index wrong would score as a whole family of mismatches.
 
-The next stage is the statement walk: a body of one assignment or one call, with the property and local indices the
-emitter does not read yet.
+## Stage 3, continued -- the join closes and two statement families land (measured 2026-11-22)
+
+**2,200 bodies are modelled and 2,196 are byte-identical.** The four that differ are the population stage 3's first
+run already named: the text declares a call the package did not compile (`Weapon.ForceReload` calls
+`ServerForceReload()`, and the shipped script for that body is the bare trailer).
+
+### The join's residue was 350, and it was three declaration forms the walk did not read
+
+Stage 3's first run left 350 shipped bodies with no declaration to join (80 class-scope + 270 state names). None of
+them was a missing source file -- every one was a form the walk did not recognise:
+
+| the form | what it cost | the rule |
+|---|---|---|
+| `state() LoopMove` -- a state whose label is empty | 194 of the 270 state names, all of them Mover's, Trigger's and KHinge's, because the walk took the `(` for the state's name | step over an empty `()` group and take the name after it (the same form stage 2a measured) |
+| `ignores SeePlayer, HearNoise, KilledBy;` | the rest: the compiler emits one bodyless `Function` per ignored name, in the scope that writes the clause | read the clause as a declaration, one stub per name |
+| `delegate bool OnClick(Actor Sender);` | the 80 class-scope names, nearly all GUI's `OnDraw`/`OnPress` family: a delegate is one property **and** one Function named after it | read `delegate` as a declaration with no body |
+
+**11,678 of 11,687 walked bodies now join; 9 do not**, and each is named in `inventory/uscript_emit_join.csv`
+with its cause rather than left as a rate: five `TeamVoicePack`/`Mover` names the text spells but never declares in
+that scope, three `Mover.TriggerToggle` names declared only in another state, and `BotScarab.DoBury`, in the one
+class whose shipped `ScriptText` is a fragment with no header.
+
+**The walk's brace depth was a counter that skipped bodies, and it drifted.** A declaration's body was consumed whole
+(`i = end + 1`), so the body's braces were never counted; one state later the counter read one level high and every
+class-scope function after it was read as *nested* -- `Mover`'s `SetStoppedPosition`, `MoverLooped`,
+`UpdatePrecacheStaticMeshes` and `DisplayDebug` were simply absent from a file whose braces balance. The depth is now
+precomputed per token, which cannot drift.
+
+### The property index is the record's own index, so nothing had to be rebuilt
+
+`X = value;` compiles to `Let` (`0x0f`) + the *property token* + the record's index + the value, and the index is the
+package's own: an export index when the declaring class is in this package (`PlayerProfile.DirtyMask` is export
+**1096**), a **negative import index** when the property comes from another package (`InteractionHands.EndState`
+writes `fc 07`, -508). A local is the same shape with `LocalVariable` (`0x00`) and the export whose outer is the
+function. `bFlag = true;` is `LetBool` (`0x14`), then `BoolVariable` (`0x2d`), then the same property token and index.
+
+The resolver therefore reads names and owners out of the export table and writes the index it finds -- own class,
+then the nearest ancestor in the same package, then a property import. That is 76 bodies: 424 bool assignments and
+their int/float/byte/object/string siblings, all byte-identical.
+
+### A call's token is decided by its declaration, not by the call site
+
+| the callee | the bytes | why |
+|---|---|---|
+| a native with a token (`Destroy` 279) | `61 17 16` | `HighNative`: opcode `0x60 + token//256`, operand `token % 256`
+| a `final` function (`myOnDeactivate`) | `1c <index> 16` | `FinalFunction` names the Function record itself
+| anything else by name (`Died`) | `1b <name index> 16` | `VirtualFunction` names it through the name table
+| native with token **0** and not final (`DetachActor`) | the `VirtualFunction` form | there is no opcode to emit, so the call goes by name
+
+The native token and the `Final` flag come from `inventory/natives.csv` (read only); `final` on a *scripted* callee
+comes from its own declaration in the text. Two of those four rows cost a run each: `DestroyPlayerStatCache` and
+`myOnDeactivate` are scripted and `final`, which no native table can say. 114 one-call bodies are modelled, all
+byte-identical.
+
+## What the statement walk has left
+
+Its own residue, named by count and not by rate: 405 bodies whose single call carries **arguments** (the argument
+list is the next family -- the call token, then each argument's expression), 283 whose call has a **receiver**
+(`Pawn.SwitchWeapon(F)`, a `Context` chain), 58 whose assignment target is a **receiver chain or an index**
+(`H.LastPickupTime`, `Skins[0]`), 32 bool assignments whose value is not a literal, and 3,934 + 1,434 + 764 bodies
+with **control flow** (a nested block, or two or three statements).
 
 ## What this project does not need
 
