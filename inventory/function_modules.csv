@@ -1571,7 +1571,7 @@ address,name,size,module,attributed_by,run
 0x00059650,FUN_00059650,211,(unnamed),unattributed,844
 0x000597f0,FUN_000597f0,367,(unnamed),unattributed,845
 0x000599e0,FUN_000599e0,1591,(unnamed),unattributed,846
-0x0005a020,FUN_0005a020,2385,(unnamed),unattributed,847
+0x0005a020,FUN_0005a020,2411,(unnamed),unattributed,847
 0x0005a990,Core_UnMisc,3190,Core,name prefix,124
 0x0005b610,FUN_0005b610,67,(unnamed),unattributed,848
 0x0005b660,FUN_0005b660,202,(unnamed),unattributed,849
@@ -4482,7 +4482,7 @@ address,name,size,module,attributed_by,run
 0x00132a80,GameEngine_vt39,141,Engine,class package,437
 0x00132b10,FUN_00132b10,852,(unnamed),unattributed,2512
 0x00132e70,FUN_00132e70,979,(unnamed),unattributed,2513
-0x00133250,FUN_00133250,4429,(unnamed),unattributed,2514
+0x00133250,FUN_00133250,4457,(unnamed),unattributed,2514
 0x001343c0,FUN_001343c0,518,(unnamed),unattributed,2515
 0x001345d0,Engine_UnGame,188,Engine,name prefix,438
 0x00134690,FUN_00134690,311,(unnamed),unattributed,2516
@@ -5324,7 +5324,7 @@ address,name,size,module,attributed_by,run
 0x0017e350,FUN_0017e350,343,(unnamed),unattributed,3000
 0x0017e4b0,FUN_0017e4b0,50,(unnamed),unattributed,3001
 0x0017e4f0,Ladder_vt123,58,Engine,class package,614
-0x0017e530,FUN_0017e530,2579,(unnamed),unattributed,3002
+0x0017e530,FUN_0017e530,2586,(unnamed),unattributed,3002
 0x0017ef50,Door_vt126,338,Engine,class package,615
 0x0017f0b0,FUN_0017f0b0,349,(unnamed),unattributed,3003
 0x0017f2b0,LiftCenter_vt129,399,Engine,class package,616

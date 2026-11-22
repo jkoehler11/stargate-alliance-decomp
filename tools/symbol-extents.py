@@ -206,7 +206,10 @@ def decode(blob, base):
 
     A row is decoded from its own first byte, never from a linear sweep of the section: objdump wraps an
     instruction longer than seven bytes onto a second line, so a sweep's byte count is short and every
-    later boundary drifts. `.byte` lines are objdump's refusals and are dropped, not counted as one byte.
+    later boundary drifts. `--insn-width=16` prints the whole byte group on one line, so the count is the
+    instruction's own length; without it every instruction of eight bytes or more (`mov [esp+N],imm32`,
+    `movaps [reg+disp32],xmm`) reports seven, the four bytes behind it decode as new instructions, and the
+    read desyncs. `.byte` lines are objdump's refusals and are dropped, not counted as one byte.
     """
     if not blob:
         return []
@@ -216,7 +219,7 @@ def decode(blob, base):
         path = fh.name
     try:
         listing = subprocess.run([exe, "-D", "-b", "binary", "-m", "i386", "-M", "intel",
-                                  "--adjust-vma=0x%x" % base, path],
+                                  "--insn-width=16", "--adjust-vma=0x%x" % base, path],
                                  capture_output=True, text=True, check=False).stdout
     finally:
         os.unlink(path)
