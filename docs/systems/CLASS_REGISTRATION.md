@@ -3864,3 +3864,121 @@ committed CSV. The tool reads no image at all: both sides of the join are commit
 
 **Not in this bundle.** Nothing of this edge is left; the class thread's residues are unchanged -- the 427
 silent bodies, the 4 linker folds, and the interface naming question the section above leaves to the library.
+
+## The 427 silent bodies read at their own bytes: a row's tail, a copied header helper, and nothing at all (2026-11-21)
+
+U40's residue ended the interface round on one count that five bundles had carried without moving: **427 bodies,
+52,485 bytes, with nothing in `.text` spelling their address** as an operand or a table word, and no call, jump,
+pushed immediate or outside pointer naming them either. Every earlier round answered it with another *reference*
+channel -- the assert path, the literal, the caller, the slot -- and every one came back empty, because a body
+nothing references is not missing a reference: it is a body nothing references.
+
+So this read stops looking for one and reads what the body says about itself: the padding in front of it and the
+body that ends at its first byte, whether the same bytes exist at another address, the literal it pushes, and the
+instructions it is made of. `tools/silent-bodies.py` writes `inventory/silent_bodies.csv`, one row per body, with
+a `verdict` that is the answer rather than a name -- and it adds nothing to the symbol map, because a body nothing
+references has no owner to take a name from.
+
+<!-- generated:silent-bodies -->
+**427 bodies, 52485 bytes, and three answers rather than one** -- the residue `tools/gap-body-families.py` calls silent, read at its own bytes (`inventory/silent_bodies.csv`).
+
+**16 are the continuation of the named row above them**: no padding between the two and the row's last instruction is not a terminator, so the extents are one function's code and the map's size column stops short (6394 bytes of it). **74 are a second address of a body the artifacts already hold** -- 20 byte-identical groups of at least 8 bytes, from a 10-address body down to pairs -- and **337 (41456 bytes) are unique**: no twin, no padding-free predecessor, and nothing anywhere in the image that spells their address.
+
+**The population is unreachable by any absolute reference, and the control says the channel works**: the address of **0 of 427** of the population occurs somewhere outside `.text`, against **5125 of 16935** map rows (30.3%) -- and the same read finds a resolving section-relative table entry for **21** of the population against **497 of 16935** map rows (2.9%), of which **0** sit in a run of three consecutive entries resolving into one function. So a relative `switch` table is not the missing channel either: one resolving dword among unrelated bytes is the base rate, not a table.
+
+| the continuation | bytes | the row whose extent stops before it | the row's last instruction |
+|---|---:|---|---|
+| `0x002a003e` | 4501 | `0x002a002a` `FUN_002a002a` | `movss  DWORD PTR [esp+0x14],xmm0` |
+| `0x003878ff` | 599 | `0x003873a0` `FUN_003873a0` | `add    esp,0x14` |
+| `0x00378f8e` | 539 | `0x00378f00` `FUN_00378f00` | `jge    0x378f72` |
+| `0x003820eb` | 263 | `0x00381f90` `FUN_00381f90` | `pop    ebx` |
+| `0x0038c996` | 229 | `0x0038c4f0` `FUN_0038c4f0` | `add    esp,0x10` |
+| `0x000a3677` | 73 | `0x000a2f00` `Engine_KPhysic` | `je     0xa3686` |
+| `0x000be75a` | 70 | `0x000bdf70` `FUN_000bdf70` | `mov    ecx,DWORD PTR [esp+0x10]` |
+| `0x0015260e` | 43 | `0x001520d0` `FUN_001520d0` | `add    eax,ecx` |
+| `0x002d00ab` | 17 | `0x002cfc20` `FUN_002cfc20` | `pop    ebp` |
+| `0x002de02b` | 13 | `0x002ddb50` `FUN_002ddb50` | `pop    ebp` |
+| `0x001559bd` | 9 | `0x00155880` `FUN_00155880` | `mov    ds:0x5fbec0,eax` |
+| `0x0026b242` | 9 | `0x0026afe0` `FUN_0026afe0` | `pop    ebp` |
+| `0x003cf84d` | 9 | `0x003cf6f0` `FUN_003cf6f0` | `jne    0x3cf7f0` |
+| `0x003c3852` | 8 | `0x003c3760` `FUN_003c3760` | `add    esp,0x10` |
+| `0x000991d2` | 6 | `0x00098d70` `FUN_00098d70` | `pop    ebp` |
+| `0x003c01bd` | 6 | `0x003c00f0` `FUN_003c00f0` | `add    esp,0x10` |
+
+**9 of the 16 stop the row on an epilogue sequence** (`pop ebp`, `pop ebx`, `add esp,N`) and the continuation opens on the `ret` that closes it, so the row is short by a terminator and the head rule read the leftover as a body. The other 7 stop mid-expression, and the largest of those is `0x002a003e`, **4501 bytes**, continuing a 20-byte `FUN_002a002a` row.
+
+| bytes | what the body does | bodies here | addresses each | one of them |
+|---:|---|---:|---:|---|
+| 44 | three-float dot product | 9 | 10 | `0x0008d980` |
+| 43 | three-float subtract | 9 | 9 | `0x0008d8c0` |
+| 41 | three-float scale in place | 8 | 8 | `0x0008d9e0` |
+| 148 | three-float normalize (sqrt + divide) | 4 | 7 | `0x0009bb50` |
+| 37 | three-float dot product | 7 | 7 | `0x0008d8f0` |
+| 83 | three-float cross product | 6 | 6 | `0x0008d920` |
+| 15 | zero-init (3 fields) | 6 | 6 | `0x00059100` |
+| 55 | three-float add scaled | 4 | 4 | `0x0008da10` |
+| 43 | not one of the shapes read | 4 | 4 | `0x00094660` |
+| 140 | three-float add scaled | 3 | 3 | `0x00098b80` |
+| 23 | virtual-slot wrapper | 1 | 3 | `0x00037060` |
+| 334 | not one of the shapes read | 2 | 2 | `0x000947f0` |
+| 148 | three-float cross product | 2 | 2 | `0x00091ea0` |
+| 103 | struct copy (16 dwords) | 1 | 2 | `0x000adf50` |
+| 44 | not one of the shapes read | 2 | 2 | `0x000947c0` |
+| 32 | zero-init (9 fields) | 1 | 2 | `0x000b71b0` |
+| 18 | not one of the shapes read | 1 | 2 | `0x000391e0` |
+| 15 | virtual-slot wrapper | 1 | 2 | `0x0003df80` |
+| 14 | zero-init (3 fields) | 1 | 2 | `0x001d3770` |
+| 8 | not one of the shapes read | 2 | 2 | `0x000c4910` |
+
+**The copied shapes are one vector-math header**: three-float dot product 16, three-float subtract 9, three-float scale in place 8, three-float cross product 8, zero-init (3 fields) 7, three-float add scaled 7, three-float normalize (sqrt + divide) 4, virtual-slot wrapper 2, struct copy (16 dwords) 1, zero-init (9 fields) 1 -- the float3 operators a `static` inline in a header compiles once per object file and inlines at every call site, which is exactly why the out-of-line copies are the bodies nothing reaches.
+
+**The 337 unique bodies are helper-shaped, not class-shaped**: `arg-load` 124, `push-reg` 84, `getter-disp8` 20, `sse-load` 20, `global-load-eax` 15, `self-return` 12, `global-load-ecx` 9, `alloc` 9, and 18 of the 427 population are 13 bytes or shorter. **176 call at least one body the map names** and 251 call none, so the larger part of the population reaches the engine's own functions while no table reaches it. **32 push a printable literal**, and it is an assert message rather than a symbol -- `[LIPSinc]: LIPSincShutdownEditor`, `Unpopulated box!`, `FlyingPathNode:` -- so the literal channel places the subsystem and never the name, which is why nothing here is added to the symbol map.
+
+**What this does not do.** It writes no name: a body nothing references has no owner to take one from, and the copies are `FUN_` on both sides. It does not correct the **16** short rows either -- that moves **6394** bytes of extents and every artifact cut from them, so it is its own bundle -- and the interface-held bodies stay a separate count in `docs/UNKNOWNS.md` U40.
+<!-- /generated:silent-bodies -->
+
+**The reach negative is the one that needed a control, and it has two.** The address of **none** of the 427 occurs
+anywhere in the image outside `.text`, while 5,125 of the map's 16,935 rows do (30.3%) -- so the scanner is not
+blind, the population is a property of these bodies. The second control reads the channel that would survive that
+test: a `switch` table holds offsets from its own base and never an absolute address, so a body whose only
+reference is such an entry looks silent to every absolute scan. Read that way, **21** of the 427 have a resolving
+entry against 497 of 16,935 map rows (2.9%), and **none** of the 21 sits in a run of three consecutive entries
+resolving into one function -- they are the base rate, a dword in the middle of unrelated bytes, not a table.
+
+**The 16 continuations are a map-size fact, not a naming one.** MSVC pads between functions, so an unpadded head
+whose predecessor's last instruction is not a terminator is not a function: it is the rest of the row above it, and
+the map's size column stops early. Nine of the 16 are the smallest version of that -- the row ends on `pop ebp`,
+`pop ebx` or `add esp,N` and the continuation opens on the `ret` that closes the epilogue -- and seven stop
+mid-expression. The largest is worth reading: `FUN_002a002a` is a **20-byte row** in the middle of an SSE float
+function (`addss xmm1,xmm4` is its first instruction, so it opens on no prologue at all) and the continuation at
+`0x002a003e` runs **4,501 bytes** to its terminator. Correcting those 16 sizes moves 6,394 bytes of extents and
+every artifact cut from them, so it is its own bundle and not this one.
+
+**The 74 copies are one vector-math header, and the shape names them.** Twenty byte-identical groups of at least
+eight bytes, from a ten-address body down to pairs: a 44-byte and a 37-byte **dot product**, a 43-byte
+**subtract**, a 41-byte **scale**, an 83-byte **cross product**, a 55-byte and a 140-byte **add scaled**, a
+148-byte **normalize** (the `fsqrt`/`divss` form), and a 15-byte **zero-init**. That is the float3 operator set a
+`static` inline in a header compiles once per object file and inlines at every call site -- which is why the
+out-of-line copies are the bodies nothing reaches, and why identical bytes appear under unrelated classes. It is
+the same relation the declarer walk's four folds are (two 21-byte getters at index 34 and 35 of seven tables, a
+1-byte `ret` at index 17 of 489, and a 4-byte getter at indices 7, 8 and 30 of seven) and the same relation as the
+map's own duplicate population (108 groups over 813 bodies). A fold is not a naming failure; it is a header helper
+with more than one copy.
+
+**What is left is helper-shaped, and its literals place it.** The 337 unique bodies are `arg-load` 124,
+`push-reg` 84, `getter-disp8` 20, `sse-load` 20 -- and **176 of them call a body the map names** while 251 call
+none, so most of the population reaches the engine's own functions without a table reaching it. **32 push a
+printable literal**, and it is an assert message, never a symbol: `[LIPSinc]: LIPSincShutdownEditor`,
+`Unpopulated box!`, `FlyingPathNode:***********added new spec`. The literal channel therefore places the subsystem
+-- the LIPSinc editor, the physics box, the path nodes -- and cannot name the function, which is the conclusion
+the file-stem channel reached from the other direction.
+
+    SG1_DUMP=$HOME/nfs/sg1-dump python3 tools/silent-bodies.py \
+        --xbe "$SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe" -o inventory
+    python3 tools/silent-bodies.py --write-doc docs/systems/CLASS_REGISTRATION.md
+
+`--check` is synthetic (the three verdicts from synthetic extents, the reach counter, a relative entry in and out
+of range, the run test on three neighbouring entries and on one, the copy shapes, the render and both artifact
+round trips; no dump, writes nothing) and `--check-doc` rebuilds the block from the committed CSV with no dump.
+Both run in `make ci`. The generator needs the dump, so it is named in the CI output like `map-census`.
+

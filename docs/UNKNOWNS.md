@@ -6335,3 +6335,28 @@ native edge (`Object`, `GameInfo`)** -- and the call the page named, `0x0011bf20
 is the control. The `Super` field is the *script* parent and the installer's call is the *native* base: two
 relations, one class in 490 where they differ. What is left of this entry: the interface's own name for the 212
 anonymous tables (the slot vocabulary names 20), the 4 folds, and the 427 silent bodies.
+
+**Answered since (2026-11-21, the 427 read at their own bytes, and the entry closes).** Nothing in the image
+references them, so this round reads what they *are* rather than what names them (`tools/silent-bodies.py`,
+`inventory/silent_bodies.csv`, 427 rows). The reach negative has its control: the address of **none** of the 427
+occurs anywhere outside `.text`, against **5,125 of 16,935** map rows (30.3%); and the section-relative `switch`
+channel -- the one that would survive every absolute scan -- resolves **21** of them against 497 map rows (2.9%),
+with **0** of the 21 in a run of three consecutive entries resolving into one function, so the hits are the base
+rate and not a table. The population splits **16 continuations / 74 copies / 337 unique**. A *continuation* is an
+unpadded head whose predecessor's last instruction is not a terminator: the extents are one function's code and
+the map's size stops early -- 9 of the 16 end the row on an epilogue sequence and open on its `ret`, and
+`FUN_002a002a` is a 20-byte row whose continuation runs 4,501 bytes. A *copy* is the same bytes at another
+address, and the 20 groups are one float3 operator set: dot 16, subtract 9, scale 8, cross 8, add-scaled 7,
+zero-init 8, normalize 4, plus two virtual-slot wrappers and one 16-dword struct copy -- a `static` inline in a
+header compiled once per object file and inlined at every call site, which is the same relation the four declarer
+folds are and the reason identical bytes appear under unrelated classes. The 337 *unique* bodies are
+helper-shaped (`arg-load` 124, `push-reg` 84): 176 of them call a body the map names, 251 call none, and 32 push
+an assert literal (`[LIPSinc]: LIPSincShutdownEditor`, `Unpopulated box!`) that places the subsystem and never the
+function. The 16 short rows are **not** corrected by this read -- that moves 6,394 bytes of extents and every
+artifact cut from them, so it is a bundle of its own.
+
+**Closed, and why nothing is left.** The interface's own name -- the entry's other residue -- is the library
+channel's negative measured above (12 of the 232 tables named from the supplied libraries' symbols, 10 reported
+`thin`/`split`, 210 with no vote because their slots are game code), and the 4 folds are the copy relation this
+round measures over the gap as well as the map. What remains of U40 is the 16-row extent correction, which is a
+map-size change and not an open question.
