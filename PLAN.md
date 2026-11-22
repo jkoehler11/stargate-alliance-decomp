@@ -17644,6 +17644,71 @@ sequence.
   holder on the pad, and the negative where the hole opens right in front of the fragment); `--check` proves the
   770-byte resize and the 89-byte add are applied to the map and carried by the artifact.
 
+### Execution notes (2026-11-22, the code behind a close read by what it is: 4 rows and 370 bytes)
+
+- **Task.** The last note left three families of refusal: 3 tails that close and then run into code the rule
+  cannot attribute (`0x003b7ae0`, `0x003ef88b`, `0x003ea9a0`), 3 `short` rows of the same shape
+  (`0x003e5010`, `0x003eaac1`, `0x003ee8ec`) and 2 splits that refuse as `body-inside`. Six of the eight sit in
+  the static CRT (`0x003e5`–`0x003f0`), where MSVC lays a function's second epilogue, its SEH funclets and its
+  `%f` conversion **after** the terminal `ret`; the seventh (`0x003b7ae0`) ends on a `ret` in front of a switch's
+  table. The first terminator behind a close was being read by its own byte; the code after it was not.
+- **A run that reads the row's own frame and ends at the next map row is the body's own code.**
+  `0x003ee8ec` closes on `ret` at `0x003ef49b` and then runs 54 bytes of its own locals (`inc [ebp-0x20]`,
+  `push [ebp+0x8]`, `call 0x3f159d`, ...) to a `jmp` back into its loop at `0x003ef4c7` -- exactly where
+  `__freebuf` starts -- and `__input` closes at `0x003f0407` and runs 297 bytes of its `%f` conversion, which
+  uses `[ebp-0x90]` inside the frame its own `lea esp,[ebp-0x1e8]` built, to a `ret` at `0x003f0503`. The walk
+  that looks for a close through the shared epilogue (`close_ahead`) stops at the row's horizon, so the read is
+  now taken linearly to the next map row and the row ends on the **last** terminator in the run: **+54** and
+  **+297**. Three guards keep it from swallowing a neighbour: no `call`/`jmp` from **outside the row** may land
+  inside the run (a call from the body itself is a local helper -- `__input` calls its own `0x003f04b0`), nothing
+  but non-terminator bytes may follow the run's last terminator, and the terminator has to end within one
+  instruction of the next row.
+- **A float-returning epilogue opens on the x87 work that restores the return value.** `0x003e5010`'s early
+  return closes on `ret` at `0x003e5247`, and the code behind it is `fstp st(0)`; `fld DWORD PTR [esp+0x10]`;
+  `pop edi`; `pop esi`; `pop ebp`; `pop ebx`; `add esp,0x50`; `ret` -- the row's own frame, unwound, with the
+  value it returns put back first. The `epilogue` test looked only at the **first** instruction behind the close,
+  so an x87 discard blinded it; it now skips the x87 work and asks the first non-x87 instruction, which repairs
+  the row by **16** bytes: the `ret` at `0x003e5247`, that second epilogue to a `ret` at `0x003e5255`, and 10
+  `nop`s of padding after it.
+- **A switch's dispatch table is code pointers, and the ring-0 vocabulary cannot see it.** `0x003b7ae0` (8,177
+  bytes) ends 2 bytes inside its last instruction (`add esp,0x20c`), so completing the cut lands on the `ret` at
+  `0x003b9ad3`; the bytes behind it decode as `loopne`, `movs`, `jge`, `push ss` -- all legal on a ring-3 CPU, so
+  `not_code` called them code and the row refused. The **vocabulary route was measured first and dropped**: 867
+  `movs` and 675 `stos` sit inside real bodies of this map (MSVC inlines `memcpy`/`memset` as string ops), so no
+  mnemonic list can carry that reading. What the dwords *are* settles it: the entries at `0x003b9ad4` are
+  `0x003b7ce0`, `0x003b7da4`, ... -- consecutive dwords inside `.text`, which code does not write by accident
+  (a random dword lands in the section about once in a thousand). **43 of the map's 16,909 rows** are followed by
+  a run of three or more at their own end and every one of them already closes on a terminator, which is the
+  control for the reading; the row adopts it for **+3** bytes.
+- **A funclet is a new entry, not a continuation.** `?CallCatchBlock` (`0x003eaac1`) closes at `0x003eab7d` and
+  the run behind it is its SEH funclets, which begin `mov esp,DWORD PTR [ebp-0x18]` -- a stack restore the
+  unwinder enters through a stored pointer. A run that opens that way refuses, and the row stays `short` with a
+  stated reason instead of a surprise.
+- **A refusal now names the reason of the read that replaced it.** The re-read over one more instruction exists
+  because a truncated decode desyncs at the row's end; when the re-read also refused, the artifact reported the
+  **first** read's reason. `0x003ea9a0` was listed as "a `jmp` opens the tail" for three runs, a `jmp` no
+  completed instruction ever reached; it now reads `then-code`, which is what its close at `0x003eaa46` is.
+- **The map.** 4,264,563 -> **4,264,933 bytes** (+370) and the same 16,909 rows; `symbols/xbe_boundaries.csv`
+  gains 4 `resize` rows (723 now) and `--check` proves all of them are applied. No `add`/`drop`: none of the four
+  changes a row's head, and no `xbe_overrides.csv` row moved.
+- **The census.** 675 -> **679 continuations**, 13,930 -> **14,300 bytes**; `follow` 4 -> 5, `data` 2 plus the new
+  `data-table` 1, `complete-fill` 285 -> 287, `epilogue` 1. The artifact's row count falls 732 -> 731 because
+  `0x003ef88b` moved out of the refused set. `--selftest` covers all three readings plus the funclet negative
+  (eight new synthetic rows).
+- **Cascade, regenerated on the repaired map:** `gap_heads`, `gap_body_families`, `gap_body_files`,
+  `silent_bodies`, `class_slot_declarers` (374 head rows), `function_modules`, `module_export_plan`,
+  `xbe_functions_by_module`, `symbols/xbox.map` + `xbox.sym.s`, `docs/NATIVE.md`, `docs/ARTIFACTS.md`,
+  `docs/systems/CLASS_REGISTRATION.md` and the generated blocks in `docs/SYMBOLS.md`.
+- **What is left in this thread.** 4 rows, and each now names its own question: the 2 splits
+  (`0x002c4f10`/`0x002c4f1c` both carry the name `FUdpLink_BindPort`, so the map split one symbol and the fold's
+  `body-inside` refusal is a registration slot rather than a call; `0x003ee1ea` is a 7-byte row whose successor
+  uses a frame it does not build, i.e. a frame-sharing subroute of `_fltin`); `0x003ea9a0`, whose close's 6 bytes
+  of successor are the **next row's prologue** -- the map's row at `0x003eaa4d` starts 6 bytes late; and
+  `0x003eaac1`, the funclet.
+- **Gates.** `make ci` green; `--selftest` covers the run to the next map row, the x87-led epilogue, the pointer
+  table and the funclet refusal; `--check` proves the four resizes are in the map and carried by the artifact;
+  `--check-doc` rebuilds the `docs/SYMBOLS.md` block from the committed CSV. No boot, no Ghidra, no xemu.
+
 ### Execution notes (2026-11-22, the extents that run too long: 9 rows and 1,832 bytes given back)
 
 - **Task.** The thread's rows that refuse a close were exhausted one family at a time, and the last one was

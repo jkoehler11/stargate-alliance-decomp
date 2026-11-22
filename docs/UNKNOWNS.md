@@ -6421,3 +6421,23 @@ and its span drops the nine map rows inside it, which is the cluster's two `no-b
 `no-close` tail and its over-long row in one `add`. What is left of U40 is 3 tails that close and then run
 into code the rule cannot attribute (`0x003b7ae0`, `0x003ef88b`, `0x003ea9a0`), 3 `short` rows of the same
 shape and 2 splits that refuse as `body-inside` because a map row inside the span is called.
+
+**Answered since (2026-11-22, the code behind a close read by what it is).** The four families left above were
+one question -- what the code *after* the first terminator is -- and three readings settle it. A run behind the
+close that reads the **row's own frame** and ends on a terminator within one instruction of the **next map row**
+is that body's own code, so the row ends there: `0x003ee8ec` 2,983 -> **3,037** and `__input` 2,896 -> **3,193**.
+An epilogue that opens with the x87 work restoring a float return value (`fstp st(0)`; `fld [esp+0x10]`) before
+its pops is still the body's own, so `0x003e5010` 566 -> **582**. A run of **consecutive dwords that land inside
+`.text`** is a switch's dispatch table, so the close in front of it bounds the row: `0x003b7ae0` 8,177 ->
+**8,180**. The mnemonic route for the last one was measured and dropped -- 867 `movs` and 675 `stos` sit inside
+real bodies of this map, MSVC's inline `memcpy`/`memset` -- and the pointer reading's control is the map itself:
+43 of the 16,909 rows are followed by a run of three or more code addresses at their own end, every one of them
+already closed on a terminator. What a run may **not** be is a new entry, so a call from outside the row or a
+funclet's `mov esp,[ebp-0x18]` refuses, which is why `?CallCatchBlock` stays `short`; and a refusal now reports
+the re-read's reason rather than the reason of the read it replaced, which is what made `0x003ea9a0` read as "a
+`jmp` opens the tail" for three runs. What is left of U40 is 4 rows, each named with its reason in
+`inventory/symbol_extents.csv`: two splits (`0x002c4f10`/`0x002c4f1c` carry the **same** name, so the map split
+one symbol and the refusal is a registration slot, not a call; `0x003ee1ea` is a 7-byte row whose successor uses
+a frame it does not build), `0x003ea9a0`, whose successor's 6 bytes are the next row's prologue (the map's row at
+`0x003eaa4d` starts 6 bytes late), and the funclet at `0x003eaac1`.
+

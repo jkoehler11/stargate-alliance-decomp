@@ -1550,6 +1550,16 @@ def render(rows, cen):
         (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["row_va"] if cont else "-"),
         (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["row_size"] if cont else "-"),
         (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["tail_bytes"] if cont else "-")))
+    tables = [r for r in rows if r["reason"] == "data-table"]
+    if tables:
+        lines.append("")
+        lines.append(
+            "**A switch's dispatch table is code pointers, and no instruction list can name them.** %d row(s) "
+            "close on a terminator whose successor is a run of consecutive dwords that land inside `.text` "
+            "(%s): code does not write those by accident, where the same bytes decode as `les`, `push ss`, "
+            "`movs` and `loopne` -- all legal on a ring-3 CPU, so the ring-0 reading cannot see them. The "
+            "table starts where the body ends, so the close bounds the row." % (
+                len(tables), ", ".join("`%s` at %s" % (r["close_insn"], r["close_va"]) for r in tables)))
     lines.append("")
     jpad = [r for r in cont if r["reason"] == "jump-pad"]
     jbehind = [r for r in cont if r["reason"] == "jump-behind"]
