@@ -32,6 +32,17 @@ review this rule cannot supply), `refused` (a terminator with code behind it, or
 and `short` (still a byte count: nothing spans the cut, the completed instruction would cross the next
 row, or the run behind it does not close).
 
+**A `ret` is a boundary too, and the code behind it is read by what it *is*, not only by what it
+reads.** Nothing falls through a `ret` either, so code behind one is reached only by a branch, and the
+rule refuses it because the branch could be the row's own early return. Two shapes settle that without
+guessing: the bytes behind are **not code at all** -- a run that holds an instruction no ring-3 program
+can execute (`in`/`out`, a privileged op, objdump's `(bad)`) is a table the map's size overran, and no
+branch of this body reaches it (`data`) -- or they are a **complete body of its own** -- the run closes
+on a terminator with fill or a pad behind it inside 64 bytes, which is another function, so the close in
+front bounds this one (`body`). The same two readings serve a `jmp` whose bytes behind neither pad nor
+match the opening table: data behind a dispatch ends the body at the jump (`jump-data`), and a complete
+body behind it is the tail call `jump-behind` already names.
+
 **The rule has a control, and it is the same rule over the data sections.** The same decode from 3,000
 fixed addresses in the image's data (a `ret` with only fill after it) finds almost nothing, because a
 `ret`-into-fill is a shape code has and data does not; the hits and trials are in the census row.
@@ -76,17 +87,24 @@ CENSUS = ("text_rows", "sized_rows", "terminator", "short", "undecoded", "undeco
           "complete_bytes", "complete_term", "complete_fill", "bounded", "split", "split_fold",
           "split_folded", "fold_bytes", "refused", "refused_no_close", "refused_jump", "refused_then_code",
           "refused_undecoded", "refused_no_room", "padding_family", "padding_bytes", "behind_family",
-          "behind_bytes", "follow_family", "follow_bytes", "short_overlap", "short_nostraddle",
-          "short_refused", "short_split", "fold_trials", "fold_agree", "null_hits", "null_trials")
+          "behind_bytes", "body_family", "body_bytes", "data_family", "data_bytes", "follow_family",
+          "follow_bytes", "short_overlap", "short_nostraddle", "short_refused", "short_split", "fold_trials",
+          "fold_agree", "null_hits", "null_trials")
 # the reason's first token is its family, so a carried row needs no second column
-FAMILIES = ("head", "tail", "pad", "jump", "complete", "padding", "behind", "follow")
+FAMILIES = ("head", "tail", "pad", "jump", "complete", "padding", "behind", "body", "data", "follow")
 
 OBJ_LINE = re.compile(r"^\s*([0-9a-f]+):\t([0-9a-f ]+?)\s*\t(.*)$")
 WRITES_EBP = re.compile(r"^(mov|lea|xor|add|sub|and|or|pop|imul|movzx|movsx|and)\s+ebp\b")
 JMP_TARGET = re.compile(r"^jmp\s+(?:short\s+)?0x([0-9a-f]+)")
+BRANCH_TARGET = re.compile(r"^j[a-z]+\s+(?:short\s+)?0x([0-9a-f]+)")
 FRAME_WRITE = re.compile(r"^(mov|lea|xor|add|sub|and|or)\s+ebp,")
 TERM = ("ret", "jmp", "int3", "hlt", "iret")
 FILL = (0xCC, 0x90)
+# Instructions a ring-3 program cannot execute. A run that holds one is not code at all, whatever the
+# decoder made of the bytes around it: the image is a user-mode XBE, so `in`/`out` and the system-table
+# opcodes only occur inside data.
+RING0 = ("in", "out", "ins", "outs", "cli", "sti", "lgdt", "lidt", "lldt", "ltr", "lmsw", "clts",
+         "invd", "invlpg", "wbinvd", "wrmsr", "rdmsr", "rdpmc", "sysenter", "sysexit", "hlt", "iret")
 MAX_TAIL = 256
 MAX_CUT = 16          # the longest x86 instruction: a cut cannot reach further
 MAX_FOLD = 2048       # how far a fragment's body is followed to its close
@@ -109,7 +127,8 @@ REPAIRS = ("row ends on a non-terminator and a gap head closes at its end",
            "the row's size cuts an instruction, and completing it lands on a terminator or a close",
            "the tail's first terminator is a `jmp` tail call, or a close with a two-byte pad behind it",
            "the close is followed by alignment padding, by a body's own opening, or by the same frame's "
-           "shared epilogue")
+           "shared epilogue",
+           "the close is followed by a complete body of its own, or by bytes no ring-3 code can execute")
 
 
 
@@ -206,7 +225,7 @@ def tail_close(ins):
     return None, "no-close"
 
 
-def tail_rule(reader, decode_fn, start, limit):
+def tail_rule(reader, decode_fn, start, limit, targets=None):
     """(tail instructions, close instruction, family-or-refusal) for the run after a row's end.
 
     The first terminator closes the row when **only fill** follows it (`tail` for a `ret`, `jump` for a
@@ -223,18 +242,24 @@ def tail_rule(reader, decode_fn, start, limit):
     if not tail:
         return tail, None, ("no-room" if room <= 0 else "undecoded")
     first = None
+    targets = set(targets or ())
     for t in tail:
         if is_term(t[2]):
             first = t
             break
+        targets |= branch_targets([t])
     if first is None:
         return tail, None, "no-close"
     why = close_kind(reader, decode_fn, first, limit)
-    if why in ("tail", "jump", "pad", "jump-pad", "jump-behind", "jump-table"):
+    if why in ("body", "data") and (first[0] + first[1]) in targets:
+        # the row branches to the bytes behind this close, so they are the row's own code -- the
+        # early-return shape -- whatever they look like
+        return tail, None, "then-code"
+    if why in ("tail", "jump", "pad", "jump-pad", "jump-behind", "jump-table", "jump-data"):
         return tail, first, why
     if why == "jump-open":
         return tail, None, "jump"
-    if why in ("padding", "behind"):
+    if why in ("padding", "behind", "data", "body"):
         return tail, first, why
     if why == "jump-inside":
         close, _jwhy = close_ahead(reader, decode_fn, first[0] + first[1], limit)
@@ -255,13 +280,28 @@ def is_indirect_jmp(text):
         bool(re.match(r"^jmp\s+e[a-z]{2}$", text))
 
 
+def branch_targets(ins):
+    """The set of addresses a direct branch in `ins` lands on.
+
+    A close only bounds a row when the code behind it is not where the row *itself* goes: the
+    early-return shape is a `jcc` over a `ret` into the rest of the same body, so a target that lands
+    exactly behind the close says the bytes are this row's code, whatever they look like.
+    """
+    out = set()
+    for _a, _l, t in ins:
+        m = JMP_TARGET.match(t) or BRANCH_TARGET.match(t)
+        if m and m.group(1):
+            out.add(int(m.group(1), 16))
+    return out
+
+
 def jmp_target(text):
     """The absolute target of a direct `jmp`, or None for a register or memory operand."""
     m = JMP_TARGET.match(text)
     return int(m.group(1), 16) if m and m.group(1) else None
 
 
-def jump_kind(reader, decode_fn, step, after_va, limit):
+def jump_kind(reader, decode_fn, step, after_va, limit, deep=True):
     """How the bytes behind one `jmp` bound it: `jump-pad`, `jump-behind`, `jump-inside` or `jump-open`.
 
     A `jmp` is unconditional, so nothing falls through it: the bytes behind it are reached only by
@@ -281,20 +321,25 @@ def jump_kind(reader, decode_fn, step, after_va, limit):
     target = jmp_target(step[2])
     if target is not None and after_va <= target < limit:
         return "jump-inside"
-    kind, _first = after_kind(reader, decode_fn, after_va, limit)
+    kind, _first = after_kind(reader, decode_fn, after_va, limit, deep=deep)
     if kind == "padding":
         return "jump-pad"
     if kind == "follow":
         return "jump-inside"
     if kind == "behind":
         return "jump-behind"
+    if kind == "body":
+        return "jump-behind"
+    if kind == "data":
+        return "jump-data"
     return "jump-open"
 
 
-def close_kind(reader, decode_fn, step, limit):
-    """How the bytes behind one terminator bound it: `tail`, `pad`, `padding`, `behind`, `follow`, the
-    `jump` family (`jump-pad`, `jump-behind`, `jump-table`, `jump-inside`), or a refusal (`jump-open`,
-    `then-code`)."""
+def close_kind(reader, decode_fn, step, limit, deep=True):
+    """How the bytes behind one terminator bound it: `tail`, `pad`, `padding`, `behind`, `body`, `data`,
+    `follow`, the `jump` family (`jump-pad`, `jump-behind`, `jump-table`, `jump-data`, `jump-inside`), or
+    a refusal (`jump-open`, `then-code`). `deep` is off for the nested read the `body` test makes, so the
+    two tests cannot call each other."""
     after_va = step[0] + step[1]
     after = reader(after_va, max(0, limit - after_va))
     if all(b in FILL for b in after):
@@ -308,17 +353,58 @@ def close_kind(reader, decode_fn, step, limit):
     if pad >= 2:
         return ("jump" if mnemonic(step[2]) == "jmp" else "pad")
     if mnemonic(step[2]) == "jmp":
-        return jump_kind(reader, decode_fn, step, after_va, limit)
-    kind, _first = after_kind(reader, decode_fn, after_va, limit)
+        return jump_kind(reader, decode_fn, step, after_va, limit, deep=deep)
+    kind, _first = after_kind(reader, decode_fn, after_va, limit, deep=deep)
     return kind
 
 
-def after_kind(reader, decode_fn, va, limit):
-    """(`padding` | `behind` | `follow` | `then-code`, first instruction) for the code at `va`.
+def not_code(ins):
+    """The first instruction in `ins` that no ring-3 program can execute, or None.
+
+    An `in`/`out` or a system-table opcode in this image is a byte pattern in a table, and objdump's
+    `(bad)` is a byte pattern it cannot decode at all: a branch of the body whose close sits in front of
+    them cannot reach either, so the bytes are data the map's size overran.
+    """
+    for _a, _l, t in ins:
+        if "(bad)" in t or mnemonic(t) in RING0:
+            return t
+    return None
+
+
+def body_behind(reader, decode_fn, va, limit, cap=64):
+    """(close instruction, kind) when the run at `va` is a whole body of its own.
+
+    A body is a run that closes on a terminator with fill, a pad, alignment padding, a tail call or a
+    dispatch behind it inside `cap` bytes. Anything longer is not this reading's to settle: it could be
+    the enclosing row's own code, reached by a branch the decode cannot see.
+    """
+    room = max(0, min(limit - va, cap))
+    if room <= 0:
+        return None, "no-room"
+    ins = decode_fn(reader(va, room), va)
+    if not_code(ins) is not None:
+        return None, "data"          # data is not a body, whatever `ret` byte it happens to contain
+    for step in ins:
+        if not is_term(step[2]):
+            continue
+        kind = close_kind(reader, decode_fn, step, limit, deep=False)
+        if kind in ("tail", "pad", "padding", "jump", "jump-pad", "jump-behind", "jump-table",
+                    "jump-data"):
+            return step, kind
+        return None, kind
+    return None, "no-close"
+
+
+def after_kind(reader, decode_fn, va, limit, deep=True):
+    """(`padding` | `behind` | `follow` | `body` | `data` | `then-code`, first instruction) for code at `va`.
 
     `padding` is alignment filler, `behind` a body's own opening, and `follow` a run that reads a frame
     (`[ebp...]`, `leave`) it never writes in its opening window -- the shared epilogue an early return
-    jumps into. Anything else is code this rule cannot attribute."""
+    jumps into. The two readings a `ret` needs beyond those are `data` (a run that holds an instruction no
+    ring-3 program can execute: the bytes are a table the size overran) and `body` (a whole body closes
+    inside 64 bytes, so the code belongs to it, not to the row in front). Anything else is code this rule
+    cannot attribute.
+    """
     ins = decode_fn(reader(va, min(limit - va, 24)), va)
     if not ins:
         return "then-code", None
@@ -332,6 +418,12 @@ def after_kind(reader, decode_fn, va, limit):
     for _a, _l, t in ins[:4]:
         if "[ebp" in t or mnemonic(t) == "leave":
             return "follow", ins[0]
+    if deep:
+        if not_code(decode_fn(reader(va, min(limit - va, 48)), va)[:8]) is not None:
+            return "data", ins[0]
+        body, _why = body_behind(reader, decode_fn, va, limit)
+        if body is not None:
+            return "body", ins[0]
     return "then-code", ins[0]
 
 
@@ -346,14 +438,24 @@ def opens_body(first):
 
 
 def is_fill_insn(text):
-    """Alignment filler: `nop`, `int3`, or a `lea r,[r+0x0]` that writes nothing."""
+    """Alignment filler: `nop`, `int3`, `lea r,[r+0x0]`, or any other no-op that writes nothing.
+
+    MSVC pads with more than `90` and `cc`: a self-move (`8b f6` `mov esi,esi`), a self-exchange, and an
+    arithmetic op with a zero immediate (`05 00 00 00 00` `add eax,0x0`, the canonical five-byte nop)
+    are the same filler with a different encoding, and reading only the three named forms left rows
+    refusing behind them.
+    """
     m = mnemonic(text)
     if m in ("nop", "int3"):
         return True
-    if m == "lea":
-        q = re.match(r"^lea\s+(\w+),\[\1\+0x0\]$", text.replace("  ", " "))
-        return bool(q)
-    return False
+    t = " ".join(text.split())
+    q = re.match(r"^lea\s+(\w+),\[(\w+)\+0x0\]$", t)
+    if q and q.group(1) == q.group(2):
+        return True
+    q = re.match(r"^(mov|xchg)\s+(\w+),(\w+)$", t)
+    if q and q.group(2) == q.group(3):
+        return True
+    return bool(re.match(r"^(add|sub|or|and|xor)\s+\w+,0x0$", t))
 
 
 def close_ahead(reader, decode_fn, start, limit, cap=600):
@@ -362,10 +464,13 @@ def close_ahead(reader, decode_fn, start, limit, cap=600):
     A close is a terminator with fill, a two-byte pad, alignment padding or a body's own opening behind
     it. When the code behind a close reads the same frame, the walk continues past it -- the early
     return's shared epilogue -- so the answer is the close that ends the body, not the first one it
-    reaches. `None` when nothing closes before `limit`.
+    reaches. It also continues past one whose bytes another branch in the walk targets: a `jcc` over a
+    `ret` lands on the row's own code, and a body behind a close that no branch reaches is a body. `None`
+    when nothing closes before `limit`.
     """
     va = start
     steps = 0
+    targets = set()
     while va < limit and steps < cap:
         n = min(limit - va, WINDOW)
         ins = decode_fn(reader(va, n), va)
@@ -377,10 +482,13 @@ def close_ahead(reader, decode_fn, start, limit, cap=600):
             if step[0] + step[1] > va + n:
                 break                     # the window's last instruction is truncated: re-read it
             if not is_term(step[2]):
+                targets |= branch_targets([step])
                 continue
             kind = close_kind(reader, decode_fn, step, limit)
-            if kind in ("tail", "pad", "padding", "behind", "jump", "jump-pad", "jump-behind",
-                        "jump-table"):
+            if kind in ("body", "data") and (step[0] + step[1]) in targets:
+                kind = "then-code"
+            if kind in ("tail", "pad", "padding", "behind", "body", "data", "jump", "jump-pad",
+                        "jump-behind", "jump-table", "jump-data"):
                 return step, kind
             if kind == "jump-open":
                 return None, "jump"
@@ -532,6 +640,16 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
         nxt = starts[k] if k < len(starts) else None
         held = known.get(r["va"]) or known.get("0x%08x" % r["va"])
         if held and held.get("new_size") and int(held["new_size"]) == r["size"]:
+            if (held.get("verdict") or "") == "interior":
+                # a fold's head row is still in the map: carry the fold itself, not a continuation, or the
+                # census would grow a `fold` family the header has no column for
+                cen["nonterm"] += 1
+                cen["split"] += 1
+                cen["split_fold"] += 1
+                cen["fold_bytes"] += int(held.get("tail_bytes") or 0)
+                cover.append((r["va"] + r["size"], r["va"]))
+                out.append(dict(held))
+                continue
             cen["nonterm"] += 1
             cen["continuation"] += 1
             tail_bytes = int(held.get("tail_bytes") or 0)
@@ -584,7 +702,8 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
             if nxt == cend:
                 split_row(r, cut, "cut:next-row", cut=True)
                 continue
-            tail, close, why = tail_rule(reader, decode_fn, cend, nxt if nxt else cend + MAX_TAIL)
+            tail, close, why = tail_rule(reader, decode_fn, cend, nxt if nxt else cend + MAX_TAIL,
+                                         targets=branch_targets(wide))
             if close is None:
                 cen["short"] += 1
                 cen["short_refused"] += 1
@@ -609,7 +728,8 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                              h["size"], h["verdict"], h["tail"] or "a terminator"),
                          r["size"] + h["size"], head=h)
         else:
-            tail, close, why = tail_rule(reader, decode_fn, end, nxt if nxt else end + MAX_TAIL)
+            tail, close, why = tail_rule(reader, decode_fn, end, nxt if nxt else end + MAX_TAIL,
+                                         targets=branch_targets(ins))
             if close is not None:
                 # a pad *is* the boundary: the body ends where the pad's first `int3` begins
                 cclose = close[0] if mnemonic(close[2]) == "int3" else close[0] + close[1]
@@ -631,6 +751,15 @@ def measure(rows, heads, reader, decode_fn=decode, known=None, text=None, null_t
                                    "alignment padding, not code",
                         "behind": "a decode from the row's end reaches `%s` and the code behind it opens "
                                   "a body of its own, so the close bounds this one",
+                        "body": "a decode from the row's end reaches `%s`, and the code behind it is a "
+                                "complete body of its own -- it closes inside 64 bytes with a pad or fill "
+                                "behind it -- so the close bounds this row",
+                        "data": "a decode from the row's end reaches `%s`, and the bytes behind it hold an "
+                                "instruction no ring-3 program can execute, so they are a table the row's "
+                                "size overran rather than code, and the close bounds the row",
+                        "jump-data": "a decode from the row's end reaches `%s`, and the bytes behind it "
+                                     "hold an instruction no ring-3 program can execute -- the dispatch's "
+                                     "own table -- so the body ends at the jump",
                         "follow": "a decode from the row's end reaches `%s`, and the code behind it reads "
                                   "the same frame -- the shared epilogue an early return jumps into -- so "
                                   "the body runs on to the close at 0x%08x",
@@ -751,9 +880,15 @@ def render(rows, cen):
         "`jmp` -- a tail call, its target code elsewhere -- or when it is a `ret` with a pad of two or "
         "`CC` behind it (**%d rows, %d bytes**), because only a run of two or more `int3` bounds a "
         "body. The code behind a close is not the body's own code, so a close with code behind it is "
-        "read three ways: **%d rows** end where the next instructions are alignment padding, **%d** "
+        "read five ways: **%d rows** end where the next instructions are alignment padding, **%d** "
         "where they open a body of their own, and **%d** where they read the same frame -- the shared "
         "epilogue an early return jumps into -- and the body runs on to the next close (**%d bytes**). "
+        "**%d more** end where a complete body of its own sits behind the close -- a run that closes on "
+        "a terminator with fill or a pad behind it inside 64 bytes, so the code is that body's, not the "
+        "row's -- and **%d** where the bytes behind the close are not code at all: a run that holds an "
+        "instruction no ring-3 program can execute (`in`/`out`, a system-table opcode, objdump's "
+        "`(bad)`) is a table the row's size overran, and no branch of this body reaches it "
+        "(**%d bytes**). "
         "Together **%d rows and %d bytes**: %d of them grow by one instruction or less (a row that "
         "stops on `pop ebp`/`add esp,N` before its own `ret`), and the largest is `%s`, a %s-byte row "
         "continued by %s bytes." % (
@@ -762,6 +897,7 @@ def render(rows, cen):
         n("pad_family") + n("jump_family"), n("pad_bytes") + n("jump_bytes"),
         n("padding_family"), n("behind_family"), n("follow_family"),
         n("padding_bytes") + n("behind_bytes") + n("follow_bytes"),
+        n("body_family"), n("data_family"), n("body_bytes") + n("data_bytes"),
         n("continuation"), n("continuation_bytes"),
         sum(1 for r in cont if int(r["tail_bytes"] or 0) <= 4),
         (max(cont, key=lambda r: int(r["tail_bytes"] or 0))["row_va"] if cont else "-"),
@@ -772,6 +908,7 @@ def render(rows, cen):
     jbehind = [r for r in cont if r["reason"] == "jump-behind"]
     jinside = [r for r in cont if r["reason"] == "jump-inside"]
     jtable = [r for r in cont if r["reason"] == "jump-table"]
+    jdata = [r for r in cont if r["reason"] == "jump-data"]
     lines.append(
         "**A `jmp` in a tail is read by its target, because it is unconditional.** Nothing falls through "
         "an unconditional jump, so the bytes behind it are reached only by another branch or by the jump "
@@ -781,14 +918,17 @@ def render(rows, cen):
         "**%d rows, %d bytes**. A target elsewhere closes the run when alignment padding follows the jump "
         "(**%d rows, %d bytes**) or when the bytes behind it open a body of their own -- a tail call into "
         "that body (**%d rows, %d bytes**), and an **indirect** jump -- a `switch` dispatch -- ends "
-        "the body at the jump with its table behind it (**%d rows, %d bytes**). **%d tails** stop on a "
-        "`jmp` none of those explain: code "
+        "the body at the jump with its table behind it (**%d rows, %d bytes**). A direct jump with data "
+        "behind it -- a run holding an instruction no ring-3 program can execute -- ends the body there "
+        "too, because the table the dispatch reads is what follows it (**%d rows, %d bytes**). **%d "
+        "tails** stop on a `jmp` none of those explain: code "
         "behind it that neither pads, nor opens a body, nor reads the same frame, nor lies at the jump's "
         "own target." % (
             len(jinside), sum(int(r["tail_bytes"] or 0) for r in jinside),
             len(jpad), sum(int(r["tail_bytes"] or 0) for r in jpad),
             len(jbehind), sum(int(r["tail_bytes"] or 0) for r in jbehind),
-            len(jtable), sum(int(r["tail_bytes"] or 0) for r in jtable), n("refused_jump")))
+            len(jtable), sum(int(r["tail_bytes"] or 0) for r in jtable),
+            len(jdata), sum(int(r["tail_bytes"] or 0) for r in jdata), n("refused_jump")))
     lines.append("")
     lines.append(
         "**The control is the same rule over data.** Decoding from **%d** fixed addresses in the image's "
@@ -909,12 +1049,18 @@ def evidence_for(r):
     if r["reason"] in ("jump", "pad"):
         return ("%s; `%s` closes the run %s bytes past the row's end, and what follows it is fill or a pad "
                 "rather than code" % (REPAIRS[3], r["close_insn"], r["tail_bytes"]))
-    if r["reason"] in ("padding", "behind", "follow"):
-        return ("%s; `%s` at %s is the first terminator behind the row's end and the bytes behind it are "
-                "%s, so the body runs to %s" % (
-                    REPAIRS[4], r["close_insn"], r["close_va"],
-                    {"padding": "alignment filler", "behind": "a body's own opening",
-                     "follow": "the same frame's shared epilogue"}[r["reason"]], r["new_size"]))
+    if r["reason"] in ("padding", "behind", "follow", "body", "data", "jump-data"):
+        return (REPAIRS[5] if r["reason"] in ("body", "data", "jump-data") else REPAIRS[4]) + (
+            "; `%s` at %s is the first terminator behind the row's end and the bytes behind it are "
+            "%s, so the body runs to %s" % (
+                r["close_insn"], r["close_va"],
+                {"padding": "alignment filler", "behind": "a body's own opening",
+                 "follow": "the same frame's shared epilogue",
+                 "body": "a complete body of their own, which closes inside 64 bytes",
+                 "data": "not code -- an instruction no ring-3 program can execute is in the run, so "
+                         "they are a table the size overran",
+                 "jump-data": "not code -- an instruction no ring-3 program can execute is in the run, "
+                              "so the dispatch's table follows it"}[r["reason"]], r["new_size"]))
     if r["verdict"] == "interior":
         return ("%s; the row's head is a body's own start and the body read forward from it closes on `%s` "
                 "at %s with %s behind it, so the %s bytes to that close are one body and the map rows "
@@ -1365,15 +1511,80 @@ def self_check():
                               known={r["row_va"]: r for r in fout}, text=(0x10000, 0x11000))
         if cen4.get("split_folded") != 2 or not [r for r in again if r["verdict"] == "folded"]:
             bad.append("a dropped row's record is carried from the artifact")
+        carried_fold, cen5 = measure(
+            [{"va": 0x10400, "name": "FUN_00010400", "size": 8},
+             {"va": 0x10406, "name": "FUN_00010406", "size": 4}],
+            [], r2, d2, known={r["row_va"]: r for r in fout}, text=(0x10000, 0x11000))
+        if cen5.get("split_fold") != 1 or "fold_family" in cen5 or \
+                [r["verdict"] for r in carried_fold if r["row_va"] == "0x00010400"] != ["interior"]:
+            bad.append("a carried fold keeps its `interior` record instead of counting a family")
     finally:
         shutil.rmtree(tmp2, ignore_errors=True)
+    # --- the two readings a `ret` needs beyond frame/pad/opening: a filler no-op, a whole body, data --
+    put2(0x10804, b"\x89\xd8\xc3\x8b\xf6\xcc\xcc")              # ret, then `mov esi,esi` (2-byte nop)
+    put2(0x10904, b"\x89\xd8\xc3\x05\x00\x00\x00\x00\xcc\xcc")  # ret, then `add eax,0x0` (5-byte nop)
+    put2(0x10a04, b"\x89\xd8\xc3\x33\xc9\xc3\xcc\xcc")          # ret, then a two-instruction body
+    put2(0x10b04, b"\x89\xd8\xc3\xec\xc3\xcc\xcc")              # ret, then `in al,dx`: not code at all
+    put2(0x10c04, b"\x75\x01\xc3\x33\xc9\xc3\xcc\xcc")          # `jne` over the ret: the row's own code
+    d3 = {
+        0x10800: [(0x10800, 4, "mov    eax,edx")],
+        0x10804: [(0x10804, 2, "mov    eax,ebx"), (0x10806, 1, "ret")],
+        0x10807: [(0x10807, 2, "mov    esi,esi")],
+        0x10900: [(0x10900, 4, "mov    eax,edx")],
+        0x10904: [(0x10904, 2, "mov    eax,ebx"), (0x10906, 1, "ret")],
+        0x10907: [(0x10907, 5, "add    eax,0x0")],
+        0x10a00: [(0x10a00, 4, "mov    eax,edx")],
+        0x10a04: [(0x10a04, 2, "mov    eax,ebx"), (0x10a06, 1, "ret")],
+        0x10a07: [(0x10a07, 2, "xor    ecx,ecx"), (0x10a09, 1, "ret")],
+        0x10b00: [(0x10b00, 4, "mov    eax,edx")],
+        0x10b04: [(0x10b04, 2, "mov    eax,ebx"), (0x10b06, 1, "ret")],
+        0x10b07: [(0x10b07, 1, "in     al,dx"), (0x10b08, 1, "ret")],
+        0x10c00: [(0x10c00, 4, "mov    eax,edx")],
+        0x10c04: [(0x10c04, 2, "jne    0x10c07"), (0x10c06, 1, "ret")],
+        0x10c07: [(0x10c07, 2, "xor    ecx,ecx"), (0x10c09, 1, "ret")],
+    }
+
+    def d3f(blob, base):
+        return d3.get(base, [])
+
+    ret_rows = [{"va": 0x10800, "name": "FUN_00010800", "size": 4},
+                {"va": 0x10820, "name": "FUN_00010820", "size": 1},
+                {"va": 0x10900, "name": "FUN_00010900", "size": 4},
+                {"va": 0x10920, "name": "FUN_00010920", "size": 1},
+                {"va": 0x10a00, "name": "FUN_00010a00", "size": 4},
+                {"va": 0x10a20, "name": "FUN_00010a20", "size": 1},
+                {"va": 0x10b00, "name": "FUN_00010b00", "size": 4},
+                {"va": 0x10b20, "name": "FUN_00010b20", "size": 1},
+                {"va": 0x10c00, "name": "FUN_00010c00", "size": 4},
+                {"va": 0x10c20, "name": "FUN_00010c20", "size": 1}]
+    for va in (0x10820, 0x10920, 0x10a20, 0x10b20, 0x10c20):
+        d3[va] = [(va, 1, "ret")]
+    rout, rcen = measure(ret_rows, [], r2, d3f, text=(0x10000, 0x11000))
+    rv = {r["row_va"]: r for r in rout}
+    for va, want in (("0x00010800", "padding"), ("0x00010900", "padding"),
+                     ("0x00010a00", "body"), ("0x00010b00", "data")):
+        got = rv.get(va, {}).get("reason")
+        if rv.get(va, {}).get("verdict") != "continuation" or got != want:
+            bad.append("a `ret` followed by %s reads as `%s`, not `%s` (got %s / %s)" % (
+                {"padding": "a no-op filler", "body": "a whole body",
+                 "data": "bytes no ring-3 program can run"}[want], want, got,
+                rv.get(va, {}).get("verdict"), got))
+    if rcen.get("body_family") != 1 or rcen.get("data_family") != 1:
+        bad.append("the new families are counted (body %s, data %s)"
+                   % (rcen.get("body_family"), rcen.get("data_family")))
+    if rv.get("0x00010c00", {}).get("verdict") != "refused" or \
+            rv.get("0x00010c00", {}).get("reason") != "then-code":
+        bad.append("a `ret` a branch of the row lands behind is the row's own code, not a close (got "
+                   "%s / %s)" % (rv.get("0x00010c00", {}).get("verdict"),
+                                 rv.get("0x00010c00", {}).get("reason")))
     if bad:
         for b in bad:
             print("FAIL selftest: " + b)
         return 1
     print("ok   symbol-extents selftest: both tail families, the cut repairs, the pad and `jmp` closes "
           "(a tail call, a branch inside the gap, and a refusal), the `bounded` row, the split, the "
-          "refusals, the three closes behind a `ret`, the fold and its frame test, the undecoded cut, "
+          "refusals, the three closes behind a `ret` (a filler no-op, a whole body, and bytes no ring-3 "
+          "program can run), the fold and its frame test, the undecoded cut, "
           "the carry and both round trips")
     return 0
 
