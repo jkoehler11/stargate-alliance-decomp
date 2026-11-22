@@ -3625,5 +3625,10 @@ the window step, the owner lookup, the render); `--check-doc` rebuilds the block
 with no dump; `--check-symbols` fails when a recorded name leaves the map or the map holds its address under
 another name or size; the artifact reproduces byte for byte on a second run. No boot, no xemu, no Ghidra.
 
-**Not in this bundle.** The 7 unnamed Karma callback bodies (their interface slot states no name), the 425
+**The census re-read follows the names, and it is small.** Against the post-name map the residue reads
+**487 -> 485 bodies (104,817 -> 104,764 bytes) and 141 islands**, the slot channel **9 stores -> 7**, and
+the 427 silent bodies unchanged: the two named bodies leave the population with their 53 bytes, and the
+seven the table names by no literal stay in it.
+
+**Not in this bundle.** The 7 unnamed Karma callback bodies (their interface slot states no name), the 427
 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds and the 359 interface-only bodies.

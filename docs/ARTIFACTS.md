@@ -22,7 +22,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/ai_state_bodies.csv` | 165 | 26 | `make help` |
 | `inventory/ai_states.csv` | 165 | 20 | `make help` |
 | `inventory/archive_slots.csv` | 24 | 12 | `make archive-slots` |
-| `inventory/artifact_hashes.csv` | 397 | 3 | `make artifact-hashes` |
+| `inventory/artifact_hashes.csv` | 399 | 3 | `make artifact-hashes` |
 | `inventory/asset_classes.csv` | 13 | 2 | `make assets` |
 | `inventory/assets.csv` | 399 | 11 | `make help` |
 | `inventory/audio_engine_init.csv` | 32 | 4 | `make audio-engine-init` |
@@ -190,7 +190,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/function_module_attribution.csv` | 16935 | 11 | `make module-attribution` |
 | `inventory/function_modules.csv` | 16935 | 6 | `make module-split` |
 | `inventory/function_no_script.csv` | 39 | 10 | `make ci` |
-| `inventory/gap_body_families.csv` | 488 | 57 | `make ci` |
+| `inventory/gap_body_families.csv` | 486 | 57 | `make ci` |
 | `inventory/gap_body_files.csv` | 2200 | 62 | `make ci` |
 | `inventory/gap_heads.csv` | 2276 | 26 | `make ci` |
 | `inventory/gap_lib_names.csv` | 72 | 5 | **gap-lib-names.py (no target runs it)** |

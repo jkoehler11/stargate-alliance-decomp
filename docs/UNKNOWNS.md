@@ -6293,6 +6293,7 @@ The 65 array entries are **68 `c7 05` stores by `0x00012620`** (`Core_UnObjBas`)
 the array is **past the file-backed `.data`**, which is why no value is in the image, and **67 of the 68 values
 are the `<Class>_lookup` walkers** this entry named while the 68th (`0x00011600`) is an address inside one of
 them (`BotEnemy_lookup + 0x50`). Two bodies take the name their own literal states (`MePoolMallocReset`,
-`MePoolMallocDestroy`), gated in `make ci` by `--check-symbols`. What is left of this entry: the 7 callback
-bodies the table names by no literal, the 425 silent bodies, the 2 bodies in `0x0051724c`, the 4 linker folds
-and the 359 interface-only bodies.
+`MePoolMallocDestroy`), gated in `make ci` by `--check-symbols`; the census re-read over the post-name map reads
+**485 bodies (104,764 bytes) and 141 islands with the slot channel down from 9 stores to 7**. What is left of
+this entry: the 7 callback bodies the table names by no literal, the 427 silent bodies, the 2 bodies in
+`0x0051724c`, the 4 linker folds and the 359 interface-only bodies.

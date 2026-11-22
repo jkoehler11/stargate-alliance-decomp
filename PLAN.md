@@ -17381,6 +17381,9 @@ sequence.
   constructor, held as a member at `+0x38` of `0x00507c7c`'s table, with 2 calls and 2 gap slots -- the
   interface tools (`class-interface-*`, `class-plain-tables`) already carry every column this needs, and it is
   the last interface item that is not a residue count.
-- **Not in this bundle.** The 7 unnamed callback bodies, the 425 silent bodies, the 4 linker folds and the 359
+- **The re-read.** Against the post-name map the census reads **485 bodies (104,764 bytes) and 141 islands**
+  (from 487 / 104,817) and the slot channel **7 stores** (from 9): the two named bodies leave the population
+  with their 53 bytes, and the 427 silent bodies do not move.
+- **Not in this bundle.** The 7 unnamed callback bodies, the 427 silent bodies, the 4 linker folds and the 359
   interface-only bodies.
 
