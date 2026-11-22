@@ -351,3 +351,51 @@ their parameters, and 7 assignments to a struct property.
 A stock compiler. The corpus supplies the source, the packages supply the compiled result, and the comparator between
 them already exists; the front end is the only missing piece, and the lexer now shows it can start from measured ground
 rather than from a guess about the dialect.
+
+## Stage 3, continued -- the cast family and the member node (measured 2026-11-22)
+
+**2,856 bodies are modelled and 2,855 are byte-identical: 1 differs**, from 2,819 / 2,818 / 1. The one that differs is
+`PlayerInput.ChangeSnapView`, and its six bytes are now named rather than left as a remainder (below). Seven rules came
+out of the bodies that refused before; `inventory/uscript_emit.csv` carries the shape of every one of them.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `return AIController(Controller);` | `2e 59 01 01 09` | `DynamicCast` names the class as a **compact object reference**: 89 is `AIController`'s export in `Engine.u`, `2e 13` is `Vehicle` (export 19), `2e c8 01` is `Material`'s import (-72). Not a name index -- the name table holds `AIController` at 799 |
+| `return string(GetValue());` | `39 55 ...` | an explicit cast is `PrimitiveCast` + the slot of its (from, to) pair from `inventory/cast_operands.csv`: FloatToString `55`, StringToInt `4a`, StringToBool `4b`, VectorToRotator `50`, ObjectToString `56`, BoolToInt `41`. A pair the table holds with **0 tokens** has no slot to write and is refused |
+| `return string(class);` | `39 56 17` | **bare `class` is `Self`**: `GetItemName(string(class))` and `GetItemName(string(self))` are the same seven bytes (`1b 31 39 56 17 16`) |
+| `return Target.Health;` | `19 <obj> 05 00 04 <member>` | `Context` = object, skip word, member's value size, member. The size byte is the **member's** own value size: object/name/class/bool 4, byte 1, vector 12, string 0 |
+| `PathName.FullPath` | `36 <member> <struct read>` | `StructMember` names the **field first** and the value after it, the opposite order to `Context` |
+| `Recipients.Length;` | `37 <array read>` | `.Length` is the length operator, not a property of any class; 14 bodies |
+| `return w.Default.X;` in a `float` function | `39 3f 19 ...` | the conversion wraps the **node**, it is not written inside it |
+
+### The receiver's own class is the join, not the body's
+
+`List.Index` in `GUIComboBox.GetIndex` is `GUIListBase.Index`: `inventory/class_properties.csv` names the class of
+every object property, and resolving the member through the *body's* chain wrote export 8263 where the package writes
+13. The fallback was removed rather than tuned: two `InitFor` bodies resolve a same-named **own export** where the
+package names an **import** (-20), i.e. bytes that look right and are not. A receiver whose class the artifact does not
+name (a parameter, a local) is refused by name -- 100 bodies -- instead of joined by the first record of the name.
+
+### The skip word is 5 for an `InstanceVariable` member, and it is not a length
+
+All **17,710** `Context` nodes whose member is an `InstanceVariable` write 5, whatever width that member's index is
+written with (`01 18`, `01 69 04` and `2d 01 6c 28` all write 5). It is therefore not the member's byte length, and a
+`VirtualFunction` member of one shape ranges 1..6 -- so a call member is refused by name and not given a number the
+corpus does not support.
+
+### The six bytes in `PlayerInput.ChangeSnapView` are `Outer.bSnapToLevel`
+
+The package writes `14 | 19 01 8e 05 00 04 2d 01 6c 28 | 2d 00 79 56 | 04 0b 47`: a `Context` whose object is the
+imported **`Outer`** property (import 14) wrapped around the BoolVariable target `2d 01 <export 2604>`. Export 2604 is
+`bSnapToLevel`, declared on **`PlayerController`**; `PlayerInput` extends `Object` and has no such record on its chain,
+so the compiled statement names the property through `Outer` while the shipped text spells it bare
+(`bSnapToLevel = B;`). The difference is in the text, not in the walk -- and a bool member's word is not settled (the
+corpus writes 6 for that shape), so the emitter refuses that member and the body stays in the residue by name.
+
+### What the walk still refuses, by name
+
+**22 of the 51 cast/`assert` call sites this page named are emitted now** (`call to a name the class chain does not
+declare` 51 -> 29), and the 29 are no longer one family: the `assert(...)` bodies, casts whose operand is an operator
+expression, 4 bool members, 2 pairs the cast table does not install, 2 casts of a struct. The
+`assert` statement (`Actor.Crash` writes `09 26 08 28` -- opcode, **source line 2086**, expression) is its own next
+item, because the line number is the only operand the emitter would have to read from the text.
