@@ -305,3 +305,35 @@ only moves by finding what the loader dereferences (`CR2=0xfff0007b`) or by shri
 
 The working loop is now three tools in order: `uscript-emit.py` (source → bytes) → `uscript-fit.py` (bytes → shipped
 length) → `l1-change.py --index` (bytes → package, same length) → `build-xiso.sh` → `drive.py` with the pad steps.
+
+## The fault address is a kernel hardware probe, not a package pointer (measured 2026-11-23)
+
+The previous section read `CR2=0xfff0007b` as a corrupted pointer and proposed finding "the loader field that was read".
+That was an over-read of the evidence. `-d int` on the emulator records the faulting instruction, and the disassembly says
+something else:
+
+```
+49fe1:  f6 05 7b 00 f0 ff 80   testb $0x80,0xfff0007b
+```
+
+An absolute operand — `testb $0x80` against a **hardcoded address** — so `0xfff0007b` is not formed from package data at
+all. It is an unmapped hardware window that the kernel touches on this path, and the fault is the kernel's own probe
+failing, in code at `0x80049fe1`, with `EAX=1`, `ECX=0x3f8`, `EDX=0x3f9` (COM1's data and interrupt-enable ports) live in
+registers. The surrounding instructions store a flag at `0x8005049e`, compare against `0x8005049c` and install
+`0x8004a320` — kernel bookkeeping, not a game object.
+
+**So the useful question is not "which loader field was read".** The guest is idle (`EIP=0x8001d1ea`, `HLT=1`) because the
+game's work has stopped, and the page fault is a symptom on the way there, not necessarily the cause. The next instrument
+is a breakpoint on the halt and on the kernel's exit path, to see what the game called last — not another read of the
+package.
+
+**Two measurement notes that cost time and will cost it again:**
+
+- `pmemsave` takes **physical** addresses. The guest runs paged (`CR0` PG set, `CR3=0xf000`), so a dump of physical
+  `0x80000000` is not linear `0x80000000` — the first dump disassembled to `...` (zeros) and looked like a missing kernel.
+  In this build the kernel is identity-offset: linear `0x80049fe1` is physical `0x49fe1`, which is why the low-memory dump
+  shows the faulting instruction.
+- `xemu` merges its settings file with the command line. Passing `-machine`/`-drive` for something the config already
+  defines fails with `drive with bus=0, unit=0 (index=0) exists`, and the run exits in seconds with an empty log — three
+  attempts died that way before the config-only run worked. To add a QEMU flag, put the machine in the config and pass only
+  the flag.
