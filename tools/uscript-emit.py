@@ -619,15 +619,36 @@ def _emit_var(name, env, want=""):
     """
     low = name.lower()
     scope = env["scope"]
+    from_props = False
     if low in scope["locals"]:
         token, index, ptype = scope["locals"][low]
     elif low in scope["props"]:
         token, index, ptype = scope["props"][low]
+        from_props = True
     else:
         return None
     out = bytes([token]) + write_index(index)
     body = bytes([0x2D]) + out if ptype == "bool" else out
+    if from_props:
+        body = _outer_wrapped(low, body, ptype, want, env) or body
     return _converted(body, ptype, want)
+
+
+def _outer_wrapped(low, read, ptype, want, env):
+    """`Context(Outer, 5, 4) <read>` for a name the package exports once, on a class outside the body's chain.
+
+    `PlayerInput.ChangeSnapView` writes `19 01 8e 05 00 04 2d 01 6c 28` where the text spells `bSnapToLevel` and the
+    record (export 2604) is declared on `PlayerController`, which `PlayerInput` (extends `Object`) does not reach --
+    so the compiled read goes through `Outer` (property import 14, `01 8e`). Only the bool shape is measured: all 60
+    `Outer.<bool>` nodes write the word 5 (a bare export bool writes 6), so anything else is refused, not guessed.
+    """
+    scope = env.get("scope") or {}
+    if low not in (scope.get("outer_props") or ()):
+        return None
+    if ptype != "bool" or scope.get("outer_ref") is None:
+        raise Refused("a name this package declares only on another class's chain (the `Outer.<bool>` shape)")
+    outer = bytes([INSTANCE_TOKEN]) + write_index(scope["outer_ref"])
+    return _converted(bytes([0x19]) + outer + struct.pack("<H", 5) + bytes([4]) + read, ptype, want)
 
 
 def _emit_enum(name, env):
@@ -929,7 +950,12 @@ def _emit_member(expr, rettype, env):
         if token != INSTANCE_TOKEN:
             raise Refused("a default member reached through a local")
         if ptype not in PROP_SIZE:
-            raise Refused("a %s default member, whose value size this walk does not carry" % (ptype or "typeless"))
+            if ptype != "struct":
+                raise Refused("a %s default member, whose value size this walk does not carry"
+                              % (ptype or "typeless"))
+            # A struct default is the record alone: `return Default.DrawColor;` is `04 02 44 44` -- no size byte
+            # and no `Context`, because the value is copied straight out of the default object.
+            return bytes([0x02]) + write_index(index), "default-struct"
         if ptype == "bool":
             return _converted(bytes([0x2D, 0x02]) + write_index(index), "bool", rettype), "default-bool"
         return _converted(bytes([0x02]) + write_index(index), ptype, rettype), "default"
@@ -1216,20 +1242,28 @@ def emit_assign(stmt, at, env):
         return bytes([0x0F]) + node + emit_expr(rhs, ptype, env)[0]
     nm = lhs[0][1].lower()
     scope = env["scope"] or {}
+    from_props = False
     if nm in scope.get("locals", {}):
         token, index, ptype = scope["locals"][nm]
     elif nm in scope.get("props", {}):
         token, index, ptype = scope["props"][nm]
+        from_props = True
     else:
         raise Refused("an assignment to a name neither a local nor a property of the class chain")
     if ptype == "bool":
         # The value is one expression: a literal, a variable read (the bool flag is the read's own) or a call.
         if len(rhs) != 1 and not _is_call(rhs):
             raise Refused("a bool assignment whose value is a compound expression")
-        return bytes([0x14, 0x2D, token]) + write_index(index) + emit_expr(rhs, "bool", env)[0]
+        read = bytes([0x2D, token]) + write_index(index)
+        if from_props:
+            read = _outer_wrapped(nm, read, ptype, "", env) or read
+        return bytes([0x14]) + read + emit_expr(rhs, "bool", env)[0]
     if ptype in ("struct", "array", "delegate", "pointer", ""):
         raise Refused("an assignment to a %s property" % (ptype or "typeless"))
-    return bytes([0x0F, token]) + write_index(index) + emit_expr(rhs, ptype, env)[0]
+    read = bytes([token]) + write_index(index)
+    if from_props:
+        read = _outer_wrapped(nm, read, ptype, "", env) or read
+    return bytes([0x0F]) + read + emit_expr(rhs, ptype, env)[0]
 
 
 def _callee_return_type(name, env):
@@ -1357,6 +1391,10 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     props, funcs, imports, classes = tables
     scope = {"props": {}, "locals": {}, "funcs": {}, "classrefs": {}, "props_all": props, "chain": chain,
              "pack": pack, "cls": cls.lower(),
+             # a property the package exports once, on a class outside this body's chain, is read through `Outer`
+             "outer_props": set(),
+             # the `Outer` record itself -- a property import (`01 8e` is import 14 of Engine.u)
+             "outer_ref": next((c[0] for c in imports.get("outer", []) if c[1] in PROPERTY_CLASSES), None),
              # the type word the package artifact spells for every property record, keyed by (package, class, name):
              # a cast's slot needs `SquadDir` as `Vector`, and a receiver's member may live in another package
              "friendly": _obj_classes(),
@@ -1394,9 +1432,28 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                 scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
                 continue
             if len(cands) == 1:
+                # One record by that name in the whole package, declared on a class that is *not* on this body's
+                # chain: `PlayerInput.ChangeSnapView` writes `bSnapToLevel` (export 2604, on `PlayerController`) as
+                # `19 01 8e 05 00 04 2d 01 6c 28` -- a `Context` around `Outer`. The index is right, the node is not
+                # a bare read, so it is marked and the read wraps it (see `_outer_wrapped`). Only the bool shape is
+                # marked: the 27 non-bool names that reach this fallback are read *bare* in this corpus, so they
+                # keep that read and are not given a node the package does not write.
                 picked = cands[0]
+                if PROP_TYPE.get(picked[2]) == "bool":
+                    scope["outer_props"].add(nm)
         if picked is not None:
             scope["props"][nm] = (INSTANCE_TOKEN, picked[0], PROP_TYPE.get(picked[2], ""))
+    # A property this package only *imports* -- an ancestor in another package declares it and no class here
+    # re-declares it -- is still a record the compiler wrote, with a negative index: `Corroded.GetPawnDamageEffect`
+    # is `04 02 d8 02` (`Default.PawnDamageEffect`, import 152) and `VoiceChatReplicationInfo.JoinChannelAt` reads
+    # its `Level.Game`-style names the same way. The class chain is not the authority here; the package's own
+    # import table is.
+    for nm, cands in imports.items():
+        if nm in scope["props"]:
+            continue
+        imp = [c for c in cands if c[1] in PROPERTY_CLASSES]
+        if len(imp) == 1:
+            scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
     # A `delegate` is *two* records: a DelegateProperty named `__X__delegate` and a Function named `X`, so the call
     # `OnChange(Self)` is a `DelegateFunction` naming **both** -- `43 33 1a 17 16` is export 51
     # (`GUI.GUIComponent.__OnChange__Delegate`) and name index 26 (`OnChange`), which is why the base name has to be

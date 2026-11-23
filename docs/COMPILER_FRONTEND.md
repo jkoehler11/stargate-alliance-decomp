@@ -431,3 +431,37 @@ The `Context` skip word is now settled for every member kind the walk emits: **5
 local. The 4 bool-member bodies this page named are emitted and identical; the member walk reads a property's declared
 type from `inventory/class_properties.csv` once per run instead of once per body, which is what kept a corpus walk at
 8 minutes and now runs it in 2.
+
+## Stage 3, continued -- the record table the compiler read (measured 2026-11-22)
+
+**2,986 bodies are modelled and 2,986 are byte-identical** -- 45 gained, none lost, and **no body differs** for the
+first time (`PlayerInput.ChangeSnapView`, the last one, now reproduces).
+
+The skip word is not a per-shape constant: it is the member's width in the compiler's **uncompacted** code array,
+where every compact index occupies four bytes. Measured over the 63 `Context` nodes whose member is a call:
+
+| the member | compact | uncompacted | the word |
+|---|---|---|---|
+| `1b 0a 16` (`List.ItemCount()`) | 3 | 6 | **6** |
+| `1c 72 10 16` (a `final` member, `MyList.GetExtra()`) | 4 | 6 | **6** |
+| `1b 61 05 01 05 16` (`P.BotDesireability(Pawn)`) | 6 | 11 | **11** |
+| `1b 43 08 00 7f 7e 1e 00000000 16` (`P.BeyondViewDistance(SpawnLocation, 0)`) | 12 | 16 | **16** |
+
+60 of the 63 agree. The same arithmetic gives the property constants this page already recorded: `01 <idx>` is 5
+and `2d 01 <idx>` is 6, because an index is four bytes wide before the archive compacts it. Three nodes do not agree
+and stay refused by name: a member whose **argument list carries a `Context` of its own**
+(`Squad.GetSGFormation().GetLocationFor(...)` writes 18 where the wide length is 24, twice in `BotEnemy`/`BotRep`)
+and `UWindowLayoutControl.AddRow` (11 against 9). The one shape where the rule gives the wrong number is
+`Outer.<bool>`: it writes 5 where `2d 01 <idx>` accounts for 6, so that word is measured, not derived.
+
+Three record-table rules came out of the same walk:
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `bSnapToLevel = B;` (`PlayerInput`, export 2604 on **another** class) | `14 19 01 8e 05 00 04 2d 01 6c 28 2d 00 ...` | a bool the package exports once on a class outside the body's chain is read through **`Outer`** (`01 8e` is import 14); the `Context` wraps the read, the `LetBool` stays outside it |
+| `return Default.PawnDamageEffect;` (`Corroded`, `Drowned`) | `04 02 d8 02` | a property the package only **imports** is a record the compiler named, index `-152`: the import table, not the class chain, is the authority. 27 assignments and 11 reads this page had no record for are modelled from it |
+| `return Default.DrawColor;` (`LocalMessage.GetColor`, `GetConsoleColor`) | `04 02 44 44` | a **struct** default is the record alone -- no `Context`, no size byte, because the value is copied straight out of the default object |
+
+An off-chain record is only read through `Outer` when it is a **bool**: the 27 non-bool names that land in the same
+fallback are read *bare* in this corpus (`GamerTag` writes `0f 01 77 39` -- export 3703 -- not a `Context`), so the
+mark is per type, and a non-bool name in that position is refused rather than given a node the package does not write.
