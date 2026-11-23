@@ -574,3 +574,54 @@ difference is a gap in the *statement* emitter that the single-expression surfac
 
 The gate carries **64 synthetic bodies**: one per new form, `for` and `do`/`until` as refusals, and `WhileThen` (a loop
 followed by a statement), which is the case the first draft of the `while` rule got wrong by three bytes.
+
+## Stage 3, continued -- the loop surface: `for`, `do`/`until` and the four increment opcodes (measured 2026-11-22)
+
+**4,096 bodies are modelled and 4,079 are byte-identical: 17 differ**, from 4,022 / 4,008 / 14. The 74 gained bodies
+were every one of them refused before this change, and no previously scored body lost a byte (the 4,008 identical rows
+are still identical, and the join stays at 11,678 of 11,687 walked bodies). A statement can now be an *expression*:
+`i ++` and `x += y` are statements in their own right, not assignments, and the `for` header's three clauses are
+expressions the same emitter writes.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `for (i = 0; i < n; i ++) S;` | init, `07 <end>`, cond, S, step, `06 <top>` | the init comes first, then a `JumpIfNot` whose target is the position **after** the back-jump, the condition, the body, the step, and a `Jump` naming the `JumpIfNot`'s own position |
+| `do S until (c);` | S, `07 <body's first byte>`, c | the condition is written *after* the jump that reads it, and the jump names the body's start |
+| `i ++` / `++ i` | `a5 <read> 16` / `a3 <read> 16` | postfix and prefix are two natives, not one with a flag |
+| `b ++` / `++ b` | `8b <read> 16` / `89 <read> 16` | the `byte` pair, from the operand's declared type |
+| `Slot += 2` | `a1 <read> 2c 02 16` | `AddEqual_IntInt` (161) is a different native from `Add_IntInt` (146) |
+| `YPos += YL` | `b8 <read> <read> 16` | `AddEqual_FloatFloat` (184), chosen by the declared `(float, float)` pair like any operator |
+
+### The `for` end operand is the position after the back-jump
+
+`Actor.UpdatePrecacheMaterials` writes `07 3700` for a loop whose `06 0700` sits at wide 0x34 and ends at 0x37;
+`SGOrder.PostBeginPlay` writes `07 2100` for a `Jump` at 0x1e. Both name the position *past the jump*, which is the
+same rule the `while` shape follows (`Object.GetItemName`'s 0x47) -- and reading it as the jump's own position, the
+first draft, left **14 bodies exactly three bytes short** (the whole of `AIMsgManager`, `xAdminGroup.ValidName`,
+`UWindowEditBox.InsertText`). The back-`Jump` names the `JumpIfNot`'s own position, not the condition's first byte:
+`Actor.UpdatePrecacheMaterials` writes `06 0700` for a `JumpIfNot` at wide 7 whose condition starts at 10.
+
+### `do`/`until` is measured, and no corpus body models it end to end yet
+
+`Engine.TestInfo.TestContinueDoUntil` writes `07 1000` for a body that begins at wide 0x10, and
+`Engine.StreamBase.RevInStr` writes `07 3d00` for one that begins at 0x3d; in both the condition follows the jump. The
+shape emits, but every one of the corpus's 8 `do`/`until` bodies still refuses further in -- `continue` (which compiles
+to a `Jump` naming the position after the loop's `JumpIfNot`, and is a statement the walk does not model), a call it
+cannot bound, or a member it cannot name -- so the rule is carried by the two shipped disassemblies and the gate's
+synthetic body rather than by a scored row. That is the honest state of it: measured, emitted, unexercised.
+
+### The 17 that differ are 14 plus three the loop surface reached for the first time
+
+`Controller.AwardAdrenaline`, `Pawn.Tool_AngleLinearInterpolate` and `UWindowEditBox.InsertText` are the
+**conversion on an operand** family the page already names (a `39 3f` / `39 44` the package writes in front of an
+operand the walk's type join leaves alone), reached now because their bodies contain a `for` or a `+=`. That family is
+5 bodies before this change and 8 after it, and it is the thread's next item -- one rule, and every one of the 17
+becomes identical or stays refused. Nothing else differs: no branch operand moved.
+
+`switch` (173 bodies), `continue`/`break` (52) and a statement whose call is a member of a receiver
+(`Pawn.SwitchWeapon(F)`, 2,250) are **not in this PR**. The receiver-call statement was written and measured: it
+gained 52 bodies and wrote 8 wrong (the skip word and the `EatString` prefix of a *member* call the statement path
+does not yet distinguish), so it went back to the residue rather than ship plausible bytes.
+
+The gate carries **71 synthetic bodies**: `ForLoop`, `ForCompound` (a compound assignment for its step), `DoLoop`,
+`IncSlot`, `PreIncSlot`, `AddToSlot`, `SubFromSlot` and `IncFloat` (refused: no `float` increment is installed).

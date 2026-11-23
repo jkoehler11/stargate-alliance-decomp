@@ -239,6 +239,25 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the loop surface: `for`, `do`/`until` and the four increment opcodes: **4,096 modelled /
+  4,079 byte-identical / 17 differ** (from 4,022 / 4,008 / 14; 74 bodies gained, none lost, and no previously scored
+  body's bytes moved -- the join is unchanged at 11,678 of 11,687 walked). (1) A statement can be an **expression**:
+  `i ++` is `a5 <read> 16` and `++ i` is `a3 <read> 16` (the `byte` pair at 0x8b/0x89), and `x += y` is its own native
+  -- `Slot += 2` is `a1` (`AddEqual_IntInt` 161) where `Slot + 2` is 146, `YPos += YL` is `b8` (184), picked by the
+  declared operand pair exactly as `+` is. (2) `for (init; cond; step) S;` is the init, `07 <end>`, the condition, S,
+  the step, `06 <the JumpIfNot's own position>`; **`end` is the position after the back-jump**, not the jump's own
+  position -- `Actor.UpdatePrecacheMaterials` writes `07 3700` for a `06 0700` that sits at wide 0x34 and ends at
+  0x37, and the first draft (the jump's position) left 14 bodies exactly three bytes short. (3) `do S until (c);` is
+  the body, `07 <the body's first byte>`, then the condition: `TestInfo.TestContinueDoUntil` writes `07 1000` for a
+  body at wide 0x10 and `StreamBase.RevInStr` `07 3d00` for one at 0x3d. The shape emits but **no corpus body models
+  end to end** -- all 8 refuse further in (`continue`, a call it cannot bound, a member it cannot name), so the rule
+  rests on those two disassemblies and the gate's synthetic body. (4) The 17 that differ are the 14 the page already
+  names plus 3 of the same *conversion on an operand* family (`Controller.AwardAdrenaline`,
+  `Pawn.Tool_AngleLinearInterpolate`, `UWindowEditBox.InsertText`), which the loop surface reached for the first time:
+  that family is 5 bodies before and 8 after, and it is the next item. **Not in this PR:** `switch` (173), a statement
+  whose call is a member of a receiver (2,250 -- written, measured, 8 wrong, reverted), `continue`/`break` (52). Doc:
+  `docs/COMPILER_FRONTEND.md` gains the loop-surface section; the artifact and the join are regenerated; `--check`
+  carries 71 synthetic bodies.
 - [~] 3.6 the statement walk: a sequence, an `if` and a `while`: **4,022 modelled / 4,008 byte-identical /
   14 differ** (from 3,056 / 3,056 / 0; 966 bodies gained and none lost, and no previously scored body's bytes moved.
   The 14 that differ were all refused before this change and are named by shape in the stage-3 section). (1) A body is
