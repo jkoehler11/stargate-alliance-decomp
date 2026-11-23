@@ -338,8 +338,9 @@ byte. Named, not explained.
 
 ## What the statement walk has left
 
-Its own residue, named by count and not by rate: **3,893** bodies with a nested block and **3,690** with two or more
-statements (control flow, the next stage), 462 whose one expression is **compound**, 322 whose one statement is
+Its own residue, named by count and not by rate -- **superseded** by the statement-walk section below, which
+models 731 of these bodies and names what is left by cause: **3,893** bodies with a nested block and **3,690** with two or
+more statements (control flow, the next stage), 462 whose one expression is **compound**, 322 whose one statement is
 control flow, 283 whose call has a **receiver** (`Pawn.SwitchWeapon(F)`, a `Context` chain), 58 whose assignment
 target is a receiver chain or an index (`H.LastPickupTime`, `Skins[0]`), 51 that call a **cast**
 (`AIController(Controller)`) or `assert(...)`, 32 names that are neither a local, a property nor an enum constant, 28
@@ -516,3 +517,60 @@ this reason and stay in the residue.
 The 70 gained bodies are 43 call members, 14 short-circuits and 13 that only became emittable once their expression
 resolved (4 calls, 4 assignments, 2 contexts, 1 bool context, 1 call value, 1 operator). The 3 remaining "member is
 not one name" are `class'X'.static.F()`, an array-element receiver and a `default` chain -- each its own next item.
+
+## Stage 3, continued -- the statement walk: a sequence, an `if` and a `while` (measured 2026-11-22)
+
+**4,022 bodies are modelled and 4,008 are byte-identical: 14 differ**, from 3,056 / 3,056 / 0. The 966 gained bodies
+were every one of them refused before this change, and no previously scored body lost a byte -- the 3,056 rows that
+were identical are still identical, to the byte (`git show <before>:inventory/uscript_emit.csv` against the new file:
+0 rows lost, 0 rows moved). The join is unchanged at 11,678 of 11,687 walked bodies.
+
+A body is now a **list of statements**: each statement emits on its own and the body appends its trailer once. 731 of
+the modelled bodies carry two or more statements, 574 carry an `if`, 133 open with a `local` declaration and 19 carry
+a `while`.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `SetPhysics(PHYS_None); SetTimer(0.2 + FRand(), false); SetPhysics(PHYS_Falling);` | the three calls back to back, then `04 0b 47` **once** | statements concatenate with no separator, and the trailer belongs to the body, not to a statement |
+| `local rotator newRotation; newRotation = Rotation; newRotation.Pitch = 0;` | `0f 00 4e01 01a7 0f 36 b9 00 4e01 25 …` | a `local` declaration emits **nothing**: it is a record the package declares, so the first bytes are the first *assignment* and the two-byte `00 4e01` read of the local follows it |
+| `if ( c ) S ;` | `07 <end> c S` | `JumpIfNot` names the position just past `S` |
+| `if ( c ) S ; else T ;` | `07 <else> c S 06 <end> T` | the `JumpIfNot` names the **else branch's** position and a `Jump` carries the end |
+| `while ( c ) S ;` | `07 <end> c S 06 <start>` | the condition sits at the loop's top, the back-`Jump` names the loop's own start, and the `JumpIfNot` names the position **after** that `Jump` |
+
+### A branch operand is an absolute position in the uncompacted array
+
+`Skip` is a *distance* -- from the right operand's first byte to the end of the enclosing node -- but a branch operand
+is the **absolute** offset of its target in the compiler's uncompacted code array, measured from the body's first byte.
+Three sites agree with that reading and with nothing else:
+
+* `TransientAmbientPawn.PhysicsVolumeChange` writes **59** for an `if` that starts at 0, whose condition is 28 wide and
+  whose braced body is 28 more (46 compact + 13 of index widening = 59); read as a distance from the instruction's end
+  the same target would be 56.
+* `FishBase.PhysicsVolumeChange`'s `if/else` writes **32** for the else branch at compact `0x19` (25 compact + 7
+  widening) and **53** for the end of the whole statement at `0x2c`; the `Jump` in between sits at wide 29, so a
+  distance reading would be **21**.
+* `Object.GetItemName`'s `while` writes **0x47** for the position of the `return` that follows the loop; its back-`Jump`
+  is at wide 0x44, i.e. three bytes earlier. The first draft of the rule named the `Jump` itself, and every body whose
+  loop was followed by a statement came back three bytes short -- the target is the loop's *end*, not its back edge.
+
+A `for` header is measured and **not** emitted: `for (i = 0; i < n; i++) S;` is the init, a `JumpIfNot` naming the
+back-jump's position, the condition, the body, the increment, then a `Jump` to the condition's position.
+`Actor.UpdatePrecacheMaterials` writes `06 1300` for a condition at wide 19. The increment compiles to an expression
+(`a5`, `AddAdd_Int`) that the statement surface does not model, so `for` (467 bodies), `switch` (173) and `do`/`until`
+(8) stay refused by name.
+
+### The 14 that differ were all refused before this change
+
+None of them is caused by the new control flow: every branch operand in all 14 agrees with the shipped bytes, and each
+difference is a gap in the *statement* emitter that the single-expression surface never reached.
+
+| the shape | bodies | what the package writes that the walk does not |
+|---|---|---|
+| an operand the compiler wraps in a conversion | 5: `Canvas.DrawBracket`, `Canvas.MakeColor`, `PlayerController.CompressAccel`, `UWindowHTMLTextArea.ParseColor`, `UWindowWindow.GetMouseXY` | `39 3f` / `39 44` / `39 3a` in front of an operand the walk's type join leaves alone |
+| a `Context` skip word that is neither 5 nor 6 | 4: `Scarab.Surfaced` (3), `DMMutator.AlwaysKeep` (11), `StargateWeapon.GetRating` (16), `ScriptedController.NeedToTurn` (11) | the member's own width, measured per shape, not the constant the walk writes |
+| a call statement the compiler reaches through `Outer` | 2: `CheatManager.astral`, `CheatManager.puss` | `19 01 8e 05 00 00 <call>` -- the callee is declared on `Outer`'s class and the source spells it bare |
+| one member read the walk does not emit after a cast | 2: `GameInfo.InitGameReplicationInfo`, `Inventory.HandlePickupQuery` | one extra `01 9e` |
+| a byte literal at a `byte` parameter | 1: `PuzzleTrigger.Trigger` | `24 00` (`ByteConst`) where the walk writes `39 3d 25` (`IntToByte`, `IntZero`) |
+
+The gate carries **64 synthetic bodies**: one per new form, `for` and `do`/`until` as refusals, and `WhileThen` (a loop
+followed by a statement), which is the case the first draft of the `while` rule got wrong by three bytes.

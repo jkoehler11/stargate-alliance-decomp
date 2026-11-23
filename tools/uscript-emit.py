@@ -22,8 +22,14 @@ What the corpus settled, and what the emitter therefore encodes (measured 2026-1
 * **A vector literal is one token:** `23 <3 x f32>`.
 
 Anything outside the family is refused with the reason named (a variable operand needs the class's property table, an
-enum constant needs its declared values, two statements need control flow), because a guess here is a wrong body that
-looks like a measurement. The residue is what the next stage reads.
+enum constant needs its declared values, a statement form the walk does not model), because a guess here is a wrong
+body that looks like a measurement. The residue is what the next stage reads.
+
+A body is a **list of statements** (`stmt_tree`): each statement emits on its own, the body appends its trailer once,
+and the three control-flow forms whose operands the corpus pins are emitted from an absolute position in the
+compiler's uncompacted code array -- `if`, `if`/`else` and `while` (`emit_flow`). A `local` declaration emits nothing.
+`for`, `do`/`until` and `switch` are parsed and refused by name; the `for` shape is measured in
+`docs/COMPILER_FRONTEND.md` but its increment is an expression the statement surface does not model.
 
     python3 tools/uscript-emit.py --check                       # synthetic, no dump, writes nothing
     python3 tools/uscript-emit.py --tree $WORK/scripts-all \\
@@ -1477,21 +1483,195 @@ def _callee_return_type(name, env):
     return ""
 
 
-def emit_body(body, rettype, env, is_native=False):
-    """`(bytes, model, shape)` for a modelled body, or Refused naming what is not modelled."""
-    if body is None:
-        if is_native:
-            raise Refused("a native declaration: its body relays its parameters to the native")
-        return TRAILER, "stub", "stub"          # declared without a body: the package compiles the trailer alone
-    stmts = statements(body)
-    if not stmts:
-        return TRAILER, "empty", "empty"
-    if len(stmts) > 1:
-        raise Refused("%d statements, which needs control flow" % len(stmts))
-    stmt = stmts[0]
+def _block_at(toks, i, top=False):
+    """`([nodes], next index)` for the statements between a `{` and its `}`, or to the end at `top`."""
+    out = []
+    while True:
+        while i < len(toks) and toks[i] == ("op", ";"):
+            i += 1
+        if i >= len(toks):
+            if top:
+                return out, i
+            raise Refused("a block that never closes")
+        if toks[i] == ("op", "}"):
+            if top:
+                raise Refused("a body whose braces do not balance")
+            return out, i + 1
+        node, i = _stmt_at(toks, i)
+        if node is not None:
+            out.append(node)
+
+
+def _split_semis(toks):
+    """Split a `for` header at its depth-0 `;` tokens."""
+    out, cur, depth = [], [], 0
+    for tk in toks:
+        if tk[0] == "op" and tk[1] in "([":
+            depth += 1
+        elif tk[0] == "op" and tk[1] in ")]":
+            depth -= 1
+        if tk == ("op", ";") and depth == 0:
+            out.append(cur)
+            cur = []
+            continue
+        cur.append(tk)
+    out.append(cur)
+    return out
+
+
+def _stmt_at(toks, i):
+    """`(node, next index)` for one statement at token `i`.
+
+    A node is `("simple", tokens)`, `("local", tokens)`, `("block", [nodes])`, `("if", cond, then, else)`,
+    `("while", cond, body)`, `("for", init, cond, next, body)` or `("until", cond, body)`. The whole statement set is
+    parsed here so the shape of a body is known before it is emitted; a form the emitter does not model (`for`,
+    `do`/`until`, `switch`) is refused by `emit_flow`, by name.
+    """
+    while i < len(toks) and toks[i] == ("op", ";"):
+        i += 1
+    if i >= len(toks):
+        return None, i
+    kind, val = toks[i]
+    low = val.lower()
+    if kind == "op" and val == "{":
+        nodes, j = _block_at(toks, i + 1)
+        return ("block", nodes), j
+    if kind == "keyword" and low in ("if", "while", "for"):
+        j = i + 1
+        if j >= len(toks) or toks[j] != ("op", "("):
+            raise Refused("a %s without a parenthesised condition" % low)
+        close = _paren_end(toks, j)
+        if close is None:
+            raise Refused("a %s whose condition the walk cannot bound" % low)
+        inner = toks[j + 1:close]
+        if low == "for":
+            parts = _split_semis(inner)
+            if len(parts) != 3:
+                raise Refused("a for whose header is not three clauses")
+            body, j = _stmt_at(toks, close + 1)
+            if body is None:
+                raise Refused("a for with no body")
+            return ("for", parts[0], parts[1], parts[2], body), j
+        body, j = _stmt_at(toks, close + 1)
+        if body is None:
+            raise Refused("a %s with no body" % low)
+        if low == "while":
+            return ("while", inner, body), j
+        els = None
+        if j < len(toks) and toks[j][0] == "keyword" and toks[j][1].lower() == "else":
+            els, j = _stmt_at(toks, j + 1)
+        return ("if", inner, body, els), j
+    if kind == "keyword" and low == "do":
+        body, j = _stmt_at(toks, i + 1)
+        if j >= len(toks) or toks[j][0] != "keyword" or toks[j][1].lower() != "until":
+            raise Refused("a do without an until")
+        j += 1
+        if j >= len(toks) or toks[j] != ("op", "("):
+            raise Refused("a do without an until condition")
+        close = _paren_end(toks, j)
+        if close is None:
+            raise Refused("a do whose condition the walk cannot bound")
+        k = close + 1
+        if k < len(toks) and toks[k] == ("op", ";"):
+            k += 1
+        return ("until", toks[j + 1:close], body), k
+    if kind == "keyword" and low == "switch":
+        raise Refused("a switch statement")
+    if kind == "keyword" and low == "local":
+        # `local rotator newRotation;` is a record the package declares, not code: it emits no bytes.
+        j, depth = i, 0
+        while j < len(toks):
+            tk = toks[j]
+            if tk[0] == "op" and tk[1] in "([":
+                depth += 1
+            elif tk[0] == "op" and tk[1] in ")]":
+                depth -= 1
+            elif tk == ("op", ";") and depth == 0:
+                return ("local", toks[i:j]), j + 1
+            j += 1
+        raise Refused("a local declaration without its semicolon")
+    j, depth = i, 0
+    while j < len(toks):
+        tk = toks[j]
+        if tk[0] == "op" and tk[1] in "([":
+            depth += 1
+        elif tk[0] == "op" and tk[1] in ")]":
+            depth -= 1
+        elif tk == ("op", "{") and depth == 0:
+            raise Refused("a nested block in a statement the walk does not model")
+        elif tk == ("op", ";") and depth == 0:
+            return ("simple", toks[i:j]), j + 1
+        j += 1
+    raise Refused("a statement without its semicolon")
+
+
+def stmt_tree(body):
+    """The body as a list of statement nodes (`_stmt_at`'s shapes) at class scope."""
+    return _block_at(body, 0, top=True)[0]
+
+
+def _off(value):
+    """A branch operand: the **absolute** offset into the compiler's uncompacted code array."""
+    if not 0 <= value <= 0xFFFF:
+        raise Refused("a code offset of %d does not fit the word the compiler writes" % value)
+    return struct.pack("<H", value)
+
+
+def emit_flow(node, rettype, env, pos):
+    """`(bytes, model, shape)` for one statement whose first byte sits at wide offset `pos`.
+
+    A branch operand is an **absolute** position in the compiler's uncompacted code array, measured from the body's
+    first byte -- not a distance from the instruction. Measured on the shipped bodies: `if (c) S;` writes the
+    position just past `S`, `if (c) S; else T;` writes the `else` branch's position and its `Jump` writes the end,
+    and `while (c) S;` writes the trailing `Jump`'s position while that `Jump` writes the loop's own start.
+    """
+    kind = node[0]
+    if kind == "simple":
+        return emit_stmt(node[1], rettype, env)
+    if kind == "local":
+        return b"", "local", "local"
+    if kind == "block":
+        out, models = b"", []
+        for child in node[1]:
+            chunk, _m, _s = emit_flow(child, rettype, env, pos + _wide(out))
+            out += chunk
+            models.append(_m)
+        return out, "+".join(models) if models else "block", "block"
+    if kind == "if":
+        _k, cond, then, els = node
+        cbytes, _cshape = emit_expr(cond, "bool", env)
+        then_pos = pos + 3 + _wide(cbytes)
+        tbytes, _tm, _ts = emit_flow(then, rettype, env, then_pos)
+        if els is None:
+            target = then_pos + _wide(tbytes)
+            return bytes([0x07]) + _off(target) + cbytes + tbytes, "if", "if"
+        jump_pos = then_pos + _wide(tbytes)
+        ebytes, _em, _es = emit_flow(els, rettype, env, jump_pos + 3)
+        end = jump_pos + 3 + _wide(ebytes)
+        return (bytes([0x07]) + _off(jump_pos + 3) + cbytes + tbytes
+                + bytes([0x06]) + _off(end) + ebytes), "if-else", "if-else"
+    if kind == "while":
+        _k, cond, body = node
+        cbytes, _cshape = emit_expr(cond, "bool", env)
+        body_pos = pos + 3 + _wide(cbytes)
+        bbytes, _bm, _bs = emit_flow(body, rettype, env, body_pos)
+        jump_pos = body_pos + _wide(bbytes)
+        # The target is the *end of the loop*, i.e. the position after the back-jump: `Object.GetItemName` writes
+        # 0x47 for a body whose `Jump` sits at 0x44 and whose next statement starts at 0x47.
+        return (bytes([0x07]) + _off(jump_pos + 3) + cbytes + bbytes
+                + bytes([0x06]) + _off(pos)), "while", "while"
+    if kind == "for":
+        raise Refused("a for loop")
+    if kind == "until":
+        raise Refused("a do/until loop")
+    raise Refused("a %s statement" % kind)
+
+
+def emit_stmt(stmt, rettype, env):
+    """`(bytes, model, shape)` for one simple statement, without the body trailer."""
     if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "return":
         expr, shape = emit_expr(stmt[1:], rettype, env)
-        return bytes([0x04]) + expr + TRAILER, "return", shape
+        return bytes([0x04]) + expr, "return", shape
     if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "assert":
         # `assert(false);` is `09 26 08 28`: the opcode, the **source line as uint16**, then the expression -- and a
         # `bool` slot, so `false` is `28`. `Actor.Crash`'s assert sits on line 2086 of the shipped text and the
@@ -1502,13 +1682,13 @@ def emit_body(body, rettype, env, is_native=False):
         if len(stmt) < 4 or stmt[1] != ("op", "(") or _paren_end(stmt, 1) != len(stmt) - 1:
             raise Refused("an assert whose argument the walk cannot bound")
         expr, shape = emit_expr(stmt[2:-1], "bool", env)
-        return bytes([0x09]) + struct.pack("<H", line) + expr + TRAILER, "assert", "assert"
+        return bytes([0x09]) + struct.pack("<H", line) + expr, "assert", "assert"
     if any(k == "keyword" and v.lower() in ("if", "for", "while", "do", "switch", "case", "else", "foreach")
            for k, v in stmt):
         raise Refused("a statement that is control flow")
     at = _assign_at(stmt)
     if at is not None:
-        return emit_assign(stmt, at, env) + TRAILER, "assign", "assign"
+        return emit_assign(stmt, at, env), "assign", "assign"
     call = emit_call(stmt, env)
     if stmt and stmt[0][0] in ("ident", "keyword") and _callee_return_type(stmt[0][1], env) == "string":
         # A statement call whose declaration returns `string` is prefixed with `EatString` (0x0e):
@@ -1516,8 +1696,31 @@ def emit_body(body, rettype, env, is_native=False):
         # walk emits without the prefix (`Logf(... $ ...)`, `log(... $ ...)`) return nothing. The temporary the call
         # produces is eaten instead of copied. `$`/`@` themselves are ordinary operator nodes (0x70/0xa8) -- the
         # previous note credited them with the prefix, which this reading corrects.
-        return bytes([0x0E]) + call + TRAILER, "call", "eat-string-call"
-    return call + TRAILER, "call", "call"
+        return bytes([0x0E]) + call, "call", "eat-string-call"
+    return call, "call", "call"
+
+
+def emit_body(body, rettype, env, is_native=False):
+    """`(bytes, model, shape)` for a modelled body, or Refused naming what is not modelled."""
+    if body is None:
+        if is_native:
+            raise Refused("a native declaration: its body relays its parameters to the native")
+        return TRAILER, "stub", "stub"          # declared without a body: the package compiles the trailer alone
+    nodes = stmt_tree(body)
+    if not nodes:
+        return TRAILER, "empty", "empty"
+    if sum(1 for k, v in body if k == "keyword" and v.lower() == "assert") > 1:
+        # The line operand is pinned once per declaration, from the whole body's token run, so a body with two
+        # asserts has no second line to read: refuse rather than number both from the first.
+        raise Refused("two asserts, whose lines the walk pins once per body")
+    out, models, shape = b"", [], ""
+    for node in nodes:
+        chunk, model, shape = emit_flow(node, rettype, env, _wide(out))
+        out += chunk
+        models.append(model)
+    if len(models) == 1:
+        return out + TRAILER, models[0], shape
+    return out + TRAILER, "sequence", "sequence(%d)" % len(nodes)
 
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -2061,6 +2264,13 @@ function SetMember() { Target.Health = 7; }
 function SetMemberFlag() { Target.bFlag = true; }
 function Speak() { MyText(Caption); }
 function SetLength() { Items.Length = 0; }
+function Sequence() { Foo(1); Health = 1; }
+function Locals() { local int Extra; Health = 1; }
+function IfElse() { if (bDead) Health = 1; else Health = 2; }
+function WhileLoop() { while (bDead) Health = 1; }
+function WhileThen() { while (bDead) Health = 1; Health = 2; }
+function ForLoop() { for (Slot = 0; Slot < 2; Slot++) Health = 1; }
+function DoLoop() { do Health = 1; until (bDead); }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -2183,11 +2393,23 @@ WANT = {
     "setmember": "0f19016309050004016e042c07" "040b47",   # Target.Health = 7; -- Let + the Context read + the value
     "setmemberflag": "14190163090600042d012f" "27040b47",  # Target.bFlag = true; -- LetBool + the bool Context + True
     "speak": "0e1b32010516040b47",                 # MyText(Caption); -- a call returning `string` is prefixed with EatString
+    # Two statements are one after the other, with the body's own trailer once at the end: no separator is emitted.
+    "sequence": "1b2926160f016e0426040b47",       # Foo(1); Health = 1;
+    # A `local` declaration is a record the package declares, not code: `local int Extra;` writes nothing.
+    "locals": "0f016e0426040b47",
+    # `if (c) S;` is `07 <absolute end> cond S`: the operand is the end of S, a position in the uncompacted array.
+    "ifstmt": "0710002d012d0f016e0426040b47",
+    # `if/else` writes the else branch's position in the JumpIfNot and the end in the Jump between the two.
+    "ifelse": "0713002d012d0f016e0426061b000f016e042c02040b47",
+    # `while (c) S;` puts the condition at the top and jumps back with `06 <the loop's own start>`, and its
+    # JumpIfNot names the position *after* that jump -- the end of the loop, not the jump itself.
+    "whileloop": "0713002d012d0f016e0426060000040b47",
+    "whilethen": "0713002d012d0f016e04260600000f016e042c02040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
-REFUSE = ("compoundarg", "floatarg", "wrongargc", "ifstmt", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "setlength")
+REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
+          "castnoslot", "opnoslot", "setlength", "forloop", "doloop")
 
 
 def check(args):
