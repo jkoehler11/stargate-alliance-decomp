@@ -97,16 +97,26 @@ the payload 34 → 40, and the file **3031678 → 3031705**: +27 bytes, so **21 
 grew because payload offsets crossed a compact-index boundary — which is exactly the circularity `pkg-write`'s docstring
 warns about, and it means the header's three table offsets are not a constant shift.
 
-**Patching the header is necessary but was not sufficient.** The first run left the header pointing imports and exports at
-their old addresses; the reader called the result `unaligned`. Writing the measured `names` / `imports` / `exports`
-positions back into the header (offsets 16, 24 and 32) fixed that symptom's cause but not the symptom — the rebuilt package
-**still reads as `unaligned`** for that function.
+**Patching the header was necessary.** The first run left the header pointing imports and exports at their original
+addresses, and the reader called the result `unaligned`; writing the measured `names` / `imports` / `exports` positions back
+(offsets 16, 24 and 32) is part of any writer that moves a payload.
 
-**So the writer has one more assumption than the model states**, and it is not in the emitter or the reader: something
-else in the container is left inconsistent when a payload changes length and the export table grows with it. The next
-attempt should diff the rebuilt file against the original **region by region** — the tool to do that is
-`pkg-write.py --layout`, which already reports where every region sits per package.
+**But the `unaligned` that survived that fix was not the writer's fault — it was the experiment's own.** `e["index"]` is
+**0-based** in this reader (export 5464 carries index 5464), and the tool resolved a function by returning `i + 1`. So it
+rewrote the export *after* the one it named, reported success on the size it had chosen, and left the reader to discover a
+payload whose six leading indices ended on the wrong name. Correcting the base to `e["index"]` closes it:
 
-Until that is closed, L1's status is unchanged: reproduction is proven (18 of 18 packages, 3,056 of 3,056 bodies), and a
-changed body has been attempted once and refused by the project's own reader. No tool from this attempt is committed,
-because a writer that fails its own check is worse than none.
+| | |
+|---|---|
+| script | 3 → 9 bytes (`04 0b 47` → `04 1d 9a 02 00 00 04 0b 47`) |
+| payload | 34 → 40 |
+| file | 3,031,678 → 3,031,684 (**+6**, no table growth this time) |
+| read back | script **exact**, every other payload **untouched** |
+
+So the container **does** accept a changed body of a different length, and `tools/l1-change.py` reproduces that on demand.
+The lesson is worth keeping: an off-by-one in a verification harness looks exactly like a broken writer, and this one was
+recorded as a writer defect for a few hours.
+
+**What is still untested is the load.** Nothing has been handed to the game: the bytes are accepted by this project's
+reader, which is not the same claim as xemu accepting them. That is the next experiment, and it needs the ISO rebuilt with
+the changed package rather than another parser.
