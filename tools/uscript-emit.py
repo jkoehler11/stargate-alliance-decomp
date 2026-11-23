@@ -1032,6 +1032,10 @@ def _class_of(expr, env):
             return hit[3]
         return ""
     if _is_call(expr):
+        # `TransientAmbientPawn(Pawn).VerifyLastRenderTime()`: the receiver is a cast, and a cast names the class
+        # it casts to -- the same `classrefs` rule `_emit_cast` uses for `DynamicCast`.
+        if _cast_kind(expr[0][1], env) == "object" and expr[0][1].lower() in class_names:
+            return expr[0][1].lower()
         t = _rettype_on("", expr[0][1], env)
         return t if t in class_names else ""
     at = _dot_at(expr)
@@ -1424,22 +1428,29 @@ def _callee_params(name, env, receiver=None):
     return None
 
 
-def emit_call(stmt, env, receiver=None):
+def emit_call(stmt, env, receiver=None, head=None):
     """`Name(a, b)` -> the token its declaration earned, each argument, `16` (EndFunctionParms); no trailer.
 
     `receiver` is the class a member call's receiver holds (`A.F(args)`): the callee is then looked up on *that*
     class's chain first, because a member call names a function of the receiver's class, not of the body's.
+    `head` is the call token already decided by the caller -- `Super.F()` writes the parent's own record as a
+    `FinalFunction`, which no lookup on the body's chain can produce.
     """
     close = _paren_end(stmt, 1) if len(stmt) > 1 and stmt[1] == ("op", "(") else None
     if close is None or close != len(stmt) - 1:
         raise Refused("a call the statement walk cannot bound (a receiver, or a statement after the call)")
     args = _split_commas(stmt[2:close]) if stmt[2:close] else []
     scope = env["scope"]
-    how = _func_on(receiver, stmt[0][1], env) if receiver else None
-    if how is None:
-        how = (scope or {}).get("funcs", {}).get(stmt[0][1].lower())
-    dele = (scope or {}).get("delegates", {}).get(stmt[0][1].lower())
-    if dele is not None:
+    if head is None:
+        how = _func_on(receiver, stmt[0][1], env) if receiver else None
+        if how is None:
+            how = (scope or {}).get("funcs", {}).get(stmt[0][1].lower())
+        dele = (scope or {}).get("delegates", {}).get(stmt[0][1].lower())
+    else:
+        how, dele = None, None        # the caller named the record: a Super call, never a delegate
+    if head is not None:
+        pass
+    elif dele is not None:
         # `DelegateFunction`: the DelegateProperty's export index, then the callee's name index, then the arguments.
         idx = how[1] if how and how[0] == "virtual" else env["names"].get(stmt[0][1].lower())
         if idx is None:
@@ -1775,6 +1786,132 @@ def _compound(stmt, env):
     return None
 
 
+def _value_size(rtype, env):
+    """The size byte a `Context` writes for a call's **value**: 0 for a void call, 4 for an object."""
+    if not rtype:
+        return 0
+    if rtype in (env.get("class_names") or set()):
+        return 4
+    if rtype in RETURN_SIZE:
+        return RETURN_SIZE[rtype]
+    raise Refused("a call returning %s, whose value size this walk does not carry" % rtype)
+
+
+def _declared_on_chain(low, order, env):
+    """True when a function of that name is declared on the body's own class chain."""
+    order = set(order)
+    for idx, owner in (env.get("funcs_all") or {}).get(low, []):
+        if owner in order:
+            return True
+    for (_p, c, f) in (env.get("natives") or {}):
+        if f == low and c in order:
+            return True
+    return any(low in (env.get("final_of") or {}).get(c, ()) for c in order)
+
+
+def _record_on(cls, name, env):
+    """The **record** a `Super.F()` call names: an export of this package or an import, never a name index.
+
+    `TransientAmbientCreature.PostBeginPlay` writes `1c bc 16` for `Super.PostBeginPlay()`: `bc` is import 60,
+    `PostBeginPlay` of class `Function`; `FishBase.PhysicsVolumeChange` writes `1c 46 02 ...`, export 134 on the
+    parent in the same package. 1,061 bodies open this way in the corpus.
+    """
+    low = name.lower()
+    scope = env.get("scope") or {}
+    chain = scope.get("chain") or {}
+    pack = scope.get("pack") or ""
+    funcs = env.get("funcs_all") or {}
+    imports = env.get("imports") or {}
+    for _p, c in _ancestors(chain, pack, cls.lower()):
+        own = [x for x in funcs.get(low, []) if x[1] == c]
+        if own:
+            return own[0][0]
+        imp = [x for x in imports.get(low, []) if x[1] == "Function"]
+        if len(imp) == 1:
+            return imp[0][0]
+    return None
+
+
+def _super_call(stmt, env):
+    """`Super.F(args);` -> `1c <F's record> args 16`, or None when the statement is not a Super call."""
+    if not (len(stmt) >= 4 and stmt[0][0] in ("ident", "keyword") and stmt[0][1].lower() == "super"
+            and stmt[1] == ("op", ".")):
+        return None
+    order = env.get("order") or []
+    if len(order) < 2:
+        raise Refused("a Super call in a class with no super")
+    parent = order[1]
+    name = stmt[2]
+    if name[0] not in ("ident", "keyword"):
+        raise Refused("a Super call whose member the walk cannot name")
+    rec = _record_on(parent, name[1], env)
+    if rec is None:
+        raise Refused("a Super call to a name the parent's chain does not declare")
+    return emit_call(stmt[2:], env, receiver=parent, head=bytes([0x1C]) + write_index(rec))
+
+
+def _within_call(stmt, env):
+    """The class a bare call resolves on when this class is declared `within` it, or "".
+
+    `class CheatManager extends Object within PlayerController` calls `DeactivateAstralSight()` with no receiver,
+    and the compiler writes it as a member of `Outer`: `19 01 8e 05 00 00 1b 5b 15 16`. Five classes carry the
+    clause in this corpus (`AIMsgManager`, `CheatManager`, `PlayerInput`, `SGPlayerInput`, `StreamTag`).
+    """
+    within = env.get("within") or ""
+    if not within or len(stmt) < 2 or stmt[0][0] not in ("ident", "keyword") or stmt[1] != ("op", "("):
+        return ""
+    low = stmt[0][1].lower()
+    if _declared_on_chain(low, env.get("order") or [], env):
+        return ""
+    if _func_on(within, stmt[0][1], env) is None:
+        return ""
+    return within
+
+
+def _emit_within_call(stmt, env, within):
+    """`F(args);` in a `within X` class -> `19 <Outer> 05 00 <value size> <call>`; `0e` in front for a string."""
+    scope = env.get("scope") or {}
+    outer = scope.get("outer_ref")
+    if outer is None:
+        raise Refused("a `within` call whose package imports no `Outer`")
+    call = emit_call(stmt, env, receiver=within)
+    rtype = _rettype_on(within, stmt[0][1], env)
+    node = (bytes([0x19, INSTANCE_TOKEN]) + write_index(outer) + struct.pack("<H", 5)
+            + bytes([_value_size(rtype, env)]) + call)
+    if rtype == "string":
+        return bytes([0x0E]) + node, "within-call", "eat-string-within-call"
+    return node, "within-call", "within-call"
+
+
+def _stmt_member_call(stmt, env):
+    """`A.F(args);` -> `19 <A> <skip> <size> <F>`: a call statement whose callee is a member of a receiver.
+
+    The word is the call's own width in the uncompacted array (`_wide`) -- `PlayerController.SwitchWeapon` writes
+    `19 01 05 0b 00 00 1b 61 03 00 4b 6e 16` for `Pawn.SwitchWeapon(F);` and the call is 11 wide -- except behind
+    a property **import** (`Outer`), whose shape writes 5 whatever the member is (measured on
+    `CheatManager.astral`/`puss`). The size byte is the call's value size: 0 for a void call.
+    """
+    at = _dot_at(stmt)
+    if at is None:
+        return None
+    obj, member = stmt[:at], stmt[at + 1:]
+    if not _is_call(member):
+        raise Refused("a statement that is a member read, not a call")
+    cls = _class_of(obj, env)
+    if not cls:
+        raise Refused("a call statement whose receiver's class the artifacts do not name")
+    if _func_on(cls, member[0][1], env) is None:
+        raise Refused("a member call statement to a name the receiver's chain does not declare")
+    memb = emit_call(member, env, receiver=cls)
+    rtype = _rettype_on(cls, member[0][1], env)
+    skip = 5 if _is_import_read(obj, env) else _wide(memb)
+    node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", skip)
+            + bytes([_value_size(rtype, env)]) + memb)
+    if rtype == "string":
+        return bytes([0x0E]) + node, "call-member", "eat-string-call-member"
+    return node, "call-member", "call-member"
+
+
 def emit_stmt(stmt, rettype, env):
     """`(bytes, model, shape)` for one simple statement, without the body trailer."""
     if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "return":
@@ -1800,6 +1937,15 @@ def emit_stmt(stmt, rettype, env):
     comp = _compound(stmt, env)
     if comp is not None:
         return comp[0], "expr", comp[1]
+    sup = _super_call(stmt, env)
+    if sup is not None:
+        return sup, "super-call", "super-call"
+    within = _within_call(stmt, env)
+    if within:
+        return _emit_within_call(stmt, env, within)
+    mem = _stmt_member_call(stmt, env)
+    if mem is not None:
+        return mem
     call = emit_call(stmt, env)
     if stmt and stmt[0][0] in ("ident", "keyword") and _callee_return_type(stmt[0][1], env) == "string":
         # A statement call whose declaration returns `string` is prefixed with `EatString` (0x0e):
@@ -2092,6 +2238,7 @@ def _source_index(tree):
     rets = {}
     localtypes = {}
     proptypes = {}
+    withins = {}
     enums, enum_names = {}, set()
     files = 0
     for dirpath, _dirs, names in os.walk(tree):
@@ -2103,6 +2250,13 @@ def _source_index(tree):
                 text = fh.read()
             files += 1
             cls = os.path.splitext(os.path.basename(path))[0].lower()
+            # A class declared `within X` resolves an unqualified name against X: `CheatManager extends Object
+            # within PlayerController` calls `DeactivateAstralSight()` bare and the compiler writes it through
+            # `Outer` (`19 01 8e 05 00 00 <call>`). Only five classes in this corpus carry the clause.
+            m = re.search(r"(?is)\bclass\s+[A-Za-z_]\w*\s+extends\s+[A-Za-z_]\w*[^;{]*?\bwithin\s+([A-Za-z_]\w*)",
+                          text[:4000])
+            if m:
+                withins[cls] = m.group(1).lower()
             for m in re.finditer(r"\blocal\s+([A-Za-z_]\w*)\s+([A-Za-z_]\w*)", text, re.I):
                 localtypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
             # A property's *declared type word*, which is how a receiver's class is named when the package's own
@@ -2141,14 +2295,14 @@ def _source_index(tree):
                     enum_names.add(enum.lower())
                     for cname, ordinal in consts:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
-    return index, files, params, enums, enum_names, rets, localtypes, proptypes
+    return index, files, params, enums, enum_names, rets, localtypes, proptypes, withins
 
 
 def score(tree, dump, out_dir, residue_dir=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
-    index, files, params, enums, enum_names, rets, localtypes, proptypes = _source_index(tree)
+    index, files, params, enums, enum_names, rets, localtypes, proptypes, withins = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -2230,7 +2384,9 @@ def score(tree, dump, out_dir, residue_dir=None):
                    "proptypes": proptypes_by_cls.get(cls.lower(), {}),
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
                    # record only says `StructProperty`
-                   "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])}}
+                   "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])},
+                   # the class this one is declared `within`, whose names resolve through `Outer`
+                   "within": withins.get(cls.lower(), "")}
             try:
                 ours, model, shape = emit_body(src_body, rettype, env, is_native)
             except Refused as exc:
@@ -2388,6 +2544,10 @@ function PreIncSlot() { ++Slot; }
 function AddToSlot() { Slot += 2; }
 function SubFromSlot() { Slot -= 2; }
 function IncFloat() { FCount++; }
+function CallMember() { Target.Ping(); }
+function CallMemberArg() { Target.Pong(1); }
+function CallMemberText() { Target.Say("x"); }
+function CallUnknown() { Target.Missing(); }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -2418,7 +2578,8 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
                    "mix": ("virtual", 46), "bump": ("virtual", 47), "gotostate": ("native", 113),
                    "tinytoken": ("native", 2), "onchange": ("virtual", 26),
-                   "mix3": ("virtual", 48), "mixbyte": ("virtual", 49), "mytext": ("virtual", 50)},
+                   "mix3": ("virtual", 48), "mixbyte": ("virtual", 49), "mytext": ("virtual", 50),
+                   "ping": ("virtual", 51), "pong": ("virtual", 52), "say": ("virtual", 53)},
          "delegates": {"onchange": 51}}
 
 # The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
@@ -2446,10 +2607,15 @@ PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "
           ("probe", "mix3"): [("bool", "Flag", False), ("vector", "V", False)],
           ("probe", "mixbyte"): [("byte", "Mode", False)],
           ("probe", "mytext"): [("string", "S", False)]}
+PARAMS[("probe", "pong")] = [("int", "A", False)]
+PARAMS[("probe", "say")] = [("string", "S", False)]
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
-ENV = {"names": {}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS, "enum_names": {"eprobe"},
+ENV = {"names": {"ping": 51, "pong": 52, "say": 53}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS,
+       "enum_names": {"eprobe"},
        "class_names": {"probe"}, "order": ["probe"],
-       "rets": {("probe", "bump"): "int", ("probe", "mytext"): "string"},
+       "rets": {("probe", "bump"): "int", ("probe", "mytext"): "string", ("probe", "say"): "string"},
+       # the receiver walk's own join: a function *record* of the synthetic class, which a member call resolves on
+       "funcs_all": {nm: [(1, "probe")] for nm in ("ping", "pong", "say")},
        "assert_line": 2086, "paramtypes": {}}
 
 WANT = {
@@ -2536,16 +2702,21 @@ WANT = {
     "preincslot": "a300630916040b47",
     "addtoslot": "a10063092c0216040b47",
     "subfromslot": "a20063092c0216040b47",
+    # A call statement whose callee is a member of a receiver: `Context`, the skip word (`_wide` of the call), the
+    # value size (0 for a void call) and the call. `Target.Say` returns `string`, so its statement carries `0e`.
+    "callmember": "190163090600001b3316040b47",
+    "callmemberarg": "190163090700001b342616040b47",
+    "callmembertext": "0e190163090900001b351f780016040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "setlength", "incfloat")
+          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown")
 
 
 def check(args):
     """Synthetic corpus plus the committed artifact's own consistency: no dump, no writes."""
-    names = {"weapon_bone": 2063, "probe": 5}
+    names = {"weapon_bone": 2063, "probe": 5, "ping": 51, "pong": 52, "say": 53}
     for value, want in ((0, b"\x00"), (1, b"\x01"), (63, b"\x3f"), (64, b"\x40\x01"),
                         (2063, b"\x4f\x20"), (8191, b"\x7f\x7f")):
         got = write_index(value)
@@ -2638,7 +2809,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]
@@ -2661,6 +2832,45 @@ def check(args):
     if "otherfn" in sc["funcs"]:
         print("FAIL uscript-emit: a native of a class outside the chain resolves anyway (%r)"
               % (sc["funcs"]["otherfn"],))
+        return 1
+    # P4: `Super.F()` names the *record* of F on the parent's chain -- a `FinalFunction` over an export or an
+    # import, never the body's own name index. `Super.Ping()` with the parent declaring Ping as export 763 is
+    # `1c 7b 0b 16`.
+    super_env = dict(env)
+    super_env["order"] = ["probe", "parent"]
+    super_env["scope"] = dict(SCOPE, chain={("probe", "probe"): ("probe", "parent"),
+                                            ("probe", "parent"): ("", "")})
+    super_env["funcs_all"] = {"ping": [(763, "parent")]}
+    super_env["imports"] = {}
+    super_toks = [("ident", "Super"), ("op", "."), ("ident", "Ping"), ("op", "("), ("op", ")")]
+    try:
+        got, _m, _s = emit_stmt(super_toks, "", super_env)
+    except Refused as exc:
+        print("FAIL uscript-emit: Super.Ping() refused: %s" % exc)
+        return 1
+    if got.hex() != "1c7b0b16":
+        print("FAIL uscript-emit: Super.Ping() emits %s, expected 1c7b0b16" % got.hex())
+        return 1
+    # P5: a bare call in a class declared `within X` is a member of `Outer`, and a bare call the body's own chain
+    # declares is not: the same synthetic class, one name that resolves only on the `within` class.
+    within_env = dict(env)
+    within_env.update({"within": "parent", "names": {"ping": 5, "foo": 41},
+                       "funcs_all": {"ping": [(763, "parent")], "foo": [(41, "probe")]},
+                       "imports": {}, "natives": {}, "final_of": {}})
+    within_env["scope"] = dict(SCOPE, outer_ref=-14)
+    bare = [("ident", "Ping"), ("op", "("), ("op", ")")]
+    try:
+        got, _m, _s = emit_stmt(bare, "", within_env)
+    except Refused as exc:
+        print("FAIL uscript-emit: a `within` call refused: %s" % exc)
+        return 1
+    if got.hex() != "19018e0500001b0516":
+        print("FAIL uscript-emit: a `within` call emits %s, expected 19018e0500001b0516" % got.hex())
+        return 1
+    own = [("ident", "Foo"), ("op", "("), ("number", "1"), ("op", ")")]
+    got, _m, _s = emit_stmt(own, "", within_env)
+    if got.hex() != "1b292616":
+        print("FAIL uscript-emit: a bare call the chain declares was wrapped as `Outer` (%s)" % got.hex())
         return 1
     if not os.path.exists(ARTIFACT):
         print("ok uscript-emit: %d synthetic bodies, no artifact to check" % len(WANT))
