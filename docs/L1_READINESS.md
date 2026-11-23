@@ -274,3 +274,34 @@ loader and the script's presence, not its result. And it does not lift the lengt
 **The method it establishes** is the useful part: edit source → run the emitter → read `ours` from
 `inventory/uscript_emit.csv` → splice by index at the same length → build the ISO → boot with the pad steps. That is the
 loop a recompiled package will have to survive, and it now has a working example.
+
+## Fitting a compiled body back to its shipped length (measured 2026-11-23)
+
+The previous section's body happened to come out at six bytes. This one does not, and the difference is the whole point:
+`return 0` compiles to `0425040b47` — **five** bytes, one shorter than the shipped body — which a length-changing splice
+would have refused (or faulted on, if forced).
+
+`tools/uscript-fit.py` closes that gap by using the encoding the compiler itself varies, not an invented no-op:
+
+| step | value |
+|---|---|
+| source | `Engine/GameInfo.uc` `GetDefenderNum`: `return 255;` → `return 0;` |
+| emitter | `ours = 0425040b47` — **5 bytes** (`04 25` = `IntZero`) |
+| fitted | `042c00040b47` — **6 bytes** (`04 2c 00` = `IntConstByte 0`, same value) |
+| splice | index 16777, 6 → 6: `Engine.u` 3,090,635 → **3,090,635** |
+| package | sha256 `dc8da69effaabd4f394f666fd9741089ac155b214910bd961aed0d9286504d53` |
+| ISO | 2,258,370,560 bytes, sha256 `013cac57a6049733e6c67eaac7e964997fa4fec1ba086507ee5e20f1e25aa97e` |
+| boot | title, then both pad taps repaint — **25,334** and **68,747** px |
+
+The same integer can be written `IntZero`/`IntOne` (2 bytes), `IntConstByte` (3) or `IntConst` (6), so a value that compiles
+short can be **widened** to reach the shipped length without changing what it computes. `--check` holds five fittings and
+two refusals: a value that needs more bytes than the target (`400` in six) is refused rather than approximated, because
+this bytecode has no no-op to pad with and silently truncating a constant is not a fitting.
+
+**What this proves:** the emitter's output is not required to match the shipped length by luck — the length can be met
+deliberately, at the source level, and the game boots the result.
+**What it does not prove:** that a body which *needs* more bytes can be made to fit. That case is the remaining wall, and it
+only moves by finding what the loader dereferences (`CR2=0xfff0007b`) or by shrinking the compiled code itself.
+
+The working loop is now three tools in order: `uscript-emit.py` (source → bytes) → `uscript-fit.py` (bytes → shipped
+length) → `l1-change.py --index` (bytes → package, same length) → `build-xiso.sh` → `drive.py` with the pad steps.
