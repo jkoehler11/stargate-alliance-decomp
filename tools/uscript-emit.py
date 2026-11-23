@@ -888,7 +888,7 @@ def _emit_operator(expr, rettype, env):
     return _converted(node, result, rettype), "operator"
 
 
-def _emit_cast(name, inner, env):
+def _emit_cast(name, inner, env, rettype=""):
     """`Type(expr)` -> `39 <slot> <expr>` when the type is a primitive, `2E <class ref> <expr>` when it is a class.
 
     The slot is the image's own cast table read backwards: the row*named* `<From>To<To>` for the operand's declared
@@ -903,7 +903,10 @@ def _emit_cast(name, inner, env):
         if slot is None:
             raise Refused("a cast from %s to %s the image's cast table does not install"
                           % (src or "an unknown type", low))
-        return bytes([0x39, slot]) + emit_expr(inner, src, env)[0], "primitive-cast"
+        # `X = Int(Root.MouseX);` in a float slot is `39 3f 39 44 19 ...`: the explicit cast is the *inner*
+        # node and the site's own conversion wraps it, so a cast's result is converted like any other value.
+        return (_converted(bytes([0x39, slot]) + emit_expr(inner, src, env)[0], low, rettype),
+                "primitive-cast")
     if kind == "object":
         ref = (env["scope"] or {}).get("classrefs", {}).get(low)
         if ref is None:
@@ -1097,10 +1100,11 @@ def _emit_member_call(obj, member, rettype, env):
         # name two classes away -- where the package writes a `FinalFunction` naming the receiver's own record.
         raise Refused("a call member whose receiver's class the artifacts do not name")
     memb = emit_call(member, env, receiver=cls)
-    if objb[:1] == bytes([INSTANCE_TOKEN]) and _is_import_read(obj, env):
-        skip = CONTEXT_SKIP
-    else:
-        skip = _wide(memb)
+    # The word is the call's own width in the compiler's code array, whatever the receiver is. It was held at 5 for
+    # an import receiver (`Outer.Log("...")`), but that shape's call *is* five wide: `19 01 8e 05 00 00 1b 0f ...`, and
+    # the four bodies whose receiver is a property read with a longer call write 0x03, 0x0b, 0x0b and 0x10 --
+    # `Pawn.NeedToTurn(targ)` is `19 01 8d 0b 00 04 1b 59 02 00 48 0a 16`, and `_wide` of that call is 11.
+    skip = _wide(memb)
     rtype = _rettype_on(cls or "", member[0][1], env)
     if rtype in (env.get("class_names") or set()):
         rtype = "object"
@@ -1250,16 +1254,29 @@ def emit_expr(expr, rettype, env):
         if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
         if _is_call(expr) and _cast_kind(expr[0][1], env):
-            return _emit_cast(expr[0][1], expr[2:-1], env)
+            return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
         if _is_call(expr):
-            return emit_call(expr, env), "call-value"
+            # The value a call yields is converted at *its* site, not inside the callee: `Adrenaline = Clamp(...)`
+            # in a float slot is `0f <read> 39 3f fb ...` -- IntToFloat around the Clamp, because Clamp returns an
+            # `int` -- and `Insert(Asc(...))` writes `39 3d` (IntToByte) around the `Asc`, whose result is an int.
+            node = emit_call(expr, env)
+            return _converted(node, _type_of(expr, env), rettype), "call-value"
         if _dot_at(expr) is not None:
             return _emit_member(expr, rettype, env)
         raise Refused("a compound expression, which needs the statement walk")
     kind, val = expr[0]
     if kind in ("ident", "keyword") and val.lower() == "class":
-        # `class` (bare) compiles to `Self`: `GetItemName(string(class))` and `GetItemName(string(self))` are the
-        # same seven bytes (`1b 31 39 56 17 16`), so the token is Self and the conversion names the object.
+        # The *spelling* decides, and the two are different nodes in this build: lowercase `class` compiles to
+        # `Self` (`GetItemName(string(class))` and `GetItemName(string(self))` are the same seven bytes,
+        # `1b 31 39 56 17 16`, in `Actor.GetItemName`, `Pickup` and `Pawn`), while `Class` is the property
+        # `Object` declares (`var native const editconst class Class;`) and compiles to its record:
+        # `GameReplicationInfo.GameClass = string(Class);` writes `39 56 01 9e` -- `ObjectToString` of the import
+        # `Class` -- and `Item.InventoryType == Class` writes `01 9e 16`. Two bodies each way, and the source the
+        # emitter reads is the package's own `ScriptText`, so the spelling is the compiler's input.
+        if val != "class":
+            read = _emit_var(val, env, rettype)
+            if read is not None:
+                return read, "class-property"
         return bytes([0x17]), "self-class"
     if kind in ("ident", "keyword") and val.lower() not in ("true", "false", "none", "self"):
         read = _emit_var(val, env, rettype)
@@ -1301,7 +1318,17 @@ def emit_expr(expr, rettype, env):
         if t == "byte":
             if not 0 <= v < 256:
                 raise Refused("a byte literal out of range (%s)" % val)
-            return bytes([0x24, int(v)]), "byte-const"
+            if v < 128:
+                return bytes([0x24, int(v)]), "byte-const"
+            # Above the signed byte range the literal stops being a byte constant and the compiler writes the *int*
+            # form behind an `IntToByte`: `A = 255;` in Canvas.MakeColor is `0f ... 39 3d 2c ff`, and
+            # `FindControllerPortIndex(255)` (a `byte` parameter) is `39 3d 2c ff`, while `_SetKeyFrameToPuzzleMovers(0)`
+            # is `24 00`, `SetTimer`-style assignments of 1 and 3 are `24 01` / `24 03`, and ParseColor's 16 is
+            # `24 10`. Six sites, one threshold: 127 is the last value the byte form carries.
+            slot = _cast_slots().get(("int", "byte"))
+            if slot is None:
+                raise Refused("a byte literal of %d, whose IntToByte slot the image's table does not install" % v)
+            return bytes([0x39, slot, 0x2C, int(v)]), "byte-const-cast"
         if t == "float":
             return bytes([0x1E]) + struct.pack("<f", float(v)), "float-const"
         raise Refused("a numeric literal in a %s function" % (rettype or "typeless"))
@@ -1452,15 +1479,8 @@ def emit_call(stmt, env, receiver=None):
     for arg, (ptype, _pname, _optional) in zip(args, params):
         if not arg:
             raise Refused("a call that leaves an optional argument empty")
-        if ptype.lower() == "byte" and _int_literal(arg) is not None:
-            # An integer literal is typed `int` even at a `byte` parameter: the compiler writes `39 3d`
-            # (IntToByte, the image's cast table) and then the *int* constant (`2c ff` IntConstByte), not `24 ff`
-            # (ByteConst). Measured on `GUIController.GetFocusedControl`/`SetFocusedControl`, whose only difference
-            # is those three bytes.
-            slot = _cast_slots().get(("int", "byte"))
-            if slot is not None:
-                out += bytes([0x39, slot]) + emit_expr(arg, "int", env)[0]
-                continue
+        # A byte-typed literal is written by `emit_expr`, which knows the form from the value (see the number
+        # branch): `byte` takes ByteConst up to 127 and the int form behind IntToByte above it.
         out += emit_expr(arg, ptype, env)[0]
     return out + b"\x16"
 
