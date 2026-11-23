@@ -371,3 +371,37 @@ constraint is narrower than this page currently claims.
 `0xd016514c`, and the dump at physical `0x16514c` was solid `ff000000` fill, not a stack. The alias arithmetic was a guess
 (`0xd0000000` treated as a flat RAM alias); the correct resolution needs the page tables (`CR3=0xf000`,
 `tools/xemu/vamap.py`). Recorded so the next session starts from the page tables instead of repeating the guess.
+
+## The constraint is a payload's size, not its offset (measured 2026-11-23)
+
+Two builds settle it, and one of them contradicts the section above.
+
+| build | payload sizes | payload offsets | result |
+|---|---|---|---|
+| in-place `IntConst` edit | unchanged | unchanged | plays (25,130 / 69,014 px) |
+| **every payload shifted +4 bytes** | **unchanged** | **all 13,425 moved** | **plays (21,885 / 68,326 px)** |
+| pad the tables by 6 | unchanged | unchanged | plays (26,664 / 66,837 px) |
+| **valid 5-byte body spliced into a 3-byte one** | **34 → 36 bytes** | later payloads move | **faults** |
+| relayout 3 → 9 | 34 → 40 | later move | faults |
+| insert 3 → 9 | 34 → 40 | target jumps to the region end | faults |
+| pair +6 / −6 | two payloads change | between them | faults |
+
+The second row is decisive against the earlier claim: **moving every payload is fine**. A uniform shift changes all 13,425
+offsets, leaves every byte and every size alone, and the game plays — so `docs/L1_READINESS.md`'s "payload offsets may not
+move" is wrong and is retracted here.
+
+The fourth row is decisive the other way, and it rules out the explanation I wanted: that the earlier faults were caused by
+*invalid* bytecode. The body spliced there is `IgnoreTeleport`'s shipped `04 28 04 0b 47` — a real, balanced, shipped body,
+not the `IntConst 666` stack imbalance I had been using. It still faults when `LogDropped`'s payload grows 34 → 36.
+
+**So the rule is about a payload's length, not its position:** a payload may move, and a body may change in place, but a
+payload's serialised size may not change. Every build that changed a size faulted; every build that did not, played.
+
+**Why that is still unexplained, and what it is not.** The obvious candidate — a length field inside the payload header that
+a writer must update — did not hold up: the dword at `+20` matches the script length for only 54 of 3,256 functions, and
+the dword at `start − 4` for 561. Neither is the field. So either the length is recorded somewhere this project has not
+modelled, or the loader uses the export's `size` in a way that a consistent re-layout still violates.
+
+**What this means for a bootable recompile, unchanged in practice:** bodies must keep their shipped length. That is what
+`tools/uscript-fit.py` exists for, and it is verified three times over (the `return 200` boot, the fitted `return 0` boot,
+and the shipped-body test above). A compile that *needs* more bytes than the shipped body still cannot load.
