@@ -247,3 +247,30 @@ general one.
 **Next instrument, unchanged and now better aimed:** the fault is a dereference of `0xfff0007b`. Finding the instruction
 that forms it — breakpoint on the page-fault handler, read the stack at the fault rather than after the kernel idles —
 names the loader field that was read. That is a job for the debug harness, not for another parser.
+
+## The first body from edited source that the game boots (measured 2026-11-23)
+
+Every earlier boot used a body this project *chose*; this one used a body the **emitter produced from source it had never
+seen**. The chain, with nothing hand-assembled:
+
+| step | value |
+|---|---|
+| source | `Engine/GameInfo.uc` `GetDefenderNum`: `return 255;` → `return 200;` |
+| emitter | `ours = 042cc8040b47`, `theirs = 042cff040b47`, verdict **`differ`** — both six bytes |
+| splice | export index **16777** in `Engine.u`, same length: file 3,090,635 → **3,090,635** |
+| package | `Engine.u` sha256 `9c4c07ff87429c1190f79b8d27df3f5c6bc4f3810489c9216342d06d137883d0` |
+| ISO | 2,258,370,560 bytes, sha256 `3919efaf002487a45d4d662606f09acd316af9e7cb577be1f7ad66c3b319d646` |
+| boot | title, then `pad=start` and `pad=a` both repaint — **6,216** and **55,854** px |
+
+The emitter had been scored only against bodies it reproduced exactly, so "it emits bytes" and "the game accepts those
+bytes" were separate claims. They are now the same claim: this is the first time a byte sequence generated from edited
+source has run inside the game.
+
+**What it proves:** a compiled body at the shipped length is accepted, and the package containing it boots and takes input.
+**What it does not prove:** that the value is *observed* — `GetDefenderNum` is not on the title path, so this exercises the
+loader and the script's presence, not its result. And it does not lift the length constraint: the body was chosen because
+`255` and `200` share the `IntConstByte` encoding, which is exactly the property a general recompile cannot assume.
+
+**The method it establishes** is the useful part: edit source → run the emitter → read `ours` from
+`inventory/uscript_emit.csv` → splice by index at the same length → build the ISO → boot with the pad steps. That is the
+loop a recompiled package will have to survive, and it now has a working example.
