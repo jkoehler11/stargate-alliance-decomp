@@ -239,6 +239,22 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the record table the compiler read: **2,986 modelled / 2,986 byte-identical / 0 differ** (from
+  2,941 / 2,940 / 1; 45 bodies gained, none lost, and `PlayerInput.ChangeSnapView` -- the last differing body --
+  reproduces). (1) A `Context`'s skip word is the member's width in the compiler's **uncompacted** code array, where
+  every compact index is four bytes: `List.ItemCount()` writes 6 for a 3-byte member, `P.BotDesireability(Pawn)` 11
+  for 6, `P.BeyondViewDistance(SpawnLocation, 0)` 16 for 12 -- 60 of the 63 call-member nodes agree, and the same
+  arithmetic is what the property constants 5 (`01 <idx>`) and 6 (`2d 01 <idx>`) already were. The 3 that do not are
+  refused by name: a member whose argument list carries a `Context` of its own
+  (`Squad.GetSGFormation().GetLocationFor`) and `UWindowLayoutControl.AddRow`; `Outer.<bool>` writes 5 where the rule
+  gives 6, so that word stays measured. (2) `bSnapToLevel = B;` in `PlayerInput` is
+  `14 19 01 8e 05 00 04 2d 01 6c 28 ...`: a bool the package exports once on a class outside the body's chain is read
+  through `Outer` (import 14), while the 27 non-bool names in the same fallback are read *bare* (`GamerTag` writes
+  export 3703), so the wrap is per type and a non-bool refuses. (3) A property the package only **imports** is a
+  record: `Corroded`/`Drowned` `GetPawnDamageEffect` is `04 02 d8 02` (`Default.PawnDamageEffect`, index -152); 27
+  assignments and 11 reads moved from refused to identical. (4) A struct default is the record alone --
+  `return Default.DrawColor;` is `04 02 44 44`, no `Context` and no size byte. Doc: `docs/COMPILER_FRONTEND.md` gains
+  the section; the artifact and the join are regenerated.
 - [~] 3.6 the operator node, the `assert` statement and three types the member walk could not name:
   **2,902 modelled / 2,901 byte-identical / 1 differs** (from 2,856 / 2,855 / 1; 46 bodies gained, none lost).
   (1) An operator is `<token> A B 16` -- the native's own opcode **first**, then the left and right operands and
