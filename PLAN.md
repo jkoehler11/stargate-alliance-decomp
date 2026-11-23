@@ -239,7 +239,9 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
-- [~] 3.6 the record table the compiler read: **2,986 modelled / 2,986 byte-identical / 0 differ** (from
+- [~] 3.6 the record table the compiler read: **3,056 modelled / 3,056 byte-identical / 0 differ** (from
+  2,986 / 2,986 / 0; 70 bodies gained by the receiver-join rule and the `Skip` word, none lost -- see the
+  stage-3 section in `docs/COMPILER_FRONTEND.md`); the earlier count was (from
   2,941 / 2,940 / 1; 45 bodies gained, none lost, and `PlayerInput.ChangeSnapView` -- the last differing body --
   reproduces). (1) A `Context`'s skip word is the member's width in the compiler's **uncompacted** code array, where
   every compact index is four bytes: `List.ItemCount()` writes 6 for a 3-byte member, `P.BotDesireability(Pawn)` 11
