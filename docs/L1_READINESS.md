@@ -405,3 +405,32 @@ modelled, or the loader uses the export's `size` in a way that a consistent re-l
 **What this means for a bootable recompile, unchanged in practice:** bodies must keep their shipped length. That is what
 `tools/uscript-fit.py` exists for, and it is verified three times over (the `return 200` boot, the fitted `return 0` boot,
 and the shipped-body test above). A compile that *needs* more bytes than the shipped body still cannot load.
+
+## A size change survives the title and dies at the next transition (measured 2026-11-23)
+
+The last test was built to remove every confound in the earlier ones. `IgnoreTeleport`'s body turned out to return `False`
+(`0x28` is `False`, not a void token), so splicing it into a void function was the same type mismatch as `IntConst 666` had
+been — my "valid body" claim was wrong too. The clean version is `04 0b 04 0b 47`: `Return Nothing`, then three dead bytes
+the VM never executes. Semantically identical to the shipped `04 0b 47`, two bytes longer, same return type.
+
+| build | payload | start | then A |
+|---|---|---|---|
+| original | shipped | 48,350 px | 74,254 px |
+| `04 0b 04 0b 47` (**+2 bytes, dead code**) | 34 → 36 | **3,365 px — repainted** | **0 px** |
+| every earlier size change (`IntConst`, `False`, relayout, insert, pair) | changed | 0 px | 0 px |
+
+That is a different failure from the ones above it: this build **responds to the first input** and then stops changing the
+screen. So a payload's size change is not rejected at load — the title still works — and the damage shows up at the next
+transition, which is what a length read *later* would look like (a lazy preload, a size check on first use, or a buffer
+sized from the old length).
+
+**What this does not say:** whether the game died at the A press or is sitting on a static screen. Earlier in this page the
+same `0 px` was a corpse with the last frame on screen, and only an EIP sample distinguished the two. That sample has not
+been taken for this build, so the row above reports what the screen did and no more.
+
+**Where that leaves the rule.** "A payload's size may not change" still describes every build, but it is now known to be a
+*late* consequence rather than a load-time rejection, which makes the search narrower: the thing that reads the old length
+runs after the title, so it can be found by breaking on the transition rather than by staring at the package format.
+
+**The practical answer does not move:** ship same-length bodies. Every build that kept its sizes played; the fitter exists
+to keep them, and it refuses what it cannot fit.
