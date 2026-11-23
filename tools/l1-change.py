@@ -196,6 +196,11 @@ def main():
     # A name is not a unique handle: `LogDropped` is carried by two exports and `QueueForceFire` by more than one, so a
     # name lookup silently rewrites whichever the table lists first -- and still reports the size it chose.
     ap.add_argument("--index", type=int)
+    # A body may not change the package's length on disk: growing one payload pushes every later payload to a new
+    # offset, and the game faults on that (CR2=0xfff0007b, kernel idle) while this project's reader accepts the file.
+    # Same-length edits boot and play. Refuse the fault by default; `--allow-resize` is for the experiment, not the tool.
+    ap.add_argument("--allow-resize", action="store_true",
+                    help="permit a body of a different length (the game faults on this; see docs/L1_READINESS.md)")
     ap.add_argument("--append", action="store_true",
                     help="append the new payload and patch one table entry in place instead of re-laying out the file")
     ap.add_argument("--insert", action="store_true",
@@ -223,6 +228,11 @@ def main():
     export = next(e for e in pkg.exports if e["index"] == index)
     payload = pkg.data[export["offset"]:export["offset"] + export["size"]]
     status, old_script, start, end, _name_end, _front = sd.locate(export, pkg.data)
+    if len(script) != len(old_script) and not args.allow_resize:
+        print("FAIL l1-change: %d bytes -> %d bytes moves payload offsets, which faults the guest "
+              "(docs/L1_READINESS.md); pad the body to its shipped length, or pass --allow-resize to measure it"
+              % (len(old_script), len(script)))
+        return 1
     if status != "ok":
         print("FAIL l1-change: %s's script is %s, not locatable" % (args.function, status))
         return 1
