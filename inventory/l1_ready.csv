@@ -7,9 +7,9 @@ ACTION_ChangeLevel,2,1,1,50.0,3 statements
 ACTION_ChangePodLock,1,0,1,0.0,3 statements
 ACTION_ChangeScript,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_ChangeTeam,1,0,1,0.0,2 statements
-ACTION_ChangeVehicleStatus,4,0,4,0.0,a nested block: control flow is not modelled
+ACTION_ChangeVehicleStatus,4,2,2,50.0,a nested block: control flow is not modelled
 ACTION_ChangeWeapon,1,0,1,0.0,3 statements
-ACTION_ConsoleCommand,2,0,2,0.0,2 statements
+ACTION_ConsoleCommand,2,1,1,50.0,2 statements
 ACTION_CounterAdd,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_Crouch,1,0,1,0.0,4 statements
 ACTION_DamageInstigator,2,0,2,0.0,4 statements
@@ -17,7 +17,7 @@ ACTION_DeactivateAstralSight,1,0,1,0.0,a nested block: control flow is not model
 ACTION_DespawnEnemies,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_DestroyActor,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_DestroyPawn,1,0,1,0.0,2 statements
-ACTION_DisplayMessage,2,0,2,0.0,3 statements
+ACTION_DisplayMessage,2,1,1,50.0,3 statements
 ACTION_DisplaySGText,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_EndSection,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_FadeOutAmbientSound,2,0,2,0.0,a nested block: control flow is not modelled
@@ -26,9 +26,9 @@ ACTION_FinishRotation,2,1,1,50.0,3 statements
 ACTION_ForceBotEnemy,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_ForceMoveToPoint,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_Freeze,1,0,1,0.0,a nested block: control flow is not modelled
-ACTION_FreezeOnAnimEnd,3,0,3,0.0,3 statements
+ACTION_FreezeOnAnimEnd,3,1,2,33.3,3 statements
 ACTION_GivePlayerHint,1,0,1,0.0,a nested block: control flow is not modelled
-ACTION_GotoAction,3,0,3,0.0,a nested block: control flow is not modelled
+ACTION_GotoAction,3,1,2,33.3,a nested block: control flow is not modelled
 ACTION_GuardActor,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_GuardPlayer,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_Hack,1,0,1,0.0,a nested block: control flow is not modelled
@@ -40,14 +40,14 @@ ACTION_KeepCurrentRotation,1,0,1,0.0,2 statements
 ACTION_KillActor,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_Killinstigator,2,0,2,0.0,2 statements
 ACTION_LeaveSequence,1,1,0,100.0,
-ACTION_Lookat,2,0,2,0.0,a nested block: control flow is not modelled
+ACTION_Lookat,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_MindControl,4,0,4,0.0,9 statements
 ACTION_MoveToLandingPoint,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_MoveToPlayer,6,3,3,50.0,7 statements
 ACTION_MoveToPoint,7,3,4,42.9,a nested block: control flow is not modelled
 ACTION_PlayAmbientSound,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_PlayLocalSound,2,0,2,0.0,a nested block: control flow is not modelled
-ACTION_PlayMusic,2,0,2,0.0,a nested block: control flow is not modelled
+ACTION_PlayMusic,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_PlaySGSound,8,2,6,25.0,a nested block: control flow is not modelled
 ACTION_PlaySound,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_ResetSG1,1,0,1,0.0,a nested block: control flow is not modelled
@@ -62,7 +62,7 @@ ACTION_SetBotScript,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_SetBotShootMode,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_SetBotShootState,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_SetBotTargetPriority,1,0,1,0.0,a nested block: control flow is not modelled
-ACTION_SetBotToSnipe,2,0,2,0.0,a nested block: control flow is not modelled
+ACTION_SetBotToSnipe,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_SetCommandStatus,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_SetGodMode,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_SetHidden,1,0,1,0.0,a nested block: control flow is not modelled
@@ -79,36 +79,36 @@ ACTION_SetTeamAggroStatus,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_SetViewTarget,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_ShootTarget,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_SpawnActor,2,0,2,0.0,a nested block: control flow is not modelled
-ACTION_SpawnBot,2,0,2,0.0,a nested block: control flow is not modelled
+ACTION_SpawnBot,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_SpawnScriptedActor,2,0,2,0.0,a nested block: control flow is not modelled
-ACTION_SpawnSquad,2,0,2,0.0,a nested block: control flow is not modelled
+ACTION_SpawnSquad,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_SpecialMove,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_Sprint,1,0,1,0.0,4 statements
 ACTION_SquadEnterVehicle,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_SquadGetIntoFormation,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_SquadMoveInFormation,5,1,4,20.0,15 statements
-ACTION_SquadMoveToPlayer,6,1,5,16.7,a compound expression
+ACTION_SquadMoveToPlayer,6,1,5,16.7,a call to a name the class chain does not declare
 ACTION_SquadSetBotScript,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_SquadWander,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_StopAnimation,1,0,1,0.0,2 statements
 ACTION_StopGuardPlayer,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_StopShooting,1,0,1,0.0,3 statements
 ACTION_SuggestNextState,2,0,2,0.0,a nested block: control flow is not modelled
-ACTION_Talk,5,0,5,0.0,a compound expression
+ACTION_Talk,5,1,4,20.0,a nested block: control flow is not modelled
 ACTION_TeleportSpecificPawn,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_TeleportToPoint,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_ThrowWeapon,1,0,1,0.0,4 statements
 ACTION_TriggerEvent,2,0,2,0.0,2 statements
 ACTION_TriggerMatinee,2,0,2,0.0,a nested block: control flow is not modelled
 ACTION_TriggerStaticEvent,2,0,2,0.0,a nested block: control flow is not modelled
-ACTION_TurnTowardPlayer,3,1,2,33.3,3 statements
+ACTION_TurnTowardPlayer,3,2,1,66.7,3 statements
 ACTION_UseActor,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_UseScriptRotation,1,0,1,0.0,2 statements
 ACTION_VehicleActivateTurret,1,0,1,0.0,a nested block: control flow is not modelled
 ACTION_VehicleEnter,2,0,2,0.0,a nested block: control flow is not modelled
-ACTION_VehicleExit,2,0,2,0.0,a nested block: control flow is not modelled
+ACTION_VehicleExit,2,1,1,50.0,a nested block: control flow is not modelled
 ACTION_VehicleTransportRings,1,0,1,0.0,a nested block: control flow is not modelled
-ACTION_WaitForAnimEnd,1,0,1,0.0,a compound expression
+ACTION_WaitForAnimEnd,1,1,0,100.0,
 ACTION_WaitForConditions,3,0,3,0.0,3 statements
 ACTION_WaitForEvent,4,1,3,25.0,7 statements
 ACTION_WaitForPlayer,3,2,1,66.7,4 statements
@@ -116,13 +116,13 @@ ACTION_WaitForPlayerGettingInVehicle,2,1,1,50.0,7 statements
 ACTION_WaitForTimer,4,2,2,50.0,a nested block: control flow is not modelled
 ACTION_Walk,1,0,1,0.0,4 statements
 ACTION_____________NONE,1,1,0,100.0,
-AIController,19,8,11,42.1,5 statements
+AIController,19,9,10,47.4,5 statements
 AIMSG_Cloak,4,0,4,0.0,a nested block: control flow is not modelled
 AIMSG_ConcentrateFire,8,0,8,0.0,4 statements
 AIMSG_Stargate,10,1,9,10.0,2 statements
 AIMSG_TakeCover,4,0,4,0.0,a nested block: control flow is not modelled
-AIMessage,33,8,25,24.2,4 statements
-AIMsgManager,39,6,33,15.4,5 statements
+AIMessage,33,10,23,30.3,4 statements
+AIMsgManager,39,10,29,25.6,5 statements
 AIScript,3,1,2,33.3,2 statements
 APC,1,0,1,0.0,a nested block: control flow is not modelled
 APCM60Gun,6,2,4,33.3,a nested block: control flow is not modelled
@@ -130,13 +130,13 @@ APCM60GunAmmo,3,2,1,66.7,3 statements
 APCM60GunAttachment,2,1,1,50.0,13 statements
 APCM60Turret,1,1,0,100.0,
 AbstractUIXInteraction,19,18,1,94.7,2 statements
-AccessControl,31,5,26,16.1,5 statements
+AccessControl,31,9,22,29.0,5 statements
 AcidBurn,3,0,3,0.0,a bool assignment whose value is a compound expression
 ActionPause,3,3,0,100.0,
 Action_PLAYANIM,4,0,4,0.0,a nested block: control flow is not modelled
-Actor,111,78,33,70.3,a nested block: control flow is not modelled
+Actor,111,79,32,71.2,a nested block: control flow is not modelled
 Admin,2,0,2,0.0,a nested block: control flow is not modelled
-AdminBase,23,7,16,30.4,a statement that is control flow
+AdminBase,23,8,15,34.8,a statement that is control flow
 AirborneTurret,1,0,1,0.0,a nested block: control flow is not modelled
 AirborneTurretController,5,0,5,0.0,3 statements
 AlarmLight,1,0,1,0.0,5 statements
@@ -144,9 +144,9 @@ AlarmPanel,21,9,12,42.9,9 statements
 AlarmSiren,12,7,5,58.3,2 statements
 AlkeshBomb,3,0,3,0.0,7 statements
 AlkeshBombAmmo,1,0,1,0.0,3 statements
-AlkeshBombProjectile,5,0,5,0.0,a nested block: control flow is not modelled
+AlkeshBombProjectile,5,2,3,40.0,a nested block: control flow is not modelled
 AlkeshBomber,18,4,14,22.2,13 statements
-AlkeshBomberBot,75,9,66,12.0,a nested block: control flow is not modelled
+AlkeshBomberBot,75,10,65,13.3,a nested block: control flow is not modelled
 AlkeshCannon,7,0,7,0.0,3 statements
 AlkeshCannonProjectile,2,0,2,0.0,4 statements
 AlkeshEngine,1,0,1,0.0,4 statements
@@ -156,11 +156,11 @@ AmbientPawn,4,4,0,100.0,
 AmbushInfo,5,0,5,0.0,a nested block: control flow is not modelled
 Ambushpoint,1,0,1,0.0,a nested block: control flow is not modelled
 Ammo,7,0,7,0.0,2 statements
-Ammunition,10,1,9,10.0,a statement that is control flow
+Ammunition,10,2,8,20.0,a statement that is control flow
 AnimNotify_FireWeapon,1,0,1,0.0,3 statements
 AnimNotify_Scripted,1,1,0,100.0,
 AnimNotify_Trigger,1,0,1,0.0,a call the statement walk cannot bound
-AnnouncerQueueManager,9,1,8,11.1,a compound expression
+AnnouncerQueueManager,9,1,8,11.1,an operator the image's table does not install
 AnnouncerVoice,4,0,4,0.0,a nested block: control flow is not modelled
 AntiPortalActor,3,2,1,66.7,2 statements
 Armor,6,1,5,16.7,a nested block: control flow is not modelled
@@ -170,7 +170,7 @@ AttachedAlkeshTurret,5,1,4,20.0,a call the statement walk cannot bound
 AttachedDeathGliderTurret,5,0,5,0.0,a call the statement walk cannot bound
 AttachedDeathGliderTurretGun,2,0,2,0.0,2 statements
 AttachedMothershipTurret,4,0,4,0.0,a call the statement walk cannot bound
-AttachedMothershipTurretGun,2,0,2,0.0,a compound expression
+AttachedMothershipTurretGun,2,0,2,0.0,an operator the image's table does not install
 AttachmentRepAcidJet,3,0,3,0.0,a nested block: control flow is not modelled
 AutosaveCheckpoint,2,0,2,0.0,a nested block: control flow is not modelled
 AvoidMarker,3,0,3,0.0,a statement that is control flow
@@ -182,18 +182,18 @@ BinocularCommandTrigger,4,0,4,0.0,4 statements
 Binoculars,23,6,17,26.1,a nested block: control flow is not modelled
 Bird,9,6,3,66.7,a nested block: control flow is not modelled
 Birds,4,0,4,0.0,3 statements
-BlockedPath,1,0,1,0.0,an assignment to a name neither a local nor a property of the class chain
+BlockedPath,1,0,1,0.0,a bool assignment whose value is a compound expression
 Blood,2,0,2,0.0,a statement that is control flow
 BloodHit,2,0,2,0.0,a statement that is control flow
 BlueFlag,1,0,1,0.0,3 statements
 BodySwapTrigger,5,0,5,0.0,a nested block: control flow is not modelled
-BotBase,138,53,85,38.4,a nested block: control flow is not modelled
-BotEnemy,450,159,291,35.3,a nested block: control flow is not modelled
+BotBase,138,54,84,39.1,a nested block: control flow is not modelled
+BotEnemy,450,163,287,36.2,a nested block: control flow is not modelled
 BotGoauld,16,1,15,6.2,a nested block: control flow is not modelled
 BotGuide,15,1,14,6.7,a nested block: control flow is not modelled
 BotLite,35,5,30,14.3,6 statements
 BotRep,26,2,24,7.7,a nested block: control flow is not modelled
-BotSG,155,36,119,23.2,a nested block: control flow is not modelled
+BotSG,155,37,118,23.9,a nested block: control flow is not modelled
 BotScarab,11,2,9,18.2,8 statements
 BroadcastHandler,16,1,15,6.2,2 statements
 BrushBuilder,1,1,0,100.0,
@@ -203,7 +203,7 @@ C4Mission,14,5,9,35.7,a nested block: control flow is not modelled
 C4Pickup,1,0,1,0.0,a nested block: control flow is not modelled
 C4Prop,5,1,4,20.0,a nested block: control flow is not modelled
 C4Weapon,39,19,20,48.7,a call the statement walk cannot bound
-CTFBase,7,0,7,0.0,9 statements
+CTFBase,7,1,6,14.3,9 statements
 CTFDialHomeDevice,2,1,1,50.0,a nested block: control flow is not modelled
 CTFFlag,35,10,25,28.6,2 statements
 CTFFlagMesh,1,1,0,100.0,
@@ -213,15 +213,15 @@ CTFMessage,2,0,2,0.0,a nested block: control flow is not modelled
 CTFScoreboard,4,0,4,0.0,a nested block: control flow is not modelled
 CameraEffect,1,1,0,100.0,
 CameraTextureClient,3,0,3,0.0,a statement that is control flow
-Canvas,15,0,15,0.0,2 statements
+Canvas,15,2,13,13.3,2 statements
 CaptainStaffWeaponMeleeAmmo,1,0,1,0.0,3 statements
 Carter,3,1,2,33.3,2 statements
 ChapterList,5,0,5,0.0,a nested block: control flow is not modelled
-ChapterSelectionPanel,4,0,4,0.0,2 statements
+ChapterSelectionPanel,4,1,3,25.0,2 statements
 CharacterSelectionList,4,0,4,0.0,a nested block: control flow is not modelled
 CharacterSelectionPanel,1,0,1,0.0,a call the statement walk cannot bound
 ChatRoomMessage,2,0,2,0.0,a nested block: control flow is not modelled
-CheatManager,75,6,69,8.0,6 statements
+CheatManager,75,7,68,9.3,6 statements
 Chip,3,0,3,0.0,6 statements
 CirclingBirds,4,0,4,0.0,13 statements
 ClientBeaconReceiver,7,0,7,0.0,13 statements
@@ -234,16 +234,16 @@ Condition,10,6,4,60.0,3 statements
 ConeBuilder,2,0,2,0.0,a nested block: control flow is not modelled
 ConnectPanel,2,0,2,0.0,2 statements
 Console,28,10,18,35.7,3 statements
-Controller,145,82,63,56.6,a nested block: control flow is not modelled
-ControllerButton,4,1,3,25.0,an assignment whose target is not one name
+Controller,145,85,60,58.6,a nested block: control flow is not modelled
+ControllerButton,4,2,2,50.0,2 statements
 CoopPlayerPanel,7,0,7,0.0,12 statements
-Corroded,1,0,1,0.0,a compound expression
+Corroded,1,1,0,100.0,
 CountTrigger,2,0,2,0.0,a nested block: control flow is not modelled
-CoverInfo,13,2,11,15.4,a nested block: control flow is not modelled
+CoverInfo,13,3,10,23.1,a nested block: control flow is not modelled
 CreateNewProfile,4,0,4,0.0,a nested block: control flow is not modelled
 CreditsPage,1,0,1,0.0,a nested block: control flow is not modelled
-CrystalTunnel,29,12,17,41.4,2 statements
-CrystalTunnelDissolve,2,0,2,0.0,an assignment whose target is not one name
+CrystalTunnel,29,14,15,48.3,2 statements
+CrystalTunnelDissolve,2,0,2,0.0,a member that is not a property of the receiver's class
 CrystalTunnelGrow,4,0,4,0.0,2 statements
 CrystalTunnelLayer,26,11,15,42.3,2 statements
 CrystalTunnelPiece,23,12,11,52.2,2 statements
@@ -256,13 +256,13 @@ CurvedStairBuilder,2,0,2,0.0,a nested block: control flow is not modelled
 CylinderBuilder,2,0,2,0.0,a nested block: control flow is not modelled
 DMMutator,3,0,3,0.0,2 statements
 DMRoster,2,1,1,50.0,a nested block: control flow is not modelled
-DamageType,10,4,6,40.0,a compound expression
+DamageType,10,5,5,50.0,2 statements
 DeathGlider,22,2,20,9.1,a nested block: control flow is not modelled
-DeathGliderBot,36,10,26,27.8,5 statements
-DeathGliderGun,4,1,3,25.0,a compound expression
+DeathGliderBot,36,12,24,33.3,5 statements
+DeathGliderGun,4,1,3,25.0,an operator the image's table does not install
 DeathGliderGunAmmo,3,2,1,66.7,3 statements
 DeathGliderGunProjectile,2,0,2,0.0,4 statements
-DeathMatch,47,4,43,8.5,a nested block: control flow is not modelled
+DeathMatch,47,6,41,12.8,a nested block: control flow is not modelled
 DecipheringPawn,5,0,5,0.0,a nested block: control flow is not modelled
 DecipheringProjectile,4,0,4,0.0,a nested block: control flow is not modelled
 Decoration,12,3,9,25.0,a nested block: control flow is not modelled
@@ -288,12 +288,12 @@ Door,8,0,8,0.0,a nested block: control flow is not modelled
 DrawOpBase,5,0,5,0.0,3 statements
 DrawOpImage,1,0,1,0.0,a nested block: control flow is not modelled
 DrawOpText,1,0,1,0.0,a nested block: control flow is not modelled
-Drowned,1,0,1,0.0,a compound expression
+Drowned,1,1,0,100.0,
 DustStormEmitter,10,6,4,60.0,6 statements
 DustStormVolume,5,0,5,0.0,a nested block: control flow is not modelled
 DynamicProjector,3,0,3,0.0,2 statements
 ENGAGE_ORDER_WaitUntilDamaged,1,1,0,100.0,
-ElectricStaticMeshActor,2,0,2,0.0,an assignment to a name neither a local nor a property of the class chain
+ElectricStaticMeshActor,2,0,2,0.0,a bool assignment whose value is a compound expression
 ElectrifiedObject,10,1,9,10.0,a nested block: control flow is not modelled
 Electrocutor,1,0,1,0.0,2 statements
 Emitter,4,0,4,0.0,a nested block: control flow is not modelled
@@ -302,7 +302,7 @@ EngagementOrder,3,3,0,100.0,
 EnterFriendNamePage,1,0,1,0.0,7 statements
 EnterProfileNamePage,1,0,1,0.0,3 statements
 ErrorPage,3,0,3,0.0,a call the statement walk cannot bound
-ExplosiveMeshActor,4,0,4,0.0,5 statements
+ExplosiveMeshActor,4,1,3,25.0,5 statements
 ExplosiveScorch,1,0,1,0.0,5 statements
 ExtendedConsole,16,2,14,12.5,a nested block: control flow is not modelled
 ExtrasPage,1,0,1,0.0,a nested block: control flow is not modelled
@@ -315,14 +315,14 @@ ExtreniteWeaponAmmo_Enemy,1,0,1,0.0,a compound expression
 ExtreniteWeaponProjectile,1,0,1,0.0,3 statements
 ExtreniteWeaponProjectileAlt,8,1,7,12.5,3 statements
 FadeViewTrigger,2,0,2,0.0,a nested block: control flow is not modelled
-FailedConnect,2,0,2,0.0,a compound expression
+FailedConnect,2,0,2,0.0,a receiver chain whose member is not one name
 FarClipChange,7,4,3,57.1,4 statements
 FearSpot,1,0,1,0.0,a nested block: control flow is not modelled
-FishBase,9,1,8,11.1,2 statements
+FishBase,9,2,7,22.2,2 statements
 FishSchool,5,0,5,0.0,4 statements
 FlipVehicleTrigger,1,0,1,0.0,a nested block: control flow is not modelled
 FluidSurfaceInfo,2,0,2,0.0,a nested block: control flow is not modelled
-FontInfo,10,1,9,10.0,a compound expression
+FontInfo,10,2,8,20.0,2 statements
 ForceField,5,2,3,40.0,12 statements
 FractalTextureFactory,1,0,1,0.0,a nested block: control flow is not modelled
 FragGrenade,1,1,0,100.0,
@@ -335,9 +335,9 @@ GUI,4,0,4,0.0,a nested block: control flow is not modelled
 GUIArrowScrollPanel,3,0,3,0.0,a call the statement walk cannot bound
 GUIButton,6,2,4,33.3,2 statements
 GUICheckBoxButton,2,0,2,0.0,2 statements
-GUIComboBox,26,0,26,0.0,a compound expression
-GUIComponent,104,44,60,42.3,a call the statement walk cannot bound
-GUIController,84,14,70,16.7,a nested block: control flow is not modelled
+GUIComboBox,26,5,21,19.2,4 statements
+GUIComponent,104,46,58,44.2,a call the statement walk cannot bound
+GUIController,84,16,68,19.0,a nested block: control flow is not modelled
 GUIEditBox,7,1,6,14.3,4 statements
 GUIFont,2,0,2,0.0,a nested block: control flow is not modelled
 GUIHorzGripButton,1,0,1,0.0,2 statements
@@ -345,16 +345,16 @@ GUIHorzList,11,0,11,0.0,8 statements
 GUIHorzScrollBar,10,0,10,0.0,2 statements
 GUIHorzScrollButton,1,0,1,0.0,3 statements
 GUIHorzScrollZone,3,1,2,33.3,2 statements
-GUIImageList,39,6,33,15.4,a nested block: control flow is not modelled
+GUIImageList,39,7,32,17.9,a nested block: control flow is not modelled
 GUIImageListMap,2,0,2,0.0,3 statements
 GUILabel,2,0,2,0.0,2 statements
 GUILabelButton,2,0,2,0.0,a nested block: control flow is not modelled
-GUIListBase,33,12,21,36.4,6 statements
-GUIListBox,6,1,5,16.7,5 statements
-GUIListBoxBase,3,0,3,0.0,a nested block: control flow is not modelled
+GUIListBase,33,15,18,45.5,6 statements
+GUIListBox,6,2,4,33.3,5 statements
+GUIListBoxBase,3,1,2,33.3,a nested block: control flow is not modelled
 GUIMenuOption,13,5,8,38.5,a nested block: control flow is not modelled
 GUIMessageBox,13,2,11,15.4,9 statements
-GUIMultiColumnList,15,6,9,40.0,a compound expression
+GUIMultiColumnList,15,7,8,46.7,a nested block: control flow is not modelled
 GUIMultiColumnListBox,2,0,2,0.0,a nested block: control flow is not modelled
 GUIMultiComponent,41,13,28,31.7,a nested block: control flow is not modelled
 GUINumericEdit,8,0,8,0.0,10 statements
@@ -365,7 +365,7 @@ GUIScrollBarBase,4,3,1,75.0,a nested block: control flow is not modelled
 GUIScrollText,12,2,10,16.7,3 statements
 GUIScrollTextBox,8,0,8,0.0,11 statements
 GUIScrollingPanel,2,0,2,0.0,a nested block: control flow is not modelled
-GUISlider,7,2,5,28.6,a nested block: control flow is not modelled
+GUISlider,7,3,4,42.9,a nested block: control flow is not modelled
 GUISpinnerButton,1,0,1,0.0,3 statements
 GUIStyles,3,2,1,66.7,a nested block: control flow is not modelled
 GUITabButton,4,1,3,25.0,a call the statement walk cannot bound
@@ -375,9 +375,9 @@ GUIVertList,12,1,11,8.3,5 statements
 GUIVertScrollBar,11,0,11,0.0,2 statements
 GUIVertScrollButton,1,0,1,0.0,3 statements
 GUIVertScrollZone,3,1,2,33.3,2 statements
-GameHud,51,5,46,9.8,a nested block: control flow is not modelled
-GameInfo,161,52,109,32.3,7 statements
-GameMenu,18,2,16,11.1,an assignment whose target is not one name
+GameHud,51,6,45,11.8,a nested block: control flow is not modelled
+GameInfo,161,55,106,34.2,7 statements
+GameMenu,18,3,15,16.7,an assignment whose target is a length expression
 GameMessage,1,0,1,0.0,a nested block: control flow is not modelled
 GameModeList,5,0,5,0.0,3 statements
 GameModeSelectionPanel,2,0,2,0.0,2 statements
@@ -387,7 +387,7 @@ GameProfile,21,2,19,9.5,a nested block: control flow is not modelled
 GameReplicationInfo,12,0,12,0.0,a nested block: control flow is not modelled
 GameRules,14,1,13,7.1,2 statements
 GameStartInfo,8,0,8,0.0,a nested block: control flow is not modelled
-GameStats,22,1,21,4.5,12 statements
+GameStats,22,3,19,13.6,12 statements
 Gate,23,4,19,17.4,a nested block: control flow is not modelled
 GateChevrons,5,0,5,0.0,9 statements
 GateEventHorizon,3,1,2,33.3,a nested block: control flow is not modelled
@@ -395,10 +395,10 @@ GateIris,10,6,4,60.0,2 statements
 GateKawoosh,1,0,1,0.0,2 statements
 GateSymbolRing,6,2,4,33.3,3 statements
 GatlingGun,1,0,1,0.0,2 statements
-GatlingGunAttachment,2,0,2,0.0,a nested block: control flow is not modelled
+GatlingGunAttachment,2,1,1,50.0,a nested block: control flow is not modelled
 GoaAutoTurret,21,2,19,9.5,a nested block: control flow is not modelled
 GoaAutoTurretController,17,4,13,23.5,a nested block: control flow is not modelled
-GoaAutoTurretGun,4,1,3,25.0,a compound expression
+GoaAutoTurretGun,4,1,3,25.0,an operator the image's table does not install
 GoaAutoTurretGunProjectile,1,0,1,0.0,3 statements
 GoaAutoTurretMK2Controller,28,9,19,32.1,a nested block: control flow is not modelled
 GoaAutoTurretMK2Gun,4,1,3,25.0,2 statements
@@ -406,24 +406,24 @@ GoaAutoTurretMK2GunProjectile,1,0,1,0.0,3 statements
 GoaAutoTurretMK2Pawn,11,1,10,9.1,16 statements
 GoaDropTurret,13,0,13,0.0,16 statements
 GoaDropTurretBase,3,0,3,0.0,a call the statement walk cannot bound
-GoaDropTurretGun,7,2,5,28.6,a compound expression
+GoaDropTurretGun,7,2,5,28.6,an operator the image's table does not install
 GoaDropTurretProjectile,1,0,1,0.0,3 statements
 GoauldConsole,3,1,2,33.3,19 statements
 GoauldConsoleCrystal,1,0,1,0.0,3 statements
 GoauldConsoleHud,34,12,22,35.3,2 statements
 GoauldConsoleTrigger,4,0,4,0.0,a nested block: control flow is not modelled
 GoauldConsoleVessel,3,1,2,33.3,a nested block: control flow is not modelled
-GoauldDrone,11,0,11,0.0,an assignment to a name neither a local nor a property of the class chain
+GoauldDrone,11,2,9,18.2,6 statements
 GoauldDroneBot,35,5,30,14.3,a nested block: control flow is not modelled
 GoauldDroneWeaponProjectile,1,0,1,0.0,3 statements
 GoauldKillerDroid,2,1,1,50.0,6 statements
 GoauldKillerDroidBot,8,1,7,12.5,6 statements
 GoauldKillerDroidMeleeAmmo,4,2,2,50.0,3 statements
 GoauldRibbonAmmo,1,0,1,0.0,5 statements
-GoauldRibbonAttachment,1,0,1,0.0,a compound expression
+GoauldRibbonAttachment,1,0,1,0.0,a name neither a local
 GoauldRibbonProjectile,8,2,6,25.0,a nested block: control flow is not modelled
 GoauldShield,15,4,11,26.7,2 statements
-GoauldTurretEmplacementGun,6,2,4,33.3,a compound expression
+GoauldTurretEmplacementGun,6,2,4,33.3,an operator the image's table does not install
 GoauldTurretEmplacementProjectile,1,0,1,0.0,3 statements
 GravCrane,16,4,12,25.0,a nested block: control flow is not modelled
 GravCraneConsole,15,2,13,13.3,a nested block: control flow is not modelled
@@ -434,7 +434,7 @@ GravCranePowerEmitter,2,0,2,0.0,2 statements
 GravCraneProjector,5,0,5,0.0,a nested block: control flow is not modelled
 GrenadeAmmo,2,1,1,50.0,6 statements
 GrenadeSand,2,2,0,100.0,
-HANDOFLIGHT,19,3,16,15.8,a nested block: control flow is not modelled
+HANDOFLIGHT,19,4,15,21.1,a nested block: control flow is not modelled
 HUD,61,22,39,36.1,9 statements
 HaakenBot,21,6,15,28.6,3 statements
 HaakenGrunt,9,3,6,33.3,a nested block: control flow is not modelled
@@ -462,8 +462,8 @@ HerdAnimal,20,1,19,5.0,5 statements
 HintScreen,5,0,5,0.0,3 statements
 HitEffectManager,7,0,7,0.0,a nested block: control flow is not modelled
 HoldSpot,1,1,0,100.0,
-HoverCraft,13,1,12,7.7,a call the statement walk cannot bound
-HoverCraftFixedGun,5,1,4,20.0,a compound expression
+HoverCraft,13,2,11,15.4,a call the statement walk cannot bound
+HoverCraftFixedGun,5,1,4,20.0,an operator the image's table does not install
 HoverCraftFixedGunAmmo,3,2,1,66.7,3 statements
 HoverCraftLaserProjectile,2,0,2,0.0,4 statements
 HoverCraftPlasmaProjectile,2,0,2,0.0,4 statements
@@ -480,8 +480,8 @@ HudOverlay,2,1,1,50.0,2 statements
 Hummvee,1,0,1,0.0,a nested block: control flow is not modelled
 HummveeMachineGun,2,1,1,50.0,3 statements
 HummveeTurretRear,1,1,0,100.0,
-IMusicActor,17,2,15,11.8,a nested block: control flow is not modelled
-IMusicController,11,1,10,9.1,a nested block: control flow is not modelled
+IMusicActor,17,3,14,17.6,a nested block: control flow is not modelled
+IMusicController,11,2,9,18.2,a nested block: control flow is not modelled
 InGameInfoPanel,4,0,4,0.0,3 statements
 InGameInfoScreen,4,0,4,0.0,2 statements
 InGameMenu,4,0,4,0.0,a nested block: control flow is not modelled
@@ -489,15 +489,15 @@ InGameScoreboard,4,0,4,0.0,a nested block: control flow is not modelled
 InfiniteAmmo,1,1,0,100.0,
 Influence,2,1,1,50.0,a nested block: control flow is not modelled
 Info,5,4,1,80.0,a call the statement walk cannot bound
-IntelligentSpawner,15,3,12,20.0,2 statements
+IntelligentSpawner,15,4,11,26.7,2 statements
 Interaction,12,11,1,91.7,a call the statement walk cannot bound
 InteractionHands,31,19,12,61.3,2 statements
 InteractionMaster,11,0,11,0.0,a nested block: control flow is not modelled
 Interactions,1,0,1,0.0,a compound expression
 InternetInfo,3,3,0,100.0,
 InternetLink,3,2,1,66.7,a native declaration: its body relays its parameters to the native
-Inventory,24,2,22,8.3,3 statements
-InventoryAttachment,1,0,1,0.0,a compound expression
+Inventory,24,3,21,12.5,3 statements
+InventoryAttachment,1,1,0,100.0,
 InventorySpot,2,0,2,0.0,2 statements
 Jackson,3,1,2,33.3,2 statements
 JaffaBase,17,3,14,17.6,6 statements
@@ -529,11 +529,11 @@ KVehicleFactory,1,0,1,0.0,a nested block: control flow is not modelled
 KarmaTowActor,13,0,13,0.0,2 statements
 KeyInventory,2,0,2,0.0,a call the statement walk cannot bound
 KeyPickup,1,0,1,0.0,5 statements
-KillerMessagePlus,2,0,2,0.0,a compound expression
+KillerMessagePlus,2,0,2,0.0,an operator the image's table does not install
 KullDisruptorProjectile,3,1,2,33.3,3 statements
 LCDScreen,4,0,4,0.0,9 statements
 Ladder,1,0,1,0.0,a nested block: control flow is not modelled
-LadderInfo,6,0,6,0.0,a nested block: control flow is not modelled
+LadderInfo,6,1,5,16.7,a nested block: control flow is not modelled
 LadderVolume,5,0,5,0.0,a nested block: control flow is not modelled
 LastManScoreboard,2,0,2,0.0,a nested block: control flow is not modelled
 LastManStandingGame,2,1,1,50.0,a nested block: control flow is not modelled
@@ -545,7 +545,7 @@ LeftLockingPanel,1,0,1,0.0,2 statements
 LevelChange,1,1,0,100.0,
 LevelGameRules,9,2,7,22.2,a call the statement walk cannot bound
 LevelGravityChange,1,0,1,0.0,a nested block: control flow is not modelled
-LevelInfo,19,2,17,10.5,a compound expression
+LevelInfo,19,3,16,15.8,a nested block: control flow is not modelled
 LiftCenter,4,0,4,0.0,2 statements
 LiftExit,3,0,3,0.0,2 statements
 LimitationVolume,1,0,1,0.0,a nested block: control flow is not modelled
@@ -557,13 +557,13 @@ LinkedGateTeleporter,10,4,6,40.0,2 statements
 LinkedTacticalTarget,1,0,1,0.0,a nested block: control flow is not modelled
 ListObjectPropsCommandlet,3,0,3,0.0,5 statements
 LoadGameMenu,3,0,3,0.0,a nested block: control flow is not modelled
-LocalMessage,12,2,10,16.7,a compound expression
+LocalMessage,12,8,4,66.7,2 statements
 LockedObjective,5,0,5,0.0,a nested block: control flow is not modelled
 LogEntry,3,0,3,0.0,a nested block: control flow is not modelled
 M10_SuperSoldierBattleManager,4,0,4,0.0,a nested block: control flow is not modelled
 M3UParser,3,0,3,0.0,a nested block: control flow is not modelled
 M60TurretEmplacement,2,0,2,0.0,5 statements
-M60TurretGun,7,2,5,28.6,a compound expression
+M60TurretGun,7,2,5,28.6,a member that is not a property of the receiver's class
 MOVE_ORDER_Advance,4,1,3,25.0,a nested block: control flow is not modelled
 MOVE_ORDER_Charge,4,2,2,50.0,a nested block: control flow is not modelled
 MOVE_ORDER_Fallback,3,1,2,33.3,a nested block: control flow is not modelled
@@ -575,9 +575,9 @@ MapFileList,4,0,4,0.0,3 statements
 MapList,11,0,11,0.0,5 statements
 MapSelectionPanel,1,0,1,0.0,a call the statement walk cannot bound
 MapVolume,1,0,1,0.0,4 statements
-MaplistManager,55,0,55,0.0,2 statements
+MaplistManager,55,1,54,1.8,2 statements
 MaplistManagerBase,29,29,0,100.0,
-MaplistRecord,45,8,37,17.8,a compound expression
+MaplistRecord,45,9,36,20.0,an operator the image's table does not install
 MasterServerClient,6,5,1,83.3,a native declaration: its body relays its parameters to the native
 MasterServerGameStats,2,0,2,0.0,2 statements
 MasterServerLink,2,1,1,50.0,4 statements
@@ -618,13 +618,13 @@ MultiplayerServerPanel,1,0,1,0.0,a compound expression
 MusicEvent,2,0,2,0.0,a nested block: control flow is not modelled
 MusicTrigger,1,0,1,0.0,a nested block: control flow is not modelled
 Mutator,30,2,28,6.7,a statement that is control flow
-MuzzleFlashAttachment,6,1,5,16.7,13 statements
+MuzzleFlashAttachment,6,3,3,50.0,13 statements
 NavigationPoint,10,7,3,70.0,a nested block: control flow is not modelled
 NoMatchFoundPage,1,0,1,0.0,2 statements
 NotYetImplementedPage,1,0,1,0.0,2 statements
 NotificationManager,3,0,3,0.0,10 statements
 ONeill_Lite,1,1,0,100.0,
-Object,16,3,13,18.8,a native declaration: its body relays its parameters to the native
+Object,16,4,12,25.0,a native declaration: its body relays its parameters to the native
 ObjectPool,3,0,3,0.0,a nested block: control flow is not modelled
 ObjectivesPanel,14,0,14,0.0,a nested block: control flow is not modelled
 Oneill,3,1,2,33.3,2 statements
@@ -640,37 +640,37 @@ P90Prototype,2,0,2,0.0,2 statements
 P90Shells,1,0,1,0.0,2 statements
 PLSParser,1,0,1,0.0,a nested block: control flow is not modelled
 PSDepthOfFieldMaterial,1,0,1,0.0,3 statements
-Pawn,243,91,152,37.4,a compound expression
+Pawn,243,98,145,40.3,9 statements
 PawnTouchTrigger,2,0,2,0.0,2 statements
 PhysicsVolume,17,4,13,23.5,4 statements
-Pickup,44,15,29,34.1,2 statements
-PickupMessagePlus,2,0,2,0.0,a compound expression
+Pickup,44,20,24,45.5,2 statements
+PickupMessagePlus,2,0,2,0.0,an operator the image's table does not install
 PickupMessagePlus_Weapon,1,0,1,0.0,a nested block: control flow is not modelled
 PistolAmmo,3,2,1,66.7,3 statements
 PistolPrototype,2,0,2,0.0,2 statements
 PixelShaderMaterial,1,0,1,0.0,5 statements
 PlayInfo,4,1,3,25.0,a nested block: control flow is not modelled
 PlayerChatManager,19,18,1,94.7,4 statements
-PlayerController,487,112,375,23.0,a statement that is control flow
+PlayerController,487,119,368,24.4,a statement that is control flow
 PlayerInput,14,3,11,21.4,a nested block: control flow is not modelled
-PlayerProfile,44,10,34,22.7,a compound expression
+PlayerProfile,44,13,31,29.5,a nested block: control flow is not modelled
 PlayerReplicationInfo,36,11,25,30.6,a nested block: control flow is not modelled
 PlayerStatCache,9,4,5,44.4,2 statements
 PlayerStats,11,4,7,36.4,3 statements
 PlaylistParserBase,8,1,7,12.5,a call the statement walk cannot bound
 PotentialClimbWatcher,1,0,1,0.0,a nested block: control flow is not modelled
-Powerups,14,5,9,35.7,a nested block: control flow is not modelled
+Powerups,14,6,8,42.9,a nested block: control flow is not modelled
 PressureVolume,4,0,4,0.0,a nested block: control flow is not modelled
 ProfileList,4,0,4,0.0,2 statements
-ProfilePanel,6,0,6,0.0,2 statements
-ProgressTrigger,12,2,10,16.7,a compound expression
+ProfilePanel,6,2,4,33.3,2 statements
+ProgressTrigger,12,2,10,16.7,an operator the image's table does not install
 ProjDGLightPlasmaPrimary,2,0,2,0.0,4 statements
 Projectile,19,6,13,31.6,a nested block: control flow is not modelled
 Projector,4,2,2,50.0,a nested block: control flow is not modelled
 Ptero,4,2,2,50.0,6 statements
-PteroBoss,4,1,3,25.0,a call to a name the class chain does not declare
-PteroBossBot,32,7,25,21.9,7 statements
-PteroBot,21,5,16,23.8,2 statements
+PteroBoss,4,2,2,50.0,a call to a name the class chain does not declare
+PteroBossBot,32,8,24,25.0,7 statements
+PteroBot,21,6,15,28.6,2 statements
 PteroClaws,8,3,5,37.5,12 statements
 PteroClawsAmmo,3,2,1,66.7,3 statements
 PuzzleMover,7,0,7,0.0,a nested block: control flow is not modelled
@@ -691,10 +691,10 @@ ReetouDevice,14,5,9,35.7,2 statements
 ReetouDeviceAmmo,1,0,1,0.0,a nested block: control flow is not modelled
 ReetouDeviceSpray,3,0,3,0.0,a nested block: control flow is not modelled
 ReetouMeleeAmmo,1,0,1,0.0,a nested block: control flow is not modelled
-ReetouMeleeAttack,9,3,6,33.3,a compound expression
+ReetouMeleeAttack,9,3,6,33.3,an operator the image's table does not install
 ReetouProtector,1,1,0,100.0,
-ReetouProtectorBot,17,1,16,5.9,3 statements
-ReetouWeapon,14,7,7,50.0,a compound expression
+ReetouProtectorBot,17,2,15,11.8,3 statements
+ReetouWeapon,14,7,7,50.0,a member that is not a property of the receiver's class
 ReetouWeaponProjectile,1,0,1,0.0,3 statements
 ReflectionCamera,8,3,5,37.5,2 statements
 RefractionCamera,8,3,5,37.5,2 statements
@@ -703,7 +703,7 @@ RepAcidHitsWall,3,1,2,33.3,2 statements
 RepAmmo,1,0,1,0.0,a nested block: control flow is not modelled
 RepChip,1,0,1,0.0,11 statements
 RepChipEmitter,1,0,1,0.0,17 statements
-RepQueenEnergyWeapon,1,0,1,0.0,a compound expression
+RepQueenEnergyWeapon,1,0,1,0.0,an operator the image's table does not install
 RepQueenEnergyWeaponProjectile,1,0,1,0.0,3 statements
 Replicator,23,3,20,13.0,2 statements
 ReplicatorHUD,29,9,20,31.0,a nested block: control flow is not modelled
@@ -711,7 +711,7 @@ ReplicatorPossess,5,0,5,0.0,a call the statement walk cannot bound
 ReplicatorQueen,4,2,2,50.0,a nested block: control flow is not modelled
 RestartGame,2,0,2,0.0,a nested block: control flow is not modelled
 RightLockingMenuPanel,4,0,4,0.0,a nested block: control flow is not modelled
-RightLockingPanel,3,1,2,33.3,2 statements
+RightLockingPanel,3,2,1,66.7,2 statements
 RingTransportEmitter,2,0,2,0.0,a nested block: control flow is not modelled
 RockingSkyZoneInfo,1,0,1,0.0,6 statements
 RosterEntry,3,1,2,33.3,a nested block: control flow is not modelled
@@ -745,7 +745,7 @@ SE_Decals,1,0,1,0.0,5 statements
 SE_ExplosiveKActor,10,4,6,40.0,a nested block: control flow is not modelled
 SE_RandomSpawn,5,1,4,20.0,2 statements
 SE_RandomTrigger,5,1,4,20.0,2 statements
-SE_ToggleStaticMeshActor,2,0,2,0.0,an assignment to a name neither a local nor a property of the class chain
+SE_ToggleStaticMeshActor,2,0,2,0.0,a bool assignment whose value is a compound expression
 SG1AIMsgManager,4,0,4,0.0,3 statements
 SG1Pawn,1,0,1,0.0,a nested block: control flow is not modelled
 SG1ShieldBelt,1,0,1,0.0,6 statements
@@ -754,7 +754,7 @@ SGAssaultRifleShells,1,0,1,0.0,2 statements
 SGC_DestructibleSecurityDoor,4,0,4,0.0,a nested block: control flow is not modelled
 SGC_SecurityDoor,4,0,4,0.0,2 statements
 SGC_SecurityReader,5,1,4,20.0,a statement that is control flow
-SGFontInfo,10,1,9,10.0,a compound expression
+SGFontInfo,10,2,8,20.0,2 statements
 SGFormation,14,0,14,0.0,18 statements
 SGInsetCamera,19,7,12,36.8,5 statements
 SGInsetCameraLookAt,2,0,2,0.0,3 statements
@@ -771,7 +771,7 @@ SGOrderFollow,1,0,1,0.0,a nested block: control flow is not modelled
 SGOrderGoto,2,1,1,50.0,a nested block: control flow is not modelled
 SGOrderHold,2,1,1,50.0,a nested block: control flow is not modelled
 SGOrderOpenFire,1,0,1,0.0,a nested block: control flow is not modelled
-SGPageBase,6,1,5,16.7,14 statements
+SGPageBase,6,2,4,33.3,14 statements
 SGPlayerInput,1,0,1,0.0,a nested block: control flow is not modelled
 SGScarabTrail,1,0,1,0.0,a call the statement walk cannot bound
 SGSceneManager,2,0,2,0.0,a nested block: control flow is not modelled
@@ -799,23 +799,23 @@ SVehicle,8,3,5,37.5,a nested block: control flow is not modelled
 SVehicleFactory,5,2,3,40.0,a nested block: control flow is not modelled
 SVehicleTrigger,5,0,5,0.0,2 statements
 SaveGameMenu,5,1,4,20.0,2 statements
-SaveGamePanel,4,0,4,0.0,3 statements
+SaveGamePanel,4,1,3,25.0,3 statements
 SavedGameInfo,4,0,4,0.0,6 statements
-SavedGameList,5,0,5,0.0,a compound expression
+SavedGameList,5,0,5,0.0,a member that is not a property of the receiver's class
 SavedMove,6,0,6,0.0,9 statements
 SayMessagePlus,3,0,3,0.0,6 statements
-Scarab,26,6,20,23.1,a nested block: control flow is not modelled
+Scarab,26,8,18,30.8,a nested block: control flow is not modelled
 ScarabPuff,2,2,0,100.0,
 ScarabSplat,2,2,0,100.0,
 SceneManager,7,0,7,0.0,a nested block: control flow is not modelled
 SceneSubtitles,2,0,2,0.0,2 statements
 ScopedWeapon,27,4,23,14.8,3 statements
 Scorch,2,1,1,50.0,3 statements
-ScoreBoard,16,3,13,18.8,a nested block: control flow is not modelled
+ScoreBoard,16,4,12,25.0,a nested block: control flow is not modelled
 Scout,1,1,0,100.0,
 Screenplay,48,5,43,10.4,a nested block: control flow is not modelled
 ScriptEvent,17,3,14,17.6,a nested block: control flow is not modelled
-ScriptObject,8,4,4,50.0,a call the statement walk cannot bound
+ScriptObject,8,5,3,62.5,a call the statement walk cannot bound
 ScriptScene,21,3,18,14.3,a nested block: control flow is not modelled
 ScriptedAction,12,10,2,83.3,a call the statement walk cannot bound
 ScriptedController,59,18,41,30.5,a nested block: control flow is not modelled
@@ -830,11 +830,11 @@ SelectPawnPanel,5,0,5,0.0,a call the statement walk cannot bound
 SelectTeamPage,4,0,4,0.0,7 statements
 SelectTeamPanel,4,0,4,0.0,3 statements
 SelectionMenu,29,1,28,3.4,a nested block: control flow is not modelled
-Semektet,12,1,11,8.3,a nested block: control flow is not modelled
+Semektet,12,2,10,16.7,a nested block: control flow is not modelled
 SemektetAttachment,4,1,3,25.0,13 statements
 SemektetMortarGun,21,9,12,42.9,a nested block: control flow is not modelled
 SemektetMortarGunAmmo,2,1,1,50.0,5 statements
-SemektetMortarGunProjectile,7,0,7,0.0,a nested block: control flow is not modelled
+SemektetMortarGunProjectile,7,1,6,14.3,a nested block: control flow is not modelled
 SemektetMortarTurret,1,1,0,100.0,
 SemektetStaffCannonGun,11,7,4,63.6,a nested block: control flow is not modelled
 SemektetStaffCannonGunAmmo,1,0,1,0.0,6 statements
@@ -844,12 +844,12 @@ ServerList,9,0,9,0.0,2 statements
 ServerQueryClient,3,2,1,66.7,2 statements
 ServerSelectionListBox,13,0,13,0.0,a nested block: control flow is not modelled
 ServerSelectionPage,3,0,3,0.0,a nested block: control flow is not modelled
-ServerSelectionPanel,3,1,2,33.3,2 statements
+ServerSelectionPanel,3,2,1,66.7,2 statements
 Shader,2,0,2,0.0,8 statements
 ShadowManager,2,1,1,50.0,a nested block: control flow is not modelled
 ShadowProjector,5,0,5,0.0,a call the statement walk cannot bound
 SheetBuilder,1,0,1,0.0,a nested block: control flow is not modelled
-Shield,1,0,1,0.0,a compound expression
+Shield,1,0,1,0.0,an operator the image's table does not install
 ShieldBelt,33,9,24,27.3,a nested block: control flow is not modelled
 ShieldBeltAttach,5,0,5,0.0,a statement that is control flow
 ShieldEffect,3,0,3,0.0,a nested block: control flow is not modelled
@@ -857,7 +857,7 @@ ShieldPickup,2,0,2,0.0,a nested block: control flow is not modelled
 ShockGrenade,1,1,0,100.0,
 ShockGrenadePickup,1,0,1,0.0,a nested block: control flow is not modelled
 ShockGrenadeProjectile,3,1,2,33.3,3 statements
-ShootOrder,3,2,1,66.7,a compound expression
+ShootOrder,3,3,0,100.0,
 ShotgunAmmo,4,2,2,50.0,3 statements
 SimpleCommandlet,2,1,1,50.0,21 statements
 SinglePlayerChapterSelect,5,0,5,0.0,a nested block: control flow is not modelled
@@ -872,16 +872,16 @@ SnipingVolume,2,0,2,0.0,a nested block: control flow is not modelled
 SoundModifier,3,2,1,66.7,4 statements
 SoundTrigger,1,0,1,0.0,a nested block: control flow is not modelled
 SpecialEventTrigger,1,0,1,0.0,a nested block: control flow is not modelled
-Speech,8,1,7,12.5,a compound expression
+Speech,8,1,7,12.5,a member that is not a property of the receiver's class
 SpinnyWeap,2,0,2,0.0,a nested block: control flow is not modelled
 SpiralStairBuilder,2,0,2,0.0,a nested block: control flow is not modelled
-SquadAIBasic,106,19,87,17.9,a nested block: control flow is not modelled
-SquadAISG,31,3,28,9.7,2 statements
+SquadAIBasic,106,21,85,19.8,a nested block: control flow is not modelled
+SquadAISG,31,4,27,12.9,2 statements
 SquadMenu,11,0,11,0.0,a nested block: control flow is not modelled
 SquadRoster,1,1,0,100.0,
 StaffCannon,10,0,10,0.0,2 statements
 StaffCannonAmmo,1,0,1,0.0,4 statements
-StaffCannonGun,41,20,21,48.8,a nested block: control flow is not modelled
+StaffCannonGun,41,21,20,51.2,a nested block: control flow is not modelled
 StaffCannonProjectile,1,0,1,0.0,3 statements
 StaffWeaponAmmo,1,0,1,0.0,6 statements
 StaffWeaponAttachment,6,1,5,16.7,a nested block: control flow is not modelled
@@ -890,7 +890,7 @@ StaffWeaponProjectile,4,0,4,0.0,2 statements
 StargateAIMsgManager,4,0,4,0.0,2 statements
 StargateAmmo,14,2,12,14.3,a nested block: control flow is not modelled
 StargateArmor,7,2,5,28.6,a nested block: control flow is not modelled
-StargateCar,15,0,15,0.0,5 statements
+StargateCar,15,1,14,6.7,5 statements
 StargateCopter,10,0,10,0.0,10 statements
 StargateDeathMatch,7,2,5,28.6,2 statements
 StargateDeathMessage,2,0,2,0.0,a nested block: control flow is not modelled
@@ -900,22 +900,22 @@ StargateHUD,56,9,47,16.1,a nested block: control flow is not modelled
 StargateHover,11,0,11,0.0,a nested block: control flow is not modelled
 StargateMutator,1,0,1,0.0,a nested block: control flow is not modelled
 StargatePassengerTrigger,1,0,1,0.0,2 statements
-StargatePawn,227,21,206,9.3,a nested block: control flow is not modelled
-StargatePlayer,271,113,158,41.7,a statement that is control flow
+StargatePawn,227,24,203,10.6,a nested block: control flow is not modelled
+StargatePlayer,271,115,156,42.4,a statement that is control flow
 StargateProjectile,10,0,10,0.0,5 statements
-StargateRechargeWeapons,4,0,4,0.0,a compound expression
+StargateRechargeWeapons,4,0,4,0.0,an operator the image's table does not install
 StargateScoreBoard,9,0,9,0.0,a nested block: control flow is not modelled
-StargateStationaryWeapon,17,6,11,35.3,a compound expression
+StargateStationaryWeapon,17,7,10,41.2,5 statements
 StargateTeamHUD,5,0,5,0.0,a nested block: control flow is not modelled
 StargateTextTrigger,3,0,3,0.0,a nested block: control flow is not modelled
-StargateVehicle,33,5,28,15.2,a nested block: control flow is not modelled
+StargateVehicle,33,7,26,21.2,a nested block: control flow is not modelled
 StargateVehicleGunAttachment,1,0,1,0.0,3 statements
 StargateVehiclePassenger,14,1,13,7.1,a nested block: control flow is not modelled
 StargateVehicleSeat,7,1,6,14.3,4 statements
-StargateVoicePack,34,8,26,23.5,a nested block: control flow is not modelled
-StargateWeapon,160,46,114,28.8,a nested block: control flow is not modelled
-StargateWeaponAttachment,11,2,9,18.2,a call to a name the class chain does not declare
-StargateWeaponEmplacement,32,10,22,31.2,a nested block: control flow is not modelled
+StargateVoicePack,34,9,25,26.5,a nested block: control flow is not modelled
+StargateWeapon,160,49,111,30.6,a nested block: control flow is not modelled
+StargateWeaponAttachment,11,3,8,27.3,9 statements
+StargateWeaponEmplacement,32,11,21,34.4,a nested block: control flow is not modelled
 StargateWeaponPickup,8,4,4,50.0,2 statements
 StartupMessage,2,0,2,0.0,a nested block: control flow is not modelled
 StaticMenuPane,4,0,4,0.0,2 statements
@@ -927,13 +927,13 @@ StingerAmmo,1,0,1,0.0,8 statements
 StingerProjectile,8,0,8,0.0,2 statements
 StoryModeGame,59,7,52,11.9,a nested block: control flow is not modelled
 StoryModeScoreboard,5,0,5,0.0,2 statements
-Stream,13,4,9,30.8,a call the statement walk cannot bound
-StreamBase,11,1,10,9.1,a nested block: control flow is not modelled
+Stream,13,7,6,53.8,a call the statement walk cannot bound
+StreamBase,11,2,9,18.2,a nested block: control flow is not modelled
 StreamCommandlet,3,0,3,0.0,a nested block: control flow is not modelled
 StreamInteraction,31,7,24,22.6,a nested block: control flow is not modelled
 StreamInterface,3,0,3,0.0,a nested block: control flow is not modelled
-StreamPlaylist,35,5,30,14.3,6 statements
-StreamPlaylistManager,42,5,37,11.9,a compound expression
+StreamPlaylist,35,7,28,20.0,6 statements
+StreamPlaylistManager,42,6,36,14.3,a compound expression
 StreamTag,2,1,1,50.0,a nested block: control flow is not modelled
 StringMessagePlus,1,1,0,100.0,
 SuperSoldier,24,5,19,20.8,a nested block: control flow is not modelled
@@ -962,7 +962,7 @@ TeamTrigger,4,0,4,0.0,2 statements
 TeamVoicePack,16,1,15,6.2,a nested block: control flow is not modelled
 Teleporter,8,0,8,0.0,3 statements
 Teltak,9,3,6,33.3,13 statements
-TeltakBot,46,9,37,19.6,a nested block: control flow is not modelled
+TeltakBot,46,10,36,21.7,a nested block: control flow is not modelled
 TempleTurretGun,6,3,3,50.0,3 statements
 TempleTurretGunProjectile,1,0,1,0.0,3 statements
 TerrainBuilder,2,0,2,0.0,a nested block: control flow is not modelled
@@ -979,8 +979,8 @@ TimeMessage,3,0,3,0.0,2 statements
 TimedTrigger,2,1,1,50.0,2 statements
 TournamentConsole,5,3,2,60.0,a nested block: control flow is not modelled
 Train,11,0,11,0.0,5 statements
-TransientAmbientCreature,15,1,14,6.7,a compound expression
-TransientAmbientPawn,17,6,11,35.3,a compound expression
+TransientAmbientCreature,15,2,13,13.3,a member that is not a property of the receiver's class
+TransientAmbientPawn,17,7,10,41.2,a nested block: control flow is not modelled
 TransportPlatform,7,1,6,14.3,2 statements
 TransportPlatformTeleporter,23,11,12,47.8,5 statements
 TransportRingMesh,1,0,1,0.0,a nested block: control flow is not modelled
@@ -1038,7 +1038,7 @@ UPreviewMapListClient,4,0,4,0.0,28 statements
 UPreviewRootWindow,4,0,4,0.0,3 statements
 UPreviewSkinnedButton,2,0,2,0.0,a nested block: control flow is not modelled
 UPreviewSkinnedDialogClientWindow,3,0,3,0.0,10 statements
-USoundEmitter,5,1,4,20.0,an assignment whose target is not one name
+USoundEmitter,5,1,4,20.0,an assignment whose target is a length expression
 UT_SpriteSmokePuff,1,0,1,0.0,2 statements
 UWindowBase,5,0,5,0.0,a nested block: control flow is not modelled
 UWindowBitmap,1,0,1,0.0,a nested block: control flow is not modelled
@@ -1046,9 +1046,9 @@ UWindowButton,10,0,10,0.0,6 statements
 UWindowCheckbox,3,0,3,0.0,a nested block: control flow is not modelled
 UWindowClientWindow,1,0,1,0.0,2 statements
 UWindowComboButton,4,1,3,25.0,2 statements
-UWindowComboControl,28,0,28,0.0,14 statements
+UWindowComboControl,28,9,19,32.1,14 statements
 UWindowComboLeftButton,2,0,2,0.0,a nested block: control flow is not modelled
-UWindowComboList,24,0,24,0.0,a call the statement walk cannot bound
+UWindowComboList,24,1,23,4.2,a call the statement walk cannot bound
 UWindowComboListItem,1,0,1,0.0,a nested block: control flow is not modelled
 UWindowComboRightButton,2,0,2,0.0,a nested block: control flow is not modelled
 UWindowConsoleClientWindow,5,0,5,0.0,2 statements
@@ -1058,9 +1058,9 @@ UWindowDialogClientWindow,5,2,3,40.0,2 statements
 UWindowDialogControl,16,4,12,25.0,2 statements
 UWindowDynamicTextArea,18,4,14,22.2,a nested block: control flow is not modelled
 UWindowEditBox,33,3,30,9.1,2 statements
-UWindowEditControl,13,0,13,0.0,an assignment whose target is not one name
+UWindowEditControl,13,5,8,38.5,2 statements
 UWindowFrameCloseBox,3,1,2,33.3,a call the statement walk cannot bound
-UWindowFramedWindow,11,1,10,9.1,5 statements
+UWindowFramedWindow,11,3,8,27.3,5 statements
 UWindowGrid,13,7,6,53.8,9 statements
 UWindowGridClient,1,1,0,100.0,
 UWindowGridColumn,11,0,11,0.0,a call the statement walk cannot bound
@@ -1070,25 +1070,25 @@ UWindowHSplitter,5,0,5,0.0,5 statements
 UWindowHTMLTextArea,28,1,27,3.6,28 statements
 UWindowHotkeyWindowList,1,0,1,0.0,a nested block: control flow is not modelled
 UWindowLabelControl,3,0,3,0.0,a nested block: control flow is not modelled
-UWindowLayoutControl,4,0,4,0.0,5 statements
+UWindowLayoutControl,4,1,3,25.0,5 statements
 UWindowLayoutRow,3,1,2,33.3,3 statements
 UWindowList,32,3,29,9.4,10 statements
 UWindowListBox,19,0,19,0.0,2 statements
 UWindowListControl,2,1,1,50.0,6 statements
 UWindowLookAndFeel,38,37,1,97.4,a nested block: control flow is not modelled
 UWindowMenuBar,19,4,15,21.1,4 statements
-UWindowMenuBarItem,7,1,6,14.3,3 statements
+UWindowMenuBarItem,7,2,5,28.6,3 statements
 UWindowMessageBox,4,0,4,0.0,6 statements
 UWindowMessageBoxArea,2,0,2,0.0,11 statements
 UWindowMessageBoxCW,8,0,8,0.0,3 statements
-UWindowPageControl,14,0,14,0.0,3 statements
-UWindowPageControlPage,2,0,2,0.0,a call the statement walk cannot bound
+UWindowPageControl,14,2,12,14.3,3 statements
+UWindowPageControlPage,2,1,1,50.0,a call the statement walk cannot bound
 UWindowPageWindow,1,1,0,100.0,
 UWindowProgressBar,2,1,1,50.0,a nested block: control flow is not modelled
 UWindowPulldownMenu,23,2,21,8.7,7 statements
-UWindowPulldownMenuItem,6,0,6,0.0,4 statements
+UWindowPulldownMenuItem,6,1,5,16.7,4 statements
 UWindowRightClickMenu,4,2,2,50.0,2 statements
-UWindowRootWindow,33,4,29,12.1,a nested block: control flow is not modelled
+UWindowRootWindow,33,5,28,15.2,a nested block: control flow is not modelled
 UWindowSBDownButton,4,0,4,0.0,a nested block: control flow is not modelled
 UWindowSBLeftButton,4,0,4,0.0,a nested block: control flow is not modelled
 UWindowSBRightButton,4,0,4,0.0,a nested block: control flow is not modelled
@@ -1108,7 +1108,7 @@ UWindowURLTextArea,6,0,6,0.0,a nested block: control flow is not modelled
 UWindowVScrollbar,10,0,10,0.0,4 statements
 UWindowVSplitter,5,0,5,0.0,5 statements
 UWindowWin95LookAndFeel,29,0,29,0.0,a nested block: control flow is not modelled
-UWindowWindow,103,33,70,32.0,11 statements
+UWindowWindow,103,37,66,35.9,11 statements
 UWindowWrappedTextArea,1,0,1,0.0,a nested block: control flow is not modelled
 UdpBeacon,5,0,5,0.0,2 statements
 UdpGamespyQuery,16,0,16,0.0,a nested block: control flow is not modelled
@@ -1122,20 +1122,20 @@ UnrealTeamInfo,13,0,13,0.0,a call the statement walk cannot bound
 UseStaticTrigger,4,2,2,50.0,3 statements
 UseTrigger,3,2,1,66.7,a nested block: control flow is not modelled
 VSMainMenu,5,0,5,0.0,4 statements
-Vehicle,112,35,77,31.2,a nested block: control flow is not modelled
+Vehicle,112,38,74,33.9,a nested block: control flow is not modelled
 VehiclePart,2,2,0,100.0,
 VehicleRemoteTurret,1,0,1,0.0,a nested block: control flow is not modelled
 VehicleTurret,7,0,7,0.0,11 statements
 VehicleWeakPoint,1,0,1,0.0,a nested block: control flow is not modelled
 VehicleWeapon,8,2,6,25.0,a nested block: control flow is not modelled
 VehicleWeaponAttachment,4,1,3,25.0,a statement that is control flow
-VictimMessage,2,0,2,0.0,a compound expression
+VictimMessage,2,0,2,0.0,an operator the image's table does not install
 ViewShaker,1,0,1,0.0,2 statements
 Vignette,2,2,0,100.0,
 VirtualKeyboardPage,6,0,6,0.0,a call the statement walk cannot bound
 VirtualKeyboardPanel,17,0,17,0.0,a nested block: control flow is not modelled
-VoiceChatReplicationInfo,38,23,15,60.5,2 statements
-VoiceChatRoom,23,20,3,87.0,a nested block: control flow is not modelled
+VoiceChatReplicationInfo,38,24,14,63.2,2 statements
+VoiceChatRoom,23,22,1,95.7,a nested block: control flow is not modelled
 VoicePack,4,4,0,100.0,
 VoiceSG,1,0,1,0.0,a nested block: control flow is not modelled
 VoiceSelector,10,1,9,10.0,11 statements
@@ -1153,7 +1153,7 @@ WarpZoneMarker,3,0,3,0.0,2 statements
 WaterVolume,1,0,1,0.0,6 statements
 Waypoint,5,2,3,40.0,a nested block: control flow is not modelled
 WeapRepDefault,8,1,7,12.5,a nested block: control flow is not modelled
-Weapon,158,66,92,41.8,a statement that is control flow
+Weapon,158,74,84,46.8,a statement that is control flow
 WeaponAttachment,4,2,2,50.0,a statement that is control flow
 WeaponMenu,12,0,12,0.0,7 statements
 WeaponPickup,12,0,12,0.0,3 statements
@@ -1179,21 +1179,21 @@ burnProjector,6,1,5,16.7,a bool assignment whose value is a compound expression
 cloth01_anim,1,1,0,100.0,
 counter,3,2,1,66.7,a nested block: control flow is not modelled
 direction,7,6,1,85.7,2 statements
-moCheckBox,7,0,7,0.0,a compound expression
-moComboBox,5,1,4,20.0,2 statements
-moEditBox,6,1,5,16.7,2 statements
+moCheckBox,7,3,4,42.9,2 statements
+moComboBox,5,2,3,40.0,2 statements
+moEditBox,6,3,3,50.0,2 statements
 moImageListMap,8,2,6,25.0,a nested block: control flow is not modelled
-moListEditBox,14,2,12,14.3,a nested block: control flow is not modelled
-moNumericEdit,4,1,3,25.0,a call to a name the class chain does not declare
-moSlider,10,0,10,0.0,a statement that is control flow
-moTextOption,24,2,22,8.3,3 statements
+moListEditBox,14,5,9,35.7,a nested block: control flow is not modelled
+moNumericEdit,4,2,2,50.0,a call the statement walk cannot bound
+moSlider,10,1,9,10.0,a statement that is control flow
+moTextOption,24,3,21,12.5,3 statements
 pclSGAssaultRifleShells,1,0,1,0.0,2 statements
 scaleWall,5,1,4,20.0,2 statements
 xAdminConfigBase,2,2,0,100.0,
-xAdminGroup,7,0,7,0.0,2 statements
-xAdminGroupList,9,0,9,0.0,a compound expression
-xAdminUser,20,0,20,0.0,2 statements
-xAdminUserList,8,0,8,0.0,a compound expression
+xAdminGroup,7,1,6,14.3,2 statements
+xAdminGroupList,9,1,8,11.1,a nested block: control flow is not modelled
+xAdminUser,20,3,17,15.0,2 statements
+xAdminUserList,8,1,7,12.5,4 statements
 xEmitter,6,2,4,33.3,a nested block: control flow is not modelled
 xMaterialController,7,1,6,14.3,a nested block: control flow is not modelled
 xPickUpBase,5,2,3,40.0,a nested block: control flow is not modelled
