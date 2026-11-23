@@ -51,8 +51,56 @@ def find_function(pkg, cls, name):
     return None
 
 
-def rebuild_with(pkg, index, blob):
-    """Re-lay the file with export `index`'s payload replaced by `blob` (any length)."""
+def rebuild_with(pkg, index, blob, append=False):
+    """Replace export `index`'s payload with `blob` (any length).
+
+    Two strategies, and the difference is measured, not stylistic. `append=True` leaves the original file a byte prefix,
+    patches one export entry in place and puts the new payload at the old end of file. The relayout path moves every
+    payload after the target, and a package rebuilt that way boots the game to a **frozen title** while this project's
+    reader accepts it (2026-11-22) -- so the relayout is the suspect, not the bytes.
+    """
+
+    if append == "insert":
+        # names -> payloads -> imports -> exports: the tables sit *after* the payloads, so a grown payload can be inserted
+        # at the end of the payload region and move only the tables. Every payload keeps its original offset.
+        exports = [dict(e) for e in pkg.exports]
+        target = next((e for e in exports if e["index"] == index), None)
+        if target is None:
+            raise SystemExit("no export with index %r" % index)
+        payload_end = pkg.import_offset
+        target["offset"] = payload_end
+        target["size"] = len(blob)
+        table = pw.encode_exports(exports)
+        head = bytearray(pkg.data[:pkg.name_offset])
+        struct.pack_into("<I", head, 24, pkg.export_offset + len(blob))
+        struct.pack_into("<I", head, 32, pkg.import_offset + len(blob))
+        out = bytearray(head)
+        out += pkg.data[pkg.name_offset:payload_end]
+        out += blob
+        out += pkg.data[pkg.import_offset:pkg.export_offset]
+        out += table
+        return bytes(out)
+
+    if append:
+        exports = [dict(e) for e in pkg.exports]
+        target = next((e for e in exports if e["index"] == index), None)
+        if target is None:
+            raise SystemExit("no export with index %r" % index)
+        original = pw.encode_exports(pkg.exports)
+        at = pkg.export_offset
+        if pkg.data[at:at + len(original)] != original:
+            raise SystemExit("the export table is not where the header says (byte %d)" % at)
+        target["offset"] = len(pkg.data)
+        target["size"] = len(blob)
+        table = pw.encode_exports(exports)
+        if len(table) != len(original):
+            # an in-place patch cannot absorb a longer table: it would shift the payloads it addresses
+            raise SystemExit("the export table changes length (%d -> %d bytes)" % (len(original), len(table)))
+        out = bytearray(pkg.data)
+        out[at:at + len(table)] = table
+        out += blob
+        return bytes(out)
+
     exports = [dict(e) for e in pkg.exports]
     order = sorted(pkg.exports, key=lambda e: e["offset"])
     blobs = {e["index"]: (blob if e["index"] == index
@@ -145,6 +193,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--package")
     ap.add_argument("--function")
+    # A name is not a unique handle: `LogDropped` is carried by two exports and `QueueForceFire` by more than one, so a
+    # name lookup silently rewrites whichever the table lists first -- and still reports the size it chose.
+    ap.add_argument("--index", type=int)
+    ap.add_argument("--append", action="store_true",
+                    help="append the new payload and patch one table entry in place instead of re-laying out the file")
+    ap.add_argument("--insert", action="store_true",
+                    help="insert the grown payload at the end of the payload region, so only the tables move")
     ap.add_argument("--class", dest="cls")
     ap.add_argument("--body", nargs="+", help="hex bytes, concatenated")
     ap.add_argument("-o", "--out")
@@ -152,7 +207,7 @@ def main():
     args = ap.parse_args()
     if args.check:
         return check(args)
-    if not (args.package and args.function and args.body and args.out):
+    if not (args.package and (args.function or args.index is not None) and args.body and args.out):
         print("FAIL l1-change: --package, --function, --body and -o are required")
         return 2
 
@@ -161,7 +216,7 @@ def main():
     pkg.read_names()
     pkg.read_imports()
     pkg.read_exports()
-    index = find_function(pkg, args.cls, args.function)
+    index = args.index if args.index is not None else find_function(pkg, args.cls, args.function)
     if index is None:
         print("FAIL l1-change: no Function named %r in %s" % (args.function, args.package))
         return 1
@@ -173,7 +228,7 @@ def main():
         return 1
     new_payload = payload[:start] + script + payload[end:]
 
-    new_file = rebuild_with(pkg, index, new_payload)
+    new_file = rebuild_with(pkg, index, new_payload, append="insert" if args.insert else args.append)
     with open(args.out, "wb") as fh:
         fh.write(new_file)
 

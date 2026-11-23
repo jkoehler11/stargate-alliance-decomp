@@ -138,7 +138,9 @@ The ISO is the same size as the original, because six extra bytes fit inside the
 anyone reads a matching size as "nothing changed".
 
 **What this proves:** the game's own package loader parses a package whose payload this project wrote, at a different
-length than the original, and boots to the title. That is the claim the reproduction work could not make on its own.
+length than the original, and boots to the title. **It also then freezes there and ignores input**, which the control boot
+does not — so read this table as "the loader got that far", not as a working build. The matrix below is the result that
+matters. That is the claim the reproduction work could not make on its own.
 
 **What it does not prove:** that the changed function *runs*. `LogDropped` is not on the title path, so the boot exercises
 the loader and not the new script. A behavioural test needs a function that fires during a boot, and a change whose effect
@@ -151,3 +153,44 @@ looked at, which is how this section exists.
 
 The frame is not committed: it is game content (see `AGENTS.md`). The hashes above are the evidence, and the ISO and dump
 copy are reproducible from `tools/xemu/build-xiso.sh` and `tools/l1-change.py`.
+
+## Structural changes freeze the game; in-place byte edits do not (measured 2026-11-22)
+
+Six builds, one variable at a time. "Responds" means the pad taps changed the frame (`pad=start` then `pad=a`, pixels
+differing against the previous shot); "frozen" means two shots 25 s apart were byte-identical and the pad did nothing.
+
+| build | change | file size | payload offsets | result |
+|---|---|---|---|---|
+| original | — | 3,031,678 | — | title, **responds** (48,350 / 74,254 px) |
+| no-op rebuild | none | 3,031,678 | unchanged | **byte-identical** to the shipped package (`89d9f93c…`) |
+| in-place | `QueueForceFire` `IntConst 8192 → 8193` | 3,031,678 | unchanged | title, **responds** (25,130 / 69,014 px) |
+| relayout | `LogDropped` script 3 → 9 bytes | +6 | every payload after the target moves | title, then **frozen** (0 px) |
+| insert | `LogDropped` script 3 → 9 bytes | +41 | payloads fixed, tables move | **frozen** |
+| pair | `LogDropped` +6 **and** `FinishAlerting` −6 | **3,031,678** | payloads between the two move | **frozen** |
+
+What the matrix says, and what it rules out:
+
+- **Not size.** The pair build is byte-for-byte the original length and still freezes; the in-place build changes four
+  bytes and passes.
+- **Not content hashing.** If the game verified package digests, the in-place edit would fail too. It does not, so
+  `System/Packages.md5` is not gating this.
+- **Not the bytes themselves.** The no-op rebuild regenerates the package exactly, so the writer's model of the container
+  is faithful when nothing moves.
+- **It is structural.** The loader accepts the shipped tables and offsets and does not accept a package whose payload
+  offsets or table positions differ — even when this project's reader parses the result cleanly and every other payload
+  is verifiably identical.
+
+**Consequence for L1**, stated as a constraint rather than an estimate: a recompiled package whose bodies all keep their
+shipped lengths will load. A package where any body's length changes will not, until whatever the loader compares is
+found. That is a narrower target than "finish the emitter", and it is the one that actually gates a bootable rebuild.
+
+**Next**: find what the loader checks. The candidates in order of plausibility are a summary field this project does not
+model, an alignment or ordering rule on the export table, and a length recorded outside the package. The instrument is
+the xemu breakpoint harness, not another parser: the question is what the *game* does with the file, so the answer has to
+come from the game.
+
+**Two hygiene notes from the same run.** `cp -al dump-local dump-chg` followed by `cp new dump-chg/System/X.u` **writes
+through the shared inode** — `cp` does not break a hardlink, so the "pristine" copy was silently modified and the next
+experiment ran from changed bytes. Remove the target first. And a function **name is not a unique handle**: `LogDropped`
+is carried by two exports and `QueueForceFire` by more than one, so `tools/l1-change.py` now takes `--index` to target
+one export exactly.
