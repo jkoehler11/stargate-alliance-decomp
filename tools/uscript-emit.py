@@ -1199,6 +1199,38 @@ def _emit_member(expr, rettype, env):
     return _converted(node, ptype, rettype), "context"
 
 
+def _incdec(expr, env):
+    """`x++`, `++x`, `x--`, `--x` -> the post/pre operator's own opcode, the read, `16`.
+
+    The four forms are four *different* natives, not one with a flag: `AddAdd_Int` (0xa5) is postfix on an `int`,
+    `AddAdd_PreInt` (0xa3) prefix, and the `byte` pair is `AddAdd_Byte` (0x8b) / `AddAdd_PreByte` (0x89);
+    `SubtractSubtract_*` sit next to each (0xa6 / 0xa4 / 0x8c / 0x8a). The operand is written exactly as a read of
+    the same variable, and the node ends on `16` like any other call -- `Actor.UpdatePrecacheMaterials`'s
+    `i ++` is `a5 00 5a 21 <idx> 16` and the `for` header's increment is the same node. A `float` increment has no
+    installed operator in this build, so it is refused by name rather than given a token.
+    """
+    if len(expr) != 2:
+        return None
+    # (postfix, prefix) per operand type: the four forms are four opcodes.
+    syms = {"++": {"byte": (0x8B, 0x89), "int": (0xA5, 0xA3)},
+            "--": {"byte": (0x8C, 0x8A), "int": (0xA6, 0xA4)}}
+    if expr[0][0] == "op" and expr[0][1] in syms and expr[1][0] in ("ident", "keyword"):
+        read, prefix, sym = expr[1], True, expr[0][1]        # `++ x` -- the operator is in front: the *pre* form
+    elif expr[1][0] == "op" and expr[1][1] in syms and expr[0][0] in ("ident", "keyword"):
+        read, prefix, sym = expr[0], False, expr[1][1]       # `x ++` -- the operator follows: the post form
+    else:
+        return None
+    t = _type_of([read], env).lower()
+    pair = syms[sym].get(t)
+    token = pair[1 if prefix else 0] if pair else None
+    if token is None:
+        raise Refused("a %s on a %s operand, which no installed operator names" % (sym, t or "typeless"))
+    body = _emit_var(read[1], env, "")
+    if body is None:
+        raise Refused("a %s on a name neither a local nor a property of the class chain" % sym)
+    return bytes([token]) + body + b"\x16", "incdec"
+
+
 def emit_expr(expr, rettype, env):
     """The bytes of one expression, or Refused with the reason."""
     names = env["names"]
@@ -1208,6 +1240,9 @@ def emit_expr(expr, rettype, env):
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
         expr = [("number", "-" + expr[1][1])]
     if len(expr) != 1:
+        inc = _incdec(expr, env)
+        if inc is not None:
+            return inc
         if _operator_types(expr, env) is not None:
             # the loosest depth-0 operator is the expression's root, so it is tried before a call or a member:
             # `Foo(1) + 2` is an `Add_IntInt`, not a call
@@ -1661,10 +1696,63 @@ def emit_flow(node, rettype, env, pos):
         return (bytes([0x07]) + _off(jump_pos + 3) + cbytes + bbytes
                 + bytes([0x06]) + _off(pos)), "while", "while"
     if kind == "for":
-        raise Refused("a for loop")
+        # `for (init; cond; step) S;` = init, `JumpIfNot <end>`, cond, S, step, `Jump <the JumpIfNot's position>`.
+        # The jump operand is an **absolute** position in the uncompacted array, like every other branch operand:
+        # `Actor.UpdatePrecacheMaterials` writes `06 0700` for a `JumpIfNot` at wide 7 and `07 3700` for the end of
+        # a loop whose step ends at wide 0x37. `playercontroller`-style `for (i = -1; i < 2; i += 2)` is the same
+        # shape with a compound assignment for the step; both are measured in the corpus.
+        _k, init, cond, step, body = node
+        initb = _emit_clause(init, env)
+        top = pos + _wide(initb)                       # the `JumpIfNot`'s own position: what the back-jump names
+        condb = emit_expr(cond, "bool", env)[0]
+        body_pos = top + 3 + _wide(condb)
+        bodyb, _bm, _bs = emit_flow(body, rettype, env, body_pos)
+        stepb = _emit_clause(step, env)
+        # The position just past the loop is *after* the back-`Jump`: `Actor.UpdatePrecacheMaterials`'s `06 0700`
+        # sits at wide 0x34 and the shipped `07 3700` names 0x37, three bytes further on -- the same rule the `while`
+        # shape follows, and reading it as the jump's own position left every `for` three bytes short.
+        end = body_pos + _wide(bodyb) + _wide(stepb) + 3
+        return (initb + bytes([0x07]) + _off(end) + condb + bodyb + stepb
+                + bytes([0x06]) + _off(top)), "for", "for"
     if kind == "until":
-        raise Refused("a do/until loop")
+        # `do S until (c);` = S, `JumpIfNot <S's first byte>`, c: the condition is written *after* the jump that
+        # reads it, and the target is the body's own start. `Engine.TestInfo.TestContinueDoUntil` writes
+        # `07 1000` for a body that begins at wide 0x10, and the `Jump` a `continue` compiles to names the position
+        # after that `JumpIfNot` (its `0x60`), which is why a `continue` in a loop is refused rather than guessed.
+        _k, cond, body = node
+        bodyb, _bm, _bs = emit_flow(body, rettype, env, pos)
+        condb = emit_expr(cond, "bool", env)[0]
+        return bodyb + bytes([0x07]) + _off(pos) + condb, "do-until", "do-until"
     raise Refused("a %s statement" % kind)
+
+
+def _emit_clause(toks, env):
+    """One `for`-header clause: an assignment, a compound assignment or an increment -- never a trailer."""
+    if not toks:
+        return b""
+    at = _assign_at(toks)
+    if at is not None:
+        return emit_assign(toks, at, env)
+    return emit_expr(toks, "", env)[0]
+
+
+COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=")
+
+
+def _compound(stmt, env):
+    """`i ++;` / `x += y;` -> the node alone. There is no `Let` around a compound assignment.
+
+    `Adrenaline += Amount;` writes `b8 <read> <value> 16`: the operator *is* the statement, and its token is a
+    separate native from the binary one (`AddEqual_FloatFloat` 184 against `Add_FloatFloat` 174, `AddEqual_IntInt`
+    161 against `Add_IntInt` 146), so the declared (left, right) pair picks it exactly as it picks `+`.
+    """
+    inc = _incdec(stmt, env)
+    if inc is not None:
+        return inc
+    op = _operator_types(stmt, env)
+    if op is not None and op[0] in COMPOUND:
+        return emit_expr(stmt, "", env)
+    return None
 
 
 def emit_stmt(stmt, rettype, env):
@@ -1689,6 +1777,9 @@ def emit_stmt(stmt, rettype, env):
     at = _assign_at(stmt)
     if at is not None:
         return emit_assign(stmt, at, env), "assign", "assign"
+    comp = _compound(stmt, env)
+    if comp is not None:
+        return comp[0], "expr", comp[1]
     call = emit_call(stmt, env)
     if stmt and stmt[0][0] in ("ident", "keyword") and _callee_return_type(stmt[0][1], env) == "string":
         # A statement call whose declaration returns `string` is prefixed with `EatString` (0x0e):
@@ -2271,6 +2362,12 @@ function WhileLoop() { while (bDead) Health = 1; }
 function WhileThen() { while (bDead) Health = 1; Health = 2; }
 function ForLoop() { for (Slot = 0; Slot < 2; Slot++) Health = 1; }
 function DoLoop() { do Health = 1; until (bDead); }
+function ForCompound() { for (Slot = -1; Slot < 2; Slot += 2) Health = 1; }
+function IncSlot() { Slot++; }
+function PreIncSlot() { ++Slot; }
+function AddToSlot() { Slot += 2; }
+function SubFromSlot() { Slot -= 2; }
+function IncFloat() { FCount++; }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -2293,7 +2390,7 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool"),
                    "bflag": (0x01, 47, "bool"), "squaddir": (0x01, 620, "struct"),
                    "caption": (0x01, 5, "string"), "suffix": (0x01, 6, "string"),
-                   "items": (0x01, 700, "array")},
+                   "items": (0x01, 700, "array"), "fcount": (0x01, 640, "float")},
          "chain": {("probe", "probe"): ("", "")}, "pack": "probe", "cls": "probe",
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte")},
          "classrefs": {"probe": 4, "actor": -77},
@@ -2316,7 +2413,8 @@ SCOPE["props_all"] = {nm: [(v[1], "probe", "ObjectProperty" if v[2] == "object" 
 # The type words the package artifact spells: `SquadDir` is a `Vector`, and `bFlag` is a `bool` member.
 SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe", "bflag"): "bool",
                      ("probe", "probe", "health"): "int", ("probe", "probe", "bdead"): "bool",
-                     ("probe", "probe", "flag2"): "bool", ("probe", "probe", "target"): "probe"}
+                     ("probe", "probe", "flag2"): "bool", ("probe", "probe", "target"): "probe",
+                     ("probe", "probe", "fcount"): "float"}
 
 # The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
 # The third field is `optional`: `Mix(false)` legitimately stops short of `Time`, `Foo()` does not.
@@ -2405,11 +2503,24 @@ WANT = {
     # JumpIfNot names the position *after* that jump -- the end of the loop, not the jump itself.
     "whileloop": "0713002d012d0f016e0426060000040b47",
     "whilethen": "0713002d012d0f016e04260600000f016e042c02040b47",
+    # `for (init; cond; step) S;`: the init, `07 <the position just past the loop>`, the condition, S, the step,
+    # then `06 <the JumpIfNot's own position>` -- the back edge names the loop's top, not the condition's first byte.
+    "forloop": "0f00630925072400960063092c02160f016e0426a500630916060700040b47",
+    # `do S until (c);`: the body, `07 <the body's first byte>`, then the condition -- written *after* the jump.
+    "doloop": "0f016e04260700002d012d040b47",
+    # The same `for` with a compound assignment for its step: `Slot += 2` is AddEqual_IntInt, not Add_IntInt.
+    "forcompound": "0f0063091dffffffff072a00960063092c0216"
+                   "0f016e0426a10063092c0216060b00" "040b47",
+    # The four increment forms are four opcodes: postfix/prefix on an int (0xa5/0xa3) and on a byte (0x8b/0x89).
+    "incslot": "a500630916040b47",
+    "preincslot": "a300630916040b47",
+    "addtoslot": "a10063092c0216040b47",
+    "subfromslot": "a20063092c0216040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "setlength", "forloop", "doloop")
+          "castnoslot", "opnoslot", "setlength", "incfloat")
 
 
 def check(args):
