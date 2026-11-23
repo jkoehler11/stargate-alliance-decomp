@@ -194,3 +194,56 @@ through the shared inode** — `cp` does not break a hardlink, so the "pristine"
 experiment ran from changed bytes. Remove the target first. And a function **name is not a unique handle**: `LogDropped`
 is carried by two exports and `QueueForceFire` by more than one, so `tools/l1-change.py` now takes `--index` to target
 one export exactly.
+
+## The frozen title is a fault, not an idle screen (measured 2026-11-22)
+
+Sampling EIP for 170 s over the rebuild that "hung" gave **one distinct address in 680 samples** — the guest was not
+waiting for input:
+
+| register | value | what it means |
+|---|---|---|
+| `EIP` | `0x8001d1ea`, `HLT=1` | the kernel's idle loop; no game code is running |
+| `CR2` | `0xfff0007b` | the last page fault was a dereference of an invalid address |
+| `EFL` | `0x82` | halted with the sign flag set |
+
+So the game **faulted** while using the rebuilt package and the kernel idled; the title still on screen is the last frame
+it drew. Every earlier sentence of the form "the game ignores input" described a corpse, and the driver's
+`differing pixels: 0` was reading a stopped guest, not a static screen.
+
+## Payload offsets are the constraint (measured 2026-11-22)
+
+One more build separates the remaining factor, and it changes the conclusion. Insert six pad bytes **before the imports
+table**, patch the header's two table offsets, change nothing else: every payload keeps its offset, the file grows by 6,
+and the tables move.
+
+| build | file size | payload offsets | result |
+|---|---|---|---|
+| original | 3,031,678 | — | responds (48,350 / 74,254 px) |
+| in-place `IntConst` edit | 3,031,678 | unchanged | responds (25,130 / 69,014 px) |
+| **table shift +6, no content change** | **3,031,684** | **unchanged** | **responds (26,664 / 66,837 px)** |
+| relayout (`LogDropped` +6) | 3,031,684 | every payload after target moves | fault |
+| insert (payloads fixed, tables moved) | 3,031,719 | target offset jumps to end of region | fault |
+| pair (+6 and −6) | 3,031,678 | payloads between the two move | fault |
+
+The middle row is the one that matters: **a different file size and moved tables are fine**. The combinable facts are now
+narrow and they agree:
+
+- file size may change;
+- the three tables may move, and their content may change;
+- payload **content** may change in place;
+- payload **offsets** may not.
+
+That last one is what a length-changing body edit cannot avoid: growing one payload pushes every later payload along, and
+the loader faults on a package where they have moved — even though this project's reader accepts the file and every
+payload is verifiably identical.
+
+**Consequence for L1, now a hard constraint rather than an estimate.** A recompiled package loads only if every payload
+keeps its shipped offset. In this package that means a body may not change length in the middle of the file: there is no
+slack inside a payload (`LogDropped` is 34 bytes = 24 header + 3 script + 7 epilogue) and no way to give one payload more
+room without moving the next. Either the loader's reason is found and worked around, or the first bootable recompile is
+restricted to same-length bodies — a real and useful target (the emitter already reproduces bodies exactly), but not the
+general one.
+
+**Next instrument, unchanged and now better aimed:** the fault is a dereference of `0xfff0007b`. Finding the instruction
+that forms it — breakpoint on the page-fault handler, read the stack at the fault rather than after the kernel idles —
+names the loader field that was read. That is a job for the debug harness, not for another parser.
