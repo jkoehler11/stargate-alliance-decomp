@@ -18014,3 +18014,32 @@ sequence.
 - **Not in this commit.** The cascade regeneration (`gap_heads`, `gap_body_*`, `silent_bodies`,
   `function_modules` and the rest) and `make ci`: the map moved after the artifact was measured, so the
   next run must regenerate them before the gate is green.
+
+### Execution notes (2026-11-22, the front end: the value converts at its site, and a byte literal's form is its value)
+
+- **Task.** The page's last note named "the conversion on an operand" as the thread's next item -- 5 bodies before the
+  loop surface, 8 after it, and 17 differs in all. Read body by body against the package, it was three rules, not one.
+- **The conversion is a site rule, not a leaf rule.** A call's result, a cast's result and a call's argument were
+  passed the wanted type *down* instead of being converted at the point they yield a value: `Adrenaline =
+  Clamp(...)` in a `float` property needs `39 3f` (IntToFloat) around the call because `Clamp` returns `int`, and
+  `Insert(Asc(...))` needs `39 3d` (IntToByte) around the `Asc`. Six bodies fixed: `Canvas.DrawBracket`,
+  `Controller.AwardAdrenaline`, `Pawn.Tool_AngleLinearInterpolate`, `PlayerController.CompressAccel`,
+  `UWindowEditBox.InsertText`, `UWindowWindow.GetMouseXY`.
+- **The `Context` word of a call member is `_wide` of the call.** The 5 the page carried for an import receiver was
+  `Outer.Log(...)`'s own width (that call has no index to widen). Four bodies fixed with the computed word:
+  `ScriptedController.NeedToTurn` `0x0b`, `Scarab.Surfaced.Tick` `0x03`, `DMMutator.AlwaysKeep` `0x0b`,
+  `StargateWeapon.GetRating` `0x10`.
+- **`Class` is the property, `class` is `Self`.** `string(Class)` is `39 56 01 9e` (`ObjectToString` of the import)
+  and `Item.InventoryType == Class` is `01 9e 16`, while the lowercase spelling in `Actor.GetItemName`, `Pickup` and
+  `Pawn` is `17`. Two bodies fixed: `Inventory.HandlePickupQuery`, `GameInfo.InitGameReplicationInfo`.
+- **A byte literal's form is its value.** Up to 127 the compiler writes `ByteConst` (`24 00`, `24 01`, `24 03`,
+  `24 10`); above it the int form behind `IntToByte` (`39 3d 2c ff` for 255, in `Canvas.MakeColor` and in
+  `GUIController`'s two `FindControllerPortIndex(255)` callers). The first attempt applied the cast on every byte
+  assignment and broke five identical bodies (`PlayerProfile.NewProfile`, `DeathMatch.BeginState`,
+  `SGScreenBlur.BlurView`, `StoryModeGame.BeginState`, `UWindowURLTextArea.ProcessText`); those five are the evidence
+  for the threshold.
+- **Result.** 4,096 modelled, 4,093 identical, 3 differ, from 4,079 / 17; 7,582 refused and 11,678 joined, unchanged.
+  No body lost a byte.
+- **Not in this PR.** `CheatManager.astral`/`puss` (a void call written as a member of `Outer`, `19 01 8e 05 00 00`)
+  and `UWindowHTMLTextArea.ParseColor` (a literal that adopts its byte neighbour and is promoted, `39 3a 24 10`).
+- **Files.** `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`.

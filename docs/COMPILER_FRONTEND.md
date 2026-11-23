@@ -625,3 +625,56 @@ does not yet distinguish), so it went back to the residue rather than ship plaus
 
 The gate carries **71 synthetic bodies**: `ForLoop`, `ForCompound` (a compound assignment for its step), `DoLoop`,
 `IncSlot`, `PreIncSlot`, `AddToSlot`, `SubFromSlot` and `IncFloat` (refused: no `float` increment is installed).
+
+## Stage 3, continued -- the value converts at its site, the two spellings of `Class`, and a byte literal's form (measured 2026-11-22)
+
+**4,096 bodies are modelled and 4,093 are byte-identical: 3 differ**, from 4,096 / 4,079 / 17. Fourteen of the
+seventeen fixed and no previously scored body lost a byte (the 4,079 identical rows are still identical, and the
+walk and the join are unchanged at 11,687 and 11,678). The residue is unchanged at 7,582: every body here was
+already modelled, the bytes were wrong.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `Adrenaline = Clamp(Adrenaline, 0, AdrenalineMax);` in a `float` property | `0f <read> 39 3f fb ... 16` | the **call's result** is converted at its own site: `Clamp` returns an `int`, the property is a `float`, so `IntToFloat` wraps the call. The argument conversions (`39 44` on both int parameters) were already right |
+| `X = Int(Root.MouseX);` in a `float` local | `39 3f 39 44 19 ...` | a **cast's result** is converted like any other value: `Int(...)` is the inner `FloatToInt`, the site's own `IntToFloat` wraps it |
+| `Insert(Asc(Mid(Text, i, 1)));` at a `byte` parameter | `1b 3b 39 3d 5a ...` | an argument that is a **call** is converted by the parameter's type: `Asc` returns `int`, `Insert` takes a `byte`, and the `39 3d` sits around the `Asc`, not around its argument |
+| `Min(Abs(C), 127)` | `7e 39 44 <Abs> ...` | a nested call's result is converted for *its* site as well (the `39 44` was missing inside `Min`, not outside it) |
+
+The rule is one sentence: **a node's value is converted to the type its site wants, and only a leaf read was doing
+that before.** Six bodies: `Canvas.DrawBracket`, `Controller.AwardAdrenaline`, `Pawn.Tool_AngleLinearInterpolate`,
+`PlayerController.CompressAccel`, `UWindowEditBox.InsertText`, `UWindowWindow.GetMouseXY`.
+
+### The `Context` word of a call member is the call's own width, whatever the receiver is
+
+`Pawn.NeedToTurn(targ)` writes `19 01 8d 0b 00 04 1b 59 02 00 48 0a 16` -- the word is `0x0b`, and `_wide` of
+`1b 59 02 00 48 0a 16` is 7 compact bytes plus 2 for each of its two widened indices: 11. The page carried a measured
+constant (5) for a property **import** receiver, from `Outer.Log("...")`; that shape's call *is* five wide
+(`1b 0f <string> 16`, no index to widen), so the constant was the observation, not the rule. Three more bodies agree
+with the computed word and nothing else moved: `Scarab.Surfaced.Tick` `0x03` (a `HighNative` with no index),
+`DMMutator.AlwaysKeep` `0x0b`, `StargateWeapon.GetRating` `0x10`.
+
+### `class` and `Class` are two nodes, and the spelling is the compiler's input
+
+Lowercase `class` compiles to `Self` -- `Actor.GetItemName`, `Pickup` and `Pawn` all write `1b 31 39 56 17 16` for
+`GetItemName(string(class))`. Capital `Class` is the property `Object` declares (`var native const editconst class
+Class;`) and compiles to its record: `GameReplicationInfo.GameClass = string(Class);` is `39 56 01 9e`
+(`ObjectToString` of the import), and `Item.InventoryType == Class` is `01 9e 16`. Two bodies each way, and the text
+the emitter reads is the package's own `ScriptText`, so this is a rule rather than a reconstruction artefact.
+
+### A byte literal's form is decided by its value, not by its slot
+
+`A = 255;` where `A` is a `byte` writes `39 3d 2c ff` -- `IntToByte` and then the **int** constant form -- and
+`FindControllerPortIndex(255)` (also a `byte` parameter) writes the same three bytes. Below 128 the form is
+`ByteConst` itself: `_SetKeyFrameToPuzzleMovers(0)` is `24 00`, `SetTimer`-style assignments of 1 and 3 are `24 01`
+and `24 03`, and ParseColor's `16` is `24 10`. Six sites, one threshold (127), and five bodies that were already
+identical -- `PlayerProfile.NewProfile`, `DeathMatch.BeginState`, `SGScreenBlur.BlurView`, `StoryModeGame.BeginState`
+and `UWindowURLTextArea.ProcessText` -- are what pinned the low side when the cast rule was tried on them.
+
+### What is left
+
+Three bodies. `CheatManager.astral` and `CheatManager.puss` write a **receiver-less call as a member of `Outer`**:
+`DeactivateAstralSight();` compiles to `19 01 8e 05 00 00 1b 5b 15 16` -- a `Context` whose value size is 0 (the call
+returns nothing) -- where the walk writes the `VirtualFunction` bare. `UWindowHTMLTextArea.ParseColor`'s
+`16 * GetHexDigit(...)` writes the literal as `39 3a 24 10`: the literal adopts its byte neighbour, then is promoted
+for the `int` operator, and the byte-returning call beside it is not converted at all. Neither is a site rule, so
+neither is in this change.
