@@ -337,3 +337,37 @@ package.
   defines fails with `drive with bus=0, unit=0 (index=0) exists`, and the run exits in seconds with an empty log — three
   attempts died that way before the config-only run worked. To add a QEMU flag, put the machine in the config and pass only
   the flag.
+
+## The fault is specific to the rebuilt package (measured 2026-11-23)
+
+The same emulator flags on both builds, 100 s each:
+
+| ISO | log | page faults |
+|---|---|---|
+| original | 161,944,027 bytes | **0** |
+| rebuilt (`LogDropped` 3 → 9, relaid out) | 43,213,771 bytes | **1**, at `IP=80049fe1` |
+
+So the fault belongs to the rebuild and not to the emulator or the machine: the original never executes the instruction
+that touches `0xfff0007b`.
+
+Put together with the disassembly (`testb $0x80,0xfff0007b`, an absolute operand, COM1's ports live in registers) and the
+idle end state (`EIP=0x8001d1ea`, `HLT=1`), the reading that fits all three observations is:
+
+1. the game reaches a **fatal condition** while using the rebuilt package;
+2. the kernel's error-reporting path runs, touches a device window that is unmapped here, and faults;
+3. the machine ends in the idle loop, with the last frame — the title — still on screen.
+
+That ordering matters for what to do next: **the page fault is not the bug, it is the report of the bug.** Chasing
+`0xfff0007b` further would be chasing the messenger, which is why the previous section's "find the loader field" is
+withdrawn rather than merely unconfirmed.
+
+**What the next experiment has to separate** is "payload offsets changed" from "a payload's size changed", because every
+build that faulted changed both. The clean test is a rebuild that moves payloads without changing any size: write the same
+payloads in a different file order, update the export offsets, and leave every byte and length intact. If that faults,
+offsets alone are fatal and the constraint is exactly as stated; if it boots, size is implicated after all and the
+constraint is narrower than this page currently claims.
+
+**A note on the failed attempt inside this one.** Reading the kernel stack to name the caller did not work: `ESP` was
+`0xd016514c`, and the dump at physical `0x16514c` was solid `ff000000` fill, not a stack. The alias arithmetic was a guess
+(`0xd0000000` treated as a flat RAM alias); the correct resolution needs the page tables (`CR3=0xf000`,
+`tools/xemu/vamap.py`). Recorded so the next session starts from the page tables instead of repeating the guess.
