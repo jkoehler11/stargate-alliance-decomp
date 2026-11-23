@@ -491,10 +491,12 @@ def _converted(body, ptype, want=""):
 
     A read whose declared type is not the type the site wants is wrapped in `PrimitiveCast`, slot from the image's
     own cast table: `return Damage;` in a `float` function whose parameter is an `int` writes `04 39 3f 00 697e`
-    (`IntToFloat`). Only pairs the table has a *used* slot for are cast.
+    (`IntToFloat`). Only pairs the table has a *used* slot for are cast. The same rule covers a `coerce` argument:
+    `GetPlayerController(int ViewportIndex)` passes it to `coerce string ViewportIndexString`, and the package
+    writes `39 53` (`IntToString`, slot 83) in front of the local.
     """
     want = (want or "").lower()
-    if ptype in ("byte", "int", "float") and want in ("byte", "int", "float") and want != ptype:
+    if ptype and want and want != ptype:
         slot = _cast_slots().get((ptype, want))
         if slot is not None:
             return bytes([0x39, slot]) + body
@@ -663,6 +665,30 @@ def _emit_enum(name, env):
             return None, enum
         return bytes([0x24, ordinal]), enum
     return None, ""
+
+
+_WIDE_TABLE = None
+
+
+def _wide(data):
+    """The length a node occupies in the compiler's **uncompacted** code array.
+
+    The archive compacts an index operand to one, two or four bytes, and the loader widens it back to four on the
+    way into memory (`uscript-dis.operand_spans`, measured on a RAM dump: `b8 2a` in the package is `a0 1e 26 01`
+    in the guest). The `Context` and `Skip` words are byte distances the compiler computed in that wider array, so a
+    node's wide length is its compact length plus the widening of every index it carries. Measured over the shipped
+    corpus: the `Skip` word equals this reading on **4,857 of 4,857** nodes, and the `Context` word on every member
+    kind except a bool behind a property import (see `_emit_member`).
+    """
+    global _WIDE_TABLE
+    dis = _dis()
+    if _WIDE_TABLE is None:
+        _WIDE_TABLE = dis.Table()
+    try:
+        spans = dis._spans_with_op(data, _WIDE_TABLE)
+    except dis.Refused:
+        raise Refused("a node whose code-array width the walk cannot measure")
+    return len(data) + sum(4 - (b - a) for a, b, k, _op in spans if k == "index")
 
 
 def _dot_at(expr):
@@ -836,21 +862,22 @@ def _emit_operator(expr, rettype, env):
     left, right = expr[:at], expr[at + 1:]
     if _is_literal(left) and _is_literal(right):
         raise Refused("an operator whose two operands are literals, which the compiler folds")
-    if sym in ("&&", "||", "^^"):
-        # The right operand of a short-circuit operator is wrapped in `Skip` (`18 <uint16> <expr>`) and the word is
-        # not the operand's length. The image says what it is: `execAndAnd_BoolBool` (GNatives[0x82] = 0x00041120)
-        # evaluates the left operand, reads the word and, when that operand is false, sets `Code = <first byte of the
-        # right operand> + word` (0x000411a4..0xad). So the word is a byte distance to the enclosing expression's
-        # end -- and over this corpus it lands 1..3 bytes *past* the body's last token (`Pawn.PressingFire` writes 20
-        # where the body holds 17 more bytes), i.e. it is a compiler code-array position this corpus does not
-        # reproduce from the emitted bytes. Refused, with the measurement in `docs/COMPILER_FRONTEND.md`.
-        raise Refused("a short-circuit operator, whose right operand is a `Skip` node")
     if 0x70 <= token <= 0xFF:
         head = bytes([token])
     elif token >= 0x100:
         head = bytes([0x60 + (token >> 8), token & 0xFF])
     else:
         raise Refused("an operator token below 0x70 (%d), which collides with a real opcode" % token)
+    if sym in ("&&", "||", "^^"):
+        # The right operand of a short-circuit operator is wrapped in `Skip` (`18 <uint16> <expr>`), and the word is
+        # a distance in the compiler's **uncompacted** code array: from the first byte of the right operand to the
+        # end of the enclosing node. `Pawn.InGodMode` writes 36 for `(Controller != None) && (...)`: the right
+        # operand is 25 compact bytes plus 10 for its four widened indices, and the node's own `16` makes 36. The
+        # rule holds on all 4,857 `Skip` nodes the corpus carries (0 differences), so it is computed, not guessed.
+        leftb = emit_expr(left, t1, env)[0]
+        rightb = emit_expr(right, t2, env)[0]
+        node = (head + leftb + bytes([0x18]) + struct.pack("<H", _wide(rightb) + 1) + rightb + b"\x16")
+        return _converted(node, result, rettype), "short-circuit"
     node = head + emit_expr(left, t1, env)[0] + emit_expr(right, t2, env)[0] + b"\x16"
     return _converted(node, result, rettype), "operator"
 
@@ -887,6 +914,127 @@ def _prop_by_name(nm, env):
     return (hit[0], hit[1], hit[2], _friendly(nm, env))
 
 
+def _rettype_on(cls, name, env):
+    """The declared return type of `name` as declared on `cls`'s chain (or, with no class, on the body's chain)."""
+    low = name.lower()
+    rets = env.get("rets") or {}
+    scope = env.get("scope") or {}
+    if cls:
+        for _p, c in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", cls.lower()):
+            hit = rets.get((c, low))
+            if hit:
+                return hit.lower()
+    for c in env.get("order") or []:
+        hit = rets.get((c, low))
+        if hit:
+            return hit.lower()
+    return ""
+
+
+def _params_on(cls, name, env):
+    """`[(type, name, optional)]` for `name` declared on `cls`'s chain -- a member call's callee, not the body's."""
+    low = name.lower()
+    params = env.get("params") or {}
+    scope = env.get("scope") or {}
+    if cls:
+        for _p, c in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", cls.lower()):
+            hit = params.get((c, low))
+            if hit:
+                return hit
+    for c in env.get("order") or []:
+        hit = params.get((c, low))
+        if hit:
+            return hit
+    return None
+
+
+def _func_on(cls, name, env):
+    """`("native", token)` / `("final", index)` / `("virtual", name index)` for a callee on the receiver's chain.
+
+    A member call's callee is a function of the *receiver's* class, which is often not on the body's chain:
+    `Controller.RateWeapon` calls `w.GetAIRating()` where `w` is a `Weapon`. The token rules are the ones the
+    class-scope lookup already measured; only the declaration's owner changes.
+    """
+    low = name.lower()
+    scope = env.get("scope") or {}
+    chain = scope.get("chain") or {}
+    pack = scope.get("pack") or ""
+    natives = env.get("natives") or {}
+    funcs = env.get("funcs_all") or {}
+    imports = env.get("imports") or {}
+    finals = env.get("final_of") or {}
+    for p, c in _ancestors(chain, pack, cls.lower()):
+        hit = natives.get((p, c, low))
+        if hit is not None:
+            token, flags = hit
+            if token:
+                return ("native", token)
+            if "0x1:Final" in flags:
+                own = [x for x in funcs.get(low, []) if x[1] == c]
+                if own:
+                    return ("final", own[0][0])
+                imp = [x for x in imports.get(low, []) if x[1] == "Function"]
+                if len(imp) == 1:
+                    return ("final", imp[0][0])
+                continue
+            break
+        own = [x for x in funcs.get(low, []) if x[1] == c]
+        if own:
+            if low in finals.get(c, ()):
+                return ("final", own[0][0])
+            return ("virtual", (env.get("names") or {}).get(low))
+        if low in finals.get(c, ()):
+            continue
+    imp = [x for x in imports.get(low, []) if x[1] == "Function"]
+    if len(imp) == 1:
+        # An import's owner class is not in this package's export table, so the `final` flag is read off the
+        # receiver's *chain* in the text: `ProfileList.ItemCount()` is `1c d9 03` -- a FinalFunction naming the
+        # import -- because `ItemCount` is `final` on `GUIListBox`, the chain's GUI ancestor.
+        if any(low in finals.get(c, ()) for _p, c in _ancestors(chain, pack, cls.lower())):
+            return ("final", imp[0][0])
+        return ("virtual", (env.get("names") or {}).get(low))
+    return None
+
+
+def _class_of(expr, env):
+    """The class a receiver expression holds, named the way the package names classes, or "".
+
+    Three sources, all artifacts rather than guesses: a parameter's or local's declared type (`Pawn P` -> `pawn`),
+    a property's declared class (`class_properties.csv`: `GUIComboBox.List` is a `GUIListBase`), and a call's
+    declared return type (`function PlayerController GetPlayerController(...)`). This is what lets a receiver chain
+    be resolved one link at a time -- `H.Level.TimeSeconds` is a member of `LevelInfo`, which is what `HUD.Level`
+    is declared as.
+    """
+    expr = _strip_parens(expr)
+    if not expr:
+        return ""
+    class_names = env.get("class_names") or set()
+    if len(expr) == 1 and expr[0][0] in ("ident", "keyword"):
+        low = expr[0][1].lower()
+        for table in ("paramtypes", "localtypes", "proptypes"):
+            t = (env.get(table) or {}).get(low, "")
+            if t and t in class_names:
+                return t
+        if low == "self":
+            own = (env.get("scope") or {}).get("cls") or ""
+            return own if own in class_names else ""
+        hit = _prop_by_name(low, env)
+        if hit is not None and len(hit) > 3 and (hit[3] or "") in class_names:
+            return hit[3]
+        return ""
+    if _is_call(expr):
+        t = _rettype_on("", expr[0][1], env)
+        return t if t in class_names else ""
+    at = _dot_at(expr)
+    if at is not None:
+        member = expr[at + 1:]
+        if len(member) == 1 and member[0][0] in ("ident", "keyword"):
+            hit = _member_record(expr[:at], member[0][1].lower(), env)
+            if hit is not None and len(hit) > 3 and (hit[3] or "") in class_names:
+                return hit[3]
+    return ""
+
+
 def _member_record(obj, nm, env):
     """The property record of `nm` on the *receiver's* class, or None.
 
@@ -896,15 +1044,19 @@ def _member_record(obj, nm, env):
     guessed: a wrong index emits plausible bytes.
     """
     scope = env["scope"] or {}
-    if len(obj) != 1 or obj[0][0] not in ("ident", "keyword"):
-        return None
     pack = (scope.get("pack") or "").lower()
     classes = scope.get("objclass") or {}
     target = ""
-    for anc in env.get("order") or []:
-        target = classes.get((anc, obj[0][1].lower()), "")
-        if target:
-            break
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword"):
+        for anc in env.get("order") or []:
+            target = classes.get((anc, obj[0][1].lower()), "")
+            if target:
+                break
+    if not target:
+        # The receiver is not a property of this package's class table: it is a parameter or a local named by the
+        # declaration (`Pawn P` in `Controller.RateWeapon` is `w`), a call whose return type the text declares
+        # (`w.GetAIRating()`), or a chain link whose own class the artifact names.
+        target = _class_of(obj, env)
     if not target:
         return None
     chain = scope.get("chain") or {}
@@ -916,6 +1068,41 @@ def _member_record(obj, nm, env):
             friendly = (scope.get("friendly") or {}).get((p, c, nm), "")
             return (INSTANCE_TOKEN, hit[0][0], PROP_TYPE.get(hit[0][2], ""), friendly)
     return None
+
+
+RETURN_SIZE = dict(PROP_SIZE, rotator=12)
+
+
+def _emit_member_call(obj, member, rettype, env):
+    """`A.F(args)` -> `19 <A> <skip> <size> <F>`: the call is the **member** of a `Context`.
+
+    The word is the call's own width in the compiler's code array (`_wide`), not a constant: `List.ItemCount()` is
+    `19 01 2b 06 00 04 1b 0a 16` and `P.BeyondViewDistance(SpawnLocation, 0)` is `19 00 7e 7e 10 00 04 1b 43 08 00
+    7f 7e 1e 00000000 16`. The size byte is the *value* the call yields -- 4 for an object, an int or a bool, 0 for a
+    string, 12 for a rotator (`AlkeshCannonAttachment(...).GetBoneRotation(...)` writes `0c`). When the object is a
+    property **import** (`Outer`, `01 8e`) the corpus writes 5 whatever the member is (measured over `Engine.u`:
+    `Outer.Log("...")` is `19 01 8e 05 00 04 1b 0f ...`), so that shape keeps the measured constant.
+    """
+    objb = emit_expr(obj, "", env)[0]
+    cls = _class_of(obj, env)
+    if not cls:
+        # The receiver's class is the join. Falling back to the body's own chain here wrote a `VirtualFunction`
+        # for `ProfileList.ItemCount()` -- resolved to `ProfilePanel.ItemCount`, a *different* function of the same
+        # name two classes away -- where the package writes a `FinalFunction` naming the receiver's own record.
+        raise Refused("a call member whose receiver's class the artifacts do not name")
+    memb = emit_call(member, env, receiver=cls)
+    if objb[:1] == bytes([INSTANCE_TOKEN]) and _is_import_read(obj, env):
+        skip = CONTEXT_SKIP
+    else:
+        skip = _wide(memb)
+    rtype = _rettype_on(cls or "", member[0][1], env)
+    if rtype in (env.get("class_names") or set()):
+        rtype = "object"
+    if rtype not in RETURN_SIZE:
+        raise Refused("a call member returning %s, whose value size this walk does not carry"
+                      % (rtype or "an unknown type"))
+    node = bytes([0x19]) + objb + struct.pack("<H", skip) + bytes([RETURN_SIZE[rtype]]) + memb
+    return _converted(node, rtype, rettype), "call-member"
 
 
 def _emit_member(expr, rettype, env):
@@ -936,6 +1123,10 @@ def _emit_member(expr, rettype, env):
         raise Refused("a compound expression, which needs the statement walk")
     obj, member = expr[:at], expr[at + 1:]
     if len(member) != 1 or member[0][0] not in ("ident", "keyword"):
+        if _is_call(member):
+            # `A.F(args)`: a call member is a `Context` like a property member, but its word is the call's width in
+            # the compiler's code array rather than a constant (see `_emit_member_call`).
+            return _emit_member_call(obj, member, rettype, env)
         raise Refused("a receiver chain whose member is not one name")
     nm = member[0][1].lower()
     if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "default":
@@ -1151,8 +1342,12 @@ def _assign_at(stmt):
     return None
 
 
-def _callee_params(name, env):
+def _callee_params(name, env, receiver=None):
     """`[(type, name)]` from the declaration of the callee the class chain inherits it from."""
+    if receiver:
+        hit = _params_on(receiver, name, env)
+        if hit:
+            return hit
     low = name.lower()
     for cls in env["order"]:
         hit = env["params"].get((cls, low))
@@ -1161,14 +1356,20 @@ def _callee_params(name, env):
     return None
 
 
-def emit_call(stmt, env):
-    """`Name(a, b)` -> the token its declaration earned, each argument, `16` (EndFunctionParms); no trailer."""
+def emit_call(stmt, env, receiver=None):
+    """`Name(a, b)` -> the token its declaration earned, each argument, `16` (EndFunctionParms); no trailer.
+
+    `receiver` is the class a member call's receiver holds (`A.F(args)`): the callee is then looked up on *that*
+    class's chain first, because a member call names a function of the receiver's class, not of the body's.
+    """
     close = _paren_end(stmt, 1) if len(stmt) > 1 and stmt[1] == ("op", "(") else None
     if close is None or close != len(stmt) - 1:
         raise Refused("a call the statement walk cannot bound (a receiver, or a statement after the call)")
     args = _split_commas(stmt[2:close]) if stmt[2:close] else []
     scope = env["scope"]
-    how = (scope or {}).get("funcs", {}).get(stmt[0][1].lower())
+    how = _func_on(receiver, stmt[0][1], env) if receiver else None
+    if how is None:
+        how = (scope or {}).get("funcs", {}).get(stmt[0][1].lower())
     dele = (scope or {}).get("delegates", {}).get(stmt[0][1].lower())
     if dele is not None:
         # `DelegateFunction`: the DelegateProperty's export index, then the callee's name index, then the arguments.
@@ -1193,7 +1394,7 @@ def emit_call(stmt, env):
         head = bytes([0x1C]) + write_index(how[1])
     else:
         head = bytes([0x1B]) + write_index(how[1])
-    params = _callee_params(stmt[0][1], env)
+    params = _callee_params(stmt[0][1], env, receiver)
     if params is None:
         if args:
             raise Refused("a call whose callee declaration the text does not carry")
@@ -1526,12 +1727,21 @@ def _residue_cause(texts, name, state):
     return "the text does not carry the name"
 
 
+_DIS_MODULE = None
+
+
 def _dis():
-    """`uscript-dis.py` as a module: the locator and the token walk are its own, one answer for both halves."""
-    spec = importlib.util.spec_from_file_location("uscript_dis", os.path.join(ROOT, "tools", "uscript-dis.py"))
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    """`uscript-dis.py` as a module: the locator and the token walk are its own, one answer for both halves.
+
+    Cached: the emitter asks it for the code-array width of every member node it writes, and re-executing a
+    6,000-line module per node would cost more than the walk.
+    """
+    global _DIS_MODULE
+    if _DIS_MODULE is None:
+        spec = importlib.util.spec_from_file_location("uscript_dis", os.path.join(ROOT, "tools", "uscript-dis.py"))
+        _DIS_MODULE = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_DIS_MODULE)
+    return _DIS_MODULE
 
 
 def _assert_line(text, body):
@@ -1561,10 +1771,13 @@ def _assert_line(text, body):
 def _source_index(tree):
     """`{(class, state, function): (rettype, body, text, native, final)}` from the extracted corpus, plus every
     declaration's parameter list, every enum constant and every callee's return type -- the three joins a cast's
-    slot and an argument's token need."""
+    slot and an argument's token need -- and every `local Type Name;`, which is how a receiver's class is read when
+    the receiver is a local rather than a property."""
     index = {}
     params = {}
     rets = {}
+    localtypes = {}
+    proptypes = {}
     enums, enum_names = {}, set()
     files = 0
     for dirpath, _dirs, names in os.walk(tree):
@@ -1576,6 +1789,14 @@ def _source_index(tree):
                 text = fh.read()
             files += 1
             cls = os.path.splitext(os.path.basename(path))[0].lower()
+            for m in re.finditer(r"\blocal\s+([A-Za-z_]\w*)\s+([A-Za-z_]\w*)", text, re.I):
+                localtypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
+            # A property's *declared type word*, which is how a receiver's class is named when the package's own
+            # artifact cannot: `StargateMenus.ProfilePanel` has no row for `Automated ProfileList ProfileList` in
+            # `class_properties.csv`, so `ProfileList.ItemCount()` had no class to join on.
+            for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)",
+                                 text, re.I):
+                proptypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
             for state, fn, rettype, body, is_native, is_final, decl_params in functions_of(text):
                 if decl_params:
                     params.setdefault((cls, fn.lower()), decl_params)
@@ -1606,17 +1827,23 @@ def _source_index(tree):
                     enum_names.add(enum.lower())
                     for cname, ordinal in consts:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
-    return index, files, params, enums, enum_names, rets
+    return index, files, params, enums, enum_names, rets, localtypes, proptypes
 
 
 def score(tree, dump, out_dir, residue_dir=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
-    index, files, params, enums, enum_names, rets = _source_index(tree)
+    index, files, params, enums, enum_names, rets, localtypes, proptypes = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
+    localtypes_by_cls = {}
+    for (c, n), t in localtypes.items():
+        localtypes_by_cls.setdefault(c, {})[n] = t
+    proptypes_by_cls = {}
+    for (c, n), t in proptypes.items():
+        proptypes_by_cls.setdefault(c, {})[n] = t
     chain, natives = _chain(), _natives()
     class_names = {c for (_p, c) in chain}
     final_of = {}
@@ -1682,6 +1909,11 @@ def score(tree, dump, out_dir, residue_dir=None):
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
                    "enum_names": enum_names, "class_names": class_names, "order": scope["order"],
                    "rets": rets, "assert_line": aline,
+                   # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
+                   # and the records of the package it is declared in
+                   "natives": natives, "funcs_all": tables[1], "imports": tables[2], "final_of": final_of,
+                   "localtypes": localtypes_by_cls.get(cls.lower(), {}),
+                   "proptypes": proptypes_by_cls.get(cls.lower(), {}),
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
                    # record only says `StructProperty`
                    "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])}}
@@ -2053,7 +2285,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]

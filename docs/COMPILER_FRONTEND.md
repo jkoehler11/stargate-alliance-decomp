@@ -465,3 +465,54 @@ Three record-table rules came out of the same walk:
 An off-chain record is only read through `Outer` when it is a **bool**: the 27 non-bool names that land in the same
 fallback are read *bare* in this corpus (`GamerTag` writes `0f 01 77 39` -- export 3703 -- not a `Context`), so the
 mark is per type, and a non-bool name in that position is refused rather than given a node the package does not write.
+
+## Stage 3, continued -- the receiver's class, and the `Skip` word measured (measured 2026-11-22)
+
+**3,056 bodies are modelled and 3,056 are byte-identical: 0 differ** -- 70 gained, none lost. The thread is the
+receiver: a `Context`'s member can be a call, and the callee it names belongs to the *receiver's* class, which the
+body's own chain usually cannot name.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `return List.ItemCount();` | `04 19 01 2b 06 00 04 1b 0a 16` | a **call member** is a `Context` like a property member; its word is the call's width in the uncompacted array, and the size byte is the *value* the call yields -- 4 for an object/int/bool, 0 for a string, 12 for a rotator |
+| `return AmmoType.HasAmmo();` | `04 19 01 38 06 00 04 1b 41 01 16` | the receiver is a property whose class `Inventory`/`Weapon` is declared in the artifact; the callee resolves on **that** chain (`HasAmmo` is a `Weapon` function, not a `Pawn` one) |
+| `return w.GetAIRating();` (`Controller.RateWeapon`) | `04 19 00 56 68 06 00 04 1b 62 14 16` | a receiver that is a **parameter** is typed by its own declaration (`Weapon w`), which is where the class comes from |
+| `return ProfileList.ItemCount();` | `1c d9 03 16` | `ItemCount` is an **import** (a negative index) and `final` on the chain's GUI ancestor, so the call is a `FinalFunction` naming the import -- a `VirtualFunction` here is a *different* function of the same name on the body's own class |
+| `GetPlayerController(ViewportIndex)` (`coerce string`) | `39 53 00 47 1d` | a `coerce` argument is a `PrimitiveCast` from the image's table (`IntToString` is slot 83); the conversion also sits outside the node |
+| `return (Controller != None) && (Controller.bGodMode \|\| Controller.bCheatGodMode);` | `82 ... 18 24 00 ... 16` | the **`Skip` word** is a distance in the uncompacted array: from the right operand's first byte to the end of the enclosing node, so `wide(right) + 1` for the node's own `16` |
+
+### The `Skip` word is measured on every node the corpus carries
+
+`tools/uscript-emit.py` now computes the word instead of refusing it. A probe over all 18 packages read every `Skip`
+node in every walked body and compared the shipped word with `wide(parent end) - wide(right operand start)`:
+**4,857 of 4,857 agree, 0 differ**. `Pawn.InGodMode` is the worked example: the outer `&&` writes 36 for a 25-byte
+right operand whose four indices widen by 10, and the inner `||` writes 16 for 10 bytes plus 5.
+
+The same reading settles the `Context` word for call members: of 134 such nodes, the computed width agrees on every
+one whose object is not a property import, and the `Outer` shape (`01 8e`) writes **5 whatever the member is** --
+`Outer.Log("...")` is `19 01 8e 05 00 04 1b 0f ...` and `Outer.MaplistCommand(...)` is 5 too. That is a measurement,
+not a derivation, so the emitter keeps the constant for that shape.
+
+### The receiver's class is the join, and it has three sources
+
+`_class_of()` resolves a receiver one link at a time from artifacts only: a parameter's or local's declared type
+(`Weapon w`), a property's declared type (`class_properties.csv`, and the source's own `var`/`Automated` line when the
+package table has no row -- `ProfilePanel` has none for `Automated ProfileList ProfileList`), and a call's declared
+return type (`w.GetSGFormation()` is an `SGFormation`, so its `.GetLocationFor(...)` resolves). Falling back to the
+body's chain is now **refused**: before that rule, `ProfileList.ItemCount()` was emitted as a `VirtualFunction`
+resolved to `ProfilePanel.ItemCount` -- plausible bytes for a different function. Five bodies are refused by name for
+this reason and stay in the residue.
+
+### What moved, by reason
+
+| reason | before | after |
+|---|---|---|
+| a receiver chain whose member is not one name | 69 | **3** |
+| a short-circuit operator, whose right operand is a `Skip` node | 13 | **0** |
+| a member that is not a property of the receiver's class | 97 | **91** |
+| an operator the image's table does not install | 176 | 173 |
+| a call member whose receiver's class the artifacts do not name | -- | 5 (new, by name) |
+
+The 70 gained bodies are 43 call members, 14 short-circuits and 13 that only became emittable once their expression
+resolved (4 calls, 4 assignments, 2 contexts, 1 bool context, 1 call value, 1 operator). The 3 remaining "member is
+not one name" are `class'X'.static.F()`, an array-element receiver and a `default` chain -- each its own next item.
