@@ -120,3 +120,34 @@ recorded as a writer defect for a few hours.
 **What is still untested is the load.** Nothing has been handed to the game: the bytes are accepted by this project's
 reader, which is not the same claim as xemu accepting them. That is the next experiment, and it needs the ISO rebuilt with
 the changed package rather than another parser.
+
+## The load test: the game boots with a body this project wrote (measured 2026-11-22)
+
+Everything above is this project's reader agreeing with itself. This section is the other question — whether the game
+accepts the bytes — and it does.
+
+| | |
+|---|---|
+| package | `System/StargateGame.u` 3,031,684 bytes, sha256 `99029b19508bad974ef83e7cad880f762c5125a8ca17b8664517d6ae0c9a4878` |
+| what changed | `StargateGame.LogDropped`, script 3 → 9 bytes, payload 34 → 40 |
+| ISO | `sg1-changed.iso` 2,258,370,560 bytes, sha256 `38007f94f25aa9012698a2788a4f70f9fdba1d0f1c94aa5e5e816d6503de72d3` |
+| boot | xemu, debug BIOS, reached the **title screen** — frame sha256 `727f79272889085f99bb00a826a4a119cb2f36d065f45a78c91791bb00769a44` |
+| frames | two shots 25 s apart were **identical**: the title screen is static, not a crash loop |
+
+The ISO is the same size as the original, because six extra bytes fit inside the sector padding — worth knowing before
+anyone reads a matching size as "nothing changed".
+
+**What this proves:** the game's own package loader parses a package whose payload this project wrote, at a different
+length than the original, and boots to the title. That is the claim the reproduction work could not make on its own.
+
+**What it does not prove:** that the changed function *runs*. `LogDropped` is not on the title path, so the boot exercises
+the loader and not the new script. A behavioural test needs a function that fires during a boot, and a change whose effect
+is visible — the next experiment, not this one.
+
+**A note on the failure that looked like one.** The driver reported `differing pixels: 0 (threshold 200) FAIL` between the
+70 s and 95 s frames. That is not the game failing to render; it is the driver assuming the screen would keep changing. A
+static title screen is the success case here, and the harness reads it as a repaint failure — so the frame has to be
+looked at, which is how this section exists.
+
+The frame is not committed: it is game content (see `AGENTS.md`). The hashes above are the evidence, and the ISO and dump
+copy are reproducible from `tools/xemu/build-xiso.sh` and `tools/l1-change.py`.
