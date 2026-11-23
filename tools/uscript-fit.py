@@ -86,7 +86,7 @@ def check(_args):
     cases = [
         ("042cff040b47", 6, "042cff040b47"),      # 255 already at 6
         ("0425040b47", 6, "042c00040b47"),        # 0 widened to IntConstByte
-        ("0425040b47", 9, "041d000000040b47"),    # 0 widened to IntConst
+        ("0425040b47", 9, "041d00000000040b47"),  # 0 widened to IntConst (04 1d + four zero bytes)
         ("0426040b47", 6, "042c01040b47"),        # 1 widened to IntConstByte
         ("042cff040b47", 9, "041dff000000040b47"),  # 255 widened to IntConst
     ]
