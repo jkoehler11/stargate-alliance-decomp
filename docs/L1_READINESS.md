@@ -52,3 +52,32 @@ L1 is **not** nine thousand bodies of undifferentiated work. It is:
 3. **Control flow** is the wall: nested blocks plus the multi-statement and control-flow-statement reasons.
 4. **The stall point is a decision, not a count**: everything past (3) needs the statement walk — labels, jump targets,
    operand stacks and type coercion — which is a different kind of work from what the current families do.
+
+## What is already proven, and what L1 would still add
+
+The temptation is to read "61 classes fully covered" as "61 classes compile". Three measurements bound that, and the
+boundary matters more than the number:
+
+1. **Every modelled body is byte-identical to the shipped package.** 3,056 of 3,056, zero differ — the emitter supplies
+   the bytes, not a copy of them.
+2. **Every package rebuilds byte for byte.** `tools/pkg-write.py --rebuild` reports **18 of 18**, each with *100% of bytes
+   accounted for, 0 gaps*: header, name/import/export tables and every payload explain the whole file. There is no region
+   a writer would have to invent.
+3. **61 classes have every one of their bodies modelled** (`inventory/l1_ready.csv`).
+
+Put together, a class in that set can be regenerated end to end today and the result is the shipped file. That is a real
+result, and it is *reproduction*, not compilation — which is exactly where the remaining risk sits.
+
+### What has not been exercised
+
+* **A body that differs from the shipped bytes.** None exists yet: the family was built body by body until each matched.
+  So the emitter has never produced output the package did not already contain.
+* **A payload whose size changes.** Bodies are byte-identical, so no export ever grew or shrank in a real rebuild. The
+  writer's resize path has only been driven synthetically — 84 of 84 payload resizes round-trip, with filler bytes and no
+  meaning.
+* **Loading a rebuilt package.** Nothing has been loaded by the game. `pkg-write` proves the bytes, not that xemu accepts
+  the result, and that is the only test that would make L1 a measurement rather than a derivation.
+
+So L1's honest statement today is: *"61 classes would regenerate identically, and 18 of 18 packages re-encode with every
+byte accounted for; no class has been rebuilt from changed bytes, and none has been loaded."* The next unit of work that
+would move that line is not another body family — it is one changed body, assembled and loaded.
