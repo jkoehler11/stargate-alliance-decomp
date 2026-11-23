@@ -239,6 +239,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the statement walk: a sequence, an `if` and a `while`: **4,022 modelled / 4,008 byte-identical /
+  14 differ** (from 3,056 / 3,056 / 0; 966 bodies gained and none lost, and no previously scored body's bytes moved.
+  The 14 that differ were all refused before this change and are named by shape in the stage-3 section). (1) A body is
+  a **list of statements**: each emits on its own and the body appends `04 0b 47` once, with no separator between them;
+  731 modelled bodies carry two or more statements and 133 open with a `local` declaration, which emits **nothing** (it
+  is a record the package declares -- `FishBase.Landed` writes its first assignment as the body's first bytes).
+  (2) A branch operand is an **absolute** position in the compiler's uncompacted code array, measured from the body's
+  first byte, not a distance: `if (c) S;` writes the position past `S`, `if (c) S; else T;` writes the else branch's
+  position and a `Jump` carries the end, and `while (c) S;` writes the position *after* its back-`Jump` while that
+  `Jump` writes the loop's own start (`Object.GetItemName` writes 0x47 for a `Jump` at 0x44 -- naming the `Jump` cost
+  every loop followed by a statement three bytes). (3) `assert(...)` inside a multi-statement body is emitted with its
+  own line, and a body with two asserts is refused because the line reader pins one per declaration. (4) The `for`
+  shape is measured and refused by name: init, `JumpIfNot` at the back-jump's position, condition, body, increment,
+  `Jump` to the condition's position (`Actor.UpdatePrecacheMaterials` writes `06 1300` for a condition at wide 19); its
+  increment is an `AddAdd_Int` expression the statement surface does not model, and `switch` (173) and `do`/`until`
+  (8) stay refused with it. Doc: `docs/COMPILER_FRONTEND.md` gains the section and the 14 differ by name; the artifact
+  and the join are regenerated; `--check` carries 64 synthetic bodies.
 - [~] 3.6 the record table the compiler read: **3,056 modelled / 3,056 byte-identical / 0 differ** (from
   2,986 / 2,986 / 0; 70 bodies gained by the receiver-join rule and the `Skip` word, none lost -- see the
   stage-3 section in `docs/COMPILER_FRONTEND.md`); the earlier count was (from
