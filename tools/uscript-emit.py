@@ -2799,9 +2799,12 @@ def _record_on(cls, name, env):
     if imp:
         # Two ancestors that declare the same name import it once each (`AmbientCreatures` carries
         # `PostBeginPlay` for `Controller`, `Actor` and `Pawn`), and the compiler's record is the one whose owner
-        # is the **nearest** class of the parent's chain: 351 of the 380 Super-opening bodies agree, and the 29
-        # that do not are `BeginState`/`EndState`, which name a state rather than a function.
-        for _p, c in _ancestors(chain, pack, cls.lower())[1:]:
+        # is the **nearest** class of the parent's chain -- and the walk starts **at the parent**, because this is
+        # called with `cls` = the parent: skipping it (`[1:]`) wrote the grandparent's import on 70 bodies
+        # (`EmptyHands.PostBeginPlay` imports `PostBeginPlay` for `StargateWeapon` (-134), `Actor` (-127) and
+        # three more, and the build writes -134). The 29 that still do not agree are `BeginState`/`EndState`,
+        # which name a state rather than a function.
+        for _p, c in _ancestors(chain, pack, cls.lower()):
             hit = [x for x in imp if owners.get(x[0]) == c]
             if hit:
                 return hit[0][0]
