@@ -239,6 +239,44 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a struct assign is a plain `Let` and a compound assign picks by its target: **6,966 modelled / 6,966
+  byte-identical / 0 differ** (from 6,777 / 6,777 / 0; 189 bodies gained, none lost; residue 4,901 -> 4,712, and the
+  artifact regenerates byte for byte over the full corpus, 11,687 bodies walked). Three rules, one refusal family.
+  (1) A **struct-typed** target is a plain `Let`: `Velocity = 200 * VRand();` is `0f 01 98 <operator>` and
+  `newRotation = Rotation;` is `0f <LocalVariable> <InstanceVariable>` -- the copy is by value and the token carries
+  the extent, so there is no member node and no size byte (539 residue rows named it, in both the local and the
+  property branch of `emit_assign`). (2) A **compound assignment's** row is chosen by its first (`out`) parameter,
+  the target's declared type, and only then by the value -- `+=` has its own native (`AddEqual_IntInt` 161 against
+  `Add_IntInt` 146): `NewRot.Yaw += Delta * SpinRate` takes `AddEqual_IntInt` and narrows the product (`39 44`),
+  `a *= 2` has no `*=(int, int)` row and takes `MultiplyEqual_IntFloat` with the literal widened, `Velocity *= -1`
+  takes `MultiplyEqual_VectorFloat`. (3) A **binary** operator promotes an `int` side to `float` when the exact pair
+  is not installed and the widened pair is, right side first, then left, then both: `200 * VRand()` is
+  `Multiply_FloatVector` with the literal cast. Doc: `docs/COMPILER_FRONTEND.md` gains the section and names the
+  residue's new head. Not in this PR: the 1,414 "an operator the image's table does not install" rows (the next
+  instrument), the `BeginState`/`EndState` state record (29) and the 135 bodies that still emit and differ.
+- [~] 3.6 a `Super` call names the nearest ancestor's import: **6,777 modelled / 6,777 byte-identical / 0 differ**
+  (from 6,662 / 6,662 / 0; 115 bodies gained, none lost; residue 5,016 -> 4,901, and the `Super`-call bucket
+  483 -> 368). `Super.F()` writes `1c <record>` and the record can be an **import**: a package imports one entry per
+  ancestor that declares the name (`AmbientCreatures.u` carries `PostBeginPlay` three times, on `Controller`, `Actor`
+  and `Pawn`), and the walk had accepted only a *unique* import. The compiler's choice is the import whose **owner**
+  -- its own `package` field, which names the declaring class -- is the nearest class of the parent's chain, and the
+  shipped bytes agree on 351 of the 380 bodies that open with `1c`. The 29 that do not are `BeginState`/`EndState`,
+  which name a state rather than a function and stay refused. `_class_tables` keeps `import_owners` and `_record_on`
+  walks the chain nearest-first, falling back to the unique import. Doc: `docs/COMPILER_FRONTEND.md` gains the
+  section. Not in this PR: the `BeginState`/`EndState` record and the struct assignment.
+- [~] 3.6 the array element read, index first: **6,662 modelled / 6,662 byte-identical / 0 differ** (from 6,096 /
+  6,096 / 0; 566 bodies gained, none lost; residue 5,274 -> 5,016, and the compound-expression bucket 420 -> 129).
+  The statement walk's largest single refusal, `A[i]`. (1) The token is the **record's own kind**: a dynamic array
+  is a `UArrayProperty` and writes `10` (`DynamicArrayElement`), a static dimension on any other record writes `1A`
+  (`ArrayElement` -- `XUID` is a `UByteProperty` whose `[12]` lives in the class record), and both take the same two
+  children. (2) The children are the **index first and the array second**, and the node writes no skip word of its
+  own: `AIMsgManager.GetReceivedMsg`'s `return msgReceived[Idx];` is `04 10 00 7a 57 01 01 7e 03 04 0b 47`. (3) The
+  element is its **declared element type** -- `array<T>`'s `T`, a static record's own kind, a struct's friendly
+  name, the innermost array for a nested `A[B[i]][j]` -- and that type is what types a cast around the read, the
+  receiver of a member call (`GlobalEvents[size - 1].AddCondition(con)`) and the target of a `Let`. The shape is
+  recognised only when the whole run is one, so `A[i].B` and `A[i] + 1` are the member and operator shapes. Doc:
+  `docs/COMPILER_FRONTEND.md` gains the section. Not in this PR: arrays whose element type the artifacts do not
+  spell (94 rows) and the remaining compound expressions (129).
 - [~] 3.6 the `foreach` that returns, the object `switch` and the empty `switch`: **6,404 modelled / 6,404
   byte-identical / 0 differ** (from 6,392 / 6,392 / 0; 12 bodies gained, none lost; residue 5,286 -> 5,274). Three
   rules, one thread, and the first is the cleanup the last note named as next. (1) A `return` inside a `foreach`
