@@ -434,3 +434,25 @@ runs after the title, so it can be found by breaking on the transition rather th
 
 **The practical answer does not move:** ship same-length bodies. Every build that kept its sizes played; the fitter exists
 to keep them, and it refuses what it cannot fit.
+
+## The late failure is the same corpse (measured 2026-11-23)
+
+The row above left one question open — whether the build that stopped repainting after `pad=a` had died or was sitting on
+a static screen. Registers answer it:
+
+| after the transition | value |
+|---|---|
+| `EIP` | `0x8001d1ea`, `HLT=1` |
+| `CR2` | `0xfff0007b` |
+
+That is the same end state as every size-changing build: the kernel idle loop, with the last fault against the unmapped
+window. So the `04 0b 04 0b 47` build did not survive the transition and stop drawing — it **died there**, later than the
+others only because the payload it changed is not touched until the first input.
+
+**The rule is therefore unchanged and now has its timing measured:** a payload may move, a body may change in place, and a
+payload whose size changes loads fine and kills the guest the first time something uses it. Everything that kept its sizes
+played; everything that changed one died at the same address.
+
+**What that means for the search**: the code that uses the old length runs between the title appearing and the first
+transition, so a breakpoint there is the instrument. Nothing about the package format needs to be re-read first — the
+target is now a time window, not a field.
