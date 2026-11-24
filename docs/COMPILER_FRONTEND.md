@@ -1225,3 +1225,47 @@ names the rule. Every count in this section was taken that way, and it is the in
 `inventory/class_properties.csv`, which is per class -- then 49 `X.Default.Y` chains and 56 names that are a `const`
 on an ancestor class (`MAXSTEPHEIGHT`, `pi`). The differ bucket is 66, three of them new: bodies the two rules carried
 far enough to reach a later node whose rule is wrong, all refused and none written.
+
+## Stage 3, continued -- a struct member's declared type, and a float const (measured 2026-11-24)
+
+**7,648 -> 7,786 modelled, all byte-identical, none differing** (138 bodies gained, none lost; the residue
+4,030 -> 3,892 and the differ bucket 148 -> 89). Three rules, each a table that was missing rather than a walk that
+was wrong.
+
+**A struct member's type is a `var` line in a `struct` block, and nothing in the package carries it.** A struct's
+member *is* a record -- `PathName.FullPath` is Engine export 3007 and `Directory` 3006, both property exports whose
+Outer is the class-`Struct` export `FilePath` -- but the record's class only gives its **size** (`FloatProperty` is
+four bytes). The word a cast or an operator needs is in the source: `Coords.Origin` is a `vector`,
+`FilePath.DirectoryParts` an `array<string>`, `Vector.Z` a `float`. `tools/struct-members.py` reads every class text
+in the dump's 18 packages (2,319 texts) with `uscript-dis.source_structs()` and writes
+`inventory/struct_members.csv`: **164 structs, 800 members, 799 typed**; the one untyped member
+(`ParticleProjectorInfo.BitmapMaterial`) is declared with two types in the corpus and is written empty rather than
+guessed. The census is what shows the engine's own `Region` struct is **not in any class text** -- the `region` the
+corpus declares has `X`,`Y`,`W`,`H` and no `Zone`, which is why `Viewer.Region.Zone.bDistanceFog` is still refused.
+
+Two joins, and the pair is what makes them safe. The emitter keys a struct member's *record* by
+**(struct, member)** -- `Dest.Z` is `Z` on `Vector`, an import of AmbientCreatures (`36 95` = -21), while `z` alone
+names a function in six Engine classes -- and it keys the member's *declared type* by the same pair in the census.
+Both are fallbacks: `_prop_by_name` still answers first, so every body that modelled before emits the same bytes
+(the artifact regenerated with 0 new differ rows). The operator bucket falls **759 -> 693** and *a member that is not
+a property of the receiver's class* **631 -> 536**.
+
+**A `const` may be a float, and the table kept only integers.** `const Pi = 3.1415926535897932;` on `Object` and
+`const MAXSTEPHEIGHT = 35.0;` on `Actor` (with `SUPERPUNCH_RANGE = 100.0` on `SuperSoldierBot`) were absent from every
+body's const table, so *a name neither a local, a property nor an enum constant of the class chain* held 56 operator
+rows that were float consts. `_consts_of` now keeps the **literal text** rather than the number it parses to -- a
+const is substituted at its site, so the spelling is what picks `FloatConst` from `IntConst`, and
+`str(3.1415926535897932)` is not the text the source wrote. `ArrayCount` still folds only a whole-number const
+(`_const_int`), because a dimension cannot be a float. That bucket falls **164 -> 130**.
+
+**`X.Default.Y` is a `ClassContext` (`12`), and the walk does not reach it yet.** Measured from the shipped bytes of
+three refused bodies: `return AmmoName.Default.MaxAmmo;` is `12 01 75 0a 05 00 04 02 5b 0f` -- the object expression
+is the receiver, the word is the member's value size, and the `DefaultVariable` (`02`) carries **`Y`'s own record on
+X's class**, so there is no separate member read. `_emit_member` now builds that node after resolving the record
+through `_member_record(X, Y)`, and `_type_of` types the chain the same way, but the branch is **not reached**: the
+statement walk hands `_emit_member` an expression without the chain (3 rows still refuse, and no body models it).
+The shape is measured; the routing is the next read, and it should start at `emit_stmt`'s `return` arm rather than at
+the member walk.
+
+**Not in this change.** The 693 remaining operator rows, the 89 differ rows (headed by bodies the two rules now carry
+to a later node), the `BeginState`/`EndState` state record, and the `X.Default.Y` routing above.

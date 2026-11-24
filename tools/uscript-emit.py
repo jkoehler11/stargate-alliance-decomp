@@ -96,6 +96,12 @@ PROP_TYPE = {"IntProperty": "int", "ByteProperty": "byte", "BoolProperty": "bool
              "ArrayProperty": "array", "DelegateProperty": "delegate", "PointerProperty": "pointer",
              "InterfaceProperty": "object"}
 LOCAL_TOKEN, INSTANCE_TOKEN, DEFAULT_TOKEN = 0x00, 0x01, 0x02
+STRUCT_TOKEN, CLASS_CONTEXT_TOKEN = 0x36, 0x12
+
+# The record class a struct export carries. `Engine.FilePath` is export 2502 of class `Struct`, and its members
+# (`Directory` 3006, `FullPath` 3007) are property records whose Outer is that export -- so a property's owner being
+# one of these kinds is what makes it a *struct* member rather than a class member.
+STRUCT_KINDS = {"Struct", "ScriptStruct"}
 
 # The types a source cast can name as a primitive: `string(x)`/`int(x)`/`bool(x)`/`rotator(x)` are `PrimitiveCast`,
 # and anything else in front of a parenthesised expression that names a class is a `DynamicCast`.
@@ -467,6 +473,13 @@ def _consts_of(text):
     `const TOTAL_LADDER_RUNGS=17;` on the same class, and ShieldBelt's `AbsorbSounds[MAX_ABSORB_SOUNDS]` from
     `const MAX_ABSORB_SOUNDS = 3;`. Only a bare number is read: a const written as an expression is left unresolved
     and refuses the `ArrayCount` rather than folding a value the source does not spell.
+
+    The **literal text** is kept, not the number it parses to. A const is substituted at its site, and its own
+    spelling says which type the site is: `const Pi = 3.1415926535897932;` on `Object` and `const MAXSTEPHEIGHT =
+    35.0;` on `Actor` are floats, while `NUMTEAMS = 2` is an int. Keeping only the integers dropped every float
+    const from every body's name table -- 56 operator rows named a const the walk could not type (`pi`,
+    `MAXSTEPHEIGHT`, `SUPERPUNCH_RANGE`) -- and `str(3.1415926535897932)` is not the text the source wrote, so the
+    value is re-emitted from the token rather than reformatted.
     """
     toks = tokens_of(text)
     if toks is None:
@@ -481,10 +494,19 @@ def _consts_of(text):
         if j < len(toks) and toks[j] == ("op", "="):
             j += 1
         if j < len(toks) and toks[j][0] == "number":
-            v = _number(toks[j][1])
-            if isinstance(v, int):
-                out.setdefault(toks[i + 1][1].lower(), v)
+            out.setdefault(toks[i + 1][1].lower(), toks[j][1])
     return out
+
+
+def _const_int(raw):
+    """The whole number a const's literal text spells, or None -- an array dimension cannot be a float."""
+    if not raw:
+        return None
+    try:
+        v = _number(raw)
+    except ValueError:
+        return None
+    return v if isinstance(v, int) and v >= 0 else None
 
 
 def _array_dims(text):
@@ -539,8 +561,8 @@ def _array_dims(text):
                     v = _number(dim_tok[1])
                     if isinstance(v, int) and v > 0:
                         out.setdefault(toks[k][1].lower(), v)
-                elif dim_tok[1].lower() in consts:
-                    out.setdefault(toks[k][1].lower(), consts[dim_tok[1].lower()])
+                elif _const_int(consts.get(dim_tok[1].lower())) is not None:
+                    out.setdefault(toks[k][1].lower(), _const_int(consts[dim_tok[1].lower()]))
                 else:
                     out.setdefault(toks[k][1].lower(), dim_tok[1].lower())
                 k += 5
@@ -1180,9 +1202,11 @@ def _type_of(expr, env):
                 # `enum` here read `byte == enetrole` (45 bodies) and `byte == ephysics` (12) as uninstalled pairs.
                 return "byte"
             if low in (scope.get("consts") or {}):
-                # A `const NAME = <int>;` is substituted by the compiler, so the site is an `int` site --
-                # `MAX_CORRECT_MOVER < 5` is `Less_IntInt` whatever the const was written for.
-                return "int"
+                # A `const NAME = <literal>;` is substituted by the compiler, so the site carries the literal's own
+                # type: `MAX_CORRECT_MOVER < 5` is `Less_IntInt` because the const is a whole number, while
+                # `MAXSTEPHEIGHT + 14` and a bare `pi` are floats -- the 56 operator rows whose unknown side was a
+                # const on an ancestor class were all float consts, which the table did not hold at all.
+                return "float" if isinstance(_number(scope["consts"][low]), float) else "int"
             if _emit_enum(val, env)[0] is not None:
                 return "byte"
             if _cast_kind(val, env) == "object":
@@ -1260,7 +1284,21 @@ def _type_of(expr, env):
             # in the package, and the record is what names `R`. Testing the declared word here instead refused
             # 42 bodies the walk already modelled -- `Canvas.SetDrawColor` is the first of them.
             objkind = _record_kind(obj, env) or _type_of(obj, env).lower()
-            hit = _member_record(obj, nm, env) if objkind != "struct" else _prop_by_name(nm, env)
+            chain_at = _dot_at(obj)
+            default_chain = (chain_at is not None and len(obj[chain_at + 1:]) == 1
+                             and obj[chain_at + 1][0][0] in ("ident", "keyword")
+                             and obj[chain_at + 1][0][1].lower() == "default")
+            if default_chain:
+                # `AmmoName.Default.MaxAmmo` is a member of the **class of `AmmoName`**, read off its default
+                # object (`12 <obj> 05 00 04 02 <idx>`), so the record is that class's, not the body's.
+                hit = _member_record(obj[:chain_at], nm, env)
+            elif objkind == "struct":
+                # A struct member's record is keyed by (struct, member); a class-property lookup by name cannot
+                # find it, and that miss left `Dest.Z` (float), `Rotation.Pitch` (int) and every operator over
+                # them untyped -- the head of the operator residue (353 rows).
+                hit = _prop_by_name(nm, env) or _struct_member(obj, nm, env)
+            else:
+                hit = _member_record(obj, nm, env)
             if hit is not None:
                 if hit[2] == "struct" and len(hit) > 3 and hit[3]:
                     return hit[3]
@@ -1567,6 +1605,61 @@ def _prop_by_name(nm, env):
     return (hit[0], hit[1], hit[2], _friendly(nm, env))
 
 
+def _structs():
+    """`{(struct, member): declared type}` from `inventory/struct_members.csv` (`tools/struct-members.py`).
+
+    A struct member's *record* gives its size (`Vector.Z` is a `FloatProperty`) but not the struct a nested member
+    is, nor an array's element type: `Coords.Origin` is a `vector` and `FilePath.DirectoryParts` an `array<string>`,
+    and both are statements of the source's `struct` block. The census is the corpus's own `var` lines, so this is
+    a join between the package's record and the text's declaration, exactly as `_type_of` joins a class property's
+    record with `class_properties.csv`.
+    """
+    if STRUCT_TYPES:
+        return STRUCT_TYPES
+    path = os.path.join(ROOT, "inventory", "struct_members.csv")
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("type"):
+                    STRUCT_TYPES[(r["struct"].lower(), r["member"].lower())] = r["type"].lower()
+    except OSError:
+        pass
+    return STRUCT_TYPES
+
+
+STRUCT_TYPES = {}
+
+
+def _struct_of(expr, env):
+    """The **struct** a receiver is declared as (`vector`), not the record kind every struct property shares."""
+    expr = _strip_parens(expr)
+    if len(expr) == 1 and expr[0][0] in ("ident", "keyword"):
+        return (_declared_type(expr[0][1].lower(), env) or "").lower()
+    return _type_of(expr, env).lower()
+
+
+def _struct_member(obj, nm, env):
+    """`(INSTANCE_TOKEN, index, kind, declared)` for `nm` on the struct the receiver is declared as, or None.
+
+    The pair is what resolves it: `Dest.Z` is `Z` on `Vector`, not any `z` the package happens to export, and the
+    record is either this package's export or an import (`-21` here, written `95`). A pair the package does not
+    hold, or a name whose declared type the census does not carry, answers None -- the refusal, not a guess.
+    """
+    name = _struct_of(obj, env)
+    if not name:
+        return None
+    hit = ((env.get("scope") or {}).get("struct_props") or {}).get((name, nm))
+    if hit is None:
+        return None
+    index, kind = hit
+    ptype = PROP_TYPE.get(kind, "")
+    declared = _structs().get((name, nm), "")
+    if ptype in ("struct", "array"):
+        # the record says only `StructProperty`/`ArrayProperty`; the census names the struct or the element
+        return (INSTANCE_TOKEN, index, ptype, declared)
+    return (INSTANCE_TOKEN, index, ptype, "")
+
+
 def _rettype_on(cls, name, env):
     """The declared return type of `name` as declared on `cls`'s chain (or, with no class, on the body's chain)."""
     low = name.lower()
@@ -1834,6 +1927,27 @@ def _emit_member(expr, rettype, env):
         if ptype == "bool":
             return _converted(bytes([0x2D, 0x02]) + write_index(index), "bool", rettype), "default-bool"
         return _converted(bytes([0x02]) + write_index(index), ptype, rettype), "default"
+    chain_at = _dot_at(obj)
+    if (chain_at is not None and len(obj[chain_at + 1:]) == 1 and obj[chain_at + 1][0][0] in ("ident", "keyword")
+            and obj[chain_at + 1][0][1].lower() == "default"):
+        # `X.Default.Y` is a **ClassContext** (`12`), not a `Context` around a default read: the object expression
+        # `X` is the node's receiver and the `DefaultVariable` (`02`) carries `Y`'s own record on X's class --
+        # `return AmmoName.Default.MaxAmmo;` is `12 01 75 0a 05 00 04 02 5b 0f`, with no separate member read. The
+        # size byte is the member's value size, the same one a `Context` would write.
+        recv = obj[:chain_at]
+        hit = _member_record(recv, nm, env)
+        if hit is None:
+            raise Refused("a default chain whose member the receiver's class does not declare")
+        _token, index, ptype, friendly = hit
+        size = PROP_SIZE.get(ptype)
+        if size is None and ptype == "struct":
+            size = STRUCT_SIZE.get((friendly or "").lower())
+        if size is None:
+            raise Refused("a default chain to a %s member, whose value size this walk does not carry"
+                          % (ptype or "typeless"))
+        node = (bytes([CLASS_CONTEXT_TOKEN]) + emit_expr(recv, "", env)[0] + struct.pack("<H", CONTEXT_SKIP)
+                + bytes([size, DEFAULT_TOKEN]) + write_index(index))
+        return _converted(node, ptype, rettype), "default-chain"
     objtype = _type_of(obj, env).lower()
     # The node is chosen by the receiver's *record kind*, not by its declared type word: `PathName` is a `FilePath`
     # struct (a `StructMember`), while a cast or an operator wants that word (`SquadDir` is a `Vector`).
@@ -1842,7 +1956,10 @@ def _emit_member(expr, rettype, env):
         if nm != "length":
             raise Refused("a %s member that is not its length" % objkind)
         return _converted(bytes([0x37]) + emit_expr(obj, "", env)[0], "int", rettype), "length"
-    hit = _member_record(obj, nm, env) if objkind != "struct" else _prop_by_name(nm, env)
+    if objkind == "struct":
+        hit = _prop_by_name(nm, env) or _struct_member(obj, nm, env)
+    else:
+        hit = _member_record(obj, nm, env)
     if hit is None:
         # No fallback to the body's own chain: `Index` is declared on half the GUI classes, and resolving it that way
         # wrote export 8263 for a property whose record is 13. Two bodies also resolve the name to a same-named
@@ -2003,7 +2120,7 @@ def emit_expr(expr, rettype, env):
                 # root of a float expression folds like a written literal does). Of the 1,414 operator sites
                 # with a bare unknown operand, 73 were `NUMTEAMS`, `NUM_PIECES`, `MAX_CORRECT_MOVER` -- consts
                 # the emitter never consulted, though `_scope` already builds the table for `ArrayCount`.
-                node, _shape = emit_expr([("number", str(value))], rettype, dict(env, _root=root))
+                node, _shape = emit_expr([("number", value)], rettype, dict(env, _root=root))
                 return node, "const-literal"
             token, enum = _emit_enum(val, env)
         if token is not None:
@@ -3160,15 +3277,33 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     for anc in order:
         for nm, n in (dims_by_cls or {}).get(anc, {}).items():
             if isinstance(n, str):
-                # `Doors[MAX_DOORS]`: the dimension is a `const` this class or an ancestor declares
-                n = cst.get(n)
+                # `Doors[MAX_DOORS]`: the dimension is a `const` this class or an ancestor declares, and the
+                # table holds the const's *literal text*, so a float const resolves to no dimension rather than
+                # folding `35.0` into an `ArrayCount`.
+                n = _const_int(cst.get(n))
                 if n is None:
                     continue
             dim.setdefault(nm, n)
     scope["dims"] = dim
-    # The `const NAME = <int>;` table itself, which `ArrayCount` already read and a bare `NUMTEAMS` did not:
+    # The `const NAME = <literal>;` table itself, which `ArrayCount` already read and a bare `NUMTEAMS` did not:
     # a const is a compile-time literal, so `emit_expr` substitutes it at the site.
     scope["consts"] = cst
+    # A **struct member**'s record is a property whose owner is a `Struct` export, or an import whose owner is a
+    # struct in another package: `PathName.FullPath` is this package's export 3007 (owner `FilePath`), and `Dest.Z`
+    # is import 21 of AmbientCreatures (`36 95`, owner `Vector`). The member's *name* alone is ambiguous -- Engine
+    # declares `z` on half a dozen classes -- so the record is keyed by the (struct, member) pair the source spells,
+    # which is the one a receiver's declared type names.
+    struct_props = {}
+    for i, e in enumerate(pkg.exports):
+        outer = e["outer"]
+        if outer > 0 and kinds.get(outer) in STRUCT_KINDS and kinds.get(i + 1) in PROPERTY_CLASSES:
+            struct_props[(names.get(outer, "").lower(), names.get(i + 1, "").lower())] = (i + 1, kinds[i + 1])
+    for nm, cands in imports.items():
+        for idx, kind in cands:
+            owner = _import_owners.get(idx)
+            if owner and kind in PROPERTY_CLASSES:
+                struct_props.setdefault((owner, nm), (idx, kind))
+    scope["struct_props"] = struct_props
     for nm, cands in props.items():
         picked = None
         for anc in order:
