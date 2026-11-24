@@ -239,6 +239,22 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the two loop exits and the `switch` chain: **6,269 modelled / 6,269 byte-identical / 0 differ** (from 6,212 /
+  6,212 / 0; 57 bodies gained, none lost; residue 5,466 -> 5,409, and the switch rule costs no body: the 12 that first
+  read as differing were exactly three bytes short, and the missing bytes were the terminator). Three rules, one
+  thread. (1) A `switch` is `05 <width>` + the expression, then one `0a <absolute wide offset of the next Case> <value
+  expression>` per case, and a terminator `0a ff ff` written **whether or not the source has a `default:`** (its body is
+  empty then, and `PlayerProfile.GetCategoryVolume` -- a three-case switch with no default -- is the site that proved
+  it). The opcode is `0a`, not `Return`'s `04`. The width is the compared value's **declared type**: `0` a wide string,
+  `1` a byte or a bool, `4` an int, a name or a float -- the split `inventory/switch_operands.csv` already carried.
+  (2) A case value is an ordinary expression at that width: `case 'Music':` writes `21 <name index>` under width 4,
+  `case 0:` `25`, `case "":` `1f 00` under width 0. (3) `break` and `continue` are bare `Jump`s to a position the
+  enclosing construct publishes: a `break` names the end of the nearest loop or `switch`, a `continue` the loop's next
+  iteration (`for` its step, `do`/`until` the condition after the `JumpIfNot`, `while` the loop's own start), and a
+  `switch` passes `continue` out to the loop it sits in. Both targets are known only after the body's extent is, so a
+  construct whose exit depends on its own length is emitted twice with three-byte placeholders -- the same extent, so
+  the second pass measures the first pass's. Doc: `docs/COMPILER_FRONTEND.md` gains the section. Not in this PR:
+  `foreach` (77 bodies, now the control-flow residue's head) and the 10 bodies that still emit and differ.
 - [~] 3.6 the compiled array size: **6212 modelled / 6212 byte-identical / 0 differ** (from 6,210 / 6,210 / 0; 2 bodies
   gained, none lost; residue 5,468 -> 5466, and the bodies that emit and differ stay 10). `ArrayCount(X)` is not a call:
   the compiler writes X's **declared dimension** as an int literal, so the rule reads the number the source spells

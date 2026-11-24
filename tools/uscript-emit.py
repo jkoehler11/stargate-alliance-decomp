@@ -26,10 +26,11 @@ enum constant needs its declared values, a statement form the walk does not mode
 body that looks like a measurement. The residue is what the next stage reads.
 
 A body is a **list of statements** (`stmt_tree`): each statement emits on its own, the body appends its trailer once,
-and the three control-flow forms whose operands the corpus pins are emitted from an absolute position in the
-compiler's uncompacted code array -- `if`, `if`/`else` and `while` (`emit_flow`). A `local` declaration emits nothing.
-`for`, `do`/`until` and `switch` are parsed and refused by name; the `for` shape is measured in
-`docs/COMPILER_FRONTEND.md` but its increment is an expression the statement surface does not model.
+and the control-flow forms whose operands the corpus pins are emitted from an absolute position in the
+compiler's uncompacted code array -- `if`, `if`/`else`, `while`, `for`, `do`/`until` and `switch`, whose `Case` chain
+carries the position of the next case and ends on `Case 0xffff`. `break` and `continue` are the `Jump`s those
+constructs publish: a `break` names the end of the nearest loop or switch, a `continue` the next iteration of the
+nearest loop. A `local` declaration emits nothing.
 
     python3 tools/uscript-emit.py --check                       # synthetic, no dump, writes nothing
     python3 tools/uscript-emit.py --tree $WORK/scripts-all \\
@@ -890,8 +891,9 @@ def _wide(data):
         _WIDE_TABLE = dis.Table()
     try:
         spans = dis._spans_with_op(data, _WIDE_TABLE)
-    except dis.Refused:
-        raise Refused("a node whose code-array width the walk cannot measure")
+    except dis.Refused as exc:
+        raise Refused("a node whose code-array width the walk cannot measure (%s; %s)"
+                      % (exc, data.hex()))
     return len(data) + sum(4 - (b - a) for a, b, k, _op in spans if k == "index")
 
 
@@ -2113,13 +2115,66 @@ def _split_semis(toks):
     return out
 
 
+def _switch_groups(toks, i):
+    """`(groups, next index)` for a `switch` body, from just past its `{`.
+
+    A group is `(label, nodes)`: `label` is the `case` value's own tokens, or `None` for `default:`. Every `case` is
+    its own group even when it shares a body with the next (`case A: case B: X;` leaves the first group empty), which
+    is the chain the compiler writes -- each `Case` token links to the next one. `default:` is the list's terminator
+    (`Case 0xffff`), so the source order is kept as written and `emit_flow` refuses a `default:` that is not last
+    rather than reordering a list the build may have emitted in place.
+    """
+    groups, label, nodes = [], None, []
+    while True:
+        while i < len(toks) and toks[i] == ("op", ";"):
+            i += 1
+        if i >= len(toks):
+            raise Refused("a switch body that never closes")
+        if toks[i] == ("op", "}"):
+            i += 1
+            break
+        kind, val = toks[i]
+        low = val.lower()
+        if kind == "keyword" and low in ("case", "default"):
+            if label is not None or nodes:
+                groups.append((label, nodes))
+            label, nodes = None, []
+            i += 1
+            if low == "default":
+                if i >= len(toks) or toks[i] != ("op", ":"):
+                    raise Refused("a default whose colon the walk cannot find")
+                i += 1
+                continue
+            j, depth = i, 0
+            while j < len(toks):
+                tk = toks[j]
+                if tk[0] == "op" and tk[1] in "([":
+                    depth += 1
+                elif tk[0] == "op" and tk[1] in ")]":
+                    depth -= 1
+                elif tk == ("op", ":") and depth == 0:
+                    break
+                j += 1
+            if j >= len(toks):
+                raise Refused("a case whose colon the walk cannot find")
+            label, i = toks[i:j], j + 1
+            continue
+        node, i = _stmt_at(toks, i)
+        if node is not None:
+            nodes.append(node)
+    if label is not None or nodes:
+        groups.append((label, nodes))
+    return groups, i
+
+
 def _stmt_at(toks, i):
     """`(node, next index)` for one statement at token `i`.
 
     A node is `("simple", tokens)`, `("local", tokens)`, `("block", [nodes])`, `("if", cond, then, else)`,
-    `("while", cond, body)`, `("for", init, cond, next, body)` or `("until", cond, body)`. The whole statement set is
-    parsed here so the shape of a body is known before it is emitted; a form the emitter does not model (`for`,
-    `do`/`until`, `switch`) is refused by `emit_flow`, by name.
+    `("while", cond, body)`, `("for", init, cond, next, body)`, `("until", cond, body)` or
+    `("switch", expression, [(label tokens or None, [nodes])])`. The whole statement set is parsed here so the shape of
+    a body is known before it is emitted; a statement form the emitter does not model is refused by `emit_flow`, by
+    name.
     """
     while i < len(toks) and toks[i] == ("op", ";"):
         i += 1
@@ -2170,7 +2225,22 @@ def _stmt_at(toks, i):
             k += 1
         return ("until", toks[j + 1:close], body), k
     if kind == "keyword" and low == "switch":
-        raise Refused("a switch statement")
+        # `switch (e) { case v: ...; default: ...; }` is a chain of `Case` tokens, each carrying the absolute wide
+        # offset of the next one (`execSwitch`, `0x0004ca20`), ending on `Case 0xffff`; the `Switch` token carries
+        # the **comparison width** (`0` a wide string, `1` a byte, `4` an int). `emit_flow` writes it.
+        j = i + 1
+        if j >= len(toks) or toks[j] != ("op", "("):
+            raise Refused("a switch without a parenthesised expression")
+        close = _paren_end(toks, j)
+        if close is None:
+            raise Refused("a switch whose expression the walk cannot bound")
+        k = close + 1
+        while k < len(toks) and toks[k] == ("op", ";"):
+            k += 1
+        if k >= len(toks) or toks[k] != ("op", "{"):
+            raise Refused("a switch whose body is not a block")
+        groups, k = _switch_groups(toks, k + 1)
+        return ("switch", toks[j + 1:close], groups), k
     if kind == "keyword" and low == "local":
         # `local rotator newRotation;` is a record the package declares, not code: it emits no bytes.
         j, depth = i, 0
@@ -2205,7 +2275,14 @@ def stmt_tree(body):
 
 
 def _off(value):
-    """A branch operand: the **absolute** offset into the compiler's uncompacted code array."""
+    """A branch operand: the **absolute** offset into the compiler's uncompacted code array.
+
+    `None` is the measuring pass of a construct whose exit target is its own end (`switch`, `for`, `while`,
+    `do`/`until`): the word is still three bytes, so the pass that measures a body's extent writes a placeholder and
+    the second pass, which knows the end, writes the real one.
+    """
+    if value is None:
+        return b"\x00\x00"
     if not 0 <= value <= 0xFFFF:
         raise Refused("a code offset of %d does not fit the word the compiler writes" % value)
     return struct.pack("<H", value)
@@ -2221,6 +2298,15 @@ def emit_flow(node, rettype, env, pos):
     """
     kind = node[0]
     if kind == "simple":
+        if len(node[1]) == 1 and node[1][0][0] == "keyword" and node[1][0][1].lower() in ("break", "continue"):
+            # `break` leaves the nearest `switch` or loop, `continue` the nearest loop: both are a bare `Jump` to an
+            # absolute wide position the enclosing construct publishes in `env["_exit"]`. A `switch` is not a loop,
+            # so it passes `continue` through to whatever encloses it.
+            word = node[1][0][1].lower()
+            exits = env.get("_exit") or {}
+            if word not in exits:
+                raise Refused("a `%s` outside the construct it leaves" % word)
+            return bytes([0x06]) + _off(exits[word]), word, word
         return emit_stmt(node[1], rettype, env)
     if kind == "local":
         return b"", "local", "local"
@@ -2248,8 +2334,13 @@ def emit_flow(node, rettype, env, pos):
         _k, cond, body = node
         cbytes, _cshape = emit_expr(cond, "bool", env)
         body_pos = pos + 3 + _wide(cbytes)
-        bbytes, _bm, _bs = emit_flow(body, rettype, env, body_pos)
-        jump_pos = body_pos + _wide(bbytes)
+        # A `break` in the body names the loop's end and a `continue` its own start, and neither is known until the
+        # body's extent is -- so the body is emitted twice, the first time with placeholder targets (each still three
+        # bytes, so the extent the second pass measures is the first pass's).
+        rough = emit_flow(body, rettype, dict(env, _exit={"break": None, "continue": None}), body_pos)[0]
+        jump_pos = body_pos + _wide(rough)
+        bbytes, _bm, _bs = emit_flow(body, rettype, dict(env, _exit={"break": jump_pos + 3, "continue": pos}),
+                                     body_pos)
         # The target is the *end of the loop*, i.e. the position after the back-jump: `Object.GetItemName` writes
         # 0x47 for a body whose `Jump` sits at 0x44 and whose next statement starts at 0x47.
         return (bytes([0x07]) + _off(jump_pos + 3) + cbytes + bbytes
@@ -2265,23 +2356,82 @@ def emit_flow(node, rettype, env, pos):
         top = pos + _wide(initb)                       # the `JumpIfNot`'s own position: what the back-jump names
         condb = emit_expr(cond, "bool", env)[0]
         body_pos = top + 3 + _wide(condb)
-        bodyb, _bm, _bs = emit_flow(body, rettype, env, body_pos)
         stepb = _emit_clause(step, env)
+        # A `continue` names the step and a `break` the position past it, so the body is emitted twice as in `while`.
+        rough = emit_flow(body, rettype, dict(env, _exit={"break": None, "continue": None}), body_pos)[0]
+        tail = body_pos + _wide(rough)
+        end = tail + _wide(stepb) + 3
+        bodyb, _bm, _bs = emit_flow(body, rettype, dict(env, _exit={"break": end, "continue": tail}), body_pos)
         # The position just past the loop is *after* the back-`Jump`: `Actor.UpdatePrecacheMaterials`'s `06 0700`
         # sits at wide 0x34 and the shipped `07 3700` names 0x37, three bytes further on -- the same rule the `while`
         # shape follows, and reading it as the jump's own position left every `for` three bytes short.
-        end = body_pos + _wide(bodyb) + _wide(stepb) + 3
         return (initb + bytes([0x07]) + _off(end) + condb + bodyb + stepb
                 + bytes([0x06]) + _off(top)), "for", "for"
     if kind == "until":
         # `do S until (c);` = S, `JumpIfNot <S's first byte>`, c: the condition is written *after* the jump that
         # reads it, and the target is the body's own start. `Engine.TestInfo.TestContinueDoUntil` writes
         # `07 1000` for a body that begins at wide 0x10, and the `Jump` a `continue` compiles to names the position
-        # after that `JumpIfNot` (its `0x60`), which is why a `continue` in a loop is refused rather than guessed.
+        # after that `JumpIfNot` (`0x60`), which is why the condition's position is the continue target below.
         _k, cond, body = node
-        bodyb, _bm, _bs = emit_flow(body, rettype, env, pos)
+        # A `continue` in a `do`/`until` names the position after the `JumpIfNot` -- the condition code -- and a
+        # `break` the position past it, so the body is emitted twice as in `while`.
+        rough = emit_flow(body, rettype, dict(env, _exit={"break": None, "continue": None}), pos)[0]
+        cond_pos = pos + _wide(rough) + 3
         condb = emit_expr(cond, "bool", env)[0]
+        bodyb, _bm, _bs = emit_flow(body, rettype, dict(env, _exit={"break": cond_pos + _wide(condb),
+                                                                   "continue": cond_pos}), pos)
         return bodyb + bytes([0x07]) + _off(pos) + condb, "do-until", "do-until"
+    if kind == "switch":
+        # `Switch <width>` + the expression, then one `Case` per labelled group: `0a <absolute wide offset of the
+        # next case> <value expression>` (the opcode is `0x0a`, not `Return`'s `0x04`), and `0a ff ff` for the
+        # terminator (`default:`). An arm's `break` is a
+        # `Jump` to the switch's own end, which is known only after the last group is emitted -- so, as in the loops,
+        # the switch is emitted twice; every placeholder word is three bytes, like the real jump, so the extent the
+        # second pass measures is the first pass's.
+        _k, expr_toks, groups = node
+        stype = _type_of(expr_toks, env)
+        width = SWITCH_WIDTH.get(stype)
+        if width is None:
+            raise Refused("a switch on a %s, whose comparison width the corpus does not pin"
+                          % (stype or "value the walk cannot type"))
+        if not groups or groups[0][0] is None:
+            raise Refused("a switch whose first label is not a `case`")
+        if sum(1 for lab, _s in groups if lab is None) > 1:
+            raise Refused("a switch with two `default:` labels")
+        if groups[-1][0] is not None and any(lab is None for lab, _s in groups):
+            raise Refused("a switch whose `default:` is not its last label")
+        head = bytes([0x05, width]) + emit_expr(expr_toks, stype, env)[0]
+
+        def once(end_target):
+            out = bytearray(head)
+            src = env.get("_exit") or {}
+            exits = {"break": end_target}
+            if "continue" in src:
+                exits["continue"] = src["continue"]
+            benv = dict(env, _exit=exits)
+            # The terminator is written whether or not the source has a `default:`: a `switch` with none still ends
+            # on `Case 0xffff` and an empty body (`PlayerProfile.GetCategoryVolume`), so the list's last case links to
+            # it and control runs from it into the statement after the switch.
+            seq = list(groups)
+            if seq[-1][0] is not None:
+                seq.append((None, []))
+            cases = []
+            for lab, stmts in seq:
+                cases.append((len(out) + 1, pos + _wide(bytes(out))))
+                if lab is None:
+                    out += bytes([0x0A, 0xFF, 0xFF])
+                else:
+                    out += bytes([0x0A, 0x00, 0x00]) + emit_expr(lab, stype, env)[0]
+                for st in stmts:
+                    out += emit_flow(st, rettype, benv, pos + _wide(bytes(out)))[0]
+            for i in range(len(cases) - 1):          # the terminator's own word stays 0xffff
+                at = cases[i][0]
+                out[at:at + 2] = _off(cases[i + 1][1])
+            assert out[cases[-1][0] - 1] == 0x0A and out[cases[-1][0]:cases[-1][0] + 2] == b"\xff\xff"
+            return bytes(out)
+
+        rough = once(None)
+        return once(pos + _wide(rough)), "switch", "switch"
     raise Refused("a %s statement" % kind)
 
 
@@ -2296,6 +2446,12 @@ def _emit_clause(toks, env):
 
 
 COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=")
+
+# The `Switch` token's operand is the number of bytes the case comparison reads, not a case count: `0` a wide string,
+# `1` a byte and `4` an int (`docs/BYTECODE.md`, measured against `execSwitch` at `0x0004ca20` and the corpus's 200
+# sites). A `name` compares as its four-byte index, and a `bool` as one byte, like the `ByteConst` cases the corpus
+# writes under width 1.
+SWITCH_WIDTH = {"string": 0, "byte": 1, "bool": 1, "int": 4, "name": 4, "float": 4}
 
 
 def _compound(stmt, env):
