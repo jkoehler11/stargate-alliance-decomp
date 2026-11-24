@@ -441,6 +441,125 @@ def _int_literal(expr):
     return None
 
 
+def _int_bytes(v):
+    """The compiler's own token for an int constant: `25` zero, `26` one, `2c <byte>` 2..255, else `1d <int32>`."""
+    if v == 0:
+        return bytes([0x25])
+    if v == 1:
+        return bytes([0x26])
+    if 0 < v < 256:
+        return bytes([0x2C, v])
+    return bytes([0x1D]) + struct.pack("<i", v)
+
+
+def _consts_of(text):
+    """`{name: value}` for every `const NAME = <int literal>;` in the text -- what an array dimension spells.
+
+    GUIController's `var() transient CachedRungData LiveRungData[TOTAL_LADDER_RUNGS];` sizes the array from
+    `const TOTAL_LADDER_RUNGS=17;` on the same class, and ShieldBelt's `AbsorbSounds[MAX_ABSORB_SOUNDS]` from
+    `const MAX_ABSORB_SOUNDS = 3;`. Only a bare number is read: a const written as an expression is left unresolved
+    and refuses the `ArrayCount` rather than folding a value the source does not spell.
+    """
+    toks = tokens_of(text)
+    if toks is None:
+        return {}
+    out = {}
+    for i in range(len(toks) - 3):
+        if not (toks[i][0] == "keyword" and toks[i][1].lower() == "const"):
+            continue
+        if toks[i + 1][0] not in ("ident", "keyword"):
+            continue
+        j = i + 2
+        if j < len(toks) and toks[j] == ("op", "="):
+            j += 1
+        if j < len(toks) and toks[j][0] == "number":
+            v = _number(toks[j][1])
+            if isinstance(v, int):
+                out.setdefault(toks[i + 1][1].lower(), v)
+    return out
+
+
+def _array_dims(text):
+    """`{name: N}` for every declaration in the text that spells a dimension: `var string Foo[4];`.
+
+    `ArrayCount(X)` is not a call at all -- the compiler writes the **declared dimension** as an int literal, so the
+    rule needs the number the source spells rather than a runtime read (`PlayerController.SetProgressMessage`'s
+    `Index < ArrayCount(ProgressMessage)` is `... 2c 04 16` for `var string ProgressMessage[4];`, and
+    `LevelInfo.AddEventToCache` writes `2c 40` for `var name EventCache[64];`). Only a `var`/`local` statement is
+    read, and a declarator's `]` has to be followed by `;` or `,`: that is what separates a *declaration* from an
+    index in an initializer (`var int A[4], B[2];` reads both, `X = Foo[3],` reads neither).
+    """
+    toks = tokens_of(text)
+    if toks is None:
+        return {}
+    depth_at, d = [], 0
+    for kind, val in toks:
+        depth_at.append(d)
+        if kind == "op" and val in "([{":
+            d += 1
+        elif kind == "op" and val in ")]}":
+            d -= 1
+    consts = _consts_of(text)
+    out = {}
+    i, n = 0, len(toks)
+    while i < n:
+        kind, val = toks[i]
+        if not (kind == "keyword" and val.lower() in ("var", "local")):
+            i += 1
+            continue
+        base = depth_at[i]
+        j = i + 1
+        if j < n and toks[j] == ("op", "("):
+            close = _paren_end(toks, j)
+            if close is None:
+                i += 1
+                continue
+            j = close + 1                # `var(Private) string Foo[4];` carries its modifiers in a group
+        k = j
+        while k + 4 < n:
+            if toks[k] == ("op", ";") and depth_at[k] == base:
+                break
+            if (toks[k][0] in ("ident", "keyword") and depth_at[k] == base
+                    and toks[k + 1] == ("op", "[") and toks[k + 2][0] in ("number", "ident", "keyword")
+                    and toks[k + 3] == ("op", "]")
+                    and toks[k + 4][0] == "op" and toks[k + 4][1] in (";", ",")):
+                # The dimension is a number (`Doors[2]`) or the name of a `const` (`LiveRungData[TOTAL_LADDER_RUNGS]`
+                # beside `const TOTAL_LADDER_RUNGS=17;`). A const declared on an *ancestor* class is resolved in
+                # `_scope`, where the class chain is known -- this text may not carry the declaration.
+                dim_tok = toks[k + 2]
+                if dim_tok[0] == "number":
+                    v = _number(dim_tok[1])
+                    if isinstance(v, int) and v > 0:
+                        out.setdefault(toks[k][1].lower(), v)
+                elif dim_tok[1].lower() in consts:
+                    out.setdefault(toks[k][1].lower(), consts[dim_tok[1].lower()])
+                else:
+                    out.setdefault(toks[k][1].lower(), dim_tok[1].lower())
+                k += 5
+                continue
+            k += 1
+        i = max(k, i + 1)
+    return out
+
+
+def _array_count(expr, env):
+    """The integer `ArrayCount(X)` compiles to: the **declared dimension**, written as an int literal.
+
+    A name whose dimension the source does not spell is refused by name rather than given a guessed number, because
+    a wrong dimension is a wrong body that still scores.
+    """
+    if not _is_call(expr) or expr[0][1].lower() != "arraycount":
+        return None
+    inner = _strip_parens(expr[2:-1])
+    if len(inner) != 1 or inner[0][0] not in ("ident", "keyword"):
+        raise Refused("an ArrayCount of something that is not a bare name")
+    nm = inner[0][1].lower()
+    n = ((env.get("scope") or {}).get("dims") or {}).get(nm)
+    if n is None:
+        raise Refused("an ArrayCount of a name whose declared dimension the source does not spell")
+    return n
+
+
 def _is_call(expr):
     """`Name(...)` -- the whole expression is one call."""
     return (len(expr) >= 3 and expr[0][0] in ("ident", "keyword") and expr[1] == ("op", "(")
@@ -924,6 +1043,10 @@ def _type_of(expr, env):
         low = expr[0][1].lower()
         if low in CAST_TYPES:
             return low
+        if low == "arraycount":
+            # `ArrayCount(X)` is a *compile-time* int: the compiler writes the declared dimension as a literal, so
+            # the site is an int site and `i < ArrayCount(X)` is `Less_IntInt`, not an unknown-type pair.
+            return "int"
         if _cast_kind(expr[0][1], env) == "object":
             return "class"
         if low == "vect":
@@ -1637,6 +1760,11 @@ def emit_expr(expr, rettype, env):
             return _emit_vector(expr), "vector"
         if _is_call(expr) and _cast_kind(expr[0][1], env):
             return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
+        if _is_call(expr) and expr[0][1].lower() == "arraycount":
+            # `ArrayCount(X)` is not a call: the compiler writes X's declared dimension as an int literal, and the
+            # value converts at its site like any int. `PlayerController.SetProgressMessage`'s
+            # `Index < ArrayCount(ProgressMessage)` is `... 2c 04 16` for `var string ProgressMessage[4];`.
+            return _converted(_int_bytes(_array_count(expr, env)), "int", rettype), "array-count"
         if _is_call(expr):
             # The value a call yields is converted at *its* site, not inside the callee: `Adrenaline = Clamp(...)`
             # in a float slot is `0f <read> 39 3f fb ...` -- IntToFloat around the Clamp, because Clamp returns an
@@ -1698,9 +1826,7 @@ def emit_expr(expr, rettype, env):
                 return bytes([0x25]), "int-zero"
             if v == 1:
                 return bytes([0x26]), "int-one"
-            if 0 < v < 256:
-                return bytes([0x2C, v]), "int-const-byte"
-            return bytes([0x1D]) + struct.pack("<i", v), "int-const"
+            return _int_bytes(v), "int-const"
         if t == "byte":
             if not 0 <= v < 256:
                 raise Refused("a byte literal out of range (%s)" % val)
@@ -2503,7 +2629,8 @@ def _func_owners(pkg, kinds, names):
     return out
 
 
-def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, table_index, final_of=None):
+def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, table_index, final_of=None,
+           dims_by_cls=None, consts_by_cls=None):
     """The names one body may mention, each with the index and token the package's own record earns.
 
     A property is found by *name and owner*: the record's index is what the compiler wrote, so nothing is rebuilt.
@@ -2544,6 +2671,22 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             scope["locals"][names[i + 1].lower()] = (LOCAL_TOKEN, i + 1, PROP_TYPE.get(kinds[i + 1], ""))
     order = [c for _p, c in _ancestors(chain, pack, cls)]
     scope["order"] = order
+    # The dimension `ArrayCount(X)` folds to, the nearest declaration winning exactly as a property record does:
+    # `var string ProgressMessage[4];` is on `PlayerController` itself, while `EventCache[64]` is `LevelInfo`'s.
+    cst = {}
+    for anc in order:
+        for nm, v in (consts_by_cls or {}).get(anc, {}).items():
+            cst.setdefault(nm, v)
+    dim = {}
+    for anc in order:
+        for nm, n in (dims_by_cls or {}).get(anc, {}).items():
+            if isinstance(n, str):
+                # `Doors[MAX_DOORS]`: the dimension is a `const` this class or an ancestor declares
+                n = cst.get(n)
+                if n is None:
+                    continue
+            dim.setdefault(nm, n)
+    scope["dims"] = dim
     for nm, cands in props.items():
         picked = None
         for anc in order:
@@ -2708,6 +2851,7 @@ def _source_index(tree):
     localtypes = {}
     proptypes = {}
     withins = {}
+    dims, consts = {}, {}
     enums, enum_names = {}, set()
     files = 0
     for dirpath, _dirs, names in os.walk(tree):
@@ -2734,6 +2878,12 @@ def _source_index(tree):
             for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)",
                                  text, re.I):
                 proptypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
+            # The declared dimension of an array: `ArrayCount(X)` folds to it, so a name whose declarations
+            # disagree (two functions declaring one local name at two sizes) is left out rather than guessed.
+            for nm, dim in _array_dims(text).items():
+                dims.setdefault((cls, nm), set()).add(dim)
+            for nm, v in _consts_of(text).items():
+                consts.setdefault((cls, nm), set()).add(v)
             for state, fn, rettype, body, is_native, is_final, decl_params in functions_of(text):
                 if decl_params:
                     params.setdefault((cls, fn.lower()), decl_params)
@@ -2760,21 +2910,29 @@ def _source_index(tree):
                         # against a stub
                         index[key] = (rettype, body, text, is_native, is_final, decl_params, aline)
             if "enum" in text.lower():
-                for enum, consts in enums_of(text):
+                for enum, members in enums_of(text):
                     enum_names.add(enum.lower())
-                    for cname, ordinal in consts:
+                    for cname, ordinal in members:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
-    return index, files, params, enums, enum_names, rets, localtypes, proptypes, withins
+    return index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts
 
 
 def score(tree, dump, out_dir, residue_dir=None, only=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
-    index, files, params, enums, enum_names, rets, localtypes, proptypes, withins = _source_index(tree)
+    index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
+    dims_by_cls = {}
+    for (c, n), sizes in dims.items():
+        if len(sizes) == 1:
+            dims_by_cls.setdefault(c, {})[n] = next(iter(sizes))
+    consts_by_cls = {}
+    for (c, n), values in consts.items():
+        if len(values) == 1:
+            consts_by_cls.setdefault(c, {})[n] = next(iter(values))
     localtypes_by_cls = {}
     for (c, n), t in localtypes.items():
         localtypes_by_cls.setdefault(c, {})[n] = t
@@ -2845,7 +3003,8 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                                 "cause": _residue_cause(src_texts.get(cls.lower(), []), fname, state)})
                 continue
             rettype, src_body, _text, is_native, _is_final, decl_params, aline = got
-            scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of)
+            scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of,
+                           dims_by_cls, consts_by_cls)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
                    "enum_names": enum_names, "class_names": class_names, "order": scope["order"],
                    "rets": rets, "assert_line": aline,
@@ -3049,6 +3208,9 @@ function NotSet() { bDead = !bDead; }
 function bool NotAnd() { return !bDead && bFlag; }
 function int NegInt() { return -Health; }
 function bool NotCall() { return !Target.bFlag; }
+function int ACount() { return ArrayCount(Items); }
+function ACountSet() { Health = ArrayCount(Items); }
+function ACountUnknown() { return ArrayCount(Caption); }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -3085,6 +3247,9 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
 
 # The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
 SCOPE["objclass"] = {("probe", "target"): "probe"}
+
+# The declared dimension of an array property, which `ArrayCount` folds to (`var int Items[4];`).
+SCOPE["dims"] = {"items": 4}
 
 # The raw record table the receiver walk reads: `{name: [(index, owner, kind)]}`.
 SCOPE["props_all"] = {nm: [(v[1], "probe", "ObjectProperty" if v[2] == "object" else
@@ -3167,6 +3332,8 @@ WANT = {
     "asclasstext": "04395617040b47",              # return string(class); -- `class` is Self: the same seven bytes
     "asint": "0439412d012d040b47",                # return int(bDead); -- BoolToInt
     "callcast": "1b2939412d012d16040b47",       # Foo(int(bDead)): the cast is the argument -- BoolToInt + the read
+    "acount": "042c04040b47",                     # return ArrayCount(Items); -- the declared 4, an IntConstByte
+    "acountset": "0f016e042c04040b47",            # Health = ArrayCount(Items); -- the same literal at an int site
     "asserted": "09260828040b47",                  # assert(false); -- Assert, line 2086, False
     "andint": "049c393a0064092c0216040b47",        # return Count & 2; -- And_IntInt, ByteToInt, IntConstByte
     "boolmember": "04190163090600042d012f040b47",  # return Target.bFlag; -- Context skip 6, size 4, BoolVariable
@@ -3222,7 +3389,7 @@ WANT = {
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown")
+          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown")
 
 
 def check(args):
@@ -3280,6 +3447,13 @@ def check(args):
     else:
         print("FAIL uscript-emit: assertnoline was emitted with no source line")
         return 1
+    # `_array_dims` reads a declaration's dimension and not an index: a `var` with two declarators answers both,
+    # an index in an initializer answers nothing, and a `local` inside a body counts too.
+    dims = _array_dims("class P;\nvar string A[4], B[2];\nvar int C;\n"
+                       "function F()\n{\n\tlocal int D[8];\n\tC = A[0] + 3;\n}\n")
+    if dims != {"a": 4, "b": 2, "d": 8}:
+        print("FAIL uscript-emit: _array_dims answers %r" % (dims,))
+        return 1
     # `_assert_line` is the line reader itself: the same body twice in one file is ambiguous and must answer None.
     one = "class P;\nfunction A()\n{\n\tassert(false);\n}\n"
     stmt_tokens = [("keyword", "assert"), ("op", "("), ("keyword", "false"), ("op", ")"), ("op", ";")]
@@ -3320,7 +3494,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]

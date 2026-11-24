@@ -239,6 +239,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the compiled array size: **6212 modelled / 6212 byte-identical / 0 differ** (from 6,210 / 6,210 / 0; 2 bodies
+  gained, none lost; residue 5,468 -> 5466, and the bodies that emit and differ stay 10). `ArrayCount(X)` is not a call:
+  the compiler writes X's **declared dimension** as an int literal, so the rule reads the number the source spells
+  (`var string ProgressMessage[4];` -> `2c 04`, `var name EventCache[64];` -> `2c 40`) and follows a `const` to its
+  value (`LiveRungData[TOTAL_LADDER_RUNGS]` beside `const TOTAL_LADDER_RUNGS=17;`). The call's type is `int`, which is
+  what retyped 41 of the residue's `ArrayCount` rows from `int < an unknown type` to their real obstacle; the 0 that
+  still refuse are named ("an ArrayCount of a name whose declared dimension the source does not spell"). Gained:
+  `AlkeshBomber.GetNumBombingBays`, `ClientBeaconReceiver.GetBeaconCount`. Doc: `docs/COMPILER_FRONTEND.md` gains the
+  section. Not in this PR: `switch` (173), `continue`/`break` (65), and the 10 that still emit and differ.
 - [~] 3.6 the literal's form: a leading position, a float site, and the byte context's own spelling: **6,210 modelled /
   6,210 byte-identical / 0 differ** (from 6,202 / 6,202 / 0; 8 bodies gained, none lost; residue 5,476 -> 5,468, and
   the bodies that emit and differ 18 -> 10). Two rules, and they recover every body the previous note recorded as
