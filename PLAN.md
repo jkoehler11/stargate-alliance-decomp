@@ -239,6 +239,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the operand's declared type, and two sizes that were constants: **6,194 modelled / 6,194 byte-identical /
+  0 differ** (from 5,931 / 5,931 / 0; 263 bodies gained, none lost; the residue 5,747 -> 5,484). Five rules, one
+  thread: (1) an enum constant where the pair is `(int, int)` is the byte **widened** -- `ByteToInt` (58) around
+  `24 <ordinal>` (`Physics != PHYS_Falling` is `9b 39 3a 01 da 01 39 3a 24 02 16`) -- while the same constant at a
+  `byte` site is the bare `24 02` (`SetPhysics(PHYS_Falling)`); the site's type decides, which is what the previous
+  note's "42 that do not widen" were: 243 bodies refused, none now. (2) A struct-valued member's size byte is the
+  **declared** struct (`vector`/`rotator`/`coords` 12), not the record kind, so `return Pawn.Location` is
+  `04 19 01 86 05 00 0c 01 8a`; 196 refused, none now, and the residue names the structs it still cannot size
+  (`color` 9, `region` 7, `htmlstyle` 1). (3) A bool member's skip word is the member's width in the uncompacted
+  array (`_wide`), 6 for `2d 01 <index>`; 28 bodies wrote 5 because the object was an import and are identical now,
+  and the 60 `Outer.<bool>` nodes keep their measured 5. (4) **The cast's slot is keyed on the operand's declared
+  type**, not on the pair's promoted one: `SoundVolume / 255.0` is `39 3c 01 55` (`ByteToFloat`), a `byte` at a `$`
+  site is `39 52` (`ByteToString`) not `39 53`, and `class` -> `object` is the fallback key. The bodies that emit
+  and differ fall 61 -> 26. (5) The exception is a **negative** and is recorded as one: an `int` literal promoted to
+  `float` is folded in some sites (`10 + 5 * FRand()` holds `1e 00002041`) and cast in others (`39 3f 2c 05` for the
+  `5` in the same body), and "arithmetic folds" fixed 5 bodies and broke 69, so it stays cast in the emitter and in
+  the residue. Doc: `docs/COMPILER_FRONTEND.md` gains the section and the two bullets it supersedes are corrected in
+  place; not in this PR: `switch` (173), `ArrayCount(FixedArray)` (33), `continue`/`break` (65), and the 26 differ.
 - [~] 3.6 the types the pair histogram was missing: **5,931 modelled / 5,931 byte-identical / 0 differ** (from
   5,289 / 5,289 / 0; 642 bodies gained, none lost, the walk and the join unchanged at 11,687 and 11,678, and the
   operator refusals 2,523 -> 1,279). One thread, five rules: (1) `.Length` of an array or a string is an **int** --
