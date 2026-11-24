@@ -100,7 +100,7 @@ NUL-terminated (ANSI for `0x1f`, UTF-16 for `0x34`), so their length is data, no
 `tools/uelib` (pinned `8236c39`) states the same mapping independently, for the whole UE2 family
 (`src/Branch/DefaultEngineBranch.cs::BuildTokenMap`), and the two agree on most of the table. The agreements worth
 naming, because they were not used to build it: `0x11 New` has **four** children (UELib's `NewToken` reads Outer,
-Name, Flags, Class), `0x2f Iterator` is an expression then a code offset, `0x42 DebugInfo` is three int32s then a
+Name, Flags, Class), `0x2f Iterator` is an expression then a code offset (**the wide position of the `IteratorPop`** -- the operand follows the iterator's call, and a `foreach`'s `break` is a `Jump` to the same word: `Pickup.CheckTouching`'s `2f 61 33 20 01 00 70 3d 16 1c 00`), `0x42 DebugInfo` is three int32s then a
 byte, `0x40`/`0x41` are three children each, and `0x47 EndOfScript` has none — which is why every payload's epilogue
 ends with it.
 

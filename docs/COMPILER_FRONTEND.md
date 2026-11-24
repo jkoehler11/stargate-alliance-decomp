@@ -983,5 +983,38 @@ the first pass writes a three-byte placeholder, which is the width of the real j
 measures is the first pass's. That is the same shape the `Case` words need, and it is what makes a `break` inside an
 `if` inside an arm (the two interior breaks `inventory/switch_arms.csv` counts) ordinary rather than special.
 
-What is left of the statement surface is `foreach` (77 bodies), whose iterator binding is a declaration the emitter does
-not read yet.
+## The `foreach`, the class literal, and a guard that read an argument as a keyword (measured 2026-11-24)
+
+**6,269 -> 6,392 modelled, 6,392 byte-identical, 0 differ** (123 bodies gained, none lost; the residue 5,409 -> 5,286;
+the walk and the join unchanged at 11,687 and 11,678). Three rules and one defect, one thread.
+
+**A `foreach` is an `Iterator` token whose operand comes *after* its own call.** `foreach F(a) S;` writes
+`2f <the call to F> <u16>` + S + `31` (`IteratorNext`) + `30` (`IteratorPop`), and the word is the **wide position of
+the `IteratorPop`** -- `Pickup.CheckTouching` is `2f 61 33 20 01 00 70 3d 16 1c 00 1b 2d 00 70 3d 16 31 30 04 0b 47`
+with the pop at wide 0x1c. The loop has **no back edge**: the step is the `IteratorNext` the body ends on, so a
+`break` is a bare `Jump` to that word (`HUD.PostBeginPlay`'s `... 26 00 06 26 00 31 30`, the `Iterator` and the `Jump`
+naming one position) and a `continue` is the **step plus** that `Jump` -- `TestInfo.TestContinueForEach` writes
+`31 06 4f 00` for the arm of an `if` whose body is `continue;`. Both targets follow the body's extent, so the body is
+emitted twice with a two-byte placeholder, the same shape `switch` and the loops use.
+
+**A class name in single quotes is an object reference, not a name.** `class'Pawn'` compiles to
+`20 <compact index>` (`ObjectConst`), the same table a `DynamicCast` reads: `foreach TouchingActors(class'Pawn', P)`
+writes `20 01`, Engine.u's export 1, which is `Pawn`. Reading it as a `NameConst` would have been a body that scores.
+A name the package's tables do not carry is refused by name (**2** rows corpus-wide).
+
+**The guard that refused a control-flow keyword scanned the whole statement.** `emit_stmt`'s first line asked whether
+*any* token of a simple statement was `if`/`for`/`while`/`do`/`switch`/`case`/`else`/`foreach`, so a statement that
+merely **passed** one -- `Switch` is a `LocalMessage` parameter, and `GameInfo.BroadcastLocalized` passes it bare --
+was refused as unparsed control flow. It reads the statement's first token now, which is the only place a form the parse
+did not take can show up.
+
+**What the 77 was.** The number named every residue row whose text carries a `foreach`, not the bodies the form blocked:
+of the **309** declarations whose tree holds a `foreach`, the rule now emits **1** byte-identical
+(`DemoRecSpectator.ViewClass`) that carries one at statement level... and the 12 rows that differ are the shape below.
+The rest were already refused deeper -- **190** of the **246** `foreach` residue rows name "a compound expression",
+which the class literal above is the first half of.
+
+**Not in this PR:** the `foreach` body that **returns**. 12 bodies now emit and differ, all one byte short or long, and
+their shipped bytes carry an `IteratorPop` in front of the `return` (`Pawn.TouchingWaterVolume` ships
+`... 2d 01 6d 02 30 04 27 31 30 04 28 04 0b 47` where the walk writes `... 2d 01 6d 02 04 27 31 30 ...`) -- a cleanup
+the compiler inserts when a `return` leaves the iterator, and the next rule this thread reads.

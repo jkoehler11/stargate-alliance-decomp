@@ -27,10 +27,12 @@ body that looks like a measurement. The residue is what the next stage reads.
 
 A body is a **list of statements** (`stmt_tree`): each statement emits on its own, the body appends its trailer once,
 and the control-flow forms whose operands the corpus pins are emitted from an absolute position in the
-compiler's uncompacted code array -- `if`, `if`/`else`, `while`, `for`, `do`/`until` and `switch`, whose `Case` chain
-carries the position of the next case and ends on `Case 0xffff`. `break` and `continue` are the `Jump`s those
+compiler's uncompacted code array -- `if`, `if`/`else`, `while`, `for`, `do`/`until`, `switch`, whose `Case` chain
+carries the position of the next case and ends on `Case 0xffff`, and `foreach`, whose `Iterator` token carries the
+`IteratorPop`'s position after its own call expression. `break` and `continue` are the `Jump`s those
 constructs publish: a `break` names the end of the nearest loop or switch, a `continue` the next iteration of the
-nearest loop. A `local` declaration emits nothing.
+nearest loop -- and in a `foreach` a `continue` is the iterator's step (`IteratorNext`) followed by that `Jump`, so
+the loop pays a step per skip rather than a back edge. A `local` declaration emits nothing.
 
     python3 tools/uscript-emit.py --check                       # synthetic, no dump, writes nothing
     python3 tools/uscript-emit.py --tree $WORK/scripts-all \\
@@ -1041,6 +1043,11 @@ def _type_of(expr, env):
         if kind == "string":
             return "string"
         return ""
+    if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
+            and expr[1][0] == "quoted"):
+        # `class'Pawn'` is an object reference: the same `class` a bare class name reads as, so a site that wants an
+        # object takes it unconverted and one that wants a string casts it (`ObjectToString`).
+        return "class"
     if _is_call(expr):
         low = expr[0][1].lower()
         if low in CAST_TYPES:
@@ -1760,6 +1767,11 @@ def emit_expr(expr, rettype, env):
             return un
         if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
+        if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
+                and expr[1][0] == "quoted"):
+            # `class'Pawn'` -- the class name in single quotes -- is an object reference and not a name constant;
+            # `_emit_class_literal` reads it through the same table a `DynamicCast` uses.
+            return _emit_class_literal(expr[1][1], env), "class-literal"
         if _is_call(expr) and _cast_kind(expr[0][1], env):
             return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
         if _is_call(expr) and expr[0][1].lower() == "arraycount":
@@ -1892,6 +1904,22 @@ def _literal_text(raw):
         out.append(ch)
         i += 1
     return "".join(out)
+
+
+def _emit_class_literal(raw, env):
+    """`class'Pawn'` -> `ObjectConst` and the class's own **object reference** (a compact index, like a cast's).
+
+    The literal is not a string or a name: `Pickup.CheckTouching`'s `foreach TouchingActors(class'Pawn', P)` writes
+    `2f 61 33 20 01 00 70 3d 16`, and `20 01` is `ObjectConst` of Engine.u's export 1, which is `Pawn`. The index is
+    the same `classrefs` table a `DynamicCast` reads, so a class the body's package only imports is written as the
+    negative import. A name the package's tables do not carry is refused rather than guessed -- a wrong index here
+    is a body that reads as measured.
+    """
+    name = _literal_text(raw[1:-1])
+    ref = (env.get("scope") or {}).get("classrefs", {}).get(name.lower())
+    if ref is None:
+        raise Refused("a class literal whose class the package's tables do not name")
+    return bytes([0x20]) + write_index(ref)
 
 
 def _emit_vector(expr):
@@ -2171,10 +2199,10 @@ def _stmt_at(toks, i):
     """`(node, next index)` for one statement at token `i`.
 
     A node is `("simple", tokens)`, `("local", tokens)`, `("block", [nodes])`, `("if", cond, then, else)`,
-    `("while", cond, body)`, `("for", init, cond, next, body)`, `("until", cond, body)` or
-    `("switch", expression, [(label tokens or None, [nodes])])`. The whole statement set is parsed here so the shape of
-    a body is known before it is emitted; a statement form the emitter does not model is refused by `emit_flow`, by
-    name.
+    `("while", cond, body)`, `("for", init, cond, next, body)`, `("until", cond, body)`,
+    `("switch", expression, [(label tokens or None, [nodes])])` or `("foreach", iterator call tokens, body)`. The
+    whole statement set is parsed here so the shape of a body is known before it is emitted; a statement form the
+    emitter does not model is refused by `emit_flow`, by name.
     """
     while i < len(toks) and toks[i] == ("op", ";"):
         i += 1
@@ -2224,6 +2252,23 @@ def _stmt_at(toks, i):
         if k < len(toks) and toks[k] == ("op", ";"):
             k += 1
         return ("until", toks[j + 1:close], body), k
+    if kind == "keyword" and low == "foreach":
+        # `foreach F(a) S;` -- the iterator variable is an argument of the head's own call, so the statement is one
+        # call expression and one body. The compiler writes `Iterator <the call> <wide offset of the IteratorPop>`:
+        # the operand comes *after* the call, and `Pickup.CheckTouching`'s `2f 61 33 20 01 00 70 3d 16 1c 00` is
+        # `Iterator`, `HighNative1 TouchingActors`, `ObjectConst`, `LocalVariable`, `EndFunctionParms`, `1c 00`.
+        j = i + 1
+        while j < len(toks) and toks[j] != ("op", "("):
+            j += 1
+        if j >= len(toks):
+            raise Refused("a foreach without an iterator call")
+        close = _paren_end(toks, j)
+        if close is None:
+            raise Refused("a foreach whose iterator call the walk cannot bound")
+        body, k = _stmt_at(toks, close + 1)
+        if body is None:
+            raise Refused("a foreach with no body")
+        return ("foreach", toks[i + 1:close + 1], body), k
     if kind == "keyword" and low == "switch":
         # `switch (e) { case v: ...; default: ...; }` is a chain of `Case` tokens, each carrying the absolute wide
         # offset of the next one (`execSwitch`, `0x0004ca20`), ending on `Case 0xffff`; the `Switch` token carries
@@ -2306,7 +2351,13 @@ def emit_flow(node, rettype, env, pos):
             exits = env.get("_exit") or {}
             if word not in exits:
                 raise Refused("a `%s` outside the construct it leaves" % word)
-            return bytes([0x06]) + _off(exits[word]), word, word
+            target = exits[word]
+            if isinstance(target, tuple):
+                # A `foreach`'s `continue` is its **step**: `IteratorNext` then a `Jump` to the pop, so the skip pays
+                # one iterator call. `TestInfo.TestContinueForEach` writes `31 06 4f 00` for the arm of an `if` whose
+                # body is `continue;`, and 0x4f is the `IteratorPop`'s wide position.
+                return bytes([0x31]) + bytes([0x06]) + _off(target[1]), word, word
+            return bytes([0x06]) + _off(target), word, word
         return emit_stmt(node[1], rettype, env)
     if kind == "local":
         return b"", "local", "local"
@@ -2381,6 +2432,26 @@ def emit_flow(node, rettype, env, pos):
         bodyb, _bm, _bs = emit_flow(body, rettype, dict(env, _exit={"break": cond_pos + _wide(condb),
                                                                    "continue": cond_pos}), pos)
         return bodyb + bytes([0x07]) + _off(pos) + condb, "do-until", "do-until"
+    if kind == "foreach":
+        # `foreach F(a) S;` = `Iterator <F(a)> <wide offset of the IteratorPop>`, S, `IteratorNext`, `IteratorPop`.
+        # The loop has no back edge: the step is the `IteratorNext` the body ends on, and the token's operand is the
+        # pop's own position, so a `break` is a `Jump` to it and a `continue` is the step plus that `Jump` (see the
+        # simple-statement branch above). `Pickup.CheckTouching` is `2f 61 33 20 01 00 70 3d 16 1c 00 1b 2d 00 70 3d
+        # 16 31 30`, and 0x1c is the `IteratorPop`'s wide offset -- the body starts at 0x0b and is 10 wide bytes.
+        # The operand is known only after the body's extent is, so, like `switch`, the body is emitted twice with a
+        # two-byte placeholder, which keeps the extent the second pass measures the first pass's.
+        _k, head, body = node
+        call = emit_expr(head, "bool", env)[0]
+        body_pos = pos + 3 + _wide(call)
+
+        def once(pop):
+            exits = {"break": pop, "continue": ("iterate", pop)}
+            return emit_flow(body, rettype, dict(env, _exit=exits), body_pos)[0]
+
+        rough = once(None)
+        pop = body_pos + _wide(rough) + 1
+        bodyb = once(pop)
+        return (bytes([0x2F]) + call + _off(pop) + bodyb + bytes([0x31, 0x30]), "foreach", "foreach")
     if kind == "switch":
         # `Switch <width>` + the expression, then one `Case` per labelled group: `0a <absolute wide offset of the
         # next case> <value expression>` (the opcode is `0x0a`, not `Return`'s `0x04`), and `0a ff ff` for the
@@ -2636,8 +2707,12 @@ def emit_stmt(stmt, rettype, env):
             raise Refused("an assert whose argument the walk cannot bound")
         expr, shape = emit_expr(stmt[2:-1], "bool", env)
         return bytes([0x09]) + struct.pack("<H", line) + expr, "assert", "assert"
-    if any(k == "keyword" and v.lower() in ("if", "for", "while", "do", "switch", "case", "else", "foreach")
-           for k, v in stmt):
+    if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() in ("if", "for", "while", "do", "switch", "case",
+                                                                  "else", "foreach"):
+        # The guard is on the statement's **first** token: a control-flow form the parse did not take is refused by
+        # name, while an argument that happens to be spelled like one is not. `Switch` is a `LocalMessage`
+        # parameter, and `GameInfo.BroadcastLocalized` passes it bare, so a guard that scanned the whole statement
+        # refused every localization body in the corpus (6 in Engine.u alone).
         raise Refused("a statement that is control flow")
     at = _assign_at(stmt)
     if at is not None:
@@ -3367,6 +3442,11 @@ function bool NotCall() { return !Target.bFlag; }
 function int ACount() { return ArrayCount(Items); }
 function ACountSet() { Health = ArrayCount(Items); }
 function ACountUnknown() { return ArrayCount(Caption); }
+function EachPlain() { foreach Iter(Slot) Foo(1); }
+function EachStop() { foreach Iter(Slot) break; }
+function EachSkip() { foreach Iter(Slot) { if (bDead) continue; Foo(1); } }
+function ClassLit() { TakeClass(class'Probe'); }
+function BadClass() { TakeClass(class'Missing'); }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -3398,7 +3478,8 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "mix": ("virtual", 46), "bump": ("virtual", 47), "gotostate": ("native", 113),
                    "tinytoken": ("native", 2), "onchange": ("virtual", 26),
                    "mix3": ("virtual", 48), "mixbyte": ("virtual", 49), "mytext": ("virtual", 50),
-                   "ping": ("virtual", 51), "pong": ("virtual", 52), "say": ("virtual", 53)},
+                   "ping": ("virtual", 51), "pong": ("virtual", 52), "say": ("virtual", 53),
+                   "iter": ("native", 300), "takeclass": ("virtual", 55)},
          "delegates": {"onchange": 51}}
 
 # The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
@@ -3431,6 +3512,10 @@ PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "
           ("probe", "mytext"): [("string", "S", False)]}
 PARAMS[("probe", "pong")] = [("int", "A", False)]
 PARAMS[("probe", "say")] = [("string", "S", False)]
+# A `foreach`'s head is a call whose last argument is the loop variable, and a class literal is passed where a
+# `class` is declared -- the two shapes the statement walk's new families emit.
+PARAMS[("probe", "iter")] = [("int", "Item", False)]
+PARAMS[("probe", "takeclass")] = [("class", "C", False)]
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
 ENV = {"names": {"ping": 51, "pong": 52, "say": 53}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS,
        "enum_names": {"eprobe"},
@@ -3541,11 +3626,28 @@ WANT = {
     # `&&` whose left operand is a `!` node: `82 <!bDead> 18 0700 <bFlag> 16`; the skip word is that node's wide
     # width plus one, exactly as `bSquadBeingAlerted && ! bSquadAlertComplete` writes `18 09 00` for an 8-wide node.
     "notand": "04" "82" "812d012d16" "180700" "2d012f" "16" "040b47",
+    # A `foreach` is `Iterator <call> <wide offset of the IteratorPop>`, the body, `IteratorNext`, `IteratorPop`,
+    # and the operand comes **after** the call: `Pickup.CheckTouching` writes
+    # `2f 61 33 20 01 00 70 3d 16 1c 00 1b 2d 00 70 3d 16 31 30` for `foreach TouchingActors(class'Pawn', P)
+    # Touch(P);`. Here the head is `Iter(Slot)` -- `61 2c` is the native token 300 -- and the body `Foo(1)` is 7
+    # wide bytes, so the pop sits at 11 + 7 + 1 = 0x13.
+    "eachplain": "2f612c00630916" "1300" "1b292616" "3130" "040b47",
+    # A `break` leaves the loop with a bare `Jump` to that same position: `HUD.PostBeginPlay`'s
+    # `2f 61 30 20 4f 01 4c 63 16 26 00 06 26 00 31 30` -- the `Jump` and the `Iterator` name one word.
+    "eachstop": "2f612c00630916" "0f00" "060f00" "3130" "040b47",
+    # A `continue` is the step plus that `Jump` (`TestInfo.TestContinueForEach`'s `31 06 4f 00`), so the arm is four
+    # bytes and the `JumpIfNot` over it names the statement after it. The condition `bDead` is 6 wide bytes (its
+    # `InstanceVariable` index widens), so the arm sits at 0x0b + 3 + 6 = 0x14 and the body is 20 wide bytes: the
+    # `JumpIfNot` names 0x18 and the pop 0x20.
+    "eachskip": "2f612c00630916" "2000" "07" "1800" "2d012d" "31" "062000" "1b292616" "3130" "040b47",
+    # `class'Probe'` is an **object reference**: `ObjectConst` of the class's own index (SCOPE's classrefs says 4),
+    # not a name constant -- `foreach TouchingActors(class'Pawn', P)` writes `20 01`, which is Engine.u's export 1.
+    "classlit": "1b37200416040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown")
+          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown", "badclass")
 
 
 def check(args):

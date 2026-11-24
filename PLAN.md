@@ -239,6 +239,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the `foreach`, the class literal and the statement guard: **6,392 modelled / 6,392 byte-identical / 0 differ**
+  (from 6,269 / 6,269 / 0; 123 bodies gained, none lost; residue 5,409 -> 5,286). Three rules, one thread. (1) A
+  `foreach F(a) S;` is `2f` + the call to `F` + `<u16 the wide position of the IteratorPop>`, then S, `31`
+  (`IteratorNext`) and `30` (`IteratorPop`): the operand comes **after** the call (`Pickup.CheckTouching` is
+  `2f 61 33 20 01 00 70 3d 16 1c 00 1b 2d 00 70 3d 16 31 30 04 0b 47`), the loop has no back edge, a `break` is a
+  bare `Jump` to that word, and a `continue` is the step plus that `Jump` (`TestInfo.TestContinueForEach`'s
+  `31 06 4f 00`). (2) `class'Pawn'` is an **object reference** -- `20 <compact index>`, the table a `DynamicCast`
+  reads (`20 01` is Engine.u's export 1, `Pawn`) -- not a name constant; a name the package's tables do not carry is
+  refused (2 rows). (3) `emit_stmt`'s control-flow guard read *any* token of the statement, so a body that merely
+  passed `Switch` (a `LocalMessage` parameter, `GameInfo.BroadcastLocalized`) was refused as unparsed control flow; it
+  reads the first token now. The "77 bodies" the switch note named were residue rows whose text carries a `foreach`,
+  not bodies the form blocked: of **309** declarations whose tree holds one, the rule emits the ones whose remaining
+  statements are modelled, and **190** of the **246** `foreach` residue rows still name "a compound expression".
+  Doc: `docs/COMPILER_FRONTEND.md` gains the section and `docs/BYTECODE.md` names the `Iterator` operand. Not in this
+  PR: the `foreach` body that **returns** -- 12 bodies now emit and differ, all one byte short, and their shipped
+  bytes carry an `IteratorPop` in front of the `return` (`Pawn.TouchingWaterVolume`), which is the next rule this
+  thread reads.
 - [~] 3.6 the two loop exits and the `switch` chain: **6,269 modelled / 6,269 byte-identical / 0 differ** (from 6,212 /
   6,212 / 0; 57 bodies gained, none lost; residue 5,466 -> 5,409, and the switch rule costs no body: the 12 that first
   read as differing were exactly three bytes short, and the missing bytes were the terminator). Three rules, one
