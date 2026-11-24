@@ -239,6 +239,30 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the literal's context and the pair's site: **6,202 modelled / 6,202 byte-identical / 0 differ** (from
+  6,194 / 6,194 / 0; 13 bodies gained, 5 lost; residue 5,484 -> 5,476, and the bodies that emit and differ 26 -> 18).
+  Four rules, one thread: (1) the int-literal **fold** is positional -- the literal at the *root* of an expression is
+  a `FloatConst` (`return (10 + 5 * FRand())` is `ae 1e 00002041 ab 39 3f 2c 05`), a nested one is `IntConstByte`
+  behind `IntToFloat`, the right-hand position casts (`RespawnTime < 10`), and a parenthesised operand is a root
+  again (`640 / RangeToTarget`, `96 * scale`); the previous note's negative is retracted with its reason (folding
+  *every* literal fixed 5 and broke 69). (2) An argument's **byte parameter types the literal**, so
+  `SetDrawColor(0, 160 * (FadeTime / 3.0), 0)` writes `39 3c 24 a0` (`ByteToFloat` of a `ByteConst`, slot 60), not
+  `IntToFloat` of an `IntConstByte`. (3) The byte form's boundary is **255, not 127**: a census of all 18 packages
+  finds 3,357 `ByteConst` nodes, 30 at 128 or above, and 389 at exactly 255 in the int form -- so `SetDrawColor(0,
+  128, 0)` is `24 80` and the "127 is the last value the byte form carries" bullet in `_byte_literal` is corrected.
+  (4) At the **root** of an `int` site a `(float, int)` pair takes the int row and narrows the float operand with
+  `FloatToInt`: `Items.FindEntry((Y - VBorder) / ItemHeight)` is `91 39 44 af 00 51 19 39 3f 01 7b 0a 16 01 45 0b 16`,
+  while the nested subtraction and every `bool`-site comparison keep the float row. The four `UWindowGridColumn`
+  bodies read as a `Context` skip word two bytes short for exactly this reason -- the skip word was the symptom.
+  Gained: five `MaxHiddenTime`/`GetSleepTime`, `Fragment.BeginState`, `Replicator.PlayWaiting`, `Beacons.DrawBeacon`,
+  `StargatePawn.DrawClassIcon`, `SayMessagePlus.RenderComplexMessage`, `UWindowGrid.Resized`,
+  `UWindowPulldownMenu.SetSelected`, `PlayerController.BlendRot`. Lost, named: `PlayerController.ServerUpdatePing`,
+  `Beacons.VisibleForABit.Tick`, `BotEnemy.DefendMelee`, `UWindowHScrollbar.CheckRange`, `UWindowVScrollbar.CheckRange`
+  (a nested narrow or a `Skip` whose right operand moved). Doc: `docs/COMPILER_FRONTEND.md` gains the section and the
+  corrected bullet. Not in this PR: the 18 that still emit and differ (`GUIComponent.ParseOption`'s `final` callee
+  through a receiver chain, `CheatManager.SetCameraDist`, `LinearStairBuilder.Build`, `DeathMatch.AdjustSkill`,
+  `GatlingGunAttachment.Tick`, four `UWindowGridColumn`), `switch` (173), `ArrayCount(FixedArray)` (33),
+  `continue`/`break` (65).
 - [~] 3.6 the operand's declared type, and two sizes that were constants: **6,194 modelled / 6,194 byte-identical /
   0 differ** (from 5,931 / 5,931 / 0; 263 bodies gained, none lost; the residue 5,747 -> 5,484). Five rules, one
   thread: (1) an enum constant where the pair is `(int, int)` is the byte **widened** -- `ByteToInt` (58) around
