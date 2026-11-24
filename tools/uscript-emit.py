@@ -60,6 +60,8 @@ decls = importlib.util.module_from_spec(_spec2)
 _spec2.loader.exec_module(decls)
 
 SKIP = {"space", "comment", "high"}
+_CLASS_PKG = {}          # {class: package} for a name only one package declares (see `_chain`)
+
 TRAILER = bytes([0x04, 0x0B, 0x47])          # Return Nothing; EndOfScript -- every shipped body ends with it
 ARTIFACT = os.path.join(ROOT, "inventory", "uscript_emit.csv")
 FIELDS = ["package", "class", "state", "function", "model", "rettype", "source", "ours", "theirs",
@@ -598,8 +600,17 @@ def _operator_types(expr, env):
 
 
 def _numeric(t):
-    """`byte` operands are promoted to `int` by the compiler: `DirtyMask & 254` is `And_IntInt`."""
-    return "int" if t == "byte" else t
+    """`byte` operands are promoted to `int` by the compiler: `DirtyMask & 254` is `And_IntInt`.
+
+    A `class` operand compares as an **`object`**: the table installs `!=` for (Object, Object) and no row for a
+    class-typed pair, and the compiler uses that row -- `Inventory.Destroyed`'s `if (Pawn(Owner) != None)` and
+    `Mover.Detach`'s alike. Substituting it is a lookup rule only; the operand's own bytes are unchanged.
+    """
+    if t == "byte":
+        return "int"
+    if t == "class":
+        return "object"
+    return t
 
 
 def _is_literal(expr):
@@ -639,6 +650,16 @@ def _emit_var(name, env, want=""):
     body = bytes([0x2D]) + out if ptype == "bool" else out
     if from_props:
         body = _outer_wrapped(low, body, ptype, want, env) or body
+        if (env.get("within_call") and low in (scope.get("outside_props") or ())
+                and scope.get("outer_ref") is not None and low not in (scope.get("outer_props") or ())):
+            # A `within` call's arguments are compiled in `Outer`'s scope, so a property the package declares on a
+            # class outside the body's chain is read through `Outer` even when the type is not bool:
+            # `TriggerEvent(EventName, Pawn, Pawn)` in `CheatManager` is `19 01 8e 05 00 04 01 05` for each `Pawn`.
+            if ptype != "object":
+                raise Refused("a `within` call's argument of type %s, whose wrapper is not measured"
+                              % (ptype or "unknown"))
+            body = (bytes([0x19, INSTANCE_TOKEN]) + write_index(scope["outer_ref"]) + struct.pack("<H", 5)
+                    + bytes([4]) + body)
     return _converted(body, ptype, want)
 
 
@@ -722,6 +743,20 @@ def _record_kind(expr, env):
         if hit is not None:
             return hit[2]
     return ""
+
+
+def _import_of(expr, env):
+    """The negative index a name reads its record through, or None: `Outer` is import 14 in Engine.u."""
+    expr = _strip_parens(expr)
+    if len(expr) != 1 or expr[0][0] not in ("ident", "keyword"):
+        return None
+    nm = expr[0][1].lower()
+    scope = env.get("scope") or {}
+    for table in ("locals", "props"):
+        hit = scope.get(table, {}).get(nm)
+        if hit is not None:
+            return hit[1] if hit[1] < 0 else None
+    return None
 
 
 def _is_import_read(expr, env):
@@ -850,6 +885,43 @@ def _type_of(expr, env):
     return ""
 
 
+def _byte_literal(part, want, site, env):
+    """`39 3a 24 <v>` for a literal the enclosing expression typed as `byte` and the operator widened to `int`.
+
+    `UWindowHTMLTextArea.ParseColor` writes `C.R = 16 * GetHexDigit(...) + ...` as
+    `39 3d <Add_IntInt> 90 39 3a 24 10 ...`: the `16` is a **ByteConst** behind `ByteToInt` (slot 0x3a), because the
+    assignment's byte typed the literal before the int operator widened it -- not the `IntConstByte` the int
+    operand alone takes. The byte type reaches the literal through the **operator tree**: the assignment types the
+    outermost node (`+`), and a literal two operators in is still a byte.
+
+    Three bounds are measured, not guessed, and each is a body this tool scores:
+    - `PlayerProfile.SetDirty` writes `DirtyMask = DirtyMask | 1;` as `... 39 3a 01 48 11 26 16`: the **`1` is
+      `IntOne`**, not a widened `ByteConst`, so 0 and 1 keep the compiler's dedicated opcodes.
+    - `ParseColor`'s `Mid(S, 2, 1)` writes `2c 02 26` inside the same expression: a **call's argument** is typed by
+      the parameter, so the byte context stops at a call (`emit_call` drops the flag).
+    - `A = 255;` on a byte writes `39 3d 2c ff`: a literal at the assignment itself (site `byte`, no operator) is
+      `emit_expr`'s case, and 128..255 is the int form.
+    """
+    if (want or "").lower() != "int":
+        return None
+    if (site or "").lower() != "byte" and not env.get("byte_root"):
+        return None
+    core = _strip_parens(part)
+    if len(core) != 1 or core[0][0] != "number":
+        return None
+    v = _number(core[0][1])
+    if isinstance(v, float):
+        if not v.is_integer():
+            return None
+        v = int(v)
+    if not 2 <= v < 128:
+        return None
+    slot = _cast_slots().get(("byte", "int"))
+    if slot is None:
+        return None
+    return bytes([0x39, slot, 0x24, v])
+
+
 def _emit_operator(expr, rettype, env):
     """`A op B` -> `<token> A B 16`: the operator's token comes **first**, its operands after it.
 
@@ -880,11 +952,16 @@ def _emit_operator(expr, rettype, env):
         # end of the enclosing node. `Pawn.InGodMode` writes 36 for `(Controller != None) && (...)`: the right
         # operand is 25 compact bytes plus 10 for its four widened indices, and the node's own `16` makes 36. The
         # rule holds on all 4,857 `Skip` nodes the corpus carries (0 differences), so it is computed, not guessed.
-        leftb = emit_expr(left, t1, env)[0]
-        rightb = emit_expr(right, t2, env)[0]
+        leftb = _byte_literal(left, t1, rettype, env) or emit_expr(left, t1, env)[0]
+        rightb = _byte_literal(right, t2, rettype, env) or emit_expr(right, t2, env)[0]
         node = (head + leftb + bytes([0x18]) + struct.pack("<H", _wide(rightb) + 1) + rightb + b"\x16")
         return _converted(node, result, rettype), "short-circuit"
-    node = head + emit_expr(left, t1, env)[0] + emit_expr(right, t2, env)[0] + b"\x16"
+    # The byte context reaches a literal through the operator tree: the assignment types the outermost node, and a
+    # literal two operators in is still a byte (`ParseColor`). It stops at a call, whose arguments are typed by the
+    # callee's parameters -- `emit_call` drops the flag.
+    inner = dict(env, byte_root=True) if (rettype or "").lower() == "byte" else env
+    node = (head + (_byte_literal(left, t1, rettype, inner) or emit_expr(left, t1, inner)[0])
+            + (_byte_literal(right, t2, rettype, inner) or emit_expr(right, t2, inner)[0]) + b"\x16")
     return _converted(node, result, rettype), "operator"
 
 
@@ -930,9 +1007,17 @@ def _rettype_on(cls, name, env):
     scope = env.get("scope") or {}
     if cls:
         for _p, c in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", cls.lower()):
-            hit = rets.get((c, low))
-            if hit:
-                return hit.lower()
+            # Membership, not truthiness: an `event` declares no return type and its empty string is the answer.
+            # `Controller.ServerXControllerEvent(...)` in GUIComponent returns void (`BaseGUIController`'s event),
+            # and a falsy test fell through to the body's own chain and found GUIComponent's `bool` override --
+            # writing value size 4 where the package has 0.
+            if (c, low) in rets:
+                return (rets[(c, low)] or "").lower()
+        # No fallback to the body's own chain: a member call names the *receiver's* declaration, and a same-named
+        # function on the body is a different record with its own return type. `GUIComponent.ServerXControllerEvent`
+        # calls `Controller.ServerXControllerEvent(...)` (void) while GUIComponent's own override beside it returns
+        # `bool`; the fallback read the body's and wrote value size 4 where the package has 0.
+        return ""
     for c in env.get("order") or []:
         hit = rets.get((c, low))
         if hit:
@@ -947,9 +1032,8 @@ def _params_on(cls, name, env):
     scope = env.get("scope") or {}
     if cls:
         for _p, c in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", cls.lower()):
-            hit = params.get((c, low))
-            if hit:
-                return hit
+            if (c, low) in params:
+                return params[(c, low)]
     for c in env.get("order") or []:
         hit = params.get((c, low))
         if hit:
@@ -1277,10 +1361,9 @@ def emit_expr(expr, rettype, env):
         # `GameReplicationInfo.GameClass = string(Class);` writes `39 56 01 9e` -- `ObjectToString` of the import
         # `Class` -- and `Item.InventoryType == Class` writes `01 9e 16`. Two bodies each way, and the source the
         # emitter reads is the package's own `ScriptText`, so the spelling is the compiler's input.
-        if val != "class":
-            read = _emit_var(val, env, rettype)
-            if read is not None:
-                return read, "class-property"
+        read = _emit_var(val, env, rettype)
+        if read is not None:
+            return read, "class-property"
         return bytes([0x17]), "self-class"
     if kind in ("ident", "keyword") and val.lower() not in ("true", "false", "none", "self"):
         read = _emit_var(val, env, rettype)
@@ -1336,7 +1419,17 @@ def emit_expr(expr, rettype, env):
         if t == "float":
             return bytes([0x1E]) + struct.pack("<f", float(v)), "float-const"
         raise Refused("a numeric literal in a %s function" % (rettype or "typeless"))
-    if kind in ("string", "quoted"):
+    if kind == "quoted":
+        # UnrealScript spells a *name* with single quotes and a string with double ones, and this build follows it:
+        # `Log('STOP Bot being electrocuted')` in BotEnemy's state is `39 57 21 75 36` -- `NameToString` of a
+        # NameConst -- while `Log("Leaving ...")` beside it is a StringConst. The declared return type does not
+        # decide: the literal's own spelling does, and the site's coercion (name -> string) is `_converted`'s.
+        text = _literal_text(val[1:-1])
+        idx = 0 if not text else (env.get("names") or {}).get(text.lower())
+        if idx is None:
+            raise Refused("a name literal the package does not carry (%d chars)" % len(text))
+        return _converted(bytes([0x21]) + write_index(idx), "name", t), "name-const"
+    if kind == "string":
         text = _literal_text(val[1:-1])
         if t == "string":
             return bytes([0x1F]) + text.encode("latin-1") + b"\x00", "string-const"
@@ -1439,6 +1532,10 @@ def emit_call(stmt, env, receiver=None, head=None):
     close = _paren_end(stmt, 1) if len(stmt) > 1 and stmt[1] == ("op", "(") else None
     if close is None or close != len(stmt) - 1:
         raise Refused("a call the statement walk cannot bound (a receiver, or a statement after the call)")
+    if env.get("byte_root"):
+        # A call's arguments are typed by the callee's parameters, not by the assignment that encloses the call:
+        # `ParseColor` writes `Mid(S, 2, 1)` as `2c 02 26` inside a byte-typed expression.
+        env = {k: v for k, v in env.items() if k != "byte_root"}
     args = _split_commas(stmt[2:close]) if stmt[2:close] else []
     scope = env["scope"]
     if head is None:
@@ -1815,20 +1912,31 @@ def _record_on(cls, name, env):
     `TransientAmbientCreature.PostBeginPlay` writes `1c bc 16` for `Super.PostBeginPlay()`: `bc` is import 60,
     `PostBeginPlay` of class `Function`; `FishBase.PhysicsVolumeChange` writes `1c 46 02 ...`, export 134 on the
     parent in the same package. 1,061 bodies open this way in the corpus.
+
+    The walk covers the **whole** parent chain before it falls back to the import: `TeamDeathMatch.RestartPlayer`
+    writes `1c 50 49` (export 4688, `DeathMatch.RestartPlayer`), not the `RestartPlayer` import, and
+    `BotGuide.SetNewScript` writes export 3832 (`BotBase`). An import fallback taken at the first ancestor that
+    declares nothing wrote the `Function` import for both. Inside a state the parent's same-state override wins
+    (`func_owners`), which is what `Armor.BeginState` (`Super.BeginState()` -> `Powerups.Activated.BeginState`) and
+    `BotSG.Tick` name.
     """
     low = name.lower()
     scope = env.get("scope") or {}
     chain = scope.get("chain") or {}
     pack = scope.get("pack") or ""
-    funcs = env.get("funcs_all") or {}
-    imports = env.get("imports") or {}
+    rows = (env.get("func_owners") or {}).get(low, [])
+    state = (env.get("state") or "").lower()
     for _p, c in _ancestors(chain, pack, cls.lower()):
-        own = [x for x in funcs.get(low, []) if x[1] == c]
-        if own:
-            return own[0][0]
-        imp = [x for x in imports.get(low, []) if x[1] == "Function"]
-        if len(imp) == 1:
-            return imp[0][0]
+        if state:
+            hit = [x for x in rows if x[1] == c and x[2] == state]
+            if hit:
+                return hit[0][0]
+        hit = [x for x in rows if x[1] == c and not x[2]]
+        if hit:
+            return hit[0][0]
+    imp = [x for x in (env.get("imports") or {}).get(low, []) if x[1] == "Function"]
+    if len(imp) == 1:
+        return imp[0][0]
     return None
 
 
@@ -1874,7 +1982,9 @@ def _emit_within_call(stmt, env, within):
     outer = scope.get("outer_ref")
     if outer is None:
         raise Refused("a `within` call whose package imports no `Outer`")
-    call = emit_call(stmt, env, receiver=within)
+    inner = dict(env)
+    inner["within_call"] = True
+    call = emit_call(stmt, inner, receiver=within)
     rtype = _rettype_on(within, stmt[0][1], env)
     node = (bytes([0x19, INSTANCE_TOKEN]) + write_index(outer) + struct.pack("<H", 5)
             + bytes([_value_size(rtype, env)]) + call)
@@ -1902,9 +2012,20 @@ def _stmt_member_call(stmt, env):
         raise Refused("a call statement whose receiver's class the artifacts do not name")
     if _func_on(cls, member[0][1], env) is None:
         raise Refused("a member call statement to a name the receiver's chain does not declare")
+    # A `delegate` is two records, and the call is `43 <DelegateProperty> <name index>` -- a `DelegateFunction` over
+    # the receiver's own property, which no function lookup produces. `PlayerController.AdminReply` calls
+    # `Player.GUIController.OnAdminReply(Reply)` and the package writes `43 5d 63 4d 1e`; read as a member call it
+    # came out a `VirtualFunction` of the wrong width. Refused by name until the wrapper is measured.
+    if "__%s__delegate" % member[0][1].lower() in ((env.get("scope") or {}).get("props_all") or {}):
+        raise Refused("a delegate call through a receiver (the callee is a DelegateProperty record)")
     memb = emit_call(member, env, receiver=cls)
     rtype = _rettype_on(cls, member[0][1], env)
-    skip = 5 if _is_import_read(obj, env) else _wide(memb)
+    # The word is the call's own width in the uncompacted array -- except behind `Outer`, whose shape writes 5
+    # whatever the member is (`CheatManager.astral`/`puss`). Every *other* property import uses the computed word:
+    # `Pawn.SetSprinting(true)` in BotBase is `19 01 8a 07 00 00` (the call is 7 wide), and reading every import as
+    # `Outer` wrote 5 there -- nine bodies, all of them one word short.
+    imp = _import_of(obj, env)
+    skip = 5 if imp is not None and imp == (env.get("scope") or {}).get("outer_ref") else _wide(memb)
     node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", skip)
             + bytes([_value_size(rtype, env)]) + memb)
     if rtype == "string":
@@ -1987,13 +2108,22 @@ JOIN_FIELDS = ["package", "class", "state", "function", "cause"]
 
 
 def _chain():
-    """{(package, class): (super, super's package)} -- the ancestor walk, from the committed class table."""
-    chain = {}
+    """{(package, class): (super, super's package)} -- the ancestor walk, from the committed class table.
+
+    The reverse map (`_CLASS_PKG`) is what makes the walk usable for a **receiver** class: a member call names a
+    class the body's package only imports (`Instigator.AttachToBone` in StargateContent, whose receiver is Engine's
+    `Pawn`), and a walk started in the body's package stops at the class's own row. Only a class that one package
+    declares is re-homed; a name two packages carry (`Trigger` in Engine and in a game package) keeps the body's.
+    """
+    global _CLASS_PKG
+    chain, pkgs = {}, {}
     path = os.path.join(ROOT, "inventory", "classes.csv")
     with open(path, newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
             # stored in the walk's own order: the super's package first, then the super
             chain[(r["package"].lower(), r["class"].lower())] = (r["package_of_super"].lower(), r["super"].lower())
+            pkgs.setdefault(r["class"].lower(), set()).add(r["package"].lower())
+    _CLASS_PKG = {c: next(iter(ps)) for c, ps in pkgs.items() if len(ps) == 1}
     return chain
 
 
@@ -2010,9 +2140,14 @@ def _natives():
 
 def _ancestors(chain, pack, cls):
     """[(package, class)] from the class outwards. `classes.csv` keys a super by its own package, so the walk
-    crosses a package boundary where the build did."""
+    crosses a package boundary where the build did -- and it *starts* in the class's own package when the name was
+    only imported (`_CLASS_PKG`), because a member call's receiver is often declared in another package."""
     out, seen, p, c = [], set(), pack, cls.lower()
     while c and (p, c) not in seen:
+        if (p, c) not in chain and c in _CLASS_PKG:
+            p = _CLASS_PKG[c]
+        if (p, c) in seen:
+            break
         seen.add((p, c))
         out.append((p, c))
         p, c = chain.get((p, c), ("", ""))
@@ -2042,6 +2177,27 @@ def _class_tables(pkg, kinds, names):
     return props, funcs, imports, classes
 
 
+def _func_owners(pkg, kinds, names):
+    """{name: [(export index, owning class, owning state)]} -- a function's owner walked to the nearest `Class`.
+
+    A `Function` export's Outer is a *state* as often as a class: `Powerups`' `Activated.BeginState` is export 4466
+    whose Outer is the state, and an owner read as `names[outer]` then names `Activated` and no class walk can match
+    it. The owning class is `owner_class`'s walk; the state name is kept because the compiler resolves a
+    `Super.F()` written inside a state to the parent's *same-state* override first -- `BotSG.Tick` in state
+    `BotUnconscious` writes export 4129 (`BotEnemy.BotUnconscious.Tick`), not export 417 (`BotEnemy.Tick`).
+    """
+    out = {}
+    dis = _dis()
+    for i, e in enumerate(pkg.exports):
+        if kinds.get(i + 1) != "Function":
+            continue
+        outer = e["outer"]
+        owner = dis.owner_class(pkg.exports, kinds, names, outer).lower()
+        state = names.get(outer, "").lower() if kinds.get(outer) == "State" else ""
+        out.setdefault(names.get(i + 1, "").lower(), []).append((i + 1, owner, state))
+    return out
+
+
 def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, table_index, final_of=None):
     """The names one body may mention, each with the index and token the package's own record earns.
 
@@ -2054,6 +2210,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
              "pack": pack, "cls": cls.lower(),
              # a property the package exports once, on a class outside this body's chain, is read through `Outer`
              "outer_props": set(),
+             # every name that fallback picked, whatever its type: a `within` call's argument reads it through
+             # `Outer` too (`CheatManager.CauseEvent` passes `Pawn`, which is `PlayerController`'s property)
+             "outside_props": set(),
              # the `Outer` record itself -- a property import (`01 8e` is import 14 of Engine.u)
              "outer_ref": next((c[0] for c in imports.get("outer", []) if c[1] in PROPERTY_CLASSES), None),
              # the type word the package artifact spells for every property record, keyed by (package, class, name):
@@ -2097,9 +2256,11 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                 # chain: `PlayerInput.ChangeSnapView` writes `bSnapToLevel` (export 2604, on `PlayerController`) as
                 # `19 01 8e 05 00 04 2d 01 6c 28` -- a `Context` around `Outer`. The index is right, the node is not
                 # a bare read, so it is marked and the read wraps it (see `_outer_wrapped`). Only the bool shape is
-                # marked: the 27 non-bool names that reach this fallback are read *bare* in this corpus, so they
-                # keep that read and are not given a node the package does not write.
+                # wrapped at a bare read: the 27 non-bool names that reach this fallback are read *bare* in this
+                # corpus, so they keep that read and are not given a node the package does not write -- except as a
+                # `within` call's argument, where the read is compiled in `Outer`'s scope (`outside_props`).
                 picked = cands[0]
+                scope["outside_props"].add(nm)
                 if PROP_TYPE.get(picked[2]) == "bool":
                     scope["outer_props"].add(nm)
         if picked is not None:
@@ -2298,7 +2459,7 @@ def _source_index(tree):
     return index, files, params, enums, enum_names, rets, localtypes, proptypes, withins
 
 
-def score(tree, dump, out_dir, residue_dir=None):
+def score(tree, dump, out_dir, residue_dir=None, only=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
@@ -2326,6 +2487,8 @@ def score(tree, dump, out_dir, residue_dir=None):
     for fn in sorted(os.listdir(dump)):
         if not fn.endswith(".u"):
             continue
+        if only and fn.lower() not in only:
+            continue
         pkg = Package(os.path.join(dump, fn))
         pkg.read_names()
         pkg.read_imports()
@@ -2336,6 +2499,7 @@ def score(tree, dump, out_dir, residue_dir=None):
         for i in range(len(pkg.names or [])):
             table_index.setdefault(str(pkg.name(i)).lower(), i)
         tables = _class_tables(pkg, kinds, names)
+        func_owners = _func_owners(pkg, kinds, names)
         pack = os.path.splitext(fn)[0].lower()
         # the body's own export index: `_scope` reads locals off the export whose outer is this function, so the
         # index has to be the loop's own -- reusing `i` from the name-table sweep above scoped every body to the
@@ -2386,7 +2550,11 @@ def score(tree, dump, out_dir, residue_dir=None):
                    # record only says `StructProperty`
                    "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])},
                    # the class this one is declared `within`, whose names resolve through `Outer`
-                   "within": withins.get(cls.lower(), "")}
+                   "within": withins.get(cls.lower(), ""),
+                   # which state the body is written in: a `Super.F()` prefers the parent's same-state override
+                   "state": state.lower(),
+                   # a function record's owning class and state, walked past the state's own Outer
+                   "func_owners": func_owners}
             try:
                 ours, model, shape = emit_body(src_body, rettype, env, is_native)
             except Refused as exc:
@@ -2400,9 +2568,29 @@ def score(tree, dump, out_dir, residue_dir=None):
                                     "source": " ".join(v for _k, v in (src_body or ()))[:300],
                                     "theirs": body.hex()})
                 continue
+            if ours != body:
+                # A modelled body that differs is a **bug in the walk**, not a measurement: every family here was
+                # built until it matched, so a diff means a rule that is wrong for this shape. Refusing it keeps the
+                # artifact's contract -- a row is either byte-identical or names what is not modelled -- and keeps a
+                # wrong body out of `inventory/uscript_emit.csv`, which the next run would read as evidence. It is
+                # counted under `not-modelled` and **not** under `modelled`, because the census's `modelled` column
+                # is the row count (`--check` holds the two equal) and a body with no row is not modelled here.
+                tally["not-modelled"] += 1
+                reasons["an emitted body that differs from the shipped bytes"] += 1
+                if residue_dir:
+                    examples.setdefault("an emitted body that differs from the shipped bytes", []).append(
+                        "%s.%s" % (cls, fname))
+                    refused.append({"package": fn, "class": cls, "state": state, "function": fname,
+                                    "rettype": rettype,
+                                    "reason": "an emitted body that differs from the shipped bytes (%d vs %d)"
+                                              % (len(ours), len(body)),
+                                    "source": " ".join(v for _k, v in (src_body or ()))[:300],
+                                    "theirs": body.hex(),
+                                    "ours": ours.hex()})
+                continue
             tally["modelled"] += 1
             shapes[shape] += 1
-            verdict = "identical" if ours == body else "differ"
+            verdict = "identical"
             tally[verdict] += 1
             rows.append({"package": fn, "class": cls, "function": fname, "state": state,
                          "model": model, "rettype": rettype, "source": shape,
@@ -2445,7 +2633,7 @@ def score(tree, dump, out_dir, residue_dir=None):
         os.makedirs(residue_dir, exist_ok=True)
         rpath = os.path.join(residue_dir, "residue.csv")
         with open(rpath, "w", newline="", encoding="utf-8") as fh:
-            fields = ["package", "class", "state", "function", "rettype", "reason", "source", "theirs"]
+            fields = ["package", "class", "state", "function", "rettype", "reason", "source", "theirs", "ours"]
             w = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
             w.writeheader()
             for r in refused:
@@ -2841,6 +3029,7 @@ def check(args):
     super_env["scope"] = dict(SCOPE, chain={("probe", "probe"): ("probe", "parent"),
                                             ("probe", "parent"): ("", "")})
     super_env["funcs_all"] = {"ping": [(763, "parent")]}
+    super_env["func_owners"] = {"ping": [(763, "parent", "")]}
     super_env["imports"] = {}
     super_toks = [("ident", "Super"), ("op", "."), ("ident", "Ping"), ("op", "("), ("op", ")")]
     try:
@@ -2851,11 +3040,27 @@ def check(args):
     if got.hex() != "1c7b0b16":
         print("FAIL uscript-emit: Super.Ping() emits %s, expected 1c7b0b16" % got.hex())
         return 1
+    # P4b: inside a state the parent's *same-state* override is the record. `Super.Ping()` in state `follow`, where
+    # the parent declares `Ping` at class scope (export 763) and again in state `follow` (export 764), is `1c 7c 0b`.
+    state_env = dict(super_env)
+    state_env["state"] = "follow"
+    state_env["func_owners"] = {"ping": [(763, "parent", ""), (764, "parent", "follow")]}
+    got, _m, _s = emit_stmt(super_toks, "", state_env)
+    if got.hex() != "1c7c0b16":
+        print("FAIL uscript-emit: Super.Ping() in a state emits %s, expected 1c7c0b16" % got.hex())
+        return 1
+    # P4c: the class-scope record wins when the parent has no same-state one.
+    state_env["func_owners"] = {"ping": [(763, "parent", ""), (764, "parent", "other")]}
+    got, _m, _s = emit_stmt(super_toks, "", state_env)
+    if got.hex() != "1c7b0b16":
+        print("FAIL uscript-emit: Super.Ping() in a state without an override emits %s" % got.hex())
+        return 1
     # P5: a bare call in a class declared `within X` is a member of `Outer`, and a bare call the body's own chain
     # declares is not: the same synthetic class, one name that resolves only on the `within` class.
     within_env = dict(env)
     within_env.update({"within": "parent", "names": {"ping": 5, "foo": 41},
                        "funcs_all": {"ping": [(763, "parent")], "foo": [(41, "probe")]},
+                       "func_owners": {"ping": [(763, "parent", "")], "foo": [(41, "probe", "")]},
                        "imports": {}, "natives": {}, "final_of": {}})
     within_env["scope"] = dict(SCOPE, outer_ref=-14)
     bare = [("ident", "Ping"), ("op", "("), ("op", ")")]
@@ -2885,6 +3090,9 @@ def check(args):
     c = census[0]
     identical = sum(1 for r in body_rows if r["verdict"] == "identical")
     differ = sum(1 for r in body_rows if r["verdict"] == "differ")
+    if differ:
+        print("FAIL uscript-emit: %d modelled body(ies) differ from the shipped bytes" % differ)
+        return 1
     if identical + differ != len(body_rows):
         print("FAIL uscript-emit: %d rows, %d identical + %d differ" % (len(body_rows), identical, differ))
         return 1
@@ -2932,13 +3140,16 @@ def main():
     ap.add_argument("-o", "--out", default=os.path.join(ROOT, "inventory"))
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--residue-out", metavar="DIR", help="write the refused bodies and their reasons here")
+    ap.add_argument("--only", metavar="PKG", help="score only these packages (comma separated). A debug aid -- the "
+                                                  "artifact it writes is partial and must not be committed")
     args = ap.parse_args()
     if args.check:
         return check(args)
     if not args.tree or not args.dump:
         print("FAIL uscript-emit: --tree and --dump are required (the corpus and the dump stay outside the repo)")
         return 2
-    return score(args.tree, args.dump, args.out, args.residue_out)
+    only = {p.strip().lower() for p in args.only.split(",") if p.strip()} if args.only else None
+    return score(args.tree, args.dump, args.out, args.residue_out, only)
 
 
 if __name__ == "__main__":
