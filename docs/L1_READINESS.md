@@ -598,3 +598,41 @@ by alignment is tolerated.
 **The rule this page will state until that is checked**: a size change that changes the file's length fails; one that does
 not change it has not been shown to fail. The experiment that settles it is a table-only edit — raise one export's size by
 one byte without touching a payload — and that is the next probe, not another body.
+
+## The size field is load-bearing, and the last anomaly dissolves (measured 2026-11-24)
+
+**The single-variable experiment.** One export's recorded size was raised by one byte in the export table alone — no payload
+byte touched, no region moved, the file the same length, one byte different on disk:
+
+```
+UIWidget   SerialSize 987 -> 988   file 3,031,678 -> 3,031,678   bytes changed 1
+Result     title renders, then 0 px / 0 px on both following steps   -- FAIL, harder than any payload edit
+```
+
+So `SerialSize` is not a hint the loader recomputes; it is consumed, and a lie about it is fatal even when nothing moves.
+
+**The fitted-build anomaly, resolved.** `Engine.u`'s `GetDefenderNum` payload is **40 bytes**; the "5 -> 6" quoted earlier was
+the *script* length inside it. The fitted body grew the script by one byte **within the payload's slack**, so no payload size
+changed and the build booted. The anomaly was a units error, not a counter-example.
+
+**The rule, now consistent with every boot on this page:**
+
+| change | payload sizes | plays? |
+|---|---|---|
+| same-length in-place body | unchanged | **yes** |
+| `+4` shift of all 13,425 payloads | unchanged | **yes** |
+| six bytes inserted before the imports table | unchanged | **yes** |
+| body compiled from source, fitted to its payload | unchanged | **yes** |
+| body 3 -> 9 bytes (payload 34 -> 40) | **+6** | no |
+| body 3 -> 12 bytes, valid void code (payload 34 -> 43) | **+9** | no |
+| class payload 987 -> 991 | **+4** | no |
+| class payload 144 -> 208 | **+64** | no |
+| **size field 987 -> 988, nothing moved** | **+1, nothing else** | **no** |
+
+**Payloads may move freely; no payload's size may change.** Every boot that played kept all 13,425 sizes; every failure
+changed exactly one, and the last row shows the size is sufficient on its own.
+
+**What that means for the compile loop**, and it is the useful part: a recompiled body must fit inside its shipped payload,
+padded — which is what `tools/uscript-fit.py` does, and why `tools/l1-change.py` refusing a resize by default is the correct
+default rather than a limitation. The blocker is no longer "we cannot write a package"; it is "we cannot yet write a body
+that does not fit", and the fix for that is padding, not a deeper understanding of the loader.
