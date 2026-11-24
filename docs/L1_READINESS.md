@@ -483,3 +483,31 @@ visibly, and every build that did not played.
 against the real `xemu.toml` and `eeprom.bin` rather than a per-run copy the way `drive.py` does. Its launch parameters are
 otherwise correct, and its samples are what they are — but compare against a control run before drawing a conclusion from a
 single address.
+
+## Two instruments disagree on the same ISO, and the difference is input (measured 2026-11-24)
+
+The sampler and the driver describe the same `LogDropped` 34 → 36 build differently, and this page has now quoted each of
+them against the other:
+
+| instrument | input | what it saw |
+|---|---|---|
+| `drive.py` | `pad=start` at 70 s, `pad=a` at 82 s | title, then **3,365 px** repaint, then nothing |
+| `eip-functions.py` | none (with or without `--vpad`) | **one** address, `0x8001d1ea` + `HLT=1`, for every sample |
+
+The simplest reading that fits both: **a title screen waiting for a button is idle**. The kernel idles in `HLT` until an
+input arrives, so a sampler that never presses anything sees the idle loop and nothing else — on this build and, in the
+same window, on a build that plays. Pressing Start is what moves the guest, and that is exactly what the driver does and
+the sampler does not.
+
+`eip-functions.py` now takes `--vpad` and binds port 1 to the virtual pad, because a controller-less boot is its own
+distinct failure — but the pad alone does not make its numbers comparable to a driver run. **A trace of the transition
+needs a press**, which is the next instrument to build: a tap at a given second, then sampling immediately after it.
+
+**What this means for the claims above:** the boot matrix is unaffected (pixel evidence, both builds, same run). The
+register-and-EIP statements are the ones that keep failing to reproduce, and they should be read as hypotheses until the
+sampler can press a button.
+
+**A note on the cost.** Three separate wrong answers this session came from a single instrument used without a control
+that exercises the same inputs: a register dump after a press, a sampler with no press, and a sampler without a pad. The
+pattern is not subtle in hindsight — **any measurement of a game must supply the input the game waits for**, or it measures
+the waiting.

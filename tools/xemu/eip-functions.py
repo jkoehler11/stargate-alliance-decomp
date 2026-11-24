@@ -42,6 +42,14 @@ def load_functions():
     return rows
 
 
+def load_vpad():
+    spec = importlib.util.spec_from_file_location("vpad", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                                      "vpad.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def containing(rows, va):
     best = None
     for addr, size, name in rows:
@@ -54,6 +62,8 @@ def containing(rows, va):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--vpad", action="store_true",
+                    help="create the virtual pad before xemu starts; without a controller this game never leaves idle")
     ap.add_argument("--iso", required=True)
     ap.add_argument("--dvd-dir", action="store_true")
     ap.add_argument("--bios", required=True)
@@ -79,8 +89,24 @@ def main():
     sock_path = os.path.join(args.out, "qmp.sock")
     if os.path.exists(sock_path):
         os.unlink(sock_path)
+    # A controller is not optional for this game: without one it sits in the kernel's idle loop, and every sample comes
+    # back as `0x8001d1ea` with `HLT=1` -- which reads exactly like a crashed guest. drive.py creates the pad for the
+    # same reason; the sampler has to as well or its numbers cannot be compared with a driver run.
+    pad = None
+    pad_guid = None
+    if args.vpad:
+        module = load_vpad()
+        pad = module.Pad(settle=1.5)
+        pad_guid = module.GUID
+        print("pad: created before the emulator starts, so SDL sees it at init")
+
     with open(toml, "w") as f:
-        f.write("[general]\nshow_welcome = false\n[sys]\nmem_limit = '128'\n[sys.files]\n")
+        f.write("[general]\nshow_welcome = false\n[sys]\nmem_limit = '128'\n")
+        f.write("[input]\nbackground_input_capture = true\n")
+        if pad_guid:
+            f.write("auto_bind = false\ngamepad_mappings = [\n    { gamepad_id = '%s'}\n    ]\n" % pad_guid)
+            f.write("[input.bindings]\nport1_driver = 'usb-xbox-gamepad'\nport1 = '%s'\n" % pad_guid)
+        f.write("[sys.files]\n")
         f.write("bootrom_path = '%s'\nflashrom_path = '%s'\n" % (mcpx, flash))
         f.write("hdd_path = '%s'\ndvd_path = '%s'\n" % (args.hdd, args.iso))
 
