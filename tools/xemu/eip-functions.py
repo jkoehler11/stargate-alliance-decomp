@@ -62,6 +62,9 @@ def containing(rows, va):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--tap-at", action="append", default=[], metavar="SECS:BUTTON",
+                    help="press a pad button this many seconds into sampling (implies --vpad); the game idles at the "
+                         "title until something presses it, so a sample with no tap measures the wait")
     ap.add_argument("--vpad", action="store_true",
                     help="create the virtual pad before xemu starts; without a controller this game never leaves idle")
     ap.add_argument("--iso", required=True)
@@ -92,6 +95,17 @@ def main():
     # A controller is not optional for this game: without one it sits in the kernel's idle loop, and every sample comes
     # back as `0x8001d1ea` with `HLT=1` -- which reads exactly like a crashed guest. drive.py creates the pad for the
     # same reason; the sampler has to as well or its numbers cannot be compared with a driver run.
+    taps = []
+    for spec in args.tap_at:
+        secs, _, button = spec.partition(":")
+        try:
+            taps.append((float(secs), button))
+        except ValueError:
+            raise SystemExit("--tap-at wants SECS:BUTTON, got %r" % spec)
+    taps.sort()
+    if taps:
+        args.vpad = True          # a tap without a pad is a no-op, and a no-op tap is how a run measures the wait
+
     pad = None
     pad_guid = None
     if args.vpad:
@@ -126,7 +140,14 @@ def main():
             return 3
         cmd = smoke.qmp_session(sock)
         time.sleep(args.seconds)
+        started = time.time()
         for _ in range(args.samples):
+            now = time.time() - started
+            while taps and now >= taps[0][0]:
+                _when, button = taps.pop(0)
+                if pad is not None:
+                    pad.tap(button, 0.15)
+                print("   tap %s at %.1fs into sampling" % (button, now))
             regs = cmd("human-monitor-command", {"command-line": "info registers"}).get("return", "")
             m = EIP_RE.search(regs)
             if m:
@@ -135,6 +156,8 @@ def main():
     finally:
         # The AppImage spawns AppRun -> qemu-system as children; terminating only the wrapper leaks a
         # qemu that keeps the HDD image locked and makes every later boot fail "Failed to get write lock".
+        if pad is not None:
+            pad.close()
         for sig in (signal.SIGTERM, signal.SIGKILL):
             try:
                 os.killpg(os.getpgid(proc.pid), sig)
