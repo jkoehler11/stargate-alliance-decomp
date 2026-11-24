@@ -2708,8 +2708,18 @@ def _record_on(cls, name, env):
         if hit:
             return hit[0][0]
     imp = [x for x in (env.get("imports") or {}).get(low, []) if x[1] == "Function"]
-    if len(imp) == 1:
-        return imp[0][0]
+    owners = env.get("import_owners") or {}
+    if imp:
+        # Two ancestors that declare the same name import it once each (`AmbientCreatures` carries
+        # `PostBeginPlay` for `Controller`, `Actor` and `Pawn`), and the compiler's record is the one whose owner
+        # is the **nearest** class of the parent's chain: 351 of the 380 Super-opening bodies agree, and the 29
+        # that do not are `BeginState`/`EndState`, which name a state rather than a function.
+        for _p, c in _ancestors(chain, pack, cls.lower())[1:]:
+            hit = [x for x in imp if owners.get(x[0]) == c]
+            if hit:
+                return hit[0][0]
+        if len(imp) == 1:
+            return imp[0][0]
     return None
 
 
@@ -2943,7 +2953,7 @@ def _ancestors(chain, pack, cls):
 def _class_tables(pkg, kinds, names):
     """The package's own records as the compiler addressed them: property and function exports, the imports, and
     the classes an object cast can name."""
-    props, funcs, imports, classes = {}, {}, {}, {}
+    props, funcs, imports, classes, import_owners = {}, {}, {}, {}, {}
     for i, e in enumerate(pkg.exports):
         kind = kinds.get(i + 1, "")
         nm = names.get(i + 1, "").lower()
@@ -2958,9 +2968,17 @@ def _class_tables(pkg, kinds, names):
         # an import's `class` field is a name index, not an export index, so `class_name_of` cannot read it
         iname, ikind = str(pkg.name(im["name"])).lower(), pkg.name(im["class"])
         imports.setdefault(iname, []).append((-(j + 1), ikind))
+        # ...and its `package` field is the class the member belongs to (a negative import index, or an export of
+        # this package): that owner is what a `Super.F()` picks between two same-named imports
+        ref = im.get("package", 0)
+        ref = ref - 2 ** 32 if ref > 2 ** 31 else ref
+        if ref < 0 and -ref <= len(pkg.imports):
+            import_owners[-(j + 1)] = str(pkg.name(pkg.imports[-ref - 1]["name"])).lower()
+        elif ref > 0 and ref <= len(pkg.exports):
+            import_owners[-(j + 1)] = str(pkg.name(pkg.exports[ref - 1]["name"])).lower()
         if ikind == "Class":
             classes.setdefault(iname, []).append((-(j + 1), "Class"))
-    return props, funcs, imports, classes
+    return props, funcs, imports, classes, import_owners
 
 
 def _func_owners(pkg, kinds, names):
@@ -2992,7 +3010,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     A callee is resolved by walking the ancestor chain to the class that declares it -- the native table says the
     token (0 means "not a native opcode, call it by name"), and its `final` flag picks the call token.
     """
-    props, funcs, imports, classes = tables
+    props, funcs, imports, classes, _import_owners = tables
     scope = {"props": {}, "locals": {}, "funcs": {}, "classrefs": {}, "props_all": props, "chain": chain,
              "pack": pack, "cls": cls.lower(),
              # a property the package exports once, on a class outside this body's chain, is read through `Outer`
@@ -3366,6 +3384,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
                    # and the records of the package it is declared in
                    "natives": natives, "funcs_all": tables[1], "imports": tables[2], "final_of": final_of,
+                   "import_owners": tables[4],
                    "localtypes": localtypes_by_cls.get(cls.lower(), {}),
                    "proptypes": proptypes_by_cls.get(cls.lower(), {}),
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
