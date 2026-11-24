@@ -663,3 +663,47 @@ this function — the capacity *is* the shipped length.
 A body that comes out longer cannot be made to fit by padding, by moving regions, or by widening a constant *within* the
 payload — those all leave the length where it was. The only two ways forward are a shorter body or a size change the guest
 rejects, which makes **emitting a body that fits** the actual frontier, not writing packages.
+
+## The compile loop closes on edited source (measured 2026-11-24)
+
+Every earlier boot used a body this project *wrote*; this one used a body this project **compiled from source it had edited**.
+
+**The edit** — one word, in `ACTION_DisplaySGText.uc`:
+
+```
+function bool CompleteWhenTimer()      before:  return true;
+{                                               return false;   <- edited
+	return true;
+}
+```
+
+**What the emitter said** (`tools/uscript-emit.py --tree <edited copy> --dump …/System`):
+
+```
+shipped 0427040b47   emitted 0428040b47   "an emitted body that differs from the shipped bytes (5 vs 5)"
+```
+
+Five bytes either way: the two constants are the same width, so the edit is length-neutral by construction — and the emitter
+compiled it rather than refusing it or silently reproducing the shipped bytes.
+
+**The control that makes that trustworthy.** The edited run has *no row* for the class in `inventory/uscript_emit.csv`, which
+first read as "the emitter dropped it". A comment-only edit to the same file keeps the row (1 row, `0427040b47`), so the file
+is not touchy; and the edited body was in the **residue** with its verdict and both byte strings. The artifact lists identical
+bodies, and a differing body goes to the residue — a filing convention, not a refusal.
+
+**The install** (`tools/l1-change.py --class ACTION_DisplaySGText --function CompleteWhenTimer --body 0428040b47`):
+
+```
+script 5 -> 5 bytes (+0)   payload 40 -> 40   file 3,031,678 -> 3,031,678   script exact, every other payload untouched
+```
+
+**The boot**: both shot steps repainted — `01-press` 241,499 raw px and `02-menu` 744,293 raw px, the driver's filtered verdict
+PASS on both. The game plays with a body that came from edited text.
+
+**The honest scope.** `CompleteWhenTimer` is not on the title path, so this proves the *installation and loading* of a compiled
+body, not that its new value is observed at runtime. The behavioural proof needs a function that runs on a reachable screen —
+and that is the next experiment, not a claim this one can make.
+
+**What is no longer in question**: editing a `.uc` file, compiling it, installing the result without changing any payload's
+size, and booting the game. Every link in that chain is measured, and each of the four tools involved refuses the step it
+cannot justify.
