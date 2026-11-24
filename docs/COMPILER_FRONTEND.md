@@ -1047,3 +1047,97 @@ not a `case`"; it now emits the terminator alone, and `CreditsPage.ButtonClick` 
 
 **`--check`** carries four new synthetic bodies -- a `return` in a `foreach`, the same inside an `if`, an object
 `switch` and an empty one -- plus the nested-`foreach` return that must refuse: 89 bodies, no dump, no writes.
+
+## Stage 3, continued -- the array element read, and the index that comes first (measured 2026-11-24)
+
+**6,096 -> 6,662 modelled, 6,662 byte-identical, 0 differ** (566 bodies gained, none lost; the residue
+5,274 -> 5,016, and the compound-expression bucket 420 -> 129). It was the statement walk's largest single refusal:
+an expression that reads `A[i]`.
+
+**The token is the record's own kind, not the syntax's.** A dynamic array is a `UArrayProperty` and writes `10`
+(`DynamicArrayElement`); a static dimension on any other record writes `1A` (`ArrayElement`) -- `XUID` is a
+`UByteProperty` whose `XUID[12]` lives in the class record, and `PlayerController.ServerSetXUID` writes
+`0F 1A 25 01 58 05 ...` for `XUID[1] = ...`. Both tokens take the same two children.
+
+**The children are the index first and the array second, and the node writes no skip word of its own.**
+`AIMsgManager.GetReceivedMsg`'s `return msgReceived[Idx];` is `04 10 00 7a 57 01 01 7e 03 04 0b 47`: `10`, then the
+local `Idx`, then the property read. The enclosing `Return`/`Let` carries on directly after the second child --
+there is no `16` belonging to the element, which is why a first draft that wrote one overshot every body by a byte.
+
+**The element is its declared element type.** `array<T>`'s `T` for a dynamic array; the record's own kind for a
+static one (a `UByteProperty` with a dimension is `byte` elements); a struct element keeps the artifact's friendly
+name, because that is the key the cast table and the member walk use; a nested `A[B[i]][j]` reads its element type
+from the innermost array. That type is what three consumers need -- a cast around the read and an operator pair at
+its site (`_type_of`), the receiver of a member call (`_class_of`: `GlobalEvents[size - 1].AddCondition(con)`, where
+the element type is the class the call resolves against), and the legality of the target in `emit_assign`
+(`Skins[0] = ...` emits an ordinary `Let`).
+
+**The element shape is recognised only when the whole run is one.** The closing `]` has to be the run's last token
+and its partner the depth-0 `[`, so `A[i].B` and `A[i] + 1` are not elements -- the member chain and the operator
+are tried first, exactly as the compiler nests them.
+
+**Not in this PR:** the element of an array whose declared element type the artifacts do not spell (94 rows still
+name it), and the remaining compound expressions (129).
+
+## Stage 3, continued -- a `Super` call names the nearest ancestor's import (measured 2026-11-24)
+
+**6,662 -> 6,777 modelled, 6,777 byte-identical, 0 differ** (115 bodies gained, none lost; the residue 5,016 ->
+4,901, and the `Super`-call bucket 483 -> 368).
+
+**One rule, measured.** `Super.F()` writes `1c <record>` where the record can be an **import**, and a package
+imports one entry per ancestor that declares the name: `AmbientCreatures.u` carries `PostBeginPlay` three times
+(import 60 on `Controller`, 66 on `Actor`, 80 on `Pawn`). The walk refused every one of them because it only
+accepted a *unique* import. The compiler's choice is the import whose **owner** -- the import's own `package`
+field, which names the declaring class -- is the nearest class of the parent's chain, and the shipped bytes agree
+on **351 of the 380** bodies that open with `1c`:
+
+| body | chain (nearest first after the parent) | shipped record | owner |
+|---|---|---|---|
+| `Bird.PostBeginPlay` | `TransientAmbientPawn, Pawn, Actor` | `1c d0 01` = import 80 | `Pawn` |
+| `TransientAmbientCreature.PostBeginPlay` | `AIController, Controller, Actor` | `1c bc` = import 60 | `Controller` |
+| `HerdAnimal.Destroyed` | `AmbientCreature, AIController, Controller, Actor` | `1c ac` = import 44 | `Controller` |
+| `AmbientCreatureManager.PostBeginPlay` | `Info, Actor` | `1c c2 01` = import 66 | `Actor` |
+
+**The 29 that do not agree are `BeginState`/`EndState`**, which name a **state** rather than a function and stay
+refused (they are the next shape this thread reads, not a wrong rule).
+
+**The tool change.** `_class_tables` now keeps each import's declaring class (its `package` field resolved through
+the import or export table) in `import_owners`, threaded into the body env; `_record_on` walks the parent's chain
+nearest-first and takes the first ancestor that owns a same-named `Function` import, falling back to the unique
+import as before. `--check` stays green with no dump (89 synthetic bodies, all four `Super` controls unchanged).
+
+**Not in this PR:** the `BeginState`/`EndState` state record (29 bodies) and the struct-property assignment (539
+residue rows).
+
+## Stage 3, continued -- a struct assign is a plain `Let`, and a compound assign picks by its target (measured 2026-11-24)
+
+**6,777 -> 6,966 modelled, 6,966 byte-identical, 0 differ** (189 bodies gained, none lost; the residue 4,901 ->
+4,712). Three rules from one refusal family, and the walk now models **6,966 of the 11,687 bodies it reads**
+(4,712 not modelled), regenerating `inventory/uscript_emit.csv` byte for byte over the whole corpus.
+
+**A struct-typed target is a plain `Let`.** `Velocity = 200 * VRand();` is `0f 01 98 <operator>` and
+`newRotation = Rotation;` is `0f <LocalVariable> <InstanceVariable>`: the copy is by value and the *token* carries
+the extent, so there is no member node and no size byte to write. That refusal was the walk's second largest after
+the element read -- 539 residue rows named it -- and both spellings (`emit_assign`'s member branch and its property
+branch) needed it, because a local struct and a property struct take the same token and differ only in the write
+index.
+
+**A compound assignment's row is chosen by its first (`out`) parameter -- the target's declared type -- and only
+then by the value.** A `+=` is not a `Let` around a `+`: its token is a separate native (`AddEqual_IntInt` 161
+against `Add_IntInt` 146). `NewRot.Yaw += Delta * SpinRate` targets an `int` and the table installs no
+`+=(int, float)`, so the compiler takes `AddEqual_IntInt` and narrows the value (`39 44`, a `FloatToInt` in front of
+the product); `a *= 2` has no `*=(int, int)` row at all and takes `MultiplyEqual_IntFloat` with the literal widened
+(`39 3f 2c 02`); `Velocity *= -1` takes `MultiplyEqual_VectorFloat` and widens (`dd 01 98 39 3f 1d ffffffff 16`).
+The value is widened to `float` before it is narrowed to the target, because that is the order all three show.
+
+**A binary operator promotes an `int` operand to `float` when the exact pair is not installed and the pair with
+that side widened is** -- right side first, then left, then both, because a row that exists on the other side is a
+different native: `200 * VRand()` is `Multiply_FloatVector` with the literal cast (`d5 39 3f 2c c8 fc 16 16`).
+
+**What is left.** The residue's head is now **1,414** rows of *an operator the image's table does not install*,
+then 581 *a member that is not a property of the receiver's class* and 485 *a call to a name the class chain does
+not declare*; the shapes histogram carries 10 `element` bodies and 45 `super-call`, and the element read's own
+refusal is down to 94 rows.
+
+**Not in this PR:** the 1,414 operator rows (the next instrument), the `BeginState`/`EndState` record and the 135
+bodies that still emit and differ.
