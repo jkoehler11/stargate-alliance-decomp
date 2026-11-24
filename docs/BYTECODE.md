@@ -1442,6 +1442,14 @@ Those 7 rows count the arms they reach before the nested switch, so their `cases
 The numbers are `inventory/switch_operands.csv` (`tools/uscript-dis.py --switches`), the artifact this block is rendered from; `make switch-operands` re-runs the walk against the dump and `--switches-doc --write-doc docs/BYTECODE.md` re-renders the block from the artifact alone, so `make ci` needs no dump to prove the page still matches its census.
 <!-- /generated:switch-widths -->
 
+**An object compares at width 4, and an empty `switch` is the terminator alone.** The census above splits by site, not
+by declared type, so the width an *object* takes shows up there only as one more row under `4`: `InGameMenu.ButtonClick`
+writes `05 04` in front of a `LocalVariable` that holds a `GUIButton`, and its `case ExitBN:` is an `InstanceVariable`
+read of an `ObjectProperty` -- a pointer is four bytes wide at the switch, the same width an int takes, and the emitter
+(`tools/uscript-emit.py`) reproduces it byte for byte (16 bodies, `docs/COMPILER_FRONTEND.md`). A `switch` whose source
+body is empty still ends on the `0xffff` terminator and nothing else: `ExtrasPage.ButtonClick` ships
+`05 04 <Sender> 0a ff ff` and control runs from that token into the statement after the switch.
+
 The split is the check, and it is a split by site. A wide-string switch's case values are `StringConst` on every one
 of its sites, and `ByteConst` appears under the one-byte width only, while an int's cases are the compact int tokens
 (`IntConstByte`, `IntZero`, `IntOne`). The width is therefore a property of the value's type as the compiler saw it,
