@@ -34,6 +34,11 @@ constructs publish: a `break` names the end of the nearest loop or switch, a `co
 nearest loop -- and in a `foreach` a `continue` is the iterator's step (`IteratorNext`) followed by that `Jump`, so
 the loop pays a step per skip rather than a back edge. A `local` declaration emits nothing.
 
+Three shapes the same walk pins on the corpus: a `return` inside a `foreach` pops the iterator first (`IteratorPop`
+before `Return`, `Pawn.TouchingWaterVolume`), a `switch` on an object compares at width 4 like an int
+(`InGameMenu.ButtonClick`), and a `switch` with no `case` still writes the `Case 0xffff` terminator
+(`ExtrasPage.ButtonClick`).
+
     python3 tools/uscript-emit.py --check                       # synthetic, no dump, writes nothing
     python3 tools/uscript-emit.py --tree $WORK/scripts-all \\
         --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15/System -o inventory
@@ -2446,7 +2451,9 @@ def emit_flow(node, rettype, env, pos):
 
         def once(pop):
             exits = {"break": pop, "continue": ("iterate", pop)}
-            return emit_flow(body, rettype, dict(env, _exit=exits), body_pos)[0]
+            # `_iter` counts the iterators a `return` inside the body has to pop (see `emit_stmt`).
+            inner = dict(env, _exit=exits, _iter=int(env.get("_iter") or 0) + 1)
+            return emit_flow(body, rettype, inner, body_pos)[0]
 
         rough = once(None)
         pop = body_pos + _wide(rough) + 1
@@ -2465,11 +2472,11 @@ def emit_flow(node, rettype, env, pos):
         if width is None:
             raise Refused("a switch on a %s, whose comparison width the corpus does not pin"
                           % (stype or "value the walk cannot type"))
-        if not groups or groups[0][0] is None:
+        if groups and groups[0][0] is None:
             raise Refused("a switch whose first label is not a `case`")
         if sum(1 for lab, _s in groups if lab is None) > 1:
             raise Refused("a switch with two `default:` labels")
-        if groups[-1][0] is not None and any(lab is None for lab, _s in groups):
+        if groups and groups[-1][0] is not None and any(lab is None for lab, _s in groups):
             raise Refused("a switch whose `default:` is not its last label")
         head = bytes([0x05, width]) + emit_expr(expr_toks, stype, env)[0]
 
@@ -2482,9 +2489,11 @@ def emit_flow(node, rettype, env, pos):
             benv = dict(env, _exit=exits)
             # The terminator is written whether or not the source has a `default:`: a `switch` with none still ends
             # on `Case 0xffff` and an empty body (`PlayerProfile.GetCategoryVolume`), so the list's last case links to
-            # it and control runs from it into the statement after the switch.
+            # it and control runs from it into the statement after the switch. A switch with **no case at all** is
+            # the terminator alone: `ExtrasPage.ButtonClick` writes `05 04 <Sender> 0a ff ff`, with no case word to
+            # patch -- its source is `switch (Sender) { }`.
             seq = list(groups)
-            if seq[-1][0] is not None:
+            if not seq or seq[-1][0] is not None:
                 seq.append((None, []))
             cases = []
             for lab, stmts in seq:
@@ -2521,8 +2530,10 @@ COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=")
 # The `Switch` token's operand is the number of bytes the case comparison reads, not a case count: `0` a wide string,
 # `1` a byte and `4` an int (`docs/BYTECODE.md`, measured against `execSwitch` at `0x0004ca20` and the corpus's 200
 # sites). A `name` compares as its four-byte index, and a `bool` as one byte, like the `ByteConst` cases the corpus
-# writes under width 1.
-SWITCH_WIDTH = {"string": 0, "byte": 1, "bool": 1, "int": 4, "name": 4, "float": 4}
+# writes under width 1. An **object** compares at 4 too: `InGameMenu.ButtonClick`'s `switch (Sender)` writes
+# `05 04` in front of a `LocalVariable` that holds a `GUIButton`, and its `case ExitBN:` is an `InstanceVariable`
+# read of an `ObjectProperty` -- a pointer is four bytes wide at the switch, like an int.
+SWITCH_WIDTH = {"string": 0, "byte": 1, "bool": 1, "int": 4, "name": 4, "float": 4, "object": 4}
 
 
 def _compound(stmt, env):
@@ -2695,7 +2706,16 @@ def emit_stmt(stmt, rettype, env):
     """`(bytes, model, shape)` for one simple statement, without the body trailer."""
     if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "return":
         expr, shape = emit_expr(stmt[1:], rettype, env)
-        return bytes([0x04]) + expr, "return", shape
+        # A `return` that leaves a `foreach` pops the iterator first: `Pawn.TouchingWaterVolume` ships
+        # `... 6d 02 | 30 04 27 | 31 30 | 04 28` -- the `IteratorPop` in front of `Return True`, and the loop's own
+        # `IteratorNext`/`IteratorPop` after it as dead code. The iterator is popped once per `return` that leaves
+        # it, so a body with two returns carries two pops; two **nested** iterators would need two pops each, and the
+        # corpus has no such body (`0` rows), so that shape is refused rather than doubled.
+        depth = int(env.get("_iter") or 0)
+        if depth > 1:
+            raise Refused("a `return` inside %d nested `foreach` loops, whose pop count the corpus does not pin"
+                          % depth)
+        return bytes([0x30]) * depth + bytes([0x04]) + expr, "return", shape
     if stmt and stmt[0][0] == "keyword" and stmt[0][1].lower() == "assert":
         # `assert(false);` is `09 26 08 28`: the opcode, the **source line as uint16**, then the expression -- and a
         # `bool` slot, so `false` is `28`. `Actor.Crash`'s assert sits on line 2086 of the shipped text and the
@@ -3447,6 +3467,11 @@ function EachStop() { foreach Iter(Slot) break; }
 function EachSkip() { foreach Iter(Slot) { if (bDead) continue; Foo(1); } }
 function ClassLit() { TakeClass(class'Probe'); }
 function BadClass() { TakeClass(class'Missing'); }
+function bool EachRet() { foreach Iter(Slot) return true; }
+function bool EachRetIf() { foreach Iter(Slot) { if (bDead) return true; } return false; }
+function ObjSwitch() { switch (Target) { case Target: Foo(1); break; } }
+function EmptySwitch() { switch (Target) { } }
+function EachNested() { foreach Iter(Slot) foreach Iter(Slot) return true; }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -3643,11 +3668,23 @@ WANT = {
     # `class'Probe'` is an **object reference**: `ObjectConst` of the class's own index (SCOPE's classrefs says 4),
     # not a name constant -- `foreach TouchingActors(class'Pawn', P)` writes `20 01`, which is Engine.u's export 1.
     "classlit": "1b37200416040b47",
+    # A `return` inside a `foreach` pops the iterator first: `30` then the `Return`, and the loop's own
+    # `IteratorNext`/`IteratorPop` still follow the body. `Pawn.TouchingWaterVolume`'s arm is `30 04 27`, and here
+    # the body is three wide bytes, so the pop sits at 11 + 3 + 1 = 0x0f.
+    "eachret": "2f612c006309160f003004273130040b47",
+    "eachretif": "2f612c0063091618000717002d012d30042731300428040b47",
+    # `switch (Target)` on an object compares at width 4 (`InGameMenu.ButtonClick` writes `05 04`), and a `case`
+    # value is an ordinary expression at that width, so `case Target:` is the property read again.
+    "objswitch": "05040163090a19000163091b292616061c000affff040b47",
+    # A `switch` with no `case` at all writes the terminator alone: `ExtrasPage.ButtonClick` is `05 04 <Sender>
+    # 0a ff ff`, no case word to patch.
+    "emptyswitch": "05040163090affff040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown", "badclass")
+          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown", "badclass",
+          "eachnested")
 
 
 def check(args):

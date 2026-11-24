@@ -239,6 +239,27 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the `foreach` that returns, the object `switch` and the empty `switch`: **6,404 modelled / 6,404
+  byte-identical / 0 differ** (from 6,392 / 6,392 / 0; 12 bodies gained, none lost; residue 5,286 -> 5,274). Three
+  rules, one thread, and the first is the cleanup the last note named as next. (1) A `return` inside a `foreach`
+  **pops the iterator first**: `Pawn.TouchingWaterVolume` ships `... 6d 02 | 30 04 27 | 31 30 | 04 28` -- the
+  `IteratorPop` in front of `Return True`, with the loop's own `IteratorNext`/`IteratorPop` after it as dead code --
+  and `LadderVolume.InUse` writes the pop for a `return true` inside a nested `if`. The iterator is popped once per
+  `return` that leaves it; two nested `foreach` loops would need two pops and the corpus carries **no** such body (0
+  rows), so that shape is refused by name rather than doubled. It settles twelve bodies one byte short
+  (`Actor.IsInVolume`, `LadderVolume.InUse`, `Pawn.IsInPain`, `Pawn.TouchingWaterVolume`, `Screenplay.GetActorByTag`,
+  `Teleporter`/`Trigger`/`WarpZoneMarker`/`TriggeredScript` `FindTriggerActor`, `TriggeredObjective.FindTrigger`,
+  `MindControlCrystal.FindMindControlBase`, `moListEditBox.OnScrollButtonClick`). (2) A `switch` on an **object**
+  compares at **width 4**, like an int: `InGameMenu.ButtonClick` writes `Switch 04` in front of a `LocalVariable` that
+  holds a `GUIButton`, and its `case ExitBN:` is an `InstanceVariable` read of an `ObjectProperty`. The width table
+  carries `object: 4` now, which lifts the "a switch on a object" refusal (**16** rows) off the walk. (3) A `switch`
+  with **no case at all** writes the terminator alone: `ExtrasPage.ButtonClick` is `05 04 <Sender> 0a ff ff`, with no
+  case word to patch, and control runs from the terminator into the statement after the switch. Doc:
+  `docs/COMPILER_FRONTEND.md` gains the section and `docs/BYTECODE.md`'s switch section names the object width. Not in
+  this PR: the 13 bodies that still emit and differ (`LinearStairBuilder.Build` 4 short, `SetCameraDist` 30 short, the
+  four `UWindowGridColumn` 4 short, `AdjustSkill` 3, `UdpGamespyUplink.PreBeginPlay` 1 long,
+  `ParseOption`/`TestContinueDoUntil`/`TestContinueWhile`/`GatlingGunAttachment.Tick` same length) and the 420 rows
+  the walk still calls "a compound expression".
 - [~] 3.6 the `foreach`, the class literal and the statement guard: **6,392 modelled / 6,392 byte-identical / 0 differ**
   (from 6,269 / 6,269 / 0; 123 bodies gained, none lost; residue 5,409 -> 5,286). Three rules, one thread. (1) A
   `foreach F(a) S;` is `2f` + the call to `F` + `<u16 the wide position of the IteratorPop>`, then S, `31`

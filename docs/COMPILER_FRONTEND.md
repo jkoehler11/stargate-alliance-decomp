@@ -1018,3 +1018,32 @@ which the class literal above is the first half of.
 their shipped bytes carry an `IteratorPop` in front of the `return` (`Pawn.TouchingWaterVolume` ships
 `... 2d 01 6d 02 30 04 27 31 30 04 28 04 0b 47` where the walk writes `... 2d 01 6d 02 04 27 31 30 ...`) -- a cleanup
 the compiler inserts when a `return` leaves the iterator, and the next rule this thread reads.
+
+## The `foreach` that returns, the object `switch`, and the empty `switch` (measured 2026-11-24)
+
+**6,392 -> 6,404 modelled, 6,404 byte-identical, 0 differ** (12 bodies gained, none lost; the residue 5,286 -> 5,274;
+the walk and the join unchanged at 11,687 and 11,678). Three rules from one thread, and the first is the cleanup the
+`foreach` note left as "not in this PR".
+
+**A `return` inside a `foreach` pops the iterator first.** `Pawn.TouchingWaterVolume` ships
+`... 6d 02 | 30 04 27 | 31 30 | 04 28 | 04 0b 47` -- `IteratorPop`, `Return True`, then the loop's own
+`IteratorNext`/`IteratorPop` (dead code, because the return left), then the next statement's `Return False`. The pop
+therefore belongs to the **`return`**, not to the loop: `LadderVolume.InUse` writes it for a `return true` inside a
+nested `if` whose body is the whole arm. The body is emitted twice for the `Iterator` operand, so the extra byte is
+counted in the measuring pass and every following position still lands on the word the shipped bytes name. Two
+**nested** iterators would need two pops each; the corpus carries no such body, so the shape is refused by name
+instead of doubled.
+
+**A `switch` on an object compares at width 4.** `InGameMenu.ButtonClick`'s `switch (Sender)` writes `05 04` in front
+of a `LocalVariable` that holds a `GUIButton`, and its `case ExitBN:` is an `InstanceVariable` read of an
+`ObjectProperty` -- the same `4` an int takes, because a pointer is four bytes. The walk had refused these by name
+("a switch on a object, whose comparison width the corpus does not pin", **16** rows); the width table carries
+`object: 4` now.
+
+**A `switch` with no `case` at all writes the terminator and nothing else.** `ExtrasPage.ButtonClick`'s
+`switch (Sender) { }` ships the head, then `Case 0xffff`: there is no case word to patch, and control runs from the
+terminator into the statement after the switch. The walk refused an empty group list as "a switch whose first label is
+not a `case`"; it now emits the terminator alone, and `CreditsPage.ButtonClick` is the second of the two rows.
+
+**`--check`** carries four new synthetic bodies -- a `return` in a `foreach`, the same inside an `if`, an object
+`switch` and an empty one -- plus the nested-`foreach` return that must refuse: 89 bodies, no dump, no writes.
