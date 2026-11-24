@@ -239,6 +239,29 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the call statement, the whole parent chain, and two type rules: **5,057 modelled / 5,057 byte-identical /
+  0 differ** (from 4,096 / 4,093 / 3; 961 bodies gained, none lost -- the walk and the join are unchanged at 11,687
+  and 11,678, and the residue falls 6,742 -> 6,621). One thread, five rules: (1) a **call statement through a
+  receiver** is `19 <receiver> <skip> <value size> <call>` where the skip word is the call's own width in the
+  uncompacted array -- `Pawn.SwitchWeapon(F);` writes `0b`, and the `5` is the shape of a **property import** receiver
+  (`Outer`), which wrote nine bodies one word short when applied to every import. (2) `Super.F()` walks the **whole
+  parent chain** and prefers the parent's **same-state** override inside a state (`TeamDeathMatch.RestartPlayer` ->
+  `1c 50 49`, export 4688; `BotSG.Tick` in `BotUnconscious` -> export 4129), which also needed a function's owner
+  walked past a state's own `Outer` (`func_owners`). (3) a `within` call's **arguments** compile in `Outer`'s scope,
+  so a property declared outside the body's chain reads through `Outer` even when it is not a `bool`
+  (`CheatManager`'s `TriggerEvent(EventName, Pawn, Pawn)`). (4) the **byte context reaches a literal through the
+  operator tree** and stops at a call: `ParseColor`'s `16` is `39 3a 24 10` (a `ByteConst` under `ByteToInt`) two
+  operators inside a byte assignment, while `SetDirty`'s `1` is `IntOne` and the same expression's `Mid(S, 2, 1)` is
+  `2c 02 26` -- 2 bodies that differed are now identical. (5) a **`class` operand compares as an `object`**
+  (the table installs `!=` only for `(Object, Object)`: `Pawn(Owner) != None`), +121 bodies. **And the artifact's
+  contract is enforced by the tool now**: a modelled body whose bytes differ is *refused* with both hex strings
+  (never written as a differing row), `--check` holds `modelled` to the row count and fails on any `differ` row, and
+  `--only Package.u` scores one package in seconds. **Not in this PR:** the unary `!` -- unmodelled, and the
+  histogram's owner (1,059 residue bodies; `bool && an unknown type` 309, `int < an unknown type` 306, `an unknown
+  && an unknown` 180): `Not_PreBool` is `0x81` in the bytes but `inventory/native_operators.csv` carries only
+  two-operand declarations, so the census has to read `operator(N) T sym ( T A )` first; then `switch` (173), a
+  member-call statement whose receiver's class the artifacts do not name (174), `continue`/`break` (52).
+  Doc: `docs/COMPILER_FRONTEND.md` gains the section, the three bounds and the updated residue.
 - [~] 3.6 the loop surface: `for`, `do`/`until` and the four increment opcodes: **4,096 modelled /
   4,079 byte-identical / 17 differ** (from 4,022 / 4,008 / 14; 74 bodies gained, none lost, and no previously scored
   body's bytes moved -- the join is unchanged at 11,678 of 11,687 walked). (1) A statement can be an **expression**:

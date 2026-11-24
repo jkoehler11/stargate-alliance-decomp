@@ -670,11 +670,61 @@ and `24 03`, and ParseColor's `16` is `24 10`. Six sites, one threshold (127), a
 identical -- `PlayerProfile.NewProfile`, `DeathMatch.BeginState`, `SGScreenBlur.BlurView`, `StoryModeGame.BeginState`
 and `UWindowURLTextArea.ProcessText` -- are what pinned the low side when the cast rule was tried on them.
 
+## Stage 3, continued -- the call statement through a receiver, the whole parent chain, and two type rules (measured 2026-11-23)
+
+**5,057 bodies are modelled and all 5,057 are byte-identical**, from 4,096 / 4,093 / 3. No previously scored body
+lost a byte: the walk and the join are unchanged at 11,687 and 11,678, every one of the 4,093 identical rows is still
+identical, and the residue falls 6,742 -> **6,621** of 11,687.
+
+**The artifact's contract is now enforced by the tool, not by this page.** A body whose emitted bytes differ from the
+shipped ones is *refused* -- reason `an emitted body that differs from the shipped bytes (n vs m)`, with both hex
+strings in the residue row -- instead of being written as a differing row: a family here is built until it matches, so
+a diff is a rule that is wrong for that shape, and `inventory/uscript_emit.csv` must never carry a body the next run
+would read as evidence. `--check` holds `modelled` to the row count and fails on any `differ` row. Two flags make the
+loop cheap: `--residue-out` writes `theirs` and `ours` beside every refusal, and `--only Package.u` scores one package
+in seconds (its artifact is partial and must not be committed).
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `Pawn.SwitchWeapon(F);` | `19 01 05 0b 00 00 1b 61 03 00 4b 6e 16` | a **call statement through a receiver** is a `Context` whose skip word is the call's **own width** in the uncompacted array (`_wide`, 11 here), not a constant |
+| `Outer.Log("...")`, `CheatManager.astral` | `19 01 8e 05 00 00 ...` | the 5 belongs to a **property import** receiver (`Outer`), whose call is five wide in those bodies; reading every import as `Outer` wrote 5 for `Pawn.SetSprinting(true)` (7 wide) and nine bodies came out one word short |
+| `TeamDeathMatch.RestartPlayer`'s `Super.RestartPlayer()` | `1c 50 49` (export 4688, `DeathMatch.RestartPlayer`) | a `Super` call walks the **whole parent chain** before it falls back to the `Function` import; the fallback taken at the first ancestor that declared nothing wrote the import for two bodies |
+| `BotSG.Tick` in state `BotUnconscious` | export 4129 (`BotEnemy.BotUnconscious.Tick`) | inside a state the parent's **same-state** override is the record, and a function's owner has to be walked past a state's own `Outer` (`func_owners`) |
+| `TriggerEvent(EventName, Pawn, Pawn)` in `CheatManager` | `19 01 8e 05 00 04 01 05` per `Pawn` | a `within` call's **arguments** are compiled in `Outer`'s scope: a property the package declares outside the body's chain is read through `Outer` even when its type is not `bool` |
+| `Instigator.AttachToBone(...)` in `StargateContent` | -- | a **receiver's class** is re-homed to the package that declares it when exactly one does, so the walk starts there; a name two packages carry keeps the body's package |
+
+### The byte context reaches a literal through the operator tree, and stops at a call
+
+`PlayerProfile.SetDirty` writes `DirtyMask = DirtyMask | 1;` as `0f 01 48 11 39 3d 9c 39 3a 01 48 11 26 16`: the `1`
+is **`IntOne`** (`26`), not a widened `ByteConst`. `UWindowHTMLTextArea.ParseColor` writes
+`C.R = 16 * GetHexDigit(...) + GetHexDigit(...)` as `39 3d 92 90 39 3a 24 10 ...`: that `16` **is** a `ByteConst`
+behind `ByteToInt` (`39 3a`), two operators inside a byte-typed assignment. Three bounds settle the difference, each
+on a body this tool scores:
+
+1. **0 and 1 keep the compiler's dedicated opcodes** (`IntZero` `25`, `IntOne` `26`) whatever the context -- SetDirty's
+   `1` is `26`.
+2. **The byte type propagates through operators**, from the assignment's own type down the tree: ParseColor's `16` is
+   a byte because the assignment is.
+3. **A call's arguments are typed by the callee's parameters**, so the context stops at a call: the same ParseColor
+   expression writes `Mid(S, 2, 1)` as `2c 02 26`, the int forms.
+
+A direct `A = 255;` on a byte is not this shape at all -- `39 3d 2c ff`, the int constant under `IntToByte` -- and
+neither is a byte parameter's `0` (`_SetKeyFrameToPuzzleMovers(0)` is `24 00`).
+
+### A `class` operand compares as an `object`
+
+`inventory/native_operators.csv` installs `!=` for `(Object, Object)` and for no class-typed pair, and the compiler
+uses that row: `Inventory.Destroyed`'s `if (Pawn(Owner) != None)`, `Mover.Detach`'s and
+`PlayerReplicationInfo.SetPlayerName`'s alike. Substituting `class` -> `object` in the lookup only (the operand's own
+bytes are unchanged) gained **121 bodies** -- 4,936 -> 5,057, none lost -- the `(class != object)` family leaves the
+histogram, and the operator-pair refusals fall 2,806 -> 2,528.
+
 ### What is left
 
-Three bodies. `CheatManager.astral` and `CheatManager.puss` write a **receiver-less call as a member of `Outer`**:
-`DeactivateAstralSight();` compiles to `19 01 8e 05 00 00 1b 5b 15 16` -- a `Context` whose value size is 0 (the call
-returns nothing) -- where the walk writes the `VirtualFunction` bare. `UWindowHTMLTextArea.ParseColor`'s
-`16 * GetHexDigit(...)` writes the literal as `39 3a 24 10`: the literal adopts its byte neighbour, then is promoted
-for the `int` operator, and the byte-returning call beside it is not converted at all. Neither is a site rule, so
-neither is in this change.
+**The unary `!` is unmodelled, and it owns the histogram.** 1,059 residue bodies name a `!`, and the operator-pair
+refusals are dominated by the unknown type it leaves: `bool && an unknown type` 309, `int < an unknown type` 306,
+`an unknown && an unknown` 180, `bool || an unknown type` 136. `Not_PreBool` is `0x81` in the shipped bytes
+(`bIsOn = ! bIsOn;` is `14 2d 01 03 81 2d 01 03 16 04 0b 47`) but `inventory/native_operators.csv` carries only
+two-operand declarations (97 rows), so the token has no row to come from: the census tool has to read
+`operator(N) T sym ( T A )` as well, and then `_type_of` and `emit_expr` need the unary node. After it: `switch`
+(173), a member-call statement whose receiver's class the artifacts do not name (174), `continue`/`break` (52).
