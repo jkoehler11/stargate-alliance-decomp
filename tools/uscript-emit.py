@@ -1234,6 +1234,17 @@ def _type_of(expr, env):
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
+        if _is_call(member):
+            # `A.F()` -- a **member call**: its return type is declared on the *receiver's* class, and a same-named
+            # function on the body's own chain is a different record. `CurrentAction.WaitForPlayer()` returns a bool
+            # declared on `ScriptedAction`, so reading the body's chain left it an unknown type and `A && B` never
+            # reached `AndAnd_BoolBool` -- the largest family in the operator residue (518 rows, 311 right and 207
+            # left). `_rettype_on` already refuses to fall back to the body's chain for the same reason (see its
+            # note) and `_emit_member_call` joins through `_class_of`, so this is that join's type-level twin.
+            rec = _class_of(expr[:at], env)
+            if rec:
+                return _rettype_on(rec, member[0][1], env)
+            return ""
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
             nm = member[0][1].lower()
             obj = expr[:at]
@@ -1419,6 +1430,11 @@ def _emit_operator(expr, rettype, env, root=False):
         raise Refused("a compound expression, which needs the statement walk")
     sym, t1, t2, result, token, at = op
     if not token:
+        left, right = expr[:at], expr[at + 1:]
+        if os.environ.get("SG1_DBG_OP"):
+            raise Refused("an operator the image's table does not install (%s %s %s) <<%s | %s>>"
+                          % (t1 or "an unknown type", sym, t2 or "an unknown type",
+                             " ".join(v for _k, v in left), " ".join(v for _k, v in right)))
         raise Refused("an operator the image's table does not install (%s %s %s)"
                       % (t1 or "an unknown type", sym, t2 or "an unknown type"))
     left, right = expr[:at], expr[at + 1:]
