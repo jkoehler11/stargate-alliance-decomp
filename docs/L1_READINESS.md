@@ -564,3 +564,37 @@ So position is free and length is not, and the difference is per-object.
 **The next probe is cheap and specific**: change a payload's size by a *large* amount (say +64) on a class nothing loads at
 boot, and see whether the failure is identical or later/earlier. A failure whose *timing* does not move with the size change
 points at a check performed once, at load; one that moves points at a read of that object's length where the object is used.
+
+## A valid longer body fails too, and the base was contaminated (measured 2026-11-24)
+
+**First, a correction to the working copy.** `~/sg1/work/dump-local/System/StargateGame.u` had been replaced by the `+64`
+build, because `cp -al` creates **hardlinks** and a later plain `cp` wrote *through* the link into every tree at once. Three
+dump trees shared one inode. The file was restored from `~/sg1/dump-pristine/Stargate_SG-1_-_The_Alliance-2005-12-15/` and
+verified against the manifest:
+
+```
+3,031,678 bytes   sha256 89d9f93c37717648f38fbefe1256038aea6476e2ff09c8efe989da2425af465c   link count 1
+```
+
+Every boot result on this page stands — each build used its own package — but any experiment built *from* `dump-local`
+while it was contaminated is void, and one was re-run below. **A tree copy must `rm` the target before `cp`.**
+
+**The clean experiment.** `LogDropped`'s shipped body is `04 0b 47` — Return, Nothing, EndFunction: a void function. It was
+replaced with twelve bytes of the same shape, nine `Nothing` statements then the same return:
+
+```
+File          script 3 -> 12 bytes   payload 34 -> 43   file 3,031,678 -> 3,031,687
+Result        title renders, then 0 px on the start tap, 0 px on the next step -> FAIL
+```
+
+Valid content, one size change, no invalid bytecode anywhere: it still fails, and it fails harder than the earlier `+6`
+build (which at least repainted 3,365 px afterwards).
+
+**So content validity was not the explanation either.** What remains is the size itself — with one anomaly that has to be
+settled before that is written as a rule: the fitted `GetDefenderNum` body changed its export size from 5 to 6 and **booted**,
+and its package did not change length. Either the size field did not actually change (unverified), or a size change absorbed
+by alignment is tolerated.
+
+**The rule this page will state until that is checked**: a size change that changes the file's length fails; one that does
+not change it has not been shown to fail. The experiment that settles it is a table-only edit — raise one export's size by
+one byte without touching a payload — and that is the next probe, not another body.
