@@ -511,3 +511,28 @@ sampler can press a button.
 that exercises the same inputs: a register dump after a press, a sampler with no press, and a sampler without a pad. The
 pattern is not subtle in hindsight — **any measurement of a game must supply the input the game waits for**, or it measures
 the waiting.
+
+## The tap did not fix the sampler (measured 2026-11-24)
+
+The section above proposed a tap as the missing piece. It has now been tried, and it is not sufficient:
+
+| attempt | result |
+|---|---|
+| `--vpad`, no tap | 400 of 400 samples at `8001d1ea`, `HLT=1` |
+| `--vpad --tap-at 30:start --tap-at 42:a` (70 s and 82 s wall time) | **400 of 400**, unchanged |
+| adding `-device usb-hub,port=1,ports=4` | emulator refused to start — `FAIL: no QMP socket`, because xemu passes that hub **itself** in every launch line and the flag was a duplicate. Reverted. |
+
+So the sampler still reports a guest that never leaves idle on a build whose driver run repaints at 82 s. Two instruments, one
+ISO, contradictory results, and the difference is not the pad, not the tap, and not the hub.
+
+**What that leaves standing.** The pixel evidence is the evidence: a driver run presses the same buttons the game waits for,
+in the same process, and sees the screen change. The EIP sampler, in this build and at these times, does not reproduce that
+boot. Until it does, its numbers are not usable for locating the failure and this page should not quote them as if they were.
+
+**What was kept anyway.** `--vpad` and `--tap-at` are correct on their own terms — a controller and a press are what this
+game needs — so they stay in `tools/xemu/eip-functions.py`. They made the sampler *comparable in principle*; the thing that
+makes it reproducible in practice is still unknown.
+
+**The honest next step**, if this thread is picked up: run the sampler and the driver in the same session against the same
+ISO and dump both launch lines side by side, rather than comparing a sampler run from one hour with a driver run from
+another. Every contradiction in this page came from comparing runs that differed in ways nobody wrote down.
