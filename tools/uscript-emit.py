@@ -816,6 +816,12 @@ def _is_import_read(expr, env):
     return False
 
 
+def _is_outer(expr):
+    """`Outer` -- the one receiver whose `Context` member does not widen (`skip` 5, not the member's width)."""
+    expr = _strip_parens(expr)
+    return len(expr) == 1 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "outer"
+
+
 def _cast_kind(name, env):
     """`primitive` for `int(x)`, `object` for `AIController(x)`, and "" when the name is neither.
 
@@ -988,15 +994,32 @@ def _operand(part, want, rettype, env, inner):
     """One operand of a binary node, converted to the type the pair was looked up under, or None.
 
     The conversion is a `PrimitiveCast` written **around** the operand's own bytes, never a retyping of them:
-    `RespawnTime < 10` is `39 3f 2c 0a` -- an `IntConstByte` 10 behind `IntToFloat` -- not the `1e 00002041` a
-    literal typed *as* a float takes, and `"a" $ RefCount` is `39 53 01 6e 08`. The cast's slot comes from the
-    image's table keyed on the **numeric** type, so a class-typed operand converts through `ObjectToString`.
+    `RespawnTime < 10` is `39 3f 2c 0a` -- an `IntConstByte 10` behind `IntToFloat` -- not the `1e 00002041` a
+    literal typed *as* a float takes, and `"a" $ RefCount` is `39 53 01 6e 08`.
+
+    **The slot is keyed on the operand's declared type, not on the type the pair was looked up under.** A pair
+    whose `byte` side is promoted to `int` reads `39 3a` (`ByteToInt`) and *the same* byte promoted to `float`
+    reads `39 3c` (`ByteToFloat`) -- `Mover.FinishedClosing`'s `SoundVolume / 255.0` is `39 3c 01 55`, not the
+    `39 3f` the promoted `int` would give. A `$`/`@` operand follows the same rule and is where it was found:
+    `Role` is a `byte` and `Pawn.Fire` writes `39 52` (`ByteToString`, slot 82), not `39 53` (`IntToString`).
+    A one-letter promotion (`class` -> `object`) is the fallback key, because `self $ "x"` is `39 56` and a class
+    name is not the word `object`.
+
+    One shape is *not* this rule and stays a named measurement: an `int` literal promoted to `float` is folded
+    into a constant by the compiler in some sites (`return (10 + 5 * FRand());` holds `1e 00002041`) and cast in
+    others (`39 3f 2c 05` for the `5` of `5 * FRand()`, `39 3f 2c 0a` for `RespawnTime < 10`). Neither the
+    operator nor the site decides it, so it is not modelled.
     """
     own = _type_of(part, env).lower()
-    src = _numeric(own, env) if own else ""
+    src = own
     if not want or src == want:
         return None
     slot = _cast_slots().get((src, want))
+    if slot is None:
+        # A class-typed operand converts as an **object** (`self $ "x"` is `39 56`), and a class name is not the
+        # word `object`, so the promoted type is the fallback key rather than the declared one.
+        alt = _numeric(own, env) if own else ""
+        slot = _cast_slots().get((alt, want)) if alt != src else None
     if slot is None:
         return None
     body = emit_expr(part, own, env)[0] if own else emit_expr(part, "", env)[0]
@@ -1436,10 +1459,12 @@ def _emit_member(expr, rettype, env):
         raise Refused("a %s member, whose value size this walk does not carry" % (ptype or "typeless"))
     if ptype == "bool":
         # A bool member is `19 <obj> <skip> 04 2d 01 <index>`: the size byte is 4 like every other pointer-sized
-        # member, and the read is a `BoolVariable` around the property. The skip word is 6 in 2,212 of the corpus's
-        # 2,272 such nodes and 5 in the other 60, and those 60 are all `Outer.<bool>` -- the object is a property
-        # *import* (`01 8e`, import 14), which is the shape PlayerInput writes in its own bodies.
-        skip = 5 if _is_import_read(obj, env) else 6
+        # member, and the read is a `BoolVariable` around the property. The skip word is the *member's* width in
+        # the compiler's uncompacted code array (`_wide`), which is 6 for `2d 01 <index>` whatever width the index
+        # was compacted to -- 2,212 of the corpus's 2,272 such nodes. The other 60 are all `Outer.<bool>` and write
+        # 5 (the object is a property import, `01 8e`, and the member read does not widen): that word is measured,
+        # not derived, so it stays a constant for that shape only.
+        skip = 5 if _is_outer(obj) else _wide(bytes([0x2D, INSTANCE_TOKEN]) + write_index(index))
         read = bytes([0x2D, INSTANCE_TOKEN]) + write_index(index)
         node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", skip) + bytes([4]) + read)
         return _converted(node, "bool", rettype), "bool-context"

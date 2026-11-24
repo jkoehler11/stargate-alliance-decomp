@@ -816,13 +816,58 @@ refusals fall 2,523 → **1,279**.
 
 **Bounds, named, not guessed:**
 
-- An enum constant in an `int` site: `Actor.UpdatePrecacheStaticMeshes` widens *both* sides (`9a 39 3a 01 50 03 39
-  3a 24 08 16`), but 42 bodies (`Pawn.DropToGround`, `Mover.Trigger`, `Pickup.InitDroppedPickupFor`) do **not**, so
-  the widening is measured per body rather than assumed — shipped without it, the 84 sites stay refused by name.
+- An enum constant in an `int` site widens, and the **site's own type decides**: `Pawn.FaceRotation`'s
+  `Physics == PHYS_Walking` is `9a 39 3a 01 28 39 3a 24 0b 16` (`ByteToInt`, slot 58, in front of the `24 <ordinal>`)
+  while `Pawn.DropToGround`'s `SetPhysics(PHYS_Falling)` — a `byte` parameter — writes the bare `24 02`. Both are
+  emitted now; the note's "42 bodies do not widen" were the byte-parameter sites. See the next section.
 - `ArrayCount(FixedArray)` is **folded to the array's literal dimension** by the compiler
   (`NumClasses < ArrayCount(PawnTypes)` is `Less_IntInt` with `IntConstByte 08`); modelling it needs the export's
   `ArrayDim`, which `ue2pkg` does not read. 33 bodies.
-- A struct member of a **foreign** receiver (`Enemy.Location`) now has a record and a declared type, and is refused
-  where it always was: the value size of a `StructProperty` is not in `PROP_SIZE`.
+- A struct member's value size is the **declared** struct, and the three the corpus reaches are 12 bytes; a struct
+  this table does not carry is still refused, and the residue names it (`color` 9, `region` 7, `htmlstyle` 1).
+  See the next section.
 - `switch` (173), a member-call statement whose receiver's class the artifacts do not name (198), `continue`/`break`
   (65) are untouched.
+
+## The operand's declared type picks the cast, and two sizes that were constants (measured 2026-11-23)
+
+**6,194 modelled / 6,194 byte-identical / 0 differ** (from 5,931 / 5,931 / 0; **263 bodies gained, none lost**, the
+walk and the join unchanged at 11,687 and 11,678). The residue falls 5,747 → **5,484**, and the two families it was
+counted by are gone: `an enum constant passed as int` 243 → **0** and `a struct member, whose value size this walk
+does not carry` 196 → **0**. The bodies that *emit and differ* fall 61 → **26**. The operator refusal rises
+1,279 → 1,327, which is the same advance seen from below: those bodies now reach the operator stage instead of dying
+at the operand.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `Physics != PHYS_Falling` (`FishBase.PhysicsVolumeChange`), an enum constant where the pair is `(int, int)` | `9b 39 3a 01 da 01 39 3a 24 02 16` | the constant is a **byte widened**, not retyped: `ByteToInt` (slot 58) around `24 <ordinal>`, the same wrapper a `byte` property gets from the same pair lookup. `_type_of` already answers `byte` for it, so only the site's `int` was missing |
+| `SetPhysics(PHYS_Falling)` (`Pawn.DropToGround`) | `6f 82 24 02 16` | the *same* constant at a `byte` site is the bare `24 02` -- the site's own type decides, which is why the previous note's "42 bodies do not widen" and this one's 243 are one rule, not a dispute |
+| `return Pawn.Location;` (`TransientAmbientCreature.PickDestination`) | `04 19 01 86 05 00 0c 01 8a` | a struct-valued member is a `Context` like any other and its size byte is the **declared** struct: `vector`/`rotator`/`coords` are 12, and the record's own kind (`StructProperty`) names none of them. The size comes from the artifact's `friendly_type`, so a struct it does not name keeps the refusal -- the residue now carries `color` 9, `region` 7, `htmlstyle` 1 instead of one anonymous 196 |
+| `if (Pawn != None) ... Pawn.bPhysicsAnimUp...` (`BotEnemy.EndState`) | `14 19 01 8a 06 00 04 2d 01 e7 02 28` | a bool member's skip word is the member's width in the uncompacted code array (`_wide`), not a constant chosen by whether the object is an import: it is **6** here whatever made the read, and the emitter wrote 5 because the property is a negative import. The 60 `Outer.<bool>` nodes (`01 8e`, import 14) keep their measured **5** |
+| `SoundVolume / 255.0` (`Mover.FinishedClosing`) | `39 3c 01 55` | the cast's slot is keyed on the operand's **declared** type, not on the type the pair was looked up under: a `byte` promoted to `float` is `ByteToFloat` (slot 60), not the `IntToFloat` its promoted `int` takes. Same rule at `$`: `Role` is a `byte`, so `Pawn.Fire` writes `39 52` (`ByteToString`) and not `39 53` |
+| `self $ " fire weapon " $ weapon` (`Pawn.Fire`) | `39 56 01 17` | ...and a class-typed operand still converts as an **object** (`ObjectToString`, 86): `class` is not the word `object`, so the promoted type is the fallback key when the declared one has no row |
+
+**One shape is a negative, and it is named so the next session does not re-guess it.** An `int` literal promoted to
+`float` is **folded into a constant** by the compiler in some sites and **cast** in others, and neither the operator
+nor the site decides which:
+
+| the source | the bytes |
+|---|---|
+| `return (10 + 5 * FRand());` (`TransientAmbientCreature.MaxHiddenTime`) | `ae 1e 00002041` -- the `10` is a `FloatConst` |
+| `return (15 + 5 * FRand())`, `(5 + 5 * FRand())` (three classes) | `1e 00007041`, `1e 0000a040` -- folded |
+| the `5` of the *same* `5 * FRand()` | `39 3f 2c 05` -- cast |
+| `RespawnTime < 10` (`Pickup.BotDesireability`) | `39 3f 2c 0a` -- cast |
+| `SetTimer(1 + FRand(), True)` (`Fragment.BeginState`) | `ae 1e 0000803f` -- folded |
+
+Folding is not decided by `+` against `*` (the same body folds one literal and casts the other), by the literal's
+position, or by the site's type. Writing it as "arithmetic folds" was tried: it turned 5 bodies identical and broke
+**69** that were already identical, which is how the negative was measured rather than reasoned. The 5 folded sites
+stay in the residue with their bytes, and the emitter keeps the cast.
+
+**Not in this PR**: `switch` (173), `ArrayCount(FixedArray)` (33 -- needs the export's `ArrayDim`), a member-call
+statement whose receiver's class the artifacts do not name, `continue`/`break` (65), and the 26 bodies that still
+emit and differ: the six folded literals above, three `SetDrawColor(160 * (IdentifyFadeTime / 3.0))` bodies whose
+`160` is a `ByteConst` widened by `ByteToFloat` (a byte the site did not ask for), four `UWindowGridColumn` bodies
+whose first difference is a `Skip` word two bytes short, and thirteen singles -- a `within` call, a call token and
+index, a cast, and length differences whose cause is not their first differing byte.
+
