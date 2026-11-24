@@ -903,3 +903,29 @@ folded literals the positional rule does not reach, `GUIComponent.ParseOption`'s
 `VirtualFunction` through a receiver chain, `CheatManager.SetCameraDist`'s write through a `Context`, and singles in
 `LinearStairBuilder.Build`, `DeathMatch.AdjustSkill`, `GatlingGunAttachment.Tick`, `UWindowGridColumn` (4) -- plus
 `switch` (173), `ArrayCount(FixedArray)` (33) and `continue`/`break` (65) as before.
+
+## The literal's form: a leading position, a float site, and the byte context's own spelling (measured 2026-11-23)
+
+**6,210 modelled / 6,210 byte-identical / 0 differ** (from 6,202 / 6,202 / 0; **8 bodies gained, none lost**, the
+walk and the join unchanged at 11,687 and 11,678, residue 5,476 -> **5,468**, the bodies that *emit and differ*
+18 -> **10**). Two rules account for all eight, and the five bodies the previous note recorded as lost are back.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `Alpha -= (255 * VisibleTime) * Delta;` (`Beacons.VisibleForABit.Tick`) | `b9 016b3e ab` then `ab 393f2cff 015937 16 007c6f 16` | the int-literal **fold is the expression's leading position**, not a parenthesised one. `255` starts a group that is itself an *operand* of the outer `*`, and the compiler **casts** it (`39 3f 2c ff`). The literal folds only where it is the first operand the compiler reads -- a statement's value, a return value, a call argument -- and it keeps that position down the chain of left operands: `DistanceScale = (640 / RangeToTarget) * 85 / ...` folds the `640` two nodes in, while the `85` to the right of `*` casts |
+| `PlayerReplicationInfo.Ping = Min(0.25 * NewPing, 250);` (`PlayerController.ServerUpdatePing`) | `39 3d f9 39 44 ab 1e0000803e 39 3f 00776f 16 2cfa 16` | the mixed `(float, int)` pair is narrowed to `(int, int)` at a root `int` site only when **neither operand is a literal**. Here the float operand is the literal `0.25`: the compiler keeps the `(float, float)` row, promotes `NewPing` (`39 3f`) and converts the *product* at the parameter (`39 44`). `UWindowPulldownMenu.SetSelected`'s `(Y - VBorder) / ItemHeight` has no literal on either side and still narrows |
+| `Canvas.SetDrawColor(0, 160 * (IdentifyFadeTime / 3.0), 0)` (`StargateHUD`/`GoauldConsoleHud`/`ReplicatorHUD.SetIDColor`) | `... 39 3c 24 a0 ac 015c0d 1e00004040 16 16 24 00 16` | the **byte context types an *int* literal, not a float one**. `_byte_literal` fired on the `3.0` and wrote `39 3c 24 03` (`ByteToFloat(ByteConst 3)`), two bytes that had been read as a `Context` skip word; the source spells a float, so the compiler writes `1e 00004040` and the byte context stops there. `160` in the same argument is an int literal and stays a `ByteConst` (`24 a0`) |
+
+The previous section's "five bodies lost, named and not explained" are explained: each is one of the two positions
+above. `PlayerController.ServerUpdatePing` (the literal pair), `Beacons.VisibleForABit.Tick` (a compound
+assignment's value), `BotEnemy.DefendMelee` (`5 * Enemy.Weapon.MaxRange` inside a comparison), and
+`UWindowHScrollbar`/`UWindowVScrollbar.CheckRange` (`2 * LookAndFeel.Size...`, a right-hand operand). The four
+`UWindowGridColumn` bodies the earlier note blamed on a `Context` skip word are the same rule (`(Y - 12)` narrows
+the literal `12` where the group is an operand), and they are still in the ten -- their first difference is that
+narrowing, not the skip word.
+
+**Not in this PR** (the 10 that still emit and differ): `LinearStairBuilder.Build`, `PlayerController.PlayerMove`
+(`250.0` at an `int` site is `IntToFloat(IntConstByte 250)` -- a *float* literal retyped through the int form),
+`CheatManager.SetCameraDist` (a write through a `Context`), `GUIComponent.ParseOption` (`final` callee through a
+receiver chain), `DeathMatch.AdjustSkill`, `GatlingGunAttachment.Tick`, and the four `UWindowGridColumn`; plus
+`switch` (173), `ArrayCount(FixedArray)` (33) and `continue`/`break` (65) as before.

@@ -619,7 +619,7 @@ def _operator_types(expr, env, site="", root=False):
     # a `PrimitiveCast` -- `Pickup.BotDesireability`'s `RespawnTime < 10` is `b0 01 72 09 39 3f 2c 0a 16`, an
     # `IntConstByte 10` behind `IntToFloat`. That row is the row for a **literal** on the int side, because a
     # literal is retyped from the site.
-    if (n1 == "float" and t2 == "int" and not _is_literal(right)
+    if (n1 == "float" and t2 == "int" and not _is_literal(right) and not _is_literal(left)
             and root and (site or "").lower() == "int"):
         # At the **root** of an expression whose own site is an `int` the compiler takes the `(int, int)` row and
         # narrows the float operand with `FloatToInt` (slot 68). `UWindowPulldownMenu.SetSelected` writes
@@ -1000,9 +1000,10 @@ def _byte_literal(part, want, site, env):
         return None
     v = _number(core[0][1])
     if isinstance(v, float):
-        if not v.is_integer():
-            return None
-        v = int(v)
+        # A **float-spelled** literal keeps its float form: `StargateHUD.SetIDColor`'s
+        # `160 * (IdentifyFadeTime / 3.0)` writes the `3.0` as `1e 00004040`, not as a `ByteConst 3` behind
+        # `ByteToFloat` -- the byte context types an int literal, not a float one.
+        return None
     # Widened to `int` the byte literal is a byte only while it fits a **signed** byte: `PlayerProfile.SetClean`
     # writes `DirtyMask | 254` as `9c 39 3a 01 48 11 2c fe 16` -- a plain `IntConstByte`, no `ByteToInt` -- while
     # `ParseColor`'s 16 is `39 3a 24 10`. Widened to `float` the form carries every value the byte form does:
@@ -1070,10 +1071,20 @@ def _float_literal(part, want, site=""):
     the position is what was missing: folding every arithmetic literal fixed 5 bodies and broke 69. The **byte**
     site is the other bound: `StargatePawn.ShieldFlashOn` writes `255 * ...` at a `byte` parameter as
     `39 3f 2c ff` (`IntToFloat`), not as a `FloatConst`, so a byte-typed site casts.
+
+    The position is the **leading** one, and the site must be a `float` one. A leading literal keeps that position
+    down the chain of left operands -- `(640 / RangeToTarget) * 85 / ...` folds the 640 two nodes in -- while an
+    operand to the right of an operator casts (`5` of `5 * FRand()`), a **compound assignment's** value casts
+    (`Alpha -= (255 * VisibleTime) * Delta` is `39 3f 2c ff`), and an `int` site casts (`Min(0.25 * NewPing, 250)`
+    keeps `39 3f 2c fa`). Eight bodies are the evidence: five the earlier parenthesised rule had lost
+    (`PlayerController.ServerUpdatePing`, `Beacons.VisibleForABit.Tick`, `BotEnemy.DefendMelee`, both
+    `CheckRange`) and three it wrote a `ByteToFloat(ByteConst 3)` into.
     """
     if (want or "").lower() != "float":
         return None
-    if (site or "").lower() == "byte":
+    # The fold is a **float site's** rule: at an `int` site the compiler keeps the literal in its int form and
+    # casts it (`250` in `Min(0.25 * NewPing, 250)` is `39 3f 2c fa`), and a byte site casts too.
+    if (site or "").lower() != "float":
         return None
     core = _strip_parens(part)
     neg = False
@@ -1142,14 +1153,15 @@ def _emit_operator(expr, rettype, env, root=False):
     # literal two operators in is still a byte (`ParseColor`). It stops at a call, whose arguments are typed by the
     # callee's parameters -- `emit_call` drops the flag.
     inner = dict(env, byte_root=True) if (rettype or "").lower() == "byte" else env
-    # A byte-typed site types a literal before the cast table is asked (`39 3c 24 a0`), and the root of an
-    # expression folds an int literal into a `FloatConst`; both are tried before `_operand`, whose form for a
-    # literal is the cast.
-    left_env = dict(inner, _root=True) if _paren_wrapped(left) else inner
-    right_env = dict(inner, _root=True) if _paren_wrapped(right) else inner
-    lroot = root or _paren_wrapped(left)
+    # A byte-typed site types a literal before the cast table is asked (`39 3c 24 a0`), and an int literal at a
+    # `float` site folds into a `FloatConst` in exactly two measured positions (see `_float_literal`); both are
+    # tried before `_operand`, whose form for a literal is the cast.
+    # The **leading** operand of the expression keeps the root, so `(640 / RangeToTarget) * 85` folds the 640 two
+    # nodes in; an operand to the right of an operator does not (`5` of `10 + 5 * FRand()` casts).
+    left_env = dict(inner, _root=True) if root else inner
+    right_env = inner
     node = (head + (_byte_literal(left, t1, rettype, inner)
-                    or (_float_literal(left, t1, rettype) if lroot else None)
+                    or (_float_literal(left, t1, rettype) if root else None)
                     or _operand(left, t1, rettype, env, left_env)
                     or emit_expr(left, t1, left_env)[0])
             + (_byte_literal(right, t2, rettype, inner)
