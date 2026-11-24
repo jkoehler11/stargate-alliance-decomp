@@ -693,6 +693,11 @@ OPERATORS = {}
 OPERATOR_PREC = {}
 UNARY = {}
 
+# The compound-assignment spellings. A `+=` is **not** a `Let` around a `+`: its token is a separate native
+# (`AddEqual_IntInt` 161 against `Add_IntInt` 146) and its first parameter is an `out`, so the row is chosen by the
+# target's type first.
+COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=")
+
 
 def _operator_types(expr, env, site="", root=False):
     """`(symbol, left type, right type, result type, token, position)` for the loosest depth-0 operator, or None.
@@ -760,11 +765,34 @@ def _operator_types(expr, env, site="", root=False):
         if hit is not None:
             token, ret = hit
             return sym, "int", "int", ret, token, at
-    if {n1, n2} == {"int", "float"}:
-        hit = _operators().get((sym, "float", "float"))
-        if hit is not None:
-            token, ret = hit
-            return sym, ("float" if n1 == "int" else n1), ("float" if n2 == "int" else n2), ret, token, at
+    if sym in COMPOUND and t1:
+        # A **compound assignment's** row is chosen by its first (`out`) parameter -- the target's own declared
+        # type -- and only then by the value's. `NewRot . Yaw += Delta * SpinRate` targets an `int` and the table
+        # installs no `+=(int, float)`, so the compiler takes `AddEqual_IntInt` and narrows the value (`39 44`, a
+        # `FloatToInt` in front of the product); `a *= 2` has no `*=(int, int)` row at all and takes
+        # `MultiplyEqual_IntFloat` with the literal widened (`39 3f 2c 02`); `Velocity *= - 1` takes
+        # `MultiplyEqual_VectorFloat` and widens (`dd 01 98 39 3f 1d ffffffff 16`). The value is widened to `float`
+        # before it is narrowed to the target, because that is the order the corpus shows on all three.
+        for a, b in ((t1, n2), (t1, "float"), (t1, t1)):
+            if a == n1 and b == n2:
+                continue
+            hit = _operators().get((sym, a, b))
+            if hit is not None:
+                token, ret = hit
+                return sym, a, b, ret, token, at
+    if n1 == "int" or n2 == "int":
+        # A **binary** operator's `int` operand is promoted to `float` when the exact pair is not installed and the
+        # pair with that side replaced by `float` is: `200 * VRand()` is `Multiply_FloatVector` with the literal
+        # cast (`d5 39 3f 2c c8 fc 16 16`). The right side is tried first, then the left, then both -- a row that
+        # exists on the other side is a different native.
+        f1, f2 = ("float" if n1 == "int" else n1), ("float" if n2 == "int" else n2)
+        for a, b in ((f1, n2), (n1, f2), (f1, f2)):
+            if a == n1 and b == n2:
+                continue
+            hit = _operators().get((sym, a, b))
+            if hit is not None:
+                token, ret = hit
+                return sym, a, b, ret, token, at
     # `$` and `@` are declared `coerce string` on both sides, so a non-string operand is converted with the
     # image's own cast table: `AIMessage.DecRefCount` writes `" msg DecRefCount = : " $ RefCount` as
     # `1f <string> 00 39 53 01 6e 08 16` (`IntToString`, slot 83) and `log("STAT QUERY" @ EntryName)` writes
@@ -2175,7 +2203,11 @@ def emit_assign(stmt, at, env):
             raise Refused("an assignment whose target is a %s expression" % shape)
         if ptype == "bool" or shape == "bool-context":
             return bytes([0x14]) + node + emit_expr(rhs, "bool", env)[0]
-        if ptype in ("struct", "array", "delegate", "pointer", ""):
+        if ptype == "struct":
+            # A struct-typed target is a plain `Let`: the copy is by value and the token carries the extent, so
+            # `newRotation = Rotation;` is `0f <LocalVariable> <InstanceVariable>` with no member node of its own.
+            return bytes([0x0F]) + node + emit_expr(rhs, "", env)[0]
+        if ptype in ("array", "delegate", "pointer", ""):
             raise Refused("an assignment to a %s member" % (ptype or "typeless"))
         return bytes([0x0F]) + node + emit_expr(rhs, ptype, env)[0]
     nm = lhs[0][1].lower()
@@ -2198,7 +2230,16 @@ def emit_assign(stmt, at, env):
         if from_props:
             read = _outer_wrapped(nm, read, ptype, "", env) or read
         return bytes([0x14]) + read + emit_expr(rhs, "bool", env)[0]
-    if ptype in ("struct", "array", "delegate", "pointer", ""):
+    if ptype == "struct":
+        # Same plain `Let` for a property: `Velocity = 200 * VRand();` is `0f 01 98 <operator>`, and
+        # `Pawn . Velocity = Pawn . Velocity + ...` is `0f 19 ... <Add_VectorVector>`. The value is written for the
+        # property's own struct type when the artifacts name it (a local's does not -- `_friendly` is the class's
+        # property table -- so a local copy takes no cast at all).
+        read = bytes([token]) + write_index(index)
+        if from_props:
+            read = _outer_wrapped(nm, read, ptype, "", env) or read
+        return bytes([0x0F]) + read + emit_expr(rhs, _friendly(nm, env) or "", env)[0]
+    if ptype in ("array", "delegate", "pointer", ""):
         raise Refused("an assignment to a %s property" % (ptype or "typeless"))
     read = bytes([token]) + write_index(index)
     if from_props:
@@ -2629,7 +2670,6 @@ def _emit_clause(toks, env):
     return emit_expr(toks, "", env)[0]
 
 
-COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=")
 
 # The `Switch` token's operand is the number of bytes the case comparison reads, not a case count: `0` a wide string,
 # `1` a byte and `4` an int (`docs/BYTECODE.md`, measured against `execSwitch` at `0x0004ca20` and the corpus's 200
