@@ -239,6 +239,27 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the types the pair histogram was missing: **5,931 modelled / 5,931 byte-identical / 0 differ** (from
+  5,289 / 5,289 / 0; 642 bodies gained, none lost, the walk and the join unchanged at 11,687 and 11,678, and the
+  operator refusals 2,523 -> 1,279). One thread, five rules: (1) `.Length` of an array or a string is an **int** --
+  it is the `37` length operator and has no property record, so `i < PathList.Length` (157 bodies) read as an
+  unknown operand. (2) An **enum constant is a `byte`**, not its enum's name: `_type_of` answered `enetrole` and the
+  table was asked for `byte == enetrole` (24) and `byte < enetrole` (21). (3) **`int` against `float` promotes to
+  the `(float, float)` row and the int operand takes the compiler's cast** -- `RespawnTime < 10` is
+  `b0 01 72 09 39 3f 2c 0a 16`, an `IntConstByte` behind `IntToFloat`, written around the operand's own bytes
+  rather than retyping it (a float site would take `1e 00002041`). (4) **`$` and `@` are `coerce string` on both
+  sides**, so `" msg DecRefCount = : " $ RefCount` is `39 53 01 6e 08` (`IntToString`) and `"STAT QUERY" @ EntryName`
+  is `39 57 00 56 20` (`NameToString`), keyed on the numeric type so an object goes through `ObjectToString`.
+  (5) **A member of an imported class resolves through the import table** -- `props_all` is this package's exports,
+  so `Pawn.Acceleration` in AmbientCreatures had no record at all; the compiler wrote a negative import, and
+  `_type_of` now returns the member's declared class (`Controller.Pawn` is a `Pawn`) with `_numeric` looking a
+  class-typed value up as `object`. `FishBase.PhysicsVolumeChange`'s `NewVolume.bWaterVolume` writes
+  `19 00 59 02 06 00 04 2d 01 ae 0f`. **Not in this PR:** an enum constant in an `int` site (84 -- 42 bodies widen
+  both sides and 42 do not, so the widening is measured per body rather than assumed), `ArrayCount(fixed array)`
+  (33, folded to the dimension `ue2pkg` does not read), a struct member of a foreign receiver (now typed, refused
+  where it always was: no `StructProperty` value size), `switch` (173), a member-call statement whose receiver's
+  class the artifacts do not name (198), `continue`/`break` (65). Doc: `docs/COMPILER_FRONTEND.md` gains the section
+  and the four bounds.
 - [~] 3.6 the one-operand node, and the census that never read a unary declaration: **5,289 modelled / 5,289
   byte-identical / 0 differ** (from 5,057 / 5,057 / 0; 232 bodies gained, none lost, no scored row's bytes moved, and
   the walk and join are unchanged at 11,687 and 11,678 -- residue 6,621 -> 6,389). One thread, three rules: (1) the

@@ -601,24 +601,50 @@ def _operator_types(expr, env):
     if not left or not right:
         return None
     t1, t2 = _type_of(left, env).lower(), _type_of(right, env).lower()
-    for a, b in ((_numeric(t1), _numeric(t2)), (t1, t2)):
+    n1, n2 = _numeric(t1, env), _numeric(t2, env)
+    for a, b in ((n1, n2), (t1, t2)):
         hit = _operators().get((sym, a, b))
         if hit is not None:
             token, ret = hit
             return sym, a, b, ret, token, at
+    # `int` against `float`: the table installs the `(float, float)` row and the compiler wraps the int operand in
+    # a `PrimitiveCast` -- `Pickup.BotDesireability`'s `RespawnTime < 10` is `b0 01 72 09 39 3f 2c 0a 16`, an
+    # `IntConstByte 10` behind `IntToFloat`, and `Pawn.EncroachingOn`'s `Level.TimeSeconds - Pawn.LastStartTime`
+    # is float already. One direction only: nothing narrows a float to an int without a cast in the source.
+    if {n1, n2} == {"int", "float"}:
+        hit = _operators().get((sym, "float", "float"))
+        if hit is not None:
+            token, ret = hit
+            return sym, ("float" if n1 == "int" else n1), ("float" if n2 == "int" else n2), ret, token, at
+    # `$` and `@` are declared `coerce string` on both sides, so a non-string operand is converted with the
+    # image's own cast table: `AIMessage.DecRefCount` writes `" msg DecRefCount = : " $ RefCount` as
+    # `1f <string> 00 39 53 01 6e 08 16` (`IntToString`, slot 83) and `log("STAT QUERY" @ EntryName)` writes
+    # `39 57 00 56 20` (`NameToString`, slot 87). Only a pair whose conversion the build installs is taken.
+    if sym in ("$", "@", "$=", "@="):
+        hit = _operators().get((sym, "string", "string"))
+        if hit is not None and all(n == "string" or _cast_slots().get((n, "string")) is not None
+                                   for n in (n1, n2)):
+            token, ret = hit
+            return sym, "string", "string", ret, token, at
     return sym, t1, t2, "", None, at
 
 
-def _numeric(t):
+def _numeric(t, env=None):
     """`byte` operands are promoted to `int` by the compiler: `DirtyMask & 254` is `And_IntInt`.
 
     A `class` operand compares as an **`object`**: the table installs `!=` for (Object, Object) and no row for a
     class-typed pair, and the compiler uses that row -- `Inventory.Destroyed`'s `if (Pawn(Owner) != None)` and
     `Mover.Detach`'s alike. Substituting it is a lookup rule only; the operand's own bytes are unchanged.
+
+    A value whose type is a **class name** (`Pawn`, `Controller`, `LevelInfo`) is an object too, and that is the
+    type `_type_of` hands back for a member whose record is an object property: `Controller.Pawn == self` is
+    `EqualEqual_ObjectObject`, and the pair table has no `(controller, object)` row to find it under.
     """
     if t == "byte":
         return "int"
     if t == "class":
+        return "object"
+    if env and t and t in (env.get("class_names") or set()):
         return "object"
     return t
 
@@ -852,7 +878,10 @@ def _type_of(expr, env):
                     return _declared_type(low, env)
             token, enum = _emit_enum(val, env)
             if token is not None:
-                return (enum or "").lower() or "byte"
+                # An enum constant is a **`byte`** whatever enum names it: `NM_Client` is a `ByteConst`, and the
+                # operator table installs its pairs against `byte`, not against the enum's own name. Returning
+                # `enum` here read `byte == enetrole` (45 bodies) and `byte == ephysics` (12) as uninstalled pairs.
+                return "byte"
             if _cast_kind(val, env) == "object":
                 return "class"
             return ""
@@ -891,11 +920,22 @@ def _type_of(expr, env):
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
             nm = member[0][1].lower()
             obj = expr[:at]
+            if nm == "length":
+                # `PathList.Length` is the `37` length operator, which yields an **int** -- there is no property
+                # record to look up, so the member chain read as an unknown type and `i < PathList.Length` (157
+                # bodies) never reached `Less_IntInt`. The receiver's *record* kind is the test, as in
+                # `_emit_member`; the declared type is the fallback for a chain (`Player.LocalInteractions`).
+                if (_record_kind(obj, env) or _type_of(obj, env).lower()) in ("array", "string"):
+                    return "int"
             hit = (_member_record(obj, nm, env) if _type_of(obj, env).lower() != "struct"
                    else _prop_by_name(nm, env))
             if hit is not None:
                 if hit[2] == "struct" and len(hit) > 3 and hit[3]:
                     return hit[3]
+                if hit[2] == "object" and len(hit) > 3 and (hit[3] or "").lower() in (env.get("class_names") or set()):
+                    # the declared **class** of an object property, not the word `object`: `Controller.Pawn` is a
+                    # `Pawn`, and a further link (`.bWaterVolume` on a `NewVolume`) needs the class, not the kind
+                    return hit[3].lower()
                 return hit[2]
     return ""
 
@@ -937,6 +977,25 @@ def _byte_literal(part, want, site, env):
     return bytes([0x39, slot, 0x24, v])
 
 
+def _operand(part, want, rettype, env, inner):
+    """One operand of a binary node, converted to the type the pair was looked up under, or None.
+
+    The conversion is a `PrimitiveCast` written **around** the operand's own bytes, never a retyping of them:
+    `RespawnTime < 10` is `39 3f 2c 0a` -- an `IntConstByte` 10 behind `IntToFloat` -- not the `1e 00002041` a
+    literal typed *as* a float takes, and `"a" $ RefCount` is `39 53 01 6e 08`. The cast's slot comes from the
+    image's table keyed on the **numeric** type, so a class-typed operand converts through `ObjectToString`.
+    """
+    own = _type_of(part, env).lower()
+    src = _numeric(own, env) if own else ""
+    if not want or src == want:
+        return None
+    slot = _cast_slots().get((src, want))
+    if slot is None:
+        return None
+    body = emit_expr(part, own, env)[0] if own else emit_expr(part, "", env)[0]
+    return bytes([0x39, slot]) + body
+
+
 def _emit_operator(expr, rettype, env):
     """`A op B` -> `<token> A B 16`: the operator's token comes **first**, its operands after it.
 
@@ -967,16 +1026,20 @@ def _emit_operator(expr, rettype, env):
         # end of the enclosing node. `Pawn.InGodMode` writes 36 for `(Controller != None) && (...)`: the right
         # operand is 25 compact bytes plus 10 for its four widened indices, and the node's own `16` makes 36. The
         # rule holds on all 4,857 `Skip` nodes the corpus carries (0 differences), so it is computed, not guessed.
-        leftb = _byte_literal(left, t1, rettype, env) or emit_expr(left, t1, env)[0]
-        rightb = _byte_literal(right, t2, rettype, env) or emit_expr(right, t2, env)[0]
+        leftb = (_operand(left, t1, rettype, env, env) or _byte_literal(left, t1, rettype, env)
+                 or emit_expr(left, t1, env)[0])
+        rightb = (_operand(right, t2, rettype, env, env) or _byte_literal(right, t2, rettype, env)
+                  or emit_expr(right, t2, env)[0])
         node = (head + leftb + bytes([0x18]) + struct.pack("<H", _wide(rightb) + 1) + rightb + b"\x16")
         return _converted(node, result, rettype), "short-circuit"
     # The byte context reaches a literal through the operator tree: the assignment types the outermost node, and a
     # literal two operators in is still a byte (`ParseColor`). It stops at a call, whose arguments are typed by the
     # callee's parameters -- `emit_call` drops the flag.
     inner = dict(env, byte_root=True) if (rettype or "").lower() == "byte" else env
-    node = (head + (_byte_literal(left, t1, rettype, inner) or emit_expr(left, t1, inner)[0])
-            + (_byte_literal(right, t2, rettype, inner) or emit_expr(right, t2, inner)[0]) + b"\x16")
+    node = (head + (_operand(left, t1, rettype, env, inner) or _byte_literal(left, t1, rettype, inner)
+                    or emit_expr(left, t1, inner)[0])
+            + (_operand(right, t2, rettype, env, inner) or _byte_literal(right, t2, rettype, inner)
+               or emit_expr(right, t2, inner)[0]) + b"\x16")
     return _converted(node, result, rettype), "operator"
 
 
@@ -1232,6 +1295,19 @@ def _member_record(obj, nm, env):
         if hit:
             friendly = (scope.get("friendly") or {}).get((p, c, nm), "")
             return (INSTANCE_TOKEN, hit[0][0], PROP_TYPE.get(hit[0][2], ""), friendly)
+    # `props_all` holds this package's own exports, so a member of a class declared in *another* package has no
+    # record there -- `Pawn.Acceleration` in AmbientCreatures is Engine's. The compiler still wrote an index for
+    # it, a **negative import**, and the import table names it; only a single candidate of that name is used, the
+    # same rule `_scope` applies to a property on another chain (`InteractionHands.EndState` writes -508).
+    imp = [x for x in (scope.get("imports") or {}).get(nm, []) if x[1] in PROPERTY_CLASSES]
+    if len(imp) == 1:
+        kind = PROP_TYPE.get(imp[0][1], "")
+        friendly = ""
+        for p, c in _ancestors(chain, pack, target):
+            friendly = (scope.get("friendly") or {}).get((p, c, nm), "")
+            if friendly:
+                break
+        return (INSTANCE_TOKEN, imp[0][0], kind, friendly)
     return None
 
 
@@ -2289,6 +2365,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
              # every name that fallback picked, whatever its type: a `within` call's argument reads it through
              # `Outer` too (`CheatManager.CauseEvent` passes `Pawn`, which is `PlayerController`'s property)
              "outside_props": set(),
+             # the imports, so a member of a class this package only imports can find its record (a negative
+             # index): `Pawn.Location` in AmbientCreatures is not an export of AmbientCreatures
+             "imports": imports,
              # the `Outer` record itself -- a property import (`01 8e` is import 14 of Engine.u)
              "outer_ref": next((c[0] for c in imports.get("outer", []) if c[1] in PROPERTY_CLASSES), None),
              # the type word the package artifact spells for every property record, keyed by (package, class, name):
