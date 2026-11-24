@@ -636,3 +636,30 @@ changed exactly one, and the last row shows the size is sufficient on its own.
 padded — which is what `tools/uscript-fit.py` does, and why `tools/l1-change.py` refusing a resize by default is the correct
 default rather than a limitation. The blocker is no longer "we cannot write a package"; it is "we cannot yet write a body
 that does not fit", and the fix for that is padding, not a deeper understanding of the loader.
+
+## Padding works, and a payload has no room above its shipped script (measured 2026-11-24)
+
+`tools/uscript-pad.py` pads a body with **`Nothing` statements** inserted immediately before the top-level `Return`, where
+every preceding statement is complete. One byte each, no effect, and the insertion point comes from the grammar rather than a
+guess. Its `--check` runs three paddings (to 6 bytes, to 11, and the identity) and two refusals — a shrink, and a body that
+does not walk.
+
+**What it cannot do, and the measurement that shows it.** `LogDropped`'s shipped script is 3 bytes in a 34-byte payload, so
+its overhead is 31 bytes. Filling the payload with an 11-byte body was attempted through `tools/l1-change.py`:
+
+```
+FAIL l1-change: 3 bytes -> 11 bytes moves payload offsets, which faults the guest (docs/L1_READINESS.md)
+```
+
+42, not 34: the tool adds the new script to the same 31 bytes of overhead, so **a payload is exactly as large as its shipped
+script plus a fixed overhead, and there is no slack in it**. "Pad to the payload's capacity" is therefore not a thing for
+this function — the capacity *is* the shipped length.
+
+**So the rule for a recompile has a second half**, and it is the half that constrains the front end:
+
+- a recompiled body must be **no longer** than the shipped script, and
+- it must be padded **back to exactly** the shipped length (the padder's job).
+
+A body that comes out longer cannot be made to fit by padding, by moving regions, or by widening a constant *within* the
+payload — those all leave the length where it was. The only two ways forward are a shorter body or a size change the guest
+rejects, which makes **emitting a body that fits** the actual frontier, not writing packages.
