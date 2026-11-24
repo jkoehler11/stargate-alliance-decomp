@@ -917,6 +917,94 @@ def _dot_at(expr):
     return pos
 
 
+def _element_at(expr):
+    """The `[` position when the whole run is `head[index]`, or None.
+
+    The closing bracket has to be the run's **last** token and its partner the depth-0 `[`, so `A[i].B` and
+    `A[i] + 1` are not elements here -- the operator and the member chain are tried first, exactly as the
+    compiler nests them.
+    """
+    if len(expr) < 4 or expr[-1] != ("op", "]"):
+        return None
+    depth = 0
+    for i in range(len(expr) - 1, -1, -1):
+        kind, val = expr[i]
+        if kind != "op":
+            continue
+        if val in ")]}":
+            depth += 1
+        elif val in "([{":
+            depth -= 1
+            if depth == 0:
+                return i if val == "[" else None
+    return None
+
+
+_ARRAY_MODS = ("export", "editinline", "const", "coerce", "out", "native", "array")
+
+
+def _array_element(friendly):
+    """`array<export editinline ScriptEvent>` -> `scriptevent`; "" when the artifact does not spell one."""
+    f = (friendly or "").strip()
+    if not (f.startswith("array<") and f.endswith(">")):
+        return ""
+    words = [w for w in f[6:-1].split() if w.lower() not in _ARRAY_MODS]
+    return words[-1].lower() if words else ""
+
+
+def _element_type(head, env):
+    """`(token, element type)` for the array `head` names, or `(None, "")` when it is not an array read.
+
+    The token is the record's own kind. A **dynamic** array is a `UArrayProperty` and writes `10`
+    (`DynamicArrayElement`); every other indexed record writes `1A` (`ArrayElement`) -- `XUID` is a
+    `UByteProperty` whose `XUID[12]` dimension lives in the class record, and `ServerSetXUID` writes
+    `0F 1A 25 01 58 05 ...`. The children are the **index first** and the array read second
+    (`AIMsgManager.GetReceivedMsg`'s `return msgReceived[Idx];` is `04 10 00 7a 57 01 01 7e 03 04 0b 47`:
+    `10` with the local `Idx` in front of the property), and the node writes no `16` of its own -- the
+    enclosing `Return`/`Let` carries on directly.
+
+    The element type is the declared one: `array<T>`'s `T` for a dynamic array, and the record's own kind
+    for a static one (a `UByteProperty` with a dimension is `byte` elements). A struct element keeps the
+    artifact's friendly name, because that is what the cast table and the member walk key on.
+    """
+    head = _strip_parens(head)
+    if not head:
+        return None, ""
+    if len(head) == 1 and head[0][0] in ("ident", "keyword"):
+        nm = head[0][1].lower()
+        if _record_kind(head, env) == "array":
+            return 0x10, _array_element(_friendly(nm, env))
+        declared = _declared_type(nm, env)
+        if declared in ("", "array"):
+            return None, ""
+        return 0x1A, declared
+    at = _dot_at(head)
+    if at is not None and len(head[at + 1:]) == 1 and head[at + 1][0][0] in ("ident", "keyword"):
+        hit = _member_record(head[:at], head[at + 1][0][1].lower(), env)
+        if hit is None:
+            return None, ""
+        kind, friendly = hit[2], (hit[3] if len(hit) > 3 else "") or ""
+        if kind == "array":
+            return 0x10, _array_element(friendly)
+        declared = friendly if kind == "struct" else kind
+        return (0x1A, declared) if declared else (None, "")
+    if _element_at(head) is not None:
+        # a nested element (`A[B[i]][j]`): its elements are the innermost array's
+        return _element_type(head[:_element_at(head)], env)
+    return None, ""
+
+
+def _emit_element(head, index, rettype, env):
+    """`X[i]` -> `10`/`1A`, the index, the array read; then the element converts at its own site."""
+    token, etype = _element_type(head, env)
+    if token is None:
+        raise Refused("an element of an array the artifacts do not type")
+    arrb = emit_expr(head, "", env)[0]
+    idxb = emit_expr(index, "", env)[0]
+    node = bytes([token]) + idxb + arrb
+    return _converted(node, etype, rettype), "element"
+
+
 def _record_kind(expr, env):
     """The package record's own kind for a simple name (`StructProperty`, `StrProperty`, ...), or ""."""
     expr = _strip_parens(expr)
@@ -1079,6 +1167,11 @@ def _type_of(expr, env):
         # a one-operand node's result: `!bIsOn` is a bool, and this is what types it when the node sits *inside*
         # another operator -- `bInScope && !bHasZoomAnims` reads `bool && an unknown type` without it
         return un[2]
+    at = _element_at(expr)
+    if at is not None:
+        # an element is its array's declared element type, which is what a cast around it and an operator
+        # pair at its site both key on
+        return _element_type(expr[:at], env)[1]
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
@@ -1517,6 +1610,12 @@ def _class_of(expr, env):
             return expr[0][1].lower()
         t = _rettype_on("", expr[0][1], env)
         return t if t in class_names else ""
+    at = _element_at(expr)
+    if at is not None:
+        # `GlobalEvents[size - 1].AddCondition(con)`: the receiver is an element, and the element type is what
+        # the member call resolves against
+        t = _element_type(expr[:at], env)[1]
+        return t if t in class_names else ""
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
@@ -1770,6 +1869,11 @@ def emit_expr(expr, rettype, env):
             # position 0, which `_operator_types` skips as a sign -- so it is tried before the call and member
             # shapes rather than after them.
             return un
+        at = _element_at(expr)
+        if at is not None:
+            # `X[i]`: the element node is read as `10`/`1A` + index + array, and it is tried before the
+            # call and member shapes because an indexed read is neither.
+            return _emit_element(expr[:at], expr[at + 1:-1], rettype, env)
         if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
         if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
@@ -2067,7 +2171,7 @@ def emit_assign(stmt, at, env):
         # (`modifiers.Length = 0;` writes `0f 37 <read> 0f 25`, an extra token this walk does not model) are refused.
         ptype = _type_of(lhs, env).lower()
         node, shape = emit_expr(lhs, "", env)
-        if shape not in ("context", "bool-context", "struct-member"):
+        if shape not in ("context", "bool-context", "struct-member", "element"):
             raise Refused("an assignment whose target is a %s expression" % shape)
         if ptype == "bool" or shape == "bool-context":
             return bytes([0x14]) + node + emit_expr(rhs, "bool", env)[0]
