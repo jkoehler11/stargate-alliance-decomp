@@ -239,6 +239,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the literal's form: a leading position, a float site, and the byte context's own spelling: **6,210 modelled /
+  6,210 byte-identical / 0 differ** (from 6,202 / 6,202 / 0; 8 bodies gained, none lost; residue 5,476 -> 5,468, and
+  the bodies that emit and differ 18 -> 10). Two rules, and they recover every body the previous note recorded as
+  lost. (1) The int-literal **fold is the expression's leading position**, not a parenthesised one: `255` in
+  `Alpha -= (255 * VisibleTime) * Delta` is the first operand of a group that is an operand of `*`, and it casts
+  (`39 3f 2c ff`), while `(640 / RangeToTarget) * 85` folds the `640` two nodes in because it sits on the chain of
+  left operands that starts the statement's value. (2) The mixed `(float, int)` pair is narrowed to `(int, int)` at
+  a root `int` site only when **neither operand is a literal** -- `Min(0.25 * NewPing, 250)` promotes `NewPing` and
+  converts the product at the parameter (`39 44`) -- and the **byte context types an int literal, not a float one**,
+  so `160 * (IdentifyFadeTime / 3.0)` keeps the `3.0` as `1e 00004040` and the three `SetIDColor` bodies are
+  identical (the `39 3c 24 03` it wrote was the "skip word two bytes short" they had been read as). Gained:
+  `Beacons.VisibleForABit.Tick`, `BotEnemy.DefendMelee`, `PlayerController.ServerUpdatePing`, both `CheckRange`, and
+  the three `SetIDColor`. Doc: `docs/COMPILER_FRONTEND.md` gains the section and the fold's bound is stated in
+  `_float_literal`'s docstring. Not in this PR: the 10 that still emit and differ (`LinearStairBuilder.Build`,
+  `PlayerController.PlayerMove` -- a float literal at an int site goes through the int form -- `SetCameraDist`,
+  `ParseOption`, `AdjustSkill`, `GatlingGunAttachment.Tick`, four `UWindowGridColumn`), `switch` (173),
+  `ArrayCount(FixedArray)` (33), `continue`/`break` (65).
 - [~] 3.6 the literal's context and the pair's site: **6,202 modelled / 6,202 byte-identical / 0 differ** (from
   6,194 / 6,194 / 0; 13 bodies gained, 5 lost; residue 5,484 -> 5,476, and the bodies that emit and differ 26 -> 18).
   Four rules, one thread: (1) the int-literal **fold** is positional -- the literal at the *root* of an expression is
