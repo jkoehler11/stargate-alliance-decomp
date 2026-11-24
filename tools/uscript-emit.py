@@ -521,6 +521,10 @@ def _operators():
 
     The precedence is the operator's own `operator(28)` value: smaller binds tighter, so the *loosest* operator at
     depth 0 is the expression's root (`a + b * c` is `a + (b * c)`).
+
+    A **one-operand** declaration is a `preoperator`/`postoperator` statement with no `operator(N)` at all
+    (`native(129) static final preoperator bool ! ( bool A )`), and it lands in `UNARY` instead; the census only
+    started carrying those rows when its `\\boperator\\b` match was fixed, which is why `Not_PreBool` had no token.
     """
     if OPERATORS:
         return OPERATORS
@@ -533,14 +537,19 @@ def _operators():
                 if not token.isdigit():
                     continue
                 m = re.match(r"^.*?\boperator\((\d+)\)\s+([A-Za-z<>]+)\s+(\S+?)\s*"
-                             r"\(\s*((?:out\s+|skip\s+|coerce\s+)*)([A-Za-z<>]+)\s+\w+\s*,\s*"
-                             r"((?:out\s+|skip\s+|coerce\s+)*)([A-Za-z<>]+)\s+\w+\s*\)", decl)
-                if not m:
+                             r"\(\s*((?:out\s+|skip\s+|coerce\s+|optional\s+|const\s+)*)([A-Za-z<>]+)\s+\w+\s*,\s*"
+                             r"((?:out\s+|skip\s+|coerce\s+|optional\s+|const\s+)*)([A-Za-z<>]+)\s+\w+\s*\)", decl)
+                if m:
+                    prec, ret, sym = int(m.group(1)), m.group(2).lower(), m.group(3)
+                    a, b = m.group(5).lower(), m.group(7).lower()
+                    OPERATORS[(sym, a, b)] = (int(token), ret)
+                    OPERATOR_PREC.setdefault(sym, prec)
                     continue
-                prec, ret, sym = int(m.group(1)), m.group(2).lower(), m.group(3)
-                a, b = m.group(5).lower(), m.group(7).lower()
-                OPERATORS[(sym, a, b)] = (int(token), ret)
-                OPERATOR_PREC.setdefault(sym, prec)
+                mu = re.match(r"^.*?\b(?P<form>pre|post)?operator\s+([A-Za-z<>]+)\s+(\S+?)\s*"
+                              r"\(\s*((?:out\s+|skip\s+|coerce\s+|optional\s+|const\s+)*)([A-Za-z<>]+)\s+\w+\s*\)", decl)
+                if mu:
+                    UNARY[(mu.group(3), mu.group(5).lower())] = (int(token), mu.group(2).lower(),
+                                                                 (mu.group(1) or "").lower())
     except OSError:
         pass
     return OPERATORS
@@ -548,6 +557,7 @@ def _operators():
 
 OPERATORS = {}
 OPERATOR_PREC = {}
+UNARY = {}
 
 
 def _operator_types(expr, env):
@@ -870,6 +880,11 @@ def _type_of(expr, env):
     if op is not None:
         # an operator's own result type: `DirtyMask & 2` is an `int`, which is what `bool(...)` casts *from*
         return op[3]
+    un = _unary_types(expr, env)
+    if un is not None:
+        # a one-operand node's result: `!bIsOn` is a bool, and this is what types it when the node sits *inside*
+        # another operator -- `bInScope && !bHasZoomAnims` reads `bool && an unknown type` without it
+        return un[2]
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
@@ -963,6 +978,59 @@ def _emit_operator(expr, rettype, env):
     node = (head + (_byte_literal(left, t1, rettype, inner) or emit_expr(left, t1, inner)[0])
             + (_byte_literal(right, t2, rettype, inner) or emit_expr(right, t2, inner)[0]) + b"\x16")
     return _converted(node, result, rettype), "operator"
+
+
+def _unary_types(expr, env):
+    """`(symbol, operand type, result type, token)` for a leading one-operand operator, or None.
+
+    A unary operator is *not* an operator at depth 0 with two operands: `_operator_types` skips position 0 (a sign,
+    or a lone symbol), so `!bIsOn` and `-Health` never reached the pair table. The declaration the token comes from is
+    the `preoperator` row (`native(129) static final preoperator bool ! ( bool A )`), keyed by the symbol and the
+    operand's declared type -- `-` is `Subtract_PreInt` (143), `Subtract_PreFloat` (169) and `Subtract_PreVector`
+    (211), so the operand's type is part of the key here too.
+    """
+    if len(expr) < 2 or expr[0][0] != "op":
+        return None
+    sym = expr[0][1]
+    if not any(k[0] == sym for k in UNARY):
+        return None
+    t = _type_of(expr[1:], env).lower()
+    for cand in (_numeric(t), t):
+        hit = UNARY.get((sym, cand))
+        if hit is not None:
+            return sym, cand, hit[1], hit[0]
+    return sym, t, "", None
+
+
+def _emit_unary(expr, rettype, env):
+    """`! x` -> `81 <x> 16`: the pre-operator's own opcode, its operand, then `16` like any other call.
+
+    Measured on the shipped bytes, three bodies: `bIsOn = ! bIsOn;` is `14 2d 01 03 | 81 2d 01 03 16 | 04 0b 47` --
+    the token is the native's own opcode (129, in the 0x70..0xff range the exec natives use), the operand is written
+    exactly as a read of the same variable, and the node closes on `16`. As a short-circuit operand the node's width
+    is what the `Skip` word counts: `bSquadBeingAlerted && ! bSquadAlertComplete` writes `18 09 00` around eight wide
+    bytes of operand plus the `16`, the same `_wide(node) + 1` rule the binary nodes use.
+
+    An operand the compiler folds (a literal) is refused by name, as with the two-operand case.
+    """
+    hit = _unary_types(expr, env)
+    if hit is None:
+        return None
+    sym, t, result, token = hit
+    if token is None:
+        raise Refused("a unary operator the image's table does not install (%s %s)"
+                      % (t or "an unknown type", sym))
+    operand = expr[1:]
+    if _is_literal(operand):
+        raise Refused("a unary operator whose operand is a literal, which the compiler folds")
+    if 0x70 <= token <= 0xFF:
+        head = bytes([token])
+    elif token >= 0x100:
+        head = bytes([0x60 + (token >> 8), token & 0xFF])
+    else:
+        raise Refused("a unary operator token below 0x70 (%d), which collides with a real opcode" % token)
+    node = head + emit_expr(operand, result, env)[0] + b"\x16"
+    return _converted(node, result, rettype), "unary"
 
 
 def _emit_cast(name, inner, env, rettype=""):
@@ -1339,6 +1407,12 @@ def emit_expr(expr, rettype, env):
             # the loosest depth-0 operator is the expression's root, so it is tried before a call or a member:
             # `Foo(1) + 2` is an `Add_IntInt`, not a call
             return _emit_operator(expr, rettype, env)
+        un = _emit_unary(expr, rettype, env)
+        if un is not None:
+            # a one-operand node: `!bIsOn`, `-Health`. The pair table never sees it -- its operator sits at
+            # position 0, which `_operator_types` skips as a sign -- so it is tried before the call and member
+            # shapes rather than after them.
+            return un
         if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
         if _is_call(expr) and _cast_kind(expr[0][1], env):
@@ -1621,8 +1695,10 @@ def emit_assign(stmt, at, env):
     else:
         raise Refused("an assignment to a name neither a local nor a property of the class chain")
     if ptype == "bool":
-        # The value is one expression: a literal, a variable read (the bool flag is the read's own) or a call.
-        if len(rhs) != 1 and not _is_call(rhs):
+        # The value is one expression: a literal, a variable read (the bool flag is the read's own), a call, or any
+        # expression that types as a bool -- `bIsOn = ! bIsOn;` is `14 <read> 81 <read> 16`, and the unary node's
+        # own type is what admits it.
+        if len(rhs) != 1 and not _is_call(rhs) and _type_of(rhs, env).lower() != "bool":
             raise Refused("a bool assignment whose value is a compound expression")
         read = bytes([0x2D, token]) + write_index(index)
         if from_props:
@@ -2736,6 +2812,11 @@ function CallMember() { Target.Ping(); }
 function CallMemberArg() { Target.Pong(1); }
 function CallMemberText() { Target.Say("x"); }
 function CallUnknown() { Target.Missing(); }
+function bool NotFlag() { return !bDead; }
+function NotSet() { bDead = !bDead; }
+function bool NotAnd() { return !bDead && bFlag; }
+function int NegInt() { return -Health; }
+function bool NotCall() { return !Target.bFlag; }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -2895,6 +2976,16 @@ WANT = {
     "callmember": "190163090600001b3316040b47",
     "callmemberarg": "190163090700001b342616040b47",
     "callmembertext": "0e190163090900001b351f780016040b47",
+    # A one-operand node: `81 <operand> 16`. `bIsOn = ! bIsOn;` in the shipped bytes is
+    # `14 2d 01 03 81 2d 01 03 16 04 0b 47`, and `-MyList.ItemsPerPage` in `GUIVertScrollBar.WheelUp` writes
+    # `1b 2d 8f 19 01 30 05 00 04 01 19 16 16` -- `8f` (Subtract_PreInt) around the member read.
+    "notflag": "04812d012d16040b47",
+    "notset": "142d012d812d012d16040b47",
+    "notcall": "0481190163090600042d012f16040b47",
+    "negint": "048f016e0416040b47",
+    # `&&` whose left operand is a `!` node: `82 <!bDead> 18 0700 <bFlag> 16`; the skip word is that node's wide
+    # width plus one, exactly as `bSquadBeingAlerted && ! bSquadAlertComplete` writes `18 09 00` for an 8-wide node.
+    "notand": "04" "82" "812d012d16" "180700" "2d012f" "16" "040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.

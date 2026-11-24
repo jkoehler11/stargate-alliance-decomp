@@ -1,4 +1,5 @@
 package,class,declaration,symbol,composed,native_token,record,record_token,body_va,status
+Core,Object,native(129) static final preoperator bool ! ( bool A ),!,Not_PreBool,129,Not_PreBool,129,0x00040fa0,bound
 Core,Object,"native(242) static final operator(24) bool == ( bool A, bool B )",==,EqualEqual_BoolBool,242,EqualEqual_BoolBool,242,0x00041000,bound
 Core,Object,"native(243) static final operator(26) bool != ( bool A, bool B )",!=,NotEqual_BoolBool,243,NotEqual_BoolBool,243,0x00041090,bound
 Core,Object,"native(130) static final operator(30) bool && ( bool A, skip bool B )",&&,AndAnd_BoolBool,130,AndAnd_BoolBool,130,0x00041120,bound
@@ -8,6 +9,12 @@ Core,Object,"native(133) static final operator(34) byte *= ( out byte A, byte B 
 Core,Object,"native(134) static final operator(34) byte /= ( out byte A, byte B )",/=,DivideEqual_ByteByte,134,DivideEqual_ByteByte,134,0x000413a0,bound
 Core,Object,"native(135) static final operator(34) byte += ( out byte A, byte B )",+=,AddEqual_ByteByte,135,AddEqual_ByteByte,135,0x00041460,bound
 Core,Object,"native(136) static final operator(34) byte -= ( out byte A, byte B )",-=,SubtractEqual_ByteByte,136,SubtractEqual_ByteByte,136,0x00041510,bound
+Core,Object,native(137) static final preoperator byte ++ ( out byte A ),++,AddAdd_PreByte,137,AddAdd_PreByte,137,0x000415c0,bound
+Core,Object,native(138) static final preoperator byte -- ( out byte A ),--,SubtractSubtract_PreByte,138,SubtractSubtract_PreByte,138,0x00041650,bound
+Core,Object,native(139) static final postoperator byte ++ ( out byte A ),++,AddAdd_Byte,139,AddAdd_Byte,139,0x000416e0,bound
+Core,Object,native(140) static final postoperator byte -- ( out byte A ),--,SubtractSubtract_Byte,140,SubtractSubtract_Byte,140,0x00041770,bound
+Core,Object,native(141) static final preoperator int ~ ( int A ),~,Complement_PreInt,141,Complement_PreInt,141,0x00041800,bound
+Core,Object,native(143) static final preoperator int - ( int A ),-,Subtract_PreInt,143,Subtract_PreInt,143,0x000418e0,bound
 Core,Object,"native(144) static final operator(16) int * ( int A, int B )",*,Multiply_IntInt,144,Multiply_IntInt,144,0x00041940,bound
 Core,Object,"native(145) static final operator(16) int / ( int A, int B )",/,Divide_IntInt,145,Divide_IntInt,145,0x000419c0,bound
 Core,Object,"native(146) static final operator(20) int + ( int A, int B )",+,Add_IntInt,146,Add_IntInt,146,0x00041a50,bound
@@ -28,6 +35,11 @@ Core,Object,"native(159) static final operator(34) int *= ( out int A, float B )
 Core,Object,"native(160) static final operator(34) int /= ( out int A, float B )",/=,DivideEqual_IntFloat,160,DivideEqual_IntFloat,160,0x000421f0,bound
 Core,Object,"native(161) static final operator(34) int += ( out int A, int B )",+=,AddEqual_IntInt,161,AddEqual_IntInt,161,0x000422c0,bound
 Core,Object,"native(162) static final operator(34) int -= ( out int A, int B )",-=,SubtractEqual_IntInt,162,SubtractEqual_IntInt,162,0x00042370,bound
+Core,Object,native(163) static final preoperator int ++ ( out int A ),++,AddAdd_PreInt,163,AddAdd_PreInt,163,0x00042420,bound
+Core,Object,native(164) static final preoperator int -- ( out int A ),--,SubtractSubtract_PreInt,164,SubtractSubtract_PreInt,164,0x000424b0,bound
+Core,Object,native(165) static final postoperator int ++ ( out int A ),++,AddAdd_Int,165,AddAdd_Int,165,0x00042540,bound
+Core,Object,native(166) static final postoperator int -- ( out int A ),--,SubtractSubtract_Int,166,SubtractSubtract_Int,166,0x000425d0,bound
+Core,Object,native(169) static final preoperator float - ( float A ),-,Subtract_PreFloat,169,Subtract_PreFloat,169,0x000426d0,bound
 Core,Object,"native(170) static final operator(12) float ** ( float A, float B )",**,MultiplyMultiply_FloatFloat,170,MultiplyMultiply_FloatFloat,170,0x00042730,bound
 Core,Object,"native(171) static final operator(16) float * ( float A, float B )",*,Multiply_FloatFloat,171,Multiply_FloatFloat,171,0x000427c0,bound
 Core,Object,"native(172) static final operator(16) float / ( float A, float B )",/,Divide_FloatFloat,172,Divide_FloatFloat,172,0x00042850,bound
@@ -45,6 +57,7 @@ Core,Object,"native(182) static final operator(34) float *= ( out float A, float
 Core,Object,"native(183) static final operator(34) float /= ( out float A, float B )",/=,DivideEqual_FloatFloat,183,DivideEqual_FloatFloat,183,0x00042f10,bound
 Core,Object,"native(184) static final operator(34) float += ( out float A, float B )",+=,AddEqual_FloatFloat,184,AddEqual_FloatFloat,184,0x00042fd0,bound
 Core,Object,"native(185) static final operator(34) float -= ( out float A, float B )",-=,SubtractEqual_FloatFloat,185,SubtractEqual_FloatFloat,185,0x00043090,bound
+Core,Object,native(211) static final preoperator vector - ( vector A ),-,Subtract_PreVector,211,Subtract_PreVector,211,0x00043950,bound
 Core,Object,"native(212) static final operator(16) vector * ( vector A, float B )",*,Multiply_VectorFloat,212,Multiply_VectorFloat,212,0x000439e0,bound
 Core,Object,"native(213) static final operator(16) vector * ( float A, vector B )",*,Multiply_FloatVector,213,Multiply_FloatVector,213,0x00043aa0,bound
 Core,Object,"native(296) static final operator(16) vector * ( vector A, vector B )",*,Multiply_VectorVector,296,Multiply_VectorVector,296,0x00043b60,bound

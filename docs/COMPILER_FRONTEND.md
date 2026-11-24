@@ -728,3 +728,54 @@ refusals are dominated by the unknown type it leaves: `bool && an unknown type` 
 two-operand declarations (97 rows), so the token has no row to come from: the census tool has to read
 `operator(N) T sym ( T A )` as well, and then `_type_of` and `emit_expr` need the unary node. After it: `switch`
 (173), a member-call statement whose receiver's class the artifacts do not name (174), `continue`/`break` (52).
+
+## Stage 3, continued -- the one-operand node, and the census that never read a unary declaration (measured 2026-11-23)
+
+**5,289 bodies are modelled and all 5,289 are byte-identical**, from 5,057 / 5,057 / 0. No previously scored body lost
+a byte and no row's bytes moved: 232 bodies gained, and the residue falls 6,621 -> **6,389** of 11,687 (the walk and
+the join are unchanged at 11,687 and 11,678).
+
+### `Not_PreBool` had no row because the census never read a `preoperator`
+
+The previous section recorded the token as unreachable: "`inventory/native_operators.csv` carries only two-operand
+declarations". It carries **110** declarations now, from 97, and the missing 13 are `Core.Object`'s unary family --
+`native(129) static final preoperator bool ! ( bool A )`, `++`/`--` in both pre and post form, `Complement_PreInt`
+(141), `Subtract_PreInt` (143), `Subtract_PreFloat` (169) and `Subtract_PreVector` (211). The declaration regex matched
+`\boperator\b`, and `preoperator` has no word boundary in front of `operator`, so every unary statement was skipped;
+the records they explain (`AddAdd_PreByte`, `Subtract_PreInt`, ...) then read as if the compiler had synthesised them
+from other operators, and that sentence sat in the tool's own docstring. **`--check` now holds 110 declarations, all 110
+bound to a registration record, and 0 operator-named records without a declaration (from 13)** -- the orphan line the
+tool prints is the gate.
+
+The composed name follows the declaration's own form: a `preoperator` is `<stem>_Pre<Type>` and a `postoperator` is
+`<stem>_<Type>` (`AddAdd_Byte` is the postfix increment, `AddAdd_PreByte` the prefix one), so the four increment forms
+are four records and not one. The never-matched shape is now a self-test case, three declarations deep.
+
+### A one-operand operator is `<token> <operand> 16`
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `bIsOn = ! bIsOn;` (`scaleWall.Trigger`) | `14 2d 01 03 81 2d 01 03 16 04 0b 47` | the token is the native's **own opcode** (129 = `0x81`), the operand is written exactly as a read of the same variable, and the node closes on `16` like any other call |
+| `return ( ! Pawn.bJustLanded );` (`PlayerController.WantsSmoothedView`) | `04 81 19 01 05 06 00 04 2d 01 5c 12 16 04 0b 47` | the operand may be a `Context` member, so the node wraps an already-emitted node -- no extra skip word of its own |
+| `bSquadBeingAlerted && ! bSquadAlertComplete` (`SquadAIBasic.IsBeingAlerted`) | `82 2d 01 68 21 18 09 00 81 2d 01 47 3c 16 16` | as a short-circuit operand the node's width is what the `Skip` counts: 8 wide bytes of operand plus the `16`, the same `_wide(node) + 1` rule the binary nodes use |
+| `- MyList.ItemsPerPage` (`GUIVertScrollBar.WheelUp`) | `1b 2d 8f 19 01 30 05 00 04 01 19 16 16` | the same shape carries `Subtract_PreInt` (`0x8f`) around a member read, so it is one rule for the family, not a `!` special case |
+
+`_type_of` needed the node as much as `emit_expr` did: the operator-pair histogram's `bool && an unknown type` was the
+unary node's own result type leaking unknown into the pair lookup, so a one-operand expression now answers its
+declaration's return type. A bool assignment admits any value that types as a bool (`bIsOn = ! bIsOn;`), where before
+only a literal, a read or a call was written.
+
+### What the node does not reach, and the three bounds on it
+
+- **The operand's type has to be known.** 72 bodies still refuse `an unknown type !` -- `! Level.bDropDetail` reads
+  through a member the artifacts do not type. The pair families that survive are the same gap seen from the other
+  side: `int < an unknown type` 317, `bool && an unknown type` 289, `an unknown type && an unknown type` 137.
+- **`~` is emitted and unexercised.** `Complement_PreInt` (141) takes the same rule as `-`, but no body in the corpus
+  writes a unary complement (all 104 `~` hits in the source are `~=` comparisons), so its bytes are unmeasured; a body
+  that used it and compiled differently would be refused by the artifact's own contract, not shipped.
+- **A folded operand is refused by name** (`a unary operator whose operand is a literal, which the compiler folds`),
+  as with the two-operand case: `-1` is an `IntConst`, never `8f 25 16`.
+
+Still refused after this: `switch` (173), a member-call statement whose receiver's class the artifacts do not name
+(198), `continue`/`break` (65 "a statement that is control flow"), and the unknown-type operand families above, which
+are now the histogram's owners and the next instrument.
