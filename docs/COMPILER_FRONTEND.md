@@ -929,3 +929,23 @@ narrowing, not the skip word.
 `CheatManager.SetCameraDist` (a write through a `Context`), `GUIComponent.ParseOption` (`final` callee through a
 receiver chain), `DeathMatch.AdjustSkill`, `GatlingGunAttachment.Tick`, and the four `UWindowGridColumn`; plus
 `switch` (173), `ArrayCount(FixedArray)` (33) and `continue`/`break` (65) as before.
+
+## Stage 3, continued -- the compiled array size, and the `const` behind it (measured 2026-11-24)
+
+**6212 modelled / 6212 byte-identical / 0 differ** (from 6,210 / 6,210 / 0; **2 bodies gained, none lost**, the walk and
+the join unchanged at 11,687 and 11,678, residue 5,468 -> **5466**, the bodies that emit and differ stay **10**).
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `return ArrayCount(BombingBay);` (`AlkeshBomber.GetNumBombingBays`) | `042c02040b47` | `ArrayCount(X)` is **not a call**: the compiler writes X's *declared dimension* as an int literal -- `var BombingBay BombingBay[2];` on the class, so the body is the one-statement `Return` of a `2c` constant. The token is the ordinary int form (`25` zero, `26` one, `2c <byte>`, `1d <int32>`), and it converts at its site like any int, so a float site would carry a `39 3f` in front of it |
+| `if (EventCacheIdx >= ArrayCount(EventCache))` (`LevelInfo.AddEventToCache`) | `?` | the dimension can be **large**: `var name EventCache[64];` folds to `2c 40`, not to a byte-only or a zero form. The **type** the call answers is `int`, which is what made 41 of the residue's `ArrayCount` rows read `int < an unknown type` -- the pair table never saw a left type for the comparison, so the body stopped at its first `if` |
+
+The declaration is read from the **source text**, not from the package: `tools/uscript-emit.py` scans every `var` and
+`local` statement for a declarator whose `]` is followed by `;` or `,` (`var string A[4], B[2];` reads both), which is
+what separates a declaration from an index in an initializer. A dimension spelled as a `const` is followed to its
+value -- `GUIController`'s `LiveRungData[TOTAL_LADDER_RUNGS]` is 17 from `const TOTAL_LADDER_RUNGS=17;` -- and a name
+whose declarations disagree, or whose const is an expression rather than a number, is refused by name
+(**0** rows: "an ArrayCount of a name whose declared dimension the source does not spell") instead of being given a
+guessed size, because a wrong dimension is a wrong body that still scores.
+
+**Not in this PR:** `switch` (173), `continue`/`break` (65), and the 10 bodies that still emit and differ.
