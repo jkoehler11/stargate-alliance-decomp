@@ -707,3 +707,40 @@ and that is the next experiment, not a claim this one can make.
 **What is no longer in question**: editing a `.uc` file, compiling it, installing the result without changing any payload's
 size, and booting the game. Every link in that chain is measured, and each of the four tools involved refuses the step it
 cannot justify.
+
+## A one-byte edit changes what the game displays (measured 2026-11-24)
+
+The previous section ended with a caveat: a compiled body had been installed and the game booted, but nothing showed that the
+change *did* anything. This closes it, on the main menu, with one byte.
+
+**The target.** `StargateMenus.u` carries the menu's build line in two places, both found by scanning the package:
+
+| where | what |
+|---|---|
+| export **1333**, `Function InitComponent`, `+51` of 81 | the **bytecode literal**: `1f 42 75 69 6c 64 3a 20 00` = `StringConst "Build: "` |
+| export **1766**, `TextBuffer ScriptText`, `+300` | the **shipped source**: `BuildStampLB.Caption = "Build: "$MyController.GetBuildStamp();` |
+
+**The edit**: `0x144e3`, `B` → `X`. One byte.
+
+```
+file 285,884 -> 285,884   bytes changed 1 (0x144e3)   payload sizes unchanged   layout untouched
+```
+
+**The observation**: the booted game's main menu displays
+
+```
+Xuild: Dec 15 2005 12:02:54
+```
+
+Read off the frame, not inferred: the same menu, the same items, the same timestamp — and the prefix the bytecode supplies now
+reads `Xuild:`.
+
+**What this proves, precisely.** A byte in a script literal inside a package reaches the screen. With the earlier result — a body
+compiled from edited `.uc` source, installed without a size change, booting — the loop from **source to visible output** is
+closed and each step is measured. What it does not prove is that a *compiled body* was executed here: this particular change is
+a literal in already-shipped bytecode, not one the emitter produced. The two results are adjacent, not the same, and the
+distinction is the next thing to close.
+
+**Why the timing caveat from the last section does not apply.** That null result depended on comparing animated frames. This one
+is a *string on a static screen*: no diffing, no statistics, no instrument that can be right for the wrong reason — the text
+either says `Xuild:` or it does not.
