@@ -254,6 +254,25 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   `Multiply_FloatVector` with the literal cast. Doc: `docs/COMPILER_FRONTEND.md` gains the section and names the
   residue's new head. Not in this PR: the 1,414 "an operator the image's table does not install" rows (the next
   instrument), the `BeginState`/`EndState` state record (29) and the 135 bodies that still emit and differ.
+- [~] 3.6 a bare name is an enum constant, a const, or a local's declared word: **7,250 modelled / 7,250
+  byte-identical / none of them differing** (from 6,966 / 6,966 / 0; 284 bodies gained, **none lost**; residue
+  4,712 -> 4,428, the operator bucket 1,414 -> 1,125, and the artifact regenerates over the full corpus, 11,687
+  bodies walked). Four rules, one family: a **bare name** the walk had resolved only along the body's class chain.
+  (1) An **enum constant is a global name** to this compiler, not a chain name: 104 of the 1,414 operator rows were
+  `NM_DedicatedServer` (41), `NM_Client` (23), `NM_Standalone` (21) -- `LevelInfo.ENetMode` constants spelled in
+  bodies whose chain never reaches `LevelInfo` -- compiled as the ordinal alone. The chain is tried first; the
+  corpus table answers only a name whose every declarer agrees on one `(ordinal, enum)`. (2) A `const NAME = <int>;`
+  is a **compile-time literal** (73 rows: `NUMTEAMS`, `NUM_PIECES`, `MAX_CORRECT_MOVER`), substituted at the site and
+  re-entering the literal path with the site type and root position, so a const at the root of a float expression
+  folds and one wanted as a byte is a `ByteConst`. The order is **chain enum -> chain `const` -> corpus enum**,
+  measured: 24 names are both a const and an enum constant (`xc_*`). (3) A **local's declared word** comes from
+  `env["localtypes"]` (78 operands over 46 names), unambiguous because no class declares one local name with two
+  types -- 0 collisions over 4,124 `local` declarations. (4) The member's **record** is chosen by the receiver's
+  *record kind*, as `_emit_member` already chose its node: the typing change alone refused the 42 bodies the walk
+  had modelled (`Canvas.SetDrawColor`'s `local Color C; C.R = R;`) and was measured that way first (7,174 with 42
+  lost). Doc: `docs/COMPILER_FRONTEND.md` gains the section. Not in this PR: the 13 bodies that now reach a **later**
+  wrong rule (differ bucket 135 -> 148, all refused, seven only after the record-kind read), the 1,125 operator rows
+  that remain, and the `BeginState`/`EndState` state record (29).
 - [~] 3.6 a `Super` call names the nearest ancestor's import: **6,777 modelled / 6,777 byte-identical / 0 differ**
   (from 6,662 / 6,662 / 0; 115 bodies gained, none lost; residue 5,016 -> 4,901, and the `Super`-call bucket
   483 -> 368). `Super.F()` writes `1c <record>` and the record can be an **import**: a package imports one entry per

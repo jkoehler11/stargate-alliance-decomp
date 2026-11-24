@@ -1141,3 +1141,53 @@ refusal is down to 94 rows.
 
 **Not in this PR:** the 1,414 operator rows (the next instrument), the `BeginState`/`EndState` record and the 135
 bodies that still emit and differ.
+
+## Stage 3, continued -- a bare name is an enum constant, a const, or a local's declared word (measured 2026-11-24)
+
+**6,966 -> 7,250 modelled, all 7,250 byte-identical, none of them differing** (284 bodies gained, **none lost**; the
+residue 4,712 -> 4,428 rows and the operator bucket 1,414 -> 1,125). Four rules from one family: a **bare name** in an
+expression, which the walk had resolved only along the body's own class chain and otherwise refused.
+
+**An enum constant is a global name to this compiler, not a name resolved along the chain.** Of the 1,414 rows of *an
+operator the image's table does not install*, **104** were operands that are `NM_DedicatedServer` (41), `NM_Client`
+(23), `NM_Standalone` (21), `MSGP_None`… -- `LevelInfo.ENetMode`'s constants, spelled in bodies whose chain never
+reaches `LevelInfo` and compiled as the ordinal alone (`24 <ordinal>`). The chain is still tried **first**, because a
+declaration the body's own chain carries is the one the compiler read; the corpus table (`enum_by_name`, built in
+`score`) answers only a name whose every declarer in the corpus agrees on one `(ordinal, enum)` pair, which is what
+keeps a name two enums spell differently out of the guess. Callers that must not widen pass `corpus=False`.
+
+**A `const NAME = <int>;` is a compile-time literal.** `_scope` already built the table for `ArrayCount`; it is now
+`scope["consts"]` and `emit_expr` re-enters the literal path at the **same site type and the same root position**,
+because the compiler substitutes the value and encodes the site exactly as the written number would be. **73** rows were
+`NUMTEAMS`, `NUM_PIECES`, `MAX_CORRECT_MOVER`, `NUM_RINGS`… A const at the root of a `float` expression folds like a
+written literal does; one passed where a byte is wanted is a `ByteConst`.
+
+**The lookup order between the two is measured, not chosen: chain enum -> chain `const` -> corpus enum.** **24** names
+are both a `const` and an enum constant (`xc_*`), so an order that put the corpus table first would read those from the
+wrong table; a chain `const` outranks a corpus enum because the body's own declaration is the one the compiler read.
+
+**A local's declared word, and the control that caught the wrong rule it enabled.** `_declared_type` reads a
+**local's** type from `env["localtypes"]` (`local Vector Dir;` -> `vector`) instead of leaving a `StructProperty` local
+as `struct`: **78** bare operands over **46** names (`StartTrace`, `Enemydir`, `TargetVector`, `HitLocation`). That is
+unambiguous only because **no class declares one local name with two types -- 0 collisions over 4,124 `local`
+declarations**, which is why the table is first-wins.
+
+With the word now `vector`, `_type_of`'s dot branch took `_member_record` where it had taken `_prop_by_name`, and
+**42 bodies the walk already modelled were refused** (`Canvas.SetDrawColor` writes `local Color C; C.R = R;`). The
+member's *record* is chosen by the receiver's **record kind**, exactly as `_emit_member` chooses its node -- the same
+convention, one function away -- and with both doing it, all 42 come back: the four rules gain **284** and lose none.
+A version of this branch that stopped at the typing change was measured first and shipped nothing (7,174 with 42 lost),
+which is the number to distrust if anyone re-derives the rule.
+
+**The differ bucket grew 135 -> 148, and not one of the new rows was modelled before.** Every body in it is *refused*
+-- the artifact's verdict is byte equality, so nothing wrong enters `modelled`. They are bodies the old rule stopped
+early and that now reach a **later** node whose rule is wrong: **seven** appear only once the member read follows the
+record kind (`BlueFlag.PostBeginPlay`'s `SimAnim.bAnimLoop = true;`, `Mover.KeyFrameReached`, `UDebugBlueLookAndFeel.
+FW_GetClientArea`), **six** already with the two bare-name tables (`HandOfLight_AstralSenseParticle`,
+`ZatPulse`, `StingerProjectile` 57 vs 57, `ReplicatorQueen`, `StargateGrenadeProjectile`, `ExtreniteWeapon`'s
+`FullChargeTime / MAX_CHARGE`). Named like this they are the next instrument's work list, not a fraction.
+
+**What is left.** The residue's head is 604 *a member that is not a property of the receiver's class*, 502 *a call to a
+name the class chain does not declare*, 372 *a member call statement…*, 232 *an operator … (bool && an unknown type)*,
+232 *a call statement whose receiver's class the artifacts do not name*, 170 *a numeric literal in a typeless
+function*, 164 *a name neither a local, a property nor an enum constant of the chain*.

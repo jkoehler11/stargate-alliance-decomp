@@ -893,8 +893,18 @@ def _outer_wrapped(low, read, ptype, want, env):
     return _converted(bytes([0x19]) + outer + struct.pack("<H", 5) + bytes([4]) + read, ptype, want)
 
 
-def _emit_enum(name, env):
-    """`PHYS_Swimming` -> `24 03`: the ordinal of the constant in the enum the class chain declares."""
+def _emit_enum(name, env, corpus=True):
+    """`PHYS_Swimming` -> `24 03`: the ordinal of a constant the class chain declares, or -- with `corpus` --
+    one the whole corpus declares exactly once.
+
+    An enum constant is a **global** name to this compiler, not a name resolved along the class chain: of the
+    1,414 operator sites whose operand was a bare name, 104 are `NM_DedicatedServer` (41), `NM_Client` (23),
+    `NM_Standalone` (21) and their siblings -- `LevelInfo.ENetMode`'s constants, spelled in bodies whose chain
+    never reaches `LevelInfo`, and compiled as the ordinal alone. The chain is still tried first, because a
+    declaration the body's own chain carries is the one the compiler read; the corpus table answers only a
+    name whose every declarer agrees on one `(ordinal, enum)` pair (`env["enum_by_name"]`, built in `score`),
+    which is what keeps a name two enums spell with different ordinals out of the guess.
+    """
     low = name.lower()
     for cls in env["order"]:
         hit = env["enums"].get((cls, low))
@@ -904,7 +914,13 @@ def _emit_enum(name, env):
         if not 0 <= ordinal <= 255:
             return None, enum
         return bytes([0x24, ordinal]), enum
-    return None, ""
+    hit = (env.get("enum_by_name") or {}).get(low) if corpus else None
+    if hit is None:
+        return None, ""
+    ordinal, enum = hit
+    if not 0 <= ordinal <= 255:
+        return None, enum
+    return bytes([0x24, ordinal]), enum
 
 
 _WIDE_TABLE = None
@@ -1112,17 +1128,26 @@ def _declared_type(nm, env):
     """A read's declared type: the record's kind, spelled out when the record only says `struct`.
 
     A parameter's struct name is in its declaration (`Vector momentum`), a property's in
-    `inventory/class_properties.csv` (`SquadDir` is a `Vector`); a local `local Vector V;` is neither, and stays
-    `struct` -- which refuses rather than guesses.
+    `inventory/class_properties.csv` (`SquadDir` is a `Vector`), a **local's** in its own `local` statement
+    (`local Vector Dir;` -- `env["localtypes"]`, which is per class and carries only names the class declares
+    with one type); a local no statement spells stays `struct`, which refuses rather than guesses.
     """
     scope = env.get("scope") or {}
-    ptype = ""
+    ptype, is_local = "", False
     for table in ("locals", "props"):
         if nm in scope.get(table, {}):
             ptype = scope[table][nm][2]
+            is_local = table == "locals"
             break
     if ptype != "struct":
         return ptype
+    if is_local:
+        # The property artifact has no row for a local, so a struct-typed local read as `struct` and every
+        # operator over it was refused as a pair the table does not install: 78 bare operands (46 names) were
+        # `StartTrace`, `Enemydir`, `TargetVector` -- `local Vector` in their own function.
+        word = (env.get("localtypes") or {}).get(nm)
+        if word:
+            return word
     return _friendly(nm, env) or (env.get("paramtypes") or {}).get(nm, "") or ptype
 
 
@@ -1148,11 +1173,17 @@ def _type_of(expr, env):
             for table in ("locals", "props"):
                 if low in scope.get(table, {}):
                     return _declared_type(low, env)
-            token, enum = _emit_enum(val, env)
+            token, enum = _emit_enum(val, env, corpus=False)
             if token is not None:
                 # An enum constant is a **`byte`** whatever enum names it: `NM_Client` is a `ByteConst`, and the
                 # operator table installs its pairs against `byte`, not against the enum's own name. Returning
                 # `enum` here read `byte == enetrole` (45 bodies) and `byte == ephysics` (12) as uninstalled pairs.
+                return "byte"
+            if low in (scope.get("consts") or {}):
+                # A `const NAME = <int>;` is substituted by the compiler, so the site is an `int` site --
+                # `MAX_CORRECT_MOVER < 5` is `Less_IntInt` whatever the const was written for.
+                return "int"
+            if _emit_enum(val, env)[0] is not None:
                 return "byte"
             if _cast_kind(val, env) == "object":
                 return "class"
@@ -1213,8 +1244,12 @@ def _type_of(expr, env):
                 # `_emit_member`; the declared type is the fallback for a chain (`Player.LocalInteractions`).
                 if (_record_kind(obj, env) or _type_of(obj, env).lower()) in ("array", "string"):
                     return "int"
-            hit = (_member_record(obj, nm, env) if _type_of(obj, env).lower() != "struct"
-                   else _prop_by_name(nm, env))
+            # The member record is chosen by the receiver's *record kind*, exactly as `_emit_member` chooses
+            # its node: `local Color C; C.R = R;` is a `color` by its own statement and a `StructMember` record
+            # in the package, and the record is what names `R`. Testing the declared word here instead refused
+            # 42 bodies the walk already modelled -- `Canvas.SetDrawColor` is the first of them.
+            objkind = _record_kind(obj, env) or _type_of(obj, env).lower()
+            hit = _member_record(obj, nm, env) if objkind != "struct" else _prop_by_name(nm, env)
             if hit is not None:
                 if hit[2] == "struct" and len(hit) > 3 and hit[3]:
                     return hit[3]
@@ -1942,7 +1977,19 @@ def emit_expr(expr, rettype, env):
         read = _emit_var(val, env, rettype)
         if read is not None:
             return read, "variable"
-        token, enum = _emit_enum(val, env)
+        token, enum = _emit_enum(val, env, corpus=False)
+        if token is None:
+            value = (env["scope"].get("consts") or {}).get(val.lower())
+            if value is not None:
+                # A `const NAME = <int>;` is a **compile-time literal**: the compiler substitutes the value and
+                # the site encodes it exactly as the number written there would be, which is why this re-enters
+                # the literal path with the same site type and the same `root` position (an int const at the
+                # root of a float expression folds like a written literal does). Of the 1,414 operator sites
+                # with a bare unknown operand, 73 were `NUMTEAMS`, `NUM_PIECES`, `MAX_CORRECT_MOVER` -- consts
+                # the emitter never consulted, though `_scope` already builds the table for `ArrayCount`.
+                node, _shape = emit_expr([("number", str(value))], rettype, dict(env, _root=root))
+                return node, "const-literal"
+            token, enum = _emit_enum(val, env)
         if token is not None:
             # An enum constant is a byte and the compiler writes ByteConst there; passed where neither a byte, an
             # int nor its own enum is the declared type, the token would be a guess, so it is refused by name.
@@ -3100,6 +3147,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                     continue
             dim.setdefault(nm, n)
     scope["dims"] = dim
+    # The `const NAME = <int>;` table itself, which `ArrayCount` already read and a bare `NUMTEAMS` did not:
+    # a const is a compile-time literal, so `emit_expr` substitutes it at the site.
+    scope["consts"] = cst
     for nm, cands in props.items():
         picked = None
         for anc in order:
@@ -3346,6 +3396,13 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     for (c, n), values in consts.items():
         if len(values) == 1:
             consts_by_cls.setdefault(c, {})[n] = next(iter(values))
+    enum_seen = {}
+    for (_cls, low), hit in enums.items():
+        enum_seen.setdefault(low, set()).add(hit)
+    # The names the whole corpus spells as one enum constant: keyed by name, valued `(ordinal, enum)`, and only
+    # where every declarer agrees. `NM_DedicatedServer` is `LevelInfo.ENetMode`'s ordinal 1 in one class and
+    # nothing else, so a body whose chain never reaches `LevelInfo` can still write `24 01` for it.
+    enum_by_name = {nm: next(iter(v)) for nm, v in enum_seen.items() if len(v) == 1}
     localtypes_by_cls = {}
     for (c, n), t in localtypes.items():
         localtypes_by_cls.setdefault(c, {})[n] = t
@@ -3419,7 +3476,8 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
             scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of,
                            dims_by_cls, consts_by_cls)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
-                   "enum_names": enum_names, "class_names": class_names, "order": scope["order"],
+                   "enum_names": enum_names, "enum_by_name": enum_by_name,
+                   "class_names": class_names, "order": scope["order"],
                    "rets": rets, "assert_line": aline,
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
                    # and the records of the package it is declared in
