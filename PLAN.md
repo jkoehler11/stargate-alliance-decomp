@@ -239,6 +239,20 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a Super call's record starts its import walk at the parent, and a member call's return type comes from
+  the receiver's class: **7,648 modelled / 7,648 byte-identical / 0 differ** (from 7,250 / 7,250 / 0; 398 bodies
+  gained, none lost; residue 4,428 -> 4,030 and the differ bucket 148 -> 66). Two rules, each a join that read the
+  wrong table. (1) `_record_on` is handed the **parent**, so `_ancestors(...)` already opens at the class whose
+  declaration wins; the import fallback sliced `[1:]` and skipped it, so a body whose parent imports the name itself
+  wrote the grandparent's import -- `EmptyHands.PostBeginPlay` is `1c c6 02 16 04 0b 47` (import **-134**, owner
+  `StargateWeapon`, against the walk's -127 `Actor`). **70 of the 148** bodies that emitted and differed differed at
+  that one byte and nowhere else. (2) `_type_of` read a call's return type along the **body's** own chain, so
+  `CurrentAction.WaitForPlayer()` (a `bool` declared on `ScriptedAction`) was an unknown type and `A && B` never
+  reached `AndAnd_BoolBool`: **518 of the 1,125** operator rows (311 right, 207 left). The residue gains a debug
+  spelling (`SG1_DBG_OP=1` appends both operand texts to the refusal), which is how those rows were counted by shape.
+  Doc: `docs/COMPILER_FRONTEND.md` gains the section. Not in this PR: the 66 that still differ, the 759 operator rows
+  (headed by 353 whose unknown side is a struct member -- `Dest.Z`, `Rotation.Pitch`), the 49 `X.Default.Y` chains and
+  the 56 names that are a `const` on an ancestor class.
 - [~] 3.6 a struct assign is a plain `Let` and a compound assign picks by its target: **6,966 modelled / 6,966
   byte-identical / 0 differ** (from 6,777 / 6,777 / 0; 189 bodies gained, none lost; residue 4,901 -> 4,712, and the
   artifact regenerates byte for byte over the full corpus, 11,687 bodies walked). Three rules, one refusal family.

@@ -1191,3 +1191,37 @@ FW_GetClientArea`), **six** already with the two bare-name tables (`HandOfLight_
 name the class chain does not declare*, 372 *a member call statement…*, 232 *an operator … (bool && an unknown type)*,
 232 *a call statement whose receiver's class the artifacts do not name*, 170 *a numeric literal in a typeless
 function*, 164 *a name neither a local, a property nor an enum constant of the chain*.
+
+## Stage 3, continued -- the Super record's walk, and a member call's return type (measured 2026-11-24)
+
+**7,250 -> 7,648 modelled, all byte-identical, none of them differing** (398 bodies gained, **none lost**; the residue
+4,428 -> 4,030 and the differ bucket 148 -> 66). Two rules, each a join that was reading the wrong table.
+
+**A `Super.F()` record's import walk starts at the parent, because it is handed the parent.** `_record_on(parent, ...)`
+opens `_ancestors(chain, pack, parent)` -- whose **first** entry is the parent itself -- for the export half, but the
+import fallback sliced `[1:]`, so a body whose parent imports the name itself wrote the **grandparent's** import.
+`EmptyHands.PostBeginPlay` is `1c c6 02 16 04 0b 47`: `c6` sets the sign bit and the continuation bit, `02` continues
+the value, so the record is **-134** (`StargateContent` imports `PostBeginPlay` for `StargateWeapon`, `Actor`, `Pawn`,
+`Controller` and eleven more), and the walk wrote -127 (`Actor`). **70 of the 148** bodies that emitted and differed
+differed at that one byte and nowhere else -- `ZATGUN.DisplayDebug` is -226 (`StargateWeapon`) against the walk's -236
+(`Actor`), and every `super.PostBeginPlay();` in `StargateContent` moved. The 29 that still disagree are
+`BeginState`/`EndState`, which name a state rather than a function, and they stay refused.
+
+**A member call's return type is declared on the receiver's class, not on the body's chain.** `_type_of`'s call branch
+walked `env["order"]`, the body's own ancestors, so `CurrentAction.WaitForPlayer()` -- a `bool` declared on
+`ScriptedAction`, a class the body does not extend -- was an unknown type, and every `A && B`, `A || B` and `!A`
+around such a call was refused as a pair the table does not install. That is **518 of the 1,125** operator rows (311
+where the unknown side was on the right, 207 on the left). `_rettype_on(cls, ...)` already refuses the body-chain
+fallback for exactly this reason -- a same-named function on the body is a different record with its own return type
+-- and `_emit_member_call` joins through `_class_of`, so the type now comes from that same join. The pair histogram
+moves where the note predicted: `bool && an unknown type` 232 -> 28 rows, `an unknown type && bool` 81 -> 6.
+
+**The residue carries a debug spelling.** `SG1_DBG_OP=1` appends both operand texts to the operator refusal
+(`... <<Pawn . DrawScale | Pawn . Default . DrawScale>>`), because a pair histogram names a shape while a token run
+names the rule. Every count in this section was taken that way, and it is the instrument the next family starts from.
+
+**What is left.** The operator bucket is **759** rows, headed by **353** whose unknown side is a **struct member**
+(`Dest.Z`, `Rotation.Pitch`, `Viewer.Region.Zone.bDistanceFog`) -- a `vector`'s fields are not in
+`inventory/class_properties.csv`, which is per class -- then 49 `X.Default.Y` chains and 56 names that are a `const`
+on an ancestor class (`MAXSTEPHEIGHT`, `pi`). The differ bucket is 66, three of them new: bodies the two rules carried
+far enough to reach a later node whose rule is wrong, all refused and none written.
