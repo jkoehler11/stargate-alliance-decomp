@@ -779,3 +779,50 @@ only a literal, a read or a call was written.
 Still refused after this: `switch` (173), a member-call statement whose receiver's class the artifacts do not name
 (198), `continue`/`break` (65 "a statement that is control flow"), and the unknown-type operand families above, which
 are now the histogram's owners and the next instrument.
+
+## The types the pair histogram was missing: five rules, 5,289 → 5,931 bodies
+
+The unary node left **1,556 operand sites** whose type `_type_of` could not name, and every one of them read as
+`an operator the image's table does not install`. Naming them is one thread: four rules in `_type_of` and one in the
+operator lookup. Measured on the whole corpus, **5,931 modelled / 5,931 byte-identical / 0 differ** (from 5,289 /
+5,289 / 0; 642 bodies gained, none lost, the walk and the join unchanged at 11,687 and 11,678), and the operator
+refusals fall 2,523 → **1,279**.
+
+1. **`.Length` of an array or a string is an `int`.** It is the `37` length operator, not a property record, so the
+   chain read as unknown and `i < PathList.Length` (157 bodies), `Skins.Length > 0` (51) never reached
+   `Less_IntInt`. The test is the receiver's *record* kind, as in `_emit_member`, with the declared type as the
+   fallback for a chain.
+2. **An enum constant is a `byte`, not its enum's name.** `_type_of` returned `enetrole`/`ephysics`, so the pair
+   table was asked for `byte == enetrole` (24) and `byte < enetrole` (21) and refused; the constant is a `ByteConst`
+   and the installed row is against `byte`. (`NM_Client`-style constants whose enum the body's chain does not
+   declare stay refused as "an enum constant passed as int": see the bound below.)
+3. **`int` against `float` promotes to the `(float, float)` row, and the int operand takes the compiler's cast.**
+   `Pickup.BotDesireability` writes `RespawnTime < 10` as `b0 01 72 09 39 3f 2c 0a 16` — `Less_FloatFloat` with an
+   `IntConstByte 10` behind `IntToFloat` (slot 0x3f). The conversion is written **around** the operand's own bytes,
+   never by retyping it: a float site would take `1e 00002041`, and the cast is what the corpus carries. One
+   direction only — nothing narrows a float without a cast in the source.
+4. **`$` and `@` are declared `coerce string` on both sides**, so a non-string operand is converted with the image's
+   own cast table: `" msg DecRefCount = : " $ RefCount` is `1f <string> 00 39 53 01 6e 08 16` (`IntToString` 83) and
+   `"STAT QUERY" @ EntryName` is `39 57 00 56 20` (`NameToString` 87). Only a pair whose conversion the build
+   installs is taken; the key is the **numeric** type, so a class-typed operand goes through `ObjectToString`.
+5. **A member of a class this package only imports resolves through the import table.** `props_all` is this
+   package's own exports, so `Pawn.Acceleration` inside `AmbientCreatures` had no record at all (`rec=None`) even
+   though the receiver's class was named. The compiler still wrote an index — a **negative import** — and the import
+   table names it; a single candidate of that name is used, the same rule `_scope` already applies to a property on
+   another chain. `_type_of` then returns the member's **declared class** (`Controller.Pawn` is a `Pawn`), which is
+   what lets a second link resolve, and `_numeric` looks a class-typed value up as `object` (`Pawn(Owner) != None`
+   is `EqualEqual_ObjectObject`). `FishBase.PhysicsVolumeChange`'s `NewVolume.bWaterVolume` now writes
+   `19 00 59 02 06 00 04 2d 01 ae 0f`.
+
+**Bounds, named, not guessed:**
+
+- An enum constant in an `int` site: `Actor.UpdatePrecacheStaticMeshes` widens *both* sides (`9a 39 3a 01 50 03 39
+  3a 24 08 16`), but 42 bodies (`Pawn.DropToGround`, `Mover.Trigger`, `Pickup.InitDroppedPickupFor`) do **not**, so
+  the widening is measured per body rather than assumed — shipped without it, the 84 sites stay refused by name.
+- `ArrayCount(FixedArray)` is **folded to the array's literal dimension** by the compiler
+  (`NumClasses < ArrayCount(PawnTypes)` is `Less_IntInt` with `IntConstByte 08`); modelling it needs the export's
+  `ArrayDim`, which `ue2pkg` does not read. 33 bodies.
+- A struct member of a **foreign** receiver (`Enemy.Location`) now has a record and a declared type, and is refused
+  where it always was: the value size of a `StructProperty` is not in `PROP_SIZE`.
+- `switch` (173), a member-call statement whose receiver's class the artifacts do not name (198), `continue`/`break`
+  (65) are untouched.
