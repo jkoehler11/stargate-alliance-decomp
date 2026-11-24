@@ -456,3 +456,30 @@ played; everything that changed one died at the same address.
 **What that means for the search**: the code that uses the old length runs between the title appearing and the first
 transition, so a breakpoint there is the instrument. Nothing about the package format needs to be re-read first — the
 target is now a time window, not a field.
+
+## A halted EIP sample means idle, not dead (measured 2026-11-23)
+
+This page has used `EIP=0x8001d1ea` with `HLT=1` as the signature of a dead guest. It is not a sufficient one. Sampling the
+build whose `LogDropped` payload grew 34 → 36 returned that address for **every** sample — 500 of 500 starting at 15 s, and
+300 of 300 starting at 60 s — and the same ISO then **rendered its title** in a driver run at 70 s and repainted on a pad
+tap at 82 s.
+
+The kernel idles in `HLT` while its threads wait, so a sample can land there for an instant at any time. What distinguishes
+idle from dead is the **window**, not the value:
+
+- a build that samples *exclusively* at the idle address across a window in which the original is executing real code is
+  stalled or dead;
+- a single halted sample, or a handful, says only that the CPU was idle when it was read.
+
+**What this retracts**: statements on this page of the form "the guest is dead here" that rested on one register dump taken
+after a known input. They were consistent with the pixel evidence, but the register evidence alone did not establish them —
+and on this build it flatly contradicted the driver's own repaint count.
+
+**What survives**: the boot matrix, because it is pixel evidence from the driver with the original as control in the same
+run; and the size rule, because it does not depend on any register reading — every build that changed a payload size failed
+visibly, and every build that did not played.
+
+**Tooling note for the next session**: `tools/xemu/eip-functions.py` does **not** isolate `XDG_DATA_HOME`, so it runs
+against the real `xemu.toml` and `eeprom.bin` rather than a per-run copy the way `drive.py` does. Its launch parameters are
+otherwise correct, and its samples are what they are — but compare against a control run before drawing a conclusion from a
+single address.
