@@ -99,6 +99,13 @@ CAST_TYPES = ("byte", "int", "bool", "float", "string", "name", "vector", "rotat
 PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4, "byte": 1, "vector": 12,
              "string": 0}
 
+# A **struct-valued** member's size is not in `PROP_SIZE`: the record says `StructProperty` and the artifact's
+# `friendly_type` names the struct. The three engine structs the corpus reaches that way are all 12 bytes, and the
+# size byte is the same 12 a `vector` property writes -- `return Pawn.Location;` is `04 19 01 86 05 00 0c 01 8a`
+# (`AmbientCreatures.TransientAmbientCreature.PickDestination`). A struct the artifact names but this table does not
+# is still refused rather than given a size the corpus never wrote.
+STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12}
+
 # The skip word a `Context` writes before its type byte. For a member that is an `InstanceVariable` it is 5 in all
 # 17,710 such nodes, whatever width the member's index was written with (`01 18` and `01 69 04` both write 5). A
 # *call* member is not this constant -- over `VirtualFunction` members of one shape the word ranges 1..6 -- so the
@@ -1416,7 +1423,16 @@ def _emit_member(expr, rettype, env):
                 "struct-member")
     if token != INSTANCE_TOKEN:
         raise Refused("a member reached through a local")
-    if ptype not in PROP_SIZE:
+    size = PROP_SIZE.get(ptype)
+    if size is None and ptype == "struct":
+        # The record is a `StructProperty`; the artifact's declared type names the struct, and only a struct whose
+        # size the corpus writes is modelled (`Pawn.Location` -> 12). A struct name the table does not carry keeps
+        # the refusal, and the message names it so the residue says which one.
+        size = STRUCT_SIZE.get((friendly or "").lower())
+        if size is None:
+            raise Refused("a struct member declared %s, whose value size this walk does not carry"
+                          % (friendly or "without a friendly type"))
+    if size is None:
         raise Refused("a %s member, whose value size this walk does not carry" % (ptype or "typeless"))
     if ptype == "bool":
         # A bool member is `19 <obj> <skip> 04 2d 01 <index>`: the size byte is 4 like every other pointer-sized
@@ -1429,7 +1445,7 @@ def _emit_member(expr, rettype, env):
         return _converted(node, "bool", rettype), "bool-context"
     read = bytes([INSTANCE_TOKEN]) + write_index(index)
     node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", CONTEXT_SKIP)
-            + bytes([PROP_SIZE[ptype]]) + read)
+            + bytes([size]) + read)
     # the cast sits *outside* the node: `return w.Default.AutoSwitchPriority;` in a float function is
     # `04 39 3f 19 ...` -- IntToFloat, then the Context
     return _converted(node, ptype, rettype), "context"
@@ -1521,9 +1537,14 @@ def emit_expr(expr, rettype, env):
             return read, "variable"
         token, enum = _emit_enum(val, env)
         if token is not None:
-            # An enum constant is a byte and the compiler writes ByteConst there; passed where neither a byte nor
-            # its own enum is the declared type, the token would be a guess, so it is refused by name.
+            # An enum constant is a byte and the compiler writes ByteConst there; passed where neither a byte, an
+            # int nor its own enum is the declared type, the token would be a guess, so it is refused by name.
             want = (rettype or "").lower()
+            if want == "int":
+                # In an `int` site the byte is **widened**, not retyped: `Physics != PHYS_Falling` is
+                # `9a 39 3a 01 28 39 3a 24 02 16` -- `ByteToInt` (slot 58) in front of the `24 <ordinal>`, the same
+                # wrapper a `byte` *property* gets from the same pair lookup.
+                return _converted(token, "byte", "int"), "enum-const"
             if want != "byte" and want != (enum or "").lower():
                 raise Refused("an enum constant passed as %s" % (rettype or "typeless"))
             return token, "enum-const"
