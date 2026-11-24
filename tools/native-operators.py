@@ -5,8 +5,13 @@ The marker pass skips the 92 `operator` declarations because one statement was t
 typed records — `Core.Object`'s operators become 103 records. Measured here, that is the wrong way round: each
 declaration becomes **one** record whose name the compiler composes from the operator and its operand types
 (`int + ( int A, int B )` → `Add_IntInt`, `vector * ( float A, vector B )` → `Multiply_FloatVector`), and the
-record count is higher because records exist that no declaration made — the `++`/`--` family and the unary
-`Subtract_Pre*`/`Not_PreBool`/`Complement_PreInt`, which the compiler synthesises from other operators.
+record count is higher because records exist that no declaration made -- the `++`/`--` family and the unary
+`Subtract_Pre*`/`Not_PreBool`/`Complement_PreInt`. That last sentence was wrong, and it hid a parser bug for a day:
+those **are** declared, as a `preoperator`/`postoperator` statement -- `native(129) static final preoperator bool ! (
+bool A );` -- and this tool's declaration regex matched `\boperator\b`, which `preoperator` has no boundary for, so
+all 24 unary declarations were skipped and the records they explain read as synthesised. A `preoperator` composes
+`<stem>_Pre<Type>` (`Not_PreBool`, `AddAdd_PreByte`) and a `postoperator` composes `<stem>_<Type>`
+(`AddAdd_Byte`, the postfix increment).
 
 So the mapping is a rule, not a guess, and this tool applies it to the shipped text and checks it against the
 registration table:
@@ -58,7 +63,7 @@ SYMBOLS = {
     "+": "Add", "-": "Subtract", "*": "Multiply", "/": "Divide", "%": "Percent", "**": "MultiplyMultiply",
     "$": "Concat", "@": "At", "$=": "ConcatEqual", "@=": "AtEqual", "-=": "SubtractEqual",
     "+=": "AddEqual", "*=": "MultiplyEqual", "/=": "DivideEqual", "%=": "PercentEqual",
-    "!": "Not", "~": "Complement",
+    "!": "Not", "~": "Complement", "++": "AddAdd", "--": "SubtractSubtract",
 }
 
 # Named operators, which are identifiers rather than punctuation (`operator bool ClockwiseFrom( int A, int B )`).
@@ -69,8 +74,8 @@ TYPES = {"bool": "Bool", "byte": "Byte", "int": "Int", "float": "Float", "string
 
 MODIFIERS = {"out", "coerce", "skip", "optional", "const", "export", "private", "protected", "native"}
 
-DECL = re.compile(r"\bnative\b(?:\(\s*(?P<token>\d+)\s*\))?(?P<mods>(?:\s+(?:static|final|const|private|protected))*)"
-                  r".*?\boperator\b\s*(?:\(\s*[\d,]+\s*\))?\s*[\w<>\[\]]+\s+"
+DECL = re.compile(r"\bnative\b(?:\s*\(\s*(?P<token>\d+)\s*\))?(?P<mods>(?:\s+(?:static|final|const|private|protected))*)"
+                  r".*?\b(?:(?P<form>pre|post)operator|operator)\b\s*(?:\(\s*[\d,]+\s*\))?\s*[\w<>\[\]]+\s+"
                   r"(?P<symbol>[A-Za-z_]\w*|[+\-*/%<>=!&|^@~$]{1,3})\s*\((?P<params>[^)]*)\)", re.I | re.S)
 
 
@@ -98,12 +103,18 @@ def suffix(type_name):
     return TYPES.get(t, t)
 
 
-def compose(symbol, types):
-    """The record name the compiler builds: stem, then one suffix per operand; a unary operator says `Pre`."""
+def compose(symbol, types, form=""):
+    """The record name the compiler builds: stem, then one suffix per operand; a unary operator says `Pre`.
+
+    A `preoperator` is `<stem>_Pre<Type>` (`Not_PreBool`, `AddAdd_PreByte`) and a `postoperator` is
+    `<stem>_<Type>` (`AddAdd_Byte`, `AddAdd_Int`) -- the postfix increment is the record whose name has no `Pre`.
+    """
     stem = SYMBOLS.get(symbol) or (symbol if symbol in NAMED else None)
     if stem is None:
         return None
     if len(types) == 1:
+        if (form or "").lower() == "post":
+            return "%s_%s" % (stem, suffix(types[0]))
         return "%s_Pre%s" % (stem, suffix(types[0]))
     return stem + "_" + "".join(suffix(t) for t in types)
 
@@ -121,16 +132,21 @@ def statements(text):
 
 
 def parse(text):
-    """[(declaration, symbol, token, record)] for every `operator` statement in one class's text."""
+    """[(declaration, symbol, token, record)] for every `operator` statement in one class's text.
+
+    The statement's keyword is one of `operator`, `preoperator` or `postoperator` -- the unary family carries the
+    prefix/suffix, which is why a `\\boperator\\b` search never saw `native(129) static final preoperator bool ! (` ...
+    """
     out = []
     for chunk in statements(text):
-        if not re.search(r"\bnative\b", chunk, re.I) or not re.search(r"\boperator\b", chunk, re.I):
+        if not re.search(r"\bnative\b", chunk, re.I) or not re.search(r"(?:pre|post)?operator\b", chunk, re.I):
             continue
         for m in DECL.finditer(chunk):
             symbol = m.group("symbol")
             decl = re.sub(r"\s+", " ", m.group(0)).strip()
             types = param_types(m.group("params"))
-            out.append((decl, symbol, (m.group("token") or "").strip(), compose(symbol, types)))
+            out.append((decl, symbol, (m.group("token") or "").strip(),
+                        compose(symbol, types, m.group("form") or "")))
     return out
 
 
@@ -269,6 +285,10 @@ def selftest():
     assert compose("$", ["string", "string"]) == "Concat_StrStr"
     assert compose("@=", ["string", "string"]) == "AtEqual_StrStr"
     assert compose("-", ["float"]) == "Subtract_PreFloat"
+    assert compose("!", ["bool"], "pre") == "Not_PreBool"
+    assert compose("++", ["byte"], "pre") == "AddAdd_PreByte"
+    assert compose("++", ["byte"], "post") == "AddAdd_Byte"
+    assert compose("--", ["int"], "post") == "SubtractSubtract_Int"
     assert compose("Dot", ["vector", "vector"]) == "Dot_VectorVector"
     assert compose("??", ["int"]) is None
     cases += 1
@@ -289,6 +309,14 @@ def selftest():
     assert got[0][1:] == ("ClockwiseFrom", "", "ClockwiseFrom_IntInt"), got
     got = parse("native(296) static final operator(16) vector * ( vector A, vector B );")
     assert got[0][2:] == ("296", "Multiply_VectorVector"), got
+    # The unary family: `preoperator` and `postoperator` are one-operand statements with no `operator(N)`, and the
+    # `Pre` in the record's name is the declaration's own prefix. This is the shape the old `\boperator\b` lost.
+    got = parse("native(129) static final preoperator  bool  !  ( bool A );")
+    assert got[0][1:] == ("!", "129", "Not_PreBool"), got
+    got = parse("native(139) static final postoperator byte ++ ( out byte A );")
+    assert got[0][1:] == ("++", "139", "AddAdd_Byte"), got
+    got = parse("native(143) static final preoperator  int  -  ( int A );")
+    assert got[0][1:] == ("-", "143", "Subtract_PreInt"), got
     cases += 1
     # The pool's `String` spelling answers where the script's `Str` does not.
     alias = "AtEqual_StrStr".replace("Str", "String")

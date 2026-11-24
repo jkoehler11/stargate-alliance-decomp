@@ -239,6 +239,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the one-operand node, and the census that never read a unary declaration: **5,289 modelled / 5,289
+  byte-identical / 0 differ** (from 5,057 / 5,057 / 0; 232 bodies gained, none lost, no scored row's bytes moved, and
+  the walk and join are unchanged at 11,687 and 11,678 -- residue 6,621 -> 6,389). One thread, three rules: (1) the
+  census's `\boperator\b` never matched a **`preoperator`/`postoperator`** statement, so `Core.Object`'s 13 unary
+  declarations were skipped and the records they explain (`Not_PreBool`, `AddAdd_PreByte`, `Subtract_PreInt`,
+  `Complement_PreInt`) read as compiler-synthesised: `inventory/native_operators.csv` goes 97 -> **110 rows, all 110
+  bound, 0 operator-named records left without a declaration (from 13)**, and a `postoperator` composes
+  `<stem>_<Type>` where a `preoperator` composes `<stem>_Pre<Type>`. (2) A one-operand operator is **`<token> <operand>
+  16`** with the token as its own opcode: `bIsOn = ! bIsOn;` is `14 2d 01 03 81 2d 01 03 16 04 0b 47`,
+  `return ( ! Pawn.bJustLanded );` wraps a `Context` member (`04 81 19 01 05 06 00 04 2d 01 5c 12 16 04 0b 47`), and
+  `- MyList.ItemsPerPage` is the same shape with `8f` (`Subtract_PreInt`), so it is one rule for the family. (3)
+  `_type_of` answers the node's declared return type, which is what the pair histogram was missing: `bool && an
+  unknown type` was the unary node leaking an unknown operand, and a bool assignment now admits any value that types
+  as bool. **Not in this PR:** the operand's type still has to be known (72 bodies refuse `an unknown type !`; `int <
+  an unknown type` 317, `bool && an unknown type` 289 are the same gap), `switch` (173), a member-call statement whose
+  receiver's class the artifacts do not name (198), `continue`/`break` (65), and `~` is emitted but unexercised by the
+  corpus. Doc: `docs/COMPILER_FRONTEND.md` gains the section, the four measured rows and the three bounds.
 - [~] 3.6 the call statement, the whole parent chain, and two type rules: **5,057 modelled / 5,057 byte-identical /
   0 differ** (from 4,096 / 4,093 / 3; 961 bodies gained, none lost -- the walk and the join are unchanged at 11,687
   and 11,678, and the residue falls 6,742 -> 6,621). One thread, five rules: (1) a **call statement through a
