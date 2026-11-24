@@ -871,3 +871,35 @@ emit and differ: the six folded literals above, three `SetDrawColor(160 * (Ident
 whose first difference is a `Skip` word two bytes short, and thirteen singles -- a `within` call, a call token and
 index, a cast, and length differences whose cause is not their first differing byte.
 
+## The literal's context and the pair's site (measured 2026-11-23)
+
+**6,202 modelled / 6,202 byte-identical / 0 differ** (from 6,194 / 6,194 / 0; **13 bodies gained, 5 lost**, the walk
+and the join unchanged at 11,687 and 11,678, residue 5,484 -> **5,476**), and the bodies that *emit and differ* fall
+26 -> **18**. Three rules and one corrected constant, all read off the 26 bodies the previous note left behind.
+
+| the source | the bytes | what it settled |
+|---|---|---|
+| `return (10 + 5 * FRand());` (`TransientAmbientCreature.MaxHiddenTime`) | `04 ae 1e 00002041 ab 39 3f 2c 05 c3` | the int-literal fold is **positional**: the literal at the **root** of an expression is a `FloatConst` (`1e`), while the `5` of the nested `5 * FRand()` is `IntConstByte` behind `IntToFloat`. The right-hand position casts too (`RespawnTime < 10`), and a parenthesised operand is a root again -- `Beacons.DrawBeacon` folds the `640` of `(640 / RangeToTarget)` and `StargatePawn.DrawClassIcon` the `96` of `96 * scale`. The previous note recorded folding as a negative ("neither the operator, the literal's position nor the site decides it") because it folded *every* arithmetic literal, which fixed 5 bodies and broke 69: it is the position, and only inside a root |
+| `Canvas.SetDrawColor(0, 160 * (IdentifyFadeTime / 3.0), 0)` (`StargateHUD.SetIDColor`, three classes) | `... 39 3c 24 a0 ac ...` | an argument's **byte parameter types the literal**: `160` is a `ByteConst` and the mixed pair widens it with `ByteToFloat` (slot 60), not the `IntConstByte` behind `IntToFloat` (slot 63) an int literal takes. The `255` of the `else` branch beside it keeps the int form, which is the next row |
+| `Canvas.SetDrawColor(0, 128, 0)` (`SayMessagePlus.RenderComplexMessage`) | `1c dc 01 24 00 24 80 24 00 16` | the byte form's boundary is **255**, not 127. A census of all 18 packages: **3,357** `ByteConst` nodes, **30** of them at 128 or above (128, 137, 150, 160, 192, 200..254), and **389** nodes at exactly 255 in the int form (`A = 255;`, `FindControllerPortIndex(255)`). The earlier "127 is the last value" was measured on six sites that all sat below 128 except the 255 ones |
+| `Items.FindEntry((Y - VBorder) / ItemHeight)` (`UWindowPulldownMenu.SetSelected`) | `1b 60 02 91 39 44 af 00 51 19 39 3f 01 7b 0a 16 01 45 0b 16 16` | at the **root** of an expression whose own site is an `int`, a `(float, int)` pair takes the `(int, int)` row and narrows the float operand with `FloatToInt` (slot 68): `Divide_IntInt(FloatToInt(Y - IntToFloat(VBorder)), ItemHeight)`. The **nested** subtraction keeps the float row, and a comparison at a `bool` site promotes the int side instead (`AmbientCreatureManager.InSpawnRange`, `ShieldBelt.Tick`) |
+
+`(a) . _byte_literal`'s widening is why the four `UWindowGridColumn` bodies and `UWindowGrid.Resized` read as a
+`Context` skip word two bytes long: the extra bytes were a `39 44`/`39 3f` pair inside the context, not a wrong skip
+word. The skip word was the symptom the previous note named; the pair is the cause.
+
+**13 bodies gained:** the five `MaxHiddenTime`/`GetSleepTime` folds, `Fragment.BeginState`,
+`Replicator.PlayWaiting`, `Beacons.DrawBeacon`, `StargatePawn.DrawClassIcon`, `SayMessagePlus.RenderComplexMessage`,
+`UWindowGrid.Resized`, `UWindowPulldownMenu.SetSelected`, and `PlayerController.BlendRot`.
+
+**5 bodies lost, named and not explained:** `PlayerController.ServerUpdatePing`, `Beacons.VisibleForABit.Tick`,
+`BotEnemy.DefendMelee`, `UWindowHScrollbar.CheckRange`, `UWindowVScrollbar.CheckRange`. Each is a mixed pair whose
+narrowing sits at a *nested* node, or a `Skip` word whose right operand now differs; the counts are net +8 and the
+artifact's contract still holds (a row is byte-identical or the body is refused), but the five are the price of the
+root rule and the next session's sample.
+
+**Not in this PR** (the 18 that still emit and differ): the three `SetIDColor` bodies' remaining skip word, three
+folded literals the positional rule does not reach, `GUIComponent.ParseOption`'s `final` callee written as a
+`VirtualFunction` through a receiver chain, `CheatManager.SetCameraDist`'s write through a `Context`, and singles in
+`LinearStairBuilder.Build`, `DeathMatch.AdjustSkill`, `GatlingGunAttachment.Tick`, `UWindowGridColumn` (4) -- plus
+`switch` (173), `ArrayCount(FixedArray)` (33) and `continue`/`break` (65) as before.

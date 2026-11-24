@@ -567,12 +567,13 @@ OPERATOR_PREC = {}
 UNARY = {}
 
 
-def _operator_types(expr, env):
+def _operator_types(expr, env, site="", root=False):
     """`(symbol, left type, right type, result type, token, position)` for the loosest depth-0 operator, or None.
 
     A `byte` operand is promoted to `int` before the pair is looked up -- `DirtyMask & 254` is `And_IntInt` with the
     read wrapped in `39 3a` (`ByteToInt`), not a byte operator -- and an exact pair is preferred when the table has
-    one.
+    one. `site` and `root` are the *expression's* own type and position, which the mixed `int`/`float` fallback
+    reads (`_emit_operator` passes them; `_type_of` does not).
     """
     ops = _operators()
     if not ops:
@@ -616,8 +617,22 @@ def _operator_types(expr, env):
             return sym, a, b, ret, token, at
     # `int` against `float`: the table installs the `(float, float)` row and the compiler wraps the int operand in
     # a `PrimitiveCast` -- `Pickup.BotDesireability`'s `RespawnTime < 10` is `b0 01 72 09 39 3f 2c 0a 16`, an
-    # `IntConstByte 10` behind `IntToFloat`, and `Pawn.EncroachingOn`'s `Level.TimeSeconds - Pawn.LastStartTime`
-    # is float already. One direction only: nothing narrows a float to an int without a cast in the source.
+    # `IntConstByte 10` behind `IntToFloat`. That row is the row for a **literal** on the int side, because a
+    # literal is retyped from the site.
+    if (n1 == "float" and t2 == "int" and not _is_literal(right)
+            and root and (site or "").lower() == "int"):
+        # At the **root** of an expression whose own site is an `int` the compiler takes the `(int, int)` row and
+        # narrows the float operand with `FloatToInt` (slot 68). `UWindowPulldownMenu.SetSelected` writes
+        # `Items.FindEntry((Y - VBorder) / ItemHeight)` -- `Y` is a float, `ItemHeight` an int property, and the
+        # parameter is an `int` -- as `1b 60 02 | 91 39 44 af 00 51 19 39 3f 01 7b 0a 16 01 45 0b 16 16`:
+        # `Divide_IntInt(FloatToInt(Y - IntToFloat(VBorder)), ItemHeight)`. The **nested** subtraction in the same
+        # expression keeps the float row, and so does every comparison: `AmbientCreatureManager.InSpawnRange` and
+        # `ShieldBelt.Tick` promote the int side at a `bool` site. Restricting the narrowing to a root int site is
+        # what keeps the six UWindow bodies and leaves the corpus's other mixed pairs alone.
+        hit = _operators().get((sym, "int", "int"))
+        if hit is not None:
+            token, ret = hit
+            return sym, "int", "int", ret, token, at
     if {n1, n2} == {"int", "float"}:
         hit = _operators().get((sym, "float", "float"))
         if hit is not None:
@@ -968,9 +983,15 @@ def _byte_literal(part, want, site, env):
     - `ParseColor`'s `Mid(S, 2, 1)` writes `2c 02 26` inside the same expression: a **call's argument** is typed by
       the parameter, so the byte context stops at a call (`emit_call` drops the flag).
     - `A = 255;` on a byte writes `39 3d 2c ff`: a literal at the assignment itself (site `byte`, no operator) is
-      `emit_expr`'s case, and 128..255 is the int form.
+      `emit_expr`'s case, and only **255** is the int form (254 and below are `ByteConst`; see the number branch).
+
+    The **float** target is the same literal rule read one step further: `StargateHUD.SetIDColor` writes
+    `Canvas.SetDrawColor(0, 160 * (IdentifyFadeTime / 3.0), 0)` as `39 3c 24 a0 ac ...` -- the argument's parameter
+    is a `byte`, so the `160` is a **ByteConst** and the mixed pair widens it with `ByteToFloat` (slot 60), not the
+    `IntConstByte` behind `IntToFloat` an int literal would take. The `255` of the `else` branch beside it writes
+    `39 3f 2c ff` (`IntToFloat`, slot 63) because 255 is the one value the byte form does not carry.
     """
-    if (want or "").lower() != "int":
+    if (want or "").lower() not in ("int", "float"):
         return None
     if (site or "").lower() != "byte" and not env.get("byte_root"):
         return None
@@ -982,9 +1003,16 @@ def _byte_literal(part, want, site, env):
         if not v.is_integer():
             return None
         v = int(v)
-    if not 2 <= v < 128:
+    # Widened to `int` the byte literal is a byte only while it fits a **signed** byte: `PlayerProfile.SetClean`
+    # writes `DirtyMask | 254` as `9c 39 3a 01 48 11 2c fe 16` -- a plain `IntConstByte`, no `ByteToInt` -- while
+    # `ParseColor`'s 16 is `39 3a 24 10`. Widened to `float` the form carries every value the byte form does:
+    # 160 is `39 3c 24 a0`.
+    if (want or "").lower() == "int":
+        if not 2 <= v < 128:
+            return None
+    elif not 2 <= v < 255:
         return None
-    slot = _cast_slots().get(("byte", "int"))
+    slot = _cast_slots().get(("byte", (want or "").lower()))
     if slot is None:
         return None
     return bytes([0x39, slot, 0x24, v])
@@ -1026,7 +1054,55 @@ def _operand(part, want, rettype, env, inner):
     return bytes([0x39, slot]) + body
 
 
-def _emit_operator(expr, rettype, env):
+def _float_literal(part, want, site=""):
+    """`1e <f32>` for an **int literal** the compiler folded into a float constant at the root of an expression.
+
+    The fold is positional, not a general rule: `TransientAmbientCreature.MaxHiddenTime`'s
+    `return (10 + 5 * FRand());` is `04 ae 1e 00002041 ab 39 3f 2c 05 c3` -- the `10`, the **left operand of the
+    expression's root**, is a `FloatConst`, while the `5` of `5 * FRand()`, a *nested* node, is an
+    `IntConstByte` behind `IntToFloat`. Five more bodies are the same shape (`15 + 5 * FRand()`,
+    `5 + 5 * FRand()` twice, `3 + 3 * FRand()` in `FishBase.GetSleepTime`), and the right-hand position casts
+    instead: `RespawnTime < 10` is `39 3f 2c 0a`. A parenthesised operand is a root again -- `Beacons.DrawBeacon`
+    folds the `640` of `(640 / RangeToTarget)` two nodes in, and `StargatePawn.DrawClassIcon` folds the `96` of
+    `96 * scale` at the top of an argument.
+
+    This was a recorded negative ("folding is not decided by the operator, the literal's position or the site") and
+    the position is what was missing: folding every arithmetic literal fixed 5 bodies and broke 69. The **byte**
+    site is the other bound: `StargatePawn.ShieldFlashOn` writes `255 * ...` at a `byte` parameter as
+    `39 3f 2c ff` (`IntToFloat`), not as a `FloatConst`, so a byte-typed site casts.
+    """
+    if (want or "").lower() != "float":
+        return None
+    if (site or "").lower() == "byte":
+        return None
+    core = _strip_parens(part)
+    neg = False
+    if len(core) == 2 and core[0] == ("op", "-") and core[1][0] == "number":
+        core, neg = [core[1]], True
+    if len(core) != 1 or core[0][0] != "number":
+        return None
+    v = _number(core[0][1])
+    if isinstance(v, float):
+        return None                    # a source float literal is already written as `1e` by `emit_expr`
+    return bytes([0x1E]) + struct.pack("<f", -float(v) if neg else float(v))
+
+
+def _paren_wrapped(expr):
+    """True when the **whole** token run is one parenthesised group -- a new expression root for the fold rule."""
+    if len(expr) < 3 or expr[0] != ("op", "(") or expr[-1] != ("op", ")"):
+        return False
+    depth = 0
+    for i, (kind, val) in enumerate(expr):
+        if kind == "op" and val in "([{":
+            depth += 1
+        elif kind == "op" and val in ")]}":
+            depth -= 1
+            if depth == 0 and i != len(expr) - 1:
+                return False
+    return depth == 0
+
+
+def _emit_operator(expr, rettype, env, root=False):
     """`A op B` -> `<token> A B 16`: the operator's token comes **first**, its operands after it.
 
     Measured on `PlayerProfile.SetDirty` (`DirtyMask = DirtyMask | 1;` -> `0f 01 48 11 | 39 3d | 9c 39 3a 01 48 11 26
@@ -1034,7 +1110,7 @@ def _emit_operator(expr, rettype, env):
     node ends on `16` (EndFunctionParms) like any other call. `PteroBoss.TakeDamage` (`AddVelocity(Momentum / Mass)`)
     is the same shape one level in, with `d6` (`Divide_VectorFloat` 214).
     """
-    op = _operator_types(expr, env)
+    op = _operator_types(expr, env, rettype, root)
     if op is None:
         raise Refused("a compound expression, which needs the statement walk")
     sym, t1, t2, result, token, at = op
@@ -1066,10 +1142,19 @@ def _emit_operator(expr, rettype, env):
     # literal two operators in is still a byte (`ParseColor`). It stops at a call, whose arguments are typed by the
     # callee's parameters -- `emit_call` drops the flag.
     inner = dict(env, byte_root=True) if (rettype or "").lower() == "byte" else env
-    node = (head + (_operand(left, t1, rettype, env, inner) or _byte_literal(left, t1, rettype, inner)
-                    or emit_expr(left, t1, inner)[0])
-            + (_operand(right, t2, rettype, env, inner) or _byte_literal(right, t2, rettype, inner)
-               or emit_expr(right, t2, inner)[0]) + b"\x16")
+    # A byte-typed site types a literal before the cast table is asked (`39 3c 24 a0`), and the root of an
+    # expression folds an int literal into a `FloatConst`; both are tried before `_operand`, whose form for a
+    # literal is the cast.
+    left_env = dict(inner, _root=True) if _paren_wrapped(left) else inner
+    right_env = dict(inner, _root=True) if _paren_wrapped(right) else inner
+    lroot = root or _paren_wrapped(left)
+    node = (head + (_byte_literal(left, t1, rettype, inner)
+                    or (_float_literal(left, t1, rettype) if lroot else None)
+                    or _operand(left, t1, rettype, env, left_env)
+                    or emit_expr(left, t1, left_env)[0])
+            + (_byte_literal(right, t2, rettype, inner)
+               or _operand(right, t2, rettype, env, right_env)
+               or emit_expr(right, t2, right_env)[0]) + b"\x16")
     return _converted(node, result, rettype), "operator"
 
 
@@ -1511,6 +1596,12 @@ def _incdec(expr, env):
 def emit_expr(expr, rettype, env):
     """The bytes of one expression, or Refused with the reason."""
     names = env["names"]
+    # `root` is the expression the compiler starts on -- a statement's value, an argument, a condition -- and it is
+    # what decides whether an int literal at a `float` site is **folded** into a `FloatConst` or left behind an
+    # `IntToFloat` cast (see `_float_literal`). Every nested operand clears it; a parenthesised operand sets it
+    # again, because a parenthesised group is its own expression.
+    root = env.get("_root", True)
+    env = dict(env, _root=False)
     expr = _strip_parens(expr)
     if not expr:
         return bytes([0x0B]), "nothing"                  # Return; -> Return Nothing
@@ -1523,7 +1614,7 @@ def emit_expr(expr, rettype, env):
         if _operator_types(expr, env) is not None:
             # the loosest depth-0 operator is the expression's root, so it is tried before a call or a member:
             # `Foo(1) + 2` is an `Add_IntInt`, not a call
-            return _emit_operator(expr, rettype, env)
+            return _emit_operator(expr, rettype, env, root)
         un = _emit_unary(expr, rettype, env)
         if un is not None:
             # a one-operand node: `!bIsOn`, `-Health`. The pair table never sees it -- its operator sits at
@@ -1601,13 +1692,16 @@ def emit_expr(expr, rettype, env):
         if t == "byte":
             if not 0 <= v < 256:
                 raise Refused("a byte literal out of range (%s)" % val)
-            if v < 128:
+            if v < 255:
                 return bytes([0x24, int(v)]), "byte-const"
-            # Above the signed byte range the literal stops being a byte constant and the compiler writes the *int*
-            # form behind an `IntToByte`: `A = 255;` in Canvas.MakeColor is `0f ... 39 3d 2c ff`, and
-            # `FindControllerPortIndex(255)` (a `byte` parameter) is `39 3d 2c ff`, while `_SetKeyFrameToPuzzleMovers(0)`
-            # is `24 00`, `SetTimer`-style assignments of 1 and 3 are `24 01` / `24 03`, and ParseColor's 16 is
-            # `24 10`. Six sites, one threshold: 127 is the last value the byte form carries.
+            # The boundary is **255**, not 127. `EX_ByteConst` carries every value up to 254 and only 255 takes the
+            # *int* form behind an `IntToByte`: a census of all 18 packages finds **3,357** `ByteConst` nodes, 30 of
+            # them at 128 or above (128, 137, 150, 160, 192, 200..254 -- `SayMessagePlus.RenderComplexMessage`'s
+            # `SetDrawColor(0,128,0)` is `1c dc 01 24 00 24 80 24 00`), and **389** nodes whose operand is 255 in
+            # the int form (`A = 255;` in Canvas.MakeColor and `FindControllerPortIndex(255)` are `39 3d 2c ff`).
+            # The earlier note's "127 is the last value the byte form carries" was measured on six sites that all
+            # sat below 128 except the 255 ones, so it recorded the 255 case as a 127 threshold. One 128 in the int
+            # form exists (`PlayerController.CallServerMove`, a body this walk refuses) and is not explained here.
             slot = _cast_slots().get(("int", "byte"))
             if slot is None:
                 raise Refused("a byte literal of %d, whose IntToByte slot the image's table does not install" % v)
@@ -1784,8 +1878,9 @@ def emit_call(stmt, env, receiver=None, head=None):
         if not arg:
             raise Refused("a call that leaves an optional argument empty")
         # A byte-typed literal is written by `emit_expr`, which knows the form from the value (see the number
-        # branch): `byte` takes ByteConst up to 127 and the int form behind IntToByte above it.
-        out += emit_expr(arg, ptype, env)[0]
+        # branch): `byte` takes ByteConst up to 254 and the int form for 255. Each argument is its own expression
+        # root, so `_root` from an enclosing expression is cleared here.
+        out += emit_expr(arg, ptype, {k: v for k, v in env.items() if k != "_root"})[0]
     return out + b"\x16"
 
 
