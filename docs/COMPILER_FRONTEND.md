@@ -949,3 +949,39 @@ whose declarations disagree, or whose const is an expression rather than a numbe
 guessed size, because a wrong dimension is a wrong body that still scores.
 
 **Not in this PR:** `switch` (173), `continue`/`break` (65), and the 10 bodies that still emit and differ.
+
+## The `switch` chain and the two loop exits (measured 2026-11-24)
+
+`switch`, `break` and `continue` were the statement walk's three named refusals. They are now emitted, and the score
+moved **6,212 -> 6,269 modelled, 6,269 byte-identical, 0 differ** (57 bodies gained, none lost; the residue
+5,466 -> 5,409).
+
+**The `switch` is a chain, and its terminator is unconditional.** A `switch (e)` writes `05 <width>` and then the
+expression; each `case` writes `0a <word>` and then its value expression; the list ends on `0a ff ff`. The word is the
+**absolute position of the next `Case` in the compiler's uncompacted array**, the same reading `tools/switch-join.py`
+measured from the handler at `0x0004ca20`, so the emitter knows every link only after the arms are laid out and patches
+them at the end. The opcode is `0a` -- reading it as `Return`'s `04` stops the walk at the case value, which is what the
+first draft did.
+
+**A `switch` with no `default:` still writes the terminator.** `PlayerProfile.GetCategoryVolume` is three cases and no
+`default:`, and its shipped body ends `... 0a 5e 00 21 75 06 07 58 00 ... 0a ff ff 04 1e 00 00 80 bf`: the last case
+links to the terminator, the terminator has an empty body, and execution runs from it straight into the statement after
+the switch. Emitting no terminator left twelve bodies exactly **three** bytes short, which is the tell that the missing
+bytes were one token and not a rule.
+
+**The width is the compared value's declared type, not the case list's.** `0` is a wide string, `1` a byte or a bool,
+`4` an int, a name or a float -- `case 'Music':` under a `name` switch is `21 <index>` compared as four bytes, `case 0:`
+under an `int` is `25`, and `case "":` under a `string` is `1f 00`. That is the same split `inventory/switch_operands.csv`
+carries for the 200 sites a clean walk reaches (19 at width 0, 118 at 1, 63 at 4).
+
+**`break` and `continue` are bare `Jump`s to a position the enclosing construct publishes.** A `break` names the end of
+the nearest loop or `switch`; a `continue` names the loop's next iteration -- the step clause of a `for`, the condition
+code after a `do`/`until`'s `JumpIfNot`, the loop's own start for a `while` -- and a `switch` passes `continue` through
+to whatever loop encloses it. Neither target is known when the body is emitted, because each is the body's own end
+(`break`) or the tail it precedes (`continue`), so a construct whose exit depends on its own length is emitted twice:
+the first pass writes a three-byte placeholder, which is the width of the real jump, so the extent the second pass
+measures is the first pass's. That is the same shape the `Case` words need, and it is what makes a `break` inside an
+`if` inside an arm (the two interior breaks `inventory/switch_arms.csv` counts) ordinary rather than special.
+
+What is left of the statement surface is `foreach` (77 bodies), whose iterator binding is a declaration the emitter does
+not read yet.
