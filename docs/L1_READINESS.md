@@ -536,3 +536,31 @@ makes it reproducible in practice is still unknown.
 **The honest next step**, if this thread is picked up: run the sampler and the driver in the same session against the same
 ISO and dump both launch lines side by side, rather than comparing a sampler run from one hour with a driver run from
 another. Every contradiction in this page came from comparing runs that differed in ways nobody wrote down.
+
+## A class payload grown by four bytes fails the same way a script does (measured 2026-11-24)
+
+Every size experiment on this page until now changed a **Function** payload, so "the script's own length is read" was a
+live explanation. It is now dead: the same experiment on a **Class** fails identically.
+
+| export | kind | payload | file | start tap | next step |
+|---|---|---|---|---|---|
+| `LogDropped` | Function | 34 → 36 | 3,031,678 → 3,031,680 | **0 px** | 3,365 px |
+| `UIWidget` | **Class** | 987 → 991 | 3,031,678 → 3,031,682 | **0 px** | **3,365 px** |
+
+Both builds render the title, both ignore the Start press, and both then produce the *same* 3,365 px on the following step —
+the number a working build turns into 21,885 px and then 68,326 px. The resize went through `pkg-write.py`'s own `relayout`,
+which re-places every region and re-derives the export table (13,425 exports before and after, all readable).
+
+**What this rules out**: that the constraint lives in UnrealScript bytecode, in `ScriptEnd`, in the script-size field at
+`+20`, or in anything a Function payload contains. Those are all now irrelevant to the failure.
+
+**What it leaves**: something consumes the **size of any payload**, not the bytes inside one. Two results bracket it:
+
+- **sizes unchanged, everything moved** (`+4` shift of all 13,425 payloads) — **plays**;
+- **one size changed, everything else identical** — **fails**.
+
+So position is free and length is not, and the difference is per-object.
+
+**The next probe is cheap and specific**: change a payload's size by a *large* amount (say +64) on a class nothing loads at
+boot, and see whether the failure is identical or later/earlier. A failure whose *timing* does not move with the size change
+points at a check performed once, at load; one that moves points at a read of that object's length where the object is used.
