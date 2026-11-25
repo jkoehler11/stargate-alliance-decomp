@@ -4189,7 +4189,18 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                         and (_import_owners.get(imp[0][0]) or "") not in order:
                     scope["within_props"].add(nm)
                 continue
-            if len(cands) == 1:
+            if within_chain:
+                # A name the class this body is declared `within` declares is read in `Outer`'s scope, and the
+                # within chain is the authority for *which* record: `Level` has five records in Engine.u (Actor's
+                # object property and four unrelated properties of that name), so the two fallbacks below -- a
+                # single import candidate, a single candidate in the whole package -- both missed it, and every
+                # `Level.Game.…` read in `CheatManager`/`AdminBase` refused although the within chain carries it.
+                for anc in within_chain:
+                    hit = [c for c in cands if c[1] == anc]
+                    if hit:
+                        picked = hit[0]
+                        break
+            if picked is None and len(cands) == 1:
                 # One record by that name in the whole package, declared on a class that is *not* on this body's
                 # chain: `PlayerInput.ChangeSnapView` writes `bSnapToLevel` (export 2604, on `PlayerController`) as
                 # `19 01 8e 05 00 04 2d 01 6c 28` -- a `Context` around `Outer`. The index is right, the node is not
