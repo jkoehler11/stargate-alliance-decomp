@@ -239,6 +239,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the receiver-class join: a callee the body's package has no record of is a by-name call: **9,479
+      modelled / 9,479 byte-identical / 0 differ** (from 8,743 / 8,743 / 0; 736 bodies gained, none lost; residue
+      2,935 -> 2,199). One rule, measured on two bodies and then on the corpus: a callee with no export, no import and
+      no native row in the body's package is written `1b <name index>` (`TransientAmbientPawn.Died`'s
+      `1b 41 02` for `PlayDying(...)`, name 129; `ScriptedController.LeaveScripting`'s `1b 39 28 16` for
+      `Pawn.SetWalking(false)`, name 57), guarded by the name being in the package's own table and a function of that
+      name being declared somewhere in the corpus -- which is what keeps `rot(...)` and the reconstructed text's
+      `super` out of the call path -- and withheld where the package does import a record of the name, because there
+      the compiler named the record. The statement path had to stop refusing before it reached it. What settled *which*
+      rule to write is the instrument: `tools/receiver-join.py` + `inventory/emit_receiver_join.csv` join the
+      emitter's residue (now carrying the refused expression, the receiver class and the reason `_class_of` answered
+      nothing) to the corpus's declarations and `classes.csv`'s chains, and answer per family one verdict -- on the
+      chain 2 bare / 88 member-call / 28 read, a state 0, off the chain 27 / 29 / 232, undeclared 12 / 0 / 37, no
+      receiver class 174. Two of those verdicts are the next work: **232 member reads off the chain** (the receiver's
+      class is a base while the field is declared on a subclass, or the struct link is untyped) and **174 refusals
+      whose receiver class is unnamed** (`why` splits them: a bare name with no declared type 239, a chain member
+      named no class 200, an array element 199, a call's return type 25). Not in this PR: those two populations.
+      Doc: `docs/COMPILER_FRONTEND.md`, section of the same name.
 - [~] 3.6 a literal subscript is an int site, and a Super call in an expression, on top of the `Global.`/`within`/
       enum-constant increment: **8,743 modelled / 8,743 byte-identical / 0 differ** (from 8,373 / 8,373 / 0; 370 bodies
       gained, none lost; residue 3,305 -> 2,935). (1) `Global.F(args);` -> `0x38` + the record a bare `F()` writes

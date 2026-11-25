@@ -1,0 +1,11 @@
+family,where,bodies,examples
+(census),,629,0 modelled of 0 walked
+bare call,off-chain,27,PlayerController.ServerMove PhysicsVolume.PawnEnteredVolume Pickup.SpawnCopy
+bare call,on-chain,2,StargateAIMsgManager.FilterSentMsg StargateAIMsgManager.FilterReceivedMsg
+bare call,undeclared,12,GUIImageList.internalKeyEvent GUITabControl.NextControl GUITabControl.PrevControl
+"member call, no receiver class",unnamed,174,PlaylistParserBase.ParseLines ScriptObject.Destroyed AIMsgManager.RemoveReceivedMsg
+"member call, statement",off-chain,29,PuzzleTrigger._ResetMovers C4Mission.BeginState Train.SetTrainState
+"member call, statement",on-chain,88,SpecialEventTrigger.Trigger ACTION_DamageInstigator.InitActionFor SE_RandomSpawn.spawnActor
+member read,off-chain,232,TransientAmbientCreature.FindSpawnLocation SpiralStairBuilder.BuildCurvedStair Actor.DisplayDebug
+member read,on-chain,28,GUIMenuOption.InitComponent GUIListBox.InitComponent GUIScrollTextBox.InitComponent
+member read,undeclared,37,PlayerController.MakeAdmin Mutator.GetServerDetails MaplistManager.GetRecords
