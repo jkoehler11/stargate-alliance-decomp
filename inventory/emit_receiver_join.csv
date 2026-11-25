@@ -1,16 +1,15 @@
 family,where,why,bodies,examples
-(census),,,440,9730 modelled of 11687 walked
+(census),,,353,9911 modelled of 11687 walked
 bare call,off-chain,,29,PlayerController.ServerMove PhysicsVolume.PawnEnteredVolume Pickup.SpawnCopy
 bare call,on-chain,,4,StargateAIMsgManager.FilterSentMsg StargateAIMsgManager.FilterReceivedMsg SGVoicePackExtended.WaitToReply
 bare call,undeclared,,7,GUIImageList.internalKeyEvent GUIEditBox.InternalOnKeyEvent GUIHorzList.InternalOnKeyEvent
-"member call, no receiver class",unnamed,a bare name this body declares no type for,115,PlaylistParserBase.ParseLines ScriptObject.Destroyed AIMsgManager.RemoveReceivedMsg
+"member call, no receiver class",unnamed,a bare name this body declares no type for,10,ChapterList.InitComponent ServerSelectionListBox.RefreshListBox XBoxLiveServerSelectionListBox.RefreshListBox
 "member call, no receiver class",unnamed,a member call whose declared return type the class table does not carry as a class,2,StargatePawn.CreateShield StargatePawn.CreateHealthRegenerator
-"member call, no receiver class",unnamed,a receiver chain whose member the artifacts name no class for,15,PlayerController.HandleWalking MaplistRecord.CreateMapItem MaplistRecord.RemoveOptionItem
+"member call, no receiver class",unnamed,a receiver chain whose member the artifacts name no class for,11,PlayerController.HandleWalking TournamentConsole.ConnectWithPassword MindControlCrystal.GrabMind
 "member call, no receiver class",unnamed,a receiver shape `_class_of` does not resolve,2,ACTION_SGWaitForPlayer.PlayImpatience ACTION_PlaySGSound.Play3DSound
-"member call, no receiver class",unnamed,"an array name, whose element type the artifacts do not name",9,StreamBase.ParseDirectories GameReplicationInfo.GetPRIArray Pawn.RemoveAllInventory
-"member call, no receiver class",unnamed,an element of an array the artifacts do not type,11,MaplistManager.ResetList MaplistManager.ClearList MaplistManager.SaveMapList
+"member call, no receiver class",unnamed,an element of an array the artifacts do not type,12,PlayerController.LoadPlayers MaplistManager.ResetList MaplistManager.ClearList
 "member call, statement",off-chain,,29,PuzzleTrigger._ResetMovers C4Mission.BeginState Train.SetTrainState
-"member call, statement",on-chain,,88,SpecialEventTrigger.Trigger ACTION_DamageInstigator.InitActionFor SE_RandomSpawn.spawnActor
+"member call, statement",on-chain,,90,SpecialEventTrigger.Trigger ACTION_DamageInstigator.InitActionFor SE_RandomSpawn.spawnActor
 "member call, statement",on-chain,a bare name this body declares no type for,1,ElectrifiedObject.CausePainTo
 "member call, statement",on-chain,an element of an array the artifacts do not type,1,HaakenLeaderBot.AssignRole
 member read,off-chain,,10,PlayerInput.PlayerInput PuzzleTrigger.PostBeginPlay SGC_SecurityReader.PostBeginPlay
@@ -18,5 +17,5 @@ member read,on-chain,,30,GUIMenuOption.InitComponent GUIListBox.InitComponent GU
 member read,undeclared,,1,UWindowDialogClientWindow.CreateControl
 member read,unnamed,"`pair` is declared `gameinfo . keyvaluepair`, which is not a class the class table carries",1,MaplistRecord.CreateMapOption
 member read,unnamed,a bare name this body declares no type for,36,CheatManager.SetFlash CheatManager.SetFogR CheatManager.SetFogG
-member read,unnamed,a receiver chain whose member the artifacts name no class for,23,PhysicsVolume.CausePainTo PlayerController.BeyondViewDistance PlayerController.MakeAdmin
-member read,unnamed,an element of an array the artifacts do not type,26,MaplistManager.ApplyMapList MaplistManager.GenerateGroupMaplist MaplistManager.PreBeginPlay
+member read,unnamed,a receiver chain whose member the artifacts name no class for,26,VoiceChatReplicationInfo.GetInstalledCodecs PhysicsVolume.CausePainTo PlayerController.BeyondViewDistance
+member read,unnamed,an element of an array the artifacts do not type,51,IMusicActor.TransitionToSameState IMusicActor.RecurseTransitionsFromTo MaplistManager.GetCacheMapList

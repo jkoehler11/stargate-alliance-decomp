@@ -239,6 +239,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the dynamic-array intrinsic: `Remove`, `Insert`, a length `Let`, and an array member's zero:
+      **9,911 modelled / 9,911 byte-identical / 0 differ** (from 9,730 / 9,730 / 0; 181 bodies gained, none lost;
+      residue 1,948 -> 1,767; the join's four receiver families 440 -> 353 refused bodies). (1) **An array method is
+      an intrinsic, not a call.** This build's walker has `0x40` `DynamicArrayInsert` and `0x41`
+      `DynamicArrayRemove`, each an array read, an index and a count, and at version 130 neither a skip word nor an
+      `EndFunctionParms`: `Paths.Remove(0, Paths.Length)` is `41 01 6f 09 25 37 01 6f 09` and
+      `msgReceived.Insert(Idx, 1)` `40 01 7e 03 00 60 30 26`. UELib's `Add`, `Find`, `Sort`, `AddItem`, `Empty` have
+      no opcode here (0x48..0x5f is the walker's bad-token range), so the residue's 11 `.Add(` rows are
+      `GUIList.Add` on an unnamed receiver class -- and the page's "UnrealScript has no array methods" sentence was
+      wrong: 120 refused bodies were this node, not the reconstruction's syntax. The receiver is recognised by
+      `_receiver_kind` (an `ArrayProperty` record or a local `array<T>`), before the receiver-class join is asked.
+      (2) **An array member's `Context` writes size 0** (`PROP_SIZE["array"]`), measured on every `array<T>` member
+      read in the corpus; the same entry clears the 29 `a struct member of type array` rows. (3) **A `Let` takes the
+      length node and an array copy**: `Profiles.Length = 0;` is `0f 37 01 7d 01 25` -- the `0f` the previous note
+      read as an extra token is the Let itself, with the member's two-byte index behind `01` -- and
+      `SongArray = Songs;` a plain `Let`, which clears 59 + 19 rows. Four gained bodies (`Mover.BeginPlay`,
+      `PlayerController.ReplicateMove`, `StargatePawn.SelectFace`, `GameHud.AddWaypoint`) reach a deeper refusal
+      instead: the array prefix matches the shipped bytes and the difference is downstream (a branch distance, a
+      property index). What is left: **an element of an array the artifacts do not type**, 125 -> 161 as bodies now
+      reach their element reads, and the bare-name receiver family 261 -> 158.
+      Doc: `docs/COMPILER_FRONTEND.md`, the dynamic-array section, the regenerated join block with its `undeclared`
+      sentence corrected in place; `docs/UNKNOWNS.md` U41.
 - [~] 3.6 the receiver's kind: a struct link, a call link, and a `Super` cast: **9,730 modelled / 9,730
       byte-identical / 0 differ** (from 9,495 / 9,495 / 0; 235 bodies gained, none lost; residue 2,183 -> 1,948; the
       join's four receiver families 626 -> 440 refused bodies). (1) **A receiver's kind is not its type word.**

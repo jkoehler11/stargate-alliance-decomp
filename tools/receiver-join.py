@@ -185,9 +185,12 @@ def render(rows, census):
                  "compiler writes those by *name index* (`1b <index>`), which is the rule this read added -- "
                  "`TransientAmbientPawn.Died` ships `1b 41 02` for `PlayDying(HitLocation, HitDamageType)` and "
                  "`ScriptedController.LeaveScripting` `19 01 8d 07 00 00 1b 39 28 16` for `Pawn.SetWalking(false)`, "
-                 "neither callee imported, exported or in `natives.csv` there. **Undeclared** is the reconstructed "
-                 "text's own invention -- `AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- which "
-                 "no declaration can ever resolve, because UnrealScript has no array methods and no `super` member.")
+                 "neither callee imported, exported or in `natives.csv` there. **Undeclared** is the residue that is "
+                 "neither: a name the reconstructed text spells and no declaration carries (`GUIImageList.internalKeyEvent`, "
+                 "`GUIEditBox.InternalOnKeyEvent`, `UWindowDialogClientWindow.CreateControl`). An **array method** is not "
+                 "one of them -- this build compiles `A.Remove(i, n)` and `A.Insert(i, n)` as the `0x41`/`0x40` "
+                 "intrinsics, and the join counted them `undeclared` only while the emitter refused the node (see the "
+                 "dynamic-array section).")
     lines.append("")
     lines.append("A **member** row is never bucketed against a chain the walk did not have: when `_class_of` names no "
                  "receiver class the row is `unnamed`, and the table below is what the walk was missing. Bucketing "

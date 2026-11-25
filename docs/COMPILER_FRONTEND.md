@@ -1764,24 +1764,27 @@ The measured effect: **8,743 -> 9,479 modelled bodies, every one byte-identical,
 and the bare-call family falls 719 -> 41 while the member families *rise*, because bodies that used to die at their
 first bare call now reach the next thing the walk does not model.
 
-The `undeclared` verdict is its own finding: the reconstructed source spells calls no declaration can ever answer --
-`AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- because UnrealScript has no array methods and no
-`super` member. Those rows are not emitter work; they are the reconstruction's own syntax. The member families carry
-almost none of them: the 37 member reads this page used to report as `undeclared`, and the 232 it called *off the
-chain*, were refusals whose receiver class the walk never named, and the join had bucketed them against the empty
-chain. What is left once the receiver really is named is 9 member reads off the chain, 1 undeclared and 28 on it.
+The `undeclared` verdict is its own finding, and the first reading of it was wrong: the reconstructed source's
+`AttachedControllers.remove` and `... .insert` are **not** the reconstruction's invention. This build compiles an
+array method as an intrinsic opcode, and the emitter refused the node, so the join saw a call whose receiver had no
+class. Once the node is modelled -- the dynamic-array section below -- that verdict falls to eight rows, names the
+text spells in a case no declaration carries (`GUIImageList.internalKeyEvent`, `GUIEditBox.InternalOnKeyEvent`,
+`UWindowDialogClientWindow.CreateControl`). The member families carry almost none of them: the 37 member reads this
+page used to report as `undeclared`, and the 232 it called *off the chain*, were refusals whose receiver class the
+walk never named, and the join had bucketed them against the empty chain. What is left once the receiver really is
+named is 10 member reads off the chain, 1 undeclared and 30 on it.
 
 <!-- BEGIN receiver-join -->
-**440 refused bodies over the four receiver families, joined to the corpus's own declarations** (`inventory/emit_receiver_join.csv`; 9,730 modelled of 11,687 walked, so the join is over the residue and not over the corpus).
+**353 refused bodies over the four receiver families, joined to the corpus's own declarations** (`inventory/emit_receiver_join.csv`; 9,911 modelled of 11,687 walked, so the join is over the residue and not over the corpus).
 
 | family | refusals | on the chain | only in a state | off the chain | undeclared | no receiver class |
 |---|---|---|---|---|---|---|
 | bare call | 40 | 4 | 0 | 29 | 7 | 0 |
-| member call, no receiver class | 154 | 0 | 0 | 0 | 0 | 154 |
-| member call, statement | 119 | 90 | 0 | 29 | 0 | 0 |
-| member read | 127 | 30 | 0 | 10 | 1 | 86 |
+| member call, no receiver class | 37 | 0 | 0 | 0 | 0 | 37 |
+| member call, statement | 121 | 92 | 0 | 29 | 0 | 0 |
+| member read | 155 | 30 | 0 | 10 | 1 | 114 |
 
-A name **on the chain** and still refused is a record the body's package does not carry: the compiler writes those by *name index* (`1b <index>`), which is the rule this read added -- `TransientAmbientPawn.Died` ships `1b 41 02` for `PlayDying(HitLocation, HitDamageType)` and `ScriptedController.LeaveScripting` `19 01 8d 07 00 00 1b 39 28 16` for `Pawn.SetWalking(false)`, neither callee imported, exported or in `natives.csv` there. **Undeclared** is the reconstructed text's own invention -- `AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- which no declaration can ever resolve, because UnrealScript has no array methods and no `super` member.
+A name **on the chain** and still refused is a record the body's package does not carry: the compiler writes those by *name index* (`1b <index>`), which is the rule this read added -- `TransientAmbientPawn.Died` ships `1b 41 02` for `PlayDying(HitLocation, HitDamageType)` and `ScriptedController.LeaveScripting` `19 01 8d 07 00 00 1b 39 28 16` for `Pawn.SetWalking(false)`, neither callee imported, exported or in `natives.csv` there. **Undeclared** is the residue that is neither: a name the reconstructed text spells and no declaration carries (`GUIImageList.internalKeyEvent`, `GUIEditBox.InternalOnKeyEvent`, `UWindowDialogClientWindow.CreateControl`). An **array method** is not one of them -- this build compiles `A.Remove(i, n)` and `A.Insert(i, n)` as the `0x41`/`0x40` intrinsics, and the join counted them `undeclared` only while the emitter refused the node (see the dynamic-array section).
 
 A **member** row is never bucketed against a chain the walk did not have: when `_class_of` names no receiver class the row is `unnamed`, and the table below is what the walk was missing. Bucketing those rows against the empty chain instead put 232 member reads *off* the chain -- a number the previous read of this page carried -- where 223 of them name a member on a class nowhere near the body, i.e. the verdict was the join's, not the build's. The `off-chain` and `undeclared` cells for the member families are what is left when the receiver really was named.
 
@@ -1791,7 +1794,7 @@ A **member** row is never bucketed against a chain the walk did not have: when `
 | bare call | on-chain | 4 | `StargateAIMsgManager.FilterSentMsg`, `StargateAIMsgManager.FilterReceivedMsg`, `SGVoicePackExtended.WaitToReply` |
 | bare call | undeclared | 7 | `GUIImageList.internalKeyEvent`, `GUIEditBox.InternalOnKeyEvent`, `GUIHorzList.InternalOnKeyEvent` |
 | member call, statement | off-chain | 29 | `PuzzleTrigger._ResetMovers`, `C4Mission.BeginState`, `Train.SetTrainState` |
-| member call, statement | on-chain | 88 | `SpecialEventTrigger.Trigger`, `ACTION_DamageInstigator.InitActionFor`, `SE_RandomSpawn.spawnActor` |
+| member call, statement | on-chain | 90 | `SpecialEventTrigger.Trigger`, `ACTION_DamageInstigator.InitActionFor`, `SE_RandomSpawn.spawnActor` |
 | member call, statement | on-chain | 1 | `ElectrifiedObject.CausePainTo` |
 | member call, statement | on-chain | 1 | `HaakenLeaderBot.AssignRole` |
 | member read | off-chain | 10 | `PlayerInput.PlayerInput`, `PuzzleTrigger.PostBeginPlay`, `SGC_SecurityReader.PostBeginPlay` |
@@ -1800,11 +1803,66 @@ A **member** row is never bucketed against a chain the walk did not have: when `
 
 | what the walk was missing | refusals | examples |
 |---|---|---|
-| a bare name this body declares no type for | 151 | `PlaylistParserBase.ParseLines`, `ScriptObject.Destroyed` |
-| a receiver chain whose member the artifacts name no class for | 38 | `PlayerController.HandleWalking`, `MaplistRecord.CreateMapItem` |
-| an element of an array the artifacts do not type | 37 | `MaplistManager.ResetList`, `MaplistManager.ClearList` |
-| an array name, whose element type the artifacts do not name | 9 | `StreamBase.ParseDirectories`, `GameReplicationInfo.GetPRIArray` |
+| an element of an array the artifacts do not type | 63 | `PlayerController.LoadPlayers`, `MaplistManager.ResetList` |
+| a bare name this body declares no type for | 46 | `ChapterList.InitComponent`, `ServerSelectionListBox.RefreshListBox` |
+| a receiver chain whose member the artifacts name no class for | 37 | `PlayerController.HandleWalking`, `TournamentConsole.ConnectWithPassword` |
 | a member call whose declared return type the class table does not carry as a class | 2 | `StargatePawn.CreateShield`, `StargatePawn.CreateHealthRegenerator` |
 | a receiver shape `_class_of` does not resolve | 2 | `ACTION_SGWaitForPlayer.PlayImpatience`, `ACTION_PlaySGSound.Play3DSound` |
 | `pair` is declared `gameinfo . keyvaluepair`, which is not a class the class table carries | 1 | `MaplistRecord.CreateMapOption` |
 <!-- END receiver-join -->
+
+
+## Stage 3, continued -- the dynamic-array intrinsics, and the array member's zero (measured 2026-11-25)
+
+The largest family left after the receiver's kind was a receiver the walk could not name, and a third of it was not a
+class at all: `Paths.Remove(0, Paths.Length);`, `msgReceived.Insert(Idx, 1);`, `Profiles.Length = 0;`. Those are
+**dynamic-array nodes**. No class declares `Remove`, so `_class_of` cannot answer, the join has nothing to join, and
+the page was calling the reconstruction's syntax what is in fact this build's compiler writing an intrinsic. This
+build's walker has exactly four array opcodes, and measuring all four -- not the two the source spells most -- is what
+closed the family.
+
+| the source | the bytes | why |
+|---|---|---|
+| `Paths.Remove(0, Paths.Length);` | `41 01 6f 09 25 37 01 6f 09` | `0x41` `DynamicArrayRemove`: array read, index, count |
+| `msgReceived.Insert(Idx, 1);` | `40 01 7e 03 00 60 30 26` | `0x40` `DynamicArrayInsert`: the same three operands |
+| `Profiles.Length = 0;` | `0f 37 01 7d 01 25` | a `Let` whose **target** is the `0x37` length node |
+| `SongArray = Songs;` | `0f 00 70 5f 01 7c 01` | an array-to-array copy is a plain `Let`, like a struct's |
+| `MyList.Elements.Length` | `37 19 01 28 05 00 00 01 ...` | an array **member** read's `Context` writes size 0 |
+
+- **Only two method tokens exist, and this build is too old for UELib's later shapes.** `inventory/opcode_table.csv`
+  carries `0x40`/`0x41` as three-expression nodes; UELib's `DynArrayFind`, `FindStruct`, `Sort`, `Add`, `AddItem`,
+  `RemoveItem`, `InsertItem` and `Empty` have no opcode here (0x48..0x5f is the walker's own bad-token range), so the
+  `.Add(` rows the residue carries are `GUIList.Add` on a receiver class and not arrays at all. Package version 130 is
+  below `EndTokenAppendedToArrayTokenIntrinsics` (649) and the skip-size version, so the node writes neither a skip
+  word nor an `EndFunctionParms` after its arguments: the parameters are just two int slots.
+- **The receiver is decided by its record kind, not by a class.** `_receiver_kind` answers `array` for an
+  `ArrayProperty` record and for a local declared `array<T>`, which is the same test `.Length` already used; the
+  member call then goes to `_emit_array_method` before the receiver-class join is asked. 120 refused bodies were
+  this shape, and every one of them now emits.
+- **An array member's `Context` value size is 0** (`PROP_SIZE["array"]`), measured on `MyList.Elements.Length`,
+  `source.modifiers.Length` and every other `array<T>` member read in the corpus; the skip word stays the 5 every
+  `InstanceVariable` member writes. The same entry unblocks a **struct member of array type** (`29` rows), which
+  refused on the same missing size.
+- **A `Let` takes two more targets.** `A.Length = n;` writes the length node where a property read would sit --
+  `Profiles.Length = 0;` is `0f 37 01 7d 01 25`, and the `0f` the previous note read as an "extra token" is the Let
+  itself, with the member's two-byte index behind `01`. An array-to-array assignment is a plain `Let` like a
+  struct's copy, with no node and no cast (`SongArray = Songs;`).
+
+The measured effect: **9,730 -> 9,911 modelled bodies, every one byte-identical, 0 differ**, residue 1,948 -> 1,767.
+The five families that carried it: a call statement whose receiver's class the artifacts do not name **150 -> 33**,
+an array member whose value size was not carried **82 -> 0**, an assignment whose target is a length expression
+**59 -> 0**, a struct member of array type **29 -> 0**, an assignment to an array property **19 -> 0**. The join's
+four receiver families fall 440 -> 353 refused bodies with it, and its `undeclared` sentence is corrected above.
+
+Four of the gained bodies reach a *deeper* refusal rather than the trailer -- `Mover.BeginPlay`,
+`PlayerController.ReplicateMove`, `StargatePawn.SelectFace` and `GameHud.AddWaypoint` -- and the emitter refuses a
+body whose bytes differ, so they stay residue. Their array prefix is byte-identical to the shipped bytes; each
+difference is downstream (a branch distance, a property index), which is the next instrument and not this node.
+
+What is left of the family: **an element of an array the artifacts do not type**, 125 -> 161 rows as bodies that used
+to die at the intrinsic now reach their element reads, and the bare-name receiver family 261 -> 158.
+
+`--check` pins four positives -- `Items.Remove(0, Items.Length)`, `Items.Insert(Count, 1)` with its `39 3a`
+`ByteToInt`, `Items.Length = 0;`, `Songs = Others;` -- the array-member `Context`, and two refusals (`Items.Find(0)`,
+a name this build has no token for, and a one-argument `Insert`). The synthetic `setlength` body, which was a
+*refusal* case, moves to the positive table: the rule it was pinning as unmodelled is the one this read measured.

@@ -6441,3 +6441,27 @@ one symbol and the refusal is a registration slot, not a call; `0x003ee1ea` is a
 a frame it does not build), `0x003ea9a0`, whose successor's 6 bytes are the next row's prologue (the map's row at
 `0x003eaa4d` starts 6 bytes late), and the funclet at `0x003eaac1`.
 
+## U41. `array<T>` has four opcodes and no `Add`, and the text's `.Add(` rows are `GUIList.Add` -- answered
+
+**Observed.** The front end refused 120 bodies whose source spells an array method (`Paths.Remove(0, Paths.Length);`,
+`msgReceived.Insert(Idx, 1);`), and an earlier read of the page called those names the reconstruction's own
+invention, "because UnrealScript has no array methods". That was wrong, and the refusal was the emitter's.
+
+**Measured.** `inventory/opcode_table.csv` carries exactly four array tokens: `0x10` `DynamicArrayElement`, `0x37`
+`DynamicArrayLength`, `0x40` `DynamicArrayInsert` and `0x41` `DynamicArrayRemove` -- the two method tokens are
+`expr,expr,expr`. UELib's `DynArrayFind`, `DynArrayFindStruct`, `DynArraySort`, `DynArrayAdd`, `DynArrayAddItem`,
+`DynArrayRemoveItem`, `DynArrayInsertItem` and `DynArrayEmpty` are names for later builds; this one gives 0x48..0x5f
+to the walker's bad-token case, so no source spelling of `Add`/`Find`/`Sort`/`Empty` can have compiled to an opcode.
+The four shipped shapes are `41 <array> <index> <count>` (`Paths.Remove(0, Paths.Length)` = `41 01 6f 09 25 37 01 6f
+09`), `40 <array> <index> <count>` (`msgReceived.Insert(Idx, 1)` = `40 01 7e 03 00 60 30 26`), `0f 37 <array> <value>`
+(`Profiles.Length = 0;` = `0f 37 01 7d 01 25`) and `0f <array> <array>` (`SongArray = Songs;`). Version 130 is below
+UELib's `EndTokenAppendedToArrayTokenIntrinsics` (649) and below its skip-word version, so neither a skip word nor an
+ending `16` is written. An array read as a **member** is a `Context` whose size byte is 0 (`MyList.Elements.Length` is
+`37 19 01 28 05 00 00 01 ...`), which is what `PROP_SIZE["array"]` now carries.
+
+**What settled the `.Add(` rows.** They are not arrays: `List.Add(...)` on a `GUIList`/`GUIListBase` control, a
+declared method of a class the walk cannot name as the receiver, and the residue's 11 rows are all that shape.
+
+**Still open, in this family.** `an element of an array the artifacts do not type` rose 125 -> 161 as bodies that used
+to die at the intrinsic now reach their element reads; that element-typing join is the next instrument, and the
+`A.Length;` statement read (a member read, not a call) is not modelled either.
