@@ -239,6 +239,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a subscripted array read's own size, the index that converts, and the differing bodies classified:
+      **10,422 modelled / 10,422 byte-identical / 0 differ** (from 10,323 / 10,323 / 0; 99 gained, none lost;
+      residue 1,355 -> 1,256; no body refuses that did not before; `uscript_emit_join.csv` byte-identical).
+      (1) **A static array read that a subscript consumes writes the array's own byte size**, `dimension x element`,
+      not the element's: `StargatePawn.EndCrouch`'s `StargateWeapon(Weapon).RegularMovementAnims[1]` is size **8**
+      (`name[2]`), `NavigationPoint.SetBaseVisibility`'s `N.BaseVisible[BaseNum]` **2** (`byte[2]`),
+      `PlayerController.ClientUpdateFlagHolder`'s `GameReplicationInfo.FlagHolder[i]` **8**, and the census behind
+      the rule -- `tools/array-read-width.py`, `inventory/array_read_width.csv` -- reads **6,046 element nodes over
+      363 shapes with 0 contradicting it**, the dimension taken per *receiver* class (`StargatePawn`'s `[7]` vs
+      `StargateWeapon`'s `[2]`). 49 bodies. (2) **A named byte index converts at the subscript**: `Mover.SetKeyframe`'s
+      `KeyPos[KeyNum] = NewLocation;` ships `1a 39 3a 01 3b ...`, a `ByteToInt` around the `byte KeyNum`, where the
+      walk passed an int site for a *literal* index only -- 50 bodies, none lost. (3) **`tools/emit-differ.py`**
+      classifies the **111** bodies that still emit and differ at their **first differing node** rather than a byte
+      offset (`inventory/emit_differ.csv`): 43 are a jump distance (the word moved with the body's own length delta,
+      so the cause is a missing node after the jump), 38 a node one side does not have, **21 a `Context` size byte**,
+      6 an operand, 3 a skip word. The 21 size rows are the branches rule 1 has not reached -- `HUDClass.default.
+      FontScreenWidthSmall[i]` writes **0x24** where the walk writes 4 -- which is the next instrument. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name.
 - [~] 3.6 an enum's size byte, a class the packages only import, and the operator that is a call: **10,323
       modelled / 10,323 byte-identical / 0 differ** (from 10,313 / 10,313 / 0; 10 bodies gained, none lost; residue
       1,365 -> 1,355; no body refuses that did not before; `inventory/uscript_emit_join.csv` byte-identical). (1) **An

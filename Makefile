@@ -499,6 +499,8 @@ oracle-diff:
 # per-commit gate; the dump-side checks stay in `make check` and `make ghidra`.
 ci:
 	@$(PYTHON) tools/ci.py
+	@$(PYTHON) tools/array-read-width.py --check-doc docs/COMPILER_FRONTEND.md
+	@$(PYTHON) tools/emit-differ.py --check-doc docs/COMPILER_FRONTEND.md
 	@$(PYTHON) tools/lipsinc-sampler-ops.py --check-doc docs/formats/lipsinc-lad.md
 	@$(PYTHON) tools/lipsinc-pack-keys.py --check-doc docs/formats/lipsinc-lad.md
 	@$(PYTHON) tools/lipsinc-globs.py --check-doc docs/formats/lipsinc-lad.md

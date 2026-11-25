@@ -2050,3 +2050,131 @@ at from this one body.
 (`-261`), because a rule that guessed an opcode for a no-index operator would emit a wrong body that still walks. The
 other two rules are pinned by the bodies they emitted byte-identically, which is the stronger evidence: an enum's size
 word and a class the package only imports have no synthetic equivalent that the corpus does not already state.
+
+## Stage 3, continued -- the array read's own size, and the index that converts (measured 2026-11-25)
+
+**10,323 -> 10,422 modelled bodies, every one byte-identical, 0 differ** (99 gained, none lost; residue 1,355 ->
+1,256; no body refuses that did not before, and `inventory/uscript_emit_join.csv` regenerates byte-identically).
+The two rules are the last section's own question, one node further out, and the first of them is a census rather
+than a patch: three bodies in the residue wrote three different widths at the same node.
+
+1. **A subscripted static array read writes the array's own byte size.** `StargatePawn.EndCrouch`'s
+   `StargateWeapon(Weapon).RegularMovementAnims[1]` ships `19 2e 09 01 a5 05 00 08 01 63 21` (size **8**),
+   `NavigationPoint.SetBaseVisibility`'s `N.BaseVisible[BaseNum]` **2**, `PlayerController.ClientUpdateFlagHolder`'s
+   `GameReplicationInfo.FlagHolder[i]` **8** -- and the previous section's `PROP_SIZE["array"] = 0` is right for
+   *dynamic* arrays, so nothing about that entry could be changed. The width is `dimension x element`, with the
+   element's width from `PROP_SIZE`/`STRUCT_SIZE` and the dimension from the corpus's own `var` line, read **per
+   receiver class**: `StargatePawn` declares `RegularMovementAnims[7]` and `StargateWeapon` `[2]`, and a
+   `StargatePawn` body reading through the cast must take the latter's. A `class<Z>` receiver takes Z's dimension,
+   exactly as its member record is Z's (`HUDClass.default.FontScreenWidthSmall[i]` is `HUD`'s `int[9]`, 36).
+
+   The evidence is a census of every element node in the corpus, not the three bodies that named the question:
+   `tools/array-read-width.py` walks both the `10` (`DynamicArrayElement`) and the `1A` (`ArrayElement`) nodes of
+   every body and records the read's form, the array property's record, its declared element and dimension, and the
+   `Context` size byte -- **6,046 nodes, 363 shapes, 0 that contradict `dim x element`**:
+
+<!-- BEGIN array-read-width -->
+**6,046 array-element nodes over 363 shapes** (`inventory/array_read_width.csv`): **206** write `dimension x element` for a static array in 30 shapes, **328** write 0 for a `UArrayProperty`, **4,739** write no `Context` at all (a read on *self*), **704** are a call's return rather than a property, and **69** are declarations the corpus spells with a `const` dimension. **No node contradicts it.**
+
+| element | dim | size byte | nodes | examples |
+|---|---|---|---|---|
+| `region` | 4 | 64 | 41 | `UWindowWindow.DrawMiscBevel`, `UWindowProgressBar.Paint` |
+| `font` | 10 | 40 | 27 | `UWindowDialogControl.BeforePaint`, `UWindowButton.BeforePaint` |
+| `pawn` | 16 | 64 | 25 | `BotBase.SetNextEnemy`, `SquadAIBasic.MergeEnemiesFrom` |
+| `int` | 6 | 24 | 19 | `LadderInfo.UpdateLadders` |
+| `botbase` | 16 | 64 | 16 | `BotEnemy.DetermineFollowLocation`, `BotBase.SetManInFront` |
+| `int` | 4 | 16 | 11 | `GUIMessageBox.LayoutButtons`, `GUIMessageBox.InternalOnPreDraw` |
+| `actor` | 16 | 64 | 9 | `Teleporter.SpecialHandling`, `HUD.DrawRoute` |
+| `name` | 4 | 16 | 7 | `SquadAISG.ForceTakeCover`, `SquadAISG.ForceFireMode` |
+| `int` | 16 | 64 | 6 | `BotEnemy.DetermineFollowLocation`, `BotBase.SetManInFront` |
+| `name` | 2 | 8 | 6 | `StargatePawn.GetAlertSquadAnim`, `StargatePawn.PlayReloading` |
+| `float` | 4 | 16 | 4 | `GUIHorzScrollBar.ZoneClick`, `GUIVertScrollBar.ZoneClick` |
+| `int` | 3 | 12 | 4 | `DeathMatch.InitGame`, `TeamDeathMatch.InitTeams` |
+| `string` | 4 | 0 | 4 | `HUD.DisplayProgressMessages` |
+| `guicomponent` | 4 | 16 | 3 | `GUIMultiComponent.MapControls` |
+| `material` | 3 | 12 | 3 | `StargateWeapon.ResetFirstPersonHandsMaterial` |
+| `actor` | 4 | 16 | 2 | `Trigger.Touch` |
+| `byte` | 2 | 2 | 2 | `NavigationPoint.SetBaseVisibility` |
+| `guifont` | 16 | 64 | 2 | `GUIMessageBox.LayoutButtons`, `GUIMessageBox.InternalOnPreDraw` |
+| `string` | 8 | 0 | 2 | `UnrealPawn.AddDefaultInventory` |
+| `unrealteaminfo` | 2 | 8 | 2 | `GameObjective.DisableObjective`, `GameObjective.Timer` |
+| `unrealteaminfo` | 3 | 12 | 2 | `BotLite.PostBeginPlay`, `StoryModeGame.LoadSaveGameInfo` |
+| `actor` | 32 | 128 | 1 | `SquadAISG.GetSquadCoverNodes` |
+| `alkeshbomb` | 2 | 8 | 1 | `AlkeshBomberBot.DoBombDrop` |
+| `color` | 4 | 16 | 1 | `HUD.DisplayProgressMessages` |
+| `color` | 5 | 20 | 1 | `GUIScrollBar.createParts` |
+| `guicomponent.elooptype` | 3 | 3 | 1 | `MenuItemOverlay.InitComponent` |
+| `name` | 3 | 12 | 1 | `StargatePawn.GetCowerAnim` |
+| `playerreplicationinfo` | 2 | 8 | 1 | `PlayerController.ClientUpdateFlagHolder` |
+| `sgformation.efollowuseposition` | 16 | 16 | 1 | `BotBase.DisplayDebug` |
+| `vector` | 16 | 192 | 1 | `StoryModeGame.AddSquadFromSpawner` |
+<!-- END array-read-width -->
+
+   The four other populations are one rule each and are in the CSV rather than on this page: **4,739** element nodes
+   write **no `Context` at all** -- a read on *self* (`BaseVisible[BaseNum] = 1;` is the bare `1A <index> 01 <record>`),
+   which is why a bare name needs no dimension; **328** are a `UArrayProperty` and write 0; **704** are a **call's
+   return** consumed by a subscript, a node shape of its own; and **69** are declarations whose dimension the corpus
+   spells as a `const` name (`var Sound SpawnSound[MAX_SPAWN_SOUNDS]`), which this walk refuses rather than resolving
+   -- a wrong dimension is a wrong body that still walks, and `MAX_SPAWN_SOUNDS` is a name, not a number the
+   declaration answers.
+
+2. **A named byte index converts at the subscript.** `_emit_element` passed an `int` site for a *literal* index only,
+   on the note that "no shipped body shows the width a byte-typed local takes in this position". Two do:
+   `Mover.SetKeyframe`'s `KeyPos[KeyNum] = NewLocation;` ships `1a 39 3a 01 3b 01 6e 36 00` -- a `ByteToInt` around
+   the `byte KeyNum` -- and `Mover.BeginPlay` writes the same two bytes, in bodies that differed by exactly them. The
+   subscript is an `int` site whatever the index is, so the site is now passed unconditionally and an `int` index is
+   a no-op through `_converted`; the control is that every body already modelled stays byte-identical (10,323 ->
+   10,372 from this rule, none lost, and the 185-body literal family from the previous section does not move).
+
+`--check` grows nothing: the census tool is the gate for the first rule (its five verdicts, the two size tables it
+reads, and the render's round trip from the committed CSV), and the second rule is pinned by the two bodies it made
+identical, which is the stronger evidence -- a synthetic byte stream cannot show that the *site* is int rather than
+the index's own type.
+
+### The emitter's differing bodies, classified at their first differing node
+
+A byte offset is not a finding. The **111** bodies that emit and still differ were read as two token trees -- the
+package's and this walk's -- with the image's own operand table, and the first *node* where they part company is what
+names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
+
+<!-- BEGIN emit-differ -->
+**111 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,323 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 111 separate defects.
+
+| first difference | node | length | branch moved with it | bodies | examples |
+|---|---|---|---|---|---|
+| jump distance | JumpIfNot | ours longer | yes | 17 | `PlayerController.LongClientAdjustPosition`, `Pawn.SurfaceReduceDamage`, `PlayerController.PlayerMove` |
+| jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
+| context size | ClassContext | same length | - | 11 | `ScoreBoard.GetSmallFontFor`, `ScoreBoard.HaveHalfFont`, `ScoreBoard.GetSmallerFontFor` |
+| context size | Context | same length | - | 10 | `TransportRings.Destroyed`, `UWindowConsoleClientWindow.Initialized`, `UWindowFramedWindow.MouseMove` |
+| opcode | PrimitiveCast | ours shorter | - | 9 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
+| opcode | VirtualFunction | ours shorter | - | 8 | `XBoxLiveFriendsMenu.MyOnReopen`, `XBoxLiveMenu.MyOnReopen`, `XBoxLiveFindGameMenu.MyOnReopen` |
+| jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
+| jump distance | JumpIfNot | ours shorter | no | 4 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
+| opcode | PrimitiveCast | ours longer | - | 4 | `VolumetricBuilder.BuildVolumetric`, `Mover.InterpolateTo`, `UDebugVideoClient.BeforePaint` |
+| operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
+| opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
+| context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
+| jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
+| opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
+| opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
+| opcode | Nothing | ours longer | - | 2 | `StargateEffect.Trigger`, `StargateHUD.PostNetHUDSetup` |
+| opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
+| context skip | Context | ours longer | - | 1 | `SGMenuInteraction.Initialized` |
+| jump distance | JumpIfNot | ours longer | no | 1 | `GameHud.AddWaypoint` |
+| opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
+| opcode | Divide_FloatFloat | ours shorter | - | 1 | `UWindowComboList.SetSelected` |
+| opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
+| opcode | FinalFunction | same length | - | 1 | `GUIComponent.ParseOption` |
+| opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
+| opcode | StructCmpEq | ours shorter | - | 1 | `MaplistRecord.CompareItems` |
+| operand | Iterator | ours shorter | - | 1 | `BotEnemy.FindTurretGoal` |
+| operand | StringConst | ours longer | - | 1 | `TextGameInfo.InitComponent` |
+<!-- END emit-differ -->
+
+Two things the classification settles for the next run. A **jump distance** whose word moved by exactly the body's
+own length delta is not a branch defect: the branch is right and the body is short *after* it, so the jump rows that
+moved point at a missing node further on rather than at the jump. And the **21 `Context` size rows** left after rule
+1 above are the branches the rule has not reached yet -- `HUDClass.default.FontScreenWidthSmall[i]` in
+`ScoreBoard.GetSmallFontFor` differs at offset 34 with size **0x24** where this walk writes 4, the same `int[9]`
+shape as rule 1 through a `X.default.Y` receiver: that branch keeps its own copy of the size lookup, and it is the
+next instrument rather than a new node.

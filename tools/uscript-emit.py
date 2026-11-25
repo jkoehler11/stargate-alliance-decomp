@@ -1304,19 +1304,55 @@ def _element_type(head, env):
     return None, ""
 
 
+def _element_dim(head, env):
+    """The declared dimension of the **static** array `head` names, `None` when no declaration carries one.
+
+    A subscript on a member whose record is not an array is a static array -- a dynamic one is a `UArrayProperty`
+    and `_element_type` sends it down `0x10` -- so the dimension comes from the corpus's own `var` line, read per
+    receiver class: `StargatePawn` declares `var name RegularMovementAnims[7]` and `StargateWeapon` `[2]`, and a
+    body in the former reading `StargateWeapon(Weapon).RegularMovementAnims[1]` must take the latter's. A read on
+    *self* needs no dimension: the compiler writes no `Context` for it (`BaseVisible[BaseNum] = 1;` is the bare
+    `1A <index> 01 <record>`), so a bare name answers 0.
+    """
+    head = _strip_parens(head)
+    at = _dot_at(head)
+    if at is None or len(head[at + 1:]) != 1 or head[at + 1][0] not in ("ident", "keyword"):
+        return 0
+    nm = head[at + 1][1].lower()
+    recv = head[:at]
+    chain_at = _dot_at(recv)
+    if (chain_at is not None and len(recv[chain_at + 1:]) == 1 and recv[chain_at + 1][0] in ("ident", "keyword")
+            and recv[chain_at + 1][1].lower() == "default"):
+        recv = recv[:chain_at]
+    cls = (_class_of(recv, env) or "").lower()
+    if not cls:
+        return None
+    for _p, anc in _ancestors(env["scope"].get("chain") or {}, "", cls):
+        dim = ((env.get("dims_by_cls") or {}).get(anc) or {}).get(nm)
+        if dim:
+            return dim
+    return None
+
+
 def _emit_element(head, index, rettype, env):
     """`X[i]` -> `10`/`1A`, the index, the array read; then the element converts at its own site."""
     token, etype = _element_type(head, env)
     if token is None:
         raise Refused("an element of an array the artifacts do not type")
-    arrb = emit_expr(head, "", env)[0]
+    # This node is the only place that knows the read is being subscripted, so it is the only place that can hand
+    # `_emit_member` the dimension the `Context` size byte needs. A **dynamic** array (`0x10`, a `UArrayProperty`)
+    # writes 0 and passes nothing; a static one passes its declared dimension, or -1 for one no declaration spells.
+    dim = _element_dim(head, env) if token == 0x1A else 0
+    arrb = emit_expr(head, "", env, element_dim=-1 if (token == 0x1A and dim is None) else (dim or 0))[0]
     # The subscript is an **int** site whatever the array holds: a literal index compiles as an int literal and
     # not as the element's type -- `TransportPlatform.Activated`'s `Skins[1] = ActiveTexture;` writes `10 26 01`
     # (IntOne) and `StoryModeGame.GetBotTeam`'s `return Teams[0];` writes `1a 25 ...` (IntZero), and against the
-    # element's own type 185 bodies refused as `a numeric literal in a typeless function`. Only a literal is
-    # retyped here: a *named* index keeps the site it had, because no shipped body shows the width a byte-typed
-    # local takes in this position.
-    idxb = emit_expr(index, "int" if (len(index) == 1 and index[0][0] == "number") else "", env)[0]
+    # element's own type 185 bodies refused as `a numeric literal in a typeless function`. A **named** byte index
+    # converts at that site too: `Mover.SetKeyframe`'s `KeyPos[KeyNum] = NewLocation;` ships
+    # `1a 39 3a 01 3b 01 6e 36 00` -- a `ByteToInt` around the `byte KeyNum` -- and `Mover.BeginPlay`'s
+    # `KeyPos[KeyNum] = ...` writes the same two bytes in a body that differed by exactly them. An int index
+    # is a no-op through `_converted`, so every body that already matched stays byte-identical.
+    idxb = emit_expr(index, "int", env)[0]
     node = bytes([token]) + idxb + arrb
     return _converted(node, etype, rettype), "element"
 
@@ -2642,7 +2678,7 @@ def _is_class_ref(expr, env):
     return False
 
 
-def _emit_member(expr, rettype, env):
+def _emit_member(expr, rettype, env, element_dim=0):
     """The member node: a receiver chain is one of three different tokens, decided by the receiver's type.
 
     | the source | the bytes | why |
@@ -2780,6 +2816,22 @@ def _emit_member(expr, rettype, env):
     if token != INSTANCE_TOKEN:
         raise Refused("a member reached through a local")
     size = PROP_SIZE.get(ptype)
+    if element_dim:
+        # The read is the array a **subscript** consumes, and its `Context` writes the array's own byte size --
+        # `dimension x element` -- not the element's: `StargatePawn.EndCrouch`'s
+        # `StargateWeapon(Weapon).RegularMovementAnims[1]` ships `19 2e 09 01 a5 05 00 08 01 63 21` (a `name[2]`
+        # is 8) where this walk wrote `PROP_SIZE["name"]` 4; `NavigationPoint.SetBaseVisibility`'s
+        # `N.BaseVisible[BaseNum]` writes 2 (`byte[2]`), `PlayerController.ClientUpdateFlagHolder`'s
+        # `GameReplicationInfo.FlagHolder[i]` 8 (`PlayerReplicationInfo[2]`), `BotBase.SetNextEnemy`'s
+        # `pawn[16]` 64 and `StoryModeGame.AddSquadFromSpawner`'s `vector[16]` **192**
+        # (`inventory/array_read_width.csv`, `tools/array-read-width.py`: 115 nodes, every one `dim x element`).
+        # The dimension is the *receiver* class's declaration, because two classes spell one name with different
+        # dimensions (`StargatePawn`'s `RegularMovementAnims[7]`, `StargateWeapon`'s `[2]`); a static array whose
+        # dimension no declaration carries is refused rather than given the element's width.
+        unit = STRUCT_SIZE.get((friendly or "").lower()) if ptype == "struct" else PROP_SIZE.get(ptype)
+        if element_dim < 0 or unit is None:
+            raise Refused("a static array whose declared dimension the artifacts do not carry")
+        size = element_dim * unit
     if size is None and ptype == "struct":
         # The record is a `StructProperty`; the artifact's declared type names the struct, and only a struct whose
         # size the corpus writes is modelled (`Pawn.Location` -> 12). A struct name the table does not carry keeps
@@ -2841,8 +2893,12 @@ def _incdec(expr, env):
     return bytes([token]) + body + b"\x16", "incdec"
 
 
-def emit_expr(expr, rettype, env):
-    """The bytes of one expression, or Refused with the reason."""
+def emit_expr(expr, rettype, env, element_dim=0):
+    """The bytes of one expression, or Refused with the reason.
+
+    `element_dim` is non-zero only when the caller is a subscript (`_emit_element`): the array read it composes
+    is then consumed by the element node, and a static array's `Context` writes the array's own byte size.
+    """
     names = env["names"]
     # `root` is the expression the compiler starts on -- a statement's value, an argument, a condition -- and it is
     # what decides whether an int literal at a `float` site is **folded** into a `FloatConst` or left behind an
@@ -2901,7 +2957,7 @@ def emit_expr(expr, rettype, env):
             node = emit_call(expr, env)
             return _converted(node, _type_of(expr, env), rettype), "call-value"
         if _dot_at(expr) is not None:
-            return _emit_member(expr, rettype, env)
+            return _emit_member(expr, rettype, env, element_dim=element_dim)
         raise Refused("a compound expression, which needs the statement walk")
     kind, val = expr[0]
     if kind in ("ident", "keyword") and val.lower() == "class":
@@ -4860,6 +4916,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # declares `local GameHUD G` while a later function of the same class declares
                    # `local class<GameInfo> G`, and the class-wide table kept only the first for both bodies --
                    # `G.HideHud(!G.bHideHud)` joined on `GameInfo` and the body was refused.
+                   "dims_by_cls": dims_by_cls,
                    "localtypes": dict(localtypes_by_cls.get(cls.lower(), {}),
                                       **localtypes_fn.get((cls.lower(), fname.lower()), {})),
                    "proptypes": proptypes_by_cls.get(cls.lower(), {}),
