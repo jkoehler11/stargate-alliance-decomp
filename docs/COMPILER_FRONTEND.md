@@ -1657,3 +1657,52 @@ member table ahead of it. `BotEnemy.SetNewHideNode` now refuses at `an unknown t
 the box return. Then the 42 `class<Z>(` rows that fail on their operands and the 246 operator rows whose pair the
 table cannot type with *both* sides known.
 
+
+## Stage 3, continued -- a struct field the class shadows, a cast inside an expression, and a `.static` statement (measured 2026-11-25)
+
+**8,342 -> 8,373 modelled, all 8,373 byte-identical, 0 differing** (31 gained, none lost; residue 3,336 -> 3,305).
+These are the three open items the previous note named, and each one is a shape resolved through a table asked in the
+wrong order, or a spelling read as syntax.
+
+**A struct field's record wins over a class property that spells the same name.** The struct branch of `_emit_member`
+-- and its twin in `_type_of` -- asked the class chain first: `hit = _prop_by_name(nm, env) or _struct_member(obj, nm,
+env)`. That table is keyed by name alone, so `ClientArea.WinLeft = R.X` in `UWindowFramedWindow.Resized` read `X` as
+export **478**, a `float` property of the GUI class, where UWindow's own `Region.X` is export **31**, an `int`, and
+wrote `36 de 01` against the package's `36 1f`. The `39 3f` `IntToFloat` in front of the field went missing with the
+record, because a `float` property needs no cast into a `float` slot. Asking the struct first settles **19 bodies** --
+`Resized` and eighteen more (`UWindowBase.NewRegion`/`NewTexRegion`/`GetRegion`, `UWindowBitmap.Paint`,
+`UWindowGrid.Paint`, `UWindowWindow.ClipText`, `UWindowWin95LookAndFeel.SB_HDraw`/`SB_VDraw`, ...) -- and every one of
+them was a **differ** row before, which is the tell that the node's shape was already right and only its record was
+wrong. The fallback stands where it belongs: a name the declared struct does not hold is still answered from the class
+chain, and `--check` holds both directions -- `SquadDir.X` behind a shadowing `float` `X` property, and
+`SquadDir.Health`, which no `vector` declares.
+
+**A `class < Z > ( ... )` head anywhere in an expression is a guarded span, not two comparisons.** `_operator_types`
+already skipped the `<` and `>` of a cast at the expression's *head*, which is the only place `_metacast_span` reads
+one; a cast in the middle of a larger expression was unguarded, so its `>` was scanned as an operator.
+`WeaponPickup.PostBeginPlay`'s `MaxDesireability = 1.2 * class<Weapon>(InventoryType).Default.AIRating` was split at
+that `>` into `1.2 * class < Weapon` and `( InventoryType ) . Default . AIRating` -- two untyped sides -- and the body
+refused as `an unknown type > an unknown type`. `_metacast_spans` returns every head's absolute span and the scan skips
+all of them. The value a cast yields is untouched: `12 05 00 04 13 0f | 02 74 07` is a `ClassContext` over the
+group-13 node, which is what `_type_of` already read for a `.Default` chain on a cast.
+
+**A `.static` call in a *statement* is the same `ClassContext` a return position writes.** `_stmt_member_call` took the
+receiver to be everything before the last `.`, so `G.Static.SetupInteractionsFor(Self)` -- with `G` a
+`local class<GameInfo>` -- handed `G.Static` to `emit_expr`, which answered *a member that is not a property of the
+receiver's class*: `Static` is a link, not a property. `PlayerController.ClientReStart` ships
+`12 07 00 00 <G> 1b 5f 0f 2a 16` -- `ClassContext`, `_wide` of the call (7), value size 0, the local read, the call --
+which is the node `_emit_member_call` has written for the same shape in a return position since the `.static` rule
+landed. The statement path now takes the link off before resolving the receiver, and writes `_wide` of the call rather
+than the property-import constant.
+
+The two operand rules carry **12 bodies** between them: four that spell only `.static`
+(`PlayerController.ServerSpeech`, `PlayerController.ReceiveLocalizedMessage`, `MapList.PreBeginPlay`,
+`CreateNewProfile.Closed`), four that spell only a cast (`LevelInfo.FillPrecacheMaterialsArray`,
+`LevelInfo.FillPrecacheStaticMeshesArray`, `PlayerController.ClientReStart`, `WeaponPickup.PostBeginPlay`), and four
+that need both (`AnnouncerVoice.PrecacheAnnouncements`, `GameReplicationInfo.PostNetBeginPlay`,
+`PlayerController.ClientPostLogin`, `xPickUpBase.PostBeginPlay`).
+
+**What is left on this thread.** The largest single refusal family is now `a member that is not a property of the
+receiver's class` at **341** rows, followed by `a member call statement to a name the receiver's chain does not
+declare` at **469**, and the 246 operator rows whose pair the table cannot type with *both* sides known. That order is
+the next three instruments.

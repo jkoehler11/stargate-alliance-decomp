@@ -790,11 +790,13 @@ def _operator_types(expr, env, site="", root=False):
     spelled = {"dot", "cross", "clockwisefrom"}
     symbols = {sym for (sym, _a, _b) in ops if not sym[:1].isalpha()}
     depth, best = 0, None
-    span = _metacast_span(expr)
-    guard = span[1] if span else -1
+    # Every `class < Z > ( ... )` head in the expression is guarded, not only one at the head: its `<` and `>`
+    # are the cast's spelling, and a scan that read them as comparisons split the expression at the `>`.
+    guarded = set()
+    for start, _close, end in _metacast_spans(expr):
+        guarded.update(range(start, end + 1))
     for i, (kind, val) in enumerate(expr):
-        if i <= guard:
-            # inside a `class < Z > ( ... )` head: its `<` and `>` are the cast's spelling, not comparisons
+        if i in guarded:
             continue
         if kind == "op" and val in "([{":
             depth += 1
@@ -1399,8 +1401,10 @@ def _type_of(expr, env):
             elif objkind == "struct":
                 # A struct member's record is keyed by (struct, member); a class-property lookup by name cannot
                 # find it, and that miss left `Dest.Z` (float), `Rotation.Pitch` (int) and every operator over
-                # them untyped -- the head of the operator residue (353 rows).
-                hit = _prop_by_name(nm, env) or _struct_member(obj, nm, env)
+                # them untyped -- the head of the operator residue (353 rows). The struct's own record is asked
+                # **first**, exactly as `_emit_member` now does: a name the class also spells (`Region.X`) is the
+                # field, and reading the property's type here types the operator over it wrong.
+                hit = _struct_member(obj, nm, env) or _prop_by_name(nm, env)
             else:
                 hit = _member_record(obj, nm, env)
             if hit is not None:
@@ -1747,6 +1751,28 @@ def _metacast_span(expr):
     if end is None:
         return None
     return close, end
+
+
+def _metacast_spans(expr):
+    """Every `class < Z > ( ... )` head's `(start, close, end)` in an expression, as absolute indices.
+
+    `_metacast_span` reads one cast only at the expression's head, which is enough for the *value* a cast
+    yields but not for the **scan** `_operator_types` runs: a cast can sit anywhere in an expression, and its
+    `<` and `>` are the cast's spelling, not comparisons. `1.2 * class<Weapon>(InventoryType).Default.AIRating`
+    was split at the `>` into `1.2 * class < Weapon` and `( InventoryType ) . Default . AIRating`, two untyped
+    sides, so the body refused as a pair the table does not install.
+    """
+    out, i = [], 0
+    while i < len(expr) - 2:
+        kind, val = expr[i]
+        if kind in ("ident", "keyword") and val.lower() == "class" and expr[i + 1] == ("op", "<"):
+            span = _metacast_span(expr[i:])
+            if span is not None:
+                out.append((i, i + span[0], i + span[1]))
+                i += span[1] + 1
+                continue
+        i += 1
+    return out
 
 
 def _metacast(expr, env):
@@ -2332,7 +2358,14 @@ def _emit_member(expr, rettype, env):
             raise Refused("a %s member that is not its length" % objkind)
         return _converted(bytes([0x37]) + emit_expr(obj, "", env)[0], "int", rettype), "length"
     if objkind == "struct":
-        hit = _prop_by_name(nm, env) or _struct_member(obj, nm, env)
+        # The **struct's own** record wins over a class property of the same name. The class chain's table is
+        # keyed by name alone, so a struct field whose name a property of the class also spells resolved to the
+        # property: `UWindowFramedWindow.Resized`'s `ClientArea.WinLeft = R.X` read `X` as export 478 (a float
+        # property of the GUI class) and wrote `36 de 01`, where the package writes `36 1f` -- UWindow's own
+        # `Region.X`, export 31, an `int` -- and with the property's `float` type the `39 3f` `IntToFloat` in
+        # front of the field went missing too. `_struct_member` answers only when the receiver's declared struct
+        # declares the name, so a field the struct does not hold still falls back to the class chain.
+        hit = _struct_member(obj, nm, env) or _prop_by_name(nm, env)
     else:
         hit = _member_record(obj, nm, env)
     if hit is None:
@@ -3435,6 +3468,14 @@ def _stmt_member_call(stmt, env):
     obj, member = stmt[:at], stmt[at + 1:]
     if not _is_call(member):
         raise Refused("a statement that is a member read, not a call")
+    # A `.static` link names the class object itself, so the receiver is the chain **before** it and the call is
+    # written inside a `ClassContext` (`12`), the node `_emit_member_call` already writes for the same shape in a
+    # return position. `PlayerController.ClientReStart`'s `G.Static.SetupInteractionsFor(Self)` -- `G` is a
+    # `local class<GameInfo>` -- is `12 07 00 00 <G> 1b 5f 0f 2a 16`; read as a plain `Context` the receiver was
+    # `G.Static`, which is no property of `GameInfo`, and the body refused.
+    stat_at = _static_at(obj)
+    if stat_at is not None:
+        obj = obj[:stat_at]
     cls = _class_of(obj, env)
     if not cls:
         raise Refused("a call statement whose receiver's class the artifacts do not name")
@@ -3453,8 +3494,10 @@ def _stmt_member_call(stmt, env):
     # `Pawn.SetSprinting(true)` in BotBase is `19 01 8a 07 00 00` (the call is 7 wide), and reading every import as
     # `Outer` wrote 5 there -- nine bodies, all of them one word short.
     imp = _import_of(obj, env)
-    skip = 5 if imp is not None and imp == (env.get("scope") or {}).get("outer_ref") else _wide(memb)
-    node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", skip)
+    skip = 5 if (stat_at is None and imp is not None
+                 and imp == (env.get("scope") or {}).get("outer_ref")) else _wide(memb)
+    node = (bytes([CLASS_CONTEXT_TOKEN if stat_at is not None else CONTEXT_TOKEN])
+            + emit_expr(obj, "", env)[0] + struct.pack("<H", skip)
             + bytes([_value_size(rtype, env)]) + memb)
     if rtype == "string":
         return bytes([0x0E]) + node, "call-member", "eat-string-call-member"
@@ -4417,6 +4460,8 @@ function bool NotAnd() { return !bDead && bFlag; }
 function int NegInt() { return -Health; }
 function bool NotCall() { return !Target.bFlag; }
 function bool ClassRefDefault() { local class<Probe> Cls; return Cls.Default.bDead; }
+function Nothing StaticStmt() { Cls.Static.Ping(); }
+function int ProductCast() { return 2 * class<Probe>(Target).Default.Health; }
 function string ClassCall() { return class'Probe'.static.Say("x"); }
 function string BadStatic() { return class'Missing'.static.Say("x"); }
 function Actor CastChain() { return Probe(Target).Default.Target; }
@@ -4635,6 +4680,15 @@ WANT = {
     # (`PlayerController.SetDodging`). A bool member keeps the `2d` BoolVariable inside the node and the skip word
     # covers it (`Vehicle.ClientKDriverLeave` writes `19 01 1b 06 00 04 2d 02 59 0a` over an object receiver).
     "classrefdefault": "04120065090600042d022d040b47",
+    # A `.static` call in a **statement** is the same `ClassContext` a return position writes: `Cls` is the probe's
+    # `local class<Probe>`, the skip word is `_wide` of the call (`1b 33 16` is 3 bytes with a one-byte index, so 6)
+    # and `Ping` returns nothing, so the value size is 0. Shipped: `PlayerController.ClientReStart`'s
+    # `G.Static.SetupInteractionsFor(Self)` is `12 07 00 00 59 42 1b 5f 0f 2a 16` -- a two-byte index, so 7.
+    "staticstmt": "120065090600001b3316040b47",
+    # A `class<Z>( )` **inside** a larger expression: the `*` is the operator, and the cast is the `ClassContext`
+    # over a `MetaClassCast` -- `12 13 04 01 63 09 05 00 04 02 6e 04`, the shape `WeaponPickup.PostBeginPlay`
+    # ships as `12 05 00 04 13 0f | 02 74 07` over an `int` member (`Health`), so no value conversion.
+    "productcast": "04902c02121304016309050004026e0416040b47",
     # A **cast** is an object, not a reference: `Pawn(Owner).Default.Visibility` is a plain `Context`
     # (`19 2e 83 01`, `ShieldBelt.StopInvisible`), and writing `12` there is a `ClassContext` the compiler did not.
     "castchain": "04192e04016309050004026309040b47",
@@ -4934,6 +4988,49 @@ def check(args):
     got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "X")], "float", senv)
     if got[:2] == b"\x2d\x36":
         print("FAIL uscript-emit: a float struct member is written behind BoolVariable")
+        return 1
+    # P6b: a struct **field** whose name the class chain also spells is the struct's record, not the property.
+    # `UWindowFramedWindow.Resized` wrote `36 de 01` (the GUI class's `X`, export 478, a float) where UWindow's
+    # own `Region.X` is export 31, an int -- and the property's float type is why the `39 3f` `IntToFloat` in
+    # front of the field disappeared with it. The fallback is pinned too: a name the struct does not hold is
+    # answered from the class chain, which is what `SquadDir.Health` must keep doing.
+    sh_env = dict(senv)
+    sh_env["scope"] = dict(senv["scope"], struct_props={("vector", "x"): (31, "IntProperty")},
+                           props=dict(SCOPE["props"], x=(0x01, 478, "float")))
+    got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "X")], "int", sh_env)
+    want = b"\x36" + write_index(31) + b"\x01" + write_index(620)          # `01` = InstanceVariable: `SquadDir` is a property
+    if got != want:
+        print("FAIL uscript-emit: a struct field shadowed by a property emits %s, expected %s"
+              % (got.hex(), want.hex()))
+        return 1
+    got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "Health")], "int", sh_env)
+    if _struct_member([("ident", "SquadDir")], "health", sh_env) is not None:
+        print("FAIL uscript-emit: the shadowing struct answers a field it does not declare")
+        return 1
+    if _prop_by_name("health", sh_env) is None:
+        print("FAIL uscript-emit: the class chain no longer answers a property the struct lacks")
+        return 1
+    # P8b: a `class<Z>( )` cast **inside** a larger expression is a guarded span, not two comparisons. The
+    # loosest operator of `1.2 * class<Weapon>(InventoryType).Default.AIRating` is the `*`, and the `>` inside
+    # the cast head must not be read as an operator at all.
+    mc_ops = _operator_types([("number", "1.2"), ("op", "*"), ("keyword", "class"), ("op", "<"),
+                              ("ident", "Actor"), ("op", ">"), ("op", "("), ("ident", "OptionalObject"),
+                              ("op", ")"), ("op", "."), ("ident", "Default"), ("op", "."), ("ident", "X")], env)
+    if mc_ops is None or mc_ops[0] != "*" or mc_ops[5] != 1:
+        print("FAIL uscript-emit: `1.2 * class<Z>(x).Default.Y` reads %r, expected the `*` at 1" % (mc_ops,))
+        return 1
+    # P8c: the cast as a `.Default` receiver is a **ClassContext** over the group-13 node:
+    # `12 13 <Z> <inner> 05 00 <size> 02 <member>`. Shipped: `WeaponPickup.PostBeginPlay` writes
+    # `12 05 00 04 13 0f | 02 74 07` for `class<Weapon>(InventoryType).Default.AIRating`.
+    mc_env2 = dict(env, scope=dict(SCOPE, props=dict(SCOPE["props"]),
+                                   objclass={("probe", "target"): "probe"}))
+    got, _m = emit_expr([("keyword", "class"), ("op", "<"), ("ident", "Probe"), ("op", ">"), ("op", "("),
+                         ("ident", "Target"), ("op", ")"), ("op", "."), ("ident", "Default"), ("op", "."),
+                         ("ident", "Health")], "int", mc_env2)
+    want = (b"\x12\x13" + write_index(4) + b"\x01" + write_index(611) + b"\x05\x00\x04"
+            + b"\x02" + write_index(302))
+    if got != want:
+        print("FAIL uscript-emit: `class<Z>(x).Default.Y` emits %s, expected %s" % (got.hex(), want.hex()))
         return 1
     # P8: a cast to a **class** type is the group-13 `MetaClassCast` (`13 <object ref> <expr>`), and it is a class
     # reference at its site. `LocalMessage.GetString`'s `class<Actor>(OptionalObject) != None` is

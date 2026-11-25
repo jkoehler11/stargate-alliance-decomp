@@ -239,6 +239,18 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a struct field the class chain shadows, a cast inside an expression, and a `.static` statement: **8,373
+      modelled / 8,373 byte-identical / 0 differ** (from 8,342 / 8,342 / 0; 31 bodies gained, none lost; residue
+      3,336 -> 3,305). (1) A struct field's record is asked **before** the class chain's: `UWindowFramedWindow.Resized`
+      read `Region.X` as a `float` property (export 478, `36 de 01`) where the package writes the struct's own record
+      (export 31, `36 1f`), and lost the `39 3f` `IntToFloat` in front of the field with it -- 19 bodies, every one of
+      them a differ row before. (2) A `class<Z>( )` head **anywhere** in an expression is guarded
+      (`_metacast_spans`), so `1.2 * class<Weapon>(InventoryType).Default.AIRating` no longer splits at the cast's
+      `>`. (3) A `.static` call in a **statement** takes the link off the receiver and writes the `ClassContext` the
+      return-position path already wrote (`12 07 00 00 <G> 1b 5f 0f 2a 16`); 12 bodies across (2) and (3).
+      Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Next: the 341 `a member that is not a property of
+      the receiver's class` rows, the 469 `a member call statement to a name the receiver's chain does not declare`
+      rows, then the 246 operator rows whose pair is missing with both sides known.
 - [~] 3.6 one-row operator symbols, a member call's parameter list, and four return sizes: **8,342 modelled
       / 8,342 byte-identical / 0 differ** (from 8,314 / 8,314 / 0; 28 bodies gained, none lost; residue 3,364 ->
       3,336). `&&`/`||`/`^^`/`!` are typed by their symbol (one row each in the table), `_params_on` no longer
