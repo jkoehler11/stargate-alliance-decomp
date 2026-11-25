@@ -239,6 +239,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 which side of an operator pair is what -- the spelling, an enum's byte, a class reference: **10,313
+      modelled / 10,313 byte-identical / 0 differ** (from 10,273 / 10,273 / 0; 40 bodies gained, none lost; residue
+      1,405 -> 1,365; no body refuses that did not before; the join artifact byte-identical). (1) **A word-spelled
+      operator is keyed by the table's spelling.** `Dot` and `Cross` are declared with a capital
+      (`native(219) static final operator(16) float Dot ( vector A, vector B )`) and the source spells them in any
+      case, so `LookDir cross vect(0,0,1)` never met the row: 23 bodies refused as `(vector cross vector)` /
+      `(vector dot vector)` with `Cross_VectorVector` (220) and `Dot_VectorVector` (219) in the table. Eleven more
+      refused on a pair with an **unknown** side that is a `dot`/`cross` sub-expression -- the spelling fix is the
+      only change that can type one, and `Fragment.HitWall`, `ForceField.TakeDamage`, `StargatePawn.FacingTowards`
+      and `StargateWeaponEmplacement.LimitRotation` all spell an infix `dot`. (2) **An enum's own name is the byte it
+      is stored in.** `var EFileType T` / `function EAggroLevel GetAggroLevel()` are neither builtin nor class, so
+      `ConvertToFileType(Ext) != FILE_None` refused as `(efiletype != byte)`; `_enum_byte` maps the name at every
+      producer of a declared type (`_declared_type`, a bare call's return, `_callee_return_type`), which installs the
+      `NotEqual_IntInt` **and both** `39 3a` (`ByteToInt`) casts -- 182 bytes against the 178 a pair-level rule
+      wrote, and that pair-level version turned eight bodies into emitting-and-differing (178 vs 182, 251 vs 255,
+      452 vs 454) before it was moved to the type. (3) **A class reference is an object.** `class<damagetype>` and
+      `class.aimessage` are the two spellings a declared type arrives in and `_numeric` knew only `class`; a class
+      name is also an object off the body's own chain (`Font`). Doc: `docs/COMPILER_FRONTEND.md`, section of the
+      same name. Not in this PR: the seven `(eaggrolevel ...)` rows whose value is a *member call*
+      (`Controller.GetAggroLevel()`; typing that producer too changed no body), `(font == object)` /
+      `(viewport == object)` (`Font` and `Viewport` ship no `ScriptText`, so `classes.csv` has no row), and
+      `ClockwiseFrom`, declared `native` with no index at all.
 - [~] 3.6 the class-scope prefix and the receiver joins around it: **10,273 modelled / 10,273
       byte-identical / 0 differ** (from 10,061 / 10,061 / 0; 212 bodies gained, none lost; residue
       1,767 -> 1,405; no new refusal). (1) **`Static.F(args)` / `Global.F(args)` name the class scope, not an

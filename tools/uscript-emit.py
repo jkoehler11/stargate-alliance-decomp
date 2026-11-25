@@ -749,9 +749,28 @@ def _operators():
 
 OPERATORS = {}
 OPERATOR_PREC = {}
+OP_SPELLING = {}
+ALL_CLASS_NAMES = set()
 UNARY = {}
 SOLE_ROWS = {}
 SOLE_UNARY = {}
+
+
+def _op_spelling():
+    """`{lower-case spelling: the table's own spelling}` for the operators whose symbol is a **word**.
+
+    The table spells three of them with a capital -- `static final operator(16) float Dot ( vector A, vector B )`,
+    `Cross`, and `ClockwiseFrom` -- and the source spells them in whatever case the author used:
+    `LookDir cross vect(0,0,1)`, `OffDir dot (Pawn.Location - MyManager.Location)`,
+    `if ( FireYaw ClockwiseFrom Rotation.Yaw )`. The pair is a dictionary key, so `cross` never met `Cross` and 29
+    bodies refused as *an operator the image's table does not install (vector cross vector)* while
+    `Cross_VectorVector` (220), `Dot_VectorVector` (219) and `ClockwiseFrom` (316) sat in the table.
+    """
+    if not OP_SPELLING:
+        for (sym, _a, _b) in _operators():
+            if sym[:1].isalpha():
+                OP_SPELLING.setdefault(sym.lower(), sym)
+    return OP_SPELLING
 
 
 def _sole_rows():
@@ -832,7 +851,9 @@ def _operator_types(expr, env, site="", root=False):
         if kind == "op" and val in symbols:
             sym = val
         elif kind in ("ident", "keyword") and val.lower() in spelled:
-            sym = val  # spelled as an infix word: `FireYaw ClockwiseFrom Rotation.Yaw`
+            # spelled as an infix word: `FireYaw ClockwiseFrom Rotation.Yaw` -- and keyed by the spellings below,
+            # which are the table's (`Dot`, `Cross`, `ClockwiseFrom`), not the source's
+            sym = _op_spelling().get(val.lower(), val)
         else:
             continue
         if i == 0 or i == len(expr) - 1:
@@ -939,9 +960,27 @@ def _numeric(t, env=None):
         return "int"
     if t == "class":
         return "object"
-    if env and t and t in (env.get("class_names") or set()):
+    if t.startswith("class.") or t.startswith("class<"):
+        # A class reference is an object whatever spelling the artifacts carry it in: a local declared
+        # `class<Info>` arrives as `class<info>`, and a property record spells `class.AIMessage`.
+        # `Classes[i].Class != GetAIMsgClass(msgID)` compares two of them as `EqualEqual_ObjectObject`.
+        return "object"
+    if env and t and (t in (env.get("class_names") or set()) or t in _all_class_names()):
         return "object"
     return t
+
+
+def _all_class_names():
+    """Every class name the corpus's class table carries -- not only the ones on the body's own chain.
+
+    `_numeric` read a class-typed operand as an `object` only when the class sat on the body's chain, so
+    `LoadFontStatic(i) == aFont` read `(font, object)` and `Viewport` in GUI read `(viewport, object)` as pairs the
+    table does not install, while `EqualEqual_ObjectObject` -- the row the compiler used -- sat in it. A class name
+    is an object reference wherever it is declared.
+    """
+    if not ALL_CLASS_NAMES:
+        ALL_CLASS_NAMES.update(c for (_p, c) in _chain())
+    return ALL_CLASS_NAMES
 
 
 def _is_literal(expr):
@@ -1307,7 +1346,29 @@ def _friendly(nm, env):
     return ""
 
 
+def _enum_byte(t, env):
+    """An **enum's own name** is its storage: a `byte`.
+
+    `var EFileType T` and `function EAggroLevel GetAggroLevel()` declare types that are neither a builtin nor a
+    class, and the value they carry is a byte. `ConvertToFileType(Ext) != FILE_None` is `NotEqual_IntInt` with
+    **both** operands wrapped in `39 3a` (`ByteToInt`) -- 182 bytes against the 178 a pair-only reading wrote, and
+    the missing four were the two casts -- and an enum *constant* already answers `byte` (`_emit_enum`).
+
+    Kept in one place because three producers report a declared type -- a property/local/parameter record, a
+    call's return type, and a callee's -- and a pair looked up on the name alone writes a body four bytes short,
+    which is a silent difference rather than a refusal.
+    """
+    if t and env and t.lower() in (env.get("enum_names") or set()):
+        return "byte"
+    return t
+
+
 def _declared_type(nm, env):
+    """A read's declared type, with an enum's own name answering the byte it is stored in (`_enum_byte`)."""
+    return _enum_byte(_declared_type_record(nm, env), env)
+
+
+def _declared_type_record(nm, env):
     """A read's declared type: the record's kind, spelled out when the record only says `struct`.
 
     A parameter's struct name is in its declaration (`Vector momentum`), a property's in
@@ -1412,7 +1473,7 @@ def _type_of(expr, env):
         for cls in env["order"]:
             hit = (env.get("rets") or {}).get((cls, low))
             if hit:
-                return hit.lower()
+                return _enum_byte(hit.lower(), env)
         return ""
     op = _operator_types(expr, env)
     if op is not None:
@@ -3149,7 +3210,7 @@ def _callee_return_type(name, env):
     for cls in env.get("order") or []:
         hit = (env.get("rets") or {}).get((cls, low))
         if hit:
-            return hit.lower()
+            return _enum_byte(hit.lower(), env)
     return ""
 
 
