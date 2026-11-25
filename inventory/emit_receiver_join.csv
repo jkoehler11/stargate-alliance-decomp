@@ -1,11 +1,23 @@
-family,where,bodies,examples
-(census),,629,0 modelled of 0 walked
-bare call,off-chain,27,PlayerController.ServerMove PhysicsVolume.PawnEnteredVolume Pickup.SpawnCopy
-bare call,on-chain,2,StargateAIMsgManager.FilterSentMsg StargateAIMsgManager.FilterReceivedMsg
-bare call,undeclared,12,GUIImageList.internalKeyEvent GUITabControl.NextControl GUITabControl.PrevControl
-"member call, no receiver class",unnamed,174,PlaylistParserBase.ParseLines ScriptObject.Destroyed AIMsgManager.RemoveReceivedMsg
-"member call, statement",off-chain,29,PuzzleTrigger._ResetMovers C4Mission.BeginState Train.SetTrainState
-"member call, statement",on-chain,88,SpecialEventTrigger.Trigger ACTION_DamageInstigator.InitActionFor SE_RandomSpawn.spawnActor
-member read,off-chain,232,TransientAmbientCreature.FindSpawnLocation SpiralStairBuilder.BuildCurvedStair Actor.DisplayDebug
-member read,on-chain,28,GUIMenuOption.InitComponent GUIListBox.InitComponent GUIScrollTextBox.InitComponent
-member read,undeclared,37,PlayerController.MakeAdmin Mutator.GetServerDetails MaplistManager.GetRecords
+family,where,why,bodies,examples
+(census),,,626,9495 modelled of 11687 walked
+bare call,off-chain,,27,PlayerController.ServerMove PhysicsVolume.PawnEnteredVolume Pickup.SpawnCopy
+bare call,on-chain,,2,StargateAIMsgManager.FilterSentMsg StargateAIMsgManager.FilterReceivedMsg
+bare call,undeclared,,11,GUIImageList.internalKeyEvent GUITabControl.NextControl GUITabControl.PrevControl
+bare call,undeclared,a call whose declared return type the class table does not carry as a class,2,GUIListBox.CanAcceptInput GUIListBox.CanAcceptFocus
+"member call, no receiver class",unnamed,a bare name this body declares no type for,107,PlaylistParserBase.ParseLines ScriptObject.Destroyed AIMsgManager.RemoveReceivedMsg
+"member call, no receiver class",unnamed,a call whose declared return type the class table does not carry as a class,6,ShadowProjector.PostBeginPlay GUIMenuOption.MenuStateChange GUITabControl.SetFocus
+"member call, no receiver class",unnamed,a receiver chain whose member the artifacts name no class for,17,PlayerController.HandleWalking MaplistRecord.CreateMapItem MaplistRecord.RemoveOptionItem
+"member call, no receiver class",unnamed,a receiver shape `_class_of` does not resolve,24,Pawn.DisplayDebug Controller.SetNewTeam xAdminGroup.SetPrivs
+"member call, no receiver class",unnamed,"an array name, whose element type the artifacts do not name",9,StreamBase.ParseDirectories GameReplicationInfo.GetPRIArray Pawn.RemoveAllInventory
+"member call, no receiver class",unnamed,an element of an array the artifacts do not type,11,MaplistManager.ResetList MaplistManager.ClearList MaplistManager.SaveMapList
+"member call, statement",off-chain,,29,PuzzleTrigger._ResetMovers C4Mission.BeginState Train.SetTrainState
+"member call, statement",on-chain,,88,SpecialEventTrigger.Trigger ACTION_DamageInstigator.InitActionFor SE_RandomSpawn.spawnActor
+member read,off-chain,,9,PlayerInput.PlayerInput PuzzleTrigger.PostBeginPlay SGC_SecurityReader.PostBeginPlay
+member read,on-chain,,28,GUIMenuOption.InitComponent GUIListBox.InitComponent GUIScrollTextBox.InitComponent
+member read,undeclared,,1,UWindowDialogClientWindow.CreateControl
+member read,unnamed,"`pair` is declared `gameinfo . keyvaluepair`, which is not a class the class table carries",1,MaplistRecord.CreateMapOption
+member read,unnamed,a bare name this body declares no type for,28,CheatManager.SetFlash CheatManager.SetFogR CheatManager.SetFogG
+member read,unnamed,a call whose declared return type the class table does not carry as a class,13,GoaAutoTurretMK2Pawn.UpdateAimingRotation HaakenMK1Weapon.GetFireStart SuperSoldier.GetGrabPos
+member read,unnamed,a receiver chain whose member the artifacts name no class for,92,TransientAmbientCreature.FindSpawnLocation Actor.DisplayDebug Controller.BeginState
+member read,unnamed,a receiver shape `_class_of` does not resolve,26,AccessControl.SaveAdmins xAdminUser.RedoMergedPrivs xAdminUser.CanManageUser
+member read,unnamed,an element of an array the artifacts do not type,95,SpiralStairBuilder.BuildCurvedStair IMusicActor.SetTransition IMusicActor.RecurseTransitionsFromTo

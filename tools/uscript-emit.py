@@ -1123,8 +1123,13 @@ _ARRAY_MODS = ("export", "editinline", "const", "coerce", "out", "native", "arra
 
 
 def _array_element(friendly):
-    """`array<export editinline ScriptEvent>` -> `scriptevent`; "" when the artifact does not spell one."""
-    f = (friendly or "").strip()
+    """`array<export editinline ScriptEvent>` -> `scriptevent`; "" when the artifact does not spell one.
+
+    The **local** walk spells a declaration with the tokens' own spaces (`local array<Interaction> A;` comes back
+    `array < interaction >`), so the brackets are normalised before the shape test; the words inside keep their
+    spaces, because `_ARRAY_MODS` reads them one at a time.
+    """
+    f = re.sub(r"\s*([<>])\s*", r"\1", (friendly or "").strip())
     if not (f.startswith("array<") and f.endswith(">")):
         return ""
     words = [w for w in f[6:-1].split() if w.lower() not in _ARRAY_MODS]
@@ -1151,8 +1156,17 @@ def _element_type(head, env):
         return None, ""
     if len(head) == 1 and head[0][0] in ("ident", "keyword"):
         nm = head[0][1].lower()
-        if _record_kind(head, env) == "array":
-            return 0x10, _array_element(_friendly(nm, env))
+        # The element's class has three witnesses and the package record is only the first: `_friendly` reads
+        # `class_properties.csv`, which holds **class properties**, and a local or a parameter is in neither table --
+        # `local array<Interaction> InteractionArray;` is a dynamic array whose element is `Interaction`, and
+        # `_record_kind` answers `array` for it while `_friendly` answers "". The element went untyped and
+        # `InteractionArray[Index].bActive` was refused as "an element of an array the artifacts do not type" with
+        # the class sitting in the same body's own `local` statement.
+        word = ((env.get("localtypes") or {}).get(nm) or (env.get("paramtypes") or {}).get(nm) or "")
+        el = _array_element(_friendly(nm, env)) or _array_element(word)
+        if _record_kind(head, env) == "array" or word.strip().lower().startswith("array"):
+            # a dynamic array, wherever the record or the declaration spells it: `10` (`DynamicArrayElement`)
+            return 0x10, el
         declared = _declared_type(nm, env)
         if declared in ("", "array"):
             return None, ""
