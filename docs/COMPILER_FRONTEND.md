@@ -1502,3 +1502,34 @@ width is **not** in this bundle.
 `PROP_TYPE` and then drops the declared word, so `FireProperties.ProjectileClass`'s `class<Projectile>` never
 reaches `_class_of` -- one clause, and the width of the struct chain is already measured. Then the `class<Z>`
 differ rows, `HTMLStyle`'s 28, and the 510 rows the operator table still refuses by the pair it cannot type.
+
+## Stage 3, continued -- a record kind in a struct lookup, a chain link that is a class, and `HTMLStyle`'s 28 (measured 2026-11-25)
+
+**8,136 -> 8,148 modelled, all 8,148 byte-identical, 0 differing** (12 gained, 0 lost, no new residue; the residue
+3,542 -> 3,530). Three rules, each one comparison that asked the wrong table.
+
+**A struct member's declared word is carried by its *record kind*, not by the mapped type.** `PROP_TYPE` answers
+`object` for a `ClassProperty` -- a class reference is a pointer -- and `_struct_member` tested the mapped word
+(`if ptype in ("struct", "array", "class")`) before returning the census's declared type, so
+`FireProperties.ProjectileClass` (`class<Projectile>`) came back with an empty word and
+`FiredAmmunition.ProjectileClass.Default.Speed` refused as *a default chain whose member the receiver's class does
+not declare*. The test is the record kind now, and the two bodies it settles are `Controller.WarnTarget` and
+`Weapon.CanAttack`; `PlayerController.AdjustAim` and `BotEnemy.AdjustAim` read the same chain and refuse further
+on, which is the next read on this thread.
+
+**A chain link can be the class reference.** `_is_class_ref` asked a bare name, a `class'X'` literal, a `class<Z>`
+declaration and `_type_of(...) == "class"` -- and a **member** is none of those: `Chosen.PawnClass` is `Pawn`'s
+`var class<Pawn> PawnClass`, so `Chosen.PawnClass.Default.ControllerClass` is a `ClassContext` (`12`) and the walk
+wrote `19`. Seven bodies were *differing* on exactly that byte and none of them was refused, which is why the
+promise "a wrong rule shows up as residue, never as a wrong body" holds only for shapes the walk can emit at all:
+`DeathMatch.SpawnBot`, `AmbientCreatureManager.Timer`, `Powerups.HandlePickupQuery`,
+`WeaponPickup.BotDesireability`, `GRENADE.CalcGrenadeLanding`, `SemektetMortarGun.CalcGrenadeLanding`,
+`AirborneTurretController.GetAimingTargetSpeedOffset`. All seven are byte-identical now.
+
+**`HTMLStyle` is 28 bytes wide and reads as `Context 05 00 1c`.** The width was measured in the previous bundle from
+eight nodes (`UWindowHTMLTextRow(L).StartStyle` at `000d` in `UWindowHTMLTextArea.DrawTextLine`, and seven more
+across `GetWrapPos`, `RemoveWrap` and `WrapRow`); it is in `STRUCT_SIZE` now, and `GetWrapPos`, `RemoveWrap` and
+`WrapRow` are modelled. `DrawTextLine` still refuses earlier in its body, so the width is in the table and not yet on
+every body that reads it.
+
+All three are single comparisons; the measured artifact is regenerated and its census row carries the new totals.

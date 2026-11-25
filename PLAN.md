@@ -18402,3 +18402,9 @@ sequence.
   `class<Z>` differ rows; the 17 *a receiver chain whose member is not one name* rows; `HTMLStyle`'s width (a
   `string` member means no fixed size); the 680 operator rows.
 - **Files.** `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`.
+
+- Front end, 2026-11-25: `_struct_member` carries a `ClassProperty`'s declared `class<Z>` (the test is the record
+  kind, not `PROP_TYPE`'s `object`), `_is_class_ref` answers for a chain link, and `STRUCT_SIZE` holds
+  `htmlstyle: 28`. 8,136 -> 8,148 modelled, all identical, 0 differ; 2 fireproperties chains, 7 `ClassContext`
+  differ rows and 3 `HTMLStyle` bodies. Still open on this thread: `PlayerController.AdjustAim` /
+  `BotEnemy.AdjustAim`, `UWindowHTMLTextArea.DrawTextLine`, the 486 operator rows.

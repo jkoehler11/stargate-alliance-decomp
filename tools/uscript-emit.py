@@ -124,11 +124,14 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 # `Plane` is four floats (**16**) -- `HUD.PostRender`; `Region` is `UWindowBase`'s four ints `X,Y,W,H` (**16**) --
 # `UWindowWindow.DrawUpBevel`, `UWindowWin95LookAndFeel.FW_SetupFrameButtons`; `MouseCursor` is `UWindowWindow`'s
 # `Texture tex; int HotX, HotY; byte WindowsCursor` (**4+4+4+1 = 13**) -- `UWindowGridColumn.MouseMove`,
-# `UWindowFramedWindow.LMouseDown`. A width one byte either side of these puts the emitted tail out of step with the
-# shipped body, so the match is the measurement.
-#
+# `UWindowFramedWindow.LMouseDown`; `HTMLStyle` is **28**, which no field sum gives (`UWindowBase` declares an int,
+# a string, two colors and seven bools) -- the width is the compiler's own static size and every read of an
+# `HTMLStyle` property is `Context 05 00 1c` (`UWindowHTMLTextRow(L).StartStyle` in
+# `UWindowHTMLTextArea.DrawTextLine` at offset `000d`, and seven more nodes across `GetWrapPos`, `RemoveWrap` and
+# `WrapRow`). A width one byte either side of these puts the emitted tail out of step with the shipped body, so the
+# match is the measurement.
 STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 16, "region": 16,
-               "mousecursor": 13}
+               "mousecursor": 13, "htmlstyle": 28}
 
 # The skip word a `Context` writes before its type byte. For a member that is an `InstanceVariable` it is 5 in all
 # 17,710 such nodes, whatever width the member's index was written with (`01 18` and `01 69 04` both write 5). A
@@ -1671,9 +1674,13 @@ def _struct_member(obj, nm, env):
     index, kind = hit
     ptype = PROP_TYPE.get(kind, "")
     declared = _structs().get((name, nm), "")
-    if ptype in ("struct", "array", "class"):
-        # the record says only `StructProperty`/`ArrayProperty`/`ClassProperty`; the census names the struct, the
-        # element or the class a `class<Z>` member holds (`FireProperties.ProjectileClass` is `class<Projectile>`)
+    if kind in ("StructProperty", "ArrayProperty", "ClassProperty"):
+        # The test is the **record kind**, not the mapped type word: `PROP_TYPE` answers `object` for a
+        # `ClassProperty` (a class reference is a pointer), so keying on `ptype` dropped the declared word and
+        # `FireProperties.ProjectileClass` lost its `class<Projectile>` -- the chain then refused as *a default
+        # chain whose member the receiver's class does not declare*. The record says only
+        # `StructProperty`/`ArrayProperty`/`ClassProperty`; the census names the struct, the element or the class
+        # a `class<Z>` member holds.
         return (INSTANCE_TOKEN, index, ptype, declared)
     return (INSTANCE_TOKEN, index, ptype, "")
 
@@ -1997,6 +2004,21 @@ def _is_class_ref(expr, env):
         word = (env.get("localtypes") or {}).get(expr[0][1].lower(), "")
         if word.lower().startswith("class<") or word.lower().startswith("class."):
             return True
+    at = _dot_at(expr)
+    if at is not None:
+        # A **member** can be the class reference: `Chosen.PawnClass` is `Pawn`'s `var class<Pawn> PawnClass`, and
+        # `Chosen.PawnClass.Default.ControllerClass` is `12 ...`, a `ClassContext`. Every receiver shape above is a
+        # bare name, a literal or a cast, so a chain link fell through to `False` and seven bodies wrote `19` where
+        # the package wrote `12` (the seven differ rows: `DeathMatch`/`StoryModeGame.SpawnBot` and the six
+        # `class<Z>` rows -- `AmbientCreatureManager.Timer`, `Powerups.HandlePickupQuery`,
+        # `WeaponPickup.BotDesireability`, both `CalcGrenadeLanding`, `AirborneTurretController.
+        # GetAimingTargetSpeedOffset`). The link's own declared word is the same join `_class_of` uses, so ask it.
+        member = expr[at + 1:]
+        if len(member) == 1 and member[0][0] in ("ident", "keyword"):
+            nm = member[0][1].lower()
+            hit = _member_record(expr[:at], nm, env) or _struct_member(expr[:at], nm, env)
+            if hit is not None and len(hit) > 3 and _class_ref_class(hit[3]):
+                return True
     if _type_of(expr, env).lower() == "class" and not _is_call(expr):
         # A bare class name (`Pawn`) and a class literal read as `class`, but a **cast** reads as `class` too
         # (`Pawn(Owner)`) because `_type_of` answers the cast's own word for every object type. A cast is an
