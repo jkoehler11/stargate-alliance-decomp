@@ -1438,7 +1438,7 @@ def _type_of(expr, env):
             # its node: `local Color C; C.R = R;` is a `color` by its own statement and a `StructMember` record
             # in the package, and the record is what names `R`. Testing the declared word here instead refused
             # 42 bodies the walk already modelled -- `Canvas.SetDrawColor` is the first of them.
-            objkind = _record_kind(obj, env) or _type_of(obj, env).lower()
+            objkind = _receiver_kind(obj, env)
             chain_at = _dot_at(obj)
             default_chain = (chain_at is not None and len(obj[chain_at + 1:]) == 1
                              and obj[chain_at + 1][0] in ("ident", "keyword")
@@ -1465,6 +1465,39 @@ def _type_of(expr, env):
                     return hit[3].lower()
                 return hit[2]
     return ""
+
+
+def _receiver_kind(expr, env):
+    """The *kind* of a receiver expression: the package's own record kind, else the declared type word.
+
+    `_record_kind` answers only for a bare name, so every receiver that is a **chain** or a **call** fell through
+    to its declared type word -- and `_emit_member` (and the chain branch of `_type_of`) compares that word to
+    `struct` to choose the `(struct, member)` record. A struct receiver's word is the struct's name (`color`,
+    `pointregion`, `coords`, `rotator`), never `struct`, so the struct's own record was never asked and the member
+    read refused on the receiver's class: `Canvas.DrawColor.B`, `Pawn.SimAnim.AnimRate`,
+    `GetBoneCoords('FireStartPos').Origin`, `rotator(HackingPawn.Location).Yaw`.
+
+    The set of struct names is the corpus's own `struct` declarations (`inventory/struct_members.csv`, the same
+    artifact `_struct_member` reads), and a word that names a **class** is never read as one: a class name reaches
+    `_member_record`, which is the join that already answers for a class-typed receiver.
+    """
+    kind = _record_kind(expr, env)
+    if kind:
+        return kind
+    word = _type_of(expr, env).lower()
+    if word and word not in (env.get("class_names") or set()) and word in _struct_names():
+        return "struct"
+    return word
+
+
+STRUCT_NAMES = set()
+
+
+def _struct_names():
+    """The struct names the corpus declares -- the first column of `inventory/struct_members.csv`."""
+    if not STRUCT_NAMES:
+        STRUCT_NAMES.update(name for name, _member in _structs())
+    return STRUCT_NAMES
 
 
 def _byte_literal(part, want, site, env):
@@ -1854,6 +1887,26 @@ def _emit_metacast(name, inner, env, rettype=""):
     return _converted(node, "class", rettype), "metacast"
 
 
+def _super_cast_class(expr, env):
+    """`Super(GUIComponent)` -> `guicomponent`: the class a `Super` cast names, or "" for any other expression.
+
+    A `Super` in a receiver position has two spellings. `Super.F()` steps to the body's parent -- `order[1]`, the
+    rule `_super_call` measures -- and `Super(C).F()` names the class on the arrow instead. Both write the same
+    node (the callee's record behind `1c`, no `Context`, no skip word), so the second is the first with the class
+    read out of the expression. Every residue row that spells it refused on the receiver
+    (`Super(Actor).PostBeginPlay()`, `Super(GUIComponent).SetFocus()`, `Super(UWindowWindow).GetDesiredDimensions`),
+    because `Super(...)` read as a call to a function named `super`, whose declared return type nothing carries.
+    """
+    expr = _strip_parens(expr)
+    if not (len(expr) == 4 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "super"
+            and expr[1] == ("op", "(") and expr[3] == ("op", ")")):
+        return ""
+    if expr[2][0] not in ("ident", "keyword"):
+        return ""
+    nm = expr[2][1].lower()
+    return nm if nm in (env.get("class_names") or set()) else ""
+
+
 def _prop_by_name(nm, env):
     """A property record by name through the body's own class chain -- what a struct member and a bare read use."""
     hit = (env["scope"] or {}).get("props", {}).get(nm)
@@ -1911,13 +1964,17 @@ def _struct_member(obj, nm, env):
     index, kind = hit
     ptype = PROP_TYPE.get(kind, "")
     declared = _structs().get((name, nm), "")
-    if kind in ("StructProperty", "ArrayProperty", "ClassProperty"):
+    if kind in ("StructProperty", "ArrayProperty", "ClassProperty", "ObjectProperty"):
         # The test is the **record kind**, not the mapped type word: `PROP_TYPE` answers `object` for a
         # `ClassProperty` (a class reference is a pointer), so keying on `ptype` dropped the declared word and
         # `FireProperties.ProjectileClass` lost its `class<Projectile>` -- the chain then refused as *a default
         # chain whose member the receiver's class does not declare*. The record says only
         # `StructProperty`/`ArrayProperty`/`ClassProperty`; the census names the struct, the element or the class
         # a `class<Z>` member holds.
+        # An `ObjectProperty` keeps its word for the same reason, one link further out: `PointRegion.Zone` is
+        # declared `zoneinfo` in the corpus's `struct` block, and `Viewer.Region.Zone.bDistanceFog` needs that
+        # class to join the *next* member on -- without it the link read as the word `object` and the chain
+        # refused as one whose member the artifacts name no class for.
         return (INSTANCE_TOKEN, index, ptype, declared)
     return (INSTANCE_TOKEN, index, ptype, "")
 
@@ -2140,6 +2197,17 @@ def _class_of(expr, env):
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
+        if _is_call(member):
+            # `A.F().X`: the chain's last link is a **call**, and the class the chain holds is the return type
+            # `F` declares on A's class. `Controller.GetPlayerController().GamepadID` refused as *a receiver
+            # shape `_class_of` does not resolve* while `GetPlayerController()`'s declaration names
+            # `PlayerController`; `xAdminGroup.Users.Get(i).bMasterAdmin` is the same shape two links out. The
+            # return type is asked on the receiver's chain (`_rettype_on` refuses to fall back to the body's),
+            # so a call link with no receiver class stays unresolved rather than borrowing the body's function.
+            cls = _class_of(expr[:at], env)
+            t = _rettype_on(cls, member[0][1], env) if cls else ""
+            return t if t in class_names else _no(
+                "a member call whose declared return type the class table does not carry as a class")
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
             nm = member[0][1].lower()
             hit = _member_record(expr[:at], nm, env)
@@ -2282,6 +2350,18 @@ def _emit_member_call(obj, member, rettype, env):
             raise Refused("a Super call to a name the parent's chain does not declare")
         call = emit_call(member, env, receiver=parent, head=bytes([0x1C]) + write_index(rec))
         return _converted(call, _rettype_on(parent, member[0][1], env), rettype), "super-call-value"
+    sup = _super_cast_class(obj, env)
+    if sup:
+        # `Super(C).F(...)` in a value position: the same record-behind-`1c` node as `Super.F(...)`, with the
+        # class read from the cast instead of from the body's parent. Its declared return type converts at the
+        # site, exactly as the parent spelling's does.
+        if member[0][0] not in ("ident", "keyword"):
+            raise Refused("a Super(C) call whose member the walk cannot name")
+        rec = _record_on(sup, member[0][1], env)
+        if rec is None:
+            raise Refused("a Super(C) call to a name the class's chain does not declare")
+        call = emit_call(member, env, receiver=sup, head=bytes([0x1C]) + write_index(rec))
+        return _converted(call, _rettype_on(sup, member[0][1], env), rettype), "super-cast-value"
     objb = emit_expr(obj, "", env)[0]
     cls = _class_of(obj, env)
     if not cls:
@@ -2466,7 +2546,7 @@ def _emit_member(expr, rettype, env):
     objtype = _type_of(obj, env).lower()
     # The node is chosen by the receiver's *record kind*, not by its declared type word: `PathName` is a `FilePath`
     # struct (a `StructMember`), while a cast or an operator wants that word (`SquadDir` is a `Vector`).
-    objkind = _record_kind(obj, env) or objtype
+    objkind = _receiver_kind(obj, env)
     if objkind in ("array", "string"):
         if nm != "length":
             raise Refused("a %s member that is not its length" % objkind)
@@ -3648,6 +3728,17 @@ def _stmt_member_call(stmt, env):
     if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "global":
         # `Global.F()` names the class-scope function, not a member of an object called `Global`
         return _emit_global_call(member, env)
+    sup = _super_cast_class(obj, env)
+    if sup:
+        # `Super(C).F(args);` -- the statement spelling of the value path above: the callee's record behind `1c`
+        # and no `Context`, the node `_super_call` writes for `Super.F(...)`.
+        rec = _record_on(sup, member[0][1], env)
+        if rec is None:
+            raise Refused("a Super(C) call statement to a name the class's chain does not declare")
+        node = emit_call(member, env, receiver=sup, head=bytes([0x1C]) + write_index(rec))
+        if _rettype_on(sup, member[0][1], env) == "string":
+            return bytes([0x0E]) + node, "super-cast-call", "eat-string-super-cast-call"
+        return node, "super-cast-call", "super-cast-call"
     cls = _class_of(obj, env)
     if not cls:
         _note(family="member-call-stmt", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
@@ -5199,6 +5290,42 @@ def check(args):
     got, _m, _s = emit_stmt(super_toks, "", ext_env)
     if got.hex() != "1c" + write_index(765).hex() + "16":
         print("FAIL uscript-emit: Super.Ping() in a state that extends another emits %s" % got.hex())
+        return 1
+    # P4f: `Super(C).F()` names the class on the arrow, and writes the same node `Super.F()` does -- the record of
+    # F on C's chain behind `1c`. `Super(Parent).Ping()` is `1c 7b 0b 16` for the same export 763.
+    sc_env = dict(super_env, class_names={"parent"})
+    sc_toks = [("ident", "Super"), ("op", "("), ("ident", "Parent"), ("op", ")"), ("op", "."),
+               ("ident", "Ping"), ("op", "("), ("op", ")")]
+    got, _m, _s = emit_stmt(sc_toks, "", sc_env)
+    if got.hex() != "1c7b0b16":
+        print("FAIL uscript-emit: Super(Parent).Ping() emits %s, expected 1c7b0b16" % got.hex())
+        return 1
+    # P4g: a `Super(C)` whose class the table does not carry is no receiver at all -- the record cannot be named.
+    if _super_cast_class(sc_toks[:4], dict(sc_env, class_names=set())):
+        print("FAIL uscript-emit: Super(Unknown) resolved a class the table does not carry")
+        return 1
+    # P6: a receiver whose declared type is a **struct name** is a struct receiver, even when it is a call or a
+    # chain (`_record_kind` answers only for a bare name). `GetBoneCoords(...).Origin` and `Canvas.DrawColor.B`
+    # are the shipped shapes; a *class* word never reads as one.
+    struct_env = dict(env, order=["probe"], rets={("probe", "getcoords"): "coords"})
+    call_toks = [("ident", "GetCoords"), ("op", "("), ("op", ")")]
+    if _receiver_kind(call_toks, struct_env) != "struct":
+        print("FAIL uscript-emit: a call returning a struct is not a struct receiver")
+        return 1
+    cls_env = dict(struct_env, rets={("probe", "getcoords"): "pawn"}, class_names={"pawn"})
+    if _receiver_kind(call_toks, cls_env) == "struct":
+        print("FAIL uscript-emit: a class-typed receiver was read as a struct")
+        return 1
+    # P7: a chain link that is a **call** holds the callee's declared return type: `GetPawn().Health` is a member
+    # of `Pawn`, joined on the receiver's chain, not on the body's.
+    link_env = dict(env, order=["probe"], class_names={"pawn", "probe"},
+                    localtypes={"owner": "pawn"}, paramtypes={}, proptypes={},
+                    rets={("pawn", "getpawn"): "pawn"})
+    link_env["scope"] = dict(SCOPE)
+    link_toks = [("ident", "Owner"), ("op", "."), ("ident", "GetPawn"), ("op", "("), ("op", ")")]
+    if _class_of(link_toks, link_env) != "pawn":
+        print("FAIL uscript-emit: a call link in a receiver chain names %r, expected 'pawn'"
+              % (_class_of(link_toks, link_env),))
         return 1
     # P5: a bare call in a class declared `within X` is a member of `Outer`, and a bare call the body's own chain
     # declares is not: the same synthetic class, one name that resolves only on the `within` class.
