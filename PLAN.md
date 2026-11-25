@@ -239,6 +239,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 an enum's size byte, a class the packages only import, and the operator that is a call: **10,323
+      modelled / 10,323 byte-identical / 0 differ** (from 10,313 / 10,313 / 0; 10 bodies gained, none lost; residue
+      1,365 -> 1,355; no body refuses that did not before; `inventory/uscript_emit_join.csv` byte-identical). (1) **An
+      enum's own name is a byte at the `Context` size word too.** `_emit_member`'s value-size byte and the pair's own
+      operand types (`_operator_types`, which `_operand`'s cast key follows) were the two producers `_enum_byte` had
+      not reached: `Controller.GetAggroLevel() != AGGRO_High` is a `Context` of size **1** behind `39 3a`, and with
+      only the earlier three producers in place it refused twice over (`a call member returning eaggrolevel, whose
+      value size this walk does not carry`, then `(eaggrolevel != byte)`). Eight rows on the size word (`eaggrolevel`
+      7, `estreamplaylisttype` 1), six gained. (2) **A class the package only imports is a class.** `Font` and
+      `Viewport` are the engine's native classes and no shipped `.u` declares them, so `classes.csv` has no row and
+      `(font == object)` / `(viewport == object)` found nothing -- but `Engine.u` carries `Font <- Class <- Engine`
+      (-37) and `GUI.u` `Viewport <- Class <- Engine` (-66), and an import whose class field is `Class` says what the
+      census says for the classes it carries. Six rows, three gained (`DestructableActor.TakeDamage`'s
+      `(staticmesh != object)` is `StaticMesh <- Class` -353). (3) **An operator declared with no index is a call,
+      not an opcode.** `native static final operator(24) bool ClockwiseFrom( int A, int B )` has no slot, so
+      `ScriptedController.SetFireYaw` writes `1c c5 04 | 00 47 01 | ... | 16` -- a `FinalFunction` to import -261
+      (`ClockwiseFrom_IntInt`) -- and the table's `composed` column is the record's name. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name. Five rows moved *past* their pair rather than landing:
+      the three `GUIController` viewport bodies now stop at a delegate call / a member the class does not declare,
+      `GoauldKillerDroidMeleeAmmo.ProcessTraceHit` at a member call statement, and `StargatePawn.EndCrouch` at an
+      emitted body that differs 354 vs 354 from offset **173** -- an `ArrayElement`'s `Context` writes the *element*
+      size (**8**) where this walk writes the array's (4), which is the next instrument.
 - [~] 3.6 which side of an operator pair is what -- the spelling, an enum's byte, a class reference: **10,313
       modelled / 10,313 byte-identical / 0 differ** (from 10,273 / 10,273 / 0; 40 bodies gained, none lost; residue
       1,405 -> 1,365; no body refuses that did not before; the join artifact byte-identical). (1) **A word-spelled
