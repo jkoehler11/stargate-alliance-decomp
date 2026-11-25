@@ -1177,8 +1177,28 @@ def _element_type(head, env):
             return None, ""
         return 0x1A, declared
     at = _dot_at(head)
-    if at is not None and len(head[at + 1:]) == 1 and head[at + 1][0][0] in ("ident", "keyword"):
-        hit = _member_record(head[:at], head[at + 1][0][1].lower(), env)
+    if at is not None and len(head[at + 1:]) == 1 and head[at + 1][0] in ("ident", "keyword"):
+        # The member's own name is the token's **text** -- the first version read `head[at + 1][0][1]`, the
+        # second character of the kind (`"ident"[1]` is `"d"`), so every member read asked the package for a
+        # property called `d` and refused as *an element of an array the artifacts do not type* even when
+        # `inventory/class_properties.csv` carried the array's element type.
+        obj = head[:at]
+        nm = head[at + 1][1].lower()
+        hit = None
+        if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "default":
+            # `Default.X` / `default.X` is the class default object's own record, read on **this** body's chain
+            # -- the rule `_emit_member` already writes with `DefaultVariable` (0x02).
+            hit = _prop_by_name(nm, env)
+        else:
+            chain_at = _dot_at(obj)
+            if (chain_at is not None and len(obj[chain_at + 1:]) == 1
+                    and obj[chain_at + 1][0] in ("ident", "keyword")
+                    and obj[chain_at + 1][1].lower() == "default"):
+                # `X.Default.Y`: the member is read on X's class, the same receiver `_emit_member` resolves for
+                # a `ClassContext` default chain.
+                hit = _member_record(obj[:chain_at], nm, env)
+            else:
+                hit = _member_record(obj, nm, env)
         if hit is None:
             return None, ""
         kind, friendly = hit[2], (hit[3] if len(hit) > 3 else "") or ""
