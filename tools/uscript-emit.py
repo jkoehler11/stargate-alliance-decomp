@@ -988,6 +988,21 @@ def _wide(data):
     return len(data) + sum(4 - (b - a) for a, b, k, _op in spans if k == "index")
 
 
+def _static_at(expr):
+    """The index of a **`.static`** link in a receiver chain, or None.
+
+    `class'AIMessage'.static.Assign(msg, NewMsg)` reaches the walk as one chain whose last link is the keyword
+    `static`: the `.static` names the class object itself, so the receiver a call resolves on is the chain *before*
+    it and the node the call is written in is a `ClassContext` (`12`), not a `Context` (`19`) --
+    `Speech.SetAIMsg` is `12 20 19 10 00 04 1c 56 07 ...`, `ObjectConst(19)` then the call.
+    """
+    at = _dot_at(expr)
+    if at is not None and len(expr[at + 1:]) == 1 and expr[at + 1][0] in ("ident", "keyword") \
+            and expr[at + 1][1].lower() == "static":
+        return at
+    return None
+
+
 def _dot_at(expr):
     """The last depth-0 `.` in an expression, or None: `Gun.GetAimingBoneCoords()` keeps its dot inside the call."""
     depth, pos = 0, None
@@ -1894,6 +1909,12 @@ def _class_of(expr, env):
     if not expr:
         return ""
     class_names = env.get("class_names") or set()
+    stat_at = _static_at(expr)
+    if stat_at is not None:
+        # `.static` is the class object itself, so the chain before it is what holds the class:
+        # `class'AIMessage'.static.Assign(...)` resolves `Assign` on `AIMessage`, and
+        # `class<Actor>(OptionalObject).static.GetLocalString(...)` on `Actor`.
+        return _class_of(expr[:stat_at], env)
     if len(expr) == 1 and expr[0][0] in ("ident", "keyword"):
         low = expr[0][1].lower()
         # a `local class<Z> N;` / `var class<Z> N;` declaration, which the two type tables below cannot carry
@@ -2031,7 +2052,16 @@ def _member_record(obj, nm, env):
     return None
 
 
-RETURN_SIZE = dict(PROP_SIZE, rotator=12)
+# The size byte a **call** writes for its value, per declared return kind. `PROP_SIZE` is the property table (the
+# same measure, taken over 31,622 `Context` nodes); the four struct/byte words here are the ones the refusal families
+# pin, each read off the shipped node that refused for want of it -- the size is a property of the return kind, so a
+# body with one call node in it pins the pair:
+#   `coords` -> **48**, not 12: four vectors (`Origin`, `XAxis`, `YAxis`, `ZAxis`), measured on 10 bodies
+#     (`Pawn.GetBoneCoords(...)`, `AlkeshCannonAttachment.GetBoneCoords`); `STRUCT_SIZE`'s 12 for a coords *property*
+#     is a different shape and stays as measured.
+#   `color` -> 4 (one node; the same width `STRUCT_SIZE` carries for the property), `font` -> 4 (a class, so a
+#     pointer: two nodes), `framehittest` -> 1 (one node -- a byte-sized UWindow struct).
+RETURN_SIZE = dict(PROP_SIZE, rotator=12, coords=48, color=4, font=4, framehittest=1)
 
 
 def _emit_member_call(obj, member, rettype, env):
@@ -2044,6 +2074,15 @@ def _emit_member_call(obj, member, rettype, env):
     property **import** (`Outer`, `01 8e`) the corpus writes 5 whatever the member is (measured over `Engine.u`:
     `Outer.Log("...")` is `19 01 8e 05 00 04 1b 0f ...`), so that shape keeps the measured constant.
     """
+    stat_at = _static_at(obj)
+    if stat_at is not None:
+        # `class'AIMessage'.static.Assign(m, n)`: `.static` names the class object, so the call sits inside a
+        # **`ClassContext`** (`12`) whose expression is the chain before the link -- `Speech.SetAIMsg` writes
+        # `12 20 19 10 00 04 1c 56 07` (ObjectConst of the class, skip 16, size 4, the call). The skip word is the
+        # same measure as a `Context`'s: over all 113 `ClassContext` call nodes in the corpus it equals `_wide` of
+        # the member (the compact length plus 3 bytes per one-byte index), never the compact length itself -- which
+        # is why the word read as unexplainable at `AIMsgManager.AddReceivedMsg` (skip 22 over a 14-byte member).
+        obj = obj[:stat_at]
     objb = emit_expr(obj, "", env)[0]
     cls = _class_of(obj, env)
     if not cls:
@@ -2058,13 +2097,20 @@ def _emit_member_call(obj, member, rettype, env):
     # `Pawn.NeedToTurn(targ)` is `19 01 8d 0b 00 04 1b 59 02 00 48 0a 16`, and `_wide` of that call is 11.
     skip = _wide(memb)
     rtype = _rettype_on(cls or "", member[0][1], env)
+    if _class_ref_class(rtype):
+        # A `class<Z>` return is a **class reference**, and a class reference is pointer-sized: the artifact spells
+        # the word three ways (`class<GameInfo>`, `Class.GameInfo`, `class`), and only the last reached the size
+        # table -- `Level.GetGameClass()` is `class<GameInfo>` and `G = Level.GetGameClass()` refused as
+        # `class.gameinfo` in `PlayerController.Fire`.
+        rtype = "class"
     if rtype in (env.get("class_names") or set()):
         rtype = "object"
     if rtype not in RETURN_SIZE:
         raise Refused("a call member returning %s, whose value size this walk does not carry"
                       % (rtype or "an unknown type"))
-    node = bytes([0x19]) + objb + struct.pack("<H", skip) + bytes([RETURN_SIZE[rtype]]) + memb
-    return _converted(node, rtype, rettype), "call-member"
+    node = (bytes([CLASS_CONTEXT_TOKEN if stat_at is not None else CONTEXT_TOKEN])
+            + objb + struct.pack("<H", skip) + bytes([RETURN_SIZE[rtype]]) + memb)
+    return _converted(node, rtype, rettype), "class-member-call" if stat_at is not None else "call-member"
 
 
 def _is_class_ref(expr, env):
@@ -4293,6 +4339,8 @@ function bool NotAnd() { return !bDead && bFlag; }
 function int NegInt() { return -Health; }
 function bool NotCall() { return !Target.bFlag; }
 function bool ClassRefDefault() { local class<Probe> Cls; return Cls.Default.bDead; }
+function string ClassCall() { return class'Probe'.static.Say("x"); }
+function string BadStatic() { return class'Missing'.static.Say("x"); }
 function Actor CastChain() { return Probe(Target).Default.Target; }
 function string LitDefaultText() { return class'Probe'.Default.Caption; }
 function int ACount() { return ArrayCount(Items); }
@@ -4502,6 +4550,11 @@ WANT = {
     # A class literal names its own class for the member join, and a non-bool chain keeps skip 5: `class 'Localizer'
     # . default . sSelect` is `12 20 cc 01 05 00 00 02 d5 03` (`GUIMessageBox.InitComponent`), a string member.
     "litdefaulttext": "041220040500000205040b47",
+    # A **`.static`** call is the same class object inside a `ClassContext` (`12`), and its skip word is `_wide` of the
+    # call exactly as a `Context` member's is: `class'Probe'.static.Say("x")` -> `12 20 04 09 00 00 1b 35 1f 78 00 16`
+    # (ObjectConst of the class, skip 9 over a 6-byte call with one one-byte index, size 0 for a string return).
+    # Shipped: `Speech.SetAIMsg`'s `class'AIMessage'.static.Assign(msg, NewMsg)` is `12 20 19 10 00 04 1c 56 07 ...`.
+    "classcall": "041220040900001b351f780016" "040b47",
     "negint": "048f016e0416040b47",
     # `&&` whose left operand is a `!` node: `82 <!bDead> 18 0700 <bFlag> 16`; the skip word is that node's wide
     # width plus one, exactly as `bSquadBeingAlerted && ! bSquadAlertComplete` writes `18 09 00` for an 8-wide node.
@@ -4539,7 +4592,7 @@ WANT = {
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
           "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown", "badclass",
-          "eachnested")
+          "badstatic", "eachnested")
 
 
 def check(args):
