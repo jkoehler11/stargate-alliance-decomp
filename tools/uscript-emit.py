@@ -1749,6 +1749,24 @@ def _func_on(cls, name, env):
     return None
 
 
+def _class_ref_class(word):
+    """The class a **type word** names when that word is a class reference, or "".
+
+    A `class<Z>` declaration reaches the walk in three spellings and all three name the same class: the artifact
+    spells it `Class<Ammunition>` (`class_properties.csv`, a `UClassProperty`), the source writes it with or without
+    spaces (`var class<Ammunition> AmmoName;`, `local class < StargateWeapon > WeaponClass;`), and a parameter keeps
+    its own concatenation (`class<Pawn>`, because `params_of` joins the words). `Z` is what a `.Default` member of
+    the receiver is read on and what a `ClassContext` (`12`) is chosen for -- the reference's own record says
+    `UClassProperty` and nothing about `Z`.
+    """
+    low = (word or "").replace(" ", "").lower()
+    if low.startswith("class<") and low.endswith(">"):
+        return low[6:-1]
+    if low.startswith("class."):
+        return low[6:]
+    return ""
+
+
 def _class_of(expr, env):
     """The class a receiver expression holds, named the way the package names classes, or "".
 
@@ -1756,7 +1774,8 @@ def _class_of(expr, env):
     a property's declared class (`class_properties.csv`: `GUIComboBox.List` is a `GUIListBase`), and a call's
     declared return type (`function PlayerController GetPlayerController(...)`). This is what lets a receiver chain
     be resolved one link at a time -- `H.Level.TimeSeconds` is a member of `LevelInfo`, which is what `HUD.Level`
-    is declared as.
+    is declared as. A *class reference* (`class<Z>`, `Class<Z>`) resolves to `Z`: `AmmoName.Default.MaxAmmo` is a
+    member of `Ammunition`, and the record lives on `Z`'s chain, not on the word `class`.
     """
     expr = _strip_parens(expr)
     if not expr:
@@ -1764,17 +1783,36 @@ def _class_of(expr, env):
     class_names = env.get("class_names") or set()
     if len(expr) == 1 and expr[0][0] in ("ident", "keyword"):
         low = expr[0][1].lower()
+        # a `local class<Z> N;` / `var class<Z> N;` declaration, which the two type tables below cannot carry
+        # (their declaration regexes stop at the `<`)
+        ref = (env.get("classreftypes") or {}).get(low, "")
+        if ref:
+            return ref if ref in class_names else ""
         for table in ("paramtypes", "localtypes", "proptypes"):
             t = (env.get(table) or {}).get(low, "")
             if t and t in class_names:
                 return t
+            ref = _class_ref_class(t)
+            if ref:
+                return ref if ref in class_names else ""
         if low == "self":
             own = (env.get("scope") or {}).get("cls") or ""
             return own if own in class_names else ""
         hit = _prop_by_name(low, env)
-        if hit is not None and len(hit) > 3 and (hit[3] or "") in class_names:
-            return hit[3]
+        if hit is not None and len(hit) > 3:
+            friendly = hit[3] or ""
+            if friendly in class_names:
+                return friendly
+            ref = _class_ref_class(friendly)
+            if ref:
+                return ref if ref in class_names else ""
         return ""
+    if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
+            and expr[1][0] == "quoted"):
+        # `class'GameInfo'.Default.DefaultPlayerName`: the literal names its own class, and a package prefix is the
+        # package's, not part of the class name (`class'Engine.PlayerInput'`).
+        name = expr[1][1].strip("'").strip('"').lower().split(".")[-1]
+        return name if name in class_names else ""
     if _is_call(expr):
         # `TransientAmbientPawn(Pawn).VerifyLastRenderTime()`: the receiver is a cast, and a cast names the class
         # it casts to -- the same `classrefs` rule `_emit_cast` uses for `DynamicCast`.
@@ -1793,8 +1831,14 @@ def _class_of(expr, env):
         member = expr[at + 1:]
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
             hit = _member_record(expr[:at], member[0][1].lower(), env)
-            if hit is not None and len(hit) > 3 and (hit[3] or "") in class_names:
-                return hit[3]
+            if hit is not None and len(hit) > 3:
+                friendly = hit[3] or ""
+                if friendly in class_names:
+                    return friendly
+                # a member declared `class<Z>`: `Chosen.PawnClass.Default.ControllerClass` is read on `Pawn`
+                ref = _class_ref_class(friendly)
+                if ref:
+                    return ref if ref in class_names else ""
     return ""
 
 
@@ -1820,6 +1864,12 @@ def _member_record(obj, nm, env):
         # declaration (`Pawn P` in `Controller.RateWeapon` is `w`), a call whose return type the text declares
         # (`w.GetAIRating()`), or a chain link whose own class the artifact names.
         target = _class_of(obj, env)
+    if target:
+        # A receiver declared `class<Z>` has its property's record on **Z**: `Weapon.AmmoName` is
+        # `var class<Ammunition> AmmoName`, so `AmmoName.Default.MaxAmmo`'s record is `Ammunition.MaxAmmo` and not
+        # a record on the word `class`. The class table already spells it `class<ammunition>` for a property and
+        # `_class_of` returns `Z` for a local, so the unwrap has to sit here, on both paths.
+        target = _class_ref_class(target) or target
     if not target:
         return None
     chain = scope.get("chain") or {}
@@ -1895,6 +1945,13 @@ def _is_class_ref(expr, env):
     expr = _strip_parens(expr)
     if not expr:
         return False
+    if len(expr) == 1 and expr[0][0] in ("ident", "keyword") and \
+            (env.get("classreftypes") or {}).get(expr[0][1].lower()):
+        # a `class<Z>` declaration is the reference whatever the package's record kind says: the record is a
+        # `UClassProperty` and its friendly word is `Class<Z>`, neither of which spells `class` on its own.
+        # `StargatePawn.AnimateSniping`'s `local class < StargateWeapon > WeaponClass` writes `12 00 67 29`
+        # for `WeaponClass.Default.SnipIdleAnim` -- the `ClassContext`, not a `Context`.
+        return True
     if len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class" \
             and expr[1][0] == "quoted":
         return True
@@ -1905,8 +1962,11 @@ def _is_class_ref(expr, env):
         word = (env.get("localtypes") or {}).get(expr[0][1].lower(), "")
         if word.lower().startswith("class<") or word.lower().startswith("class."):
             return True
-    if _type_of(expr, env).lower() == "class":
-        # a bare class name (`Pawn`) and a class literal read as `class`
+    if _type_of(expr, env).lower() == "class" and not _is_call(expr):
+        # A bare class name (`Pawn`) and a class literal read as `class`, but a **cast** reads as `class` too
+        # (`Pawn(Owner)`) because `_type_of` answers the cast's own word for every object type. A cast is an
+        # object, not a reference: `Pawn(Owner).Default.Visibility` is `19 2e 83 01` (a `Context`), and writing
+        # `12` there was the whole of `ShieldBelt.StopInvisible`'s difference.
         return True
     return False
 
@@ -1933,6 +1993,9 @@ def _emit_member(expr, rettype, env):
             # `A.F(args)`: a call member is a `Context` like a property member, but its word is the call's width in
             # the compiler's code array rather than a constant (see `_emit_member_call`).
             return _emit_member_call(obj, member, rettype, env)
+        if os.environ.get("SG1_DBG_MEMBER"):
+            raise Refused("a receiver chain whose member is not one name (obj %s | member %s)"
+                          % (" ".join(v for _k, v in obj), " ".join(v for _k, v in member)))
         raise Refused("a receiver chain whose member is not one name")
     nm = member[0][1].lower()
     if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "default":
@@ -1966,6 +2029,10 @@ def _emit_member(expr, rettype, env):
         recv = obj[:chain_at]
         hit = _member_record(recv, nm, env)
         if hit is None:
+            if os.environ.get("SG1_DBG_MEMBER"):
+                raise Refused("a default chain whose member the receiver's class does not declare "
+                              "(recv %s on %s)" % (" ".join(v for _k, v in recv),
+                                                   _class_of(recv, env) or "an unnamed class"))
             raise Refused("a default chain whose member the receiver's class does not declare")
         _token, index, ptype, friendly = hit
         size = PROP_SIZE.get(ptype)
@@ -1974,9 +2041,18 @@ def _emit_member(expr, rettype, env):
         if size is None:
             raise Refused("a default chain to a %s member, whose value size this walk does not carry"
                           % (ptype or "typeless"))
+        member_read = bytes([DEFAULT_TOKEN]) + write_index(index)
+        skip = CONTEXT_SKIP
+        if ptype == "bool":
+            # A bool member of the default object is read behind `BoolVariable` exactly as an instance bool member
+            # is: `Driver.default.bOwnerNoSee` is `19 01 1b 06 00 04 2d 02 59 0a` -- `2d` (BoolVariable) sits
+            # inside the `Context`'s own node and the `DefaultVariable` (0x02) follows it, so the skip word is the
+            # member read's *wide* length (`_wide`, 6 here) and the value size stays 4.
+            member_read = bytes([0x2D, DEFAULT_TOKEN]) + write_index(index)
+            skip = _wide(member_read)
         node = (bytes([CLASS_CONTEXT_TOKEN if _is_class_ref(recv, env) else CONTEXT_TOKEN])
-                + emit_expr(recv, "", env)[0] + struct.pack("<H", CONTEXT_SKIP)
-                + bytes([size, DEFAULT_TOKEN]) + write_index(index))
+                + emit_expr(recv, "", env)[0] + struct.pack("<H", skip)
+                + bytes([size]) + member_read)
         return _converted(node, ptype, rettype), "default-chain"
     objtype = _type_of(obj, env).lower()
     # The node is chosen by the receiver's *record kind*, not by its declared type word: `PathName` is a `FilePath`
@@ -3567,6 +3643,7 @@ def _source_index(tree):
     rets = {}
     localtypes = {}
     proptypes = {}
+    classrefs = {}
     withins = {}
     dims, consts = {}, {}
     enums, enum_names = {}, set()
@@ -3601,6 +3678,13 @@ def _source_index(tree):
             for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)",
                                  text, re.I):
                 proptypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
+            # ...and a `class<Z>` declaration's **target**, which both regexes above stop short of: their type
+            # group is one word, so `var class<Ammunition> AmmoName;` and
+            # `local class < StargateWeapon > WeaponClass;` put nothing in either table. `Z` is the class a
+            # `.Default` member of the receiver is read on (`AmmoName.Default.MaxAmmo` -> `Ammunition`).
+            for m in re.finditer(r"(?m)^[ \t]*(?:var|local|Automated)\s*(?:\([^)]*\))?\s*class\s*<\s*"
+                                 r"([A-Za-z_]\w*)\s*>\s+([A-Za-z_]\w*)", text, re.I):
+                classrefs.setdefault((cls, m.group(2).lower()), m.group(1).lower())
             # The declared dimension of an array: `ArrayCount(X)` folds to it, so a name whose declarations
             # disagree (two functions declaring one local name at two sizes) is left out rather than guessed.
             for nm, dim in _array_dims(text).items():
@@ -3637,15 +3721,16 @@ def _source_index(tree):
                     enum_names.add(enum.lower())
                     for cname, ordinal in members:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
-    return index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents
+    return (index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents,
+            classrefs)
 
 
 def score(tree, dump, out_dir, residue_dir=None, only=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
-    index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents = \
-        _source_index(tree)
+    index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents, \
+        classrefs = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -3670,6 +3755,9 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     proptypes_by_cls = {}
     for (c, n), t in proptypes.items():
         proptypes_by_cls.setdefault(c, {})[n] = t
+    classrefs_by_cls = {}
+    for (c, n), t in classrefs.items():
+        classrefs_by_cls.setdefault(c, {})[n] = t
     chain, natives = _chain(), _natives()
     class_names = {c for (_p, c) in chain}
     final_of = {}
@@ -3746,6 +3834,9 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "import_owners": tables[4], "import_pairs": tables[5],
                    "localtypes": localtypes_by_cls.get(cls.lower(), {}),
                    "proptypes": proptypes_by_cls.get(cls.lower(), {}),
+                   # a `class<Z>` declaration's target class: `local class<StargateWeapon> WeaponClass`, whose
+                   # `.Default` member is read on `StargateWeapon` and not on the word `class`
+                   "classreftypes": classrefs_by_cls.get(cls.lower(), {}),
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
                    # record only says `StructProperty`
                    "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])},
@@ -3945,6 +4036,9 @@ function NotSet() { bDead = !bDead; }
 function bool NotAnd() { return !bDead && bFlag; }
 function int NegInt() { return -Health; }
 function bool NotCall() { return !Target.bFlag; }
+function bool ClassRefDefault() { local class<Probe> Cls; return Cls.Default.bDead; }
+function Actor CastChain() { return Probe(Target).Default.Target; }
+function string LitDefaultText() { return class'Probe'.Default.Caption; }
 function int ACount() { return ArrayCount(Items); }
 function ACountSet() { Health = ArrayCount(Items); }
 function ACountUnknown() { return ArrayCount(Caption); }
@@ -3982,7 +4076,8 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "caption": (0x01, 5, "string"), "suffix": (0x01, 6, "string"),
                    "items": (0x01, 700, "array"), "fcount": (0x01, 640, "float")},
          "chain": {("probe", "probe"): ("", "")}, "pack": "probe", "cls": "probe",
-         "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte")},
+         "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte"),
+                    "cls": (0x00, 613, "class")},
          "classrefs": {"probe": 4, "actor": -77},
          "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39),
                    "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
@@ -4004,6 +4099,11 @@ SCOPE["props_all"] = {nm: [(v[1], "probe", "ObjectProperty" if v[2] == "object" 
                             "BoolProperty" if v[2] == "bool" else
                             "StructProperty" if v[2] == "struct" else "IntProperty")]
                       for nm, v in SCOPE["props"].items()}
+
+# The record table spells a property's own kind, so a `StrProperty` must not be folded into `IntProperty`: a string
+# member's `Context` writes size 0 (`MyNumericEdit.Value` is `05 00 00`), and reading `Caption` as an int adds a
+# `39 53` cast that the shipped bytes do not carry.
+SCOPE["props_all"]["caption"] = [(5, "probe", "StrProperty")]
 
 # The type words the package artifact spells: `SquadDir` is a `Vector`, and `bFlag` is a `bool` member.
 SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe", "bflag"): "bool",
@@ -4034,7 +4134,9 @@ ENV = {"names": {"ping": 51, "pong": 52, "say": 53}, "scope": SCOPE, "params": P
        "rets": {("probe", "bump"): "int", ("probe", "mytext"): "string", ("probe", "say"): "string"},
        # the receiver walk's own join: a function *record* of the synthetic class, which a member call resolves on
        "funcs_all": {nm: [(1, "probe")] for nm in ("ping", "pong", "say")},
-       "assert_line": 2086, "paramtypes": {}}
+       "assert_line": 2086, "paramtypes": {},
+       # the source-side `class<Z>` table: a local's declared target class, which the class table does not carry
+       "classreftypes": {"cls": "probe"}}
 
 WANT = {
     "yes": "0427040b47",
@@ -4133,6 +4235,17 @@ WANT = {
     "notflag": "04812d012d16040b47",
     "notset": "142d012d812d012d16040b47",
     "notcall": "0481190163090600042d012f16040b47",
+    # A receiver declared `class<Z>` reads its member on `Z` and writes a **ClassContext** (`12`) whatever the
+    # member is: `InputClass.default.bEnableDodging` is `12 01 53 1a 06 00 04 2d 02 7b 16`
+    # (`PlayerController.SetDodging`). A bool member keeps the `2d` BoolVariable inside the node and the skip word
+    # covers it (`Vehicle.ClientKDriverLeave` writes `19 01 1b 06 00 04 2d 02 59 0a` over an object receiver).
+    "classrefdefault": "04120065090600042d022d040b47",
+    # A **cast** is an object, not a reference: `Pawn(Owner).Default.Visibility` is a plain `Context`
+    # (`19 2e 83 01`, `ShieldBelt.StopInvisible`), and writing `12` there is a `ClassContext` the compiler did not.
+    "castchain": "04192e04016309050004026309040b47",
+    # A class literal names its own class for the member join, and a non-bool chain keeps skip 5: `class 'Localizer'
+    # . default . sSelect` is `12 20 cc 01 05 00 00 02 d5 03` (`GUIMessageBox.InitComponent`), a string member.
+    "litdefaulttext": "041220040500000205040b47",
     "negint": "048f016e0416040b47",
     # `&&` whose left operand is a `!` node: `82 <!bDead> 18 0700 <bFlag> 16`; the skip word is that node's wide
     # width plus one, exactly as `bSquadBeingAlerted && ! bSquadAlertComplete` writes `18 09 00` for an 8-wide node.
@@ -4275,7 +4388,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]

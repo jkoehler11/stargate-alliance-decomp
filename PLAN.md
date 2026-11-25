@@ -239,6 +239,26 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a `class<Z>` receiver, a bool member of the default object, and a cast that is not a reference:
+      **7,884 modelled / 7,884 byte-identical / 0 differ** (from 7,853 / 7,853 / 0; 32 bodies gained, one lost;
+      residue 3,825 -> 3,794 and the *default chain whose member the receiver's class does not declare* bucket
+      34 -> 5). (1) `X.Default.Y` where `X` is declared `class<Z>` resolves the member on **Z**: `_class_ref_class`
+      unwraps `Class<Ammunition>` / `class < StargateWeapon >` and a new source-side `classreftypes` table carries
+      the target past the two declaration regexes that stop at the `<` (`AmmoName.Default.MaxAmmo` is
+      `12 01 75 0a 05 00 04 02 5b 0f`), a class literal names its own class, and `_member_record` unwraps the
+      class table's own `class<...>` word. (2) a **bool** member of the default object is read behind
+      `BoolVariable` with a 6-word: `Driver.default.bOwnerNoSee` is `19 01 1b 06 00 04 2d 02 59 0a`
+      (`Vehicle.ClientKDriverLeave`) and `InputClass.default.bEnableDodging` is `12 01 53 1a 06 00 04 2d 02 7b 16`
+      (`PlayerController.SetDodging`) -- six differ rows. (3) an **object cast** is not a class reference:
+      `Pawn(Owner).Default.Visibility` is `19 2e 83 01`, and `_type_of` answers `class` for every object cast
+      (`ShieldBelt.StopInvisible`). Both member refusals gained a debug spelling (`SG1_DBG_MEMBER=1`), and the gate
+      carries the three as `classrefdefault` / `castchain` / `litdefaulttext` (92 synthetic bodies).
+      Doc: `docs/COMPILER_FRONTEND.md` gains the section. Not in this PR: the 5 chains that are a member of a
+      member (`FiredAmmunition.ProjectileClass`, `Chosen.PawnClass`), the 6 new differ rows the class join now
+      reaches (`AirborneTurretController.GetAimingTargetSpeedOffset`, `AmbientCreatureManager.Timer`,
+      `GRENADE`/`SemektetMortarGun.CalcGrenadeLanding`, `Powerups.HandlePickupQuery`,
+      `WeaponPickup.BotDesireability`), the one lost body `StargateHUD.ToggleGameHUD` (`local GameHUD G; G.HideHud()`)
+      and the 17 *member is not one name* rows.
 - [~] 3.6 a `Super` in a state, a struct member's bool, and `continue`: **7,853 modelled / 7,853 byte-identical /
       0 differ** (from 7,809 / 7,809 / 0; 44 bodies gained, none lost, differ bucket 96 -> 52). A `Super.F()` inside
       a state names the state's own super -- the state it `extends` first (`BeginState <- Idle <- Weapon` is import
