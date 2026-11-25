@@ -1164,7 +1164,13 @@ def _emit_element(head, index, rettype, env):
     if token is None:
         raise Refused("an element of an array the artifacts do not type")
     arrb = emit_expr(head, "", env)[0]
-    idxb = emit_expr(index, "", env)[0]
+    # The subscript is an **int** site whatever the array holds: a literal index compiles as an int literal and
+    # not as the element's type -- `TransportPlatform.Activated`'s `Skins[1] = ActiveTexture;` writes `10 26 01`
+    # (IntOne) and `StoryModeGame.GetBotTeam`'s `return Teams[0];` writes `1a 25 ...` (IntZero), and against the
+    # element's own type 185 bodies refused as `a numeric literal in a typeless function`. Only a literal is
+    # retyped here: a *named* index keeps the site it had, because no shipped body shows the width a byte-typed
+    # local takes in this position.
+    idxb = emit_expr(index, "int" if (len(index) == 1 and index[0][0] == "number") else "", env)[0]
     node = bytes([token]) + idxb + arrb
     return _converted(node, etype, rettype), "element"
 
@@ -2215,6 +2221,22 @@ def _emit_member_call(obj, member, rettype, env):
         # the member (the compact length plus 3 bytes per one-byte index), never the compact length itself -- which
         # is why the word read as unexplainable at `AIMsgManager.AddReceivedMsg` (skip 22 over a 14-byte member).
         obj = obj[:stat_at]
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "super":
+        # `Super.F(args)` in an **expression** is the same `FinalFunction` the statement path writes: the parent
+        # class's own record behind `1c`, with no `Context` around it (`_super_call`). The statement form has been
+        # modelled since the parent-record rule; a return or an assignment value reaches `_emit_member` instead and
+        # had no path, so `return Super.F();` refused on the receiver.
+        order = env.get("order") or []
+        if len(order) < 2:
+            raise Refused("a Super call in a class with no super")
+        parent = order[1]
+        if member[0][0] not in ("ident", "keyword"):
+            raise Refused("a Super call whose member the walk cannot name")
+        rec = _record_on(parent, member[0][1], env)
+        if rec is None:
+            raise Refused("a Super call to a name the parent's chain does not declare")
+        call = emit_call(member, env, receiver=parent, head=bytes([0x1C]) + write_index(rec))
+        return _converted(call, _rettype_on(parent, member[0][1], env), rettype), "super-call-value"
     objb = emit_expr(obj, "", env)[0]
     cls = _class_of(obj, env)
     if not cls:

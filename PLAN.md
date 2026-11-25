@@ -239,6 +239,21 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a literal subscript is an int site, and a Super call in an expression, on top of the `Global.`/`within`/
+      enum-constant increment: **8,743 modelled / 8,743 byte-identical / 0 differ** (from 8,373 / 8,373 / 0; 370 bodies
+      gained, none lost; residue 3,305 -> 2,935). (1) `Global.F(args);` -> `0x38` + the record a bare `F()` writes
+      (`Vehicle.VehicleCeaseFire` = `38 50 06 2d 00 74 81 01 16`), and a native with no table index is not an opcode
+      (`P.ClientTravel` is an ordinary `1b <name>` call). (2) a class declared `within X` reads X's properties through
+      `Outer` at the value's size (`CheatManager.Amphibious`'s `Pawn.UnderwaterTime`), with the within chain's own
+      source text supplying the receiver's class. (3) a qualified enum constant is `24 <ordinal>`, keyed on the
+      measured `(enum, constant)` pair. (4) a subscript is an **int** site: `Skins[1]` writes `10 26 01` (IntOne) and
+      `Teams[0]` `1a 25 ...` (IntZero), which retires the 185-row `a numeric literal in a typeless function` family.
+      (5) `Super.F(args)` in an expression is the same `1c <parent record>` the statement path writes
+      (`UWindowURLTextArea.BeforePaint` = `1c 69 0c 00 7c 1c 00 7d 1c 00 7e 1c 16`), which takes
+      `a name neither a local, a property nor an enum constant of the class chain` from 207 to 109.
+      Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Next: the four receiver-class families together
+      (719 `a call to a name the class chain does not declare`, 441 member call statement, 280 member not a property,
+      146 receiver class unnamed) -- one join, not four nodes.
 - [~] 3.6 a struct field the class chain shadows, a cast inside an expression, and a `.static` statement: **8,373
       modelled / 8,373 byte-identical / 0 differ** (from 8,342 / 8,342 / 0; 31 bodies gained, none lost; residue
       3,336 -> 3,305). (1) A struct field's record is asked **before** the class chain's: `UWindowFramedWindow.Resized`
