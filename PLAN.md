@@ -239,6 +239,33 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a `.static` call, and the value size of a class or struct return: **8,314 modelled / 8,314
+      byte-identical / 0 differ** (from 8,278 / 8,278 / 0; 36 bodies gained, none lost; residue 3,400 -> 3,364).
+      (1) `class'X'.static.F(args)` is a **`ClassContext`** (`12`) whose class expression is the chain before the
+      link: `Speech.SetAIMsg`'s `class'AIMessage'.static.Assign(msg, NewMsg)` is `12 20 19 10 00 04 1c 56 07 01 7c 36
+      00 72 51 16`, and `class<Actor>(OptionalObject).static.GetLocalString(...)` is the same node over a
+      `MetaClassCast` (`12 13 02 00 41 44 15 00 00 1b 77 ...`). **The skip word was never a new quantity**: over 417
+      `ClassContext` nodes in the shipped packages -- 113 of them calls through an `ObjectConst` receiver, 61
+      `VirtualFunction` and 52 `FinalFunction`, and 83 more over a `LocalVariable` (36), `InstanceVariable` (24),
+      `Context` (11) and `StructMember` (12) receiver -- it equals `_wide` of the member (compact length plus three
+      bytes per one-byte index), 10 -> 16 at `SetAIMsg` and 14 -> 22 at `AIMsgManager.AddReceivedMsg`, exactly the
+      `Context` member's rule. The member is the whole call node with its arguments and its `16`. 98 residue bodies
+      spell `static`, **22 are modelled** now (`Speech.SetAIMsg`, `LocalMessage.GetString`,
+      `PlayerController.Speak`, `AIMessage.IsSubTypeOf`, `GameProfile.RegisterGame`, `HUD.ConnectFailure`, 16 more);
+      the 76 that remain refuse on a different reason in the same body. (2) `RETURN_SIZE` gains the kinds the corpus
+      writes, each pair read off the shipped node that refused for want of it in a body with one call node:
+      **`coords` -> 48** (10 bodies; four vectors, not `STRUCT_SIZE`'s 12 for a coords *property*), `color` -> 4,
+      `font` -> 4 (two bodies), `framehittest` -> 1, and a `class<Z>` / `Class.Z` return reads as `class` (4, the
+      `PROP_SIZE` measure) instead of refusing as `class.gameinfo` -- `PlayerController.Fire`'s
+      `G = Level.GetGameClass()` is the case. **15 bodies gained** (`class.weapon` 3, `color` 4, `font` 3,
+      `class.gameinfo` 2, `coords` 1, `class.effects` 1, `framehittest` 1). `--check` carries the node as `classcall`
+      (`12 20 04 09 00 00 1b 35 1f 78 00 16`, positive) and `badstatic` (a class literal the package does not name,
+      refused), the positive one verified by flipping its `12` to `19` and watching the gate fail. Doc:
+      `docs/COMPILER_FRONTEND.md` gains the section. Not in this PR: `plane`/`region`/`box`/`array<string>` returns
+      (no body with a single call node pins them), the 20 `0 argument(s) to a 1-parameter callee` rows (a member
+      call's **parameter list** still falls back to the body's chain: `HaakenWeaponShield.BeginState`'s
+      `ShieldFX.Lower()` reads the body's `Lower(float)`), the 42 `class<Z>(` rows that fail on their operands and
+      the 246 operator rows whose pair the table cannot type.
 - [~] 3.6 a cast to a class type, a hole in an argument list, and a struct compare: **8,278 modelled / 8,278
       byte-identical / 0 differ** (from 8,148 / 8,148 / 0; 130 bodies gained, none lost; residue 3,530 -> 3,400).
       (1) `class<Z>(expr)` is the group-13 `13 <object ref> <expr>` (`MetaClassCast`), and its operand is the

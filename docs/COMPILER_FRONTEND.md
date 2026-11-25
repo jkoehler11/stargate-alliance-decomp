@@ -1572,9 +1572,50 @@ node carries. It flips **no body yet**: the three bodies that hold one of the si
 on the `HTMLStyle` row it reads before the compare, the other two on their array elements), so this rule is gated by
 a control rather than by a gained body, and the doc says so rather than counting it as work done.
 
-**What is left on this thread.** The `.static.` call a class reference feeds: **82 residue bodies spell it and none is
-modelled** -- `Speech.SetAIMsg`'s `msg = class'AIMessage'.static.Assign(msg, NewMsg)` is
-`0f 01 7c 36 12 20 19 10 00 04 1c 56 07 01 7c 36 00 72 51 16 04 0b 47`, a `ClassContext` (`12`) whose class
-expression is an `ObjectConst` (`20`) and whose two expressions are that literal and the call -- and the skip word is
-**not** the compact length: 16 there against 20 in `AIMsgManager.AddReceivedMsg`, whose inner call differs by one
-argument. It needs the same wide-length read the `Context` word needed, so it is a bundle of its own.
+**A `.static` call is the class object inside a `ClassContext` (`12`), and its skip word is the same wide length a
+`Context` writes.** `class'AIMessage'.static.Assign(msg, NewMsg)` is `12 20 19 | 10 00 | 04 | 1c 56 07 01 7c 36 00 72 51
+16` -- `ClassContext`, the class expression (`ObjectConst`, `20 19`), the skip word, the value size, then the call as
+the node's second expression. Two things had made the word look unexplainable, and both are the `Context` rule the
+emitter already carried: the word is **`_wide` of the member** (the compact length plus three bytes for every
+one-byte index), not the compact length -- 10 -> 16 at `Speech.SetAIMsg`, 14 -> 22 at `AIMsgManager.AddReceivedMsg`,
+whose inner call is one argument longer -- and the member is the *whole* call node including its arguments and its
+`16`, not the callee alone. A census of the shipped packages settles it: **417 `ClassContext` nodes**, 113 of them
+calling a function through an `ObjectConst` receiver (61 `VirtualFunction`, 52 `FinalFunction`), and the skip word
+equals `_wide` of the member on every one of the 113 -- and on every `ClassContext` whose member is a property record
+or a `default` read (skip 5, the `Context` constant). The four other receiver kinds the corpus writes (`LocalVariable`
+36 nodes, `InstanceVariable` 24, `Context` 11, `StructMember` 12) follow the same measure, so the word was never a
+different quantity: it was read against the compact length. **98 residue bodies spell the `static` keyword and 22 of
+them are modelled now** -- `Speech.SetAIMsg`, `LocalMessage.GetString`, `PlayerController.Speak`,
+`AIMessage.IsSubTypeOf`, `GameProfile.RegisterGame`, `HUD.ConnectFailure`, sixteen more -- and the 76 that still
+refuse refuse on a *different* reason inside the same body (`a member that is not a property of the receiver's class`
+18, `a call to a name the class chain does not declare` 18, `a call statement whose receiver's class the artifacts do
+not name` 8), which is what a rule that is right looks like. `--check` carries the node as `classcall` (`12 20 04 09 00 00 1b 35 1f 78 00 16`) and
+the refusal as `badstatic` (a class literal the package does not name), and the positive control was verified by
+flipping its `12` to `19` and watching `--check` fail.
+
+**A call's value size covers the kinds the corpus writes, and a `class<Z>` return is a class reference, not an
+unknown.** `RETURN_SIZE` was the property table plus a rotator, so a member call whose callee returns a struct or a
+class refused with `whose value size this walk does not carry`. The added pairs are read off the shipped node that
+refused for want of each, one pair per body with a single call node in it: **`coords` -> 48** (10 bodies, e.g.
+`StargateWeapon.GetAimingBoneCoords`, `Pawn.GetBoneCoords` -- four vectors, `Origin`/`XAxis`/`YAxis`/`ZAxis`; this is
+*not* the 12 `STRUCT_SIZE` carries for a coords **property**, which is a different shape and stays as measured),
+`color` -> 4, `font` -> 4 (a class, so a pointer: two bodies), `framehittest` -> 1 (a byte-sized UWindow struct).
+Separately, the artifact spells a class-typed return three ways and only one of them reached the table:
+`Level.GetGameClass()` is declared `class<GameInfo>`, so `PlayerController.Fire`'s `G = Level.GetGameClass()`
+refused as `class.gameinfo` even though a class reference is pointer-sized (`PROP_SIZE`'s `class` is 4, measured over
+31,622 `Context` nodes). Reading the word through `_class_ref_class` first settles `class<Z>`, `Class.Z` and `class`
+alike. **15 bodies gained**: `class.weapon` 3 (`GameInfo.AddDefaultInventory`, `Mutator.GetDefaultWeapon`), `color` 4
+(`GameInfo.AdminSay`, `PlayerController.ServerSay`, both `DrawHUD`s), `font` 3 (`ScoreBoard.GetLargeFontFor` and
+`GetMediumFontFor`, `StargateTeamHUD.DrawTeam`), `class.gameinfo` 2 (`PlayerController.Fire`), `coords` 1,
+`class.effects` 1 (`Pawn.PlayHit`), `framehittest` 1 (`UWindowFramedWindow.LMouseDown`).
+
+Together: **8,314 modelled / 8,314 byte-identical / 0 differ** (from 8,278 / 8,278 / 0; 36 bodies gained, none lost;
+residue 3,400 -> 3,364).
+
+**What is left on this thread.** `plane` and `region` returns are *not* in this bundle: neither has a body with a
+single call node in it, so the same census answers two sizes apiece (16 and 4; 16, 0 and 4) and no measurement pins
+them -- `box` and `array<string>` are in the same state. The 20 `a call with 0 argument(s) to a 1-parameter callee`
+rows are the next rule, not the next table: `HaakenWeaponShield.BeginState`'s `ShieldFX.Lower()` is legal on
+`HaakenWeaponShieldEffect` while the emitter read the *body's* `Lower(float)` declaration, so a member call's
+parameter list needs the same no-fallback-to-the-body's-chain treatment its return type already has. Then the 42
+`class<Z>(` rows that fail on their operands and the 246 operator rows whose pair the table cannot type.
