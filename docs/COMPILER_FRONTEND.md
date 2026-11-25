@@ -1533,3 +1533,48 @@ across `GetWrapPos`, `RemoveWrap` and `WrapRow`); it is in `STRUCT_SIZE` now, an
 every body that reads it.
 
 All three are single comparisons; the measured artifact is regenerated and its census row carries the new totals.
+
+## Stage 3, continued -- a class cast, a hole in an argument list, and a struct compare (measured 2026-11-25)
+
+**8,148 -> 8,278 modelled, all 8,278 byte-identical, 0 differing** (130 gained, none lost; residue 3,530 -> 3,400).
+Three rules, each a node the walk had no shape for; each carries a control in `--check` taken from a shipped body,
+and each control was checked by mutating the emitted byte and watching `--check` fail.
+
+**A cast to a class type is `13 <object ref> <expr>`, and its `<`/`>` are the cast's spelling, not comparisons.**
+`class<Z>(expr)` is the group-13 node `--resolve` calls `MetaClassCast`, and its operand is an **object reference**
+in the same table `2E` (`DynamicCast`) reads: `LocalMessage.GetString`'s `class<Actor>(OptionalObject)` is
+`13 02 00 41 44` and `Controller.SetPawnClass`'s `class<Pawn>(DynamicLoadObject(...))` is `13 01 1c 9f ...`, where
+`02` and `01` are `Actor` and `Pawn` -- exports 2 and 1 of Engine.u, in that order. That settles the old "which object
+a `0x13` cast names" question for this token: the package's export/import tables, exactly as a `DynamicCast` names
+its class (`--resolve` already reported all 129 operands naming a `Class`). The rule matters because `<` and `>` are
+*live operators* in the same expression: before it, `Controller.SetPawnClass` refused as
+`an operator ... (an unknown type > object)` and `LocalMessage.GetString` as `... (an unknown type != object)`. The
+parse is tried before the operator table, `_operator_types` skips the span, and the node *types* as a class
+reference, so `!=` resolves to the `(object, object)` row `_numeric` answers for a `class` -- `77 13 02 00 41 44 2a 16`.
+**62 residue bodies spelled the cast and 20 of them are modelled now**; 42 still refuse, 11 of them on a compound
+expression, and the shape behind most of those is the call it feeds (below).
+
+**A hole in an argument list is written, not skipped: the compiler's `Nothing` (`0b`).**
+`Controller.PostBeginPlay`'s `Spawn(PlayerReplicationInfoClass, Self, , vect(0,0,0), rot(0,0,0))` is
+`... 16 | 0b 23 <vector> 22 <rotator> 16` -- one `Nothing` in the `SpawnTag` slot, so the callee's parameter count is
+unchanged and the slot still holds a byte. **101 of the 130 gained bodies were refused on this reason alone**, and it
+is the whole of `Controller.FindPostedAIMsg`'s `FindPostedMsg(, msgID)`. 102 residue rows still spell `, ,` and now
+refuse further on (27 of them on *a call to a name the class chain does not declare*), which is what a rule that is
+right looks like: the first refusal moves down the body instead of vanishing.
+
+**A struct comparison is its own node: `32`/`33` + the struct's object reference, and no `16`.**
+`UWindowHTMLTextArea.DrawTextLine`'s `(CurrentStyle.TextColor != OldColor)` is `33 8c 36 7c 02 ... 01 55 06`, where
+`8c` is import 12 -- the `Color` struct -- of UWindow.u. The corpus carries **six** such nodes and all six name a
+`Struct`: `Color` (one), `IpAddr` (one, `ClientBeaconReceiver.ReceivedText`) and `VoiceRef` (four, at export 160, in
+`VoiceSelector.DiscardRecentlyUsedVoices`). The rule fires only where the pair table has nothing, and the table's four
+color rows are `-`, `*`, `+` and `*` -- so `color != color` is the fallback, and the struct's own record is what the
+node carries. It flips **no body yet**: the three bodies that hold one of the six nodes refuse earlier (DrawTextLine
+on the `HTMLStyle` row it reads before the compare, the other two on their array elements), so this rule is gated by
+a control rather than by a gained body, and the doc says so rather than counting it as work done.
+
+**What is left on this thread.** The `.static.` call a class reference feeds: **82 residue bodies spell it and none is
+modelled** -- `Speech.SetAIMsg`'s `msg = class'AIMessage'.static.Assign(msg, NewMsg)` is
+`0f 01 7c 36 12 20 19 10 00 04 1c 56 07 01 7c 36 00 72 51 16 04 0b 47`, a `ClassContext` (`12`) whose class
+expression is an `ObjectConst` (`20`) and whose two expressions are that literal and the call -- and the skip word is
+**not** the compact length: 16 there against 20 in `AIMsgManager.AddReceivedMsg`, whose inner call differs by one
+argument. It needs the same wide-length read the `Context` word needed, so it is a bundle of its own.

@@ -748,7 +748,12 @@ def _operator_types(expr, env, site="", root=False):
     spelled = {"dot", "cross", "clockwisefrom"}
     symbols = {sym for (sym, _a, _b) in ops if not sym[:1].isalpha()}
     depth, best = 0, None
+    span = _metacast_span(expr)
+    guard = span[1] if span else -1
     for i, (kind, val) in enumerate(expr):
+        if i <= guard:
+            # inside a `class < Z > ( ... )` head: its `<` and `>` are the cast's spelling, not comparisons
+            continue
         if kind == "op" and val in "([{":
             depth += 1
             continue
@@ -1244,6 +1249,11 @@ def _type_of(expr, env):
         # `class'Pawn'` is an object reference: the same `class` a bare class name reads as, so a site that wants an
         # object takes it unconverted and one that wants a string casts it (`ObjectToString`).
         return "class"
+    mc = _metacast(expr, env)
+    if mc is not None:
+        # `class<Z>(x)` is a class reference: `_numeric` reads it as the `object` row, which is the pair the
+        # compiler compares with (`LocalMessage.GetString`'s `class<Actor>(OptionalObject) != None` is `77`).
+        return "class"
     if _is_call(expr):
         low = expr[0][1].lower()
         if low in CAST_TYPES:
@@ -1264,7 +1274,13 @@ def _type_of(expr, env):
     op = _operator_types(expr, env)
     if op is not None:
         # an operator's own result type: `DirtyMask & 2` is an `int`, which is what `bool(...)` casts *from*
-        return op[3]
+        if op[3]:
+            return op[3]
+        if (op[0] in ("==", "!=") and op[1] and op[1] == op[2]
+                and op[1] in (env.get("scope") or {}).get("structrefs", {})):
+            # a struct compare (`StructCmpEq`/`StructCmpNe`) yields a bool; the pair table has no row for it
+            return "bool"
+        return ""
     un = _unary_types(expr, env)
     if un is not None:
         # a one-operand node's result: `!bIsOn` is a bool, and this is what types it when the node sits *inside*
@@ -1489,6 +1505,17 @@ def _emit_operator(expr, rettype, env, root=False):
     sym, t1, t2, result, token, at = op
     if not token:
         left, right = expr[:at], expr[at + 1:]
+        if sym in ("==", "!=") and t1 and t1 == t2:
+            # A **struct comparison** is its own node: `0x33`/`0x32` (`StructCmpNe`/`StructCmpEq`), the struct's
+            # object reference, the two operands, and no `16`. The corpus carries six of them and all six name a
+            # `Struct` (`Color` -12 in UWindow, `IpAddr`, `VoiceRef` 160 four times); the operator table installs no
+            # `(color, color)` row -- its four color rows are `-`, `*`, `+`, `*` -- so this is the fallback the
+            # compiler takes when the pair table has nothing.
+            ref = (env["scope"] or {}).get("structrefs", {}).get(t1)
+            if ref is not None:
+                node = (bytes([0x33 if sym == "!=" else 0x32]) + write_index(ref)
+                        + emit_expr(left, "", env)[0] + emit_expr(right, "", env)[0])
+                return node, "struct-cmp"
         if os.environ.get("SG1_DBG_OP"):
             raise Refused("an operator the image's table does not install (%s %s %s) <<%s | %s>>"
                           % (t1 or "an unknown type", sym, t2 or "an unknown type",
@@ -1615,6 +1642,67 @@ def _emit_cast(name, inner, env, rettype=""):
             raise Refused("a cast to a class this package neither exports nor imports")
         return bytes([0x2E]) + write_index(ref) + emit_expr(inner, "", env)[0], "object-cast"
     raise Refused("a call the class chain does not declare")
+
+
+def _metacast_span(expr):
+    """`(index of the closing '>', index of the matching ')')` for a `class < Z > ( ... )` head, or None.
+
+    Kept apart from `_metacast` because `_operator_types` needs the span even when the cast is only the *left*
+    operand: its `<` and `>` are not comparisons, and reading them as such split
+    `class<Actor>(OptionalObject) != None` at the `<`.
+    """
+    if len(expr) < 6 or expr[0][0] not in ("ident", "keyword") or expr[0][1].lower() != "class":
+        return None
+    if expr[1] != ("op", "<"):
+        return None
+    depth, close = 0, None
+    for i in range(1, len(expr)):
+        kind, val = expr[i]
+        if kind != "op":
+            continue
+        if val == "<":
+            depth += 1
+        elif val == ">":
+            depth -= 1
+            if depth == 0:
+                close = i
+                break
+    if close is None or close + 1 >= len(expr) or expr[close + 1] != ("op", "("):
+        return None
+    end = _paren_end(expr, close + 1)
+    if end is None:
+        return None
+    return close, end
+
+
+def _metacast(expr, env):
+    """`class<Z>(inner)` -> `(Z, [inner tokens])`, or None when the expression is not that shape.
+
+    A cast to a *class* type is the group-13 `MetaClassCast` (`0x13`), not the `2E` a cast to an object type
+    writes: `class<Actor>(OptionalObject)` in `LocalMessage.GetString` is `13 02 00 41 44` and
+    `class<Pawn>(DynamicLoadObject(...))` in `Controller.SetPawnClass` is `13 01 1c 9f ...`. The operand is an
+    **object reference** (`02` and `01` are `Actor` and `Pawn`, exports 2 and 1 of Engine.u), the same table
+    `_emit_cast` reads for a `DynamicCast` -- `--resolve` reports all 129 `MetaClassCast` operands in the corpus
+    naming a `Class`. The source spells it with or without spaces (`class < Pawn > ( ... )`), so the tokens are
+    the same either way and the `<`/`>` are what `_operator_types` would otherwise read as comparisons.
+    """
+    span = _metacast_span(expr)
+    if span is None or span[1] != len(expr) - 1:
+        return None
+    close, end = span
+    name = expr[2:close]
+    if len(name) != 1 or name[0][0] not in ("ident", "keyword"):
+        return None
+    return name[0][1], expr[close + 2:end]
+
+
+def _emit_metacast(name, inner, env, rettype=""):
+    """`class<Z>(expr)` -> `13 <Z's object index> <expr>`, the group-13 node `--resolve` calls `MetaClassCast`."""
+    ref = (env["scope"] or {}).get("classrefs", {}).get(name.lower())
+    if ref is None:
+        raise Refused("a cast to a class this package neither exports nor imports")
+    node = bytes([0x13]) + write_index(ref) + emit_expr(inner, "", env)[0]
+    return _converted(node, "class", rettype), "metacast"
 
 
 def _prop_by_name(nm, env):
@@ -1838,6 +1926,11 @@ def _class_of(expr, env):
         # package's, not part of the class name (`class'Engine.PlayerInput'`).
         name = expr[1][1].strip("'").strip('"').lower().split(".")[-1]
         return name if name in class_names else ""
+    mc = _metacast(expr, env)
+    if mc is not None:
+        # `class<Actor>(OptionalObject).static.GetLocalString(...)`: the receiver holds `Z` itself, so a member
+        # lookup runs on `Z`'s chain rather than on the word `class`
+        return mc[0].lower() if mc[0].lower() in class_names else ""
     if _is_call(expr):
         # `TransientAmbientPawn(Pawn).VerifyLastRenderTime()`: the receiver is a cast, and a cast names the class
         # it casts to -- the same `classrefs` rule `_emit_cast` uses for `DynamicCast`.
@@ -2221,6 +2314,12 @@ def emit_expr(expr, rettype, env):
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
         expr = [("number", "-" + expr[1][1])]
     if len(expr) != 1:
+        mc = _metacast(expr, env)
+        if mc is not None:
+            # A cast to a class type is tried before the operator table: its own spelling carries a `<` and a `>`,
+            # which that table reads as two comparisons (`Controller.SetPawnClass` was refused as "an unknown type
+            # > object", `LocalMessage.GetString` as "an unknown type != object").
+            return _emit_metacast(mc[0], mc[1], env, rettype)
         inc = _incdec(expr, env)
         if inc is not None:
             return inc
@@ -2530,7 +2629,14 @@ def emit_call(stmt, env, receiver=None, head=None):
     out = head
     for arg, (ptype, _pname, _optional) in zip(args, params):
         if not arg:
-            raise Refused("a call that leaves an optional argument empty")
+            # A hole in the argument list is the compiler's own `Nothing` (`0x0B`), one byte in the slot the
+            # omitted argument would take: `Controller.PostBeginPlay`'s
+            # `Spawn(PlayerReplicationInfoClass, Self, , vect(0,0,0), rot(0,0,0))` is
+            # `16 | 0b 23 <vector> 22 <rotator> 16` -- `Nothing` where `SpawnTag` sits. Measured on the 176 residue
+            # rows that leave a slot empty (174 of them spell `, ,` in the source); the slot is written, not
+            # skipped, so the callee's parameter count is unchanged.
+            out += b"\x0b"
+            continue
         # A byte-typed literal is written by `emit_expr`, which knows the form from the value (see the number
         # branch): `byte` takes ByteConst up to 254 and the int form for 255. Each argument is its own expression
         # root, so `_root` from an enclosing expression is cleared here.
@@ -3536,6 +3642,21 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             if owner and kind in PROPERTY_CLASSES:
                 struct_props.setdefault((owner, nm), (idx, kind))
     scope["struct_props"] = struct_props
+    # The **struct itself** as the compiler names it: a `StructCmpEq`/`StructCmpNe` operand is an object reference
+    # to the struct record (`0x33 8c` for `color` is import 12 of UWindow.u), so the compare needs the same kind of
+    # table `classrefs` is for a cast. An export wins, as it does there, because a package re-declaring a struct is
+    # naming its own record.
+    structrefs = {}
+    for i, e in enumerate(pkg.exports):
+        if kinds.get(i + 1) in STRUCT_KINDS:
+            structrefs.setdefault(names.get(i + 1, "").lower(), i + 1)
+    for nm, cands in imports.items():
+        if nm in structrefs:
+            continue
+        own = [idx for idx, kind in cands if kind in STRUCT_KINDS]
+        if len(own) == 1:
+            structrefs[nm] = own[0]
+    scope["structrefs"] = structrefs
     for nm, cands in props.items():
         picked = None
         for anc in order:
@@ -4641,6 +4762,56 @@ def check(args):
     got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "X")], "float", senv)
     if got[:2] == b"\x2d\x36":
         print("FAIL uscript-emit: a float struct member is written behind BoolVariable")
+        return 1
+    # P8: a cast to a **class** type is the group-13 `MetaClassCast` (`13 <object ref> <expr>`), and it is a class
+    # reference at its site. `LocalMessage.GetString`'s `class<Actor>(OptionalObject) != None` is
+    # `77 13 02 00 41 44 2a 16` -- `02` is `Actor`'s export in Engine.u, the operand a local -- and
+    # `Controller.SetPawnClass`'s `class<Pawn>(DynamicLoadObject(...))` is `13 01 ...`. Its `<` and `>` are the
+    # cast's own spelling: read as comparisons they made the whole condition a pair the table does not install.
+    mc_env = dict(env, scope=dict(SCOPE, locals={"optionalobject": (0x00, 4353, "object")}))
+    got, _m = emit_expr([("ident", "class"), ("op", "<"), ("ident", "Actor"), ("op", ">"), ("op", "("),
+                         ("ident", "OptionalObject"), ("op", ")"), ("op", "!="), ("keyword", "None")],
+                        "bool", mc_env)
+    want = b"\x77\x13" + write_index(-77) + b"\x00" + write_index(4353) + b"\x2a\x16"
+    if got != want:
+        print("FAIL uscript-emit: class<Z>(x) != None emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    got, _m = emit_expr([("ident", "class"), ("op", "<"), ("ident", "Actor"), ("op", ">"), ("op", "("),
+                         ("ident", "OptionalObject"), ("op", ")")], "", mc_env)
+    if got[:1] != b"\x13":
+        print("FAIL uscript-emit: a class cast alone emits %s, expected a `13` node" % got.hex())
+        return 1
+    # P9: a hole in an argument list is **written**, not skipped: the compiler's `Nothing` (`0b`).
+    # `Controller.PostBeginPlay`'s `Spawn(PlayerReplicationInfoClass, Self, , vect(0,0,0), rot(0,0,0))` is
+    # `... 16 | 0b 23 <vector> 22 <rotator> 16` -- one `Nothing` in the `SpawnTag` slot. 101 residue bodies were
+    # refused for the hole alone.
+    hole_env = dict(env)
+    hole_env["scope"] = dict(SCOPE, funcs=dict(SCOPE["funcs"], holey=("virtual", 60)))
+    hole_env["params"] = dict(PARAMS)
+    hole_env["params"][("probe", "holey")] = [("int", "A", False), ("int", "B", False),
+                                              ("vector", "V", False), ("int", "C", True)]
+    got, _m, _s = emit_stmt([("ident", "Holey"), ("op", "("), ("number", "22"), ("op", ","), ("number", "33"),
+                             ("op", ","), ("op", ","), ("number", "44"), ("op", ")")], "int", hole_env)
+    want = b"\x1b" + write_index(60) + b"\x2c\x16\x2c\x21" + b"\x0b" + b"\x2c\x2c\x16"
+    if got != want:
+        print("FAIL uscript-emit: a call with an empty argument emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    # P10: a **struct comparison** is `33`/`32` + the struct's own object reference and **no** `16`:
+    # `UWindowHTMLTextArea.DrawTextLine`'s `(CurrentStyle.TextColor != OldColor)` is `33 8c 36 7c 02 ... 01 55 06`,
+    # where `8c` is import 12 (`Color`) of UWindow.u. The pair table installs no `(color, color)` row -- its four
+    # color rows are `-`, `*`, `+`, `*` -- so the compare is the fallback, and all six such nodes in the corpus
+    # name a `Struct` (`Color`, `IpAddr`, `VoiceRef`).
+    cmp_env = dict(env, scope=dict(SCOPE, structrefs={"color": -12},
+                                   locals={"oldcolor": (0x00, 700, "color"),
+                                           "newcolor": (0x00, 701, "color")}))
+    got, _m = emit_expr([("ident", "OldColor"), ("op", "!="), ("ident", "NewColor")], "bool", cmp_env)
+    want = b"\x33" + write_index(-12) + b"\x00" + write_index(700) + b"\x00" + write_index(701)
+    if got != want:
+        print("FAIL uscript-emit: a `color != color` compare emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    got, _m = emit_expr([("ident", "OldColor"), ("op", "=="), ("ident", "NewColor")], "bool", cmp_env)
+    if got[:1] != b"\x32":
+        print("FAIL uscript-emit: a `color == color` compare emits %s, expected StructCmpEq" % got.hex())
         return 1
     # P7: a `continue` names the loop's **test node** -- the trailing `Jump` in a `while`, the trailing
     # `JumpIfNot` in a `do`/`until` -- not the loop's first byte. Settled by two shipped bodies

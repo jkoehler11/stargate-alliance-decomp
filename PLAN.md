@@ -239,6 +239,26 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a cast to a class type, a hole in an argument list, and a struct compare: **8,278 modelled / 8,278
+      byte-identical / 0 differ** (from 8,148 / 8,148 / 0; 130 bodies gained, none lost; residue 3,530 -> 3,400).
+      (1) `class<Z>(expr)` is the group-13 `13 <object ref> <expr>` (`MetaClassCast`), and its operand is the
+      package's own export/import index -- `LocalMessage.GetString`'s `class<Actor>(OptionalObject)` is `13 02 00 41
+      44` and `Controller.SetPawnClass`'s `class<Pawn>(DynamicLoadObject(...))` is `13 01 1c 9f ...`, where `02` and
+      `01` are `Actor` and `Pawn`, exports 2 and 1 of Engine.u. Its `<`/`>` are the cast's spelling, and reading
+      them as comparisons was the refusal (`an unknown type > object`, `an unknown type != object`); the node types
+      as a class reference, so `!=` takes the `(object, object)` row. 62 residue bodies spelled the cast, 20 are
+      modelled now, 42 still refuse. (2) a hole in an argument list is the compiler's `Nothing` (`0b`), one byte in
+      the slot: `Spawn(Class, Self, , vect(0,0,0), rot(0,0,0))` is `... 0b 23 <vector> 22 <rotator> ...`. 101 of the
+      130 gains were refused on this reason alone; 102 rows still spell `, ,` and now refuse further on. (3) a
+      **struct compare** is `32`/`33` + the struct's object reference and no `16` (`33 8c ...` for `color != color`,
+      `8c` = import 12 of UWindow.u); the corpus carries six such nodes, all naming a `Struct` (`Color`, `IpAddr`,
+      `VoiceRef`), and the pair table installs no `(color, color)` row. It flips no body yet -- the three bodies
+      that hold one refuse earlier -- so it is gated by a control, not counted as a gain. `--check` carries all
+      three controls (`13`/`0b`/`33`), each verified by mutating the byte and watching the gate fail. Doc:
+      `docs/COMPILER_FRONTEND.md` gains the section. Not in this PR: the `.static.` call through a class reference
+      (82 residue bodies, 0 modelled -- `12 <class expr> <uint16 skip> <uint8 size> <call>`, and the skip word is
+      not the compact length, so it needs its own read), the 42 `class<Z>` rows that fail on their operands, and
+      the 246 operator rows whose pair the table cannot type.
 - [~] 3.6 two operator spellings the lexer split, and a parameter's struct: **8,136 modelled / 8,136
       byte-identical / 0 differ** (from 7,977 / 7,977 / 0; 159 bodies gained, none lost; residue 3,701 -> 3,542).
       (1) `~=` and `^^` are two-character operators the engine's table declares (`ComplementEqual_StrStr` native
