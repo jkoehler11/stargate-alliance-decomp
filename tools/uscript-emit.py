@@ -125,8 +125,13 @@ CAST_TYPES = ("byte", "int", "bool", "float", "string", "name", "vector", "rotat
 # The type byte a `Context` node writes is the *member's* value size, measured on 31,622 nodes: 4 for the
 # pointer-sized types, 1 for a byte, 12 for a vector and 0 for a string (`MyNumericEdit.Value` is a string and its
 # node writes `05 00 00`, `Items.Next` is an object and writes `05 00 04`).
+# The last two are measured on the shipped nodes, not summed: a string member's `Context` writes size 0
+# (`MyNumericEdit.Value`, `Caption`), and an **array** member's writes 0 as well -- `MyList.Elements.Length` is
+# `37 19 01 28 05 00 00 01 ...` and `source.modifiers.Length` `37 19 00 66 35 05 00 00 01 58 0f`, over every
+# `array<T>` member read in the corpus. An array's element type lives in its own record, so the read yields
+# nothing, not the element's width.
 PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4, "byte": 1, "vector": 12,
-             "string": 0}
+             "string": 0, "array": 0}
 
 # A **struct-valued** member's size is not in `PROP_SIZE`: the record says `StructProperty` and the artifact's
 # `friendly_type` names the struct. The three engine structs the corpus reaches that way are all 12 bytes, and the
@@ -3034,7 +3039,10 @@ def emit_assign(stmt, at, env):
         # (`modifiers.Length = 0;` writes `0f 37 <read> 0f 25`, an extra token this walk does not model) are refused.
         ptype = _type_of(lhs, env).lower()
         node, shape = emit_expr(lhs, "", env)
-        if shape not in ("context", "bool-context", "struct-member", "element"):
+        if shape not in ("context", "bool-context", "struct-member", "element", "length"):
+            # `A.Length = n;` is a `Let` whose target is the `37` length node: `Profiles.Length = 0;` is
+            # `0f 37 01 7d 01 25` and `Recipients.Length = 0;` `0f 37 01 4a 03 25 04 27` -- the length node, then the
+            # value, with no extra token (`0f` is the Let; the three bytes after `01` are the member's own index).
             raise Refused("an assignment whose target is a %s expression" % shape)
         if ptype == "bool" or shape == "bool-context":
             return bytes([0x14]) + node + emit_expr(rhs, "bool", env)[0]
@@ -3042,7 +3050,9 @@ def emit_assign(stmt, at, env):
             # A struct-typed target is a plain `Let`: the copy is by value and the token carries the extent, so
             # `newRotation = Rotation;` is `0f <LocalVariable> <InstanceVariable>` with no member node of its own.
             return bytes([0x0F]) + node + emit_expr(rhs, "", env)[0]
-        if ptype in ("array", "delegate", "pointer", ""):
+        if ptype in ("delegate", "pointer", ""):
+            # An array value is copied by a plain `Let` like a struct is: `SongArray = Songs;` is
+            # `0f <SongArray> <Songs>`, with no node around either side and no cast.
             raise Refused("an assignment to a %s member" % (ptype or "typeless"))
         return bytes([0x0F]) + node + emit_expr(rhs, ptype, env)[0]
     nm = lhs[0][1].lower()
@@ -3074,7 +3084,7 @@ def emit_assign(stmt, at, env):
         if from_props:
             read = _outer_wrapped(nm, read, ptype, "", env) or read
         return bytes([0x0F]) + read + emit_expr(rhs, _friendly(nm, env) or "", env)[0]
-    if ptype in ("array", "delegate", "pointer", ""):
+    if ptype in ("delegate", "pointer", ""):
         raise Refused("an assignment to a %s property" % (ptype or "typeless"))
     read = bytes([token]) + write_index(index)
     if from_props:
@@ -3703,6 +3713,42 @@ def _emit_global_call(member, env):
     return node, "global-call", "global-call"
 
 
+# The dynamic-array intrinsics this build's walker carries, by the name the reconstructed text spells. The opcode
+# table has exactly two *method* tokens -- `0x40` `DynamicArrayInsert` and `0x41` `DynamicArrayRemove`, each
+# `expr,expr,expr` (array, index, count) -- beside `0x37` `DynamicArrayLength` and `0x10`
+# `DynamicArrayElement`. UELib's `Find`, `FindStruct`, `Sort`, `Add`, `AddItem`, `RemoveItem`, `InsertItem` and
+# `Empty` have no opcode here: 0x48..0x5f are the walker's bad-token range, and the source's `.Add(` rows this
+# residue carries are `GUIList.Add` on a receiver class, not an array. And this build is version 130, below
+# UELib's `EndTokenAppendedToArrayTokenIntrinsics` (649) and its skip-word version, so the node writes neither a
+# skip word nor an `EndFunctionParms`: `Paths.Remove(0, Paths.Length)` ships `41 01 6f 09 25 37 01 6f 09` and
+# `msgReceived.Insert(Idx, 1)` ships `40 01 7e 03 00 60 30 26`.
+ARRAY_METHODS = {"insert": (0x40, ("int", "int")), "remove": (0x41, ("int", "int"))}
+
+
+def _emit_array_method(obj, member, env):
+    """`A.Remove(i, n);` / `A.Insert(i, n);` -> the intrinsic's own opcode, the array read, then its two int slots.
+
+    The receiver is a *dynamic array* by its record, which is why this is a node and not a receiver-class join: no
+    class declares `Remove`, and the compiler wrote no record for it. The array read goes through the ordinary
+    expression path -- a bare property is an `InstanceVariable`, a member is the `Context` whose size byte is 0
+    (`PROP_SIZE["array"]`) -- and each argument is an int site, whatever the argument's own type is.
+    """
+    tok, wants = ARRAY_METHODS[member[0][1].lower()]
+    close = _paren_end(member, 1) if len(member) > 1 and member[1] == ("op", "(") else None
+    if close is None or close != len(member) - 1:
+        raise Refused("an array method call the statement walk cannot bound")
+    args = _split_commas(member[2:close]) if member[2:close] else []
+    if len(args) != len(wants):
+        raise Refused("an array method with %d argument(s), where this build's token takes %d"
+                      % (len(args), len(wants)))
+    out = bytes([tok]) + emit_expr(obj, "", env)[0]
+    for arg, want in zip(args, wants):
+        if not arg:
+            raise Refused("an array method whose argument the walk cannot read")
+        out += emit_expr(arg, want, env)[0]
+    return out, "array-method", "array-method"
+
+
 def _stmt_member_call(stmt, env):
     """`A.F(args);` -> `19 <A> <skip> <size> <F>`: a call statement whose callee is a member of a receiver.
 
@@ -3728,6 +3774,12 @@ def _stmt_member_call(stmt, env):
     if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "global":
         # `Global.F()` names the class-scope function, not a member of an object called `Global`
         return _emit_global_call(member, env)
+    if (member[0][0] in ("ident", "keyword") and member[0][1].lower() in ARRAY_METHODS
+            and _receiver_kind(obj, env) == "array"):
+        # `Paths.Remove(0, Paths.Length);` is neither a member of a class nor a by-name call: the receiver is a
+        # dynamic array and the member is one of this build's two intrinsic tokens. `_class_of` cannot answer for
+        # an array (there is no class), which is what put 120 bodies in the bare-name family.
+        return _emit_array_method(obj, member, env)
     sup = _super_cast_class(obj, env)
     if sup:
         # `Super(C).F(args);` -- the statement spelling of the value path above: the callee's record behind `1c`
@@ -4833,7 +4885,8 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "bflag": (0x01, 47, "bool"), "squaddir": (0x01, 620, "struct"),
                    "caption": (0x01, 5, "string"), "suffix": (0x01, 6, "string"),
                    "items": (0x01, 700, "array"), "fcount": (0x01, 640, "float"),
-                   "targeth": (0x01, 614, "object")},
+                   "mats": (0x01, 701, "array"), "songs": (0x01, 702, "array"),
+                   "others": (0x01, 703, "array"), "targeth": (0x01, 614, "object")},
          "chain": {("probe", "probe"): ("", ""), ("probe", "helper"): ("", "")},
          "pack": "probe", "cls": "probe",
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte"),
@@ -4864,6 +4917,10 @@ SCOPE["props_all"] = {nm: [(v[1], "probe", "ObjectProperty" if v[2] == "object" 
 # member's `Context` writes size 0 (`MyNumericEdit.Value` is `05 00 00`), and reading `Caption` as an int adds a
 # `39 53` cast that the shipped bytes do not carry.
 SCOPE["props_all"]["caption"] = [(5, "probe", "StrProperty")]
+# An array member's own record (the node `_member_record` reads), distinct from a fixed dimension on another kind.
+SCOPE["props_all"]["mats"] = [(701, "probe", "ArrayProperty")]
+SCOPE["props_all"]["songs"] = [(702, "probe", "ArrayProperty")]
+SCOPE["props_all"]["others"] = [(703, "probe", "ArrayProperty")]
 
 # The type words the package artifact spells: `SquadDir` is a `Vector`, and `bFlag` is a `bool` member.
 SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe", "bflag"): "bool",
@@ -5078,11 +5135,15 @@ WANT = {
     # A **qualified** enum constant writes the ordinal alone, exactly as the bare spelling does: `24 01` in a
     # `byte` site (an `int` site widens it with `39 3a`, the same `ByteToInt` the bare spelling gets).
     "enummember": "042401" "040b47",
+    # `Items.Length = 0;` is a `Let` on the `37` length node: `Profiles.Length = 0;` ships
+    # `0f 37 01 7d 01 25` and `Recipients.Length = 0;` `0f 37 01 4a 03 25 04 27`. The property is export 700
+    # (`7c 0a`), written by the same index the target's read uses.
+    "setlength": "0f37017c0a25040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown", "badclass",
+          "castnoslot", "opnoslot", "incfloat", "callunknown", "acountunknown", "badclass",
           "badstatic", "eachnested", "callglobalnative", "badenummember")
 
 
@@ -5492,6 +5553,50 @@ def check(args):
     got, _m = emit_expr([("ident", "OldColor"), ("op", "=="), ("ident", "NewColor")], "bool", cmp_env)
     if got[:1] != b"\x32":
         print("FAIL uscript-emit: a `color == color` compare emits %s, expected StructCmpEq" % got.hex())
+        return 1
+    # P11: the dynamic-array intrinsics. `0x41` Remove and `0x40` Insert take the array read and two int slots with
+    # no skip word and no `16` (version 130 predates both), `A.Length = n;` is a `Let` on the `37` node, an
+    # array-to-array assignment is a plain `Let`, and an array *member* read is a `Context` whose size byte is 0.
+    # The refusals are part of the contract: a name this build has no token for (`Find`) and a wrong argument count
+    # must refuse, not emit a plausible node.
+    arr_stmts = [
+        ("`Items.Remove(0, Items.Length)`",
+         [("ident", "Items"), ("op", "."), ("ident", "Remove"), ("op", "("), ("number", "0"),
+          ("op", ","), ("ident", "Items"), ("op", "."), ("ident", "Length"), ("op", ")")],
+         b"\x41\x01" + write_index(700) + b"\x25" + b"\x37\x01" + write_index(700)),
+        ("`Items.Insert(Count, 1)`",
+         [("ident", "Items"), ("op", "."), ("ident", "Insert"), ("op", "("), ("ident", "Count"),
+          ("op", ","), ("number", "1"), ("op", ")")],
+         b"\x40\x01" + write_index(700) + b"\x39\x3a\x00" + write_index(612) + b"\x26"),
+        ("`Items.Length = 0;`",
+         [("ident", "Items"), ("op", "."), ("ident", "Length"), ("op", "="), ("number", "0")],
+         b"\x0f\x37\x01" + write_index(700) + b"\x25"),
+        ("`Songs = Others;`",
+         [("ident", "Songs"), ("op", "="), ("ident", "Others")],
+         b"\x0f\x01" + write_index(702) + b"\x01" + write_index(703)),
+    ]
+    for label, toks, want in arr_stmts:
+        got, _m, _s = emit_stmt(toks, "", env)
+        if got != want:
+            print("FAIL uscript-emit: %s emits %s, expected %s" % (label, got.hex(), want.hex()))
+            return 1
+    got, _m = emit_expr([("ident", "Target"), ("op", "."), ("ident", "Mats"), ("op", "."),
+                         ("ident", "Length")], "int", env)
+    want = b"\x37\x19\x01" + write_index(611) + b"\x05\x00\x00\x01" + write_index(701)
+    if got != want:
+        print("FAIL uscript-emit: `Target.Mats.Length` emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    for label, toks in (("`Items.Find(0)`",
+                         [("ident", "Items"), ("op", "."), ("ident", "Find"), ("op", "("),
+                          ("number", "0"), ("op", ")")]),
+                        ("`Items.Insert(0)` (one argument)",
+                         [("ident", "Items"), ("op", "."), ("ident", "Insert"), ("op", "("),
+                          ("number", "0"), ("op", ")")])):
+        try:
+            emit_stmt(toks, "", env)
+        except Refused:
+            continue
+        print("FAIL uscript-emit: %s did not refuse" % label)
         return 1
     # P7: a `continue` names the loop's **test node** -- the trailing `Jump` in a `while`, the trailing
     # `JumpIfNot` in a `do`/`until` -- not the loop's first byte. Settled by two shipped bodies
