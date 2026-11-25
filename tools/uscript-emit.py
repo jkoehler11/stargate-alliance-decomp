@@ -96,7 +96,7 @@ PROP_TYPE = {"IntProperty": "int", "ByteProperty": "byte", "BoolProperty": "bool
              "ArrayProperty": "array", "DelegateProperty": "delegate", "PointerProperty": "pointer",
              "InterfaceProperty": "object"}
 LOCAL_TOKEN, INSTANCE_TOKEN, DEFAULT_TOKEN = 0x00, 0x01, 0x02
-STRUCT_TOKEN, CLASS_CONTEXT_TOKEN = 0x36, 0x12
+STRUCT_TOKEN, CLASS_CONTEXT_TOKEN, CONTEXT_TOKEN = 0x36, 0x12, 0x19
 
 # The record class a struct export carries. `Engine.FilePath` is export 2502 of class `Struct`, and its members
 # (`Directory` 3006, `FullPath` 3007) are property records whose Outer is that export -- so a property's owner being
@@ -1286,8 +1286,8 @@ def _type_of(expr, env):
             objkind = _record_kind(obj, env) or _type_of(obj, env).lower()
             chain_at = _dot_at(obj)
             default_chain = (chain_at is not None and len(obj[chain_at + 1:]) == 1
-                             and obj[chain_at + 1][0][0] in ("ident", "keyword")
-                             and obj[chain_at + 1][0][1].lower() == "default")
+                             and obj[chain_at + 1][0] in ("ident", "keyword")
+                             and obj[chain_at + 1][1].lower() == "default")
             if default_chain:
                 # `AmmoName.Default.MaxAmmo` is a member of the **class of `AmmoName`**, read off its default
                 # object (`12 <obj> 05 00 04 02 <idx>`), so the record is that class's, not the body's.
@@ -1882,6 +1882,35 @@ def _emit_member_call(obj, member, rettype, env):
     return _converted(node, rtype, rettype), "call-member"
 
 
+def _is_class_ref(expr, env):
+    """Whether the receiver of a `.Default.` chain holds a **class reference** rather than an object.
+
+    `X.Default.Y` is two different opcodes and the receiver decides which: the shipped bytes write
+    `12 <X> 05 00 <size> 02 <Y>` (a `ClassContext`) when `X` is a class -- `Weapon.AmmoName` is declared
+    `var class<Ammunition> AmmoName`, and `return AmmoName.Default.MaxAmmo;` is `12 01 75 0a 05 00 04 02 5b 0f` --
+    and `19 <X> 05 00 <size> 02 <Y>` (a plain `Context`) when it is an object, which is what every one of the
+    corpus's 30 modelled default chains over a variable writes (`P.Default.AirSpeed`, `Driver.default.bOwnerNoSee`).
+    A class literal (`class'GameInfo'.Default.X`) and a bare class name are references by their own spelling.
+    """
+    expr = _strip_parens(expr)
+    if not expr:
+        return False
+    if len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class" \
+            and expr[1][0] == "quoted":
+        return True
+    if len(expr) == 1 and expr[0][0] in ("ident", "keyword"):
+        word = (env.get("paramtypes") or {}).get(expr[0][1].lower(), "") or _friendly(expr[0][1].lower(), env) or ""
+        if word.lower().startswith("class<") or word.lower().startswith("class."):
+            return True
+        word = (env.get("localtypes") or {}).get(expr[0][1].lower(), "")
+        if word.lower().startswith("class<") or word.lower().startswith("class."):
+            return True
+    if _type_of(expr, env).lower() == "class":
+        # a bare class name (`Pawn`) and a class literal read as `class`
+        return True
+    return False
+
+
 def _emit_member(expr, rettype, env):
     """The member node: a receiver chain is one of three different tokens, decided by the receiver's type.
 
@@ -1928,8 +1957,8 @@ def _emit_member(expr, rettype, env):
             return _converted(bytes([0x2D, 0x02]) + write_index(index), "bool", rettype), "default-bool"
         return _converted(bytes([0x02]) + write_index(index), ptype, rettype), "default"
     chain_at = _dot_at(obj)
-    if (chain_at is not None and len(obj[chain_at + 1:]) == 1 and obj[chain_at + 1][0][0] in ("ident", "keyword")
-            and obj[chain_at + 1][0][1].lower() == "default"):
+    if (chain_at is not None and len(obj[chain_at + 1:]) == 1 and obj[chain_at + 1][0] in ("ident", "keyword")
+            and obj[chain_at + 1][1].lower() == "default"):
         # `X.Default.Y` is a **ClassContext** (`12`), not a `Context` around a default read: the object expression
         # `X` is the node's receiver and the `DefaultVariable` (`02`) carries `Y`'s own record on X's class --
         # `return AmmoName.Default.MaxAmmo;` is `12 01 75 0a 05 00 04 02 5b 0f`, with no separate member read. The
@@ -1945,7 +1974,8 @@ def _emit_member(expr, rettype, env):
         if size is None:
             raise Refused("a default chain to a %s member, whose value size this walk does not carry"
                           % (ptype or "typeless"))
-        node = (bytes([CLASS_CONTEXT_TOKEN]) + emit_expr(recv, "", env)[0] + struct.pack("<H", CONTEXT_SKIP)
+        node = (bytes([CLASS_CONTEXT_TOKEN if _is_class_ref(recv, env) else CONTEXT_TOKEN])
+                + emit_expr(recv, "", env)[0] + struct.pack("<H", CONTEXT_SKIP)
                 + bytes([size, DEFAULT_TOKEN]) + write_index(index))
         return _converted(node, ptype, rettype), "default-chain"
     objtype = _type_of(obj, env).lower()

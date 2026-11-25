@@ -18297,3 +18297,27 @@ sequence.
 - **Not in this PR.** `CheatManager.astral`/`puss` (a void call written as a member of `Outer`, `19 01 8e 05 00 00`)
   and `UWindowHTMLTextArea.ParseColor` (a literal that adopts its byte neighbour and is promoted, `39 3a 24 10`).
 - **Files.** `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`.
+
+### Execution notes (2026-11-24, the front end: `X.Default.Y` is two nodes, and both of its branches were dead)
+
+- **Task.** The previous note's `X.Default.Y` routing: the shape was measured, "the branch is not reached", and it
+  named `emit_stmt`'s `return` arm as the next read. The arm was not the problem.
+- **The guard read a character, not a token kind.** `obj[chain_at + 1][0][0] in ("ident", "keyword")` indexes the
+  token twice: `[0]` is the kind, and `[0][0]` its first letter, so the test was `'k' in (...)` -- False for every
+  token. The same expression sat in `_type_of`, so both the emitter's node and its type-level twin were unreachable
+  for `Message.Default.bBeep`, `P.Default.AirSpeed`, `Driver.default.bOwnerNoSee` and every other chain. A one-line
+  fix in each (`[0]` for the kind, `[1]` for the value) made the rule the page had already measured run.
+- **`Context` (`19`) or `ClassContext` (`12`) is the receiver's declared type, not a constant.** The page carried
+  `12`; `Weapon.AmmoName` is `var class<Ammunition> AmmoName`, so `AmmoName.Default.MaxAmmo` is `12 ...` while an
+  object receiver writes `19` (a local: `19 00 21 05 00 04 02 a9`). Emitting `12` everywhere produced 30 differing
+  bodies, all identical once `_is_class_ref` chose the token from the record's `Class<...>` type, a `class'X'`
+  literal, or a bare class name. The differ bucket's head is what caught it -- a new family that emits *and* differs
+  is the cheapest measurement of a node's second form.
+- **Result.** 7,786 -> **7,809 modelled, all byte-identical, 0 differing**; residue 3,892 -> 3,869, the differ bucket
+  119 -> 96. `inventory/uscript_emit.csv` regenerated over the whole corpus.
+- **What is left.** 34 rows now reach *a default chain whose member the receiver's class does not declare*; the 96
+  differ rows (the `Super.BeginState()`/`EndState` state record, the `2d 36` bool operand of
+  `Weapon.AdjustAim`/`Controller.InstantWarnTarget`, the two `continue` jump targets in `TestInfo`); the 17 rows
+  whose member is itself a chain (`Groups[GameIndex].Records.Length`); the struct sizes no class text carries
+  (`Region`, `Zone`, `MouseCursor`, `HTMLStyle`); the 680 operator rows.
+- **Files.** `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`.
