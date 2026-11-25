@@ -239,6 +239,26 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the class-scope prefix and the receiver joins around it: **10,273 modelled / 10,273
+      byte-identical / 0 differ** (from 10,061 / 10,061 / 0; 212 bodies gained, none lost; residue
+      1,767 -> 1,405; no new refusal). (1) **`Static.F(args)` / `Global.F(args)` name the class scope, not an
+      object called `Static`.** `Static.` (either spelling) writes no receiver node at all:
+      `GameInfo.AddMutator`'s `!Static.AllowMutator(MutName)` is `1b 7f 16` and `GameInfo.AllowMutator`'s
+      `static.IsVehicleMutator(MutatorClassName)` is `1b 40 17 6f 4e 16`; `Global.` is that same call behind a
+      `GlobalFunction`, in a statement (`Vehicle.VehicleCeaseFire`) and in a value
+      (`ScriptedController.GetAggroLevel`'s `return Global.GetAggroLevel();` is `04 38 64 03 16`). `_prefix_call`
+      writes both positions, and `_type_of` answers the callee's return type so the operator above it installs.
+      (2) **An ambiguous import is the one whose owner is on the body's chain.** `Condition` and `ScriptScene`
+      (both Engine.u) each declare `var Screenplay _ParentScreenplay;`, so every `_ParentScreenplay.*` refused as
+      *a name neither a local, a property nor an enum constant*; the import's `package` field names the owner and
+      one of them is an ancestor (`_scope._by_owner`): 12 bodies, including the two `DirectionStart` states whose
+      `_ParentScreenplay != None` was an uninstalled pair. (3) **`PointRegion` is 12 bytes, and a struct field
+      needs the struct link.** `PlayerZone = P.Region.Zone;` writes the `Region` `Context` as `05 00 0c` (the
+      three fields sum to 9), and `Region.Zone.bSoftKillZ` refused as *a receiver chain whose member the artifacts
+      name no class* because `_class_of` stopped at `_member_record`'s empty declared word; it now asks
+      `_struct_member` for that link (7 bodies plus the `Region.Zone` member calls). Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the operator families the gained
+      bodies now reach (vector cross vector, `$` over a rotator).
 - [~] 3.6 an array element's member read, and the names a `within` class carries: **10,061 modelled / 10,061
       byte-identical / 0 differ** (from 9,911 / 9,911 / 0; 150 bodies gained, none lost; residue 1,767 -> 1,617).
       (1) **`_element_type`'s dotted branch read the token's kind, not its text.** The branch asked
