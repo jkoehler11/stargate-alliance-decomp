@@ -239,6 +239,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 an array element's member read, and the names a `within` class carries: **10,061 modelled / 10,061
+      byte-identical / 0 differ** (from 9,911 / 9,911 / 0; 150 bodies gained, none lost; residue 1,767 -> 1,617).
+      (1) **`_element_type`'s dotted branch read the token's kind, not its text.** The branch asked
+      `_member_record` for `head[at + 1][0][1]` -- the *second character of the kind* (`"ident"[1]` is `"d"`) -- so
+      every member read looked up a property named `d` and refused as *an element of an array the artifacts do not
+      type*, though `inventory/class_properties.csv` carried the element type all along
+      (`Emitter.Emitters` is `array<export editinline ParticleEmitter>`, `SGFormation.FollowsWho` an `IntProperty`).
+      The fix reads `head[at + 1][1]` and resolves the two `Default` receivers `_emit_member` already models
+      (`Default.X` on this body's chain, `X.Default.Y` on X's class): +116 bodies, that refusal 161 -> 26.
+      (2) **A bare name on the `within` class's chain** (`CheatManager`/`AdminBase` are `within PlayerController`
+      and extend `Object`) was reached only by an import with one property candidate or by a single candidate in
+      the whole package; `Level` has five records in Engine.u, so `Level.Game.…` refused as *a name neither a
+      local, a property nor an enum constant*. The within chain is now asked for its own record before those two
+      fallbacks, which feeds the `Context(Outer, 5, size)` node `_outer_wrapped` already writes: +34 bodies, that
+      family 137 -> 103. What is left: the `Static.`/`Global.` prefix receivers (15 bodies, measured bytes in the
+      patch note but not modelled here), `_ParentScreenplay` (12), and the `pointregion` struct width.
+      Doc: `docs/COMPILER_FRONTEND.md`, the array-element and within-chain section.
 - [~] 3.6 the dynamic-array intrinsic: `Remove`, `Insert`, a length `Let`, and an array member's zero:
       **9,911 modelled / 9,911 byte-identical / 0 differ** (from 9,730 / 9,730 / 0; 181 bodies gained, none lost;
       residue 1,948 -> 1,767; the join's four receiver families 440 -> 353 refused bodies). (1) **An array method is
