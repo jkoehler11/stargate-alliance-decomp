@@ -239,6 +239,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 two operator spellings the lexer split, and a parameter's struct: **8,136 modelled / 8,136
+      byte-identical / 0 differ** (from 7,977 / 7,977 / 0; 159 bodies gained, none lost; residue 3,701 -> 3,542).
+      (1) `~=` and `^^` are two-character operators the engine's table declares (`ComplementEqual_StrStr` native
+      124, `Xor_BoolBool`) and `tools/uscript-lex.py` listed `~~`, `@=`, `$=` but not `~=`, so `A[i].Name ~= B`
+      lexed as `~` then `=` and the member scan met the `=` first: the residue's whole 17 *receiver chain whose
+      member is not one name* rows (`PlayerController.SetChannelPassword`, `StreamPlaylist.FindIndexByPath`,
+      `ServerList.UpdateServer`, `GUITabControl.AddTab`, ...) are modelled, and `--check` now holds both
+      spellings as one token each. (2) a **parameter** is in neither `scope["locals"]` nor `scope["props"]`, so
+      `FiredAmmunition` (`FireProperties FiredAmmunition` on `Controller.WarnTarget`) read as the empty type and
+      `_struct_of` answered `""` -- `paramtypes` is now the fallback, and a parameter's declared type was also
+      the missing operand type in the operator pairs. (3) a cross-package member's import is decided by its
+      **owner**: `Chosen.PawnClass.Default.ControllerClass` wants `Pawn.ControllerClass`, which
+      `StargateGame.u` imports from more than one class, so `DeathMatch.SpawnBot` and `StoryModeGame.SpawnBot`
+      refuse under the single-candidate rule and are byte-identical under the owner filter.
+      **`HTMLStyle` is 28 bytes wide**, and no field sum gives it (`int`, `string`, two `Color`s, seven `bool`s):
+      every `HTMLStyle` property read in the shipped packages is `Context 05 00 1c` (8 nodes across
+      `UWindowHTMLTextArea`'s `DrawTextLine`, `GetWrapPos`, `RemoveWrap`, `WrapRow`), so the width is the
+      compiler's own static size for the struct -- measured, not shipped here. Doc: `docs/COMPILER_FRONTEND.md`
+      gains the section. Not in this PR: the three `FireProperties` chains (`_struct_member` maps a
+      `ClassProperty` to `object` and drops the declared `class<Projectile>` before `_class_of` sees it -- one
+      clause, and the parent fallback is in), `HTMLStyle`'s 28 in `STRUCT_SIZE`, the `class<Z>` differ rows and
+      the 510 operator rows whose pair the table cannot type.
 - [~] 3.6 a `class<Z>` receiver, a bool member of the default object, and a cast that is not a reference:
       **7,884 modelled / 7,884 byte-identical / 0 differ** (from 7,853 / 7,853 / 0; 32 bodies gained, one lost;
       residue 3,825 -> 3,794 and the *default chain whose member the receiver's class does not declare* bucket

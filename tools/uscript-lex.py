@@ -30,7 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OPERATORS = [
     ">>>", "<<=", ">>=", "**=", "...",
     "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
-    "<<", ">>", "**", "~~", "@=", "$=", "->",
+    "<<", ">>", "**", "~~", "~=", "^^", "@=", "$=", "->",
     "+", "-", "*", "/", "%", "=", "<", ">", "!", "&", "|", "^", "~", "@", "$", "?", ":", ".", ",",
     ";", "(", ")", "[", "]", "{", "}", "#",
 ]
@@ -190,12 +190,24 @@ def lex_tree(tree):
 SYNTH = '''class Probe extends Actor;\r\n// a comment with a ! and a "quote\r\n/* block\r\n comment */\r\nvar int Count;\r\nenum EFoo { A, B };\r\nfunction bool Check(optional int N)\r\n{\r\n\tlocal string S;\r\n\tS = "hurry! \\"quoted\\" text";\r\n\tif (N >= 2 && N != 3) { return true; }\r\n\tforeach AllActors(class\'Actor\', A) { break; }\r\n\treturn N >>> 1 == 0x1f || `define(FOO);\r\n}\r\n'''
 
 
+SYNTH_OP = '''function bool Same(string A, string B, bool X, bool Y)\r\n{\r\n\treturn (A ~= B) ^^ (X || Y);\r\n}\r\n'''
+
+
 def check(_args):
     tokens, bad = lex(SYNTH)
     gap = coverage(SYNTH, tokens) if bad is None else bad
     if gap is not None:
         print("FAIL uscript-lex: the synthetic corpus is not classified at %d" % gap)
         return 1
+    # The two-character operators the engine's own table declares and this list did not carry: `~=` is
+    # `ComplementEqual_StrStr` (native 124) and `^^` is `Xor_BoolBool`. Lexed as `~` + `=` they looked like an
+    # assignment, so every body whose condition was `A[i].Name ~= B` refused as "a receiver chain whose member is
+    # not one name" -- the member scan met the `=` first.
+    ops = "".join(SYNTH_OP[start:end] for kind, start, end in lex(SYNTH_OP)[0] if kind == "op")
+    for need in ("~=", "^^"):
+        if need not in ops:
+            print("FAIL uscript-lex: %r is not one operator token" % need)
+            return 1
     kinds = {}
     for kind, start, end in tokens:
         kinds[kind] = kinds.get(kind, 0) + 1

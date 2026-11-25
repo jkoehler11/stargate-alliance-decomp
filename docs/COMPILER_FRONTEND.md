@@ -1458,3 +1458,47 @@ package scope. It is named here as the next read, not counted as a gain.
 previous bundle; the 17 *a receiver chain whose member is not one name* rows; `HTMLStyle`'s width (no body pins it:
 7 bools, an int, two colors and a string, and a string member has no fixed size); the 680 operator rows.
 
+## Stage 3, continued -- two operator spellings the lexer split, and a parameter's struct (measured 2026-11-25)
+
+**7,977 -> 8,136 modelled, all 8,136 byte-identical, 0 differing** (159 gained; the residue 3,701 -> 3,542).
+Three joins, and two of them were a name that was never resolved rather than a shape the walk could not emit.
+
+**`~=` and `^^` are two-character operators, and the lexer's list carried neither.** The engine's own table
+declares them -- `native(124) static final operator(24) bool ~= ( string A, string B )` (`ComplementEqual_StrStr`)
+and `Xor_BoolBool` -- and `tools/uscript-lex.py` listed `~~`, `@=`, `$=` but not `~=`, so `A ~= B` lexed as `~`
+then `=`. The member scan met the `=` first and every body whose condition compares a member read
+(`StoredChatPasswords[i].ChatRoomName ~= ChannelName`) refused as *a receiver chain whose member is not one name*
+-- the residue's whole 17 rows: `PlayerController.SetChannelPassword`/`FindChannelPassword`,
+`StreamPlaylistManager.FindNameIndex`, the four `StreamPlaylist.Find*`, `MaplistManager`'s three, `GUITabControl`'s
+two, `ServerList.RemoveServer`/`UpdateServer`, `DeathMatch.ChangeName`, `CharacterSelectionList.SelectCharacter`,
+`UDebugMapList.FindMap`. All 17 are modelled now, and the operator family the split hid came with them. The
+lexer's `--check` now holds both spellings as one token each, because a gate that only tiles the input cannot see
+a two-character operator that came out as two.
+
+**A parameter's struct is in its own signature, and `_declared_type` only asked the property tables.** A body's
+parameters are in neither `scope["locals"]` nor `scope["props"]`, so `FiredAmmunition` -- declared
+`FireProperties FiredAmmunition` on `Controller.WarnTarget`, `PlayerController.AdjustAim` and
+`BotEnemy.AdjustAim` -- read as the empty type, `_struct_of` answered `""`, and
+`FiredAmmunition.ProjectileClass.Default.Speed` refused as *an unnamed class*. `paramtypes` (already in the env,
+`{name: type}` for the body's own `decl_params`) is now the fallback when neither table has the name. It reaches
+past the five chains: a parameter's declared type was also the missing operand type in the operator table, which
+is why this one rule moved 100+ bodies.
+
+**A cross-package member's import record is decided by its owner.** `Chosen.PawnClass.Default.ControllerClass`
+(`DeathMatch.SpawnBot`, `StoryModeGame.SpawnBot`) resolves `PawnClass` to `class<Pawn>` and then wants
+`Pawn.ControllerClass`: `Pawn` is Engine's, so in `StargateGame.u` it is an **import**, and that package imports
+`ControllerClass` from more than one class -- the single-candidate rule answered none. The receiver's ancestor
+chain is now the filter (`_import_owners` names each import's owner), and both bodies are byte-identical.
+
+**`HTMLStyle` is 28 bytes wide, and no field sum gives that.** `UWindowBase` declares it as `int BulletLevel`,
+`string LinkDestination`, two `Color`s and seven `bool`s. Every read of an `HTMLStyle` property in the shipped
+packages is `Context 05 00 1c`: `UWindowHTMLTextRow(L).StartStyle` in `UWindowHTMLTextArea.DrawTextLine` at offset
+`000d`, and seven more nodes across `GetWrapPos`, `RemoveWrap` and `WrapRow`. So the width is the compiler's own
+static size for the struct and it is read from the bytes, not composed from the fields -- the same evidence rule as
+`Color`'s 4 and `MouseCursor`'s 13. The four bodies still refuse (they read other members of the row first) and the
+width is **not** in this bundle.
+
+**What is left.** The three `FireProperties` chains: `_struct_member` maps a `ClassProperty` to `object` in
+`PROP_TYPE` and then drops the declared word, so `FireProperties.ProjectileClass`'s `class<Projectile>` never
+reaches `_class_of` -- one clause, and the width of the struct chain is already measured. Then the `class<Z>`
+differ rows, `HTMLStyle`'s 28, and the 510 rows the operator table still refuses by the pair it cannot type.
