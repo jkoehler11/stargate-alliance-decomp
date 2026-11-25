@@ -118,7 +118,16 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 # size byte is the same 12 a `vector` property writes -- `return Pawn.Location;` is `04 19 01 86 05 00 0c 01 8a`
 # (`AmbientCreatures.TransientAmbientCreature.PickDestination`). A struct the artifact names but this table does not
 # is still refused rather than given a size the corpus never wrote.
-STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12}
+#
+# The four the UI packages add are pinned by the bodies that refused for want of them, each a byte-identical match
+# only at one width: `Color` is `byte B,G,R,A` (**4**) -- `HUD.DrawCustomBeacon`, `GUIMenuOption.InitComponent`;
+# `Plane` is four floats (**16**) -- `HUD.PostRender`; `Region` is `UWindowBase`'s four ints `X,Y,W,H` (**16**) --
+# `UWindowWindow.DrawUpBevel`, `UWindowWin95LookAndFeel.FW_SetupFrameButtons`; `MouseCursor` is `UWindowWindow`'s
+# `Texture tex; int HotX, HotY; byte WindowsCursor` (**4+4+4+1 = 13**) -- `UWindowGridColumn.MouseMove`,
+# `UWindowFramedWindow.LMouseDown`. A width one byte either side of these puts the emitted tail out of step with the
+# shipped body, so the match is the measurement.
+STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 16, "region": 16,
+               "mousecursor": 13}
 
 # The skip word a `Context` writes before its type byte. For a member that is an `InstanceVariable` it is 5 in all
 # 17,710 such nodes, whatever width the member's index was written with (`01 18` and `01 69 04` both write 5). A
@@ -1654,8 +1663,9 @@ def _struct_member(obj, nm, env):
     index, kind = hit
     ptype = PROP_TYPE.get(kind, "")
     declared = _structs().get((name, nm), "")
-    if ptype in ("struct", "array"):
-        # the record says only `StructProperty`/`ArrayProperty`; the census names the struct or the element
+    if ptype in ("struct", "array", "class"):
+        # the record says only `StructProperty`/`ArrayProperty`/`ClassProperty`; the census names the struct, the
+        # element or the class a `class<Z>` member holds (`FireProperties.ProjectileClass` is `class<Projectile>`)
         return (INSTANCE_TOKEN, index, ptype, declared)
     return (INSTANCE_TOKEN, index, ptype, "")
 
@@ -1830,7 +1840,15 @@ def _class_of(expr, env):
     if at is not None:
         member = expr[at + 1:]
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
-            hit = _member_record(expr[:at], member[0][1].lower(), env)
+            nm = member[0][1].lower()
+            hit = _member_record(expr[:at], nm, env)
+            if hit is None:
+                # The receiver is a **struct**, and a struct's members are records too: `FiredAmmunition` is a
+                # `FireProperties` parameter, so `FiredAmmunition.ProjectileClass.Default.Speed` needs
+                # `FireProperties.ProjectileClass`'s declared type (`class<Projectile>`) and not a class lookup --
+                # `fireproperties` is no class, so the class join answers "". The pair is the same `_struct_member`
+                # `_emit_member` uses for a struct field read.
+                hit = _struct_member(expr[:at], nm, env)
             if hit is not None and len(hit) > 3:
                 friendly = hit[3] or ""
                 if friendly in class_names:
@@ -3632,6 +3650,67 @@ def _assert_line(text, body):
     return None
 
 
+def _local_decls(text):
+    """`[(function, name, type word, class-ref target)]` for every `local` declaration in one class file.
+
+    A declaration belongs to the function whose body encloses it, and that is the join a local's type needs: a
+    class-scoped table keyed by `(class, name)` keeps the *first* declaration of a name, so
+    `StargateHUD.ToggleGameHUD`'s `local GameHUD G;` was read as a later function's `local class<GameInfo> G;` --
+    `G.HideHud(!G.bHideHud)` then joined on `GameInfo`, found no `HideHud`, and the body was refused. Two `local`s
+    of one name in one function is a compile error, so the function is the whole scope.
+    """
+    toks = tokens_of(text)
+    if toks is None:
+        return []
+    out, fn, i, depth = [], "", 0, 0
+    while i < len(toks):
+        kind, val = toks[i]
+        low = val.lower() if kind == "keyword" else ""
+        if kind == "op" and val == "{":
+            depth += 1
+        elif kind == "op" and val == "}":
+            depth -= 1
+        elif low in ("function", "event", "delegate"):
+            # the header's name is its last word before `(`; `function bool Pawn.Foo(` carries the class too, and
+            # the *name* is what the package's export is called
+            j, words = i + 1, []
+            while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] in ("(", ";")):
+                if toks[j][0] in ("ident", "keyword"):
+                    words.append(toks[j][1])
+                j += 1
+            if words:
+                fn = words[-1].lower()
+            i = j
+            continue
+        elif low == "local" and depth > 0 and fn:
+            j, segs, cur = i + 1, [], []
+            while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] == ";"):
+                if toks[j][0] == "op" and toks[j][1] == ",":
+                    segs.append(cur)
+                    cur = []
+                else:
+                    cur.append(toks[j])
+                j += 1
+            segs.append(cur)
+            # the type is written once for the whole statement: `local int X, Y;` and `local actor Other, PathTarget;`
+            # name two locals of one type, so it comes from the first segment and every name shares it
+            first = segs[0] if segs else []
+            words = [k for k, t in enumerate(first) if t[0] in ("ident", "keyword")]
+            if words:
+                typew = " ".join(t[1] for t in first[:words[-1]]).strip().lower()
+                ref = _class_ref_class(typew)
+                if ref:
+                    typew = "class<%s>" % ref
+                for seg in segs:
+                    ws = [k for k, t in enumerate(seg) if t[0] in ("ident", "keyword")]
+                    if ws:
+                        out.append((fn, seg[ws[-1]][1].lower(), typew, ref))
+            i = j
+            continue
+        i += 1
+    return out
+
+
 def _source_index(tree):
     """`{(class, state, function): (rettype, body, text, native, final)}` from the extracted corpus, plus every
     declaration's parameter list, every enum constant and every callee's return type -- the three joins a cast's
@@ -3642,6 +3721,8 @@ def _source_index(tree):
     params = {}
     rets = {}
     localtypes = {}
+    localtypes_fn = {}
+    classrefs_fn = {}
     proptypes = {}
     classrefs = {}
     withins = {}
@@ -3672,6 +3753,13 @@ def _source_index(tree):
                 withins[cls] = m.group(1).lower()
             for m in re.finditer(r"\blocal\s+([A-Za-z_]\w*)\s+([A-Za-z_]\w*)", text, re.I):
                 localtypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
+            # ...and the same two joins attributed to the function that declares them, which is a local's real
+            # scope: the class-scoped tables above keep only the *first* `local` of a name, so a name declared
+            # twice in one class read as its first declaration in both functions (`_local_decls`).
+            for fnm, lname, ltype, lref in _local_decls(text):
+                localtypes_fn.setdefault((cls, fnm), {})[lname] = ltype
+                if lref:
+                    classrefs_fn.setdefault((cls, fnm), {})[lname] = lref
             # A property's *declared type word*, which is how a receiver's class is named when the package's own
             # artifact cannot: `StargateMenus.ProfilePanel` has no row for `Automated ProfileList ProfileList` in
             # `class_properties.csv`, so `ProfileList.ItemCount()` had no class to join on.
@@ -3722,7 +3810,7 @@ def _source_index(tree):
                     for cname, ordinal in members:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
     return (index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents,
-            classrefs)
+            classrefs, localtypes_fn, classrefs_fn)
 
 
 def score(tree, dump, out_dir, residue_dir=None, only=None):
@@ -3730,7 +3818,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
     index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents, \
-        classrefs = _source_index(tree)
+        classrefs, localtypes_fn, classrefs_fn = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -3832,11 +3920,19 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # and the records of the package it is declared in
                    "natives": natives, "funcs_all": tables[1], "imports": tables[2], "final_of": final_of,
                    "import_owners": tables[4], "import_pairs": tables[5],
-                   "localtypes": localtypes_by_cls.get(cls.lower(), {}),
+                   # a local's declared type: the class-wide table (for a name the class declares once) extended by
+                   # the *function's own* declarations, which is a local's real scope. `StargateHUD.ToggleGameHUD`
+                   # declares `local GameHUD G` while a later function of the same class declares
+                   # `local class<GameInfo> G`, and the class-wide table kept only the first for both bodies --
+                   # `G.HideHud(!G.bHideHud)` joined on `GameInfo` and the body was refused.
+                   "localtypes": dict(localtypes_by_cls.get(cls.lower(), {}),
+                                      **localtypes_fn.get((cls.lower(), fname.lower()), {})),
                    "proptypes": proptypes_by_cls.get(cls.lower(), {}),
                    # a `class<Z>` declaration's target class: `local class<StargateWeapon> WeaponClass`, whose
-                   # `.Default` member is read on `StargateWeapon` and not on the word `class`
-                   "classreftypes": classrefs_by_cls.get(cls.lower(), {}),
+                   # `.Default` member is read on `StargateWeapon` and not on the word `class`. Per function for the
+                   # same reason as `localtypes`, and it is the table `_class_of` consults *first*.
+                   "classreftypes": dict(classrefs_by_cls.get(cls.lower(), {}),
+                                        **classrefs_fn.get((cls.lower(), fname.lower()), {})),
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
                    # record only says `StructProperty`
                    "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])},
@@ -4388,7 +4484,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr, _ltf, _crf = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]
