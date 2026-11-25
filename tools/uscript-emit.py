@@ -1347,10 +1347,12 @@ def _emit_element(head, index, rettype, env):
     # The subscript is an **int** site whatever the array holds: a literal index compiles as an int literal and
     # not as the element's type -- `TransportPlatform.Activated`'s `Skins[1] = ActiveTexture;` writes `10 26 01`
     # (IntOne) and `StoryModeGame.GetBotTeam`'s `return Teams[0];` writes `1a 25 ...` (IntZero), and against the
-    # element's own type 185 bodies refused as `a numeric literal in a typeless function`. Only a literal is
-    # retyped here: a *named* index keeps the site it had, because no shipped body shows the width a byte-typed
-    # local takes in this position.
-    idxb = emit_expr(index, "int" if (len(index) == 1 and index[0][0] == "number") else "", env)[0]
+    # element's own type 185 bodies refused as `a numeric literal in a typeless function`. A **named** byte index
+    # converts at that site too: `Mover.SetKeyframe`'s `KeyPos[KeyNum] = NewLocation;` ships
+    # `1a 39 3a 01 3b 01 6e 36 00` -- a `ByteToInt` around the `byte KeyNum` -- and `Mover.BeginPlay`'s
+    # `KeyPos[KeyNum] = ...` writes the same two bytes in a body that differed by exactly them. An int index
+    # is a no-op through `_converted`, so every body that already matched stays byte-identical.
+    idxb = emit_expr(index, "int", env)[0]
     node = bytes([token]) + idxb + arrb
     return _converted(node, etype, rettype), "element"
 

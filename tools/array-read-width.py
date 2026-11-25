@@ -52,33 +52,44 @@ def _dis():
     return mod
 
 
-def rule_of(record_kind, declared, dim, size):
-    """What a node's size byte *is*, as one of four verdicts -- the whole question this census asks.
+def element_unit(record_kind, declared):
+    """The element's own width, from the emitter's own `PROP_SIZE`/`STRUCT_SIZE` tables -- not a second copy."""
+    emit = _emitter()
+    if record_kind == "StructProperty":
+        return emit.STRUCT_SIZE.get((declared or "").lower())
+    word = (declared or "").lower()
+    unit = emit.PROP_SIZE.get(emit.PROP_TYPE.get(record_kind, word) or word)
+    if unit is None:
+        unit = emit.PROP_SIZE.get(word)
+    return unit
 
-    `static` is the claim under test: a static array's read writes its own byte size, `dimension x element`. `dynamic`
-    is a `UArrayProperty`, whose own size is 0 (there is no fixed block). Anything else is a row the rule does not
-    explain and is named (`unexplained`) rather than averaged in.
+
+def rule_of(record_kind, declared, dim, size, form="context"):
+    """What a node's size byte *is*, in one of five verdicts -- the whole question this census asks.
+
+    `static` is the claim under test: a static array's read writes its own byte size, `dimension x element`.
+    `dynamic` is a `UArrayProperty`, whose own size is 0 (there is no fixed block). `no Context` is the read on
+    *self*, where the compiler writes the bare record and no size byte at all. `type not joined` is a row whose
+    declared type or dimension the artifacts do not carry -- the rule is not tested there, so it is not counted as
+    agreement or as a failure. `unexplained` is the only verdict that contradicts the rule, and every such row is
+    named in the artifact.
     """
+    if form in ("bare", "other"):
+        return "no Context" if form == "bare" else "not a property read"
     if record_kind == "ArrayProperty":
         return "dynamic" if size in (0, None) else "unexplained"
-    if size is None:
-        return "no-context" if record_kind else "untyped"
-    return "static" if size == expected_size(declared, dim, record_kind) else "unexplained"
+    unit = element_unit(record_kind, declared)
+    if not declared or unit is None or not isinstance(dim, int) or dim <= 0:
+        # A declaration the corpus spells with a `const` name (`var Sound SpawnSound[MAX_SPAWN_SOUNDS]`) or no
+        # dimension at all is not a dimension this census can test, so the row is not counted either way.
+        return "type not joined"
+    return "static" if size == dim * unit else "unexplained"
 
 
-def expected_size(declared, dim, record_kind, prop_types=None, struct_size=None):
-    """`dimension x element`, with the element's width from the emitter's own `PROP_SIZE`/`STRUCT_SIZE` tables."""
-    emit = _emitter()
-    prop_types = prop_types or emit.PROP_TYPE
-    struct_size = struct_size or emit.STRUCT_SIZE
-    word = (declared or "").lower()
-    if record_kind == "StructProperty":
-        unit = struct_size.get(word)
-    else:
-        unit = emit.PROP_SIZE.get(prop_types.get(record_kind, word) or word)
-        if unit is None:
-            unit = emit.PROP_SIZE.get(word)
-    if unit is None or not dim:
+def expected_size(declared, dim, record_kind):
+    """Kept as one expression so the self-test can ask the rule the same way the census does."""
+    unit = element_unit(record_kind, declared)
+    if unit is None or not isinstance(dim, int) or dim <= 0:
         return None
     return unit * dim
 
@@ -123,6 +134,9 @@ def census(dump, tree, only=None):
         pkg.read_exports()
         kinds = {i + 1: pkg.class_name_of(e) for i, e in enumerate(pkg.exports)}
         names = {i + 1: pkg.name(e["name"]) for i, e in enumerate(pkg.exports)}
+        # a property *import* carries no owner in the export table; the emitter's own table does (`tables[4]`,
+        # `{name: owner class}`), and joining through it is what turns an `unexplained` row into a measurable one
+        import_owners = emit._class_tables(pkg, kinds, names)[4]
         for ei, e in enumerate(pkg.exports):
             if kinds.get(ei + 1) != "Function" or e["outer"] <= 0:
                 continue
@@ -161,7 +175,10 @@ def census(dump, tree, only=None):
                         imp = pkg.imports[-idx - 1]
                         prop_name = pkg.name(imp["name"])
                         record_kind = pkg.name(imp["class"])
-                        row = props.get((cls, prop_name.lower()))
+                        owner = (import_owners.get(prop_name.lower()) or "").lower()
+                        row = props.get((owner, prop_name.lower())) if owner else None
+                        if row is None:
+                            row = props.get((cls, prop_name.lower()))
                         declared = row[1] if row else ""
                     else:
                         prop_name = "?"
@@ -176,20 +193,22 @@ def census(dump, tree, only=None):
                     form = "other"
                 word = _element_word(declared)
                 dim = dims.get((owner, prop_name.lower())) if owner else None
-                verdict = rule_of(record_kind, word, dim, size)
+                verdict = rule_of(record_kind, word, dim, size, form)
                 key = (record_kind, word, str(dim if dim is not None else ""), form,
                        "" if size is None else str(size))
                 counts[key] += 1
-                if len(examples[key]) < 3:
-                    fname = pkg.name(e["name"])
-                    examples[key].append("%s.%s" % (dis.owner_class(pkg.exports, kinds, names, e["outer"]), fname))
+                fname = "%s.%s" % (dis.owner_class(pkg.exports, kinds, names, e["outer"]),
+                                   pkg.name(e["name"]))
+                if fname not in examples[key] and len(examples[key]) < 3:
+                    examples[key].append(fname)
                 tally[verdict] += 1
     rows = []
     for key, n in sorted(counts.items()):
         record_kind, word, dim, form, size = key
         rows.append({"record_kind": record_kind, "declared": word, "dim": dim, "read_form": form,
-                     "size_byte": size, "rule": rule_of(record_kind, word, int(dim) if dim else 0,
-                                                        int(size) if size else None),
+                     "size_byte": size,
+                     "rule": rule_of(record_kind, word, int(dim) if (dim or "").isdigit() else None,
+                                     int(size) if size else 0, form),
                      "nodes": str(n), "examples": " ".join(examples[key])})
     return rows, tally
 
@@ -214,24 +233,41 @@ def read_artifact(path):
 
 
 def render(rows, tally):
-    total = sum(int(r["nodes"]) for r in rows)
-    static = sum(int(r["nodes"]) for r in rows if r["rule"] == "static")
-    dynamic = sum(int(r["nodes"]) for r in rows if r["rule"] == "dynamic")
+    """The page's block: the static table in full (it is the claim), the other four populations as one line each.
+
+    The 296 `no Context` shapes and 24 `dynamic` ones are in the CSV and not in the page: they are one rule each
+    (`a read on self writes no size byte; a `UArrayProperty` writes 0`), and printing 320 table rows would bury the
+    30 that carry the measurement.
+    """
+    def total(rule):
+        return sum(int(r["nodes"]) for r in rows if r["rule"] == rule)
+
+    def shapes(rule):
+        return sum(1 for r in rows if r["rule"] == rule)
+
     hot = [r for r in rows if r["rule"] == "unexplained"]
     lines = []
     lines.append("**{:,} array-element nodes over {} shapes** (`inventory/array_read_width.csv`): **{:,}** write "
-                 "`dimension x element` for a static array and **{:,}** write 0 for a `UArrayProperty`; "
-                 "**{:,}** are the rows the rule does not explain, listed below by name.".format(
-                     total, len(rows), static, dynamic, sum(int(r["nodes"]) for r in hot)))
+                 "`dimension x element` for a static array in {} shapes, **{:,}** write 0 for a `UArrayProperty`, "
+                 "**{:,}** write no `Context` at all (a read on *self*), **{:,}** are a call's return rather than a "
+                 "property, and **{:,}** are declarations the corpus spells with a `const` dimension. **{}**".format(
+                     total("static") + total("dynamic") + total("no Context") + total("not a property read")
+                     + total("type not joined") + total("unexplained"),
+                     len(rows), total("static"), shapes("static"), total("dynamic"), total("no Context"),
+                     total("not a property read"), total("type not joined"),
+                     ("%d node(s) contradict the rule, named below." % total("unexplained")) if hot
+                     else "No node contradicts it."))
     lines.append("")
-    lines.append("| record kind | declared | dim | read form | size byte | rule | nodes | examples |")
-    lines.append("|---|---|---|---|---|---|---|---|")
-    order = {"static": 0, "dynamic": 1, "no-context": 2, "untyped": 3, "unexplained": 4}
-    for r in sorted(rows, key=lambda r: (order.get(r["rule"], 9), -int(r["nodes"]), r["record_kind"])):
-        lines.append("| %s | %s | %s | %s | %s | %s | %s | %s |" % (
-            r["record_kind"] or "-", r["declared"] or "-", r["dim"] or "-", r["read_form"],
-            r["size_byte"] or "-", r["rule"], r["nodes"],
-            ", ".join("`%s`" % e for e in (r["examples"] or "").split()[:2]) or "-"))
+    lines.append("| element | dim | size byte | nodes | examples |")
+    lines.append("|---|---|---|---|---|")
+    for r in sorted([r for r in rows if r["rule"] == "static"], key=lambda r: (-int(r["nodes"]), r["declared"])):
+        seen = []
+        for e in (r["examples"] or "").split():
+            if e not in seen:
+                seen.append(e)
+        lines.append("| `%s` | %s | %s | %s | %s |" % (
+            r["declared"] or r["record_kind"], r["dim"] or "-", r["size_byte"], r["nodes"],
+            ", ".join("`%s`" % e for e in seen[:2]) or "-"))
     if hot:
         lines.append("")
         lines.append("A row the rule does not explain is named, never folded in: " + "; ".join(
@@ -257,19 +293,22 @@ def splice_doc(path, block, markers):
 def self_check():
     """Synthetic: the four verdicts, the expected sizes, the render and its round trip."""
     bad = []
-    cases = [("ByteProperty", "byte", 2, 2, "static"),
-             ("NameProperty", "name", 2, 8, "static"),
-             ("ObjectProperty", "object", 2, 8, "static"),
-             ("StructProperty", "vector", 24, 288, "static"),
-             ("ArrayProperty", "array<name>", 0, 0, "dynamic"),
-             ("ArrayProperty", "array<name>", 0, 8, "unexplained"),
-             ("NameProperty", "name", 7, 8, "unexplained"),
-             ("ByteProperty", "byte", 2, 1, "unexplained"),
-             ("ByteProperty", "byte", 2, None, "no-context")]
-    for kind, word, dim, size, want in cases:
-        got = rule_of(kind, word, dim, size)
+    cases = [("ByteProperty", "byte", 2, 2, "context", "static"),
+             ("NameProperty", "name", 2, 8, "context", "static"),
+             ("ObjectProperty", "object", 2, 8, "context", "static"),
+             ("StructProperty", "vector", 24, 288, "context", "static"),
+             ("StrProperty", "string", 4, 0, "context", "static"),
+             ("ArrayProperty", "array<name>", 0, 0, "context", "dynamic"),
+             ("ArrayProperty", "array<name>", 0, 8, "context", "unexplained"),
+             ("NameProperty", "name", 7, 8, "context", "unexplained"),
+             ("ByteProperty", "byte", 2, 1, "context", "unexplained"),
+             ("NameProperty", "name", None, 4, "context", "type not joined"),
+             ("ByteProperty", "byte", 2, None, "bare", "no Context")]
+    for kind, word, dim, size, form, want in cases:
+        got = rule_of(kind, word, dim, size, form)
         if got != want:
-            bad.append("rule_of(%s, %s, %s, %s) = %s, wanted %s" % (kind, word, dim, size, got, want))
+            bad.append("rule_of(%s, %s, %s, %s, %s) = %s, wanted %s"
+                       % (kind, word, dim, size, form, got, want))
     # the expected size is the emitter's own table, not a second copy of it
     emit = _emitter()
     if expected_size("name", 2, "NameProperty") != 2 * emit.PROP_SIZE["name"]:
@@ -285,8 +324,10 @@ def self_check():
     block = render(rows, {})
     if "**4 array-element nodes over 2 shapes**" not in block:
         bad.append("the render does not carry the node total it was handed")
-    if "| NameProperty | name | 2 | context | 8 | static | 3 |" not in block:
+    if "| `name` | 2 | 8 | 3 |" not in block:
         bad.append("the render does not carry the static row")
+    if "No node contradicts it." not in block:
+        bad.append("the render does not say the rule explains every row it was handed")
     tmp = tempfile.mkdtemp()
     try:
         path = os.path.join(tmp, "array_read_width.csv")
@@ -306,7 +347,7 @@ def self_check():
     for line in bad:
         print("FAIL array-read-width: %s" % line)
     if not bad:
-        print("ok   array-read-width: the four verdicts, the size tables it reads, the render and its round trip")
+        print("ok   array-read-width: the five verdicts, the size tables it reads, the render and its round trip")
     return 1 if bad else 0
 
 
@@ -372,6 +413,8 @@ def main():
             w.writerow(r)
     print("walked %d nodes: %s" % (tally["nodes"],
                                    ", ".join("%s %d" % (k, v) for k, v in sorted(tally.items()) if k != "nodes")))
+    if tally["unexplained"]:
+        print("FAIL: %d node(s) contradict the rule -- named in the artifact" % tally["unexplained"])
     for r in rows:
         print("  %-16s %-18s dim %-3s %-13s size %-3s %-11s %5s  %s" % (
             r["record_kind"], r["declared"], r["dim"], r["read_form"], r["size_byte"], r["rule"], r["nodes"],

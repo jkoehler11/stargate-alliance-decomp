@@ -1,0 +1,365 @@
+record_kind,declared,dim,read_form,size_byte,rule,nodes,examples
+(census),,,,,"206 static, 328 dynamic, 0 unexplained",6046,
+,,,other,,not a property read,677,SpiralStairBuilder.BuildCurvedStair PlayerReplicationInfo.PropagateUserData StreamBase.ParseDirectories
+,,,other,0,not a property read,5,PlayerReplicationInfo.GetNameCallSign PlayerReplicationInfo.GetCallSign TeamDeathMatch.InitTeams
+,,,other,12,not a property read,3,StargatePawn.PlayFiring
+,,,other,36,not a property read,3,ScoreBoard.GetSmallFontFor ScoreBoard.HaveHalfFont ScoreBoard.GetSmallerFontFor
+,,,other,8,not a property read,16,HUD.DrawCustomBeacon StargatePawn.AnimateFleeing StargatePawn.AnimateSprinting
+ArrayProperty,,,bare,,no Context,177,SE_AdvExplosiveMeshActor.PostBeginPlay SE_AdvExplosiveMeshActor.UsedBy SE_AdvExplosiveMeshActor.CreateInteractionObject
+ArrayProperty,,,context,0,dynamic,185,ACTION_PlayAmbientSound.InitActionFor MOVE_ORDER_Flee.GetTargetActor Replicator.SpawnGibs
+ArrayProperty,actor,,bare,,no Context,7,Mover.ShouldReTrigger Pawn.BeginState TransportPlatformTeleporter.Trigger
+ArrayProperty,aimessage,,bare,,no Context,47,AIMsgManager.RemoveReceivedMsg AIMsgManager.FindReceivedMsg AIMsgManager.GetReceivedMsg
+ArrayProperty,alkeshlandingzone,,bare,,no Context,6,AlkeshBomberBot.PickLandingPoint TeltakBot.PickLandingPoint TeltakBot.GetAllLandingZones
+ArrayProperty,antiportalactor,,bare,,no Context,1,Mover.BeginPlay
+ArrayProperty,bonesurfacemap,,bare,,no Context,3,Pawn.GetDamageRatio Pawn.BindBoneToSurface
+ArrayProperty,botbase,,bare,,no Context,2,AIMSG_ConcentrateFire.UseSpecialAttack AIMSG_ConcentrateFire.UseGrenadeAttack
+ArrayProperty,box,,bare,,no Context,2,StargateHUD.Add_DebugBox StargateHUD.Draw_DebugBox
+ArrayProperty,c4prop,,bare,,no Context,2,C4Weapon.DoPlaceC4 C4Weapon.DoIgniteC4
+ArrayProperty,cachedsound,,bare,,no Context,6,AnnouncerVoice.PrecacheFallbackPackage AnnouncerVoice.GetSound
+ArrayProperty,cameraeffect,,bare,,no Context,2,PlayerController.AddCameraEffect PlayerController.RemoveCameraEffect
+ArrayProperty,chapterinfo,,bare,,no Context,7,ChapterList.InitComponent ChapterList.GetSelectedChapter ChapterList.GetChapter
+ArrayProperty,characterinfo,,bare,,no Context,7,CharacterSelectionList.SelectCharacter CharacterSelectionList.GetSelectedCharacter CharacterSelectionList.GetSelectedPawnClass
+ArrayProperty,class,,bare,,no Context,3,StargatePlayer.ClientNotifyInventoryChanged StargatePlayer.CheckNewInventoryItems
+ArrayProperty,class<damagetype>,,bare,,no Context,1,VehicleWeakPoint.TakeDamage
+ArrayProperty,class<emitter>,,bare,,no Context,1,StargatePawn.CompleteSetBurning
+ArrayProperty,class<info>,,bare,,no Context,5,PlayInfo.Dump PlayInfo.Init PlayInfo.GetGameInfo
+ArrayProperty,color,,bare,,no Context,6,StargateHUD.Add_DebugLine StargateHUD.Draw_DebugLine StargateHUD.Add_DebugSphere
+ArrayProperty,colormodifier,,bare,,no Context,71,UIWidget.IsHidden UIWidget.SetupColourModifier UIWidget.SetSkin
+ArrayProperty,colormodifier,,context,0,dynamic,2,HitEffectManager.SetupFade
+ArrayProperty,colorrecord,,bare,,no Context,14,GUIComponent.PulseB GUIComponent.Pulse
+ArrayProperty,controller,,bare,,no Context,9,AIMessage.Broadcast AIMessage.GetRecipient AIMessage.AddRecipient
+ArrayProperty,controller,,context,0,dynamic,6,AIMessage.CompareRecipients CTFGame.ScoreFlag
+ArrayProperty,crystaltunnellayer,,bare,,no Context,9,CrystalTunnel.OpenTunnel CrystalTunnel.CloseTunnel CrystalTunnel.PostBeginPlay
+ArrayProperty,drawopbase,,bare,,no Context,7,SGLoadingPageBase.DrawVignette SGLoadingPageBase.AddImage SGLoadingPageBase.AddText
+ArrayProperty,driverweaponstruct,,bare,,no Context,6,StargateWeaponEmplacement.PostNetBeginPlay StargateVehicle.PostNetBeginPlay
+ArrayProperty,editconst editinline guilistelem,,bare,,no Context,21,GUIListBase.findItemNdx GUIListBase.GetItemAtIndex GUIScrollText.SkipChar
+ArrayProperty,editconst editinline guilistelem,,context,0,dynamic,3,GUIController.DumpMaps
+ArrayProperty,editconst editinline int,,bare,,no Context,5,StreamPlaylist.ResetRandomPool StreamPlaylist.GetRandomSong StreamPlaylist.RemoveSongAt
+ArrayProperty,editconst editinline playlistparserbase,,bare,,no Context,4,StreamPlaylistManager.ImportPlaylist StreamPlaylistManager.InitializeParsers
+ArrayProperty,editconst editinline stream,,bare,,no Context,14,StreamPlaylist.Save StreamPlaylist.HandleDebugExec StreamPlaylist.DebugInfo
+ArrayProperty,editconst export editinline guicomponent,,bare,,no Context,3,GUIComponent.layoutChanged GUIComponent.FindLayoutListenerIndex GUIComponent.AddLayoutChangeListener
+ArrayProperty,editconst id3field,,bare,,no Context,3,StreamTag.DumpScriptTag
+ArrayProperty,editinline keyvalue,,bare,,no Context,10,GameStartInfo.setURLKeyValue GameStartInfo.GetURL GameStartInfo.hasURLKeyValue
+ArrayProperty,editinline streamplaylist,,bare,,no Context,34,StreamPlaylistManager.GetCurrentTitle StreamPlaylistManager.Save StreamPlaylistManager.HandleDebugExec
+ArrayProperty,editinline streamplaylist,,context,0,dynamic,1,PlaylistParserBase.ImportedPlaylist
+ArrayProperty,editinlinenotify name,,bare,,no Context,9,PlayerStats.LogAllStats PlayerStatCache.BeginFullQuery
+ArrayProperty,editinlinenotify string,,bare,,no Context,2,RightLockingMenuPanel.ButtonClick
+ArrayProperty,editinlineuse material,,bare,,no Context,2,MaterialSwitch.Reset MaterialSwitch.Trigger
+ArrayProperty,emitter,,bare,,no Context,4,StargatePawn.CompleteSetBurning StargatePawn.Destroyed
+ArrayProperty,export editinline condition,,bare,,no Context,8,ScriptEvent.Destroyed ScriptEvent.ConditionsStart ScriptEvent.ConditionsFinish
+ArrayProperty,export editinline decocollideactor,,bare,,no Context,2,SVehicle.PostNetBeginPlay
+ArrayProperty,export editinline direction,,bare,,no Context,19,ScriptEvent.Destroyed ScriptEvent.DirectionsFinish ScriptEvent.RunDirections
+ArrayProperty,export editinline guibutton,,bare,,no Context,53,GUIMessageBox.AddButton GUIMessageBox.SetupQuestion GUIMessageBox.LayoutButtons
+ArrayProperty,export editinline guicomponent,,bare,,no Context,15,GUIMultiComponent.RemapComponents GUIMultiComponent.FocusFirst GUIComponent.MenuStateChange
+ArrayProperty,export editinline guiimage,,bare,,no Context,22,GUIImageList.doLayout GUIImageList.RefreshAppearance GUIImageList.doFullLayout
+ArrayProperty,export editinline guipage,,bare,,no Context,40,GUIController.CreateMenu GUIController.FindMenuIndex GUIController.SaveRestorePages
+ArrayProperty,export editinline guipanel,,bare,,no Context,20,GUIScrollingPanel.PreDraw GUIScrollingPanel.AddPanel
+ArrayProperty,export editinline guistyles,,bare,,no Context,1,GUIController.RegisterStyle
+ArrayProperty,export editinline guitabbutton,,bare,,no Context,15,GUITabControl.InternalOnKeyEvent GUITabControl.AddTab GUITabControl.InsertTab
+ArrayProperty,export editinline mataction,,bare,,no Context,6,SceneManager.ResolveActorsInActions
+ArrayProperty,export editinline matsubaction,,context,0,dynamic,1,SceneManager.ResolveActorsInActions
+ArrayProperty,export editinline order,,bare,,no Context,1,Actor.PreBeginPlay
+ArrayProperty,export editinline particleemitter,,bare,,no Context,9,Emitter.UpdatePrecacheMaterials Emitter.Trigger Emitter.SpawnParticle
+ArrayProperty,export editinline particleemitter,,context,0,dynamic,14,SurfaceInfo.EmitWheelEffect SurfaceInfo.BulletImpact
+ArrayProperty,export editinline rosterentry,,bare,,no Context,9,UnrealTeamInfo.GetClassFromString UnrealTeamInfo.GetBotClass UnrealTeamInfo.ChooseBotClass
+ArrayProperty,export editinline rosterentry,,context,0,dynamic,5,StoryModeGame.AddSquadFromSpawner
+ArrayProperty,export editinline scriptedaction,,bare,,no Context,10,ScriptedSequence.PostBeginPlay ScriptedTrigger.ValidAction ScriptedSequence.SetActions
+ArrayProperty,export editinline scriptedaction,,context,0,dynamic,4,ScriptedController.SendWarningMessage ScriptedAction.ProceedToSectionEnd
+ArrayProperty,export editinline scriptevent,,bare,,no Context,27,Screenplay.Destroyed Screenplay.NewEvent Screenplay.Event_ConditionsAnd
+ArrayProperty,export editinline scriptscene,,bare,,no Context,25,Screenplay.Destroyed Screenplay.NewEvent Screenplay.Event_ConditionsAnd
+ArrayProperty,export editinline sginteraction,,bare,,no Context,7,SVehicleTrigger.CreateInteractionObject SGUseTrigger.PostNetBeginPlay Actor.GetInteractionText
+ArrayProperty,export editinline svehiclewheel,,bare,,no Context,9,SVehicle.Tick
+ArrayProperty,export editinlinenotify guicomponent,,bare,,no Context,69,GUIMultiComponent.InitComponent GUIMultiComponent.RemoveControl GUIMessageBox.AddButton
+ArrayProperty,export editinlinenotify guicomponent,,context,0,dynamic,11,GUIListBoxBase.InitBaseList GUIScrollBar.doLayout GUIScrollBar.createParts
+ArrayProperty,faceinformation,,bare,,no Context,3,StargatePawn.SelectFace
+ArrayProperty,float,,bare,,no Context,12,GUIMultiColumnList.GetCellLeftWidth GUIMultiColumnList.InternalOnPreDraw GUIMultiColumnList.InitializeColumns
+ArrayProperty,font,,bare,,no Context,4,GUIFont.LoadFont
+ArrayProperty,gamemenu,,bare,,no Context,28,SelectionMenu.SelectItem SelectionMenu.PostRender SelectionMenu.Initialized
+ArrayProperty,gamemodeinfo,,bare,,no Context,7,GameModeList.GetModeInfo GameModeList.IsTeamGame GameModeList.GetSelectedGameMode
+ArrayProperty,gamerecord,,bare,,no Context,10,MaplistManager.ValidGameType MaplistManager.GetCacheGameIndex MaplistManager.ApplyMapList
+ArrayProperty,gamerecordgroup,,bare,,no Context,7,MaplistManager.SetActiveList MaplistManager.ResetGame MaplistManager.GetStoredGameIndex
+ArrayProperty,goauldconsolecrystal,,bare,,no Context,1,GoauldConsole.PostBeginPlay
+ArrayProperty,goauldconsolecrystal,,context,0,dynamic,3,StargatePlayer.BeginState GoauldConsoleHud.UpdateConsoleMousePointer
+ArrayProperty,guilistelem,,bare,,no Context,15,moTextOption.FindIndex moTextOption.SetIndex moTextOption.GetItem
+ArrayProperty,guimutatorrecord,,bare,,no Context,4,GUIController.GetMutatorList
+ArrayProperty,hudoverlay,,bare,,no Context,5,HUD.PostRender HUD.DrawCinematicHUD HUD.AddHudOverlay
+ArrayProperty,imageliststruct,,bare,,no Context,20,GUIImageList.SwapPrev GUIImageList.SwapNext GUIImageList.Add
+ArrayProperty,imusicsegment,,bare,,no Context,19,IMusicActor.PostNetBeginPlay IMusicActor.GetCurrentState IMusicActor.TransitionToSameState
+ArrayProperty,imusicsegment,,context,0,dynamic,1,IMusicController.GetMusicState
+ArrayProperty,influence,,bare,,no Context,2,StargatePawn.Destroyed StargatePawn.AddInfluence
+ArrayProperty,int,,bare,,no Context,14,GUIMultiColumnList.Dump GUIMultiColumnList.InternalOnPreDraw GUIMultiColumnList.OnSortChanged
+ArrayProperty,interaction,,bare,,no Context,4,InteractionMaster.SetFocusTo InteractionMaster.RegisterOnline InteractionMaster.RemoveInteraction
+ArrayProperty,interaction,,context,0,dynamic,5,InteractionMaster.SetFocusTo PlayerController.StreamFinished InteractionMaster.RemoveInteraction
+ArrayProperty,localized string,,bare,,no Context,12,VoiceChatReplicationInfo.GetTitle VoiceChatReplicationInfo.GetDefaultChannel SceneSubtitles.GetSubTitles
+ArrayProperty,mapitem,,bare,,no Context,26,MaplistRecord.MapHasOption MaplistRecord.Save MaplistRecord.VerifyMaps
+ArrayProperty,maplistrecordgroup,,bare,,no Context,71,MaplistManager.MaplistDirty MaplistManager.ValidName MaplistManager.GetActiveMap
+ArrayProperty,maprecord,,bare,,no Context,1,MapList.FindCacheIndex
+ArrayProperty,material,,bare,,no Context,17,Actor.DisplayDebug Actor.UpdatePrecacheMaterials MaterialTrigger.PostBeginPlay
+ArrayProperty,material,,context,0,dynamic,1,Decoration.Destroyed
+ArrayProperty,materialpassitem,,bare,,no Context,5,MultiPassMaterial.Cleanup
+ArrayProperty,mindcontrolslot,,bare,,no Context,21,HaakenLeaderBot.NotifyKilled HaakenLeaderBot.NotifyCrystalDeactivated HaakenLeaderBot.AssignRole
+ArrayProperty,missionobjective,,bare,,no Context,2,MissionObjective.findKids MissionObjective.checkKidsStatus
+ArrayProperty,multicolumnheaderdata,,bare,,no Context,1,GUIMultiColumnList.InitializeColumns
+ArrayProperty,multicolumnsortdata,,bare,,no Context,5,GUIMultiColumnList.Dump GUIMultiColumnList.CurrentListId
+ArrayProperty,name,,bare,,no Context,36,SpinnyWeap.PlayNextAnim ACTION_WaitForConditions.CheckTriggerConditions SE_AdvExplosiveMeshActor.TakeDamage
+ArrayProperty,object,,bare,,no Context,8,AIMessage.AddCustomParam AIMessage.GetCustomParam ObjectPool.AllocateObject
+ArrayProperty,objectiveinfo,,bare,,no Context,58,ObjectivesPanel.MyOnDrawItem ObjectivesPanel.RemoveObjective ObjectivesPanel.UpdateDone
+ArrayProperty,passengerweaponstruct,,bare,,no Context,3,StargateVehicle.PostNetBeginPlay
+ArrayProperty,pawninfostruct,,bare,,no Context,7,SelectPawnPanel.RefreshListBox SelectPawnPanel.GetSelectedPawnIndex SelectPawnPanel.GetSelectedPawnClass
+ArrayProperty,phasetorchhit,,bare,,no Context,15,ReetouBot.WhatToDoNext ReetouBot.NotifyPhaseTorchHit ReetouBot.GetMaxPhaseTorchIntensity
+ArrayProperty,playerinfo,,bare,,no Context,10,CoopPlayerPanel.MySortString CoopPlayerPanel.AddPlayer CoopPlayerPanel.MyOnDrawItem
+ArrayProperty,playerqueryspec,,bare,,no Context,1,StatsQuery.SetUser
+ArrayProperty,playerreplicationinfo,,bare,,no Context,11,GameReplicationInfo.GetPRIArray GameReplicationInfo.RemovePRI GameReplicationInfo.AddPRI
+ArrayProperty,playerreplicationinfo,,context,0,dynamic,19,PlayerController.LoadPlayers ScoreBoard.SortPRIArray PlayerController.ServerChatRestriction
+ArrayProperty,playinfodata,,bare,,no Context,16,PlayInfo.Dump
+ArrayProperty,playlistparser,,bare,,no Context,3,StreamPlaylistManager.InitializeParsers
+ArrayProperty,psdistortionmaterial,,bare,,no Context,2,Reetou.SetInvisibility Reetou.SetInvisibilityAlpha
+ArrayProperty,queueitem,,bare,,no Context,7,AnnouncerQueueManager.CanFindSoundInQueue AnnouncerQueueManager.IsQueueingSwitch AnnouncerQueueManager.Timer
+ArrayProperty,reachspec,,bare,,no Context,2,NavigationPoint.PostBeginPlay
+ArrayProperty,restoremenuitem,,bare,,no Context,7,GUIController.SaveRestorePages GUIController.PerformRestore
+ArrayProperty,scriptedcontroller,,bare,,no Context,7,AmbushInfo.UnTouch AmbushInfo.Touch AmbushInfo.RemoveAllControllers
+ArrayProperty,scriptobject,,bare,,no Context,5,SP_TargetList.SetTarget SP_TargetList.UnsetTarget SP_IntVar.SetValue
+ArrayProperty,serverinfo,,bare,,no Context,22,ServerList.MySortString ServerList.GetAdditionalInfo ServerList.GetIP
+ArrayProperty,serverresponseline,,bare,,no Context,10,ServerSelectionListBox.GetTeamInfoURL ServerSelectionListBox.GetGameTypeName ServerSelectionListBox.IsTeamGame
+ArrayProperty,sgorder,,context,0,dynamic,1,SGMenuInteraction.drawObjectivesMenu
+ArrayProperty,sgtriggeredcondition,,bare,,no Context,1,SGOrder.Initialise
+ArrayProperty,singleresult,,bare,,no Context,6,ListObjectPropsCommandlet.AddResult ListObjectPropsCommandlet.WriteResults
+ArrayProperty,snotification,,bare,,no Context,7,NotificationManager.AddNotification NotificationManager.DisplayMessages
+ArrayProperty,sound,,bare,,no Context,19,Vehicle.PlayTakeHit Vehicle.ServerPlayHorn SoundTrigger.Touch
+ArrayProperty,sound,,context,0,dynamic,10,StargateVoicePack.TestVoice VoiceSelector.SelectVoice VoiceSelector.DumpFoundVoices
+ArrayProperty,sounddatastruct,,bare,,no Context,6,USoundEmitter.Play USoundEmitter.SetLayerDefaults
+ArrayProperty,sounddatastruct,,context,0,dynamic,5,MultiLayerSound.Connect RandomPitch.Play RandomVolume.Play
+ArrayProperty,soundemitter,,bare,,no Context,1,ACTION_PlayAmbientSound.InitActionFor
+ArrayProperty,soundmodifier,,bare,,no Context,2,USoundEmitter.Update USoundEmitter.Play
+ArrayProperty,soundmodifier,,context,0,dynamic,1,SoundModifier.Connect
+ArrayProperty,stargatepawn,,bare,,no Context,20,HANDOFLIGHT.Tick HANDOFLIGHT.Destroyed HANDOFLIGHT.DetectEnemies
+ArrayProperty,stargatevehiclepassenger,,bare,,no Context,29,StargateVehicle.Destroyed StargateVehicle.Died StargateVehicle.hasAvailableSeat
+ArrayProperty,stargatevehiclepassenger,,context,0,dynamic,11,StargateVehiclePassenger.ServerChangeDriverPosition StargateVehiclePassenger.PossessedBy
+ArrayProperty,staticmesh,,bare,,no Context,9,LevelInfo.AddPrecacheStaticMesh SGC_DestructibleSecurityDoor.SpawnDestructibleActor DestructableActor.TakeDamage
+ArrayProperty,staticmesh,,context,0,dynamic,2,SGC_DestructibleSecurityDoor.SpawnDestructibleActor
+ArrayProperty,storedchatpassword,,bare,,no Context,10,PlayerController.Join PlayerController.SetChannelPassword PlayerController.FindChannelPassword
+ArrayProperty,storedpassword,,bare,,no Context,3,ExtendedConsole.ConnectFailure
+ArrayProperty,string,,bare,,no Context,76,PlayerController.ListSavedGames MapList.HasInvalidMaps MapList.GetMap
+ArrayProperty,string,,context,0,dynamic,3,SquadAIBasic.SetupSkin SquadAIBasic.LoadSkins
+ArrayProperty,teaminfostruct,,bare,,no Context,4,SelectTeamPanel.SetNumPlayers SelectTeamPanel.MyOnDrawItem
+ArrayProperty,tmasterserverentry,,bare,,no Context,2,MasterServerLink.GetMasterServer
+ArrayProperty,trainwagon,,bare,,no Context,8,Train.SetTrainAnimFrame Train.InitTrainAnimation Train.SetTrainLocation
+ArrayProperty,transitionresult,,bare,,no Context,8,IMusicActor.RecurseTransitionsFromTo IMusicActor.GetShortestTransitionPath
+ArrayProperty,uiprogressbar,,bare,,no Context,20,GameHud.PostRender GameHud.AddProgressBar GameHud.ShowProgressBar
+ArrayProperty,uiwidget,,bare,,no Context,34,GameMenu.AddIndexedCommand GameMenu.RemoveCommand GameMenu.Select
+ArrayProperty,uiwidget,,context,0,dynamic,14,SelectionMenu.Show WeaponMenu.NeedToDropItem WeaponMenu.GetCurrentlyHighlightedWeapon
+ArrayProperty,vector,,bare,,no Context,28,Vehicle.KDriverEnter KVehicle.KDriverLeave Vehicle.PlaceExitingDriver
+ArrayProperty,viewport,,bare,,no Context,14,GUIController.GetViewport GUIController.RestoreMenu GUIController.AddChildViewport
+ArrayProperty,voicechatroom,,bare,,no Context,3,VoiceChatReplicationInfo.CheckChannels VoiceChatRoom.IsMember
+ArrayProperty,voicedesc,,bare,,no Context,37,VoiceSet.GetVoiceText VoiceSet.GetVoiceCustomize VoiceSet.GetVoiceTone
+ArrayProperty,voicedesc,,context,0,dynamic,20,SGVoicePackExtended.SearchVoice StargateVoicePack.TestVoice VoiceSelector.SearchVoices
+ArrayProperty,voiceref,,bare,,no Context,28,VoiceSelector.SearchVoices VoiceSelector.DiscardRecentlyUsedVoices VoiceSelector.SelectVoice
+ArrayProperty,voiceset,,bare,,no Context,19,SGVoicePackExtended.SearchSuitableVoices StargateVoicePack.SelectVoice StargateVoicePack.Init
+ArrayProperty,waypoint,,bare,,no Context,5,GameHud.PostRender GameHud.RemoveWaypoint GameHud.AddWaypoint
+ArrayProperty,weapon,,bare,,no Context,18,StargateWeaponEmplacement.SetActiveWeapon StargateWeaponEmplacement.Destroyed StargateWeaponEmplacement.PostNetBeginPlay
+ArrayProperty,xadmingroup,,bare,,no Context,8,xAdminGroupList.Add xAdminGroupList.Remove xAdminGroupList.Get
+ArrayProperty,xadminuser,,bare,,no Context,6,xAdminUserList.Add xAdminUserList.Get xAdminUserList.Remove
+ByteProperty,,,context,2,type not joined,3,CTFFlag.BeginState
+ByteProperty,byte,12,bare,,no Context,15,PlayerReplicationInfo.PropagateUserData PlayerReplicationInfo.GetPlayerXUID PlayerReplicationInfo.ServerSetXUID
+ByteProperty,byte,16,bare,,no Context,1,UnrealPawn.AddDefaultInventory
+ByteProperty,byte,2,bare,,no Context,1,NavigationPoint.SetBaseVisibility
+ByteProperty,byte,2,context,2,static,2,NavigationPoint.SetBaseVisibility
+ByteProperty,byte,32,bare,,no Context,1,TeamVoicePack.SetOtherMessage
+ByteProperty,gameprofile.eplayerpos,7,bare,,no Context,2,GameProfile.GetPositionDescription GameProfile.SetPosition
+ByteProperty,guicomponent.elooptype,3,bare,,no Context,4,GUIComponent.Animate GUIComponent.PulseB GUIComponent.Pulse
+ByteProperty,guicomponent.elooptype,3,context,3,static,1,MenuItemOverlay.InitComponent
+ByteProperty,sgformation.ecombatposition,16,bare,,no Context,2,SGFormation.isOnInside SGFormation.isOnOutside
+ByteProperty,sgformation.efollowuseposition,16,bare,,no Context,1,SGFormation.usesPosition
+ByteProperty,sgformation.efollowuseposition,16,context,16,static,1,BotBase.DisplayDebug
+ClassProperty,class<pawn>,8,bare,,no Context,2,TransientAmbientCreature.AddPawn
+ClassProperty,class<teamai>,2,bare,,no Context,3,TeamDeathMatch.InitTeams TeamDeathMatch.InitGame
+ClassProperty,class<teamai>,3,bare,,no Context,1,StoryModeGame.InitTeams
+ClassProperty,class<transientambientcreature>,8,bare,,no Context,2,AmbientCreatureManager.Timer AmbientCreatureManager.PostBeginPlay
+ClassProperty,class<unrealpawn>,32,bare,,no Context,6,UnrealTeamInfo.BelongsOnTeam UnrealTeamInfo.NextLoadOut
+FloatProperty,float,2,bare,,no Context,54,xEmitter.PreSpawned PlayerInput.SmoothMouse GUIScrollBar.doLayout
+FloatProperty,float,24,bare,,no Context,13,Mover.KeyFrameReached Mover.DoOpen Mover.DoClose
+FloatProperty,float,3,bare,,no Context,7,GoauldRibbonProjectile.SetLevel CoverInfo.GetMoveOverrideTime
+FloatProperty,float,4,bare,,no Context,28,PlayerInput.SmoothMouse GUIComponent.IsInClientBounds GUIComponent.IsInBounds
+FloatProperty,float,4,context,16,static,4,GUIHorzScrollBar.ZoneClick GUIVertScrollBar.ZoneClick
+FloatProperty,float,5,bare,,no Context,6,TacticalTarget.GetWanderTarget TacticalTarget.GetWanderDistance QuadBike.DisplayDebug
+FloatProperty,float,7,bare,,no Context,16,FontInfo.GetSmallFont FontInfo.GetMediumFont FontInfo.GetBigFont
+FloatProperty,float,8,bare,,no Context,4,JumpDest.SpecialCost JumpDest.SuggestMovePreparation
+IntProperty,,,context,16,type not joined,6,CoopPlayerPanel.MyOnDrawItem
+IntProperty,int,14,bare,,no Context,6,UGraphStaticMeshPage.Change UGraphStaticMeshPage.Initialized
+IntProperty,int,15,bare,,no Context,6,UGraphHardware2Page.Change UGraphHardware2Page.Initialized
+IntProperty,int,16,bare,,no Context,16,SGFormation.GetOffsetFor SGFormation.GetFollowPawn SGFormation.ResetFormation
+IntProperty,int,16,context,64,static,6,BotEnemy.DetermineFollowLocation BotBase.SetManInFront SquadAIBasic.tellFollowingBotsToFollowNode
+IntProperty,int,2,bare,,no Context,16,PlayerInput.SmoothMouse UGraphLightMapPage.Change UGraphLightMapPage.Initialized
+IntProperty,int,3,bare,,no Context,31,LevelGameRules.GetRoster UGraphStencilPage.Change UGraphStencilPage.Initialized
+IntProperty,int,3,context,12,static,4,DeathMatch.InitGame TeamDeathMatch.InitTeams StoryModeGame.InitTeams
+IntProperty,int,4,bare,,no Context,30,GameProfile.SetPosition GameProfile.SetLineup UGraphTerrainPage.Change
+IntProperty,int,4,context,16,static,11,GUIMessageBox.LayoutButtons GUIMessageBox.InternalOnPreDraw GUIMultiColumnList.GetCellLeftWidth
+IntProperty,int,6,bare,,no Context,14,GameProfile.CheatJumpMatch GameProfile.FindFirstUnfinishedLadder UGraphGame2Page.Change
+IntProperty,int,6,context,24,static,19,LadderInfo.UpdateLadders
+IntProperty,int,7,bare,,no Context,6,UGraphMeshPage.Change UGraphMeshPage.Initialized
+IntProperty,int,8,bare,,no Context,6,UGraphVisibilityPage.Change UGraphVisibilityPage.Initialized
+IntProperty,int,9,bare,,no Context,14,GateChevrons.PlayChevronLock UGraphNetPage.Change UGraphNetPage.Initialized
+NameProperty,,,bare,,no Context,141,SHOTGUN.BeginState Replicator.AnimateRunning Replicator.AnimateRiding
+NameProperty,name,13,bare,,no Context,28,StargatePawn.EndDustStormAnims StargatePawn.StartDustStormAnims
+NameProperty,name,16,bare,,no Context,3,RoundRobin.Trigger
+NameProperty,name,2,bare,,no Context,17,Train.SetTrainState SHOTGUN.BeginState SHOTGUN.AnimEnd
+NameProperty,name,2,context,8,static,6,StargatePawn.GetAlertSquadAnim StargatePawn.PlayReloading StargatePawn.StartCrouch
+NameProperty,name,3,bare,,no Context,42,PuzzleTrigger.NotifyPuzzleTrigger_Activated C4Mission.UsedBy HackingPawnForBot.CompleteHacking
+NameProperty,name,3,context,12,static,1,StargatePawn.GetCowerAnim
+NameProperty,name,4,bare,,no Context,28,SuperSoldier.AnimateRunning SuperSoldier.AnimateAggroRunning StargatePawn.BeginState
+NameProperty,name,4,context,16,static,7,SquadAISG.ForceTakeCover SquadAISG.ForceFireMode StargatePawn.SetupWeaponAnims
+NameProperty,name,5,bare,,no Context,4,PuzzleTrigger.PostBeginPlay
+NameProperty,name,6,bare,,no Context,5,Pawn.IsHeadShot SuperSoldier.PlaySuperPunchAnim HaakenGrunt.PlayMeleeAttackAnim
+NameProperty,name,64,bare,,no Context,2,LevelInfo.FindCachedEvent LevelInfo.AddEventToCache
+NameProperty,name,7,bare,,no Context,16,StargatePawn.StartDustStormAnims StargatePawn.AnimateBurningWalking StargatePawn.StartCrouch
+ObjectProperty,,,bare,,no Context,15,StaffCannonGun.PlayFiring HaakenWeaponProjectileFull.Explode ProjDGLightPlasmaPrimary.Explode
+ObjectProperty,,,context,12,type not joined,8,AnimNotify_FireWeapon.Notify CTFBase.UpdateForTeam StargateTeamHUD.DrawGameSynopsis
+ObjectProperty,,,context,16,type not joined,22,TriggeredScript.Touch BodySwapTrigger.Touch WarpPortalTrigger.Touch
+ObjectProperty,,,context,40,type not joined,14,UDebugBlueLookAndFeel.FW_DrawWindowFrame UDebugBlueLookAndFeel.Combo_SetupSizes UDebugBlueLookAndFeel.Editbox_SetupSizes
+ObjectProperty,,,context,64,type not joined,12,TacticalTarget.InitialiseBotMoveTargets TacticalTarget.FinishedMove WillowWhisp.PostBeginPlay
+ObjectProperty,actor,,context,64,type not joined,2,SquadAIBasic.MoveIntoFormation SquadAIBasic.Investigate
+ObjectProperty,actor,16,bare,,no Context,25,PlayerController.GetPathTo AIController.DisplayDebug SquadAIBasic.GetFormationFocus
+ObjectProperty,actor,16,context,64,static,9,Teleporter.SpecialHandling HUD.DrawRoute TeamAI.FindSquadPathToward
+ObjectProperty,actor,256,bare,,no Context,14,GRENADE.AddArcPoint GRENADE.HideArcPointList GRENADE.ResetArcPointList
+ObjectProperty,actor,3,bare,,no Context,7,CoverInfo.GetAdvanceActor CoverInfo.PreBeginPlay
+ObjectProperty,actor,32,bare,,no Context,29,BotEnemy.UpdateCoverNodes BotEnemy.RemoveHideCandidate BotEnemy.Destroyed
+ObjectProperty,actor,32,context,128,static,1,SquadAISG.GetSquadCoverNodes
+ObjectProperty,actor,4,context,16,static,2,Trigger.Touch
+ObjectProperty,actor,8,bare,,no Context,6,TacticalTarget.InitialiseBotMoveTargets TacticalTarget.FinishedMove TacticalTarget.GetBotTarget
+ObjectProperty,alkeshbomb,2,bare,,no Context,11,AlkeshBomber.DropBomb AlkeshBomber.PostBeginPlay
+ObjectProperty,alkeshbomb,2,context,8,static,1,AlkeshBomberBot.DoBombDrop
+ObjectProperty,alkeshengine,4,bare,,no Context,14,AlkeshBomber.GetNumWorkingEngines AlkeshBomber.Destroyed AlkeshBomber.PostBeginPlay
+ObjectProperty,avoidmarker,2,bare,,no Context,4,Controller.FearThisSpot
+ObjectProperty,botbase,16,bare,,no Context,20,SquadAIBasic.RegisterAlarmRunner SquadAIBasic.IsAlarmRunner SquadAIBasic.DeregisterAlarmRunner
+ObjectProperty,botbase,16,context,64,static,16,BotEnemy.DetermineFollowLocation BotBase.SetManInFront SquadAIBasic.PickNewLeader
+ObjectProperty,botenemy,8,bare,,no Context,32,TacticalTarget.Reset TacticalTarget.IsBotLinked TacticalTarget.RemoveBotFromTarget
+ObjectProperty,controller,4,bare,,no Context,1,Pickup.BeginState
+ObjectProperty,crystaltunnelpiece,10,bare,,no Context,15,CrystalTunnelLayer.PostBeginPlay CrystalTunnelLayer.Destroyed CrystalTunnelLayer.NotifyPieces
+ObjectProperty,emitter,2,bare,,no Context,12,Train.SetTrainState Train.Destroyed
+ObjectProperty,emitter,3,bare,,no Context,4,HaakenPod.BeginState HaakenPod.EndState
+ObjectProperty,font,10,bare,,no Context,8,UWindowRootWindow.SetupFonts
+ObjectProperty,font,10,context,40,static,27,UWindowDialogControl.BeforePaint UWindowButton.BeforePaint UWindowDynamicTextArea.Paint
+ObjectProperty,font,7,bare,,no Context,32,FontInfo.GetSmallFont FontInfo.GetMediumFont FontInfo.GetBigFont
+ObjectProperty,font,9,bare,,no Context,4,HUD.LoadFont
+ObjectProperty,gravcranecorner,4,bare,,no Context,9,GravCrane.PostNetBeginPlay GravCrane.DisplayDebug
+ObjectProperty,guibutton,2,bare,,no Context,8,GUIScrollBar.doLayout GUIScrollBar.createParts
+ObjectProperty,guibutton,4,bare,,no Context,93,GUIScrollBar.activateArrows GUIScrollBar.bMoreBelow GUIScrollBar.bMoreAbove
+ObjectProperty,guicomponent,4,bare,,no Context,10,GUIComponent.Free GUIComponent.SetLinks GUIComponent.SetLinkOverrides
+ObjectProperty,guicomponent,4,context,16,static,3,GUIMultiComponent.MapControls
+ObjectProperty,guifont,16,bare,,no Context,2,GUIStyles.Initialize
+ObjectProperty,guifont,16,context,64,static,2,GUIMessageBox.LayoutButtons GUIMessageBox.InternalOnPreDraw
+ObjectProperty,guipanel,2,bare,,no Context,23,GUIScrollBar.doLayout GUIScrollBar.createParts
+ObjectProperty,haakenpoddoor,3,bare,,no Context,13,HaakenPod.Destroyed HaakenPod.CreateDoors HaakenPod.ShowThawStartLights
+ObjectProperty,hackingpanelgadget,9,bare,,no Context,48,HackingPawnForBot.CompleteHacking HackingPawnForBot.Tick HackingPawnForBot.PostBeginPlay
+ObjectProperty,lcdscreen,2,bare,,no Context,16,C4Mission.BeginState C4Mission.Timer C4Mission.UsedBy
+ObjectProperty,material,2,bare,,no Context,19,GUIScrollBar.createParts GUIHorzScrollButton.InitComponent GUIVertScrollButton.InitComponent
+ObjectProperty,material,3,context,12,static,3,StargateWeapon.ResetFirstPersonHandsMaterial
+ObjectProperty,material,4,bare,,no Context,7,GUIScrollBar.createParts GUIArrowScrollPanel.createParts HitEffectManager.SetDrawIcon
+ObjectProperty,material,8,bare,,no Context,1,DecipheringPawn.Trigger
+ObjectProperty,mesh,11,bare,,no Context,1,Fragment.BeginState
+ObjectProperty,moveorder,3,bare,,no Context,14,CoverInfo.GetMoveOverride CoverInfo.GetMoveOverrideTime CoverInfo.PreBeginPlay
+ObjectProperty,mover,6,bare,,no Context,6,M10_SuperSoldierBattleManager.PostBeginPlay M10_SuperSoldierBattleManager.CheckAllGateClosed
+ObjectProperty,pawn,16,bare,,no Context,39,ReetouProtectorBot.SetEnemies ReetouProtectorBot.SetNextEnemy ReetouDevice.ClearSprayedPawns
+ObjectProperty,pawn,16,context,64,static,25,BotBase.SetNextEnemy SquadAIBasic.MergeEnemiesFrom BotBase.IsEnemy
+ObjectProperty,pawn,3,bare,,no Context,7,CoverInfo.CanUse CoverInfo.ClearUserBot CoverInfo.SetUserBot
+ObjectProperty,pawn,4,bare,,no Context,7,SquadAIBasic.AddEnemy SquadAIBasic.AddSafeEnemy SquadAIBasic.RemoveSafeEnemy
+ObjectProperty,playerreplicationinfo,2,bare,,no Context,7,GameReplicationInfo.Timer
+ObjectProperty,playerreplicationinfo,2,context,8,static,1,PlayerController.ClientUpdateFlagHolder
+ObjectProperty,puzzlemover,5,bare,,no Context,35,PuzzleTrigger.PostBeginPlay PuzzleTrigger.NotifyPuzzleTrigger_Activated PuzzleTrigger.NotifyPuzzleTrigger_Deactivated
+ObjectProperty,reachspec,8,bare,,no Context,1,JumpDest.GetPathIndex
+ObjectProperty,reetou,2,bare,,no Context,10,ReetouDeviceAmmo.ReetouAttack
+ObjectProperty,sgc_securitydoor,2,bare,,no Context,11,SGC_SecurityReader.UsedBy SGC_SecurityReader.PostBeginPlay
+ObjectProperty,sound,16,bare,,no Context,6,TeamVoicePack.SetOrderMessage TeamVoicePack.SetClientOrderMessage TeamVoicePack.SetFFireMessage
+ObjectProperty,sound,2,bare,,no Context,3,StargatePawn.PlayTakeHit StargatePawn.PlayDyingSound GoauldDrone.PlayTakeHit
+ObjectProperty,sound,3,bare,,no Context,10,Weapon.PlayFireSound Projectile.PostBeginPlay Projectile.BlowUp
+ObjectProperty,sound,32,bare,,no Context,4,TeamVoicePack.SetOtherMessage TeamVoicePack.SetClientOtherMessage TeamVoicePack.SetTauntMessage
+ObjectProperty,sound,4,bare,,no Context,6,TeamVoicePack.SetAckMessage TeamVoicePack.SetClientAckMessage TeamVoicePack.ClientInitialize
+ObjectProperty,sound,8,bare,,no Context,13,TeamVoicePack.Timer TeamVoicePack.SetAckMessage TeamVoicePack.SetClientAckMessage
+ObjectProperty,sound,max_spawn_sounds,bare,,no Context,2,StaffWeaponProjectile.PlayNormalSpawnSound
+ObjectProperty,speech,4,bare,,no Context,4,StargateVoicePack.GetFreeSpeech StargateVoicePack.Init
+ObjectProperty,staticmesh,2,bare,,no Context,3,StationaryWeapons.SetTeam DestroyableObjective.TakeDamage
+ObjectProperty,staticmesh,4,bare,,no Context,2,AlkeshEngine.SetEngineIdx
+ObjectProperty,surface,32,bare,,no Context,3,SurfaceInfo.Cleanup SurfaceInfo.InitSurface SurfaceInfo.SetSurface
+ObjectProperty,texture,3,bare,,no Context,2,GameReplicationInfo.UpdatePrecacheMaterials GameReplicationInfo.TeamSymbolNotify
+ObjectProperty,texture,4,bare,,no Context,1,UT_SpriteSmokePuff.BeginPlay
+ObjectProperty,transportringmesh,5,bare,,no Context,21,TransportRings.PostBeginPlay TransportRings.Destroyed TransportRings.RingsMove
+ObjectProperty,uiwidget,4,bare,,no Context,14,HitEffectManager.Init HitEffectManager.SetDrawIcon HitEffectManager.Reset
+ObjectProperty,unrealscriptedsequence,16,bare,,no Context,5,SnipingVolume.Touch SnipingVolume.AddDefensePoint
+ObjectProperty,unrealteaminfo,,context,12,type not joined,2,TeamDeathMatch.InitTeams StoryModeGame.InitTeams
+ObjectProperty,unrealteaminfo,2,bare,,no Context,48,TeamDeathMatch.InitTeams CTFGame.ScoreFlag TeamDeathMatch.TeamIDLookup
+ObjectProperty,unrealteaminfo,2,context,8,static,2,GameObjective.DisableObjective GameObjective.Timer
+ObjectProperty,unrealteaminfo,3,bare,,no Context,41,StoryModeGame.LoadSaveGameInfo StoryModeGame.InitTeams StoryModeGame.TeamIDLookup
+ObjectProperty,unrealteaminfo,3,context,12,static,2,BotLite.PostBeginPlay StoryModeGame.LoadSaveGameInfo
+ObjectProperty,uwindowcheckbox,14,bare,,no Context,24,UGraphStaticMeshPage.Change UGraphStaticMeshPage.Notify UGraphStaticMeshPage.Initialized
+ObjectProperty,uwindowcheckbox,15,bare,,no Context,24,UGraphHardware2Page.Change UGraphHardware2Page.Notify UGraphHardware2Page.Initialized
+ObjectProperty,uwindowcheckbox,16,bare,,no Context,48,UGraphHardwarePage.Change UGraphHardwarePage.Notify UGraphHardwarePage.Initialized
+ObjectProperty,uwindowcheckbox,2,bare,,no Context,48,UGraphLightMapPage.Change UGraphLightMapPage.Notify UGraphLightMapPage.Initialized
+ObjectProperty,uwindowcheckbox,3,bare,,no Context,120,UGraphStencilPage.Change UGraphStencilPage.Notify UGraphStencilPage.Initialized
+ObjectProperty,uwindowcheckbox,4,bare,,no Context,96,UGraphTerrainPage.Change UGraphTerrainPage.Notify UGraphTerrainPage.Initialized
+ObjectProperty,uwindowcheckbox,6,bare,,no Context,48,UGraphGame2Page.Change UGraphGame2Page.Notify UGraphGame2Page.Initialized
+ObjectProperty,uwindowcheckbox,7,bare,,no Context,24,UGraphMeshPage.Change UGraphMeshPage.Notify UGraphMeshPage.Initialized
+ObjectProperty,uwindowcheckbox,8,bare,,no Context,24,UGraphVisibilityPage.Change UGraphVisibilityPage.Notify UGraphVisibilityPage.Initialized
+ObjectProperty,uwindowcheckbox,9,bare,,no Context,48,UGraphNetPage.Change UGraphNetPage.Notify UGraphNetPage.Initialized
+ObjectProperty,uwindoweditcontrol,14,bare,,no Context,11,UGraphStaticMeshPage.Change UGraphStaticMeshPage.Notify UGraphStaticMeshPage.Initialized
+ObjectProperty,uwindoweditcontrol,15,bare,,no Context,11,UGraphHardware2Page.Change UGraphHardware2Page.Notify UGraphHardware2Page.Initialized
+ObjectProperty,uwindoweditcontrol,16,bare,,no Context,22,UGraphHardwarePage.Change UGraphHardwarePage.Notify UGraphHardwarePage.Initialized
+ObjectProperty,uwindoweditcontrol,2,bare,,no Context,22,UGraphLightMapPage.Change UGraphLightMapPage.Notify UGraphLightMapPage.Initialized
+ObjectProperty,uwindoweditcontrol,3,bare,,no Context,55,UGraphStencilPage.Change UGraphStencilPage.Notify UGraphStencilPage.Initialized
+ObjectProperty,uwindoweditcontrol,4,bare,,no Context,44,UGraphTerrainPage.Change UGraphTerrainPage.Notify UGraphTerrainPage.Initialized
+ObjectProperty,uwindoweditcontrol,6,bare,,no Context,22,UGraphGame2Page.Change UGraphGame2Page.Notify UGraphGame2Page.Initialized
+ObjectProperty,uwindoweditcontrol,7,bare,,no Context,11,UGraphMeshPage.Change UGraphMeshPage.Notify UGraphMeshPage.Initialized
+ObjectProperty,uwindoweditcontrol,8,bare,,no Context,11,UGraphVisibilityPage.Change UGraphVisibilityPage.Notify UGraphVisibilityPage.Initialized
+ObjectProperty,uwindoweditcontrol,9,bare,,no Context,22,UGraphNetPage.Change UGraphNetPage.Notify UGraphNetPage.Initialized
+ObjectProperty,uwindowlabelcontrol,14,bare,,no Context,4,UGraphStaticMeshPage.Initialized
+ObjectProperty,uwindowlabelcontrol,15,bare,,no Context,4,UGraphHardware2Page.Initialized
+ObjectProperty,uwindowlabelcontrol,16,bare,,no Context,8,UGraphHardwarePage.Initialized UGraphGamePage.Initialized
+ObjectProperty,uwindowlabelcontrol,2,bare,,no Context,8,UGraphLightMapPage.Initialized UGraphFramePage.Initialized
+ObjectProperty,uwindowlabelcontrol,3,bare,,no Context,20,UGraphStencilPage.Initialized UGraphMiscGamePage.Initialized UGraphFluidPage.Initialized
+ObjectProperty,uwindowlabelcontrol,4,bare,,no Context,16,UGraphTerrainPage.Initialized UGraphProjectorPage.Initialized UGraphParticlePage.Initialized
+ObjectProperty,uwindowlabelcontrol,6,bare,,no Context,8,UGraphGame2Page.Initialized UGraphBSPPage.Initialized
+ObjectProperty,uwindowlabelcontrol,7,bare,,no Context,4,UGraphMeshPage.Initialized
+ObjectProperty,uwindowlabelcontrol,8,bare,,no Context,4,UGraphVisibilityPage.Initialized
+ObjectProperty,uwindowlabelcontrol,9,bare,,no Context,8,UGraphNetPage.Initialized UGraphKarmaPage.Initialized
+ObjectProperty,uwindowlookandfeel,20,bare,,no Context,6,UWindowRootWindow.GetLookAndFeel
+StrProperty,,,bare,,no Context,6,ExtendedConsole.KeyEvent WarpZoneInfoTimed.NextDest
+StrProperty,string,10,bare,,no Context,16,TournamentConsole.ConnectWithPassword UDebugOpenCW.OpenURL UDebugOpenCW.Initialized
+StrProperty,string,14,bare,,no Context,7,UGraphStaticMeshPage.Change UGraphStaticMeshPage.Initialized
+StrProperty,string,15,bare,,no Context,7,UGraphHardware2Page.Change UGraphHardware2Page.Initialized
+StrProperty,string,16,bare,,no Context,35,Console.KeyEvent GUIStyles.Initialize TeamVoicePack.SetOrderMessage
+StrProperty,string,2,bare,,no Context,24,Vehicle.PlayTeleportEffect Security.Perform Security.Timer
+StrProperty,string,3,bare,,no Context,37,LevelGameRules.GetRoster UGraphStencilPage.Change UGraphStencilPage.Initialized
+StrProperty,string,32,bare,,no Context,4,TeamVoicePack.SetOtherMessage TeamVoicePack.SetClientOtherMessage TeamVoicePack.SetTauntMessage
+StrProperty,string,4,bare,,no Context,43,TeamInfo.GetHumanReadableName PlayerController.AllowTextMessage PlayerController.ClearProgressMessages
+StrProperty,string,4,context,0,static,4,HUD.DisplayProgressMessages
+StrProperty,string,6,bare,,no Context,14,UGraphGame2Page.Change UGraphGame2Page.Initialized UGraphBSPPage.Change
+StrProperty,string,64,bare,,no Context,6,Console.StartRollingDemo WindowConsole.Message WindowConsole.CreateRootWindow
+StrProperty,string,7,bare,,no Context,7,UGraphMeshPage.Change UGraphMeshPage.Initialized
+StrProperty,string,750,bare,,no Context,7,UWindowTextAreaControl.Paint UWindowWrappedTextArea.Paint UWindowTextAreaControl.Clear
+StrProperty,string,8,bare,,no Context,12,WarpZoneInfo.Trigger WarpZoneInfo.PreBeginPlay UGraphVisibilityPage.Change
+StrProperty,string,8,context,0,static,2,UnrealPawn.AddDefaultInventory
+StrProperty,string,9,bare,,no Context,16,HUD.LoadFont UGraphNetPage.Change UGraphNetPage.Initialized
+StructProperty,,,bare,,no Context,30,UDebugBlueLookAndFeel.Combo_SetupSizes UDebugBlueLookAndFeel.Editbox_SetupSizes UDebugBlueLookAndFeel.ControlFrame_SetupSizes
+StructProperty,beaconinfo,32,bare,,no Context,13,ClientBeaconReceiver.ReceivedText ClientBeaconReceiver.Timer ClientBeaconReceiver.GetBeaconText
+StructProperty,cachedladderdata,17,bare,,no Context,17,GUIController.ClearLadderCache GUIController.LadderQueryComplete GUIController.ShowLadderData
+StructProperty,cachedrungdata,17,bare,,no Context,16,GUIController.ClearRungCache GUIController.RungQueryComplete GUIController.FindRungDataIndex
+StructProperty,color,4,bare,,no Context,2,PlayerController.ClearProgressMessages PlayerController.SetProgressMessage
+StructProperty,color,4,context,16,static,1,HUD.DisplayProgressMessages
+StructProperty,color,5,context,20,static,1,GUIScrollBar.createParts
+StructProperty,consolemessage,8,bare,,no Context,17,HUD.DisplayMessages HUD.AddTextMessage
+StructProperty,difficultylevel,4,bare,,no Context,4,StoryModeGame.GetBotSkillScale StoryModeGame.GetBotHealthScale StoryModeGame.GetPlayerShieldScale
+StructProperty,hudlocalizedmessage,10,bare,,no Context,144,GoauldConsoleHud.DrawHUD GoauldConsoleHud.Timer GoauldConsoleHud.LocalizedMessage
+StructProperty,pieceoffsetstruct,10,bare,,no Context,8,CrystalTunnelLayer.PostBeginPlay CrystalTunnelLayer.NotifyPieces
+StructProperty,region,4,bare,,no Context,24,UWindowWin95LookAndFeel.Combo_SetupSizes UWindowWin95LookAndFeel.Editbox_SetupSizes
+StructProperty,region,4,context,64,static,41,UWindowWindow.DrawMiscBevel UWindowProgressBar.Paint
+StructProperty,rotator,24,bare,,no Context,3,Mover.InterpolateTo Mover.SetKeyframe Mover.BeginPlay
+StructProperty,rotator,3,bare,,no Context,1,HaakenPod.CreateDoors
+StructProperty,squaditemstruct,4,bare,,no Context,68,SquadMenu.PostRender SquadMenu.UpdateSquad SquadMenu.Destroyed
+StructProperty,vector,16,bare,,no Context,5,SGFormation.GetViewPointFor SGFormation.GetLocationFor SGFormation.GetOffsetFor
+StructProperty,vector,16,context,192,static,1,StoryModeGame.AddSquadFromSpawner
+StructProperty,vector,17,bare,,no Context,6,WillowWhisp.StartNextPath WillowWhisp.PostBeginPlay
+StructProperty,vector,2,bare,,no Context,14,StaffWeaponAttachment.DoCheckMeleeDashColDet StaffWeaponAttachment.DoCheckMeleeSwingColDet AttachmentRepAcidJet.GetEffectStart
+StructProperty,vector,24,bare,,no Context,3,Mover.InterpolateTo Mover.SetKeyframe Mover.BeginPlay
+StructProperty,vector,3,bare,,no Context,1,HaakenPod.CreateDoors
+StructProperty,vector,4,bare,,no Context,3,HitEffectManager.Init
+StructProperty,vector,5,bare,,no Context,2,KVehicle.SpecialCalcView
+StructProperty,vector,8,bare,,no Context,8,JumpDest.SpecialCost JumpDest.DoJump JumpDest.SuggestMovePreparation
