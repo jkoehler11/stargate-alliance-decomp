@@ -726,16 +726,27 @@ def _operators():
             for r in csv.DictReader(fh):
                 decl = (r.get("declaration") or "").strip()
                 token = (r.get("native_token") or "").strip()
-                if not token.isdigit():
-                    continue
                 m = re.match(r"^.*?\boperator\((\d+)\)\s+([A-Za-z<>]+)\s+(\S+?)\s*"
                              r"\(\s*((?:out\s+|skip\s+|coerce\s+|optional\s+|const\s+)*)([A-Za-z<>]+)\s+\w+\s*,\s*"
                              r"((?:out\s+|skip\s+|coerce\s+|optional\s+|const\s+)*)([A-Za-z<>]+)\s+\w+\s*\)", decl)
                 if m:
                     prec, ret, sym = int(m.group(1)), m.group(2).lower(), m.group(3)
                     a, b = m.group(5).lower(), m.group(7).lower()
-                    OPERATORS[(sym, a, b)] = (int(token), ret)
+                    if token.isdigit():
+                        OPERATORS[(sym, a, b)] = (int(token), ret)
+                    else:
+                        # An operator declared with **no index** has no opcode at all, and the compiler writes an
+                        # ordinary `FinalFunction` on the operator's own record -- the same node a native with no
+                        # slot gets, not the token path. `Object.uc`'s
+                        # `native static final operator(24) bool ClockwiseFrom( int A, int B )` is the one this
+                        # corpus spells, and `ScriptedController.SetFireYaw`'s
+                        # `if ( FireYaw ClockwiseFrom Rotation.Yaw )` is `1c c5 04 00 47 01 ... 16` -- a
+                        # `FinalFunction` to import -261 (`ClockwiseFrom_IntInt`), which is why looking for an
+                        # opcode could never find one.
+                        OP_FN[(sym, a, b)] = ((r.get("composed") or "").strip(), ret)
                     OPERATOR_PREC.setdefault(sym, prec)
+                    continue
+                if not token.isdigit():
                     continue
                 mu = re.match(r"^.*?\b(?P<form>pre|post)?operator\s+([A-Za-z<>]+)\s+(\S+?)\s*"
                               r"\(\s*((?:out\s+|skip\s+|coerce\s+|optional\s+|const\s+)*)([A-Za-z<>]+)\s+\w+\s*\)", decl)
@@ -750,6 +761,7 @@ def _operators():
 OPERATORS = {}
 OPERATOR_PREC = {}
 OP_SPELLING = {}
+OP_FN = {}
 ALL_CLASS_NAMES = set()
 UNARY = {}
 SOLE_ROWS = {}
@@ -770,7 +782,25 @@ def _op_spelling():
         for (sym, _a, _b) in _operators():
             if sym[:1].isalpha():
                 OP_SPELLING.setdefault(sym.lower(), sym)
+        # A no-index operator is not in `OPERATORS` at all, so the spelling map has to be seeded from its own table
+        # too: `if ( yaw clockwisefrom other )` in a body whose author spelled it in lower case would otherwise look
+        # up the pair under `clockwisefrom` and miss the `ClockwiseFrom` row.
+        for (sym, _a, _b) in _operator_fn():
+            if sym[:1].isalpha():
+                OP_SPELLING.setdefault(sym.lower(), sym)
     return OP_SPELLING
+
+
+def _operator_fn():
+    """`{(symbol, A type, B type): the operator's own record name}` for the operators declared with **no index**.
+
+    Three declarations in `inventory/native_operators.csv` spell no `native(NNN)` at all -- `ClockwiseFrom`,
+    `string *` and `string *=` -- and a compiler given no slot writes an ordinary call to the record instead of an
+    opcode (`ScriptedController.SetFireYaw`'s `1c c5 04`). The record's own name is the table's `composed` column
+    (`ClockwiseFrom_IntInt`), which is also the name the package's import table carries.
+    """
+    _operators()
+    return OP_FN
 
 
 def _sole_rows():
@@ -869,6 +899,11 @@ def _operator_types(expr, env, site="", root=False):
     if not left or not right:
         return None
     t1, t2 = _type_of(left, env).lower(), _type_of(right, env).lower()
+    # An operand whose declared type is an **enum's own name** is stored in a byte (`_enum_byte`), and the pair is
+    # looked up on the promoted type like any other byte. `StargatePawn.PlayWaiting`'s
+    # `Controller.GetAggroLevel() != AGGRO_High` refused as `(eaggrolevel != byte)` for want of that mapping, and
+    # the same mapping is what `_operand` needs to write the `39 3a` (`ByteToInt`) around the call.
+    t1, t2 = _enum_byte(t1, env), _enum_byte(t2, env)
     n1, n2 = _numeric(t1, env), _numeric(t2, env)
     if not (t1 and t2):
         # A side the walk cannot type on a **one-row** symbol: `&&`/`||`/`^^` install one row each, so the symbol
@@ -886,6 +921,11 @@ def _operator_types(expr, env, site="", root=False):
         if hit is not None:
             token, ret = hit
             return sym, a, b, ret, token, at
+        fn = _operator_fn().get((sym, a, b))
+        if fn is not None:
+            # A no-index operator has no token at all; `_emit_operator` writes the record the table names, and the
+            # result type is still the declaration's (`bool` for `ClockwiseFrom`).
+            return sym, a, b, fn[1], None, at
     # `int` against `float`: the table installs the `(float, float)` row and the compiler wraps the int operand in
     # a `PrimitiveCast` -- `Pickup.BotDesireability`'s `RespawnTime < 10` is `b0 01 72 09 39 3f 2c 0a 16`, an
     # `IntConstByte 10` behind `IntToFloat`. That row is the row for a **literal** on the int side, because a
@@ -967,6 +1007,16 @@ def _numeric(t, env=None):
         return "object"
     if env and t and (t in (env.get("class_names") or set()) or t in _all_class_names()):
         return "object"
+    if env and t:
+        # A class the body's **own package imports** is a class even when no shipped package declares it. `Font`
+        # and `Viewport` are the engine's native classes: `Engine.u` and `GUI.u` each carry
+        # `Font <- Class <- Core` in their import tables, and the class census -- which is built from the export
+        # tables -- has no row for either, so `HUD.LargerFontThan`'s `LoadFontStatic(i) != aFont` and
+        # `GUIController.AddChildViewport`'s comparison refused as `(font == object)` / `(viewport == object)`
+        # while `EqualEqual_ObjectObject` sat in the table. The import's own class field is the evidence, and it
+        # is per package, so this answers only where the name is actually visible.
+        if any(kind == "Class" for _ref, kind in (env.get("imports") or {}).get(t, [])):
+            return "object"
     return t
 
 
@@ -1670,6 +1720,10 @@ def _operand(part, want, rettype, env, inner):
     operator nor the site decides it, so it is not modelled.
     """
     own = _type_of(part, env).lower()
+    # An enum's own name is the byte it is stored in (`_enum_byte`), and the cast is keyed on the *storage* type:
+    # `byte` promoted to `int` is `39 3a`, so `GetAggroLevel() != AGGRO_High` writes the call behind `ByteToInt`
+    # exactly as the enum-typed read does. Without this the key is the enum's name and no slot exists.
+    own = _enum_byte(own, env)
     src = own
     if not want or src == want:
         return None
@@ -1755,7 +1809,22 @@ def _emit_operator(expr, rettype, env, root=False):
     if op is None:
         raise Refused("a compound expression, which needs the statement walk")
     sym, t1, t2, result, token, at = op
+    head = None
     if not token:
+        fn = _operator_fn().get((sym, t1, t2)) or _operator_fn().get(
+            (sym, _numeric(t1, env), _numeric(t2, env)))
+        if fn:
+            # An operator declared with **no index** is not a native the VM dispatches by opcode: the compiler
+            # writes a `FinalFunction` on the operator's own record, and the record is an **import** when the
+            # declaring class lives in another package -- `ScriptedController.SetFireYaw`'s
+            # `if ( FireYaw ClockwiseFrom Rotation.Yaw )` is `1c c5 04` + the two operands + `16`, i.e.
+            # `FinalFunction -261` -> `ClockwiseFrom_IntInt` in `GamePlay.u`'s import table. The same head shape a
+            # `Super.F()` value writes for a parent's record, and the tail below is the ordinary operator node.
+            ref = next((r for r, kind in (env.get("imports") or {}).get(fn[0].lower(), []) if kind == "Function"),
+                       None)
+            if ref is not None:
+                head = bytes([0x1C]) + write_index(ref)
+    if not token and head is None:
         left, right = expr[:at], expr[at + 1:]
         if sym in ("==", "!=") and t1 and t1 == t2:
             # A **struct comparison** is its own node: `0x33`/`0x32` (`StructCmpNe`/`StructCmpEq`), the struct's
@@ -1777,7 +1846,9 @@ def _emit_operator(expr, rettype, env, root=False):
     left, right = expr[:at], expr[at + 1:]
     if _is_literal(left) and _is_literal(right):
         raise Refused("an operator whose two operands are literals, which the compiler folds")
-    if 0x70 <= token <= 0xFF:
+    if head is not None:
+        pass                                   # a no-index operator's `FinalFunction` record, set above
+    elif 0x70 <= token <= 0xFF:
         head = bytes([token])
     elif token >= 0x100:
         head = bytes([0x60 + (token >> 8), token & 0xFF])
@@ -2503,6 +2574,12 @@ def _emit_member_call(obj, member, rettype, env):
         rtype = "class"
     if rtype in (env.get("class_names") or set()):
         rtype = "object"
+    # An **enum's own name** is the byte it is stored in, here as everywhere (`_enum_byte`): the size word is the
+    # width of the value the call yields, and `GetAggroLevel()` returns an `EAggroLevel`. Seven bodies refused on
+    # this one byte -- `a call member returning eaggrolevel, whose value size this walk does not carry`
+    # (`StargatePawn.PlayWaiting`, `SquadAISG.AssignSquadResponsibility`, ...) -- while the third `_enum_byte`
+    # producer (a callee's declared return) already answered `byte` for the same type.
+    rtype = _enum_byte(rtype, env)
     if rtype not in RETURN_SIZE:
         raise Refused("a call member returning %s, whose value size this walk does not carry"
                       % (rtype or "an unknown type"))
@@ -4963,6 +5040,7 @@ function Asserted() { assert(false); }
 function AssertNoLine() { assert(true); }
 function AndInt() { return Count & 2; }
 function OpNoSlot() { return Health & 2.0; }
+function bool NoIndexOp() { return Health ClockwiseFrom Health; }
 function BoolMember() { return Target.bFlag; }
 function AsRotator() { return rotator(SquadDir); }
 function string ConcatOp() { return Caption $ Suffix; }
@@ -5126,7 +5204,11 @@ ENV = {"names": {"ping": 51, "pong": 52, "say": 53, "getbox": 54, "getregion": 5
        "assert_line": 2086, "paramtypes": {}, "enum_consts": {"erenderstyle": {"sty_normal": 1}},
        "within_proptypes": {},
        # the source-side `class<Z>` table: a local's declared target class, which the class table does not carry
-       "classreftypes": {"cls": "probe"}}
+       "classreftypes": {"cls": "probe"},
+       # the package's own import table: `{name: [(negative ref, kind)]}`. A no-index operator's record is an
+       # import (`-261` is `ClockwiseFrom_IntInt` in GamePlay.u), and a name imported **as a `Class`** is a class
+       # the class census has no row for (`Font`, `Viewport`, `StaticMesh`).
+       "imports": {"clockwisefrom_intint": [(-261, "Function")], "font": [(-37, "Class")]}}
 
 # `Pong` is a record of *both* classes: the receiver's chain picks the one `TargetH` holds, which is the `helper`
 # spelling with no parameters.
@@ -5312,6 +5394,11 @@ WANT = {
     # `0f 37 01 7d 01 25` and `Recipients.Length = 0;` `0f 37 01 4a 03 25 04 27`. The property is export 700
     # (`7c 0a`), written by the same index the target's read uses.
     "setlength": "0f37017c0a25040b47",
+    # `Health ClockwiseFrom Health` is an operator declared with **no index**, so the compiler writes a
+    # `FinalFunction` on the record instead of an opcode: `ScriptedController.SetFireYaw` ships
+    # `1c c5 04 | 00 47 01 | ... | 16`, and `-261` is `ClockwiseFrom_IntInt` in that package's import table. A
+    # rule that guessed an opcode here would emit a wrong body that still walks, which is why this one is pinned.
+    "noindexop": "041cc504016e04016e0416" "040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.

@@ -1986,3 +1986,67 @@ to die at the intrinsic now reach their element reads, and the bare-name receive
 `ByteToInt`, `Items.Length = 0;`, `Songs = Others;` -- the array-member `Context`, and two refusals (`Items.Find(0)`,
 a name this build has no token for, and a one-argument `Insert`). The synthetic `setlength` body, which was a
 *refusal* case, moves to the positive table: the rule it was pinning as unmodelled is the one this read measured.
+
+## Stage 3, continued -- an enum's size byte, a class the packages only import, and the operator that is a call (measured 2026-11-25)
+
+The operator-pair section above left four families and named them; this read takes three of them, and each one is the
+*same* rule the previous section applied, found one place further along the walk. The fourth -- `(font == object)`,
+where the class the lookup did not know is imported by the package rather than declared by it -- is the one that needed
+the packages' own import tables instead of the class census.
+
+1. **An enum's own name is a byte at the `Context` size word too.** `_enum_byte` answered `byte` at three producers
+   (a record's declared type, a bare call's return, a callee's return) and the pair then promoted it to `int` with
+   `39 3a`. Two more producers were missing, and both are on the *same* node: the `Context` size byte a member call
+   writes (`_emit_member`) and the operand types the pair is looked up under (`_operator_types`, whose key also reaches
+   `_operand`'s cast). `StargatePawn.PlayWaiting`'s `Controller.GetAggroLevel() != AGGRO_High` is
+   `19 01 99 05 00 01 1b ... 39 3a` -- the call's **value size is 1**, then `ByteToInt` -- and with only the three
+   earlier producers in place it refused twice in a row: first as
+   `a call member returning eaggrolevel, whose value size this walk does not carry`, then, with the size word
+   answered, as `an operator the image's table does not install (eaggrolevel != byte)`. Eight bodies were refused on
+   the size word alone (`eaggrolevel` 7, `estreamplaylisttype` 1); six of them now emit and are byte-identical, and
+   `StreamPlaylistManager.ImportPlaylist` is the `estreamplaylisttype` one.
+
+2. **A class the package only *imports* is a class.** `Font` and `Viewport` are the engine's native classes: no
+   shipped `.u` declares them, so `inventory/classes.csv` (built from the export tables) has no row, and
+   `HUD.LargerFontThan`'s `LoadFontStatic(i) != aFont` read `(font, object)`, `GUIController.AddChildViewport`'s
+   `Viewport == None` read `(viewport, object)` -- pairs the table has no row for while `EqualEqual_ObjectObject`
+   sat in it. The evidence is the import table: `Engine.u` carries `Font <- Class <- Engine` (-37), `GUI.u` carries
+   `Viewport <- Class <- Engine` (-66), `StargateContent.u` carries `StaticMesh <- Class <- Engine` (-353). An import
+   whose own class field is `Class` says exactly what the census said for the classes it carries, and it is per
+   package, so the rule answers only where the name is visible. Six rows: three bodies gained
+   (`HUD.LargerFontThan`, `GUIFont.LoadFont`, `DestructableActor.TakeDamage`'s `(staticmesh != object)`).
+
+3. **An operator declared with no index is a call, not an opcode.** `Object.uc` spells
+   `native static final operator(24) bool ClockwiseFrom( int A, int B )` with no slot at all, and the compiler given
+   no slot writes an ordinary `FinalFunction` on the operator's own record:
+   `ScriptedController.SetFireYaw`'s `if ( FireYaw ClockwiseFrom Rotation.Yaw )` is
+   `1c c5 04 | 00 47 01 | ... | 16` -- `FinalFunction -261`, i.e. `ClockwiseFrom_IntInt` in `GamePlay.u`'s import
+   table (import 260). Looking for an opcode could never find one, which is why the row stayed refused with the token
+   column blank in `inventory/native_operators.csv`; the table's `composed` column names the record, and the import
+   index is the same one a `Super.F()` value resolves. The body is byte-identical. Two more no-index declarations
+   (`string *`, `string *=`) take the same path and no body in the corpus spells them.
+
+The measured effect: **10,313 -> 10,323 modelled bodies, every one byte-identical, 0 differ**, residue 1,365 -> 1,355,
+no body lost and **no body refuses that did not before**; `inventory/uscript_emit_join.csv` regenerates byte-identically,
+so the walk the census rides on has not moved. Five bodies moved *past* their pair to a deeper refusal rather than
+landing: the three `GUIController` viewport rows now stop at a delegate call through a receiver
+(`AddChildViewport`, `RemoveChildViewport`) and at a member the receiver's class does not declare
+(`GetPlayerController`), `GoauldKillerDroidMeleeAmmo.ProcessTraceHit` at a member call statement, and
+`StargatePawn.EndCrouch` at an emitted body that differs -- 354 bytes against 354, first differing offset **173**, a
+`Context` size byte of **8** where this walk writes **4**:
+
+```
+theirs  19 2e 09 01 a5 05 00 08 01 63 21 ...
+ours    19 2e 09 01 a5 05 00 04 01 63 21 ...
+```
+
+That node is `StargateWeapon(Weapon).RegularMovementAnims[1]`: the `Context` wraps the array **property read** and the
+`ArrayElement` above it selects element 1, so the size written is the *element*'s (a `name`, 8) and not the array's
+(`PROP_SIZE["array"]` is 0, measured on `.Length` in the section above). That is the next instrument: which width an
+array read writes when a subscript consumes it, measured against the corpus's `ArrayElement` nodes rather than guessed
+at from this one body.
+
+`--check` grows one synthetic body: `Health ClockwiseFrom Health` with the record in the test package's import table
+(`-261`), because a rule that guessed an opcode for a no-index operator would emit a wrong body that still walks. The
+other two rules are pinned by the bodies they emitted byte-identically, which is the stronger evidence: an enum's size
+word and a class the package only imports have no synthetic equivalent that the corpus does not already state.
