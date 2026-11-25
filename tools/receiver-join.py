@@ -48,7 +48,7 @@ FAMILIES = {
     "a member that is not a property of the receiver's class": "member read",
 }
 
-FIELDS = ["family", "where", "bodies", "examples"]
+FIELDS = ["family", "where", "why", "bodies", "examples"]
 DOC_A = ("<!-- BEGIN receiver-join -->", "<!-- END receiver-join -->")
 
 # `where` verdicts, in the order the render lists them.
@@ -118,7 +118,14 @@ def bucket(nm, chain, funcs, props, read=False):
 
 
 def classify(rows, chain_of, funcs, props):
-    """The (family, where) counter and the examples, from residue rows and a chain lookup."""
+    """The (family, where, why) counter and the examples, from residue rows and a chain lookup.
+
+    A **member** family whose receiver class the walk never named is not asked against a chain: there was no chain
+    to ask, and bucketing such a row against the empty one put 232 member reads in `off-chain` that share no
+    inheritance story at all -- 223 of them the member sits on a class nowhere near the body. Such a row is
+    `unnamed`, and the emitter's own `why` is what becomes the cell. The bare-call family has no receiver by
+    construction and always walks the body's own chain.
+    """
     out = collections.Counter()
     ex = collections.defaultdict(list)
     for r in rows:
@@ -127,26 +134,26 @@ def classify(rows, chain_of, funcs, props):
             continue
         nm = (r.get("member") or "").lower()
         recv = (r.get("receiver") or "").lower()
+        why = r.get("why") or ""
         if not nm:
-            out[(fam, "undeclared")] += 1
+            out[(fam, "undeclared", why)] += 1
             continue
-        if fam == "member call, no receiver class":
-            # the receiver's class is what was missing, so the emitter's own reason is the verdict
-            out[(fam, "unnamed")] += 1
-            ex[(fam, "unnamed")].append("%s.%s" % (r["class"], r["function"]))
+        if fam != "bare call" and not recv:
+            out[(fam, "unnamed", why)] += 1
+            ex[(fam, "unnamed", why)].append("%s.%s" % (r["class"], r["function"]))
             continue
         chain = chain_of(recv) if recv else chain_of("")
         where = bucket(nm, chain, funcs, props, read=(fam == "member read"))
-        out[(fam, where)] += 1
-        ex[(fam, where)].append("%s.%s" % (r["class"], r["function"]))
+        out[(fam, where, why)] += 1
+        ex[(fam, where, why)].append("%s.%s" % (r["class"], r["function"]))
     return out, ex
 
 
 def rows_of(counter, ex):
     rows = []
-    for (fam, where), n in sorted(counter.items()):
-        rows.append({"family": fam, "where": where, "bodies": str(n),
-                     "examples": " ".join(ex[(fam, where)][:3])})
+    for (fam, where, why), n in sorted(counter.items()):
+        rows.append({"family": fam, "where": where, "why": why, "bodies": str(n),
+                     "examples": " ".join(ex[(fam, where, why)][:3])})
     return rows
 
 
@@ -156,11 +163,14 @@ def render(rows, census):
         if r["family"] not in fams:
             fams.append(r["family"])
     total = sum(int(r["bodies"]) for r in rows)
-    by = {(r["family"], r["where"]): int(r["bodies"]) for r in rows}
+    by = collections.Counter()
+    for r in rows:
+        by[(r["family"], r["where"])] += int(r["bodies"])
     lines = []
-    lines.append("**%d refused bodies over the four receiver families, joined to the corpus's own declarations** "
-                 "(`inventory/emit_receiver_join.csv`; %d modelled of %d walked, so the join is over the residue and "
-                 "not over the corpus)." % (total, census.get("modelled", 0), census.get("walked", 0)))
+    lines.append("**{:,} refused bodies over the four receiver families, joined to the corpus's own "
+                 "declarations** (`inventory/emit_receiver_join.csv`; {:,} modelled of {:,} walked, so the join is "
+                 "over the residue and not over the corpus).".format(
+                     total, census.get("modelled", 0), census.get("walked", 0)))
     lines.append("")
     lines.append("| family | refusals | on the chain | only in a state | off the chain | undeclared | "
                  "no receiver class |")
@@ -179,11 +189,37 @@ def render(rows, census):
                  "text's own invention -- `AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- which "
                  "no declaration can ever resolve, because UnrealScript has no array methods and no `super` member.")
     lines.append("")
+    lines.append("A **member** row is never bucketed against a chain the walk did not have: when `_class_of` names no "
+                 "receiver class the row is `unnamed`, and the table below is what the walk was missing. Bucketing "
+                 "those rows against the empty chain instead put 232 member reads *off* the chain -- a number the "
+                 "previous read of this page carried -- where 223 of them name a member on a class nowhere near the "
+                 "body, i.e. the verdict was the join's, not the build's. The `off-chain` and `undeclared` cells for "
+                 "the member families are what is left when the receiver really was named.")
+    lines.append("")
     lines.append("| family | where | bodies | examples |")
     lines.append("|---|---|---|---|")
     for r in rows:
+        if r["where"] == "unnamed":
+            # the why table below is this population's detail; a row here would repeat its family six times
+            # with no column to tell the rows apart
+            continue
         lines.append("| %s | %s | %s | %s |" % (r["family"], r["where"], r["bodies"],
                                                 ", ".join("`%s`" % e for e in r["examples"].split()[:3]) or "-"))
+    unnamed = collections.defaultdict(lambda: [0, ""])
+    for r in rows:
+        if r["where"] != "unnamed":
+            continue
+        cell = unnamed[r["why"] or "(not recorded)"]
+        cell[0] += int(r["bodies"])
+        if not cell[1]:
+            cell[1] = r["examples"]
+    if unnamed:
+        lines.append("")
+        lines.append("| what the walk was missing | refusals | examples |")
+        lines.append("|---|---|---|")
+        for why, (n, exa) in sorted(unnamed.items(), key=lambda kv: (-kv[1][0], kv[0])):
+            lines.append("| %s | %d | %s |" % (why, n,
+                                              ", ".join("`%s`" % e for e in exa.split()[:2]) or "-"))
     return "\n".join(lines)
 
 
@@ -203,7 +239,9 @@ def emit_census(path):
         return {}
     with open(path, newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
-            if r.get("class") == "(census)":
+            # The emitter writes the marker in `package`, not `class`: read there, or the page's headline says
+            # "0 modelled of 0 walked" beside an artifact whose census row carries 9,479 of 11,687.
+            if r.get("class") == "(census)" or r.get("package") == "(census)":
                 return {"modelled": int(r["ours"]), "walked": int(r["walked"])}
     return {}
 
@@ -247,17 +285,25 @@ def self_check():
             {"reason": "a member that is not a property of the receiver's class",
              "member": "remove", "receiver": "pawn", "class": "Probe", "function": "C"},
             {"reason": "a call statement whose receiver's class the artifacts do not name",
-             "member": "walking", "receiver": "", "class": "Probe", "function": "D"}]
+             "member": "walking", "receiver": "", "class": "Probe", "function": "D"},
+            # a member read the walk could not name a receiver for: no chain was ever asked, so it is `unnamed`
+            # with its own reason, never a bucket on an empty chain
+            {"reason": "a member that is not a property of the receiver's class",
+             "member": "health", "receiver": "", "class": "Probe", "function": "E",
+             "why": "an element of an array the artifacts do not type"}]
     # the bare call walks its own class's chain (short), the member call the receiver's (long)
     counter, ex = classify(rows, lambda c: chain_pawn if c == "pawn" else ["actor", "object"], funcs, props)
-    want = {("member call, statement", "on-chain"): 1, ("bare call", "off-chain"): 1,
-            ("member read", "undeclared"): 1, ("member call, no receiver class", "unnamed"): 1}
+    want = {("member call, statement", "on-chain", ""): 1, ("bare call", "off-chain", ""): 1,
+            ("member read", "undeclared", ""): 1, ("member call, no receiver class", "unnamed", ""): 1,
+            ("member read", "unnamed", "an element of an array the artifacts do not type"): 1}
     if dict(counter) != want:
         bad.append("classify() = %s, wanted %s" % (dict(counter), want))
     out = rows_of(counter, ex)
     block = render(out, {"modelled": 9, "walked": 11})
-    if "4 refused bodies" not in block or "| member call, statement | 1 |" not in block:
+    if "5 refused bodies" not in block or "| member call, statement | 1 |" not in block:
         bad.append("the render does not carry the families it was handed")
+    if "| an element of an array the artifacts do not type | 1 |" not in block:
+        bad.append("the render does not split the unnamed population by its reason")
     tmp = tempfile.mkdtemp()
     try:
         path = os.path.join(tmp, "emit_receiver_join.csv")
@@ -270,6 +316,15 @@ def self_check():
         back, _census = read_artifact(path)
         if render(back, {"modelled": 9, "walked": 11}) != block:
             bad.append("the render does not reproduce from the written artifact")
+        # the emitter writes its census marker in `package`; a reader keyed on `class` answers 0 of 0 and the
+        # page's headline then contradicts the artifact it quotes
+        epath = os.path.join(tmp, "uscript_emit.csv")
+        with open(epath, "w", newline="", encoding="utf-8") as fh:
+            fh.write("package,class,state,function,model,rettype,source,ours,theirs,verdict,walked,differ\n")
+            fh.write("(census),,,,census,,,9,9,modelled/identical,11,0\n")
+        got = emit_census(epath)
+        if got != {"modelled": 9, "walked": 11}:
+            bad.append("emit_census read %s from a census row written in `package`" % (got,))
     finally:
         for name in os.listdir(tmp):
             os.unlink(os.path.join(tmp, name))

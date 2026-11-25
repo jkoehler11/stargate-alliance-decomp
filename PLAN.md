@@ -239,6 +239,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the refusals whose receiver the walk could not name: **9,495 modelled / 9,495 byte-identical / 0 differ**
+      (from 9,479 / 9,479 / 0; 16 bodies gained, none lost; residue 2,199 -> 2,183). (1) **The join was bucketing
+      rows against a chain the walk never had.** The previous note's 232 "member reads off the chain" were refusals
+      whose receiver class `_class_of` never named: `classify()` then asked `bucket()` against an *empty* chain, and
+      an empty chain answers `off-chain` (or `undeclared`) for every name. With `inventory/emit_receiver_join.csv`
+      carrying the emitter's own `why` per row, a member family with no receiver class is now `unnamed` -- and the
+      real populations are **9 member reads off the chain, 1 undeclared and 28 on it**, not 232/37/28. The `why`
+      split over the 433 unnamed refusals: a bare name this body declares no type for 135, an element of an array
+      the artifacts do not type 113, a receiver chain whose member the artifacts name no class for 109, a receiver
+      shape `_class_of` does not resolve 50, a call whose declared return type the class table does not carry 19,
+      an array name whose element type the artifacts do not name 6. (2) **The page's census sentence read 0 of 0**
+      beside a 9,479-of-11,687 artifact: `emit_census()` keyed its marker on `class` while the emitter writes
+      `(census)` in `package`, so the join never saw the row; the check now drives a census row written there.
+      (3) **A `local array<T>` declaration types the element**, which is what the array-element cause was: the
+      local's element class is in its own `local` statement, `class_properties.csv` holds class properties only,
+      so `_record_kind` answered `array` and `_friendly` answered "" and `InteractionArray[Index].bActive` refused
+      with `Interaction` spelled two lines above it. `_element_type` now reads the declared word (the local walk
+      spells it `array < interaction >`, so `_array_element` normalises the brackets), and a declared `array<...>`
+      is `10` `DynamicArrayElement` whatever the package record says. Measured over the corpus: 16 bodies gained,
+      every one byte-identical, 0 differ. Not in this PR: the 109 chain-member receivers (the struct link), the
+      135 bare-name receivers, and the 19 whose receiver is a call's return type.
+      Doc: `docs/COMPILER_FRONTEND.md`, the receiver-class section corrected in place plus the unnamed table.
 - [~] 3.6 the receiver-class join: a callee the body's package has no record of is a by-name call: **9,479
       modelled / 9,479 byte-identical / 0 differ** (from 8,743 / 8,743 / 0; 736 bodies gained, none lost; residue
       2,935 -> 2,199). One rule, measured on two bodies and then on the corpus: a callee with no export, no import and

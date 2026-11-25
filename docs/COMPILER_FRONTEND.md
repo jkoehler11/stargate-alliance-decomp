@@ -1766,29 +1766,44 @@ first bare call now reach the next thing the walk does not model.
 
 The `undeclared` verdict is its own finding: the reconstructed source spells calls no declaration can ever answer --
 `AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- because UnrealScript has no array methods and no
-`super` member. Those rows are not emitter work; they are the reconstruction's own syntax.
+`super` member. Those rows are not emitter work; they are the reconstruction's own syntax. The member families carry
+almost none of them: the 37 member reads this page used to report as `undeclared`, and the 232 it called *off the
+chain*, were refusals whose receiver class the walk never named, and the join had bucketed them against the empty
+chain. What is left once the receiver really is named is 9 member reads off the chain, 1 undeclared and 28 on it.
 
 <!-- BEGIN receiver-join -->
-**629 refused bodies over the four receiver families, joined to the corpus's own declarations** (`inventory/emit_receiver_join.csv`; 0 modelled of 0 walked, so the join is over the residue and not over the corpus).
+**626 refused bodies over the four receiver families, joined to the corpus's own declarations** (`inventory/emit_receiver_join.csv`; 9,495 modelled of 11,687 walked, so the join is over the residue and not over the corpus).
 
 | family | refusals | on the chain | only in a state | off the chain | undeclared | no receiver class |
 |---|---|---|---|---|---|---|
-| bare call | 41 | 2 | 0 | 27 | 12 | 0 |
+| bare call | 42 | 2 | 0 | 27 | 13 | 0 |
 | member call, no receiver class | 174 | 0 | 0 | 0 | 0 | 174 |
 | member call, statement | 117 | 88 | 0 | 29 | 0 | 0 |
-| member read | 297 | 28 | 0 | 232 | 37 | 0 |
+| member read | 293 | 28 | 0 | 9 | 1 | 255 |
 
 A name **on the chain** and still refused is a record the body's package does not carry: the compiler writes those by *name index* (`1b <index>`), which is the rule this read added -- `TransientAmbientPawn.Died` ships `1b 41 02` for `PlayDying(HitLocation, HitDamageType)` and `ScriptedController.LeaveScripting` `19 01 8d 07 00 00 1b 39 28 16` for `Pawn.SetWalking(false)`, neither callee imported, exported or in `natives.csv` there. **Undeclared** is the reconstructed text's own invention -- `AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- which no declaration can ever resolve, because UnrealScript has no array methods and no `super` member.
+
+A **member** row is never bucketed against a chain the walk did not have: when `_class_of` names no receiver class the row is `unnamed`, and the table below is what the walk was missing. Bucketing those rows against the empty chain instead put 232 member reads *off* the chain -- a number the previous read of this page carried -- where 223 of them name a member on a class nowhere near the body, i.e. the verdict was the join's, not the build's. The `off-chain` and `undeclared` cells for the member families are what is left when the receiver really was named.
 
 | family | where | bodies | examples |
 |---|---|---|---|
 | bare call | off-chain | 27 | `PlayerController.ServerMove`, `PhysicsVolume.PawnEnteredVolume`, `Pickup.SpawnCopy` |
 | bare call | on-chain | 2 | `StargateAIMsgManager.FilterSentMsg`, `StargateAIMsgManager.FilterReceivedMsg` |
-| bare call | undeclared | 12 | `GUIImageList.internalKeyEvent`, `GUITabControl.NextControl`, `GUITabControl.PrevControl` |
-| member call, no receiver class | unnamed | 174 | `PlaylistParserBase.ParseLines`, `ScriptObject.Destroyed`, `AIMsgManager.RemoveReceivedMsg` |
+| bare call | undeclared | 11 | `GUIImageList.internalKeyEvent`, `GUITabControl.NextControl`, `GUITabControl.PrevControl` |
+| bare call | undeclared | 2 | `GUIListBox.CanAcceptInput`, `GUIListBox.CanAcceptFocus` |
 | member call, statement | off-chain | 29 | `PuzzleTrigger._ResetMovers`, `C4Mission.BeginState`, `Train.SetTrainState` |
 | member call, statement | on-chain | 88 | `SpecialEventTrigger.Trigger`, `ACTION_DamageInstigator.InitActionFor`, `SE_RandomSpawn.spawnActor` |
-| member read | off-chain | 232 | `TransientAmbientCreature.FindSpawnLocation`, `SpiralStairBuilder.BuildCurvedStair`, `Actor.DisplayDebug` |
+| member read | off-chain | 9 | `PlayerInput.PlayerInput`, `PuzzleTrigger.PostBeginPlay`, `SGC_SecurityReader.PostBeginPlay` |
 | member read | on-chain | 28 | `GUIMenuOption.InitComponent`, `GUIListBox.InitComponent`, `GUIScrollTextBox.InitComponent` |
-| member read | undeclared | 37 | `PlayerController.MakeAdmin`, `Mutator.GetServerDetails`, `MaplistManager.GetRecords` |
+| member read | undeclared | 1 | `UWindowDialogClientWindow.CreateControl` |
+
+| what the walk was missing | refusals | examples |
+|---|---|---|
+| a bare name this body declares no type for | 135 | `PlaylistParserBase.ParseLines`, `ScriptObject.Destroyed` |
+| a receiver chain whose member the artifacts name no class for | 109 | `PlayerController.HandleWalking`, `MaplistRecord.CreateMapItem` |
+| an element of an array the artifacts do not type | 106 | `MaplistManager.ResetList`, `MaplistManager.ClearList` |
+| a receiver shape `_class_of` does not resolve | 50 | `Pawn.DisplayDebug`, `Controller.SetNewTeam` |
+| a call whose declared return type the class table does not carry as a class | 19 | `ShadowProjector.PostBeginPlay`, `GUIMenuOption.MenuStateChange` |
+| an array name, whose element type the artifacts do not name | 9 | `StreamBase.ParseDirectories`, `GameReplicationInfo.GetPRIArray` |
+| `pair` is declared `gameinfo . keyvaluepair`, which is not a class the class table carries | 1 | `MaplistRecord.CreateMapOption` |
 <!-- END receiver-join -->
