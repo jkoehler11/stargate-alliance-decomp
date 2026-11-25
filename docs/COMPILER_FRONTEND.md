@@ -1302,3 +1302,53 @@ declares).
 **Not in this change.** The 17 *a receiver chain whose member is not one name* rows (`Groups[GameIndex].Records.
 Length` and its kin: a member of a member), and the struct sizes no class text carries (`Region`, `Zone`,
 `MouseCursor`, `HTMLStyle`).
+
+## Stage 3, continued -- a `Super` in a state, a struct member's bool, and `continue` (measured 2026-11-24)
+
+**7,809 -> 7,853 modelled, all 7,853 byte-identical, none lost and none changed** (44 bodies gained; every one of
+the 7,809 rows that was identical before is still identical, to the byte, and the differ bucket 96 -> 52 with **no
+new row in it**). The residue 3,869 -> 3,826. Three rules, all read off bodies the walk already reached and then
+wrote wrong -- the differ bucket is the only place a rule shows up without a refusal to hide behind.
+
+**A `Super.F()` inside a state names the state's own super: first the state it `extends`, then the parent
+class's same-state override -- and the same-state half is a *pair*, not a class.** Two spellings, one idea:
+
+| the source | the record | why the walk wrote something else |
+|---|---|---|
+| `GRENADE.ClientPreparingToFire extends PreparingToFire` calls `Super.BeginState()` | export **2073** = `GRENADE.PreparingToFire.BeginState` | the walk looked on the class parent (`StargateWeapon`) and wrote its import, -177 |
+| `UnrealPawn.Dying` calls `Super.BaseChange()` | import **-1044** = `BaseChange <- Dying <- Pawn` | the import table names the *state* as the record's owner, and the walk compared `dying` against class names, so it fell through to the class-scope import -1116 |
+
+`Import` entries carry their owner as a third field that points at another entry, and a function owned by a state
+spells the chain out: `BeginState <- Idle <- Weapon` is -1263, `BeginState <- Activated <- Armor` is -523. Reading
+only the immediate name (`idle`) can never match a class, which is why **35 bodies** wrote the class-scope import.
+`_class_tables` now keeps that owner as a `(state, class)` pair beside the bare name (`import_pairs`, because the
+bare name is what the struct-member join reads), `_record_on` resolves the record through the pair, and
+`uscript-dis.state_parents()` reads the `extends` clause from the one state-header rule (`class-text-bodies`).
+The resolution order is the measurement: state-extends -> parent's same-state (exports **and** imports) -> parent's
+class scope. 38 bodies.
+
+**A bool member of a struct is read behind `BoolVariable`.** `Weapon.AdjustAim`'s `!SavedFireProperties.bInitialized`
+is `81 2d 36 52 43 01 5a 08 16` and `BlueFlag.PostBeginPlay`'s `SimAnim.bAnimLoop = true;` is `14 2d 36 ...`: the
+`StructMember` node reads the record and the `2d` around it types the value, exactly as it does for a bool
+*property*. The walk wrote the bare `36`, which is the whole of four differences (`Weapon.AdjustAim`,
+`Controller.InstantWarnTarget`, `BlueFlag.PostBeginPlay`, `RedFlag.PostBeginPlay`). 4 bodies.
+
+**A `continue` names the loop's test node, not the loop's first byte.** `TestInfo.TestContinueWhile` writes
+`06 59 00` inside a `while` whose back-`Jump` sits at wide 0x59, and `TestInfo.TestContinueDoUntil` writes
+`06 60 00` for the `do`/`until`'s trailing `JumpIfNot` at wide 0x60. Both are the node that decides whether another
+iteration runs -- in a `while` that is the back edge (which jumps to the condition at the top), in a `do`/`until`
+the test itself -- and both spellings place it at the loop's *end*. The walk wrote the loop's start (`while`) and
+the condition's first byte (`do`/`until`), three bytes late. 2 bodies.
+
+**The gate** carries the three as controls: `whilecontinue`/`docontinue` checked structurally (the emitted loop's
+last branch node is the position the `continue` names, so the check cannot agree with a wrong constant), a bool
+struct member required to be `2d 36 <record> <read>` while its float sibling is not, and `Super.Ping()` in a state
+that extends another `(1c <export>)`, in a state whose override is an import (`(state, class)` pair), and with no
+same-state record at all (class scope). Both new body gates were corrupted deliberately and each named its row.
+
+**What is left.** The differ bucket is 52: the `2d 36` bool operand is gone, `continue` is settled, and what remains
+is the UWindow `region`/`mousecursor`/`htmlstyle` struct members (**its struct is declared in no class text**, so its
+member indices and sizes are unknown), the Editor builders' `39 3f` operand casts, `B4SParser`, `Mover`'s two
+keyframe bodies, and `TextGameInfo.InitComponent`'s one non-ASCII byte. The 34 *default chain whose member the
+receiver's class does not declare* rows are `X.Default.Y` where `X` is a `class<Z>` variable -- `PickupClass`,
+`DamageType`, `WeaponClass` -- so the member lives on `Z`, which is the next join to read.

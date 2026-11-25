@@ -2001,8 +2001,14 @@ def _emit_member(expr, rettype, env):
         if ptype not in PROP_SIZE:
             raise Refused("a struct member of type %s, whose value size this walk does not carry"
                           % (ptype or "typeless"))
-        return (_converted(bytes([0x36]) + write_index(index) + emit_expr(obj, "", env)[0], ptype, rettype),
-                "struct-member")
+        read = bytes([0x36]) + write_index(index) + emit_expr(obj, "", env)[0]
+        if ptype == "bool":
+            # A bool **member of a struct** is written behind `BoolVariable`, exactly as a bool property is: the
+            # `StructMember` node reads the record and the `2d` around it is what types the value.
+            # `!SavedFireProperties.bInitialized` is `81 2d 36 52 43 01 5a 08 16`
+            # (`Weapon.AdjustAim`) and `SimAnim.bAnimLoop = true;` is `14 2d 36 ...` (`BlueFlag.PostBeginPlay`).
+            read = bytes([0x2D]) + read
+        return (_converted(read, ptype, rettype), "struct-member")
     if token != INSTANCE_TOKEN:
         raise Refused("a member reached through a local")
     size = PROP_SIZE.get(ptype)
@@ -2750,7 +2756,7 @@ def emit_flow(node, rettype, env, pos):
         # bytes, so the extent the second pass measures is the first pass's).
         rough = emit_flow(body, rettype, dict(env, _exit={"break": None, "continue": None}), body_pos)[0]
         jump_pos = body_pos + _wide(rough)
-        bbytes, _bm, _bs = emit_flow(body, rettype, dict(env, _exit={"break": jump_pos + 3, "continue": pos}),
+        bbytes, _bm, _bs = emit_flow(body, rettype, dict(env, _exit={"break": jump_pos + 3, "continue": jump_pos}),
                                      body_pos)
         # The target is the *end of the loop*, i.e. the position after the back-jump: `Object.GetItemName` writes
         # 0x47 for a body whose `Jump` sits at 0x44 and whose next statement starts at 0x47.
@@ -2781,16 +2787,17 @@ def emit_flow(node, rettype, env, pos):
     if kind == "until":
         # `do S until (c);` = S, `JumpIfNot <S's first byte>`, c: the condition is written *after* the jump that
         # reads it, and the target is the body's own start. `Engine.TestInfo.TestContinueDoUntil` writes
-        # `07 1000` for a body that begins at wide 0x10, and the `Jump` a `continue` compiles to names the position
-        # after that `JumpIfNot` (`0x60`), which is why the condition's position is the continue target below.
+        # `07 1000` for a body that begins at wide 0x10, and the `Jump` a `continue` compiles to names that
+        # `JumpIfNot`'s own position (`0x60`) -- the loop's test node, not the condition's first byte.
         _k, cond, body = node
-        # A `continue` in a `do`/`until` names the position after the `JumpIfNot` -- the condition code -- and a
-        # `break` the position past it, so the body is emitted twice as in `while`.
+        # A `continue` in a `do`/`until` names the trailing `JumpIfNot`'s own position -- the test node -- and a
+        # `break` the position past the condition, so the body is emitted twice as in `while`.
         rough = emit_flow(body, rettype, dict(env, _exit={"break": None, "continue": None}), pos)[0]
-        cond_pos = pos + _wide(rough) + 3
+        test_pos = pos + _wide(rough)
+        cond_pos = test_pos + 3
         condb = emit_expr(cond, "bool", env)[0]
         bodyb, _bm, _bs = emit_flow(body, rettype, dict(env, _exit={"break": cond_pos + _wide(condb),
-                                                                   "continue": cond_pos}), pos)
+                                                                   "continue": test_pos}), pos)
         return bodyb + bytes([0x07]) + _off(pos) + condb, "do-until", "do-until"
     if kind == "foreach":
         # `foreach F(a) S;` = `Iterator <F(a)> <wide offset of the IteratorPop>`, S, `IteratorNext`, `IteratorPop`.
@@ -2939,9 +2946,10 @@ def _record_on(cls, name, env):
     The walk covers the **whole** parent chain before it falls back to the import: `TeamDeathMatch.RestartPlayer`
     writes `1c 50 49` (export 4688, `DeathMatch.RestartPlayer`), not the `RestartPlayer` import, and
     `BotGuide.SetNewScript` writes export 3832 (`BotBase`). An import fallback taken at the first ancestor that
-    declares nothing wrote the `Function` import for both. Inside a state the parent's same-state override wins
-    (`func_owners`), which is what `Armor.BeginState` (`Super.BeginState()` -> `Powerups.Activated.BeginState`) and
-    `BotSG.Tick` name.
+    declares nothing wrote the `Function` import for both. Inside a state the record is the state's own: the state
+    this one `extends` first (`GRENADE.ClientPreparingToFire` -> `PreparingToFire`), then the parent's same-state
+    override (`Armor.BeginState` -> `Powerups.Activated.BeginState`, `UnrealPawn.Dying.BaseChange` -> the import
+    `BaseChange <- Dying <- Pawn`), and only then the class scope.
     """
     low = name.lower()
     scope = env.get("scope") or {}
@@ -2949,30 +2957,54 @@ def _record_on(cls, name, env):
     pack = scope.get("pack") or ""
     rows = (env.get("func_owners") or {}).get(low, [])
     state = (env.get("state") or "").lower()
-    for _p, c in _ancestors(chain, pack, cls.lower()):
-        if state:
-            hit = [x for x in rows if x[1] == c and x[2] == state]
+    pairs = env.get("import_pairs") or {}
+    imp = [x for x in (env.get("imports") or {}).get(low, []) if x[1] == "Function"]
+
+    def on(c, st):
+        """The record of `F` on class `c` in state `st` (`""` = class scope): an export, else an import."""
+        if st:
+            hit = [x for x in rows if x[1] == c and x[2] == st]
             if hit:
                 return hit[0][0]
+            for x in imp:
+                if pairs.get(x[0]) == (st, c):
+                    return x[0]
+            return None
         hit = [x for x in rows if x[1] == c and not x[2]]
         if hit:
             return hit[0][0]
-    imp = [x for x in (env.get("imports") or {}).get(low, []) if x[1] == "Function"]
-    owners = env.get("import_owners") or {}
-    if imp:
-        # Two ancestors that declare the same name import it once each (`AmbientCreatures` carries
-        # `PostBeginPlay` for `Controller`, `Actor` and `Pawn`), and the compiler's record is the one whose owner
-        # is the **nearest** class of the parent's chain -- and the walk starts **at the parent**, because this is
-        # called with `cls` = the parent: skipping it (`[1:]`) wrote the grandparent's import on 70 bodies
-        # (`EmptyHands.PostBeginPlay` imports `PostBeginPlay` for `StargateWeapon` (-134), `Actor` (-127) and
-        # three more, and the build writes -134). The 29 that still do not agree are `BeginState`/`EndState`,
-        # which name a state rather than a function.
-        for _p, c in _ancestors(chain, pack, cls.lower()):
-            hit = [x for x in imp if owners.get(x[0]) == c]
-            if hit:
-                return hit[0][0]
-        if len(imp) == 1:
-            return imp[0][0]
+        for x in imp:
+            if pairs.get(x[0]) == ("", c):
+                return x[0]
+        return None
+
+    # A state that `extends` another state names **that** state's function first: `GRENADE.ClientPreparingToFire
+    # extends PreparingToFire`, so `Super.BeginState()` writes export 2073 (`GRENADE.PreparingToFire.BeginState`)
+    # and `Super.Tick()` export 2071 -- neither is on the class parent at all. The state this one extends is
+    # looked for on the body's own chain, because the clause names a state of this class or an ancestor.
+    if state:
+        up = (env.get("state_parents") or {}).get(state) or ""
+        up = up.split(".")[-1]
+        if up:
+            own = (scope.get("cls") or "").lower()
+            for _p, c in _ancestors(chain, pack, own or cls.lower()):
+                hit = on(c, up)
+                if hit is not None:
+                    return hit
+    # The parent's **same-state** override, then its class scope. Both halves of the chain carry state-owned
+    # records: an export when the ancestor is in this package, an import whose owner pair is `(state, class)` when
+    # it is not (`BeginState <- Dying <- Pawn` is -1044, and the class-scope import is -1116).
+    for _p, c in _ancestors(chain, pack, cls.lower()):
+        if state:
+            hit = on(c, state)
+            if hit is not None:
+                return hit
+    for _p, c in _ancestors(chain, pack, cls.lower()):
+        hit = on(c, "")
+        if hit is not None:
+            return hit
+    if len(imp) == 1:
+        return imp[0][0]
     return None
 
 
@@ -3203,10 +3235,44 @@ def _ancestors(chain, pack, cls):
     return out
 
 
+def _owner_pair(pkg, kinds, ref, depth=3):
+    """`(state, class)` for an object index: a state's own outer names the class that declares it.
+
+    A `Super.BeginState()` inside a state names a function **owned by a state**, and the import table spells that
+    ownership out: `StargateGame.u` carries `BeginState` six times with owners `Object`, `Activated/Armor`,
+    `Idle/Weapon`, `ClientFiring/Weapon` and so on. Reading only the immediate owner name therefore compares
+    `idle` against a class and can never match; the pair is the join.
+    """
+    if depth <= 0 or not ref:
+        return ("", "")
+    if ref > 0:
+        if ref > len(pkg.exports):
+            return ("", "")
+        e = pkg.exports[ref - 1]
+        nm = str(pkg.name(e["name"])).lower()
+        if kinds.get(ref) == "State":
+            st, cl = _owner_pair(pkg, kinds, e["outer"], depth - 1)
+            return (nm, cl or st)
+        return ("", nm)
+    if -ref > len(pkg.imports):
+        return ("", "")
+    im = pkg.imports[-ref - 1]
+    nm = str(pkg.name(im["name"])).lower()
+    ikind = pkg.name(im["class"])
+    nxt = im.get("package", 0)
+    nxt = nxt - 2 ** 32 if nxt > 2 ** 31 else nxt
+    if ikind == "State":
+        st, cl = _owner_pair(pkg, kinds, nxt, depth - 1)
+        return (nm, cl or st)
+    if ikind in ("Class", "ScriptStruct"):
+        return ("", nm)
+    return ("", "")
+
+
 def _class_tables(pkg, kinds, names):
     """The package's own records as the compiler addressed them: property and function exports, the imports, and
     the classes an object cast can name."""
-    props, funcs, imports, classes, import_owners = {}, {}, {}, {}, {}
+    props, funcs, imports, classes, import_owners, import_pairs = {}, {}, {}, {}, {}, {}
     for i, e in enumerate(pkg.exports):
         kind = kinds.get(i + 1, "")
         nm = names.get(i + 1, "").lower()
@@ -3229,9 +3295,12 @@ def _class_tables(pkg, kinds, names):
             import_owners[-(j + 1)] = str(pkg.name(pkg.imports[-ref - 1]["name"])).lower()
         elif ref > 0 and ref <= len(pkg.exports):
             import_owners[-(j + 1)] = str(pkg.name(pkg.exports[ref - 1]["name"])).lower()
+        # ...and the same owner read as a `(state, class)` pair, because a function owned by a *state* is what a
+        # `Super.F()` inside a state names. `import_owners` keeps the bare name for the struct joins.
+        import_pairs[-(j + 1)] = _owner_pair(pkg, kinds, ref)
         if ikind == "Class":
             classes.setdefault(iname, []).append((-(j + 1), "Class"))
-    return props, funcs, imports, classes, import_owners
+    return props, funcs, imports, classes, import_owners, import_pairs
 
 
 def _func_owners(pkg, kinds, names):
@@ -3263,7 +3332,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     A callee is resolved by walking the ancestor chain to the class that declares it -- the native table says the
     token (0 means "not a native opcode, call it by name"), and its `final` flag picks the call token.
     """
-    props, funcs, imports, classes, _import_owners = tables
+    props, funcs, imports, classes, _import_owners, _import_pairs = tables
     scope = {"props": {}, "locals": {}, "funcs": {}, "classrefs": {}, "props_all": props, "chain": chain,
              "pack": pack, "cls": cls.lower(),
              # a property the package exports once, on a class outside this body's chain, is read through `Outer`
@@ -3493,6 +3562,7 @@ def _source_index(tree):
     slot and an argument's token need -- and every `local Type Name;`, which is how a receiver's class is read when
     the receiver is a local rather than a property."""
     index = {}
+    dis = _dis()
     params = {}
     rets = {}
     localtypes = {}
@@ -3500,6 +3570,7 @@ def _source_index(tree):
     withins = {}
     dims, consts = {}, {}
     enums, enum_names = {}, set()
+    stateparents = {}
     files = 0
     for dirpath, _dirs, names in os.walk(tree):
         for name in sorted(names):
@@ -3510,6 +3581,11 @@ def _source_index(tree):
                 text = fh.read()
             files += 1
             cls = os.path.splitext(os.path.basename(path))[0].lower()
+            # A state header names the state it `extends` (`state ClientPreparingToFire extends PreparingToFire`),
+            # and that clause is the `Super` a `Super.F()` inside it resolves to -- the class parent is only the
+            # fallback. Read once per file, keyed by class and state.
+            for st, up in dis.state_parents(text).items():
+                stateparents.setdefault(cls, {}).setdefault(st, up)
             # A class declared `within X` resolves an unqualified name against X: `CheatManager extends Object
             # within PlayerController` calls `DeactivateAstralSight()` bare and the compiler writes it through
             # `Outer` (`19 01 8e 05 00 00 <call>`). Only five classes in this corpus carry the clause.
@@ -3561,14 +3637,15 @@ def _source_index(tree):
                     enum_names.add(enum.lower())
                     for cname, ordinal in members:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
-    return index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts
+    return index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents
 
 
 def score(tree, dump, out_dir, residue_dir=None, only=None):
     dis = _dis()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
-    index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts = _source_index(tree)
+    index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents = \
+        _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -3666,7 +3743,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
                    # and the records of the package it is declared in
                    "natives": natives, "funcs_all": tables[1], "imports": tables[2], "final_of": final_of,
-                   "import_owners": tables[4],
+                   "import_owners": tables[4], "import_pairs": tables[5],
                    "localtypes": localtypes_by_cls.get(cls.lower(), {}),
                    "proptypes": proptypes_by_cls.get(cls.lower(), {}),
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
@@ -3676,6 +3753,8 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "within": withins.get(cls.lower(), ""),
                    # which state the body is written in: a `Super.F()` prefers the parent's same-state override
                    "state": state.lower(),
+                   # ...and the state that one `extends`, whose functions are its own `Super` before the class parent
+                   "state_parents": stateparents.get(cls.lower(), {}),
                    # a function record's owning class and state, walked past the state's own Outer
                    "func_owners": func_owners}
             try:
@@ -3846,6 +3925,8 @@ function Sequence() { Foo(1); Health = 1; }
 function Locals() { local int Extra; Health = 1; }
 function IfElse() { if (bDead) Health = 1; else Health = 2; }
 function WhileLoop() { while (bDead) Health = 1; }
+function WhileContinue() { while (bDead) { if (bFlag) continue; Health = 1; } }
+function DoContinue() { do { if (bFlag) continue; Health = 1; } until (bDead); }
 function WhileThen() { while (bDead) Health = 1; Health = 2; }
 function ForLoop() { for (Slot = 0; Slot < 2; Slot++) Health = 1; }
 function DoLoop() { do Health = 1; until (bDead); }
@@ -4194,7 +4275,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]
@@ -4252,6 +4333,30 @@ def check(args):
     if got.hex() != "1c7b0b16":
         print("FAIL uscript-emit: Super.Ping() in a state without an override emits %s" % got.hex())
         return 1
+    # P4d: the same-state record can be an **import** whose owner pair is `(state, class)`. A parent in another
+    # package carries `BaseChange <- Dying <- Pawn` as -1044 and the class-scope import as -1116, and
+    # `UnrealPawn.Dying.BaseChange` writes the first -- reading only the immediate owner name compares `dying`
+    # with a class and can never match, which is what wrote -1116 on 35 shipped bodies.
+    imp_env = dict(state_env)
+    imp_env["func_owners"] = {}
+    imp_env["imports"] = {"ping": [(-51, "Function"), (-1044, "Function")]}
+    imp_env["import_pairs"] = {-51: ("", "parent"), -1044: ("follow", "parent")}
+    got, _m, _s = emit_stmt(super_toks, "", imp_env)
+    if got.hex() != "1c" + write_index(-1044).hex() + "16":
+        print("FAIL uscript-emit: Super.Ping() with a state-owned import emits %s, expected %s"
+              % (got.hex(), "1c" + write_index(-1044).hex() + "16"))
+        return 1
+    # P4e: a state that `extends` another names **that** state's function before the class parent's:
+    # `GRENADE.ClientPreparingToFire extends PreparingToFire` writes export 2073 for `Super.BeginState()` and
+    # 2071 for `Super.Tick()`, and neither is on the class parent at all.
+    ext_env = dict(state_env)
+    ext_env["state"] = "follow"
+    ext_env["state_parents"] = {"follow": "walk"}
+    ext_env["func_owners"] = {"ping": [(763, "parent", ""), (765, "probe", "walk")]}
+    got, _m, _s = emit_stmt(super_toks, "", ext_env)
+    if got.hex() != "1c" + write_index(765).hex() + "16":
+        print("FAIL uscript-emit: Super.Ping() in a state that extends another emits %s" % got.hex())
+        return 1
     # P5: a bare call in a class declared `within X` is a member of `Outer`, and a bare call the body's own chain
     # declares is not: the same synthetic class, one name that resolves only on the `within` class.
     within_env = dict(env)
@@ -4274,6 +4379,56 @@ def check(args):
     if got.hex() != "1b292616":
         print("FAIL uscript-emit: a bare call the chain declares was wrapped as `Outer` (%s)" % got.hex())
         return 1
+    # P6: a bool **member of a struct** is read behind `BoolVariable`: `!SavedFireProperties.bInitialized` writes
+    # `81 2d 36 52 43 01 5a 08 16` (`Weapon.AdjustAim`), `SimAnim.bAnimLoop = true;` writes `14 2d 36 ...`
+    # (`BlueFlag.PostBeginPlay`), and the bare `36` was the whole of four differences.
+    senv = dict(env)
+    senv["scope"] = dict(SCOPE, struct_props={("vector", "bhit"): (77, "BoolProperty"),
+                                              ("vector", "x"): (78, "FloatProperty")})
+    got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "bHit")], "bool", senv)
+    want = b"\x2d\x36" + write_index(77) + b"\x01" + write_index(620)
+    if got != want:
+        print("FAIL uscript-emit: a bool struct member emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "X")], "float", senv)
+    if got[:2] == b"\x2d\x36":
+        print("FAIL uscript-emit: a float struct member is written behind BoolVariable")
+        return 1
+    # P7: a `continue` names the loop's **test node** -- the trailing `Jump` in a `while`, the trailing
+    # `JumpIfNot` in a `do`/`until` -- not the loop's first byte. Settled by two shipped bodies
+    # (`TestInfo.TestContinueWhile` writes `06 59 00` for a back-`Jump` at wide 0x59 and `TestContinueDoUntil`
+    # writes `06 60 00` for a `JumpIfNot` at wide 0x60), and checked here structurally: the emitted loop's own
+    # test is its last branch node, and the `continue`'s `Jump` must name that node's position.
+    decls = {f[1].lower(): (f[2], f[3], f[4]) for f in functions_of(SYNTH)}
+    for fn in ("whilecontinue", "docontinue"):
+        if fn not in decls:
+            print("FAIL uscript-emit: the synthetic class does not declare %s" % fn)
+            return 1
+        rettype, body, is_native = decls[fn]
+        out, _m, _s = emit_body(body, rettype, env, is_native)
+        flat = []
+
+        def flatten(ns):
+            for n in ns:
+                flat.append(n)
+                flatten(n["children"])
+
+        flatten(dis.parse(out, dis.Table()))
+        branches = [n for n in flat if n["opcode"] in (0x06, 0x07)]
+        if not branches:
+            print("FAIL uscript-emit: %s emits no branch node" % fn)
+            return 1
+        test = branches[-1]
+        jumps = [n for n in flat if n["opcode"] == 0x06 and n is not test]
+        if not jumps:
+            print("FAIL uscript-emit: %s emits no `continue` jump" % fn)
+            return 1
+        want = _wide(out[:test["offset"]])
+        got_jump = out[jumps[0]["offset"]:jumps[0]["end"]]
+        if got_jump != bytes([0x06]) + struct.pack("<H", want):
+            print("FAIL uscript-emit: %s's `continue` emits %s, expected a jump to %d (the loop's test)"
+                  % (fn, got_jump.hex(), want))
+            return 1
     if not os.path.exists(ARTIFACT):
         print("ok uscript-emit: %d synthetic bodies, no artifact to check" % len(WANT))
         return 0

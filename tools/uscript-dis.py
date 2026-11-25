@@ -298,6 +298,15 @@ def selftest():
     if [n for n, _b in state_blocks(text)] != ["normalfire"]:
         print("FAIL uscript-dis: state_blocks found %r" % (state_blocks(text),))
         return 1
+    # A state that `extends` another names that state as its `Super` inside its functions; a state without a
+    # clause must be absent from the map, not mapped to an empty parent (the emitter falls back to the class
+    # parent only when the clause is missing).
+    sp = state_parents("class P;\r\nstate PreparingToFire { function BeginState(){} }\r\n"
+                       "state ClientPreparingToFire extends PreparingToFire { function BeginState(){} }\r\n"
+                       "state Idle { function Tick(){} }\r\n")
+    if sp != {"clientpreparingtofire": "preparingtofire"}:
+        print("FAIL uscript-dis: state_parents answered %r" % (sp,))
+        return 1
     # A `native` declaration has no body, so the next function's `{` is not its anchor (two of the ten "no rule for
     # that return type" rows were this).
     pair = ("simulated native function rotator GetErrorVec(optional out vector out_Error);\r\n"
@@ -947,6 +956,18 @@ def state_blocks(text):
     version read the wrong `{` and turned a 92-of-93 peak into a flat histogram over +16..+39).
     """
     return [(name, text[start:end]) for name, start, end in state_spans(text)]
+
+
+def state_parents(text):
+    """`{state: the state it extends}` for every `state X extends Y` header in a class's ScriptText.
+
+    The clause is the state's own super: `Super.F()` inside `ClientPreparingToFire extends PreparingToFire` names
+    `PreparingToFire.F`, not the class parent's. The name is returned as written (lower-cased, possibly
+    qualified), and a state with no clause is absent rather than mapped to `""` -- the emitter's lookup falls back
+    to the parent class only when the clause is missing.
+    """
+    return {d["name"].lower(): d["parent"].strip().lower()
+            for d in ctb_tool().state_declarations(text) if (d["parent"] or "").strip()}
 
 
 def state_spans(text):
