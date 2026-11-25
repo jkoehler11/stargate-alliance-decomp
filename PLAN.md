@@ -239,6 +239,13 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a `Super` in a state, a struct member's bool, and `continue`: **7,853 modelled / 7,853 byte-identical /
+      0 differ** (from 7,809 / 7,809 / 0; 44 bodies gained, none lost, differ bucket 96 -> 52). A `Super.F()` inside
+      a state names the state's own super -- the state it `extends` first (`BeginState <- Idle <- Weapon` is import
+      -1263, export 2073 for `GRENADE`), then the parent's same-state override, whose import owner is the pair
+      `(state, class)` and not a class name; a bool member of a struct is read behind `BoolVariable`
+      (`81 2d 36 ...`); and a `continue` names the loop's test node, not its first byte (`06 59 00` for a back-`Jump`
+      at wide 0x59). The 34 `X.Default.Y` rows where `X` is a `class<Z>` are the next join.
 - [~] 3.6 a Super call's record starts its import walk at the parent, and a member call's return type comes from
   the receiver's class: **7,648 modelled / 7,648 byte-identical / 0 differ** (from 7,250 / 7,250 / 0; 398 bodies
   gained, none lost; residue 4,428 -> 4,030 and the differ bucket 148 -> 66). Two rules, each a join that read the
