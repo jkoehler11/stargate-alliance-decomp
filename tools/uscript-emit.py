@@ -1177,8 +1177,28 @@ def _element_type(head, env):
             return None, ""
         return 0x1A, declared
     at = _dot_at(head)
-    if at is not None and len(head[at + 1:]) == 1 and head[at + 1][0][0] in ("ident", "keyword"):
-        hit = _member_record(head[:at], head[at + 1][0][1].lower(), env)
+    if at is not None and len(head[at + 1:]) == 1 and head[at + 1][0] in ("ident", "keyword"):
+        # The member's own name is the token's **text** -- the first version read `head[at + 1][0][1]`, the
+        # second character of the kind (`"ident"[1]` is `"d"`), so every member read asked the package for a
+        # property called `d` and refused as *an element of an array the artifacts do not type* even when
+        # `inventory/class_properties.csv` carried the array's element type.
+        obj = head[:at]
+        nm = head[at + 1][1].lower()
+        hit = None
+        if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "default":
+            # `Default.X` / `default.X` is the class default object's own record, read on **this** body's chain
+            # -- the rule `_emit_member` already writes with `DefaultVariable` (0x02).
+            hit = _prop_by_name(nm, env)
+        else:
+            chain_at = _dot_at(obj)
+            if (chain_at is not None and len(obj[chain_at + 1:]) == 1
+                    and obj[chain_at + 1][0] in ("ident", "keyword")
+                    and obj[chain_at + 1][1].lower() == "default"):
+                # `X.Default.Y`: the member is read on X's class, the same receiver `_emit_member` resolves for
+                # a `ClassContext` default chain.
+                hit = _member_record(obj[:chain_at], nm, env)
+            else:
+                hit = _member_record(obj, nm, env)
         if hit is None:
             return None, ""
         kind, friendly = hit[2], (hit[3] if len(hit) > 3 else "") or ""
@@ -4169,7 +4189,18 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                         and (_import_owners.get(imp[0][0]) or "") not in order:
                     scope["within_props"].add(nm)
                 continue
-            if len(cands) == 1:
+            if within_chain:
+                # A name the class this body is declared `within` declares is read in `Outer`'s scope, and the
+                # within chain is the authority for *which* record: `Level` has five records in Engine.u (Actor's
+                # object property and four unrelated properties of that name), so the two fallbacks below -- a
+                # single import candidate, a single candidate in the whole package -- both missed it, and every
+                # `Level.Game.…` read in `CheatManager`/`AdminBase` refused although the within chain carries it.
+                for anc in within_chain:
+                    hit = [c for c in cands if c[1] == anc]
+                    if hit:
+                        picked = hit[0]
+                        break
+            if picked is None and len(cands) == 1:
                 # One record by that name in the whole package, declared on a class that is *not* on this body's
                 # chain: `PlayerInput.ChangeSnapView` writes `bSnapToLevel` (export 2604, on `PlayerController`) as
                 # `19 01 8e 05 00 04 2d 01 6c 28` -- a `Context` around `Outer`. The index is right, the node is not

@@ -336,6 +336,34 @@ body stays under its own state name; a one-file synthetic tree gates both halves
 `LetBool` and the target's `BoolVariable` that the model does not write, and the rest of the body matches byte for
 byte. Named, not explained.
 
+## Stage 3, continued -- the array element's member, and the `within` class's names (measured 2026-11-25)
+
+Two refusals that read as missing joins were both a lookup keyed on the wrong thing.
+
+**`_element_type`'s dotted branch asked for the token's kind, not its text.** The branch tested
+`head[at + 1][0][0] in ("ident", "keyword")` and then read `head[at + 1][0][1].lower()` -- the second character of
+the *kind*, so `"ident"[1]` is `"d"`. Every member read through an element chain therefore asked the package for a
+property named `d` and refused as *an element of an array the artifacts do not type*, with the element type sitting
+in `inventory/class_properties.csv`: `Engine,Emitter,Emitters` is `array<export editinline ParticleEmitter>` and
+`StargateGame,SGFormation,FollowsWho` an `IntProperty`. Reading `head[at + 1][1]` and adding the two `Default`
+receivers `_emit_member` already models (`Default.X` on this body's chain via `_prop_by_name`, `X.Default.Y` via
+`_member_record` on X) took modelled bodies 9,911 -> 10,027 and that refusal 161 -> 26.
+
+**A name on the `within` class's chain is read through `Outer`, and the chain decides which record.** `CheatManager`
+and `AdminBase` are `within PlayerController` and extend `Object`, so `Level`, `PlayerReplicationInfo` and `myHUD`
+are not on their own chain. `_scope` could pick such a name only through an import with exactly one property
+candidate or through a single candidate in the whole package; `Level` has five records in Engine.u (Actor's object
+property plus four unrelated properties of the same name), so neither fired and every `Level.Game.…` read refused as
+*a name neither a local, a property nor an enum constant of the class chain*. Asking the within chain for its own
+record first feeds the `Context(Outer, 5, size)` node `_outer_wrapped` already writes: 10,027 -> 10,061, that
+family 137 -> 103.
+
+**Both fixes are joins, not shapes** -- neither writes a node the corpus does not already contain, which is why
+every gained body is byte-identical on the first run and no modelled body was lost. The remaining
+`Static.`/`Global.` prefix receivers are a shape: `Static.AllowMutator(MutName)` in `GameInfo.AddMutator` is a bare
+`VirtualFunction` plus its argument list (`1b 7f 16 47 5d 16`, no receiver node), so the pattern is measured and
+the statement path only needs the prefix spelling added.
+
 ## What the statement walk has left
 
 Its own residue, named by count and not by rate -- **superseded** by the statement-walk section below, which
