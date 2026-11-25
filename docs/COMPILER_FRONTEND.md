@@ -1414,3 +1414,47 @@ G.HideHud(!G.bHideHud);`) is now refused as *a member call statement to a name t
 declare* -- the local's class resolves, the callee does not -- which is the next read on this chain, not a
 measurement of it. The 17 *a receiver chain whose member is not one name* rows and the UWindow `Region` members
 (a struct no class text declares) are untouched by this change.
+## Stage 3, continued -- a local's type belongs to its function, and four struct widths the corpus pins (measured 2026-11-24)
+
+**7,884 -> 7,977 modelled, all 7,977 byte-identical, 0 differing, 0 bodies changed** (93 gained; the residue
+3,794 -> 3,701). Two joins, and both were tables keyed one scope too wide.
+
+**A `local` declaration's type is its *function's*, and the class-wide table kept the first one.** `_source_index`
+filled `localtypes`/`classrefs` with `setdefault((class, name), ...)`, so the first `local` of a name in a class
+typed every other function that declared the same name: **43 classes, 66 colliding names** over the 4,637-file
+corpus. The body this cost is named: `StargateHUD.ToggleGameHUD` declares `local GameHUD G;`, a later function of
+the same class declares `local class<GameInfo> G;`, and `classreftypes` is what `_class_of` consults *first* -- so
+`G.HideHud(!G.bHideHud)` joined on `GameInfo`, found no `HideHud`, and the body was refused as a member call to a
+name the receiver's chain does not declare. `_local_decls(text)` reads the token stream once per class and
+attributes every declaration to the function header above it, including the type written once for a whole
+statement (`local vector LookDir, AimDir;` types both names; reading only the first segment's words typed the second
+name as the empty string and cost 484 bodies, which is the rule's own control). The env then carries the class-wide
+table **extended by** the function's own, so a name the class declares once is unchanged and only a real collision
+moves. **73 bodies** gained, none lost: `Actor.IsInPain`, `Controller.AdjustToss`, `Pawn.AddInventory`,
+`Pawn.NeedToTurn`, `PlayerController.PlayerMove` and the rest of the operator/member families the wrong word had
+blocked.
+
+**Four struct widths, each pinned by the bodies that refused for want of it.** `STRUCT_SIZE` carried `vector`,
+`rotator` and `coords` (all 12); a struct-valued member whose artifact names any other struct stayed refused, which
+was 24 `color` rows, 10 `region`, 8 `mousecursor` and 1 `plane`. The width is not a guess from the field list: the
+emitted node writes the size byte *inside* the member read, so a wrong width puts everything behind it out of step
+with the shipped body and the body can only match at the true width. `Color` is `4` (12 bodies: `ShieldEffect.
+SetColour`, `StargatePlayer.SetBloomColour`, `UIProgressBar.ResetSkinColor`, `UWindowComboControl.Initialized`),
+`Region` is `16` (`UWindowBase`'s four ints `X,Y,W,H`; 8 bodies: `UWindowWin95LookAndFeel.FW_SetupFrameButtons`,
+`SB_SetupUpButton`, `Tab_SetupRightButton`), `Plane` is `16` and `MouseCursor` is `13` (`UWindowWindow`'s
+`Texture tex; int HotX, HotY; byte WindowsCursor`) -- the last two are carried on the same evidence but no body
+reaches them yet. **20 bodies** gained, none lost.
+
+**A struct member's declared type is a record too.** `FiredAmmunition.ProjectileClass.Default.Speed` has a struct
+receiver (`FireProperties`), and `_class_of`'s chain branch asked the class table for `projectileclass` on
+`fireproperties`, got `""`, and stopped: `_struct_member` answers the same pair from the struct's own records and
+`inventory/struct_members.csv` names the class (`class<Projectile>`). That fallback is in this bundle and reached
+**no body yet** -- the five default chains still refuse (`Controller.WarnTarget`, `PlayerController.AdjustAim`,
+`BotEnemy.AdjustAim`, `DeathMatch.SpawnBot`, `StoryModeGame.SpawnBot`), because `_struct_of` asks `_declared_type`
+for the parameter's struct and `_struct_member` then finds no `(fireproperties, projectileclass)` pair in the
+package scope. It is named here as the next read, not counted as a gain.
+
+**What is left.** Those five default chains; the 43 `class<Z>`/chain rows; the six `class<Z>` differ rows from the
+previous bundle; the 17 *a receiver chain whose member is not one name* rows; `HTMLStyle`'s width (no body pins it:
+7 bools, an int, two colors and a string, and a string member has no fixed size); the 680 operator rows.
+

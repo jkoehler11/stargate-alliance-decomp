@@ -18348,3 +18348,35 @@ sequence.
   whose member is itself a chain (`Groups[GameIndex].Records.Length`); the struct sizes no class text carries
   (`Region`, `Zone`, `MouseCursor`, `HTMLStyle`); the 680 operator rows.
 - **Files.** `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`.
+### Execution notes (2026-11-24b, the front end: a local's type is its own function's, and four struct widths)
+
+- **Task.** The previous note's two leftovers: the *default chain to a member of a member*
+  (`FiredAmmunition.ProjectileClass.Default.Speed`) and the struct widths no class text carries. Reading the
+  first showed the table underneath it was keyed a scope too wide, which is the larger half of this bundle.
+- **A `local`'s declared type belongs to its function.** `localtypes`/`classreftypes` were keyed `(class, name)`
+  with `setdefault`, so the first `local` of a name in a class typed every other function that declared it:
+  **43 classes and 66 colliding names** over the 4,637-file corpus. `StargateHUD.ToggleGameHUD`'s
+  `local GameHUD G` was read as a later function's `local class<GameInfo> G` (`classreftypes` is what `_class_of`
+  consults first), so `G.HideHud(!G.bHideHud)` joined on `GameInfo`, found no `HideHud`, and the body was refused.
+  `_local_decls` reads the token stream and attributes each declaration to the function header above it, with the
+  type shared by every name in the statement: `local vector LookDir, AimDir` types both, and reading the type from
+  the first name's own segment typed the second as `""` and cost 484 bodies -- that regression is the rule's
+  control, not a footnote.
+- **The env carries the class-wide table extended by the function's own**, so a name the class declares once reads
+  exactly as before and only a real collision moves. **73 bodies** gained, none lost, none changed.
+- **Four struct widths, pinned by the bodies that refused for want of them.** `STRUCT_SIZE` had `vector`,
+  `rotator`, `coords`; `Color` is **4** (12 bodies), `Region` is **16** (`UWindowBase`'s four ints, 8 bodies),
+  `Plane` **16** and `MouseCursor` **13** (carried, no body reaches them yet). The size byte sits inside the member
+  read, so a width one byte wrong desynchronises the whole tail: the match is the measurement. **20 bodies** gained.
+- **A struct member's declared type is a record, not a class.** `_class_of`'s chain branch now falls back to
+  `_struct_member` (and that answers a `ClassProperty` member's declared word too), which is what
+  `FiredAmmunition.ProjectileClass.Default.Speed` needs. It reached **no body**: the five default chains still
+  refuse because `_struct_of` cannot name the parameter's struct and the `(fireproperties, projectileclass)` pair
+  is not in the body package's scope. Named as the next read, not counted.
+- **Result.** 7,884 -> **7,977 modelled, all byte-identical, 0 differing**; residue 3,794 -> 3,701;
+  `inventory/uscript_emit.csv` regenerated over the whole corpus.
+- **What is left.** The five default chains (`Controller.WarnTarget`, `PlayerController.AdjustAim`,
+  `BotEnemy.AdjustAim`, `DeathMatch.SpawnBot`, `StoryModeGame.SpawnBot`); the 43 `class<Z>`/chain rows; the six
+  `class<Z>` differ rows; the 17 *a receiver chain whose member is not one name* rows; `HTMLStyle`'s width (a
+  `string` member means no fixed size); the 680 operator rows.
+- **Files.** `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`.
