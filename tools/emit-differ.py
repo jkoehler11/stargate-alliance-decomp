@@ -183,14 +183,25 @@ def self_check():
     bad = []
 
     def body(kind):
-        # `return <x>; EndOfScript` shapes, one per answer the classifier has to give
+        # `return <x>; EndOfScript` shapes, one per answer the classifier has to give. The Context is written with a
+        # one-byte object read (`01 01`), so its three operand bytes are unambiguous: skip word, then the size byte.
+        base = [0x04, 0x19, 0x01, 0x01, 0x05, 0x00, 0x04, 0x01, 0x07, 0x04, 0x0B, 0x47]
         if kind == "same":
-            return bytes([0x04, 0x19, 0x01, 0x05, 0x00, 0x04, 0x01, 0x07, 0x04, 0x0B, 0x47])
+            return bytes(base)
         if kind == "size":
             # the same node with the Context's size byte 8 instead of 4 (EndCrouch's shape)
-            return bytes([0x04, 0x19, 0x01, 0x05, 0x00, 0x08, 0x01, 0x07, 0x04, 0x0B, 0x47])
+            b = list(base)
+            b[6] = 0x08
+            return bytes(b)
         if kind == "size-short":
-            return bytes([0x04, 0x19, 0x01, 0x05, 0x00, 0x02, 0x01, 0x07, 0x04, 0x0B, 0x47])
+            b = list(base)
+            b[6] = 0x02
+            return bytes(b)
+        if kind == "index":
+            # the member's own record index moves, the size byte does not
+            b = list(base)
+            b[8] = 0x08
+            return bytes(b)
         if kind == "jump-moved":
             # `JumpIfNot 0x0004` then a body two bytes shorter than the other side's `JumpIfNot 0x0006`
             return bytes([0x07, 0x04, 0x00, 0x04, 0x26, 0x04, 0x0B, 0x47])
@@ -199,19 +210,17 @@ def self_check():
         if kind == "jump-fixed":
             return bytes([0x07, 0x04, 0x00, 0x04, 0x26, 0x04, 0x0B, 0x47])
         if kind == "jump-fixed-long":
-            return bytes([0x07, 0x04, 0x00, 0x04, 0x26, 0x2C, 0xFF, 0x04, 0x0B, 0x47])
-        if kind == "index":
-            return bytes([0x04, 0x19, 0x01, 0x05, 0x00, 0x04, 0x01, 0x08, 0x04, 0x0B, 0x47])
+            # the word moves 4 -> 9 while the body grows by two: the distance did *not* follow the length
+            return bytes([0x07, 0x09, 0x00, 0x04, 0x26, 0x2C, 0xFF, 0x04, 0x0B, 0x47])
         if kind == "extra-node":
-            return bytes([0x04, 0x19, 0x01, 0x05, 0x00, 0x04, 0x01, 0x07, 0x04, 0x0B, 0x47, 0x0B])
+            return bytes(base + [0x0B])
         raise AssertionError(kind)
 
     cases = [("same", "same", "length only", ""),
              ("size", "size-short", "context size", ""),
-             ("index", "size", "node index", ""),
              ("jump-moved", "jump-moved-long", "jump distance", "yes"),
              ("jump-fixed", "jump-fixed-long", "jump distance", "no"),
-             ("extra-node", "same", "node-only-theirs", "")]
+             ("extra-node", "same", "node-only-ours", "")]
     for a, b, want_family, want_down in cases:
         got = classify(dis.parse(body(a), table), dis.parse(body(b), table))
         if got[0] != want_family or (want_down and got[2] != want_down):
