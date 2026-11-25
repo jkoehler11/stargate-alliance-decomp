@@ -1772,14 +1772,14 @@ chain*, were refusals whose receiver class the walk never named, and the join ha
 chain. What is left once the receiver really is named is 9 member reads off the chain, 1 undeclared and 28 on it.
 
 <!-- BEGIN receiver-join -->
-**626 refused bodies over the four receiver families, joined to the corpus's own declarations** (`inventory/emit_receiver_join.csv`; 9,495 modelled of 11,687 walked, so the join is over the residue and not over the corpus).
+**440 refused bodies over the four receiver families, joined to the corpus's own declarations** (`inventory/emit_receiver_join.csv`; 9,730 modelled of 11,687 walked, so the join is over the residue and not over the corpus).
 
 | family | refusals | on the chain | only in a state | off the chain | undeclared | no receiver class |
 |---|---|---|---|---|---|---|
-| bare call | 42 | 2 | 0 | 27 | 13 | 0 |
-| member call, no receiver class | 174 | 0 | 0 | 0 | 0 | 174 |
-| member call, statement | 117 | 88 | 0 | 29 | 0 | 0 |
-| member read | 293 | 28 | 0 | 9 | 1 | 255 |
+| bare call | 40 | 4 | 0 | 29 | 7 | 0 |
+| member call, no receiver class | 154 | 0 | 0 | 0 | 0 | 154 |
+| member call, statement | 119 | 90 | 0 | 29 | 0 | 0 |
+| member read | 127 | 30 | 0 | 10 | 1 | 86 |
 
 A name **on the chain** and still refused is a record the body's package does not carry: the compiler writes those by *name index* (`1b <index>`), which is the rule this read added -- `TransientAmbientPawn.Died` ships `1b 41 02` for `PlayDying(HitLocation, HitDamageType)` and `ScriptedController.LeaveScripting` `19 01 8d 07 00 00 1b 39 28 16` for `Pawn.SetWalking(false)`, neither callee imported, exported or in `natives.csv` there. **Undeclared** is the reconstructed text's own invention -- `AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- which no declaration can ever resolve, because UnrealScript has no array methods and no `super` member.
 
@@ -1787,23 +1787,24 @@ A **member** row is never bucketed against a chain the walk did not have: when `
 
 | family | where | bodies | examples |
 |---|---|---|---|
-| bare call | off-chain | 27 | `PlayerController.ServerMove`, `PhysicsVolume.PawnEnteredVolume`, `Pickup.SpawnCopy` |
-| bare call | on-chain | 2 | `StargateAIMsgManager.FilterSentMsg`, `StargateAIMsgManager.FilterReceivedMsg` |
-| bare call | undeclared | 11 | `GUIImageList.internalKeyEvent`, `GUITabControl.NextControl`, `GUITabControl.PrevControl` |
-| bare call | undeclared | 2 | `GUIListBox.CanAcceptInput`, `GUIListBox.CanAcceptFocus` |
+| bare call | off-chain | 29 | `PlayerController.ServerMove`, `PhysicsVolume.PawnEnteredVolume`, `Pickup.SpawnCopy` |
+| bare call | on-chain | 4 | `StargateAIMsgManager.FilterSentMsg`, `StargateAIMsgManager.FilterReceivedMsg`, `SGVoicePackExtended.WaitToReply` |
+| bare call | undeclared | 7 | `GUIImageList.internalKeyEvent`, `GUIEditBox.InternalOnKeyEvent`, `GUIHorzList.InternalOnKeyEvent` |
 | member call, statement | off-chain | 29 | `PuzzleTrigger._ResetMovers`, `C4Mission.BeginState`, `Train.SetTrainState` |
 | member call, statement | on-chain | 88 | `SpecialEventTrigger.Trigger`, `ACTION_DamageInstigator.InitActionFor`, `SE_RandomSpawn.spawnActor` |
-| member read | off-chain | 9 | `PlayerInput.PlayerInput`, `PuzzleTrigger.PostBeginPlay`, `SGC_SecurityReader.PostBeginPlay` |
-| member read | on-chain | 28 | `GUIMenuOption.InitComponent`, `GUIListBox.InitComponent`, `GUIScrollTextBox.InitComponent` |
+| member call, statement | on-chain | 1 | `ElectrifiedObject.CausePainTo` |
+| member call, statement | on-chain | 1 | `HaakenLeaderBot.AssignRole` |
+| member read | off-chain | 10 | `PlayerInput.PlayerInput`, `PuzzleTrigger.PostBeginPlay`, `SGC_SecurityReader.PostBeginPlay` |
+| member read | on-chain | 30 | `GUIMenuOption.InitComponent`, `GUIListBox.InitComponent`, `GUIScrollTextBox.InitComponent` |
 | member read | undeclared | 1 | `UWindowDialogClientWindow.CreateControl` |
 
 | what the walk was missing | refusals | examples |
 |---|---|---|
-| a bare name this body declares no type for | 135 | `PlaylistParserBase.ParseLines`, `ScriptObject.Destroyed` |
-| a receiver chain whose member the artifacts name no class for | 109 | `PlayerController.HandleWalking`, `MaplistRecord.CreateMapItem` |
-| an element of an array the artifacts do not type | 106 | `MaplistManager.ResetList`, `MaplistManager.ClearList` |
-| a receiver shape `_class_of` does not resolve | 50 | `Pawn.DisplayDebug`, `Controller.SetNewTeam` |
-| a call whose declared return type the class table does not carry as a class | 19 | `ShadowProjector.PostBeginPlay`, `GUIMenuOption.MenuStateChange` |
+| a bare name this body declares no type for | 151 | `PlaylistParserBase.ParseLines`, `ScriptObject.Destroyed` |
+| a receiver chain whose member the artifacts name no class for | 38 | `PlayerController.HandleWalking`, `MaplistRecord.CreateMapItem` |
+| an element of an array the artifacts do not type | 37 | `MaplistManager.ResetList`, `MaplistManager.ClearList` |
 | an array name, whose element type the artifacts do not name | 9 | `StreamBase.ParseDirectories`, `GameReplicationInfo.GetPRIArray` |
+| a member call whose declared return type the class table does not carry as a class | 2 | `StargatePawn.CreateShield`, `StargatePawn.CreateHealthRegenerator` |
+| a receiver shape `_class_of` does not resolve | 2 | `ACTION_SGWaitForPlayer.PlayImpatience`, `ACTION_PlaySGSound.Play3DSound` |
 | `pair` is declared `gameinfo . keyvaluepair`, which is not a class the class table carries | 1 | `MaplistRecord.CreateMapOption` |
 <!-- END receiver-join -->

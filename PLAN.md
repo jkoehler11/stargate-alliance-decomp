@@ -239,6 +239,29 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the receiver's kind: a struct link, a call link, and a `Super` cast: **9,730 modelled / 9,730
+      byte-identical / 0 differ** (from 9,495 / 9,495 / 0; 235 bodies gained, none lost; residue 2,183 -> 1,948; the
+      join's four receiver families 626 -> 440 refused bodies). (1) **A receiver's kind is not its type word.**
+      `_record_kind` answers only for a bare name, so a chain (`Canvas.DrawColor`) or a call
+      (`GetBoneCoords('FireStartPos')`) fell through to its declared word -- and `_emit_member` compares that word to
+      `struct` to choose the `(struct, member)` record, which a struct's own name (`color`, `coords`, `rotator`,
+      `pointregion`) never is, so the struct's record was never asked. `_receiver_kind` answers `struct` for a word
+      the corpus's `struct` blocks declare (`inventory/struct_members.csv`) and leaves a class word alone:
+      `PC.Rotation.Pitch`, `Instigator.Rotation.Yaw`, `Canvas.DrawColor.B`, `PhysicsVolume.Gravity.Z`,
+      `GetBoneCoords('FireStartPos').Origin`, `rotator(HackingPawn.Location).Yaw`, and the same rule through an
+      array element (`Maps[i].MapName`, `Segments[i].SegmentName`). The two struct-shaped `why` buckets fall with it:
+      a receiver chain whose member the artifacts name no class for 202 -> 58, an element of an array the artifacts
+      do not type 195 -> 59. (2) **A chain link that is a call holds the callee's return type**:
+      `Users.Get(i).Password`, `Level.Game.GetScreenplay().DisplayDebug(...)`, asked on the receiver's chain, never
+      the body's -- *a receiver shape `_class_of` does not resolve* 71 -> 2, and both survivors spell a leading dot.
+      (3) **`Super(C).F()` names the class on the arrow** and writes the same `1c <record>` node `Super.F()` does
+      (`GUIImageList.LoseFocus`'s `super(GUIComponent).LoseFocus();` is `1c 65 0b 17 16`), in a statement and in a
+      return; *a call whose declared return type the class table does not carry* 25 -> 0. What is left: the bare-name
+      family (261, of which 114 name an array method -- a dynamic-array node, not a join) and a **property whose
+      declared struct the class table leaves empty** (`Actor.Region` is `var const PointRegion Region;`), which keeps
+      `Region.Zone.bSoftKillZ` out.
+      Doc: `docs/COMPILER_FRONTEND.md`, section of the same name plus the regenerated join block.
+
 - [~] 3.6 the refusals whose receiver the walk could not name: **9,495 modelled / 9,495 byte-identical / 0 differ**
       (from 9,479 / 9,479 / 0; 16 bodies gained, none lost; residue 2,199 -> 2,183). (1) **The join was bucketing
       rows against a chain the walk never had.** The previous note's 232 "member reads off the chain" were refusals
