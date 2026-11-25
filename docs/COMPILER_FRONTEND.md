@@ -1706,3 +1706,36 @@ that need both (`AnnouncerVoice.PrecacheAnnouncements`, `GameReplicationInfo.Pos
 receiver's class` at **341** rows, followed by `a member call statement to a name the receiver's chain does not
 declare` at **469**, and the 246 operator rows whose pair the table cannot type with *both* sides known. That order is
 the next three instruments.
+
+## Stage 3, continued -- a literal subscript is an int site, and a Super call in an expression (measured 2026-11-25)
+
+**8,538 -> 8,743 modelled, all 8,743 byte-identical, 0 differing** (205 gained, none lost; residue 3,140 -> 2,935).
+Two rules, and neither is a new node: one is a site type that was passed as "unknown", the other a node the statement
+walk already wrote and the expression walk never asked for.
+
+**A subscript is an `int` site whatever the array holds.** `_emit_element` emitted the index with an empty site type,
+so a *literal* index had nothing to pick an encoding from and 185 bodies refused as `a numeric literal in a typeless
+function` -- `TransportPlatform.Activated`'s `Skins[1] = ActiveTexture;`, `MindControlCrystal.ShowActiveMaterial`,
+`UIWidget.GotFocus`/`LostFocus`, `C4Weapon.HideC4OnHand`. The package writes the index as an **int literal**:
+`Skins[1] = ...` is `10 26 01` (`DynamicArrayElement`, `26` = IntOne, the array read) and `StoryModeGame.GetBotTeam`'s
+`return Teams[0];` is `1a 25 01 62 01` (`ArrayElement`, `25` = IntZero) -- not the element's type, which for `Skins` is
+a material and for `Teams` an `UnrealTeamInfo`. That family is gone from the residue (185 -> 0): every one of the 205
+gained bodies refused on it. Only a **literal** index is retyped; a named index keeps the site it had, because no
+shipped body shows the width a byte-typed local takes in this position, and the corpus's 8,538 already-identical bodies
+reproduce byte for byte (a `byte` local in an `int` site would have gained a `39 3a` and moved them).
+
+**`Super.F(args)` in an expression is the `FinalFunction` the statement path already writes.** `_super_call` resolved
+`Super.F(args);` as a statement -- `1c <F's record on the parent chain> args 16` (`JaffaSerpentM.BeginState`'s
+`Super.BeginState();` is `1c f8 09 16`, `UDebugSmallLoadMapButton.Initialized`'s `Super.Initialized();` `1c e3 02 16`)
+-- but a Super call in a *value* position reaches `_emit_member` -> `_emit_member_call`, which took `Super` for an object
+and refused on its class. `UWindowURLTextArea.BeforePaint`'s `Super.BeforePaint(C, X, Y);` shows the same node with its
+arguments and no `Context` around it (`1c 69 0c 00 7c 1c 00 7d 1c 00 7e 1c 16`). The expression path now resolves the
+same parent record and returns it, converted at its own site. The refusal family it owned --
+`a name neither a local, a property nor an enum constant of the class chain` -- falls 207 -> 109, and every body that
+was already modelled stays identical, which is the control: the rule only fires where the walk used to refuse.
+
+**What is left on this thread.** The leaders are now `a call to a name the class chain does not declare` at **719**
+rows, `a member call statement to a name the receiver's chain does not declare` at **441**, `a member that is not a
+property of the receiver's class` at **280**, and `a call statement whose receiver's class the artifacts do not name`
+at 146 -- four families that all ask the same question in different places: which class the receiver's expression holds.
+That join is the next instrument, not another node.

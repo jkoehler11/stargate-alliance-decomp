@@ -972,20 +972,30 @@ def _emit_var(name, env, want=""):
 
 
 def _outer_wrapped(low, read, ptype, want, env):
-    """`Context(Outer, 5, 4) <read>` for a name the package exports once, on a class outside the body's chain.
+    """`Context(Outer, 5, <size>) <read>` for a name the package exports once, on a class outside the body's chain.
 
     `PlayerInput.ChangeSnapView` writes `19 01 8e 05 00 04 2d 01 6c 28` where the text spells `bSnapToLevel` and the
     record (export 2604) is declared on `PlayerController`, which `PlayerInput` (extends `Object`) does not reach --
-    so the compiled read goes through `Outer` (property import 14, `01 8e`). Only the bool shape is measured: all 60
-    `Outer.<bool>` nodes write the word 5 (a bare export bool writes 6), so anything else is refused, not guessed.
+    so the compiled read goes through `Outer` (property import 14, `01 8e`). The word is 5 for every one of the 60
+    `Outer.<bool>` nodes (a bare export bool writes 6).
+
+    The size byte is the **value's** size, and it is the same node for a non-bool name **in a class declared
+    `within X`**: `CheatManager.Amphibious`'s `Pawn.UnderwaterTime = +999999.0` opens
+    `19 19 01 8e 05 00 04 01 05 05 00 04 01 77` -- `Context(Outer, 5, 4) Pawn`, then the member read -- and
+    `Invisible`'s `Pawn.bHidden` is the same receiver. Outside a `within` class a non-bool name on another chain is
+    read **bare** (the 27 names the fallback answers are), so it keeps that read and is not given a node the package
+    does not write.
     """
     scope = env.get("scope") or {}
-    if low not in (scope.get("outer_props") or ()):
+    wrap_any = low in (scope.get("within_props") or ()) and (env.get("within") or "")
+    if low not in (scope.get("outer_props") or ()) and not wrap_any:
         return None
-    if ptype != "bool" or scope.get("outer_ref") is None:
-        raise Refused("a name this package declares only on another class's chain (the `Outer.<bool>` shape)")
+    size = PROP_SIZE.get(ptype)
+    if scope.get("outer_ref") is None or size is None:
+        raise Refused("a name this package declares only on another class's chain (the `Outer.<%s>` shape)"
+                      % (ptype or "typeless"))
     outer = bytes([INSTANCE_TOKEN]) + write_index(scope["outer_ref"])
-    return _converted(bytes([0x19]) + outer + struct.pack("<H", 5) + bytes([4]) + read, ptype, want)
+    return _converted(bytes([0x19]) + outer + struct.pack("<H", 5) + bytes([size]) + read, ptype, want)
 
 
 def _emit_enum(name, env, corpus=True):
@@ -1154,7 +1164,13 @@ def _emit_element(head, index, rettype, env):
     if token is None:
         raise Refused("an element of an array the artifacts do not type")
     arrb = emit_expr(head, "", env)[0]
-    idxb = emit_expr(index, "", env)[0]
+    # The subscript is an **int** site whatever the array holds: a literal index compiles as an int literal and
+    # not as the element's type -- `TransportPlatform.Activated`'s `Skins[1] = ActiveTexture;` writes `10 26 01`
+    # (IntOne) and `StoryModeGame.GetBotTeam`'s `return Teams[0];` writes `1a 25 ...` (IntZero), and against the
+    # element's own type 185 bodies refused as `a numeric literal in a typeless function`. Only a literal is
+    # retyped here: a *named* index keeps the site it had, because no shipped body shows the width a byte-typed
+    # local takes in this position.
+    idxb = emit_expr(index, "int" if (len(index) == 1 and index[0][0] == "number") else "", env)[0]
     node = bytes([token]) + idxb + arrb
     return _converted(node, etype, rettype), "element"
 
@@ -1385,6 +1401,10 @@ def _type_of(expr, env):
                 # `_emit_member`; the declared type is the fallback for a chain (`Player.LocalInteractions`).
                 if (_record_kind(obj, env) or _type_of(obj, env).lower()) in ("array", "string"):
                     return "int"
+            if len(obj) == 1 and obj[0][0] in ("ident", "keyword"):
+                # a qualified enum constant is a `byte`, exactly as the bare spelling is (see `_emit_member`)
+                if (env.get("enum_consts") or {}).get(obj[0][1].lower(), {}).get(nm) is not None:
+                    return "byte"
             # The member record is chosen by the receiver's *record kind*, exactly as `_emit_member` chooses
             # its node: `local Color C; C.R = R;` is a `color` by its own statement and a `StructMember` record
             # in the package, and the record is what names `R`. Testing the declared word here instead refused
@@ -1948,7 +1968,14 @@ def _func_on(cls, name, env):
                 if len(imp) == 1:
                     return ("final", imp[0][0])
                 continue
-            break
+            # A `native` declaration with **no index** (`natives.csv` token 0) has no opcode of its own, so
+            # the compiler writes an ordinary call over the name: `GameInfo.ProcessServerTravel`'s
+            # `P.ClientTravel(...)` is `1b 75 03` -- name 245, this package's `clienttravel` -- and
+            # `Pawn.EndClimbLadder`'s `SetViewPitch` the same. Only a token the table carries is an opcode.
+            idx = (env.get("names") or {}).get(low)
+            if idx is None:
+                break
+            return ("virtual", idx)
         own = [x for x in funcs.get(low, []) if x[1] == c]
         if own:
             if low in finals.get(c, ()):
@@ -2028,6 +2055,18 @@ def _class_of(expr, env):
             if friendly in class_names:
                 return friendly
             ref = _class_ref_class(friendly)
+            if ref:
+                return ref if ref in class_names else ""
+        # A `within` class spells the outer class's properties bare, and the package's class table does **not**
+        # carry their types (`PlayerController`'s `Pawn`, `Level` and `Outer` are native records with no
+        # `class_properties.csv` row, so the friendly word is empty and `Pawn.UnderwaterTime` had no class to join
+        # on). The `within` chain's own source text is the declaration the compiler read: `Controller.uc`'s
+        # `var Pawn Pawn;`, `Actor.uc`'s `var const LevelInfo Level;`.
+        word = (env.get("within_proptypes") or {}).get(low, "")
+        if word:
+            if word in class_names:
+                return word
+            ref = _class_ref_class(word)
             if ref:
                 return ref if ref in class_names else ""
         return ""
@@ -2182,6 +2221,22 @@ def _emit_member_call(obj, member, rettype, env):
         # the member (the compact length plus 3 bytes per one-byte index), never the compact length itself -- which
         # is why the word read as unexplainable at `AIMsgManager.AddReceivedMsg` (skip 22 over a 14-byte member).
         obj = obj[:stat_at]
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "super":
+        # `Super.F(args)` in an **expression** is the same `FinalFunction` the statement path writes: the parent
+        # class's own record behind `1c`, with no `Context` around it (`_super_call`). The statement form has been
+        # modelled since the parent-record rule; a return or an assignment value reaches `_emit_member` instead and
+        # had no path, so `return Super.F();` refused on the receiver.
+        order = env.get("order") or []
+        if len(order) < 2:
+            raise Refused("a Super call in a class with no super")
+        parent = order[1]
+        if member[0][0] not in ("ident", "keyword"):
+            raise Refused("a Super call whose member the walk cannot name")
+        rec = _record_on(parent, member[0][1], env)
+        if rec is None:
+            raise Refused("a Super call to a name the parent's chain does not declare")
+        call = emit_call(member, env, receiver=parent, head=bytes([0x1C]) + write_index(rec))
+        return _converted(call, _rettype_on(parent, member[0][1], env), rettype), "super-call-value"
     objb = emit_expr(obj, "", env)[0]
     cls = _class_of(obj, env)
     if not cls:
@@ -2349,6 +2404,18 @@ def _emit_member(expr, rettype, env):
                 + emit_expr(recv, "", env)[0] + struct.pack("<H", skip)
                 + bytes([size]) + member_read)
         return _converted(node, ptype, rettype), "default-chain"
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword"):
+        # A **qualified enum constant** -- `ERenderStyle.STY_Normal`, `WeaponID.P90` -- is the ordinal alone, the
+        # same two bytes the bare spelling writes: an enum constant is a global name to this compiler, so the
+        # `Enum.` prefix names the enum and adds no node. 31 residue rows spell it in bodies whose chain never
+        # declares the enum (`UWindow` classes and the SGMenu family read `Actor`'s `ERenderStyle`), and the
+        # `(enum, constant)` pair is what makes the ordinal unambiguous -- the table drops a pair two declarations
+        # spell at different ordinals.
+        _ordinal = (env.get("enum_consts") or {}).get(obj[0][1].lower(), {}).get(nm)
+        if _ordinal is not None:
+            if not 0 <= _ordinal <= 255:
+                raise Refused("an enum constant whose ordinal is above 255")
+            return _converted(bytes([0x24, _ordinal]), "byte", rettype), "enum-member"
     objtype = _type_of(obj, env).lower()
     # The node is chosen by the receiver's *record kind*, not by its declared type word: `PathName` is a `FilePath`
     # struct (a `StructMember`), while a cast or an operator wants that word (`SquadDir` is a `Vector`).
@@ -3454,6 +3521,29 @@ def _emit_within_call(stmt, env, within):
     return node, "within-call", "within-call"
 
 
+def _emit_global_call(member, env):
+    """`Global.F(args);` -> `38 <record> <args> 16`: the call with the state override stepped over.
+
+    `global.F()` names the class-scope function even inside a state, and the compiler writes it as a
+    `GlobalFunction` (0x38) over the **same record** a bare `F()` on the body's chain names:
+    `Vehicle.VehicleCeaseFire`'s `Global.VehicleCeaseFire(bWasAltFire);` is `38 50 06 2d 00 74 81 01 16` --
+    export 400 (`50 06`), the parameter read, `16` -- and `VehicleFire` is the same shape over export 345.
+    82 residue rows (41 bodies) spell the keyword and every one of them refuses today on the receiver.
+
+    A native, a delegate or a string-returning callee is refused rather than guessed: the head `0x38` earns for
+    those has not been measured. `_wide` is not consulted because the node writes no skip word: `0x38` is a
+    call token like `0x1b`/`0x1c`, not a `Context`.
+    """
+    call = emit_call(member, env)
+    if not call or call[0] not in (0x1B, 0x1C):
+        raise Refused("a `Global.` call whose callee is not a virtual or final function")
+    node = bytes([0x38]) + call[1:]
+    if _callee_return_type(member[0][1], env) == "string":
+        # a statement call whose declaration returns `string` is prefixed with `EatString`, as any other is
+        return bytes([0x0E]) + node, "global-call", "eat-string-global-call"
+    return node, "global-call", "global-call"
+
+
 def _stmt_member_call(stmt, env):
     """`A.F(args);` -> `19 <A> <skip> <size> <F>`: a call statement whose callee is a member of a receiver.
 
@@ -3476,6 +3566,9 @@ def _stmt_member_call(stmt, env):
     stat_at = _static_at(obj)
     if stat_at is not None:
         obj = obj[:stat_at]
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "global":
+        # `Global.F()` names the class-scope function, not a member of an object called `Global`
+        return _emit_global_call(member, env)
     cls = _class_of(obj, env)
     if not cls:
         raise Refused("a call statement whose receiver's class the artifacts do not name")
@@ -3728,7 +3821,7 @@ def _func_owners(pkg, kinds, names):
 
 
 def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, table_index, final_of=None,
-           dims_by_cls=None, consts_by_cls=None):
+           dims_by_cls=None, consts_by_cls=None, within=None):
     """The names one body may mention, each with the index and token the package's own record earns.
 
     A property is found by *name and owner*: the record's index is what the compiler wrote, so nothing is rebuilt.
@@ -3743,6 +3836,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
              # every name that fallback picked, whatever its type: a `within` call's argument reads it through
              # `Outer` too (`CheatManager.CauseEvent` passes `Pawn`, which is `PlayerController`'s property)
              "outside_props": set(),
+             # a name whose record is declared on the class this body is declared `within` (or its ancestors) and
+             # not on the body's own chain: every read of it is compiled in `Outer`'s scope, whatever its type
+             "within_props": set(),
              # the imports, so a member of a class this package only imports can find its record (a negative
              # index): `Pawn.Location` in AmbientCreatures is not an export of AmbientCreatures
              "imports": imports,
@@ -3769,6 +3865,10 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             scope["locals"][names[i + 1].lower()] = (LOCAL_TOKEN, i + 1, PROP_TYPE.get(kinds[i + 1], ""))
     order = [c for _p, c in _ancestors(chain, pack, cls)]
     scope["order"] = order
+    # The `within` class's chain, so a property record can be attributed: a name declared there and not on this
+    # body's chain is read through `Outer` (`CheatManager` -> `PlayerController`, whose `Pawn`, `Level`, `myHUD`
+    # and `Weapon` are the names its cheats spell bare).
+    within_chain = [c for _p, c in _ancestors(chain, pack, within)] if within else []
     # The dimension `ArrayCount(X)` folds to, the nearest declaration winning exactly as a property record does:
     # `var string ProgressMessage[4];` is on `PlayerController` itself, while `EventCache[64]` is `LevelInfo`'s.
     cst = {}
@@ -3835,6 +3935,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             imp = [c for c in imports.get(nm, []) if c[1] in PROPERTY_CLASSES]
             if len(imp) == 1:
                 scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
+                if within_chain and (_import_owners.get(imp[0][0]) or "") in within_chain \
+                        and (_import_owners.get(imp[0][0]) or "") not in order:
+                    scope["within_props"].add(nm)
                 continue
             if len(cands) == 1:
                 # One record by that name in the whole package, declared on a class that is *not* on this body's
@@ -3850,6 +3953,8 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                     scope["outer_props"].add(nm)
         if picked is not None:
             scope["props"][nm] = (INSTANCE_TOKEN, picked[0], PROP_TYPE.get(picked[2], ""))
+            if within_chain and (picked[1] or "") in within_chain and (picked[1] or "") not in order:
+                scope["within_props"].add(nm)
     # A property this package only *imports* -- an ancestor in another package declares it and no class here
     # re-declares it -- is still a record the compiler wrote, with a negative index: `Corroded.GetPawnDamageEffect`
     # is `04 02 d8 02` (`Default.PawnDamageEffect`, import 152) and `VoiceChatReplicationInfo.JoinChannelAt` reads
@@ -4052,6 +4157,8 @@ def _source_index(tree):
     withins = {}
     dims, consts = {}, {}
     enums, enum_names = {}, set()
+    enum_members = collections.defaultdict(set)
+    proptypes_mod = {}
     stateparents = {}
     files = 0
     for dirpath, _dirs, names in os.walk(tree):
@@ -4090,6 +4197,14 @@ def _source_index(tree):
             for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)",
                                  text, re.I):
                 proptypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
+            # ...and the same declaration with its **modifiers stepped over**: `var const LevelInfo Level;` reads
+            # as type `const` above, and the property a `within` body needs the class of (`CheatManager`'s `Level`)
+            # is exactly that spelling. This table feeds only the `within` join, so nothing else moves.
+            for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*"
+                                 r"(?:(?:const|config|private|protected|public|transient|native|editconst|"
+                                 r"editinline|editinlineuse|export|noimport|duplicatetransient|localized|"
+                                 r"input|travel)\s+)*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)", text, re.I):
+                proptypes_mod.setdefault((cls, m.group(2).lower()), m.group(1).lower())
             # ...and a `class<Z>` declaration's **target**, which both regexes above stop short of: their type
             # group is one word, so `var class<Ammunition> AmmoName;` and
             # `local class < StargateWeapon > WeaponClass;` put nothing in either table. `Z` is the class a
@@ -4133,8 +4248,11 @@ def _source_index(tree):
                     enum_names.add(enum.lower())
                     for cname, ordinal in members:
                         enums.setdefault((cls, cname.lower()), (ordinal, enum))
+                        # a **qualified** constant names its enum as well as the constant, so the pair is the key
+                        # and the ordinal is unambiguous even where two classes spell the name differently
+                        enum_members[(enum.lower(), cname.lower())].add(ordinal)
     return (index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents,
-            classrefs, localtypes_fn, classrefs_fn)
+            classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod))
 
 
 def score(tree, dump, out_dir, residue_dir=None, only=None):
@@ -4142,7 +4260,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
     index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents, \
-        classrefs, localtypes_fn, classrefs_fn = _source_index(tree)
+        classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod) = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -4161,6 +4279,16 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     # where every declarer agrees. `NM_DedicatedServer` is `LevelInfo.ENetMode`'s ordinal 1 in one class and
     # nothing else, so a body whose chain never reaches `LevelInfo` can still write `24 01` for it.
     enum_by_name = {nm: next(iter(v)) for nm, v in enum_seen.items() if len(v) == 1}
+    # The qualified spelling's table: `(enum, constant)` -> ordinal, kept only where every declaration agrees.
+    # `ERenderStyle.STY_Normal` is 1 in `Actor.uc` and in `SGMenuInteraction.uc`, so the pair answers; a pair two
+    # classes spell at different ordinals is dropped rather than guessed.
+    enum_consts = {}
+    for (enum, cname), ords in enum_members.items():
+        if len(ords) == 1:
+            enum_consts.setdefault(enum, {})[cname] = next(iter(ords))
+    proptypes_mod_by_cls = {}
+    for (c, n), t in proptypes_mod.items():
+        proptypes_mod_by_cls.setdefault(c, {})[n] = t
     localtypes_by_cls = {}
     for (c, n), t in localtypes.items():
         localtypes_by_cls.setdefault(c, {})[n] = t
@@ -4234,10 +4362,20 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                                 "cause": _residue_cause(src_texts.get(cls.lower(), []), fname, state)})
                 continue
             rettype, src_body, _text, is_native, _is_final, decl_params, aline = got
+            wcls = withins.get(cls.lower(), "")
             scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of,
-                           dims_by_cls, consts_by_cls)
+                           dims_by_cls, consts_by_cls, within=wcls)
+            # The declared type of every property the `within` class's chain spells, nearest ancestor first: the
+            # package's class table carries no row for a native record (`Pawn`, `Level`), so the source text is the
+            # only place the class of `CheatManager`'s bare names is written.
+            within_proptypes = {}
+            if wcls:
+                for _wp, _wc in _ancestors(chain, pack, wcls):
+                    for _n, _t in proptypes_mod_by_cls.get(_wc, {}).items():
+                        within_proptypes.setdefault(_n, _t)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
-                   "enum_names": enum_names, "enum_by_name": enum_by_name,
+                   "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
+                   "within_proptypes": within_proptypes,
                    "class_names": class_names, "order": scope["order"],
                    "rets": rets, "assert_line": aline,
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
@@ -4479,6 +4617,10 @@ function bool EachRetIf() { foreach Iter(Slot) { if (bDead) return true; } retur
 function ObjSwitch() { switch (Target) { case Target: Foo(1); break; } }
 function EmptySwitch() { switch (Target) { } }
 function EachNested() { foreach Iter(Slot) foreach Iter(Slot) return true; }
+function CallGlobal() { Global.Ping(); }
+function CallGlobalNative() { Global.Destroy(); }
+function byte EnumMember() { return ERenderStyle.STY_Normal; }
+function int BadEnumMember() { return ERenderStyle.STY_Missing; }
 """
 
 # A class that declares a bodyless stub at class scope and a body of the same name inside a state: the two are
@@ -4570,7 +4712,8 @@ ENV = {"names": {"ping": 51, "pong": 52, "say": 53, "getbox": 54, "getregion": 5
                 ("probe", "getbox"): "box", ("probe", "getregion"): "region"},
        # the receiver walk's own join: a function *record* of the synthetic class, which a member call resolves on
        "funcs_all": {nm: [(1, "probe")] for nm in ("ping", "pong", "say", "getbox", "getregion")},
-       "assert_line": 2086, "paramtypes": {},
+       "assert_line": 2086, "paramtypes": {}, "enum_consts": {"erenderstyle": {"sty_normal": 1}},
+       "within_proptypes": {},
        # the source-side `class<Z>` table: a local's declared target class, which the class table does not carry
        "classreftypes": {"cls": "probe"}}
 
@@ -4739,12 +4882,19 @@ WANT = {
     # A `switch` with no `case` at all writes the terminator alone: `ExtrasPage.ButtonClick` is `05 04 <Sender>
     # 0a ff ff`, no case word to patch.
     "emptyswitch": "05040163090affff040b47",
+    # `Global.F();` is the same call behind `GlobalFunction` (0x38): `Vehicle.VehicleCeaseFire`'s
+    # `Global.VehicleCeaseFire(bWasAltFire);` is `38 50 06 2d 00 74 81 01 16`, and here `Ping`'s record is 51 --
+    # the same index `Ping();` writes behind `0x1b`.
+    "callglobal": "383316" "040b47",
+    # A **qualified** enum constant writes the ordinal alone, exactly as the bare spelling does: `24 01` in a
+    # `byte` site (an `int` site widens it with `39 3a`, the same `ByteToInt` the bare spelling gets).
+    "enummember": "042401" "040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
           "castnoslot", "opnoslot", "setlength", "incfloat", "callunknown", "acountunknown", "badclass",
-          "badstatic", "eachnested")
+          "badstatic", "eachnested", "callglobalnative", "badenummember")
 
 
 def check(args):
@@ -4870,7 +5020,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr, _ltf, _crf = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr, _ltf, _crf, _tabs = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]
@@ -4973,6 +5123,42 @@ def check(args):
     got, _m, _s = emit_stmt(own, "", within_env)
     if got.hex() != "1b292616":
         print("FAIL uscript-emit: a bare call the chain declares was wrapped as `Outer` (%s)" % got.hex())
+        return 1
+    # P5b: a name whose record is declared on the `within` class's chain and not the body's is read through
+    # `Outer` **whatever its type**: `CheatManager.Amphibious` writes `19 19 01 8e 05 00 04 01 05 05 00 04 01 77`
+    # for `Pawn.UnderwaterTime` (the receiver wrapped at size 4), and `PlayerInput.ChangeSnapView`'s bool
+    # `bSnapToLevel` is `19 01 8e 05 00 04 2d 01 6c 28`. A name on the body's own chain keeps its bare read.
+    w_env = dict(within_env)
+    w_env["class_names"] = {"probe", "helper", "pawn"}
+    w_env["within_proptypes"] = {"pawn": "pawn"}
+    w_env["scope"] = dict(within_env["scope"], within_props={"pawn"},
+                          props=dict(SCOPE["props"], pawn=(0x01, 5, "object")))
+    try:
+        got = _emit_var("Pawn", w_env, "")
+    except Refused as exc:
+        print("FAIL uscript-emit: a `within` property read refused: %s" % exc)
+        return 1
+    if got.hex() != "19018e050004" "0105":
+        print("FAIL uscript-emit: a `within` property read emits %s, expected 19018e0500040105" % got.hex())
+        return 1
+    if _class_of([("ident", "Pawn")], w_env) != "pawn":
+        print("FAIL uscript-emit: the `within` text does not name the receiver's class (%r)"
+              % (_class_of([("ident", "Pawn")], w_env),))
+        return 1
+    if _emit_var("Health", w_env, "") is None or _emit_var("Health", w_env, "")[:1] == b"\x19":
+        print("FAIL uscript-emit: a property of the body's own chain was wrapped as `Outer`")
+        return 1
+    # ...and a type with no measured value size is refused rather than given a word: a struct-typed `within`
+    # property is the shape no shipped body writes.
+    st_env = dict(w_env, scope=dict(w_env["scope"],
+                                    props=dict(w_env["scope"]["props"], squaddir=(0x01, 620, "struct")),
+                                    within_props={"squaddir"}))
+    try:
+        _emit_var("SquadDir", st_env, "")
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a struct-typed `within` property was wrapped with an unmeasured size")
         return 1
     # P6: a bool **member of a struct** is read behind `BoolVariable`: `!SavedFireProperties.bInitialized` writes
     # `81 2d 36 52 43 01 5a 08 16` (`Weapon.AdjustAim`), `SimAnim.bAnimLoop = true;` writes `14 2d 36 ...`
