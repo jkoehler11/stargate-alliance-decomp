@@ -1352,3 +1352,65 @@ member indices and sizes are unknown), the Editor builders' `39 3f` operand cast
 keyframe bodies, and `TextGameInfo.InitComponent`'s one non-ASCII byte. The 34 *default chain whose member the
 receiver's class does not declare* rows are `X.Default.Y` where `X` is a `class<Z>` variable -- `PickupClass`,
 `DamageType`, `WeaponClass` -- so the member lives on `Z`, which is the next join to read.
+
+## Stage 3, continued -- a `class<Z>` receiver, a bool member of the default object, and a cast that is not a reference (measured 2026-11-24)
+
+**7,853 -> 7,884 modelled, all 7,884 byte-identical, none changed** (32 bodies gained; the residue 3,825 -> 3,794;
+the *default chain whose member the receiver's class does not declare* bucket **34 -> 5**; the differ bucket stays
+at **52** with **6 rows fixed and 6 new**, both named below). The three rules are one join each, and each was a word
+the walk had already read and then compared against the wrong table.
+
+**A receiver declared `class<Z>` reads its member on `Z`, and no table held `Z`.** `AmmoName.Default.MaxAmmo` is
+`Ammunition.MaxAmmo`'s record, but the receiver's *record* is a `UClassProperty` whose kind word is `class`, the
+class table (`class_properties.csv`) spells the declared type `Class<Ammunition>`, and the source's own
+`var class<Ammunition> AmmoName;` / `local class < StargateWeapon > WeaponClass;` fell through both declaration
+regexes in `_source_index`, which capture one type word and stop at the `<`. So `_class_of` answered `""`, the
+member lookup never ran, and **34 bodies** refused. Three fixes, one idea:
+
+| source | the record | why the walk wrote something else |
+|---|---|---|
+| `AmmoName.Default.MaxAmmo` (`var class<Ammunition>`) | `12 01 75 0a 05 00 04 02 5b 0f` | the class table's `Class<Ammunition>` is not a class *name* |
+| `WeaponClass.Default.SnipingIdleAnim` (`local class < StargateWeapon >`) | `12 00 67 29 ...` | neither declaration regex reached past the `<` |
+| `class 'Localizer' . default . sSelect` | `12 20 cc 01 05 00 00 02 d5 03` | a class literal names its class in the literal |
+
+`_class_ref_class(word)` unwraps `Class<Z>` / `class < Z >` / `class.Z` to `Z`; `_class_of` consults it for a
+parameter, a local, a property's artifact spelling, a **chain link** and a `class'X'` literal (package prefix
+dropped); and a new source-side table `classreftypes` (`local`/`var class<Z> N`) carries the target for the two
+declarations the old regexes could not see. `_member_record` unwraps its `target` on the *class-table* path too,
+because a property's declared word arrives there as `class<ammunition>` and the records live on `Ammunition`.
+`_is_class_ref` reads `classreftypes` first: `12 00 67 29` for `WeaponClass.Default.SnipIdleAnim` is a
+`ClassContext`, and asking the record kind instead answered `19`.
+
+**A bool member of the default object is read behind `BoolVariable`.** `Driver.default.bOwnerNoSee` is
+`19 01 1b 06 00 04 2d 02 59 0a` (`Vehicle.ClientKDriverLeave`) and `InputClass.default.bEnableDodging` is
+`12 01 53 1a 06 00 04 2d 02 7b 16` (`PlayerController.SetDodging`): the `Context`'s member is `2d`
+(`BoolVariable`) and the `DefaultVariable` (`02`) *follows* it, so the skip word is the member read's wide length
+(6) and the value size stays 4. The chain emitted `02 <idx>` alone with skip 5 -- the whole of six differences
+(`Vehicle`/`KVehicle.ClientKDriverLeave`, `KVehicle.KDriverLeave`, `WeaponTurret.GunnerLeave`,
+`PlayerController.PlayerSpidering.EndState`, and the bool half of `ShieldBelt.StopInvisible`).
+
+**A cast is an object, not a reference.** `_is_class_ref`'s last test asked `_type_of(expr) == "class"`, and
+`_type_of` answers `class` for *every* object cast (`Pawn(Owner)`), because the word covers both "a class" and "an
+object of a class type". `Pawn(Owner).Default.Visibility` is `19 2e 83 01` -- a plain `Context` -- and writing `12`
+there was all of `ShieldBelt.StopInvisible`. The test now skips a call expression; a bare class name, a class
+literal and a `class<Z>` declaration still answer `class`.
+
+**The gate** carries the three as controls: `classrefdefault` (`12 <local> 06 00 04 2d 02 <idx>` for a
+`local class<Probe>` bool chain, taken from `SetDodging`), `castchain` (`19 2e <cast> 05 00 04 02 <idx>`, from
+`StopInvisible`'s token) and `litdefaulttext` (`12 20 <idx> 05 00 00 02 <idx>`, from `GUIMessageBox.InitComponent`)
+-- 92 synthetic bodies, all three corrupted deliberately and each named its row. The synthetic record table also
+gained the `StrProperty` kind for `Caption` (a folded `IntProperty` added a `39 53` cast the shipped bytes do not
+carry), and both member refusals gained a debug spelling (`SG1_DBG_MEMBER=1` names the receiver and the class it
+resolved to), which is how the last five rows were counted by shape.
+
+**What is left.** Five default chains refuse still: `FiredAmmunition.ProjectileClass` in `Controller.WarnTarget`,
+`PlayerController.AdjustAim` and `BotEnemy.AdjustAim` (a member of a member inside the chain), `Chosen.PawnClass`
+in `DeathMatch`/`StoryModeGame.SpawnBot` (same shape), and one more. The differ bucket's six **new** rows are
+`class<Z>` chains whose member is now found and whose *shape* is one more rule:
+`AirborneTurretController.GetAimingTargetSpeedOffset`, `AmbientCreatureManager.Timer`,
+`GRENADE.CalcGrenadeLanding`, `Powerups.HandlePickupQuery`, `SemektetMortarGun.CalcGrenadeLanding`,
+`WeaponPickup.BotDesireability`. **One body was lost**: `StargateHUD.ToggleGameHUD` (`local GameHUD G; ...
+G.HideHud(!G.bHideHud);`) is now refused as *a member call statement to a name the receiver's chain does not
+declare* -- the local's class resolves, the callee does not -- which is the next read on this chain, not a
+measurement of it. The 17 *a receiver chain whose member is not one name* rows and the UWindow `Region` members
+(a struct no class text declares) are untouched by this change.
