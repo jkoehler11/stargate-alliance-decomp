@@ -727,6 +727,48 @@ def _operators():
 OPERATORS = {}
 OPERATOR_PREC = {}
 UNARY = {}
+SOLE_ROWS = {}
+SOLE_UNARY = {}
+
+
+def _sole_rows():
+    """`{symbol: (a, b)}` for every binary symbol the table installs exactly **one** row for.
+
+    An operator's token is chosen by its symbol *and* its operand pair (`+` is `Add_IntInt`, `Add_FloatFloat` and
+    `Add_VectorVector`), so a pair the walk cannot type has no answer -- unless the symbol has only one row, in
+    which case the symbol alone is the answer. `&&`, `||` and `^^` are each declared once in all 18 packages
+    (`native(130) static final operator(30) bool && ( bool A, skip bool B )`), so there is no other overload the
+    compiler could pick and both operands are `bool` by the declaration itself. The walk types an operand from the
+    receiver chain it reads; when that chain is not in the artifacts the side is unknown, and on a one-row symbol
+    that unknown cannot change the row -- the body was refused for want of the only row there is.
+    """
+    if SOLE_ROWS:
+        return SOLE_ROWS
+    seen = {}
+    for (sym, a, b) in _operators():
+        seen.setdefault(sym, set()).add((a, b))
+    for sym, pairs in seen.items():
+        if len(pairs) == 1:
+            SOLE_ROWS[sym] = next(iter(pairs))
+    return SOLE_ROWS
+
+
+def _sole_unary():
+    """`{symbol: operand type}` for every one-operand symbol the table installs exactly one row for.
+
+    `!` is `native(129) static final preoperator bool ! ( bool A )` and the corpus declares no second row, so its
+    operand is `bool` by the declaration. `-` has three rows (`Subtract_PreInt`/`PreFloat`/`PreVector`) and is not
+    in the table here.
+    """
+    if SOLE_UNARY:
+        return SOLE_UNARY
+    seen = {}
+    for (sym, a) in UNARY:
+        seen.setdefault(sym, set()).add(a)
+    for sym, ops in seen.items():
+        if len(ops) == 1:
+            SOLE_UNARY[sym] = next(iter(ops))
+    return SOLE_UNARY
 
 # The compound-assignment spellings. A `+=` is **not** a `Let` around a `+`: its token is a separate native
 # (`AddEqual_IntInt` 161 against `Add_IntInt` 146) and its first parameter is an `out`, so the row is chosen by the
@@ -782,6 +824,17 @@ def _operator_types(expr, env, site="", root=False):
         return None
     t1, t2 = _type_of(left, env).lower(), _type_of(right, env).lower()
     n1, n2 = _numeric(t1, env), _numeric(t2, env)
+    if not (t1 and t2):
+        # A side the walk cannot type on a **one-row** symbol: `&&`/`||`/`^^` install one row each, so the symbol
+        # alone decides the token and both operands are `bool`. 48 `bool && unknown`, 25 `unknown && unknown`, 15
+        # `bool || unknown` and 12 `unknown && bool` bodies are refused on exactly this and nothing else the body
+        # spells -- the row is not missing, the side is.
+        sole = _sole_rows().get(sym)
+        if sole == ("bool", "bool"):
+            hit = _operators().get((sym, "bool", "bool"))
+            if hit is not None:
+                token, ret = hit
+                return sym, "bool", "bool", ret, token, at
     for a, b in ((n1, n2), (t1, t2)):
         hit = _operators().get((sym, a, b))
         if hit is not None:
@@ -1598,6 +1651,12 @@ def _unary_types(expr, env):
         hit = UNARY.get((sym, cand))
         if hit is not None:
             return sym, cand, hit[1], hit[0]
+    if not t and _sole_unary().get(sym) == "bool":
+        # The one-row rule on the unary side: `!` is declared once, over `bool`, so an operand the walk cannot
+        # type is still a bool and the row is the only candidate. 25 bodies refuse on `an unknown type !` alone.
+        hit = UNARY.get((sym, "bool"))
+        if hit is not None:
+            return sym, "bool", hit[1], hit[0]
     return sym, t, "", None
 
 
@@ -1822,6 +1881,11 @@ def _params_on(cls, name, env):
         for _p, c in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", cls.lower()):
             if (c, low) in params:
                 return params[(c, low)]
+        # No fallback to the body's own chain: a member call's parameter list is the receiver's declaration, the
+        # same rule `_rettype_on` already carries for its return type. `HaakenWeaponShield.BeginState`'s
+        # `ShieldFX.Lower()` is a no-argument `Lower()` on `HaakenWeaponShieldEffect` while the body's own chain
+        # declares `Lower(float)`, and the fallback refused the call as `0 argument(s) to a 1-parameter callee`.
+        return None
     for c in env.get("order") or []:
         hit = params.get((c, low))
         if hit:
@@ -2053,7 +2117,7 @@ def _member_record(obj, nm, env):
 
 
 # The size byte a **call** writes for its value, per declared return kind. `PROP_SIZE` is the property table (the
-# same measure, taken over 31,622 `Context` nodes); the four struct/byte words here are the ones the refusal families
+# same measure, taken over 31,622 `Context` nodes); the struct/byte words here are the ones the refusal families
 # pin, each read off the shipped node that refused for want of it -- the size is a property of the return kind, so a
 # body with one call node in it pins the pair:
 #   `coords` -> **48**, not 12: four vectors (`Origin`, `XAxis`, `YAxis`, `ZAxis`), measured on 10 bodies
@@ -2061,7 +2125,16 @@ def _member_record(obj, nm, env):
 #     is a different shape and stays as measured.
 #   `color` -> 4 (one node; the same width `STRUCT_SIZE` carries for the property), `font` -> 4 (a class, so a
 #     pointer: two nodes), `framehittest` -> 1 (one node -- a byte-sized UWindow struct).
-RETURN_SIZE = dict(PROP_SIZE, rotator=12, coords=48, color=4, font=4, framehittest=1)
+#   `plane` -> 16, `region` -> 16, `box` -> 28 and `array.string` -> 0 are read off the `Context` node each
+#     refuses at, and the skip word beside the size is its own check (`skip == _wide(call)`):
+#     `ShadowProjector.InitShadow`'s `ShadowActor.GetRenderBoundingSphere()` is `19 01 62 16 06 00 10 1c 61 41 16`
+#     (skip 6, size 0x10); `UWindowFramedWindow.Resized` and `UWindowMessageBox.BeforePaint` both write
+#     `19 01 06 07 00 10 1b 73 01 17 16` for `LookAndFeel.FW_GetClientArea(Self)` (skip 7, size 0x10);
+#     `BotEnemy.SetNewHideNode`'s box-returning call is `19 01 14 06 00 1c 1c e7 0e 16` (skip 6, size 0x1c = 28,
+#     not the 25 a field sum of `box` would give); and `GameInfo.GetMapRotation`'s
+#     `MaplistHandler.GetCurrentMapRotation()` is `19 01 68 1f 06 00 00 1b 50 0d 16` (skip 6, size 0).
+RETURN_SIZE = dict(PROP_SIZE, rotator=12, coords=48, color=4, font=4, framehittest=1,
+                   plane=16, region=16, box=28, **{"array.string": 0})
 
 
 def _emit_member_call(obj, member, rettype, env):
@@ -2597,11 +2670,13 @@ def _assign_at(stmt):
 
 
 def _callee_params(name, env, receiver=None):
-    """`[(type, name)]` from the declaration of the callee the class chain inherits it from."""
+    """`[(type, name)]` from the declaration of the callee the class chain inherits it from.
+
+    With a `receiver` the answer is the receiver's chain only: `_params_on` refuses to fall back, because a
+    same-named function on the body is a different record with its own parameter list.
+    """
     if receiver:
-        hit = _params_on(receiver, name, env)
-        if hit:
-            return hit
+        return _params_on(receiver, name, env)
     low = name.lower()
     for cls in env["order"]:
         hit = env["params"].get((cls, low))
@@ -4332,6 +4407,9 @@ function IncFloat() { FCount++; }
 function CallMember() { Target.Ping(); }
 function CallMemberArg() { Target.Pong(1); }
 function CallMemberText() { Target.Say("x"); }
+function Box TakeBox() { return Target.GetBox(); }
+function Region TakeRegion() { return Target.GetRegion(); }
+function CallHelper() { TargetH.Pong(); }
 function CallUnknown() { Target.Missing(); }
 function bool NotFlag() { return !bDead; }
 function NotSet() { bDead = !bDead; }
@@ -4378,8 +4456,10 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "target": (0x01, 611, "object"), "flag2": (0x01, 46, "bool"),
                    "bflag": (0x01, 47, "bool"), "squaddir": (0x01, 620, "struct"),
                    "caption": (0x01, 5, "string"), "suffix": (0x01, 6, "string"),
-                   "items": (0x01, 700, "array"), "fcount": (0x01, 640, "float")},
-         "chain": {("probe", "probe"): ("", "")}, "pack": "probe", "cls": "probe",
+                   "items": (0x01, 700, "array"), "fcount": (0x01, 640, "float"),
+                   "targeth": (0x01, 614, "object")},
+         "chain": {("probe", "probe"): ("", ""), ("probe", "helper"): ("", "")},
+         "pack": "probe", "cls": "probe",
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte"),
                     "cls": (0x00, 613, "class")},
          "classrefs": {"probe": 4, "actor": -77},
@@ -4393,7 +4473,7 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
          "delegates": {"onchange": 51}}
 
 # The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
-SCOPE["objclass"] = {("probe", "target"): "probe"}
+SCOPE["objclass"] = {("probe", "target"): "probe", ("probe", "targeth"): "helper"}
 
 # The declared dimension of an array property, which `ArrayCount` folds to (`var int Items[4];`).
 SCOPE["dims"] = {"items": 4}
@@ -4413,6 +4493,7 @@ SCOPE["props_all"]["caption"] = [(5, "probe", "StrProperty")]
 SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe", "bflag"): "bool",
                      ("probe", "probe", "health"): "int", ("probe", "probe", "bdead"): "bool",
                      ("probe", "probe", "flag2"): "bool", ("probe", "probe", "target"): "probe",
+                     ("probe", "probe", "targeth"): "helper",
                      ("probe", "probe", "fcount"): "float"}
 
 # The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
@@ -4431,16 +4512,26 @@ PARAMS[("probe", "say")] = [("string", "S", False)]
 # `class` is declared -- the two shapes the statement walk's new families emit.
 PARAMS[("probe", "iter")] = [("int", "Item", False)]
 PARAMS[("probe", "takeclass")] = [("class", "C", False)]
+# A **member** call's parameter list is its *receiver's* declaration: `Pong` is one argument on `Probe` and no
+# argument on the class `TargetH` holds, so a fallback to the body's chain would refuse `TargetH.Pong()` as
+# `0 argument(s) to a 1-parameter callee`.
+PARAMS[("helper", "pong")] = []
 ENUMS = {("probe", "probe_walking"): (1, "EProbe"), ("probe", "probe_swimming"): (3, "EProbe")}
-ENV = {"names": {"ping": 51, "pong": 52, "say": 53}, "scope": SCOPE, "params": PARAMS, "enums": ENUMS,
+ENV = {"names": {"ping": 51, "pong": 52, "say": 53, "getbox": 54, "getregion": 55}, "scope": SCOPE,
+       "params": PARAMS, "enums": ENUMS,
        "enum_names": {"eprobe"},
-       "class_names": {"probe"}, "order": ["probe"],
-       "rets": {("probe", "bump"): "int", ("probe", "mytext"): "string", ("probe", "say"): "string"},
+       "class_names": {"probe", "helper"}, "order": ["probe"],
+       "rets": {("probe", "bump"): "int", ("probe", "mytext"): "string", ("probe", "say"): "string",
+                ("probe", "getbox"): "box", ("probe", "getregion"): "region"},
        # the receiver walk's own join: a function *record* of the synthetic class, which a member call resolves on
-       "funcs_all": {nm: [(1, "probe")] for nm in ("ping", "pong", "say")},
+       "funcs_all": {nm: [(1, "probe")] for nm in ("ping", "pong", "say", "getbox", "getregion")},
        "assert_line": 2086, "paramtypes": {},
        # the source-side `class<Z>` table: a local's declared target class, which the class table does not carry
        "classreftypes": {"cls": "probe"}}
+
+# `Pong` is a record of *both* classes: the receiver's chain picks the one `TargetH` holds, which is the `helper`
+# spelling with no parameters.
+ENV["funcs_all"]["pong"] = [(1, "probe"), (2, "helper")]
 
 WANT = {
     "yes": "0427040b47",
@@ -4555,6 +4646,13 @@ WANT = {
     # (ObjectConst of the class, skip 9 over a 6-byte call with one one-byte index, size 0 for a string return).
     # Shipped: `Speech.SetAIMsg`'s `class'AIMessage'.static.Assign(msg, NewMsg)` is `12 20 19 10 00 04 1c 56 07 ...`.
     "classcall": "041220040900001b351f780016" "040b47",
+    # A struct-typed return's value size is the `Context` byte: `plane` and `region` are 16 and `box` is 28
+    # (`ShadowProjector.InitShadow` writes skip 6 / size 0x10; `BotEnemy.SetNewHideNode` skip 6 / size 0x1c).
+    "takebox": "04190163090600" "1c" "1b3616" "040b47",
+    "takeregion": "04190163090600" "10" "1b3716" "040b47",
+    # A member call's parameter list is its receiver's declaration: `TargetH` holds `helper`, whose `Pong` takes no
+    # argument, while the body's own `Probe.Pong(int A)` does -- a fallback to the body's chain refuses this call.
+    "callhelper": "19016609060000" "1b3416" "040b47",
     "negint": "048f016e0416040b47",
     # `&&` whose left operand is a `!` node: `82 <!bDead> 18 0700 <bFlag> 16`; the skip word is that node's wide
     # width plus one, exactly as `bSquadBeingAlerted && ! bSquadAlertComplete` writes `18 09 00` for an 8-wide node.
@@ -4597,7 +4695,8 @@ REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative",
 
 def check(args):
     """Synthetic corpus plus the committed artifact's own consistency: no dump, no writes."""
-    names = {"weapon_bone": 2063, "probe": 5, "ping": 51, "pong": 52, "say": 53}
+    names = {"weapon_bone": 2063, "probe": 5, "ping": 51, "pong": 52, "say": 53,
+             "getbox": 54, "getregion": 55}
     for value, want in ((0, b"\x00"), (1, b"\x01"), (63, b"\x3f"), (64, b"\x40\x01"),
                         (2063, b"\x4f\x20"), (8191, b"\x7f\x7f")):
         got = write_index(value)
@@ -4615,6 +4714,26 @@ def check(args):
             return 1
     env = dict(ENV)
     env["names"] = names
+    # A **one-row symbol** is typed by its symbol: `&&`, `||` and `^^` are declared once each in all 18 packages
+    # and `!` is `preoperator bool ! ( bool A )`, so a side the walk cannot type still takes that row. Driven
+    # directly because the probe class has no operand that is *emittable* and untyped at the same time -- a bare
+    # unknown name is refused by `emit_expr` on its own.
+    _operators()
+    for sym in ("&&", "||", "^^"):
+        if _sole_rows().get(sym) != ("bool", "bool"):
+            print("FAIL uscript-emit: the table installs more than one row for %s" % sym)
+            return 1
+        got = _operator_types([("ident", "Unknown"), ("op", sym), ("keyword", "bFlag")], env)
+        if got is None or got[4] is None or got[1:3] != ("bool", "bool"):
+            print("FAIL uscript-emit: %s with an untyped side answers %r, expected the (bool, bool) row" % (sym, got))
+            return 1
+    if _sole_unary().get("!") != "bool":
+        print("FAIL uscript-emit: `!` no longer installs one operand type")
+        return 1
+    got = _unary_types([("op", "!"), ("ident", "Unknown")], env)
+    if got is None or got[3] is None or got[1] != "bool":
+        print("FAIL uscript-emit: `!` with an untyped operand answers %r, expected the bool row" % (got,))
+        return 1
     got = {f[1].lower(): (f[2], f[3], f[4]) for f in functions_of(SYNTH)}
     for fn, want in WANT.items():
         if fn not in got:

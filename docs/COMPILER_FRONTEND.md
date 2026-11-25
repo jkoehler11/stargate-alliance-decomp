@@ -1612,10 +1612,48 @@ alike. **15 bodies gained**: `class.weapon` 3 (`GameInfo.AddDefaultInventory`, `
 Together: **8,314 modelled / 8,314 byte-identical / 0 differ** (from 8,278 / 8,278 / 0; 36 bodies gained, none lost;
 residue 3,400 -> 3,364).
 
-**What is left on this thread.** `plane` and `region` returns are *not* in this bundle: neither has a body with a
-single call node in it, so the same census answers two sizes apiece (16 and 4; 16, 0 and 4) and no measurement pins
-them -- `box` and `array<string>` are in the same state. The 20 `a call with 0 argument(s) to a 1-parameter callee`
-rows are the next rule, not the next table: `HaakenWeaponShield.BeginState`'s `ShieldFX.Lower()` is legal on
-`HaakenWeaponShieldEffect` while the emitter read the *body's* `Lower(float)` declaration, so a member call's
-parameter list needs the same no-fallback-to-the-body's-chain treatment its return type already has. Then the 42
-`class<Z>(` rows that fail on their operands and the 246 operator rows whose pair the table cannot type.
+## Stage 3, continued -- one-row operators, the receiver's parameter list, and four return sizes (measured 2026-11-25)
+
+**8,314 -> 8,342 modelled, all 8,342 byte-identical, 0 differing** (28 gained, none lost; residue 3,364 -> 3,336).
+Three rules, each of them a lookup that asked a table where the language had already fixed the answer.
+
+**A symbol the operator table installs one row for is typed by its symbol.** The table holds exactly one `&&` (130),
+one `^^` (131), one `||` (132) and one `!` (129) declaration across all 18 packages, and every one of them is `bool`
+on both sides -- so a side the walk cannot type cannot change the row. The refusal families that were waiting on it
+were the head of the operator residue: 48 `bool && an unknown type`, 25 `an unknown type && an unknown type`, 15
+`bool || unknown`, 12 `unknown && bool`, 9 `unknown || unknown`, 7 `unknown || bool` and 25 `an unknown type !`.
+`_sole_rows()`/`_sole_unary()` read that census off `inventory/native_operators.csv` (a symbol with one row, not a
+hand-written list), and the rule fires **only where a side is unknown**: a pair the table lacks for two *known*
+types is still refused, because there the type is the measurement and not the symbol. `--check` drives
+`_operator_types`/`_unary_types` directly for all four symbols, because the probe class has no operand that is
+emittable and untyped at once.
+
+**A member call's parameter list is the receiver's declaration, with no fallback to the body's chain.** `_params_on`
+walked the receiver's chain and then, when the name was not declared there, the *body's* chain -- the fallback
+`_rettype_on` had already lost for the return type. `HaakenWeaponShield.BeginState`'s `ShieldFX.Lower()` is a
+no-argument `Lower()` on `HaakenWeaponShieldEffect` while the body's own chain declares `Lower(float)`, so the call
+was refused as `0 argument(s) to a 1-parameter callee (0 required)`; that family carries 20 rows, and two more
+(`0 argument(s) to a 2-parameter callee`, `... a 6-parameter callee`) are the same fallback. All 22 model now, and
+`--check` holds the rule with a second class in the probe: `TargetH.Pong()` is a no-argument `Pong` on the class
+`TargetH` holds while `Probe.Pong(int A)` is the body's -- a fallback refuses it.
+
+**Four return sizes are read off the `Context` node that refused.** `plane` is **16** (`ShadowProjector.InitShadow`'s
+`ShadowActor.GetRenderBoundingSphere()` is `19 01 62 16 06 00 10 1c 61 41 16`), `region` **16**
+(`UWindowFramedWindow.Resized` and `UWindowMessageBox.BeforePaint` both write `19 01 06 07 00 10 1b 73 01 17 16` for
+`LookAndFeel.FW_GetClientArea(Self)`), `box` **28** -- not the 25 a field sum of `box` gives
+(`BotEnemy.SetNewHideNode` writes `19 01 14 06 00 1c 1c e7 0e 16`) -- and `array.string` **0**
+(`GameInfo.GetMapRotation`'s `MaplistHandler.GetCurrentMapRotation()` is `19 01 68 1f 06 00 00 1b 50 0d 16`). Each
+node checks itself: the skip word beside the size is `_wide` of the call (6, 7, 6, 6), so the byte read is the size
+and not a neighbouring field. The earlier census could not pin these because it demanded a body with a *single* call
+node in it; a `Context` writes the size for the call it holds regardless of what else the body does. Three bodies
+gained; `box`'s moves on to an operator rule (`unknown - unknown`), and `plane`/`region` *member* records are still
+open -- see below. `--check` holds `plane`/`region` (`takebox`, `takeregion`).
+
+**What is left on this thread.** `UWindowFramedWindow.Resized` is now a **differ** row rather than a refusal: with
+`region` at 16 its node matches `BeforePaint`'s byte for byte, but the body models 163 bytes against the shipped
+165, because `R.X`/`R.Y` are read as a record (`36 de 01`) where the package writes `36 1f`, and the `39 3f`
+`IntToFloat` in front of each is missing -- the gap is region's *member* records, not its size. `plane` has the same
+member table ahead of it. `BotEnemy.SetNewHideNode` now refuses at `an unknown type - an unknown type` instead of at
+the box return. Then the 42 `class<Z>(` rows that fail on their operands and the 246 operator rows whose pair the
+table cannot type with *both* sides known.
+

@@ -239,6 +239,12 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 one-row operator symbols, a member call's parameter list, and four return sizes: **8,342 modelled
+      / 8,342 byte-identical / 0 differ** (from 8,314 / 8,314 / 0; 28 bodies gained, none lost; residue 3,364 ->
+      3,336). `&&`/`||`/`^^`/`!` are typed by their symbol (one row each in the table), `_params_on` no longer
+      falls back to the body's chain, and `plane`/`region`/`box`/`array.string` return sizes are read off the
+      `Context` node that refused. Next: region's member records (`Resized` is a differ row), `SetNewHideNode`'s
+      `unknown - unknown`.
 - [~] 3.6 a `.static` call, and the value size of a class or struct return: **8,314 modelled / 8,314
       byte-identical / 0 differ** (from 8,278 / 8,278 / 0; 36 bodies gained, none lost; residue 3,400 -> 3,364).
       (1) `class'X'.static.F(args)` is a **`ClassContext`** (`12`) whose class expression is the chain before the
