@@ -126,6 +126,7 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 # `Texture tex; int HotX, HotY; byte WindowsCursor` (**4+4+4+1 = 13**) -- `UWindowGridColumn.MouseMove`,
 # `UWindowFramedWindow.LMouseDown`. A width one byte either side of these puts the emitted tail out of step with the
 # shipped body, so the match is the measurement.
+#
 STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 16, "region": 16,
                "mousecursor": 13}
 
@@ -1171,7 +1172,14 @@ def _declared_type(nm, env):
             is_local = table == "locals"
             break
     if ptype != "struct":
-        return ptype
+        if ptype:
+            return ptype
+        # A **parameter** has no row in either table: its declared type is in the body's own signature, which
+        # `paramtypes` carries, and `localtypes` carries it too when the class declares the name once.
+        # `Controller.WarnTarget(FireProperties FiredAmmunition, ...)` reads
+        # `FiredAmmunition.ProjectileClass.Default.Speed`, and `FireProperties.ProjectileClass`'s declared type is
+        # the only thing that names the class that chain ends on -- answering "" refused it as "an unnamed class".
+        return (env.get("paramtypes") or {}).get(nm) or (env.get("localtypes") or {}).get(nm) or ptype
     if is_local:
         # The property artifact has no row for a local, so a struct-typed local read as `struct` and every
         # operator over it was refused as a pair the table does not install: 78 bare operands (46 names) were
@@ -1903,6 +1911,15 @@ def _member_record(obj, nm, env):
     # it, a **negative import**, and the import table names it; only a single candidate of that name is used, the
     # same rule `_scope` applies to a property on another chain (`InteractionHands.EndState` writes -508).
     imp = [x for x in (scope.get("imports") or {}).get(nm, []) if x[1] in PROPERTY_CLASSES]
+    if len(imp) > 1:
+        # The receiver's class is known, so the import's *owner* is the record: `Chosen.PawnClass.Default.
+        # ControllerClass` is `Pawn.ControllerClass`, and `StargateGame.u` imports `ControllerClass` from more
+        # than one class, so the name alone is ambiguous and the chain's own ancestor decides.
+        owners = env.get("import_owners") or {}
+        anc = {c for _p, c in _ancestors(chain, pack, target)}
+        owned = [x for x in imp if (owners.get(x[0]) or "").lower() in anc]
+        if len(owned) == 1:
+            imp = owned
     if len(imp) == 1:
         kind = PROP_TYPE.get(imp[0][1], "")
         friendly = ""
