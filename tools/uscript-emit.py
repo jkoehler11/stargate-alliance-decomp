@@ -85,6 +85,21 @@ class Refused(Exception):
     pass
 
 
+# The refusal's own context: what the walk was looking at when it gave up. Cleared once per body, filled by the
+# refusal site (and by `_class_of` when it answers nothing), and written into `--residue-out` beside the reason.
+REFUSAL = {}
+
+
+def _note(**kw):
+    REFUSAL.update(kw)
+
+
+def _no(why):
+    """Record *why* `_class_of` found no class, then answer "" the way its callers expect."""
+    REFUSAL["why"] = why
+    return ""
+
+
 # The record classes an `InstanceVariable`/`LocalVariable` operand can name. The operand is the record's *index* --
 # positive for an export, negative for an import -- so a property needs no order rebuilt, just its own row found.
 PROPERTY_CLASSES = {"IntProperty", "ByteProperty", "BoolProperty", "FloatProperty", "ObjectProperty",
@@ -2024,7 +2039,7 @@ def _class_of(expr, env):
     """
     expr = _strip_parens(expr)
     if not expr:
-        return ""
+        return _no("an empty receiver expression")
     class_names = env.get("class_names") or set()
     stat_at = _static_at(expr)
     if stat_at is not None:
@@ -2038,14 +2053,16 @@ def _class_of(expr, env):
         # (their declaration regexes stop at the `<`)
         ref = (env.get("classreftypes") or {}).get(low, "")
         if ref:
-            return ref if ref in class_names else ""
+            return ref if ref in class_names else _no(
+                "a `class<Z>` declaration whose class the class table does not carry")
         for table in ("paramtypes", "localtypes", "proptypes"):
             t = (env.get(table) or {}).get(low, "")
             if t and t in class_names:
                 return t
             ref = _class_ref_class(t)
             if ref:
-                return ref if ref in class_names else ""
+                return ref if ref in class_names else _no(
+                    "a `class<Z>` declaration whose class the class table does not carry")
         if low == "self":
             own = (env.get("scope") or {}).get("cls") or ""
             return own if own in class_names else ""
@@ -2056,7 +2073,8 @@ def _class_of(expr, env):
                 return friendly
             ref = _class_ref_class(friendly)
             if ref:
-                return ref if ref in class_names else ""
+                return ref if ref in class_names else _no(
+                    "a `class<Z>` member whose class the class table does not carry")
         # A `within` class spells the outer class's properties bare, and the package's class table does **not**
         # carry their types (`PlayerController`'s `Pawn`, `Level` and `Outer` are native records with no
         # `class_properties.csv` row, so the friendly word is empty and `Pawn.UnderwaterTime` had no class to join
@@ -2068,32 +2086,43 @@ def _class_of(expr, env):
                 return word
             ref = _class_ref_class(word)
             if ref:
-                return ref if ref in class_names else ""
-        return ""
+                return ref if ref in class_names else _no(
+                    "a `within` property whose class the class table does not carry")
+        for table in ("paramtypes", "localtypes", "proptypes"):
+            t = (env.get(table) or {}).get(low, "")
+            if t.replace(" ", "").lower().startswith("array"):
+                return _no("an array name, whose element type the artifacts do not name")
+            if t:
+                return _no("`%s` is declared `%s`, which is not a class the class table carries"
+                           % (low, t))
+        return _no("a bare name this body declares no type for")
     if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
             and expr[1][0] == "quoted"):
         # `class'GameInfo'.Default.DefaultPlayerName`: the literal names its own class, and a package prefix is the
         # package's, not part of the class name (`class'Engine.PlayerInput'`).
         name = expr[1][1].strip("'").strip('"').lower().split(".")[-1]
-        return name if name in class_names else ""
+        return name if name in class_names else _no(
+            "a class literal whose class the class table does not carry")
     mc = _metacast(expr, env)
     if mc is not None:
         # `class<Actor>(OptionalObject).static.GetLocalString(...)`: the receiver holds `Z` itself, so a member
         # lookup runs on `Z`'s chain rather than on the word `class`
-        return mc[0].lower() if mc[0].lower() in class_names else ""
+        return mc[0].lower() if mc[0].lower() in class_names else _no(
+            "a `class<Z>(x)` cast whose class the class table does not carry")
     if _is_call(expr):
         # `TransientAmbientPawn(Pawn).VerifyLastRenderTime()`: the receiver is a cast, and a cast names the class
         # it casts to -- the same `classrefs` rule `_emit_cast` uses for `DynamicCast`.
         if _cast_kind(expr[0][1], env) == "object" and expr[0][1].lower() in class_names:
             return expr[0][1].lower()
         t = _rettype_on("", expr[0][1], env)
-        return t if t in class_names else ""
+        return t if t in class_names else _no(
+            "a call whose declared return type the class table does not carry as a class")
     at = _element_at(expr)
     if at is not None:
         # `GlobalEvents[size - 1].AddCondition(con)`: the receiver is an element, and the element type is what
         # the member call resolves against
         t = _element_type(expr[:at], env)[1]
-        return t if t in class_names else ""
+        return t if t in class_names else _no("an element of an array the artifacts do not type")
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
@@ -2114,8 +2143,10 @@ def _class_of(expr, env):
                 # a member declared `class<Z>`: `Chosen.PawnClass.Default.ControllerClass` is read on `Pawn`
                 ref = _class_ref_class(friendly)
                 if ref:
-                    return ref if ref in class_names else ""
-    return ""
+                    return ref if ref in class_names else _no(
+                        "a chain member declared `class<Z>` whose class the table does not carry")
+            return _no("a receiver chain whose member the artifacts name no class for")
+    return _no("a receiver shape `_class_of` does not resolve")
 
 
 def _member_record(obj, nm, env):
@@ -2243,6 +2274,8 @@ def _emit_member_call(obj, member, rettype, env):
         # The receiver's class is the join. Falling back to the body's own chain here wrote a `VirtualFunction`
         # for `ProfileList.ItemCount()` -- resolved to `ProfilePanel.ItemCount`, a *different* function of the same
         # name two classes away -- where the package writes a `FinalFunction` naming the receiver's own record.
+        _note(family="member-call-expr", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
+              receiver="")
         raise Refused("a call member whose receiver's class the artifacts do not name")
     memb = emit_call(member, env, receiver=cls)
     # The word is the call's own width in the compiler's code array, whatever the receiver is. It was held at 5 for
@@ -2440,6 +2473,8 @@ def _emit_member(expr, rettype, env):
         # wrote export 8263 for a property whose record is 13. Two bodies also resolve the name to a same-named
         # export of *this* package while the package names an import (`InitFor` writes -20), which is wrong bytes
         # that look right -- the receiver's class is the only honest join.
+        _note(family="member-read", expr=" ".join(v for _k, v in obj), member=nm,
+              receiver=_class_of(obj, env) or "", kind=objkind)
         raise Refused("a member that is not a property of the receiver's class")
     token, index, ptype, friendly = hit
     if objkind == "struct":
@@ -2785,6 +2820,31 @@ def _callee_params(name, env, receiver=None):
     return None
 
 
+def _by_name_index(name, env):
+    """The name index a **by-name** `VirtualFunction` writes, or None when the callee is not that shape.
+
+    A callee with no record in the body's package -- no export, no import, no native row -- is not nameless: the
+    compiler writes the call by *name index*. `AmbientCreatures.TransientAmbientPawn.Died` ships
+    `... 1b 41 02 00 73 02 00 74 02 16` for `PlayDying(DamageType, HitLocation)` (name 129 of that package's
+    name table), and `GamePlay.ScriptedController.LeaveScripting` writes `19 01 8d 07 00 00 1b 39 28 16` for
+    `Pawn.SetWalking(false)` (name 57); neither callee is imported, exported or in `natives.csv` there. The
+    name has to be in this package's own table, because that index is what the compiler wrote, **and** a
+    function of that name has to be declared somewhere in the corpus -- which is what keeps `rot(...)` (a
+    vector constructor no class declares) and the reconstructed text's `super` out of the call path. A package
+    that *does* import a record of the name is left alone: the compiler named the record, not the name.
+    """
+    low = name.lower()
+    idx = (env.get("names") or {}).get(low)
+    if idx is None:
+        return None
+    for _idx, kind in ((env.get("imports") or {}).get(low) or []):
+        if kind in ("Function", "DelegateFunction"):
+            return None
+    if low not in (env.get("corpus_funcs") or set()):
+        return None
+    return idx
+
+
 def emit_call(stmt, env, receiver=None, head=None):
     """`Name(a, b)` -> the token its declaration earned, each argument, `16` (EndFunctionParms); no trailer.
 
@@ -2818,7 +2878,12 @@ def emit_call(stmt, env, receiver=None, head=None):
             raise Refused("a delegate call whose name the name table does not carry")
         head = bytes([0x43]) + write_index(dele) + write_index(idx)
     elif how is None:
-        raise Refused("a call to a name the class chain does not declare")
+        idx = _by_name_index(stmt[0][1], env)
+        if idx is None:
+            _note(family="bare-call" if not receiver else "member-call-expr",
+                  receiver=receiver or "", member=stmt[0][1].lower())
+            raise Refused("a call to a name the class chain does not declare")
+        head = bytes([0x1B]) + write_index(idx)
     elif how[0] == "native":
         # An exec native's *token is its own opcode* once it reaches 0x70: the compiler writes `71 21 ... 16` for
         # `GotoState(...)`, `75` for `Enable(113)` and `76` for `Disable(118)` -- one byte, not the HighNative pair
@@ -3571,8 +3636,16 @@ def _stmt_member_call(stmt, env):
         return _emit_global_call(member, env)
     cls = _class_of(obj, env)
     if not cls:
+        _note(family="member-call-stmt", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
+              receiver="")
         raise Refused("a call statement whose receiver's class the artifacts do not name")
-    if _func_on(cls, member[0][1], env) is None:
+    if _func_on(cls, member[0][1], env) is None and _by_name_index(member[0][1], env) is None:
+        # The same rule the bare call uses: a callee the body's package carries no record of is written by
+        # name index, and `emit_call` takes that path when it is reached -- so the pre-check must not refuse
+        # the shape first. `Pawn.SetWalking(false)` in `ScriptedController.LeaveScripting` is exactly this:
+        # `19 01 8d 07 00 00 1b 39 28 16`, name 57, no record of it in GamePlay.u.
+        _note(family="member-call-stmt", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
+              receiver=cls)
         raise Refused("a member call statement to a name the receiver's chain does not declare")
     # A `delegate` is two records, and the call is `43 <DelegateProperty> <name index>` -- a `DelegateFunction` over
     # the receiver's own property, which no function lookup produces. `PlayerController.AdminReply` calls
@@ -4298,6 +4371,9 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     classrefs_by_cls = {}
     for (c, n), t in classrefs.items():
         classrefs_by_cls.setdefault(c, {})[n] = t
+    # Every function name the corpus's text declares, which is the guard the by-name call needs: the index the
+    # compiler wrote is this package's, but "is this a function at all" is the corpus's answer.
+    corpus_funcs = {key[2] for key in index}
     chain, natives = _chain(), _natives()
     class_names = {c for (_p, c) in chain}
     final_of = {}
@@ -4374,6 +4450,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                     for _n, _t in proptypes_mod_by_cls.get(_wc, {}).items():
                         within_proptypes.setdefault(_n, _t)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
+                   "corpus_funcs": corpus_funcs,
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
                    "within_proptypes": within_proptypes,
                    "class_names": class_names, "order": scope["order"],
@@ -4406,6 +4483,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "state_parents": stateparents.get(cls.lower(), {}),
                    # a function record's owning class and state, walked past the state's own Outer
                    "func_owners": func_owners}
+            REFUSAL.clear()
             try:
                 ours, model, shape = emit_body(src_body, rettype, env, is_native)
             except Refused as exc:
@@ -4417,7 +4495,12 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                     refused.append({"package": fn, "class": cls, "state": state, "function": fname,
                                     "rettype": rettype, "reason": str(exc),
                                     "source": " ".join(v for _k, v in (src_body or ()))[:300],
-                                    "theirs": body.hex()})
+                                    "theirs": body.hex(),
+                                    "family": REFUSAL.get("family", ""),
+                                    "expr": REFUSAL.get("expr", ""),
+                                    "member": REFUSAL.get("member", ""),
+                                    "receiver": REFUSAL.get("receiver", ""),
+                                    "why": REFUSAL.get("why", "")})
                 continue
             if ours != body:
                 # A modelled body that differs is a **bug in the walk**, not a measurement: every family here was
@@ -4484,7 +4567,8 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
         os.makedirs(residue_dir, exist_ok=True)
         rpath = os.path.join(residue_dir, "residue.csv")
         with open(rpath, "w", newline="", encoding="utf-8") as fh:
-            fields = ["package", "class", "state", "function", "rettype", "reason", "source", "theirs", "ours"]
+            fields = ["package", "class", "state", "function", "rettype", "reason", "source", "theirs", "ours",
+                      "family", "expr", "member", "receiver", "why"]
             w = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
             w.writeheader()
             for r in refused:

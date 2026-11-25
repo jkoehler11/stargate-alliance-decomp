@@ -1739,3 +1739,56 @@ rows, `a member call statement to a name the receiver's chain does not declare` 
 property of the receiver's class` at **280**, and `a call statement whose receiver's class the artifacts do not name`
 at 146 -- four families that all ask the same question in different places: which class the receiver's expression holds.
 That join is the next instrument, not another node.
+
+### The receiver-class join: a callee the package has no record of is written by name index
+
+Four refusals were one question: the walk resolved every artefact and still did not know what the name in front of a
+`.` (or a bare call) was. `tools/receiver-join.py` joins the emitter's own residue -- which now carries the refused
+expression, the receiver class the artefacts gave it and the reason `_class_of` answered nothing -- to the corpus's
+declarations and to `inventory/classes.csv`'s ancestor walk, so each refusal is one verdict: the name is declared at
+class scope **on the chain**, only inside a **state** of it, **off** the chain, **nowhere** at all, or the receiver's
+class is what is missing.
+
+The join's largest verdict is `on-chain`, and it is a rule rather than a gap. A callee that has **no record in the
+body's package** -- no export, no import, no native row -- is not nameless: the compiler writes the call by *name
+index*. `AmbientCreatures.TransientAmbientPawn.Died` ships `1b 41 02 00 73 02 00 74 02 16` for
+`PlayDying(HitLocation, HitDamageType)` (name 129 of that package's table) and
+`GamePlay.ScriptedController.LeaveScripting` writes `19 01 8d 07 00 00 1b 39 28 16` for `Pawn.SetWalking(false)`
+(name 57); neither callee is imported, exported or in `natives.csv` there. The emitter now takes that path when the
+name is in the package's own table **and** a function of that name is declared somewhere in the corpus -- the second
+half is what keeps `rot(...)` (a vector constructor no class declares) and the reconstructed text's `super` out of the
+call path -- and it leaves a package that *does* import a record of the name alone, because there the compiler named
+the record.
+
+The measured effect: **8,743 -> 9,479 modelled bodies, every one byte-identical, 0 differ**, residue 2,935 -> 2,199 --
+and the bare-call family falls 719 -> 41 while the member families *rise*, because bodies that used to die at their
+first bare call now reach the next thing the walk does not model.
+
+The `undeclared` verdict is its own finding: the reconstructed source spells calls no declaration can ever answer --
+`AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- because UnrealScript has no array methods and no
+`super` member. Those rows are not emitter work; they are the reconstruction's own syntax.
+
+<!-- BEGIN receiver-join -->
+**629 refused bodies over the four receiver families, joined to the corpus's own declarations** (`inventory/emit_receiver_join.csv`; 0 modelled of 0 walked, so the join is over the residue and not over the corpus).
+
+| family | refusals | on the chain | only in a state | off the chain | undeclared | no receiver class |
+|---|---|---|---|---|---|---|
+| bare call | 41 | 2 | 0 | 27 | 12 | 0 |
+| member call, no receiver class | 174 | 0 | 0 | 0 | 0 | 174 |
+| member call, statement | 117 | 88 | 0 | 29 | 0 | 0 |
+| member read | 297 | 28 | 0 | 232 | 37 | 0 |
+
+A name **on the chain** and still refused is a record the body's package does not carry: the compiler writes those by *name index* (`1b <index>`), which is the rule this read added -- `TransientAmbientPawn.Died` ships `1b 41 02` for `PlayDying(HitLocation, HitDamageType)` and `ScriptedController.LeaveScripting` `19 01 8d 07 00 00 1b 39 28 16` for `Pawn.SetWalking(false)`, neither callee imported, exported or in `natives.csv` there. **Undeclared** is the reconstructed text's own invention -- `AttachedControllers.remove`, `... .insert`, `guitabcontrol.super` -- which no declaration can ever resolve, because UnrealScript has no array methods and no `super` member.
+
+| family | where | bodies | examples |
+|---|---|---|---|
+| bare call | off-chain | 27 | `PlayerController.ServerMove`, `PhysicsVolume.PawnEnteredVolume`, `Pickup.SpawnCopy` |
+| bare call | on-chain | 2 | `StargateAIMsgManager.FilterSentMsg`, `StargateAIMsgManager.FilterReceivedMsg` |
+| bare call | undeclared | 12 | `GUIImageList.internalKeyEvent`, `GUITabControl.NextControl`, `GUITabControl.PrevControl` |
+| member call, no receiver class | unnamed | 174 | `PlaylistParserBase.ParseLines`, `ScriptObject.Destroyed`, `AIMsgManager.RemoveReceivedMsg` |
+| member call, statement | off-chain | 29 | `PuzzleTrigger._ResetMovers`, `C4Mission.BeginState`, `Train.SetTrainState` |
+| member call, statement | on-chain | 88 | `SpecialEventTrigger.Trigger`, `ACTION_DamageInstigator.InitActionFor`, `SE_RandomSpawn.spawnActor` |
+| member read | off-chain | 232 | `TransientAmbientCreature.FindSpawnLocation`, `SpiralStairBuilder.BuildCurvedStair`, `Actor.DisplayDebug` |
+| member read | on-chain | 28 | `GUIMenuOption.InitComponent`, `GUIListBox.InitComponent`, `GUIScrollTextBox.InitComponent` |
+| member read | undeclared | 37 | `PlayerController.MakeAdmin`, `Mutator.GetServerDetails`, `MaplistManager.GetRecords` |
+<!-- END receiver-join -->
