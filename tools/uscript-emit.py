@@ -149,9 +149,12 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 # `HTMLStyle` property is `Context 05 00 1c` (`UWindowHTMLTextRow(L).StartStyle` in
 # `UWindowHTMLTextArea.DrawTextLine` at offset `000d`, and seven more nodes across `GetWrapPos`, `RemoveWrap` and
 # `WrapRow`). A width one byte either side of these puts the emitted tail out of step with the shipped body, so the
-# match is the measurement.
+# match is the measurement. `PointRegion` is **12** -- its three fields sum to 9 (`Zone` pointer, `iLeaf` int,
+# `ZoneNumber` byte), so only the node measures it: `PlayerReplicationInfo.UpdatePlayerLocation`'s
+# `PlayerZone = P.Region.Zone;` is `36 41 0f 19 00 52 16 05 00 0c 01 78 0e`, the `Context` around `P.Region`
+# writing `0c` (see the 7 bodies that refused as *a struct member declared pointregion*).
 STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 16, "region": 16,
-               "mousecursor": 13, "htmlstyle": 28}
+               "mousecursor": 13, "htmlstyle": 28, "pointregion": 12}
 
 # The skip word a `Context` writes before its type byte. For a member that is an `InstanceVariable` it is 5 in all
 # 17,710 such nodes, whatever width the member's index was written with (`01 18` and `01 69 04` both write 5). A
@@ -1444,6 +1447,15 @@ def _type_of(expr, env):
             rec = _class_of(expr[:at], env)
             if rec:
                 return _rettype_on(rec, member[0][1], env)
+            obj = expr[:at]
+            if len(obj) == 1 and obj[0][0] in ("ident", "keyword") \
+                    and obj[0][1].lower() in ("static", "global"):
+                # `Static.F()` / `Global.F()`: the prefix names the class scope, so the call resolves on the body's
+                # own chain exactly as a bare `F()` does (`_prefix_call`). Without the type the operator above it
+                # stayed an uninstalled pair -- `GameInfo.AllowMutator`'s
+                # `!Default.bAllowVehicles && static.IsVehicleMutator(MutatorClassName)` is `AndAnd_BoolBool`
+                # (`21`), and `GameInfo.AddMutator`'s `!Static.AllowMutator(MutName)` is a `Not_PreBool`.
+                return _callee_return_type(member[0][1], env)
             return ""
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
             nm = member[0][1].lower()
@@ -2236,13 +2248,22 @@ def _class_of(expr, env):
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
             nm = member[0][1].lower()
             hit = _member_record(expr[:at], nm, env)
-            if hit is None:
+            if hit is None or not hit[3]:
                 # The receiver is a **struct**, and a struct's members are records too: `FiredAmmunition` is a
                 # `FireProperties` parameter, so `FiredAmmunition.ProjectileClass.Default.Speed` needs
                 # `FireProperties.ProjectileClass`'s declared type (`class<Projectile>`) and not a class lookup --
                 # `fireproperties` is no class, so the class join answers "". The pair is the same `_struct_member`
                 # `_emit_member` uses for a struct field read.
-                hit = _struct_member(expr[:at], nm, env)
+                #
+                # A *class* record with no declared word is the same miss one shape out: `Region.Zone` is
+                # `PointRegion.Zone`, a struct field, and `_member_record` answers it from the package's own
+                # export with an empty friendly type -- `PointRegion.Zone` is not a class property, so
+                # `class_properties.csv` has no row for it and `Region.Zone.bSoftKillZ` then refused as *a
+                # receiver chain whose member the artifacts name no class for*. The struct's own declaration
+                # says `zoneinfo`, so the struct link is asked whenever the class record carries no type word.
+                sh = _struct_member(expr[:at], nm, env)
+                if sh is not None and sh[3]:
+                    hit = sh
             if hit is not None and len(hit) > 3:
                 friendly = hit[3] or ""
                 if friendly in class_names:
@@ -2359,6 +2380,16 @@ def _emit_member_call(obj, member, rettype, env):
         # the member (the compact length plus 3 bytes per one-byte index), never the compact length itself -- which
         # is why the word read as unexplainable at `AIMsgManager.AddReceivedMsg` (skip 22 over a 14-byte member).
         obj = obj[:stat_at]
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() in ("static", "global"):
+        # `Static.F(args)` / `Global.F(args)` in a value position: `ScriptedController.GetAggroLevel`'s
+        # `return Global.GetAggroLevel();` is `04 38 64 03 16`, and `GameInfo.AddMutator`'s
+        # `!Static.AllowMutator(MutName)` is `1b 7f 16`. The prefix writes no receiver node; the return type is the
+        # callee's own and converts at the site, exactly as a bare call's does.
+        node, _model, shape = _prefix_call(obj, member, env)
+        rtype = _callee_return_type(member[0][1], env)
+        if rtype == "string":
+            return node, shape                   # the `EatString` prefix is already in the node
+        return _converted(node, rtype, rettype), shape
     if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "super":
         # `Super.F(args)` in an **expression** is the same `FinalFunction` the statement path writes: the parent
         # class's own record behind `1c`, with no `Context` around it (`_super_call`). The statement form has been
@@ -3710,6 +3741,27 @@ def _emit_within_call(stmt, env, within):
     return node, "within-call", "within-call"
 
 
+def _prefix_call(obj, member, env):
+    """`Static.F(args)` / `Global.F(args)` -> the callee's own node: the prefix names the class scope.
+
+    `Static.` (spelled `Static.` and `static.`) writes no receiver node at all -- the compiler emits exactly the
+    token a bare `F()` earns. Measured: `GameInfo.AllowMutator`'s `static.IsVehicleMutator(MutatorClassName)` is
+    `1b 40 17 6f 4e 16`, `GameInfo.AddMutator`'s `!Static.AllowMutator(MutName)` is `1b 7f 16`, and
+    `LocalMessage.GetRelatedString`'s `return Static.GetString(...)` the same shape. `Global.` is that call behind
+    a `GlobalFunction` (`38 <record>`), measured in a statement (`Vehicle.VehicleCeaseFire`'s
+    `38 50 06 2d 00 74 81 01 16`) and in a value (`ScriptedController.GetAggroLevel`'s
+    `return Global.GetAggroLevel();` is `04 38 64 03 16`), so the statement path keeps `_emit_global_call`.
+
+    Returns `(bytes, model, shape)`; a `string`-returning callee carries the `EatString` prefix, as any call does.
+    """
+    if obj[0][1].lower() == "global":
+        return _emit_global_call(member, env)
+    call = emit_call(member, env)
+    if _callee_return_type(member[0][1], env) == "string":
+        return bytes([0x0E]) + call, "static-prefix-call", "eat-string-static-prefix-call"
+    return call, "static-prefix-call", "static-prefix-call"
+
+
 def _emit_global_call(member, env):
     """`Global.F(args);` -> `38 <record> <args> 16`: the call with the state override stepped over.
 
@@ -3791,9 +3843,11 @@ def _stmt_member_call(stmt, env):
     stat_at = _static_at(obj)
     if stat_at is not None:
         obj = obj[:stat_at]
-    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "global":
-        # `Global.F()` names the class-scope function, not a member of an object called `Global`
-        return _emit_global_call(member, env)
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() in ("static", "global"):
+        # `Static.F(args);` / `Global.F(args);` name the class scope, not a member of an object called `Static` or
+        # `Global` -- the same rule the value position applies (`_prefix_call`).
+        node, _model, shape = _prefix_call(obj, member, env)
+        return node, shape, shape
     if (member[0][0] in ("ident", "keyword") and member[0][1].lower() in ARRAY_METHODS
             and _receiver_kind(obj, env) == "array"):
         # `Paths.Remove(0, Paths.Length);` is neither a member of a class nor a by-name call: the receiver is a
@@ -4114,6 +4168,22 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
         if e["outer"] == func_index and kinds.get(i + 1) in PROPERTY_CLASSES:
             scope["locals"][names[i + 1].lower()] = (LOCAL_TOKEN, i + 1, PROP_TYPE.get(kinds[i + 1], ""))
     order = [c for _p, c in _ancestors(chain, pack, cls)]
+
+    def _by_owner(imp):
+        """An ambiguous import name is the one whose owner is on this body's chain.
+
+        Two classes in another package declare the name, and the import table lists both: `Condition` and
+        `ScriptScene` (both Engine.u) each carry `var Screenplay _ParentScreenplay;`, so
+        `Cond_WhenPlayerTriggerChanges`'s `_ParentScreenplay.GetPlayerController()` had no single candidate and
+        refused as *a name neither a local, a property nor an enum constant*. The import's `package` field is the
+        owning class, and only one owner is an ancestor -- the same join `_member_record` applies to a receiver's
+        ambiguous import.
+        """
+        if len(imp) > 1:
+            owned = [c for c in imp if (_import_owners.get(c[0]) or "") in set(order)]
+            if len(owned) == 1:
+                return owned
+        return imp
     scope["order"] = order
     # The `within` class's chain, so a property record can be attributed: a name declared there and not on this
     # body's chain is read through `Outer` (`CheatManager` -> `PlayerController`, whose `Pawn`, `Level`, `myHUD`
@@ -4182,7 +4252,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             # A property an ancestor in *another* package declares is an import here, and the compiler wrote its
             # index as a negative number: `InteractionHands.EndState` reads `fc 07` (-508), not the export of a
             # same-named property some unrelated class in this package declares.
-            imp = [c for c in imports.get(nm, []) if c[1] in PROPERTY_CLASSES]
+            imp = _by_owner([c for c in imports.get(nm, []) if c[1] in PROPERTY_CLASSES])
             if len(imp) == 1:
                 scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
                 if within_chain and (_import_owners.get(imp[0][0]) or "") in within_chain \
@@ -4224,7 +4294,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     for nm, cands in imports.items():
         if nm in scope["props"]:
             continue
-        imp = [c for c in cands if c[1] in PROPERTY_CLASSES]
+        imp = _by_owner([c for c in cands if c[1] in PROPERTY_CLASSES])
         if len(imp) == 1:
             scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
     # A `delegate` is *two* records: a DelegateProperty named `__X__delegate` and a Function named `X`, so the call
@@ -4891,6 +4961,9 @@ function EmptySwitch() { switch (Target) { } }
 function EachNested() { foreach Iter(Slot) foreach Iter(Slot) return true; }
 function CallGlobal() { Global.Ping(); }
 function CallGlobalNative() { Global.Destroy(); }
+function int StaticValue() { return Static.Foo(1); }
+function int StaticLowerValue() { return static.Foo(1); }
+function int GlobalValue() { return Global.Foo(1); }
 function byte EnumMember() { return ERenderStyle.STY_Normal; }
 function int BadEnumMember() { return ERenderStyle.STY_Missing; }
 """
@@ -5163,6 +5236,14 @@ WANT = {
     # `Global.VehicleCeaseFire(bWasAltFire);` is `38 50 06 2d 00 74 81 01 16`, and here `Ping`'s record is 51 --
     # the same index `Ping();` writes behind `0x1b`.
     "callglobal": "383316" "040b47",
+    # `Static.F(args)` / `Global.F(args)` in a **value** position: the prefix writes no receiver node at all.
+    # `GameInfo.AddMutator`'s `!Static.AllowMutator(MutName)` is `1b 7f 16`, `GameInfo.AllowMutator`'s
+    # `static.IsVehicleMutator(MutatorClassName)` is `1b 40 17 6f 4e 16`, and `ScriptedController.GetAggroLevel`'s
+    # `return Global.GetAggroLevel();` is `04 38 64 03 16`. `Foo(1)` is `1b 29 26 16`; the `Static.` spelling is
+    # byte-for-byte the bare call.
+    "staticvalue": "041b292616040b47",
+    "staticlowervalue": "041b292616040b47",
+    "globalvalue": "0438292616040b47",
     # A **qualified** enum constant writes the ordinal alone, exactly as the bare spelling does: `24 01` in a
     # `byte` site (an `int` site widens it with `39 3a`, the same `ByteToInt` the bare spelling gets).
     "enummember": "042401" "040b47",

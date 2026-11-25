@@ -359,10 +359,45 @@ record first feeds the `Context(Outer, 5, size)` node `_outer_wrapped` already w
 family 137 -> 103.
 
 **Both fixes are joins, not shapes** -- neither writes a node the corpus does not already contain, which is why
-every gained body is byte-identical on the first run and no modelled body was lost. The remaining
-`Static.`/`Global.` prefix receivers are a shape: `Static.AllowMutator(MutName)` in `GameInfo.AddMutator` is a bare
-`VirtualFunction` plus its argument list (`1b 7f 16 47 5d 16`, no receiver node), so the pattern is measured and
-the statement path only needs the prefix spelling added.
+every gained body is byte-identical on the first run and no modelled body was lost. The `Static.`/`Global.`
+prefix receivers this paragraph left open are modelled in the next section: `Static.` writes the bare call
+(`1b 7f 16` for `GameInfo.AddMutator`'s `!Static.AllowMutator(MutName)`), and `Global.` the same call behind
+`38`.
+
+## Stage 3, continued -- the class-scope prefix, the caller's import, and a struct's own link (measured 2026-11-25)
+
+**10,273 modelled / 10,273 byte-identical / 0 differ** (from 10,061 / 10,061 / 0; 212 bodies gained, none lost;
+residue 1,767 -> 1,405, and no body refuses that did not before). Three rules, each measured on a shipped node.
+
+**`Static.F(args)` and `Global.F(args)` name the class scope, not an object.** `Static.` -- the texts spell it
+`Static.` and `static.` -- writes **no receiver node at all**: the compiler emits exactly the token a bare `F()`
+earns. `GameInfo.AddMutator`'s `!Static.AllowMutator(MutName)` is `1b 7f 16`; `GameInfo.AllowMutator`'s
+`!Default.bAllowVehicles && static.IsVehicleMutator(MutatorClassName)` writes the call as `1b 40 17 6f 4e 16`
+inside an `AndAnd_BoolBool`. `Global.` is the same call behind a `GlobalFunction` (`38 <record>`), measured in a
+statement (`Vehicle.VehicleCeaseFire`'s `38 50 06 2d 00 74 81 01 16`) and in a value
+(`ScriptedController.GetAggroLevel`'s `return Global.GetAggroLevel();` is `04 38 64 03 16`). `_prefix_call` writes
+both positions; `_type_of` answers the callee's return type for the prefix so the operator above it installs.
+The earlier note called this "a shape the statement path only needs a spelling for" -- it is neither: the node was
+already the bare call, and the value position was the half that refused.
+
+**An ambiguous property import is the one whose owner is on the body's chain.** `Condition` and `ScriptScene`
+(both Engine.u) each declare `var Screenplay _ParentScreenplay;`, so `StargateContent.u`'s import table carries the
+name twice (`-473` owned by `Condition`, `-232` by `Direction`, which itself extends `ScriptScene`). `_scope` used
+an import only when it was the name's *single* candidate, so every `_ParentScreenplay.GetPlayerController()` and
+`_ParentScreenplay.Spawn(...)` refused as *a name neither a local, a property nor an enum constant of the class
+chain*. The import's `package` field names the owner class, and only one owner is an ancestor of the body's class:
+that is the record, written with its negative index exactly as any other import. Twelve bodies, including the two
+`DirectionStart` states whose `_ParentScreenplay != None` had been an uninstalled `(unknown, object)` pair.
+
+**`PointRegion` is 12 bytes, and a struct field's record needs the struct link.** `Actor.Region` is
+`var const PointRegion Region;`, and `PlayerReplicationInfo.UpdatePlayerLocation`'s `PlayerZone = P.Region.Zone;`
+writes the `Region` `Context` as `19 00 52 16 05 00 0c 01 78 0e` -- size **0x0c**, though the three declared
+fields sum to 9 (`Zone` pointer, `iLeaf` int, `ZoneNumber` byte). Seven bodies refused for want of that width.
+`Region.Zone.bSoftKillZ` was the other half: `_class_of` asks `_member_record` for the last link first, and for a
+struct field the package answers a record with an **empty declared word** (`PointRegion.Zone` is no class
+property, so `class_properties.csv` has no row), so the walk returned "no class" without ever asking the struct's
+own declaration. It now falls through to `_struct_member`, which says `zoneinfo`, and the next member resolves on
+that class. Both fixes are joins; neither writes a node the corpus does not contain.
 
 ## What the statement walk has left
 
