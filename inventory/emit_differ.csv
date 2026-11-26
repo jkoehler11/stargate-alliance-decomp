@@ -1,5 +1,5 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,87,10765 identical
+(census),,,,79,10773 identical
 context skip,Context,ours shorter,,2,BotSG.AssignAmbushPoint SGMenuInteraction.Initialized
 context skip,Context,same length,,2,CheatManager.Fly CheatManager.Ghost
 jump distance,Jump,ours shorter,yes,7,Pawn.BaseChange Decoration.BaseChange BotSG.PickDestination
@@ -15,8 +15,8 @@ opcode,EndFunctionParms,ours shorter,,2,StargateEffect.Trigger StargateHUD.PostN
 opcode,FinalFunction,same length,,1,GUIComponent.ParseOption
 opcode,FloatConst,ours shorter,,2,CurvedStairBuilder.BuildCurvedStair SpiralStairBuilder.BuildCurvedStair
 opcode,Multiply_FloatFloat,ours shorter,,1,HUD.DisplayMessages
-opcode,PrimitiveCast,ours longer,,4,VolumetricBuilder.BuildVolumetric Mover.InterpolateTo UDebugVideoClient.BeforePaint
-opcode,PrimitiveCast,ours shorter,,10,LinearStairBuilder.Build GUIMessageBox.LayoutButtons BotSG.EngageDirection
+opcode,PrimitiveCast,ours longer,,3,VolumetricBuilder.BuildVolumetric UDebugVideoClient.BeforePaint UDebugVideoClient.Initialized
+opcode,PrimitiveCast,ours shorter,,3,LinearStairBuilder.Build BotSG.EngageDirection StargateHUD.paintTransparentBlob
 opcode,Skip,ours shorter,,1,SGPlayerInput.PlayerInput
 opcode,StructCmpEq,ours shorter,,1,MaplistRecord.CompareItems
 opcode,SubtractEqual_IntInt,same length,,2,StargateVehiclePassenger.ServerChangeDriverPosition StargateVehicle.ServerChangeDriverPosition

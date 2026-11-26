@@ -2138,17 +2138,17 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**87 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,765 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 87 separate defects.
+**79 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,773 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 79 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours shorter | yes | 20 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.SurfaceReduceDamage` |
 | jump distance | JumpIfNot | ours longer | yes | 10 | `PlayerController.LongClientAdjustPosition`, `PlayerController.PlayerMove`, `PlayerController.UpdateRotation` |
-| opcode | PrimitiveCast | ours shorter | - | 10 | `LinearStairBuilder.Build`, `GUIMessageBox.LayoutButtons`, `BotSG.EngageDirection` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
 | jump distance | JumpIfNot | ours shorter | no | 6 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
-| opcode | PrimitiveCast | ours longer | - | 4 | `VolumetricBuilder.BuildVolumetric`, `Mover.InterpolateTo`, `UDebugVideoClient.BeforePaint` |
 | operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
+| opcode | PrimitiveCast | ours longer | - | 3 | `VolumetricBuilder.BuildVolumetric`, `UDebugVideoClient.BeforePaint`, `UDebugVideoClient.Initialized` |
+| opcode | PrimitiveCast | ours shorter | - | 3 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
 | opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
 | context skip | Context | ours shorter | - | 2 | `BotSG.AssignAmbushPoint`, `SGMenuInteraction.Initialized` |
 | context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
@@ -2563,3 +2563,67 @@ alone, and PLAN 3.6 keeps the promotion open with the three scores as its starti
   `JumpIfNot` distance carries the extra byte. `ACTION_IfProximity`'s `DynamicActors(..., currentActor,)` strips the
   same trailing hole and both callees' omitted parameter is `optional`, so optionality does not decide it: the
   trailing-hole strip of the iterator section has one body against it and no rule yet.
+
+## Stage 3, continued -- the promotion is a call rule and a literal rule (measured 2026-11-26)
+
+The section above refuted the site rule and named the *operand's kind* as the variable. This run measured what the
+kind is: **two** bounds, both on the chain's leaves, each scored as a full run of `tools/uscript-emit.py` over the
+reconstructed tree plus `tools/emit-differ.py` against the same `origin/main` baseline (10,765 modelled / 913 residue
+/ 87 differ bodies), and compared per body with `cmp-score.py`:
+
+| formulation | modelled | residue | lost | gained |
+|---|---|---|---|---|
+| `origin/main` (site rule) | 10,765 | 913 | -- | -- |
+| every leaf a variable, property or literal | 10,772 | 906 | **3** | 10 |
+| the same, **and one leaf a literal** (shipped) | 10,773 | 905 | **0** | 8 |
+
+### The call bound: five of v3's eight losses
+
+A chain with a **call's** `int` result anywhere in it keeps its `int` arithmetic and casts its *result*. That one
+bound alone returns five of the eight bodies v3 lost -- `UWindowHSliderControl.CheckValue`,
+`CrystalTunnel.RandomVect`, `CrystalTunnelLayer.RandomVect`, `moTextOption.GetAdjustedSize`,
+`DestructableActor.TakeDamage` -- and keeps every gain. A call is a word immediately followed by `(`, which is also
+how a meta-cast is spelled (`Int(...)`, `int(...)`); an array subscript, a struct member and a parenthesised group are
+none of them a call.
+
+### The literal bound: the three that are not calls, and two retractions
+
+The two `SGInsetCamera.CalcDrawOffset` states and `GoaAutoTurretMK2Pawn.UpdateAimingRotation` are what the call bound
+does not explain, and reading them retracts this page's earlier attribution of both:
+
+- **`SGInsetCamera` is not the mixed chain.** `DrawOffset.Y = ViewOffsetX - SlideTime / 100.0 * deltaX` was named as
+  the loss because its pair is mixed. It is emitted correctly by the walk already: `SlideTime` is an **`int`**, so
+  `SlideTime / 100.0` is `Divide_FloatFloat(IntToFloat(SlideTime), FloatConst 100.0)` and the outer subtraction casts
+  its `int` leaf (`39 3f 01 76 12`). What v3 broke in that body is two statements earlier:
+  `deltaX = InactiveOffsetX - ViewOffsetX;` -- a **pure-read** chain assigned to a `float` local, which ships
+  `IntToFloat(Subtract_IntInt(InactiveOffsetX, ViewOffsetX))`, not `Subtract_FloatFloat` of two casts.
+- **`GoaAutoTurretMK2Pawn` is not a call leaf.** The earlier reading blamed `Tool_FindAngleDiff(...)`. The shipped
+  body at `0x52` is `Let InstanceVariable 6607 | 39 3f | 93 00 <newRot.Pitch> <Rotation.pitch> | 16`: the **differing
+  statement** is `desiredPitchOffset = newRot.Pitch - Rotation.pitch`, a pure-read chain of two `int` struct members
+  whose result the site casts. The call statement is byte-identical.
+
+So a chain of pure reads is not retyped either, and a **literal** is what makes the compiler retype: it folds the
+literal to a `FloatConst` (`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` is `Add_FloatFloat` all the way
+down), which makes one operand `float`, the pair takes the float row, and every other leaf converts at its own read.
+With no literal the chain keeps its `(int, int)` row and the **site** casts the result.
+
+The eight bodies the rule gains are the shape it was written for: `Mover.InterpolateTo`,
+`GUIMessageBox.LayoutButtons`, `UDebugBlueLookAndFeel.Combo_SetupSizes` / `Editbox_SetupSizes` and their
+`UWindowWin95LookAndFeel` twins, `UWindowComboList.BeforePaint`, `UWindowPulldownMenu.BeforePaint`.
+
+### What the rule does not reach, measured
+
+- `StargateHUD.paintTransparentBlob` **560** against 562 (from 534): closer, still two bytes short.
+- `StargatePawn.TakeDamage` **233** against 235 -- unchanged by either bound.
+- `Pawn.BaseChange` **268** against 272 -- unchanged, and none of the four formulations models it.
+
+### The trailing hole: writing it is worse, and the strip stays
+
+The last section left `Pawn.SurfaceReduceDamage`'s **written** `Nothing` (`GetClosestBone(..., OutSurface,,)` ships
+111 bytes where the strip writes 110) against `ACTION_IfProximity`'s stripped iterator call. Making the strip the
+**iterator's** (`foreach` head only) and writing a `Nothing` for an ordinary call's omitted trailing optional was
+scored and **refused**: it takes **13** residue bodies one byte long (among them `SurfaceReduceDamage` at 112 against
+111) and loses `StargateContent.SearchLight.SearchTick`, which the unconditional strip models exactly
+(413 against 412 with the hole written). So the strip stays unconditional, and `SurfaceReduceDamage` remains the one
+body against it: 111 wanted, 110 with the slot dropped, 112 with a `Nothing` in it -- the byte is neither, and it is
+the next instrument in this thread rather than a rule.
