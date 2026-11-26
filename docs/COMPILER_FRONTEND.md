@@ -2138,7 +2138,7 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**87 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,764 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 87 separate defects.
+**87 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,765 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 87 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -2490,38 +2490,76 @@ Of the 9 nodes a pair cannot decide on its own, **6** name the copy nested in th
 | `orientation.lookatactortag` | lowest | order | 2 | `NameProperty` | 2 | `scenemanager.ResolveActorsInActions` |
 <!-- END struct-records -->
 
-## Stage 3, continued -- the int/float promotion is per operand, and the emitter casts the result (measured 2026-11-26)
+## Stage 3, continued -- `interpcurve` is 12 bytes, and the float site's promotion refuted itself (measured 2026-11-26)
 
-Fourteen bodies first differ at a `PrimitiveCast` and six more at the operator the same byte sits on
-(`Divide_FloatFloat` 1 `ours shorter`, `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3,
-`SubtractEqual_IntInt` 2 -- `inventory/emit_differ.csv`), and they are one shape: **the package converts each
-operand to the expression's wider type at the operand's own site; the emitter evaluates in the operands' own type
-and converts the result.**
+Two results from one thread: the struct width the seven-widths section left out, and the promotion rule this page
+predicted *before* it had a score -- which the score refused.
 
-`UDebugBlueLookAndFeel.Combo_SetupSizes`'s `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H;`, target `float`,
-both `.H` ints:
+### `interpcurve`'s width, from the one body that reads it
 
-    shipped   Add_FloatFloat( Add_FloatFloat( FloatConst 12.0f, IntToFloat(.H) ), IntToFloat(.H) ) 16
-    emitter   IntToFloat( Add_IntInt( Add_IntInt( IntConstByte 12, .H ), .H ) ) 16
+`StargateCar.SVehicleUpdateParams` walks `Wheels[i].WheelInertia` where `Wheels` is an `array<interpcurve>`, and the
+node carries the width in its own bytes (`05 00 0c` where a 4-byte value writes `05 00 04`). The body refused as
+**a struct member declared `interpcurve`, whose value size this walk does not carry**, which is also why
+`inventory/context_size.csv` has no row for the struct: the only reader was the refusal, so no `Context` node ever
+disputed a width. `STRUCT_SIZE` gains `"interpcurve": 12` and the body emits byte-identically -- **10,765 modelled /
+10,765 identical / 0 differ** (from 10,764; one body gained, none lost; residue 914 -> 913; `emit_differ.csv`
+unchanged at 87 bodies, because this body differed on its width rather than on its bytes). `tools/context-size.py`'s
+`--check` used `interpcurve` as its witness for the *not in table* verdict, which a struct in the table can no longer
+be, so the witness moves to `interpcurvepoint`.
 
-Two shapes bound the rule:
+### The promotion: three formulations, one that fails its own test
 
-- `StargateHUD.paintTransparentBlob`'s `tempFloat = (xloc - 1) / image.USize;` ships
-  `Divide_FloatFloat( IntToFloat( Subtract_IntInt( xloc, 1 ) ), IntToFloat( USize ) )`: a **parenthesised** operand
-  keeps its own type and converts at the promotion site, while the division's own operands promote -- and the
-  unparenthesised left-associative chain above promotes with it (`12 + .H + .H` promotes the inner `+` too).
-- `UDebugVideoClient.BeforePaint`'s `ControlRight = ... / 2;` has an **int** target and ships
-  `Divide_IntInt( PrimitiveCast[44]( <float expression> ), IntConstByte 2 )`: at an int site the float operand
-  narrows *before* the division, which is the narrowing rule `_operator_types` already carries for a root int site.
+The rule the earlier section predicted is: at a `float` site an all-`int` chain retypes, each operand converting at
+its own site, so `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` ships
+`Add_FloatFloat(Add_FloatFloat(FloatConst 12, IntToFloat(.H)), IntToFloat(.H))`. Three bounds on it were scored, each a
+full run of `tools/uscript-emit.py` over the reconstructed tree plus `tools/emit-differ.py`; a body is **lost** when it
+is modelled at `origin/main` and not modelled by the formulation, **gained** the other way, both counted per
+`(package, class, state, function)`:
 
-**Why the emitter cannot reach it today**: `_operator_types` asks the pair table with the operands' own types and
-the exact `(int, int)` row answers first, so a `float` site never consults the `(float, float)` row; the mixed row is
-only reached when one operand is already float. The change is to let the **site** choose the row for the four
-arithmetic symbols when both operands are int, and to emit each operand at the promoted type -- except a
-parenthesised operand, which keeps its own type and converts after it.
+| bound | modelled | differ bodies | lost | gained |
+|---|---|---|---|---|
+| none (`origin/main`) | 10,764 | 87 | -- | -- |
+| v1 every operand of a `float`-site pair | 10,735 | 116 | 40 | 11 |
+| v2 + a call's argument keeps its `int` arithmetic | 10,765 | 86 | 9 | 10 |
+| v3 + only an assignment's value retypes | 10,767 | 85 | 8 | 11 |
 
-**What would settle it, and the risk**: one score run. The rule's reach is the whole question -- it promotes at every
-float site, so a body that matches today by converting the result would stop matching. The acceptance test is the
-emitter's usual one and it is not optional here: `differ: 0` in `inventory/uscript_emit.csv`'s census row, no
-modelled body lost, and the `PrimitiveCast` / operator rows falling together. Do not ship this on the fourteen rows
-alone.
+v3 is the net-best and still **fails the acceptance test this page set for it**: eight bodies that reproduced
+byte-identically stop reproducing, and no operator row moves (`PrimitiveCast` falls from fourteen bodies to five --
+4 `ours longer` + 10 `ours shorter` becomes 3 + 2 -- while `Divide_FloatFloat`, `Multiply_FloatFloat`,
+`Subtract_IntInt`, `AddEqual_IntInt` and `SubtractEqual_IntInt` stay exactly where they were).
+
+The **eleven gains** are the shape the rule was written for and repeat in every formulation that keeps the call's
+argument bound: `UDebugBlueLookAndFeel.Combo_SetupSizes` and `Editbox_SetupSizes` and their
+`UWindowWin95LookAndFeel` twins, `GUIMessageBox.LayoutButtons`, `StargateHUD.paintTransparentBlob`,
+`StargatePawn.TakeDamage`, `Mover.InterpolateTo`, `UWindowPulldownMenu.BeforePaint`,
+`UWindowComboList.BeforePaint`, and -- under v3's assignment bound -- `StargateCar.SVehicleUpdateParams`.
+
+The **eight losses** name the variable the site rule misses, and it is the **operand's kind**, not the site:
+
+- `UWindowHSliderControl.CheckValue`'s `NewValue = Int(TempF + 0.5) * Step;` ships the product in `int` and casts the
+  *result*, although both operands are `int` and the target is `float`: the left operand is a **call's `int` result**.
+- `CrystalTunnel.RandomVect`'s `v.x = Rand(range) - (range / 2);` is the same shape (`Rand` returns `int`, the right
+  operand a parenthesised `int` division) and ships `IntToFloat(Subtract_IntInt(...))`; `CrystalTunnelLayer.RandomVect`
+  writes it twice.
+- `GUI.moTextOption.GetAdjustedSize`'s comparison `ArrowWidth - 0.5 > int(ArrowWidth - 0.5) + 1` and
+  `DestructableActor.TakeDamage`'s `IntToFloat(Subtract_IntInt(DynamicArrayLength(...), ...))` repeat it, and
+  `GoaAutoTurretMK2Pawn.UpdateAimingRotation` casts `Tool_FindAngleDiff(...)`'s result.
+- `SGInsetCamera.CalcDrawOffset` (both states) is the one loss that is **not** a call:
+  `DrawOffset.Y = ViewOffsetX - SlideTime / 100.0 * deltaX` is a *mixed* chain, so the pair table's mixed branch is
+  what moved. That body is the open question the next score starts from, not the call family.
+
+So the next formulation promotes a chain only when **every leaf is a variable, property or literal**, and casts the
+whole chain otherwise. **This change is not shipped**: `inventory/uscript_emit.csv` carries the `interpcurve` width
+alone, and PLAN 3.6 keeps the promotion open with the three scores as its starting point rather than as a design.
+
+### Two readings that bound it either way
+
+- `Pawn.BaseChange`'s `(1 - Velocity.Z / 400) * Mass / Base.Mass` is **272 bytes where the walk writes 268**, first
+  differing at byte 39: a parenthesised group whose own type is `int` around a float subtraction, narrowed and
+  re-widened (`IntToFloat(FloatToInt(Subtract_FloatFloat(IntToFloat(IntOne), Divide_FloatFloat(...))))`). One body, and
+  none of the three formulations models it.
+- `Pawn.SurfaceReduceDamage`'s `GetClosestBone(HitLocation, StartTrace, OutDist, OutSurface,,)` **does** write a
+  `Nothing` for the omitted fifth parameter: **111 bytes against the walk's 110**, first differing at byte 1 where a
+  `JumpIfNot` distance carries the extra byte. `ACTION_IfProximity`'s `DynamicActors(..., currentActor,)` strips the
+  same trailing hole and both callees' omitted parameter is `optional`, so optionality does not decide it: the
+  trailing-hole strip of the iterator section has one body against it and no rule yet.

@@ -381,7 +381,7 @@ def self_check():
         del _tbl["testslot"]
     if struct_rule("htmlstyle", 31) != "unexplained":
         bad.append("a width neither the sum nor its alignment is read as a rule")
-    if struct_rule("interpcurve", 112) != "not in table":
+    if struct_rule("interpcurvepoint", 8) != "not in table":
         bad.append("a struct the table does not carry is not reported as one")
     if aligned4(13) != 16 or aligned4(9) != 12:
         bad.append("the aligner is wrong")
