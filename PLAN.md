@@ -239,6 +239,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 seven struct widths and a struct field whose own type is a struct: **10,739 modelled / 10,739
+  byte-identical / 0 differ** (from 10,648 / 10,648 / 0; 91 bodies gained, none lost; residue 1,030 -> 939). (1)
+  `STRUCT_SIZE` gains the seven widths `inventory/context_size.csv` measures, each agreed by every `Context` node
+  that reads it (`animrep` 12 over 4 nodes, `id3field` 36 over 3, `liveuser` 24 over 2, `orientation` 92 over 3,
+  `range` 8 over 1, `rangevector` 24 over 13, `voicedesc` 64 over 8), which clears 11 refusals of the form *a struct
+  member declared `<name>`*; the census moves all seven rows from `not in table` to `table`. (2) A struct field whose
+  own type is a struct is a struct value: the struct-member path tested `PROP_SIZE` alone, where `PROP_TYPE` maps a
+  `StructProperty` to `struct` and `PROP_SIZE` carries no struct, so `A.B.C` could never emit -- one `_value_width`
+  lookup now answers both tables at all three sites, and the refusal names the declared struct (89 rows cleared; 6
+  move one node deeper). **Three bodies the rules newly reach emit and still differ and are named**, not counted:
+  `SceneManager.ResolveActorsInActions` (a `StructMember` naming import -10624 where the package names export 4800 --
+  the field's record when the struct is imported), `HUD.DisplayMessages` (a multiply where the package writes a cast),
+  `SurfaceInfo.EmitWheelEffect` (a jump two bytes short, downstream); `emit_differ.csv` 84 -> 87 bodies. (3) The
+  census runs from a target now: `make context-size` writes `inventory/context_size.csv` and splices its block into
+  the page, `make ci` reproduces the block from the committed CSV (`--check-doc`), and the renderer stops reporting
+  the blank declared word as one disputed struct. Doc: `docs/COMPILER_FRONTEND.md`, new section + the census block.
+  Not in this PR: the import-vs-export record join the first differ row names, and `interpcurve`'s width (one body,
+  no agreed byte in the census).
 - [~] 3.6 an iterator's value is nothing, and a trailing hole is not written: **10,648 modelled / 10,648
   byte-identical / 0 differ** (from 10,571 / 10,571 / 0 at #942; 77 bodies gained, none lost; residue 1,107 ->
   1,030, and the `a call member returning an unknown type` bucket's 84 iterator rows are gone). Two rules, one
