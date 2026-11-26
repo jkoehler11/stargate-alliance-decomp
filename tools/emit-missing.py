@@ -91,12 +91,52 @@ def missing_of(ours_hex, theirs_hex, dis, table):
     return missing, invented, aligned
 
 
+def walk(nodes, out, depth=0):
+    """The same document order as `flatten`, with each node's own offset and depth."""
+    for n in nodes:
+        out.append((n["offset"], depth, n))
+        walk(n["children"], out, depth + 1)
+    return out
+
+
+def nodes(hexs, dis, table):
+    """`[(offset, depth, node)]` for one stream, or `None` where the walk refuses it."""
+    try:
+        return walk(dis.parse(bytes.fromhex(hexs), table), [])
+    except Exception:                                  # noqa: BLE001 - a refusal has no nodes to name
+        return None
+
+
+def print_nodes(ours_hex, theirs_hex, dis, table, name="", out=sys.stdout, ctx=2):
+    """The two streams node-aligned: each block's nodes, by offset, on the side that carries them."""
+    a, b = nodes(ours_hex, dis, table), nodes(theirs_hex, dis, table)
+    if a is None or b is None:
+        print("    %s: a stream does not walk, no node view" % name, file=out)
+        return
+    # Align on `signature`, the same identity the multiset uses: a `Jump`/`JumpIfNot` distance that moved is not a
+    # difference (see `signature`), and a node view that reported one would send the next run after a jump.
+    sa = [signature(n) for _o, _d, n in a]
+    sb = [signature(n) for _o, _d, n in b]
+    matcher = difflib.SequenceMatcher(a=sa, b=sb, autojunk=False)
+    print("    %s: %d node(s) ours, %d shipped" % (name, len(a), len(b)), file=out)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        print("      %s ours[%d:%d] shipped[%d:%d]" % (tag, i1, i2, j1, j2), file=out)
+        for k in range(max(0, i1 - ctx), i1):
+            print("            ours    %04x %s%s" % (a[k][0], "  " * a[k][1], label(a[k][2], dis)), file=out)
+        for k in range(i1, i2):
+            print("        OUR-    %04x %s%s" % (a[k][0], "  " * a[k][1], label(a[k][2], dis)), file=out)
+        for k in range(j1, j2):
+            print("        SHIP+   %04x %s%s" % (b[k][0], "  " * b[k][1], label(b[k][2], dis)), file=out)
+
+
 def read_residue(path):
     with open(path, newline="", encoding="utf-8", errors="replace") as fh:
         return [r for r in csv.DictReader(fh) if (r.get("reason") or "").startswith(DIFFERS) and r.get("ours")]
 
 
-def report(rows, dis, table, only=None, detail=False, out=sys.stdout):
+def report(rows, dis, table, only=None, detail=False, out=sys.stdout, node_view=False):
     groups = collections.defaultdict(list)
     for r in rows:
         key = "%s.%s%s" % (r["class"], r["function"], (" [" + r["state"] + "]") if r.get("state") else "")
@@ -111,6 +151,9 @@ def report(rows, dis, table, only=None, detail=False, out=sys.stdout):
               file=out)
         for key, delta, _r in members:
             print("      %-52s %+d byte(s) against the shipped body" % (key, delta), file=out)
+        if node_view:
+            for key, _delta, r in members:
+                print_nodes(r["ours"], r["theirs"], dis, table, name=key, out=out)
         if detail:
             for key, _delta, r in members:
                 _m, _i, aligned = missing_of(r["ours"], r["theirs"], dis, table)
@@ -155,7 +198,17 @@ def check():
     if not missing or not invented:
         print("FAIL emit-missing: a Context whose size byte moved reads as no difference")
         return 1
-    print("ok   emit-missing: 5 synthetic cases (a hole, a folded constant, a masked jump, a masked skip, a size byte)")
+    # ...and the node view names the same hole with its offset: `ours` 4 nodes, `theirs` 5, one block, one `Nothing`.
+    import io
+    buf = io.StringIO()
+    print_nodes("1b4f2716" + trailer, "1b4f270b16" + trailer, dis, table, name="hole", out=buf)
+    text = buf.getvalue()
+    inserted = [ln for ln in text.splitlines() if ln.lstrip().startswith("SHIP+")]
+    if "insert" not in text or len(inserted) != 1 or not inserted[0].rstrip().endswith("Nothing"):
+        print("FAIL emit-missing: the node view of a hole reads %r" % text)
+        return 1
+    print("ok   emit-missing: 6 synthetic cases (a hole, a folded constant, a masked jump, a masked skip, a size byte,"
+          " its node view)")
     return 0
 
 
@@ -164,6 +217,7 @@ def main():
     ap.add_argument("--residue", help="the emitter's --residue-out CSV")
     ap.add_argument("--only", help="one body, by `Class.Function` (substring)")
     ap.add_argument("--detail", action="store_true", help="with --only: the difference blocks' token ranges")
+    ap.add_argument("--nodes", action="store_true", help="with --only: each difference block's nodes, by offset")
     ap.add_argument("--check", action="store_true", help="synthetic streams, no dump, writes nothing")
     args = ap.parse_args()
     if args.check:
@@ -171,7 +225,8 @@ def main():
     if not args.residue:
         ap.error("--residue is required (or pass --check)")
     dis = _dis()
-    groups = report(read_residue(args.residue), dis, dis.Table(), only=args.only, detail=args.detail)
+    groups = report(read_residue(args.residue), dis, dis.Table(), only=args.only, detail=args.detail,
+                    node_view=args.nodes)
     bodies = sum(len(v) for v in groups.values())
     print("%d differing body(ies) over %d shape(s)" % (bodies, len(groups)))
     return 0
