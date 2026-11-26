@@ -131,7 +131,7 @@ CAST_TYPES = ("byte", "int", "bool", "float", "string", "name", "vector", "rotat
 # `array<T>` member read in the corpus. An array's element type lives in its own record, so the read yields
 # nothing, not the element's width.
 PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4, "byte": 1, "vector": 12,
-             "string": 0, "array": 0}
+             "string": 0, "array": 0, "delegate": 8}
 
 # A **struct-valued** member's size is not in `PROP_SIZE`: the record says `StructProperty` and the artifact's
 # `friendly_type` names the struct. The three engine structs the corpus reaches that way are all 12 bytes, and the
@@ -2988,6 +2988,15 @@ def _member_record(obj, nm, env):
             if friendly:
                 break
         return (INSTANCE_TOKEN, imp[0][0], kind, friendly)
+    # A **delegate** is one record named `__X__delegate`, so `MyComponent.OnChange` asks for a property `onchange`
+    # that no record carries: all 32 delegate-member rows of the residue refused as *a member that is not a
+    # property of the receiver's class* while the record sat one name out (`GUIComponent.__OnChange__Delegate`,
+    # a `UDelegateProperty` whose friendly type is `delegate<OnChange>`). The two lookups above are the same two
+    # for that name -- this package's own exports, then the import of an ancestor's declaration -- so ask them
+    # again one name out rather than adding a third rule. The bare name is what the source spells and what
+    # `scope["delegates"]` is keyed by; only the record's spelling carries the markers.
+    if not nm.startswith("__"):
+        return _member_record(obj, "__%s__delegate" % nm, env)
     return None
 
 
@@ -3893,7 +3902,23 @@ def emit_assign(stmt, at, env):
             # A struct-typed target is a plain `Let`: the copy is by value and the token carries the extent, so
             # `newRotation = Rotation;` is `0f <LocalVariable> <InstanceVariable>` with no member node of its own.
             return bytes([0x0F]) + node + emit_expr(rhs, "", env)[0]
-        if ptype in ("delegate", "pointer", ""):
+        if ptype == "delegate":
+            # `MyComponent.OnChange = InternalOnChange;` is `45 <Context over the receiver and the delegate
+            # record> 44 <the function's NAME index>` -- `LetDelegate` (`0x45`, "expr,expr" in the opcode table),
+            # then a `DelegateProperty` token (`0x44`, pattern `index`) whose operand is the **name** of the
+            # assigned function and not its record: name 62 `InternalOnChange` in
+            # `GUIMenuOption.InitComponent`, name 35 `InternalOnClick` in `GUIListBox.InitComponent`. The
+            # `Context` is the ordinary member read -- skip 5, size 8 -- so only the value is new. A delegate
+            # assigned anything but a bare function name is another shape and is refused rather than guessed.
+            if shape != "context":
+                raise Refused("a delegate assignment whose target is a %s expression" % shape)
+            if not (len(rhs) == 1 and rhs[0][0] in ("ident", "keyword")):
+                raise Refused("a delegate assignment whose value is not a bare function name")
+            idx = _by_name_index(rhs[0][1], env)
+            if idx is None:
+                raise Refused("a delegate assignment to a function the name table does not carry")
+            return bytes([0x45]) + node + bytes([0x44]) + write_index(idx)
+        if ptype in ("pointer", ""):
             # An array value is copied by a plain `Let` like a struct is: `SongArray = Songs;` is
             # `0f <SongArray> <Songs>`, with no node around either side and no cast.
             raise Refused("an assignment to a %s member" % (ptype or "typeless"))
@@ -5897,6 +5922,8 @@ function string StaticTextValue() { return Static.Say("x"); }
 function StaticTextStmt() { Static.Say("x"); }
 function CallDivArg() { Mix(false, 2 / Health); }
 function CallDivIntArg() { Foo(2 / Health); }
+function SetDelegate() { MyComponent.OnChange = InternalOnChange; }
+function SetDelegateBad() { MyComponent.OnChange = Bar(bDead); }
 function bool StructEq() { return ItemA == ItemB; }
 function bool StructEqPlain() { return ItemC == ItemD; }
 function byte EnumMember() { return ERenderStyle.STY_Normal; }
@@ -5942,8 +5969,14 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "iter": ("native", 300), "takeclass": ("virtual", 55), "mix5": ("virtual", 56)},
          "delegates": {"onchange": 51}}
 
+# A **delegate** member's holder: `MyComponent.OnChange = InternalOnChange;` -- the receiver is `Probe`'s own
+# `ObjectProperty`, and the property the source spells `OnChange` is the record `__OnChange__Delegate`. Neither
+# half can be reached by the bare name the text spells, so both are fixtures.
+SCOPE["props"]["mycomponent"] = (0x01, 39, "object")
+
 # The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
-SCOPE["objclass"] = {("probe", "target"): "probe", ("probe", "targeth"): "helper"}
+SCOPE["objclass"] = {("probe", "target"): "probe", ("probe", "targeth"): "helper",
+                    ("probe", "mycomponent"): "probe"}
 
 # The declared dimension of an array property, which `ArrayCount` folds to (`var int Items[4];`).
 SCOPE["dims"] = {"items": 4}
@@ -5962,6 +5995,9 @@ SCOPE["props_all"]["caption"] = [(5, "probe", "StrProperty")]
 SCOPE["props_all"]["mats"] = [(701, "probe", "ArrayProperty")]
 SCOPE["props_all"]["songs"] = [(702, "probe", "ArrayProperty")]
 SCOPE["props_all"]["others"] = [(703, "probe", "ArrayProperty")]
+# A `DelegateProperty` record, named the way the packages name one; `PROP_TYPE` maps it to `delegate` and the value
+# size is 8 (`PROP_SIZE`), which is the size byte both shipped `LetDelegate` bodies write.
+SCOPE["props_all"]["__onchange__delegate"] = [(51, "probe", "DelegateProperty")]
 
 # The type words the package artifact spells: `SquadDir` is a `Vector`, and `bFlag` is a `bool` member.
 SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe", "bflag"): "bool",
@@ -5970,7 +6006,9 @@ SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe"
                      ("probe", "probe", "targeth"): "helper",
                      ("probe", "probe", "fcount"): "float",
                      ("probe", "probe", "itema"): "mapitem", ("probe", "probe", "itemb"): "mapitem",
-                     ("probe", "probe", "itemc"): "plainitem", ("probe", "probe", "itemd"): "plainitem"}
+                     ("probe", "probe", "itemc"): "plainitem", ("probe", "probe", "itemd"): "plainitem",
+                     ("probe", "probe", "mycomponent"): "probe",
+                     ("probe", "probe", "__onchange__delegate"): "delegate<OnChange>"}
 
 # The struct-object table the `StructCmpEq`/`StructCmpNe` fallback reads: `Color` is -12 in UWindow and a struct
 # no class declares an operator for, which is the control beside `MapItem` below.
@@ -6080,6 +6118,10 @@ WANT = {
     "fromflag": "142d012d2d012e040b47",      # bDead = Flag2; -- bool property read as the value
     "callexec": "71210516040b47",            # GotoState('Probe') -- token 113 *is* the opcode; name index 5
     "calldelegate": "43331a1716040b47",      # OnChange(Self) -- DelegateFunction: export 51, name index 26
+    # `MyComponent.OnChange = InternalOnChange;` -- LetDelegate, then the Context member read (skip 5, size 8),
+    # then `DelegateProperty` + the assigned function's NAME index (62). `GUIMenuOption.InitComponent` ships
+    # `45 | 19 01 27 05 00 08 01 33 | 44 3e` for exactly this statement, read off the payload at +0x1cb.
+    "setdelegate": "45190127050008" "0133" "443e" "040b47",
     "emptyname": "042100040b47",             # return ''; -- the name table's zero entry
     "callnested": "1b30282300000000000000000000000016" "040b47",   # Mix3(false, vect(0,0,0)): three arguments at
     "callbytelit": "1b31393d2cff16040b47",   # MixByte(255): IntToByte, then the int constant -- not ByteConst
@@ -6259,13 +6301,14 @@ WANT = {
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
           "castnoslot", "opnoslot", "incfloat", "callunknown", "acountunknown", "badclass",
-          "badstatic", "eachnested", "callglobalnative", "badenummember", "rotexpression")
+          "badstatic", "eachnested", "callglobalnative", "badenummember", "rotexpression",
+          "setdelegatebad")
 
 
 def check(args):
     """Synthetic corpus plus the committed artifact's own consistency: no dump, no writes."""
     names = {"weapon_bone": 2063, "probe": 5, "ping": 51, "pong": 52, "say": 53,
-             "getbox": 54, "getregion": 55}
+             "getbox": 54, "getregion": 55, "internalonchange": 62}
     for value, want in ((0, b"\x00"), (1, b"\x01"), (63, b"\x3f"), (64, b"\x40\x01"),
                         (2063, b"\x4f\x20"), (8191, b"\x7f\x7f")):
         got = write_index(value)
@@ -6283,6 +6326,10 @@ def check(args):
             return 1
     env = dict(ENV)
     env["names"] = names
+    # A delegate is assigned by the **name** index, and `_by_name_index` wants a declaration behind the name:
+    # the synthetic class declares `InternalOnChange` nowhere, so the name crosses the gate only when the fixture
+    # says so -- the same shape the real package has (its own function record).
+    env["corpus_funcs"] = set(env.get("corpus_funcs") or ()) | {"internalonchange"}
     # A **one-row symbol** is typed by its symbol: `&&`, `||` and `^^` are declared once each in all 18 packages
     # and `!` is `preoperator bool ! ( bool A )`, so a side the walk cannot type still takes that row. Driven
     # directly because the probe class has no operand that is *emittable* and untyped at the same time -- a bare
