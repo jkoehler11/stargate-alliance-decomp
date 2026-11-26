@@ -876,7 +876,7 @@ def _sole_unary():
 COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=")
 
 
-def _operator_types(expr, env, site="", root=False):
+def _operator_types(expr, env, site="", root=False, typing=False):
     """`(symbol, left type, right type, result type, token, position)` for the loosest depth-0 operator, or None.
 
     A `byte` operand is promoted to `int` before the pair is looked up -- `DirtyMask & 254` is `And_IntInt` with the
@@ -937,7 +937,12 @@ def _operator_types(expr, env, site="", root=False):
     # left child and types the right one from the left operand, so `CurvedStairBuilder`'s
     # `(65536.0f * (AngleOfCurve / 360.0f)) / NumSteps` narrows the outer group and leaves the inner one a
     # `Divide_FloatFloat` (`_group_narrow`).
-    if _group_narrow(left, env):
+    # ... but only where the node is being *emitted*. A group's own reading is its float type: `_type_of` asks
+    # this table for an operand's type, and a narrowing here made the group read `int` to the node above it --
+    # `HUD.DisplayMessages`' `XPos = (PosX * Scale * SizeX) + (((1 - Scale) / 2) * SizeX)` then took the
+    # `(int, int)` row and cast both groups, where the shipped body keeps the `float` row (`Add_FloatFloat`) and
+    # round-trips only the left group. `typing=True` is that distinction.
+    if not typing and _group_narrow(left, env):
         t1, n1 = "int", "int"
     # A float **literal** whose value is an exact integer is typed `int` at an `int`-typed node: the constant is
     # narrowed to the site and the pair is looked up on `int` (`_integral_float` carries the three bodies).
@@ -1649,7 +1654,7 @@ def _type_of(expr, env):
             if hit:
                 return _enum_byte(hit.lower(), env)
         return ""
-    op = _operator_types(expr, env)
+    op = _operator_types(expr, env, typing=True)
     if op is not None:
         # an operator's own result type: `DirtyMask & 2` is an `int`, which is what `bool(...)` casts *from*
         if op[3]:
