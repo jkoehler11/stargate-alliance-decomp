@@ -2242,6 +2242,28 @@ def _rettype_on(cls, name, env):
     return ""
 
 
+def _declares_void(cls, name, env):
+    """True when the callee's declaration exists and names **no return type** (`event`s and `iterator` functions).
+
+    `_rettype_on` answers `""` for both "declared with no return" and "no declaration found", and the call's value
+    size needs the difference: a void callee yields nothing, so its `Context` writes size **0**, while an unknown
+    callee is a refusal. The `iterator` family is the population that needed it -- `native(304) final iterator
+    function AllActors(class<actor> BaseClass, out actor Actor, optional name MatchTag)` names no return because the
+    value a `foreach` consumes is its `out` parameter, so the call's own `Context` is size 0
+    (`foreach C.DynamicActors(class'StargatePlayer', Player)` ships `2f 19 00 7c 18 0d 00 00 61 39 ...`: skip
+    0x000d, size 0x00). Membership, not truthiness: the empty string *is* the answer.
+    """
+    low = name.lower()
+    voids = env.get("voids") or set()
+    scope = env.get("scope") or {}
+    if cls:
+        for _p, c in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", cls.lower()):
+            if (c, low) in voids:
+                return True
+        return False
+    return any((c, low) in voids for c in env.get("order") or [])
+
+
 def _params_on(cls, name, env):
     """`[(type, name, optional)]` for `name` declared on `cls`'s chain -- a member call's callee, not the body's."""
     low = name.lower()
@@ -2651,6 +2673,13 @@ def _emit_member_call(obj, member, rettype, env):
     rtype = _enum_byte(rtype, env)
     if rtype in RETURN_SIZE:
         size = RETURN_SIZE[rtype]
+    elif not rtype and _declares_void(cls or "", member[0][1], env):
+        # A callee **declared** with no return type yields nothing, and the `Context` around its call writes size
+        # **0**. The family this closes is the iterators: the value a `foreach` consumes is the iterator's `out`
+        # parameter, not a return, so `foreach C.DynamicActors(class'StargatePlayer', Player)` ships
+        # `2f 19 00 7c 18 0d 00 00 61 39 20 ...` -- a `Context` with skip 0x000d and a size byte of 0 where a walk
+        # that read the iterator as an object return wrote 4 (76 of the 84 rows differed at exactly this byte).
+        size = 0
     else:
         # Name the callee and the receiver: this is the population `tools/call-member-ret.py` measures, and a
         # residue row without them cannot be joined to the node the package wrote.
@@ -4747,6 +4776,10 @@ def _source_index(tree):
     dis = _dis()
     params = {}
     rets = {}
+    # `(class, name)` of every declaration that names **no return type** (`event`s and `iterator` functions). It is
+    # kept apart from `rets`, whose rows exist to answer a *type word*: a cast's slot join reads `rets`, and a call's
+    # value size needs the other question -- "is there a declaration, and does it yield anything at all".
+    voids = set()
     localtypes = {}
     localtypes_fn = {}
     classrefs_fn = {}
@@ -4823,6 +4856,8 @@ def _source_index(tree):
                     # a cast's slot is chosen by the operand's type, and an operand that is a call is typed by the
                     # callee's declared return type: `string(GetValue())` is FloatToString, not a guess
                     rets.setdefault((cls, fn.lower()), rettype)
+                elif not rettype and not state:
+                    voids.add((cls, fn.lower()))
                 keys = [(cls, state.lower(), fn.lower())]
                 if not state:
                     # The class-level key is filled by class-level declarations only. A state function of the same
@@ -4850,7 +4885,7 @@ def _source_index(tree):
                         # and the ordinal is unambiguous even where two classes spell the name differently
                         enum_members[(enum.lower(), cname.lower())].add(ordinal)
     return (index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents,
-            classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod))
+            classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod), voids)
 
 
 def score(tree, dump, out_dir, residue_dir=None, only=None):
@@ -4858,7 +4893,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
     index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents, \
-        classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod) = _source_index(tree)
+        classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod), voids = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -4979,7 +5014,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
                    "within_proptypes": within_proptypes,
                    "class_names": class_names, "order": scope["order"],
-                   "rets": rets, "assert_line": aline,
+                   "rets": rets, "voids": voids, "assert_line": aline,
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
                    # and the records of the package it is declared in
                    "natives": natives, "funcs_all": tables[1], "imports": tables[2], "final_of": final_of,
@@ -5660,7 +5695,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr, _ltf, _crf, _tabs = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr, _ltf, _crf, _tabs, _vd = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]
