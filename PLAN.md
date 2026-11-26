@@ -331,6 +331,21 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       trailing-hole strip of the iterator entry -- both callees' omitted parameter is `optional`, so optionality is
       not the discriminator. The next formulation promotes a chain only when every leaf is a variable, property or
       literal. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name, corrected in place.
+- [~] 3.6 an empty argument run is `k-1` `Nothing`s: **10,785 modelled / 10,785 byte-identical / 0 differ** (from
+  10,773; **12 bodies gained, none lost**; residue 905 -> 893; `emit_differ.csv` 79 -> 67 bodies). Neither "the strip"
+  nor "write the hole": `Pawn.SurfaceReduceDamage`'s `GetClosestBone(HitLocation, StartTrace, OutDist, OutSurface,,)`
+  ships **one** `Nothing` at 0x3f before `EndFunctionParms` (111 bytes; stripping both commas read 110), and
+  `ACTION_IfProximity.ProceedToNextAction`'s `DynamicActors(class'Actor', currentActor,)` ships none -- so a trailing
+  run of k commas writes k-1: the source's last comma is the end-of-list marker and every comma before it is an
+  omitted optional. The two earlier readings were one off-by-one: the refused formulation wrote k, which is 2 for
+  `SurfaceReduceDamage` (112 against 111) and 1 for `SearchLight.SearchTick` (413 against 412), so neither is
+  evidence against writing. A hole **between** two arguments still writes its own `Nothing` (unchanged). The 12:
+  `Pawn.SurfaceReduceDamage`, `SurfaceInfo.InitSurface`/`EmitWheelEffect`, `Weapon.TraceFire`, `SHOTGUN.TraceSubFire`,
+  `SNIPERRIFLE.TraceFire`, `Scarab.PostBeginPlay`, `StargateEffect.Trigger`, `GameHud.AddWaypoint`,
+  `SGMenuInteraction.Initialized`, `StargateHUD.PostNetHUDSetup`, `AlkeshBombProjectile.PostBeginPlay`. Ships with the
+  instrument that found it -- `tools/emit-missing.py`, every token one side has and the other lacks, masked at the
+  code positions, grouped into shapes -- and four synthetic holes in `uscript-emit.py --check`, so the count cannot
+  regress silently. Doc: `docs/COMPILER_FRONTEND.md`, new section; the superseded one is marked in place.
 - [~] 3.6 the promotion is a call rule and a literal rule: **10,773 modelled / 10,773 byte-identical / 0 differ**
   (from 10,765 / 10,765 / 0; **8 bodies gained, none lost**; residue 913 -> 905; `emit_differ.csv` 87 -> 79 bodies,
   its `PrimitiveCast` rows 14 -> 6). Two bounds on the chain's leaves, each scored as a full run against the same

@@ -3523,13 +3523,15 @@ def emit_call(stmt, env, receiver=None, head=None):
         if args:
             raise Refused("a call whose callee declaration the text does not carry")
         return head + b"\x16"
-    # A **trailing** hole is not written at all: the compiler ends the parameter list, because the arguments it
-    # leaves out are the trailing optionals. `ACTION_IfProximity.ProceedToNextAction` spells
-    # `ForEach C.DynamicActors(class'Actor', currentActor,)` and the shipped call is
-    # `19 00 58 04 0d 00 00 61 39 20 84 00 7d 0b 16` -- two arguments and `EndFunctionParms`, no `Nothing` where
-    # the third would sit (ours was one byte long). Measured on the whole corpus: stripping the trailing holes took
-    # this body from `differ` to byte-identical and left all 10,647 modelled bodies unchanged.
-    while args and not args[-1]:
+    # **One** trailing hole disappears and the rest are written. `ACTION_IfProximity.ProceedToNextAction` spells
+    # `ForEach C.DynamicActors(class'Actor', currentActor,)` -- one trailing comma, and the shipped call is
+    # `19 00 58 04 0d 00 00 61 39 20 84 00 7d 0b 16`: `EndFunctionParms` right after the second argument, no
+    # `Nothing` where the third would sit. `Pawn.SurfaceReduceDamage` spells `GetClosestBone(HitLocation,
+    # StartTrace, OutDist, OutSurface,,)` -- two trailing commas -- and ships **one** `Nothing` before
+    # `EndFunctionParms` (111 bytes; stripping both read 110). So the source's last comma is the end-of-list marker
+    # and every comma before it is an omitted optional: an empty run of length k writes k-1. Measured over the
+    # corpus: 10 bodies byte-identical for it, none lost (`inventory/emit_differ.csv`).
+    if args and not args[-1]:
         args.pop()
     if len(args) > len(params):
         raise Refused("a call with %d argument(s) to a %d-parameter callee" % (len(args), len(params)))
@@ -5413,6 +5415,10 @@ function CallBool() { Bar(bDead); }
 function CallEnum() { Baz(PROBE_SWIMMING); }
 function CallMix() { Mix(false, 1.5); }
 function CallShort() { Mix(false); }
+function CallHoleNone() { Mix5(true,); }
+function CallHoleTrailTwo() { Mix5(true,,); }
+function CallHoleTrailThree() { Mix5(true,,,); }
+function CallHoleMiddle() { Mix5(true, , 2); }
 function CallMissing() { Foo(); }
 function Bump() { Health = Bump(7); }
 function FromVar() { Health = Slot; }
@@ -5544,7 +5550,7 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "tinytoken": ("native", 2), "onchange": ("virtual", 26),
                    "mix3": ("virtual", 48), "mixbyte": ("virtual", 49), "mytext": ("virtual", 50),
                    "ping": ("virtual", 51), "pong": ("virtual", 52), "say": ("virtual", 53),
-                   "iter": ("native", 300), "takeclass": ("virtual", 55)},
+                   "iter": ("native", 300), "takeclass": ("virtual", 55), "mix5": ("virtual", 56)},
          "delegates": {"onchange": 51}}
 
 # The receiver walk's join: `Target` is a property of class `Probe`, so `Target.Health` is `Probe.Health`.
@@ -5586,6 +5592,10 @@ PARAMS = {("probe", "foo"): [("int", "A", False)], ("probe", "bar"): [("bool", "
           ("probe", "mixbyte"): [("byte", "Mode", False)],
           ("probe", "mytext"): [("string", "S", False)]}
 PARAMS[("probe", "pong")] = [("int", "A", False)]
+# Two required parameters and two optionals: the four hole shapes of a call's argument list need a callee that can
+# hold them (`Mix5(true,)`, `Mix5(true,,)`, `Mix5(true,,,)`, `Mix5(true, , 2)`).
+PARAMS[("probe", "mix5")] = [("bool", "Flag", False), ("int", "B", True),
+                             ("int", "C", True), ("float", "D", True)]
 PARAMS[("probe", "say")] = [("string", "S", False)]
 # A `foreach`'s head is a call whose last argument is the loop variable, and a class literal is passed where a
 # `class` is declared -- the two shapes the statement walk's new families emit.
@@ -5650,6 +5660,16 @@ WANT = {
     "callenum": "62c1240316040b47",                # Baz(PROBE_SWIMMING) -- native token 705, ByteConst 3
     "callmix": "1b2e281e0000c03f16040b47",         # Mix(false, 1.5) -- False, FloatConst
     "callshort": "1b2e2816040b47",                  # Mix(false) -- the optional `Time` gets no placeholder
+    # An empty run in a parameter list is `k-1` `Nothing`s, not k and not none: the source's last comma is the
+    # end-of-list marker and every comma before it is an omitted optional. Corpus witnesses, one per shape:
+    # `ACTION_IfProximity.ProceedToNextAction` (k=1, no placeholder), `Pawn.SurfaceReduceDamage`'s
+    # `GetClosestBone(..., OutSurface,,)` (k=2, one `0b`), `SurfaceInfo.InitSurface`'s `Spawn(class'SoundTrigger',,,)`
+    # (k=3, two), and `Controller.PostBeginPlay`'s `Spawn(..., , vect(0,0,0), ...)` (a hole between two arguments,
+    # one `0b`). The first reading of the corpus wrote k and cost 13 bodies a byte and `SearchLight.SearchTick`.
+    "callholenone": "1b382716040b47",
+    "callholetrailtwo": "1b38270b16040b47",
+    "callholetrailthree": "1b38270b0b16040b47",
+    "callholemiddle": "1b38270b2c0216040b47",
     "bump": "0f016e041b2f2c0716040b47",      # Health = Bump(7);
     "fromvar": "0f016e04006309040b47",       # Health = Slot; -- a local's own index
     "frombyte": "04393a006409040b47",        # return Count; -- a byte local in an int function: PrimitiveCast ByteToInt
