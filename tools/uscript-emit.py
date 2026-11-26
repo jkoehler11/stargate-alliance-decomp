@@ -2201,8 +2201,20 @@ def _emit_operator(expr, rettype, env, root=False):
 
     # A group compiled at the root's `int` folds nothing, so its leading literal keeps its int encoding and is
     # widened at the node it sits in (`Pawn.BaseChange`'s `-2` is `IntToFloat(IntConst -2)`, not a `FloatConst`).
-    folded_left = ((_float_literal(left, t1, rettype) or _narrowed_const(left, t1, rettype))
-                   if root and not env.get("group_int") else None)
+    # A group compiled at the root's `int` folds nothing, so its leading literal keeps its int encoding and is
+    # widened at the node it sits in (`Pawn.BaseChange`'s `-2` is `IntToFloat(IntConst -2)`, not a `FloatConst`).
+    # The fold is the **expression root's** rule and not the node's own site: the node's arithmetic can be float
+    # while the root is the `int Damage` parameter (`Base.TakeDamage((-2 * Mass / decorMass * Velocity.Z / 400))`),
+    # and then it still folds nothing -- while `ULength = -1 * ULength` at a float assignment writes
+    # `FloatConst -1.0`. Six bodies are the evidence: two that gained (`Pawn.BaseChange`,
+    # `Pawn.TakeFallingDamage`'s `TakeDamage(-100 * (...)/MaxFallSpeed)`) and four that must keep folding
+    # (`Weapon.DrawMuzzleFlash`/`StargateWeapon.DrawMuzzleFlash`'s `-1 * ULength`, `Replicator.PlayWaiting`'s
+    # `LoopAnim('idle', -1/GroundSpeed)`, `BotEnemy.AdjustAround`).
+    narrow_left = _narrowed_const(left, t1, rettype)
+    fold_left = None if narrow_left is not None else _float_literal(left, t1, rettype)
+    if fold_left is not None and (env.get("root_site") or "").lower() != "float":
+        fold_left = None
+    folded_left = ((narrow_left or fold_left) if root and not env.get("group_int") else None)
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(_strip_parens(left), env) is not None,
                          folded_left)
             + _side(right, t2, right_env, promote["r"] and _operator_types(_strip_parens(right), right_env) is not None,
