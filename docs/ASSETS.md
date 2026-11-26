@@ -220,6 +220,21 @@ tag grammar at all — only the class data after the block.
 | shape | 4,096 bytes of palette plus a 3-byte tag block (`None`) |
 | first entries | `00 40 10 00 00 00 ff 00 00 00 ff 00 …` for `Palette54`, `00 40 10 00 7d 81 ff 00 04 08 ff 00 …` for `Palette53` |
 
-4,096 is four times a 256-entry BGRA palette, so the entries are wider than one `FColor` — that width, and the meaning of the
-`00 40 10 00` prefix, are the next thing to pin down rather than assume. The acceptance test is unchanged and remains
-visible: four packages, one PNG per texture, palette applied.
+**The layout is measured, not assumed.** Of the four possible byte offsets for a 4-byte entry, only one is consistent with a
+colour format:
+
+| entry offset | entries | byte 3 == 255 | byte 0 == 255 |
+|---|---|---|---|
+| 0 | 1,024 | 0 | 7 |
+| 1 | 1,024 | 7 | 9 |
+| 2 | 1,024 | 9 | 1,023 |
+| **3** | **1,024** | **1,024** | 0 |
+
+At offset 3 **every** entry ends in `ff`, which is an alpha channel and not a coincidence — so the palette body is
+**1,024 entries of BGRA starting at byte 3**, and the three bytes before it are the tag block. The entries decode sensibly:
+`00 7d 81 ff` is B=0, G=0x7d, R=0x81, A=255.
+
+The 1,024 are **not** four copies of 256 — the quarters differ — and most are black (`00 00 00 ff`), with colour concentrated
+early. Whether a P8 texture indexes the first 256 of them or the array is genuinely 1,024 wide is the one question left, and
+it is answered by decoding one texture and looking at the result rather than by reading the layout. The acceptance test is
+unchanged: four packages, one PNG per texture, palette applied.
