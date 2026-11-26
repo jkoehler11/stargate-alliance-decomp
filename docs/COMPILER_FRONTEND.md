@@ -2138,16 +2138,16 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**91 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,442 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 91 separate defects.
+**92 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,563 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 92 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours longer | yes | 17 | `PlayerController.LongClientAdjustPosition`, `Pawn.SurfaceReduceDamage`, `PlayerController.PlayerMove` |
 | jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
-| opcode | PrimitiveCast | ours shorter | - | 9 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
+| opcode | PrimitiveCast | ours shorter | - | 10 | `LinearStairBuilder.Build`, `GUIMessageBox.LayoutButtons`, `BotSG.EngageDirection` |
 | opcode | VirtualFunction | ours shorter | - | 8 | `XBoxLiveFriendsMenu.MyOnReopen`, `XBoxLiveMenu.MyOnReopen`, `XBoxLiveFindGameMenu.MyOnReopen` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
-| jump distance | JumpIfNot | ours shorter | no | 4 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
+| jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
 | opcode | PrimitiveCast | ours longer | - | 4 | `VolumetricBuilder.BuildVolumetric`, `Mover.InterpolateTo`, `UDebugVideoClient.BeforePaint` |
 | operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
 | opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
@@ -2157,7 +2157,6 @@ names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a nod
 | opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
 | opcode | Nothing | ours longer | - | 2 | `StargateEffect.Trigger`, `StargateHUD.PostNetHUDSetup` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
-| context size | Context | same length | - | 1 | `TransportRings.Destroyed` |
 | context skip | Context | ours longer | - | 1 | `SGMenuInteraction.Initialized` |
 | jump distance | JumpIfNot | ours longer | no | 1 | `GameHud.AddWaypoint` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
@@ -2184,3 +2183,35 @@ section landed in the tool and in the prose, but not in the shipped artifact -- 
 regenerates, so `make ci`'s dump-free `--check` stayed green over it. Both artifacts are regenerated from one run
 here: **10,442 modelled, every one byte-identical, 91 differ** (not 111), and the block above is that run's
 classification. Quote the artifact's own census row, not this paragraph, when the two disagree.
+
+### The receiver's element class and the callee's return word (2026-11-25c)
+
+Two rules, one thread: a `Context`'s size byte is decided by *what the receiver holds* and by *what the callee
+returns*, and both were being answered one layer too shallow.
+
+- **A static array's element is the declared class, not the record kind.** `var TransportRingMesh
+  MyRings[NUM_RINGS]` is an `ObjectProperty` in the export table, so `_element_type` answered `object` for
+  `MyRings[i]` -- and `Object`'s own chain declares no `Destroy`, so `TransportRings.Destroyed`'s
+  `MyRings[i].Destroy()` read a callee with no return and wrote a size byte of **0** where the package writes
+  Actor's `bool` (**4**). `_element_declared` takes the artifact's `friendly_type` for an object element (a
+  `class<Z>` unwraps to `Z`, and a word the class table does not carry leaves the kind in place). The same rule
+  applies on the member spelling (`X.MyRings[i]`). **10,442 -> 10,558 modelled, none lost**, and the last
+  `context size` differ row closes.
+- **An enum may be spelled qualified by the class that declares it.** `StargateVoicePack`'s
+  `function Actor.EMsgTone GetVoiceTone()` names a type the emitter's table did not carry, so
+  `AIMSG_Stargate.AutoBuildTone` and `SGVoicePackExtended.BuildCustomVoiceDesc` refused the call's value size.
+  `_enum_byte` now reads the `Class.Enum` spelling -- the enum is still stored in a byte -- and `_value_size`
+  applies the one enum producer instead of its own copy of the rule. **10,558 -> 10,563 modelled**, five bodies,
+  none lost.
+
+**What the 84 remaining `a call member returning an unknown type` rows are: iterators.** Ten names
+(`AllActors` 36 nodes, `DynamicActors` 30, `RadiusActors`, `TouchingActors`, `VisibleCollidingActors`,
+`CollidingActors`, `CoverActors`, `TraceActors`, `AllObjects`, `AllObjectProperties`) over receivers as varied as
+`ScriptedController`, `PlayerController` and `StargatePawn`. They are declared `native(304) final iterator
+function AllActors(class<actor> BaseClass, out actor Actor, ...)` -- **no return type**, because the value a
+`foreach` consumes is the `out` parameter -- and all 84 nodes write a size byte of **4**. Giving the emitter that
+rule (an iterator's value is the object it steps) makes the 84 bodies emit and **every one of them differs at the
+next node**: the iterator call's own operand, not its size. So the rule is measured and *not* shipped -- it turns
+84 honest refusals into 84 differ rows and moves no modelled body -- and the next instrument is the `foreach`
+head's node, not the size byte. The measurement is written down here because the obvious next guess is exactly
+the one that costs a run.
