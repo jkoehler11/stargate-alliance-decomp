@@ -239,6 +239,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 an iterator's value is nothing, and a trailing hole is not written: **10,648 modelled / 10,648
+  byte-identical / 0 differ** (from 10,571 / 10,571 / 0 at #942; 77 bodies gained, none lost; residue 1,107 ->
+  1,030, and the `a call member returning an unknown type` bucket's 84 iterator rows are gone). Two rules, one
+  thread -- the value size of a call whose callee declares nothing. (1) `_rettype_on` answers `""` for both
+  "declared void" and "no declaration found", and the ten iterator names (`AllActors` 39 nodes, `DynamicActors`
+  32, `TouchingActors` 5, `RadiusActors` 2, ...) are declared with **no return type** because the value a
+  `foreach` consumes is the iterator's `out` parameter. A `voids` set beside `rets` separates the two and the
+  call's `Context` writes size **0**: `ACTION_GivePlayerHint.InitActionFor`'s
+  `foreach C.DynamicActors(class'StargatePlayer', Player)` is `2f 19 00 7c 18 0d 00 00 61 39 20 ...` -- skip
+  `0x000d`, size `0x00`. The page's earlier note that all 84 nodes write **4** is retracted by that byte. (2) A
+  **trailing** hole in an argument list is not written at all: `ACTION_IfProximity.ProceedToNextAction` spells
+  `ForEach C.DynamicActors(class'Actor', currentActor,)` and the shipped call is two arguments and
+  `EndFunctionParms`, no `Nothing` where the third would sit -- the last body the first rule turned into a differ
+  row, and the strip closes it. A hole *between* two arguments still writes `Nothing` (`Controller.PostBeginPlay`'s
+  `Spawn(..., Self, , vect...)`), which is the shape the old rule measured. Doc: `docs/COMPILER_FRONTEND.md`'s
+  iterator section corrected in place. Not in this PR: the seven struct widths `inventory/context_size.csv`
+  measures (`animrep` 12, `id3field` 36, `liveuser` 24, `orientation` 92, `range` 8, `rangevector` 24,
+  `voicedesc` 64) and the 89 rows that refuse as `a struct member of type struct`.
 - [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
       `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
       bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from

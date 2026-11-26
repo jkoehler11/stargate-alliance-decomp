@@ -3326,6 +3326,14 @@ def emit_call(stmt, env, receiver=None, head=None):
         if args:
             raise Refused("a call whose callee declaration the text does not carry")
         return head + b"\x16"
+    # A **trailing** hole is not written at all: the compiler ends the parameter list, because the arguments it
+    # leaves out are the trailing optionals. `ACTION_IfProximity.ProceedToNextAction` spells
+    # `ForEach C.DynamicActors(class'Actor', currentActor,)` and the shipped call is
+    # `19 00 58 04 0d 00 00 61 39 20 84 00 7d 0b 16` -- two arguments and `EndFunctionParms`, no `Nothing` where
+    # the third would sit (ours was one byte long). Measured on the whole corpus: stripping the trailing holes took
+    # this body from `differ` to byte-identical and left all 10,647 modelled bodies unchanged.
+    while args and not args[-1]:
+        args.pop()
     if len(args) > len(params):
         raise Refused("a call with %d argument(s) to a %d-parameter callee" % (len(args), len(params)))
     short = [p for p in params[len(args):] if not p[2]]
@@ -3337,12 +3345,12 @@ def emit_call(stmt, env, receiver=None, head=None):
     out = head
     for arg, (ptype, _pname, _optional) in zip(args, params):
         if not arg:
-            # A hole in the argument list is the compiler's own `Nothing` (`0x0B`), one byte in the slot the
+            # A hole **between** two arguments is the compiler's own `Nothing` (`0x0B`), one byte in the slot the
             # omitted argument would take: `Controller.PostBeginPlay`'s
             # `Spawn(PlayerReplicationInfoClass, Self, , vect(0,0,0), rot(0,0,0))` is
             # `16 | 0b 23 <vector> 22 <rotator> 16` -- `Nothing` where `SpawnTag` sits. Measured on the 176 residue
-            # rows that leave a slot empty (174 of them spell `, ,` in the source); the slot is written, not
-            # skipped, so the callee's parameter count is unchanged.
+            # rows that leave a slot empty (174 of them spell `, ,` in the source). A trailing hole is a different
+            # shape and is not written at all -- see the strip above.
             out += b"\x0b"
             continue
         # A byte-typed literal is written by `emit_expr`, which knows the form from the value (see the number
