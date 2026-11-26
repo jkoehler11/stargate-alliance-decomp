@@ -2736,6 +2736,20 @@ def _func_on(cls, name, env):
             return ("virtual", (env.get("names") or {}).get(low))
         if low in finals.get(c, ()):
             continue
+        decl = (env.get("decl_index") or {}).get((c, "", low))
+        if decl is not None:
+            # A declaration this package's own tables cannot hold: `funcs_all` is this package's *exports* and
+            # `natives` its native rows, so a callee declared on the receiver's chain in another package --
+            # `Actor.TakeDamage` is an `event` of Engine.u, `Weapon.Fire` a plain function -- was invisible even
+            # though the source, the declared return type (`rets`) and the parameter list (`params`) all resolve
+            # it. 125 bodies refused in `member-call-stmt` for exactly this. A non-`final` function is called by
+            # *name* (`1b <name index>`), and the operand is the body's own name table; a `final` one names a
+            # record this package would have to import, which is `_record_on`'s join and not this lookup's.
+            if not decl[4]:
+                idx = (env.get("names") or {}).get(low)
+                if idx is not None:
+                    return ("virtual", idx)
+            continue
     imp = [x for x in imports.get(low, []) if x[1] == "Function"]
     if len(imp) == 1:
         # An import's owner class is not in this package's export table, so the `final` flag is read off the
@@ -4608,6 +4622,39 @@ def _emit_array_method(obj, member, env):
     return out, "array-method", "array-method"
 
 
+def _callee_why(cls, name, env):
+    """Which of the four joins a refused member callee failed: the residue row says *why*, not only *that*.
+
+    `member-call-stmt`'s 125 bodies all carried the same sentence while their causes were different questions --
+    a declaration in another package, a `final` one whose record this package does not import, a name the
+    package's name table does not carry. Each is answered by a different instrument, so the refusal names the
+    evidence it read instead of leaving the next run to re-derive it.
+    """
+    low = name.lower()
+    scope = env.get("scope") or {}
+    chain = scope.get("chain") or {}
+    pack = scope.get("pack") or ""
+    natives = env.get("natives") or {}
+    funcs = env.get("funcs_all") or {}
+    imports = env.get("imports") or {}
+    decl = env.get("decl_index") or {}
+    anc = _ancestors(chain, pack, cls.lower())
+    nat = [c for p, c in anc if (p, c, low) in natives]
+    exp = [c for _i, c in funcs.get(low, [])]
+    imp = [str(k) for _i, k in imports.get(low, [])]
+    dec = []
+    for _p, c in anc:
+        hit = decl.get((c, "", low))
+        if hit is not None:
+            dec.append("%s:%s" % (c, "native" if hit[3] else ("final" if hit[4] else "virtual")))
+    parts = ["declared %s" % (", ".join(dec) if dec else "nowhere on the chain"),
+             "natives %s" % (",".join(nat) if nat else "-"),
+             "exports %s" % (",".join(exp) if exp else "-"),
+             "imports %s" % (",".join(imp) if imp else "-"),
+             "name %s" % ("index" if low in (env.get("names") or {}) else "absent")]
+    return "; ".join(parts)
+
+
 def _stmt_member_call(stmt, env):
     """`A.F(args);` -> `19 <A> <skip> <size> <F>`: a call statement whose callee is a member of a receiver.
 
@@ -4625,7 +4672,34 @@ def _stmt_member_call(stmt, env):
     if at is None:
         return None
     obj, member = stmt[:at], stmt[at + 1:]
+    if (len(member) == 2 and member[0][0] in ("ident", "keyword")
+            and member[1][0] == "op" and member[1][1] in ("++", "--")):
+        # `Level.numMatineeScenesRunning++`: the increment node is the *bare name's* (`_incdec` -- four opcodes,
+        # post/pre on an int and on a byte), and a member target writes the same token over the member's own read.
+        # 31 bodies refused as `a statement that is a member read, not a call`, because the statement's second
+        # token is an operator and not a paren, so the call test answered no and the increment was never reached.
+        nm, sym = member[0][1].lower(), member[1][1]
+        hit = _member_record(obj, nm, env)
+        syms = {"++": {"byte": (0x8B, 0x89), "int": (0xA5, 0xA3)},
+                "--": {"byte": (0x8C, 0x8A), "int": (0xA6, 0xA4)}}
+        t = (hit[2] if hit else "").lower()
+        if not t and nm == "length" and _receiver_kind(obj, env) in ("array", "string"):
+            # `Elements.Length--` is the container's **length operator** (`37 <array read>`), not a property:
+            # `_member_record` answers None for it and the operator yields an `int` whatever the container holds.
+            t = "int"
+        pair = syms[sym].get(t)
+        if pair is None:
+            raise Refused("a %s on a member of type %s, which no installed operator names"
+                          % (sym, t or "typeless"))
+        read, _shape = _emit_member(stmt[:-1], t, env)
+        return bytes([pair[0]]) + read + b"\x16", "member-incdec", "member-incdec"
     if not _is_call(member):
+        # The statement names a member and is not a call: an increment the branch above did not take, or a member
+        # written alone. The row carries the receiver chain and the member, so the next run reads the shape instead
+        # of re-deriving it (`member-read-stmt`; 31 rows carried no evidence before this note).
+        _note(family="member-read-stmt", expr=" ".join(v for _k, v in obj),
+              member=(member[0][1].lower() if member and member[0][0] in ("ident", "keyword") else ""),
+              receiver=_class_of(obj, env) or "")
         raise Refused("a statement that is a member read, not a call")
     # A `.static` link names the class object itself, so the receiver is the chain **before** it and the call is
     # written inside a `ClassContext` (`12`), the node `_emit_member_call` already writes for the same shape in a
@@ -4669,7 +4743,7 @@ def _stmt_member_call(stmt, env):
         # the shape first. `Pawn.SetWalking(false)` in `ScriptedController.LeaveScripting` is exactly this:
         # `19 01 8d 07 00 00 1b 39 28 16`, name 57, no record of it in GamePlay.u.
         _note(family="member-call-stmt", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
-              receiver=cls)
+              receiver=cls, why=_callee_why(cls, member[0][1], env))
         raise Refused("a member call statement to a name the receiver's chain does not declare")
     # A `delegate` is two records, and the call is `43 <DelegateProperty> <name index>` -- a `DelegateFunction` over
     # the receiver's own property, which no function lookup produces. `PlayerController.AdminReply` calls
@@ -5551,7 +5625,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                     for _n, _t in proptypes_mod_by_cls.get(_wc, {}).items():
                         within_proptypes.setdefault(_n, _t)
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
-                   "corpus_funcs": corpus_funcs,
+                   "corpus_funcs": corpus_funcs, "decl_index": index,
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
                    "within_proptypes": within_proptypes,
                    "class_names": class_names, "order": scope["order"],
@@ -6441,6 +6515,60 @@ def check(args):
     if _class_of(link_toks, link_env) != "pawn":
         print("FAIL uscript-emit: a call link in a receiver chain names %r, expected 'pawn'"
               % (_class_of(link_toks, link_env),))
+        return 1
+    # C1: a callee declared on the receiver's chain in a package this body's tables cannot see. `funcs_all` holds
+    # this package's exports and `natives` its native rows, so `Actor.TakeDamage` (an `event` of Engine.u) and
+    # `Weapon.Fire` resolved no token at all and 125 bodies refused. A non-`final` declaration is a by-name
+    # `VirtualFunction`, so the same statement writes the same bytes the export path writes for its own callee.
+    decl_toks = [("ident", "TargetH"), ("op", "."), ("ident", "Pong"), ("op", "("), ("op", ")")]
+    decl_env = dict(ENV, funcs_all={"pong": [(1, "probe")]},
+                    decl_index={("helper", "", "pong"): ("", [], "", False, False, [], None)})
+    try:
+        got, _m, _s = emit_stmt(decl_toks, "", decl_env)
+    except Refused as exc:
+        print("FAIL uscript-emit: a chain declaration in another package refused: %s" % exc)
+        return 1
+    if got.hex() != "190166090600001b3416":
+        print("FAIL uscript-emit: a chain declaration in another package emits %s, expected 190166090600001b3416"
+              % got.hex())
+        return 1
+    # ...and a **`final`** one names a record this package would have to import: it must stay a refusal, or the
+    # rule would emit a by-name call for a callee the compiler wrote as `1c <import>`.
+    fin_env = dict(decl_env, decl_index={("helper", "", "pong"): ("", [], "", False, True, [], None)})
+    try:
+        emit_stmt(decl_toks, "", fin_env)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a `final` chain declaration was called by name")
+        return 1
+    # C2: an increment whose target is a **member of a receiver**: the node is the operator's own token over the
+    # member's read, exactly as a bare name's is over its record -- `Level.numMatineeScenesRunning++` ships
+    # `a5 19 ...` and 31 bodies refused as `a statement that is a member read, not a call`. The read is the one
+    # `Target.Health` already pins (`healthof`: `19 01 63 09 05 00 04 01 6e 04`), so the whole statement is
+    # `a5` + that + `16`; a member whose record is not an int or a byte has no installed operator and stays a
+    # refusal.
+    inc_toks = [("ident", "Target"), ("op", "."), ("ident", "Health"), ("op", "++")]
+    try:
+        got, _m, _s = emit_stmt(inc_toks, "", ENV)
+    except Refused as exc:
+        print("FAIL uscript-emit: a member increment refused: %s" % exc)
+        return 1
+    if got.hex() != "a519016309050004016e0416":
+        print("FAIL uscript-emit: a member increment emits %s, expected a519016309050004016e0416" % got.hex())
+        return 1
+    try:
+        emit_stmt([("ident", "Target"), ("op", "."), ("ident", "bDead"), ("op", "++")], "", ENV)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a bool member increment was given an operator this image does not install")
+        return 1
+    # ...and a container's **`Length`** is the length operator (`37 <array read>`), not a property: its value is an
+    # `int` whatever the container holds, so `Elements.Length--` is `a6 37 01 <idx> 16` (`ServerList.RemoveServer`).
+    got, _m, _s = emit_stmt([("ident", "Items"), ("op", "."), ("ident", "Length"), ("op", "--")], "", ENV)
+    if got.hex() != "a637017c0a16":
+        print("FAIL uscript-emit: a container Length increment emits %s, expected a637017c0a16" % got.hex())
         return 1
     # P5: a bare call in a class declared `within X` is a member of `Outer`, and a bare call the body's own chain
     # declares is not: the same synthetic class, one name that resolves only on the `within` class.

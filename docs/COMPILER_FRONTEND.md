@@ -2138,19 +2138,17 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**20 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,915 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 20 separate defects.
+**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,066 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
+| context skip | Context | ours shorter | - | 3 | `StargateVehiclePassenger.DisplayDebug`, `GravCraneConsole.DisplayDebug`, `StargateVehicle.DisplayDebug` |
 | jump distance | Jump | ours shorter | yes | 3 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
+| jump distance | JumpIfNot | ours shorter | no | 3 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `TransportRings.RingsMove` |
 | jump distance | JumpIfNot | ours shorter | yes | 3 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove`, `counter.Trigger` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
-| context skip | Context | ours shorter | - | 1 | `BotSG.AssignAmbushPoint` |
-| opcode | FinalFunction | same length | - | 1 | `GUIComponent.ParseOption` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
-| operand | Iterator | ours shorter | - | 1 | `BotEnemy.FindTurretGoal` |
 | operand | StringConst | ours longer | - | 1 | `TextGameInfo.InitComponent` |
 <!-- END emit-differ -->
 
@@ -2935,3 +2933,39 @@ tool the game directory instead of `System`, and the one mistake a partial-run s
 What this did not move: the residue's top families, unchanged in kind and in count -- a compound expression (152), a
 member call statement to a name the receiver's chain does not declare (125), a member that is not a property of the
 receiver's class (65). Those are the next thread; these three rules were the tail of the argument-list one.
+## Stage 3, continued -- a callee declared in another package, and an increment of a member (measured 2026-11-26)
+
+**11,066 modelled / 11,066 byte-identical** (from 10,915; **151 bodies gained, none lost**; residue 763 -> 612, the
+bodies that emit and still differ 20 -> 18, the walk and the join unchanged at 11,687 and 11,678). The previous
+section named the residue's top families as the next thread; two of the three are settled here.
+
+**1. A callee declared on the receiver's chain in *another* package.** `_func_on` asked `natives` (the corpus's native
+rows) and `funcs_all` (the *body package's* exports) -- so `Other.TakeDamage(...)`, where `Other` is an `Actor`, and
+`GunR.Fire(0)`, where `GunR` is a `StargateWeapon`, answered nothing at all: `Actor.TakeDamage` is an `event` of
+Engine.u and `Weapon.Fire` a plain function, and neither can be an export of the body's package. The declared return
+type (`rets`) and the parameter list (`params`) already crossed packages; only the token lookup did not. `_func_on`
+now falls back to the corpus's own declaration index (`decl_index`, keyed `(class, function)` from the reconstructed
+text): a non-`final` declaration is a by-name `VirtualFunction` (`1b <name index>`, the body package's own table --
+which is what the compiler wrote: `GunR.Fire(0)` is `19 01 78 02 0b 00 00 1b 51 01 ...`), and a `final` one stays a
+refusal because its call names a record the package would have to import. **123 bodies**: 118 of the 125
+`member-call-stmt` rows and 5 that were emitting and differing.
+
+**2. An increment whose target is a member of a receiver.** `Level.numMatineeScenesRunning++` was refused as *a
+statement that is a member read, not a call*, because the statement's second token is an operator and not a paren, so
+the call test said no and `_incdec` (a two-token form) was never reached. The node is the bare name's -- the
+operator's own token over the member's read -- and 27 bodies gained. The four surviving rows are now *named* by the
+note (`expr`/`member`/`receiver`), which is what the family never carried: `Controller(Killer.Owner).PlayerNum` (a
+cast link in the chain) and `Maps[MapIndex].Options[i].Key` (an array element's struct link), both the receiver
+chain's own joins and not this rule.
+
+**3. A container's `Length` is an `int`.** `Elements.Length--` is the length operator (`37 <array read>`), not a
+property, so `_member_record` answered None and the increment refused *typeless*; the operator's value is an `int`
+whatever the container holds (`ServerList.RemoveServer`, one body).
+
+All three rules are in `--check` (three new synthetic statements: a chain declaration in another package, a `final`
+one that must stay refused, an int-member, a bool-member and a length increment), and the tool's residue now carries
+the evidence: `member-call-stmt` names which of the four joins failed (`declared ...; natives ...; exports ...;
+imports ...; name ...`), so the next run reads a cause instead of re-deriving it.
+
+What this did not move: the compound expression (152), the operator the image's table does not install (63), a member
+that is not a property of the receiver's class (65) -- and the three named member-read statements above.
