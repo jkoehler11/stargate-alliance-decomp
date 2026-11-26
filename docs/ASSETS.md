@@ -314,3 +314,34 @@ Egyptian-style symbol, clean edges, correct colour. Not noise.
 The 771 are the paletted and compressed formats: their payloads are smaller than `USize × VSize × 4`, which is the arithmetic
 that says so. The 3,589 need the size from wherever the class inherits it — `M07_goldref` is one, with a single `Palette`
 property and 65,604 bytes. Both groups are named here rather than approximated in the tool.
+
+#### The exports that did not fit four bytes per pixel are mip chains
+
+The 771 "truncated" exports are not malformed. Sampling the first 60 packages gives the shape:
+
+| outcome | count |
+|---|---|
+| payload fits `USize × VSize × 4` | 15 |
+| payload fits a **mip chain at one byte per pixel** | **127** |
+| fits neither | 14 |
+
+The declared formats among those that do not fit are **7** (20), **8** (99), **3** (14) and absent (8) — the compressed
+family, not the BGRA one.
+
+**The arithmetic is exact.** `Asgard/aluminium`, 512 × 512, format 8, has 349,681 bytes after the 16-byte header. The mip sum
+`262,144 + 65,536 + 16,384 + 4,096 + 1,024 + 256 + 64 + 16 + 4 + 1` is **349,525**. A 256 × 256 format-7 texture: 87,520
+available against a mip sum of **87,381**. Both leave a small constant-ish slack after the levels, which is the per-level
+bookkeeping this project has not decoded yet — but the *chain* is unmistakable: every level from full size down to a single
+pixel, one byte per pixel.
+
+**So the next step is a mip-chain walker plus a block decoder**, not a size heuristic. Writing one that assumes "the first
+`USize × VSize` bytes are the image" would silently read a compressed block stream as pixels and produce a picture that looks
+like television static — which is exactly the outcome this page keeps insisting on avoiding.
+
+Two smaller facts worth keeping:
+
+- The **palettes exist in these same packages** (13 per `M07_fresco_tex`, 12 in `Tutorial_Tex`) and are not used by the
+  four-byte textures at all — which is evidence that a paletted path exists somewhere in this data, most likely among the
+  3,589 exports that state no size.
+- `Asgard/Glass`, 64 × 64 with **no format property**, has 4,097 bytes after the header against 4,096 needed at one byte per
+  pixel — one spare byte. That is the cleanest small case to decode first.
