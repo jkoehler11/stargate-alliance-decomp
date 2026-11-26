@@ -6466,31 +6466,38 @@ declared method of a class the walk cannot name as the receiver, and the residue
 to die at the intrinsic now reach their element reads; that element-typing join is the next instrument, and the
 `A.Length;` statement read (a member read, not a call) is not modelled either.
 
-## U42. A struct field's record when a package declares the struct name twice -- counted, 6 of 9 settled
+## U42. A struct field's record when a package declares the struct name twice -- answered: the declaring class decides
 
-**Observed.** `struct_props` is keyed on the `(struct, member)` pair the source spells, and the pair is not unique in
-one package: `Engine.u` nests `Orientation` inside both `SceneManager` (struct export 3940) and `MatObject` (5935),
-so `LookAtActorTag` has two records, **4800** and **10624**, and `SceneManager.ResolveActorsInActions` names 4800.
-The key was filled with a plain assignment (the last export wins), so the walk wrote 10624 and the body sat in
-`emit_differ.csv`; keeping the first export makes it emit byte-identically.
+**Observed.** `struct_props` was keyed on the `(struct, member)` pair the source spells, and the pair is not unique in
+one package: `Engine.u` nests `Orientation` inside both `SceneManager` (struct export 3940) and `MatObject` (5935), so
+`LookAtActorTag` has two records, **4800** (MatObject's copy) and **10624** (SceneManager's), and
+`SceneManager.ResolveActorsInActions` names 4800. A plain assignment kept the last export and the body differed;
+keeping the first made it emit, which was an approximation -- the index is not the rule.
+
+**Answered.** The table now holds **every** record a pair names with the class that nests it (a struct export's own
+`outer`), and the emitter resolves the pair through the chain of the class that declares the struct-typed **property**
+-- `_declaring_class`, then `_struct_record` -- nearest ancestor first, the package's export order after. The body's
+own class is deliberately not a witness: `SceneManager`'s read is declared on `SubActionOrientation`, which nests no
+`Orientation`, and the package names the *MatObject* copy, so a body-class vote made that body differ. It is the
+rule's control. Result: `StargateVehicle.PostNetBeginPlay` and `StargateWeaponEmplacement.PostNetBeginPlay` emit
+byte-identically, the corpus goes 10,740 -> **10,764 modelled, all identical**, and `SceneManager` stays identical.
 
 **Measured.** `tools/struct-records.py` (`inventory/struct_field_records.csv`, `make struct-records`) reads every
 `StructMember` node in the dump, rebuilds the same key from the record pair the emitter uses -- an export's `outer`,
 an import's `package` field -- and classifies the node by which record the package named: **5,128 nodes, 5,119** whose
-key holds one record, **6** that name the lowest index of two, **3** that name a later one, and **3,318** that name a
-record the package only **imports** (an inherited struct field is an import).
+key holds one record, **6** that name the lowest index of two, **3** that name a later one, **3,318** that name a
+record the package only **imports** (an inherited struct field is an import). A duplicate key also carries its
+**witness** -- the copy nested in the body's own class (`own`, **6** nodes), an inherited copy (`ancestor`, **0**), or
+neither (`order`, **3**) -- so the rule's reach is quoted, not assumed.
 
-**The three `later` nodes, named.** `StargateVehicle` (struct 6601) and its subclass `StargateWeaponEmplacement`
-(5975) each declare a native `DriverWeaponStruct`, and each `PostNetBeginPlay` reads **its own** copy's
-`WeaponClass`/`WeaponBone`: 4360/6597 for the parent, 4692/5974 for the child. The two copies' fields are not in the
-same relative order (4360 < 4692 for `WeaponClass`, 5974 < 6597 for `WeaponBone`), so one rule -- the reading class's
-own struct -- reads as `lowest` on one field and `later` on the other. The other three nodes are
-`SceneManager.ResolveActorsInActions` reading `CamOrientation.LookAtActorTag`/`LookAtActor`, where the struct-typed
-member is declared on `SubActionOrientation` (not in the body's chain) and the package's own order picked the lowest
-record.
+**The nine nodes, named.** Six are `DriverWeaponStruct`: `StargateVehicle` (struct 6601) and its subclass
+`StargateWeaponEmplacement` (5975) each declare one, and each `PostNetBeginPlay` reads **its own** copy's
+`WeaponClass`/`WeaponBone` -- 4360/6597 for the parent, 4692/5974 for the child. The copies' fields are not in the
+same relative order (4360 < 4692 for `WeaponClass`, 5974 < 6597 for `WeaponBone`), which is why the index reads as
+`lowest` on one field and `later` on the other. The other three are `SceneManager.ResolveActorsInActions`'s
+`CamOrientation.LookAtActorTag`/`LookAtActor`, the `order` witness above: no witness names a copy, the compiler's own
+fallback was the package order, and the walk reproduces it.
 
-**What would settle it.** Carry the **declaring class** of the struct-typed property through the key and resolve the
-record against that class's chain -- own nested struct first, the package's order after. Test: the two
-`DriverWeaponStruct` classes (own struct wins, index order irrelevant) and `SceneManager` (no own struct in the
-declaring class, so the fallback decides). Until then `lowest` is the measured approximation: it reproduces 6 of the
-9 nodes, and the artifact names the 3 it cannot decide instead of hiding them.
+**Not settled.** A struct-typed receiver reached through a **chain** (`A.B.C` where `B` is the struct-typed property)
+answers no declaring class -- `_declaring_class` claims only a bare name or an array element -- so it takes the
+package order. That is correct for every node in this corpus (three of three) and is a stated limit, not a rule.
