@@ -2138,14 +2138,12 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**111 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,323 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 111 separate defects.
+**91 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,442 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 91 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours longer | yes | 17 | `PlayerController.LongClientAdjustPosition`, `Pawn.SurfaceReduceDamage`, `PlayerController.PlayerMove` |
 | jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
-| context size | ClassContext | same length | - | 11 | `ScoreBoard.GetSmallFontFor`, `ScoreBoard.HaveHalfFont`, `ScoreBoard.GetSmallerFontFor` |
-| context size | Context | same length | - | 10 | `TransportRings.Destroyed`, `UWindowConsoleClientWindow.Initialized`, `UWindowFramedWindow.MouseMove` |
 | opcode | PrimitiveCast | ours shorter | - | 9 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
 | opcode | VirtualFunction | ours shorter | - | 8 | `XBoxLiveFriendsMenu.MyOnReopen`, `XBoxLiveMenu.MyOnReopen`, `XBoxLiveFindGameMenu.MyOnReopen` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
@@ -2159,6 +2157,7 @@ names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a nod
 | opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
 | opcode | Nothing | ours longer | - | 2 | `StargateEffect.Trigger`, `StargateHUD.PostNetHUDSetup` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
+| context size | Context | same length | - | 1 | `TransportRings.Destroyed` |
 | context skip | Context | ours longer | - | 1 | `SGMenuInteraction.Initialized` |
 | jump distance | JumpIfNot | ours longer | no | 1 | `GameHud.AddWaypoint` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
@@ -2173,8 +2172,15 @@ names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a nod
 
 Two things the classification settles for the next run. A **jump distance** whose word moved by exactly the body's
 own length delta is not a branch defect: the branch is right and the body is short *after* it, so the jump rows that
-moved point at a missing node further on rather than at the jump. And the **21 `Context` size rows** left after rule
-1 above are the branches the rule has not reached yet -- `HUDClass.default.FontScreenWidthSmall[i]` in
-`ScoreBoard.GetSmallFontFor` differs at offset 34 with size **0x24** where this walk writes 4, the same `int[9]`
-shape as rule 1 through a `X.default.Y` receiver: that branch keeps its own copy of the size lookup, and it is the
-next instrument rather than a new node.
+moved point at a missing node further on rather than at the jump. And the `Context` size family is **one** row, not
+the 21 this page used to carry: the 11 `ClassContext` rows -- `X.default.Y[i]` receivers in `ScoreBoard`'s three
+font pickers -- closed with the default-chain rule above, and what is left is `TransportRings.Destroyed`'s
+`MyRings[i].Destroy()`, where the byte is the callee's (`native(279) final function bool Destroy()`, so **4**) and
+the receiver's class is not.
+
+**The artifact this page quoted was a run behind its own tool.** `inventory/uscript_emit.csv` read 10,323 modelled
+bodies while the emitter at the same commit measured **10,442**: the 119 bodies of the two rules in the previous
+section landed in the tool and in the prose, but not in the shipped artifact -- which only a run with the dump
+regenerates, so `make ci`'s dump-free `--check` stayed green over it. Both artifacts are regenerated from one run
+here: **10,442 modelled, every one byte-identical, 91 differ** (not 111), and the block above is that run's
+classification. Quote the artifact's own census row, not this paragraph, when the two disagree.

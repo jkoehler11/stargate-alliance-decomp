@@ -38,10 +38,19 @@ POP_ARRAY = "array read"
 POP_OTHER = "other member"
 
 
+_LOADED = {}
+
+
 def _load(name, filename):
+    """Import a sibling tool **once**: `struct_rule`/`array_rule` ask for one per node, and re-executing a 6,000-line
+    module per `Context` node made the walk pay for it on every row. It is also what lets the self-test drive a rule
+    against a synthetic table entry -- a fresh module per call saw a different dict each time."""
+    if filename in _LOADED:
+        return _LOADED[filename]
     spec = importlib.util.spec_from_file_location(name, os.path.join(ROOT, "tools", filename))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    _LOADED[filename] = mod
     return mod
 
 
@@ -62,10 +71,13 @@ def aligned4(n):
 
 
 def struct_rule(declared, size):
-    """`field sum` / `aligned` for a struct the emitter's table carries, `not in table` for one it does not.
+    """`table` when the byte is the emitter's own entry, `aligned` when it is that entry rounded up to 4.
 
-    A struct absent from the table is not a failure: it is a width the corpus supplies and the emitter has never
-    been told, which is reported as its own population so the table can be extended from a measurement.
+    The vocabulary follows what the table is *for*: `STRUCT_SIZE` carried the fields' sum (`MouseCursor` 13) until
+    the corpus showed every node writing the compiler's slot (**16**), and it now carries the slot -- so a node that
+    writes 16 agrees with the table and is not "a field sum". `aligned` stays because a table entry that is still a
+    sum is read that way, and a struct absent from the table is not a failure: it is a width the corpus supplies and
+    the emitter has never been told, reported as its own population so the table can be extended from a measurement.
     """
     unit = _emitter().STRUCT_SIZE.get((declared or "").lower())
     if not declared or unit is None:
@@ -73,7 +85,7 @@ def struct_rule(declared, size):
     if size is None:
         return "unexplained"
     if size == unit:
-        return "field sum"
+        return "table"
     if unit < size <= aligned4(unit) and size == aligned4(unit):
         return "aligned"
     return "unexplained"
@@ -282,14 +294,14 @@ def render(rows, census=None):
            and r["population"] in (POP_STRUCT, POP_ARRAY)]
     lines = []
     lines.append("**{:,} `Context` nodes over {} shapes** (`inventory/context_size.csv`). A **struct** member's "
-                 "byte is the compiler's stack slot: **{:,}** nodes over {} shapes write their fields' sum, "
-                 "**{:,}** write that sum rounded up to 4 -- every `MouseCursor` node in the corpus writes **16** "
-                 "where its four fields (`texture, int, int, byte`) sum to 13 -- and **{:,}** write a struct the "
-                 "emitter's table does not carry, of which **{}** have one agreed width the table can take. A "
-                 "**subscripted** read's byte is the array's own size, not a struct's: **{:,}** nodes over {} "
-                 "shapes write `dimension x element` and **{:,}** the element alone. **{}**".format(
+                 "byte is the compiler's stack slot, and `STRUCT_SIZE` carries that slot: **{:,}** nodes over {} "
+                 "shapes write the table's own entry -- `MouseCursor` is **16** where its four fields (`texture, "
+                 "int, int, byte`) sum to 13 -- **{:,}** write an entry that is still a fields' sum rounded up to 4, "
+                 "and **{:,}** a struct the table does not carry, of which **{}** have one agreed width the table can "
+                 "take. A **subscripted** read's byte is the array's own size, not a struct's: **{:,}** nodes over "
+                 "{} shapes write `dimension x element` and **{:,}** the element alone. **{}**".format(
                      sum(int(r["nodes"]) for r in rows), len(rows),
-                     total(POP_STRUCT, "field sum"), shapes(POP_STRUCT, "field sum"),
+                     total(POP_STRUCT, "table"), shapes(POP_STRUCT, "table"),
                      total(POP_STRUCT, "aligned"), total(POP_STRUCT, "not in table"), len(widths),
                      total(POP_ARRAY, "array size"), shapes(POP_ARRAY, "array size"),
                      total(POP_ARRAY, "element size"),
@@ -332,12 +344,23 @@ def splice_doc(path, block, markers):
 def self_check():
     """Synthetic: both struct verdicts, the measured-width rule, and the render's round trip."""
     bad = []
-    if struct_rule("mousecursor", 16) != "aligned":
-        bad.append("a 13-byte struct at 16 is not read as aligned")
-    if struct_rule("mousecursor", 13) != "field sum":
-        bad.append("the field sum itself is not recognised")
-    if struct_rule("vector", 12) != "field sum":
-        bad.append("vector's 12 is no longer the field sum")
+    if struct_rule("mousecursor", 16) != "table":
+        bad.append("MouseCursor's own slot (16) is not read as the table's entry")
+    if struct_rule("mousecursor", 13) != "unexplained":
+        bad.append("the fields' sum (13) reads as the table's width")
+    if struct_rule("vector", 12) != "table":
+        bad.append("vector's 12 is no longer the table's entry")
+    # `aligned` is the rule for a table entry that is a fields' sum rather than a slot -- no shipped entry is one
+    # any more, so the branch is driven by a synthetic entry and the table is restored afterwards.
+    _tbl = _emitter().STRUCT_SIZE
+    _tbl["testslot"] = 13
+    try:
+        if struct_rule("testslot", 16) != "aligned":
+            bad.append("a table entry that is a fields' sum is not read as aligned")
+        if struct_rule("testslot", 13) != "table":
+            bad.append("a table entry that is a fields' sum does not read as the table's own width")
+    finally:
+        del _tbl["testslot"]
     if struct_rule("htmlstyle", 31) != "unexplained":
         bad.append("a width neither the sum nor its alignment is read as a rule")
     if struct_rule("interpcurve", 112) != "not in table":
@@ -378,8 +401,8 @@ def self_check():
     for line in bad:
         print("FAIL context-size: %s" % line)
     if not bad:
-        print("ok   context-size: the aligned struct slot, the array read split, the measured widths, the render "
-              "and its round trip")
+        print("ok   context-size: the table's own width (and a fields' sum entry read as aligned), the array read "
+              "split, the measured widths, the render and its round trip")
     return 1 if bad else 0
 
 

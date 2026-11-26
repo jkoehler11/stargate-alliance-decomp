@@ -373,17 +373,17 @@ struct member,StructProperty,,,24,not in table,18,SearchLight.TargetTick SearchL
 struct member,StructProperty,,,4,not in table,223,Binoculars.DrawRangeIndicator Binoculars.DrawTargeted SNIPERRIFLE.GetTargetFOV
 struct member,StructProperty,,,8,not in table,4,RingTransportEmitter.Initiate
 struct member,StructProperty,animrep,,12,not in table,4,Controller.BeginState PlayerController.BeginState
-struct member,StructProperty,color,,4,field sum,43,Actor.DisplayDebug AIController.DisplayDebug HUD.DrawCustomBeacon
-struct member,StructProperty,htmlstyle,,28,field sum,28,UWindowHTMLTextArea.AddText UWindowHTMLTextArea.GetWrapPos UWindowHTMLTextArea.RemoveWrap
+struct member,StructProperty,color,,4,table,43,Actor.DisplayDebug AIController.DisplayDebug HUD.DrawCustomBeacon
+struct member,StructProperty,htmlstyle,,28,table,28,UWindowHTMLTextArea.AddText UWindowHTMLTextArea.GetWrapPos UWindowHTMLTextArea.RemoveWrap
 struct member,StructProperty,id3field,,36,not in table,3,StreamInteraction.SetStreamAttachment Stream.GetSongTitle
 struct member,StructProperty,liveuser,,24,not in table,2,PlayerController.WriteDisconnectEvent
-struct member,StructProperty,mousecursor,,16,field sum,30,UWindowWindow.CreateWindow UWindowConsoleClientWindow.Initialized UWindowFramedWindow.MouseMove
+struct member,StructProperty,mousecursor,,16,table,30,UWindowWindow.CreateWindow UWindowConsoleClientWindow.Initialized UWindowFramedWindow.MouseMove
 struct member,StructProperty,orientation,,92,not in table,3,SceneManager.ResolveActorsInActions
-struct member,StructProperty,plane,,16,field sum,9,HUD.PostRender
-struct member,StructProperty,pointregion,,12,field sum,4,PlayerReplicationInfo.UpdatePlayerLocation WarpZoneMarker.SpecialHandling WarpZoneInfo.Tick
+struct member,StructProperty,plane,,16,table,9,HUD.PostRender
+struct member,StructProperty,pointregion,,12,table,4,PlayerReplicationInfo.UpdatePlayerLocation WarpZoneMarker.SpecialHandling WarpZoneInfo.Tick
 struct member,StructProperty,range,,8,not in table,1,Vehicle.SpectatorSpecialCalcView
 struct member,StructProperty,rangevector,,24,not in table,13,SurfaceInfo.EmitWheelEffect SurfaceInfo.BulletImpact
-struct member,StructProperty,region,,16,field sum,99,UWindowWindow.DrawUpBevel UWindowTabControl.Paint UWindowWindow.PaintClients
-struct member,StructProperty,rotator,,12,field sum,96,PlayerController.CallServerMove PlayerController.PlayerCalcView SavedMove.PostUpdate
-struct member,StructProperty,vector,,12,field sum,400,PlayerController.ProcessMove PlayerController.ServerMove Controller.PawnDied
+struct member,StructProperty,region,,16,table,99,UWindowWindow.DrawUpBevel UWindowTabControl.Paint UWindowWindow.PaintClients
+struct member,StructProperty,rotator,,12,table,96,PlayerController.CallServerMove PlayerController.PlayerCalcView SavedMove.PostUpdate
+struct member,StructProperty,vector,,12,table,400,PlayerController.ProcessMove PlayerController.ServerMove Controller.PawnDied
 struct member,StructProperty,voicedesc,,64,not in table,8,SGVoicePackExtended.SearchVoice SGVoicePackExtended.SearchSuitableVoices StargateVoicePack.SelectVoice
