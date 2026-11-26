@@ -2138,7 +2138,7 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,066 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
+**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,095 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
