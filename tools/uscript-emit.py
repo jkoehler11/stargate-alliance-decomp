@@ -980,10 +980,15 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     # promote, so the exact `(int, int)` row answered first and the `(float, float)` row was never reached. `root`
     # and a `float` site are the bounds: the narrowing branch below owns a root `int` site, and a nested node
     # keeps its own type.
+    # A **divide** is the one pair the leaves rule does not bound: `paintTransparentBlob`'s
+    # `tempFloat = (yloc) / image.VSize` has no literal and still ships `Divide_FloatFloat` with both operands
+    # converted. The bound that does hold is the *group* rule: a parenthesised group compiled at the expression
+    # root's `int` (`_group_narrow`) folds and promotes nothing, so `UWindowComboList.SetSelected`'s
+    # `i = (Y - VBorder) / ItemHeight + VertSB.Pos` keeps `Divide_IntInt` behind an `IntToFloat`.
     if (root and (site or "").lower() == "float" and (env.get("_assign") or env.get("_promote_tree"))
             and (not env.get("_arg") or env.get("_promote_tree"))
             and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
-            and _leaves_promotable(expr)):
+            and (_leaves_promotable(expr) or (sym == "/" and not _group_narrow(left, env)))):
         hit = _operators().get((sym, "float", "float"))
         if hit is not None:
             token, ret = hit
@@ -2196,8 +2201,20 @@ def _emit_operator(expr, rettype, env, root=False):
 
     # A group compiled at the root's `int` folds nothing, so its leading literal keeps its int encoding and is
     # widened at the node it sits in (`Pawn.BaseChange`'s `-2` is `IntToFloat(IntConst -2)`, not a `FloatConst`).
-    folded_left = ((_float_literal(left, t1, rettype) or _narrowed_const(left, t1, rettype))
-                   if root and not env.get("group_int") else None)
+    # A group compiled at the root's `int` folds nothing, so its leading literal keeps its int encoding and is
+    # widened at the node it sits in (`Pawn.BaseChange`'s `-2` is `IntToFloat(IntConst -2)`, not a `FloatConst`).
+    # The fold is the **expression root's** rule and not the node's own site: the node's arithmetic can be float
+    # while the root is the `int Damage` parameter (`Base.TakeDamage((-2 * Mass / decorMass * Velocity.Z / 400))`),
+    # and then it still folds nothing -- while `ULength = -1 * ULength` at a float assignment writes
+    # `FloatConst -1.0`. Six bodies are the evidence: two that gained (`Pawn.BaseChange`,
+    # `Pawn.TakeFallingDamage`'s `TakeDamage(-100 * (...)/MaxFallSpeed)`) and four that must keep folding
+    # (`Weapon.DrawMuzzleFlash`/`StargateWeapon.DrawMuzzleFlash`'s `-1 * ULength`, `Replicator.PlayWaiting`'s
+    # `LoopAnim('idle', -1/GroundSpeed)`, `BotEnemy.AdjustAround`).
+    narrow_left = _narrowed_const(left, t1, rettype)
+    fold_left = None if narrow_left is not None else _float_literal(left, t1, rettype)
+    if fold_left is not None and (env.get("root_site") or "").lower() != "float":
+        fold_left = None
+    folded_left = ((narrow_left or fold_left) if root and not env.get("group_int") else None)
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(_strip_parens(left), env) is not None,
                          folded_left)
             + _side(right, t2, right_env, promote["r"] and _operator_types(_strip_parens(right), right_env) is not None,
@@ -4469,9 +4486,14 @@ def _stmt_member_call(stmt, env):
     """`A.F(args);` -> `19 <A> <skip> <size> <F>`: a call statement whose callee is a member of a receiver.
 
     The word is the call's own width in the uncompacted array (`_wide`) -- `PlayerController.SwitchWeapon` writes
-    `19 01 05 0b 00 00 1b 61 03 00 4b 6e 16` for `Pawn.SwitchWeapon(F);` and the call is 11 wide -- except behind
-    a property **import** (`Outer`), whose shape writes 5 whatever the member is (measured on
-    `CheatManager.astral`/`puss`). The size byte is the call's value size: 0 for a void call.
+    `19 01 05 0b 00 00 1b 61 03 00 4b 6e 16` for `Pawn.SwitchWeapon(F);` and the call is 11 wide. A property
+    **import** behind the receiver is no exception *in statement position*: the corpus's three statement-shaped
+    `Outer.<call>` sites write the call's own width -- `CheatManager.Fly`/`Ghost`'s
+    `Outer.GotoState('PlayerFlying')` is `19 01 8e 07 00 00 71 21 6d 0f 16` (7) and `CheatManager.LockCamera`'s
+    `Outer.SetLocation(Locked)` is `19 01 8e 08 00 00 ...` (8). The measured constant **5** belongs to the *value*
+    position (`Outer.Log(...)` is `19 01 8e 05 00 00 1b 0f ...`) and to a `within` class's bare call
+    (`_emit_within_call`), where `CheatManager.astral`/`puss` are `19 01 8e 05 00 00 1b 5b 15 16`. The size byte is
+    the call's value size: 0 for a void call.
     """
     at = _dot_at(stmt)
     if at is None:
@@ -4534,9 +4556,7 @@ def _stmt_member_call(stmt, env):
     # whatever the member is (`CheatManager.astral`/`puss`). Every *other* property import uses the computed word:
     # `Pawn.SetSprinting(true)` in BotBase is `19 01 8a 07 00 00` (the call is 7 wide), and reading every import as
     # `Outer` wrote 5 there -- nine bodies, all of them one word short.
-    imp = _import_of(obj, env)
-    skip = 5 if (stat_at is None and imp is not None
-                 and imp == (env.get("scope") or {}).get("outer_ref")) else _wide(memb)
+    skip = _wide(memb)
     node = (bytes([CLASS_CONTEXT_TOKEN if stat_at is not None else CONTEXT_TOKEN])
             + emit_expr(obj, "", env)[0] + struct.pack("<H", skip)
             + bytes([_value_size(rtype, env)]) + memb)

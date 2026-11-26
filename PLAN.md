@@ -364,6 +364,20 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   so the unconditional strip stays and `Pawn.SurfaceReduceDamage` (111 wanted, 110 by the strip, 112 with a `Nothing`)
   is the next instrument. Not in this PR: that byte, and `paintTransparentBlob` (560 vs 562) / `TakeDamage`
   (233 vs 235). Doc: `docs/COMPILER_FRONTEND.md`, new section.
+- [~] 3.6 the divide's bound, the statement `Outer` call, and the fold that is the root's:
+  **10,823 modelled / 10,823 byte-identical / 0 differ** (from 10,814 / 10,814 / 0; **9 bodies gained, none lost**;
+  residue 864 -> 855). (1) **The int divide** at a float site takes `Divide_FloatFloat` with both operands converted
+  even when the chain has no literal (`paintTransparentBlob`'s `(yloc) / image.VSize`, `StargatePawn.TakeDamage`'s
+  `2 / Min(PlayerKills, 10)`), but not inside a group compiled at the expression root's `int`: the first full-corpus
+  run of the rule cost `UWindowComboList.SetSelected` (223 vs 221), whose `(Y - VBorder) / ItemHeight` ships
+  `Divide_IntInt` behind an `IntToFloat`, so the promotion is gated on `_group_narrow`. (2) **The statement-shaped
+  `Outer.<call>`** writes the call's own width, not the value position's measured 5 (which belongs to `Outer.Log(...)`
+  and to `within` bare calls -- `CheatManager.astral`/`puss`); `Outer.GotoState('PlayerFlying')` is 7 and
+  `Outer.SetLocation` 8, which gains `CheatManager.Fly`/`Ghost`. (3) **The int-literal fold is the expression root's
+  rule**: `Pawn.BaseChange`'s `-2` and `TakeFallingDamage`'s `-100` sit at an `int Damage` argument and stay
+  `IntToFloat(IntConst)`, while `ULength = -1 * ULength` folds at a float root; asking `root_site == "float"` gains
+  five and loses none -- the negative-only formulation the earlier note recorded lost four. Doc:
+  `docs/COMPILER_FRONTEND.md`, new section; four synthetic-free bodies, so the evidence is the per-body table.
 - [~] 3.6 an int literal past int32 wraps, and a parenthesised group at a mixed pair is retyped:
   **10,814 modelled / 10,814 byte-identical / 0 differ** (from 10,808 / 10,808 / 0; **6 bodies gained, none lost**;
   residue 870 -> 864; `emit_differ.csv` 45 -> 39 bodies). (1) **The wrap**: `BotEnemy.PickDestination`'s
