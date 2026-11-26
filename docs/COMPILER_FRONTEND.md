@@ -2138,18 +2138,17 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**39 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,814 modelled and identical in the same run). **15** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 39 separate defects.
+**30 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,823 modelled and identical in the same run). **9** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 30 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours shorter | yes | 6 | `Pawn.TakeFallingDamage`, `PlayerController.CallServerMove`, `PlayerController.CallServerMove` |
-| jump distance | JumpIfNot | ours longer | yes | 5 | `PlayerController.UpdateRotation`, `LocalMessage.ClientReceive`, `ScriptedController.UpdateRotation` |
 | jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
-| jump distance | Jump | ours shorter | yes | 4 | `Pawn.BaseChange`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
-| opcode | PrimitiveCast | ours shorter | - | 3 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
-| context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
+| jump distance | JumpIfNot | ours shorter | yes | 4 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove`, `MaplistRecord.GetMapItemIndex` |
+| jump distance | Jump | ours shorter | yes | 3 | `BotSG.PickDestination`, `ShieldBelt.Tick`, `DeathMatch.AdjustSkill` |
+| jump distance | JumpIfNot | ours longer | yes | 2 | `LocalMessage.ClientReceive`, `StargateDeathMessage.ClientReceive` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
+| opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
 | context skip | Context | ours shorter | - | 1 | `BotSG.AssignAmbushPoint` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
@@ -2782,3 +2781,64 @@ one-line rule:
   negative literal was scored: it gains those two and loses four (`Weapon.DrawMuzzleFlash`,
   `StargateWeapon.DrawMuzzleFlash`, `Replicator.PlayWaiting`, `BotEnemy.AdjustAround`), so the discriminator is not
   the sign -- the four lost bodies fold a negative literal at the same position and the two gained ones do not.
+
+## Stage 3, continued -- the divide's bound, the statement `Outer` call, and the fold that is the root's (measured 2026-11-26)
+
+Three rules, one thread: the previous section's two families and the `Context` word the one before it left open. Scored
+as a full run of `tools/uscript-emit.py` over the reconstructed tree, per body against `origin/main`'s own run
+(10,814 modelled / 864 residue):
+
+| item | modelled | lost | gained |
+|---|---|---|---|
+| `origin/main` | 10,814 | -- | -- |
+| the divide rule alone (the commit this bundle starts from) | 10,815 | **1** | 2 |
+| + the divide's bound, and the statement `Outer` call (items 1-2) | 10,818 | **0** | 4 |
+| + the int-literal fold is the root's rule (item 3) | **10,823** | **0** | **9** |
+
+**1. The int divide at a float site, and the bound it needed.** `StargateHUD.paintTransparentBlob`'s
+`tempFloat = (yloc) / image.VSize` and `StargatePawn.TakeDamage`'s `2 / Min(PlayerKills, 10)` ship
+`Divide_FloatFloat` with each operand converted where the walk kept `Divide_IntInt` and cast the result -- a chain with
+no literal, which `_leaves_promotable` refuses (that is its whole job; the two bodies' other operands are a group and
+a call). The divide now takes the float row on its own. **It cost a body on the first full-corpus run**, which the
+previous round's package-subset score could not see: `UWindowComboList.SetSelected`'s
+`i = (Y - VBorder) / ItemHeight + VertSB.Pos` ships `Divide_IntInt` behind an `IntToFloat`, because the group
+`(Y - VBorder)` is compiled at the expression root's `int` -- `_group_narrow`'s rule -- and a group compiled at `int`
+promotes nothing. Gating the divide on `not _group_narrow(left, env)` keeps both gains and returns the body:
+10,815 with 1 lost becomes 10,816 with 0 lost. The lesson is the same one the promotion round recorded and this round
+re-learned: **a package subset is not a score** -- the lost body was in `UWindow`, outside the three packages the
+first run read.
+
+**2. `Outer.GotoState(...)`: the statement path's skip word is the call's own width.** The previous section localised
+the two `CheatManager.Fly`/`Ghost` bodies to a `19 ... 05 00 ...` node written on the **statement** path, and the
+constant 5 there carried a docstring claiming it was "measured on `CheatManager.astral`/`puss`". Those two are
+`within` calls -- `ActivateAstralSight()` with no receiver -- which `_emit_within_call` writes as
+`19 01 8e 05 00 00 1b 5b 15 16`, and the value position's 5 is measured too (`Outer.Log(...)` is
+`19 01 8e 05 00 00 1b 0f ...`). Neither is a statement-shaped member call. The corpus's three statement-shaped
+`Outer.<call>` sites write the call's own width: `Outer.GotoState('PlayerFlying')` is `19 01 8e 07 00 00 71 21 6d 0f 16`
+(7) and `CheatManager.LockCamera`'s `Outer.SetLocation(Locked)` is `19 01 8e 08 00 00 ...` (8). `_stmt_member_call` now
+writes `_wide(memb)` unconditionally and gains both `GotoState` bodies; `LockCamera` stays in the residue for its own
+reason.
+
+**3. The int-literal fold is the expression root's rule, not the node's own site.** The previous section left the
+negative literal as a measured negative: refusing every negative fold gains `Pawn.BaseChange` and
+`Pawn.TakeFallingDamage` and loses four, so "the sign is not the discriminator". The discriminator is the root:
+
+| body | source | root | shipped |
+|---|---|---|---|
+| `Pawn.BaseChange` | `Base.TakeDamage((-2 * Mass / decorMass * Velocity.Z / 400), ...)` | the `int Damage` parameter | `IntToFloat(IntConst -2)` |
+| `Pawn.TakeFallingDamage` | `TakeDamage(-100 * (EffectiveSpeed + MaxFallSpeed) / MaxFallSpeed, ...)` | the `int Damage` parameter | `IntToFloat(IntConst -100)` |
+| `Weapon.DrawMuzzleFlash` | `ULength = -1 * ULength;` | a `float` local | `FloatConst -1.0` |
+| `Replicator.PlayWaiting` | `LoopAnim('idle', -1/GroundSpeed);` | a `float` parameter | `FloatConst -1.0` |
+
+Within an `int` expression the arithmetic still takes the float row -- that is why the two gained bodies' inner nodes
+are `Multiply_FloatFloat`/`Add_FloatFloat` -- but the literal stays an `int` and is cast, exactly as
+`RespawnTime < 10` (a `bool` root) casts its `10`. `env["root_site"]` already carries that type (it is set once per
+expression and re-set per argument), so the fold asks it: **a fold needs `root_site == "float"`**. Five bodies gain
+(`Pawn.BaseChange`, `Pawn.TakeFallingDamage`, `PlayerController.PlayerSpidering.UpdateRotation`,
+`ScriptedController.Scripting.UpdateRotation`, `BotEnemy.ShouldAdvance`) and none is lost -- the four the negative-only
+formulation lost all fold at a `float` root, and the two gained ones do not.
+
+What the family still refuses is named rather than counted: `DeathMatch.AdjustSkill` (171 vs 174) keeps
+`Divide_IntInt` where the root is an `int` argument and this round's rules agree with it; `DrawNameAndPing` x3 and
+`FW_GetClientArea` x2 are the divide rows whose other operand the walk still cannot type. The next instrument is one
+of those, not another re-reading of these nine.
