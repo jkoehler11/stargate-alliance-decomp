@@ -168,3 +168,33 @@ sound class no longer counted among them.
 **The lesson, stated where the number lives**: 53 packages and 3,047 sounds were carried as "unreadable" for as long as an
 exporter's limitation was recorded as a property of the data. *"Our tool cannot read it"* and *"it cannot be read"* are
 different claims, and only the second belongs in a census.
+
+### The four paletted textures: a starting point, not a mystery
+
+`umodel` reports `Colors.Num() == 256` and `Palette: Property read error: 3` on the four texture packages. Two measurements
+narrow what a reader has to do, and neither is what the error suggests:
+
+| package | exports |
+|---|---|
+| `M07_fresco_tex` | 26 — **13 `Palette`** and 13 `Texture` |
+| `Tutorial_Tex` | 24 — **12 `Palette`** and 12 `Texture` |
+
+**The palette is its own export object**, one per texture, not an array inside the texture's payload. So the failure is not a
+palette that is too small; it is the reader not resolving a reference to a sibling object.
+
+**The texture payload is a tagged property block.** The first bytes of `M07_goldref` are
+
+```
+09 25 07 05 2a 03 00 02 04 3f 01 22 9abd474a 01 a2 00 e2 71 b8 40 0b 01 05 02 01 07 06 01 07 07 22 00 01 00 00 08 22
+```
+
+and `Tutorial_Tex`'s `Tut_ultrasound_01` starts `09 25 06 05 2a 03 2a 2e 2f 3f …` — the same shape: a tag stream with
+compact name indices, then a struct-typed value (`3f`), then floats (`9abd474a` = the dword whose float reading is plausible
+for a size) and a repeated `22 … 01 … 08 22` tail that looks like two more tags.
+
+`Property read error: 3` is the reader failing on the **third** tag, so its tag grammar is wrong for this build rather than the
+data being malformed — the same class of mistake as the sound packages, one layer down.
+
+**What a reader must do**, and it is a bounded job: walk the tag block to its `None`, take the palette object reference, read
+that sibling `Palette` export (its payload should be 256 × BGRA), then follow the mip descriptions to the pixel data. The
+acceptance test is concrete: four packages, each producing one PNG per texture, with the palette applied.
