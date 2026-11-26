@@ -2138,7 +2138,7 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,114 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
+**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,176 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -2933,6 +2933,54 @@ tool the game directory instead of `System`, and the one mistake a partial-run s
 What this did not move: the residue's top families, unchanged in kind and in count -- a compound expression (152), a
 member call statement to a name the receiver's chain does not declare (125), a member that is not a property of the
 receiver's class (65). Those are the next thread; these three rules were the tail of the argument-list one.
+## Stage 3, continued -- a delegate call in a value position, and three unused declarations (measured 2026-11-26)
+
+**11,114 -> 11,176 modelled, every one byte-identical** (62 bodies gained, **0 lost**, residue 564 -> 502, the
+differ census unchanged at 18). Four rules, one thread: each is a record the walk asked for one layer too
+shallow -- a delegate in an expression, a parameter shadowed by another function's local, a struct member of an
+array element, and the `function` keyword a delegate declaration carries.
+
+**1. A delegate call is a `DelegateFunction` in both positions.** `GUIController.CloseMenu` calls
+`!ActivePage.OnCanClose(bCanceled)` as a **value** and the package writes
+
+    shipped    19 01 2a | 10 00 | 04 | 43 79 18 7d 04 ...     Context(ActivePage, skip 16, size 4)
+                                                              DelegateFunction(record 1593, name 317)
+
+where 1593 is `GUIPage.__OnCanClose__Delegate` (the compact index counts from 1) and 317 is the name
+`OnCanClose`. The record was resolved on the receiver's chain for a **statement** call only, so this body wrote
+`1b 7d 04` -- a `VirtualFunction` of the same name -- and came out **601 against 603 bytes**. `_delegate_head`
+now answers for both and `_emit_member_call` uses it too, which is the same one-line join: a delegate is a
+`Function` record *and* a `DelegateProperty`, and the call names the property.
+
+**2. A body's own parameter is a local of that body, and the class-wide table is not.** `localtypes` merges the
+class-wide table with the function's own `local` declarations, and `_element_type` asks `locals` before
+`params` -- but the class-wide half holds **another function's** local. `GUIController` declares
+`local Player Data` somewhere, so `LadderQueryComplete( array<RungDataSummary> Data )` typed `Data[0]` as a
+`Player` struct, `Data[0].LadderIndex` refused as *a member that is not a property of the receiver's class*
+and three more bodies with it (`RungQueryComplete`, `GetSummaryData`, `GetDetailData`). The function's own
+`decl_params` now merge last. The refusal also carries the receiver and its type now, which is what named this
+one: `(Data [ 0 ] -> ?, ?)` in the first read, `(Data -> player, struct)` in the second.
+
+**3. A member of an array element whose element type is a struct is a `StructMember`.** `_element_type`'s
+member branch asked `_member_record` -- a **class** property table -- for the member of
+`LiveLadderData[LadderIndex]`, whose element is the struct `CachedLadderData`: the class lookup ran on the word
+`cachedladderdata`, answered nothing, and `LiveLadderData[LadderIndex].RungData[RungIndex] = Empty;` refused as
+*an element of an array the artifacts do not type*. The record is `a3` (import 35, `CachedLadderData.RungData`),
+and `_struct_member` already answers it -- `_element_type` now asks it after the class table.
+
+**4. `delegate function X(...)` declares no return type.** This build spells a delegate
+`delegate function GotFocus( UIWidget widget )` (`UIWidget.uc`), so the word in front of the name is `function`
+and `rettype_of` read it as the return type: the five `options[i].GotFocus(...)` bodies refused as *a call
+returning function*. `delegate`, `function` and `event` are modifier words in the header walk, and the Function
+record a delegate gets is a stub whose script is `04 0b 47`.
+
+**What is not in this PR.** `GUIController.ShowLadderData` still refuses at
+`LiveLadderData[i].RungData[j].BestPlayerData` -- a struct member whose own type is `playerrungdata`, whose width
+`STRUCT_SIZE` lacks (its four fields sum to 28 and no `Context` node in the corpus writes it, so the width is
+the field-sum rule and not a measured byte). `GenerateFakeNames`/`ShowRungData` still refuse on an operator with
+an **unknown** side (`an unknown type $ string`), which is that same struct link one node further out. Both
+belong to the struct-width census, not to this join.
+
 ## Stage 3, continued -- a callee declared in another package, and an increment of a member (measured 2026-11-26)
 
 **11,066 modelled / 11,066 byte-identical** (from 10,915; **151 bodies gained, none lost**; residue 763 -> 612, the
