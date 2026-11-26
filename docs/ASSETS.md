@@ -238,3 +238,30 @@ The 1,024 are **not** four copies of 256 — the quarters differ — and most ar
 early. Whether a P8 texture indexes the first 256 of them or the array is genuinely 1,024 wide is the one question left, and
 it is answered by decoding one texture and looking at the result rather than by reading the layout. The acceptance test is
 unchanged: four packages, one PNG per texture, palette applied.
+
+#### The class data after the block: what is measured, and where it stops
+
+`tools/prop-stream.py` parses the property block of every texture in the package, so the boundary between the block and the
+class data is known exactly — and it moves:
+
+| texture | size | properties | block ends | class data | its first bytes |
+|---|---|---|---|---|---|
+| `M07_goldref` | 65,611 | 1 | **7** | 65,604 | `02 04 3f 01 22 9a bd 47 4a 01 a2 00 e2 71 b8 40` |
+| `M07_fresco_01` | 131,147 | 4 | **19** | 131,128 | `05 a8 cb 40 0b 01 05 02 01 08 06 01 07 07 22 00` |
+| `M07_floorplate` | 262,219 | 11 | **57** | 262,162 | `01 f4 d3 07 00 40 80 20 52 69 74 ff 59 72 7c ff` |
+| `M07_fx_symbol_03` | 16,459 | 8 | **57** | 16,402 | `01 3f 14 08 00 40 80 02 00 00 00 ff 00 00 00 ff` |
+| `M07_fx_symbol_05` | 16,459 | 12 | **57** | 16,402 | `01 8a 54 08 00 40 80 02 00 00 00 ff 00 00 00 ff` |
+
+**Three of the five** begin `01` then a four-byte value then `40 80`, and in those the bytes after that look like colour
+(`… ff 00 00 00 ff`). Two do not: `M07_goldref` starts `02 04 3f 01 22` and `M07_fresco_01` starts `05 a8 cb 40 0b`.
+
+**What that means, stated plainly**: the class data is *not* one fixed header followed by pixels. Either the leading bytes
+describe a mip chain whose shape depends on the properties above them, or two of these five are a different storage variant.
+Deciding which needs the same treatment that settled the sound packages and the palette: pick the hypothesis that predicts a
+number, and check it across all 13 textures in both packages rather than the first five.
+
+**Do not guess the layout into the reader.** The two failure modes are a 65,604-byte texture that is one flat P8 image and one
+that is a mip chain with a header; a reader written against the wrong one produces plausible-looking noise, which is the kind
+of error this page has spent the session learning to avoid. The next measurement is a table like the one above for all 13 × 2
+textures, with the candidate fields decoded under each hypothesis, and the hypothesis that survives is the one where every
+row's numbers agree with its payload size.
