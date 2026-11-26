@@ -239,6 +239,30 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a native struct is a struct, and a struct field read carries no width: **11,195 modelled / 11,195
+  byte-identical / 18 differ** (from 11,176 / 11,176 / 18; **19 bodies gained, none lost**; residue 502 -> 483;
+  `inventory/uscript_emit_join.csv` byte-identical, so the walk did not move, and the differ census is still 18).
+  (1) **A struct's name is the last dotted segment of a declaration, and a native struct is a package fact, not a
+  text one.** `_struct_of` returned the declared word as spelled (`gameinfo . keyvaluepair` for
+  `var GameInfo.KeyValuePair Pair`, `array<CacheManager.MutatorRecord>` for a local's element) while
+  `struct_cands`/`struct_members` key on the bare name, so the record lookup missed and the member refused on the
+  receiver's class; and `CacheManager.uc`'s `struct native init MapRecord` has **no `{ }` block**, so
+  `maprecord`/`gamerecord`/`beaconinfo` are in no `struct_members.csv` row while every member of them is a record in
+  the package. `_receiver_kind` now asks the package's own `struct_cands` keys (`scope["struct_keys"]`) beside the
+  text census, with the word normalised to its last dotted segment: 19 bodies (`MaplistManager` 7, `MapList` 3,
+  `MaplistRecord.CreateMapOption`, `GUIController.GetMutatorList`, `ClientBeaconReceiver` 2, `AdminBase.FindGameType`,
+  `ExtendedConsole.ConnectFailure`, `VoiceSelector.DumpFoundVoices`, `XBoxLiveServerSelectionBox.RefreshListBox`).
+  (2) **A struct-typed field of a struct writes no size byte, so its width is never consumed.** `A.B.C` is
+  `36 <index> <obj>`; the guard demanded a `STRUCT_SIZE` entry anyway and refused `ShowLadderData` for want of
+  `playerrungdata`'s width -- 28 by the field sum, which is the reading `MouseCursor` refuted (13 by its fields, 16
+  in the corpus). With the guard gone the body is byte-identical and the table gains nothing: the width is consumed
+  where a *value* is sized (a `Context`'s byte, a static array's `dimension x element`, a call's return).
+  (3) **The width table against the nodes that write it:** `tools/struct-widths.py` (+ `inventory/struct_widths.csv`,
+  `make struct-widths`, the gated block on the page) joins `STRUCT_SIZE` with `inventory/context_size.csv` -- 17
+  entries, **15 node-witnessed**, `coords` and `interpcurve` resting on a body's match, **0 conflicts**, and the 149
+  declared structs with no witness listed `absent` rather than filled in (a node whose byte contradicts an entry
+  fails `--check`). Doc: `docs/COMPILER_FRONTEND.md`, section of the same name.
+
 - [~] 3.6 a delegate call in a value position, a parameter beats another function's local, and a struct member on
       an array element: **11,176 modelled / 11,176 byte-identical / 18 differ** (from 11,114 / 11,114 / 18;
       **62 bodies gained, none lost**; residue 564 -> 502; `inventory/uscript_emit_join.csv` byte-identical, so
@@ -257,8 +281,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `delegate function X(...)`** (`UIWidget.uc`), so `rettype_of` read `function` as the return type and five
       `options[i].GotFocus(...)` bodies refused as *a call returning function*; `delegate`/`function`/`event` are
       modifier words and a delegate's Function record is a stub (`04 0b 47`). Doc: `docs/COMPILER_FRONTEND.md`,
-      section of the same name. Not in this PR: `ShowLadderData`'s `playerrungdata` struct width (28 by the field
-      sum, no `Context` node writes it) and the operator rows whose side is that same untyped struct link.
+      section of the same name. It left `ShowLadderData`'s `playerrungdata` width and the operator rows
+      beside it open; the next note settles both (a field read carries no size byte, so the width was never needed).
 - [~] 3.6 a callee declared in another package, an increment of a member, and a container's `Length`:
   **11,066 modelled / 11,066 byte-identical** (from 10,915; **151 bodies gained, none lost**; residue 763 -> 612;
   the bodies that emit and still differ 20 -> 18). `_func_on` consulted `natives` and the *body package's* exports
