@@ -2139,11 +2139,15 @@ def _emit_operator(expr, rettype, env, root=False):
     def _side(part, want, side_env, do_promote, folded):
         """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
         if _group_narrow(part, env):
-            # The group is compiled at the root's `int`; where the row this node took is `float` it is widened back,
-            # which is the `IntToFloat(FloatToInt(...))` round trip four bodies ship.
+            # The group's **result** is the root's type; its own arithmetic keeps the type it has. So the group is
+            # emitted at its own `float`, narrowed with the `FloatToInt` at its boundary, and widened back where a
+            # `float` consumer reads it -- the `IntToFloat(FloatToInt(...))` round trip four bodies ship. Emitting
+            # the group at `int` retypes its **inner** nodes too, which is not what the package writes:
+            # `UWindowPulldownMenu.SetSelected`'s `(Y - VBorder)` is `FloatToInt(Subtract_FloatFloat(Y,
+            # IntToFloat(VBorder))` and not an `Subtract_IntInt`, and twelve bodies were lost to that read.
             try:
-                core = emit_expr(_strip_parens(part), "int", dict(side_env, _root=False))[0]
-                return _converted(core, "int", want)
+                core = emit_expr(_strip_parens(part), "float", dict(side_env, _root=False, group_int=True))[0]
+                return _converted(_converted(core, "float", "int"), "int", want)
             except Refused:
                 pass
         if ((want or "").lower() == "int" and (rettype or "").lower() == "int" and _paren_wrapped(part)
@@ -2164,7 +2168,10 @@ def _emit_operator(expr, rettype, env, root=False):
                 or _operand(part, want, rettype, env, side_env)
                 or emit_expr(part, want, side_env)[0])
 
-    folded_left = (_float_literal(left, t1, rettype) or _narrowed_const(left, t1, rettype)) if root else None
+    # A group compiled at the root's `int` folds nothing, so its leading literal keeps its int encoding and is
+    # widened at the node it sits in (`Pawn.BaseChange`'s `-2` is `IntToFloat(IntConst -2)`, not a `FloatConst`).
+    folded_left = ((_float_literal(left, t1, rettype) or _narrowed_const(left, t1, rettype))
+                   if root and not env.get("group_int") else None)
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(left, env) is not None,
                          folded_left)
             + _side(right, t2, right_env, promote["r"] and _operator_types(right, env) is not None, None)
@@ -3400,7 +3407,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
                 raise Refused("a byte literal of %d, whose IntToByte slot the image's table does not install" % v)
             return bytes([0x39, slot, 0x2C, int(v)]), "byte-const-cast"
         if t == "float":
-            if env.get("int_site") and float(v).is_integer():
+            if (env.get("int_site") or env.get("group_int")) and float(v).is_integer():
                 return _converted(_int_bytes(int(v)), "int", "float"), "float-const-narrowed"
             return bytes([0x1E]) + struct.pack("<f", float(v)), "float-const"
         raise Refused("a numeric literal in a %s function" % (rettype or "typeless"))
@@ -3592,7 +3599,7 @@ def emit_call(stmt, env, receiver=None, head=None):
     if env.get("byte_root"):
         # A call's arguments are typed by the callee's parameters, not by the assignment that encloses the call:
         # `ParseColor` writes `Mid(S, 2, 1)` as `2c 02 26` inside a byte-typed expression.
-        env = {k: v for k, v in env.items() if k not in ("byte_root", "int_site")}
+        env = {k: v for k, v in env.items() if k not in ("byte_root", "int_site", "group_int")}
     args = _split_commas(stmt[2:close]) if stmt[2:close] else []
     scope = env["scope"]
     if head is None:
@@ -3669,7 +3676,12 @@ def emit_call(stmt, env, receiver=None, head=None):
         # A byte-typed literal is written by `emit_expr`, which knows the form from the value (see the number
         # branch): `byte` takes ByteConst up to 254 and the int form for 255. Each argument is its own expression
         # root, so `_root` from an enclosing expression is cleared here.
-        out += emit_expr(arg, ptype, dict(((k, v) for k, v in env.items() if k != "_root"), _arg=True))[0]
+        # The argument is its own expression root, so it also carries its **own** site type: `root_site` decides
+        # where a parenthesised group is narrowed (`_group_narrow`), and one inherited from the statement's root
+        # types the group at an ancestor's site instead -- `UWindowPulldownMenu.SetSelected`'s `FindEntry((Y -
+        # VBorder) / ItemHeight)` was read as a float divide because the assignment's root is an object.
+        out += emit_expr(arg, ptype, dict(((k, v) for k, v in env.items() if k not in ("_root", "root_site")),
+                                          _arg=True, root_site=ptype))[0]
     return out + b"\x16"
 
 
