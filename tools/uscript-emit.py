@@ -983,7 +983,7 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     if (root and (site or "").lower() == "float" and (env.get("_assign") or env.get("_promote_tree"))
             and (not env.get("_arg") or env.get("_promote_tree"))
             and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
-            and _leaves_promotable(expr)):
+            and (_leaves_promotable(expr) or sym == "/")):
         hit = _operators().get((sym, "float", "float"))
         if hit is not None:
             token, ret = hit
