@@ -198,3 +198,28 @@ data being malformed — the same class of mistake as the sound packages, one la
 **What a reader must do**, and it is a bounded job: walk the tag block to its `None`, take the palette object reference, read
 that sibling `Palette` export (its payload should be 256 × BGRA), then follow the mip descriptions to the pixel data. The
 acceptance test is concrete: four packages, each producing one PNG per texture, with the palette applied.
+
+#### The block already reads — `tools/prop-stream.py` is the reader
+
+The suspicion above was that the tag grammar is wrong. It is not: the repo's own reader parses these payloads without
+complaint.
+
+```
+Texture #14   1 property, 65604 trailing bytes   Palette -> Object Palette'Palette3'
+blocks terminated cleanly: 1 of 1
+```
+
+One tag, a reference to a **sibling object**, and then 65,604 bytes of class-specific data. So a texture reader needs no new
+tag grammar at all — only the class data after the block.
+
+**The palette objects themselves** (`M07_fresco_tex` holds 13, all the same shape):
+
+| | |
+|---|---|
+| payload | **4,099 bytes**, every one of the 13 |
+| shape | 4,096 bytes of palette plus a 3-byte tag block (`None`) |
+| first entries | `00 40 10 00 00 00 ff 00 00 00 ff 00 …` for `Palette54`, `00 40 10 00 7d 81 ff 00 04 08 ff 00 …` for `Palette53` |
+
+4,096 is four times a 256-entry BGRA palette, so the entries are wider than one `FColor` — that width, and the meaning of the
+`00 40 10 00` prefix, are the next thing to pin down rather than assume. The acceptance test is unchanged and remains
+visible: four packages, one PNG per texture, palette applied.
