@@ -345,3 +345,28 @@ Two smaller facts worth keeping:
   3,589 exports that state no size.
 - `Asgard/Glass`, 64 × 64 with **no format property**, has 4,097 bytes after the header against 4,096 needed at one byte per
   pixel — one spare byte. That is the cleanest small case to decode first.
+
+#### The compressed formats: two attempts, both refused, and a metric that lied
+
+The 127 mip-chain payloads are still unread, and the way they resisted is worth writing down because it is the most
+instructive failure on this page.
+
+**Attempt 1 — P8 indices through the package palette.** `Asgard/Glass` is 64 × 64 with 4,097 bytes after the header, one
+spare byte over `64 × 64`. Read as 8-bit indices it yields **4 distinct values with a maximum of 64** — a compressing block
+stream, not palette indices. Not a paletted image.
+
+**Attempt 2 — DXT5 blocks at `+16`.** Scored by the mean absolute difference between horizontally adjacent pixels (a real
+texture is smooth, noise is not), `Concrete` came out at **roughness 0.59** against 22.7 for DXT1 and 50.4 for L8 — which
+looked like a clean win, so it was rendered and looked at. It is **a black field with sparse coloured dots**. Not concrete.
+
+**That is the lesson: a smoothness score cannot tell a correct decode from an empty one.** A constant black image has
+roughness zero and would win this test every time. The score needed to be "smooth **and** with real structure" — a variance
+floor alongside the neighbour difference — and it was not, so the number that looked best described the worst outcome. This
+is the same error as every other one on this page, in a new costume: a measurement that agrees with the hypothesis because it
+cannot see the thing that would contradict it.
+
+**Where that leaves the compressed family**: formats 7, 8 and 3 are not DXT5 base-first at `+16`, and they are not P8 at
+`+16`. The one thing the arithmetic does say is that their payloads are exactly a mip chain at one byte per pixel — the
+levels sum to the byte. What remains open is the arrangement inside that chain, and the next instrument must check both
+directions at once: **does it look like a surface, and does it have the variance a surface has**. Rendering and looking at
+the image is the acceptance test; no scalar replaces it.
