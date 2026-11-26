@@ -2138,11 +2138,11 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**84 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,648 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 84 separate defects.
+**87 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,739 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 87 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours shorter | yes | 19 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.SurfaceReduceDamage` |
+| jump distance | JumpIfNot | ours shorter | yes | 20 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.SurfaceReduceDamage` |
 | jump distance | JumpIfNot | ours longer | yes | 10 | `PlayerController.LongClientAdjustPosition`, `PlayerController.PlayerMove`, `PlayerController.UpdateRotation` |
 | opcode | PrimitiveCast | ours shorter | - | 10 | `LinearStairBuilder.Build`, `GUIMessageBox.LayoutButtons`, `BotSG.EngageDirection` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
@@ -2157,10 +2157,12 @@ names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a nod
 | opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
 | context skip | Context | ours shorter | - | 1 | `SGMenuInteraction.Initialized` |
+| node index | StructMember | ours longer | - | 1 | `SceneManager.ResolveActorsInActions` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
 | opcode | Divide_FloatFloat | ours shorter | - | 1 | `UWindowComboList.SetSelected` |
 | opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
 | opcode | FinalFunction | same length | - | 1 | `GUIComponent.ParseOption` |
+| opcode | Multiply_FloatFloat | ours shorter | - | 1 | `HUD.DisplayMessages` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
 | opcode | StructCmpEq | ours shorter | - | 1 | `MaplistRecord.CompareItems` |
 | operand | Iterator | ours shorter | - | 1 | `BotEnemy.FindTurretGoal` |
@@ -2251,3 +2253,154 @@ matching. The `VirtualFunction` row that carried all eight is gone from the tabl
 The general lesson is the one this page keeps relearning in a new place: a table built from the *package's* records
 answers nothing about a record the package only **imports**, and an inherited declaration is exactly that case. Ask
 the import table with the owner join, not the export table by name.
+
+## Stage 3, continued -- seven struct widths, and a struct field whose own type is a struct (measured 2026-11-26)
+
+**10,648 -> 10,739 modelled, all 10,739 byte-identical, 0 differ in the artifact** (91 bodies gained, none lost; the
+residue 1,030 -> 939). Two rules, both about a value size the walk had no entry for, and the census that measures the
+first of them now runs from a target of its own.
+
+**`STRUCT_SIZE` gains the seven widths the corpus pins.** `inventory/context_size.csv` had carried them as
+`not in table` since the census was written, each agreed by every `Context` node that reads the struct:
+
+| struct | slot | nodes | the body that refused for want of it |
+|---|---|---|---|
+| `animrep` | 12 | 4 | `Controller.BeginState`, `PlayerController.BeginState` |
+| `id3field` | 36 | 3 | `Stream.GetSongTitle`, `StreamInteraction.SetStreamAttachment` |
+| `liveuser` | 24 | 2 | `PlayerController.WriteDisconnectEvent` |
+| `orientation` | 92 | 3 | `SceneManager.ResolveActorsInActions` |
+| `range` | 8 | 1 | `Vehicle.SpectatorSpecialCalcView` |
+| `rangevector` | 24 | 13 | `SurfaceInfo.BulletImpact` |
+| `voicedesc` | 64 | 8 | `SGVoicePackExtended.SearchVoice`, `StargateVoicePack.SelectVoice` |
+
+A width is not read off the field list: the byte sits **inside** the emitted node, so a wrong width puts everything
+behind it out of step with the shipped body and the body can only match at the true width. Every entry is already a
+multiple of 4, so the compiler's slot and the fields' sum agree here -- unlike `MouseCursor`, whose 13-field sum the
+slot rounds to 16. **11 bodies** stop refusing as *a struct member declared `<name>`* (animrep 4, voicedesc 3, id3field 2,
+orientation 1, range 1), and `tools/context-size.py` moves all seven rows from `not in table` to `table`.
+
+**A struct field whose own type is a struct is a struct value.** 89 bodies refused as *a struct member of type struct*:
+the struct-member path tested `PROP_SIZE` alone, and `PROP_TYPE` maps a `StructProperty` to `struct` while `PROP_SIZE`
+carries no struct at all -- so `A.B.C`, where `B` is a struct-valued member of struct `A`, could never emit whatever
+widths the table carried. One lookup now answers both tables (`_value_width(ptype, friendly)`), the default chain and
+the plain member path use it as well, and the refusal names the declared struct rather than only the mapped word
+(`a struct member of type struct (declared color), whose value size this walk does not carry`) so the next residue
+reads which width it wanted. **91 bodies** are modelled by the two rules together, and 6 rows that used to stop here
+now stop one node further on (a compound expression, a vector literal, an operator that folds two literals).
+
+**Three bodies the rule newly reaches emit and still differ, named** -- the emitter refuses any body whose bytes do not
+match, so none of them is in the artifact and the modelled count does not include them. `emit_differ.csv` goes
+84 -> 87 bodies:
+
+* `SceneManager.ResolveActorsInActions` -- the first differing node is a `StructMember` naming **import -10624**
+  where the package names **export 4800**: `subActOrient.CamOrientation.LookAtActorTag` resolves the field through
+  the import table, and the shipped compiler named the same package's own record. **This is the thread's next
+  instrument**: which table a struct field's record comes from when the struct itself is imported.
+* `HUD.DisplayMessages` -- a `Multiply_FloatFloat` where the package writes a `PrimitiveCast` (a coercion the walk
+  still types as arithmetic).
+* `SurfaceInfo.EmitWheelEffect` -- a `JumpIfNot` two bytes short, i.e. the missing node is downstream of the jump, not
+  at it (`rangevector`'s nested `range.X.Max` read is where it starts).
+
+**The census runs from a target now.** `tools/context-size.py` wrote `inventory/context_size.csv` and spliced a block
+into this page from the same file it measures; there was no `make` target and no block, so the page and the artifact
+could drift. `make context-size` regenerates both, `make ci` reproduces the block from the committed CSV
+(`--check-doc`), and `--check` is in the `tool-check-contract` sweep like every other tool's. Its renderer also stopped
+reporting the *blank* declared word (the 1,747 struct nodes whose artifact names no struct) as one disputed struct.
+
+<!-- BEGIN context-size -->
+**31,622 `Context` nodes over 387 shapes** (`inventory/context_size.csv`). A **struct** member's byte is the compiler's stack slot, and `STRUCT_SIZE` carries that slot: **743** nodes over 15 shapes write the table's own entry -- `MouseCursor` is **16** where its four fields (`texture, int, int, byte`) sum to 13 -- **0** write an entry that is still a fields' sum rounded up to 4, and **2,017** a struct the table does not carry, of which **0** have one agreed width the table can take. A **subscripted** read's byte is the array's own size, not a struct's: **222** nodes over 30 shapes write `dimension x element` and **403** the element alone. **No node contradicts it.**
+
+| member | declared | dim | size byte | rule | nodes | examples |
+|---|---|---|---|---|---|---|
+| struct member `StructProperty` | - | - | 12 | not in table | 1732 | `TransientAmbientCreature.PickDestination`, `HerdAnimal.NotifyHitWall`, `HerdAnimal.Wander` |
+| struct member `StructProperty` | vector | - | 12 | table | 400 | `PlayerController.ProcessMove`, `PlayerController.ServerMove`, `Controller.PawnDied` |
+| struct member `StructProperty` | - | - | 4 | not in table | 223 | `Binoculars.DrawRangeIndicator`, `Binoculars.DrawTargeted`, `SNIPERRIFLE.GetTargetFOV` |
+| array read `ArrayProperty` | - | - | 0 | element size | 187 | `ACTION_PlayAmbientSound.InitActionFor`, `MOVE_ORDER_Flee.GetTargetActor`, `Replicator.SpawnGibs` |
+| struct member `StructProperty` | region | - | 16 | table | 99 | `UWindowWindow.DrawUpBevel`, `UWindowTabControl.Paint`, `UWindowWindow.PaintClients` |
+| struct member `StructProperty` | rotator | - | 12 | table | 96 | `PlayerController.CallServerMove`, `PlayerController.PlayerCalcView`, `SavedMove.PostUpdate` |
+| struct member `StructProperty` | color | - | 4 | table | 43 | `Actor.DisplayDebug`, `AIController.DisplayDebug`, `HUD.DrawCustomBeacon` |
+| array read `StructProperty` | region | 4 | 64 | array size | 41 | `UWindowWindow.DrawMiscBevel`, `UWindowProgressBar.Paint` |
+| struct member `StructProperty` | - | - | 16 | not in table | 40 | `UDebugBlueLookAndFeel.FW_SetupFrameButtons`, `UDebugBlueLookAndFeel.Combo_GetButtonBitmaps`, `UDebugBlueLookAndFeel.Combo_SetupLeftButton` |
+| array read `IntProperty` | - | - | 4 | element size | 37 | `TeamVoicePack.SetAckMessage`, `TeamVoicePack.SetClientAckMessage`, `TeamVoicePack.ClientInitialize` |
+| struct member `StructProperty` | mousecursor | - | 16 | table | 30 | `UWindowWindow.CreateWindow`, `UWindowConsoleClientWindow.Initialized`, `UWindowFramedWindow.MouseMove` |
+| struct member `StructProperty` | htmlstyle | - | 28 | table | 28 | `UWindowHTMLTextArea.AddText`, `UWindowHTMLTextArea.GetWrapPos`, `UWindowHTMLTextArea.RemoveWrap` |
+| array read `ObjectProperty` | font | 10 | 40 | array size | 27 | `UWindowDialogControl.BeforePaint`, `UWindowButton.BeforePaint`, `UWindowDynamicTextArea.Paint` |
+| array read `IntProperty` | int | - | 4 | element size | 27 | `GameReplicationInfo.Timer`, `VoiceChatReplicationInfo.GetTitle`, `HUD.DrawCustomBeacon` |
+| array read `ObjectProperty` | pawn | 16 | 64 | array size | 25 | `BotBase.SetNextEnemy`, `SquadAIBasic.MergeEnemiesFrom`, `BotBase.IsEnemy` |
+| array read `ObjectProperty` | - | - | 16 | not joined | 22 | `TriggeredScript.Touch`, `BodySwapTrigger.Touch`, `WarpPortalTrigger.Touch` |
+| array read `NameProperty` | name | 2 | 8 | array size | 20 | `StargatePawn.AnimateFleeing`, `StargatePawn.AnimateSprinting`, `StargatePawn.AnimateRunning` |
+| array read `ArrayProperty` | voicedesc | - | 0 | element size | 20 | `SGVoicePackExtended.SearchVoice`, `StargateVoicePack.TestVoice`, `VoiceSelector.SearchVoices` |
+| array read `IntProperty` | int | 6 | 24 | array size | 19 | `LadderInfo.UpdateLadders` |
+| array read `ArrayProperty` | playerreplicationinfo | - | 0 | element size | 19 | `PlayerController.LoadPlayers`, `ScoreBoard.SortPRIArray`, `PlayerController.ServerChatRestriction` |
+| struct member `StructProperty` | - | - | 24 | not in table | 18 | `SearchLight.TargetTick`, `SearchLight.SearchTick`, `RepChipEmitter.TriggerParticle` |
+| array read `ObjectProperty` | botbase | 16 | 64 | array size | 16 | `BotEnemy.DetermineFollowLocation`, `BotBase.SetManInFront`, `SquadAIBasic.PickNewLeader` |
+| array read `ObjectProperty` | - | - | 40 | not joined | 14 | `UDebugBlueLookAndFeel.FW_DrawWindowFrame`, `UDebugBlueLookAndFeel.Combo_SetupSizes`, `UDebugBlueLookAndFeel.Editbox_SetupSizes` |
+| array read `ArrayProperty` | export editinline particleemitter | - | 0 | element size | 14 | `SurfaceInfo.EmitWheelEffect`, `SurfaceInfo.BulletImpact` |
+| array read `ArrayProperty` | uiwidget | - | 0 | element size | 14 | `SelectionMenu.Show`, `WeaponMenu.NeedToDropItem`, `WeaponMenu.GetCurrentlyHighlightedWeapon` |
+| struct member `StructProperty` | rangevector | - | 24 | table | 13 | `SurfaceInfo.EmitWheelEffect`, `SurfaceInfo.BulletImpact` |
+| array read `?` | - | - | 4 | not joined | 12 | `SquadAISG.ForceTakeCover`, `SquadAISG.ForceFireMode`, `UDebugBlueLookAndFeel.FW_DrawWindowFrame` |
+| array read `ObjectProperty` | - | - | 64 | not joined | 12 | `TacticalTarget.InitialiseBotMoveTargets`, `TacticalTarget.FinishedMove`, `WillowWhisp.PostBeginPlay` |
+| array read `ArrayProperty` | export editinlinenotify guicomponent | - | 0 | element size | 11 | `GUIListBoxBase.InitBaseList`, `GUIScrollBar.doLayout`, `GUIScrollBar.createParts` |
+| array read `IntProperty` | int | 4 | 16 | array size | 11 | `GUIMessageBox.LayoutButtons`, `GUIMessageBox.InternalOnPreDraw`, `GUIMultiColumnList.GetCellLeftWidth` |
+| array read `ArrayProperty` | stargatevehiclepassenger | - | 0 | element size | 11 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehiclePassenger.PossessedBy` |
+| array read `ArrayProperty` | sound | - | 0 | element size | 10 | `StargateVoicePack.TestVoice`, `VoiceSelector.SelectVoice`, `VoiceSelector.DumpFoundVoices` |
+| array read `ObjectProperty` | actor | 16 | 64 | array size | 9 | `Teleporter.SpecialHandling`, `HUD.DrawRoute`, `TeamAI.FindSquadPathToward` |
+| struct member `StructProperty` | plane | - | 16 | table | 9 | `HUD.PostRender` |
+| array read `ObjectProperty` | - | - | 12 | not joined | 8 | `AnimNotify_FireWeapon.Notify`, `CTFBase.UpdateForTeam`, `StargateTeamHUD.DrawGameSynopsis` |
+| struct member `StructProperty` | voicedesc | - | 64 | table | 8 | `SGVoicePackExtended.SearchVoice`, `SGVoicePackExtended.SearchSuitableVoices`, `StargateVoicePack.SelectVoice` |
+| array read `NameProperty` | name | 4 | 16 | array size | 7 | `SquadAISG.ForceTakeCover`, `SquadAISG.ForceFireMode`, `StargatePawn.SetupWeaponAnims` |
+| array read `IntProperty` | - | - | 16 | not joined | 6 | `CoopPlayerPanel.MyOnDrawItem` |
+| array read `ArrayProperty` | controller | - | 0 | element size | 6 | `AIMessage.CompareRecipients`, `CTFGame.ScoreFlag` |
+| array read `IntProperty` | int | 16 | 64 | array size | 6 | `BotEnemy.DetermineFollowLocation`, `BotBase.SetManInFront`, `SquadAIBasic.tellFollowingBotsToFollowNode` |
+| array read `ArrayProperty` | export editinline rosterentry | - | 0 | element size | 5 | `StoryModeGame.AddSquadFromSpawner` |
+| array read `ArrayProperty` | interaction | - | 0 | element size | 5 | `InteractionMaster.SetFocusTo`, `PlayerController.StreamFinished`, `InteractionMaster.RemoveInteraction` |
+| array read `ArrayProperty` | sounddatastruct | - | 0 | element size | 5 | `MultiLayerSound.Connect`, `RandomPitch.Play`, `RandomVolume.Play` |
+| array read `ArrayProperty` | export editinline scriptedaction | - | 0 | element size | 4 | `ScriptedController.SendWarningMessage`, `ScriptedAction.ProceedToSectionEnd` |
+| array read `FloatProperty` | float | 4 | 16 | array size | 4 | `GUIHorzScrollBar.ZoneClick`, `GUIVertScrollBar.ZoneClick` |
+| array read `IntProperty` | int | 3 | 12 | array size | 4 | `DeathMatch.InitGame`, `TeamDeathMatch.InitTeams`, `StoryModeGame.InitTeams` |
+| array read `NameProperty` | name | 3 | 12 | array size | 4 | `StargatePawn.GetCowerAnim`, `StargatePawn.PlayFiring` |
+| array read `StrProperty` | string | 4 | 0 | element size | 4 | `HUD.DisplayProgressMessages` |
+| struct member `StructProperty` | - | - | 8 | not in table | 4 | `RingTransportEmitter.Initiate` |
+| struct member `StructProperty` | animrep | - | 12 | table | 4 | `Controller.BeginState`, `PlayerController.BeginState` |
+| struct member `StructProperty` | pointregion | - | 12 | table | 4 | `PlayerReplicationInfo.UpdatePlayerLocation`, `WarpZoneMarker.SpecialHandling`, `WarpZoneInfo.Tick` |
+| array read `ByteProperty` | - | - | 2 | not joined | 3 | `CTFFlag.BeginState` |
+| array read `ArrayProperty` | editconst editinline guilistelem | - | 0 | element size | 3 | `GUIController.DumpMaps` |
+| array read `ArrayProperty` | goauldconsolecrystal | - | 0 | element size | 3 | `StargatePlayer.BeginState`, `GoauldConsoleHud.UpdateConsoleMousePointer` |
+| array read `ObjectProperty` | guicomponent | 4 | 16 | array size | 3 | `GUIMultiComponent.MapControls` |
+| array read `IntProperty` | int | 9 | 36 | array size | 3 | `ScoreBoard.GetSmallFontFor`, `ScoreBoard.HaveHalfFont`, `ScoreBoard.GetSmallerFontFor` |
+| array read `ObjectProperty` | material | 3 | 12 | array size | 3 | `StargateWeapon.ResetFirstPersonHandsMaterial` |
+| array read `ArrayProperty` | string | - | 0 | element size | 3 | `SquadAIBasic.SetupSkin`, `SquadAIBasic.LoadSkins` |
+| struct member `StructProperty` | id3field | - | 36 | table | 3 | `StreamInteraction.SetStreamAttachment`, `Stream.GetSongTitle` |
+| struct member `StructProperty` | orientation | - | 92 | table | 3 | `SceneManager.ResolveActorsInActions` |
+| array read `ObjectProperty` | actor | 4 | 16 | array size | 2 | `Trigger.Touch` |
+| array read `ObjectProperty` | actor | - | 64 | not joined | 2 | `SquadAIBasic.MoveIntoFormation`, `SquadAIBasic.Investigate` |
+| array read `ByteProperty` | byte | 2 | 2 | array size | 2 | `NavigationPoint.SetBaseVisibility` |
+| array read `StructProperty` | color | 2 | 8 | array size | 2 | `HUD.DrawCustomBeacon` |
+| array read `ArrayProperty` | colormodifier | - | 0 | element size | 2 | `HitEffectManager.SetupFade` |
+| array read `ObjectProperty` | guifont | 16 | 64 | array size | 2 | `GUIMessageBox.LayoutButtons`, `GUIMessageBox.InternalOnPreDraw` |
+| array read `ArrayProperty` | staticmesh | - | 0 | element size | 2 | `SGC_DestructibleSecurityDoor.SpawnDestructibleActor` |
+| array read `StrProperty` | string | 15 | 0 | element size | 2 | `PlayerReplicationInfo.GetNameCallSign`, `PlayerReplicationInfo.GetCallSign` |
+| array read `StrProperty` | string | 8 | 0 | element size | 2 | `UnrealPawn.AddDefaultInventory` |
+| array read `ObjectProperty` | unrealteaminfo | - | 12 | not joined | 2 | `TeamDeathMatch.InitTeams`, `StoryModeGame.InitTeams` |
+| array read `ObjectProperty` | unrealteaminfo | 3 | 12 | array size | 2 | `BotLite.PostBeginPlay`, `StoryModeGame.LoadSaveGameInfo` |
+| array read `ObjectProperty` | unrealteaminfo | 2 | 8 | array size | 2 | `GameObjective.DisableObjective`, `GameObjective.Timer` |
+| struct member `StructProperty` | liveuser | - | 24 | table | 2 | `PlayerController.WriteDisconnectEvent` |
+| array read `ObjectProperty` | actor | 32 | 128 | array size | 1 | `SquadAISG.GetSquadCoverNodes` |
+| array read `ObjectProperty` | alkeshbomb | 2 | 8 | array size | 1 | `AlkeshBomberBot.DoBombDrop` |
+| array read `StructProperty` | color | 4 | 16 | array size | 1 | `HUD.DisplayProgressMessages` |
+| array read `StructProperty` | color | 5 | 20 | array size | 1 | `GUIScrollBar.createParts` |
+| array read `ArrayProperty` | editinline streamplaylist | - | 0 | element size | 1 | `PlaylistParserBase.ImportedPlaylist` |
+| array read `ArrayProperty` | export editinline matsubaction | - | 0 | element size | 1 | `SceneManager.ResolveActorsInActions` |
+| array read `ByteProperty` | guicomponent.elooptype | 3 | 3 | array size | 1 | `MenuItemOverlay.InitComponent` |
+| array read `ArrayProperty` | imusicsegment | - | 0 | element size | 1 | `IMusicController.GetMusicState` |
+| array read `ArrayProperty` | material | - | 0 | element size | 1 | `Decoration.Destroyed` |
+| array read `ArrayProperty` | name | - | 0 | element size | 1 | `StargatePawn.PlayFiring` |
+| array read `ObjectProperty` | playerreplicationinfo | 2 | 8 | array size | 1 | `PlayerController.ClientUpdateFlagHolder` |
+| array read `ByteProperty` | sgformation.efollowuseposition | 16 | 16 | array size | 1 | `BotBase.DisplayDebug` |
+| array read `ArrayProperty` | sgorder | - | 0 | element size | 1 | `SGMenuInteraction.drawObjectivesMenu` |
+| array read `ArrayProperty` | soundmodifier | - | 0 | element size | 1 | `SoundModifier.Connect` |
+| array read `StructProperty` | vector | 16 | 192 | array size | 1 | `StoryModeGame.AddSquadFromSpawner` |
+| struct member `StructProperty` | range | - | 8 | table | 1 | `Vehicle.SpectatorSpecialCalcView` |
+
+The widths the corpus supplies and `STRUCT_SIZE` does not carry, each agreed by every node that reads it: none. **Disputed** (two structs of one name, or a shape this census mis-joined): ``.
+<!-- END context-size -->

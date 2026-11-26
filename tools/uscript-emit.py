@@ -157,8 +157,32 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 # `ZoneNumber` byte), so only the node measures it: `PlayerReplicationInfo.UpdatePlayerLocation`'s
 # `PlayerZone = P.Region.Zone;` is `36 41 0f 19 00 52 16 05 00 0c 01 78 0e`, the `Context` around `P.Region`
 # writing `0c` (see the 7 bodies that refused as *a struct member declared pointregion*).
+# Seven more widths, each from `inventory/context_size.csv`'s `not in table` rows: every `Context` node that
+# reads the struct writes that byte and no other (`tools/context-size.py` -- `animrep` 12 over 4 nodes, `id3field`
+# 36 over 3, `liveuser` 24 over 2, `orientation` 92 over 3, `range` 8 over 1, `rangevector` 24 over 13, `voicedesc`
+# 64 over 8). A width here is the compiler's **stack slot**, the same byte a `Context` writes, not a field sum;
+# each is already a multiple of 4, so the slot and the sum agree. The bodies that pin them are the ones that
+# refused as *a struct member declared <name>*: `Controller.BeginState` (`animrep`), `Stream.GetSongTitle`
+# (`id3field`), `PlayerController.WriteDisconnectEvent` (`liveuser`), `SceneManager.ResolveActorsInActions`
+# (`orientation`), `Vehicle.SpectatorSpecialCalcView` (`range`), `SurfaceInfo.BulletImpact` (`rangevector`) and
+# `SGVoicePackExtended.SearchVoice`/`StargateVoicePack.SelectVoice` (`voicedesc`).
 STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 16, "region": 16,
-               "mousecursor": 16, "htmlstyle": 28, "pointregion": 12}
+               "mousecursor": 16, "htmlstyle": 28, "pointregion": 12,
+               "animrep": 12, "id3field": 36, "liveuser": 24, "orientation": 92,
+               "range": 8, "rangevector": 24, "voicedesc": 64}
+
+def _value_width(ptype, friendly):
+    """A declared type's value size: `PROP_SIZE` for a primitive, `STRUCT_SIZE` for a **struct**.
+
+    The two tables had a lookup each, and the struct-member path used neither: it asked `PROP_SIZE` only, so a
+    struct field whose own type is a struct (`A.B.C`, where `B` is a struct-valued member of struct `A`) was
+    refused as *a struct member of type struct* even when `STRUCT_SIZE` carried the width -- 89 bodies at
+    `main` 1d1ade0. The width is the same one a `Context` writes for the struct, so the same table answers it.
+    """
+    if ptype == "struct":
+        return STRUCT_SIZE.get((friendly or "").lower())
+    return PROP_SIZE.get(ptype)
+
 
 # The skip word a `Context` writes before its type byte. For a member that is an `InstanceVariable` it is 5 in all
 # 17,710 such nodes, whatever width the member's index was written with (`01 18` and `01 69 04` both write 5). A
@@ -2810,9 +2834,7 @@ def _emit_member(expr, rettype, env, element_dim=0):
                                                    _class_of(recv, env) or "an unnamed class"))
             raise Refused("a default chain whose member the receiver's class does not declare")
         _token, index, ptype, friendly = hit
-        size = PROP_SIZE.get(ptype)
-        if size is None and ptype == "struct":
-            size = STRUCT_SIZE.get((friendly or "").lower())
+        size = _value_width(ptype, friendly)
         if size is None:
             raise Refused("a default chain to a %s member, whose value size this walk does not carry"
                           % (ptype or "typeless"))
@@ -2880,9 +2902,13 @@ def _emit_member(expr, rettype, env, element_dim=0):
         raise Refused("a member that is not a property of the receiver's class")
     token, index, ptype, friendly = hit
     if objkind == "struct":
-        if ptype not in PROP_SIZE:
-            raise Refused("a struct member of type %s, whose value size this walk does not carry"
-                          % (ptype or "typeless"))
+        # A field of a struct (no `Context`, so no size byte of its own) still needs a *value size* for whatever
+        # consumes it, and a field whose type is a struct is in `STRUCT_SIZE` like any other. The refusal names the
+        # declared struct, not just the mapped word, so the next residue reads which width it wanted.
+        if _value_width(ptype, friendly) is None:
+            raise Refused("a struct member of type %s%s, whose value size this walk does not carry"
+                          % (ptype or "typeless",
+                             " (declared %s)" % friendly if friendly and ptype == "struct" else ""))
         read = bytes([0x36]) + write_index(index) + emit_expr(obj, "", env)[0]
         if ptype == "bool":
             # A bool **member of a struct** is written behind `BoolVariable`, exactly as a bool property is: the
@@ -2914,7 +2940,7 @@ def _emit_member(expr, rettype, env, element_dim=0):
         # The record is a `StructProperty`; the artifact's declared type names the struct, and only a struct whose
         # size the corpus writes is modelled (`Pawn.Location` -> 12). A struct name the table does not carry keeps
         # the refusal, and the message names it so the residue says which one.
-        size = STRUCT_SIZE.get((friendly or "").lower())
+        size = _value_width(ptype, friendly)
         if size is None:
             raise Refused("a struct member declared %s, whose value size this walk does not carry"
                           % (friendly or "without a friendly type"))
