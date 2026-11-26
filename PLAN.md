@@ -297,6 +297,32 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   iterator section corrected in place. Not in this PR: the seven struct widths `inventory/context_size.csv`
   measures (`animrep` 12, `id3field` 36, `liveuser` 24, `orientation` 92, `range` 8, `rangevector` 24,
   `voicedesc` 64) and the 89 rows that refuse as `a struct member of type struct`.
+- [ ] 3.6 the int/float promotion is per operand, and the emitter casts the result: **fourteen** bodies first
+      differ at a `PrimitiveCast` and **six** more at the operator the byte sits on (`Divide_FloatFloat` 1,
+      `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3, `SubtractEqual_IntInt` 2). The package
+      converts each operand at its own site to the expression's wider type; the emitter evaluates in the operands'
+      type and converts the result -- `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` ships
+      `Add_FloatFloat(FloatConst 12, IntToFloat(.H), IntToFloat(.H))` where the walk writes
+      `IntToFloat(Add_IntInt(IntConstByte 12, .H, .H))`. Bounds measured: a **parenthesised** operand keeps its own
+      type and converts at the promotion site (`paintTransparentBlob`'s `(xloc - 1) / image.USize`), and an **int**
+      site narrows the float operand before the operator (`UDebugVideoClient.BeforePaint`'s `... / 2`), which the
+      walk already does at a root int site. `_operator_types` never reaches the `(float, float)` row because the exact
+      `(int, int)` row answers first. The change is one site choice plus per-operand typing; its risk is reach, so it
+      is accepted only on `differ: 0`, no modelled body lost, and the cast and operator rows falling together. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name.
+- [ ] 3.6 the int/float promotion is per operand, and the emitter casts the result: **fourteen** bodies first
+      differ at a `PrimitiveCast` and **six** more at the operator the byte sits on (`Divide_FloatFloat` 1,
+      `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3, `SubtractEqual_IntInt` 2). The package
+      converts each operand at its own site to the expression's wider type; the emitter evaluates in the operands'
+      type and converts the result -- `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` ships
+      `Add_FloatFloat(FloatConst 12, IntToFloat(.H), IntToFloat(.H))` where the walk writes
+      `IntToFloat(Add_IntInt(IntConstByte 12, .H, .H))`. Bounds measured: a **parenthesised** operand keeps its own
+      type and converts at the promotion site (`paintTransparentBlob`'s `(xloc - 1) / image.USize`), and an **int**
+      site narrows the float operand before the operator (`UDebugVideoClient.BeforePaint`'s `... / 2`), which the
+      walk already does at a root int site. `_operator_types` never reaches the `(float, float)` row because the exact
+      `(int, int)` row answers first. The change is one site choice plus per-operand typing; its risk is reach, so it
+      is accepted only on `differ: 0`, no modelled body lost, and the cast and operator rows falling together. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name.
 - [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
       `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
       bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from

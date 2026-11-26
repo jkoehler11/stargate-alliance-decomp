@@ -2462,3 +2462,39 @@ width is claimed for it; the sentence no longer reports a table shortfall it nev
 | `orientation.lookatactor` | lowest | 2 | `ObjectProperty` | 1 | `scenemanager.ResolveActorsInActions` |
 | `orientation.lookatactortag` | lowest | 2 | `NameProperty` | 2 | `scenemanager.ResolveActorsInActions` |
 <!-- END struct-records -->
+
+## Stage 3, continued -- the int/float promotion is per operand, and the emitter casts the result (measured 2026-11-26)
+
+Fourteen bodies first differ at a `PrimitiveCast` and six more at the operator the same byte sits on
+(`Divide_FloatFloat` 1 `ours shorter`, `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3,
+`SubtractEqual_IntInt` 2 -- `inventory/emit_differ.csv`), and they are one shape: **the package converts each
+operand to the expression's wider type at the operand's own site; the emitter evaluates in the operands' own type
+and converts the result.**
+
+`UDebugBlueLookAndFeel.Combo_SetupSizes`'s `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H;`, target `float`,
+both `.H` ints:
+
+    shipped   Add_FloatFloat( Add_FloatFloat( FloatConst 12.0f, IntToFloat(.H) ), IntToFloat(.H) ) 16
+    emitter   IntToFloat( Add_IntInt( Add_IntInt( IntConstByte 12, .H ), .H ) ) 16
+
+Two shapes bound the rule:
+
+- `StargateHUD.paintTransparentBlob`'s `tempFloat = (xloc - 1) / image.USize;` ships
+  `Divide_FloatFloat( IntToFloat( Subtract_IntInt( xloc, 1 ) ), IntToFloat( USize ) )`: a **parenthesised** operand
+  keeps its own type and converts at the promotion site, while the division's own operands promote -- and the
+  unparenthesised left-associative chain above promotes with it (`12 + .H + .H` promotes the inner `+` too).
+- `UDebugVideoClient.BeforePaint`'s `ControlRight = ... / 2;` has an **int** target and ships
+  `Divide_IntInt( PrimitiveCast[44]( <float expression> ), IntConstByte 2 )`: at an int site the float operand
+  narrows *before* the division, which is the narrowing rule `_operator_types` already carries for a root int site.
+
+**Why the emitter cannot reach it today**: `_operator_types` asks the pair table with the operands' own types and
+the exact `(int, int)` row answers first, so a `float` site never consults the `(float, float)` row; the mixed row is
+only reached when one operand is already float. The change is to let the **site** choose the row for the four
+arithmetic symbols when both operands are int, and to emit each operand at the promoted type -- except a
+parenthesised operand, which keeps its own type and converts after it.
+
+**What would settle it, and the risk**: one score run. The rule's reach is the whole question -- it promotes at every
+float site, so a body that matches today by converting the result would stop matching. The acceptance test is the
+emitter's usual one and it is not optional here: `differ: 0` in `inventory/uscript_emit.csv`'s census row, no
+modelled body lost, and the `PrimitiveCast` / operator rows falling together. Do not ship this on the fourteen rows
+alone.
