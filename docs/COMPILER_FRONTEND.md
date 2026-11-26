@@ -2430,12 +2430,13 @@ ci` reproduces it (`--check-doc`).
 
 **Three of the nine ambiguous nodes are `later`, and they are the rule's own boundary.** `StargateVehicle` declares a
 `DriverWeaponStruct` (struct export 6601) and `StargateWeaponEmplacement`, its subclass, declares its own (5975).
-Their `PostNetBeginPlay` bodies each read *their own* struct's `WeaponClass`/`WeaponBone` (4360 and 6597 for the parent,
-4692 and 5974 for the child), so one `(struct, member)` key answers two records **inside one package** and the
-discriminator is the **reading class's own scope** -- `outer` of the struct's `outer`, which the key does not carry.
-`lowest` is therefore the measured approximation on the nine ambiguous nodes (6 agree with it), and the census names
-the three it cannot decide rather than hiding them. The next instrument is to carry the declaring class through the
-key and resolve the record against the class chain; the two `DriverWeaponStruct` classes are the test.
+Their `PostNetBeginPlay` bodies each read *their own* struct's `WeaponClass`/`WeaponBone` -- 4360 and 6597 for the
+parent, 4692 and 5974 for the child -- so one `(struct, member)` key answers two records **inside one package** and
+the discriminator is the **reading class's own scope**, `outer` of the struct's `outer`, which the key does not carry.
+The two copies' fields are not in the same relative order (4360 < 4692 for `WeaponClass`, 5974 < 6597 for
+`WeaponBone`), which is why one rule reads as `lowest` on one field and `later` on the other: **the index is not the
+rule, it is the rule's shadow**. `lowest` is therefore the measured approximation (6 of the 9), and the census names
+the three it cannot decide rather than hiding them; `docs/UNKNOWNS.md` U42 carries the test.
 
 **An inherited struct field is an import, and that is most of the population.** 3,318 of the 5,128 field reads name a
 record this package does not export -- the struct is declared in another package, the import's `package` field names
