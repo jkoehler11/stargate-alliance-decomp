@@ -290,3 +290,27 @@ offset or a wrong channel order does not produce readable signage; it produces n
 **What is still unread**: the exports without `USize`/`VSize` in their properties — `M07_goldref` is one (a single `Palette`
 property and 65,604 bytes of data). Their size is inherited from somewhere this tool does not model, and the same rule
 applies as everywhere else on this page: a guessed size produces a plausible-looking image that is wrong.
+
+#### The format-less textures, and an honest census of what remains
+
+`Format` is absent on a minority of textures, and skipping them just because the property is missing is a rule about the
+tool rather than about the data. The offset is **self-validating**, so the tool now uses it: at `+16`, byte 3 is the alpha
+channel and is 255 almost everywhere. A texture is accepted when that holds for at least 90% of up to 20,000 sampled pixels,
+and rejected otherwise.
+
+That gained **2 textures and rejected 1**: `M07_fx_symbol_04` and `M07_fx_symbol_03` now decode, and one 64 × 64 export whose
+alpha validates only **808 of 4,096** was refused — which is the guard doing its job rather than a loss.
+
+**Verified by eye again**: `M07_fx_symbol_04.png` is a 64 × 64 cyan line-art glyph of an ibis-headed bird on black — an
+Egyptian-style symbol, clean edges, correct colour. Not noise.
+
+| outcome | count |
+|---|---|
+| PNG written | **51** |
+| skipped — the object states no `USize`/`VSize` | 3,589 |
+| skipped — the stated size does not fit 4 bytes/pixel | 771 |
+| skipped — alpha does not validate at `+16` | 1 |
+
+The 771 are the paletted and compressed formats: their payloads are smaller than `USize × VSize × 4`, which is the arithmetic
+that says so. The 3,589 need the size from wherever the class inherits it — `M07_goldref` is one, with a single `Palette`
+property and 65,604 bytes. Both groups are named here rather than approximated in the tool.
