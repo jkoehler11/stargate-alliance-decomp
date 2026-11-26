@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**23 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,272 modelled and identical in the same run). **7** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 23 separate defects.
+**20 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,275 modelled and identical in the same run). **7** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 20 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -2211,7 +2211,6 @@ node's own shape, the next thing to read here, not a typing question.
 | jump distance | Jump | ours shorter | yes | 3 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
 | jump distance | JumpIfNot | ours shorter | no | 3 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `TransportRings.RingsMove` |
 | jump distance | JumpIfNot | same length | no | 3 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults`, `GUIMessageBox.InternalOnPreDraw` |
-| opcode | Multiply_FloatFloat | ours longer | - | 3 | `Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState` |
 | opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
 | operand | StringConst | ours longer | - | 1 | `TextGameInfo.InitComponent` |
@@ -3225,3 +3224,45 @@ cannot type (`Door.SpecialHandling`'s `unknown != object`, `PlayInfo.Dump`'s `st
 struct compare in `ClientBeaconReceiver.ReceivedText`, the `name`/`bool`/`byte` comparisons of
 `AlkeshBomberBot` and `CommandInterface`), beside the 152-body compound-expression family, `ServerMove`'s
 retype, and the 23 emitted-but-different bodies.
+
+## Stage 3, continued -- a constant chain is not retyped, and the score is per body (measured 2026-11-26)
+
+**11,275 modelled / 11,275 byte-identical** (from 11,272; **three bodies gained, none lost**, residue 406 -> 403,
+and the differ bucket 23 -> 20: its `Multiply_FloatFloat` family is gone).
+
+`Chip.BeginState`, `Chip.HitWall` and `RepChip.BeginState` all write `200000 * 2 * FRand() - 200000` into an `int`
+property, and the shipped node keeps the constant expression `int`:
+
+    shipped   Multiply_FloatFloat( IntToFloat( Multiply_IntInt( IntConst 200000, IntConstByte 2 ) ), FRand() )
+    emitter   Multiply_FloatFloat( IntToFloat( IntConst 200000 ), IntToFloat( IntConstByte 2 ) ) * FRand()
+
+`_leaves_promotable` answers "may this `int` chain be retyped root and branch at a `float` site", and it answered
+*yes* whenever the chain held a literal and no call -- so the pair table promoted both operands of the inner
+`Multiply_IntInt` instead of converting the node's result. The bound that was missing is the **constant
+expression**: a chain whose every leaf is a literal is typed where it stands, and only its result converts. The
+literal rule needs at least one non-literal leaf, which is the same shape the call rule already had (`Int(TempF +
+0.5) * Step` keeps the whole chain `int`), so the two bounds are one sentence rather than two exceptions.
+
+**The score is a join of two runs, not a count difference.** `tools/emit-score.py --base DIR --new DIR` reads each
+run's own `art/uscript_emit.csv` and `residue.csv` and joins them on `(package, class, state, function, source)`,
+reporting gained / lost / newly differing / later refusals and exiting 1 on a loss. The **source** belongs in the
+key: `PlayerController.CallServerMove` is two bodies of one name (166 and 146 bytes), and a key without it reports
+one of them lost and the other gained on every run. This is the rule the page already stated -- a net `+3` hid 40
+lost and 43 gained in one earlier formulation -- turned into a tool so the next rule cannot skip it.
+
+    $ python3 tools/emit-score.py --base ~/sg1/work/emit-fe4 --new ~/sg1/work/emit-fe5
+    modelled 11272 -> 11275 (+3), gained 3, lost 0, kept 11272, newly differing 0, later refusals 0
+      gained Chip.BeginState
+      gained Chip.HitWall
+      gained RepChip.BeginState
+
+**What this did not reach, measured rather than guessed.** The `DisplayDebug` family's `Context skip` (3 bodies) is
+`Canvas.DrawText(Self, false)`: the parameter is `coerce string`, the package writes `39 56` (`ObjectToString`, slot
+86) in front of `17`, and the walk writes no cast because `_type_of(self)` is the body's **class name** and the
+table has no `(stargatevehicle, string)` row -- the object pair is keyed `Object`. `TextGameInfo.InitComponent`'s
+`operand StringConst` row is the same kind of shape one byte long: the `.uc` tree carries the UTF-8 run `c2 92`
+where the package holds the single byte `92`, so a string literal's bytes have to be recovered as
+`bytes -> utf-8 -> cp1252` before they are written. Both were tried in this round and are **not** in this PR: the
+first corpus run of each gained nothing, which is what sent the read back to the shape (a rule that changes no body
+is not a rule yet). Beside them the 19 operator rows, the 152-body compound family, `ServerMove`'s float retype and
+the other 20 differing bodies stand as the thread's next instruments.
