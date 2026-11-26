@@ -2138,7 +2138,7 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**26 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,827 modelled and identical in the same run). **10** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 26 separate defects.
+**26 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,909 modelled and identical in the same run). **10** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 26 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -2858,3 +2858,29 @@ left operand is declared `byte`, before the promoted pair is consulted.
 
 Measured: **10,823 -> 10,827** modelled bodies, every one byte-identical; bodies that emit and still differ
 **30 -> 26**; `differ: 0` in the census row, so none was lost.
+
+## Stage 3, continued -- a name that is not a property: `Default`, a class `const`, an enum ordinal (measured 2026-11-26)
+
+Three names the source writes through a receiver are not properties of it, and the walk answered each with a record
+lookup that could not succeed:
+
+- **`Default.<member>`** is the body's own class default object. The type path asked `_member_record` for the word
+  `default`, which names no class, so `Default.GoreLevel < 2` read `an unknown type < int` and the body stayed in the
+  operator residue although its emit path (`04 02 <idx>`) is modelled. It now asks the body's own chain; `_class_of`
+  answers `Default` as the body's class, so `Default.X.Y` and `Default.X.Length` resolve on `X`.
+- **`Sender.MSGT_Reply`** -- `MSGT_*` are consts on `Actor` -- ships `19 01 fd01 02 00 04 2c 02 16`: a `Context` over
+  the receiver whose skip word is the literal's own wide length (2), whose size byte is the value's (4), and whose
+  inner node is the constant at an `int` site. The constant's declared type is what the type path needed.
+- **`Controller.EInputKey.IK_Left`** ships `19 01 08 02 00 01 24 25 16`: skip 2, size 1 (a byte), `24 25` -- the enum's
+  own ordinal, the enum's name being the receiver's *last* link, and the site widens it (`39 3a`) exactly as the bare
+  spelling is. `Class.EnumName.CONST` resolves to no class, so the record was always missing.
+
+Measured as full runs on this branch, per body against the previous run: **10,823 -> 10,888** for `Default`,
+**10,888 -> 10,905** for the constant and enum rules, and **10,909** on the merged tree with `main`'s byte compound
+assignment -- every modelled body byte-identical, **none lost**, and the differing set unchanged by these rules.
+
+`DeathMatch.AdjustSkill` (171 against 174) is the one differing body these rules opened, and it is not truncated text:
+the same source `2/Min(...)` ships as `Divide_FloatFloat(FloatConst 2.0, IntToFloat(Min(...)))` when it is the whole
+argument of a float native, and as an int division cast at the node when it is nested under a float subtract in the
+same body. Letting a divide promote at an argument site was scored and gained **no** body, so the bound is the
+parameter slot's own desired type -- the next instrument in this thread.
