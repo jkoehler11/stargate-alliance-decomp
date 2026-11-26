@@ -2138,22 +2138,21 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**67 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,785 modelled and identical in the same run). **29** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 67 separate defects.
+**62 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,790 modelled and identical in the same run). **27** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 62 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
-| jump distance | JumpIfNot | ours longer | yes | 10 | `PlayerController.LongClientAdjustPosition`, `PlayerController.PlayerMove`, `PlayerController.UpdateRotation` |
+| jump distance | JumpIfNot | ours longer | yes | 8 | `PlayerController.UpdateRotation`, `LocalMessage.ClientReceive`, `ScriptedController.UpdateRotation` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
 | jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
 | operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
-| opcode | PrimitiveCast | ours longer | - | 3 | `VolumetricBuilder.BuildVolumetric`, `UDebugVideoClient.BeforePaint`, `UDebugVideoClient.Initialized` |
 | opcode | PrimitiveCast | ours shorter | - | 3 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
 | opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
 | context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
-| opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
+| opcode | PrimitiveCast | ours longer | - | 2 | `UDebugVideoClient.BeforePaint`, `UDebugVideoClient.Initialized` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
 | context skip | Context | ours shorter | - | 1 | `BotSG.AssignAmbushPoint` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
@@ -2687,3 +2686,52 @@ What the rule still does not reach, unchanged by it: `paintTransparentBlob` 560 
 233 against 235, `Pawn.BaseChange` 268 against 272. All three are the *literal's* type rather than a hole's count --
 `BaseChange`'s `-2` and `TakeFallingDamage`'s `-100` ship as `IntToFloat(IntConst ...)` where the walk folds them to a
 `FloatConst` -- and that is the next instrument in this thread.
+
+## Stage 3, continued -- an integral float literal narrows to `int` at an `int` node (measured 2026-11-26)
+
+The last section left the literal's type as the next instrument: `Pawn.BaseChange`'s `-2` and
+`TakeFallingDamage`'s `-100` ship as `IntToFloat(IntConst ...)` where the walk folds them to a `FloatConst`. Three
+more bodies were the same shape and are now modelled, and the rule they name is narrower than "a literal's type":
+
+`RotStep.Yaw = 65536.0f / (NumSheets * 2);` (`VolumetricBuilder.BuildVolumetric`) ships `91 1d 00000100 90 <local>
+2c 02 16` -- `Divide_IntInt(IntConst 65536, Multiply_IntInt(...))`: the **float** literal is typed `int` because the
+node it sits at is `int`, and the pair table then takes its `(int, int)` row. In `CurvedStairBuilder` the same
+literal is one node in, under a `Multiply_FloatFloat` the root narrowed, and there the package writes
+`Multiply_FloatFloat(IntToFloat(IntConst 65536), ...)` -- the int constant and the `IntToFloat` back. The narrowing
+is the **left spine's**, exactly like the int-literal fold: `SpiralStairBuilder`'s `(360.0f / NumStepsPer360)` on the
+right of the same statement keeps its `FloatConst 360.0`, and `Pawn.Tool_AngleLinearInterpolate`'s `32768.0` /
+`65536.0` at a float node stay `FloatConst` (that body emits identically, so it is the control).
+
+Three things had to be right, and each was a lost body before it was: the flag is the **node's own type**, not
+inherited (inheriting it read `360.0f` as an int and took `SpiralStairBuilder` from 958 to 964 against 960); a
+**call drops** it, because `FMin(1, 24 * DeltaTime)`'s `1` is typed by the callee's parameter (`PlayerController.
+BlendRot`, `BotEnemy.AdjustAim`); and the literal has to be **written** through the narrowed shape, not only typed
+by it -- `_operand`'s cast form (`PrimitiveCast 44 (FloatConst 65536.0)`) is tried first and leaves the body two
+bytes long.
+
+Score, as a full run of `tools/uscript-emit.py` over the reconstructed tree plus `tools/emit-differ.py` against
+`origin/main` (10,785 modelled / 893 residue / 67 differ bodies), per body:
+
+| formulation | modelled | residue | lost | gained |
+|---|---|---|---|---|
+| `origin/main` | 10,785 | 893 | -- | -- |
+| the flag inherited (first try) | 10,787 | 891 | **2** | 2 |
+| the flag the node's own type, left spine only, and the narrowed write (shipped) | **10,790** | **888** | **0** | **5** |
+
+The five: `VolumetricBuilder.BuildVolumetric`, `CurvedStairBuilder.BuildCurvedStair`,
+`SpiralStairBuilder.BuildCurvedStair`, `PlayerController.LongClientAdjustPosition`,
+`PlayerController.PlayerMove [PlayerDriving]` (the last two are `Min(0.25 * NewPing, 250)` -- `250` is an int literal
+at an `int` node, and the fold had been firing on it).
+
+`tools/emit-missing.py --nodes` is new here and is what made the families readable: the multiset had said "three
+`IntToFloat`s and one `FloatToInt`" for `Pawn.BaseChange` for two sessions, and only the node view showed where they
+sit. What the remaining 888 refuse, by family, with the shape each carries:
+
+| family | bodies | what the shipped body does that the walk does not |
+|---|---|---|
+| `IntToFloat(FloatToInt(x))` round trip | 5 | `UWindowGridColumn.Click`/`RMouseDown`/`RMouseUp`/`DoubleClick`'s `((Y - 12) / RowHeight) + TopRow` and `Binoculars.CheckPawns`: the group the root narrows is widened **back** at the divide |
+| the divide's row | 7 | `paintTransparentBlob` (560 vs 562), `StargatePawn.TakeDamage` (233 vs 235), `DrawNameAndPing` x3, `FW_GetClientArea` x2: shipped takes `Divide_FloatFloat` with an `IntToFloat` where the walk keeps `Divide_IntInt` |
+| a literal folds inside a call's argument | 2 | `ConeBuilder.BuildCone`/`CylinderBuilder.BuildCylinder`: `2` ships as `FloatConst 2.0` with float arithmetic where the walk keeps the int chain |
+| `Pawn.BaseChange` | 1 | 268 against 272: the parenthesised group narrowed and re-widened around a float subtraction |
+
+None of those four is modelled here; they are the thread's next instruments, and the round trip is the largest.

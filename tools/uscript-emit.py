@@ -933,6 +933,12 @@ def _operator_types(expr, env, site="", root=False):
     # the same mapping is what `_operand` needs to write the `39 3a` (`ByteToInt`) around the call.
     t1, t2 = _enum_byte(t1, env), _enum_byte(t2, env)
     n1, n2 = _numeric(t1, env), _numeric(t2, env)
+    # A float **literal** whose value is an exact integer is typed `int` at an `int`-typed node: the constant is
+    # narrowed to the site and the pair is looked up on `int` (`_integral_float` carries the three bodies).
+    if (site or "").lower() == "int" and _integral_float(left) is not None:
+        # The **leading** operand only: `SpiralStairBuilder`'s `(360.0f / NumStepsPer360)`, on the right of the same
+        # expression, keeps its `FloatConst`, so the narrowing is the left spine's, like the int-literal fold's.
+        t1, n1 = "int", "int"
     if not (t1 and t2):
         # A side the walk cannot type on a **one-row** symbol: `&&`/`||`/`^^` install one row each, so the symbol
         # alone decides the token and both operands are `bool`. 48 `bool && unknown`, 25 `unknown && unknown`, 15
@@ -1894,6 +1900,62 @@ def _float_literal(part, want, site=""):
     return bytes([0x1E]) + struct.pack("<f", -float(v) if neg else float(v))
 
 
+def _integral_float(expr):
+    """The int an expression is a float literal of, when the value is an exact integer -- else None.
+
+    The compiler types a **constant** from the site: `RotStep.Yaw = 65536.0f / (NumSheets * 2)` in
+    `VolumetricBuilder.BuildVolumetric` ships `91 1d 00000100 90 <local> 2c 02 16` -- `Divide_IntInt(IntConst
+    65536, Multiply_IntInt(...))`, the float literal narrowed to the `int` the site is, and then the pair table
+    taking its `(int, int)` row. In the same build `65536.0` at a **float** site stays a `FloatConst`
+    (`Pawn.Tool_AngleLinearInterpolate`'s `Abs(currentAngle - targetAngle) > 32768.0`, whose body emits
+    identically), so the narrowing is the site's, not the value's.
+    """
+    expr = _strip_parens(expr)
+    neg = False
+    if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
+        expr, neg = [expr[1]], True
+    if len(expr) != 1 or expr[0][0] != "number":
+        return None
+    try:
+        v = _number(expr[0][1])
+    except ValueError:
+        return None
+    if not isinstance(v, float) or not v.is_integer():
+        return None
+    return int(-v if neg else v)
+
+
+def _narrowed_const(part, want, site=""):
+    """An integral float literal at an `int`-typed node, written as the int constant the site narrows it to.
+
+    The literal is *emitted* through this shape, not only typed by it: `_operand`'s form for a literal whose own
+    type differs from the want is the cast, and the cast is what the package does not write. Where the operator's
+    own slot is `float` the narrowing is followed by the `IntToFloat` back (`_converted`), which is exactly
+    `393f 1d 00000100` under the `Multiply_FloatFloat` of `CurvedStairBuilder`.
+    """
+    if (site or "").lower() != "int":
+        return None
+    v = _integral_float(part)
+    if v is None:
+        return None
+    return _converted(_int_bytes(v), "int", want)
+
+
+def _leading_literal(expr):
+    """The token run in front of a parenthesised group's first operator, if it is a numeric literal, else None.
+
+    `(65536.0f * (AngleOfCurve / 360.0f))` leads with the literal; `(Y - VBorder)` leads with an identifier and is
+    not narrowable, which is what keeps `UWindowPulldownMenu.SetSelected`'s shipped `FloatToInt(Y - ...)` shape.
+    """
+    core = _strip_parens(expr)
+    if not core:
+        return None
+    neg = [(core[0][0], core[0][1])] if core[0][0] in ("number",) else None
+    if neg is None and len(core) > 1 and core[0] == ("op", "-") and core[1][0] == "number":
+        neg = [core[0], core[1]]
+    return neg
+
+
 def _paren_wrapped(expr):
     """True when the **whole** token run is one parenthesised group -- a new expression root for the fold rule."""
     if len(expr) < 3 or expr[0] != ("op", "(") or expr[-1] != ("op", ")"):
@@ -2036,7 +2098,14 @@ def _emit_operator(expr, rettype, env, root=False):
     # The byte context reaches a literal through the operator tree: the assignment types the outermost node, and a
     # literal two operators in is still a byte (`ParseColor`). It stops at a call, whose arguments are typed by the
     # callee's parameters -- `emit_call` drops the flag.
-    inner = dict(env, byte_root=True) if (rettype or "").lower() == "byte" else env
+    inner = dict(env, byte_root=True) if (rettype or "").lower() == "byte" else dict(env)
+    # The **node's own type**, replaced at every child: an integral float literal under an `int` node is written as
+    # the `int` constant the site narrows it to, and takes an `IntToFloat` back where the operator's slot is float
+    # (`(65536.0f * (AngleOfCurve / 360.0f)) / NumSteps` is `393f 1d 00000100` under `Multiply_FloatFloat`). It is
+    # replaced rather than inherited because a float-typed group inside the same statement keeps its `360.0f` as a
+    # `FloatConst` -- `SpiralStairBuilder`'s `(360.0f / NumStepsPer360)` is one node in, and inheriting the flag read
+    # that literal as an int and cost four bytes.
+    inner["int_site"] = (rettype or "").lower() == "int"
     # A byte-typed site types a literal before the cast table is asked (`39 3c 24 a0`), and an int literal at a
     # `float` site folds into a `FloatConst` in exactly two measured positions (see `_float_literal`); both are
     # tried before `_operand`, whose form for a literal is the cast.
@@ -2047,6 +2116,14 @@ def _emit_operator(expr, rettype, env, root=False):
 
     def _side(part, want, side_env, do_promote, folded):
         """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
+        if ((want or "").lower() == "int" and (rettype or "").lower() == "int" and _paren_wrapped(part)
+                and _leading_literal(part) is not None):
+            # A group the site narrows keeps its leading literal int-narrowed (`CurvedStairBuilder`); the group's own
+            # children see the narrowing, and a group that does not lead with a literal keeps the cast form.
+            try:
+                return emit_expr(_strip_parens(part), "int", dict(side_env, _root=True))[0]
+            except Refused:
+                pass
         if do_promote:
             try:
                 return emit_expr(part, "float", side_env)[0]
@@ -2057,8 +2134,9 @@ def _emit_operator(expr, rettype, env, root=False):
                 or _operand(part, want, rettype, env, side_env)
                 or emit_expr(part, want, side_env)[0])
 
+    folded_left = (_float_literal(left, t1, rettype) or _narrowed_const(left, t1, rettype)) if root else None
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(left, env) is not None,
-                         _float_literal(left, t1, rettype) if root else None)
+                         folded_left)
             + _side(right, t2, right_env, promote["r"] and _operator_types(right, env) is not None, None)
             + b"\x16")
     return _converted(node, result, rettype), "operator"
@@ -3288,6 +3366,8 @@ def emit_expr(expr, rettype, env, element_dim=0):
                 raise Refused("a byte literal of %d, whose IntToByte slot the image's table does not install" % v)
             return bytes([0x39, slot, 0x2C, int(v)]), "byte-const-cast"
         if t == "float":
+            if env.get("int_site") and float(v).is_integer():
+                return _converted(_int_bytes(int(v)), "int", "float"), "float-const-narrowed"
             return bytes([0x1E]) + struct.pack("<f", float(v)), "float-const"
         raise Refused("a numeric literal in a %s function" % (rettype or "typeless"))
     if kind == "quoted":
@@ -3478,7 +3558,7 @@ def emit_call(stmt, env, receiver=None, head=None):
     if env.get("byte_root"):
         # A call's arguments are typed by the callee's parameters, not by the assignment that encloses the call:
         # `ParseColor` writes `Mid(S, 2, 1)` as `2c 02 26` inside a byte-typed expression.
-        env = {k: v for k, v in env.items() if k != "byte_root"}
+        env = {k: v for k, v in env.items() if k not in ("byte_root", "int_site")}
     args = _split_commas(stmt[2:close]) if stmt[2:close] else []
     scope = env["scope"]
     if head is None:
