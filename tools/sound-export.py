@@ -57,15 +57,23 @@ def safe(name):
 
 
 def run(dump_dir, out_dir, inventory, exts=(".uax",)):
+    # walk: `.uax` packages do not all sit in `Sounds/` -- `eSFX`, `weaponsounds`, `jaffasounds` and others live elsewhere,
+    # and a single-directory glob left every one of them unexported while their neighbours were being written.
     files = []
-    for ext in exts:
-        files += sorted(glob.glob(os.path.join(dump_dir, "*" + ext)))
+    for root, _dirs, names in os.walk(dump_dir):
+        for name in sorted(names):
+            if os.path.splitext(name)[1].lower() in exts:
+                files.append(os.path.join(root, name))
+    files.sort()
     if not files:
         print("FAIL sound-export: no %s under %s" % (exts, dump_dir))
         return 1
     rows, written, skipped, seen = [], 0, 0, {}
     for path in files:
-        pkg_name = os.path.basename(path)[:-len(os.path.splitext(path)[1])]
+        # the directory is part of the identity: `weaponsounds` in one folder is not the same package as another of the
+        # same name elsewhere, and a bare basename would merge their sounds silently
+        rel = os.path.relpath(path, dump_dir)
+        pkg_name = os.path.splitext(rel)[0].replace(os.sep, "_")
         p = Package(path)
         p.read_names()
         p.read_imports()

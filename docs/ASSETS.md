@@ -131,3 +131,40 @@ Excluding that one class, **337 of 344 packages export — 97.97%** — and the 
 textures, two static meshes and one animation, of which `Goa_Vehicles` names its own cause (`wrong import index 31`). The
 headline number is left as `status.py` generates it; this section says what is inside it, so the gap is not read as ten
 times larger than it is.
+
+## Sound is no longer a gap (measured 2026-11-26)
+
+The coverage figure above excludes the sound packages because `umodel` cannot read them. That exclusion is now unnecessary:
+a dedicated exporter reads all of them.
+
+`umodel` treats a `Sound` payload as UE2's `Format` struct followed by a data array. These packages store a **complete RIFF
+WAVE file** after a 13-byte prefix, which is why every one of them was refused. `tools/sound-export.py` finds the chunk and
+writes it:
+
+| | |
+|---|---|
+| `.uax` packages walked | **55** (54 carry `Sound` exports) |
+| `Sound` exports | **3,047** |
+| written as `.wav` | **3,047** — 93 MB, format tag 1 (PCM), mono, 8–11 kHz, 8/16 bit |
+| failures | **0** |
+
+`inventory/sound_export.csv` records each one: package, sound, export index, payload size, where the chunk starts, its
+length and the six header fields.
+
+**The census after that.** `inventory/assets.csv` holds 399 packages and 60 failures; 53 of those are the sound packages above,
+leaving **7**:
+
+| package | why |
+|---|---|
+| `M07_fresco_tex`, `M10_train_tex`, `Tutorial_Tex` | `assertion failed: Colors.Num() == 256` — paletted textures |
+| `StargateGameFontsTex`, `Tutorial_Meshes` | `UTexture'…'.Palette: Property read error: 3` |
+| `M10Meshes` | `Unknown class "Model"` |
+| `Goa_Vehicles` | `Unknown class "MeshAnimation"` |
+
+So **392 of 399 packages export** (339 by `umodel`, 53 by the sound exporter) and the 7 that remain are those above: four
+paletted textures, two mesh packages and one animation class — the same four/two/one this page already described, with the
+sound class no longer counted among them.
+
+**The lesson, stated where the number lives**: 53 packages and 3,047 sounds were carried as "unreadable" for as long as an
+exporter's limitation was recorded as a property of the data. *"Our tool cannot read it"* and *"it cannot be read"* are
+different claims, and only the second belongs in a census.
