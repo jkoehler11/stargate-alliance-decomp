@@ -1,0 +1,389 @@
+population,record_kind,declared,dim,size_byte,rule,nodes,examples
+(census),,,,,,31622,census
+array read,,,,4,not joined,12,SquadAISG.ForceTakeCover SquadAISG.ForceFireMode UDebugBlueLookAndFeel.FW_DrawWindowFrame
+array read,ArrayProperty,,,0,element size,187,ACTION_PlayAmbientSound.InitActionFor MOVE_ORDER_Flee.GetTargetActor Replicator.SpawnGibs
+array read,ArrayProperty,colormodifier,,0,element size,2,HitEffectManager.SetupFade
+array read,ArrayProperty,controller,,0,element size,6,AIMessage.CompareRecipients CTFGame.ScoreFlag
+array read,ArrayProperty,editconst editinline guilistelem,,0,element size,3,GUIController.DumpMaps
+array read,ArrayProperty,editinline streamplaylist,,0,element size,1,PlaylistParserBase.ImportedPlaylist
+array read,ArrayProperty,export editinline matsubaction,,0,element size,1,SceneManager.ResolveActorsInActions
+array read,ArrayProperty,export editinline particleemitter,,0,element size,14,SurfaceInfo.EmitWheelEffect SurfaceInfo.BulletImpact
+array read,ArrayProperty,export editinline rosterentry,,0,element size,5,StoryModeGame.AddSquadFromSpawner
+array read,ArrayProperty,export editinline scriptedaction,,0,element size,4,ScriptedController.SendWarningMessage ScriptedAction.ProceedToSectionEnd
+array read,ArrayProperty,export editinlinenotify guicomponent,,0,element size,11,GUIListBoxBase.InitBaseList GUIScrollBar.doLayout GUIScrollBar.createParts
+array read,ArrayProperty,goauldconsolecrystal,,0,element size,3,StargatePlayer.BeginState GoauldConsoleHud.UpdateConsoleMousePointer
+array read,ArrayProperty,imusicsegment,,0,element size,1,IMusicController.GetMusicState
+array read,ArrayProperty,interaction,,0,element size,5,InteractionMaster.SetFocusTo PlayerController.StreamFinished InteractionMaster.RemoveInteraction
+array read,ArrayProperty,material,,0,element size,1,Decoration.Destroyed
+array read,ArrayProperty,name,,0,element size,1,StargatePawn.PlayFiring
+array read,ArrayProperty,playerreplicationinfo,,0,element size,19,PlayerController.LoadPlayers ScoreBoard.SortPRIArray PlayerController.ServerChatRestriction
+array read,ArrayProperty,sgorder,,0,element size,1,SGMenuInteraction.drawObjectivesMenu
+array read,ArrayProperty,sound,,0,element size,10,StargateVoicePack.TestVoice VoiceSelector.SelectVoice VoiceSelector.DumpFoundVoices
+array read,ArrayProperty,sounddatastruct,,0,element size,5,MultiLayerSound.Connect RandomPitch.Play RandomVolume.Play
+array read,ArrayProperty,soundmodifier,,0,element size,1,SoundModifier.Connect
+array read,ArrayProperty,stargatevehiclepassenger,,0,element size,11,StargateVehiclePassenger.ServerChangeDriverPosition StargateVehiclePassenger.PossessedBy
+array read,ArrayProperty,staticmesh,,0,element size,2,SGC_DestructibleSecurityDoor.SpawnDestructibleActor
+array read,ArrayProperty,string,,0,element size,3,SquadAIBasic.SetupSkin SquadAIBasic.LoadSkins
+array read,ArrayProperty,uiwidget,,0,element size,14,SelectionMenu.Show WeaponMenu.NeedToDropItem WeaponMenu.GetCurrentlyHighlightedWeapon
+array read,ArrayProperty,voicedesc,,0,element size,20,SGVoicePackExtended.SearchVoice StargateVoicePack.TestVoice VoiceSelector.SearchVoices
+array read,ByteProperty,,,2,not joined,3,CTFFlag.BeginState
+array read,ByteProperty,byte,2,2,array size,2,NavigationPoint.SetBaseVisibility
+array read,ByteProperty,guicomponent.elooptype,3,3,array size,1,MenuItemOverlay.InitComponent
+array read,ByteProperty,sgformation.efollowuseposition,16,16,array size,1,BotBase.DisplayDebug
+array read,FloatProperty,float,4,16,array size,4,GUIHorzScrollBar.ZoneClick GUIVertScrollBar.ZoneClick
+array read,IntProperty,,,16,not joined,6,CoopPlayerPanel.MyOnDrawItem
+array read,IntProperty,,,4,element size,37,TeamVoicePack.SetAckMessage TeamVoicePack.SetClientAckMessage TeamVoicePack.ClientInitialize
+array read,IntProperty,int,,4,element size,27,GameReplicationInfo.Timer VoiceChatReplicationInfo.GetTitle HUD.DrawCustomBeacon
+array read,IntProperty,int,16,64,array size,6,BotEnemy.DetermineFollowLocation BotBase.SetManInFront SquadAIBasic.tellFollowingBotsToFollowNode
+array read,IntProperty,int,3,12,array size,4,DeathMatch.InitGame TeamDeathMatch.InitTeams StoryModeGame.InitTeams
+array read,IntProperty,int,4,16,array size,11,GUIMessageBox.LayoutButtons GUIMessageBox.InternalOnPreDraw GUIMultiColumnList.GetCellLeftWidth
+array read,IntProperty,int,6,24,array size,19,LadderInfo.UpdateLadders
+array read,IntProperty,int,9,36,array size,3,ScoreBoard.GetSmallFontFor ScoreBoard.HaveHalfFont ScoreBoard.GetSmallerFontFor
+array read,NameProperty,name,2,8,array size,20,StargatePawn.AnimateFleeing StargatePawn.AnimateSprinting StargatePawn.AnimateRunning
+array read,NameProperty,name,3,12,array size,4,StargatePawn.GetCowerAnim StargatePawn.PlayFiring
+array read,NameProperty,name,4,16,array size,7,SquadAISG.ForceTakeCover SquadAISG.ForceFireMode StargatePawn.SetupWeaponAnims
+array read,ObjectProperty,,,12,not joined,8,AnimNotify_FireWeapon.Notify CTFBase.UpdateForTeam StargateTeamHUD.DrawGameSynopsis
+array read,ObjectProperty,,,16,not joined,22,TriggeredScript.Touch BodySwapTrigger.Touch WarpPortalTrigger.Touch
+array read,ObjectProperty,,,40,not joined,14,UDebugBlueLookAndFeel.FW_DrawWindowFrame UDebugBlueLookAndFeel.Combo_SetupSizes UDebugBlueLookAndFeel.Editbox_SetupSizes
+array read,ObjectProperty,,,64,not joined,12,TacticalTarget.InitialiseBotMoveTargets TacticalTarget.FinishedMove WillowWhisp.PostBeginPlay
+array read,ObjectProperty,actor,,64,not joined,2,SquadAIBasic.MoveIntoFormation SquadAIBasic.Investigate
+array read,ObjectProperty,actor,16,64,array size,9,Teleporter.SpecialHandling HUD.DrawRoute TeamAI.FindSquadPathToward
+array read,ObjectProperty,actor,32,128,array size,1,SquadAISG.GetSquadCoverNodes
+array read,ObjectProperty,actor,4,16,array size,2,Trigger.Touch
+array read,ObjectProperty,alkeshbomb,2,8,array size,1,AlkeshBomberBot.DoBombDrop
+array read,ObjectProperty,botbase,16,64,array size,16,BotEnemy.DetermineFollowLocation BotBase.SetManInFront SquadAIBasic.PickNewLeader
+array read,ObjectProperty,font,10,40,array size,27,UWindowDialogControl.BeforePaint UWindowButton.BeforePaint UWindowDynamicTextArea.Paint
+array read,ObjectProperty,guicomponent,4,16,array size,3,GUIMultiComponent.MapControls
+array read,ObjectProperty,guifont,16,64,array size,2,GUIMessageBox.LayoutButtons GUIMessageBox.InternalOnPreDraw
+array read,ObjectProperty,material,3,12,array size,3,StargateWeapon.ResetFirstPersonHandsMaterial
+array read,ObjectProperty,pawn,16,64,array size,25,BotBase.SetNextEnemy SquadAIBasic.MergeEnemiesFrom BotBase.IsEnemy
+array read,ObjectProperty,playerreplicationinfo,2,8,array size,1,PlayerController.ClientUpdateFlagHolder
+array read,ObjectProperty,unrealteaminfo,,12,not joined,2,TeamDeathMatch.InitTeams StoryModeGame.InitTeams
+array read,ObjectProperty,unrealteaminfo,2,8,array size,2,GameObjective.DisableObjective GameObjective.Timer
+array read,ObjectProperty,unrealteaminfo,3,12,array size,2,BotLite.PostBeginPlay StoryModeGame.LoadSaveGameInfo
+array read,StrProperty,string,15,0,element size,2,PlayerReplicationInfo.GetNameCallSign PlayerReplicationInfo.GetCallSign
+array read,StrProperty,string,4,0,element size,4,HUD.DisplayProgressMessages
+array read,StrProperty,string,8,0,element size,2,UnrealPawn.AddDefaultInventory
+array read,StructProperty,color,2,8,array size,2,HUD.DrawCustomBeacon
+array read,StructProperty,color,4,16,array size,1,HUD.DisplayProgressMessages
+array read,StructProperty,color,5,20,array size,1,GUIScrollBar.createParts
+array read,StructProperty,region,4,64,array size,41,UWindowWindow.DrawMiscBevel UWindowProgressBar.Paint
+array read,StructProperty,vector,16,192,array size,1,StoryModeGame.AddSquadFromSpawner
+other member,,,,0,not tested,7023,TransientAmbientPawn.Timer TransientAmbientPawn.VerifyLastRenderTime HerdAnimal.WarnHerd
+other member,,,,1,not tested,63,PlayerController.PlayerMove PlayerController.BecomeActivePlayer PlayerController.ServerJoinVoiceChannel
+other member,,,,12,not tested,138,PlayerController.PlayerCalcView Inventory.RenderOverlays PlayerController.CalcBehindView
+other member,,,,16,not tested,3,ShadowProjector.InitShadow UWindowFramedWindow.Resized UWindowMessageBox.BeforePaint
+other member,,,,28,not tested,2,Binoculars.DrawTargeted BotEnemy.SetNewHideNode
+other member,,,,4,not tested,5951,TransientAmbientPawn.PhysicsVolumeChange TransientAmbientCreature.PostBeginPlay FishBase.PhysicsVolumeChange
+other member,,,,48,not tested,43,GoaAutoTurretMK2Gun.GetFireStart StaffWeaponAttachment.DoCheckMeleeDashColDet StaffWeaponAttachment.DoCheckMeleeSwingColDet
+other member,ArrayProperty,,,0,not tested,72,ACTION_PlayAmbientSound.InitActionFor MOVE_ORDER_Flee.GetTargetActor PteroBot.PickDestination
+other member,ArrayProperty,array<botbase>,,0,not tested,2,SquadAISG.ForceFireMode
+other member,ArrayProperty,array<controller>,,0,not tested,5,AIMessage.CompareRecipients CTFGame.ScoreFlag
+other member,ArrayProperty,array<editconst editinline guilistelem>,,0,not tested,4,moListEditBox.GetIndexByName GUIController.DumpMaps
+other member,ArrayProperty,array<export editinline matsubaction>,,0,not tested,1,SceneManager.ResolveActorsInActions
+other member,ArrayProperty,array<export editinline particleemitter>,,0,not tested,2,SurfaceInfo.EmitWheelEffect SurfaceInfo.BulletImpact
+other member,ArrayProperty,array<export editinline rosterentry>,,0,not tested,2,StoryModeGame.AddSquadFromSpawner IntelligentSpawner.SpawnNewSquad
+other member,ArrayProperty,array<export editinline scriptedaction>,,0,not tested,1,ScriptedAction.ProceedToSectionEnd
+other member,ArrayProperty,array<export editinlinenotify guicomponent>,,0,not tested,3,GUIListBoxBase.InitBaseList GUIScrollBar.doLayout GUIScrollBar.createParts
+other member,ArrayProperty,array<goauldconsolecrystal>,,0,not tested,2,GoauldConsoleHud.UpdateConsoleMousePointer
+other member,ArrayProperty,array<imusicsegment>,,0,not tested,1,IMusicActor.PostNetBeginPlay
+other member,ArrayProperty,array<interaction>,,0,not tested,8,InteractionMaster.SetFocusTo PlayerController.StreamFinished LocalMessage.ClientReceive
+other member,ArrayProperty,array<material>,,0,not tested,1,LevelInfo.AddPrecacheMaterial
+other member,ArrayProperty,array<multicolumnheaderdata>,,0,not tested,1,GUIMultiColumnListBox.InitBaseList
+other member,ArrayProperty,array<name>,,0,not tested,1,StargatePawn.PlayFiring
+other member,ArrayProperty,array<playerreplicationinfo>,,0,not tested,7,PlayerController.ReplicateMove PlayerController.LoadPlayers ScoreBoard.SortPRIArray
+other member,ArrayProperty,array<sgorder>,,0,not tested,1,SGMenuInteraction.drawObjectivesMenu
+other member,ArrayProperty,array<sound>,,0,not tested,4,StargateVoicePack.SelectVoice StargateVoicePack.Init StargateVoicePack.TestVoice
+other member,ArrayProperty,array<sounddatastruct>,,0,not tested,5,MultiLayerSound.Connect RandomPlay.Play
+other member,ArrayProperty,array<soundmodifier>,,0,not tested,2,SoundModifier.Connect
+other member,ArrayProperty,array<stargatevehiclepassenger>,,0,not tested,2,StargateVehiclePassenger.ServerChangeDriverPosition StargateVehiclePassenger.PossessedBy
+other member,ArrayProperty,array<staticmesh>,,0,not tested,4,LevelInfo.AddPrecacheStaticMesh SGC_DestructibleSecurityDoor.SpawnDestructibleActor
+other member,ArrayProperty,array<string>,,0,not tested,2,SquadAIBasic.SetupSkin SquadAIBasic.LoadSkins
+other member,ArrayProperty,array<uiwidget>,,0,not tested,12,SelectionMenu.Show WeaponMenu.NeedToDropItem WeaponMenu.GetCurrentlyHighlightedWeapon
+other member,ArrayProperty,array<vector>,,0,not tested,1,SGC_DestructibleSecurityDoor.SpawnDestructibleActor
+other member,ArrayProperty,array<voicedesc>,,0,not tested,2,StargateVoicePack.TestVoice VoiceSelector.SearchVoices
+other member,ByteProperty,,,1,not tested,571,AmbientCreatureManager.PostBeginPlay GUISlider.DrawSlider ExtendedConsole.PostRender
+other member,ByteProperty,actor.edoubleclickdir,,1,not tested,32,PlayerController.CallServerMove PlayerController.ClientUpdatePosition PlayerController.ReplicateMove
+other member,ByteProperty,actor.emsgbroadcasttype,,1,not tested,3,AIMsgManager.NewAIMsg AIMsgManager.CheckPostedMsg AIMessage.CompareRecipients
+other member,ByteProperty,actor.emsgpriority,,1,not tested,1,AIMsgManager.NewAIMsg
+other member,ByteProperty,actor.emsgtone,,1,not tested,1,AIMsgManager.NewAIMsg
+other member,ByteProperty,actor.enetrole,,1,not tested,13,Actor.HurtRadius Vehicle.EncroachingOn Vehicle.RanInto
+other member,ByteProperty,actor.ephysics,,1,not tested,41,PlayerController.ServerMove PlayerController.LongClientAdjustPosition SavedMove.SetInitialPosition
+other member,ByteProperty,actor.esurfacetypes,,1,not tested,1,Weapon.TraceFire
+other member,ByteProperty,botbase.escriptfollow,,1,not tested,3,BotEnemy.ShouldSquadOverideAI BotBase.IgnoreStimuliDueToScript BotRep.ShouldSquadOverideAI
+other member,ByteProperty,byte,,1,not tested,106,Actor.DisplayDebug Pawn.PressingFire Pawn.PressingAltFire
+other member,ByteProperty,controller.eaggrolevel,,1,not tested,1,ACTION_SetStance.InitActionFor
+other member,ByteProperty,gameinfo.emultiplayermode,,1,not tested,1,StoryModeGame.AllowThisActor
+other member,ByteProperty,gui.eimgstyle,,1,not tested,1,GUIImageList.doFullLayout
+other member,ByteProperty,gui.emenustate,,1,not tested,5,GUIImageList.doFullLayout GUIImageList.createParts moTextOption.GetAdjustedSize
+other member,ByteProperty,gui.etextalign,,1,not tested,4,GUIMenuOption.InitComponent GUIScrollTextBox.InitComponent moTextOption.InitComponent
+other member,ByteProperty,guicomponent.eclicksound,,1,not tested,2,GUIListBox.InitComponent GUIComboBox.InitComponent
+other member,ByteProperty,guicomponent.erelativescaletype,,1,not tested,27,GUIMessageBox.SetupQuestion GUIPanel.BindControls GUIImageList.doFullLayout
+other member,ByteProperty,intelligentspawner.epriority,,1,not tested,2,TeamAI.NotifySquadRemoved
+other member,ByteProperty,levelinfo.eimusicendtype,,1,not tested,2,IMusicController.SetMusicEndType
+other member,ByteProperty,levelinfo.eimusicstate,,1,not tested,7,IMusicActor.RecurseTransitionsFromTo IMusicActor.TransitionToNewState IMusicActor.ChooseStartSegment
+other member,ByteProperty,levelinfo.enetmode,,1,not tested,131,Actor.PreBeginPlay Actor.DisplayDebug PlayerController.Fire
+other member,ByteProperty,material.esurfacetypes,,1,not tested,2,Actor.CalcFloorSurface Weapon.TraceFire
+other member,ByteProperty,mover.ebumptype,,1,not tested,2,Door.SpecialHandling LiftCenter.SpecialHandling
+other member,ByteProperty,object.edetailmode,,1,not tested,11,Actor.PreBeginPlay PhysicsVolume.PawnEnteredVolume Pawn.PostNetBeginPlay
+other member,ByteProperty,savedgameinfo.esavedgametype,,1,not tested,9,SavedGameList.Refresh SavedGameInfo.Compare SavedGameInfo.MakeInfo
+other member,ByteProperty,sginsetcameratarget.einsetpriority,,1,not tested,2,StargateHUD.TriggerInsetCamera
+other member,ByteProperty,sginteraction.interactiontype,,1,not tested,1,SVehicleTrigger.CreateInteractionObject
+other member,ByteProperty,sgmenuinteraction.erenderstyle,,1,not tested,2,SGMenuInteraction.drawHudCursor SGMenuInteraction.drawHudMenu
+other member,ByteProperty,sgorder.orderstate,,1,not tested,2,SGMenuInteraction.drawObjectivesMenu
+other member,ByteProperty,sgscreendof.edoffocustype,,1,not tested,4,ScopedWeapon.ZoomIn ScopedWeapon.ZoomOut ScopedWeapon.EnterScope
+other member,ByteProperty,squadaibasic.eforceenemymode,,1,not tested,3,BotBase.SetNextEnemy AIMSG_ConcentrateFire.SquadProcess
+other member,ByteProperty,squadaibasic.eformationstatus,,1,not tested,6,BotBase.SetNewScript BotEnemy.ShouldPerformScript BotEnemy.ShouldSquadOverideAI
+other member,ByteProperty,uwindowbase.messageboxresult,,1,not tested,5,UWindowMessageBoxCW.KeyDown UWindowMessageBoxCW.Notify
+other member,ByteProperty,uwindowbase.textalign,,1,not tested,3,UWindowWin95LookAndFeel.Combo_SetupSizes UWindowWin95LookAndFeel.Checkbox_SetupSizes UWindowWin95LookAndFeel.Editbox_SetupSizes
+other member,ClassProperty,,,4,not tested,164,TransientAmbientCreature.SpawnSlave Vehicle.Destroyed Pawn.Died
+other member,ClassProperty,class<actor>,,4,not tested,2,Pawn.PlayHit
+other member,ClassProperty,class<adminbase>,,4,not tested,2,PlayerController.MakeAdmin
+other member,ClassProperty,class<aicontroller>,,4,not tested,2,AIScript.SpawnControllerFor
+other member,ClassProperty,class<damagetype>,,4,not tested,4,Pawn.IsInPain Armor.BeginState Armor.EndState
+other member,ClassProperty,class<effects>,,4,not tested,3,DamageType.GetPawnDamageEffect
+other member,ClassProperty,class<emitter>,,4,not tested,9,SurfaceInfo.EmitWheelEffect SurfaceInfo.BulletImpact SurfaceInfo.ExplosionImpact
+other member,ClassProperty,class<gamemessage>,,4,not tested,8,PlayerController.BecomeSpectator PlayerController.BecomeActivePlayer GameInfo.Login
+other member,ClassProperty,class<guipage>,,4,not tested,4,GUIController.OpenMenu
+other member,ClassProperty,class<healthregenerator>,,4,not tested,1,BotSG.Possess
+other member,ClassProperty,class<inventory>,,4,not tested,5,Inventory.HandlePickupQuery Ammunition.HandlePickupQuery Powerups.HandlePickupQuery
+other member,ClassProperty,class<localmessage>,,4,not tested,1,PlayerController.HandlePickup
+other member,ClassProperty,class<pawn>,,4,not tested,28,GameInfo.RestartPlayer UnrealMPGameInfo.InitializeBot UnrealTeamInfo.GetClassFromString
+other member,ClassProperty,class<pickup>,,4,not tested,1,WeaponPickup.BotDesireability
+other member,ClassProperty,class<projectile>,,4,not tested,2,Weapon.CanAttack Weapon.AdjustAim
+other member,ClassProperty,class<projector>,,4,not tested,6,SurfaceInfo.BulletImpact SurfaceInfo.ExplosionImpact SurfaceInfo.EnergyImpact
+other member,ClassProperty,class<scriptedcontroller>,,4,not tested,4,StoryModeGame.AddBotRoster StoryModeGame.SpawnBot
+other member,ClassProperty,class<shield>,,4,not tested,3,ShieldPickup.UsedBy BotSG.Possess RosterEntry.InitPawn
+other member,ClassProperty,class<shieldeffect>,,4,not tested,1,GoauldShield.AttachToPawn
+other member,ClassProperty,class<squadaibasic>,,4,not tested,1,DMRoster.AddToTeam
+other member,ClassProperty,class<transientambientcreature>,,4,not tested,3,AmbientCreatureManager.Timer
+other member,ClassProperty,class<voicepack>,,4,not tested,4,PlayerController.ClientVoiceMessage PlayerController.ServerSpeech
+other member,ClassProperty,class<votinghandler>,,4,not tested,2,GameInfo.FillPlayInfo
+other member,ClassProperty,class<weapon>,,4,not tested,16,Pawn.Died StargatePlayer.Fire BotEnemy.ActivateGrenadeAttack
+other member,DelegateProperty,,,8,not tested,30,StargatePawn.Talk ACTION_Talk.InitActionFor RightLockingMenuPanel.InitComponent
+other member,DelegateProperty,delegate<finishtalkcallback>,,8,not tested,1,ACTION_Talk.InitActionFor
+other member,DelegateProperty,delegate<gotfocus>,,8,not tested,1,SelectionMenu.AddSelectionEntry
+other member,DelegateProperty,delegate<isdisabled>,,8,not tested,1,SelectionMenu.AddSelectionEntry
+other member,DelegateProperty,delegate<isselected>,,8,not tested,1,SelectionMenu.AddSelectionEntry
+other member,DelegateProperty,delegate<lostfocus>,,8,not tested,1,SelectionMenu.AddSelectionEntry
+other member,DelegateProperty,delegate<onactivate>,,8,not tested,1,moImageListMap.InitComponent
+other member,DelegateProperty,delegate<onadjusttop>,,8,not tested,1,GUIScrollTextBox.InitComponent
+other member,DelegateProperty,delegate<onbuttonclick>,,8,not tested,2,UIXInteraction.BeginDisplayMessage UIXInteraction.BeginYesNoMessage
+other member,DelegateProperty,delegate<oncapturedmousemove>,,8,not tested,2,GUIHorzScrollBar.InitComponent GUIVertScrollBar.InitComponent
+other member,DelegateProperty,delegate<onchange>,,8,not tested,7,GUIMenuOption.InitComponent GUIListBox.InitComponent GUIComboBox.InitComponent
+other member,DelegateProperty,delegate<onclick>,,8,not tested,26,GUIMessageBox.AddButton GUIListBox.InitComponent GUIScrollBar.createParts
+other member,DelegateProperty,delegate<ondblclick>,,8,not tested,1,SGListBox.InitComponent
+other member,DelegateProperty,delegate<ondeactivate>,,8,not tested,2,GUIComboBox.InitComponent moImageListMap.InitComponent
+other member,DelegateProperty,delegate<oninvalidate>,,8,not tested,1,GUIComboBox.InitComponent
+other member,DelegateProperty,delegate<onkeyevent>,,8,not tested,2,moListEditBox.InitComponent GUINumericEdit.InitComponent
+other member,DelegateProperty,delegate<onmousepressed>,,8,not tested,1,GUIComboBox.InitComponent
+other member,DelegateProperty,delegate<onprerender>,,8,not tested,1,moTextOption.InitComponent
+other member,DelegateProperty,delegate<onscrollzoneclick>,,8,not tested,2,GUIHorzScrollBar.InitComponent GUIVertScrollBar.InitComponent
+other member,FloatProperty,,,4,not tested,1855,HerdAnimal.NotifyHitWall TransientAmbientPawn.VerifyLastRenderTime HerdAnimal.Wander
+other member,FloatProperty,float,,4,not tested,1771,AmbientCreatureManager.Timer Birds.PickDestination Birds.PickSlaveDestination
+other member,FloatProperty,guilistbox,,4,not tested,1,InGameScoreboard.MyOnPreDraw
+other member,IntProperty,,,4,not tested,493,GUIMessageBox.LayoutButtons GUIMessageBox.InternalOnPreDraw PressureVolume.Trigger
+other member,IntProperty,byte,,4,not tested,2,AlkeshBomber.SetTeam Teltak.SetTeam
+other member,IntProperty,int,,4,not tested,447,TransientAmbientPawn.Timer NavigationPoint.PostBeginPlay PlayerController.ServerMove
+other member,IntProperty,string,,4,not tested,7,StargateScoreBoard.DrawVictoryConditions StargateScoreBoard.DrawTrailer
+other member,NameProperty,,,4,not tested,414,HerdAnimal.Possess Actor.PreBeginPlay AIMsgManager.RemoveReceivedMsg
+other member,NameProperty,byte,,4,not tested,7,StargateWeapon.AttachToPawn StargateWeapon.ServerSetClip StargateWeapon.EndState
+other member,NameProperty,name,,4,not tested,139,Actor.PreBeginPlay Controller.PawnDied AIMsgManager.FindReceivedMsg
+other member,ObjectProperty,,,4,not tested,4183,TransientAmbientPawn.Timer TransientAmbientPawn.VerifyLastRenderTime HerdAnimal.damageAttitudeTo
+other member,ObjectProperty,accesscontrol,,4,not tested,20,PlayerController.MakeAdmin PlayerController.Admin PlayerController.AdminDebug
+other member,ObjectProperty,action_playanim,,4,not tested,7,Action_PLAYANIM.SetCurrentAnimationFor Action_PLAYANIM.InitActionFor ScriptedSequence.SetActions
+other member,ObjectProperty,actor,,4,not tested,196,PlayerController.ServerMove Controller.AdjustView PlayerController.LongClientAdjustPosition
+other member,ObjectProperty,aimsgmanager,,4,not tested,8,AIMessage.Broadcast AIMessage.ReceivingProcess AIMessage.ReplyingProcess
+other member,ObjectProperty,aiscript,,4,not tested,1,AIScript.SpawnControllerFor
+other member,ObjectProperty,ammunition,,4,not tested,7,WeaponPickup.BotDesireability WeaponPickup.InitDroppedPickupFor
+other member,ObjectProperty,announcervoice,,4,not tested,2,AnnouncerQueueManager.AddItemToQueue
+other member,ObjectProperty,armor,,4,not tested,6,Armor.PrioritizeArmor GameInfo.ReduceDamage
+other member,ObjectProperty,assaultpath,,4,not tested,13,AssaultPath.FindNextPath AssaultPath.AddTo
+other member,ObjectProperty,attachedalkeshturret,,4,not tested,2,AlkeshBomberBot.SetForcedEnemy
+other member,ObjectProperty,attacheddeathgliderturret,,4,not tested,2,DeathGliderBot.SetForcedEnemy
+other member,ObjectProperty,baseguicontroller,,4,not tested,9,PlayerController.ClientOpenMenu PlayerController.ClientReplaceMenu PlayerController.ClientCloseMenu
+other member,ObjectProperty,binocularcommandtrigger,,4,not tested,1,BinocularCommandTrigger.PlayerSeesMe
+other member,ObjectProperty,botbase,,4,not tested,110,SquadAIBasic.SetEnemy SquadAIBasic.ClearForcedEnemy SquadAIBasic.RemoveEnemy
+other member,ObjectProperty,broadcasthandler,,4,not tested,4,Controller.SendVoiceMessage
+other member,ObjectProperty,c4weapon,,4,not tested,1,C4Weapon.DoPlaceC4
+other member,ObjectProperty,characterselectionlist,,4,not tested,9,OptionsEditAppearance.SaveSettings OptionsEditAppearance.InternalOnChange OptionsEditAppearance.InitComponent
+other member,ObjectProperty,console,,4,not tested,15,PlayerController.ReceiveLocalizedMessage PlayerController.TeamMessage PlayerController.ClientSetMusic
+other member,ObjectProperty,controller,,4,not tested,373,Controller.AdjustView Trigger.Touch PlayerController.PlayerTick
+other member,ObjectProperty,deathglider,,4,not tested,2,AttachedDeathGliderTurretGun.GetFireStart
+other member,ObjectProperty,decoration,,4,not tested,8,Vehicle.KDriverEnter Vehicle.KDriverLeave GameReplicationInfo.Timer
+other member,ObjectProperty,emitter,,4,not tested,7,SurfaceInfo.EmitWheelEffect
+other member,ObjectProperty,engagementorder,,4,not tested,10,StoryModeGame.AddSquadFromSpawner RosterEntry.InitBot
+other member,ObjectProperty,firstpersonhandsattachment,,4,not tested,13,StargateWeapon.DrawWeapon StargateWeapon.InvisEffectOn StargateWeapon.ResetFirstPersonHandsMaterial
+other member,ObjectProperty,font,,4,not tested,4,HUD.PostRender HUD.DisplayProgressMessages HUD.DrawTypingPrompt
+other member,ObjectProperty,gameinfo,,4,not tested,216,Actor.PreBeginPlay PlayerController.Fire Vehicle.Destroyed
+other member,ObjectProperty,gamemodelist,,4,not tested,5,MultiplayerGameSelect.InternalOnChange MultiplayerGameSelect.SelectedGameMode
+other member,ObjectProperty,gameobjective,,4,not tested,3,GameObjective.PostBeginPlay CTFGame.ScoreFlag CTFBase.BeginPlay
+other member,ObjectProperty,gameprofile,,4,not tested,7,CheatManager.SkipMatch CheatManager.JumpMatch CheatManager.areCheatsEnabled
+other member,ObjectProperty,gamereplicationinfo,,4,not tested,29,PlayerReplicationInfo.Destroyed PlayerReplicationInfo.PostNetBeginPlay PlayerReplicationInfo.PostBeginPlay
+other member,ObjectProperty,gamerules,,4,not tested,1,GameInfo.GetServerDetails
+other member,ObjectProperty,gateeventhorizon,,4,not tested,1,LinkedGateEventHorizon.Touch
+other member,ObjectProperty,goadropturret,,4,not tested,1,GoaDropTurret.PostNetBeginPlay
+other member,ObjectProperty,goauldconsolecrystal,,4,not tested,8,GoauldConsoleHud.UpdateConsoleMousePointer
+other member,ObjectProperty,gravcranelifter,,4,not tested,1,GravCraneConsole.KDriverEnter
+other member,ObjectProperty,gravcranepoweremitter,,4,not tested,1,GravCrane.PostNetBeginPlay
+other member,ObjectProperty,guicomponent,,4,not tested,21,GUIScrollBarBase.Refocus GUIListBoxBase.InitBaseList GUIMultiComponent.Free
+other member,ObjectProperty,guicontroller,,4,not tested,6,GUIController.RestoreMenu GUIController.RegisterStyle GUIController.OpenMenu
+other member,ObjectProperty,guilistbase,,4,not tested,1,GUIListBoxBase.InitBaseList
+other member,ObjectProperty,guimulticolumnlist,,4,not tested,2,GUIMultiColumnListBox.InitBaseList CoopPlayerPanel.InitComponent
+other member,ObjectProperty,guipage,,4,not tested,17,GUIController.RestoreMenu GUIController.ConsolidateMenus GUIComboBox.InternalOnInvalidate
+other member,ObjectProperty,guiscrollbarbase,,4,not tested,1,GUIListBoxBase.InitBaseList
+other member,ObjectProperty,guistyles,,4,not tested,20,GUIMenuOption.InitComponent GUIListBoxBase.InitBaseList GUIMessageBox.LayoutButtons
+other member,ObjectProperty,guitabbutton,,4,not tested,24,GUITabControl.AddTab GUITabControl.InsertTab GUITabControl.ReplaceTab
+other member,ObjectProperty,guitabpanel,,4,not tested,10,GUITabControl.AddTab GUITabControl.ReplaceTab GUITabControl.RemoveTab
+other member,ObjectProperty,guivertlist,,4,not tested,1,GUIComboBox.InitComponent
+other member,ObjectProperty,haakenmk2weapon,,4,not tested,1,HaakenWeaponShieldEffect.GetSoundPlayer
+other member,ObjectProperty,haakenweaponshield,,4,not tested,3,HaakenLeaderBot.PickDestination HaakenBot.PickDestination HaakenBot.Timer
+other member,ObjectProperty,healthregenerator,,4,not tested,3,BotSG.Possess HealthRegenerator.Destroyed
+other member,ObjectProperty,helmetattachment,,4,not tested,1,BotBase.HasHelmet
+other member,ObjectProperty,herdanimal,,4,not tested,15,HerdAnimal.WarnHerd HerdAnimal.FindMomFor HerdAnimal.HerdLeader
+other member,ObjectProperty,hiteffectmanager,,4,not tested,2,StargatePlayer.Possess
+other member,ObjectProperty,hud,,4,not tested,23,KVehicle.ClientKDriverEnter KVehicle.ClientKDriverLeave Pawn.PostRender2D
+other member,ObjectProperty,imusiccontroller,,4,not tested,17,IMusicActor.Touch IMusicActor.RecurseTransitionsFromTo IMusicActor.TransitionToNewState
+other member,ObjectProperty,int,,4,not tested,1,UWindowDialogControl.BeforePaint
+other member,ObjectProperty,intelligentspawner,,4,not tested,14,IntelligentSpawner.RemoveSquad IntelligentSpawner.AddSquad IntelligentSpawner.wasSpawnedByMe
+other member,ObjectProperty,interaction,,4,not tested,68,StargateWeapon.DrawWeapon BotSG.BeginState BotSG.EndState
+other member,ObjectProperty,interactionmaster,,4,not tested,3,LocalMessage.ClientReceive InteractionMaster.AddInteraction GameInfo.PostLogin
+other member,ObjectProperty,inventory,,4,not tested,55,Controller.SwitchToBestWeapon Ammo.DetourWeight Ammo.BotDesireability
+other member,ObjectProperty,inventoryspot,,4,not tested,12,Controller.HandlePickup Pickup.Transmogrify xPickUpBase.PostBeginPlay
+other member,ObjectProperty,keypickup,,4,not tested,1,KeyPickup.SpawnCopy
+other member,ObjectProperty,ladder,,4,not tested,2,LadderVolume.PostBeginPlay
+other member,ObjectProperty,laddervolume,,4,not tested,7,LadderVolume.InUse LadderVolume.PawnLeavingVolume PlayerController.PlayerMove
+other member,ObjectProperty,latentscriptedaction,,4,not tested,14,LatentScriptedAction.InitActionFor ACTION_WaitForEvent.InitActionFor ACTION_FinishRotation.InitActionFor
+other member,ObjectProperty,level,,4,not tested,3,PhysicsVolume.PostBeginPlay AccessControl.PreBeginPlay
+other member,ObjectProperty,levelinfo,,4,not tested,106,AIMsgManager.RemoveReceivedMsg AIMsgManager.FindReceivedMsg AIMsgManager.UnFreeze
+other member,ObjectProperty,linkedgate,,4,not tested,1,LinkedGate.SpawnEventHorizon
+other member,ObjectProperty,linkedgateteleporter,,4,not tested,1,LinkedGate.ShutdownEventHorizon
+other member,ObjectProperty,logentry,,4,not tested,7,LogEntry.Insert LogEntry.DeleteMe LogEntry.Count
+other member,ObjectProperty,maplistmanagerbase,,4,not tested,24,PlayerController.PostBeginPlay MapList.UpdateMapNum AdminBase.ShowCurrentMapList
+other member,ObjectProperty,masterserveruplink,,4,not tested,2,MasterServerUplink.BeginPlay
+other member,ObjectProperty,material,,4,not tested,52,Vehicle.TakeDamage Emitter.UpdatePrecacheMaterials xMaterialController.Tick
+other member,ObjectProperty,mesh,,4,not tested,2,PlayerController.BeginState
+other member,ObjectProperty,model,,4,not tested,1,Projectile.EncroachingOn
+other member,ObjectProperty,moveorder,,4,not tested,18,SquadAIBasic.Timer SquadAIBasic.CheckForMoraleFailure SquadAIBasic.WaitAtThisPosition
+other member,ObjectProperty,mover,,4,not tested,7,Mover.PostBeginPlay Mover.FinishNotify Mover.FinishedClosing
+other member,ObjectProperty,movie,,4,not tested,4,HUD.PostRender
+other member,ObjectProperty,multilayersound,,4,not tested,4,MultiLayerSound.Connect SurfaceInfo.WalkFootStep SurfaceInfo.RunFootStep
+other member,ObjectProperty,mutator,,4,not tested,16,Actor.PreBeginPlay PlayerController.ServerMutate PlayerController.ServerTeamSay
+other member,ObjectProperty,navigationpoint,,4,not tested,27,Controller.HandlePickup Actor.TriggerEvent NavigationPoint.SetBaseVisibility
+other member,ObjectProperty,notificationmanager,,4,not tested,8,StargatePawn.ChangedWeapon StargateHUD.DisplayMessages StargateDeathMatch.SetupInteractionsFor
+other member,ObjectProperty,object,,4,not tested,1,SGOrder.Initialise
+other member,ObjectProperty,objectpool,,4,not tested,4,ShadowProjector.Destroyed ShadowProjector.InitShadow GameInfo.InitSavedLevel
+other member,ObjectProperty,pawn,,4,not tested,253,Pawn.Died AIMsgManager.RemoveReceivedMsg AIMsgManager.FindReceivedMsg
+other member,ObjectProperty,physicsvolume,,4,not tested,15,JumpDest.SpecialCost JumpDest.SuggestMovePreparation PlayerController.ViewFlash
+other member,ObjectProperty,pickup,,4,not tested,4,Pickup.Destroyed Pickup.Transmogrify xPickUpBase.SpawnPickup
+other member,ObjectProperty,player,,4,not tested,30,PlayerController.RestartLevel Vehicle.UpdateTiltForceFeedback SceneManager.SceneStarted
+other member,ObjectProperty,playerchatmanager,,4,not tested,2,GameInfo.NotifyLogout
+other member,ObjectProperty,playercontroller,,4,not tested,18,Birds.PickDestination MigratingBirds.BeginState DemoRecSpectator.DemoViewNextPlayer
+other member,ObjectProperty,playerreplicationinfo,,4,not tested,189,PlayerController.Fire PlayerController.AltFire PlayerController.ServerMove
+other member,ObjectProperty,playerstart,,4,not tested,1,GameInfo.RestartPlayer
+other member,ObjectProperty,playerstats,,4,not tested,1,PlayerController.LogAllStats
+other member,ObjectProperty,powerups,,4,not tested,14,PlayerController.PrevItem PlayerController.ActivateItem Powerups.PickupFunction
+other member,ObjectProperty,puzzletrigger,,4,not tested,2,PuzzleTrigger.PostBeginPlay
+other member,ObjectProperty,randompitch,,4,not tested,3,Surface.WalkFootStep Surface.RunFootStep Surface.BulletImpact
+other member,ObjectProperty,randomplay,,4,not tested,3,Surface.WalkFootStep Surface.RunFootStep Surface.BulletImpact
+other member,ObjectProperty,randomvolume,,4,not tested,3,Surface.WalkFootStep Surface.RunFootStep Surface.BulletImpact
+other member,ObjectProperty,reachspec,,4,not tested,4,JumpDest.DoJump JumpDest.SuggestMovePreparation HUD.DrawRoute
+other member,ObjectProperty,rosterentry,,4,not tested,7,UnrealMPGameInfo.InitializeBot UnrealPawn.AddDefaultInventory StargatePawn.CreateShield
+other member,ObjectProperty,savedmove,,4,not tested,21,PlayerController.LongClientAdjustPosition PlayerController.GetFreeMove PlayerController.CleanOutSavedMoves
+other member,ObjectProperty,scoreboard,,4,not tested,1,PlayerController.StartClientDemoRec
+other member,ObjectProperty,scriptedsequence,,4,not tested,18,LatentScriptedAction.GetMoveTargetFor ScriptedAction.ProceedToSectionEnd ACTION_TriggerEvent.InitActionFor
+other member,ObjectProperty,security,,4,not tested,2,GameInfo.Login
+other member,ObjectProperty,serverselectionlistbox,,4,not tested,3,ServerSelectionPage.OnSelectClick
+other member,ObjectProperty,serverselectionpanel,,4,not tested,1,ServerSelectionPanel.InitComponent
+other member,ObjectProperty,sgformation,,4,not tested,1,BotEnemy.FightEnemy
+other member,ObjectProperty,sginsetcameratarget,,4,not tested,1,StargateHUD.TriggerInsetCamera
+other member,ObjectProperty,sglistbox,,4,not tested,2,SelectTeamPage.OnSelectClick SelectPawnPage.InitComponent
+other member,ObjectProperty,sgscreenbloom,,4,not tested,9,StargatePlayer.CreateEmissiveBloom StargatePlayer.ToggleMenuPauseOverlay StargatePlayer.Possess
+other member,ObjectProperty,sgscreendof,,4,not tested,18,ScopedWeapon.ZoomIn ScopedWeapon.ZoomOut ScopedWeapon.EnterScope
+other member,ObjectProperty,sgscreenemissive,,4,not tested,6,StargatePlayer.CreateEmissiveBloom StargatePlayer.ToggleEmissive
+other member,ObjectProperty,sgusetrigger,,4,not tested,2,BotEnemy.DisplayDebug BotEnemy.FindAlarmTarget
+other member,ObjectProperty,shootorder,,4,not tested,22,BotSG.ClearForceFire SquadAISG.ClearForcedEnemy StoryModeGame.AddSquadFromSpawner
+other member,ObjectProperty,sound,,4,not tested,8,SurfaceInfo.GetSurfaceLoop SurfaceInfo.GetSurfaceEnterSound SurfaceInfo.GetSurfaceExitSound
+other member,ObjectProperty,soundtrigger,,4,not tested,2,Surface.BulletImpact
+other member,ObjectProperty,squadaibasic,,4,not tested,94,GameObjective.DisableObjective SquadAIBasic.IsOnSquad UnrealTeamInfo.canSpawnBotsOnTeam
+other member,ObjectProperty,squadroster,,4,not tested,7,HoverTankPilotBot.ShouldDropTroops HoverTankPilotBot.AddSpawnSquad TeltakBot.ActivateTransportRings
+other member,ObjectProperty,stargateammo,,4,not tested,2,StargateHUD.SGDrawStatus
+other member,ObjectProperty,stargatepawn,,4,not tested,3,SuperSoldierBot.PawnDied
+other member,ObjectProperty,stargatevehicle,,4,not tested,7,BotEnemy.FindVehicleGoal BotBase.CheckIfPawnInVehicle BotSG.CheckForVehicleTarget
+other member,ObjectProperty,stargatevoicepack,,4,not tested,26,BotBase.BeginState BotBase.PostVoiceAIMsg BotEnemy.Timer
+other member,ObjectProperty,stargateweapon,,4,not tested,7,StargateWeapon.GiveAmmo StargatePlayer.ClientNotifyInventoryChanged StargatePlayer.CheckNewInventoryItems
+other member,ObjectProperty,staticmesh,,4,not tested,2,Projector.Touch
+other member,ObjectProperty,stinger,,4,not tested,2,StingerAmmo.SpawnStingerProjectile STINGER.DetonateMissles
+other member,ObjectProperty,streaminterface,,4,not tested,3,PlaylistParserBase.Import StreamPlaylist.ReplaceWith M3UParser.Import
+other member,ObjectProperty,surfaceinfo,,4,not tested,6,SVehicle.Tick PlayerController.PreClientTravel Weapon.BulletImpact
+other member,ObjectProperty,svehiclefactory,,4,not tested,2,SVehicleFactory.Trigger KVehicleFactory.Trigger
+other member,ObjectProperty,tacticaltarget,,4,not tested,25,SGOrderGoto.issueOrder SGOrderAttack.issueOrder StargatePlayer.OrderSGAttack
+other member,ObjectProperty,teamai,,4,not tested,36,SquadAIBasic.SetEnemy TeamDeathMatch.InitTeams AlarmPanel.ActivateAlarm
+other member,ObjectProperty,teaminfo,,4,not tested,66,Controller.Destroyed PlayerController.IsWinner Pawn.GetTeamNum
+other member,ObjectProperty,teamscriptedsequence,,4,not tested,2,BotBase.LeaveScripting TeamAI.ReAssessStrategy
+other member,ObjectProperty,texture,,4,not tested,51,HUD.DrawCustomBeacon GravCraneLifter.Timer GravCraneLifter.SetProjectorTextures
+other member,ObjectProperty,transientambientcreature,,4,not tested,9,TransientAmbientCreature.PostBeginPlay AmbientCreatureManager.Timer AmbientCreatureManager.RemoveCreature
+other member,ObjectProperty,transientambientpawn,,4,not tested,12,TransientAmbientPawn.Timer TransientAmbientPawn.Destroyed TransientAmbientCreature.AddSlaves
+other member,ObjectProperty,transportrings,,4,not tested,12,TeltakBot.ActivateTransportRings TeltakBot.Trigger AlkeshBomberBot.ActivateTransportRings
+other member,ObjectProperty,udebugmaplistbox,,4,not tested,2,UDebugSmallLoadMapButton.Click
+other member,ObjectProperty,unrealscriptedsequence,,4,not tested,16,GameObjective.PostBeginPlay BotEnemy.ShouldSquadOverideAI SquadAIBasic.RemoveAllSquadEnemies
+other member,ObjectProperty,unrealteaminfo,,4,not tested,17,SquadAIBasic.NotifyKilled TeamDeathMatch.InitTeams CTFGame.ScoreFlag
+other member,ObjectProperty,usoundemitter,,4,not tested,28,Surface.WalkFootStep Surface.RunFootStep Surface.BulletImpact
+other member,ObjectProperty,uwindowcombobutton,,4,not tested,8,UWindowComboList.BeforePaint UWindowWin95LookAndFeel.Combo_SetupSizes
+other member,ObjectProperty,uwindowcombocontrol,,4,not tested,4,UDebugSmallLoadMapButton.Click UWindowComboControl.Initialized
+other member,ObjectProperty,uwindowcomboleftbutton,,4,not tested,4,UWindowWin95LookAndFeel.Combo_SetupSizes
+other member,ObjectProperty,uwindowcombolist,,4,not tested,5,UWindowComboRightButton.LMouseDown UWindowComboLeftButton.LMouseDown UWindowComboButton.FocusOtherWindow
+other member,ObjectProperty,uwindowcomborightbutton,,4,not tested,4,UWindowWin95LookAndFeel.Combo_SetupSizes
+other member,ObjectProperty,uwindowconsoletextareacontrol,,4,not tested,3,WindowConsole.Message WindowConsole.CreateRootWindow
+other member,ObjectProperty,uwindowdialogcontrol,,4,not tested,11,UWindowDialogControl.KeyDown UWindowComboControl.Initialized UWindowDialogClientWindow.CreateControl
+other member,ObjectProperty,uwindowdynamictextrow,,4,not tested,10,UWindowDynamicTextArea.AddText UWindowDynamicTextArea.RemoveWrap UWindowDynamicTextArea.SplitRowAt
+other member,ObjectProperty,uwindoweditbox,,4,not tested,15,UWindowWin95LookAndFeel.Combo_SetupSizes UWindowWin95LookAndFeel.Editbox_SetupSizes
+other member,ObjectProperty,uwindowframeclosebox,,4,not tested,12,UWindowWin95LookAndFeel.FW_SetupFrameButtons
+other member,ObjectProperty,uwindowgridcolumn,,4,not tested,5,UWindowGrid.Resized UWindowGrid.AddColumn
+other member,ObjectProperty,uwindowlayoutrow,,4,not tested,2,UWindowLayoutControl.Create
+other member,ObjectProperty,uwindowlist,,4,not tested,234,UWindowListControl.Initialized UWindowDynamicTextArea.Paint UWindowDynamicTextArea.RemoveWrap
+other member,ObjectProperty,uwindowlistboxitem,,4,not tested,7,UWindowListBox.ReceiveDoubleClickItem UWindowListBox.ExternalDragOver
+other member,ObjectProperty,uwindowlookandfeel,,4,not tested,4,UWindowWindow.CreateWindow UWindowComboControl.Initialized UWindowMenuBarItem.DeSelect
+other member,ObjectProperty,uwindowmenubar,,4,not tested,3,UWindowMenuBar.AddItem UWindowPulldownMenu.KeyDown
+other member,ObjectProperty,uwindowmenubaritem,,4,not tested,1,UWindowWin95LookAndFeel.Menu_DrawMenuBarItem
+other member,ObjectProperty,uwindowpagecontrolpage,,4,not tested,2,UWindowPageControl.AddPage UWindowPageControl.InsertPage
+other member,ObjectProperty,uwindowpagewindow,,4,not tested,29,UWindowPageControl.ResolutionChanged UWindowPageControl.NotifyQuitUnreal UWindowPageControl.NotifyBeforeLevelChange
+other member,ObjectProperty,uwindowpulldownmenu,,4,not tested,22,UWindowPulldownMenu.CloseUp UWindowMenuBar.ResolutionChanged UWindowMenuBar.MenuCmd
+other member,ObjectProperty,uwindowpulldownmenuitem,,4,not tested,2,UWindowPulldownMenu.KeyDown
+other member,ObjectProperty,uwindowrootwindow,,4,not tested,9,UWindowWindow.CreateWindow UWindowWin95LookAndFeel.FW_DrawWindowFrame UWindowWin95LookAndFeel.Combo_SetupSizes
+other member,ObjectProperty,uwindowsmallbutton,,4,not tested,1,UDebugOpenCW.Notify
+other member,ObjectProperty,uwindowtabcontrol,,4,not tested,2,UWindowTabControl.AddTab UWindowTabControl.InsertTab
+other member,ObjectProperty,uwindowtabcontrolitem,,4,not tested,3,UWindowTabControlTabArea.SizeTabsSingleLine UWindowTabControlTabArea.SizeTabsMultiLine UWindowTabControlTabArea.DrawItem
+other member,ObjectProperty,uwindowtabcontrolleftbutton,,4,not tested,1,UWindowTabControlTabArea.SizeTabsSingleLine
+other member,ObjectProperty,uwindowtabcontrolrightbutton,,4,not tested,1,UWindowTabControlTabArea.SizeTabsSingleLine
+other member,ObjectProperty,uwindowtabcontroltabarea,,4,not tested,4,UWindowTabControlLeftButton.LMouseDown UWindowTabControlRightButton.LMouseDown UWindowWin95LookAndFeel.Tab_SetTabPageSize
+other member,ObjectProperty,uwindowvscrollbar,,4,not tested,2,UWindowConsoleClientWindow.Notify
+other member,ObjectProperty,uwindowwindow,,4,not tested,115,UWindowWindow.CreateWindow UWindowWindow.Close UWindowWindow.GetMouseXY
+other member,ObjectProperty,vehicle,,4,not tested,18,Vehicle.Destroyed Vehicle.TryToDrive Vehicle.DriverDied
+other member,ObjectProperty,voicechatreplicationinfo,,4,not tested,2,TeamInfo.AddToTeam
+other member,ObjectProperty,voicechatroom,,4,not tested,3,PlayerController.ServerChatRestriction
+other member,ObjectProperty,weapon,,4,not tested,91,PlayerController.Fire PlayerController.ThrowWeapon Pawn.TakeDamage
+other member,ObjectProperty,xadminuserlist,,4,not tested,8,xAdminUser.AddGroup xAdminUser.RemoveGroup xAdminUser.AddManagedGroup
+other member,ObjectProperty,xpickupbase,,4,not tested,2,Pickup.Transmogrify xPickUpBase.SpawnPickup
+other member,StrProperty,,,0,not tested,252,GUIMessageBox.SetupQuestion GUIMessageBox.InitComponent MessageTextureClient.Timer
+other member,StrProperty,string,,0,not tested,359,PlayerController.ServerMove Controller.InitPlayerReplicationInfo PlayerController.PostBeginPlay
+struct member,StructProperty,,,12,not in table,1732,TransientAmbientCreature.PickDestination HerdAnimal.NotifyHitWall HerdAnimal.Wander
+struct member,StructProperty,,,16,not in table,40,UDebugBlueLookAndFeel.FW_SetupFrameButtons UDebugBlueLookAndFeel.Combo_GetButtonBitmaps UDebugBlueLookAndFeel.Combo_SetupLeftButton
+struct member,StructProperty,,,24,not in table,18,SearchLight.TargetTick SearchLight.SearchTick RepChipEmitter.TriggerParticle
+struct member,StructProperty,,,4,not in table,223,Binoculars.DrawRangeIndicator Binoculars.DrawTargeted SNIPERRIFLE.GetTargetFOV
+struct member,StructProperty,,,8,not in table,4,RingTransportEmitter.Initiate
+struct member,StructProperty,animrep,,12,not in table,4,Controller.BeginState PlayerController.BeginState
+struct member,StructProperty,color,,4,table,43,Actor.DisplayDebug AIController.DisplayDebug HUD.DrawCustomBeacon
+struct member,StructProperty,htmlstyle,,28,table,28,UWindowHTMLTextArea.AddText UWindowHTMLTextArea.GetWrapPos UWindowHTMLTextArea.RemoveWrap
+struct member,StructProperty,id3field,,36,not in table,3,StreamInteraction.SetStreamAttachment Stream.GetSongTitle
+struct member,StructProperty,liveuser,,24,not in table,2,PlayerController.WriteDisconnectEvent
+struct member,StructProperty,mousecursor,,16,table,30,UWindowWindow.CreateWindow UWindowConsoleClientWindow.Initialized UWindowFramedWindow.MouseMove
+struct member,StructProperty,orientation,,92,not in table,3,SceneManager.ResolveActorsInActions
+struct member,StructProperty,plane,,16,table,9,HUD.PostRender
+struct member,StructProperty,pointregion,,12,table,4,PlayerReplicationInfo.UpdatePlayerLocation WarpZoneMarker.SpecialHandling WarpZoneInfo.Tick
+struct member,StructProperty,range,,8,not in table,1,Vehicle.SpectatorSpecialCalcView
+struct member,StructProperty,rangevector,,24,not in table,13,SurfaceInfo.EmitWheelEffect SurfaceInfo.BulletImpact
+struct member,StructProperty,region,,16,table,99,UWindowWindow.DrawUpBevel UWindowTabControl.Paint UWindowWindow.PaintClients
+struct member,StructProperty,rotator,,12,table,96,PlayerController.CallServerMove PlayerController.PlayerCalcView SavedMove.PostUpdate
+struct member,StructProperty,vector,,12,table,400,PlayerController.ProcessMove PlayerController.ServerMove Controller.PawnDied
+struct member,StructProperty,voicedesc,,64,not in table,8,SGVoicePackExtended.SearchVoice SGVoicePackExtended.SearchSuitableVoices StargateVoicePack.SelectVoice

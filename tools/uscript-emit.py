@@ -143,9 +143,13 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 # only at one width: `Color` is `byte B,G,R,A` (**4**) -- `HUD.DrawCustomBeacon`, `GUIMenuOption.InitComponent`;
 # `Plane` is four floats (**16**) -- `HUD.PostRender`; `Region` is `UWindowBase`'s four ints `X,Y,W,H` (**16**) --
 # `UWindowWindow.DrawUpBevel`, `UWindowWin95LookAndFeel.FW_SetupFrameButtons`; `MouseCursor` is `UWindowWindow`'s
-# `Texture tex; int HotX, HotY; byte WindowsCursor` (**4+4+4+1 = 13**) -- `UWindowGridColumn.MouseMove`,
-# `UWindowFramedWindow.LMouseDown`; `HTMLStyle` is **28**, which no field sum gives (`UWindowBase` declares an int,
-# a string, two colors and seven bools) -- the width is the compiler's own static size and every read of an
+# `Texture tex; int HotX, HotY; byte WindowsCursor` -- the fields sum to 13 and the compiler's slot is **16**, which
+# is what every one of the corpus's 30 `MouseCursor` `Context` nodes writes (`Root.NormalCursor`,
+# `MouseWindow.Cursor`; `tools/context-size.py`, `inventory/context_size.csv`). 13 was the fields' sum and made
+# nine UWindow bodies differ at that one byte (`UWindowGridColumn.MouseMove`,
+# `UWindowFramedWindow.MouseMove`, `UWindowConsoleClientWindow.Initialized`); `HTMLStyle` is **28**, which no field
+# sum gives (`UWindowBase` declares an int, a
+# string, two colors and seven bools) -- the width is the compiler's own static size and every read of an
 # `HTMLStyle` property is `Context 05 00 1c` (`UWindowHTMLTextRow(L).StartStyle` in
 # `UWindowHTMLTextArea.DrawTextLine` at offset `000d`, and seven more nodes across `GetWrapPos`, `RemoveWrap` and
 # `WrapRow`). A width one byte either side of these puts the emitted tail out of step with the shipped body, so the
@@ -154,7 +158,7 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 # `PlayerZone = P.Region.Zone;` is `36 41 0f 19 00 52 16 05 00 0c 01 78 0e`, the `Context` around `P.Region`
 # writing `0c` (see the 7 bodies that refused as *a struct member declared pointregion*).
 STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 16, "region": 16,
-               "mousecursor": 13, "htmlstyle": 28, "pointregion": 12}
+               "mousecursor": 16, "htmlstyle": 28, "pointregion": 12}
 
 # The skip word a `Context` writes before its type byte. For a member that is an `InstanceVariable` it is 5 in all
 # 17,710 such nodes, whatever width the member's index was written with (`01 18` and `01 69 04` both write 5). A
@@ -2748,6 +2752,16 @@ def _emit_member(expr, rettype, env, element_dim=0):
         if size is None:
             raise Refused("a default chain to a %s member, whose value size this walk does not carry"
                           % (ptype or "typeless"))
+        if element_dim:
+            # A **subscript** consumes this read, so the byte is the array's own size -- `dimension x element`,
+            # the same rule the receiver-chain path below applies -- and not the element's. Eleven bodies wrote
+            # the element's 4 here: `HUDClass.default.FontScreenWidthSmall[i]` (an `int[9]`, so **36**) in
+            # `ScoreBoard`'s three font pickers, and `WeaponClass.Default.RegularMovementAnims[0]` (a `name[2]`,
+            # so **8**) in seven `StargatePawn.Animate*` bodies (`inventory/emit_differ.csv`'s two `context size`
+            # rows; `tools/context-size.py` measures the rule over the corpus).
+            if element_dim < 0:
+                raise Refused("a default-chain static array whose declared dimension the artifacts do not carry")
+            size = element_dim * size
         member_read = bytes([DEFAULT_TOKEN]) + write_index(index)
         skip = CONTEXT_SKIP
         if ptype == "bool":

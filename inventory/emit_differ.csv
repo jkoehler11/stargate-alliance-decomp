@@ -1,7 +1,6 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,111,10422 identical
-context size,ClassContext,same length,,11,ScoreBoard.GetSmallFontFor ScoreBoard.HaveHalfFont ScoreBoard.GetSmallerFontFor
-context size,Context,same length,,10,TransportRings.Destroyed UWindowConsoleClientWindow.Initialized UWindowFramedWindow.MouseMove
+(census),,,,91,10442 identical
+context size,Context,same length,,1,TransportRings.Destroyed
 context skip,Context,ours longer,,1,SGMenuInteraction.Initialized
 context skip,Context,same length,,2,CheatManager.Fly CheatManager.Ghost
 jump distance,Jump,ours shorter,yes,7,Pawn.BaseChange Decoration.BaseChange BotSG.PickDestination

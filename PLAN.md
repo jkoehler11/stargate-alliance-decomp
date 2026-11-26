@@ -18672,3 +18672,16 @@ sequence.
   `htmlstyle: 28`. 8,136 -> 8,148 modelled, all identical, 0 differ; 2 fireproperties chains, 7 `ClassContext`
   differ rows and 3 `HTMLStyle` bodies. Still open on this thread: `PlayerController.AdjustAim` /
   `BotEnemy.AdjustAim`, `UWindowHTMLTextArea.DrawTextLine`, the 486 operator rows.
+- Front end, 2026-11-25b: the artifact the page quoted was a run behind its own tool, and `MouseCursor`'s table entry
+  had left the census's gate red. **Regenerated from one run: 10,442 modelled bodies, every one byte-identical, 91
+  differ** (the shipped `uscript_emit.csv` read 10,323 -- the 119 bodies of the array-read and byte-index rules landed
+  in the tool and the prose, not in the artifact, which only a run with the dump writes); `emit_differ.csv`'s census
+  follows the same run (111 -> 91, and the 11 `ClassContext` + 10 `Context` size rows are now **one**: 
+  `TransportRings.Destroyed`). `tools/context-size.py`'s `--check` was red on `main` because `STRUCT_SIZE` carries the
+  compiler's *slot* now (`MouseCursor` 16) while the rule still called the table's own entry "a fields' sum"; the
+  vocabulary is `table` (size == the entry) / `aligned` (an entry that is still a sum) / `not in table`, `--check` pins
+  all three plus a synthetic sum-entry, and the census loads each sibling tool **once** instead of per node (the walk
+  is 22 s, not minutes). Not in this PR: the one `context size` differ row's fix (`MyRings[i].Destroy()` resolves its
+  receiver as the class `object` -- measured, not fixed), the 110 `a call member returning an unknown type` rows, the
+  43 jump-distance bodies. Files: `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`,
+  `inventory/context_size.csv`, `tools/context-size.py`, `docs/COMPILER_FRONTEND.md`.
