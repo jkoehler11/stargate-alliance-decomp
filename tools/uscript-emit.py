@@ -868,6 +868,12 @@ def _struct_operator(sym, stype, env):
     pre = OP_PREFIX.get(sym)
     if not pre or not stype:
         return None
+    # The struct's word can be **qualified** (`GameInfo.KeyValuePair` is how a parameter declares it) while the
+    # operator record the compiler writes is spelled with the **bare** name -- `EqualEqual_KeyValuePairKeyValuePair`
+    # over record 1967 of Engine.u, not `equalequal_gameinfo.keyvaluepairgameinfo.keyvaluepair`. Unnormalised,
+    # `Maps[MapIndex].Options[i] == Option` found no operator record and fell through to the `StructCmpEq` node:
+    # four bodies, each one `EndFunctionParms` short of the shipped bytes.
+    stype = _struct_word(stype)
     low = (pre + "_" + stype + stype).lower()
     hit = (env.get("funcs_all") or {}).get(low)
     if not hit:
@@ -1866,6 +1872,20 @@ def _type_of(expr, env):
                 # compiler writes the value itself behind a `Context` over the receiver, not a property read. No
                 # record exists for such a name, so the pair stayed `int | an unknown type` in nine bodies.
                 cv = (env["scope"].get("consts") or {}).get(nm)
+                if cv is None:
+                    # The const need not be on the **body's** own chain: `AIMSG_Stargate` extends `AIMessage`
+                    # (which extends `Object`), and `MSGT_Reply`/`MSGC_Voice` are `Actor`'s -- the receiver's
+                    # declared class is `Controller`, whose chain carries them. Keying the lookup on the body
+                    # refused `Type = Type | Sender.MSGT_Reply` in four AIMSG subclasses and
+                    # `Channels != Sender.MSGC_None` in a fifth; the same "an inherited declaration is not in
+                    # this class's table" rule the delegate and the property import took.
+                    target = _class_of(obj, env)
+                    if target:
+                        _pack = (env["scope"].get("pack") or "").lower()
+                        for _p, _c in _ancestors(env["scope"].get("chain") or {}, _pack, target):
+                            cv = ((env.get("consts_by_cls") or {}).get(_c) or {}).get(nm)
+                            if cv is not None:
+                                break
                 if cv is not None:
                     return "float" if isinstance(_number(cv), float) else "int"
             if hit is not None:
@@ -3386,6 +3406,18 @@ def _emit_member(expr, rettype, env, element_dim=0):
             return _converted(node, "byte", rettype), "enum-chain-member"
     if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and (rettype or "").lower() in ("int", "byte"):
         _const = (env["scope"].get("consts") or {}).get(nm)
+        if _const is None:
+            # The const can be on the **receiver's** chain rather than the body's: `Sender.MSGT_Reply` on a
+            # `Controller` names `Actor`'s `const MSGT_Reply = 0x00000008`, and the body (`AIMSG_Stargate`,
+            # an `AIMessage`) has no `Actor` in its chain -- so the value type resolved and this read still
+            # refused the member. Same join `_member_record` makes for a property.
+            _target = _class_of(obj, env)
+            if _target:
+                _pack = (env["scope"].get("pack") or "").lower()
+                for _p, _c in _ancestors(env["scope"].get("chain") or {}, _pack, _target):
+                    _const = ((env.get("consts_by_cls") or {}).get(_c) or {}).get(nm)
+                    if _const is not None:
+                        break
         if _const is not None:
             # A **`const` on the receiver's class chain** is a compile-time value, but the compiler does *not*
             # fold it away: `Type = Type | Sender.MSGT_Order` ships `9e 01 fa02 19 01 fd01 02 00 04 2c 02 16` -- a
@@ -4034,6 +4066,14 @@ def emit_assign(stmt, at, env):
     elif nm in scope.get("props", {}):
         token, index, ptype = scope["props"][nm]
         from_props = True
+    elif ("__%s__delegate" % nm) in (scope.get("props") or {}):
+        # A **delegate** is a property under a composed name: `delegate OnKeyEvent(...)` is
+        # `__OnKeyEvent__Delegate` in the class's property table (`delegate<OnKeyEvent>`), so
+        # `OnKeyEvent = InternalOnKeyEvent;` was neither a local nor a property and 13 `InitComponent` bodies
+        # stayed in the residue with that reason. The value's node is the same one the member-target branch
+        # writes; only the read is bare, because the delegate is a property of the body's own chain.
+        token, index, ptype = scope["props"]["__%s__delegate" % nm]
+        from_props = True
     else:
         raise Refused("an assignment to a name neither a local nor a property of the class chain")
     if ptype == "bool":
@@ -4055,7 +4095,21 @@ def emit_assign(stmt, at, env):
         if from_props:
             read = _outer_wrapped(nm, read, ptype, "", env) or read
         return bytes([0x0F]) + read + emit_expr(rhs, _friendly(nm, env) or "", env)[0]
-    if ptype in ("delegate", "pointer", ""):
+    if ptype == "delegate":
+        # `OnKeyEvent = InternalOnKeyEvent;` (`GUIButton.InitComponent`) ships `45 01 7d04 44 27`:
+        # `LetDelegate`, the delegate property's own `InstanceVariable` read, then `DelegateProperty` over the
+        # assigned function's **name** index -- the shape the member-target branch above writes, with the read
+        # unwrapped because the property is the body's own.
+        if not (len(rhs) == 1 and rhs[0][0] in ("ident", "keyword")):
+            raise Refused("a delegate assignment whose value is not a bare function name")
+        # `OnKeyEvent = none;` (`SGLabel.InitComponent`) clears the delegate with the **zero** name
+        # (`44 00`, the name table's empty entry), not with `NoObject`: a delegate's value is a name index in
+        # both spellings, so `none` is index 0 and the node keeps its shape.
+        idx = 0 if rhs[0][1].lower() == "none" else _by_name_index(rhs[0][1], env)
+        if idx is None:
+            raise Refused("a delegate assignment to a function the name table does not carry")
+        return bytes([0x45]) + bytes([token]) + write_index(index) + bytes([0x44]) + write_index(idx)
+    if ptype in ("pointer", ""):
         raise Refused("an assignment to a %s property" % (ptype or "typeless"))
     read = bytes([token]) + write_index(index)
     if from_props:
@@ -5775,7 +5829,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "corpus_funcs": corpus_funcs, "decl_index": index,
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
                    "within_proptypes": within_proptypes,
-                   "class_names": class_names, "order": scope["order"],
+                   "class_names": class_names, "order": scope["order"], "consts_by_cls": consts_by_cls,
                    "rets": rets, "voids": voids, "assert_line": aline,
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
                    # and the records of the package it is declared in

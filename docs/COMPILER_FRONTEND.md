@@ -2202,15 +2202,16 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,243 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
+**23 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,272 modelled and identical in the same run). **7** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 23 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
+| jump distance | JumpIfNot | ours shorter | yes | 4 | `PlayerController.ServerMove`, `PlayerController.CallServerMove`, `PlayerController.CallServerMove` |
 | context skip | Context | ours shorter | - | 3 | `StargateVehiclePassenger.DisplayDebug`, `GravCraneConsole.DisplayDebug`, `StargateVehicle.DisplayDebug` |
 | jump distance | Jump | ours shorter | yes | 3 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
 | jump distance | JumpIfNot | ours shorter | no | 3 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `TransportRings.RingsMove` |
-| jump distance | JumpIfNot | ours shorter | yes | 3 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove`, `counter.Trigger` |
-| jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
+| jump distance | JumpIfNot | same length | no | 3 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults`, `GUIMessageBox.InternalOnPreDraw` |
+| opcode | Multiply_FloatFloat | ours longer | - | 3 | `Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState` |
 | opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
 | operand | StringConst | ours longer | - | 1 | `TextGameInfo.InitComponent` |
@@ -3147,3 +3148,80 @@ The entries with no node are **`coords`, `interpcurve`**: each rests on a body t
 | `liveuser` | 24 | 2 | 24 x2 |
 | `range` | 8 | 1 | 8 x1 |
 <!-- END struct-widths -->
+
+## Stage 3, continued -- a struct's operator is keyed on the bare struct name, a const on the receiver's chain, and a delegate's own record (measured 2026-11-26)
+
+**11,272 modelled / 11,272 byte-identical** (from 11,243; **29 bodies gained, none lost**; residue 435 -> 406, the
+operator bucket 26 -> 19, the differ bucket 25 -> 23). Three rules, and they are one shape three times: the
+declaration a name needs sits on the **receiver's** chain, or under a composed name -- never in the table the
+body's own class built.
+
+**(1) A struct's declared operator is spelled with the bare struct name.** `Maps[MapIndex].Options[i] == Option`
+ships a `FinalFunction` over record **1,967** (`EqualEqual_KeyValuePairKeyValuePair`, a `Function` export of
+Engine.u whose `Outer` is `MaplistRecord`), and this walk wrote the `StructCmpEq` node over record 364
+(`KeyValuePair`, a `Struct` export of `GameInfo`) because `_struct_operator` composed `equalequal_` + the
+*declared* word + itself. A parameter's declared type is **qualified** (`GameInfo.KeyValuePair Option`), so the
+composed name was `equalequal_gameinfo.keyvaluepairgameinfo.keyvaluepair`, no record matched, and the walk fell
+through to the struct-comparison fallback. `_struct_word` -- the normalisation `_struct_ref` took in the last
+round -- now runs before the composition. The two nodes differ by exactly the `EndFunctionParms` a call carries
+and a comparison node does not:
+
+    shipped   1c 6f 1e <A.Options[i]> <Option> 16     FinalFunction(1967)
+    emitter   32 6c 05 <A.Options[i]> <Option>        StructCmpEq(364)
+
+Three bodies byte-identical: `MaplistRecord.CompareItemsSlow` (315 vs 317), `GetOptionIndex` (85 vs 86) and
+`ItemHasOption` (54 vs 55). **The fourth body that group named is not a struct compare.**
+`PlayerController.ServerMove` is still 1,615 vs 1,623 and its first real difference is
+`Accel.Y = (OldAccel >>> 15) & 255;`: the package wraps the shift in `39 3f 39 44 39 3f` (`IntToFloat`, `FloatToInt`,
+`IntToFloat`) before the `& 255`, because the assignment's `float` target retypes the pair's **operand** and not
+only the store, while this walk writes the shift bare inside the `&` and casts once at the store. That is a rule
+of its own (the assignment's retype reaching *into* an operator's operand) and the next read on that body.
+
+**(2) An inherited `const` belongs to the receiver's chain.** `Type = Type | Sender.MSGT_Reply`
+(`AIMSG_Stargate.AutoBuildType`), `Channels != Sender.MSGC_None` (`AIMessage.AutoBuildChannels`),
+`bool( Channels & msgSender.MSGC_Voice )` (`AIMessage.SendingProcess` -- a **parameter**, not a property) and
+`VSize(...) > Squad.MAXSEPERATIONDIST` (`BotBase.TeleportToPawn`) each name a const no class on the body's own
+chain declares: the `MSGT_*`/`MSGC_*` families are `Actor`'s and `MAXSEPERATIONDIST` is `SquadAIBasic`'s, while
+`AIMSG_Stargate` is an `AIMessage` (`extends Object`), `BotBase`'s `Squad` is a `SquadAIBasic` and the receiver is
+a `Controller`. Both lookups read `scope["consts"]`, which is the *body's* chain, so the shape failed twice in
+different places: first the pair (`int | an unknown type`), then -- with the type known -- the member read
+(`a member that is not a property of the receiver's class`). The shipped node is a `Context` over the receiver
+with the **literal** inside it, at the site's own width:
+
+    Type = Type | Sender.MSGT_Reply
+    9e 01 fa02 | 19 01 fd01 | 02 00 | 04 | 2c 08 | 16
+    Or_IntInt    Context(Sender, skip 2, size 4)  IntConstByte 8
+
+Both lookups now walk `_ancestors(chain, pack, _class_of(obj))` over the corpus's `consts_by_cls` table. **Eight
+bodies**: `AIMessage.AutoBuildChannels`/`SendingProcess`, `AIMSG_Stargate.AutoBuildType`/`AutoBuildChannels`,
+`AIMSG_Cloak`/`AIMSG_ConcentrateFire`/`AIMSG_TakeCover.AutoBuildType` and `BotBase.TeleportToPawn`. The skip word
+is the literal's own wide length (`_wide(inner)`), never a constant.
+
+**(3) A delegate is a property under a composed name, and `none` is name index 0.** The class's property table
+spells the delegate `__OnKeyEvent__Delegate` (`delegate<OnKeyEvent>`), so an assignment whose target is the bare
+name was *neither a local nor a property of the class chain*; the shipped node is the delegate's own read, then
+`DelegateProperty` over the assigned function's **name** index -- and a delegate cleared with `none` is the same
+node over the name table's zero entry:
+
+    OnKeyEvent = InternalOnKeyEvent;   45 | 01 7d04 | 44 27
+    OnKeyEvent = none;                 45 | 01 7d04 | 44 00
+
+**Eighteen bodies**: ten `InitComponent` in GUI.u (`GUIButton`, `GUIMultiComponent`, `GUIScrollBar`,
+`GUIImageList`, `GUITabControl`, `GUIHorzScrollZone`, `GUIVertScrollZone`, `GUIEditBox`, `moListEditBox`,
+`ControllerButton`), six in StargateMenus.u (`XBoxLiveMenu`, `XBoxLiveFriendsMenu`, `XBoxLiveFindGameMenu`,
+`XBoxLivePlayMenu`, `ServerList`, `SinglePlayerSelectProfile`), and the two `= none` bodies that close
+(`SGLabel.InitComponent`, `StargatePawn.Talk`). `GUIMessageBox.InternalOnPreDraw` now **emits** (721 vs 721) and
+differs first at a jump word with both lengths equal -- a later rule in a 721-byte body, not a delegate shape.
+
+**Both committed artifacts were a run behind their own tool.** `inventory/uscript_emit.csv` read 11,114 modelled
+and `inventory/emit_differ.csv` 18 differs while the tool at that commit measured 11,243 / 25: the previous
+round's prose carried the numbers and the artifacts did not, and `make ci`'s dump-free `--check` cannot see the
+difference (it agrees with whatever the artifact says). Both are regenerated here from the run behind the figures
+above, and the generated block over the previous section -- which sat at 18 rows -- now reproduces 23 rows at
+11,272 from the committed CSV, which `emit-differ.py --check-doc` enforces.
+
+**What this did not reach.** The operator bucket still holds **19** rows and every one of them is a side the walk
+cannot type (`Door.SpecialHandling`'s `unknown != object`, `PlayInfo.Dump`'s `string @ unknown`, the `IpAddr`
+struct compare in `ClientBeaconReceiver.ReceivedText`, the `name`/`bool`/`byte` comparisons of
+`AlkeshBomberBot` and `CommandInterface`), beside the 152-body compound-expression family, `ServerMove`'s
+retype, and the 23 emitted-but-different bodies.

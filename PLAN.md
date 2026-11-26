@@ -239,6 +239,33 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a struct's operator is keyed on the bare struct name, a const on the receiver's chain, and a delegate's
+  own record: **11,272 modelled / 11,272 byte-identical** (from 11,243; **29 bodies gained, none lost**; residue
+  435 -> 406, the operator bucket 26 -> 19, the differ bucket 25 -> 23). Three rules, one shape: the declaration
+  a name needs is on the **receiver's** chain or under a composed name, never in the table the body's own class
+  built. (1) `_struct_operator` composed the operator's name from the *declared* struct word and a parameter's is
+  qualified (`GameInfo.KeyValuePair Option`), so `Options[i] == Option` found no record and wrote `StructCmpEq`
+  (record 364) where the package writes `FinalFunction` over `EqualEqual_KeyValuePairKeyValuePair` (record 1,967,
+  a `Function` of `MaplistRecord`); `_struct_word` now normalises before the composition -- three bodies
+  byte-identical (`CompareItemsSlow` 315/317, `GetOptionIndex` 85/86, `ItemHasOption` 54/55). The fourth body
+  that group named, `PlayerController.ServerMove`, is **not** a struct compare: it differs at
+  `Accel.Y = (OldAccel >>> 15) & 255`, where the assignment's `float` target retypes the `&`'s *operand*
+  (`39 3f 39 44 39 3f`) and not only the store -- the next read on that body, filed as its own rule. (2) An
+  inherited `const` is on the receiver's chain: `Sender.MSGT_Reply`/`MSGC_None`/`MSGC_Voice` are `Actor`'s and
+  `Squad.MAXSEPERATIONDIST` is `SquadAIBasic`'s, in bodies whose own chain never reaches either, so both the
+  typing join and the emit join now walk `_ancestors(_class_of(obj))` over `consts_by_cls` -- eight bodies
+  (`AIMessage` 2, `AIMSG_Stargate` 2, `AIMSG_Cloak`/`AIMSG_ConcentrateFire`/`AIMSG_TakeCover`, `BotBase` 1). The
+  node is a `Context` over the receiver with the literal inside, skip word `_wide(inner)`, size the site's width.
+  (3) A delegate is a property under a composed name (`__OnKeyEvent__Delegate`), so `OnKeyEvent =
+  InternalOnKeyEvent;` was neither a local nor a property; the node is `45 01 <record> 44 <name index>`, and
+  `= none` is the same node with the name table's zero entry -- eighteen bodies (ten `InitComponent` in GUI.u, six
+  in StargateMenus.u, and the two `= none` bodies `SGLabel.InitComponent`/`StargatePawn.Talk`).
+  `GUIMessageBox.InternalOnPreDraw` now emits (721 vs 721) and differs at a jump word, a later rule.
+  `inventory/uscript_emit.csv` and `inventory/emit_differ.csv` are regenerated from the same run -- they had sat
+  at 11,114 / 18 while the tool measured 11,243 / 25, because a dump-free `--check` agrees with whatever the
+  artifact says. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the 19 operator rows
+  that remain (every one an unknown side), the 152-body compound-expression family, and the 23 emitted-but-
+  different bodies.
 - [~] 3.6 the operator residue is typing, not folding: **11,243 modelled / 11,243 byte-identical** (from 11,195;
   **48 bodies gained, none lost**; residue 483 -> 435, the differ bucket 18 -> 25). Five rules. (1) A **sign in an
   operand position is unary**: `Pawn.Floor * - 256` was read as a `-` node (looser than `*`) whose left side was
