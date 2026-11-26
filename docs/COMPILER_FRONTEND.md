@@ -2138,7 +2138,7 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,176 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
+**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,195 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -2974,12 +2974,14 @@ and `rettype_of` read it as the return type: the five `options[i].GotFocus(...)`
 returning function*. `delegate`, `function` and `event` are modifier words in the header walk, and the Function
 record a delegate gets is a stub whose script is `04 0b 47`.
 
-**What is not in this PR.** `GUIController.ShowLadderData` still refuses at
+**What is not in this PR, and what the next section found.** `GUIController.ShowLadderData` refused at
 `LiveLadderData[i].RungData[j].BestPlayerData` -- a struct member whose own type is `playerrungdata`, whose width
-`STRUCT_SIZE` lacks (its four fields sum to 28 and no `Context` node in the corpus writes it, so the width is
-the field-sum rule and not a measured byte). `GenerateFakeNames`/`ShowRungData` still refuse on an operator with
-an **unknown** side (`an unknown type $ string`), which is that same struct link one node further out. Both
-belong to the struct-width census, not to this join.
+`STRUCT_SIZE` lacks (its four fields sum to 28 and no `Context` node in the corpus writes it). **The reading here was
+wrong**, and the next section settles it: that node is `36 <index> <obj>` and carries no size byte at all, so the
+width was never needed -- the guard was, and with it narrowed the body is byte-identical with no table entry.
+`ShowRungData` left the residue with the array-element rule above. `GenerateFakeNames` is a **different** refusal
+(`an unknown type $ string` over `Left(i++ $ FakeNames[...], 15)` -- a postfix increment's value type), not this
+struct link.
 
 ## Stage 3, continued -- a callee declared in another package, and an increment of a member (measured 2026-11-26)
 
@@ -3017,3 +3019,67 @@ imports ...; name ...`), so the next run reads a cause instead of re-deriving it
 
 What this did not move: the compound expression (152), the operator the image's table does not install (63), a member
 that is not a property of the receiver's class (65) -- and the three named member-read statements above.
+
+## Stage 3, continued -- a native struct is a struct, and a field read carries no width (measured 2026-11-26)
+
+**11,195 modelled / 11,195 byte-identical / 18 differ** (from 11,176 / 11,176 / 18; **19 bodies gained, none lost**;
+residue 502 -> 483; `inventory/uscript_emit_join.csv` byte-identical, so the walk did not move, and the differ census
+is still 18). Both rules are one claim: **the struct link is a package fact, and the width a `Context` writes belongs
+to a *value*, not to a field.**
+
+(1) **A struct's name is the last dotted segment of a declaration, and a native struct is not in the source census.**
+`_struct_of` returned the declared word as spelled -- `gameinfo . keyvaluepair` for `var GameInfo.KeyValuePair Pair`
+(the local walk keeps the tokens' spacing), `array<CacheManager.MutatorRecord>` for a local's element -- while
+`struct_cands`/`struct_members` key on the bare name the `struct` block declares, so the record lookup missed and the
+member read fell through to the class join. The second half is the same miss one layer down: `CacheManager.uc`
+declares `struct native init MapRecord` -- **no `{ }` block at all**, the fields are the class's own property records --
+so `maprecord`, `gamerecord` and `beaconinfo` are absent from `inventory/struct_members.csv` (a census of the *text*)
+while every member of them is a record in the package. `_receiver_kind` now asks the package's own member records
+(`struct_cands`' keys, precomputed as `scope["struct_keys"]`) beside the text census, and the word is normalised to its
+last dotted segment. Nineteen bodies: `MaplistManager`'s seven (`GetCacheMapList`, `ApplyMapList`,
+`GenerateGroupMaplist`, `PreBeginPlay`, `CreateDefaultList`, `GetCacheGameIndex`, `ValidGameType`), `MapList`'s three,
+`MaplistRecord.CreateMapOption` (`GameInfo.KeyValuePair`), `GUIController.GetMutatorList` (a local's
+`array<CacheManager.MutatorRecord>`), `IpDrv.ClientBeaconReceiver.GetBeaconText`/`GetBeaconAddress`,
+`AdminBase.FindGameType`, `ExtendedConsole.ConnectFailure`, `VoiceSelector.DumpFoundVoices` and
+`XBoxLiveServerSelectionBox.RefreshListBox`.
+
+(2) **A struct-typed field of a struct is the record alone, so its width is never written.** `A.B.C`, where `B` is a
+`playerrungdata`, is `36 <index> <obj>` -- no `Context`, no size byte -- and the guard on that path demanded a
+`STRUCT_SIZE` entry anyway, which is what refused `GUIController.ShowLadderData` for want of `playerrungdata`'s width.
+That struct has **no witness at all**: no `Context` node in the corpus reads it, and the 28 the last note carried was
+a field sum (float, string, int, `byte[12]`), i.e. exactly the reading `MouseCursor` refuted -- 13 by the fields and
+16 in the corpus. With the guard gone the body emits byte-identically and the table gains nothing, which is the
+measurement: a width is consumed where a *value* is sized (a `Context`'s byte, a static array's `dimension x
+element`, a call's return), never by a field read. `STRUCT_SIZE` stays at 17 entries.
+
+### The width table, against the nodes that write it
+
+`tools/struct-widths.py` (`make struct-widths`) joins the table with `inventory/context_size.csv`, so the question the
+last note left as prose -- which entries a *node* witnesses and which rest on a body's byte-identical match -- is a
+count, and a node whose byte disagrees with an entry fails `--check`. It does not grow the table: a declared struct
+with no node witness has no width an instrument can state, and the 149 that have none are listed as `absent` rather
+than filled in.
+
+<!-- BEGIN struct-widths -->
+`STRUCT_SIZE` carries **17** widths. **15** of them are node-witnessed -- a `Context`'s size byte in a body that reads the struct -- and those rest on the census below, which also holds the table's **0** conflict(s): a node whose byte disagrees with the entry fails `tools/struct-widths.py --check`, so a width cannot drift from the corpus it claims.
+
+The entries with no node are **`coords`, `interpcurve`**: each rests on a body that refused for want of the width and came out byte-identical at exactly one byte, and no instrument re-derives one from the corpus -- which is why they are listed rather than removed. The table is **not** grown from this census: 147 declared structs have no node witness at all, and a width the corpus never writes is a guess with a number's shape.
+
+| struct | width | node reads | byte(s) written |
+|---|---|---|---|
+| `vector` | 12 | 400 | 12 x400 |
+| `region` | 16 | 99 | 16 x99 |
+| `rotator` | 12 | 96 | 12 x96 |
+| `color` | 4 | 43 | 4 x43 |
+| `mousecursor` | 16 | 30 | 16 x30 |
+| `htmlstyle` | 28 | 28 | 28 x28 |
+| `rangevector` | 24 | 13 | 24 x13 |
+| `plane` | 16 | 9 | 16 x9 |
+| `voicedesc` | 64 | 8 | 64 x8 |
+| `animrep` | 12 | 4 | 12 x4 |
+| `pointregion` | 12 | 4 | 12 x4 |
+| `id3field` | 36 | 3 | 36 x3 |
+| `orientation` | 92 | 3 | 92 x3 |
+| `liveuser` | 24 | 2 | 24 x2 |
+| `range` | 8 | 1 | 8 x1 |
+<!-- END struct-widths -->

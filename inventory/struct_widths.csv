@@ -1,0 +1,166 @@
+struct,in_table,table_width,witness_nodes,witness_bytes,verdict
+accumulationdata,no,,0,,absent
+adminplayer,no,,0,,absent
+adrop,no,,0,,absent
+animrep,yes,12,4,12 x4,agrees
+attachsocket,no,,0,,absent
+backupdata,no,,0,,absent
+beaconinformation,no,,0,,absent
+bonesurfacemap,no,,0,,absent
+boundingvolume,no,,0,,absent
+box,no,,0,,absent
+builderpoly,no,,0,,absent
+buttonbindingstruct,no,,0,,absent
+cachedladderdata,no,,0,,absent
+cachedrungdata,no,,0,,absent
+cachedsound,no,,0,,absent
+chapterinfo,no,,0,,absent
+characterinfo,no,,0,,absent
+chatstruct,no,,0,,absent
+clientadjustment,no,,0,,absent
+color,yes,4,43,4 x43,agrees
+colorfloat,no,,0,,absent
+colorrecord,no,,0,,absent
+compressedposition,no,,0,,absent
+consolemessage,no,,0,,absent
+coords,yes,12,0,,unwitnessed
+copterstate,no,,0,,absent
+crosshairitem,no,,0,,absent
+deathgliderstate,no,,0,,absent
+decoinfo,no,,0,,absent
+decorationlayer,no,,0,,absent
+decorationlayerdata,no,,0,,absent
+decorationtype,no,,0,,absent
+decosectorinfo,no,,0,,absent
+deferredparticledata,no,,0,,absent
+designmodehint,no,,0,,absent
+difficultylevel,no,,0,,absent
+driverweaponstruct,no,,0,,absent
+faceinformation,no,,0,,absent
+filepath,no,,0,,absent
+fireproperties,no,,0,,absent
+floatbox,no,,0,,absent
+fsectiondigest,no,,0,,absent
+ftreeswayrotation,no,,0,,absent
+gamemodeinfo,no,,0,,absent
+gamerecordgroup,no,,0,,absent
+gui_iconposn,no,,0,,absent
+guid,no,,0,,absent
+guilistelem,no,,0,,absent
+guimutatorrecord,no,,0,,absent
+hitfxdata,no,,0,,absent
+hovercraftstate,no,,0,,absent
+htmlchar,no,,0,,absent
+htmlstyle,yes,28,28,28 x28,agrees
+hudlocalizedmessage,no,,0,,absent
+id3field,yes,36,3,36 x3,agrees
+imageliststruct,no,,0,,absent
+imusicsegment,no,,0,,absent
+init,no,,0,,absent
+intbox,no,,0,,absent
+interpcurve,yes,12,0,,unwitnessed
+interpcurvepoint,no,,0,,absent
+interpolator,no,,0,,absent
+ipaddr,no,,0,,absent
+keybindingstruct,no,,0,,absent
+keyinfo,no,,0,,absent
+keyvalue,no,,0,,absent
+keyvaluepair,no,,0,,absent
+kickvotescore,no,,0,,absent
+krbvec,no,,0,,absent
+krigidbodystate,no,,0,,absent
+ksimparams,no,,0,,absent
+liveuser,yes,24,2,24 x2,agrees
+lodlevel,no,,0,,absent
+lookpreset,no,,0,,absent
+maphistoryinfo,no,,0,,absent
+mapitem,no,,0,,absent
+maplistrecordgroup,no,,0,,absent
+mapvotegameconfig,no,,0,,absent
+mapvotegameconfiglite,no,,0,,absent
+mapvotemaplist,no,,0,,absent
+mapvotescore,no,,0,,absent
+materialpassitem,no,,0,,absent
+materialsequenceitem,no,,0,,absent
+matrix,no,,0,,absent
+md5updatedata,no,,0,,absent
+mepboneprimbox,no,,0,,absent
+mepboneprimsphere,no,,0,,absent
+mindcontrolslot,no,,0,,absent
+mousecursor,yes,16,30,16 x30,agrees
+multicolumnheaderdata,no,,0,,absent
+multicolumnsortdata,no,,0,,absent
+normalpair,no,,0,,absent
+notifyinfo,no,,0,,absent
+objectarray,no,,0,,absent
+objectiveinfo,no,,0,,absent
+orientation,yes,92,3,92 x3,agrees
+particle,no,,0,,absent
+particlebeamdata,no,,0,,absent
+particlebeamendpoint,no,,0,,absent
+particlebeamscale,no,,0,,absent
+particlecolorscale,no,,0,,absent
+particleinstance,no,,0,,absent
+particleprojectorinfo,no,,0,,absent
+particlerevolutionscale,no,,0,,absent
+particlesound,no,,0,,absent
+particlesparkdata,no,,0,,absent
+particletimescale,no,,0,,absent
+particletraildata,no,,0,,absent
+particletrailinfo,no,,0,,absent
+particlevelocityscale,no,,0,,absent
+passengerweaponstruct,no,,0,,absent
+pawninfostruct,no,,0,,absent
+phasetorchhit,no,,0,,absent
+pieceoffsetstruct,no,,0,,absent
+plane,yes,16,9,16 x9,agrees
+playerinfo,no,,0,,absent
+playernameinfo,no,,0,,absent
+playerqueryspec,no,,0,,absent
+playerresponseline,no,,0,,absent
+playerrungdata,no,,0,,absent
+playlistparser,no,,0,,absent
+pointregion,yes,12,4,12 x4,agrees
+procmeshvertex,no,,0,,absent
+quat,no,,0,,absent
+querydata,no,,0,,absent
+queueitem,no,,0,,absent
+range,yes,8,1,8 x1,agrees
+rangevector,yes,24,13,24 x13,agrees
+region,yes,16,99,16 x99,agrees
+restoremenuitem,no,,0,,absent
+rotator,yes,12,96,12 x96,agrees
+rungdatadetailed,no,,0,,absent
+rungdatasummary,no,,0,,absent
+scale,no,,0,,absent
+scarstate,no,,0,,absent
+serverinfo,no,,0,,absent
+servermapinfo,no,,0,,absent
+serverresponseline,no,,0,,absent
+sgridoffset,no,,0,,absent
+singleresult,no,,0,,absent
+snotification,no,,0,,absent
+sounddatastruct,no,,0,,absent
+soundemitter,no,,0,,absent
+spark,no,,0,,absent
+speechreplacement,no,,0,,absent
+squaditemstruct,no,,0,,absent
+standard,no,,0,,absent
+storedchatpassword,no,,0,,absent
+teaminfostruct,no,,0,,absent
+teamresponseline,no,,0,,absent
+terrainlayer,no,,0,,absent
+terrainmateriallayer,no,,0,,absent
+texregion,no,,0,,absent
+timeslicestate,no,,0,,absent
+tmasterserverentry,no,,0,,absent
+tmultimap,no,,0,,absent
+transition,no,,0,,absent
+transitionresult,no,,0,,absent
+url,no,,0,,absent
+vector,yes,12,400,12 x400,agrees
+voicechatcodec,no,,0,,absent
+voicedesc,yes,64,8,64 x8,agrees
+voiceref,no,,0,,absent
+weatherpcl,no,,0,,absent
+(census),17,15,743,0,entries / node-witnessed / conflicts

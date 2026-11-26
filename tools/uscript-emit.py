@@ -1872,8 +1872,19 @@ def _receiver_kind(expr, env):
     if kind:
         return kind
     word = _type_of(expr, env).lower()
-    if word and word not in (env.get("class_names") or set()) and word in _struct_names():
-        return "struct"
+    if word and word not in (env.get("class_names") or set()):
+        # The struct's own name is the **last segment** of a qualified declaration -- `local array<CacheManager.
+        # MutatorRecord> CachedRecords`, `var GameInfo.KeyValuePair Pair` -- and the source census spells that
+        # struct unqualified, so the whole word never matched it.
+        #
+        # The second witness is the package's **own member records**: `CacheManager.uc` declares
+        # `struct native init MapRecord` -- no `{ }` block at all, the fields are the class's property records --
+        # so `maprecord`, `gamerecord` and `beaconinfo` are absent from `inventory/struct_members.csv` (a census of
+        # the *text*) while every member of them is a record in the package. `struct_cands`' keys are those
+        # (struct, member) pairs, so a word that keys one is a struct whatever the text says.
+        name = _struct_word(word)
+        if name in _struct_names() or name in (env.get("scope") or {}).get("struct_keys", ()):
+            return "struct"
     return word
 
 
@@ -2545,12 +2556,21 @@ def _structs():
 STRUCT_TYPES = {}
 
 
+def _struct_word(word):
+    """The struct name a declared type spells: its **last** dotted segment, lowercased and unspaced.
+
+    `var GameInfo.KeyValuePair Pair` reaches `_struct_of` as `gameinfo . keyvaluepair` (the local walk keeps the
+    tokens' own spacing) and `_struct_record`/`_structs` key on the bare name the `struct` block declares.
+    """
+    return (word or "").replace(" ", "").lower().split(".")[-1]
+
+
 def _struct_of(expr, env):
     """The **struct** a receiver is declared as (`vector`), not the record kind every struct property shares."""
     expr = _strip_parens(expr)
     if len(expr) == 1 and expr[0][0] in ("ident", "keyword"):
-        return (_declared_type(expr[0][1].lower(), env) or "").lower()
-    return _type_of(expr, env).lower()
+        return _struct_word(_declared_type(expr[0][1].lower(), env) or "")
+    return _struct_word(_type_of(expr, env))
 
 
 def _declaring_class(expr, env):
@@ -3363,13 +3383,13 @@ def _emit_member(expr, rettype, env, element_dim=0):
                       % (" ".join(v for _k, v in obj), objtype or "?", objkind or "?"))
     token, index, ptype, friendly = hit
     if objkind == "struct":
-        # A field of a struct (no `Context`, so no size byte of its own) still needs a *value size* for whatever
-        # consumes it, and a field whose type is a struct is in `STRUCT_SIZE` like any other. The refusal names the
-        # declared struct, not just the mapped word, so the next residue reads which width it wanted.
-        if _value_width(ptype, friendly) is None:
-            raise Refused("a struct member of type %s%s, whose value size this walk does not carry"
-                          % (ptype or "typeless",
-                             " (declared %s)" % friendly if friendly and ptype == "struct" else ""))
+        # A field of a struct is the record alone -- `36 <index> <obj>` -- and that node carries **no size byte**,
+        # so the field's own width is never written on this path. Demanding one refused `ShowLadderData`'s
+        # `LiveLadderData[L].RungData[R].BestPlayerData.Rank` for want of `playerrungdata`: a struct no `Context`
+        # node in the corpus writes, and a width that body does not use. With the guard gone that body emits
+        # byte-identically and `STRUCT_SIZE` gains nothing (`tools/struct-widths.py` counts the witnesses -- a
+        # struct width is only ever consumed where a *value* is sized: a `Context`'s byte, a static array's
+        # `dimension x element`, a `Context` around a call).
         read = bytes([0x36]) + write_index(index) + emit_expr(obj, "", env)[0]
         if ptype == "bool":
             # A bool **member of a struct** is written behind `BoolVariable`, exactly as a bool property is: the
@@ -5182,6 +5202,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     # `DriverWeaponStruct` copies in `StargateGame.u` are nested one per class -- so the pair alone cannot decide
     # them; `_struct_record` asks the declaring class first (see `_declaring_class`).
     scope["struct_cands"] = struct_cands
+    # The struct names those keys spell, as a set: `_receiver_kind` asks it per member read, and a scan of every
+    # pair there would make the walk pay for the table on every node.
+    scope["struct_keys"] = {pair[0] for pair in struct_cands}
     # The **struct itself** as the compiler names it: a `StructCmpEq`/`StructCmpNe` operand is an object reference
     # to the struct record (`0x33 8c` for `color` is import 12 of UWindow.u), so the compare needs the same kind of
     # table `classrefs` is for a cast. An export wins, as it does there, because a package re-declaring a struct is
