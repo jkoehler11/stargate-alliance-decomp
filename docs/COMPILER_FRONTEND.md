@@ -2138,26 +2138,25 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**84 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,571 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 84 separate defects.
+**84 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,648 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 84 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours longer | yes | 17 | `PlayerController.LongClientAdjustPosition`, `Pawn.SurfaceReduceDamage`, `PlayerController.PlayerMove` |
-| jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
+| jump distance | JumpIfNot | ours shorter | yes | 19 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.SurfaceReduceDamage` |
+| jump distance | JumpIfNot | ours longer | yes | 10 | `PlayerController.LongClientAdjustPosition`, `PlayerController.PlayerMove`, `PlayerController.UpdateRotation` |
 | opcode | PrimitiveCast | ours shorter | - | 10 | `LinearStairBuilder.Build`, `GUIMessageBox.LayoutButtons`, `BotSG.EngageDirection` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
-| jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
+| jump distance | JumpIfNot | ours shorter | no | 6 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
 | opcode | PrimitiveCast | ours longer | - | 4 | `VolumetricBuilder.BuildVolumetric`, `Mover.InterpolateTo`, `UDebugVideoClient.BeforePaint` |
 | operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
 | opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
 | context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
+| opcode | EndFunctionParms | ours shorter | - | 2 | `StargateEffect.Trigger`, `StargateHUD.PostNetHUDSetup` |
 | opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
-| opcode | Nothing | ours longer | - | 2 | `StargateEffect.Trigger`, `StargateHUD.PostNetHUDSetup` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
-| context skip | Context | ours longer | - | 1 | `SGMenuInteraction.Initialized` |
-| jump distance | JumpIfNot | ours longer | no | 1 | `GameHud.AddWaypoint` |
+| context skip | Context | ours shorter | - | 1 | `SGMenuInteraction.Initialized` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
 | opcode | Divide_FloatFloat | ours shorter | - | 1 | `UWindowComboList.SetSelected` |
 | opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
@@ -2203,17 +2202,31 @@ returns*, and both were being answered one layer too shallow.
   applies the one enum producer instead of its own copy of the rule. **10,558 -> 10,563 modelled**, five bodies,
   none lost.
 
-**What the 84 remaining `a call member returning an unknown type` rows are: iterators.** Ten names
+**An iterator's value size is *nothing*, and the run that guessed 4 was reading the wrong byte.** Ten names
 (`AllActors` 36 nodes, `DynamicActors` 30, `RadiusActors`, `TouchingActors`, `VisibleCollidingActors`,
 `CollidingActors`, `CoverActors`, `TraceActors`, `AllObjects`, `AllObjectProperties`) over receivers as varied as
 `ScriptedController`, `PlayerController` and `StargatePawn`. They are declared `native(304) final iterator
 function AllActors(class<actor> BaseClass, out actor Actor, ...)` -- **no return type**, because the value a
-`foreach` consumes is the `out` parameter -- and all 84 nodes write a size byte of **4**. Giving the emitter that
-rule (an iterator's value is the object it steps) makes the 84 bodies emit and **every one of them differs at the
-next node**: the iterator call's own operand, not its size. So the rule is measured and *not* shipped -- it turns
-84 honest refusals into 84 differ rows and moves no modelled body -- and the next instrument is the `foreach`
-head's node, not the size byte. The measurement is written down here because the obvious next guess is exactly
-the one that costs a run.
+`foreach` consumes is the `out` parameter. `_rettype_on` answers `""` for both "declared void" and "no
+declaration found", so the walk could not tell the two apart; a `voids` set beside `rets` separates them and the
+call's `Context` writes size **0**:
+
+    foreach C.DynamicActors(class'StargatePlayer', Player)   ACTION_GivePlayerHint.InitActionFor
+    2f 19 00 7c 18 0d 00 00 61 39 20 ...                     Iterator, Context(skip 0x000d, size 0x00)
+
+**77 of the 84 bodies emit and match at that byte** -- 10,571 -> 10,648 modelled, none lost. The one body the
+first cut turned into a *differ* was `ACTION_IfProximity.ProceedToNextAction`, and its cause was a different
+shape: a **trailing hole**. It spells `ForEach C.DynamicActors(class'Actor', currentActor,)` and the shipped call
+writes two arguments and `EndFunctionParms` (`19 00 58 04 0d 00 00 61 39 20 84 00 7d 0b 16`), no `Nothing` where
+the third would sit, because the arguments left out are the trailing *optionals*. A hole **between** two arguments
+is still `Nothing` (`Controller.PostBeginPlay`'s `Spawn(..., Self, , vect(0,0,0), ...)`), which is the shape the
+earlier note measured; stripping trailing holes before the argument loop closed the last differ row and moved no
+other body.
+
+**Read the byte before naming the shape.** The earlier reading here -- "all 84 nodes write a size byte of 4" --
+came from the iterator's *out* parameter being an actor, i.e. from the assumption the rule was testing; the
+package writes 0, and giving the emitter 4 is what made every body differ. A size byte is the width of the value
+the *node* yields, and a call that declares no return yields nothing whatever its parameters are.
 
 ## Stage 3, continued -- a delegate an ancestor declares is an import, and the call is `DelegateFunction` (measured 2026-11-25)
 

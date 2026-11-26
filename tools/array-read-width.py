@@ -110,8 +110,8 @@ def census(dump, tree, only=None):
 
     dims = {}
     if tree:
-        _index, _files, _params, _enums, _enames, _rets, _lt, _pt, _w, dims_all, _c, _sp, _cr, _ltf, _crf, _mods = \
-            emit._source_index(tree)
+        _index, _files, _params, _enums, _enames, _rets, _lt, _pt, _w, dims_all, _c, _sp, _cr, _ltf, _crf, _mods, \
+            _voids = emit._source_index(tree)
         for (cls, nm), sizes in dims_all.items():
             if len(sizes) == 1:
                 dims[(cls, nm)] = next(iter(sizes))
