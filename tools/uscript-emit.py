@@ -1739,7 +1739,16 @@ def _type_of(expr, env):
             default_chain = (chain_at is not None and len(obj[chain_at + 1:]) == 1
                              and obj[chain_at + 1][0] in ("ident", "keyword")
                              and obj[chain_at + 1][1].lower() == "default")
-            if default_chain:
+            bare_default = (len(obj) == 1 and obj[0][0] in ("ident", "keyword")
+                            and obj[0][1].lower() == "default")
+            if bare_default:
+                # `Default.X` inside an operator is the **body's own** class chain's record, the same one
+                # `_emit_member` writes for the bare keyword (`04 02 <idx>`). The type path had a branch for a
+                # `X.Default.Y` chain and none for the bare keyword, so it fell through to `_member_record` on the
+                # word `default`, which names no class: `Default . GoreLevel < 2` read `an unknown type < int` and
+                # the body stayed in the operator residue even though its emit path is modelled.
+                hit = _prop_by_name(nm, env)
+            elif default_chain:
                 # `AmmoName.Default.MaxAmmo` is a member of the **class of `AmmoName`**, read off its default
                 # object (`12 <obj> 05 00 04 02 <idx>`), so the record is that class's, not the body's.
                 hit = _member_record(obj[:chain_at], nm, env)
@@ -2717,6 +2726,13 @@ def _class_of(expr, env):
                 return ref if ref in class_names else _no(
                     "a `class<Z>` declaration whose class the class table does not carry")
         if low == "self":
+            own = (env.get("scope") or {}).get("cls") or ""
+            return own if own in class_names else ""
+        if low == "default":
+            # `Default` is the body's **own** class's default object, so `Default.X.Y` reads `Y` on the class `X`
+            # is declared as -- the same chain `X.Default.Y` resolves. Without it `_member_record` asked the word
+            # `default` for a class and got none: `Default.InstalledCodec.Length` stayed `int < an unknown type`
+            # and `default.FontArrayFonts.Length` a `>=` the table never saw.
             own = (env.get("scope") or {}).get("cls") or ""
             return own if own in class_names else ""
         hit = _prop_by_name(low, env)
