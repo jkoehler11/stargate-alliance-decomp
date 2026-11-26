@@ -239,6 +239,26 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a delegate call in a value position, a parameter beats another function's local, and a struct member on
+      an array element: **11,176 modelled / 11,176 byte-identical / 18 differ** (from 11,114 / 11,114 / 18;
+      **62 bodies gained, none lost**; residue 564 -> 502; `inventory/uscript_emit_join.csv` byte-identical, so
+      the walk did not move). (1) **A delegate call is a `DelegateFunction` in both positions.** `CloseMenu`'s
+      `!ActivePage.OnCanClose(bCanceled)` is `19 01 2a 10 00 04 43 79 18 7d 04` -- record 1593
+      (`GUIPage.__OnCanClose__Delegate`, the compact index counting from 1) and name 317 -- and only the
+      statement path resolved the record, so the body wrote `1b 7d 04` and came out 2 bytes short. `_delegate_head`
+      now answers for both, and the residue's `_emit_element`/member-read refusals name the receiver and its type
+      (`(Data [ 0 ] -> ?, ?)`), which is what named the next two rules. (2) **A body's own parameter is a local of
+      that body.** `GUIController` declares `local Player Data` in another function and the class-wide `localtypes`
+      table is asked before `paramtypes`, so `LadderQueryComplete( array<RungDataSummary> Data )` typed `Data[0]`
+      as a `Player` struct; the function's own `decl_params` merge last now (four bodies: `LadderQueryComplete`,
+      `RungQueryComplete`, `GetSummaryData`, `GetDetailData`). (3) **A member of an array element whose element
+      type is a struct is a `StructMember`**, so `LiveLadderData[i].RungData` is `a3` (import 35) and not a class
+      property -- `_element_type` asks `_struct_member` after the class table. (4) **This build spells a delegate
+      `delegate function X(...)`** (`UIWidget.uc`), so `rettype_of` read `function` as the return type and five
+      `options[i].GotFocus(...)` bodies refused as *a call returning function*; `delegate`/`function`/`event` are
+      modifier words and a delegate's Function record is a stub (`04 0b 47`). Doc: `docs/COMPILER_FRONTEND.md`,
+      section of the same name. Not in this PR: `ShowLadderData`'s `playerrungdata` struct width (28 by the field
+      sum, no `Context` node writes it) and the operator rows whose side is that same untyped struct link.
 - [~] 3.6 a callee declared in another package, an increment of a member, and a container's `Length`:
   **11,066 modelled / 11,066 byte-identical** (from 10,915; **151 bodies gained, none lost**; residue 763 -> 612;
   the bodies that emit and still differ 20 -> 18). `_func_on` consulted `natives` and the *body package's* exports
