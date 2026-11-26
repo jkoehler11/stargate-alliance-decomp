@@ -1,5 +1,5 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,87,10739 identical
+(census),,,,86,10740 identical
 context skip,Context,ours shorter,,1,SGMenuInteraction.Initialized
 context skip,Context,same length,,2,CheatManager.Fly CheatManager.Ghost
 jump distance,Jump,ours shorter,yes,7,Pawn.BaseChange Decoration.BaseChange BotSG.PickDestination
@@ -7,7 +7,6 @@ jump distance,JumpIfNot,ours longer,yes,10,PlayerController.LongClientAdjustPosi
 jump distance,JumpIfNot,ours shorter,no,6,PlayerController.ReplicateMove B4SParser.ParseLines BotEnemy.Tick
 jump distance,JumpIfNot,ours shorter,yes,20,ConeBuilder.BuildCone CylinderBuilder.BuildCylinder Pawn.SurfaceReduceDamage
 jump distance,JumpIfNot,same length,no,2,AdminBase.SendComplexMsg ListObjectPropsCommandlet.WriteResults
-node index,StructMember,ours longer,,1,SceneManager.ResolveActorsInActions
 opcode,AddEqual_IntInt,ours shorter,,1,Mover.KeyFrameReached
 opcode,AddEqual_IntInt,same length,,2,PlayerController.CallServerMove Mover.KeyFrameReached
 opcode,Divide_FloatFloat,ours shorter,,1,UWindowComboList.SetSelected
