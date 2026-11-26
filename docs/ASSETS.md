@@ -265,3 +265,28 @@ that is a mip chain with a header; a reader written against the wrong one produc
 of error this page has spent the session learning to avoid. The next measurement is a table like the one above for all 13 × 2
 textures, with the candidate fields decoded under each hypothesis, and the hypothesis that survives is the one where every
 row's numbers agree with its payload size.
+
+#### The textures decode — layout measured, output checked by eye
+
+The layout is settled, and the test that settled it is arithmetic plus a channel check rather than an opinion:
+
+| claim | evidence |
+|---|---|
+| data starts **16** bytes past the property block | at 16, byte 3 == 255 in **20,000 of 20,000** sampled pixels; at 17, 18 and 19 the alpha lands in the wrong byte (0 of 20,000) |
+| size is `USize * VSize * 4` | true for every texture in `Tutorial_Tex` and `M07_fresco_tex` that states all three properties |
+| pixels are **BGRA** | byte 3 is `ff` in every sampled pixel at the right offset |
+
+`tools/texture-export.py` applies that: read the block with `prop-stream.py`, take `USize`/`VSize`/`Format` from the
+properties, and for `Format == 5` write `USize * VSize * 4` bytes of BGRA at `+16` as a PNG.
+
+**The run**: 170 `.utx` packages scanned, **49 PNGs** written (7.0 MB), 4,363 exports skipped — those whose properties do not
+state `USize`/`VSize`/`Format`, where this tool would have to guess and therefore does not.
+
+**The check that matters**: `Tutorial_Tex/Tut_signs_01.png` decodes to a coherent 2 × 2 atlas — an "Ear protectors must be
+worn in this area" safety sign, a chest X-ray, a "RESTROOM" sign with an accessibility pictogram, and a colour chart. A wrong
+offset or a wrong channel order does not produce readable signage; it produces noise. This is content, from the four packages
+`umodel` refused.
+
+**What is still unread**: the exports without `USize`/`VSize` in their properties — `M07_goldref` is one (a single `Palette`
+property and 65,604 bytes of data). Their size is inherited from somewhere this tool does not model, and the same rule
+applies as everywhere else on this page: a guessed size produces a plausible-looking image that is wrong.
