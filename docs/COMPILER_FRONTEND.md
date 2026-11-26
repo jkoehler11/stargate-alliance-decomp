@@ -2138,7 +2138,7 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**86 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,740 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 86 separate defects.
+**87 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,764 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 87 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -2150,13 +2150,13 @@ names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a nod
 | opcode | PrimitiveCast | ours longer | - | 4 | `VolumetricBuilder.BuildVolumetric`, `Mover.InterpolateTo`, `UDebugVideoClient.BeforePaint` |
 | operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
 | opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
+| context skip | Context | ours shorter | - | 2 | `BotSG.AssignAmbushPoint`, `SGMenuInteraction.Initialized` |
 | context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
 | opcode | EndFunctionParms | ours shorter | - | 2 | `StargateEffect.Trigger`, `StargateHUD.PostNetHUDSetup` |
 | opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
-| context skip | Context | ours shorter | - | 1 | `SGMenuInteraction.Initialized` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
 | opcode | Divide_FloatFloat | ours shorter | - | 1 | `UWindowComboList.SetSelected` |
 | opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
@@ -2421,22 +2421,47 @@ filled with a plain assignment, which keeps the *last*, so the walk wrote 10624 
 at its first `StructMember`. A `setdefault` keeps the first export; the body emits byte-identically, and no other
 body changes.
 
-**The choice is counted, not asserted.** `tools/struct-records.py` (+ `inventory/struct_field_records.csv`, `make
+**The key now carries the declaring class, and the choice is counted.** `struct_props` holds every record a
+`(struct, member)` pair names, together with the class that **nests** each of them (a struct export's own `outer`), and
+`_struct_record` walks the chain of the class that declares the struct-typed **property** -- `DriverWeapons` is
+`StargateVehicle`'s on the parent and `StargateWeaponEmplacement`'s on the subclass -- nearest ancestor first, then
+falls back to the package's order. The body's own class is deliberately **not** a witness: `SceneManager`'s
+`subActOrient.CamOrientation.LookAtActorTag` is declared on `SubActionOrientation`, which nests no `Orientation`, and
+the package names the **MatObject** copy (4800) -- so every class's search falls back there, and a body-class vote
+made that body differ. It is the rule's control, and it is byte-identical again.
+
+**The census counts the witness.** `tools/struct-records.py` (`inventory/struct_field_records.csv`, `make
+struct-records`) reads every `StructMember` node in the dump, rebuilds the same `(struct, member)` key from the record
+pair the emitter uses -- an export's `outer`, an import's `package` field -- and classifies the node by which record
+the package named: `single` (the key holds one record), `lowest` / `later` (the key holds several, and the package
+named the lowest index or a later one), `no record`; a duplicate key also carries its **witness**: `own` (the copy
+nested in the body's own class), `ancestor`, or `order` (neither, so only the package's order can decide). **Six of
+the nine** are `own` and **three** are `order` -- the `orientation` pair -- so six nodes are the rule's and three are
+the fallback, named rather than averaged. The page's block is generated from the committed CSV and `make ci`
+reproduces it (`--check-doc`). `tools/struct-records.py` (+ `inventory/struct_field_records.csv`, `make
 struct-records`) reads every `StructMember` node in the dump, rebuilds the same `(struct, member)` key from the record
 pair the emitter uses -- an export's `outer`, an import's `package` field -- and classifies the node by which record
 the package named: `single` (the key holds one record), `lowest` / `later` (the key holds several, and the package
 named the lowest index or a later one), `no record`. The page's block is generated from the committed CSV and `make
 ci` reproduces it (`--check-doc`).
 
-**Three of the nine ambiguous nodes are `later`, and they are the rule's own boundary.** `StargateVehicle` declares a
-`DriverWeaponStruct` (struct export 6601) and `StargateWeaponEmplacement`, its subclass, declares its own (5975).
-Their `PostNetBeginPlay` bodies each read *their own* struct's `WeaponClass`/`WeaponBone` -- 4360 and 6597 for the
-parent, 4692 and 5974 for the child -- so one `(struct, member)` key answers two records **inside one package** and
-the discriminator is the **reading class's own scope**, `outer` of the struct's `outer`, which the key does not carry.
-The two copies' fields are not in the same relative order (4360 < 4692 for `WeaponClass`, 5974 < 6597 for
-`WeaponBone`), which is why one rule reads as `lowest` on one field and `later` on the other: **the index is not the
-rule, it is the rule's shadow**. `lowest` is therefore the measured approximation (6 of the 9), and the census names
-the three it cannot decide rather than hiding them; `docs/UNKNOWNS.md` U42 carries the test.
+**The nine ambiguous nodes are two stories, not one.** `StargateVehicle` declares a `DriverWeaponStruct` (struct
+export 6601) and `StargateWeaponEmplacement`, its subclass, declares its own (5975). Their `PostNetBeginPlay` bodies
+each read *their own* struct's `WeaponClass`/`WeaponBone` -- 4360 and 6597 for the parent, 4692 and 5974 for the child
+-- so one `(struct, member)` key answers two records **inside one package**. The two copies' fields are not in the
+same relative order (4360 < 4692 for `WeaponClass`, 5974 < 6597 for `WeaponBone`), which is why the index alone reads
+as `lowest` on one field and `later` on the other: **the index is not the rule, it is the rule's shadow**. Those six
+nodes are the declaring-class rule and they now emit byte-identically, the two `PostNetBeginPlay` bodies included. The
+other three are `SceneManager`'s `orientation` reads, whose declaring class nests no copy; there the compiler itself
+used the package's order, so the fallback is the *measured* answer rather than an approximation.
+
+**A rotator literal is `22` and three i32, and it was missing.** `rot(pitch, yaw, roll)` is the compiler's own struct
+literal for a rotator, exactly as `vect` is for a vector, but the walk had no producer for it and refused every body
+that spawned with one -- `StargateVehicle.PostNetBeginPlay`'s `spawn(..., rot(0,0,0))` included. The bytes were read,
+not guessed: `PhysicsVolume.PlayExitSplash` ships `rot(16384,0,0)` as `22 00 40 00 00 | 00 00 00 00 | 00 00 00 00`, so
+the components are **signed dwords** in rotator units where `vect` writes f32, and `UnrealPawn`'s `Rot(-16384,0,0)` is
+the same field in two's complement. A component that is not a constant is refused (`a rotation literal that is not
+three numeric components`, four bodies) rather than written as the node this walk would guess.
 
 **An inherited struct field is an import, and that is most of the population.** 3,318 of the 5,128 field reads name a
 record this package does not export -- the struct is declared in another package, the import's `package` field names
@@ -2453,14 +2478,16 @@ width is claimed for it; the sentence no longer reports a table shortfall it nev
 <!-- BEGIN struct-records -->
 **5,128 `StructMember` nodes over 26 shapes** (`inventory/struct_field_records.csv`): **5,119** name a field whose `(struct, member)` key holds exactly one record, and **9** name one of a key that holds more -- **6** the lowest index and **3** a later one. **3,318** of the 5,128 are records this package **imports** (the struct is declared in another package), so an inherited field read is an import and no export table can answer it.
 
-| struct.field | verdict | candidates | record kind | nodes | examples |
-|---|---|---|---|---|---|
-| `driverweaponstruct.weaponbone` | later | 2 | `NameProperty` | 1 | `stargatevehicle.PostNetBeginPlay` |
-| `driverweaponstruct.weaponbone` | lowest | 2 | `NameProperty` | 1 | `stargateweaponemplacement.PostNetBeginPlay` |
-| `driverweaponstruct.weaponclass` | later | 2 | `ClassProperty` | 2 | `stargateweaponemplacement.PostNetBeginPlay` |
-| `driverweaponstruct.weaponclass` | lowest | 2 | `ClassProperty` | 2 | `stargatevehicle.PostNetBeginPlay` |
-| `orientation.lookatactor` | lowest | 2 | `ObjectProperty` | 1 | `scenemanager.ResolveActorsInActions` |
-| `orientation.lookatactortag` | lowest | 2 | `NameProperty` | 2 | `scenemanager.ResolveActorsInActions` |
+Of the 9 nodes a pair cannot decide on its own, **6** name the copy nested in the body's **own** class (the declaring class the emitter now resolves), **0** an inherited copy, and **3** neither -- only that last group falls back to the package's index order.
+
+| struct.field | verdict | witness | candidates | record kind | nodes | examples |
+|---|---|---|---|---|---|---|
+| `driverweaponstruct.weaponbone` | later | own | 2 | `NameProperty` | 1 | `stargatevehicle.PostNetBeginPlay` |
+| `driverweaponstruct.weaponbone` | lowest | own | 2 | `NameProperty` | 1 | `stargateweaponemplacement.PostNetBeginPlay` |
+| `driverweaponstruct.weaponclass` | later | own | 2 | `ClassProperty` | 2 | `stargateweaponemplacement.PostNetBeginPlay` |
+| `driverweaponstruct.weaponclass` | lowest | own | 2 | `ClassProperty` | 2 | `stargatevehicle.PostNetBeginPlay` |
+| `orientation.lookatactor` | lowest | order | 2 | `ObjectProperty` | 1 | `scenemanager.ResolveActorsInActions` |
+| `orientation.lookatactortag` | lowest | order | 2 | `NameProperty` | 2 | `scenemanager.ResolveActorsInActions` |
 <!-- END struct-records -->
 
 ## Stage 3, continued -- the int/float promotion is per operand, and the emitter casts the result (measured 2026-11-26)

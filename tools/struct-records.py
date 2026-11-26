@@ -14,6 +14,11 @@ it names, the record's own `(struct, member)` key is rebuilt from the export tab
 package named the lowest index or a later one), or **no record**. Which side the record is on is counted too, because
 an inherited struct is an import: 3,318 of the 5,128 nodes name a record this package does not export.
 
+A duplicate key is then read **by the class that nests the record** -- `own` (the body's own class), `ancestor`, or
+`order` (neither, so only the package's index order can decide) -- because that is the witness the emitter resolves
+a struct-typed property through. The `own` and `ancestor` nodes are the rule; `order` is the fallback, and naming it
+is what keeps the fallback from reading as a rule.
+
     python3 tools/struct-records.py --dump DUMP/System -o inventory
     python3 tools/struct-records.py --report
     python3 tools/struct-records.py --write-doc docs/COMPILER_FRONTEND.md
@@ -34,7 +39,8 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "inventory", "struct_field_records.csv")
-FIELDS = ["population", "verdict", "record_side", "record_kind", "candidates", "field", "nodes", "examples"]
+FIELDS = ["population", "verdict", "record_side", "record_kind", "candidates", "witness", "field", "nodes",
+          "examples"]
 DOC_A = ("<!-- BEGIN struct-records -->", "<!-- END struct-records -->")
 
 STRUCT = "struct field"
@@ -42,6 +48,12 @@ SINGLE = "single"
 LOWEST = "lowest"
 LATER = "later"
 ABSENT = "no record"
+# Which class the record the package named is nested in, for a key that holds more than one: the body's own
+# class (`own`), one of its ancestors (`ancestor`), or neither (`order` -- only the package's index order can
+# decide that one, which is the fallback `uscript-emit.py` falls back to).
+OWN = "own"
+ANCESTOR = "ancestor"
+ORDER = "order"
 
 _LOADED = {}
 
@@ -97,9 +109,45 @@ def _owner_exports(pkg, names, ref):
     return ""
 
 
+def _supers():
+    """`{class: superclass}` from the committed class table -- the census only needs the *ordering*, not packages."""
+    try:
+        emit = _load("uscript_emit", "uscript-emit.py")
+        out = {}
+        for (_p, c), (_p2, c2) in emit._chain().items():
+            if c and c2:
+                out.setdefault(c, c2)
+        return out
+    except Exception:                                            # noqa: BLE001 - the artifact must still be written
+        return {}
+
+
+def _witness(struct_owner, body_class, supers):
+    """`own` / `ancestor` / `order` for the record the package named, or `""` when the key holds one record.
+
+    The rule `uscript-emit.py` applies is the **declaring class of the struct-typed property**: its own nested
+    copy first, an inherited one after, and only a key neither names left to the package's order. This reads the
+    same question from the record side -- the struct export's own `outer` is the class that nests it -- so a
+    `later` node that is the reading class's own copy is a rule the emitter can keep, not an index it guessed.
+    """
+    if not struct_owner:
+        return "order"
+    c = body_class
+    if struct_owner == c:
+        return OWN
+    seen = set()
+    while c and c not in seen:
+        seen.add(c)
+        c = supers.get(c, "")
+        if c == struct_owner:
+            return ANCESTOR
+    return ORDER
+
+
 def census(dump, only=None):
-    """Walk every `StructMember` node and count `(verdict, side, kind, candidates)`."""
+    """Walk every `StructMember` node and count `(verdict, side, kind, candidates, witness)`."""
     dis = _dis()
+    supers = _supers()
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
     table = dis.Table()
@@ -118,6 +166,11 @@ def census(dump, only=None):
         kinds = {i + 1: pkg.class_name_of(e) for i, e in enumerate(pkg.exports)}
         names = {i + 1: pkg.name(e["name"]).lower() for i, e in enumerate(pkg.exports)}
         import_owners = _import_owners(pkg)
+        # The class that nests each struct export -- the witness a duplicate key is resolved by.
+        struct_outer = {}
+        for i, e in enumerate(pkg.exports):
+            if kinds.get(i + 1, "").endswith("Struct"):
+                struct_outer[i + 1] = _owner_exports(pkg, names, e["outer"])
         # The key the emitter's table uses, rebuilt from the records themselves: `(struct name, member)` -> the
         # records that answer it. An export's owner is its `outer`; an import's is the class its `package` field
         # names, because an import has no place in this package's export table.
@@ -138,14 +191,17 @@ def census(dump, only=None):
                 continue
             if sum(x["end"] - x["offset"] for x in nodes) != len(body):
                 continue
-            fname = "%s.%s" % (dis.owner_class(pkg.exports, kinds, names, e["outer"]), pkg.name(e["name"]))
+            bcls = dis.owner_class(pkg.exports, kinds, names, e["outer"])
+            fname = "%s.%s" % (bcls, pkg.name(e["name"]))
             for node in _walk(nodes):
                 if node["opcode"] != 0x36 or not node["operands"]:
                     continue
                 idx, _q = dis.read_index(node["operands"], 0)
+                nested_in = ""
                 if idx > 0 and idx - 1 < len(pkg.exports):
                     member = names.get(idx, "")
                     owner = _owner_exports(pkg, names, pkg.exports[idx - 1]["outer"])
+                    nested_in = struct_outer.get(pkg.exports[idx - 1]["outer"], "")
                     side, kind = "export", kinds.get(idx, "")
                 elif idx < 0 and -idx - 1 < len(pkg.imports):
                     member = str(pkg.name(pkg.imports[-idx - 1]["name"])).lower()
@@ -156,8 +212,9 @@ def census(dump, only=None):
                     side, kind = "?", ""
                 verdict, cands = classify(key.get((owner, member), []), idx)
                 kind = _norm_kind(kind)
+                wit = _witness(nested_in, bcls, supers) if verdict in (LOWEST, LATER) else ""
                 field = "%s.%s" % (owner, member) if verdict in (LOWEST, LATER) else ""
-                k = (verdict, side, kind, str(cands), field)
+                k = (verdict, side, kind, str(cands), wit, field)
                 counts[k] += 1
                 if fname not in examples[k] and len(examples[k]) < 3:
                     examples[k].append(fname)
@@ -165,9 +222,10 @@ def census(dump, only=None):
                 tally["nodes"] += 1
     rows = []
     for k, n in sorted(counts.items()):
-        verdict, side, kind, cands, field = k
+        verdict, side, kind, cands, wit, field = k
         rows.append({"population": STRUCT, "verdict": verdict, "record_side": side, "record_kind": kind,
-                     "candidates": cands, "field": field, "nodes": str(n), "examples": " ".join(examples[k])})
+                     "candidates": cands, "witness": wit, "field": field, "nodes": str(n),
+                     "examples": " ".join(examples[k])})
     return rows, tally
 
 
@@ -207,6 +265,10 @@ def totals(rows):
 
 def render(rows, census=None):
     by_verdict, by_side = totals(rows)
+    by_wit = collections.Counter()
+    for r in rows:
+        if r.get("witness"):
+            by_wit[r["witness"]] += int(r["nodes"])
     nodes = int(census["nodes"]) if census else sum(by_verdict.values())
     dup = by_verdict[LOWEST] + by_verdict[LATER]
     lines = []
@@ -219,13 +281,19 @@ def render(rows, census=None):
                      by_side["import"], nodes))
     if dup:
         lines.append("")
-        lines.append("| struct.field | verdict | candidates | record kind | nodes | examples |")
-        lines.append("|---|---|---|---|---|---|")
+        lines.append("Of the {} nodes a pair cannot decide on its own, **{}** name the copy nested in the body's "
+                     "**own** class (the declaring class the emitter now resolves), **{}** an inherited copy, and "
+                     "**{}** neither -- only that last group falls back to the package's index order.".format(
+                         dup, by_wit[OWN], by_wit[ANCESTOR], by_wit[ORDER]))
+        lines.append("")
+        lines.append("| struct.field | verdict | witness | candidates | record kind | nodes | examples |")
+        lines.append("|---|---|---|---|---|---|---|")
         for r in sorted(rows, key=lambda r: (r["field"], r["verdict"])):
             if r["verdict"] not in (LOWEST, LATER):
                 continue
-            lines.append("| `%s` | %s | %s | `%s` | %s | %s |"
-                         % (r["field"], r["verdict"], r["candidates"], r["record_kind"], r["nodes"],
+            lines.append("| `%s` | %s | %s | %s | `%s` | %s | %s |"
+                         % (r["field"], r["verdict"], r.get("witness") or "order", r["candidates"],
+                            r["record_kind"], r["nodes"],
                             ", ".join("`%s`" % x for x in r["examples"].split())))
     return "\n".join(lines)
 
@@ -253,20 +321,31 @@ def _self_test():
     assert _norm_kind("UNameProperty") == "NameProperty"
     assert _norm_kind("NameProperty") == "NameProperty"
     assert _norm_kind("") == ""
+    # The witness: the record the package named is the copy nested in the body's own class, an ancestor's, or
+    # neither. `supers` is the committed class table's ordering, so `own` is what `_declaring_class` resolves.
+    supers = {"stargateweaponemplacement": "stargatevehicle", "stargatevehicle": "svehicle"}
+    assert _witness("stargateweaponemplacement", "stargateweaponemplacement", supers) == OWN
+    assert _witness("stargatevehicle", "stargateweaponemplacement", supers) == ANCESTOR
+    assert _witness("scenemanager", "scenemanager", supers) == OWN
+    assert _witness("matobject", "scenemanager", supers) == ORDER
+    assert _witness("", "scenemanager", supers) == ORDER
     rows = [
         {"population": STRUCT, "verdict": SINGLE, "record_side": "export", "record_kind": "NameProperty",
-         "candidates": "1", "field": "", "nodes": "3", "examples": "Engine.u.a"},
+         "candidates": "1", "witness": "", "field": "", "nodes": "3", "examples": "Engine.u.a"},
         {"population": STRUCT, "verdict": LOWEST, "record_side": "export", "record_kind": "NameProperty",
-         "candidates": "2", "field": "orientation.lookatactortag", "nodes": "2", "examples": "Engine.u.i"},
+         "candidates": "2", "witness": ORDER, "field": "orientation.lookatactortag", "nodes": "2",
+         "examples": "Engine.u.i"},
         {"population": STRUCT, "verdict": LATER, "record_side": "export", "record_kind": "ClassProperty",
-         "candidates": "2", "field": "driverweaponstruct.weaponclass", "nodes": "1", "examples": "Stargame.u.x"},
+         "candidates": "2", "witness": OWN, "field": "driverweaponstruct.weaponclass", "nodes": "1",
+         "examples": "Stargame.u.x"},
         {"population": STRUCT, "verdict": SINGLE, "record_side": "import", "record_kind": "IntProperty",
-         "candidates": "1", "field": "", "nodes": "4", "examples": "Engine.u.b"},
+         "candidates": "1", "witness": "", "field": "", "nodes": "4", "examples": "Engine.u.b"},
     ]
     text = render(rows, {"nodes": "10"})
     for want in ("**10 `StructMember` nodes over 4 shapes**", "**7** name a field", "**3** name one of a key",
                  "**2** the lowest index and **1** a later one", "**4** of the 10 are records this package "
-                 "**imports**", "| `orientation.lookatactortag` | lowest | 2 |"):
+                 "**imports**", "**1** name the copy nested in the body's **own** class",
+                 "**2** neither", "| `orientation.lookatactortag` | lowest | order | 2 |"):
         if want not in text:
             print("FAIL struct-records: self-test render lacks %r" % want)
             return 1
@@ -279,7 +358,7 @@ def _self_test():
         for r in rows:
             w.writerow(r)
         w.writerow({"population": "(census)", "verdict": "", "record_side": "", "record_kind": "",
-                    "candidates": "", "field": "", "nodes": "10", "examples": "census"})
+                    "candidates": "", "witness": "", "field": "", "nodes": "10", "examples": "census"})
     back, cen = read_artifact(path)
     if sum(int(r["nodes"]) for r in back) != int(cen["nodes"]):
         print("FAIL struct-records: the rows do not add up to the census row")

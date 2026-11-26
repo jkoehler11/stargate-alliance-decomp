@@ -19,7 +19,7 @@ What the corpus settled, and what the emitter therefore encodes (measured 2026-1
 * **Small ints have their own tokens:** 0 -> `25`, 1 -> `26`, 2..255 -> `2c <byte>`, anything else `1d <int32>`.
 * **A string is NUL-terminated** (`1f 00` for ""), and a `name` literal is a *name-table index* (`21 <index>`), so
   the emitter has to encode the archive's compact index and join the package's own name table to do it.
-* **A vector literal is one token:** `23 <3 x f32>`.
+* **A vector literal is one token:** `23 <3 x f32>`, and a rotator literal is `22 <3 x i32>`.
 
 Anything outside the family is refused with the reason named (a variable operand needs the class's property table, an
 enum constant needs its declared values, a statement form the walk does not model), because a guess here is a wrong
@@ -1075,7 +1075,7 @@ def _is_literal(expr):
         if kind in ("number", "string", "quoted"):
             return True
         return kind in ("ident", "keyword") and val.lower() in ("true", "false", "none")
-    return bool(expr) and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect"
+    return bool(expr) and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() in ("vect", "rot")
 
 
 def _emit_var(name, env, want=""):
@@ -1613,6 +1613,12 @@ def _type_of(expr, env):
             return "class"
         if low == "vect":
             return "vector"
+        if low == "rot":
+            # `rot(pitch, yaw, roll)` is the compiler's own struct literal for a rotator, exactly as `vect` is
+            # for a vector: the constant components fold into `22` + three i32, so the site's own type is a
+            # rotator and not a call's return type (`Spawn(..., rot(0,0,0))` in a `rotator` slot converts to
+            # nothing).
+            return "rotator"
         for cls in env["order"]:
             hit = (env.get("rets") or {}).get((cls, low))
             if hit:
@@ -2210,6 +2216,61 @@ def _struct_of(expr, env):
     return _type_of(expr, env).lower()
 
 
+def _declaring_class(expr, env):
+    """The class that declares the property a struct-typed receiver comes from, or `""` when the walk cannot say.
+
+    A struct name is only unique inside the class that declares it: `StargateGame.u` nests one
+    `DriverWeaponStruct` in `StargateVehicle` and another in `StargateWeaponEmplacement`, and each class's
+    `PostNetBeginPlay` reads **its own** copy's `WeaponClass`/`WeaponBone`. The receiver is the property those
+    copies are held in (`DriverWeapons`, re-declared by the subclass with its own struct type), so the declaring
+    class is what picks the copy -- the package's index order cannot, because the two copies' fields are not in
+    the same relative order (4360/6597 against 4692/5974).
+
+    Only a bare name, or a name read as an array element, is answered: a chain's member is `_member_record`'s
+    record and its declaring class would be that call's answer, which this rule does not claim. A **local** of a
+    struct type is declared in the body's own class scope, so its declaring class is the body's.
+    """
+    expr = _strip_parens(expr)
+    at = _element_at(expr)
+    if at is not None:
+        expr = _strip_parens(expr[:at])
+    if len(expr) != 1 or expr[0][0] not in ("ident", "keyword"):
+        return ""
+    nm = expr[0][1].lower()
+    scope = env.get("scope") or {}
+    if nm in scope.get("locals", {}):
+        return (scope.get("cls") or "").lower()
+    return (scope.get("prop_cls") or {}).get(nm, "")
+
+
+def _struct_record(struct, member, decl_cls, env):
+    """The record `(struct, member)` names for **this** body: the declaring class's own copy first.
+
+    `struct_cands` holds every record the pair names, in the package's export order (imports after them). A key
+    with one record needs no choice. A key with several is resolved by walking the **declaring class's** chain --
+    nearest ancestor first, so a subclass's own nested copy wins over the parent's -- and a pair that chain does
+    not carry falls back to the package's order, which is the `lowest` index the census counts.
+
+    The body's own class is deliberately **not** a witness: `SceneManager.ResolveActorsInActions` reads
+    `subActOrient.CamOrientation.LookAtActorTag` where the struct-typed property is declared on
+    `SubActionOrientation`, which nests no `Orientation` of its own, and the package names the **MatObject**
+    copy (4800) -- every class's search falls back to the package order there, so the body's class must not
+    vote. That body is the control for this rule and it stays byte-identical.
+    """
+    scope = env.get("scope") or {}
+    cands = (scope.get("struct_cands") or {}).get((struct, member))
+    if not cands:
+        return None
+    if len(cands) == 1:
+        return cands[0][:2]
+    if decl_cls:
+        for _p, anc in _ancestors(scope.get("chain") or {}, scope.get("pack") or "", decl_cls):
+            for c in cands:
+                if c[2] == anc:
+                    return c[:2]
+    return cands[0][:2]
+
+
 def _struct_member(obj, nm, env):
     """`(INSTANCE_TOKEN, index, kind, declared)` for `nm` on the struct the receiver is declared as, or None.
 
@@ -2220,7 +2281,7 @@ def _struct_member(obj, nm, env):
     name = _struct_of(obj, env)
     if not name:
         return None
-    hit = ((env.get("scope") or {}).get("struct_props") or {}).get((name, nm))
+    hit = _struct_record(name, nm, _declaring_class(obj, env), env)
     if hit is None:
         return None
     index, kind = hit
@@ -3042,6 +3103,9 @@ def emit_expr(expr, rettype, env, element_dim=0):
             return _emit_element(expr[:at], expr[at + 1:-1], rettype, env)
         if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
+        if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "rot":
+            # `rot(pitch, yaw, roll)` is a struct literal the compiler folds, like `vect`: `22` and three i32.
+            return _emit_rotator(expr), "rotator"
         if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
                 and expr[1][0] == "quoted"):
             # `class'Pawn'` -- the class name in single quotes -- is an object reference and not a name constant;
@@ -3215,6 +3279,35 @@ def _emit_vector(expr):
     if len(parts) != 3 or any(len(p) != 1 or p[0][0] != "number" for p in parts):
         raise Refused("a vector literal that is not three numeric components")
     return bytes([0x23]) + b"".join(struct.pack("<f", float(_number(p[0][1]))) for p in parts)
+
+
+def _emit_rotator(expr):
+    """`rot(pitch, yaw, roll)` -> `22` and three little-endian **i32** -- measured, not assumed.
+
+    `PhysicsVolume.PlayExitSplash` ships `Spawn(ExitActor,,, ... ,rot(16384,0,0))` as
+    `... 22 00 40 00 00 | 00 00 00 00 | 00 00 00 00`, so the components are whole rotator units in signed
+    dwords rather than the f32 `vect` writes; `UnrealPawn`'s `Rot(-16384,0,0)` is the same field, two's
+    complement. The components are compile-time constants -- an expression inside `rot(...)` is a struct
+    literal the compiler cannot fold, and this walk refuses it rather than writing the node it guesses at.
+    """
+    parts = _split_commas(expr[2:-1]) if expr[1] == ("op", "(") and expr[-1] == ("op", ")") else []
+    if len(parts) != 3:
+        raise Refused("a rotation literal that is not three numeric components")
+    out = bytearray([0x22])
+    for p in parts:
+        sign = 1
+        if len(p) == 2 and p[0] == ("op", "-"):
+            # `rot(-16384,0,0)` lexes as an operator and a number, as a negative literal does everywhere else.
+            sign, p = -1, p[1:]
+        if len(p) != 1 or p[0][0] != "number":
+            raise Refused("a rotation literal that is not three numeric components")
+        value = _number(p[0][1])
+        if isinstance(value, float):
+            if not value.is_integer():
+                raise Refused("a rotation literal whose component is not a whole rotator unit")
+            value = int(value)
+        out += struct.pack("<i", sign * int(value))
+    return bytes(out)
 
 
 def _split_commas(tokens):
@@ -4447,6 +4540,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     props, funcs, imports, classes, _import_owners, _import_pairs = tables
     scope = {"props": {}, "locals": {}, "funcs": {}, "classrefs": {}, "props_all": props, "chain": chain,
              "pack": pack, "cls": cls.lower(),
+             # the class that declares each property this body reads: `_declaring_class` answers a struct-typed
+             # receiver's own copy through it (two `DriverWeaponStruct` copies, one per class)
+             "prop_cls": {},
              # a property the package exports once, on a class outside this body's chain, is read through `Outer`
              "outer_props": set(),
              # every name that fallback picked, whatever its type: a `within` call's argument reads it through
@@ -4527,17 +4623,30 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     # is import 21 of AmbientCreatures (`36 95`, owner `Vector`). The member's *name* alone is ambiguous -- Engine
     # declares `z` on half a dozen classes -- so the record is keyed by the (struct, member) pair the source spells,
     # which is the one a receiver's declared type names.
-    struct_props = {}
+    struct_cands = {}
+    # A struct's own **outer** is the class that declares it, and that is what makes a duplicate name resolvable:
+    # `StargateGame.u` exports two `DriverWeaponStruct`s, one nested in `StargateVehicle` and one in
+    # `StargateWeaponEmplacement`, so the member records' `(struct, member)` pairs collide while their declaring
+    # classes differ. Keying the candidate on the struct's *name* alone would have lost exactly that.
+    struct_outer = {}
+    for i, e in enumerate(pkg.exports):
+        if kinds.get(i + 1) in STRUCT_KINDS:
+            struct_outer[i + 1] = names.get(e["outer"], "").lower()
     for i, e in enumerate(pkg.exports):
         outer = e["outer"]
         if outer > 0 and kinds.get(outer) in STRUCT_KINDS and kinds.get(i + 1) in PROPERTY_CLASSES:
-            struct_props.setdefault((names.get(outer, "").lower(), names.get(i + 1, "").lower()), (i + 1, kinds[i + 1]))
+            key = (names.get(outer, "").lower(), names.get(i + 1, "").lower())
+            struct_cands.setdefault(key, []).append((i + 1, kinds[i + 1], struct_outer.get(outer, "")))
     for nm, cands in imports.items():
         for idx, kind in cands:
             owner = _import_owners.get(idx)
             if owner and kind in PROPERTY_CLASSES:
-                struct_props.setdefault((owner, nm), (idx, kind))
-    scope["struct_props"] = struct_props
+                struct_cands.setdefault((owner, nm), []).append((idx, kind, ""))
+    # The key, with **every** record it holds and the class that exports each one. Nine nodes of the corpus's
+    # 5,128 are ambiguous -- `Engine.u` nests `Orientation` in both `SceneManager` and `MatObject`, and the two
+    # `DriverWeaponStruct` copies in `StargateGame.u` are nested one per class -- so the pair alone cannot decide
+    # them; `_struct_record` asks the declaring class first (see `_declaring_class`).
+    scope["struct_cands"] = struct_cands
     # The **struct itself** as the compiler names it: a `StructCmpEq`/`StructCmpNe` operand is an object reference
     # to the struct record (`0x33 8c` for `color` is import 12 of UWindow.u), so the compare needs the same kind of
     # table `classrefs` is for a cast. An export wins, as it does there, because a package re-declaring a struct is
@@ -4567,6 +4676,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             imp = _by_owner([c for c in imports.get(nm, []) if c[1] in PROPERTY_CLASSES])
             if len(imp) == 1:
                 scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
+                # The import's own `package` field is the class that declares it -- the declaring class a
+                # struct-typed receiver is resolved through (`_declaring_class`).
+                scope["prop_cls"][nm] = (_import_owners.get(imp[0][0]) or "").lower()
                 if within_chain and (_import_owners.get(imp[0][0]) or "") in within_chain \
                         and (_import_owners.get(imp[0][0]) or "") not in order:
                     scope["within_props"].add(nm)
@@ -4596,6 +4708,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                     scope["outer_props"].add(nm)
         if picked is not None:
             scope["props"][nm] = (INSTANCE_TOKEN, picked[0], PROP_TYPE.get(picked[2], ""))
+            # The class whose record answered -- the declaring class of the property, which is what a
+            # struct-typed receiver's own copy is nested in.
+            scope["prop_cls"][nm] = (picked[1] or "").lower()
             if within_chain and (picked[1] or "") in within_chain and (picked[1] or "") not in order:
                 scope["within_props"].add(nm)
     # A property this package only *imports* -- an ancestor in another package declares it and no class here
@@ -4609,6 +4724,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
         imp = _by_owner([c for c in cands if c[1] in PROPERTY_CLASSES])
         if len(imp) == 1:
             scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
+            scope["prop_cls"][nm] = (_import_owners.get(imp[0][0]) or "").lower()
     # A `delegate` is *two* records: a DelegateProperty named `__X__delegate` and a Function named `X`, so the call
     # `OnChange(Self)` is a `DelegateFunction` naming **both** -- `43 33 1a 17 16` is export 51
     # (`GUI.GUIComponent.__OnChange__Delegate`) and name index 26 (`OnChange`), which is why the base name has to be
@@ -5242,6 +5358,10 @@ function OpNoSlot() { return Health & 2.0; }
 function bool NoIndexOp() { return Health ClockwiseFrom Health; }
 function BoolMember() { return Target.bFlag; }
 function AsRotator() { return rotator(SquadDir); }
+function rotator RotZero() { return rot(0,0,0); }
+function rotator RotPitch() { return rot(16384,0,0); }
+function rotator RotNegative() { return Rot(-16384,0,0); }
+function rotator RotExpression() { return rot(Slot,0,0); }
 function string ConcatOp() { return Caption $ Suffix; }
 function string AtOp() { return Caption @ Suffix; }
 function string DefaultText() { return default.Caption; }
@@ -5467,6 +5587,11 @@ WANT = {
     "andint": "049c393a0064092c0216040b47",        # return Count & 2; -- And_IntInt, ByteToInt, IntConstByte
     "boolmember": "04190163090600042d012f040b47",  # return Target.bFlag; -- Context skip 6, size 4, BoolVariable
     "asrotator": "043950016c09040b47",             # return rotator(SquadDir); -- a Vector property: VectorToRotator
+    # `rot(pitch, yaw, roll)` is the compiler's own rotator literal -- `22` and three **i32** (`22 00 40 00 00`
+    # is `rot(16384,0,0)`, measured on `PhysicsVolume.PlayExitSplash`), where `vect` writes f32.
+    "rotzero": "0422000000000000000000000000040b47",
+    "rotpitch": "0422004000000000000000000000040b47",
+    "rotnegative": "042200c0ffff0000000000000000040b47",
     "concatop": "04700105010616040b47",            # return Caption $ Suffix; -- Concat_StringString (0x70), operand, operand, 16
     "atop": "04a80105010616040b47",                # return Caption @ Suffix; -- At_StringString is token 168, its own opcode
     "defaulttext": "040205040b47",                 # return default.Caption; -- DefaultVariable (0x02) + the record's index
@@ -5603,7 +5728,7 @@ WANT = {
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
           "castnoslot", "opnoslot", "incfloat", "callunknown", "acountunknown", "badclass",
-          "badstatic", "eachnested", "callglobalnative", "badenummember")
+          "badstatic", "eachnested", "callglobalnative", "badenummember", "rotexpression")
 
 
 def check(args):
@@ -5909,8 +6034,8 @@ def check(args):
     # `81 2d 36 52 43 01 5a 08 16` (`Weapon.AdjustAim`), `SimAnim.bAnimLoop = true;` writes `14 2d 36 ...`
     # (`BlueFlag.PostBeginPlay`), and the bare `36` was the whole of four differences.
     senv = dict(env)
-    senv["scope"] = dict(SCOPE, struct_props={("vector", "bhit"): (77, "BoolProperty"),
-                                              ("vector", "x"): (78, "FloatProperty")})
+    senv["scope"] = dict(SCOPE, struct_cands={("vector", "bhit"): [(77, "BoolProperty", "")],
+                                                ("vector", "x"): [(78, "FloatProperty", "")]})
     got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "bHit")], "bool", senv)
     want = b"\x2d\x36" + write_index(77) + b"\x01" + write_index(620)
     if got != want:
@@ -5926,7 +6051,7 @@ def check(args):
     # front of the field disappeared with it. The fallback is pinned too: a name the struct does not hold is
     # answered from the class chain, which is what `SquadDir.Health` must keep doing.
     sh_env = dict(senv)
-    sh_env["scope"] = dict(senv["scope"], struct_props={("vector", "x"): (31, "IntProperty")},
+    sh_env["scope"] = dict(senv["scope"], struct_cands={("vector", "x"): [(31, "IntProperty", "")]},
                            props=dict(SCOPE["props"], x=(0x01, 478, "float")))
     got, _m = emit_expr([("ident", "SquadDir"), ("op", "."), ("ident", "X")], "int", sh_env)
     want = b"\x36" + write_index(31) + b"\x01" + write_index(620)          # `01` = InstanceVariable: `SquadDir` is a property
@@ -5940,6 +6065,34 @@ def check(args):
         return 1
     if _prop_by_name("health", sh_env) is None:
         print("FAIL uscript-emit: the class chain no longer answers a property the struct lacks")
+        return 1
+    # P6b: a struct name the package declares **twice** is resolved by the class that declares the struct-typed
+    # property. `StargateGame.u` nests one `DriverWeaponStruct` in each of `StargateVehicle` (whose `WeaponClass`
+    # is 4360) and `StargateWeaponEmplacement` (4692); each class's own copy wins, and a subclass that re-declares
+    # the property with its own struct type reads the *child's* record, which the package's index order cannot
+    # give it. The control is the same pair with no declaring class: it must fall back to the first record.
+    dc_env = dict(env)
+    dc_env["scope"] = dict(SCOPE, chain={("p", "stargateweaponemplacement"): ("p", "stargatevehicle"),
+                                         ("p", "stargatevehicle"): ("", "")},
+                           pack="p", cls="stargateweaponemplacement",
+                           struct_cands={("driverweaponstruct", "weaponclass"): [
+                               (4360, "ClassProperty", "stargatevehicle"),
+                               (4692, "ClassProperty", "stargateweaponemplacement")]},
+                           prop_cls={"driverweapons": "stargateweaponemplacement"})
+    got = _struct_record("driverweaponstruct", "weaponclass",
+                         _declaring_class([("ident", "DriverWeapons")], dc_env), dc_env)
+    if got != (4692, "ClassProperty"):
+        print("FAIL uscript-emit: the subclass's own struct copy answers %r, expected 4692" % (got,))
+        return 1
+    # The control: no declaring class means no witness, and the package's order decides -- the `lowest` index
+    # `tools/struct-records.py` counts. `SceneManager.ResolveActorsInActions` is this case in the corpus: its
+    # struct-typed property is declared on a class that nests no copy, and the package names the *other* class's
+    # record, so a body-class witness would have made that body differ.
+    fc_env = dict(dc_env, scope=dict(dc_env["scope"], cls="stargateweaponemplacement", prop_cls={}))
+    got = _struct_record("driverweaponstruct", "weaponclass",
+                         _declaring_class([("ident", "DriverWeapons")], fc_env), fc_env)
+    if got != (4360, "ClassProperty"):
+        print("FAIL uscript-emit: no witness answers %r, expected the package's first record" % (got,))
         return 1
     # P8b: a `class<Z>( )` cast **inside** a larger expression is a guarded span, not two comparisons. The
     # loosest operator of `1.2 * class<Weapon>(InventoryType).Default.AIRating` is the `*`, and the `>` inside

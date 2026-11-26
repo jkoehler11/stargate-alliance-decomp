@@ -18792,3 +18792,23 @@ sequence.
   no return type, every node writing 4 -- and giving the emitter that rule makes all 84 emit and differ at the
   iterator's own operand, so the next instrument is the `foreach` head's node. Files: `tools/uscript-emit.py`,
   `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `tools/context-size.py`, `docs/COMPILER_FRONTEND.md`.
+
+- Front end, 2026-11-25d: **a rotator literal is `22` + three i32, and a struct field's record is the declaring
+  class's copy.** `rot(pitch, yaw, roll)` is the compiler's own rotator literal -- `PhysicsVolume.PlayExitSplash`
+  ships `rot(16384,0,0)` as `22 00 40 00 00 | 00 00 00 00 | 00 00 00 00`, signed dwords in rotator units where
+  `vect` writes f32 -- and the walk had no producer for it, so every body that spawned with one refused as a call to
+  a name the class chain does not declare. `_emit_rotator` writes it, refuses a non-constant component (four bodies
+  name that refusal), and `--check` holds three constants plus the refusal. `struct_cands` holds every record a
+  `(struct, member)` pair names with the class that nests it, and `_struct_record` resolves through the **declaring
+  class of the struct-typed property** (`_declaring_class`): `StargateVehicle.PostNetBeginPlay` and
+  `StargateWeaponEmplacement.PostNetBeginPlay` each read their own `DriverWeaponStruct` copy and now emit
+  byte-identically. The body's own class is not a witness -- `SceneManager.ResolveActorsInActions` reads a property
+  declared on `SubActionOrientation`, which nests no `Orientation`, and the package names the *MatObject* copy
+  (4800), so a body-class vote made that body differ; it is the rule's control and it is identical again.
+  `tools/struct-records.py` gains a `witness` column (`own` 6 / `ancestor` 0 / `order` 3) so the rule's reach is
+  quoted rather than assumed. Result: 10,740 -> **10,764 modelled, every one byte-identical, 0 differ**; the differ
+  census is 86 -> 87 bodies, the one addition (`BotSG.AssignAmbushPoint`, a `context skip`) being a body that now
+  emits where `rot` refused it. U42 is answered (`docs/UNKNOWNS.md`), with the chain-receiver limit named. Files:
+  `tools/uscript-emit.py`, `tools/struct-records.py`, `inventory/uscript_emit.csv`,
+  `inventory/emit_differ.csv`, `inventory/struct_field_records.csv`, `docs/COMPILER_FRONTEND.md`,
+  `docs/UNKNOWNS.md`.

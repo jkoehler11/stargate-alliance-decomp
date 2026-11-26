@@ -1,28 +1,28 @@
-population,verdict,record_side,record_kind,candidates,field,nodes,examples
-struct field,later,export,ClassProperty,2,driverweaponstruct.weaponclass,2,stargateweaponemplacement.PostNetBeginPlay
-struct field,later,export,NameProperty,2,driverweaponstruct.weaponbone,1,stargatevehicle.PostNetBeginPlay
-struct field,lowest,export,ClassProperty,2,driverweaponstruct.weaponclass,2,stargatevehicle.PostNetBeginPlay
-struct field,lowest,export,NameProperty,2,driverweaponstruct.weaponbone,1,stargateweaponemplacement.PostNetBeginPlay
-struct field,lowest,export,NameProperty,2,orientation.lookatactortag,2,scenemanager.ResolveActorsInActions
-struct field,lowest,export,ObjectProperty,2,orientation.lookatactor,1,scenemanager.ResolveActorsInActions
-struct field,single,export,ArrayProperty,1,,125,streambase.ParsePath imusicactor.PostNetBeginPlay imusicactor.TransitionToSameState
-struct field,single,export,BoolProperty,1,,134,imusicactor.PostNetBeginPlay imusicactor.TransitionToSameState imusicactor.ChooseStartSegment
-struct field,single,export,ByteProperty,1,,64,playercontroller.ServerMove announcerqueuemanager.IsQueueingSwitch controller.BeginState
-struct field,single,export,ClassProperty,1,,11,controller.WarnTarget playercontroller.AdjustAim weapon.AdjustAim
-struct field,single,export,FloatProperty,1,,99,playercontroller.ServerMove controller.InstantWarnTarget controller.WarnTarget
-struct field,single,export,IntProperty,1,,652,imusicactor.TransitionToSameState imusicactor.RecurseTransitionsFromTo imusicactor.GetShortestTransitionPath
-struct field,single,export,NameProperty,1,,79,playercontroller.ServerMove announcerqueuemanager.CanFindSoundInQueue pawn.BindBoneToSurface
-struct field,single,export,ObjectProperty,1,,227,playercontroller.ServerMove statsquery.SetUser playerreplicationinfo.UpdatePlayerLocation
-struct field,single,export,StrProperty,1,,333,streambase.ParsePath voicechatreplicationinfo.GetCodecInfo voicechatreplicationinfo.GetInstalledCodecs
-struct field,single,export,StructProperty,1,,77,playercontroller.ServerMove playercontroller.SendClientAdjustment hud.ClearMessage
-struct field,single,import,ArrayProperty,1,,48,guicontroller.ClearRungCache guicontroller.ClearLadderCache guicontroller.LadderQueryComplete
-struct field,single,import,BoolProperty,1,,12,botenemy.AdjustAim stargateplayer.AdjustAim blueflag.PostBeginPlay
-struct field,single,import,ByteProperty,1,,203,actor.DisplayDebug canvas.SetDrawColor playerreplicationinfo.PropagateUserData
-struct field,single,import,ClassProperty,1,,34,botenemy.AdjustAim goauldconsolehud.DrawHUD goauldconsolehud.Timer
-struct field,single,import,FloatProperty,1,,1784,herdanimal.Wander herdanimal.NotifyBump herdanimal.PickDestination
-struct field,single,import,IntProperty,1,,917,fishbase.Landed fishbase.Timer transientambientcreature.SpawnRotation
-struct field,single,import,NameProperty,1,,9,guicontroller.FindRungDataIndex guicontroller.GenerateFakeRungData guicontroller.ShowLadderData
-struct field,single,import,ObjectProperty,1,,48,transientambientcreature.FindSpawnLocation electrifiedobject.CausePainTo deathmatch.RatePlayerStart
-struct field,single,import,StrProperty,1,,58,playerreplicationinfo.PropagateUserData playerstatcache.EndQuery playerstatcache.StartQuery
-struct field,single,import,StructProperty,1,,205,pawn.IsHeadShot surfaceinfo.EmitWheelEffect surfaceinfo.BulletImpact
-(census),,,,,,5128,census
+population,verdict,record_side,record_kind,candidates,witness,field,nodes,examples
+struct field,later,export,ClassProperty,2,own,driverweaponstruct.weaponclass,2,stargateweaponemplacement.PostNetBeginPlay
+struct field,later,export,NameProperty,2,own,driverweaponstruct.weaponbone,1,stargatevehicle.PostNetBeginPlay
+struct field,lowest,export,ClassProperty,2,own,driverweaponstruct.weaponclass,2,stargatevehicle.PostNetBeginPlay
+struct field,lowest,export,NameProperty,2,order,orientation.lookatactortag,2,scenemanager.ResolveActorsInActions
+struct field,lowest,export,NameProperty,2,own,driverweaponstruct.weaponbone,1,stargateweaponemplacement.PostNetBeginPlay
+struct field,lowest,export,ObjectProperty,2,order,orientation.lookatactor,1,scenemanager.ResolveActorsInActions
+struct field,single,export,ArrayProperty,1,,,125,streambase.ParsePath imusicactor.PostNetBeginPlay imusicactor.TransitionToSameState
+struct field,single,export,BoolProperty,1,,,134,imusicactor.PostNetBeginPlay imusicactor.TransitionToSameState imusicactor.ChooseStartSegment
+struct field,single,export,ByteProperty,1,,,64,playercontroller.ServerMove announcerqueuemanager.IsQueueingSwitch controller.BeginState
+struct field,single,export,ClassProperty,1,,,11,controller.WarnTarget playercontroller.AdjustAim weapon.AdjustAim
+struct field,single,export,FloatProperty,1,,,99,playercontroller.ServerMove controller.InstantWarnTarget controller.WarnTarget
+struct field,single,export,IntProperty,1,,,652,imusicactor.TransitionToSameState imusicactor.RecurseTransitionsFromTo imusicactor.GetShortestTransitionPath
+struct field,single,export,NameProperty,1,,,79,playercontroller.ServerMove announcerqueuemanager.CanFindSoundInQueue pawn.BindBoneToSurface
+struct field,single,export,ObjectProperty,1,,,227,playercontroller.ServerMove statsquery.SetUser playerreplicationinfo.UpdatePlayerLocation
+struct field,single,export,StrProperty,1,,,333,streambase.ParsePath voicechatreplicationinfo.GetCodecInfo voicechatreplicationinfo.GetInstalledCodecs
+struct field,single,export,StructProperty,1,,,77,playercontroller.ServerMove playercontroller.SendClientAdjustment hud.ClearMessage
+struct field,single,import,ArrayProperty,1,,,48,guicontroller.ClearRungCache guicontroller.ClearLadderCache guicontroller.LadderQueryComplete
+struct field,single,import,BoolProperty,1,,,12,botenemy.AdjustAim stargateplayer.AdjustAim blueflag.PostBeginPlay
+struct field,single,import,ByteProperty,1,,,203,actor.DisplayDebug canvas.SetDrawColor playerreplicationinfo.PropagateUserData
+struct field,single,import,ClassProperty,1,,,34,botenemy.AdjustAim goauldconsolehud.DrawHUD goauldconsolehud.Timer
+struct field,single,import,FloatProperty,1,,,1784,herdanimal.Wander herdanimal.NotifyBump herdanimal.PickDestination
+struct field,single,import,IntProperty,1,,,917,fishbase.Landed fishbase.Timer transientambientcreature.SpawnRotation
+struct field,single,import,NameProperty,1,,,9,guicontroller.FindRungDataIndex guicontroller.GenerateFakeRungData guicontroller.ShowLadderData
+struct field,single,import,ObjectProperty,1,,,48,transientambientcreature.FindSpawnLocation electrifiedobject.CausePainTo deathmatch.RatePlayerStart
+struct field,single,import,StrProperty,1,,,58,playerreplicationinfo.PropagateUserData playerstatcache.EndQuery playerstatcache.StartQuery
+struct field,single,import,StructProperty,1,,,205,pawn.IsHeadShot surfaceinfo.EmitWheelEffect surfaceinfo.BulletImpact
+(census),,,,,,,5128,census

@@ -1,6 +1,6 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,86,10740 identical
-context skip,Context,ours shorter,,1,SGMenuInteraction.Initialized
+(census),,,,87,10764 identical
+context skip,Context,ours shorter,,2,BotSG.AssignAmbushPoint SGMenuInteraction.Initialized
 context skip,Context,same length,,2,CheatManager.Fly CheatManager.Ghost
 jump distance,Jump,ours shorter,yes,7,Pawn.BaseChange Decoration.BaseChange BotSG.PickDestination
 jump distance,JumpIfNot,ours longer,yes,10,PlayerController.LongClientAdjustPosition PlayerController.PlayerMove PlayerController.UpdateRotation
