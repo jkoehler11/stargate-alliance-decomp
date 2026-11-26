@@ -1237,6 +1237,23 @@ def _array_element(friendly):
     return words[-1].lower() if words else ""
 
 
+def _element_declared(declared, friendly, env):
+    """The element type of a **static** array: the declared *class* for an object element, the kind otherwise.
+
+    `var TransportRingMesh MyRings[NUM_RINGS]` is an `ObjectProperty`, so the record's kind spells `object` while
+    `inventory/class_properties.csv`'s `friendly_type` spells the class. Answering the kind typed `MyRings[i]` on
+    `Object`, whose own chain declares no `Destroy`: the callee's declared return was then empty and
+    `TransportRings.Destroyed` wrote a `Context` size byte of **0** where the package writes Actor's `bool` (**4**)
+    -- the last `context size` row in `inventory/emit_differ.csv`. `class<Z>` unwraps to `Z`, the rule `_class_of`
+    already carries for a class reference, and a word the class table does not carry leaves the kind in place.
+    """
+    if (declared or "").lower() != "object":
+        return declared
+    word = (friendly or "").strip()
+    named = (_class_ref_class(word) or word).lower()
+    return named if named in (env.get("class_names") or set()) else declared
+
+
 def _element_type(head, env):
     """`(token, element type)` for the array `head` names, or `(None, "")` when it is not an array read.
 
@@ -1271,7 +1288,7 @@ def _element_type(head, env):
         declared = _declared_type(nm, env)
         if declared in ("", "array"):
             return None, ""
-        return 0x1A, declared
+        return 0x1A, _element_declared(declared, _friendly(nm, env), env)
     at = _dot_at(head)
     if at is not None and len(head[at + 1:]) == 1 and head[at + 1][0] in ("ident", "keyword"):
         # The member's own name is the token's **text** -- the first version read `head[at + 1][0][1]`, the
@@ -1300,7 +1317,7 @@ def _element_type(head, env):
         kind, friendly = hit[2], (hit[3] if len(hit) > 3 else "") or ""
         if kind == "array":
             return 0x10, _array_element(friendly)
-        declared = friendly if kind == "struct" else kind
+        declared = friendly if kind == "struct" else _element_declared(kind, friendly, env)
         return (0x1A, declared) if declared else (None, "")
     if _element_at(head) is not None:
         # a nested element (`A[B[i]][j]`): its elements are the innermost array's
@@ -1444,11 +1461,23 @@ def _enum_byte(t, env):
     **both** operands wrapped in `39 3a` (`ByteToInt`) -- 182 bytes against the 178 a pair-only reading wrote, and
     the missing four were the two casts -- and an enum *constant* already answers `byte` (`_emit_enum`).
 
+    A declaration may spell the enum **qualified by the class that declares it** -- `StargateVoicePack`'s
+    `function Actor.EMsgTone GetVoiceTone()` -- and the value is still the byte: the qualified spelling read as an
+    unknown type, which `AIMSG_Stargate.AutoBuildTone` (`GetSuitableMsgTone()`) and
+    `SGVoicePackExtended.BuildCustomVoiceDesc` (`GetVoiceCustomize()`) each refused on.
+
     Kept in one place because three producers report a declared type -- a property/local/parameter record, a
     call's return type, and a callee's -- and a pair looked up on the name alone writes a body four bytes short,
     which is a silent difference rather than a refusal.
     """
-    if t and env and t.lower() in (env.get("enum_names") or set()):
+    if not (t and env):
+        return t
+    low = t.lower()
+    names = env.get("enum_names") or set()
+    if low in names:
+        return "byte"
+    head, dot, tail = low.partition(".")
+    if dot and tail in names and head in (env.get("class_names") or set()):
         return "byte"
     return t
 
@@ -2620,11 +2649,17 @@ def _emit_member_call(obj, member, rettype, env):
     # (`StargatePawn.PlayWaiting`, `SquadAISG.AssignSquadResponsibility`, ...) -- while the third `_enum_byte`
     # producer (a callee's declared return) already answered `byte` for the same type.
     rtype = _enum_byte(rtype, env)
-    if rtype not in RETURN_SIZE:
+    if rtype in RETURN_SIZE:
+        size = RETURN_SIZE[rtype]
+    else:
+        # Name the callee and the receiver: this is the population `tools/call-member-ret.py` measures, and a
+        # residue row without them cannot be joined to the node the package wrote.
+        _note(family="call-member-ret", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
+              receiver=cls)
         raise Refused("a call member returning %s, whose value size this walk does not carry"
                       % (rtype or "an unknown type"))
     node = (bytes([CLASS_CONTEXT_TOKEN if stat_at is not None else CONTEXT_TOKEN])
-            + objb + struct.pack("<H", skip) + bytes([RETURN_SIZE[rtype]]) + memb)
+            + objb + struct.pack("<H", skip) + bytes([size]) + memb)
     return _converted(node, rtype, rettype), "class-member-call" if stat_at is not None else "call-member"
 
 
@@ -3802,9 +3837,15 @@ def _compound(stmt, env):
 
 
 def _value_size(rtype, env):
-    """The size byte a `Context` writes for a call's **value**: 0 for a void call, 4 for an object."""
+    """The size byte a `Context` writes for a call's **value**: 0 for a void call, 4 for an object.
+
+    The **enum** rule is applied here as well as in `_emit_member_call`: a call statement's value is discarded, but
+    the compiler still writes the width of what it yields, and a callee declared to return `Actor.EMsgTone` yields
+    a byte. Read it through the one producer (`_enum_byte`) rather than as a second table.
+    """
     if not rtype:
         return 0
+    rtype = _enum_byte((rtype or "").lower(), env)
     if rtype in (env.get("class_names") or set()):
         return 4
     if rtype in RETURN_SIZE:

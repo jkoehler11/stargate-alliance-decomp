@@ -18696,3 +18696,15 @@ sequence.
   receiver as the class `object` -- measured, not fixed), the 110 `a call member returning an unknown type` rows, the
   43 jump-distance bodies. Files: `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`,
   `inventory/context_size.csv`, `tools/context-size.py`, `docs/COMPILER_FRONTEND.md`.
+
+- Front end, 2026-11-25c: a static array's element is the declared **class**, not the record kind
+  (`_element_declared`: `var TransportRingMesh MyRings[NUM_RINGS]` typed `MyRings[i].Destroy()` on `Object`, whose
+  own chain declares no `Destroy`, so the `Context` size byte was 0 where the package writes Actor's `bool`, 4), and
+  an enum spelled `Class.Enum` is still a byte (`_enum_byte`, and `_value_size` reads the one enum producer).
+  10,442 -> 10,563 modelled, every one byte-identical, none lost; the last `context size` differ row closes
+  (`TransportRings.Destroyed`) and the differ census is 91 -> 92, the two new rows being bodies that used to refuse
+  earlier and now emit short at a jump. Measured and **not** shipped: the 84 remaining `a call member returning an
+  unknown type` rows are the ten `iterator` functions (`AllActors` 36 nodes, `DynamicActors` 30, ...) -- declared with
+  no return type, every node writing 4 -- and giving the emitter that rule makes all 84 emit and differ at the
+  iterator's own operand, so the next instrument is the `foreach` head's node. Files: `tools/uscript-emit.py`,
+  `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `tools/context-size.py`, `docs/COMPILER_FRONTEND.md`.

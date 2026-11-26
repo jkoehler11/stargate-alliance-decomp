@@ -157,7 +157,10 @@ def census(dump, tree, only=None):
             props[(r["class"].lower(), r["property"].lower())] = (r["kind"], r["friendly_type"])
     dims = {}
     if tree:
-        _idx, _files, _params, _enums, _enames, _rets, _lt, _pt, _w, dims_all, _c, _sp, _cr, _ltf, _crf, _mods = \
+        # a **starred** tail: the emitter's index grows an element per corpus-wide table it learns (the iterators
+        # are the most recent), and an exact-length unpack turns that into an exception in this census, not a
+        # failure of its own rule.
+        _idx, _files, _params, _enums, _enames, _rets, _lt, _pt, _w, dims_all, *_rest = \
             emit._source_index(tree)
         for (cls, nm), sizes in dims_all.items():
             if len(sizes) == 1:
