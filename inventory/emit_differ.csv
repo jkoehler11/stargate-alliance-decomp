@@ -1,5 +1,5 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,91,10442 identical
+(census),,,,83,10450 identical
 context size,Context,same length,,1,TransportRings.Destroyed
 context skip,Context,ours longer,,1,SGMenuInteraction.Initialized
 context skip,Context,same length,,2,CheatManager.Fly CheatManager.Ghost
@@ -22,7 +22,6 @@ opcode,Skip,ours shorter,,1,SGPlayerInput.PlayerInput
 opcode,StructCmpEq,ours shorter,,1,MaplistRecord.CompareItems
 opcode,SubtractEqual_IntInt,same length,,2,StargateVehiclePassenger.ServerChangeDriverPosition StargateVehicle.ServerChangeDriverPosition
 opcode,Subtract_IntInt,ours shorter,,3,StargateHUD.DrawFragCount UDebugBlueLookAndFeel.FW_GetClientArea UWindowWin95LookAndFeel.FW_GetClientArea
-opcode,VirtualFunction,ours shorter,,8,XBoxLiveFriendsMenu.MyOnReopen XBoxLiveMenu.MyOnReopen XBoxLiveFindGameMenu.MyOnReopen
 operand,FloatConst,same length,,4,PteroBot.PickDestination BotEnemy.PickDestination BotEnemy.UpdateCoverNodes
 operand,Iterator,ours shorter,,1,BotEnemy.FindTurretGoal
 operand,StringConst,ours longer,,1,TextGameInfo.InitComponent

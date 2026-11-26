@@ -4521,6 +4521,24 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                 break
         if picked is not None:
             scope["delegates"][nm[2:-len("__delegate")]] = picked[0]
+    # A delegate declared by an **ancestor in another package** is a property *import*, not an export, so the loop
+    # above cannot see it: `GUI.GUIPage` declares `__OnOpen__Delegate` and the eight `XBoxLive*Menu.MyOnReopen`
+    # bodies call `OnOpen()`, which the package writes `43 de 01 49 02 16` -- import **-94** then the callee's name
+    # index -- where this walk had no entry and wrote a plain `VirtualFunction` (`1b 49 02 16`), two bytes short.
+    # The owner is the import's own `package` field, resolved as `funcs` resolves it.
+    for nm, cands in imports.items():
+        if not (nm.startswith("__") and nm.endswith("__delegate")):
+            continue
+        if nm[2:-len("__delegate")] in scope["delegates"]:
+            continue
+        picked = None
+        for anc in order:
+            hit = [c for c in cands if (_import_owners.get(c[0]) or "") == anc and c[1] == "DelegateProperty"]
+            if hit:
+                picked = hit[0]
+                break
+        if picked is not None:
+            scope["delegates"][nm[2:-len("__delegate")]] = picked[0]
     # A native that an *ancestor in another package* declares is still in this class's chain: `Object` lives in
     # `Core.u`, so `GetItemName`/`GetStateName` were refused as "not declared by the class chain" for every class
     # outside Core (51 bodies). The filter is the class in the chain, not the package: the lookup below still keys
