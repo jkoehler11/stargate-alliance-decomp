@@ -3663,11 +3663,28 @@ def _emit_class_literal(raw, env):
 
 
 def _emit_vector(expr):
-    """`vect(a, b, c)` -> `23` and three little-endian f32 (measured: `return vect(0,0,0);`)."""
+    """`vect(a, b, c)` -> `23` and three little-endian f32 (measured: `return vect(0,0,0);`).
+
+    A **signed** component is folded into its f32, not written as an operator: `KVehicle.ClientKDriverEnter`
+    ships `pc.SetRotation(rotator(vect(-1, 0, 0) >> Rotation))` as `23 | 00 00 80 bf | 00 00 00 00 | 00 00 00 00`
+    -- a `VectorConst` of -1.0, so the minus is part of the constant and not a `Subtract_PreFloat` around it.
+    The same reading `_emit_rotator` already takes of `rot(-16384, 0, 0)`, and the population is large because
+    a direction vector is written with a negative axis: 19 bodies refused on the sign alone (`vect(0, 0, -500)`
+    in `Scarab.SpawnGibs`, `vect(0.0f, 0.0f, -1.0f)` in `GravCraneConsole.PostBeginPlay`).
+    """
     parts = _split_commas(expr[2:-1]) if expr[1] == ("op", "(") and expr[-1] == ("op", ")") else []
-    if len(parts) != 3 or any(len(p) != 1 or p[0][0] != "number" for p in parts):
+    if len(parts) != 3:
         raise Refused("a vector literal that is not three numeric components")
-    return bytes([0x23]) + b"".join(struct.pack("<f", float(_number(p[0][1]))) for p in parts)
+    comps = []
+    for p in parts:
+        sign = 1
+        if len(p) == 2 and p[0] == ("op", "-"):
+            # `vect(-1, 0, 0)` lexes as an operator and a number, as a negative literal does everywhere else.
+            sign, p = -1, p[1:]
+        if len(p) != 1 or p[0][0] != "number":
+            raise Refused("a vector literal that is not three numeric components")
+        comps.append(sign * _number(p[0][1]))
+    return bytes([0x23]) + b"".join(struct.pack("<f", float(c)) for c in comps)
 
 
 def _emit_rotator(expr):
@@ -5803,6 +5820,7 @@ function name Bone()    { return 'weapon_bone'; }
 function Actor Nobody() { return None; }
 function Actor Me()     { return self; }
 function vector Vec()   { return vect(0,0,0); }
+function vector VecNeg() { return vect(-1, 0, 0); }
 function Nothing() { }
 function Nothing2() { return; }
 event bool Paren() { return(true); }
@@ -6085,6 +6103,8 @@ WANT = {
     "nobody": "042a040b47",
     "me": "0417040b47",
     "vec": "0423000000000000000000000000040b47",
+    # `return vect(-1, 0, 0);` -- the sign is inside the f32 (`_emit_vector`), not a unary node.
+    "vecneg": "0423000080bf0000000000000000040b47",
     "nothing": "040b47",
     "nothing2": "040b040b47",
     "paren": "0427040b47",
