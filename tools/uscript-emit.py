@@ -78,7 +78,13 @@ FIELDS = ["package", "class", "state", "function", "model", "rettype", "source",
 # `function native static final int Foo()` -- the type is whatever is left after the modifiers.
 MODIFIERS = {"native", "static", "final", "simulated", "latent", "iterator", "singular", "private", "protected",
              "public", "reliable", "unreliable", "exec", "coerce", "const", "config", "global", "noexport",
-             "preoperator", "postoperator", "operator", "abstract", "deprecated", "travel", "repnotify"}
+             "preoperator", "postoperator", "operator", "abstract", "deprecated", "travel", "repnotify",
+             # The declaration keyword repeated after `delegate`, and the two keywords themselves: this build
+             # spells a delegate `delegate function GotFocus(UIWidget widget)` (`UIWidget.uc`), so the word in
+             # front of the name is `function` and `rettype_of` read it as the return type. The Function record a
+             # delegate gets is a *stub* with no return (`04 0b 47`), so the declared type is the empty string and
+             # the five `options[i].GotFocus(...)` bodies stop refusing as `a call returning function`.
+             "delegate", "function", "event"}
 
 
 class Refused(Exception):
@@ -1441,6 +1447,13 @@ def _element_type(head, env):
             else:
                 hit = _member_record(obj, nm, env)
         if hit is None:
+            # The receiver is an array **element** whose element type is a *struct*, so its member is a
+            # `StructMember` record and not a class property: `LiveLadderData[LadderIndex].RungData` reads
+            # `1a <LadderIndex> <LiveLadderData>` under `a3` (import 35, `CachedLadderData.RungData`), and a
+            # class lookup run on the element's own type word `cachedladderdata` answers nothing -- so the
+            # subscript above the member refused as an element the artifacts do not type.
+            hit = _struct_member(obj, nm, env)
+        if hit is None:
             return None, ""
         kind, friendly = hit[2], (hit[3] if len(hit) > 3 else "") or ""
         if kind == "array":
@@ -1487,7 +1500,9 @@ def _emit_element(head, index, rettype, env):
     """`X[i]` -> `10`/`1A`, the index, the array read; then the element converts at its own site."""
     token, etype = _element_type(head, env)
     if token is None:
-        raise Refused("an element of an array the artifacts do not type")
+        _note(family="element-unnamed", expr=" ".join(v for _k, v in head))
+        raise Refused("an element of an array the artifacts do not type (%s)"
+                      % " ".join(v for _k, v in head))
     # This node is the only place that knows the read is being subscripted, so it is the only place that can hand
     # `_emit_member` the dimension the `Context` size byte needs. A **dynamic** array (`0x10`, a `UArrayProperty`)
     # writes 0 and passes nothing; a static one passes its declared dimension, or -1 for one no declaration spells.
@@ -2881,7 +2896,8 @@ def _class_of(expr, env):
         # `GlobalEvents[size - 1].AddCondition(con)`: the receiver is an element, and the element type is what
         # the member call resolves against
         t = _element_type(expr[:at], env)[1]
-        return t if t in class_names else _no("an element of an array the artifacts do not type")
+        return t if t in class_names else _no("an element of an array the artifacts do not type (%s -> %s)"
+                                             % (" ".join(v for _k, v in expr[:at]), t or "?"))
     at = _dot_at(expr)
     if at is not None:
         member = expr[at + 1:]
@@ -3087,7 +3103,7 @@ def _emit_member_call(obj, member, rettype, env):
         _note(family="member-call-expr", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
               receiver="")
         raise Refused("a call member whose receiver's class the artifacts do not name")
-    memb = emit_call(member, env, receiver=cls)
+    memb = emit_call(member, env, receiver=cls, head=_delegate_head(obj, member, env))
     # The word is the call's own width in the compiler's code array, whatever the receiver is. It was held at 5 for
     # an import receiver (`Outer.Log("...")`), but that shape's call *is* five wide: `19 01 8e 05 00 00 1b 0f ...`, and
     # the four bodies whose receiver is a property read with a longer call write 0x03, 0x0b, 0x0b and 0x10 --
@@ -3343,7 +3359,8 @@ def _emit_member(expr, rettype, env, element_dim=0):
         # that look right -- the receiver's class is the only honest join.
         _note(family="member-read", expr=" ".join(v for _k, v in obj), member=nm,
               receiver=_class_of(obj, env) or "", kind=objkind)
-        raise Refused("a member that is not a property of the receiver's class")
+        raise Refused("a member that is not a property of the receiver's class (%s -> %s, %s)"
+                      % (" ".join(v for _k, v in obj), objtype or "?", objkind or "?"))
     token, index, ptype, friendly = hit
     if objkind == "struct":
         # A field of a struct (no `Context`, so no size byte of its own) still needs a *value size* for whatever
@@ -4697,6 +4714,28 @@ def _callee_why(cls, name, env):
     return "; ".join(parts)
 
 
+def _delegate_head(obj, member, env):
+    """The `43 <DelegateProperty record> <name index>` head of a call whose callee is a **delegate**, or None.
+
+    A delegate is two records -- a `DelegateProperty` named `__X__delegate` and a `Function` named `X` -- and the
+    compiler writes the call as `DelegateFunction` over the **property's** record, which no function lookup
+    produces: `PlayerController.AdminReply`'s `Player.GUIController.OnAdminReply(Reply)` is `43 | 5d 63 | 4d 1e`
+    (export 6365, `Engine.__OnAdminReply__Delegate`, then name 1933) and `GUIComponent.layoutChanged`'s
+    `Components[i].NotifyLayoutChange()` is `43 | 4b 12 | 41 05`. The record is resolved on the **receiver's**
+    chain, in both positions: `GUIController.CloseMenu` calls `!ActivePage.OnCanClose(bCanceled)` as a *value*
+    (`19 01 2a 10 00 04 43 79 18 7d 04`) and `CurMenu.OnClose(bCanceled)` as a statement.
+    """
+    if member[0][0] not in ("ident", "keyword"):
+        return None
+    dele = _member_record(obj, "__%s__delegate" % member[0][1].lower(), env)
+    if dele is None:
+        return None
+    nidx = (env.get("names") or {}).get(member[0][1].lower())
+    if nidx is None:
+        raise Refused("a delegate call whose name the name table does not carry")
+    return bytes([0x43]) + write_index(dele[1]) + write_index(nidx)
+
+
 def _stmt_member_call(stmt, env):
     """`A.F(args);` -> `19 <A> <skip> <size> <F>`: a call statement whose callee is a member of a receiver.
 
@@ -4787,13 +4826,7 @@ def _stmt_member_call(stmt, env):
         _note(family="member-call-stmt", expr=" ".join(v for _k, v in obj), member=member[0][1].lower(),
               receiver=cls, why=_callee_why(cls, member[0][1], env))
         raise Refused("a member call statement to a name the receiver's chain does not declare")
-    # A `delegate` is two records, and the call is `43 <DelegateProperty> <name index>` -- a `DelegateFunction` over
-    # the receiver's own property, which no function lookup produces. `PlayerController.AdminReply` calls
-    # `Player.GUIController.OnAdminReply(Reply)` and the package writes `43 5d 63 4d 1e`; read as a member call it
-    # came out a `VirtualFunction` of the wrong width. Refused by name until the wrapper is measured.
-    if "__%s__delegate" % member[0][1].lower() in ((env.get("scope") or {}).get("props_all") or {}):
-        raise Refused("a delegate call through a receiver (the callee is a DelegateProperty record)")
-    memb = emit_call(member, env, receiver=cls)
+    memb = emit_call(member, env, receiver=cls, head=_delegate_head(obj, member, env))
     rtype = _rettype_on(cls, member[0][1], env)
     # The word is the call's own width in the uncompacted array -- except behind `Outer`, whose shape writes 5
     # whatever the member is (`CheatManager.astral`/`puss`). Every *other* property import uses the computed word:
@@ -5682,8 +5715,13 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # `local class<GameInfo> G`, and the class-wide table kept only the first for both bodies --
                    # `G.HideHud(!G.bHideHud)` joined on `GameInfo` and the body was refused.
                    "dims_by_cls": dims_by_cls,
-                   "localtypes": dict(localtypes_by_cls.get(cls.lower(), {}),
-                                      **localtypes_fn.get((cls.lower(), fname.lower()), {})),
+                   # ...and its **parameters** last of all: a parameter is a local of the body
+                   # (`LadderQueryComplete(array<RungDataSummary> Data)`), and the class-wide table holds
+                   # another function's `local Player Data` -- so `Data[0]` typed as a `Player` struct and the
+                   # member read refused, while the body's own declaration said `array<RungDataSummary>`.
+                   "localtypes": {**localtypes_by_cls.get(cls.lower(), {}),
+                                  **localtypes_fn.get((cls.lower(), fname.lower()), {}),
+                                  **{p[1].lower(): p[0].lower() for p in (decl_params or [])}},
                    "proptypes": proptypes_by_cls.get(cls.lower(), {}),
                    # a `class<Z>` declaration's target class: `local class<StargateWeapon> WeaponClass`, whose
                    # `.Default` member is read on `StargateWeapon` and not on the word `class`. Per function for the
@@ -5854,6 +5892,7 @@ function WrongArgc() { Foo(1, 2); }
 function IfStmt() { if (bDead) Health = 1; }
 function CallExec() { GotoState('Probe'); }
 function CallDelegate() { OnChange(Self); }
+function DelegateMember() { MyComponent.OnChange(Self); }
 function CallBadNative() { TinyToken(); }
 function name EmptyName() { return ''; }
 function CallNested() { Mix3(false, vect(0, 0, 0)); }
@@ -6197,6 +6236,9 @@ WANT = {
     # A call statement whose callee is a member of a receiver: `Context`, the skip word (`_wide` of the call), the
     # value size (0 for a void call) and the call. `Target.Say` returns `string`, so its statement carries `0e`.
     "callmember": "190163090600001b3316040b47",
+    # `MyComponent.OnChange(Self);` -- the receiver's own `DelegateProperty` and the callee's name, so the head is
+    # `43 33 1a` and the skip word is `_wide` of the whole call (11), not the 5 a property import writes.
+    "delegatemember": "1901270b000043331a1716040b47",
     "callmemberarg": "190163090700001b342616040b47",
     "callmembertext": "0e190163090900001b351f780016040b47",
     # A one-operand node: `81 <operand> 16`. `bIsOn = ! bIsOn;` in the shipped bytes is
@@ -6328,7 +6370,7 @@ REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative",
 def check(args):
     """Synthetic corpus plus the committed artifact's own consistency: no dump, no writes."""
     names = {"weapon_bone": 2063, "probe": 5, "ping": 51, "pong": 52, "say": 53,
-             "getbox": 54, "getregion": 55, "internalonchange": 62}
+             "getbox": 54, "getregion": 55, "internalonchange": 62, "onchange": 26}
     for value, want in ((0, b"\x00"), (1, b"\x01"), (63, b"\x3f"), (64, b"\x40\x01"),
                         (2063, b"\x4f\x20"), (8191, b"\x7f\x7f")):
         got = write_index(value)
@@ -6349,7 +6391,11 @@ def check(args):
     # A delegate is assigned by the **name** index, and `_by_name_index` wants a declaration behind the name:
     # the synthetic class declares `InternalOnChange` nowhere, so the name crosses the gate only when the fixture
     # says so -- the same shape the real package has (its own function record).
-    env["corpus_funcs"] = set(env.get("corpus_funcs") or ()) | {"internalonchange"}
+    env["corpus_funcs"] = set(env.get("corpus_funcs") or ()) | {"internalonchange", "onchange"}
+    # The receiver's chain has to carry the delegate NAME as a function record too -- the compiler writes a
+    # `Function` for every delegate, and the member-call pre-check reads that record before the delegate
+    # one (`SCOPE["delegates"]` alone is the *bare* call's table, on the body's own class).
+    env["funcs_all"]["onchange"] = [(1, "probe")]
     # A **one-row symbol** is typed by its symbol: `&&`, `||` and `^^` are declared once each in all 18 packages
     # and `!` is `preoperator bool ! ( bool A )`, so a side the walk cannot type still takes that row. Driven
     # directly because the probe class has no operand that is *emittable* and untyped at the same time -- a bare
