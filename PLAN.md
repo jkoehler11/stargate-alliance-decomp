@@ -239,6 +239,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the operator residue is typing, not folding: **11,243 modelled / 11,243 byte-identical** (from 11,195;
+  **48 bodies gained, none lost**; residue 483 -> 435, the differ bucket 18 -> 25). Five rules. (1) A **sign in an
+  operand position is unary**: `Pawn.Floor * - 256` was read as a `-` node (looser than `*`) whose left side was
+  the token run `Pawn . Floor *`, typed nothing; the scan now skips a symbol whose left neighbour is an operator
+  (10 bodies). (2) **An increment's value is its target's type** -- `Str $ i ++` is `string $ int` (3). (3) **A body
+  folds nothing**: the refusal whose only witness was the tool's own `Foo(1 + 2)` fixture is gone -- `1 << 29`
+  ships `94 26 2c 1d`, `160.0/768.0` ships two `FloatConst`s, `"a"@"b"` ships `Concat_StrStr` -- and 24 bodies
+  left the residue; the fixture moved to `WANT`. (4) **A `rot`/`vect` literal is a call**: the parameter
+  `rotator rot` made `-rot.pitch` a rotation literal in two walks (6 bodies). (5) **A parameter's declared type is
+  qualified** (`params_of` cut `GameInfo.KeyValuePair Option` at its `.`) and the struct record is keyed by the
+  word's last dotted segment (`_struct_ref`), which also let the struct comparison emit -- 5 bodies, and four
+  `StructCmpEq` bodies now **emit and differ** by one to eight bytes (`MaplistRecord.CompareItemsSlow` 315 vs 317,
+  `ItemHasOption` 54 vs 55, `GetOptionIndex` 85 vs 86, `PlayerController.ServerMove` 1,615 vs 1,623), the next
+  read on this thread. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the 29 operator
+  rows that remain (`Trigger(x)`'s cast type, `Sender.MSGT_*` consts of another class, the `Beacons[i].Addr` chain
+  whose struct the census does not declare), the 152-body compound-expression family, and the four differs.
+
 - [~] 3.6 a native struct is a struct, and a struct field read carries no width: **11,195 modelled / 11,195
   byte-identical / 18 differ** (from 11,176 / 11,176 / 18; **19 bodies gained, none lost**; residue 502 -> 483;
   `inventory/uscript_emit_join.csv` byte-identical, so the walk did not move, and the differ census is still 18).
