@@ -933,6 +933,10 @@ def _operator_types(expr, env, site="", root=False):
     # the same mapping is what `_operand` needs to write the `39 3a` (`ByteToInt`) around the call.
     t1, t2 = _enum_byte(t1, env), _enum_byte(t2, env)
     n1, n2 = _numeric(t1, env), _numeric(t2, env)
+    if _group_narrow(left, env):
+        t1, n1 = "int", "int"
+    if _group_narrow(right, env):
+        t2, n2 = "int", "int"
     # A float **literal** whose value is an exact integer is typed `int` at an `int`-typed node: the constant is
     # narrowed to the site and the pair is looked up on `int` (`_integral_float` carries the three bodies).
     if (site or "").lower() == "int" and _integral_float(left) is not None:
@@ -977,7 +981,7 @@ def _operator_types(expr, env, site="", root=False):
     # a `PrimitiveCast` -- `Pickup.BotDesireability`'s `RespawnTime < 10` is `b0 01 72 09 39 3f 2c 0a 16`, an
     # `IntConstByte 10` behind `IntToFloat`. That row is the row for a **literal** on the int side, because a
     # literal is retyped from the site.
-    if (n1 == "float" and t2 == "int" and not _is_literal(right) and not _is_literal(left)
+    if (False and n1 == "float" and t2 == "int" and not _is_literal(right) and not _is_literal(left)
             and root and (site or "").lower() == "int"):
         # At the **root** of an expression whose own site is an `int` the compiler takes the `(int, int)` row and
         # narrows the float operand with `FloatToInt` (slot 68). `UWindowPulldownMenu.SetSelected` writes
@@ -1956,6 +1960,24 @@ def _leading_literal(expr):
     return neg
 
 
+def _group_narrow(part, env):
+    """True when a parenthesised float group is compiled at the expression root's `int` type.
+
+    `Row = ((Y - 12) / RowHeight) + TopRow` in `UWindowGridColumn.Click` ships
+    `Add_IntInt(FloatToInt(Divide_FloatFloat(IntToFloat(FloatToInt(Subtract_FloatFloat(Y, IntToFloat(IntConstByte
+    12)))), RowHeight)), TopRow)`: the group `(Y - 12)` is typed **int** -- the type of the expression's own root, not
+    the type of the node it sits under -- and then widened back where the row it feeds is `float`.
+    `UWindowPulldownMenu.SetSelected`'s `(Y - VBorder) / ItemHeight` is the same group with an `int` right operand,
+    so it pays only the narrowing; `Binoculars.CheckPawns`' `(float(Pawn(Other).Health)) / float(...)` is a group
+    with no operator inside and reads the same way; `Pawn.BaseChange`'s `(1 - Velocity.Z / 400)` narrows around a
+    float subtraction two nodes above its own, which is why its `1` is `IntToFloat(IntOne)` and not a folded
+    `FloatConst 1.0` -- a group compiled at `int` folds nothing.
+    """
+    if (env.get("root_site") or "").lower() != "int" or not _paren_wrapped(part):
+        return False
+    return (_type_of(_strip_parens(part), env) or "").lower() == "float"
+
+
 def _paren_wrapped(expr):
     """True when the **whole** token run is one parenthesised group -- a new expression root for the fold rule."""
     if len(expr) < 3 or expr[0] != ("op", "(") or expr[-1] != ("op", ")"):
@@ -2116,6 +2138,14 @@ def _emit_operator(expr, rettype, env, root=False):
 
     def _side(part, want, side_env, do_promote, folded):
         """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
+        if _group_narrow(part, env):
+            # The group is compiled at the root's `int`; where the row this node took is `float` it is widened back,
+            # which is the `IntToFloat(FloatToInt(...))` round trip four bodies ship.
+            try:
+                core = emit_expr(_strip_parens(part), "int", dict(side_env, _root=False))[0]
+                return _converted(core, "int", want)
+            except Refused:
+                pass
         if ((want or "").lower() == "int" and (rettype or "").lower() == "int" and _paren_wrapped(part)
                 and _leading_literal(part) is not None):
             # A group the site narrows keeps its leading literal int-narrowed (`CurvedStairBuilder`); the group's own
@@ -3227,6 +3257,10 @@ def emit_expr(expr, rettype, env, element_dim=0):
     # again, because a parenthesised group is its own expression.
     root = env.get("_root", True)
     env = dict(env, _root=False)
+    if root:
+        # The type of the expression the compiler starts on -- the assignment's target, the call's parameter, the
+        # return -- which is what a parenthesised group is re-typed to (`_group_narrow`).
+        env.setdefault("root_site", rettype)
     expr = _strip_parens(expr)
     if not expr:
         return bytes([0x0B]), "nothing"                  # Return; -> Return Nothing
