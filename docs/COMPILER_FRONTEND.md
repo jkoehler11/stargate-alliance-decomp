@@ -2138,25 +2138,24 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**79 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,773 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 79 separate defects.
+**67 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,785 modelled and identical in the same run). **29** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 67 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours shorter | yes | 20 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.SurfaceReduceDamage` |
+| jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
 | jump distance | JumpIfNot | ours longer | yes | 10 | `PlayerController.LongClientAdjustPosition`, `PlayerController.PlayerMove`, `PlayerController.UpdateRotation` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
-| jump distance | JumpIfNot | ours shorter | no | 6 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
+| jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
 | operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
 | opcode | PrimitiveCast | ours longer | - | 3 | `VolumetricBuilder.BuildVolumetric`, `UDebugVideoClient.BeforePaint`, `UDebugVideoClient.Initialized` |
 | opcode | PrimitiveCast | ours shorter | - | 3 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
 | opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
-| context skip | Context | ours shorter | - | 2 | `BotSG.AssignAmbushPoint`, `SGMenuInteraction.Initialized` |
 | context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
-| opcode | EndFunctionParms | ours shorter | - | 2 | `StargateEffect.Trigger`, `StargateHUD.PostNetHUDSetup` |
 | opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
+| context skip | Context | ours shorter | - | 1 | `BotSG.AssignAmbushPoint` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
 | opcode | Divide_FloatFloat | ours shorter | - | 1 | `UWindowComboList.SetSelected` |
 | opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
@@ -2619,6 +2618,10 @@ The eight bodies the rule gains are the shape it was written for: `Mover.Interpo
 
 ### The trailing hole: writing it is worse, and the strip stays
 
+**Superseded 2026-11-26 -- it is `k-1`, not a strip and not a write; see the last section of this page.**
+The refused formulation below wrote one `Nothing` per trailing comma, which is one too many for the body it
+was aimed at; both numbers in it are that off-by-one.
+
 The last section left `Pawn.SurfaceReduceDamage`'s **written** `Nothing` (`GetClosestBone(..., OutSurface,,)` ships
 111 bytes where the strip writes 110) against `ACTION_IfProximity`'s stripped iterator call. Making the strip the
 **iterator's** (`foreach` head only) and writing a `Nothing` for an ordinary call's omitted trailing optional was
@@ -2627,3 +2630,60 @@ scored and **refused**: it takes **13** residue bodies one byte long (among them
 (413 against 412 with the hole written). So the strip stays unconditional, and `SurfaceReduceDamage` remains the one
 body against it: 111 wanted, 110 with the slot dropped, 112 with a `Nothing` in it -- the byte is neither, and it is
 the next instrument in this thread rather than a rule.
+
+## Stage 3, continued -- an empty argument run is `k-1` `Nothing`s (measured 2026-11-26)
+
+The previous section left `Pawn.SurfaceReduceDamage` as "the one body against the strip": 111 bytes shipped, 110 with
+the slot dropped, 112 with a `Nothing` in it. Both readings came from the same off-by-one. Flattening both token
+streams for all 79 differing bodies (`tools/emit-missing.py`, new here) reports each body's **absent** tokens beside
+its invented ones instead of classifying its first differing node -- which for this body is its outer `JumpIfNot`, a
+node that can only say *something downstream is missing* -- and the answer is one token:
+
+    shipped 003f  Nothing            0040  EndFunctionParms
+    ours    ----  (nothing)          003f  EndFunctionParms
+
+for `GetClosestBone(HitLocation, StartTrace, OutDist, OutSurface,,)`: **five** slots, four arguments and one
+`Nothing`, spelled with two commas. `ACTION_IfProximity.ProceedToNextAction`'s
+`DynamicActors(class'Actor', currentActor,)` has one comma and ships none; `SurfaceInfo.InitSurface`'s
+`Spawn(class'SoundTrigger',,,)` has three and ships two. The rule is a count, not a choice:
+
+| trailing commas in the source | `Nothing`s written | witness |
+|---|---|---|
+| 1 | 0 | `ACTION_IfProximity.ProceedToNextAction`, `SearchLight.SearchTick` |
+| 2 | 1 | `Pawn.SurfaceReduceDamage`, `Weapon.TraceFire`, `SNIPERRIFLE.TraceFire` |
+| 3 | 2 | `SurfaceInfo.InitSurface`, `SurfaceInfo.EmitWheelEffect`, `SGMenuInteraction.Initialized` |
+
+The source's last comma is the end-of-list marker the compiler consumes and every comma before it is an omitted
+optional, so an empty run of length k writes k-1. A hole **between** two arguments is the `Nothing` the walk already
+wrote (`Controller.PostBeginPlay`'s `Spawn(..., , vect(0,0,0), ...)`) and is unchanged.
+
+**What the earlier score actually measured.** The refused formulation wrote a `Nothing` for *every* trailing comma:
+two for `SurfaceReduceDamage` (112 against 111) and one for `SearchLight.SearchTick` (413 against 412). Both numbers
+in that section are that off-by-one, and neither is evidence against writing a hole -- `SurfaceReduceDamage` was never
+the one body against the strip, it was the body that counted. Score, as a full run of the same tool over the same
+tree as `origin/main`:
+
+| formulation | modelled | residue | differ | lost | gained |
+|---|---|---|---|---|---|
+| `origin/main` (every trailing hole stripped) | 10,773 | 905 | 79 | -- | -- |
+| strip **one**, write the rest (shipped) | 10,785 | 893 | 67 | **0** | **12** |
+
+The twelve: `Pawn.SurfaceReduceDamage`, `SurfaceInfo.InitSurface`, `SurfaceInfo.EmitWheelEffect`, `Weapon.TraceFire`,
+`SHOTGUN.TraceSubFire`, `SNIPERRIFLE.TraceFire`, `Scarab.PostBeginPlay`, `StargateEffect.Trigger`,
+`GameHud.AddWaypoint`, `SGMenuInteraction.Initialized`, `StargateHUD.PostNetHUDSetup`,
+`AlkeshBombProjectile.PostBeginPlay`.
+
+Two instruments ship with it, because both sessions this took were spent on the same blind spot:
+
+- **`tools/emit-missing.py`** -- per body, the tokens only the shipped stream carries and only ours does, with the
+  operands that are code positions masked (a `Jump`/`JumpIfNot` word, a `Context` skip word) so a moved jump cannot
+  hide the byte that moved it. Its unit is a family with one answer, not a row: six bodies each missing one `Nothing`
+  is a rule, six rows each naming a different jump is not. `emit_differ.csv` keeps its job (first node, one verdict
+  per body); this is what to read when the first node is a jump.
+- **`tools/uscript-emit.py --check`** now holds the four hole shapes (`Mix5(true,)`, `(true,,)`, `(true,,,)`,
+  `(true, , 2)`) with the bytes the table predicts, so the count cannot go back to `k` or to none without a red gate.
+
+What the rule still does not reach, unchanged by it: `paintTransparentBlob` 560 against 562, `StargatePawn.TakeDamage`
+233 against 235, `Pawn.BaseChange` 268 against 272. All three are the *literal's* type rather than a hole's count --
+`BaseChange`'s `-2` and `TakeFallingDamage`'s `-100` ship as `IntToFloat(IntConst ...)` where the walk folds them to a
+`FloatConst` -- and that is the next instrument in this thread.
