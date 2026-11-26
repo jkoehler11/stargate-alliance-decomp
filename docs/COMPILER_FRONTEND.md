@@ -2138,28 +2138,23 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**62 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,790 modelled and identical in the same run). **27** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 62 separate defects.
+**39 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,814 modelled and identical in the same run). **15** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 39 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
-| jump distance | JumpIfNot | ours longer | yes | 8 | `PlayerController.UpdateRotation`, `LocalMessage.ClientReceive`, `ScriptedController.UpdateRotation` |
-| jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
+| jump distance | JumpIfNot | ours shorter | yes | 6 | `Pawn.TakeFallingDamage`, `PlayerController.CallServerMove`, `PlayerController.CallServerMove` |
+| jump distance | JumpIfNot | ours longer | yes | 5 | `PlayerController.UpdateRotation`, `LocalMessage.ClientReceive`, `ScriptedController.UpdateRotation` |
 | jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
-| operand | FloatConst | same length | - | 4 | `PteroBot.PickDestination`, `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` |
+| jump distance | Jump | ours shorter | yes | 4 | `Pawn.BaseChange`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
 | opcode | PrimitiveCast | ours shorter | - | 3 | `LinearStairBuilder.Build`, `BotSG.EngageDirection`, `StargateHUD.paintTransparentBlob` |
-| opcode | Subtract_IntInt | ours shorter | - | 3 | `StargateHUD.DrawFragCount`, `UDebugBlueLookAndFeel.FW_GetClientArea`, `UWindowWin95LookAndFeel.FW_GetClientArea` |
 | context skip | Context | same length | - | 2 | `CheatManager.Fly`, `CheatManager.Ghost` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
-| opcode | PrimitiveCast | ours longer | - | 2 | `UDebugVideoClient.BeforePaint`, `UDebugVideoClient.Initialized` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
 | context skip | Context | ours shorter | - | 1 | `BotSG.AssignAmbushPoint` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
-| opcode | Divide_FloatFloat | ours shorter | - | 1 | `UWindowComboList.SetSelected` |
 | opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
 | opcode | FinalFunction | same length | - | 1 | `GUIComponent.ParseOption` |
-| opcode | Multiply_FloatFloat | ours shorter | - | 1 | `HUD.DisplayMessages` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
 | opcode | StructCmpEq | ours shorter | - | 1 | `MaplistRecord.CompareItems` |
 | operand | Iterator | ours shorter | - | 1 | `BotEnemy.FindTurretGoal` |
@@ -2735,3 +2730,55 @@ sit. What the remaining 888 refuse, by family, with the shape each carries:
 | `Pawn.BaseChange` | 1 | 268 against 272: the parenthesised group narrowed and re-widened around a float subtraction |
 
 None of those four is modelled here; they are the thread's next instruments, and the round trip is the largest.
+
+## Stage 3, continued -- a wrapped int literal, and a parenthesised group inside a mixed pair (measured 2026-11-26)
+
+The last section left four families. Two of them were rules, and neither is visible at the differ classifier's first
+node: one body's first difference is a `Let` whose child moved, the other a `JumpIfNot` whose distance closed by ten.
+
+**An integer literal past the int32 range wraps before the float conversion.** `BotEnemy.PickDestination`'s
+`BestScore = -9999999999;` ships `1e c817a8ce` -- the `FloatConst` of **-1,410,065,408**, not of -9,999,999,999. The
+magnitude is stored as an `int32` first (`0x540be3ff` = 1,410,065,407), the sign is applied to *that* int, and the int
+is then converted to float. `BotEnemy.UpdateCoverNodes`' `HideNodeDistances[k] = 9999999999;` is the same int without
+the sign (`1e c817a84e`), and `PteroBot.PickDestination` and `DeathGliderBot.PickDestination` carry the negative form.
+`_int32` wraps every int constant now -- `_int_bytes`, the float fold in `_float_literal`, and the plain float-literal
+branch -- because all three are the same compiler step. Four bodies.
+
+**A parenthesised int group at a mixed `float` pair is retyped root and branch, not cast whole.**
+`ConeBuilder.BuildCone`'s `sin((2 * i + Ofs) * pi / Sides)` ships `Multiply_FloatFloat(Add_FloatFloat(
+Multiply_FloatFloat(FloatConst 2, IntToFloat(i)), IntToFloat(Ofs)), FloatConst pi)`; the walk wrote
+`IntToFloat(Add_IntInt(Multiply_IntInt(2, i), Ofs))` and came out ten bytes short -- twice in the body. The gate was
+`_operator_types(left)` asked on the **parenthesised** token run: a group has no depth-0 operator, so the promotion
+was never attempted even though `promote["l"]` was already true. The promoted subtree now carries `_promote_tree`,
+which is also what lets the group's own `+` take the `(float, float)` row inside a call's argument (where `_arg`
+otherwise keeps int arithmetic and casts at the argument's boundary). `(xloc - 1) / image.USize` is unaffected: the
+*both-int* site-promotion branch still refuses a parenthesised operand, so that divide keeps its `Subtract_IntInt`
+and casts. Two bodies: `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`.
+
+Score, a full run of `tools/uscript-emit.py` over the reconstructed tree, per body against `origin/main`'s own run
+(10,808 modelled / 870 residue / 45 differ):
+
+| formulation | modelled | residue | differ | lost | gained |
+|---|---|---|---|---|---|
+| `origin/main` | 10,808 | 870 | 45 | -- | -- |
+| both rules (shipped) | **10,814** | **864** | **39** | **0** | **6** |
+
+Both rules have a synthetic case in `tools/uscript-emit.py --check`: `WrapFloat`/`WrapFloatNeg` pin
+`04 1e c817a84e`/`04 1e c817a8ce`, and a token-level group at a float pair must start `ab ae ab 1e 00000040`
+(`Multiply_FloatFloat(Add_FloatFloat(Multiply_FloatFloat(FloatConst 2, ...)))`).
+
+What the remaining families are, named rather than counted -- both are the next instrument and neither is a
+one-line rule:
+
+- **The int divide at a float site.** `StargateHUD.paintTransparentBlob` (560 against 562),
+  `StargatePawn.TakeDamage` (233 against 235) and `DeathMatch.AdjustSkill` (171 against 174) all ship
+  `Divide_FloatFloat` with each operand converted, where the walk keeps `Divide_IntInt` and casts the result.
+  The first's shape is `tempFloat = (yloc) / image.VSize` -- a group with **no** literal, so `_leaves_promotable`
+  refuses the site promotion -- while the other two are `2 / Min(PlayerKills, 10)` and
+  `(OrigHealth - Health) / Damage`, whose chains hold a call or nothing at all.
+- **A negative int literal at a float node.** `Pawn.BaseChange`'s `* -2` (270 against 272) and
+  `Pawn.TakeFallingDamage`'s `-100 * (EffectiveSpeed + MaxFallSpeed)` (243 against 245) ship
+  `IntToFloat(IntConst -2)` where the walk folds the literal to a `FloatConst`. Refusing the fold for **every**
+  negative literal was scored: it gains those two and loses four (`Weapon.DrawMuzzleFlash`,
+  `StargateWeapon.DrawMuzzleFlash`, `Replicator.PlayWaiting`, `BotEnemy.AdjustAround`), so the discriminator is not
+  the sign -- the four lost bodies fold a negative literal at the same position and the two gained ones do not.
