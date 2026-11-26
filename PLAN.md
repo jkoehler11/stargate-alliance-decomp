@@ -239,6 +239,20 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a callee declared in another package, an increment of a member, and a container's `Length`:
+  **11,066 modelled / 11,066 byte-identical** (from 10,915; **151 bodies gained, none lost**; residue 763 -> 612;
+  the bodies that emit and still differ 20 -> 18). `_func_on` consulted `natives` and the *body package's* exports
+  only, so a callee its receiver's chain declares in another package -- `Actor.TakeDamage` (an `event` of Engine.u),
+  `Weapon.Fire` -- answered no token and 125 bodies refused as *a member call statement to a name the receiver's
+  chain does not declare*; it now falls back to the corpus declaration index (`decl_index`, `(class, function)` from
+  the reconstructed text), where a non-`final` declaration is a by-name `VirtualFunction` (the bytes the compiler
+  wrote: `GunR.Fire(0)` is `19 01 78 02 0b 00 00 1b 51 01`) and a `final` one stays a refusal (123 bodies). An
+  increment whose target is a member of a receiver (`Level.numMatineeScenesRunning++`) refused as *a statement that is
+  a member read, not a call* because the statement's second token is an operator, not a paren; the node is the bare
+  name's over the member's read (27 bodies), and the three survivors are named by the note now
+  (`Controller(Killer.Owner).PlayerNum`, `Maps[MapIndex].Options[i].Key`). `Elements.Length--` is the length
+  operator's `int`, not a typeless property (1 body). Doc: `docs/COMPILER_FRONTEND.md`, section of the same name.
+
 - [~] 3.6 `interpcurve` is 12 bytes: **10,765 modelled / 10,765 byte-identical / 0 differ** (from 10,764; one body
   gained, none lost; residue 914 -> 913; `emit_differ.csv` unchanged at 87 bodies, the body having refused on its
   width rather than differed on its bytes). `StargateCar.SVehicleUpdateParams` reads `Wheels[i].WheelInertia` over an
