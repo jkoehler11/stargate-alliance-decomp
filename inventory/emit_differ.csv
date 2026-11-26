@@ -1,5 +1,5 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,30,10888 identical
+(census),,,,30,10905 identical
 context skip,Context,ours shorter,,1,BotSG.AssignAmbushPoint
 jump distance,Jump,ours shorter,yes,3,BotSG.PickDestination ShieldBelt.Tick DeathMatch.AdjustSkill
 jump distance,JumpIfNot,ours longer,yes,2,LocalMessage.ClientReceive StargateDeathMessage.ClientReceive

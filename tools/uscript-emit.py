@@ -1761,6 +1761,18 @@ def _type_of(expr, env):
                 hit = _struct_member(obj, nm, env) or _prop_by_name(nm, env)
             else:
                 hit = _member_record(obj, nm, env)
+            if hit is None and obj and obj[-1][0] in ("ident", "keyword"):
+                # `Controller.EInputKey.IK_Left`: the enum's own name is the receiver's **last** link, so the value
+                # is the ordinal the bare spelling writes -- a `byte`, whatever the prefix names.
+                if (env.get("enum_consts") or {}).get(obj[-1][1].lower(), {}).get(nm) is not None:
+                    return "byte"
+            if hit is None and len(obj) == 1 and obj[0][0] in ("ident", "keyword"):
+                # `Sender.MSGT_Reply` on `var Controller Sender`: `MSGT_*` are **`const`s on `Actor`**, and the
+                # compiler writes the value itself behind a `Context` over the receiver, not a property read. No
+                # record exists for such a name, so the pair stayed `int | an unknown type` in nine bodies.
+                cv = (env["scope"].get("consts") or {}).get(nm)
+                if cv is not None:
+                    return "float" if isinstance(_number(cv), float) else "int"
             if hit is not None:
                 if hit[2] == "struct" and len(hit) > 3 and hit[3]:
                     return hit[3]
@@ -3187,6 +3199,37 @@ def _emit_member(expr, rettype, env, element_dim=0):
             if not 0 <= _ordinal <= 255:
                 raise Refused("an enum constant whose ordinal is above 255")
             return _converted(bytes([0x24, _ordinal]), "byte", rettype), "enum-member"
+    _enum_tail = obj[-1][1].lower() if obj and obj[-1][0] in ("ident", "keyword") else ""
+    if len(obj) > 1 and _enum_tail:
+        _ordinal = (env.get("enum_consts") or {}).get(_enum_tail, {}).get(nm)
+        if _ordinal is not None:
+            # The enum's **name** is the receiver's last link, so the prefix only names the scope the constant is
+            # read from and adds no link of its own; the node is a `Context` over the prefix with the ordinal
+            # inside it. `Controller.EInputKey.IK_Left` is `19 01 08 02 00 01 24 25 16` -- skip 2 (the ordinal's
+            # own wide length), size 1 (a byte), `24 25` -- and the site then widens it (`39 3a`, ByteToInt) for an
+            # `int` comparison, exactly as the bare spelling is widened.
+            if not 0 <= _ordinal <= 255:
+                raise Refused("an enum constant whose ordinal is above 255")
+            chain_at = _dot_at(obj)
+            inner = bytes([0x24, _ordinal])
+            node = (bytes([CONTEXT_TOKEN]) + emit_expr(obj[:chain_at], "", env)[0]
+                    + struct.pack("<H", _wide(inner)) + bytes([1]) + inner)
+            return _converted(node, "byte", rettype), "enum-chain-member"
+    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and (rettype or "").lower() in ("int", "byte"):
+        _const = (env["scope"].get("consts") or {}).get(nm)
+        if _const is not None:
+            # A **`const` on the receiver's class chain** is a compile-time value, but the compiler does *not*
+            # fold it away: `Type = Type | Sender.MSGT_Order` ships `9e 01 fa02 19 01 fd01 02 00 04 2c 02 16` -- a
+            # `Context` over `Sender` whose skip word is the literal's own wide length (`02 00`), whose size byte
+            # is the value's 4, and whose inner node is the constant written at an `int` site (`2c 02` for
+            # `MSGT_Order = 2`, `1d 00000800` for `MSGT_Cloak = 0x80000`). A float const takes the same shape with
+            # a `FloatConst` inner.
+            site = (rettype or "").lower()
+            inner, _shape = emit_expr([("number", _const)], site, dict(env, _root=True))
+            size = 1 if site == "byte" else 4
+            node = (bytes([CONTEXT_TOKEN]) + emit_expr(obj, "", env)[0]
+                    + struct.pack("<H", _wide(inner)) + bytes([size]) + inner)
+            return _converted(node, site, rettype), "const-member"
     objtype = _type_of(obj, env).lower()
     # The node is chosen by the receiver's *record kind*, not by its declared type word: `PathName` is a `FilePath`
     # struct (a `StructMember`), while a cast or an operator wants that word (`SquadDir` is a `Vector`).
