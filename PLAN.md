@@ -239,6 +239,17 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
+      `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
+      bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from
+      `inventory/emit_differ.csv`; 91 -> 83 differ). The eight are one statement -- `OnOpen();` in `XBoxLiveMenu`
+      and seven `XBoxLive*Menu` subclasses' `MyOnReopen` -- and the package writes `43 de 01 49 02 16` where the
+      emitter wrote `1b 49 02 16`: `43` is `DelegateFunction`, its first operand the `DelegateProperty`'s record
+      (**import -94**, because `__OnOpen__Delegate` is declared on `GUI.GUIPage` in another package) and its second
+      the callee's name index. The delegate table was built from the package's own exports, so an inherited delegate
+      -- which is always an import here -- could never be in it; it now reads the import table too, joined through
+      the import's `package` field to the nearest ancestor in the chain, the same join `struct_props` uses. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name.
 - [~] 3.6 a subscripted array read's own size, the index that converts, and the differing bodies classified:
       **10,422 modelled / 10,422 byte-identical / 0 differ** (from 10,323 / 10,323 / 0; 99 gained, none lost;
       residue 1,355 -> 1,256; no body refuses that did not before; `uscript_emit_join.csv` byte-identical).

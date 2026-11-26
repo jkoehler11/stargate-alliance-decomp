@@ -2138,14 +2138,13 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**92 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,563 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 92 separate defects.
+**84 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,571 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 84 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours longer | yes | 17 | `PlayerController.LongClientAdjustPosition`, `Pawn.SurfaceReduceDamage`, `PlayerController.PlayerMove` |
 | jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
 | opcode | PrimitiveCast | ours shorter | - | 10 | `LinearStairBuilder.Build`, `GUIMessageBox.LayoutButtons`, `BotSG.EngageDirection` |
-| opcode | VirtualFunction | ours shorter | - | 8 | `XBoxLiveFriendsMenu.MyOnReopen`, `XBoxLiveMenu.MyOnReopen`, `XBoxLiveFindGameMenu.MyOnReopen` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
 | jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
 | opcode | PrimitiveCast | ours longer | - | 4 | `VolumetricBuilder.BuildVolumetric`, `Mover.InterpolateTo`, `UDebugVideoClient.BeforePaint` |
@@ -2215,3 +2214,27 @@ next node**: the iterator call's own operand, not its size. So the rule is measu
 84 honest refusals into 84 differ rows and moves no modelled body -- and the next instrument is the `foreach`
 head's node, not the size byte. The measurement is written down here because the obvious next guess is exactly
 the one that costs a run.
+
+## Stage 3, continued -- a delegate an ancestor declares is an import, and the call is `DelegateFunction` (measured 2026-11-25)
+
+Eight `MyOnReopen` bodies -- `XBoxLiveMenu` and seven `XBoxLive*Menu` subclasses -- are one statement, `OnOpen();`,
+and the package writes **nine** bytes where the emitter wrote seven:
+
+    shipped   43 de 01 49 02 16 04 0b 47     DelegateFunction(import -94, name 137) EndFunctionParms, Return Nothing
+    emitter   1b 49 02 16 04 0b 47           VirtualFunction(name 137) ...
+
+`43` is `DelegateFunction`, whose first operand is the **`DelegateProperty`'s own record index** and whose second is
+the callee's name index -- the shape the walk already writes for a delegate declared on the body's own class
+(`43 33 1a 17 16` for `GUIComponent.OnChange`). The rule missed these eight because `__OnOpen__Delegate` is declared
+on **`GUI.GUIPage`**, an ancestor in *another package*: here it is a property **import**, index **-94**, and the
+delegate table was built from the package's own export table alone, which cannot carry it.
+
+`scope["delegates"]` now reads the import table as well, joining each `__X__delegate` to its owner through the
+import's own `package` field -- the join `struct_props` already uses for a struct in another package -- and takes the
+nearest ancestor in the class chain. Measured by the score on the merged base (#940 + #941): **+8 bodies and none lost**, **10,563 -> 10,571**
+modelled and every one byte-identical, and the bodies that emit and still differ **92 -> 84**; `differ: 0` in the artifact's census row, so no body that matched before stopped
+matching. The `VirtualFunction` row that carried all eight is gone from the table above.
+
+The general lesson is the one this page keeps relearning in a new place: a table built from the *package's* records
+answers nothing about a record the package only **imports**, and an inherited declaration is exactly that case. Ask
+the import table with the owner join, not the export table by name.
