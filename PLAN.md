@@ -239,6 +239,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the record a struct field read names, and a key that is not unique: **10,740 modelled / 10,740
+  byte-identical / 0 differ** (from 10,739; one body gained, none lost; `emit_differ.csv` 87 -> 86). (1)
+  `struct_props` is keyed on the `(struct, member)` pair the source spells, and `Engine.u` declares `Orientation`
+  **twice** -- nested in `SceneManager` (export 3940) and in `MatObject` (5935) -- so `LookAtActorTag` has two
+  records, 4800 and 10624. The table was filled with a plain assignment (the *last* wins) and
+  `SceneManager.ResolveActorsInActions` wrote 10624 where the package writes **4800, the lowest**; a `setdefault`
+  keeps the first export and the body emits byte-identically. The last note's reading of that row ("an import
+  -10624 against an export 4800") is **retracted**: both records are this package's exports. (2)
+  `tools/struct-records.py` (+ `inventory/struct_field_records.csv`, `make struct-records`, the gated block on the page)
+  counts the choice over every `StructMember` node: **5,128 nodes, 5,119 single, 6 lowest, 3 later, 0 absent**, and
+  **3,318** name a record the package **imports** (an inherited struct field is an import -- the delegate lesson one
+  layer down). (3) The three `later` nodes are named and are the rule's boundary: `StargateVehicle` (struct 6601) and
+  its subclass `StargateWeaponEmplacement` (5975) each declare a `DriverWeaponStruct` and each `PostNetBeginPlay`
+  reads **its own** struct's `WeaponClass`/`WeaponBone`, so one key answers two records inside one package and the
+  discriminator is the **reading class's own scope** (`outer` of the struct's `outer`), which the key does not carry
+  -- the next instrument. (4) `tools/context-size.py` stops folding a *blank* declared word into `not in table`:
+  `not joined` is its own bucket, and the census now reads **0** struct members whose declared word the table lacks
+  and **2,017** whose declared word its own join does not name (1,732 of them writing 12 bytes). Doc:
+  `docs/COMPILER_FRONTEND.md`, new section + the `struct_records` block; `docs/ARTIFACTS.md` row.
+  Not in this PR: the declaring-class key the three `later` nodes need (test: the two `DriverWeaponStruct` classes),
+  `HUD.DisplayMessages`' multiply-vs-cast, `SurfaceInfo.EmitWheelEffect`'s missing downstream node, and
+  `interpcurve`'s width.
 - [~] 3.6 seven struct widths and a struct field whose own type is a struct: **10,739 modelled / 10,739
   byte-identical / 0 differ** (from 10,648 / 10,648 / 0; 91 bodies gained, none lost; residue 1,030 -> 939). (1)
   `STRUCT_SIZE` gains the seven widths `inventory/context_size.csv` measures, each agreed by every `Context` node
@@ -275,6 +297,19 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   iterator section corrected in place. Not in this PR: the seven struct widths `inventory/context_size.csv`
   measures (`animrep` 12, `id3field` 36, `liveuser` 24, `orientation` 92, `range` 8, `rangevector` 24,
   `voicedesc` 64) and the 89 rows that refuse as `a struct member of type struct`.
+- [ ] 3.6 the int/float promotion is per operand, and the emitter casts the result: **fourteen** bodies first
+      differ at a `PrimitiveCast` and **six** more at the operator the byte sits on (`Divide_FloatFloat` 1,
+      `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3, `SubtractEqual_IntInt` 2). The package
+      converts each operand at its own site to the expression's wider type; the emitter evaluates in the operands'
+      type and converts the result -- `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` ships
+      `Add_FloatFloat(FloatConst 12, IntToFloat(.H), IntToFloat(.H))` where the walk writes
+      `IntToFloat(Add_IntInt(IntConstByte 12, .H, .H))`. Bounds measured: a **parenthesised** operand keeps its own
+      type and converts at the promotion site (`paintTransparentBlob`'s `(xloc - 1) / image.USize`), and an **int**
+      site narrows the float operand before the operator (`UDebugVideoClient.BeforePaint`'s `... / 2`), which the
+      walk already does at a root int site. `_operator_types` never reaches the `(float, float)` row because the exact
+      `(int, int)` row answers first. The change is one site choice plus per-operand typing; its risk is reach, so it
+      is accepted only on `differ: 0`, no modelled body lost, and the cast and operator rows falling together. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name.
 - [ ] 3.6 the int/float promotion is per operand, and the emitter casts the result: **fourteen** bodies first
       differ at a `PrimitiveCast` and **six** more at the operator the byte sits on (`Divide_FloatFloat` 1,
       `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3, `SubtractEqual_IntInt` 2). The package

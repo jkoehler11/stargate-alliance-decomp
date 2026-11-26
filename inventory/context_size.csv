@@ -367,11 +367,11 @@ other member,ObjectProperty,xadminuserlist,,4,not tested,8,xAdminUser.AddGroup x
 other member,ObjectProperty,xpickupbase,,4,not tested,2,Pickup.Transmogrify xPickUpBase.SpawnPickup
 other member,StrProperty,,,0,not tested,252,GUIMessageBox.SetupQuestion GUIMessageBox.InitComponent MessageTextureClient.Timer
 other member,StrProperty,string,,0,not tested,359,PlayerController.ServerMove Controller.InitPlayerReplicationInfo PlayerController.PostBeginPlay
-struct member,StructProperty,,,12,not in table,1732,TransientAmbientCreature.PickDestination HerdAnimal.NotifyHitWall HerdAnimal.Wander
-struct member,StructProperty,,,16,not in table,40,UDebugBlueLookAndFeel.FW_SetupFrameButtons UDebugBlueLookAndFeel.Combo_GetButtonBitmaps UDebugBlueLookAndFeel.Combo_SetupLeftButton
-struct member,StructProperty,,,24,not in table,18,SearchLight.TargetTick SearchLight.SearchTick RepChipEmitter.TriggerParticle
-struct member,StructProperty,,,4,not in table,223,Binoculars.DrawRangeIndicator Binoculars.DrawTargeted SNIPERRIFLE.GetTargetFOV
-struct member,StructProperty,,,8,not in table,4,RingTransportEmitter.Initiate
+struct member,StructProperty,,,12,not joined,1732,TransientAmbientCreature.PickDestination HerdAnimal.NotifyHitWall HerdAnimal.Wander
+struct member,StructProperty,,,16,not joined,40,UDebugBlueLookAndFeel.FW_SetupFrameButtons UDebugBlueLookAndFeel.Combo_GetButtonBitmaps UDebugBlueLookAndFeel.Combo_SetupLeftButton
+struct member,StructProperty,,,24,not joined,18,SearchLight.TargetTick SearchLight.SearchTick RepChipEmitter.TriggerParticle
+struct member,StructProperty,,,4,not joined,223,Binoculars.DrawRangeIndicator Binoculars.DrawTargeted SNIPERRIFLE.GetTargetFOV
+struct member,StructProperty,,,8,not joined,4,RingTransportEmitter.Initiate
 struct member,StructProperty,animrep,,12,table,4,Controller.BeginState PlayerController.BeginState
 struct member,StructProperty,color,,4,table,43,Actor.DisplayDebug AIController.DisplayDebug HUD.DrawCustomBeacon
 struct member,StructProperty,htmlstyle,,28,table,28,UWindowHTMLTextArea.AddText UWindowHTMLTextArea.GetWrapPos UWindowHTMLTextArea.RemoveWrap

@@ -78,9 +78,17 @@ def struct_rule(declared, size):
     writes 16 agrees with the table and is not "a field sum". `aligned` stays because a table entry that is still a
     sum is read that way, and a struct absent from the table is not a failure: it is a width the corpus supplies and
     the emitter has never been told, reported as its own population so the table can be extended from a measurement.
+
+    **`not joined` is not `not in table`.** A blank declared word means this census's own join missed -- the record
+    kind and the owner did not reach a `(class, property)` row in `class_properties.csv` -- so nothing is *known*
+    about the struct and no width can be offered. Folding the two together read 2,017 struct members as "a struct the
+    table does not carry, of which 0 have one agreed width", which is a claim about the table made out of a join that
+    never answered.
     """
+    if not declared:
+        return "not joined"
     unit = _emitter().STRUCT_SIZE.get((declared or "").lower())
-    if not declared or unit is None:
+    if unit is None:
         return "not in table"
     if size is None:
         return "unexplained"
@@ -300,12 +308,15 @@ def render(rows, census=None):
                  "byte is the compiler's stack slot, and `STRUCT_SIZE` carries that slot: **{:,}** nodes over {} "
                  "shapes write the table's own entry -- `MouseCursor` is **16** where its four fields (`texture, "
                  "int, int, byte`) sum to 13 -- **{:,}** write an entry that is still a fields' sum rounded up to 4, "
-                 "and **{:,}** a struct the table does not carry, of which **{}** have one agreed width the table can "
-                 "take. A **subscripted** read's byte is the array's own size, not a struct's: **{:,}** nodes over "
+                 "**{:,}** a struct the table does not carry, of which **{}** have one agreed width the table can "
+                 "take, and **{:,}** a member whose **declared word the join does not name** (`not joined` -- no "
+                 "width is claimed for those). A **subscripted** read's byte is the array's own size, not a "
+                 "struct's: **{:,}** nodes over "
                  "{} shapes write `dimension x element` and **{:,}** the element alone. **{}**".format(
                      sum(int(r["nodes"]) for r in rows), len(rows),
                      total(POP_STRUCT, "table"), shapes(POP_STRUCT, "table"),
                      total(POP_STRUCT, "aligned"), total(POP_STRUCT, "not in table"), len(widths),
+                     total(POP_STRUCT, "not joined"),
                      total(POP_ARRAY, "array size"), shapes(POP_ARRAY, "array size"),
                      total(POP_ARRAY, "element size"),
                      ("%d node(s) contradict the rule, named below." % len(hot)) if hot
@@ -353,6 +364,10 @@ def self_check():
         bad.append("the fields' sum (13) reads as the table's width")
     if struct_rule("vector", 12) != "table":
         bad.append("vector's 12 is no longer the table's entry")
+    if struct_rule("", 12) != "not joined":
+        bad.append("a member with no declared word reads as a struct the table does not carry")
+    if struct_rule("testslot", 12) != "not in table":
+        bad.append("a declared struct the table does not carry is not reported as such")
     # `aligned` is the rule for a table entry that is a fields' sum rather than a slot -- no shipped entry is one
     # any more, so the branch is driven by a synthetic entry and the table is restored afterwards.
     _tbl = _emitter().STRUCT_SIZE
