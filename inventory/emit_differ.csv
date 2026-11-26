@@ -1,15 +1,12 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,26,10909 identical
+(census),,,,20,10915 identical
 context skip,Context,ours shorter,,1,BotSG.AssignAmbushPoint
-jump distance,Jump,ours shorter,yes,4,Mover.KeyFrameReached BotSG.PickDestination ShieldBelt.Tick
-jump distance,JumpIfNot,ours longer,yes,2,LocalMessage.ClientReceive StargateDeathMessage.ClientReceive
+jump distance,Jump,ours shorter,yes,3,Mover.KeyFrameReached BotSG.PickDestination ShieldBelt.Tick
 jump distance,JumpIfNot,ours shorter,no,5,PlayerController.ReplicateMove B4SParser.ParseLines BotEnemy.Tick
-jump distance,JumpIfNot,ours shorter,yes,4,PlayerController.CallServerMove PlayerController.CallServerMove MaplistRecord.GetMapItemIndex
+jump distance,JumpIfNot,ours shorter,yes,3,PlayerController.CallServerMove PlayerController.CallServerMove counter.Trigger
 jump distance,JumpIfNot,same length,no,2,AdminBase.SendComplexMsg ListObjectPropsCommandlet.WriteResults
-opcode,EatString,ours longer,,1,LocalMessage.GetRelatedString
 opcode,FinalFunction,same length,,1,GUIComponent.ParseOption
 opcode,PrimitiveCast,ours shorter,,2,LinearStairBuilder.Build BotSG.EngageDirection
 opcode,Skip,ours shorter,,1,SGPlayerInput.PlayerInput
-opcode,StructCmpEq,ours shorter,,1,MaplistRecord.CompareItems
 operand,Iterator,ours shorter,,1,BotEnemy.FindTurretGoal
 operand,StringConst,ours longer,,1,TextGameInfo.InitComponent

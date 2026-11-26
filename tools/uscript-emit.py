@@ -5819,6 +5819,12 @@ function CallGlobalNative() { Global.Destroy(); }
 function int StaticValue() { return Static.Foo(1); }
 function int StaticLowerValue() { return static.Foo(1); }
 function int GlobalValue() { return Global.Foo(1); }
+function string StaticTextValue() { return Static.Say("x"); }
+function StaticTextStmt() { Static.Say("x"); }
+function CallDivArg() { Mix(false, 2 / Health); }
+function CallDivIntArg() { Foo(2 / Health); }
+function bool StructEq() { return ItemA == ItemB; }
+function bool StructEqPlain() { return ItemC == ItemD; }
 function byte EnumMember() { return ERenderStyle.STY_Normal; }
 function int BadEnumMember() { return ERenderStyle.STY_Missing; }
 """
@@ -5845,7 +5851,9 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
                    "caption": (0x01, 5, "string"), "suffix": (0x01, 6, "string"),
                    "items": (0x01, 700, "array"), "fcount": (0x01, 640, "float"),
                    "mats": (0x01, 701, "array"), "songs": (0x01, 702, "array"),
-                   "others": (0x01, 703, "array"), "targeth": (0x01, 614, "object")},
+                   "others": (0x01, 703, "array"), "targeth": (0x01, 614, "object"),
+                   "itema": (0x01, 720, "struct"), "itemb": (0x01, 721, "struct"),
+                   "itemc": (0x01, 722, "struct"), "itemd": (0x01, 723, "struct")},
          "chain": {("probe", "probe"): ("", ""), ("probe", "helper"): ("", "")},
          "pack": "probe", "cls": "probe",
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte"),
@@ -5886,7 +5894,13 @@ SCOPE["friendly"] = {("probe", "probe", "squaddir"): "vector", ("probe", "probe"
                      ("probe", "probe", "health"): "int", ("probe", "probe", "bdead"): "bool",
                      ("probe", "probe", "flag2"): "bool", ("probe", "probe", "target"): "probe",
                      ("probe", "probe", "targeth"): "helper",
-                     ("probe", "probe", "fcount"): "float"}
+                     ("probe", "probe", "fcount"): "float",
+                     ("probe", "probe", "itema"): "mapitem", ("probe", "probe", "itemb"): "mapitem",
+                     ("probe", "probe", "itemc"): "plainitem", ("probe", "probe", "itemd"): "plainitem"}
+
+# The struct-object table the `StructCmpEq`/`StructCmpNe` fallback reads: `Color` is -12 in UWindow and a struct
+# no class declares an operator for, which is the control beside `MapItem` below.
+SCOPE["structrefs"] = {"plainitem": -12}
 
 # The declarations' parameter lists and the enum the class chain declares: what an argument's token comes from.
 # The third field is `optional`: `Mix(false)` legitimately stops short of `Time`, `Foo()` does not.
@@ -5933,6 +5947,11 @@ ENV = {"names": {"ping": 51, "pong": 52, "say": 53, "getbox": 54, "getregion": 5
 # `Pong` is a record of *both* classes: the receiver's chain picks the one `TargetH` holds, which is the `helper`
 # spelling with no parameters.
 ENV["funcs_all"]["pong"] = [(1, "probe"), (2, "helper")]
+# A **class-declared** struct operator is an ordinary `Function` record of some package -- `MaplistRecord`'s
+# `static final operator(24) bool == ( MapItem A, MapItem B )` is export 7106 of `Engine.u`. The prefix comes from
+# the operator table's `composed` spelling (`EqualEqual_IntInt`), so a record of that name existing *is* the
+# declaration; `PlainItem` has none, and its `==` must stay a `StructCmpEq`.
+ENV["funcs_all"]["equalequal_mapitemmapitem"] = [(7106, "engine")]
 
 WANT = {
     "yes": "0427040b47",
@@ -6138,6 +6157,29 @@ WANT = {
     # `1c c5 04 | 00 47 01 | ... | 16`, and `-261` is `ClockwiseFrom_IntInt` in that package's import table. A
     # rule that guessed an opcode here would emit a wrong body that still walks, which is why this one is pinned.
     "noindexop": "041cc504016e04016e0416" "040b47",
+    # A `Static.` call's `EatString` belongs to the **statement**, where the temporary is discarded. In a value
+    # position the node *is* the value: `LocalMessage.GetRelatedString`'s
+    # `return Static.GetString(Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);` ships `04 1b 1d 00 ... 16`
+    # with no `0e`, and writing one there cost that body its identity (20 bytes against 19). The pair below is the
+    # two positions of the same call, so a rule that moves the prefix from one to the other fails one of them.
+    "statictextvalue": "041b351f780016040b47",
+    "statictextstmt": "0e1b351f780016040b47",
+    # A **call's argument** is an expression root of its own, and the declared parameter type is its site: a
+    # *divide* there promotes the pair the way an assignment's value does. `DeathMatch.AdjustSkill` writes
+    # `2/Min(PlayerDeaths, 10)` twice -- as the second argument of `FMin` it ships
+    # `ac 1e 00000040 39 3f <Min> 16` (`Divide_FloatFloat(FloatConst 2, IntToFloat(Min(...)))`), and the same
+    # text in an `int` slot is `aa 2c 02 <Min> 16`. The bound is the argument root and the divide alone: promoting
+    # an argument's whole tree was scored before and gained no body, because it retyped
+    # `AdjustedDifficulty - 2/Min(...)`'s subtract that must stay `int`.
+    "calldivarg": "1b2e28ac1e00000040393f016e041616040b47",
+    "calldivintarg": "1b29912c02016e041616040b47",
+    # A struct `==` is the `StructCmpEq` node **unless a class declares the operator** -- then the compiler writes
+    # an ordinary `FinalFunction` on that operator's record. `MaplistRecord.CompareItems`'s `return A == B;` ships
+    # `04 1c 42 37 <A> <B> 16`, `1c` over `EqualEqual_MapItemMapItem` (export 7106 of `Engine.u`), where this walk
+    # wrote `04 32 68 02 ...`; the six `StructCmpEq` bodies in the corpus (`Color`, `IpAddr`, `VoiceRef`) have no
+    # such record. The pair below is both halves of that rule.
+    "structeq": "041c426f01500b01510b16040b47",
+    "structeqplain": "04328c01520b01530b040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
