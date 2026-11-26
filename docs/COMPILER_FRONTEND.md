@@ -2138,14 +2138,13 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**92 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,563 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 92 separate defects.
+**84 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,571 modelled and identical in the same run). **36** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 84 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours longer | yes | 17 | `PlayerController.LongClientAdjustPosition`, `Pawn.SurfaceReduceDamage`, `PlayerController.PlayerMove` |
 | jump distance | JumpIfNot | ours shorter | yes | 12 | `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, `Pawn.TakeFallingDamage` |
 | opcode | PrimitiveCast | ours shorter | - | 10 | `LinearStairBuilder.Build`, `GUIMessageBox.LayoutButtons`, `BotSG.EngageDirection` |
-| opcode | VirtualFunction | ours shorter | - | 8 | `XBoxLiveFriendsMenu.MyOnReopen`, `XBoxLiveMenu.MyOnReopen`, `XBoxLiveFindGameMenu.MyOnReopen` |
 | jump distance | Jump | ours shorter | yes | 7 | `Pawn.BaseChange`, `Decoration.BaseChange`, `BotSG.PickDestination` |
 | jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
 | opcode | PrimitiveCast | ours longer | - | 4 | `VolumetricBuilder.BuildVolumetric`, `Mover.InterpolateTo`, `UDebugVideoClient.BeforePaint` |
@@ -2232,8 +2231,8 @@ delegate table was built from the package's own export table alone, which cannot
 
 `scope["delegates"]` now reads the import table as well, joining each `__X__delegate` to its owner through the
 import's own `package` field -- the join `struct_props` already uses for a struct in another package -- and takes the
-nearest ancestor in the class chain. Measured by the score: **+8 bodies and none lost**, against a base of 10,442
-modelled and 91 differing bodies; `differ: 0` in the artifact's census row, so no body that matched before stopped
+nearest ancestor in the class chain. Measured by the score on the merged base (#940 + #941): **+8 bodies and none lost**, **10,563 -> 10,571**
+modelled and every one byte-identical, and the bodies that emit and still differ **92 -> 84**; `differ: 0` in the artifact's census row, so no body that matched before stopped
 matching. The `VirtualFunction` row that carried all eight is gone from the table above.
 
 The general lesson is the one this page keeps relearning in a new place: a table built from the *package's* records
