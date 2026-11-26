@@ -364,6 +364,25 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   so the unconditional strip stays and `Pawn.SurfaceReduceDamage` (111 wanted, 110 by the strip, 112 with a `Nothing`)
   is the next instrument. Not in this PR: that byte, and `paintTransparentBlob` (560 vs 562) / `TakeDamage`
   (233 vs 235). Doc: `docs/COMPILER_FRONTEND.md`, new section.
+- [~] 3.6 an int literal past int32 wraps, and a parenthesised group at a mixed pair is retyped:
+  **10,814 modelled / 10,814 byte-identical / 0 differ** (from 10,808 / 10,808 / 0; **6 bodies gained, none lost**;
+  residue 870 -> 864; `emit_differ.csv` 45 -> 39 bodies). (1) **The wrap**: `BotEnemy.PickDestination`'s
+  `BestScore = -9999999999;` ships `1e c817a8ce` -- the `FloatConst` of -1,410,065,408, i.e. the magnitude stored as
+  an `int32` (`0x540be3ff`) with the sign applied to *that* int before the float conversion;
+  `BotEnemy.UpdateCoverNodes` is the same int without the sign (`1e c817a84e`). One `_int32` in three call sites
+  (`_int_bytes`, `_float_literal`, the float-literal branch) gains `PteroBot.PickDestination`,
+  `BotEnemy.PickDestination`, `BotEnemy.UpdateCoverNodes` and `DeathGliderBot.PickDestination`. (2) **The group**:
+  `ConeBuilder.BuildCone`'s `(2 * i + Ofs) * pi` ships `Multiply_FloatFloat(Add_FloatFloat(
+  Multiply_FloatFloat(FloatConst 2, IntToFloat(i)), IntToFloat(Ofs)), FloatConst pi)`; the promotion was computed
+  but `_operator_types` was asked on the **parenthesised** run (no depth-0 operator), so it never ran, and the group
+  was cast whole ten bytes short. A `_promote_tree` flag carries the promoted subtree, which also lets the group's
+  own `+` take the `(float, float)` row inside a call's argument; the both-int site-promotion branch still refuses a
+  parenthesised operand, so `(xloc - 1) / image.USize` keeps its `Subtract_IntInt`. Gains `BuildCone` and
+  `CylinderBuilder.BuildCylinder`. Both rules have a `--check` case (`WrapFloat`/`WrapFloatNeg`, and the `ab ae ab
+  1e 00000040` prefix for the group). Not in this PR: the int divide at a float site (`paintTransparentBlob`
+  560 vs 562, `StargatePawn.TakeDamage` 233 vs 235, `DeathMatch.AdjustSkill` 171 vs 174) and the **negative**
+  literal fold (`BaseChange` 270 vs 272, `TakeFallingDamage` 243 vs 245) -- refusing every negative fold gains two
+  and loses four, so the discriminator is not the sign. Doc: `docs/COMPILER_FRONTEND.md`, new section.
 - [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
       `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
       bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from

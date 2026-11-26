@@ -519,8 +519,21 @@ def _int_literal(expr):
     return None
 
 
+def _int32(v):
+    """An integer literal is an `int32` in the compiler: a value past the range wraps, it does not grow.
+
+    `BestScore = -9999999999;` in `BotEnemy.PickDestination` ships `1e c817a8ce` -- the `FloatConst` of
+    **-1410065408**, not of -9,999,999,999: the magnitude 9,999,999,999 wraps to `0x540be3ff` (1,410,065,407),
+    the sign is applied to *that* int, and the int is then converted to `float`. `9999999999` without the sign
+    (`BotEnemy.UpdateCoverNodes`' `HideNodeDistances[k] = 9999999999;`) is `1e c817a84e`, the same int positive.
+    """
+    u = v & 0xFFFFFFFF
+    return u - 0x100000000 if u >= 0x80000000 else u
+
+
 def _int_bytes(v):
     """The compiler's own token for an int constant: `25` zero, `26` one, `2c <byte>` 2..255, else `1d <int32>`."""
+    v = _int32(v)
     if v == 0:
         return bytes([0x25])
     if v == 1:
@@ -967,7 +980,8 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     # promote, so the exact `(int, int)` row answered first and the `(float, float)` row was never reached. `root`
     # and a `float` site are the bounds: the narrowing branch below owns a root `int` site, and a nested node
     # keeps its own type.
-    if (root and (site or "").lower() == "float" and env.get("_assign") and not env.get("_arg")
+    if (root and (site or "").lower() == "float" and (env.get("_assign") or env.get("_promote_tree"))
+            and (not env.get("_arg") or env.get("_promote_tree"))
             and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
             and _leaves_promotable(expr)):
         hit = _operators().get((sym, "float", "float"))
@@ -1908,7 +1922,8 @@ def _float_literal(part, want, site=""):
     v = _number(core[0][1])
     if isinstance(v, float):
         return None                    # a source float literal is already written as `1e` by `emit_expr`
-    return bytes([0x1E]) + struct.pack("<f", -float(v) if neg else float(v))
+    v = _int32(v)                      # the literal is an int32 before the sign and the float conversion
+    return bytes([0x1E]) + struct.pack("<f", float(-v if neg else v))
 
 
 def _integral_float(expr):
@@ -2171,7 +2186,7 @@ def _emit_operator(expr, rettype, env, root=False):
                 pass
         if do_promote:
             try:
-                return emit_expr(part, "float", side_env)[0]
+                return emit_expr(part, "float", dict(side_env, _promote_tree=True))[0]
             except Refused:
                 pass                       # not a subtree this walk can promote -- the cast shape is the fallback
         return (_byte_literal(part, want, rettype, inner)
@@ -2183,10 +2198,10 @@ def _emit_operator(expr, rettype, env, root=False):
     # widened at the node it sits in (`Pawn.BaseChange`'s `-2` is `IntToFloat(IntConst -2)`, not a `FloatConst`).
     folded_left = ((_float_literal(left, t1, rettype) or _narrowed_const(left, t1, rettype))
                    if root and not env.get("group_int") else None)
-    node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(left, env) is not None,
+    node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(_strip_parens(left), env) is not None,
                          folded_left)
-            + _side(right, t2, right_env, promote["r"] and _operator_types(right, right_env) is not None, None,
-                    narrow=False)
+            + _side(right, t2, right_env, promote["r"] and _operator_types(_strip_parens(right), right_env) is not None,
+                    None, narrow=False)
             + b"\x16")
     return _converted(node, result, rettype), "operator"
 
@@ -3421,7 +3436,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
         if t == "float":
             if (env.get("int_site") or env.get("group_int")) and float(v).is_integer():
                 return _converted(_int_bytes(int(v)), "int", "float"), "float-const-narrowed"
-            return bytes([0x1E]) + struct.pack("<f", float(v)), "float-const"
+            return bytes([0x1E]) + struct.pack("<f", float(_int32(int(v)) if isinstance(v, int) else v)), "float-const"
         raise Refused("a numeric literal in a %s function" % (rettype or "typeless"))
     if kind == "quoted":
         # UnrealScript spells a *name* with single quotes and a string with double ones, and this build follows it:
@@ -5529,6 +5544,8 @@ function int Big()  { return 666; }
 function int Neg()  { return -1; }
 function float FZero() { return 0.0; }
 function float FOne()  { return 1; }
+function float WrapFloat()    { return 9999999999; }
+function float WrapFloatNeg() { return -9999999999; }
 function string Empty() { return ""; }
 function string Text()  { return "ab"; }
 function name Bone()    { return 'weapon_bone'; }
@@ -5773,6 +5790,10 @@ WANT = {
     "two": "042c02040b47",
     "big": "041d9a020000040b47",
     "neg": "041dffffffff040b47",
+    # An int literal past the int32 range wraps before the float conversion: `BotEnemy.PickDestination`'s
+    # `BestScore = -9999999999;` ships `1e c817a8ce` (-1410065408.0); without the sign, `1e c817a84e`.
+    "wrapfloat": "041ec817a84e040b47",
+    "wrapfloatneg": "041ec817a8ce040b47",
     "fzero": "041e00000000040b47",
     "fone": "041e0000803f040b47",
     "empty": "041f00040b47",
@@ -6013,6 +6034,19 @@ def check(args):
     got = _unary_types([("op", "!"), ("ident", "Unknown")], env)
     if got is None or got[3] is None or got[1] != "bool":
         print("FAIL uscript-emit: `!` with an untyped operand answers %r, expected the bool row" % (got,))
+        return 1
+    # A **parenthesised** int group at a mixed `float` pair is retyped root and branch, not cast as a whole:
+    # `ConeBuilder.BuildCone`'s `sin((2 * i + Ofs) * pi / Sides)` ships
+    # `Multiply_FloatFloat(Add_FloatFloat(Multiply_FloatFloat(FloatConst 2, IntToFloat(i)), IntToFloat(Ofs)),
+    # FloatConst pi)`. The whole-group cast (`PrimitiveCast IntToFloat` around `Add_IntInt`) is what the first
+    # reading wrote, two bytes long; the group's own operator is asked again with the promoted subtree flag.
+    grp = [("op", "("), ("number", "2"), ("op", "*"), ("ident", "Slot"), ("op", "+"), ("ident", "Health"),
+           ("op", ")"), ("op", "*"), ("number", "1.5")]
+    got, _shape = emit_expr(grp, "float", dict(env, _root=True, root_site="float"))
+    if not got.hex().startswith("abaeab1e00000040"):
+        print("FAIL uscript-emit: a parenthesised int group at a float pair emits %s, expected "
+              "ab ae ab 1e 00000040 (Multiply_FloatFloat(Add_FloatFloat(Multiply_FloatFloat(FloatConst 2, ..."
+              % got.hex())
         return 1
     got = {f[1].lower(): (f[2], f[3], f[4]) for f in functions_of(SYNTH)}
     for fn, want in WANT.items():
