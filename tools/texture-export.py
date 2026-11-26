@@ -96,10 +96,10 @@ def run(dump_dir, out_dir, inventory):
             blob, end, values = props_of(pkg, export)
             usize, vsize, fmt = values.get("USize"), values.get("VSize"), values.get("Format")
             name = pkg.name(export["name"])
-            if not (isinstance(usize, int) and isinstance(vsize, int) and fmt == FORMAT_BGRA):
+            if not (isinstance(usize, int) and isinstance(vsize, int)):
                 skipped += 1
                 rows.append([pkg_name, name, export["index"], export["size"], usize, vsize, fmt, "", "",
-                             "size or format not stated"])
+                             "size not stated"])
                 continue
             need = usize * vsize * 4
             body = blob[end + HEADER:end + HEADER + need]
@@ -108,6 +108,17 @@ def run(dump_dir, out_dir, inventory):
                 rows.append([pkg_name, name, export["index"], export["size"], usize, vsize, fmt, "", "",
                              "truncated: %d of %d" % (len(body), need)])
                 continue
+            # `Format` is absent on a minority of textures. Rather than skip them or trust them, validate the offset:
+            # if the pixels really are BGRA at +16, byte 3 is the alpha channel and is 255 almost everywhere. A texture
+            # with genuine transparency can fail this and is then skipped -- a false negative, reported, not a wrong image.
+            if fmt != FORMAT_BGRA:
+                sample = [body[i * 4 + 3] for i in range(0, min(usize * vsize, 20000))]
+                opaque = sum(1 for a in sample if a == 255)
+                if not sample or opaque < 0.90 * len(sample):
+                    skipped += 1
+                    rows.append([pkg_name, name, export["index"], export["size"], usize, vsize, fmt, "", "",
+                                 "alpha validates %d of %d at +16" % (opaque, len(sample))])
+                    continue
             os.makedirs(pkg_dir, exist_ok=True)
             with open(os.path.join(pkg_dir, name + ".png"), "wb") as fh:
                 fh.write(png(usize, vsize, body))
