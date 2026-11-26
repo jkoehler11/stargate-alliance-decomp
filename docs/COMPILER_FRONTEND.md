@@ -2138,7 +2138,7 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**87 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,739 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 87 separate defects.
+**86 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,740 modelled and identical in the same run). **37** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 86 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -2157,7 +2157,6 @@ names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a nod
 | opcode | FloatConst | ours shorter | - | 2 | `CurvedStairBuilder.BuildCurvedStair`, `SpiralStairBuilder.BuildCurvedStair` |
 | opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
 | context skip | Context | ours shorter | - | 1 | `SGMenuInteraction.Initialized` |
-| node index | StructMember | ours longer | - | 1 | `SceneManager.ResolveActorsInActions` |
 | opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
 | opcode | Divide_FloatFloat | ours shorter | - | 1 | `UWindowComboList.SetSelected` |
 | opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
@@ -2308,19 +2307,19 @@ could drift. `make context-size` regenerates both, `make ci` reproduces the bloc
 reporting the *blank* declared word (the 1,747 struct nodes whose artifact names no struct) as one disputed struct.
 
 <!-- BEGIN context-size -->
-**31,622 `Context` nodes over 387 shapes** (`inventory/context_size.csv`). A **struct** member's byte is the compiler's stack slot, and `STRUCT_SIZE` carries that slot: **743** nodes over 15 shapes write the table's own entry -- `MouseCursor` is **16** where its four fields (`texture, int, int, byte`) sum to 13 -- **0** write an entry that is still a fields' sum rounded up to 4, and **2,017** a struct the table does not carry, of which **0** have one agreed width the table can take. A **subscripted** read's byte is the array's own size, not a struct's: **222** nodes over 30 shapes write `dimension x element` and **403** the element alone. **No node contradicts it.**
+**31,622 `Context` nodes over 387 shapes** (`inventory/context_size.csv`). A **struct** member's byte is the compiler's stack slot, and `STRUCT_SIZE` carries that slot: **743** nodes over 15 shapes write the table's own entry -- `MouseCursor` is **16** where its four fields (`texture, int, int, byte`) sum to 13 -- **0** write an entry that is still a fields' sum rounded up to 4, **0** a struct the table does not carry, of which **0** have one agreed width the table can take, and **2,017** a member whose **declared word the join does not name** (`not joined` -- no width is claimed for those). A **subscripted** read's byte is the array's own size, not a struct's: **222** nodes over 30 shapes write `dimension x element` and **403** the element alone. **No node contradicts it.**
 
 | member | declared | dim | size byte | rule | nodes | examples |
 |---|---|---|---|---|---|---|
-| struct member `StructProperty` | - | - | 12 | not in table | 1732 | `TransientAmbientCreature.PickDestination`, `HerdAnimal.NotifyHitWall`, `HerdAnimal.Wander` |
+| struct member `StructProperty` | - | - | 12 | not joined | 1732 | `TransientAmbientCreature.PickDestination`, `HerdAnimal.NotifyHitWall`, `HerdAnimal.Wander` |
 | struct member `StructProperty` | vector | - | 12 | table | 400 | `PlayerController.ProcessMove`, `PlayerController.ServerMove`, `Controller.PawnDied` |
-| struct member `StructProperty` | - | - | 4 | not in table | 223 | `Binoculars.DrawRangeIndicator`, `Binoculars.DrawTargeted`, `SNIPERRIFLE.GetTargetFOV` |
+| struct member `StructProperty` | - | - | 4 | not joined | 223 | `Binoculars.DrawRangeIndicator`, `Binoculars.DrawTargeted`, `SNIPERRIFLE.GetTargetFOV` |
 | array read `ArrayProperty` | - | - | 0 | element size | 187 | `ACTION_PlayAmbientSound.InitActionFor`, `MOVE_ORDER_Flee.GetTargetActor`, `Replicator.SpawnGibs` |
 | struct member `StructProperty` | region | - | 16 | table | 99 | `UWindowWindow.DrawUpBevel`, `UWindowTabControl.Paint`, `UWindowWindow.PaintClients` |
 | struct member `StructProperty` | rotator | - | 12 | table | 96 | `PlayerController.CallServerMove`, `PlayerController.PlayerCalcView`, `SavedMove.PostUpdate` |
 | struct member `StructProperty` | color | - | 4 | table | 43 | `Actor.DisplayDebug`, `AIController.DisplayDebug`, `HUD.DrawCustomBeacon` |
 | array read `StructProperty` | region | 4 | 64 | array size | 41 | `UWindowWindow.DrawMiscBevel`, `UWindowProgressBar.Paint` |
-| struct member `StructProperty` | - | - | 16 | not in table | 40 | `UDebugBlueLookAndFeel.FW_SetupFrameButtons`, `UDebugBlueLookAndFeel.Combo_GetButtonBitmaps`, `UDebugBlueLookAndFeel.Combo_SetupLeftButton` |
+| struct member `StructProperty` | - | - | 16 | not joined | 40 | `UDebugBlueLookAndFeel.FW_SetupFrameButtons`, `UDebugBlueLookAndFeel.Combo_GetButtonBitmaps`, `UDebugBlueLookAndFeel.Combo_SetupLeftButton` |
 | array read `IntProperty` | - | - | 4 | element size | 37 | `TeamVoicePack.SetAckMessage`, `TeamVoicePack.SetClientAckMessage`, `TeamVoicePack.ClientInitialize` |
 | struct member `StructProperty` | mousecursor | - | 16 | table | 30 | `UWindowWindow.CreateWindow`, `UWindowConsoleClientWindow.Initialized`, `UWindowFramedWindow.MouseMove` |
 | struct member `StructProperty` | htmlstyle | - | 28 | table | 28 | `UWindowHTMLTextArea.AddText`, `UWindowHTMLTextArea.GetWrapPos`, `UWindowHTMLTextArea.RemoveWrap` |
@@ -2332,7 +2331,7 @@ reporting the *blank* declared word (the 1,747 struct nodes whose artifact names
 | array read `ArrayProperty` | voicedesc | - | 0 | element size | 20 | `SGVoicePackExtended.SearchVoice`, `StargateVoicePack.TestVoice`, `VoiceSelector.SearchVoices` |
 | array read `IntProperty` | int | 6 | 24 | array size | 19 | `LadderInfo.UpdateLadders` |
 | array read `ArrayProperty` | playerreplicationinfo | - | 0 | element size | 19 | `PlayerController.LoadPlayers`, `ScoreBoard.SortPRIArray`, `PlayerController.ServerChatRestriction` |
-| struct member `StructProperty` | - | - | 24 | not in table | 18 | `SearchLight.TargetTick`, `SearchLight.SearchTick`, `RepChipEmitter.TriggerParticle` |
+| struct member `StructProperty` | - | - | 24 | not joined | 18 | `SearchLight.TargetTick`, `SearchLight.SearchTick`, `RepChipEmitter.TriggerParticle` |
 | array read `ObjectProperty` | botbase | 16 | 64 | array size | 16 | `BotEnemy.DetermineFollowLocation`, `BotBase.SetManInFront`, `SquadAIBasic.PickNewLeader` |
 | array read `ObjectProperty` | - | - | 40 | not joined | 14 | `UDebugBlueLookAndFeel.FW_DrawWindowFrame`, `UDebugBlueLookAndFeel.Combo_SetupSizes`, `UDebugBlueLookAndFeel.Editbox_SetupSizes` |
 | array read `ArrayProperty` | export editinline particleemitter | - | 0 | element size | 14 | `SurfaceInfo.EmitWheelEffect`, `SurfaceInfo.BulletImpact` |
@@ -2360,7 +2359,7 @@ reporting the *blank* declared word (the 1,747 struct nodes whose artifact names
 | array read `IntProperty` | int | 3 | 12 | array size | 4 | `DeathMatch.InitGame`, `TeamDeathMatch.InitTeams`, `StoryModeGame.InitTeams` |
 | array read `NameProperty` | name | 3 | 12 | array size | 4 | `StargatePawn.GetCowerAnim`, `StargatePawn.PlayFiring` |
 | array read `StrProperty` | string | 4 | 0 | element size | 4 | `HUD.DisplayProgressMessages` |
-| struct member `StructProperty` | - | - | 8 | not in table | 4 | `RingTransportEmitter.Initiate` |
+| struct member `StructProperty` | - | - | 8 | not joined | 4 | `RingTransportEmitter.Initiate` |
 | struct member `StructProperty` | animrep | - | 12 | table | 4 | `Controller.BeginState`, `PlayerController.BeginState` |
 | struct member `StructProperty` | pointregion | - | 12 | table | 4 | `PlayerReplicationInfo.UpdatePlayerLocation`, `WarpZoneMarker.SpecialHandling`, `WarpZoneInfo.Tick` |
 | array read `ByteProperty` | - | - | 2 | not joined | 3 | `CTFFlag.BeginState` |
@@ -2402,5 +2401,64 @@ reporting the *blank* declared word (the 1,747 struct nodes whose artifact names
 | array read `StructProperty` | vector | 16 | 192 | array size | 1 | `StoryModeGame.AddSquadFromSpawner` |
 | struct member `StructProperty` | range | - | 8 | table | 1 | `Vehicle.SpectatorSpecialCalcView` |
 
-The widths the corpus supplies and `STRUCT_SIZE` does not carry, each agreed by every node that reads it: none. **Disputed** (two structs of one name, or a shape this census mis-joined): ``.
+The widths the corpus supplies and `STRUCT_SIZE` does not carry, each agreed by every node that reads it: none.
 <!-- END context-size -->
+
+## Stage 3, continued -- the record a struct field read names, and a key that is not unique (measured 2026-11-26)
+
+**10,739 -> 10,740 modelled, all 10,740 byte-identical, 0 differ** (one body gained, none lost; `emit_differ.csv`
+87 -> 86 bodies). One rule about which record a `StructMember` names, one new instrument that counts the choice, and
+a **retraction**: the previous section read the body this fixes as "an import where the package names an export",
+and both records turn out to be this package's exports.
+
+**The `(struct, member)` key is not unique in one package.** `struct_props` is keyed on the pair the source spells,
+which is the right key -- a member's *name* alone is ambiguous because `Engine` declares `z` on half a dozen classes.
+But this package declares `Orientation` **twice**, nested inside `SceneManager` (export 3940) and inside `MatObject`
+(5935), so `LookAtActorTag` has two records: **4800** (MatObject's) and **10624** (SceneManager's). `SubActionOrientation`
+declares `var(Orientation) Orientation CamOrientation;`, `SceneManager.ResolveActorsInActions` reads
+`subActOrient.CamOrientation.LookAtActorTag`, and the package names **4800** -- the **lowest** index. The table was
+filled with a plain assignment, which keeps the *last*, so the walk wrote 10624 and the body differed by three bytes
+at its first `StructMember`. A `setdefault` keeps the first export; the body emits byte-identically, and no other
+body changes.
+
+**The choice is counted, not asserted.** `tools/struct-records.py` (+ `inventory/struct_field_records.csv`, `make
+struct-records`) reads every `StructMember` node in the dump, rebuilds the same `(struct, member)` key from the record
+pair the emitter uses -- an export's `outer`, an import's `package` field -- and classifies the node by which record
+the package named: `single` (the key holds one record), `lowest` / `later` (the key holds several, and the package
+named the lowest index or a later one), `no record`. The page's block is generated from the committed CSV and `make
+ci` reproduces it (`--check-doc`).
+
+**Three of the nine ambiguous nodes are `later`, and they are the rule's own boundary.** `StargateVehicle` declares a
+`DriverWeaponStruct` (struct export 6601) and `StargateWeaponEmplacement`, its subclass, declares its own (5975).
+Their `PostNetBeginPlay` bodies each read *their own* struct's `WeaponClass`/`WeaponBone` -- 4360 and 6597 for the
+parent, 4692 and 5974 for the child -- so one `(struct, member)` key answers two records **inside one package** and
+the discriminator is the **reading class's own scope**, `outer` of the struct's `outer`, which the key does not carry.
+The two copies' fields are not in the same relative order (4360 < 4692 for `WeaponClass`, 5974 < 6597 for
+`WeaponBone`), which is why one rule reads as `lowest` on one field and `later` on the other: **the index is not the
+rule, it is the rule's shadow**. `lowest` is therefore the measured approximation (6 of the 9), and the census names
+the three it cannot decide rather than hiding them; `docs/UNKNOWNS.md` U42 carries the test.
+
+**An inherited struct field is an import, and that is most of the population.** 3,318 of the 5,128 field reads name a
+record this package does not export -- the struct is declared in another package, the import's `package` field names
+its owner, and no export table can answer it. That is the delegate lesson one layer down, now counted rather than
+argued.
+
+**The `Context` census stops calling its own join gap a table gap.** `tools/context-size.py` folded a *blank* declared
+word into `not in table`, and the pair was quoted together: "2,017 a struct the table does not carry, of which 0 have
+one agreed width". With the seven widths of the last section in `STRUCT_SIZE`, the honest split is **0** struct members
+whose declared word the table lacks and **2,017** whose declared word this census's own join does not name at all
+(1,732 of them writing 12 bytes, i.e. a vector- or rotator-sized struct). `not joined` is now its own bucket and no
+width is claimed for it; the sentence no longer reports a table shortfall it never measured.
+
+<!-- BEGIN struct-records -->
+**5,128 `StructMember` nodes over 26 shapes** (`inventory/struct_field_records.csv`): **5,119** name a field whose `(struct, member)` key holds exactly one record, and **9** name one of a key that holds more -- **6** the lowest index and **3** a later one. **3,318** of the 5,128 are records this package **imports** (the struct is declared in another package), so an inherited field read is an import and no export table can answer it.
+
+| struct.field | verdict | candidates | record kind | nodes | examples |
+|---|---|---|---|---|---|
+| `driverweaponstruct.weaponbone` | later | 2 | `NameProperty` | 1 | `stargatevehicle.PostNetBeginPlay` |
+| `driverweaponstruct.weaponbone` | lowest | 2 | `NameProperty` | 1 | `stargateweaponemplacement.PostNetBeginPlay` |
+| `driverweaponstruct.weaponclass` | later | 2 | `ClassProperty` | 2 | `stargateweaponemplacement.PostNetBeginPlay` |
+| `driverweaponstruct.weaponclass` | lowest | 2 | `ClassProperty` | 2 | `stargatevehicle.PostNetBeginPlay` |
+| `orientation.lookatactor` | lowest | 2 | `ObjectProperty` | 1 | `scenemanager.ResolveActorsInActions` |
+| `orientation.lookatactortag` | lowest | 2 | `NameProperty` | 2 | `scenemanager.ResolveActorsInActions` |
+<!-- END struct-records -->

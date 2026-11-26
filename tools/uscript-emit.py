@@ -4531,7 +4531,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     for i, e in enumerate(pkg.exports):
         outer = e["outer"]
         if outer > 0 and kinds.get(outer) in STRUCT_KINDS and kinds.get(i + 1) in PROPERTY_CLASSES:
-            struct_props[(names.get(outer, "").lower(), names.get(i + 1, "").lower())] = (i + 1, kinds[i + 1])
+            struct_props.setdefault((names.get(outer, "").lower(), names.get(i + 1, "").lower()), (i + 1, kinds[i + 1]))
     for nm, cands in imports.items():
         for idx, kind in cands:
             owner = _import_owners.get(idx)
