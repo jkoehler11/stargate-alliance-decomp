@@ -2138,20 +2138,17 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**30 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,905 modelled and identical in the same run). **9** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 30 separate defects.
+**26 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,909 modelled and identical in the same run). **10** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 26 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
+| jump distance | Jump | ours shorter | yes | 4 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
 | jump distance | JumpIfNot | ours shorter | yes | 4 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove`, `MaplistRecord.GetMapItemIndex` |
-| jump distance | Jump | ours shorter | yes | 3 | `BotSG.PickDestination`, `ShieldBelt.Tick`, `DeathMatch.AdjustSkill` |
 | jump distance | JumpIfNot | ours longer | yes | 2 | `LocalMessage.ClientReceive`, `StargateDeathMessage.ClientReceive` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
-| opcode | AddEqual_IntInt | same length | - | 2 | `PlayerController.CallServerMove`, `Mover.KeyFrameReached` |
 | opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
-| opcode | SubtractEqual_IntInt | same length | - | 2 | `StargateVehiclePassenger.ServerChangeDriverPosition`, `StargateVehicle.ServerChangeDriverPosition` |
 | context skip | Context | ours shorter | - | 1 | `BotSG.AssignAmbushPoint` |
-| opcode | AddEqual_IntInt | ours shorter | - | 1 | `Mover.KeyFrameReached` |
 | opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
 | opcode | FinalFunction | same length | - | 1 | `GUIComponent.ParseOption` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
@@ -2842,3 +2839,48 @@ What the family still refuses is named rather than counted: `DeathMatch.AdjustSk
 `Divide_IntInt` where the root is an `int` argument and this round's rules agree with it; `DrawNameAndPing` x3 and
 `FW_GetClientArea` x2 are the divide rows whose other operand the walk still cannot type. The next instrument is one
 of those, not another re-reading of these nine.
+
+## Stage 3, continued -- a compound assignment on a byte keeps the byte operator (measured 2026-11-26)
+
+`PlayerController.CallServerMove`'s `PendingCompress += 2;` -- the target is a **`byte` local**:
+
+    shipped   87 | 00 67 0a | 39 3d 2c 02 | 16      AddEqual_ByteByte(target, IntToByte(2))
+    emitter   a1 | 39 3a 00 67 0a | 2c 02 | 16     AddEqual_IntInt(ByteToInt(target), 2)
+
+and `Mover.KeyFrameReached`'s `KeyNum += StepDirection;` is the same word with an `int` property on the right
+(`87 01 3b 39 3d 01 43 15 16`, `IntToByte` around the property read).
+
+The expression rule promotes a `byte` operand to `int` before the pair is looked up -- that is what makes
+`DirtyMask | 1` an `Or_IntInt` -- but a **compound assignment's token follows the target's declared type**. The image
+installs three byte rows (`AddEqual_ByteByte` 135, `SubtractEqual_ByteByte` 136, `MultiplyEqual_ByteByte` 133), and
+the right operand converts *down* at its own site. `_operator_types` now takes that row for a compound symbol whose
+left operand is declared `byte`, before the promoted pair is consulted.
+
+Measured: **10,823 -> 10,827** modelled bodies, every one byte-identical; bodies that emit and still differ
+**30 -> 26**; `differ: 0` in the census row, so none was lost.
+
+## Stage 3, continued -- a name that is not a property: `Default`, a class `const`, an enum ordinal (measured 2026-11-26)
+
+Three names the source writes through a receiver are not properties of it, and the walk answered each with a record
+lookup that could not succeed:
+
+- **`Default.<member>`** is the body's own class default object. The type path asked `_member_record` for the word
+  `default`, which names no class, so `Default.GoreLevel < 2` read `an unknown type < int` and the body stayed in the
+  operator residue although its emit path (`04 02 <idx>`) is modelled. It now asks the body's own chain; `_class_of`
+  answers `Default` as the body's class, so `Default.X.Y` and `Default.X.Length` resolve on `X`.
+- **`Sender.MSGT_Reply`** -- `MSGT_*` are consts on `Actor` -- ships `19 01 fd01 02 00 04 2c 02 16`: a `Context` over
+  the receiver whose skip word is the literal's own wide length (2), whose size byte is the value's (4), and whose
+  inner node is the constant at an `int` site. The constant's declared type is what the type path needed.
+- **`Controller.EInputKey.IK_Left`** ships `19 01 08 02 00 01 24 25 16`: skip 2, size 1 (a byte), `24 25` -- the enum's
+  own ordinal, the enum's name being the receiver's *last* link, and the site widens it (`39 3a`) exactly as the bare
+  spelling is. `Class.EnumName.CONST` resolves to no class, so the record was always missing.
+
+Measured as full runs on this branch, per body against the previous run: **10,823 -> 10,888** for `Default`,
+**10,888 -> 10,905** for the constant and enum rules, and **10,909** on the merged tree with `main`'s byte compound
+assignment -- every modelled body byte-identical, **none lost**, and the differing set unchanged by these rules.
+
+`DeathMatch.AdjustSkill` (171 against 174) is the one differing body these rules opened, and it is not truncated text:
+the same source `2/Min(...)` ships as `Divide_FloatFloat(FloatConst 2.0, IntToFloat(Min(...)))` when it is the whole
+argument of a float native, and as an int division cast at the node when it is nested under a float subtract in the
+same body. Letting a divide promote at an argument site was scored and gained **no** body, so the bound is the
+parameter slot's own desired type -- the next instrument in this thread.

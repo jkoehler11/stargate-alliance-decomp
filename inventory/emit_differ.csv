@@ -1,18 +1,15 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,30,10905 identical
+(census),,,,26,10909 identical
 context skip,Context,ours shorter,,1,BotSG.AssignAmbushPoint
-jump distance,Jump,ours shorter,yes,3,BotSG.PickDestination ShieldBelt.Tick DeathMatch.AdjustSkill
+jump distance,Jump,ours shorter,yes,4,Mover.KeyFrameReached BotSG.PickDestination ShieldBelt.Tick
 jump distance,JumpIfNot,ours longer,yes,2,LocalMessage.ClientReceive StargateDeathMessage.ClientReceive
 jump distance,JumpIfNot,ours shorter,no,5,PlayerController.ReplicateMove B4SParser.ParseLines BotEnemy.Tick
 jump distance,JumpIfNot,ours shorter,yes,4,PlayerController.CallServerMove PlayerController.CallServerMove MaplistRecord.GetMapItemIndex
 jump distance,JumpIfNot,same length,no,2,AdminBase.SendComplexMsg ListObjectPropsCommandlet.WriteResults
-opcode,AddEqual_IntInt,ours shorter,,1,Mover.KeyFrameReached
-opcode,AddEqual_IntInt,same length,,2,PlayerController.CallServerMove Mover.KeyFrameReached
 opcode,EatString,ours longer,,1,LocalMessage.GetRelatedString
 opcode,FinalFunction,same length,,1,GUIComponent.ParseOption
 opcode,PrimitiveCast,ours shorter,,2,LinearStairBuilder.Build BotSG.EngageDirection
 opcode,Skip,ours shorter,,1,SGPlayerInput.PlayerInput
 opcode,StructCmpEq,ours shorter,,1,MaplistRecord.CompareItems
-opcode,SubtractEqual_IntInt,same length,,2,StargateVehiclePassenger.ServerChangeDriverPosition StargateVehicle.ServerChangeDriverPosition
 operand,Iterator,ours shorter,,1,BotEnemy.FindTurretGoal
 operand,StringConst,ours longer,,1,TextGameInfo.InitComponent

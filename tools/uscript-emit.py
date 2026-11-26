@@ -993,6 +993,20 @@ def _operator_types(expr, env, site="", root=False, typing=False):
         if hit is not None:
             token, ret = hit
             return sym, "float", "float", ret, token, at
+    # A **compound assignment on a byte** keeps the byte operator: the target's declared type picks the family and
+    # the right operand converts *down* at its own site, where the expression rule promotes both sides and writes the
+    # int operator instead (`_numeric` turns `byte` into `int` before the pair is looked up). `PlayerController.
+    # CallServerMove`'s `PendingCompress += 2;` (a `byte` local) ships `87 00 67 0a 39 3d 2c 02 16` --
+    # `AddEqual_ByteByte(byteTarget, IntToByte(2))` -- and the walk wrote `a1 39 3a 00 67 0a 2c 02 16`
+    # (`AddEqual_IntInt(ByteToInt(target), 2)`), one byte longer; `Mover.KeyFrameReached`'s
+    # `KeyNum += StepDirection` is the same word with an int property on the right (`87 01 3b 39 3d 01 43 15 16`).
+    # The three byte rows the declaration table carries are `AddEqual_ByteByte` (135), `SubtractEqual_ByteByte`
+    # (136) and `MultiplyEqual_ByteByte` (133), so the row is only taken when the table installs it.
+    if sym in COMPOUND and t1 == "byte":
+        hit = _operators().get((sym, "byte", "byte"))
+        if hit is not None:
+            token, ret = hit
+            return sym, "byte", "byte", ret, token, at
     for a, b in ((n1, n2), (t1, t2)):
         hit = _operators().get((sym, a, b))
         if hit is not None:
