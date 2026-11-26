@@ -169,7 +169,7 @@ PROP_SIZE = {"bool": 4, "int": 4, "float": 4, "object": 4, "name": 4, "class": 4
 STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 16, "region": 16,
                "mousecursor": 16, "htmlstyle": 28, "pointregion": 12,
                "animrep": 12, "id3field": 36, "liveuser": 24, "orientation": 92,
-               "range": 8, "rangevector": 24, "voicedesc": 64}
+               "range": 8, "rangevector": 24, "voicedesc": 64, "interpcurve": 12}
 
 def _value_width(ptype, friendly):
     """A declared type's value size: `PROP_SIZE` for a primitive, `STRUCT_SIZE` for a **struct**.
