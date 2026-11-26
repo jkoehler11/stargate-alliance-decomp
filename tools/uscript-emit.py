@@ -785,6 +785,14 @@ def _operators():
                         # `FinalFunction` to import -261 (`ClockwiseFrom_IntInt`), which is why looking for an
                         # opcode could never find one.
                         OP_FN[(sym, a, b)] = ((r.get("composed") or "").strip(), ret)
+                    comp = (r.get("composed") or "").strip()
+                    if comp:
+                        # An operator's record is named `<Prefix>_<A><B>` (`EqualEqual_IntInt`,
+                        # `LessLess_VectorRotator`), so the prefix is the part before the first underscore -- and it
+                        # is the only way to ask for a **script**-declared operator's record, which this census
+                        # does not list because it is not native (`MaplistRecord`'s `static final operator(24) bool
+                        # == ( MapItem A, MapItem B )`).
+                        OP_PREFIX.setdefault(sym, comp.split("_")[0])
                     OPERATOR_PREC.setdefault(sym, prec)
                     continue
                 if not token.isdigit():
@@ -801,6 +809,7 @@ def _operators():
 
 OPERATORS = {}
 OPERATOR_PREC = {}
+OP_PREFIX = {}
 OP_SPELLING = {}
 OP_FN = {}
 ALL_CLASS_NAMES = set()
@@ -830,6 +839,29 @@ def _op_spelling():
             if sym[:1].isalpha():
                 OP_SPELLING.setdefault(sym.lower(), sym)
     return OP_SPELLING
+
+
+def _struct_operator(sym, stype, env):
+    """The record index of a **class-declared** `==`/`!=` for `stype`, or None.
+
+    A struct comparison is not always the `StructCmpEq` node: a class may declare the operator itself, and the
+    compiler then writes an ordinary `FinalFunction` on that operator's record, the same node a no-index operator
+    gets. `MaplistRecord` declares `static final operator(24) bool == ( MapItem A, MapItem B )` beside the struct,
+    and `CompareItems`'s `return A == B;` ships `04 1c 42 37 <A> <B> 16` -- `1c` over record 7106
+    (`EqualEqual_MapItemMapItem`, a `Function` export of `Engine.u`) -- where this walk wrote `04 32 68 02 ...`
+    (`StructCmpEq`). The name is the operator's `composed` spelling for this pair, searched in the body's own
+    package: a record of that name existing *is* the declaration, and the six `StructCmpEq` bodies in the corpus
+    (`Color`, `IpAddr`, `VoiceRef`) have no such record.
+    """
+    _operators()
+    pre = OP_PREFIX.get(sym)
+    if not pre or not stype:
+        return None
+    low = (pre + "_" + stype + stype).lower()
+    hit = (env.get("funcs_all") or {}).get(low)
+    if not hit:
+        return None
+    return hit[0][0]
 
 
 def _operator_fn():
@@ -985,8 +1017,17 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     # converted. The bound that does hold is the *group* rule: a parenthesised group compiled at the expression
     # root's `int` (`_group_narrow`) folds and promotes nothing, so `UWindowComboList.SetSelected`'s
     # `i = (Y - VBorder) / ItemHeight + VertSB.Pos` keeps `Divide_IntInt` behind an `IntToFloat`.
-    if (root and (site or "").lower() == "float" and (env.get("_assign") or env.get("_promote_tree"))
-            and (not env.get("_arg") or env.get("_promote_tree"))
+    # A **call's argument** is a site of its own, and a *divide* at that root promotes the pair the way an
+    # assignment's value does -- the declared parameter type is the site, so the node is the `(float, float)` row
+    # with both operands converted. `DeathMatch.AdjustSkill` writes `2/Min(PlayerDeaths, 10)` twice: as the second
+    # argument of `FMin` it ships `ac 1e 00000040 39 3f <Min> 16` (`Divide_FloatFloat(FloatConst 2.0,
+    # IntToFloat(Min(...)))`), while the same text nested one level down under a float subtract
+    # (`AdjustedDifficulty - 2/Min(PlayerKills, 10)`, also an argument) keeps `Divide_IntInt` behind the node's
+    # `39 3f`. So the bound is the argument *root* and the divide alone: promoting an argument's whole tree was
+    # scored before and gained no body, because it retyped the subtract that must stay `int`.
+    slot = bool(env.get("_arg")) and sym == "/" and not env.get("_promote_tree")
+    if (root and (site or "").lower() == "float" and (env.get("_assign") or env.get("_promote_tree") or slot)
+            and (not env.get("_arg") or env.get("_promote_tree") or slot)
             and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
             and (_leaves_promotable(expr) or (sym == "/" and not _group_narrow(left, env)))):
         hit = _operators().get((sym, "float", "float"))
@@ -2113,6 +2154,12 @@ def _emit_operator(expr, rettype, env, root=False):
     if not token and head is None:
         left, right = expr[:at], expr[at + 1:]
         if sym in ("==", "!=") and t1 and t1 == t2:
+            op_rec = _struct_operator(sym, t1, env)
+            if op_rec is not None:
+                # A class that declares the struct's operator gets an ordinary call node; the operands and the
+                # terminator below are the operator node's own.
+                head = bytes([0x1C]) + write_index(op_rec)
+        if head is None and sym in ("==", "!=") and t1 and t1 == t2:
             # A **struct comparison** is its own node: `0x33`/`0x32` (`StructCmpNe`/`StructCmpEq`), the struct's
             # object reference, the two operands, and no `16`. The corpus carries six of them and all six name a
             # `Struct` (`Color` -12 in UWindow, `IpAddr`, `VoiceRef` 160 four times); the operator table installs no
@@ -2123,12 +2170,15 @@ def _emit_operator(expr, rettype, env, root=False):
                 node = (bytes([0x33 if sym == "!=" else 0x32]) + write_index(ref)
                         + emit_expr(left, "", env)[0] + emit_expr(right, "", env)[0])
                 return node, "struct-cmp"
-        if os.environ.get("SG1_DBG_OP"):
+        if head is not None:
+            pass
+        elif os.environ.get("SG1_DBG_OP"):
             raise Refused("an operator the image's table does not install (%s %s %s) <<%s | %s>>"
                           % (t1 or "an unknown type", sym, t2 or "an unknown type",
                              " ".join(v for _k, v in left), " ".join(v for _k, v in right)))
-        raise Refused("an operator the image's table does not install (%s %s %s)"
-                      % (t1 or "an unknown type", sym, t2 or "an unknown type"))
+        if head is None:
+            raise Refused("an operator the image's table does not install (%s %s %s)"
+                          % (t1 or "an unknown type", sym, t2 or "an unknown type"))
     left, right = expr[:at], expr[at + 1:]
     # **Which operand the site converts, and how.** A mixed pair (`int` against `float`) converts the `int`
     # *subtree*: `ConeBuilder.BuildCone`'s `sin((2 * i + Ofs) * pi / Sides)` ships
@@ -4475,7 +4525,7 @@ def _emit_within_call(stmt, env, within):
     return node, "within-call", "within-call"
 
 
-def _prefix_call(obj, member, env):
+def _prefix_call(obj, member, env, stmt=False):
     """`Static.F(args)` / `Global.F(args)` -> the callee's own node: the prefix names the class scope.
 
     `Static.` (spelled `Static.` and `static.`) writes no receiver node at all -- the compiler emits exactly the
@@ -4486,17 +4536,20 @@ def _prefix_call(obj, member, env):
     `38 50 06 2d 00 74 81 01 16`) and in a value (`ScriptedController.GetAggroLevel`'s
     `return Global.GetAggroLevel();` is `04 38 64 03 16`), so the statement path keeps `_emit_global_call`.
 
-    Returns `(bytes, model, shape)`; a `string`-returning callee carries the `EatString` prefix, as any call does.
+    Returns `(bytes, model, shape)`; a `string`-returning callee carries the `EatString` prefix only in a
+    **statement**, where the temporary is discarded. In a value position the node *is* the value:
+    `LocalMessage.GetRelatedString`'s `return Static.GetString(Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject)`
+    ships `04 1b 1d 00 ... 16` with no `0e`, and writing one there cost that body its identity (20 against 19).
     """
     if obj[0][1].lower() == "global":
-        return _emit_global_call(member, env)
+        return _emit_global_call(member, env, stmt=stmt)
     call = emit_call(member, env)
-    if _callee_return_type(member[0][1], env) == "string":
+    if stmt and _callee_return_type(member[0][1], env) == "string":
         return bytes([0x0E]) + call, "static-prefix-call", "eat-string-static-prefix-call"
     return call, "static-prefix-call", "static-prefix-call"
 
 
-def _emit_global_call(member, env):
+def _emit_global_call(member, env, stmt=False):
     """`Global.F(args);` -> `38 <record> <args> 16`: the call with the state override stepped over.
 
     `global.F()` names the class-scope function even inside a state, and the compiler writes it as a
@@ -4513,7 +4566,7 @@ def _emit_global_call(member, env):
     if not call or call[0] not in (0x1B, 0x1C):
         raise Refused("a `Global.` call whose callee is not a virtual or final function")
     node = bytes([0x38]) + call[1:]
-    if _callee_return_type(member[0][1], env) == "string":
+    if stmt and _callee_return_type(member[0][1], env) == "string":
         # a statement call whose declaration returns `string` is prefixed with `EatString`, as any other is
         return bytes([0x0E]) + node, "global-call", "eat-string-global-call"
     return node, "global-call", "global-call"
@@ -4584,8 +4637,9 @@ def _stmt_member_call(stmt, env):
         obj = obj[:stat_at]
     if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() in ("static", "global"):
         # `Static.F(args);` / `Global.F(args);` name the class scope, not a member of an object called `Static` or
-        # `Global` -- the same rule the value position applies (`_prefix_call`).
-        node, _model, shape = _prefix_call(obj, member, env)
+        # `Global` -- the same rule the value position applies (`_prefix_call`), and the one difference between the
+        # two positions is the `EatString` a *statement* writes when its callee returns a `string`.
+        node, _model, shape = _prefix_call(obj, member, env, stmt=True)
         return node, shape, shape
     if (member[0][0] in ("ident", "keyword") and member[0][1].lower() in ARRAY_METHODS
             and _receiver_kind(obj, env) == "array"):
@@ -5422,16 +5476,21 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     for key, value in index.items():
         if value[4]:
             final_of.setdefault(key[0], set()).add(key[2])
+    packs = [fn for fn in sorted(os.listdir(dump))
+             if fn.endswith(".u") and (not only or fn.lower() in only)]
+    missing = (only or set()) - {fn.lower() for fn in packs}
+    if missing:
+        # `--only Engine` matches no package and walks nothing, so every count below is a complete report of an
+        # empty corpus -- the same shape as handing a tool the game directory instead of `System`. Refuse it rather
+        # than write a partial artifact that reads like a measurement.
+        print("FAIL uscript-emit: --only names no package present in the dump: %s" % ", ".join(sorted(missing)))
+        return 2
     table = dis.Table()
     rows, residue, refused, examples = [], [], [], {}
     tally = collections.Counter()
     shapes = collections.Counter()
     reasons = collections.Counter()
-    for fn in sorted(os.listdir(dump)):
-        if not fn.endswith(".u"):
-            continue
-        if only and fn.lower() not in only:
-            continue
+    for fn in packs:
         pkg = Package(os.path.join(dump, fn))
         pkg.read_names()
         pkg.read_imports()
