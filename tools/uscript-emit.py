@@ -967,6 +967,13 @@ def _operator_types(expr, env, site="", root=False, typing=False):
             continue
         if i == 0 or i == len(expr) - 1:
             continue                    # a unary position: the sign of a literal, or a lone symbol
+        if expr[i - 1][0] == "op" and expr[i - 1][1] not in (")", "]", "}"):
+            # A sign whose left neighbour is an **operator** is in an operand position, so it is *unary*: the
+            # walk read `Pawn.Floor * - 256` as a `-` node (looser than `*`) whose left operand was the token
+            # string `Pawn . Floor *`, typed nothing, and refused a pair the table does install. The operand
+            # position's own type comes from `_type_of` on the signed token run (`- 256` is a literal, `- Health`
+            # is `_unary_types`), never from the pair table.
+            continue
         prec = OPERATOR_PREC.get(sym, 0)
         # the loosest operator wins, and the rightmost on a tie (left-associative: `a - b - c` is `(a - b) - c`)
         if best is None or prec >= best[0]:
@@ -1674,6 +1681,14 @@ def _type_of(expr, env):
         return ""
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
         expr = [expr[1]]
+    if len(expr) == 2 and expr[1][0] == "op" and expr[1][1] in ("++", "--"):
+        # An increment's **value is its target's own type**, in both spellings: `NewName = Str $ i ++;` is a
+        # `string $ int` (`Concat_StrStr` with the `AddAdd_Int` node as its right operand), and
+        # `Left(i ++ $ FakeNames[...], 15)` the same, where the walk typed the increment as nothing and refused
+        # the pair. The value is the read's type -- `_incdec` already writes the node from the same read.
+        return _type_of(expr[:1], env)
+    if len(expr) == 2 and expr[0][0] == "op" and expr[0][1] in ("++", "--"):
+        return _type_of(expr[1:], env)
     if len(expr) == 1:
         kind, val = expr[0]
         low = val.lower()
