@@ -2137,8 +2137,72 @@ A byte offset is not a finding. The **111** bodies that emit and still differ we
 package's and this walk's -- with the image's own operand table, and the first *node* where they part company is what
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
+## Stage 3, continued -- the operator residue is typing, not folding (measured 2026-11-26)
+
+**11,243 modelled / 11,243 byte-identical** (from 11,195; **48 bodies gained, none lost**; residue 483 -> 435;
+`inventory/uscript_emit_join.csv` unchanged, so the walk did not move; the differ bucket 18 -> 25, and the four new
+ones are named below). Five rules, one thread: every row of the operator residue was a *type* the walk could not
+name, and the one rule that was not typing was simply wrong.
+
+**(1) A sign in an operand position is unary, not a binary operator.** `_operator_types` offered every depth-0
+symbol as a binary candidate, so `Pawn.Floor * - 256` became a `-` node -- looser than `*` -- whose left operand was
+the token run `Pawn . Floor *`: both sides typed nothing and the pair refused as *an operator the image's table does
+not install*. Ten bodies: `BotEnemy.EngageDirection`/`PickDestination` (twice)/`PickFallbackDestination`,
+`BotLite.EngageDirection`, `StargatePawn.ClientKickView`/`ClientSlideView`/`CalcHitAdjust`,
+`StargateVehicle.Tick`, `ReetouBot.PickDestinationToDodgePhaseTorch`. A sign whose left neighbour is an operator
+(`(` and `,` included) is now skipped; its type comes from `_type_of` on the signed run (`- 256` is a literal,
+`- Health` is `_unary_types`). `UIWidget.Update`'s `worldSpaceScreenWidth * - 0.5` is the same word.
+
+**(2) An increment's value is its target's own type.** `NewName = Str $ i ++;` refused as `string $ an unknown
+type`; the value of `i ++` is the read's type, in both spellings (`StreamPlaylistManager.RenamePlaylist`/
+`AddPlaylist`, `GUIController.GenerateFakeNames`). `_incdec` already writes the node from that read, so the rule is
+one line in `_type_of`.
+
+**(3) A body folds nothing.** The old refusal -- *an operator whose two operands are literals, which the compiler
+folds* -- had exactly one witness, and it was the tool's own fixture (`function CompoundArg() { Foo(1 + 2); }`), not
+a shipped body. Every shipped site writes the node:
+
+| the text | the shipped bytes | what they are |
+|---|---|---|
+| `GameInfo.GetServerPlayers`'s `1 << 29` | `94 26 2c 1d 16` | `LShift_IntInt(IntOne, IntConstByte 29)` |
+| `CTFScoreboard.DrawScoreboard`'s `160.0/768.0` | `ac 1e 00002043 1e 00004044 16` | two `FloatConst`s, not one |
+| `StargateHUD.drawHudMap`'s `32.0 / 2.0` | `ac 1e 00000042 1e 00000040 16` | the same |
+| `PlayerController.RestartCheckpoint`'s `"LoadSaveGame"@"c_"` | `a8 1f "LoadSaveGame" 1f "c_"` | `Concat_StrStr` over two `StringConst`s |
+
+The fold that rule was named for happens in a `defaultproperties` block, which is a different walk. The refusal is
+gone, its fixture moved from `REFUSE` to `WANT` (`1b2992262c021616040b47`, the `IntOne` the corpus writes), and
+**24 bodies** left the residue -- `Decoration.Trigger`, `GameInfo.GetKeyBindName`/`GetServerPlayers`,
+`PlayerController.RestartCheckpoint`/`ClientDamageShake`/`EnableVoiceChat`/`DisableVoiceChat`, `Weapon.LocalFire`,
+`Replicator.TakeFallingDamage`, `BotSG.MayFall`, `CTFScoreboard.DrawScoreboard`,
+`StargateScoreboard.DrawHeader`/`DrawScoreboard`, `StoryModeScoreboard.DrawHeader`, `StargateHUD.drawHudMap`/
+`DrawOrderTarget`, `GoauldConsoleHud.DrawHUD`, `ReplicatorHUD.DrawHUD`, `GravCraneLifter.InitPhysics`/
+`SlowStopPhysics`, `PickupMessagePlus.GetOffset`, `UnrealPlayer.NotifyTakeHit`,
+`HoverCraftTurretGunPawn.LimitRotation`, `UIWidget.Update`. `vect(...)` is a *constant operand*, not a foldable
+literal: `Vect(0,0,1)*900` ships `d4 23 <vector const> 39 3f 1d 84030000`.
+
+**(4) A `rot`/`vect` literal is a call, not a name.** Two walks tested the head word alone, so the *parameter*
+`rotator rot` made `-rot.pitch` read as a rotation literal: `_emit_unary` refused it as folded, and after that
+refusal went away `emit_expr` refused it as *a rotation literal that is not three numeric components*. Both now
+require `_is_call`. **Six bodies**: `StaffCannon.SetPitchBoneRotation`/`SetYawBoneRotation`,
+`M60TurretEmplacement`'s pair, `Gate.SpawnEventHorizon`, `CrystalTunnelLayer.RandomRot`,
+`ExtreniteAutoTurret.GetViewRotation`, `SemektetMortarGun.UpdatePathVisualisation`.
+
+**(5) A parameter's declared type is qualified, and a struct's record is keyed by its last dotted segment.**
+`params_of` cut a parameter at its `.`, so `GameInfo.KeyValuePair Option` read `GameInfo` as the name and typed the
+parameter nothing; `Maps[MapIndex].Options[i] == Option` refused as `gameinfo.keyvaluepair == struct` (three
+bodies: `MaplistRecord.ItemHasOption`/`GetOptionIndex`, `Mutator.GetServerDetails`,
+`VoiceSelector.SelectVoice`, `ServerSelectionListBox.MyReceivedPingInfo`). The struct-record lookup was keyed on the
+whole word too, while `structrefs` holds the bare name; `_struct_ref` now asks `_struct_word`. That let the struct
+comparison through, and it **emits and differs** in four bodies: `MaplistRecord.CompareItemsSlow` (315 vs 317),
+`GetOptionIndex` (85 vs 86), `ItemHasOption` (54 vs 55) and `PlayerController.ServerMove` (1,615 vs 1,623) -- the
+node's own shape, the next thing to read here, not a typing question.
+
+**What this did not reach.** The operator bucket still holds **29** rows (the `Trigger(x)` cast's value type, the
+`Sender.MSGT_*` consts of another class, the `Beacons[i].Addr` chain whose struct the census does not declare), the
+152-body compound-expression family, and the four differs above.
+
 <!-- BEGIN emit-differ -->
-**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,195 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
+**18 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,243 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 18 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|

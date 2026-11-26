@@ -275,7 +275,12 @@ def params_of(toks, i):
         words = [(k, v) for k, v in seg if k in ("ident", "keyword", "op")]
         cut = len(words)
         for n, (k, v) in enumerate(words):
-            if k == "op" and v in ("=", "[", "."):
+            # A parameter's declared type can be **qualified** (`GameInfo.KeyValuePair Option`,
+            # `VoiceChatRoom.EJoinChatResult Room`), and cutting the segment at its `.` read `GameInfo` as the
+            # name and typed the parameter nothing -- `Maps[MapIndex].Options[i] == Option` then refused as
+            # `gameinfo.keyvaluepair == struct`, three bodies. Only a default value (`= 5`) or an array
+            # dimension (`A[4]`) ends a declaration's type.
+            if k == "op" and v in ("=", "["):
                 cut = n
                 break
         words = words[:cut]
@@ -967,6 +972,13 @@ def _operator_types(expr, env, site="", root=False, typing=False):
             continue
         if i == 0 or i == len(expr) - 1:
             continue                    # a unary position: the sign of a literal, or a lone symbol
+        if expr[i - 1][0] == "op" and expr[i - 1][1] not in (")", "]", "}"):
+            # A sign whose left neighbour is an **operator** is in an operand position, so it is *unary*: the
+            # walk read `Pawn.Floor * - 256` as a `-` node (looser than `*`) whose left operand was the token
+            # string `Pawn . Floor *`, typed nothing, and refused a pair the table does install. The operand
+            # position's own type comes from `_type_of` on the signed token run (`- 256` is a literal, `- Health`
+            # is `_unary_types`), never from the pair table.
+            continue
         prec = OPERATOR_PREC.get(sym, 0)
         # the loosest operator wins, and the rightmost on a tie (left-associative: `a - b - c` is `(a - b) - c`)
         if best is None or prec >= best[0]:
@@ -1172,10 +1184,14 @@ def _all_class_names():
 
 
 def _is_literal(expr):
-    """A leaf literal: a number, a string, a quoted name, `true`/`false`/`None`, or a `vect(...)`.
+    """A leaf literal: a number, a string, a quoted name, `true`/`false`/`None`, or a `vect(...)`/`rot(...)`.
 
-    An operator whose *both* operands are literals is folded by the compiler at build time (`Foo(1 + 2)` holds `2c
-    03`), so the emitter refuses it rather than writing the unfolded node.
+    **This is not a foldability test, and no refusal may use it as one** -- a body folds nothing (see
+    `_emit_operator`). It answers "is this operand a constant the walk writes as a constant", which is what the
+    dead `_leading_literal` branch below asks of it.
+
+    The `vect`/`rot` head must be a **call**: without the check a parameter named `rot`
+    (`StaffCannon.SetPitchBoneRotation(rotator rot)`) made `-rot.pitch` read as a rotator literal.
     """
     expr = _strip_parens(expr)
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
@@ -1185,7 +1201,8 @@ def _is_literal(expr):
         if kind in ("number", "string", "quoted"):
             return True
         return kind in ("ident", "keyword") and val.lower() in ("true", "false", "none")
-    return bool(expr) and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() in ("vect", "rot")
+    return (bool(expr) and _is_call(expr) and expr[0][0] in ("ident", "keyword")
+            and expr[0][1].lower() in ("vect", "rot"))
 
 
 def _emit_var(name, env, want=""):
@@ -1674,6 +1691,14 @@ def _type_of(expr, env):
         return ""
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
         expr = [expr[1]]
+    if len(expr) == 2 and expr[1][0] == "op" and expr[1][1] in ("++", "--"):
+        # An increment's **value is its target's own type**, in both spellings: `NewName = Str $ i ++;` is a
+        # `string $ int` (`Concat_StrStr` with the `AddAdd_Int` node as its right operand), and
+        # `Left(i ++ $ FakeNames[...], 15)` the same, where the walk typed the increment as nothing and refused
+        # the pair. The value is the read's type -- `_incdec` already writes the node from the same read.
+        return _type_of(expr[:1], env)
+    if len(expr) == 2 and expr[0][0] == "op" and expr[0][1] in ("++", "--"):
+        return _type_of(expr[1:], env)
     if len(expr) == 1:
         kind, val = expr[0]
         low = val.lower()
@@ -1749,7 +1774,7 @@ def _type_of(expr, env):
         if op[3]:
             return op[3]
         if (op[0] in ("==", "!=") and op[1] and op[1] == op[2]
-                and op[1] in (env.get("scope") or {}).get("structrefs", {})):
+                and _struct_ref(op[1], env) is not None):
             # a struct compare (`StructCmpEq`/`StructCmpNe`) yields a bool; the pair table has no row for it
             return "bool"
         return ""
@@ -2191,7 +2216,7 @@ def _emit_operator(expr, rettype, env, root=False):
             # `Struct` (`Color` -12 in UWindow, `IpAddr`, `VoiceRef` 160 four times); the operator table installs no
             # `(color, color)` row -- its four color rows are `-`, `*`, `+`, `*` -- so this is the fallback the
             # compiler takes when the pair table has nothing.
-            ref = (env["scope"] or {}).get("structrefs", {}).get(t1)
+            ref = _struct_ref(t1, env)
             if ref is not None:
                 node = (bytes([0x33 if sym == "!=" else 0x32]) + write_index(ref)
                         + emit_expr(left, "", env)[0] + emit_expr(right, "", env)[0])
@@ -2233,8 +2258,13 @@ def _emit_operator(expr, rettype, env, root=False):
             promote["l"] = t1 == "float" and not _paren_wrapped(left) and _leaves_promotable(left)
             promote["r"] = t2 == "float" and not _paren_wrapped(right) and _leaves_promotable(right)
     left, right = expr[:at], expr[at + 1:]
-    if _is_literal(left) and _is_literal(right):
-        raise Refused("an operator whose two operands are literals, which the compiler folds")
+    # **A body folds nothing.** Both operands being literals was a refusal here, on the strength of a
+    # `Foo(1 + 2)` that holds `2c 03` -- and every site the corpus carries writes the node: `GameInfo.
+    # GetServerPlayers`' `1 << 29` is `94 26 2c 1d` (`LShift_IntInt(IntOne, IntConstByte 29)`),
+    # `CTFScoreboard.DrawScoreboard`'s `160.0/768.0` is `ac 1e 00002043 1e 00004044 16` (both `FloatConst`s),
+    # `StargateHUD.drawHudMap`'s `32.0 / 2.0` likewise, and `RestartCheckpoint`'s `"LoadSaveGame"@"c_"` is
+    # `a8 1f "LoadSaveGame" 1f "c_"`. The fold the old rule was named for happens in a `defaultproperties`
+    # block, which is a different walk. 31 bodies were refused on it.
     if head is not None:
         pass                                   # a no-index operator's `FinalFunction` record, set above
     elif 0x70 <= token <= 0xFF:
@@ -2381,8 +2411,10 @@ def _emit_unary(expr, rettype, env):
         raise Refused("a unary operator the image's table does not install (%s %s)"
                       % (t or "an unknown type", sym))
     operand = expr[1:]
-    if _is_literal(operand):
-        raise Refused("a unary operator whose operand is a literal, which the compiler folds")
+    # An operand that is a literal is **not** folded in a body: `StaffCannon.SetPitchBoneRotation`'s
+    # `NewRot.pitch = -rot.pitch;` ships `0f 36 e701 00 60 0a 8f 36 e701 00 73 32 16` (`8f` is
+    # `Subtract_PreInt` over the member read), and the literal reading of the same shape was a bug in
+    # `_is_literal` -- it took the *parameter named `rot`* for a `rot(...)` literal.
     if 0x70 <= token <= 0xFF:
         head = bytes([token])
     elif token >= 0x100:
@@ -2626,6 +2658,20 @@ def _struct_record(struct, member, decl_cls, env):
                 if c[2] == anc:
                     return c[:2]
     return cands[0][:2]
+
+
+def _struct_ref(t, env):
+    """The record a **struct's type word** names, or None: the struct the compiler's `StructCmpEq` carries.
+
+    The word can be qualified -- `GameInfo.KeyValuePair` is how a property or a parameter declares it, and the
+    census spells the struct `keyvaluepair` -- so the lookup keys on the **last dotted segment** (`_struct_word`).
+    Unnormalised, `MaplistRecord.CompareItemsSlow`'s `A.Options[i] == B.Options[j]` (both sides
+    `gameinfo.keyvaluepair`) found no record and refused a pair the table does not install, though the struct is
+    import -35 of Engine.u.
+    """
+    if not t:
+        return None
+    return ((env.get("scope") or {}).get("structrefs") or {}).get(_struct_word(t))
 
 
 def _struct_member(obj, nm, env):
@@ -3525,10 +3571,13 @@ def emit_expr(expr, rettype, env, element_dim=0):
             # `X[i]`: the element node is read as `10`/`1A` + index + array, and it is tried before the
             # call and member shapes because an indexed read is neither.
             return _emit_element(expr[:at], expr[at + 1:-1], rettype, env)
-        if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "vect":
+        if _is_call(expr) and expr[0][1].lower() == "vect":
             return _emit_vector(expr), "vector"
-        if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "rot":
+        if _is_call(expr) and expr[0][1].lower() == "rot":
             # `rot(pitch, yaw, roll)` is a struct literal the compiler folds, like `vect`: `22` and three i32.
+            # The head must be a **call**: without the test a parameter named `rot`
+            # (`StaffCannon.SetPitchBoneRotation(rotator rot)`, four bodies) made `-rot.pitch` read as a rotation
+            # literal and refuse as `a rotation literal that is not three numeric components`.
             return _emit_rotator(expr), "rotator"
         if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
                 and expr[1][0] == "quoted"):
@@ -6381,10 +6430,15 @@ WANT = {
     # such record. The pair below is both halves of that rule.
     "structeq": "041c426f01500b01510b16040b47",
     "structeqplain": "04328c01520b01530b040b47",
+    # `Foo(1 + 2)` was in REFUSE, on the claim that the compiler folds two literals in a body. It does not: the
+    # shipped `GameInfo.GetServerPlayers` writes `1 << 29` as `94 26 2c 1d 16` (`LShift_IntInt(IntOne,
+    # IntConstByte 29)`) and `1` as `26` (`IntOne`) in exactly this position, so the node is emitted and the
+    # fixture is a WANT case with the corpus's own shape.
+    "compoundarg": "1b2992262c021616040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
-REFUSE = ("compoundarg", "floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
+REFUSE = ("floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
           "castnoslot", "opnoslot", "incfloat", "callunknown", "acountunknown", "badclass",
           "badstatic", "eachnested", "callglobalnative", "badenummember", "rotexpression",
           "setdelegatebad")
