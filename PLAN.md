@@ -331,6 +331,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       trailing-hole strip of the iterator entry -- both callees' omitted parameter is `optional`, so optionality is
       not the discriminator. The next formulation promotes a chain only when every leaf is a variable, property or
       literal. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name, corrected in place.
+- [~] 3.6 the promotion is a call rule and a literal rule: **10,773 modelled / 10,773 byte-identical / 0 differ**
+  (from 10,765 / 10,765 / 0; **8 bodies gained, none lost**; residue 913 -> 905; `emit_differ.csv` 87 -> 79 bodies,
+  its `PrimitiveCast` rows 14 -> 6). Two bounds on the chain's leaves, each scored as a full run against the same
+  `origin/main` baseline: "every leaf a variable, property or literal" gives 10,772 / 906 with **3 lost**; adding
+  "**and one leaf is a literal**" gives 10,773 with **0 lost**. (1) The **call** bound returns five of the eight
+  bodies v3 lost -- `UWindowHSliderControl.CheckValue`, `CrystalTunnel.RandomVect`, `CrystalTunnelLayer.RandomVect`,
+  `moTextOption.GetAdjustedSize`, `DestructableActor.TakeDamage` -- because a chain holding a call's `int` result
+  keeps its int arithmetic and casts its result. (2) The **literal** bound is the other three, and both of the last
+  note's readings are retracted: `SGInsetCamera.CalcDrawOffset`'s loss is **not** the mixed pair (`SlideTime` is an
+  `int` and `ViewOffsetX - SlideTime / 100.0 * deltaX` was already right) but `deltaX = InactiveOffsetX - ViewOffsetX`
+  into a `float` local, and `GoaAutoTurretMK2Pawn.UpdateAimingRotation`'s is **not** `Tool_FindAngleDiff(...)` but
+  `desiredPitchOffset = newRot.Pitch - Rotation.pitch` (shipped `39 3f 93 00 ... 16` at 0x52) -- a pure-read chain
+  ships `IntToFloat(Subtract_IntInt(...))`, and a literal is what makes the compiler retype. (3) The **trailing
+  hole**: writing a `Nothing` for an ordinary call's omitted trailing optional and stripping only the `foreach` head
+  was scored and **refused** -- 13 residue bodies go one byte long and `SearchLight.SearchTick` is lost (413 vs 412),
+  so the unconditional strip stays and `Pawn.SurfaceReduceDamage` (111 wanted, 110 by the strip, 112 with a `Nothing`)
+  is the next instrument. Not in this PR: that byte, and `paintTransparentBlob` (560 vs 562) / `TakeDamage`
+  (233 vs 235). Doc: `docs/COMPILER_FRONTEND.md`, new section.
 - [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
       `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
       bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from

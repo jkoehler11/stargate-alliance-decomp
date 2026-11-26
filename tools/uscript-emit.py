@@ -944,6 +944,19 @@ def _operator_types(expr, env, site="", root=False):
             if hit is not None:
                 token, ret = hit
                 return sym, "bool", "bool", ret, token, at
+    # A **float site promotes both operands**, and the promotion is per operand: `W.WinHeight = 12 +
+    # MiscBevelT[2].H + MiscBevelB[2].H` ships `Add_FloatFloat(FloatConst 12, IntToFloat(.H), IntToFloat(.H))`
+    # where this walk wrote `IntToFloat(Add_IntInt(...))`. The table installs no `(int, int)` row a site could
+    # promote, so the exact `(int, int)` row answered first and the `(float, float)` row was never reached. `root`
+    # and a `float` site are the bounds: the narrowing branch below owns a root `int` site, and a nested node
+    # keeps its own type.
+    if (root and (site or "").lower() == "float" and env.get("_assign") and not env.get("_arg")
+            and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
+            and _leaves_promotable(expr)):
+        hit = _operators().get((sym, "float", "float"))
+        if hit is not None:
+            token, ret = hit
+            return sym, "float", "float", ret, token, at
     for a, b in ((n1, n2), (t1, t2)):
         hit = _operators().get((sym, a, b))
         if hit is not None:
@@ -1896,6 +1909,34 @@ def _paren_wrapped(expr):
     return depth == 0
 
 
+def _leaves_promotable(expr):
+    """True when an `int` chain at a `float` site is **retyped** root and branch instead of cast as a whole.
+
+    Two measured bounds decide it, both about the chain's leaves rather than about the site:
+
+    * A **call's `int` result** anywhere in the chain keeps the whole chain `int` and casts its result:
+      `NewValue = Int(TempF + 0.5) * Step;` ships `IntToFloat(Multiply_IntInt(...))` although both operands are
+      `int` and the target is `float` -- `UWindowHSliderControl.CheckValue`, `CrystalTunnel.RandomVect` (twice,
+      through `CrystalTunnelLayer`), `moTextOption.GetAdjustedSize`, `DestructableActor.TakeDamage` and
+      `GoaAutoTurretMK2Pawn.UpdateAimingRotation` all cast the chain's *result* for that reason. A call is a word
+      immediately followed by `(`, which is also how a meta-cast is spelled (`Int(...)`, `int(...)`).
+    * A chain of **pure reads** is not retyped either: `deltaX = InactiveOffsetX - ViewOffsetX;` into a `float`
+      local and `desiredPitchOffset = newRot.Pitch - Rotation.pitch;` into a `float` property ship
+      `IntToFloat(Subtract_IntInt(...))`. A **literal** is what makes the compiler retype: it folds the literal to a
+      `FloatConst` (`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` is `Add_FloatFloat` all the way down),
+      and with one operand `float` the pair takes the float row and every other leaf converts at its own read.
+
+    An array subscript, a struct member and a parenthesised group are none of them a call.
+    """
+    literal = False
+    for i, (kind, val) in enumerate(expr):
+        if kind == "number":
+            literal = True
+        elif kind == "op" and val == "(" and i and expr[i - 1][0] in ("ident", "keyword"):
+            return False
+    return literal
+
+
 def _emit_operator(expr, rettype, env, root=False):
     """`A op B` -> `<token> A B 16`: the operator's token comes **first**, its operands after it.
 
@@ -1943,6 +1984,33 @@ def _emit_operator(expr, rettype, env, root=False):
         raise Refused("an operator the image's table does not install (%s %s %s)"
                       % (t1 or "an unknown type", sym, t2 or "an unknown type"))
     left, right = expr[:at], expr[at + 1:]
+    # **Which operand the site converts, and how.** A mixed pair (`int` against `float`) converts the `int`
+    # *subtree*: `ConeBuilder.BuildCone`'s `sin((2 * i + Ofs) * pi / Sides)` ships
+    # `Multiply_FloatFloat(Add_FloatFloat(Multiply_FloatFloat(FloatConst 2, IntToFloat(i)), IntToFloat(Ofs)),
+    # FloatConst pi)` where this walk wrote `IntToFloat(Add_IntInt(Multiply_IntInt(2, i), Ofs))`. A pair the
+    # **site** promoted (both sides `int`) instead casts each operand, and a **parenthesised** operand keeps its
+    # own type: `tempFloat = (xloc - 1) / image.USize` is
+    # `Divide_FloatFloat(IntToFloat(Subtract_IntInt(xloc, 1)), IntToFloat(USize))`. `promote` names the sides whose
+    # own int arithmetic is re-emitted at `float` instead of wrapped.
+    # The shipped bytes decide it by the operand's **kind**: a chain all of whose leaves are variables,
+    # properties or literals is retyped root and branch, and a chain with a **call's** `int` result anywhere is
+    # cast as a whole (`IntToFloat(Multiply_IntInt(Int(TempF + 0.5), Step))`). `_leaves_promotable` is that
+    # bound, and it is asked at the pair table and here, so both the node's own row and the operands agree.
+    promote = {"l": False, "r": False}
+    if (rettype or "").lower() == "float" and sym in ("+", "-", "*", "/"):
+        own = {"l": _numeric(_enum_byte(_type_of(left, env).lower(), env), env),
+               "r": _numeric(_enum_byte(_type_of(right, env).lower(), env), env)}
+        if {own["l"], own["r"]} == {"int", "float"}:
+            side = "l" if own["l"] == "int" else "r"
+            promote[side] = ((t1 if side == "l" else t2) == "float"
+                             and _leaves_promotable(left if side == "l" else right))
+        elif own["l"] == own["r"] == "int":
+            # The **site's** promotion, which the pair table has to have widened: a call's argument keeps its int
+            # arithmetic and casts at the argument's own site (`Abs(BlendC - NewC)` and `FRand()-style` graders are
+            # `IntToFloat(Subtract_IntInt(...))`), and so does a parenthesised group.
+            promote["l"] = t1 == "float" and not _paren_wrapped(left) and _leaves_promotable(left)
+            promote["r"] = t2 == "float" and not _paren_wrapped(right) and _leaves_promotable(right)
+    left, right = expr[:at], expr[at + 1:]
     if _is_literal(left) and _is_literal(right):
         raise Refused("an operator whose two operands are literals, which the compiler folds")
     if head is not None:
@@ -1976,13 +2044,23 @@ def _emit_operator(expr, rettype, env, root=False):
     # nodes in; an operand to the right of an operator does not (`5` of `10 + 5 * FRand()` casts).
     left_env = dict(inner, _root=True) if root else inner
     right_env = inner
-    node = (head + (_byte_literal(left, t1, rettype, inner)
-                    or (_float_literal(left, t1, rettype) if root else None)
-                    or _operand(left, t1, rettype, env, left_env)
-                    or emit_expr(left, t1, left_env)[0])
-            + (_byte_literal(right, t2, rettype, inner)
-               or _operand(right, t2, rettype, env, right_env)
-               or emit_expr(right, t2, right_env)[0]) + b"\x16")
+
+    def _side(part, want, side_env, do_promote, folded):
+        """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
+        if do_promote:
+            try:
+                return emit_expr(part, "float", side_env)[0]
+            except Refused:
+                pass                       # not a subtree this walk can promote -- the cast shape is the fallback
+        return (_byte_literal(part, want, rettype, inner)
+                or folded
+                or _operand(part, want, rettype, env, side_env)
+                or emit_expr(part, want, side_env)[0])
+
+    node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(left, env) is not None,
+                         _float_literal(left, t1, rettype) if root else None)
+            + _side(right, t2, right_env, promote["r"] and _operator_types(right, env) is not None, None)
+            + b"\x16")
     return _converted(node, result, rettype), "operator"
 
 
@@ -3475,12 +3553,18 @@ def emit_call(stmt, env, receiver=None, head=None):
         # A byte-typed literal is written by `emit_expr`, which knows the form from the value (see the number
         # branch): `byte` takes ByteConst up to 254 and the int form for 255. Each argument is its own expression
         # root, so `_root` from an enclosing expression is cleared here.
-        out += emit_expr(arg, ptype, {k: v for k, v in env.items() if k != "_root"})[0]
+        out += emit_expr(arg, ptype, dict(((k, v) for k, v in env.items() if k != "_root"), _arg=True))[0]
     return out + b"\x16"
 
 
 def emit_assign(stmt, at, env):
     """`X = value;` -> `0F <InstanceVariable> <index> <value>`, or `14 2D <InstanceVariable> <index> <bool>`."""
+    # An assignment's value is the one site where the compiler **retypes an int subtree** at the target's `float`
+    # width (`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` is `Add_FloatFloat` all the way down). A
+    # comparison's operand and a call's argument keep their own int arithmetic and cast at the node
+    # (`Abs(BlendC - NewC)` and `ArrowWidth - 0.5 > int(ArrowWidth - 0.5) + 1` are `IntToFloat(Subtract_IntInt(...))`),
+    # so the flag travels as `_assign` and the pair table reads it.
+    env = dict(env, _assign=True)
     lhs, rhs = stmt[:at], stmt[at + 1:]
     if len(lhs) != 1 or lhs[0][0] not in ("ident", "keyword"):
         # The target is itself an expression: `H.LastPickupTime = H.Level.TimeSeconds;` is `0f <Context read> <value>`
