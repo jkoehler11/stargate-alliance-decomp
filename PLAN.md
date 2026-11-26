@@ -397,6 +397,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   560 vs 562, `StargatePawn.TakeDamage` 233 vs 235, `DeathMatch.AdjustSkill` 171 vs 174) and the **negative**
   literal fold (`BaseChange` 270 vs 272, `TakeFallingDamage` 243 vs 245) -- refusing every negative fold gains two
   and loses four, so the discriminator is not the sign. Doc: `docs/COMPILER_FRONTEND.md`, new section.
+- [~] 3.6 a compound assignment on a byte keeps the byte operator: **10,827 modelled / 10,827 byte-identical /
+      0 differ** (from 10,823; four bodies gained, none lost; 30 -> 26 bodies that emit and still differ).
+      `PendingCompress += 2;` on a `byte` local ships `87 00 67 0a 39 3d 2c 02 16` -- `AddEqual_ByteByte(target,
+      IntToByte(2))` -- where the walk wrote `a1 39 3a 00 67 0a 2c 02 16` (`AddEqual_IntInt(ByteToInt(target), 2)`,
+      one byte longer); `Mover.KeyFrameReached`'s `KeyNum += StepDirection` is the same word with an int property on
+      the right. The expression rule promotes a byte to int before the pair lookup (that is what makes
+      `DirtyMask | 1` an `Or_IntInt`), but a compound assignment's token follows the **target's** declared type, and
+      the right operand converts down at its own site; the image installs `AddEqual_ByteByte` 135,
+      `SubtractEqual_ByteByte` 136 and `MultiplyEqual_ByteByte` 133. Doc: `docs/COMPILER_FRONTEND.md`, section of the
+      same name.
 - [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
       `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
       bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from
