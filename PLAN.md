@@ -239,6 +239,15 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 `interpcurve` is 12 bytes: **10,765 modelled / 10,765 byte-identical / 0 differ** (from 10,764; one body
+  gained, none lost; residue 914 -> 913; `emit_differ.csv` unchanged at 87 bodies, the body having refused on its
+  width rather than differed on its bytes). `StargateCar.SVehicleUpdateParams` reads `Wheels[i].WheelInertia` over an
+  `array<interpcurve>` and the node writes `05 00 0c`, so `STRUCT_SIZE` gains the width and the body -- which refused
+  as *a struct member declared `interpcurve`, whose value size this walk does not carry* -- emits byte-identically.
+  `inventory/context_size.csv` carries no row for the struct -- its only reader was the refusal -- and
+  `tools/context-size.py`'s `--check` moves its "not in table" witness from `interpcurve` to `interpcurvepoint`, a
+  verdict about a struct the table lacks being untestable on a struct it now has. Doc: `docs/COMPILER_FRONTEND.md`,
+  section of the same name.
 - [~] 3.6 the record a struct field read names, and a key that is not unique: **10,740 modelled / 10,740
   byte-identical / 0 differ** (from 10,739; one body gained, none lost; `emit_differ.csv` 87 -> 86). (1)
   `struct_props` is keyed on the `(struct, member)` pair the source spells, and `Engine.u` declares `Orientation`
@@ -297,32 +306,31 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   iterator section corrected in place. Not in this PR: the seven struct widths `inventory/context_size.csv`
   measures (`animrep` 12, `id3field` 36, `liveuser` 24, `orientation` 92, `range` 8, `rangevector` 24,
   `voicedesc` 64) and the 89 rows that refuse as `a struct member of type struct`.
-- [ ] 3.6 the int/float promotion is per operand, and the emitter casts the result: **fourteen** bodies first
-      differ at a `PrimitiveCast` and **six** more at the operator the byte sits on (`Divide_FloatFloat` 1,
-      `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3, `SubtractEqual_IntInt` 2). The package
-      converts each operand at its own site to the expression's wider type; the emitter evaluates in the operands'
-      type and converts the result -- `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` ships
-      `Add_FloatFloat(FloatConst 12, IntToFloat(.H), IntToFloat(.H))` where the walk writes
-      `IntToFloat(Add_IntInt(IntConstByte 12, .H, .H))`. Bounds measured: a **parenthesised** operand keeps its own
-      type and converts at the promotion site (`paintTransparentBlob`'s `(xloc - 1) / image.USize`), and an **int**
-      site narrows the float operand before the operator (`UDebugVideoClient.BeforePaint`'s `... / 2`), which the
-      walk already does at a root int site. `_operator_types` never reaches the `(float, float)` row because the exact
-      `(int, int)` row answers first. The change is one site choice plus per-operand typing; its risk is reach, so it
-      is accepted only on `differ: 0`, no modelled body lost, and the cast and operator rows falling together. Doc:
-      `docs/COMPILER_FRONTEND.md`, section of the same name.
-- [ ] 3.6 the int/float promotion is per operand, and the emitter casts the result: **fourteen** bodies first
-      differ at a `PrimitiveCast` and **six** more at the operator the byte sits on (`Divide_FloatFloat` 1,
-      `Multiply_FloatFloat` 1, `Subtract_IntInt` 3, `AddEqual_IntInt` 3, `SubtractEqual_IntInt` 2). The package
-      converts each operand at its own site to the expression's wider type; the emitter evaluates in the operands'
-      type and converts the result -- `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` ships
-      `Add_FloatFloat(FloatConst 12, IntToFloat(.H), IntToFloat(.H))` where the walk writes
-      `IntToFloat(Add_IntInt(IntConstByte 12, .H, .H))`. Bounds measured: a **parenthesised** operand keeps its own
-      type and converts at the promotion site (`paintTransparentBlob`'s `(xloc - 1) / image.USize`), and an **int**
-      site narrows the float operand before the operator (`UDebugVideoClient.BeforePaint`'s `... / 2`), which the
-      walk already does at a root int site. `_operator_types` never reaches the `(float, float)` row because the exact
-      `(int, int)` row answers first. The change is one site choice plus per-operand typing; its risk is reach, so it
-      is accepted only on `differ: 0`, no modelled body lost, and the cast and operator rows falling together. Doc:
-      `docs/COMPILER_FRONTEND.md`, section of the same name.
+- [~] 3.6 the float site's promotion failed its own test -- the operand's kind decides, not the site: **not shipped**
+      at 10,767 modelled / 85 differ, because it loses **8 bodies that reproduced exactly**. Three bounds were scored
+      on the same corpus (a body is *lost* when it is modelled at `origin/main` and not by the formulation, *gained*
+      the other way, both per `(package, class, state, function)`): v1, every operand of a `float`-site pair, 10,735 /
+      116 differ / **40 lost** / 11 gained; v2, plus a call's argument keeps its `int` arithmetic, 10,765 / 86 /
+      **9 lost** / 10 gained; v3, plus only an assignment's value retypes, 10,767 / 85 / **8 lost** / 11 gained. v3
+      is the net-best and still fails the test stated for it two entries down: eight previously identical bodies stop
+      matching and no operator row moves (`PrimitiveCast` 14 -> 5, where `Divide_FloatFloat`, `Multiply_FloatFloat`,
+      `Subtract_IntInt`, `AddEqual_IntInt` and `SubtractEqual_IntInt` stay put). (1) The **eleven gains** are the
+      shape the rule was written for -- `UDebugBlueLookAndFeel.Combo_SetupSizes` / `Editbox_SetupSizes` and their
+      `UWindowWin95LookAndFeel` twins, `GUIMessageBox.LayoutButtons`, `StargateHUD.paintTransparentBlob`,
+      `StargatePawn.TakeDamage`, `Mover.InterpolateTo`, `UWindowPulldownMenu.BeforePaint`,
+      `UWindowComboList.BeforePaint` and `StargateCar.SVehicleUpdateParams` -- so the rule is right where it applies.
+      (2) The **eight losses** name the variable the site misses, the **operand's kind**: `UWindowHSliderControl.CheckValue`'s
+      `Int(TempF + 0.5) * Step`, `CrystalTunnel.RandomVect` and `CrystalTunnelLayer.RandomVect`'s
+      `Rand(range) - (range / 2)`, `moTextOption.GetAdjustedSize`'s `int(ArrowWidth - 0.5) + 1`,
+      `DestructableActor.TakeDamage`'s `DynamicArrayLength(...)` chain and `GoaAutoTurretMK2Pawn.UpdateAimingRotation`'s
+      `Tool_FindAngleDiff(...)` all keep the chain `int` and cast its **result**, because a leaf is a **call**;
+      `SGInsetCamera.CalcDrawOffset`'s `ViewOffsetX - SlideTime / 100.0 * deltaX` is the one loss that is a *mixed*
+      chain, and it is the next instrument. (3) The two bodies that bound it either way: `Pawn.BaseChange`'s
+      `IntToFloat(FloatToInt(...))` parenthesised group (272 bytes where the walk writes 268) and
+      `Pawn.SurfaceReduceDamage`'s **written** trailing `Nothing` (111 against 110), which contradicts the
+      trailing-hole strip of the iterator entry -- both callees' omitted parameter is `optional`, so optionality is
+      not the discriminator. The next formulation promotes a chain only when every leaf is a variable, property or
+      literal. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name, corrected in place.
 - [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
       `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
       bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from
