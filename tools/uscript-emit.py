@@ -933,10 +933,12 @@ def _operator_types(expr, env, site="", root=False):
     # the same mapping is what `_operand` needs to write the `39 3a` (`ByteToInt`) around the call.
     t1, t2 = _enum_byte(t1, env), _enum_byte(t2, env)
     n1, n2 = _numeric(t1, env), _numeric(t2, env)
+    # Only the **left** operand of a node carries the statement's type. The compiler hands its expected type to the
+    # left child and types the right one from the left operand, so `CurvedStairBuilder`'s
+    # `(65536.0f * (AngleOfCurve / 360.0f)) / NumSteps` narrows the outer group and leaves the inner one a
+    # `Divide_FloatFloat` (`_group_narrow`).
     if _group_narrow(left, env):
         t1, n1 = "int", "int"
-    if _group_narrow(right, env):
-        t2, n2 = "int", "int"
     # A float **literal** whose value is an exact integer is typed `int` at an `int`-typed node: the constant is
     # narrowed to the site and the pair is looked up on `int` (`_integral_float` carries the three bodies).
     if (site or "").lower() == "int" and _integral_float(left) is not None:
@@ -2134,11 +2136,15 @@ def _emit_operator(expr, rettype, env, root=False):
     # The **leading** operand of the expression keeps the root, so `(640 / RangeToTarget) * 85` folds the 640 two
     # nodes in; an operand to the right of an operator does not (`5` of `10 + 5 * FRand()` casts).
     left_env = dict(inner, _root=True) if root else inner
-    right_env = inner
+    # A right operand carries no site of its own: it is typed from the left operand, so a parenthesised group in that
+    # position is its own `float` (`Vehicle.HealDamage`'s `Min(Health + (Amount * LinkHealMult), HealthMax)` promotes
+    # the pair to `float` and narrows only at the argument's boundary).
+    right_env = {k: v for k, v in inner.items()
+                  if k not in ("root_site", "int_site", "group_int")}
 
-    def _side(part, want, side_env, do_promote, folded):
+    def _side(part, want, side_env, do_promote, folded, narrow=True):
         """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
-        if _group_narrow(part, env):
+        if narrow and _group_narrow(part, env):
             # The group's **result** is the root's type; its own arithmetic keeps the type it has. So the group is
             # emitted at its own `float`, narrowed with the `FloatToInt` at its boundary, and widened back where a
             # `float` consumer reads it -- the `IntToFloat(FloatToInt(...))` round trip four bodies ship. Emitting
@@ -2174,7 +2180,8 @@ def _emit_operator(expr, rettype, env, root=False):
                    if root and not env.get("group_int") else None)
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(left, env) is not None,
                          folded_left)
-            + _side(right, t2, right_env, promote["r"] and _operator_types(right, env) is not None, None)
+            + _side(right, t2, right_env, promote["r"] and _operator_types(right, right_env) is not None, None,
+                    narrow=False)
             + b"\x16")
     return _converted(node, result, rettype), "operator"
 
