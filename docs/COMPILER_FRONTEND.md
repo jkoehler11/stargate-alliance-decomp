@@ -2138,21 +2138,18 @@ package's and this walk's -- with the image's own operand table, and the first *
 names the family: a `Context` size byte, a `JumpIfNot` distance, an index, a node only one side has.
 
 <!-- BEGIN emit-differ -->
-**26 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,909 modelled and identical in the same run). **10** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 26 separate defects.
+**20 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 10,915 modelled and identical in the same run). **6** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 20 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours shorter | no | 5 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `BotEnemy.Tick` |
-| jump distance | Jump | ours shorter | yes | 4 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
-| jump distance | JumpIfNot | ours shorter | yes | 4 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove`, `MaplistRecord.GetMapItemIndex` |
-| jump distance | JumpIfNot | ours longer | yes | 2 | `LocalMessage.ClientReceive`, `StargateDeathMessage.ClientReceive` |
+| jump distance | Jump | ours shorter | yes | 3 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
+| jump distance | JumpIfNot | ours shorter | yes | 3 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove`, `counter.Trigger` |
 | jump distance | JumpIfNot | same length | no | 2 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults` |
 | opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
 | context skip | Context | ours shorter | - | 1 | `BotSG.AssignAmbushPoint` |
-| opcode | EatString | ours longer | - | 1 | `LocalMessage.GetRelatedString` |
 | opcode | FinalFunction | same length | - | 1 | `GUIComponent.ParseOption` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
-| opcode | StructCmpEq | ours shorter | - | 1 | `MaplistRecord.CompareItems` |
 | operand | Iterator | ours shorter | - | 1 | `BotEnemy.FindTurretGoal` |
 | operand | StringConst | ours longer | - | 1 | `TextGameInfo.InitComponent` |
 <!-- END emit-differ -->
@@ -2884,3 +2881,57 @@ the same source `2/Min(...)` ships as `Divide_FloatFloat(FloatConst 2.0, IntToFl
 argument of a float native, and as an int division cast at the node when it is nested under a float subtract in the
 same body. Letting a divide promote at an argument site was scored and gained **no** body, so the bound is the
 parameter slot's own desired type -- the next instrument in this thread.
+
+## Stage 3, continued -- an argument slot's own type, a `Static.` value, and a struct's declared operator (measured 2026-11-26)
+
+**10,915 modelled / 10,915 byte-identical / 0 differ** (from 10,909 / 10,909 / 0; **six bodies gained, none lost**;
+the walk and the join unchanged at 11,687 and 11,678; residue 769 -> 763; the bodies that emit and still differ
+26 -> 20). All six were `an emitted body that differs from the shipped bytes` before this branch rather than
+refusals, so the score is a per-body diff of two full runs and not a residue count -- the shape that hid 40 lost
+bodies behind a net `+3` once already.
+
+**1. `Static.F(...)` in a value position writes no `EatString`.** The prefix is the *statement's* discard node, so the
+two positions of one call are one byte apart:
+
+| body | source | shipped | this walk before |
+|---|---|---|---|
+| `LocalMessage.GetRelatedString` | `return Static.GetString(Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);` | `04 1b 1d 00 ... 16` -- **19** bytes | `04 0e 1b 1d 00 ... 16` -- 20 |
+| `LocalMessage.ClientReceive`, `StargateDeathMessage.ClientReceive` | the same call inside a larger body | jump `2d 01` / `dd 00` | `2e 01` / `de 00` (the distance of the byte that should not be there) |
+
+`Static.Say("x");` as a statement still carries `0e`, and `_emit_global_call` follows the same rule -- the flag now
+travels as `stmt` through `_prefix_call`.
+
+**2. A divide at a parameter slot promotes, and the slot is the whole bound.** `DeathMatch.AdjustSkill` writes
+`2/Min(PlayerDeaths, 10)` twice, one level apart, and the package tells the two apart:
+
+    as the argument of FMin      ac 1e 00000040 39 3f <Min> 16      Divide_FloatFloat(FloatConst 2.0, IntToFloat(Min(...)))
+    under the float subtract     a1 ...                             Divide_IntInt
+
+An earlier round scored promoting an argument's whole tree, gained nothing and retyped the subtract that must stay
+`int`; the rule is the argument **root** and the divide alone, so a nested divide keeps its int arithmetic. 171 -> 174
+bytes, and the body is byte-identical.
+
+**3. A class-declared struct operator is an ordinary `FinalFunction` on its own record.** `MaplistRecord` declares
+`static final operator(24) bool == ( MapItem A, MapItem B )` beside the struct, so `return A == B;` is
+
+    shipped    04 1c 42 37 <A> <B> 16      FinalFunction over EqualEqual_MapItemMapItem (export 7106, Engine.u)
+    this walk  04 32 68 02 <A> <B>          StructCmpEq over the struct's object
+
+Two bodies: `CompareItems` (13 -> 14 bytes) and `GetMapItemIndex`, where the node moves a `JumpIfNot` distance
+(`3f 00` -> `40 00`) in a 54 -> 55-byte body. The discriminator is not the operator table (it installs no
+`(mapitem, mapitem)` row) but the **record**: a `Function` of the operator's composed name in the body's own package
+*is* the declaration, and the corpus's six `StructCmpEq` bodies (`Color` -12 in `UWindow`, `IpAddr`, `VoiceRef`) have
+none -- so the `32` rule keeps its whole population.
+
+**All three rules are in `--check`** (six new synthetic bodies, 114 -> 120): `Static.Say("x")` as a value and as a
+statement, the same divide in a `float` slot and in an `int` slot, and both halves of the struct comparison
+(`MapItem`, which has a record, and `PlainItem`, which must stay a `StructCmpEq`).
+
+**One tool guard, same bundle.** `--only` with a package stem that names nothing present now fails
+(`FAIL uscript-emit: --only names no package present in the dump: nope`, exit 2) instead of walking an empty
+population and writing an artifact that is a complete and truthful report of nothing -- the same shape as handing the
+tool the game directory instead of `System`, and the one mistake a partial-run score is made of.
+
+What this did not move: the residue's top families, unchanged in kind and in count -- a compound expression (152), a
+member call statement to a name the receiver's chain does not declare (125), a member that is not a property of the
+receiver's class (65). Those are the next thread; these three rules were the tail of the argument-list one.

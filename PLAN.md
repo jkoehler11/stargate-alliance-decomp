@@ -407,6 +407,25 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       the right operand converts down at its own site; the image installs `AddEqual_ByteByte` 135,
       `SubtractEqual_ByteByte` 136 and `MultiplyEqual_ByteByte` 133. Doc: `docs/COMPILER_FRONTEND.md`, section of the
       same name.
+- [~] 3.6 an argument slot's own type decides a divide, a value-position `Static.` call writes no `EatString`, and
+      a class-declared struct operator is a `FinalFunction`: **10,915 modelled / 10,915 byte-identical / 0 differ**
+      (from 10,909 / 10,909 / 0; **six bodies gained, none lost**; the walk and the join unchanged at 11,687 and
+      11,678; residue 769 -> 763; the bodies that emit and still differ 26 -> 20). The six were all `an emitted body
+      that differs` before this branch, so the score is a per-body diff of two full runs, not a residue count.
+      (1) `LocalMessage.GetRelatedString` ships `04 1b 1d 00 ... 16` (19 bytes) where the walk wrote a `0e`
+      `EatString` in front of it (20): the prefix is the **statement's** discard node, so `return Static.F(...)`
+      writes the call alone -- and the two `ClientReceive` bodies are the same byte seen as a jump distance
+      (`2e 01`/`de 00` -> `2d 01`/`dd 00`). (2) `DeathMatch.AdjustSkill` writes `2/Min(PlayerDeaths, 10)` twice:
+      `ac 1e 00000040 39 3f` as the argument of `FMin`, `a1 ...` (`Divide_IntInt`) behind the float subtract, so the
+      promotion's bound is the argument **root** and the divide alone -- promoting an argument's whole tree was scored
+      before and gained nothing (171 -> 174 bytes, identical). (3) `MaplistRecord` declares
+      `static final operator(24) bool == ( MapItem, MapItem )`, so `return A == B;` is `1c 42 37`
+      (`EqualEqual_MapItemMapItem`, export 7106 of `Engine.u`) and not `32 68 02` (`StructCmpEq`); a record of the
+      composed name existing in the body's own package *is* the declaration, and the six `StructCmpEq` bodies in the
+      corpus (`Color`, `IpAddr`, `VoiceRef`) have none. Six synthetic bodies hold the three rules in `--check`
+      (114 -> 120). Doc: `docs/COMPILER_FRONTEND.md`, new section. Not in this PR: the residue's top families (a
+      compound expression 152, a member call the receiver's chain does not declare 125, a member that is not a
+      property 65), and `LocalMessage.ClientReceive`'s jump is the only evidence the byte moved rather than the node.
 - [~] 3.6 a delegate an ancestor in another package declares is a property import, and the call is
       `DelegateFunction`: **10,450 modelled / 10,450 byte-identical / 0 differ** (from 10,442 / 10,442 / 0; eight
       bodies gained, none lost; the `VirtualFunction` row that carried all eight is gone from
