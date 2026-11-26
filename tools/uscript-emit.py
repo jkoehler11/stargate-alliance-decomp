@@ -2184,15 +2184,25 @@ def _leaves_promotable(expr):
       `FloatConst` (`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` is `Add_FloatFloat` all the way down),
       and with one operand `float` the pair takes the float row and every other leaf converts at its own read.
 
+    * A chain of **nothing but literals** is a constant expression and stays `int`: `Chip.BeginState`'s
+      `RotationRate.Yaw = 200000 * 2 * FRand() - 200000;` ships `Multiply_FloatFloat(IntToFloat(Multiply_IntInt(
+      IntConst 200000, IntConstByte 2)), FRand())` -- the `2` does not become a `FloatConst`, the pair keeps its
+      `int` row and the node's **result** is what converts. The literal rule above needs a non-literal leaf to
+      apply; three bodies (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`) are the evidence, each six
+      bytes long because two `39 3f` casts were written where the package has one.
+
     An array subscript, a struct member and a parenthesised group are none of them a call.
     """
     literal = False
+    other = False
     for i, (kind, val) in enumerate(expr):
         if kind == "number":
             literal = True
+        elif kind in ("ident", "keyword"):
+            other = True
         elif kind == "op" and val == "(" and i and expr[i - 1][0] in ("ident", "keyword"):
             return False
-    return literal
+    return literal and other
 
 
 def _emit_operator(expr, rettype, env, root=False):

@@ -239,6 +239,22 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a chain of nothing but literals is not retyped: **11,275 modelled / 11,275 byte-identical** (from
+  11,272; **3 bodies gained, none lost**; residue 406 -> 403, the differ bucket 23 -> 20 -- the
+  `Multiply_FloatFloat` family is gone). `_leaves_promotable` retyped every `int` chain at a `float` site that held
+  a literal and no call, so `Chip.BeginState`'s `200000 * 2` went out as `Multiply_FloatFloat(IntToFloat(200000),
+  IntToFloat(2))` where the package keeps `Multiply_IntInt` and converts its *result*
+  (`Multiply_FloatFloat(IntToFloat(Multiply_IntInt(200000, 2)), FRand())`). A **constant expression** is not a
+  promotion candidate: the literal rule needs a non-literal leaf, the bound the call rule already had. Three bodies
+  (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`), each six bytes long, all three now identical. The
+  score is per body against the previous run, and the tool for it is new: **`tools/emit-score.py`** joins two run
+  directories on `(package, class, state, function, source)` and reports gained / lost / newly differing / later
+  refusals, exiting 1 on a loss (the source is in the key because `PlayerController.CallServerMove` is two bodies
+  of one name). Doc: `docs/COMPILER_FRONTEND.md`, new section. Not in this PR: the `Self` -> `coerce string` cast
+  (`ObjectToString` 86, keyed `(object, string)` while the walk looks up the class name), the tree being UTF-8 of
+  the package's bytes (`TextGameInfo.InitComponent`'s `0x92`), `ServerMove`'s float retype, the 19 operator rows
+  and the 152-body compound family. Both of the first two were attempted and gained no body, so their shape is
+  re-read rather than shipped.
 - [~] 3.6 a struct's operator is keyed on the bare struct name, a const on the receiver's chain, and a delegate's
   own record: **11,272 modelled / 11,272 byte-identical** (from 11,243; **29 bodies gained, none lost**; residue
   435 -> 406, the operator bucket 26 -> 19, the differ bucket 25 -> 23). Three rules, one shape: the declaration
