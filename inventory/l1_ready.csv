@@ -130,7 +130,7 @@ APCM60GunAmmo,3,3,0,100.0,
 APCM60GunAttachment,2,2,0,100.0,
 APCM60Turret,1,1,0,100.0,
 AbstractUIXInteraction,19,19,0,100.0,
-AccessControl,31,30,1,96.8,two asserts
+AccessControl,31,31,0,100.0,
 AcidBurn,3,3,0,100.0,
 ActionPause,3,3,0,100.0,
 Action_PLAYANIM,4,4,0,100.0,
@@ -165,7 +165,7 @@ AnnouncerVoice,4,4,0,100.0,
 AntiPortalActor,3,3,0,100.0,
 Armor,6,6,0,100.0,
 ArmorPickup,1,1,0,100.0,
-AssaultPath,3,2,1,66.7,an operator the image's table does not install
+AssaultPath,3,3,0,100.0,
 AttachedAlkeshTurret,5,5,0,100.0,
 AttachedDeathGliderTurret,5,5,0,100.0,
 AttachedDeathGliderTurretGun,2,2,0,100.0,
@@ -187,7 +187,7 @@ Blood,2,2,0,100.0,
 BloodHit,2,2,0,100.0,
 BlueFlag,1,1,0,100.0,
 BodySwapTrigger,5,5,0,100.0,
-BotBase,138,136,2,98.6,an ArrayCount of something that is not a bare name
+BotBase,138,138,0,100.0,
 BotEnemy,450,449,1,99.8,an operator the image's table does not install
 BotGoauld,16,16,0,100.0,
 BotGuide,15,15,0,100.0,
@@ -221,7 +221,7 @@ ChapterSelectionPanel,4,4,0,100.0,
 CharacterSelectionList,4,4,0,100.0,
 CharacterSelectionPanel,1,1,0,100.0,
 ChatRoomMessage,2,2,0,100.0,
-CheatManager,75,67,8,89.3,a name this package declares only on another class's chain
+CheatManager,75,72,3,96.0,a name this package declares only on another class's chain
 Chip,3,3,0,100.0,
 CirclingBirds,4,4,0,100.0,
 ClientBeaconReceiver,7,5,2,71.4,an operator the image's table does not install
@@ -435,7 +435,7 @@ GravCraneProjector,5,5,0,100.0,
 GrenadeAmmo,2,2,0,100.0,
 GrenadeSand,2,2,0,100.0,
 HANDOFLIGHT,19,19,0,100.0,
-HUD,61,59,2,96.7,a member that is not a property of the receiver's class
+HUD,61,60,1,98.4,a member that is not a property of the receiver's class
 HaakenBot,21,21,0,100.0,
 HaakenGrunt,9,9,0,100.0,
 HaakenLeaderBot,28,28,0,100.0,
@@ -553,7 +553,7 @@ LineOfSightTrigger,3,3,0,100.0,
 LinearStairBuilder,1,1,0,100.0,
 LinkedGate,10,10,0,100.0,
 LinkedGateEventHorizon,3,3,0,100.0,
-LinkedGateTeleporter,10,9,1,90.0,a call whose callee declaration the text does not carry
+LinkedGateTeleporter,10,10,0,100.0,
 LinkedTacticalTarget,1,1,0,100.0,
 ListObjectPropsCommandlet,3,2,1,66.7,a member that is not a property of the receiver's class
 LoadGameMenu,3,3,0,100.0,
@@ -755,7 +755,7 @@ SGC_DestructibleSecurityDoor,4,4,0,100.0,
 SGC_SecurityDoor,4,4,0,100.0,
 SGC_SecurityReader,5,5,0,100.0,
 SGFontInfo,10,10,0,100.0,
-SGFormation,14,13,1,92.9,an ArrayCount of something that is not a bare name
+SGFormation,14,14,0,100.0,
 SGInsetCamera,19,19,0,100.0,
 SGInsetCameraLookAt,2,2,0,100.0,
 SGInsetCameraTarget,4,4,0,100.0,
@@ -946,7 +946,7 @@ SystemLinkMenu,3,3,0,100.0,
 TERWEAPON,10,10,0,100.0,
 TERWeaponAmmo,1,1,0,100.0,
 TERWeaponProjectile,2,2,0,100.0,
-TacticalTarget,16,15,1,93.8,an ArrayCount of something that is not a bare name
+TacticalTarget,16,16,0,100.0,
 TcpLink,6,6,0,100.0,
 Tealc,5,5,0,100.0,
 TeamAI,27,27,0,100.0,
@@ -966,7 +966,7 @@ TeltakBot,46,45,1,97.8,a bool assignment whose value is a compound expression
 TempleTurretGun,6,6,0,100.0,
 TempleTurretGunProjectile,1,1,0,100.0,
 TerrainBuilder,2,2,0,100.0,
-TestInfo,26,17,9,65.4,two asserts
+TestInfo,26,23,3,88.5,an operator the image's table does not install
 TestObj,1,1,0,100.0,
 TestScreenplay,1,1,0,100.0,
 TetrahedronBuilder,3,3,0,100.0,
@@ -982,7 +982,7 @@ Train,11,11,0,100.0,
 TransientAmbientCreature,15,15,0,100.0,
 TransientAmbientPawn,17,17,0,100.0,
 TransportPlatform,7,7,0,100.0,
-TransportPlatformTeleporter,23,22,1,95.7,a call whose callee declaration the text does not carry
+TransportPlatformTeleporter,23,23,0,100.0,
 TransportRingMesh,1,1,0,100.0,
 TransportRings,23,23,0,100.0,
 Trigger,20,20,0,100.0,
@@ -1115,7 +1115,7 @@ UdpGamespyQuery,16,16,0,100.0,
 UdpGamespyUplink,10,10,0,100.0,
 UdpLink,5,3,2,60.0,a native declaration: its body relays its parameters to the native
 UnrealMPGameInfo,18,18,0,100.0,
-UnrealPawn,39,38,1,97.4,an ArrayCount of something that is not a bare name
+UnrealPawn,39,39,0,100.0,
 UnrealPlayer,43,42,1,97.7,a cast from class.pawn to string the image's cast table does not install
 UnrealScriptedSequence,5,5,0,100.0,
 UnrealTeamInfo,13,13,0,100.0,
