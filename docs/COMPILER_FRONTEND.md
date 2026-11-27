@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,619 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,624 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4158,3 +4158,64 @@ does carry:
 
 Not in this PR: those five rows, the 12 native relays, the 10 member rows, the 8 cast-table rows and the three
 `a call the class chain does not declare` bodies.
+
+## Stage 3, continued -- three values in front of an operator: a `class<Z>` element, a constructor `const`, and `X.Class` (measured 2026-11-27)
+
+**11,619 -> 11,624 modelled, every one byte-identical, none lost** (five bodies gained; residue 67 -> 62 rows, the
+operator family 15 -> 5 -> **2**, the differ census 2 -> 2). Three readings, each a *type* the walk did not have for a
+value that sits in front of an operator the image already carries -- and the two bodies that gained beyond the
+three operator rows say the rules are not shape-specific:
+
+- **An element of a `class<Z>` array holds the class `Z`.** `var const array<class<Info>> InfoClasses` and
+  `var array<class<Info>> Classes` are dynamic arrays whose element is a **class reference**, which
+  `_element_type` already spelled (`(0x10, 'class<info>')`) — and `_class_of`'s element branch then asked the class
+  table for a class named `class<info>`, which is no class, and refused. `_class_ref_class` is the unwrap every other
+  receiver path already makes (`_member_record`, `_numeric`, `_cast_kind`), so the branch asks it too:
+  `InfoClasses[i].Name` types as a `name` and the member record is Object's imported `Name` (`-103`, the byte the
+  package writes). `PlayInfo.Dump` (the `@` at `string @ name`) and `PlayInfo.Init` (`Classes[i] == None`) — **two
+  bodies**.
+- **A `const` whose right-hand side is a constructor is substituted whole.** `const Lotus=vect(1,2,3);` is written
+  at its site as the `VectorConst` the written literal would be (`assert(Lotus==vect(1,2,3))` ships
+  `2d 02 7a 23 0000803f 00000040 00004040` — the component bytes, not a read), and `_consts_of` kept only a
+  number/quoted/string literal, so the name typed as nothing at all. The const table now keeps the constructor's
+  **token run** and the site re-enters `emit_expr` with it (`_const_expr`), which is the same path a written
+  `vect(...)` takes; `_type_of` answers `vector`/`rotator` from the head. `TestInfo.Tick` — **one body**. The two
+  `_number(<const>)` sites that assume a literal were narrowed to `_const_kind(...) is not None`, so a constructor
+  const can never reach them.
+- **`X.Class` is a class reference whose own type word is the metaclass `class`.** The property's record says
+  `UClassProperty` and `class_properties.csv` spells the word `Class` (`Core,Object,Class,...,Class`, declared
+  `var native const editconst class Class;`), but **no shipped package declares a class named `Class`** — it is a
+  native `UClass` with no script record, so the census has no row for it and `_class_of` refused the word at its
+  class-table test. The value is a class reference (`_numeric` already answers `object` for the same word), so the
+  chain-member branch returns `class` and the member read continues on the metaclass's parent: `Item.Class.Name`
+  types as a `name`, and both records are the imports the package writes (`Class` `-169` = `e902`, `Name` `-54` =
+  `b6`, each the only candidate of its name in `StargateGame.u`). `StargatePlayer.CheckNewInventoryItems` and
+  `SGVoicePackExtended.BuildVoiceDescAdditionalParams` — **two bodies**.
+
+### Score
+
+Per body against `origin/main`'s own tool on the same tree, which reproduces the committed `inventory/uscript_emit.csv`
+(11,619 modelled, residue 67) — the baseline run is `~/sg1/work/sc-b1`:
+
+| run | modelled | gained | lost | residue | differ | operator rows |
+|---|---|---|---|---|---|---|
+| `origin/main` | 11,619 | -- | -- | 67 | 2 | 5 |
+| this bundle | **11,624** | 5 | **0** | **62** | 2 | **2** |
+
+The differ set is unchanged (`CheatManager.LockCamera`, `CylinderBuilder.Build`) and one body's refusal text moved
+without leaving the residue (`SGVoicePackExtended.BuildCustomVoiceDesc`, a member read with a different receiver now
+named) — progress at a later refusal, counted as neither a gain nor a loss.
+
+### The two operator rows left, and the two readings that did not ship
+
+- `Teleporter.AutosaveExists` (`AutoSavedGameList[i] == SaveFilename`, a `local array<String>` subscript) still
+  refuses, **unchanged**, and the rule aimed at it is *not in this PR*: `_local_decls` builds a local's type word by
+  joining its **words**, so `local array < String > X;` comes back as `array < string` — no closing `>`, and
+  `_array_element` (which requires `array<...>`) answers "". Spelling the word with its brackets was implemented and
+  scored: **it moved no body**, so the body's element read is not the only gap and the rule is left out rather than
+  shipped unmeasured. The next read is `_element_type`'s own path for a *local* array, with that fix in hand.
+- `TournamentConsole.LaunchUWindow` (`Viewport.Actor.Level.NetMode`) needs a type no artifact carries: `Viewport` is
+  a native class with **no script record**, so `class_properties.csv` has no row for `Viewport.Actor` and the chain
+  answers `(1, -33, 'object', '')` — the record, with no declared class. `_numeric` accepts an imported `Class` name
+  as an object for exactly this reason; `_class_of` cannot, because the *member's* type is the missing word. This is
+  the tag-encode/property-census thread's question, not another typing rule here.
