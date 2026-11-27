@@ -1725,7 +1725,10 @@ def _friendly(nm, env):
         hit = table.get((p, c, nm))
         if hit:
             return hit
-    return ""
+    # A property reached through the `within` class has no row on the body's own chain: `CheatManager` is
+    # `within PlayerController`, and `FlashScale`/`FlashFog` are `Actor`'s `vector`s -- read without their word,
+    # `FlashScale.X = F` asked the *record kind* `struct` for the struct's name and refused (4 bodies).
+    return (env.get("within_proptypes") or {}).get(nm, "")
 
 
 def _enum_byte(t, env):
@@ -3956,6 +3959,16 @@ def emit_expr(expr, rettype, env, element_dim=0):
             # `Index < ArrayCount(ProgressMessage)` is `... 2c 04 16` for `var string ProgressMessage[4];`.
             return _converted(_int_bytes(_array_count(expr, env)), "int", rettype), "array-count"
         if _is_call(expr):
+            # A bare call in a **value** position of a `within X` body is the same member-of-`Outer` node the
+            # statement path writes: `HitActor = Trace(...)` is `19 01 8e 05 00 04 61 15 ...` (skip 5, size 4)
+            # and the `foreach` head `AllActors(class'Actor', A)` is `19 01 8e 05 00 00 61 30 ...`, where the
+            # emitter wrote a by-name `1b <name index>` and lost the six-byte `Context` (14 bodies, every one
+            # five bytes short). The callee's own token comes from the within chain, which is where `emit_call`
+            # resolves a `receiver`ed call.
+            within = _within_call(expr, env)
+            if within:
+                node, _m, _s = _emit_within_value_call(expr, env, within)
+                return _converted(node, _type_of(expr, env), rettype), "within-call-value"
             # The value a call yields is converted at *its* site, not inside the callee: `Adrenaline = Clamp(...)`
             # in a float slot is `0f <read> 39 3f fb ...` -- IntToFloat around the Clamp, because Clamp returns an
             # `int` -- and `Insert(Asc(...))` writes `39 3d` (IntToByte) around the `Asc`, whose result is an int.
@@ -4333,11 +4346,23 @@ def _callee_params(name, env, receiver=None):
     With a `receiver` the answer is the receiver's chain only: `_params_on` refuses to fall back, because a
     same-named function on the body is a different record with its own parameter list.
     """
-    if receiver:
-        return _params_on(receiver, name, env)
     low = name.lower()
-    for cls in env["order"]:
-        hit = env["params"].get((cls, low))
+    params = env["params"]
+    if receiver:
+        hit = _params_on(receiver, name, env)
+        if hit is not None:
+            return hit
+    else:
+        for cls in env["order"]:
+            hit = params.get((cls, low))
+            if hit:
+                return hit
+    # A body declared `within C` spells C's chain's names bare: `CheatManager`/`AdminBase` are
+    # `within PlayerController`, and `ForEach AllActors(...)`, `Trace(...)` and `Outer.SetLocation(...)` all name
+    # `Actor`'s natives, which the body's own chain (`-> Object`) never reaches. The within chain is the authority
+    # for *which* declaration, exactly as it is for a property record.
+    for cls in (env.get("scope") or {}).get("within_order") or []:
+        hit = params.get((cls, low))
         if hit:
             return hit
     return None
@@ -5215,6 +5240,24 @@ def _emit_within_call(stmt, env, within):
     return node, "within-call", "within-call"
 
 
+def _emit_within_value_call(stmt, env, within):
+    """`F(args)` in a **value** position of a `within X` body -> `19 <Outer> 05 00 <value size> <call>`.
+
+    The statement path (`_emit_within_call`) is the same node plus the `EatString` a discarded `string` carries;
+    here the node *is* the value, so no prefix. `CheatManager.Teleport`'s `Trace(...)` writes size 4 (an object)
+    and the `foreach` head `AllActors(...)` size 0, both with the measured skip 5.
+    """
+    scope = env.get("scope") or {}
+    outer = scope.get("outer_ref")
+    if outer is None:
+        raise Refused("a `within` call whose package imports no `Outer`")
+    call = emit_call(stmt, dict(env, within_call=True), receiver=within)
+    rtype = _rettype_on(within, stmt[0][1], env)
+    node = (bytes([0x19, INSTANCE_TOKEN]) + write_index(outer) + struct.pack("<H", 5)
+            + bytes([_value_size(rtype, env)]) + call)
+    return node, "within-call-value", "within-call-value"
+
+
 def _prefix_call(obj, member, env, stmt=False):
     """`Static.F(args)` / `Global.F(args)` -> the callee's own node: the prefix names the class scope.
 
@@ -5800,14 +5843,25 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                 return owned
         return imp
     scope["order"] = order
+    # The `within` chain's class names, in order: a body declared `within C` resolves a bare name through C's
+    # chain, which is where its callees, consts and struct-typed properties are declared (filled below).
+    # (set just after `within_chain` is computed)
     # The `within` class's chain, so a property record can be attributed: a name declared there and not on this
     # body's chain is read through `Outer` (`CheatManager` -> `PlayerController`, whose `Pawn`, `Level`, `myHUD`
     # and `Weapon` are the names its cheats spell bare).
     within_chain = [c for _p, c in _ancestors(chain, pack, within)] if within else []
+    scope["within_order"] = within_chain
     # The dimension `ArrayCount(X)` folds to, the nearest declaration winning exactly as a property record does:
     # `var string ProgressMessage[4];` is on `PlayerController` itself, while `EventCache[64]` is `LevelInfo`'s.
     cst = {}
     for anc in order:
+        for nm, v in (consts_by_cls or {}).get(anc, {}).items():
+            cst.setdefault(nm, v)
+    # ...and the `within` chain's, for the same reason its properties are: `StargateAIMsgManager` is
+    # `within Controller`, and `MSGT_Order` is `Actor`'s const, so `msg.IsSubTypeOf(MSGT_Order)` refused as *a
+    # name neither a local, a property nor an enum constant of the class chain* (2 bodies). The body's own
+    # declarations win, as they do for a property record.
+    for anc in within_chain:
         for nm, v in (consts_by_cls or {}).get(anc, {}).items():
             cst.setdefault(nm, v)
     dim = {}
