@@ -2417,6 +2417,7 @@ def _emit_operator(expr, rettype, env, root=False):
     # bound, and it is asked at the pair table and here, so both the node's own row and the operands agree.
     promote = {"l": False, "r": False}
     both_int = False
+    tree_l = tree_r = False
     if (rettype or "").lower() == "float" and sym in ("+", "-", "*", "/"):
         own = {"l": _numeric(_enum_byte(_type_of(left, env).lower(), env), env),
                "r": _numeric(_enum_byte(_type_of(right, env).lower(), env), env)}
@@ -2424,8 +2425,16 @@ def _emit_operator(expr, rettype, env, root=False):
             side = "l" if own["l"] == "int" else "r"
             accepts = (_left_expects(left, env) if side == "l" else _leaves_promotable(right))
             promote[side] = (t1 if side == "l" else t2) == "float" and accepts
+            # A mixed pair's promoted `int` side is retyped **whole** when the other side is a plain
+            # value, and cast as a whole when it is a call. `UPreviewMapListClient.Paint`'s
+            # `120 + 5 + yl` (a `float` local on the right) ships `ae ae 1e 0000f042 39 3f 2c 05 16
+            # <IntToFloat yl> 16`; `Chip.BeginState`'s `200000 * 2 * FRand() - 200000` (a call on the
+            # right) keeps `IntToFloat(Multiply_IntInt(200000, 2))`.
+            if side == "l" and promote[side]:
+                tree_l = not _has_call_leaf(right)
         elif own["l"] == own["r"] == "int":
             both_int = True
+            tree_l = tree_r = True
             # The **site's** promotion, which the pair table has to have widened: a call's argument keeps its int
             # arithmetic and casts at the argument's own site (`Abs(BlendC - NewC)` and `FRand()-style` graders are
             # `IntToFloat(Subtract_IntInt(...))`), and so does a parenthesised group.
@@ -2557,9 +2566,9 @@ def _emit_operator(expr, rettype, env, root=False):
         fold_left = None
     folded_left = ((narrow_left or fold_left) if root and not env.get("group_int") else None)
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(_strip_parens(left), env) is not None,
-                         folded_left, tree=both_int)
+                         folded_left, tree=tree_l)
             + _side(right, t2, right_env, promote["r"] and _operator_types(_strip_parens(right), right_env) is not None,
-                    None, narrow=False, byte_lit=False, tree=both_int)
+                    None, narrow=False, byte_lit=False, tree=tree_r)
             + b"\x16")
     return _converted(node, result, rettype), "operator"
 
@@ -7665,10 +7674,12 @@ def check(args):
     # which keeps the `(int, int)` row behind one cast (`92 ...`).
     penv = dict(env)
     penv["scope"] = dict(SCOPE, props=dict(SCOPE["props"], pwid=(0x01, 12, "int"),
-                                           psteps=(0x01, 14, "int"), pofs=(0x01, 460, "int")),
+                                           psteps=(0x01, 14, "int"), pofs=(0x01, 460, "int"),
+                                           pflt=(0x01, 61, "float")),
                          props_all=dict(SCOPE["props_all"], pwid=[(12, "probe", "IntProperty")],
                                         psteps=[(14, "probe", "IntProperty")],
-                                        pofs=[(460, "probe", "IntProperty")]))
+                                        pofs=[(460, "probe", "IntProperty")],
+                                        pflt=[(61, "probe", "FloatProperty")]))
     pair = [("op", "("), ("ident", "Pwid"), ("op", "*"), ("op", "("), ("ident", "Psteps"), ("op", "-"),
             ("number", "1"), ("op", ")"), ("op", ")"), ("op", "+"), ("ident", "Pofs")]
     got, _m = emit_expr(pair, "float", dict(penv, _arg=True, root_site="float"))
@@ -7736,10 +7747,25 @@ def check(args):
     if got[:2] != b"\x39\x3f" or b"\x92" not in got:
         print("FAIL uscript-emit: an all-literal pair outside a promotion lost its int row (%s)" % got.hex())
         return 1
-    got, _m = emit_expr([("number", "120"), ("op", "+"), ("number", "5"), ("op", "+"), ("ident", "Fcount")],
-                        "float", dict(penv, _assign=True, _promote_tree=True))
-    if b"\x39\x3f\x92" not in got:
-        print("FAIL uscript-emit: a pair with a `float` operand retyped its int side (%s)" % got.hex())
+    # The control for the **mixed** branch is the corpus, not a fixture: `Chip.BeginState`, `Chip.HitWall` and
+    # `RepChip.BeginState`'s `200000 * 2 * FRand()` keep `IntToFloat(Multiply_IntInt(200000, 2))`, and the run that
+    # retyped them scored 11,432 with 13 bodies lost (`frontend/site-expectation`'s first commit). The predicate that
+    # separates the two shapes is `_has_call_leaf`, asserted above; note that an operand the walk cannot type reads
+    # as a value, not as a call, so it takes P17's shape.
+    # P17: the same chain with a **`float`** operand on the right, which is the shape the real body has
+    # (`UPreviewMapListClient.Paint` declares `local float xl, yl;`) and what P16's `int` property cannot reach.
+    # A mixed pair's promoted `int` side is retyped **whole** when the other side is a plain value: the shipped
+    # bytes of `C.SetPos((WinWidth/2)-(xl/2), 120 + 5 + yl)` are `ae ae 1e 0000f042 39 3f 2c 05 16
+    # <IntToFloat yl> 16`. The discriminator is the **call** on that side -- `Chip.BeginState`'s
+    # `200000 * 2 * FRand()` keeps `IntToFloat(Multiply_IntInt(200000, 2))` -- and it is `_has_call_leaf`, the
+    # predicate P15 asserts. Retyping the float-right chain is what P16 alone could not see: keyed on the
+    # both-`int` pair it reproduced the fixture and left the real body three bytes short.
+    npair = [("number", "120"), ("op", "+"), ("number", "5"), ("op", "+"), ("ident", "Pflt")]
+    got, _m = emit_expr(npair, "float", dict(penv, _assign=True))
+    want = (b"\xae\xae" + b"\x1e" + struct.pack("<f", 120.0) + b"\x39\x3f\x2c\x05\x16"
+            + b"\x01" + write_index(61) + b"\x16")
+    if got != want:
+        print("FAIL uscript-emit: `120 + 5 + Pflt` emits %s, expected %s" % (got.hex(), want.hex()))
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
