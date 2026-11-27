@@ -3122,7 +3122,7 @@ than filled in.
 <!-- BEGIN struct-widths -->
 `STRUCT_SIZE` carries **17** widths. **15** of them are node-witnessed -- a `Context`'s size byte in a body that reads the struct -- and those rest on the census below, which also holds the table's **0** conflict(s): a node whose byte disagrees with the entry fails `tools/struct-widths.py --check`, so a width cannot drift from the corpus it claims.
 
-The entries with no node are **`coords`, `interpcurve`**: each rests on a body that refused for want of the width and came out byte-identical at exactly one byte, and no instrument re-derives one from the corpus -- which is why they are listed rather than removed. The table is **not** grown from this census: 147 declared structs have no node witness at all, and a width the corpus never writes is a guess with a number's shape.
+The entries with no node are **`coords`, `interpcurve`**: each rests on a body that refused for want of the width and came out byte-identical at exactly one byte, and no instrument re-derives one from the corpus -- which is why they are listed rather than removed. The table is **not** grown from this census: 149 declared structs have no node witness at all, and a width the corpus never writes is a guess with a number's shape.
 
 | struct | width | node reads | byte(s) written |
 |---|---|---|---|
