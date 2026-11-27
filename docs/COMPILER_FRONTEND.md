@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,639 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,643 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4272,3 +4272,54 @@ lost the brace depth, so neither the local's word nor its element type was ever 
 its words (`array < string`); the body no longer reaches that read. `--check` now holds both rules -- a relay over
 index 290 and over 279/280/281, two refusals, and an `Event` property comparison in front of a later function's
 locals -- and each fixture fails on the code as it stood on `origin/main`.
+
+## Stage 3, continued -- a struct inherits its base's members, a modifier is not a type, and a const on a chain (measured 2026-11-27)
+
+**11,639 -> 11,643 modelled, every one byte-identical, none lost** (four bodies gained; residue 47 -> 43 rows,
+the differ census 2 -> 2 unchanged). The section above listed the member rows as the residue's largest family; three
+of the four shapes in it turned out to be three different missing links, and each one is a measurement, not a guess.
+
+- **A struct that extends another inherits its members.** `Object.uc` declares `struct Plane extends Vector` with
+  **one** member of its own (`W`): `X`, `Y` and `Z` are Vector's, so `Canvas.ColorModulate.X` ships Vector's `X`
+  import (`36 e0`, and the `Context` over `Canvas.ColorModulate` writes size `0x10` for the plane). The member census
+  read only the block's own `var` lines, so `plane.x` had no row, `(plane, x)` no record, and `HUD.PostRender`
+  refused the member although its declared type resolved. `tools/struct-members.py` now reads the `extends` word
+  (`source_struct_bases()`) and writes the inherited members under the deriving struct with a new **`via`** column
+  naming the base (6 rows: `plane.x/y/z` from `vector`, `boundingvolume.isvalid/max/min` from `box`), and
+  `uscript-emit.py` copies the base's records under the deriving `(struct, member)` key in the scope builder. The
+  record is the base's; nothing is synthesized, so a base the package neither exports nor imports still refuses.
+- **`editinlineuse` and `localized` are property modifiers, not types.** `MultiPassMaterial`'s
+  `struct native MaterialPassItem` declares `var() editinlineuse Material Material;`, and `_SRC_VAR`'s modifier
+  list did not carry `editinlineuse`: the type came back as the modifier and the member as `Material	Material`
+  (tab included), which also glued `Opacity` onto the previous member. Every struct member behind one of those two
+  words was typed by its own modifier. With them in the list, `materialpassitem` holds `material`, `finalblend` and
+  `opacity` with their real types, and `MaterialPasses[i].FinalBlend.Material` resolves.
+- **A `const` on the receiver's chain answers behind a chain, not only behind a bare name.** The const join was
+  gated on `len(obj) == 1`, which is `Sender.MSGT_Reply`; `Speech.GetAIMsg().Sender.MSGT_Name` is the same
+  `Actor` const two links out, and `_class_of` already answers `controller` for the chain, so the read refused
+  the member while the join it needed was one line away. `SGVoicePackExtended.BuildCustomVoiceDesc` and
+  `WaitToReply` both gained.
+
+### Score
+
+Per body against `origin/main`'s own tool on the same tree, which reproduces the committed
+`inventory/uscript_emit.csv` (11,639 modelled, residue 47) -- the baseline run is `~/sg1/work/base1127d`:
+
+| run | modelled | gained | lost | residue | differ | inherited rows |
+|---|---|---|---|---|---|---|
+| `origin/main` | 11,639 | -- | -- | 47 | 2 | 0 |
+| this bundle | **11,643** | 4 | **0** | **43** | 2 | **6** |
+
+The gained set is `HUD.PostRender`, `MultiPassMaterial.Cleanup`, `SGVoicePackExtended.BuildCustomVoiceDesc` and
+`SGVoicePackExtended.WaitToReply`. `inventory/struct_members.csv` gains the six inherited rows and loses one
+malformed one (807 -> 813 rows, now 5 columns), and `make struct-members` is the target that regenerates it --
+`docs/ARTIFACTS.md` had it owned by `make ci`, which is not a generator.
+
+**What is left on this thread.** Five `a member that is not a property of the receiver's class` rows remain:
+`PlayerInput.PlayerInput`'s `Outer.bDemoOwner` (`Outer` is declared `Object` and `bDemoOwner` is `Actor`'s),
+`xMaterialController.TickConstantColor`'s `cc.Color.A`, and the three `Viewport.Actor` rows
+(`WindowConsole.LaunchUWindow`, `TournamentConsole.LaunchUWindow`, `GUIController.GetPlayerController`).
+`Viewport` is the hard one: it is a **class** the shipped packages import but do not export (`Engine.u` import -41;
+`classes.csv` has no row), so its member records exist in no package and `class_properties.csv` cannot carry
+`Viewport.Actor`'s declared type. The record index itself is already right (`import -33`); the missing word is the
+*member's class*, and no artifact holds it. `Viewport` is not in this PR.

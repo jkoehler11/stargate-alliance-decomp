@@ -320,6 +320,14 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`,
   `PLAN.md`. Not in this PR: the 9 `a member that is not a property of the receiver's class` rows, the call-receiver
   rows, the cast table, and `Viewport.Actor.Level.NetMode` (the property-census thread's missing member rows).
+- [x] **Front end: struct inheritance, two modifiers and a const on a chain.** A struct that extends another
+  inherits its members (`Plane extends Vector`): `inventory/struct_members.csv` writes them under the deriving
+  struct with a `via` column, and the emitter keys the base's record there -- `HUD.PostRender`, `MultiPassMaterial.Cleanup`
+  and `SGVoicePackExtended.BuildCustomVoiceDesc`/`WaitToReply` gained, 11,639 -> 11,643 modelled, none lost, residue
+  47 -> 43. `editinlineuse`/`localized` are modifiers, not types (the `MaterialPassItem` rows were malformed), and a
+  const on the receiver's chain resolves behind a chain receiver. `make struct-members` now regenerates the census.
+  Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: `Outer.bDemoOwner`, `cc.Color.A` and the
+  three `Viewport.Actor` rows -- `Viewport` is an imported class with no export, so no package holds its member types.
 
 - [~] 3.6 a `within` body's bare call: **11,588 modelled / 11,588 byte-identical** (from 11,573; 15 bodies gained,
       none lost; residue 113 -> 98). (1) **A value-position call is the `Context(Outer, 5, size)` node the statement
