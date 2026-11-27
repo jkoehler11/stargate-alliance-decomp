@@ -7597,6 +7597,53 @@ def check(args):
         print("FAIL uscript-emit: the state function after a keyword argument reads %r, expected `bool`"
               % (got["tick"][0],))
         return 1
+    # A native declared without a script body compiles to a **relay**, not to nothing: one `NativeParm` (0x29) per
+    # parameter in **declaration** order -- the operand is the parameter's own one-based compact index, the same
+    # index a body's `00` local read names -- then the trailer, with no `EndFunctionParms` between the parms
+    # (`0x04` in `29 57 04` is the high byte of index 279). `Object.VSize(vector A)` ships `29 62 04 0b 47`,
+    # `Object.Clamp(int V, int A, int B)` `29 57 04 29 58 04 29 59 04 0b 47`, and `Object.Invert`'s three `out`
+    # vectors relay X, Y, Z although the export table holds them Z(282), Y(284), X(285) -- the order is the
+    # declaration's. A parameter the package does not export leaves the list empty and the body refuses: a relay
+    # over a guessed index is a wrong body that looks like a measurement.
+    for parms in ([290], [279, 280, 281]):
+        want = b"".join(b"\x29" + write_index(k) for k in parms) + b"\x0b\x47"
+        relay, _model, _shape = emit_body(None, "int", dict(env, native_parms=parms), True)
+        if relay != want:
+            print("FAIL uscript-emit: the native relay over %r emits %s, expected %s"
+                  % (parms, relay.hex(), want.hex()))
+            return 1
+    if b"".join(b"\x29" + write_index(k) for k in [290]) + b"\x0b\x47" != bytes.fromhex("2962040b47"):
+        print("FAIL uscript-emit: the fixture's own encoding of index 290 is not the shipped `62 04`")
+        return 1
+    for empty in ([], None):
+        try:
+            emit_body(None, "int", dict(env, native_parms=empty), True)
+        except Refused:
+            pass
+        else:
+            print("FAIL uscript-emit: a native whose parameters are not exported was relayed anyway")
+            return 1
+    # The header scan stops at its own parameter list. `Event` is a keyword **and** an ordinary property name, so
+    # the scan started at `if (A.Event == Tag)` used to run on to the next `(`/`;`, stepping over the block's
+    # braces without counting them: the depth never recovered and every later `local` in the class sat at depth 0
+    # and was dropped (`Engine.Teleporter` lost all nine of its function-scoped locals that way).
+    scan_text = (
+        "class Teleporter extends NavigationPoint;\n"
+        "event PostTouch(Actor Other)\n{\n"
+        "    local int Hits;\n"
+        "    if (A.Event == Tag)\n    {\n        Hits = 1;\n    }\n"
+        "}\n"
+        "function AutosaveExists()\n{\n"
+        "    local array<string> Names;\n"
+        "    local int i;\n"
+        "}\n")
+    found = {(f, n): t for f, n, t, _r in _local_decls(scan_text)}
+    if found.get(("autosaveexists", "i")) != "int" or ("autosaveexists", "names") not in found:
+        print("FAIL uscript-emit: an `Event` property comparison hid a later function's locals (%r)" % (found,))
+        return 1
+    if ("posttouch", "hits") not in found:
+        print("FAIL uscript-emit: the function before the `Event` comparison lost its own local (%r)" % (found,))
+        return 1
     for case in REFUSE:
         if case not in got:
             print("FAIL uscript-emit: the synthetic class does not declare %s" % case)
