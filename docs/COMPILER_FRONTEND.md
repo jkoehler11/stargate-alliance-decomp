@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,444 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,474 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -3684,3 +3684,86 @@ whether the pair above is being promoted, and the walk already carries that as `
 here rather than shipped because a rule that nets `-7` bodies is a regression under this page's own acceptance test
 (differ 0, none lost). The next formulation asks the same question **only where the pair above is not promoted**, with
 `CylinderBuilder.BuildCylinder` in the control set -- it is one of the eight this one lost.
+
+## Stage 3, continued -- a class default object is a writable target (measured 2026-11-27)
+
+The residue's largest named family was an assignment whose **target** is a class default object: 15 rows
+`an assignment whose target is a default expression`, 4 `default-chain`, 2 `default-bool`, 2 `default-struct` --
+23 of the 244 rows in the run this section starts from. The node was already right and the walk already built it:
+only `emit_assign`'s target filter excluded it, because the four shapes `emit_expr` returns for a default target
+(`default`, `default-bool`, `default-struct`, `default-chain`) were not in its accepted list.
+
+The four shapes, each with the body the bytes come from:
+
+    Default.X = v         0F 02 <record index> <value>      BroadcastHandler.Destroyed   0f 02 4221 2a
+    Default.bX = v        14 2D 02 <record index> <value>   PlayerInput.UpdateInvert     14 2d 02 4909 2d 00 7a56
+    a struct default      0F 02 <index> <record alone>      StargateWeapon.PostLoadSavedGame  0f 02 d004 ...
+    X.Default.Y = v       12 <skip> 00 04 2D 02 ...         PlayerController.SetAutoTaunt  14 12 2007 0600 04 2d02 4f1b ...
+
+A struct default writes **the record alone** -- there is no `Context` around a copy out of a default object -- and
+`X.Default.Y` takes the `ClassContext` node the read path builds for the same chain, so the read and the write
+agree by construction rather than by a second rule.
+
+Scored per body against `origin/main`'s own tool on the same tree (`git worktree` at `origin/main`, both runs
+writing their own `uscript_emit.csv` and residue):
+
+| run | modelled | gained | lost | residue | differ |
+|---|---|---|---|---|---|
+| `origin/main` | 11,444 | -- | -- | 244 | 1 |
+| the four shapes accepted | 11,466 | 22 | **0** | 222 | 1 |
+
+Every one of the 22 is byte-identical, and no body both runs model changed a byte. They are
+`BroadcastHandler.Destroyed`, `BroadcastHandler.RegisterBroadcastHandler`, `GameInfo.SetGameSpeed`, `HUD.GetConsoleFont`,
+`MapList.SetMaplist`, `MapList.StaticGetMaps`, `PlayerController.InvertLook`, `PlayerController.SetAutoTaunt`,
+`PlayerController.SetDodging`, `PlayerInput.InvertMouse`, `PlayerInput.SetSmoothingStrength`, `PlayerInput.UpdateAccel`,
+`PlayerInput.UpdateInvert`, `PlayerInput.UpdateSensitivity`, `PlayerInput.UpdateSmoothing`, `TestInfo.Test`,
+`Vehicle.NextWeapon`, `Vehicle.PrevWeapon`, `XboxLiveInterface.GetXboxLiveInterface`, `StargateHUD.GetConsoleFont`,
+`StargateWeapon.PostLoadSavedGame` and `StargateWeapon.PostNetBeginPlay`.
+
+The family's twenty-third row, `GameInfo.InitGame`, is refused at a **later** node now (its class literal), which is
+why the residue falls by 22 and not by 23: a refusal that moves deeper is progress, and the reason text is what
+says so.
+
+`--check` holds three fields of the shape (`DefSet`, `DefFlag`, `DefVec` in `SYNTH` and `WANT`), so a filter that
+stops accepting one of them fails the gate by name. The lesson is the one the reason text was already shouting:
+*an assignment whose target is a default expression* names the **gate**, not the node -- the emitter refused at the
+target filter while the value path beside it was correct.
+
+## Stage 3, continued -- a class literal names its class, not its package (measured 2026-11-27)
+
+Nine rows read `a class literal whose class the package's tables do not name`, and eight of them spell the package:
+`class'Engine.AIMessage'`, `class'Engine.PlayerInput'`, `class'Engine.StreamInterface'`,
+`class'StargateGame....'`. The table that answers a class literal is `classrefs`, and it is keyed by the **class's
+own name** -- exports first, then imports -- because the import record's `package` field is 0 on this build. So the
+qualified spelling missed a table that already held the answer, which is exactly the fallback `_object_ref` carries
+for object literals and `_emit_class_literal` did not.
+
+The rule is the same asymmetry, one node type over: look the name up as written, then by its **last component**, and
+refuse when both miss (a wrong object reference is a body that reads as measured). Scored on the two packages the
+rows live in, `--only Engine.u,StargateGame.u`, per body:
+
+| run | modelled | gained | lost |
+|---|---|---|---|
+| the default-target run | 6,505 | -- | -- |
+| plus the qualified literal | 6,513 | 8 | **0** |
+
+The eight are `AIMsgManager.GetAIMsgClass`, `GameInfo.InitGame`, `PlayerController.DodgingIsEnabled`,
+`StreamInteraction.CreateFileManager`, `StreamInteraction.CreatePlaylistManager`, `GoauldConsoleTrigger.UsedBy`,
+`StargateAIMsgManager.GetAIMsgClass` and `StargatePawn.HitByShockGrenade` -- all byte-identical. `GameInfo.FillPlayInfo`
+is the family's ninth row and is still refused deeper in the body, not at the literal.
+
+The fixture is the bare spelling's own bytes: `QualDefaultText` is `class'Engine.Probe'.Default.Caption` and must
+write `041220040500000205040b47`, the same bytes `LitDefaultText` writes for `class'Probe'`; dropping the fallback
+makes `--check` answer `FAIL uscript-emit: qualdefaulttext refused: a class literal whose class the package's tables
+do not name`, which is the proof the fixture measures the rule rather than sitting beside it.
+
+Both rules together, against `origin/main`, keyed per body:
+
+| run | modelled | gained | lost | residue | differ |
+|---|---|---|---|---|---|
+| `origin/main` | 11,444 | -- | -- | 244 | 1 |
+| both rules (this bundle) | 11,474 | 30 | **0** | 204 | 1 |
+
+(`inventory/uscript_emit.csv` regenerated from that run; `inventory/l1_ready.csv` was stale by many PRs -- it read
+`modelled` 0 for classes the emitter has modelled for weeks -- and is regenerated here: 1,104 classes fully covered
+(7,915 bodies), 59 classes one refusal away (1,270 bodies).)

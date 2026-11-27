@@ -4000,7 +4000,14 @@ def _emit_class_literal(raw, env):
     is a body that reads as measured.
     """
     name = _literal_text(raw[1:-1])
-    ref = (env.get("scope") or {}).get("classrefs", {}).get(name.lower())
+    refs = (env.get("scope") or {}).get("classrefs", {})
+    ref = refs.get(name.lower())
+    if ref is None and "." in name:
+        # A **package-qualified** literal (`class'Engine.AIMessage'`, `class'Engine.PlayerInput'`) joins on the
+        # class's own name, which is the same asymmetry `_object_ref` already carries: the import record's
+        # `package` field is 0 on this build, so the prefix is only the source's spelling and neither table is
+        # keyed by it. `AIMsgManager.GetAIMsgClass` ships `2f 20 <Engine.u's AIMessage export>` for it.
+        ref = refs.get(name.rsplit(".", 1)[1].lower())
     if ref is None:
         raise Refused("a class literal whose class the package's tables do not name")
     return bytes([0x20]) + write_index(ref)
@@ -6486,6 +6493,7 @@ function string ClassCall() { return class'Probe'.static.Say("x"); }
 function string BadStatic() { return class'Missing'.static.Say("x"); }
 function Actor CastChain() { return Probe(Target).Default.Target; }
 function string LitDefaultText() { return class'Probe'.Default.Caption; }
+function string QualDefaultText() { return class'Engine.Probe'.Default.Caption; }
 function int ACount() { return ArrayCount(Items); }
 function ACountSet() { Health = ArrayCount(Items); }
 function ACountUnknown() { return ArrayCount(Caption); }
@@ -6808,6 +6816,10 @@ WANT = {
     # A class literal names its own class for the member join, and a non-bool chain keeps skip 5: `class 'Localizer'
     # . default . sSelect` is `12 20 cc 01 05 00 00 02 d5 03` (`GUIMessageBox.InitComponent`), a string member.
     "litdefaulttext": "041220040500000205040b47",
+    # A **package-qualified** class literal writes the same bytes as the bare spelling: neither table is keyed by
+    # the prefix (the import record's `package` field is 0 on this build), so `class'Engine.Probe'` and
+    # `class'Probe'` are one node. The corpus ships eight of them (`class'Engine.AIMessage'`).
+    "qualdefaulttext": "041220040500000205040b47",
     # A **`.static`** call is the same class object inside a `ClassContext` (`12`), and its skip word is `_wide` of the
     # call exactly as a `Context` member's is: `class'Probe'.static.Say("x")` -> `12 20 04 09 00 00 1b 35 1f 78 00 16`
     # (ObjectConst of the class, skip 9 over a 6-byte call with one one-byte index, size 0 for a string return).
