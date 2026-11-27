@@ -400,6 +400,17 @@ def functions_of(text):
             d += 1
         elif kind == "op" and val == "}":
             d -= 1
+    # ...and the same table for parentheses, because a keyword inside an argument list is not a declaration:
+    # `Mover.TriggerToggle`'s `UnTriggerEvent(Event, self, Instigator);` put an `event` token at brace depth 1
+    # (the state's), so the walk read it as a header, scanned forward to the next `(`, and swallowed the whole
+    # `state() TriggerToggle` block -- three bodies of that state joined to nothing.
+    paren_at, pd = [], 0
+    for kind, val in toks:
+        paren_at.append(pd)
+        if kind == "op" and val in "([":
+            pd += 1
+        elif kind == "op" and val in ")]":
+            pd -= 1
     i, state, state_depth = 0, "", None
     while i < len(toks):
         kind, val = toks[i]
@@ -409,7 +420,8 @@ def functions_of(text):
                 state, state_depth = "", None
             i += 1
             continue
-        if kind == "keyword" and low == "ignores" and (depth_at[i] == 0 or depth_at[i] == state_depth):
+        if (kind == "keyword" and low == "ignores" and paren_at[i] == 0
+                and (depth_at[i] == 0 or depth_at[i] == state_depth)):
             # `ignores SeePlayer, HearNoise, KilledBy;` is not a comment: the compiler emits one bodyless Function
             # for each name, in the scope that writes the clause, and the package's script for it is the trailer.
             j = i + 1
@@ -420,7 +432,7 @@ def functions_of(text):
                 j += 1
             i = j + 1
             continue
-        if kind == "keyword" and low == "state" and i + 1 < len(toks):
+        if kind == "keyword" and low == "state" and i + 1 < len(toks) and paren_at[i] == 0:
             j = i + 1
             # `state() LoopMove` is a state whose label is empty -- Mover writes twelve of its nineteen that way -- so
             # the name comes after the group, not immediately after the keyword (stage 2a measured the same form).
@@ -442,7 +454,7 @@ def functions_of(text):
         # A `delegate` declaration is one property (`__X__delegate`) *and* one Function named after it (75 names
         # across 20 classes), so it is a declaration this walk must read: its text carries no body and the package's
         # script is the stub.
-        if (kind == "keyword" and low in ("function", "event", "delegate")
+        if (kind == "keyword" and low in ("function", "event", "delegate") and paren_at[i] == 0
                 and (depth_at[i] == 0 or depth_at[i] == state_depth)):
             j = i + 1
             words = []
@@ -944,7 +956,7 @@ def _sole_unary():
 # The compound-assignment spellings. A `+=` is **not** a `Let` around a `+`: its token is a separate native
 # (`AddEqual_IntInt` 161 against `Add_IntInt` 146) and its first parameter is an `out`, so the row is chosen by the
 # target's type first.
-COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=")
+COMPOUND = ("+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", "$=", "@=")
 
 
 def _operator_types(expr, env, site="", root=False, typing=False):
@@ -4909,7 +4921,12 @@ def _compound(stmt, env):
         return inc
     op = _operator_types(stmt, env)
     if op is not None and op[0] in COMPOUND:
-        return emit_expr(stmt, "", env)
+        node, shape = emit_expr(stmt, "", env)
+        if op[3] == "string":
+            # A string-valued statement is **eaten**, like a string-returning call: `$=` is declared to return
+            # `string`, so `Src $= PadChar;` writes `0e 61 42 00 ...` (token 322 `ConcatEqual_StrStr`).
+            return bytes([0x0E]) + node, shape
+        return node, shape
     return None
 
 
@@ -6450,6 +6467,9 @@ function rotator RotPitch() { return rot(16384,0,0); }
 function rotator RotNegative() { return Rot(-16384,0,0); }
 function rotator RotExpression() { return rot(Slot,0,0); }
 function string ConcatOp() { return Caption $ Suffix; }
+function ConcatSet() { Caption $= Suffix; }
+function ArgEvent() { Pong(Event); }
+state() ProbeState { function bool Tick() { return true; } }
 function string AtOp() { return Caption @ Suffix; }
 function string DefaultText() { return default.Caption; }
 function bool DefaultFlag() { return default.bDead; }
@@ -6744,6 +6764,11 @@ WANT = {
     "rotpitch": "0422004000000000000000000000040b47",
     "rotnegative": "042200c0ffff0000000000000000040b47",
     "concatop": "04700105010616040b47",            # return Caption $ Suffix; -- Concat_StringString (0x70), operand, operand, 16
+    # A **compound assignment on a string** is a statement whose value is a string, so it carries `EatString`:
+    # `Object.PadString` ships `0e 61 42 <target> <value> 16` for `Src $= PadChar;` (token 322
+    # `ConcatEqual_StrStr`). Dropping the `0e` leaves the body one byte short and every branch operand after it
+    # one position low -- the residue read it as a jump-distance difference.
+    "concatset": "0e61420105010616" + "040b47",
     "atop": "04a80105010616040b47",                # return Caption @ Suffix; -- At_StringString is token 168, its own opcode
     "defaulttext": "040205040b47",                 # return default.Caption; -- DefaultVariable (0x02) + the record's index
     "defaultflag": "042d022d040b47",               # return default.bDead; -- BoolVariable around DefaultVariable + index 45
@@ -7084,6 +7109,18 @@ def check(args):
         if ours.hex() != want:
             print("FAIL uscript-emit: %s emits %s, expected %s" % (fn, ours.hex(), want))
             return 1
+    # A keyword spelled as an **argument** is not a declaration. `Mover.TriggerToggle`'s
+    # `UnTriggerEvent(Event, self, Instigator);` put an `event` token at the state's own brace depth (parentheses
+    # do not move it), so the header scan read it as a declaration, walked forward to the next `(` -- which was
+    # `state() TriggerToggle`'s -- and swallowed that whole state: three bodies joined to nothing. The fixture puts
+    # the same shape in front of a state, and `Tick` must survive it.
+    if "tick" not in got:
+        print("FAIL uscript-emit: a keyword argument hid the state declaration that followed it")
+        return 1
+    if got["tick"][0] != "bool":
+        print("FAIL uscript-emit: the state function after a keyword argument reads %r, expected `bool`"
+              % (got["tick"][0],))
+        return 1
     for case in REFUSE:
         if case not in got:
             print("FAIL uscript-emit: the synthetic class does not declare %s" % case)

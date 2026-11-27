@@ -72,10 +72,25 @@ def lex(text):
             i = j
             continue
         if text.startswith("/*", i):
-            j = text.find("*/", i + 2)
-            j = n if j < 0 else j + 2
-            tokens.append(("comment", i, j))
-            i = j
+            # This text's block comments **nest**. `TeamVoicePack.uc` comments out a `PlayerSpeech` that itself
+            # contains a `/* ... */` pair, and the compiler read the outer comment to its own terminator: the
+            # package declares all 21 functions of that file, including the five that follow the inner close, and
+            # a non-nesting scan left the remaining 26 lines of the commented-out body as code -- two unbalanced
+            # `}` and every later declaration invisible. Measured, not assumed: the export table is the oracle.
+            j, depth = i + 2, 1
+            while j < n:
+                if text.startswith("/*", j):
+                    depth += 1
+                    j += 2
+                elif text.startswith("*/", j):
+                    depth -= 1
+                    j += 2
+                    if depth == 0:
+                        break
+                else:
+                    j += 1
+            tokens.append(("comment", i, min(j, n)))
+            i = min(j, n)
             continue
         if ch == '"':
             j = i + 1
@@ -190,6 +205,13 @@ def lex_tree(tree):
 SYNTH = '''class Probe extends Actor;\r\n// a comment with a ! and a "quote\r\n/* block\r\n comment */\r\nvar int Count;\r\nenum EFoo { A, B };\r\nfunction bool Check(optional int N)\r\n{\r\n\tlocal string S;\r\n\tS = "hurry! \\"quoted\\" text";\r\n\tif (N >= 2 && N != 3) { return true; }\r\n\tforeach AllActors(class\'Actor\', A) { break; }\r\n\treturn N >>> 1 == 0x1f || `define(FOO);\r\n}\r\n'''
 
 
+# A block comment that carries a second one inside it: the compiler's own reading of `TeamVoicePack.uc`. The
+# declarations after the inner `*/` are **still commented out**, so a lexer that closes on the first terminator
+# reads `function Skipped()` and `var int Trapped` as code and reports the class with two extra names.
+SYNTH_NESTED = ('class Probe extends Actor;\r\n'
+                '/* outer /* inner */ function Skipped() { return; } var int Trapped; */\r\n'
+                'var int Count;\r\n')
+
 SYNTH_OP = '''function bool Same(string A, string B, bool X, bool Y)\r\n{\r\n\treturn (A ~= B) ^^ (X || Y);\r\n}\r\n'''
 
 
@@ -208,6 +230,18 @@ def check(_args):
         if need not in ops:
             print("FAIL uscript-lex: %r is not one operator token" % need)
             return 1
+    ntokens, nbad = lex(SYNTH_NESTED)
+    if nbad is not None:
+        print("FAIL uscript-lex: the nested-comment corpus is not classified at %d" % nbad)
+        return 1
+    ncomments = [SYNTH_NESTED[start:end] for kind, start, end in ntokens if kind == "comment"]
+    if len(ncomments) != 1 or not ncomments[0].endswith("Trapped; */"):
+        print("FAIL uscript-lex: a nested block comment closed on its inner terminator")
+        return 1
+    if any(v == "Skipped" for kind, _s, _e in ntokens if kind == "ident"
+           for v in [SYNTH_NESTED[_s:_e]]):
+        print("FAIL uscript-lex: a declaration inside a nested comment was read as code")
+        return 1
     kinds = {}
     for kind, start, end in tokens:
         kinds[kind] = kinds.get(kind, 0) + 1

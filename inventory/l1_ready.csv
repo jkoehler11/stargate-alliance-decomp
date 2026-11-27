@@ -197,7 +197,7 @@ BotSG,155,154,1,99.4,a bool assignment whose value is a compound expression
 BotScarab,11,11,0,100.0,
 BroadcastHandler,16,16,0,100.0,
 BrushBuilder,1,1,0,100.0,
-BufferedTCPLink,12,10,2,83.3,a call the statement walk cannot bound
+BufferedTCPLink,12,12,0,100.0,
 C4Ammo,1,1,0,100.0,
 C4Mission,14,14,0,100.0,
 C4Pickup,1,1,0,100.0,
@@ -376,7 +376,7 @@ GUIVertScrollBar,11,11,0,100.0,
 GUIVertScrollButton,1,1,0,100.0,
 GUIVertScrollZone,3,3,0,100.0,
 GameHud,51,51,0,100.0,
-GameInfo,161,159,2,98.8,a call statement whose receiver's class the artifacts do not name
+GameInfo,161,160,1,99.4,a call statement whose receiver's class the artifacts do not name
 GameMenu,18,18,0,100.0,
 GameMessage,1,1,0,100.0,
 GameModeList,5,5,0,100.0,
@@ -387,7 +387,7 @@ GameProfile,21,21,0,100.0,
 GameReplicationInfo,12,12,0,100.0,
 GameRules,14,14,0,100.0,
 GameStartInfo,8,8,0,100.0,
-GameStats,22,17,5,77.3,a statement that is a member read
+GameStats,22,21,1,95.5,a cast from class.weapon to string the image's cast table does not install
 Gate,23,23,0,100.0,
 GateChevrons,5,5,0,100.0,
 GateEventHorizon,3,3,0,100.0,
@@ -561,7 +561,7 @@ LocalMessage,12,12,0,100.0,
 LockedObjective,5,5,0,100.0,
 LogEntry,3,3,0,100.0,
 M10_SuperSoldierBattleManager,4,4,0,100.0,
-M3UParser,3,1,2,33.3,a call the statement walk cannot bound
+M3UParser,3,2,1,66.7,a call member whose receiver's class the artifacts do not name
 M60TurretEmplacement,2,2,0,100.0,
 M60TurretGun,7,7,0,100.0,
 MOVE_ORDER_Advance,4,4,0,100.0,
@@ -577,7 +577,7 @@ MapSelectionPanel,1,1,0,100.0,
 MapVolume,1,1,0,100.0,
 MaplistManager,55,54,1,98.2,a call member returning array.mapitem
 MaplistManagerBase,29,29,0,100.0,
-MaplistRecord,45,43,2,95.6,a statement that is a member read
+MaplistRecord,45,45,0,100.0,
 MasterServerClient,6,5,1,83.3,a native declaration: its body relays its parameters to the native
 MasterServerGameStats,2,2,0,100.0,
 MasterServerLink,2,2,0,100.0,
@@ -603,7 +603,7 @@ Modifier,2,2,0,100.0,
 MorphTest,8,8,0,100.0,
 MoveOrder,10,10,0,100.0,
 MovementMarker,1,1,0,100.0,
-Mover,86,86,0,100.0,
+Mover,89,89,0,100.0,
 MultiLayerSound,3,3,0,100.0,
 MultiPassMaterial,1,0,1,0.0,a member that is not a property of the receiver's class
 MultiPlayerInGame,1,1,0,100.0,
@@ -624,7 +624,7 @@ NoMatchFoundPage,1,1,0,100.0,
 NotYetImplementedPage,1,1,0,100.0,
 NotificationManager,3,3,0,100.0,
 ONeill_Lite,1,1,0,100.0,
-Object,16,7,9,43.8,a native declaration: its body relays its parameters to the native
+Object,16,8,8,50.0,a native declaration: its body relays its parameters to the native
 ObjectPool,3,3,0,100.0,
 ObjectivesPanel,14,13,1,92.9,a nested block in a statement the walk does not model
 Oneill,3,3,0,100.0,
@@ -651,10 +651,10 @@ PistolPrototype,2,2,0,100.0,
 PixelShaderMaterial,1,1,0,100.0,
 PlayInfo,4,2,2,50.0,an operator the image's table does not install
 PlayerChatManager,19,19,0,100.0,
-PlayerController,487,483,4,99.2,a call the statement walk cannot bound
+PlayerController,487,484,3,99.4,an enum constant passed as VoiceChatRoom.EJoinChatResult
 PlayerInput,14,13,1,92.9,a member that is not a property of the receiver's class
-PlayerProfile,44,43,1,97.7,a call the statement walk cannot bound
-PlayerReplicationInfo,36,35,1,97.2,a call the statement walk cannot bound
+PlayerProfile,44,44,0,100.0,
+PlayerReplicationInfo,36,36,0,100.0,
 PlayerStatCache,9,9,0,100.0,
 PlayerStats,11,10,1,90.9,a call to a name the class chain does not declare
 PlaylistParserBase,8,6,2,75.0,a call member whose receiver's class the artifacts do not name
@@ -928,8 +928,8 @@ StingerProjectile,8,8,0,100.0,
 StoryModeGame,59,58,1,98.3,a bool assignment whose value is a compound expression
 StoryModeScoreboard,5,5,0,100.0,
 Stream,13,13,0,100.0,
-StreamBase,11,10,1,90.9,a call the statement walk cannot bound
-StreamCommandlet,3,2,1,66.7,a call the statement walk cannot bound
+StreamBase,11,11,0,100.0,
+StreamCommandlet,3,3,0,100.0,
 StreamInteraction,31,31,0,100.0,
 StreamInterface,3,3,0,100.0,
 StreamPlaylist,35,35,0,100.0,
@@ -959,7 +959,7 @@ TeamScriptedSequence,5,5,0,100.0,
 TeamStartToggleTrigger,1,1,0,100.0,
 TeamTeleporter,4,4,0,100.0,
 TeamTrigger,4,4,0,100.0,
-TeamVoicePack,16,16,0,100.0,
+TeamVoicePack,21,21,0,100.0,
 Teleporter,8,5,3,62.5,a cast from struct to vector the image's cast table does not install
 Teltak,9,9,0,100.0,
 TeltakBot,46,44,2,95.7,a bool assignment whose value is a compound expression
@@ -1111,7 +1111,7 @@ UWindowWin95LookAndFeel,29,29,0,100.0,
 UWindowWindow,103,103,0,100.0,
 UWindowWrappedTextArea,1,1,0,100.0,
 UdpBeacon,5,5,0,100.0,
-UdpGamespyQuery,16,15,1,93.8,a call the statement walk cannot bound
+UdpGamespyQuery,16,16,0,100.0,
 UdpGamespyUplink,10,10,0,100.0,
 UdpLink,5,3,2,60.0,a native declaration: its body relays its parameters to the native
 UnrealMPGameInfo,18,18,0,100.0,

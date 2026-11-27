@@ -253,6 +253,27 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md`, two new sections. Not in this PR: the remaining 204 refusals by family, whose
   largest is `a call the statement walk cannot bound` (20 bodies, measured: every one is a `while`/`do`/`for` body),
   and `inventory/uscript_emit_join.csv` unchanged (the 9 non-joining bodies are the same 9).
+- [~] 3.6 the statement walk's largest family was `$=`, and the join's last eight were two parser defects:
+  **11,499 modelled / 11,499 byte-identical** (from 11,475; **25 bodies gained, none lost**, residue 204 -> 187, the
+  differ census 1 -> 1, `inventory/uscript_emit_join.csv` 11,686 of 11,687 joined). (1) The 20-row family
+  `a call the statement walk cannot bound` was **not** loop walking -- the trace shows `emit_call` answering for a
+  statement that is not a call, because `COMPOUND` carried the ten arithmetic spellings and not the two string ones.
+  `$=` (native 322 `ConcatEqual_StrStr`) and `@=` (323 `AtEqual_StrStr`) are installed by the image's own table; what
+  was missing is that a compound assignment whose result is a `string` is a string-valued **statement** and therefore
+  carries `EatString`: `Object.PadString`'s `Src $= PadChar;` is `0e 61 42 <target> <value> 16`, and without the `0e`
+  the body is one byte short and every later branch operand one low -- read as a jump distance, the same trap the `%`
+  entry above records. 15 bodies. (2) `inventory/uscript_emit_join.csv`'s eight "the text spells the name, but not as
+  a declaration" rows were two parser defects: **block comments in this text nest** (the lexer ended the outer comment
+  at the inner `*/`, read 26 commented-out lines as code and left `TeamVoicePack.uc` at brace depth -2 -- the oracle is
+  the package, whose `TeamVoicePack` carries all 21 Function exports the nested reading spells, five of which the join
+  never saw), and **a keyword spelled as an argument is not a declaration** (`Mover.TriggerToggle`'s
+  `UnTriggerEvent(Event, self, Instigator);` put an `event` at the state's brace depth, the header scan walked forward
+  to the next `(` and swallowed `state() TriggerToggle` whole; `functions_of` now requires paren depth 0). 10 bodies,
+  and the join's last row is `BotScarab.DoBury`, a fragment the text does not carry. Fixtures: `ConcatSet` (the eaten
+  `$=`, from `PadString`'s own bytes), a keyword argument in front of a state (a state declaration must survive it),
+  and a nested-comment corpus in `uscript-lex.py --check`. Doc: `docs/COMPILER_FRONTEND.md`, one new section with the
+  score table. Not in this PR: the five `X[i]++`/`X[i]--` bodies (`_incdec` wants a two-token expression) and the
+  19-row `a call whose callee declaration the text does not carry` family.
 - [~] 3.6 an `int % int` is not typed `int` by the operator: **refuted, not shipped** -- `origin/main` stays 11,444 /
   differ 1. The last differ row (`CylinderBuilder.Build`) was mislocated in the two entries below and in U43: its 14
   bytes are the **`%`** of `((i+1)%Sides)*2+(1-j)/2` in the third `Poly4i` argument of `Build`, not `BuildCylinder`'s

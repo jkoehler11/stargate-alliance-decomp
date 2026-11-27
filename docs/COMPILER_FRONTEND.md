@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,474 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,499 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -3767,3 +3767,76 @@ Both rules together, against `origin/main`, keyed per body:
 (`inventory/uscript_emit.csv` regenerated from that run; `inventory/l1_ready.csv` was stale by many PRs -- it read
 `modelled` 0 for classes the emitter has modelled for weeks -- and is regenerated here: 1,104 classes fully covered
 (7,915 bodies), 59 classes one refusal away (1,270 bodies).)
+
+## Stage 3, continued -- the statement walk's largest family was `$=`, and the join's last eight were two parser defects (measured 2026-11-27)
+
+The residue this page ended on carried 204 refusals, and its largest row was `a call the statement walk cannot bound`,
+20 bodies, which the previous note read as "every one is a `while`/`do`/`for` body". **That reading was wrong**, and the
+trace says so: the refusal is raised by `emit_call` for a statement that is not a call, because two shapes fall through
+every model in `emit_stmt` and land there. The loop was incidental -- the offending statement sat inside it.
+
+### `$=`/`@=` are compound assignments, and a string statement is eaten
+
+`COMPOUND` listed the ten arithmetic and bitwise spellings but not the two **string** ones, so `Src $= PadChar;` was
+neither an assignment (`_assign_at` looks for a lone `=`), nor a compound (`_compound` asks `COMPOUND`), nor a call --
+and `emit_call` then answered with the loop's name. The image installs both rows (`native(322) ... string $= ( out
+string A, coerce string B )` `ConcatEqual_StrStr`, `native(323)` `AtEqual_StrStr`) and the operator table already
+carried them; only the statement filter was short.
+
+The second half is what made the first half look like a jump distance: **a compound assignment whose result is a
+string is a string-valued statement, so it carries `EatString`**, exactly as a string-returning call does.
+`Object.PadString` ships
+
+    shipped   0e 61 42 <target> <value> 16      ConcatEqual_StrStr, eaten
+    without   61 42 <target> <value> 16         one byte short, every later branch operand one position low
+
+Without the prefix the body was 74 bytes against 75 and the *first* difference a reader notices is `06 68` vs `06 69`
+-- the loop's back-jump -- which is the same trap the `%` section above records: diff the first differing node before
+believing a jump moved for its own reason.
+
+25 bodies gained, **none lost**, on top of the previous bundle (11,475 -> 11,499 modelled, residue 204 -> 187): the 15
+`$=` bodies (`Object.PadString`, `StreamBase.FormatTimeDisplay`, `PlayerReplicationInfo.GetPlayerXUID`,
+`GameStats.ConnectEvent`/`ServerInfo`/`NewGame`/`EndGame`, `M3UParser.MatchPath`, `StreamCommandlet.chart`,
+`PlayerProfile.FormatTimeDisplay`, `GameInfo.ParseLoadingHint`, `MaplistRecord.SetMapOptions`/`RefreshMapItem`,
+`BufferedTCPLink.SendBufferedData`/`ReceivedText`, `UdpGamespyQuery.GetFullName`), the three `Mover` state bodies and
+the five `TeamVoicePack` bodies the join was hiding (below). What is left of that family is five bodies and they are
+one other shape: `X[i]++` / `X[i]--` on a subscript (`TestInfo.TestX`, `StargateHUD.Draw_DebugLine`/`Sphere`/`Box`,
+`UWindowTabControlTabArea.SizeTabsMultiLine`), which `_incdec` refuses because it wants a two-token expression.
+
+### `inventory/uscript_emit_join.csv`: 9 -> 1, from two defects
+
+The eight that joined nothing ("the text spells the name, but not as a declaration") were two parser bugs, not eight
+declaration forms:
+
+- **A block comment in this text NESTS, and the lexer closed on the first terminator.** `TeamVoicePack.uc` comments out
+  a `PlayerSpeech` whose body itself contains `/* ... */`; a non-nesting scan ended the outer comment at the inner
+  `*/`, read the remaining 26 commented-out lines as code, and left the file at brace depth **-2**, so `PlayerSpeech`
+  and the four `Get*Ack|FFire|Taunt|Other*String` getters were never seen as declarations. The oracle is the package,
+  not a style guide: `StargateContent.u`'s `TeamVoicePack` carries **21 Function exports**, and the text under nesting
+  spells exactly those 21. The lexer now walks the comment to its own depth-0 terminator (`tools/uscript-lex.py`), and
+  its `--check` holds a fixture whose inner `*/` is followed by two declarations that must **not** appear.
+- **A keyword spelled as an argument is not a declaration.** `Mover.TriggerToggle`'s
+  `UnTriggerEvent(Event, self, Instigator);` puts an `event` token at the state's own brace depth -- parentheses do not
+  move that counter -- so `functions_of` read it as a header, scanned forward to the next `(` (which was
+  `state() TriggerToggle`'s), and swallowed the state whole, recording a body named `state` with the return type
+  `self.Instigator.bOpening.false.Stop`. The walk now computes a parenthesis table beside the brace table and requires
+  paren depth 0 for the `state`, `ignores` and `function`/`event`/`delegate` branches, so the same trap cannot fire on a
+  parameter named `State` either. `Mover.TriggerToggle`'s `Reset`, `SelfTriggered` and `Trigger` are scored again.
+
+`inventory/uscript_emit_join.csv` is now **11,686 of 11,687 joined**; the last row is `BotScarab.DoBury`, whose text is
+a fragment the class does not carry -- the case a previous session already named, and the join's own `cause` column
+says so rather than a parser being blamed.
+
+### Score
+
+Per body, against `origin/main`'s own tool on the same tree:
+
+| run | modelled | gained | lost | residue | differ |
+|---|---|---|---|---|---|
+| `origin/main` | 11,475 | -- | -- | 204 | 1 |
+| this bundle | 11,499 | 25 | **0** | 187 | 1 |
+
+`inventory/l1_ready.csv` regenerated: 1,200 classes, 11,686 joined bodies, 11,499 modelled / 187 refused, **1,111
+classes fully covered (8,090 bodies)** and 57 one refusal away (1,346 bodies). Not in this PR: the five `X[i]++` bodies,
+and the `a call whose callee declaration the text does not carry` family (19), which is the next thread rather than a
+fourth rule here.
