@@ -2202,7 +2202,13 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**No emitted body differs from the shipped bytes**: every one of the 11,300 bodies this walk models is the package's own bytes (`inventory/uscript_emit.csv`), and every body it does not model is a named refusal in the residue.
+**5 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,440 modelled and identical in the same run). **3** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 5 separate defects.
+
+| first difference | node | length | branch moved with it | bodies | examples |
+|---|---|---|---|---|---|
+| jump distance | JumpIfNot | ours longer | yes | 2 | `CylinderBuilder.Build`, `SheetBuilder.Build` |
+| opcode | Add_FloatFloat | ours longer | - | 2 | `VirtualKeyboardPanel.constructKeyboard`, `UWindowProgressBar.Paint` |
+| jump distance | JumpIfNot | ours shorter | yes | 1 | `UPreviewMapListClient.Paint` |
 <!-- END emit-differ -->
 
 Two things the classification settles for the next run. A **jump distance** whose word moved by exactly the body's
@@ -3505,5 +3511,53 @@ outside an argument root and against the right-hand group that must stay `int`.
 walk` (152), `a call the statement walk cannot bound` (20), `a call whose callee declaration the text does not carry`
 (19), `a name neither a local, a property nor an enum constant of the class chain` (17), `an operator the image's
 table does not install` (16) -- plus the one body that moved *later* in the residue without being gained
-(`M3UParser.Import`, from an unknown name to a receiver's class the artifacts do not name). No body's bytes differ
-from the package's any more, which is the state this thread was building toward.
+(`M3UParser.Import`, from an unknown name to a receiver's class the artifacts do not name). Three bodies now reach the `int`-pair promotion and differ there -- the section below names each and
+`docs/UNKNOWNS.md` U43 carries the bound that has to settle them; every other body the walk models is still
+the package's own bytes.
+
+## Object literals, `new`, a unary `+` and an in-body `const` (measured 2026-11-26)
+
+11,440 modelled / 11,440 byte-identical (from 11,300; **140 bodies gained, none lost**, residue 378 -> 238, the differ census
+**0 -> 5**, each named below). Four rules, and one negative that is now a ledger entry rather than a guess.
+
+**An object literal is one node whatever type word it carries.** `Texture'BlueMenuTL'`, `Material'X'`,
+`ColorModifier'gen_fx_tex.GEN_HOLDeathEffect_CM'` and `enum'EIntStat'` all write `20 <object reference>`; the word in
+front of the quotes is the compiler's own check, not part of the bytes. The reference is the package's **exports
+first, imports second** join (`classrefs`' order), and a name carried by two objects is disambiguated by the literal's
+type word: UWindow.u exports both a `Struct` and a `Texture` called `MouseCursor` (245 and 2542) and
+`UWindowRootWindow.Initialized`'s `Texture'MouseCursor'` is **2542**. A name the package merely imports joins through
+its `package` field and falls back to the bare name, which is the shape the four `ColorModifier` literals ship (that
+field is 0 in this build).
+
+**`new (Outer, Name, Flags) Class` is `11` and four operands.** UELib's `NewToken` reads three nested operands then
+the class expression, and this build predates its template version (130 against 300), so there is no fifth. An
+omitted one is `Nothing` (`0b`), except `None`, which is an expression and writes `NoObject` (`2a`) --
+`TestInfo.BeginPlay` spells every form. **`new()` with nothing between the parens is zero arguments**, not one empty
+one: `StargateVoicePack.Init`'s `new() class'Speech'` ships `11 0b 0b 0b 20 <class>`.
+
+**A unary `+` on a literal writes no node.** `Pawn.UnderwaterTime = + 999999.0;` ships the `FloatConst` alone, which is
+how the minus already folds into the value; a `+` in front of a typed operand stays refused, because no body in the
+corpus witnesses that node.
+
+**A `const` inside a body is hoisted to the class.** `ObjectivesPanel.MyOnDrawItem`'s `const COLUMN_INDENT = 0.03;`
+writes nothing and each use folds at its site, so the declaration is the same kind of statement as `local`.
+
+**The residue now names the expression.** A refusal's text carries `_spell(expr)` for the compound-expression family,
+so `--residue-out` says *which* expression the walk gave up on (`const COLUMN_INDENT`, `a member read with no dot`)
+instead of only its shape. The histogram still keys on the text before the parenthesis, so no family count moved.
+
+**The five bodies the new rules reach, and why they are named rather than fixed.** None was modelled in the previous
+tree -- they all enter from the residue -- and with object literals the walk now reaches the `int`-pair promotion and
+differs there. Two **over-promote**: `UWindowProgressBar.Paint` (`BlockX = LookAndFeel.MiscBevelL[2].W + 1;`, a
+`read` pair the package keeps `int` and casts whole) and `VirtualKeyboardPanel.constructKeyboard` (the same shape,
+`Add_FloatFloat` where the package writes a cast). Three have a **length difference** that moved a `JumpIfNot`:
+`CylinderBuilder.Build` and `SheetBuilder.Build` (ours longer -- the pair the package does retype) and
+`UPreviewMapListClient.Paint` (ours shorter). Bounding the promotion to a literal left operand fixes `Paint` and
+**costs two bodies** (`CylinderBuilder.BuildCylinder`, `ConeBuilder.BuildCone`), so the bound is not shipped: the
+ledger entry is `docs/UNKNOWNS.md` **U43**, which carries the witnesses and the acceptance test the next formulation
+has to pass (differ 0, none lost).
+
+`--check` holds the new rules with fixtures that can fail: the type word picking 2542 over 245 and an unworded literal
+taking 245, `enum'EIntStat'` against its own reference, `new() class'Speech'` against `11 0b 0b 0b 20`, and a unary
+`+` on a literal against the `FloatConst` plus its refusal on a read. The package stub grew `class_name_of` because the
+object join asks every export for its class -- the `--check` stub had no object tables at all before this.

@@ -6501,3 +6501,36 @@ fallback was the package order, and the walk reproduces it.
 **Not settled.** A struct-typed receiver reached through a **chain** (`A.B.C` where `B` is the struct-typed property)
 answers no declaring class -- `_declaring_class` claims only a bare name or an array element -- so it takes the
 package order. That is correct for every node in this corpus (three of three) and is a stated limit, not a rule.
+
+## U43. An `int` pair at a `float` site: which chains the compiler retypes, and which it casts whole
+
+**Open (measured 2026-11-26).** The emitter's both-`int` promotion at a `float` site leaves **five** bodies differing,
+in three shapes, and every attempt to bound it so far gains some and loses another. Two over-promote a `read` pair
+(`UWindowProgressBar.Paint`, `VirtualKeyboardPanel.constructKeyboard`, both `Add_FloatFloat` where the package writes a
+cast) and three moved a `JumpIfNot` with their own length (`CylinderBuilder.Build` and `SheetBuilder.Build` ours
+longer, `UPreviewMapListClient.Paint` ours shorter). The three with the clearest source, and the node each first
+differs at (`tools/emit-differ.py`'s own classification, so this is not a reading of the bytes):
+
+| body | shipped | ours | first differing node |
+|---|---|---|---|
+| `UWindowProgressBar.Paint` | `IntToFloat(Add_IntInt(<read>, IntOne))` for `BlockX = LookAndFeel.MiscBevelL[2].W + 1;` | `Add_FloatFloat(<read>, FloatConst 1.0)` | `opcode`, `Add_FloatFloat`, inside the `Let` |
+| `SheetBuilder.Build` | `Subtract_FloatFloat(Multiply_FloatFloat(..), IntToFloat(Divide_IntInt(..)))` for `(x*XStep)-Width/2` | both operands cast (`PrimitiveCast 3f` twice) | `opcode`, `Multiply_FloatFloat`, under `Subtract_FloatFloat` |
+| `CylinderBuilder.Build` | `Add_FloatFloat` inside `sin((2*i+Ofs)*pi/Sides)` | a whole-group cast | `jump distance`, `JumpIfNot` (downstream of the node) |
+
+**Two bounds are measured and they conflict.** A literal on the **left** of the pair earns the retype -- the
+`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` family ships `Add_FloatFloat` all the way down. A **read** on
+the left does not: `Paint`'s `MiscBevelL[2].W + 1` keeps the `int` pair and converts the result. Bounding the rule to
+a literal left operand (`group_slot or _is_literal(_strip_parens(left))`) therefore fixes `Paint` and keeps
+`UWindowRootWindow.Initialized`/`StargateVoicePack.Init`, and **costs two bodies**: `CylinderBuilder.BuildCylinder`
+(300 -> 290 shipped-vs-ours) and `ConeBuilder.BuildCone` (225 -> 215), whose shipped bytes promote an inner group at a
+root that is *not* a call argument -- so the group bound cannot be "an argument's left operand" either.
+
+**What the `SheetBuilder` row adds.** There the pair is *mixed* (`int` group, `float` divide) and the shipped bytes
+retype the **left** operand's leaves while casting the right one: the site's expected type travels down the left
+spine. That is the same left-spine asymmetry the walk already models for a group's type (`_group_narrow` writes it
+the other way round), which is a reason to state the rule as a *type expectation* rather than as a leaf test.
+
+**What would settle it.** A rule that says when the site's type is handed to the left child (so an `int` subtree
+retypes its own leaves) and when the pair keeps `int` and converts its result, scored on the whole corpus with the
+usual acceptance test: **differ 0, none lost**. The five bodies above are the witnesses that must all pass at once; a formulation that fixes one and breaks
+another has been measured here twice already.
