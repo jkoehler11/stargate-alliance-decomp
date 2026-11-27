@@ -3032,6 +3032,44 @@ def _structs():
 STRUCT_TYPES = {}
 
 
+def _struct_via():
+    """`[(struct, member, via)]` -- the rows `struct_members.csv` writes for a struct's **inherited** members.
+
+    `Plane extends Vector` declares one member of its own (`W`) and reads `X`/`Y`/`Z` through Vector's records; the
+    census writes those rows under `plane` with `via` naming `vector`, so the emitter can key the node
+    (`36 <record>`) on the pair the source spells and the record the base declares.
+    """
+    if STRUCT_VIA:
+        return STRUCT_VIA
+    path = os.path.join(ROOT, "inventory", "struct_members.csv")
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                via = (r.get("via") or "").lower()
+                if via and r.get("struct"):
+                    STRUCT_VIA.append((r["struct"].lower(), r["member"].lower(), via))
+    except OSError:
+        pass
+    return STRUCT_VIA
+
+
+STRUCT_VIA = []
+
+
+def _expand_struct_bases(struct_cands):
+    """Add each **inherited** member's records under the deriving struct's key (`plane.x` -> `vector.x`'s record).
+
+    The census's `via` column is the link, and the record is the base's: nothing is synthesized, so a struct whose
+    base this package neither exports nor imports gains no key and its member read still refuses.
+    """
+    for struct, member, via in _struct_via():
+        for cand in list(struct_cands.get((via, member)) or []):
+            bucket = struct_cands.setdefault((struct, member), [])
+            if cand not in bucket:
+                bucket.append(cand)
+    return struct_cands
+
+
 def _struct_word(word):
     """The struct name a declared type spells: its **last** dotted segment, lowercased and unspaced.
 
@@ -3868,13 +3906,19 @@ def _emit_member(expr, rettype, env, element_dim=0):
             node = (bytes([CONTEXT_TOKEN]) + emit_expr(obj[:chain_at], "", env)[0]
                     + struct.pack("<H", _wide(inner)) + bytes([1]) + inner)
             return _converted(node, "byte", rettype), "enum-chain-member"
-    if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and (rettype or "").lower() in ("int", "byte"):
-        _const = (env["scope"].get("consts") or {}).get(nm)
+    if (rettype or "").lower() in ("int", "byte"):
+        _const = ((env["scope"].get("consts") or {}).get(nm)
+                  if len(obj) == 1 and obj[0][0] in ("ident", "keyword") else None)
         if _const is None:
             # The const can be on the **receiver's** chain rather than the body's: `Sender.MSGT_Reply` on a
             # `Controller` names `Actor`'s `const MSGT_Reply = 0x00000008`, and the body (`AIMSG_Stargate`,
             # an `AIMessage`) has no `Actor` in its chain -- so the value type resolved and this read still
             # refused the member. Same join `_member_record` makes for a property.
+            #
+            # The receiver is a **chain** as often as a bare name: `Speech.GetAIMsg().Sender.MSGT_Name` is the
+            # same const on a `Controller` two links out, and limiting this join to a one-word receiver left
+            # `SGVoicePackExtended.BuildCustomVoiceDesc`/`WaitToReply` refusing the member although `_class_of`
+            # answers `controller` for the chain and `consts_by_cls` holds Actor's table.
             _target = _class_of(obj, env)
             if _target:
                 _pack = (env["scope"].get("pack") or "").lower()
@@ -6086,6 +6130,12 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             owner = _import_owners.get(idx)
             if owner and kind in PROPERTY_CLASSES:
                 struct_cands.setdefault((owner, nm), []).append((idx, kind, ""))
+    # A struct that **extends** another inherits its member records with no record of its own: `Object.uc`'s
+    # `struct Plane extends Vector` declares only `W`, so `Canvas.ColorModulate.X` ships Vector's `X` import
+    # (`36 e0` in Engine.u) while the pair the source spells is (`plane`, `x`). The census writes the inherited
+    # row under the deriving struct with `via` naming the struct that declares the member, and the record is that
+    # base's -- already in `struct_cands` under (`vector`, `x`) from the import table.
+    _expand_struct_bases(struct_cands)
     # The key, with **every** record it holds and the class that exports each one. Nine nodes of the corpus's
     # 5,128 are ambiguous -- `Engine.u` nests `Orientation` in both `SceneManager` and `MatObject`, and the two
     # `DriverWeaponStruct` copies in `StargateGame.u` are nested one per class -- so the pair alone cannot decide
@@ -8436,6 +8486,36 @@ def check(args):
             + b"\x01" + write_index(61) + b"\x16")
     if got != want:
         print("FAIL uscript-emit: `120 + 5 + Pflt` emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    # P18: a struct that **extends** another reads its base's member record. `Object.uc` declares
+    # `struct Plane extends Vector` with one member of its own (`W`), so `Canvas.ColorModulate.X` ships Vector's `X`
+    # import (`36 e0 ...` in Engine.u); `inventory/struct_members.csv` writes the inherited row under the deriving
+    # struct with `via` naming the base, and the scope builder copies the base's records to the deriving key. The
+    # control is the pair with no base row: nothing is copied for it, and its read still refuses.
+    inh = {("vector", "x"): [(31, "FloatProperty", "")]}
+    _expand_struct_bases(inh)
+    if inh.get(("plane", "x")) != [(31, "FloatProperty", "")] or ("plane", "w") in inh:
+        print("FAIL uscript-emit: an inherited struct member did not take its base's record (%r)" % (inh,))
+        return 1
+
+    # P19: a `const` on the receiver's chain answers behind a **chain** receiver, not only behind a bare name.
+    # `Speech.GetAIMsg().Sender.MSGT_Name` is `Actor`'s `const MSGT_Name` on a `Controller` two links out, and
+    # `SGVoicePackExtended.BuildCustomVoiceDesc`/`WaitToReply` refused the member while `_class_of` answered
+    # `controller` for the chain. The site is a `Context` over the chain whose inner node is the constant.
+    # The two classes are synthetic names so the walk does not re-home them through `inventory/classes.csv`'s
+    # own `controller`/`actor` rows, which `_ancestors` would start from `Engine` instead of this fixture's package.
+    cenv = dict(env, class_names=env["class_names"] | {"zzctl", "zzbase"}, proptypes={"target": "probe"},
+                consts_by_cls={"zzbase": {"msgt_reply": "0x00000008"}},
+                scope=dict(SCOPE, chain={**SCOPE["chain"], ("probe", "zzctl"): ("", "zzbase"),
+                                                ("", "zzbase"): ("", "")},
+                           objclass={("probe", "sender"): "zzctl"},
+                           props_all={"sender": [(700, "probe", "ObjectProperty")]},
+                           friendly={("probe", "probe", "sender"): "zzctl"}))
+    got, shape = _emit_member([("ident", "Target"), ("op", "."), ("ident", "Sender"), ("op", "."),
+                               ("ident", "MSGT_Reply")], "int", cenv)
+    if shape != "const-member" or not got.startswith(b"\x19") or \
+            not (b"\x2c\x08" in got or b"\x1d\x08\x00\x00\x00" in got):
+        print("FAIL uscript-emit: a const behind a chain receiver answered %s (%s)" % (shape, got.hex()))
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
