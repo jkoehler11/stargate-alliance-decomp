@@ -4016,8 +4016,8 @@ recorded size, an `ArrayCount` of a member). Five readings, 21 bodies, none lost
   `dict(env, ...)` copy made by a wrapper still advances the same counter -- a shorter list refuses on the statement
   that runs out, not on the first. Seven bodies gained (`AccessControl.PreBeginPlay` and the six `TestInfo` bodies
   that carry two to fifteen asserts each); the family's other two left it at a later node, not for a loss --
-  `TestInfo.Tick` now refuses as *an operator the image's table does not install* and `TestInfo.BeginPlay` as *a quoted
-  literal in a object function*.
+  `TestInfo.Tick` now refuses as *an operator the image's table does not install* and `TestInfo.TestSwitch` (six
+  asserts) as *an assert whose source line the corpus does not pin*.
 - **A `var`/`local`/`Automated` declaration may spell several names, and each carries the declared word.**
   `PlayerController.uc`'s `var vector FlashScale, FlashFog;` is one statement naming two properties, and the source
   index took the first name only (`m.group(2)`), so `FlashFog` had no declared word at all. Both index regexes -- the

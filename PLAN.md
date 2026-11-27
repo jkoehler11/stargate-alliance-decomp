@@ -245,7 +245,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       line operand is per statement, not per body** -- `TestInfo.Tick`'s eleven are `09 1e 01`, `09 1f 01`, `09 20 01`
       … and `AccessControl.PreBeginPlay`'s two are `09 3b 00`/`09 3c 00`, while `_assert_line` matched the whole body
       and answered one line; `_assert_lines` numbers every assert off its own offset and `_assert_at` consumes them in
-      source order (7 bodies; the family's other two moved on to a later refusal, `TestInfo.Tick` to an operator).
+      source order (7 bodies; the family's other two moved on to a later refusal -- `TestInfo.Tick` to an operator the
+      table does not install, `TestInfo.TestSwitch` to an assert line the corpus does not pin).
       (2) **a `var`/`local` declaration may spell several names** -- `var vector FlashScale, FlashFog;` is one
       statement and the index kept `m.group(2)` only, so `FlashFog` had no declared word (3 `SetFog*` bodies).
       (3) **a struct-typed property takes the size of its declared word** when the record carries only
