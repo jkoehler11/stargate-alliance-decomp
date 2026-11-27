@@ -2202,15 +2202,15 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**16 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,279 modelled and identical in the same run). **7** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 16 separate defects.
+**11 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,284 modelled and identical in the same run). **4** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 11 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours shorter | yes | 4 | `PlayerController.ServerMove`, `PlayerController.CallServerMove`, `PlayerController.CallServerMove` |
-| jump distance | Jump | ours shorter | yes | 3 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
-| jump distance | JumpIfNot | ours shorter | no | 3 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `TransportRings.RingsMove` |
 | jump distance | JumpIfNot | same length | no | 3 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults`, `GUIMessageBox.InternalOnPreDraw` |
-| opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
+| jump distance | Jump | ours shorter | yes | 2 | `Mover.KeyFrameReached`, `ShieldBelt.Tick` |
+| jump distance | JumpIfNot | ours shorter | no | 2 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines` |
+| jump distance | JumpIfNot | ours shorter | yes | 2 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove` |
+| opcode | PrimitiveCast | ours longer | - | 1 | `LinearStairBuilder.Build` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
 <!-- END emit-differ -->
 
@@ -3311,3 +3311,66 @@ in the leading operand position does not fold: `BotSG.EngageDirection`'s `MINSTR
 `1e 00001643` (`FloatConst 150.0`) where the walk writes `39 3f 2c 96`, because the const is substituted only in the
 leaf and `_float_literal` never sees it. Beside them the 19 operator rows, the 152-body compound family,
 `SGPlayerInput.PlayerInput`'s `Skip` and the remaining 16 differing bodies stand as the thread's next instruments.
+## Stage 3, continued -- a group compiles at the root it sits under, and a const folds (measured 2026-11-26)
+
+**11,284 modelled / 11,284 byte-identical** (from 11,279; **five bodies gained, none lost**, residue 399 -> 394 and
+the differ census **16 -> 11**). Two rules, both of them the "the value is compiled one way and the site converts
+it" family this thread has been closing one slot at a time.
+
+**(1) A parenthesised `int` group at a `float` root is typed at the root, then converted back into the slot it
+feeds.** `PlayerController.ServerMove`'s `Accel.Y = (OldAccel >>> 15) & 255;` ships
+
+    IntToFloat( And_IntInt( FloatToInt( IntToFloat( OldAccel >>> 15 ) ), 255 ) )
+
+-- the group is `int` and sits at a `float` expression root (the assignment's target), so the compiler types it at
+the root and narrows it back with the `FloatToInt` its own slot (`And_IntInt`'s left operand) wants: a round trip
+at the group's boundary and nowhere else, four bytes. `Accel.Z` is the second one and the body is exactly eight
+bytes short without it.
+
+This is the **mirror of `_group_narrow`**, and the bound is the **slot's own type**, which is what the previous
+round could not measure: the general form of the rule (round trip wherever a group's type differs from the root's)
+lost `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder` and -- measured this round -- `StargateHUD.
+paintTransparentBlob`, because those are bodies whose slot is already `float` and whose group the package retypes
+root and branch instead. So `_group_widen` answers only for a group whose slot wants `int`.
+
+Three of the five bodies are this rule's, and two of those are a jump distance that moved with the body's length:
+`BotSG.PickDestination` and `TransportRings.RingsMove` were in the differ set for a `Jump`/`JumpIfNot` word, which
+is the same `downstream` reading `tools/emit-differ.py` gives -- the branch is right and the body was short after
+it. A jump-distance row is not a defect of its own.
+
+**(2) A `const` in the leading operand position folds like the number written there.** `BotSG.EngageDirection`'s
+`MinDest = Pawn.Location + MINSTRAFEDIST * StrafeDir;` ships `1e 00001643` (`FloatConst 150.0`, the const inherited
+from `BotEnemy`) where the walk wrote `39 3f 2c 96` (`IntToFloat(IntConstByte 150)`); `BotLite.EngageDirection` is
+the same shape for the const it declares itself (`FloatConst 100.0`).
+
+The fold rule (`_float_literal`) reads the **token run**, and a const is a name there, so it never saw the value --
+while the leaf *does* substitute the const and cast it. The fix is to resolve the name through the same
+`scope["consts"]` table the leaf uses (the class chain's, so an inherited const resolves) and take the number the
+const spells. A float const's own text is left alone: its literal is already written as `1e` by the leaf.
+
+    $ python3 tools/emit-score.py --base ~/sg1/work/b0 --new ~/sg1/work/e2
+    modelled 11279 -> 11284 (+5), gained 5, lost 0, kept 11279, newly differing 0, later refusals 1
+      gained PlayerController.ServerMove
+      gained BotLite.EngageDirection
+      gained BotSG.PickDestination
+      gained BotSG.EngageDirection
+      gained TransportRings.RingsMove
+      later LinearStairBuilder.Build  ... (1099 vs 1103) -> ... (1107 vs 1103)
+
+`LinearStairBuilder.Build` is the one body that moved *without* being gained: its site takes the `int` row (so the
+round trip fires) where the package writes `Add_FloatFloat` with both operands converted -- a body whose group is
+retyped root and branch. It was four bytes short and is now four bytes long; it stays in the differ set either way,
+and the read (allow the *promote* for a paren `int` group at a `float` slot) is the next instrument on this thread,
+not a rule this round.
+
+**Not in this PR, measured.** (1) LinearStairBuilder's promote bound above. (2) A **byte-typed** group converts the
+same way one width down and is a separate rule: `Mover.KeyFrameReached` and `ShieldBelt.Tick` ship
+`39 3c 39 3d` (`ByteToFloat(IntToByte(...))`) where the walk writes `39 3f`, and `PlayerController.CallServerMove`
+(two bodies) ships `39 3a 39 3d` (`ByteToInt(IntToByte(...))`) where it writes the group bare -- the same round trip
+with the group's *declared* type `byte`; the bound that decides which type a group carries is not yet measured.
+(3) `ReplicateMove` and `B4SParser.ParseLines` are jump distances that did **not** move with their length delta, so
+their cause is inside the body and not yet named. (4) The three same-length rows (`AdminBase.SendComplexMsg`,
+`ListObjectPropsCommandlet.WriteResults`, `GUIMessageBox.InternalOnPreDraw`) are one shape: a `for` whose body is
+the empty statement `;` -- the package writes the increment **before** the loop's backward `Jump` and the statement
+after the loop outside it, while the walk takes the following statement as the body. (5) `SGPlayerInput.PlayerInput`
+is 520 bytes short behind a `Skip`, the largest single gap left in the differ set.
