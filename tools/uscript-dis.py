@@ -2591,13 +2591,14 @@ _SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+
 # A struct member's type can sit behind as many modifiers as a property's (`var config UIWidget Face;`,
 # `var() editconst array<Foo> List;`), and reading the first token as the type typed 23 members literally `config`.
 _SRC_VAR = re.compile(r"^\s*var(?:\s*\([^)]*\))?\s+(?:(?:const|config|globalconfig|private|protected|public|"
-                      r"transient|native|editconst|editinline|editinlinenotify|export|noexport|init|travel|input|"
-                      r"duplicatetransient|deprecated)\s+)*([\w<>\[\].]+(?:\s*>)*)\s+(.+?);", re.I)
+                      r"transient|native|editconst|editinline|editinlineuse|editinlinenotify|export|noexport|init|"
+                      r"travel|input|localized|duplicatetransient|deprecated)\s+)*"
+                      r"([\w<>\[\].]+(?:\s*>)*)\s+(.+?);", re.I)
 _SRC_STRUCT = re.compile(r"^[ \t]*(?:var[ \t]*(?:\([^)]*\))?[ \t]+)?(?:(?:const|config|private|protected|public|"
                          r"transient|native|atomic|immutable|export|noexport|init|travel|input|editconst|"
                          r"editinline|editinlineuse|duplicatetransient|localized)\s+)*"
                          r"struct[ \t]+(?:(?:native|transient|atomic|immutable|export|private|"
-                         r"protected|public)[ \t]+)*(\w+)", re.I | re.M)
+                         r"protected|public)[ \t]+)*(\w+)(?:[ \t]+extends[ \t]+(\w+))?", re.I | re.M)
 # The shipped text carries preprocessor conditionals (`#ifdefXBOX ... #else ... #endif`), and the xbox build
 # declares a function differently inside one. A directive *line* between a declaration and its `{` stopped the
 # body scan: `Engine.InteractionMaster.AddInteraction` is declared in an `#ifdefXBOX` branch and in an
@@ -2758,6 +2759,24 @@ def source_structs(text):
                     out[m.group(1)][nm].add(vm.group(1))
     return {s: {n: (next(iter(t)) if len(t) == 1 else None) for n, t in ms.items()}
             for s, ms in out.items()}
+
+
+def source_struct_bases(text):
+    """{struct: base} for every struct block whose declaration spells `extends <Struct>`.
+
+    A struct's members are the block's own `var` lines, and a struct that **extends** another inherits its members
+    with no `var` line of its own: `Object.uc`'s `struct Plane extends Vector` declares only `W`, so `Plane.X` reads
+    Vector's `X` record and the member census of the text alone has no row for it. The base is a word of the
+    declaration, one link before the `{` the member pass already finds, so the same `_SRC_STRUCT` scan carries it.
+    """
+    if not text:
+        return {}
+    text = _src_text(text)
+    out = {}
+    for m in _SRC_STRUCT.finditer(text):
+        if m.group(2):
+            out.setdefault(m.group(1).lower(), m.group(2).lower())
+    return out
 
 
 def shuffled_source(decls, rets):
@@ -5858,6 +5877,18 @@ def struct_check():
     want("a modifier in front of the type is not the type",
          source_structs("struct A\n{\n\tvar config UIWidget Face;\n\tvar() editconst array<Foo> List;\n}\n"),
          {"A": {"Face": "UIWidget", "List": "array<Foo>"}})
+    # `editinlineuse` and `localized` are property modifiers, and reading one as the type typed every
+    # `MultiPassMaterial` member `editinlineuse` with the type word glued to its name (`Material\tMaterial`), which
+    # took the struct out of the type table and refused `MaterialPasses[i].FinalBlend`.
+    want("editinlineuse and localized are modifiers, not the member's type",
+         source_structs("struct A\n{\n\tvar() editinlineuse Material Material;\n"
+                        "\tvar() editinlineuse Material\tOpacity;\n\tvar localized string Title;\n}\n"),
+         {"A": {"Material": "Material", "Opacity": "Material", "Title": "string"}})
+    want("a struct that extends another names its base",
+         source_struct_bases("struct A\n{\n\tvar int X;\n}\n\nstruct B extends A\n{\n\tvar float W;\n}\n"),
+         {"b": "a"})
+    want("a struct that extends nothing names no base",
+         source_struct_bases("struct A\n{\n\tvar int X;\n}\n"), {})
 
     want("a type's inlining modifiers are not its name",
          [_class_of_type("array<export editinline ScriptEvent>"),

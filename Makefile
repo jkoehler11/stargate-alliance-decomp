@@ -2519,6 +2519,13 @@ context-size:
 	@$(PYTHON) tools/context-size.py --write-doc docs/COMPILER_FRONTEND.md
 	@echo "  --check and --check-doc are the dump-free gates in make ci"
 
+# The corpus's struct members and their declared types, beside `class_properties.csv` -- and the members a
+# struct **inherits** from the one it extends (`Plane extends Vector`), written under the deriving struct with
+# `via` naming the base (docs/COMPILER_FRONTEND.md). Writes inventory/struct_members.csv.
+struct-members:
+	@$(PYTHON) tools/struct-members.py --system "$(GAME_DIR)/System" -o inventory/struct_members.csv
+	@echo "  --check and --report are the dump-free gates in make ci"
+
 # The struct widths the corpus's own `Context` nodes write, against the emitter's `STRUCT_SIZE` table:
 # which entries a node witnesses, which rest on a body's byte-identical match, and a failure when a node
 # contradicts the table (docs/COMPILER_FRONTEND.md). Dump-free -- it joins two committed artifacts.
