@@ -53,7 +53,7 @@ ACTION_PlaySound,2,2,0,100.0,
 ACTION_ResetSG1,1,1,0,100.0,
 ACTION_ReviveSG1,1,1,0,100.0,
 ACTION_Run,1,1,0,100.0,
-ACTION_SGWaitForPlayer,4,2,2,50.0,a bool assignment whose value is a compound expression
+ACTION_SGWaitForPlayer,4,3,1,75.0,a call statement whose receiver's class the artifacts do not name
 ACTION_SaveGame,1,1,0,100.0,
 ACTION_SetAlertness,2,2,0,100.0,
 ACTION_SetAlertnessVariables,1,1,0,100.0,
@@ -119,10 +119,10 @@ ACTION_____________NONE,1,1,0,100.0,
 AIController,19,18,1,94.7,a cast from actor to string the image's cast table does not install
 AIMSG_Cloak,4,4,0,100.0,
 AIMSG_ConcentrateFire,8,8,0,100.0,
-AIMSG_Stargate,10,8,2,80.0,a call to a name the class chain does not declare
+AIMSG_Stargate,10,10,0,100.0,
 AIMSG_TakeCover,4,4,0,100.0,
 AIMessage,33,33,0,100.0,
-AIMsgManager,39,38,1,97.4,an enum constant passed as Actor.EMsgTone
+AIMsgManager,39,39,0,100.0,
 AIScript,3,3,0,100.0,
 APC,1,1,0,100.0,
 APCM60Gun,6,6,0,100.0,
@@ -146,7 +146,7 @@ AlkeshBomb,3,3,0,100.0,
 AlkeshBombAmmo,1,1,0,100.0,
 AlkeshBombProjectile,5,5,0,100.0,
 AlkeshBomber,18,18,0,100.0,
-AlkeshBomberBot,75,64,11,85.3,a bool assignment whose value is a compound expression
+AlkeshBomberBot,75,73,2,97.3,a bool assignment whose value is a compound expression
 AlkeshCannon,7,7,0,100.0,
 AlkeshCannonProjectile,2,2,0,100.0,
 AlkeshEngine,1,1,0,100.0,
@@ -188,12 +188,12 @@ BloodHit,2,2,0,100.0,
 BlueFlag,1,1,0,100.0,
 BodySwapTrigger,5,5,0,100.0,
 BotBase,138,136,2,98.6,an ArrayCount of something that is not a bare name
-BotEnemy,450,448,2,99.6,a bool assignment whose value is a compound expression
+BotEnemy,450,449,1,99.8,an operator the image's table does not install
 BotGoauld,16,16,0,100.0,
 BotGuide,15,15,0,100.0,
 BotLite,35,35,0,100.0,
 BotRep,26,25,1,96.2,an operator the image's table does not install
-BotSG,155,154,1,99.4,a bool assignment whose value is a compound expression
+BotSG,155,155,0,100.0,
 BotScarab,11,11,0,100.0,
 BroadcastHandler,16,16,0,100.0,
 BrushBuilder,1,1,0,100.0,
@@ -202,7 +202,7 @@ C4Ammo,1,1,0,100.0,
 C4Mission,14,14,0,100.0,
 C4Pickup,1,1,0,100.0,
 C4Prop,5,5,0,100.0,
-C4Weapon,39,38,1,97.4,a bool assignment whose value is a compound expression
+C4Weapon,39,39,0,100.0,
 CTFBase,7,7,0,100.0,
 CTFDialHomeDevice,2,2,0,100.0,
 CTFFlag,35,35,0,100.0,
@@ -262,7 +262,7 @@ DeathGliderBot,36,36,0,100.0,
 DeathGliderGun,4,4,0,100.0,
 DeathGliderGunAmmo,3,3,0,100.0,
 DeathGliderGunProjectile,2,2,0,100.0,
-DeathMatch,47,46,1,97.9,a call to a name the class chain does not declare
+DeathMatch,47,47,0,100.0,
 DecipheringPawn,5,5,0,100.0,
 DecipheringProjectile,4,4,0,100.0,
 Decoration,12,12,0,100.0,
@@ -338,14 +338,14 @@ GUICheckBoxButton,2,2,0,100.0,
 GUIComboBox,26,26,0,100.0,
 GUIComponent,104,104,0,100.0,
 GUIController,84,82,2,97.6,an element of an array the artifacts do not type
-GUIEditBox,7,6,1,85.7,a call to a name the class chain does not declare
+GUIEditBox,7,7,0,100.0,
 GUIFont,2,2,0,100.0,
 GUIHorzGripButton,1,1,0,100.0,
-GUIHorzList,11,10,1,90.9,a call to a name the class chain does not declare
+GUIHorzList,11,11,0,100.0,
 GUIHorzScrollBar,10,10,0,100.0,
 GUIHorzScrollButton,1,1,0,100.0,
 GUIHorzScrollZone,3,3,0,100.0,
-GUIImageList,39,38,1,97.4,a call to a name the class chain does not declare
+GUIImageList,39,39,0,100.0,
 GUIImageListMap,2,2,0,100.0,
 GUILabel,2,2,0,100.0,
 GUILabelButton,2,2,0,100.0,
@@ -353,7 +353,7 @@ GUIListBase,33,33,0,100.0,
 GUIListBox,6,6,0,100.0,
 GUIListBoxBase,3,3,0,100.0,
 GUIMenuOption,13,13,0,100.0,
-GUIMessageBox,13,12,1,92.3,a bool assignment whose value is a compound expression
+GUIMessageBox,13,13,0,100.0,
 GUIMultiColumnList,15,15,0,100.0,
 GUIMultiColumnListBox,2,2,0,100.0,
 GUIMultiComponent,41,41,0,100.0,
@@ -362,7 +362,7 @@ GUIPage,24,24,0,100.0,
 GUIPanel,5,5,0,100.0,
 GUIScrollBar,23,23,0,100.0,
 GUIScrollBarBase,4,4,0,100.0,
-GUIScrollText,12,10,2,83.3,a bool assignment whose value is a compound expression
+GUIScrollText,12,12,0,100.0,
 GUIScrollTextBox,8,8,0,100.0,
 GUIScrollingPanel,2,2,0,100.0,
 GUISlider,7,7,0,100.0,
@@ -440,7 +440,7 @@ HaakenBot,21,21,0,100.0,
 HaakenGrunt,9,9,0,100.0,
 HaakenLeaderBot,28,28,0,100.0,
 HaakenMK1Weapon,21,21,0,100.0,
-HaakenMK2Weapon,15,14,1,93.3,a bool assignment whose value is a compound expression
+HaakenMK2Weapon,15,15,0,100.0,
 HaakenPod,24,23,1,95.8,an operator the image's table does not install
 HaakenPodDoor,1,1,0,100.0,
 HaakenWarrior,1,1,0,100.0,
@@ -478,10 +478,10 @@ HoverTankPilotBot,11,11,0,100.0,
 HoverTankTurret,1,1,0,100.0,
 HudOverlay,2,2,0,100.0,
 Hummvee,1,1,0,100.0,
-HummveeMachineGun,2,1,1,50.0,a bool assignment whose value is a compound expression
+HummveeMachineGun,2,2,0,100.0,
 HummveeTurretRear,1,1,0,100.0,
-IMusicActor,17,16,1,94.1,an enum constant passed as LevelInfo.EIMusicState
-IMusicController,11,8,3,72.7,an enum constant passed as LevelInfo.EIMusicState
+IMusicActor,17,17,0,100.0,
+IMusicController,11,11,0,100.0,
 InGameInfoPanel,4,4,0,100.0,
 InGameInfoScreen,4,4,0,100.0,
 InGameMenu,4,4,0,100.0,
@@ -500,7 +500,7 @@ Inventory,24,24,0,100.0,
 InventoryAttachment,1,1,0,100.0,
 InventorySpot,2,2,0,100.0,
 Jackson,3,3,0,100.0,
-JaffaBase,17,15,2,88.2,a name neither a local
+JaffaBase,17,17,0,100.0,
 JaffaBotHeavy,32,32,0,100.0,
 JaffaBotLight,17,17,0,100.0,
 JaffaBotMedium,8,8,0,100.0,
@@ -651,12 +651,12 @@ PistolPrototype,2,2,0,100.0,
 PixelShaderMaterial,1,1,0,100.0,
 PlayInfo,4,2,2,50.0,an operator the image's table does not install
 PlayerChatManager,19,19,0,100.0,
-PlayerController,487,484,3,99.4,an enum constant passed as VoiceChatRoom.EJoinChatResult
+PlayerController,487,487,0,100.0,
 PlayerInput,14,13,1,92.9,a member that is not a property of the receiver's class
 PlayerProfile,44,44,0,100.0,
 PlayerReplicationInfo,36,36,0,100.0,
 PlayerStatCache,9,9,0,100.0,
-PlayerStats,11,10,1,90.9,a call to a name the class chain does not declare
+PlayerStats,11,11,0,100.0,
 PlaylistParserBase,8,6,2,75.0,a call member whose receiver's class the artifacts do not name
 PotentialClimbWatcher,1,1,0,100.0,
 Powerups,14,14,0,100.0,
@@ -705,7 +705,7 @@ RepChip,1,1,0,100.0,
 RepChipEmitter,1,1,0,100.0,
 RepQueenEnergyWeapon,1,1,0,100.0,
 RepQueenEnergyWeaponProjectile,1,1,0,100.0,
-Replicator,23,21,2,91.3,an enum constant passed as Actor.EMsgTone
+Replicator,23,23,0,100.0,
 ReplicatorHUD,29,29,0,100.0,
 ReplicatorPossess,5,5,0,100.0,
 ReplicatorQueen,4,4,0,100.0,
@@ -746,7 +746,7 @@ SE_ExplosiveKActor,10,10,0,100.0,
 SE_RandomSpawn,5,5,0,100.0,
 SE_RandomTrigger,5,5,0,100.0,
 SE_ToggleStaticMeshActor,2,2,0,100.0,
-SG1AIMsgManager,4,1,3,25.0,an enum constant passed as Actor.EMsgTone
+SG1AIMsgManager,4,4,0,100.0,
 SG1Pawn,1,1,0,100.0,
 SG1ShieldBelt,1,1,0,100.0,
 SG1VoicePack,2,2,0,100.0,
@@ -771,7 +771,7 @@ SGOrderFollow,1,1,0,100.0,
 SGOrderGoto,2,2,0,100.0,
 SGOrderHold,2,2,0,100.0,
 SGOrderOpenFire,1,1,0,100.0,
-SGPageBase,6,5,1,83.3,a call to a name the class chain does not declare
+SGPageBase,6,6,0,100.0,
 SGPlayerInput,1,1,0,100.0,
 SGScarabTrail,1,1,0,100.0,
 SGSceneManager,2,2,0,100.0,
@@ -782,7 +782,7 @@ SGServerLoading,4,4,0,100.0,
 SGShotgunPock,1,1,0,100.0,
 SGTriggeredCondition,1,1,0,100.0,
 SGUseTrigger,7,7,0,100.0,
-SGVoicePackExtended,12,7,5,58.3,a call to a name the class chain does not declare
+SGVoicePackExtended,12,8,4,66.7,a member that is not a property of the receiver's class
 SHOOT_ORDER_Burst,1,1,0,100.0,
 SHOOT_ORDER_Charge,1,1,0,100.0,
 SHOOT_ORDER_Continuous,1,1,0,100.0,
@@ -876,7 +876,7 @@ Speech,8,8,0,100.0,
 SpinnyWeap,2,2,0,100.0,
 SpiralStairBuilder,2,2,0,100.0,
 SquadAIBasic,106,106,0,100.0,
-SquadAISG,31,28,3,90.3,an ArrayCount of a name whose declared dimension the source does not spell
+SquadAISG,31,30,1,96.8,an ArrayCount of a name whose declared dimension the source does not spell
 SquadMenu,11,11,0,100.0,
 SquadRoster,1,1,0,100.0,
 StaffCannon,10,10,0,100.0,
@@ -887,7 +887,7 @@ StaffWeaponAmmo,1,1,0,100.0,
 StaffWeaponAttachment,6,6,0,100.0,
 StaffWeaponMeleeAmmo,1,1,0,100.0,
 StaffWeaponProjectile,4,4,0,100.0,
-StargateAIMsgManager,4,2,2,50.0,a call to a name the class chain does not declare
+StargateAIMsgManager,4,2,2,50.0,a name neither a local
 StargateAmmo,14,14,0,100.0,
 StargateArmor,7,7,0,100.0,
 StargateCar,15,15,0,100.0,
@@ -896,19 +896,19 @@ StargateDeathMatch,7,7,0,100.0,
 StargateDeathMessage,2,2,0,100.0,
 StargateEffect,3,3,0,100.0,
 StargateGrenadeProjectile,8,8,0,100.0,
-StargateHUD,56,52,4,92.9,a call whose callee declaration the text does not carry
+StargateHUD,56,55,1,98.2,a call whose callee declaration the text does not carry
 StargateHover,11,11,0,100.0,
 StargateMutator,1,1,0,100.0,
 StargatePassengerTrigger,1,1,0,100.0,
-StargatePawn,227,215,12,94.7,a name neither a local
-StargatePlayer,271,265,6,97.8,an operator the image's table does not install
+StargatePawn,227,224,3,98.7,a call member whose receiver's class the artifacts do not name
+StargatePlayer,271,270,1,99.6,an operator the image's table does not install
 StargateProjectile,10,10,0,100.0,
 StargateRechargeWeapons,4,4,0,100.0,
 StargateScoreBoard,9,9,0,100.0,
 StargateStationaryWeapon,17,17,0,100.0,
 StargateTeamHUD,5,5,0,100.0,
 StargateTextTrigger,3,3,0,100.0,
-StargateVehicle,33,32,1,97.0,a bool assignment whose value is a compound expression
+StargateVehicle,33,33,0,100.0,
 StargateVehicleGunAttachment,1,1,0,100.0,
 StargateVehiclePassenger,14,14,0,100.0,
 StargateVehicleSeat,7,7,0,100.0,
@@ -925,7 +925,7 @@ StationaryWeapons,9,9,0,100.0,
 StatsQuery,2,2,0,100.0,
 StingerAmmo,1,1,0,100.0,
 StingerProjectile,8,8,0,100.0,
-StoryModeGame,59,58,1,98.3,a bool assignment whose value is a compound expression
+StoryModeGame,59,59,0,100.0,
 StoryModeScoreboard,5,5,0,100.0,
 Stream,13,13,0,100.0,
 StreamBase,11,11,0,100.0,
@@ -962,11 +962,11 @@ TeamTrigger,4,4,0,100.0,
 TeamVoicePack,21,21,0,100.0,
 Teleporter,8,5,3,62.5,a cast from struct to vector the image's cast table does not install
 Teltak,9,9,0,100.0,
-TeltakBot,46,44,2,95.7,a bool assignment whose value is a compound expression
+TeltakBot,46,45,1,97.8,a bool assignment whose value is a compound expression
 TempleTurretGun,6,6,0,100.0,
 TempleTurretGunProjectile,1,1,0,100.0,
 TerrainBuilder,2,2,0,100.0,
-TestInfo,26,16,10,61.5,two asserts
+TestInfo,26,17,9,65.4,two asserts
 TestObj,1,1,0,100.0,
 TestScreenplay,1,1,0,100.0,
 TetrahedronBuilder,3,3,0,100.0,
@@ -1102,7 +1102,7 @@ UWindowTabControl,9,9,0,100.0,
 UWindowTabControlItem,2,2,0,100.0,
 UWindowTabControlLeftButton,2,2,0,100.0,
 UWindowTabControlRightButton,2,2,0,100.0,
-UWindowTabControlTabArea,10,9,1,90.0,a call the statement walk cannot bound
+UWindowTabControlTabArea,10,10,0,100.0,
 UWindowTextAreaControl,9,9,0,100.0,
 UWindowURLTextArea,6,6,0,100.0,
 UWindowVScrollbar,10,10,0,100.0,
@@ -1121,11 +1121,11 @@ UnrealScriptedSequence,5,5,0,100.0,
 UnrealTeamInfo,13,13,0,100.0,
 UseStaticTrigger,4,4,0,100.0,
 UseTrigger,3,3,0,100.0,
-VSMainMenu,5,4,1,80.0,a call to a name the class chain does not declare
+VSMainMenu,5,5,0,100.0,
 Vehicle,112,112,0,100.0,
 VehiclePart,2,2,0,100.0,
 VehicleRemoteTurret,1,1,0,100.0,
-VehicleTurret,7,6,1,85.7,a bool assignment whose value is a compound expression
+VehicleTurret,7,7,0,100.0,
 VehicleWeakPoint,1,1,0,100.0,
 VehicleWeapon,8,8,0,100.0,
 VehicleWeaponAttachment,4,4,0,100.0,
@@ -1134,12 +1134,12 @@ ViewShaker,1,1,0,100.0,
 Vignette,2,2,0,100.0,
 VirtualKeyboardPage,6,6,0,100.0,
 VirtualKeyboardPanel,17,17,0,100.0,
-VoiceChatReplicationInfo,38,36,2,94.7,an enum constant passed as VoiceChatRoom.EJoinChatResult
+VoiceChatReplicationInfo,38,38,0,100.0,
 VoiceChatRoom,23,23,0,100.0,
 VoicePack,4,4,0,100.0,
 VoiceSG,1,1,0,100.0,
-VoiceSelector,10,9,1,90.0,a call to a name the class chain does not declare
-VoiceSet,14,13,1,92.9,a call to a name the class chain does not declare
+VoiceSelector,10,10,0,100.0,
+VoiceSet,14,14,0,100.0,
 Volume,5,5,0,100.0,
 VolumeTimer,2,2,0,100.0,
 VolumetricBuilder,2,2,0,100.0,
@@ -1161,10 +1161,10 @@ WeaponTurret,6,6,0,100.0,
 WeaponZoomInteraction,3,3,0,100.0,
 WillowWhisp,2,2,0,100.0,
 WindowConsole,16,13,3,81.2,a cast from an unknown type to string the image's cast table does not install
-XBoxLiveFindGameMenu,7,6,1,85.7,a member call statement to a name the receiver's chain does not declare
+XBoxLiveFindGameMenu,7,7,0,100.0,
 XBoxLiveFriendsMenu,5,5,0,100.0,
 XBoxLiveMenu,8,8,0,100.0,
-XBoxLivePlayMenu,7,6,1,85.7,a member call statement to a name the receiver's chain does not declare
+XBoxLivePlayMenu,7,7,0,100.0,
 XBoxLiveServerSelectionListBox,1,1,0,100.0,
 XBoxLiveSignOutConfirm,1,1,0,100.0,
 XBoxPlayerInput,7,7,0,100.0,

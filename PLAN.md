@@ -239,6 +239,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 four declarations the body's own table does not carry: **11,573 modelled / 11,573 byte-identical** (from
+  11,514; **59 bodies gained, none lost**, residue 172 -> 113, differ census 1 -> 1). One shape, four spellings of
+  "the declaration is elsewhere": (1) a **`const` is the literal it wraps** -- `_consts_of` kept only numbers, so
+  `DoState(SEARCHING_STATE_NAME)` could not see `const SEARCHING_STATE_NAME = 'Searching';` and the shipped node is
+  the `NameConst` of that literal (`1b 36 21 41 01 16 04 0b 47`); the table now keeps quoted/string values,
+  `_const_kind` classifies them, and `_type_of` answers `name`/`string` (16 rows, 15 bodies; the two
+  `msg.IsSubTypeOf(MSGT_Order)` rows need a corpus-wide by-name const join because an `AIMessage` subclass's chain
+  never reaches `Actor`). (2) a **qualified enum type** names its enum, not its class: 20 rows refused as `an enum
+  constant passed as Actor.EMsgTone` because the guard compared `actor.emsgtone` with `EMsgTone` -- take the last
+  dot-segment (7/4/4/3/2 across `EMsgTone`, `EIMusicState`, `ESGTeamMembers`, `EJoinChatResult`, `EAggroLevel`).
+  (3) **`Super.F()` in a value position** is typed by the parent's declaration -- `_class_of(Super)` answers nothing,
+  so `retval = Super.InternalOnKeyEvent(...)` was an `untyped` bool assignment and refused; `_type_of` now joins the
+  parent (or `Super(C)`'s cast class) through `_rettype_on` (14 rows, 13 bodies, `AlkeshBomberBot.DisplayDebug` among
+  them; the two `(EScriptFollow(...) <= ...)` bodies are another shape). (4) **a name imported more than once is
+  picked by its owner** -- `1c f2 08` is import -562, and `StargateGame.u` imports `IsSubTypeOf` three times
+  (`AIMessage`'s `int` and `AIMsgManager`'s two `static final` overloads), so `len(imp) == 1` answered nothing for all
+  eight `msg.IsSubTypeOf(...)` bodies; `_import_owner_pick` takes the nearest owner on the receiver's chain from the
+  import's own `package` field, and two candidates on one class still refuse (10 bodies). Fixtures: `ConstName`,
+  `Tone`, the `Super.Pong()` type join with its refusal control, and the import-owner pick with its ambiguity
+  control (`--check` holds 133 synthetic bodies). Doc: `docs/COMPILER_FRONTEND.md`, four sections and the score
+  table. Not in this PR: the 19 `a call whose callee declaration the text does not carry` bodies and the nine
+  `two asserts` bodies.
 - [~] 3.6 a class default object is a writable target: **11,474 modelled / 11,474 byte-identical** (from 11,444;
   **30 bodies gained, none lost**, residue 244 -> 204, the differ census 1 -> 1). (1) The emitter's target filter in
   `emit_assign` accepted five shapes and refused the four `emit_expr` already returns for a default object, which was

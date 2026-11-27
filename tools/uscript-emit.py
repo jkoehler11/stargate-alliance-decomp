@@ -589,6 +589,14 @@ def _consts_of(text):
     const from every body's name table -- 56 operator rows named a const the walk could not type (`pi`,
     `MAXSTEPHEIGHT`, `SUPERPUNCH_RANGE`) -- and `str(3.1415926535897932)` is not the text the source wrote, so the
     value is re-emitted from the token rather than reformatted.
+
+    A const's literal can be a **quoted name** as well as a number, and the substitution is the same one the
+    compiler makes: `const SEARCHING_STATE_NAME = 'Searching';` on `AlkeshBomberBot` is written at its site as the
+    `NameConst` the literal itself would be (`DoState(SEARCHING_STATE_NAME)` ships `1b 36 21 41 01 16 04 0b 47`).
+    Seventeen state-machine bodies (`AlkeshBomberBot`'s five `DoState`s, `TeltakBot.DoLanding`, `JaffaBase`'s
+    channel names, four `StargatePawn.Play*`) spelled a bare const name and refused as *a name neither a local, a
+    property nor an enum constant*. A value that is neither a number, a quoted name nor a string is still left out,
+    so a const written as an expression refuses rather than folding a value the source does not spell.
     """
     toks = tokens_of(text)
     if toks is None:
@@ -602,9 +610,27 @@ def _consts_of(text):
         j = i + 2
         if j < len(toks) and toks[j] == ("op", "="):
             j += 1
-        if j < len(toks) and toks[j][0] == "number":
+        if j < len(toks) and toks[j][0] in ("number", "quoted", "string"):
             out.setdefault(toks[i + 1][1].lower(), toks[j][1])
     return out
+
+
+def _const_kind(text):
+    """`number`, `quoted` or `string` for a const's literal text, or None when it is not a literal at all.
+
+    A name-valued const (`const FIRINGCHANNEL = 'Firing';`) is substituted by the compiler and encoded exactly as
+    the written token would be -- a `NameConst` in a `name` site, a `StringConst` in a `string` site -- so the site
+    re-enters `emit_expr` with the token the *source* wrote rather than a re-formatted value.
+    """
+    if not text:
+        return None
+    if len(text) > 1 and text[0] == text[-1] and text[0] in ("'", '"'):
+        return "quoted" if text[0] == "'" else "string"
+    try:
+        _number(text)
+    except ValueError:
+        return None
+    return "number"
 
 
 def _const_int(raw):
@@ -1810,8 +1836,14 @@ def _type_of(expr, env):
                 # A `const NAME = <literal>;` is substituted by the compiler, so the site carries the literal's own
                 # type: `MAX_CORRECT_MOVER < 5` is `Less_IntInt` because the const is a whole number, while
                 # `MAXSTEPHEIGHT + 14` and a bare `pi` are floats -- the 56 operator rows whose unknown side was a
-                # const on an ancestor class were all float consts, which the table did not hold at all.
-                return "float" if isinstance(_number(scope["consts"][low]), float) else "int"
+                # const on an ancestor class were all float consts, which the table did not hold at all. A
+                # **name-valued** const is the literal's own type too (`'Searching'` is a `name`, `"x"` a
+                # `string`), which is what lets it sit in an operator and in a `name` parameter.
+                ck = _const_kind(scope["consts"][low])
+                if ck in ("quoted", "string"):
+                    return "name" if ck == "quoted" else "string"
+                if ck == "number":
+                    return "float" if isinstance(_number(scope["consts"][low]), float) else "int"
             if _emit_enum(val, env)[0] is not None:
                 return "byte"
             if _cast_kind(val, env) == "object":
@@ -1887,10 +1919,24 @@ def _type_of(expr, env):
             # reached `AndAnd_BoolBool` -- the largest family in the operator residue (518 rows, 311 right and 207
             # left). `_rettype_on` already refuses to fall back to the body's chain for the same reason (see its
             # note) and `_emit_member_call` joins through `_class_of`, so this is that join's type-level twin.
-            rec = _class_of(expr[:at], env)
+            # `Super.F()` -- the callee is the **parent class's** declaration, exactly as the value path's
+            # `super-call-value` node resolves it, and `_class_of(super)` has no answer: `Super` is not a
+            # variable. `retval = Super.InternalOnKeyEvent(Key, State, delta);` therefore typed the whole
+            # expression `untyped` and the bool assignment refused it, in 15 bodies (`GUIScrollText`'s two
+            # handlers, `StoryModeGame.SetPause`, `StargateVehicle.TryToDrive`, `BotSG.SetEnemy`, both
+            # `SpecialCalcView`s, ...). `Super(C).F()` takes the cast's class, as the value path does.
+            obj = expr[:at]
+            if len(obj) == 1 and obj[0][0] in ("ident", "keyword") and obj[0][1].lower() == "super":
+                order = env.get("order") or []
+                if len(order) < 2:
+                    return ""
+                return _rettype_on(order[1], member[0][1], env)
+            sup = _super_cast_class(obj, env)
+            if sup:
+                return _rettype_on(sup, member[0][1], env)
+            rec = _class_of(obj, env)
             if rec:
                 return _rettype_on(rec, member[0][1], env)
-            obj = expr[:at]
             if len(obj) == 1 and obj[0][0] in ("ident", "keyword") \
                     and obj[0][1].lower() in ("static", "global"):
                 # `Static.F()` / `Global.F()`: the prefix names the class scope, so the call resolves on the body's
@@ -3020,6 +3066,25 @@ def _params_on(cls, name, env):
     return None
 
 
+def _import_owner_pick(cands, pairs, ancestors):
+    """The one import among `cands` whose owner is the nearest class on `ancestors` that owns a candidate.
+
+    A package imports one **name** per record, so a name can arrive several times: `StargateGame.u` imports
+    `IsSubTypeOf` three times -- `AIMessage`'s `final function bool IsSubTypeOf(int SuperType)` and `AIMsgManager`'s
+    two `static final` overloads (`int, int` and `name, name`). A `len(imp) == 1` test therefore answered nothing and
+    all eight `msg.IsSubTypeOf(...)` bodies refused as *a call to a name the class chain does not declare*. The
+    import's `package` field names the owning class and `_class_tables` already keys it as a `(state, class)` pair,
+    so the receiver's chain says which owner the call names; two candidates on the *same* class are still a refusal.
+    """
+    for c in ancestors:
+        owned = [x for x in cands if (pairs.get(x[0]) or ("", ""))[1] == c]
+        if len(owned) == 1:
+            return owned[0]
+        if len(owned) > 1:
+            return None
+    return None
+
+
 def _func_on(cls, name, env):
     """`("native", token)` / `("final", index)` / `("virtual", name index)` for a callee on the receiver's chain.
 
@@ -3079,6 +3144,10 @@ def _func_on(cls, name, env):
                     return ("virtual", idx)
             continue
     imp = [x for x in imports.get(low, []) if x[1] == "Function"]
+    picked = _import_owner_pick(imp, env.get("import_pairs") or {},
+                                [c for _p, c in _ancestors(chain, pack, cls.lower())])
+    if picked is not None:
+        imp = [picked]
     if len(imp) == 1:
         # An import's owner class is not in this package's export table, so the `final` flag is read off the
         # receiver's *chain* in the text: `ProfileList.ItemCount()` is `1c d9 03` -- a FinalFunction naming the
@@ -3922,19 +3991,30 @@ def emit_expr(expr, rettype, env, element_dim=0):
                 # root of a float expression folds like a written literal does). Of the 1,414 operator sites
                 # with a bare unknown operand, 73 were `NUMTEAMS`, `NUM_PIECES`, `MAX_CORRECT_MOVER` -- consts
                 # the emitter never consulted, though `_scope` already builds the table for `ArrayCount`.
-                node, _shape = emit_expr([("number", value)], rettype, dict(env, _root=root))
-                return node, "const-literal"
+                # A **name** or **string** const takes the same route with the token the source wrote:
+                # `DoState(SEARCHING_STATE_NAME)` is the `NameConst` of `'Searching'`, not of the const's name.
+                ck = _const_kind(value)
+                if ck is not None:
+                    node, _shape = emit_expr([(ck, value)], rettype, dict(env, _root=root))
+                    return node, "const-literal"
             token, enum = _emit_enum(val, env)
         if token is not None:
             # An enum constant is a byte and the compiler writes ByteConst there; passed where neither a byte, an
             # int nor its own enum is the declared type, the token would be a guess, so it is refused by name.
             want = (rettype or "").lower()
+            # A **qualified** enum type names the class that declares the enum rather than the enum alone:
+            # `Actor.EMsgTone GetSuitableMsgTone` in `AIMsgManager` (`return TONE_None;`) and
+            # `SquadAISG.ESGTeamMembers` in `StargatePlayer` are that enum's own table entries, and comparing the
+            # two spellings refused 20 of their constants -- `TONE_None` (7), `MUSICSTATE_...` (4),
+            # `SGTEAMMEMBERS_...` (4), `EJoinChatResult` (3), `EAggroLevel` (2) -- as *an enum constant passed
+            # as Actor.EMsgTone*, which reads like a type error and is a spelling one.
+            bare_want = want.rsplit(".", 1)[-1] if "." in want else want
             if want == "int":
                 # In an `int` site the byte is **widened**, not retyped: `Physics != PHYS_Falling` is
                 # `9a 39 3a 01 28 39 3a 24 02 16` -- `ByteToInt` (slot 58) in front of the `24 <ordinal>`, the same
                 # wrapper a `byte` *property* gets from the same pair lookup.
                 return _converted(token, "byte", "int"), "enum-const"
-            if want != "byte" and want != (enum or "").lower():
+            if want != "byte" and want != (enum or "").lower() and bare_want != (enum or "").lower():
                 raise Refused("an enum constant passed as %s" % (rettype or "typeless"))
             return token, "enum-const"
         raise Refused("a name neither a local, a property nor an enum constant of the class chain")
@@ -5912,6 +5992,11 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             if "0x1:Final" in flags:
                 own = [x for x in funcs.get(nm, []) if x[1] == c]
                 imp = [x for x in imports.get(nm, []) if x[1] == "Function"]
+                # A name the package imports more than once is picked by **owner**: the `final` declaration this
+                # class's chain names is the import whose `package` field is this class (see `_import_owner_pick`).
+                picked = _import_owner_pick(imp, _import_pairs, [c])
+                if picked is not None:
+                    imp = [picked]
                 if own:
                     scope["funcs"][nm] = ("final", own[0][0])
                     break
@@ -5925,6 +6010,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             if any(nm in (final_of or {}).get(k, ()) for k in order):
                 own = [x for x in funcs.get(nm, []) if x[1] in order]
                 imp = [x for x in imports.get(nm, []) if x[1] == "Function"]
+                picked = _import_owner_pick(imp, _import_pairs, order)
+                if picked is not None:
+                    imp = [picked]
                 if own:
                     scope["funcs"][nm] = ("final", own[0][0])
                     continue
@@ -6497,6 +6585,8 @@ function CallDelegate() { OnChange(Self); }
 function DelegateMember() { MyComponent.OnChange(Self); }
 function CallBadNative() { TinyToken(); }
 function name EmptyName() { return ''; }
+function name ConstName() { return CONST_NAME; }
+function Probe.EProbe Tone() { return PROBE_WALKING; }
 function CallNested() { Mix3(false, vect(0, 0, 0)); }
 function CallByteLit() { MixByte(255); }
 function HealthOf() { return Target.Health; }
@@ -6645,6 +6735,11 @@ SCOPE["objclass"] = {("probe", "target"): "probe", ("probe", "targeth"): "helper
 
 # The declared dimension of an array property, which `ArrayCount` folds to (`var int Items[4];`).
 SCOPE["dims"] = {"items": 4}
+
+# A **name-valued** const, which the compiler substitutes as the literal it wraps: `const CONST_NAME =
+# 'ProbeState';` compiles exactly as `return 'ProbeState';` does, so the body writes the `NameConst` of the literal
+# and not of the const's own name. `AlkeshBomberBot.DoSearch` is the corpus witness (`1b 36 21 41 01 16 04 0b 47`).
+SCOPE["consts"] = {"const_name": "'ProbeState'"}
 
 # The raw record table the receiver walk reads: `{name: [(index, owner, kind)]}`.
 SCOPE["props_all"] = {nm: [(v[1], "probe", "ObjectProperty" if v[2] == "object" else
@@ -6795,6 +6890,12 @@ WANT = {
     # `45 | 19 01 27 05 00 08 01 33 | 44 3e` for exactly this statement, read off the payload at +0x1cb.
     "setdelegate": "45190127050008" "0133" "443e" "040b47",
     "emptyname": "042100040b47",             # return ''; -- the name table's zero entry
+    # A **name-valued** const is the literal it wraps: `const CONST_NAME = 'ProbeState';` then
+    # `return CONST_NAME;` is `NameConst` 60 -- the same node `return 'ProbeState';` writes, not the const's name.
+    "constname": "04213c040b47",
+    # A **qualified** enum type: `Actor.EMsgTone GetSuitableMsgTone()` returning `TONE_None` is `24 00` -- the
+    # ordinal, matched against the enum's own name rather than the qualified spelling of its type.
+    "tone": "042401040b47",
     "callnested": "1b30282300000000000000000000000016" "040b47",   # Mix3(false, vect(0,0,0)): three arguments at
     "callbytelit": "1b31393d2cff16040b47",   # MixByte(255): IntToByte, then the int constant -- not ByteConst
     "healthof": "0419016309050004016e04040b47",   # return Target.Health; -> Context: 19, obj, 05 00, size 4, member
@@ -7004,7 +7105,9 @@ REFUSE = ("floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
 def check(args):
     """Synthetic corpus plus the committed artifact's own consistency: no dump, no writes."""
     names = {"weapon_bone": 2063, "probe": 5, "ping": 51, "pong": 52, "say": 53,
-             "getbox": 54, "getregion": 55, "internalonchange": 62, "onchange": 26}
+             "getbox": 54, "getregion": 55, "internalonchange": 62, "onchange": 26,
+             # the name-valued const's own literal: `const CONST_NAME = 'ProbeState';`
+             "probestate": 60}
     for value, want in ((0, b"\x00"), (1, b"\x01"), (63, b"\x3f"), (64, b"\x40\x01"),
                         (2063, b"\x4f\x20"), (8191, b"\x7f\x7f")):
         got = write_index(value)
@@ -7182,6 +7285,42 @@ def check(args):
         except Refused:
             continue
         print("FAIL uscript-emit: %s was emitted instead of refused" % case)
+        return 1
+    # The **import owner** picks between same-named records: `StargateGame.u` imports `IsSubTypeOf` three times
+    # (`AIMessage`'s `int SuperType` and `AIMsgManager`'s two `static final` overloads), so a `len(imp) == 1` test
+    # answered nothing and all eight `msg.IsSubTypeOf(...)` bodies refused. The nearest owner on the receiver's
+    # chain answers, and two candidates on one owner are still a refusal.
+    k_imports = [(-562, "Function"), (-563, "Function"), (-564, "Function")]
+    k_pairs = {-562: ("", "aimessage"), -563: ("", "aimsgmanager"), -564: ("", "aimsgmanager")}
+    if _import_owner_pick(k_imports, k_pairs, ["aimessage", "object"]) != (-562, "Function"):
+        print("FAIL uscript-emit: the import owner does not pick the receiver's record")
+        return 1
+    if _import_owner_pick(k_imports, k_pairs, ["aimsgmanager"]) is not None:
+        print("FAIL uscript-emit: two imports on one owner were picked instead of refused")
+        return 1
+    # `Super.F()` in an expression is typed by the **parent's** declaration: `retval = Super.InternalOnKeyEvent(...)`
+    # is a bool assignment and an `untyped` value refused 15 bodies. A name the parent does not declare is still
+    # untyped rather than answered from the body's own chain.
+    srets = dict(env["rets"])
+    srets[("helper", "pong")] = "bool"
+    senv = dict(env, order=["probe", "helper"], rets=srets)
+    sup_expr = [("ident", "Super"), ("op", "."), ("ident", "Pong"), ("op", "("), ("op", ")")]
+    if _type_of(sup_expr, senv) != "bool":
+        print("FAIL uscript-emit: `Super.Pong()` types as %r, expected bool" % (_type_of(sup_expr, senv),))
+        return 1
+    if _type_of([("ident", "Super"), ("op", "."), ("ident", "Nope"), ("op", "("), ("op", ")")], senv) != "":
+        print("FAIL uscript-emit: `Super.Nope()` was typed from the body's own chain")
+        return 1
+    # A **qualified** enum type matches the enum's own name; a different enum's name is still refused.
+    if emit_expr([("ident", "PROBE_WALKING")], "probe.eprobe", env)[0].hex() != "2401":
+        print("FAIL uscript-emit: a qualified enum type does not resolve its constant")
+        return 1
+    try:
+        emit_expr([("ident", "PROBE_WALKING")], "probe.ewrong", env)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: an enum constant from another enum was emitted")
         return 1
     # An `assert` is numbered from the corpus, so a body the walk cannot pin a line for is refused rather than
     # given the first line that looks plausible.
