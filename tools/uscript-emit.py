@@ -1072,12 +1072,14 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     # when the rule fired for either side). An argument whose pairs are all plain reads keeps its int arithmetic
     # too (`Abs(BlendC - NewC)` above), so this is not the "promote an argument's whole tree" rule that was
     # scored before and gained no body.
-    group_slot = bool(env.get("_arg")) and not env.get("_promote_tree") and _paren_wrapped(left)
+    group_slot = (bool(env.get("_arg")) and not env.get("_promote_tree")
+                  and _left_expects(left, env) and _leaves_promotable(expr))
     if (root and (site or "").lower() == "float"
             and (env.get("_assign") or env.get("_promote_tree") or slot or group_slot)
             and (not env.get("_arg") or env.get("_promote_tree") or slot or group_slot)
             and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
-            and (_leaves_promotable(expr) or (sym == "/" and not _group_narrow(left, env)))):
+            and ((_left_expects(left, env) and _leaves_promotable(expr))
+                 or (sym == "/" and not _group_narrow(left, env)))):
         hit = _operators().get((sym, "float", "float"))
         if hit is not None:
             token, ret = hit
@@ -2290,6 +2292,41 @@ def _leaves_promotable(expr):
     return literal and other
 
 
+def _has_call_leaf(expr):
+    """A word immediately followed by `(` anywhere in the run: a call, or a meta-cast (`Int(...)`)."""
+    for i, (kind, val) in enumerate(expr):
+        if kind == "op" and val == "(" and i and expr[i - 1][0] in ("ident", "keyword"):
+            return True
+    return False
+
+
+def _left_expects(expr, env, depth=0):
+    """True when the `float` expectation a node carries is **consumed by its left operand**.
+
+    The site's type is an expectation, and the compiler hands it down the **left** spine only:
+    `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` ships `Add_FloatFloat` all the way down (the leading
+    literal folds to `FloatConst 12` and every other leaf converts at its own read), while
+    `BlockX = LookAndFeel.MiscBevelL[2].W + 1` ships `IntToFloat(Add_IntInt(<read>, IntOne))` -- the read is not a
+    literal, so the expectation stops there, the pair keeps its `int` row and the *result* is what converts.
+    """
+    if depth > 8:
+        return False
+    if _paren_wrapped(expr):
+        # A group compiled at the expression root's **int** type (`_group_narrow`) does not take the expectation:
+        # `i = (Y - VBorder) / ItemHeight + VertSB.Pos` ships `Divide_IntInt(FloatToInt(<group>), ItemHeight)`.
+        return not _group_narrow(expr, env)
+    if _is_literal(expr):
+        return True
+    head = _operator_types(expr, env, typing=True)
+    if head is None:
+        return False
+    sym, _t1, _t2, _ret, _tok, at = head
+    if sym not in ("+", "-", "*", "/"):
+        return False
+    left = expr[:at]
+    return bool(left) and _left_expects(left, env, depth + 1)
+
+
 def _emit_operator(expr, rettype, env, root=False):
     """`A op B` -> `<token> A B 16`: the operator's token comes **first**, its operands after it.
 
@@ -2365,13 +2402,13 @@ def _emit_operator(expr, rettype, env, root=False):
                "r": _numeric(_enum_byte(_type_of(right, env).lower(), env), env)}
         if {own["l"], own["r"]} == {"int", "float"}:
             side = "l" if own["l"] == "int" else "r"
-            promote[side] = ((t1 if side == "l" else t2) == "float"
-                             and _leaves_promotable(left if side == "l" else right))
+            accepts = (_left_expects(left, env) if side == "l" else _leaves_promotable(right))
+            promote[side] = (t1 if side == "l" else t2) == "float" and accepts
         elif own["l"] == own["r"] == "int":
             # The **site's** promotion, which the pair table has to have widened: a call's argument keeps its int
             # arithmetic and casts at the argument's own site (`Abs(BlendC - NewC)` and `FRand()-style` graders are
             # `IntToFloat(Subtract_IntInt(...))`), and so does a parenthesised group.
-            promote["l"] = t1 == "float" and not _paren_wrapped(left) and _leaves_promotable(left)
+            promote["l"] = t1 == "float" and _left_expects(left, env) and not _has_call_leaf(left)
             promote["r"] = t2 == "float" and not _paren_wrapped(right) and _leaves_promotable(right)
     left, right = expr[:at], expr[at + 1:]
     # **A body folds nothing.** Both operands being literals was a refusal here, on the strength of a
