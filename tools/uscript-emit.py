@@ -1649,6 +1649,32 @@ def _is_outer(expr):
     return len(expr) == 1 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "outer"
 
 
+def _enum_cast(expr, env):
+    """`EIntStat(i)` -- a call whose callee is an **enum's own name** is a cast to the byte it is stored in.
+
+    `PlayerStats.LogAllStats`'s `GetIntStat(EIntStat(i))` ships `39 3d <i>` (`IntToByte`), and
+    `StargatePlayer.GetNextTeamMember`'s `ESGTeamMembers(PreceedingTeamMember + 1)` the same wrapper around a
+    whole `Add_IntInt` (`39 3d | 92 39 3a <enum> 26 16`). The name has to be an enum the corpus declares and
+    not also a class or a function this body can see, and the argument converts from **its own** type, so a
+    `byte` operand writes no cast at all (`EInputKey(Key)` around a byte parameter). Nine residue rows across
+    six packages were this shape, refused as `a call to a name the class chain does not declare`.
+    """
+    if len(expr) < 4 or expr[0][0] not in ("ident", "keyword"):
+        return None
+    low = expr[0][1].lower()
+    if low not in (env.get("enum_names") or set()):
+        return None
+    if low in (env.get("class_names") or set()) or low in ((env.get("scope") or {}).get("funcs") or {}):
+        return None
+    if expr[1] != ("op", "(") or _paren_end(expr, 1) != len(expr) - 1:
+        return None
+    args = _split_commas(expr[2:-1])
+    if len(args) != 1:
+        return None
+    body = emit_expr(args[0], "", env)[0]
+    return _converted(body, _type_of(args[0], env).lower(), "byte"), "enum-cast"
+
+
 def _cast_kind(name, env):
     """`primitive` for `int(x)`, `object` for `AIController(x)`, and "" when the name is neither.
 
@@ -3735,26 +3761,45 @@ def _incdec(expr, env):
     the same variable, and the node ends on `16` like any other call -- `Actor.UpdatePrecacheMaterials`'s
     `i ++` is `a5 00 5a 21 <idx> 16` and the `for` header's increment is the same node. A `float` increment has no
     installed operator in this build, so it is refused by name rather than given a token.
+
+    The operand may also be a **subscript**, and then it is the element node itself: `TestInfo.TestX`'s
+    `MyArray[int(bResource)]++;` ships `a5 | 1a 39 41 2d 00 48 32 01 5e 42 | 16` -- `AddAdd_Int` over the same
+    `ArrayElement` (`10`/`1A`, index, array read) an assignment target writes, with no extra node between. The
+    element's own declared type picks the operator, exactly as a bare name's does.
     """
-    if len(expr) != 2:
-        return None
-    # (postfix, prefix) per operand type: the four forms are four opcodes.
     syms = {"++": {"byte": (0x8B, 0x89), "int": (0xA5, 0xA3)},
             "--": {"byte": (0x8C, 0x8A), "int": (0xA6, 0xA4)}}
-    if expr[0][0] == "op" and expr[0][1] in syms and expr[1][0] in ("ident", "keyword"):
-        read, prefix, sym = expr[1], True, expr[0][1]        # `++ x` -- the operator is in front: the *pre* form
-    elif expr[1][0] == "op" and expr[1][1] in syms and expr[0][0] in ("ident", "keyword"):
-        read, prefix, sym = expr[0], False, expr[1][1]       # `x ++` -- the operator follows: the post form
+    if len(expr) < 2:
+        return None
+    if expr[0][0] == "op" and expr[0][1] in syms:
+        target, prefix, sym = expr[1:], True, expr[0][1]        # `++ x` -- the operator is in front: the *pre* form
+    elif expr[-1][0] == "op" and expr[-1][1] in syms:
+        target, prefix, sym = expr[:-1], False, expr[-1][1]      # `x ++` -- the operator follows: the post form
     else:
         return None
-    t = _type_of([read], env).lower()
+    if len(target) == 1 and target[0][0] in ("ident", "keyword"):
+        read = target[0]
+        t = _type_of([read], env).lower()
+        body = _emit_var(read[1], env, "")
+        if body is None:
+            raise Refused("a %s on a name neither a local nor a property of the class chain" % sym)
+    else:
+        # `X[i]++`: the operand is an element read, and its node is the one an assignment target writes. The
+        # element's type is the array's declared `T`, and only the four int/byte operator pairs exist.
+        at = _element_at(target)
+        if at is None:
+            return None
+        head, index = target[:at], target[at + 1:-1]
+        _token, etype = _element_type(head, env)
+        if _token is None:
+            raise Refused("an element of an array the artifacts do not type (%s)"
+                          % " ".join(v for _k, v in head))
+        t = (etype or "").lower()
+        body = _emit_element(head, index, "", env)[0]
     pair = syms[sym].get(t)
     token = pair[1 if prefix else 0] if pair else None
     if token is None:
         raise Refused("a %s on a %s operand, which no installed operator names" % (sym, t or "typeless"))
-    body = _emit_var(read[1], env, "")
-    if body is None:
-        raise Refused("a %s on a name neither a local nor a property of the class chain" % sym)
     return bytes([token]) + body + b"\x16", "incdec"
 
 
@@ -3831,6 +3876,11 @@ def emit_expr(expr, rettype, env, element_dim=0):
             return _emit_object_literal(expr[0][1], expr[1][1], env), "object-literal"
         if _is_call(expr) and _cast_kind(expr[0][1], env):
             return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
+        en = _enum_cast(expr, env)
+        if en is not None:
+            # `EIntStat(i)`: an enum's name in front of one operand is a cast, not a call. It is tried after the
+            # class/primitive cast table so a name that is both an enum and a class keeps the cast it had.
+            return en
         if _is_call(expr) and expr[0][1].lower() == "arraycount":
             # `ArrayCount(X)` is not a call: the compiler writes X's declared dimension as an int literal, and the
             # value converts at its site like any int. `PlayerController.SetProgressMessage`'s
@@ -4295,7 +4345,8 @@ def emit_call(stmt, env, receiver=None, head=None):
     params = _callee_params(stmt[0][1], env, receiver)
     if params is None:
         if args:
-            raise Refused("a call whose callee declaration the text does not carry")
+            raise Refused("a call whose callee declaration the text does not carry (%s, %d argument(s))"
+                          % (stmt[0][1], len(args)))
         return head + b"\x16"
     # **One** trailing hole disappears and the rest are written. `ACTION_IfProximity.ProceedToNextAction` spells
     # `ForEach C.DynamicActors(class'Actor', currentActor,)` -- one trailing comma, and the shipped call is

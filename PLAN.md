@@ -253,6 +253,18 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md`, two new sections. Not in this PR: the remaining 204 refusals by family, whose
   largest is `a call the statement walk cannot bound` (20 bodies, measured: every one is a `while`/`do`/`for` body),
   and `inventory/uscript_emit_join.csv` unchanged (the 9 non-joining bodies are the same 9).
+- [~] 3.6 the subscript increment and the enum cast: **11,514 modelled / 11,514 byte-identical** (from 11,499;
+  **15 gained, none lost**, residue 187 -> 172, differ census 1 -> 1). (1) `X[i]++`/`X[i]--`: `_incdec` wanted a
+  two-token expression, while the shipped node is the same `ArrayElement` an assignment target writes --
+  `TestInfo.TestX` is `a5 1a 39 41 2d 00 48 32 01 5e 42 16` -- and the **element's** declared type picks the
+  operator; five bodies. (2) Nine rows refused as `a call to a name the class chain does not declare` were an enum's
+  own name in front of one operand (`EIntStat(i)`, `EInputKey(Key)`, `ESGTeamMembers(...)`): the compiler writes
+  `39 3d` (`IntToByte`) around it, and a `byte` operand gets no cast at all; ten bodies across six packages. Doc:
+  `docs/COMPILER_FRONTEND.md`, one new section. **Measured and refused, not shipped**: joining the 19
+  `a call whose callee declaration the text does not carry` bodies to a corpus declaration (every declarer
+  agreeing) makes all 15 it reaches *emit* and every one of them **differs**, so the arity/types are not the corpus
+  declaration's; the family stays open, four rows unjoined (`Teleporter.PostTouch`,
+  `PlaylistParserBase.ImportedPlaylist`, both `DoActualTeleport`s).
 - [~] 3.6 the statement walk's largest family was `$=`, and the join's last eight were two parser defects:
   **11,499 modelled / 11,499 byte-identical** (from 11,475; **25 bodies gained, none lost**, residue 204 -> 187, the
   differ census 1 -> 1, `inventory/uscript_emit_join.csv` 11,686 of 11,687 joined). (1) The 20-row family

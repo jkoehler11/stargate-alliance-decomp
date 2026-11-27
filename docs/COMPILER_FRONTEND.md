@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,499 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,514 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -3840,3 +3840,36 @@ Per body, against `origin/main`'s own tool on the same tree:
 classes fully covered (8,090 bodies)** and 57 one refusal away (1,346 bodies). Not in this PR: the five `X[i]++` bodies,
 and the `a call whose callee declaration the text does not carry` family (19), which is the next thread rather than a
 fourth rule here.
+
+### The subscript increment, and an enum name in front of one operand is a cast
+
+11,499 -> 11,514 modelled (**15 bodies gained, none lost**, residue 187 -> 172, differ census 1 -> 1).
+
+- **`X[i]++` is the element node, not a two-token expression.** `_incdec` answered only for `name ++`, so the five
+  bodies that increment a subscript refused as `a call the statement walk cannot bound`. `TestInfo.TestX` spells
+  `MyArray[int(bResource)]++;` and ships
+
+      a5 | 1a 39 41 2d 00 48 32 01 5e 42 | 16      AddAdd_Int over the ArrayElement
+
+  -- the same `ArrayElement` (`1A`, index, array read) an assignment target writes, with no node in between and the
+  operator chosen by the **element's** declared type (`int`/`byte` pairs only, as for a bare name). Bodies:
+  `TestInfo.TestX`, `StargateHUD.Draw_DebugLine`/`Draw_DebugSphere`/`Draw_DebugBox`,
+  `UWindowTabControlTabArea.SizeTabsMultiLine`.
+- **An enum's own name in front of one operand is a cast, not a call.** Nine rows across six packages refused as
+  `a call to a name the class chain does not declare`: `EIntStat(i)`, `ECharFloatStat(i)`, `EInputKey(Key)`,
+  `ESGTeamMembers(PreceedingTeamMember + 1)`. The compiler writes the byte the enum is stored in:
+  `PlayerStats.LogAllStats`'s `GetIntStat(EIntStat(i))` is `39 3d <i>` (`IntToByte`), and
+  `StargatePlayer.GetNextTeamMember` the same wrapper around a whole `Add_IntInt`
+  (`39 3d | 92 39 3a <enum> 26 16`). The argument converts from **its own** type, so a `byte` operand gets no cast
+  (`EInputKey(Key)` around a byte parameter). `_enum_cast` runs after the class/primitive cast table, so a name that
+  is both an enum and a class keeps the cast it had, and it requires the name to be an enum the corpus declares.
+  Ten bodies: `PlayerStats.LogAllStats`, `PlayerController.ClientReceiveIntStat`/`ClientReceiveFloatStat`,
+  `DeathMatch.UploadPlayerStats`, the three `InternalOnKeyEvent`/`internalKeyEvent` bodies, the two `MyKeyEvent`
+  bodies and `StargatePlayer.GetNextTeamMember`.
+
+**Measured and refused: the corpus's by-name parameter lists.** Joining the 19 `a call whose callee declaration the
+text does not carry` bodies to a corpus declaration (every declaring class agreeing on one list) makes **all 15**
+that it reaches *emit*, and every one of them **differs** -- so the arity and argument types those bodies need are
+not the corpus declaration's, and the family stays open rather than shipped as a rule that loses nothing and is
+wrong everywhere it lands. The four it does not reach are `Teleporter.PostTouch`, `PlaylistParserBase.ImportedPlaylist`
+and the two `DoActualTeleport` bodies.
