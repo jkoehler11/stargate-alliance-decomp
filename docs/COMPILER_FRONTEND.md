@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,588 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,609 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -3999,3 +3999,83 @@ a `JumpIfNot` distance whose tail is now longer than the shipped one (`inventory
   `ObjectProperty`, so `Dest[i]` types as `Object`, whose chain declares no `Accept`.
 
 Those three are the next run's work, each a table read rather than a rule: none of them needs a boot. Not in this PR.
+
+## Stage 3, continued -- an `assert` line per statement, a declaration that spells several names, and `ArrayCount` of a member (measured 2026-11-27)
+
+The previous section named three causes as "the next run's work, each a table read rather than a rule": the nine
+two-assert bodies whose line operand is per statement, `var vector FlashScale, FlashFog;`, and
+`local Teleporter D,Dest[16];` -- one source walk that stopped at the first declared name. They were table reads, and
+the same two reads answer two more shapes the residue named in passing (a struct-typed `within` property with no
+recorded size, an `ArrayCount` of a member). Five readings, 21 bodies, none lost:
+
+- **An `assert` statement's line operand is per statement, not per body.** `_assert_lines` locates the body's whole
+  token run in the file (the match stays unique) and then numbers **every** `assert` in it off its own offset:
+  `Engine.TestInfo.Tick`'s eleven are `09 1e 01`, `09 1f 01`, `09 20 01` …, and `AccessControl.PreBeginPlay`'s two are
+  `09 3b 00` and `09 3c 00`. `_assert_line` remains for the single-assert case and the fallback (a body run the file
+  spells twice). `emit_stmt` consumes the list through `_assert_at`, whose cursor is a **one-item list** so that a
+  `dict(env, ...)` copy made by a wrapper still advances the same counter -- a shorter list refuses on the statement
+  that runs out, not on the first. Seven bodies gained (`AccessControl.PreBeginPlay` and the six `TestInfo` bodies
+  that carry two to fifteen asserts each); the family's other two left it at a later node, not for a loss --
+  `TestInfo.Tick` now refuses as *an operator the image's table does not install* and `TestInfo.BeginPlay` as *a quoted
+  literal in a object function*.
+- **A `var`/`local`/`Automated` declaration may spell several names, and each carries the declared word.**
+  `PlayerController.uc`'s `var vector FlashScale, FlashFog;` is one statement naming two properties, and the source
+  index took the first name only (`m.group(2)`), so `FlashFog` had no declared word at all. Both index regexes -- the
+  plain one and the one that steps over storage modifiers -- now capture the trailing `, name` run and register every
+  name: `CheatManager.SetFogR/SetFogG/SetFogB`, whose bodies are `FlashFog.X = F` and nothing else.
+- **A struct-typed property takes the size of its *declared word* when the record carries only `StructProperty`.**
+  `PROP_SIZE` has no entry for `struct`, so `_outer_wrapped` refused as `Outer.<struct>`. The declaration's word is the
+  measurement: `CheatManager.SetFlash`'s `FlashScale.X = F` opens `19 01 8e 05 00 0c` and 12 is the `vector` the `var`
+  line spells, and `RememberSpot`'s `Destination = Pawn.Location` is the same write on `Controller`'s
+  `var vector Destination;`. The fallback asks `_friendly` -- the join `_element_type` already applies to an array's
+  artifact-friendly name -- and a word the size table still does not carry refuses as before (`SetFlash`, `RememberSpot`).
+- **An object local's element type is the class its declaration spells, not `Object`.** `local Teleporter D,Dest[16];`
+  exports `Dest` as an `ObjectProperty` whatever class the text names, so `Dest[i]` was typed on `Object`, whose chain
+  declares no `Accept`, and three bodies refused as *a callee declaration the text does not carry*.
+  `_element_type` now prefers the declared word when it is a class name in the package's own table:
+  `Teleporter.PostTouch`, `TransportPlatformTeleporter.DoActualTeleport`, `LinkedGateTeleporter.DoActualTeleport`; and
+  `AssaultPath.FindNextPath`'s `local AssaultPath List[16];` with `List[i].Priority` is the same read on a class-typed
+  static array.
+- **`ArrayCount(M)` of a *member* folds to the dimension the receiver's class declares.** `ArrayCount(Squad.Enemies)`
+  writes the same literal `ArrayCount(Enemies)` would -- `SquadAIBasic` declares `var Actor Enemies[32]` and
+  `PlayerController` `var string ProgressMessage[4]`, which is `HUD.DisplayProgressMessages`'s
+  `for (i = 0; i < ArrayCount (PlayerOwner.ProgressMessage); i++)` -- so `_array_count` asks `_member_dim` (the
+  per-receiver reader `_element_dim` already used, lifted out of it) before refusing. A member whose dimension the
+  corpus does not spell still refuses by name, and the fixture's `ACountMemberBad` pins that. Six bodies:
+  `BotBase.IsEnemy`, `BotBase.SetNextEnemy`, `UnrealPawn.AddDefaultInventory`, `HUD.DisplayProgressMessages`,
+  `TacticalTarget.InitialiseBotMoveTargets`, `SGFormation.GetViewPointFor`.
+
+The `--check` fixture had drifted from `score()`'s own env: it put `dims_by_cls` inside `SCOPE`, while `_member_dim`
+reads it at the top of `env`. It is `ENV["dims_by_cls"]` now (after the `ENV = {...}` literal, where `score()` hands
+it), and `python3 tools/uscript-emit.py --check` passes -- `ok uscript-emit: 134 synthetic bodies`.
+
+### Score
+
+Per body, against the committed artifact `origin/main` ships (md5 `127c5efa2444bab2113d9341334528b7`, 11,590 lines),
+which a run of `origin/main`'s own tool on the same tree reproduces byte for byte:
+
+| run | modelled | gained | lost | residue | differ |
+|---|---|---|---|---|---|
+| `origin/main` | 11,588 | -- | -- | 98 | 2 |
+| this bundle | **11,609** | 21 | **0** | **77** | 2 |
+
+The 21 gained and the 0 lost are a set difference of the two artifacts' `(package, class, state, function)` keys, not
+a claim about a sample: every key `origin/main` modelled is modelled here, and no key was dropped. The differ set is
+the same two bodies it was before -- `CheatManager.LockCamera` and `CylinderBuilder.Build`, each a `JumpIfNot`
+distance `ours longer` -- and the residue's 21 fewer rows are exactly the 21 gained, so no body moved from a refusal
+family into the differ set.
+
+### What the residue now names
+
+The 77 rows, by family: 15 `an operator the image's table does not install`, 12 `a native declaration: its body relays
+its parameters to the native`, 10 `a member that is not a property of the receiver's class`, 6 `a call statement whose
+receiver's class the artifacts do not name`, 4 of the same for a call member, then the cast table -- seven
+`... to string` rows (`material` x2, `actor`, `class.weapon`, `pawn`, `class.pawn`, an unknown type) and one
+`struct to vector` -- the 2 differ rows, and singletons.
+
+Two rows are the last of a shape this section touched and did not finish: `CheatManager.Teleport` and
+`CheatManager.Summon` still refuse as `Outer.<struct>`, because the name they write is declared only on another
+class's chain and no record carries its word -- the untyped-operand family, next.
+
+Not in this PR: the 15 operator rows, the 12 native relays, the 10 member rows, the `Outer.<struct>` pair and the cast
+table.

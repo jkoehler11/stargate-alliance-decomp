@@ -239,6 +239,29 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 per-statement assert lines, a declaration that spells several names, and `ArrayCount` of a member:
+      **11,609 modelled / 11,609 byte-identical** (from 11,588; **21 bodies gained, none lost**; residue 98 -> 77,
+      differ 2 -> 2). Five table reads, each measured against the body's own bytes: (1) **an `assert` statement's
+      line operand is per statement, not per body** -- `TestInfo.Tick`'s eleven are `09 1e 01`, `09 1f 01`, `09 20 01`
+      … and `AccessControl.PreBeginPlay`'s two are `09 3b 00`/`09 3c 00`, while `_assert_line` matched the whole body
+      and answered one line; `_assert_lines` numbers every assert off its own offset and `_assert_at` consumes them in
+      source order (7 bodies; the family's other two moved on to a later refusal, `TestInfo.Tick` to an operator).
+      (2) **a `var`/`local` declaration may spell several names** -- `var vector FlashScale, FlashFog;` is one
+      statement and the index kept `m.group(2)` only, so `FlashFog` had no declared word (3 `SetFog*` bodies).
+      (3) **a struct-typed property takes the size of its declared word** when the record carries only
+      `StructProperty`: `SetFlash`'s `FlashScale.X = F` opens `19 01 8e 05 00 0c` and 12 is `vector`, so
+      `_outer_wrapped` falls back to `_friendly`'s word and still refuses a word the size table lacks (2 bodies, with
+      `RememberSpot`'s `Destination = Pawn.Location` on `Controller`'s `var vector Destination;`).
+      (4) **an object local's element type is the class its declaration spells** -- `local Teleporter D,Dest[16];`
+      exports `ObjectProperty`, so `Dest[i]` typed on `Object`, whose chain has no `Accept` (3 bodies including
+      `AssaultPath.FindNextPath`'s `local AssaultPath List[16];`). (5) **`ArrayCount(M)` of a member folds to the
+      dimension the receiver class declares** -- `ArrayCount(Squad.Enemies)` is the literal `Enemies[32]` spells, and
+      `HUD.DisplayProgressMessages`'s `ArrayCount (PlayerOwner.ProgressMessage)` is `[4]` (6 bodies). Control: the
+      committed `inventory/uscript_emit.csv` (md5 `127c5efa2444bab2113d9341334528b7`) is reproduced byte for byte by
+      `origin/main`'s own tool on the same tree. The `--check` fixture's `dims_by_cls` moved out of `SCOPE` to the top
+      of `env`, where `score()` hands it, and `--check` passes. Doc: `docs/COMPILER_FRONTEND.md`, section of the same
+      name. Not in this PR: the 15 operator rows, the 12 native relays, the 10 member rows, the `Outer.<struct>` pair
+      (`CheatManager.Teleport`/`Summon`) and the cast table.
 - [~] 3.6 a `within` body's bare call: **11,588 modelled / 11,588 byte-identical** (from 11,573; 15 bodies gained,
       none lost; residue 113 -> 98). (1) **A value-position call is the `Context(Outer, 5, size)` node the statement
       path writes**: `HitActor = Trace(...)` is `19 01 8e 05 00 04 61 15 ...` and the `foreach` head
