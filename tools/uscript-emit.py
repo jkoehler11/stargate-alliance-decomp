@@ -710,18 +710,24 @@ def _array_dims(text):
 def _array_count(expr, env):
     """The integer `ArrayCount(X)` compiles to: the **declared dimension**, written as an int literal.
 
-    A name whose dimension the source does not spell is refused by name rather than given a guessed number, because
-    a wrong dimension is a wrong body that still scores.
+    `X` is either a name on the body's own chain or a member read on a receiver (`ArrayCount(Squad.Enemies)`), and
+    both answer the number the source spells -- `SquadAIBasic` declares `var Actor Enemies[32]` and
+    `PlayerController` `var string ProgressMessage[4]`, so the body's `ArrayCount(Squad.Enemies)` writes the same
+    literal `ArrayCount(Enemies)` would. A name whose dimension the source does not spell is refused rather than
+    given a guessed number, because a wrong dimension is a wrong body that still scores.
     """
     if not _is_call(expr) or expr[0][1].lower() != "arraycount":
         return None
     inner = _strip_parens(expr[2:-1])
-    if len(inner) != 1 or inner[0][0] not in ("ident", "keyword"):
-        raise Refused("an ArrayCount of something that is not a bare name")
-    nm = inner[0][1].lower()
-    n = ((env.get("scope") or {}).get("dims") or {}).get(nm)
-    if n is None:
-        raise Refused("an ArrayCount of a name whose declared dimension the source does not spell")
+    if len(inner) == 1 and inner[0][0] in ("ident", "keyword"):
+        nm = inner[0][1].lower()
+        n = ((env.get("scope") or {}).get("dims") or {}).get(nm)
+        if n is None:
+            raise Refused("an ArrayCount of a name whose declared dimension the source does not spell")
+        return n
+    n = _member_dim(inner, env)
+    if not n:
+        raise Refused("an ArrayCount of a member whose declared dimension the source does not spell")
     return n
 
 
@@ -1347,6 +1353,15 @@ def _outer_wrapped(low, read, ptype, want, env):
     if low not in (scope.get("outer_props") or ()) and not wrap_any:
         return None
     size = PROP_SIZE.get(ptype)
+    if size is None:
+        # The record says only `StructProperty`, so the value's own type is the declaration's word: `CheatManager
+        # .SetFlash`'s `FlashScale.X = F` opens `19 01 8e 05 00 0c` and 12 is the `vector` `PlayerController.uc`
+        # spells (`var vector FlashScale, FlashFog;`). Asking the record alone refused it as `Outer.<struct>`,
+        # while the three sibling bodies (the same write on `FlashFog`) resolved their word and only then missed
+        # this size -- the join is the declared type, exactly as `_friendly` answers it.
+        alt = _friendly(low, env) or ""
+        if PROP_SIZE.get(alt) is not None:
+            ptype, size = alt, PROP_SIZE[alt]
     if scope.get("outer_ref") is None or size is None:
         raise Refused("a name this package declares only on another class's chain (the `Outer.<%s>` shape)"
                       % (ptype or "typeless"))
@@ -1526,6 +1541,14 @@ def _element_type(head, env):
             # a dynamic array, wherever the record or the declaration spells it: `10` (`DynamicArrayElement`)
             return 0x10, el
         declared = _declared_type(nm, env)
+        if declared in ("object", "struct") and word.lower() in (env.get("class_names") or set()):
+            # A local's record says `ObjectProperty` whatever class its declaration names, so the *declared word*
+            # is the class: `local Teleporter D,Dest[16];` exports `Dest` as an `object`, and `Dest[i]` typed on
+            # `Object` -- whose chain declares no `Accept` -- refused the call as *a callee declaration the text
+            # does not carry* (`Teleporter.PostTouch`, `TransportPlatformTeleporter.DoActualTeleport`,
+            # `LinkedGateTeleporter.DoActualTeleport`). The same preference `_element_declared` already applies to
+            # a static array's artifact-friendly name, asked one table earlier.
+            declared = word.lower()
         if declared in ("", "array"):
             return None, ""
         return 0x1A, _element_declared(declared, _friendly(nm, env), env)
@@ -1572,20 +1595,17 @@ def _element_type(head, env):
     return None, ""
 
 
-def _element_dim(head, env):
-    """The declared dimension of the **static** array `head` names, `None` when no declaration carries one.
+def _member_dim(head, env):
+    """The declared dimension of the **static** array a *member* read names, `None` when no declaration has one.
 
-    A subscript on a member whose record is not an array is a static array -- a dynamic one is a `UArrayProperty`
-    and `_element_type` sends it down `0x10` -- so the dimension comes from the corpus's own `var` line, read per
-    receiver class: `StargatePawn` declares `var name RegularMovementAnims[7]` and `StargateWeapon` `[2]`, and a
-    body in the former reading `StargateWeapon(Weapon).RegularMovementAnims[1]` must take the latter's. A read on
-    *self* needs no dimension: the compiler writes no `Context` for it (`BaseVisible[BaseNum] = 1;` is the bare
-    `1A <index> 01 <record>`), so a bare name answers 0.
+    The dimension comes from the corpus's own `var` line, read per receiver class: `StargatePawn` declares
+    `var name RegularMovementAnims[7]` and `StargateWeapon` `[2]`, and a body in the former reading
+    `StargateWeapon(Weapon).RegularMovementAnims[1]` must take the latter's.
     """
     head = _strip_parens(head)
     at = _dot_at(head)
     if at is None or len(head[at + 1:]) != 1 or head[at + 1][0] not in ("ident", "keyword"):
-        return 0
+        return None
     nm = head[at + 1][1].lower()
     recv = head[:at]
     chain_at = _dot_at(recv)
@@ -1600,6 +1620,20 @@ def _element_dim(head, env):
         if dim:
             return dim
     return None
+
+
+def _element_dim(head, env):
+    """The declared dimension of the **static** array `head` names, `None` when no declaration carries one.
+
+    A subscript on a member whose record is not an array is a static array -- a dynamic one is a `UArrayProperty`
+    and `_element_type` sends it down `0x10` -- so the dimension is `_member_dim`'s answer. A read on
+    *self* needs no dimension: the compiler writes no `Context` for it (`BaseVisible[BaseNum] = 1;` is the bare
+    `1A <index> 01 <record>`), so a bare name answers 0.
+    """
+    head = _strip_parens(head)
+    if _dot_at(head) is None:
+        return 0
+    return _member_dim(head, env)
 
 
 def _emit_element(head, index, rettype, env):
@@ -5519,7 +5553,7 @@ def emit_stmt(stmt, rettype, env):
         # `assert(false);` is `09 26 08 28`: the opcode, the **source line as uint16**, then the expression -- and a
         # `bool` slot, so `false` is `28`. `Actor.Crash`'s assert sits on line 2086 of the shipped text and the
         # package writes 0x0826, so the extracted text keeps the compiler's own numbering.
-        line = env.get("assert_line")
+        line = _assert_at(env)
         if not line or not 1 <= line <= 0xFFFF:
             raise Refused("an assert whose source line the corpus does not pin")
         if len(stmt) < 4 or stmt[1] != ("op", "(") or _paren_end(stmt, 1) != len(stmt) - 1:
@@ -5569,9 +5603,10 @@ def emit_body(body, rettype, env, is_native=False):
     if not nodes:
         return TRAILER, "empty", "empty"
     if sum(1 for k, v in body if k == "keyword" and v.lower() == "assert") > 1:
-        # The line operand is pinned once per declaration, from the whole body's token run, so a body with two
-        # asserts has no second line to read: refuse rather than number both from the first.
-        raise Refused("two asserts, whose lines the walk pins once per body")
+        # Every assert is numbered off the **body's own token run** (`_assert_lines`), so a body with two is read
+        # in source order; only an env that carries neither the list nor a single line refuses, in `emit_stmt`.
+        if env.get("assert_lines") is None and env.get("assert_line") is None:
+            raise Refused("two asserts, whose lines the walk pins once per body")
     out, models, shape = b"", [], ""
     for node in nodes:
         chunk, model, shape = emit_flow(node, rettype, env, _wide(out))
@@ -6108,12 +6143,19 @@ def _dis():
     return _DIS_MODULE
 
 
-def _assert_line(text, body):
-    """The source line the compiler recorded for the `assert` in `body`, or None when the text does not pin it.
+def _assert_lines(text, body):
+    """The source lines the compiler recorded for **every** `assert` in `body`, in order, or None.
 
-    The body's tokens are matched against the file's own span-carrying token stream and the match must be **unique**:
-    `assert(false);` occurs once in `Actor.uc`, so its line (2086) is the compiler's operand; a body whose token run
-    occurs twice is refused rather than numbered by the first hit.
+    The body's tokens are matched against the file's own span-carrying token stream and the match must be
+    **unique**: `assert(false);` occurs once in `Actor.uc`, so its line (2086) is the compiler's operand; a body
+    whose token run occurs twice is refused rather than numbered by the first hit.
+
+    A body with two asserts is **not** ambiguous when its whole token run is located: the operand is per
+    statement, so every `assert` in the matched run is numbered off its own offset.
+    `Engine.TestInfo.Tick`'s eleven asserts are `09 1e 01`, `09 1f 01`, `09 20 01` … and `AccessControl
+    .PreBeginPlay`'s two are `09 3b 00` and `09 3c 00` -- nine bodies that refused as *two asserts, whose lines
+    the walk pins once per body*. Only the fallback (a body run the file spells twice) asks each assert's own
+    statement, which is what `_assert_line` still does for a single one.
     """
     toks, bad = lexer.lex(text)
     if bad is not None:
@@ -6126,10 +6168,37 @@ def _assert_line(text, body):
     hits = [i for i in range(len(spans) - n + 1) if [(k, v) for k, v, _a in spans[i:i + n]] == want]
     if len(hits) != 1:
         return None
+    lines = []
     for j in range(n):
         if want[j][0] == "keyword" and want[j][1].lower() == "assert":
-            return text.count("\n", 0, spans[hits[0] + j][2]) + 1
-    return None
+            lines.append(text.count("\n", 0, spans[hits[0] + j][2]) + 1)
+    return lines
+
+
+def _assert_line(text, body):
+    """The source line the compiler recorded for a **single** `assert` in `body`, or None when the text does not
+    pin it. A body with more than one has no single line, and answers None (`_assert_lines` numbers them all).
+    """
+    lines = _assert_lines(text, body)
+    return lines[0] if lines and len(lines) == 1 else None
+
+
+def _assert_at(env):
+    """The line operand of the next `assert` in the body, consumed in source order.
+
+    `env["assert_lines"]` is the per-statement list `score()` read; a synthetic env (the fixtures) carries the
+    single `assert_line` instead. The cursor is a one-item **list** so that a `dict(env, ...)` copy made by a
+    wrapper still advances the same counter.
+    """
+    lines = env.get("assert_lines")
+    if lines is None:
+        return env.get("assert_line")
+    cursor = env.get("assert_cursor")
+    if cursor is None:
+        cursor = env["assert_cursor"] = [0]
+    i = cursor[0]
+    cursor[0] = i + 1
+    return lines[i] if 0 <= i < len(lines) else None
 
 
 def _local_decls(text):
@@ -6251,17 +6320,26 @@ def _source_index(tree):
             # A property's *declared type word*, which is how a receiver's class is named when the package's own
             # artifact cannot: `StargateMenus.ProfilePanel` has no row for `Automated ProfileList ProfileList` in
             # `class_properties.csv`, so `ProfileList.ItemCount()` had no class to join on.
-            for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)",
+            # A declaration may spell **several names**: `var vector FlashScale, FlashFog;` is one `var` statement
+            # naming two properties, and a reader that stopped at the first left `FlashFog` untyped -- the three
+            # `CheatManager.SetFog*` bodies then asked the word `struct` for a struct's name and refused as *a
+            # member that is not a property of the receiver's class*.
+            for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*([A-Za-z_]\w*)\s+"
+                                 r"([A-Za-z_]\w*)\s*(?:\[[^\]\n]*\])?\s*"
+                                 r"((?:,\s*[A-Za-z_]\w*\s*(?:\[[^\]\n]*\])?\s*)*)",
                                  text, re.I):
-                proptypes.setdefault((cls, m.group(2).lower()), m.group(1).lower())
+                for nm in [m.group(2)] + re.findall(r",\s*([A-Za-z_]\w*)", m.group(3)):
+                    proptypes.setdefault((cls, nm.lower()), m.group(1).lower())
             # ...and the same declaration with its **modifiers stepped over**: `var const LevelInfo Level;` reads
             # as type `const` above, and the property a `within` body needs the class of (`CheatManager`'s `Level`)
             # is exactly that spelling. This table feeds only the `within` join, so nothing else moves.
             for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*"
                                  r"(?:(?:const|config|private|protected|public|transient|native|editconst|"
                                  r"editinline|editinlineuse|export|noimport|duplicatetransient|localized|"
-                                 r"input|travel)\s+)*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)", text, re.I):
-                proptypes_mod.setdefault((cls, m.group(2).lower()), m.group(1).lower())
+                                 r"input|travel)\s+)*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)\s*(?:\[[^\]\n]*\])?\s*"
+                                 r"((?:,\s*[A-Za-z_]\w*\s*(?:\[[^\]\n]*\])?\s*)*)", text, re.I):
+                for nm in [m.group(2)] + re.findall(r",\s*([A-Za-z_]\w*)", m.group(3)):
+                    proptypes_mod.setdefault((cls, nm.lower()), m.group(1).lower())
             # ...and a `class<Z>` declaration's **target**, which both regexes above stop short of: their type
             # group is one word, so `var class<Ammunition> AmmoName;` and
             # `local class < StargateWeapon > WeaponClass;` put nothing in either table. `Z` is the class a
@@ -6291,9 +6369,10 @@ def _source_index(tree):
                     # a `Disable('Trigger')` inside a state -- and letting the state body fill this key scored the
                     # stub against the state's bytes: 14 shipped bodies read as "differ" that way.
                     keys.append((cls, "", fn.lower()))
-                # the `assert` statement's line operand is the compiler's own source line, so it is read here, from
-                # the text, once per declaration -- and only for a body that carries one
-                aline = _assert_line(text, body) if body and any(
+                # the `assert` statements' line operands are the compiler's own source lines, so they are read
+                # here, from the text, once per declaration -- every assert in the body, in order, because a body
+                # with more than one is numbered per statement and not once
+                alines = _assert_lines(text, body) if body and any(
                     k == "keyword" and v.lower() == "assert" for k, v in body) else None
                 for key in keys:
                     old = index.get(key)
@@ -6301,7 +6380,7 @@ def _source_index(tree):
                         # a class that ships two *class-level* declarations of one name (an `#if` branch, or a stub
                         # beside its body) compiled the longer one: prefer it, so the comparison is not scored
                         # against a stub
-                        index[key] = (rettype, body, text, is_native, is_final, decl_params, aline)
+                        index[key] = (rettype, body, text, is_native, is_final, decl_params, alines)
             if "enum" in text.lower():
                 for enum, members in enums_of(text):
                     enum_names.add(enum.lower())
@@ -6428,7 +6507,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                 residue.append({"package": fn, "class": cls, "state": state, "function": fname,
                                 "cause": _residue_cause(src_texts.get(cls.lower(), []), fname, state)})
                 continue
-            rettype, src_body, _text, is_native, _is_final, decl_params, aline = got
+            rettype, src_body, _text, is_native, _is_final, decl_params, alines = got
             wcls = _within_of(withins, chain, pack, cls)
             scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of,
                            dims_by_cls, consts_by_cls, within=wcls)
@@ -6445,7 +6524,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
                    "within_proptypes": within_proptypes,
                    "class_names": class_names, "order": scope["order"], "consts_by_cls": consts_by_cls,
-                   "rets": rets, "voids": voids, "assert_line": aline,
+                   "rets": rets, "voids": voids, "assert_lines": alines, "assert_cursor": [0],
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
                    # and the records of the package it is declared in
                    "natives": natives, "funcs_all": tables[1], "imports": tables[2], "final_of": final_of,
@@ -6712,6 +6791,8 @@ function string QualDefaultText() { return class'Engine.Probe'.Default.Caption; 
 function int ACount() { return ArrayCount(Items); }
 function ACountSet() { Health = ArrayCount(Items); }
 function ACountUnknown() { return ArrayCount(Caption); }
+function ACountMember() { return ArrayCount(Target.Items); }
+function ACountMemberBad() { return ArrayCount(Target.Caption); }
 function EachPlain() { foreach Iter(Slot) Foo(1); }
 function EachStop() { foreach Iter(Slot) break; }
 function EachSkip() { foreach Iter(Slot) { if (bDead) continue; Foo(1); } }
@@ -6870,6 +6951,11 @@ ENV = {"names": {"ping": 51, "pong": 52, "say": 53, "getbox": 54, "getregion": 5
        # the class census has no row for (`Font`, `Viewport`, `StaticMesh`).
        "imports": {"clockwisefrom_intint": [(-261, "Function")], "font": [(-37, "Class")]}}
 
+# The dimension `ArrayCount` folds to, read **per receiver class** -- the table `score()` hands the walk at the top
+# level: `ArrayCount(Target.Items)` is the number `Probe.Items` declares, because `Probe` is the class `Target` is a
+# property of. It sits here rather than in `SCOPE`, which is the body's own chain and cannot name another class.
+ENV["dims_by_cls"] = {"probe": {"items": 4}}
+
 # `Pong` is a record of *both* classes: the receiver's chain picks the one `TargetH` holds, which is the `helper`
 # spelling with no parameters.
 ENV["funcs_all"]["pong"] = [(1, "probe"), (2, "helper")]
@@ -6959,6 +7045,7 @@ WANT = {
     "asint": "0439412d012d040b47",                # return int(bDead); -- BoolToInt
     "callcast": "1b2939412d012d16040b47",       # Foo(int(bDead)): the cast is the argument -- BoolToInt + the read
     "acount": "042c04040b47",                     # return ArrayCount(Items); -- the declared 4, an IntConstByte
+    "acountmember": "042c04040b47",               # return ArrayCount(Target.Items); -- the member's own width
     "acountset": "0f016e042c04040b47",            # Health = ArrayCount(Items); -- the same literal at an int site
     "asserted": "09260828040b47",                  # assert(false); -- Assert, line 2086, False
     "andint": "049c393a0064092c0216040b47",        # return Count & 2; -- And_IntInt, ByteToInt, IntConstByte
@@ -7151,7 +7238,7 @@ WANT = {
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
 REFUSE = ("floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
-          "castnoslot", "opnoslot", "incfloat", "callunknown", "acountunknown", "badclass",
+          "castnoslot", "opnoslot", "incfloat", "callunknown", "acountunknown", "acountmemberbad", "badclass",
           "badstatic", "eachnested", "callglobalnative", "badenummember", "rotexpression",
           "setdelegatebad")
 
@@ -7402,6 +7489,36 @@ def check(args):
     two = one + "function B()\n{\n\tassert(false);\n}\n"
     if _assert_line(two, stmt_tokens) is not None:
         print("FAIL uscript-emit: _assert_line numbers an ambiguous body")
+        return 1
+    # A body with two asserts is numbered **per statement** off its own token run: the reader answers both lines
+    # in source order, and the emitted body carries one word each -- `09 <line lo> <line hi>` twice.
+    pair = ("class P;\nfunction A()\n{\n\tassert(false);\n\tif (Flag)\n\t{\n\t\tassert(false);\n\t}\n}\n")
+    pair_tokens = [("keyword", "assert"), ("op", "("), ("keyword", "false"), ("op", ")"), ("op", ";"),
+                   ("keyword", "if"), ("op", "("), ("ident", "Flag"), ("op", ")"), ("op", "{"),
+                   ("keyword", "assert"), ("op", "("), ("keyword", "false"), ("op", ")"), ("op", ";"),
+                   ("op", "}")]
+    if _assert_lines(pair, pair_tokens) != [4, 7]:
+        print("FAIL uscript-emit: _assert_lines answers %r for a body with two asserts"
+              % (_assert_lines(pair, pair_tokens),))
+        return 1
+    plain = [("keyword", "assert"), ("op", "("), ("keyword", "false"), ("op", ")"), ("op", ";"),
+             ("keyword", "assert"), ("op", "("), ("keyword", "false"), ("op", ")"), ("op", ";")]
+    try:
+        emit_body(plain, "", dict(env, assert_lines=[7, 8], assert_cursor=[0]), False)
+    except Refused as exc:
+        print("FAIL uscript-emit: two asserts refused (%s)" % (exc,))
+        return 1
+    out, _m, _s = emit_body(plain, "", dict(env, assert_lines=[7, 8], assert_cursor=[0]), False)
+    if out != bytes.fromhex("0907002809080028") + TRAILER:
+        print("FAIL uscript-emit: two asserts emitted %s" % (out.hex(),))
+        return 1
+    # ...and a *shorter* list than the body has asserts refuses on the statement that runs out, not on the first.
+    try:
+        emit_body(plain, "", dict(env, assert_lines=[7], assert_cursor=[0]), False)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a body with two asserts was emitted off one line")
         return 1
     # `_scope` reads a body's locals off the export whose `outer` is the body's own export index. The score loop
     # once handed it the index left by the name-table sweep, so no local was built and a *parameter* read fell back
@@ -7656,13 +7773,30 @@ def check(args):
     if _emit_var("Health", w_env, "") is None or _emit_var("Health", w_env, "")[:1] == b"\x19":
         print("FAIL uscript-emit: a property of the body's own chain was wrapped as `Outer`")
         return 1
-    # ...and a type with no measured value size is refused rather than given a word: a struct-typed `within`
-    # property is the shape no shipped body writes.
+    # A struct-typed `within` property carries the size of its **declared word**, which is the measurement
+    # `CheatManager.SetFlash` settled: `FlashScale.X = F` writes `19 01 8e 05 00 0c` and 12 is the `vector` the
+    # declaration spells (`var vector FlashScale, FlashFog;`), while the package's record only says
+    # `StructProperty`. `SquadDir` is exactly that shape in this fixture (a `struct` record the artifact types
+    # `Vector`), so it now wraps at 12 instead of refusing.
     st_env = dict(w_env, scope=dict(w_env["scope"],
                                     props=dict(w_env["scope"]["props"], squaddir=(0x01, 620, "struct")),
                                     within_props={"squaddir"}))
     try:
-        _emit_var("SquadDir", st_env, "")
+        got = _emit_var("SquadDir", st_env, "")
+    except Refused as exc:
+        print("FAIL uscript-emit: a struct-typed `within` property with a declared word refused: %s" % exc)
+        return 1
+    if b"\x05\x00\x0c" not in got or not got.endswith(bytes([INSTANCE_TOKEN]) + write_index(620)):
+        print("FAIL uscript-emit: a struct-typed `within` property wrapped as %s, expected word 5 and size 12"
+              % (got.hex(),))
+        return 1
+    # ...and a word the size table does **not** carry is still refused rather than guessed.
+    un_env = dict(w_env, scope=dict(w_env["scope"],
+                                    props=dict(w_env["scope"]["props"], weirddir=(0x01, 621, "struct")),
+                                    within_props={"weirddir"}),
+                  within_proptypes={"weirddir": "mystruct"})
+    try:
+        _emit_var("WeirdDir", un_env, "")
     except Refused:
         pass
     else:
