@@ -619,6 +619,16 @@ def _consts_of(text):
         if j < len(toks) and toks[j][0] in ("number", "quoted", "string"):
             text = toks[j][1] if toks[j][0] != "number" else sign + toks[j][1]
             out.setdefault(toks[i + 1][1].lower(), text)
+        elif j + 1 < len(toks) and toks[j][0] in ("ident", "keyword") \
+                and toks[j][1].lower() in ("vect", "rot") and toks[j + 1] == ("op", "("):
+            # A const's right-hand side can be a **constructor**, and the compiler substitutes it whole:
+            # `const Lotus=vect(1,2,3);` is written at its site as the `VectorConst` the literal itself would be
+            # (`assert(Lotus==vect(1,2,3))` ships `2d 02 7a 23 0000803f 00000040 00004040`, the component bytes and
+            # not a read). The token run is kept as text so the site re-enters `emit_expr` exactly as a written
+            # `vect(...)` does; a const written as any other expression is still left out.
+            close = _paren_end(toks, j + 1)
+            if close is not None:
+                out.setdefault(toks[i + 1][1].lower(), " ".join(t[1] for t in toks[j:close + 1]))
     return out
 
 
@@ -638,6 +648,25 @@ def _const_kind(text):
     except ValueError:
         return None
     return "number"
+
+
+def _const_expr(text):
+    """The token run of a const whose value is a `vect(...)`/`rot(...)` constructor, or None.
+
+    `_const_kind` answers only for a *literal*, because the site substitutes the literal's own token. A
+    constructor-valued const is substituted the same way -- the components are folded by the compiler -- so the run
+    is handed back to `emit_expr`, which already writes `vect`/`rot` from a call head (`_emit_vector`).
+    """
+    if not text:
+        return None
+    toks = tokens_of(text)
+    if not toks or len(toks) < 5:
+        return None
+    if toks[0][0] not in ("ident", "keyword") or toks[0][1].lower() not in ("vect", "rot"):
+        return None
+    if toks[1] != ("op", "(") or toks[-1] != ("op", ")"):
+        return None
+    return toks
 
 
 def _const_int(raw):
@@ -1941,6 +1970,12 @@ def _type_of(expr, env):
                     return "name" if ck == "quoted" else "string"
                 if ck == "number":
                     return "float" if isinstance(_number(scope["consts"][low]), float) else "int"
+                ce = _const_expr(scope["consts"][low])
+                if ce is not None:
+                    # `const Lotus=vect(1,2,3);` is a **vector** at its site, exactly as the written literal is:
+                    # `assert(Lotus==vect(1,2,3))` is `EqualEqual_VectorVector`, and the walk read the name as
+                    # nothing at all (1 body).
+                    return "vector" if ce[0][1].lower() == "vect" else "rotator"
             if _emit_enum(val, env)[0] is not None:
                 return "byte"
             if _cast_kind(val, env) == "object":
@@ -2129,7 +2164,9 @@ def _type_of(expr, env):
                             cv = ((env.get("consts_by_cls") or {}).get(_c) or {}).get(nm)
                             if cv is not None:
                                 break
-                if cv is not None:
+                if cv is not None and _const_kind(cv) is not None:
+                    # a **literal** const only: `_const_kind` is None for a constructor-valued one
+                    # (`const Lotus=vect(1,2,3);`), which `_number` cannot parse
                     return "float" if isinstance(_number(cv), float) else "int"
             if hit is not None:
                 if hit[2] == "struct" and len(hit) > 3 and hit[3]:
@@ -3392,8 +3429,12 @@ def _class_of(expr, env):
     at = _element_at(expr)
     if at is not None:
         # `GlobalEvents[size - 1].AddCondition(con)`: the receiver is an element, and the element type is what
-        # the member call resolves against
+        # the member call resolves against. An element declared `class<Z>` (`var const array<class<Info>>
+        # InfoClasses`) holds the class **Z**, the same unwrap `_member_record` and `_numeric` already make: without
+        # it `InfoClasses[i].Name` refused as *an element of an array the artifacts do not type (InfoClasses ->
+        # class<info>)*, and the element sat in front of the `@` that types it (1 body).
         t = _element_type(expr[:at], env)[1]
+        t = _class_ref_class(t) or t
         return t if t in class_names else _no("an element of an array the artifacts do not type (%s -> %s)"
                                              % (" ".join(v for _k, v in expr[:at]), t or "?"))
     at = _dot_at(expr)
@@ -3431,6 +3472,16 @@ def _class_of(expr, env):
                     hit = sh
             if hit is not None and len(hit) > 3:
                 friendly = hit[3] or ""
+                if friendly.lower() == "class" or friendly.lower().startswith("class."):
+                    # `X.Class` is the object's **class object**, and the metaclass is the type word every
+                    # artifact spells for it (`Core/Object.uc`: `var native const editconst class Class;`, and
+                    # `Core,Object,Class,UClassProperty,...,Class` in `class_properties.csv`). No shipped package
+                    # declares a *class* named `Class` -- the census has no row, because it is a native `UClass`
+                    # with no script record -- so the class-table test refused the word and left the receiver of
+                    # `Item.Class.Name` unnamed (1 body). `_numeric` already answers `object` for the word `class`;
+                    # this is the same reading, kept as the class reference it is so a member read can continue on
+                    # `Object` (the metaclass's own parent, and the owner the import table records for `Name`).
+                    return "class"
                 if friendly in class_names:
                     return friendly
                 # a member declared `class<Z>`: `Chosen.PawnClass.Default.ControllerClass` is read on `Pawn`
@@ -3831,7 +3882,7 @@ def _emit_member(expr, rettype, env, element_dim=0):
                     _const = ((env.get("consts_by_cls") or {}).get(_c) or {}).get(nm)
                     if _const is not None:
                         break
-        if _const is not None:
+        if _const is not None and _const_kind(_const) is not None:
             # A **`const` on the receiver's class chain** is a compile-time value, but the compiler does *not*
             # fold it away: `Type = Type | Sender.MSGT_Order` ships `9e 01 fa02 19 01 fd01 02 00 04 2c 02 16` -- a
             # `Context` over `Sender` whose skip word is the literal's own wide length (`02 00`), whose size byte
@@ -4122,6 +4173,12 @@ def emit_expr(expr, rettype, env, element_dim=0):
                 ck = _const_kind(value)
                 if ck is not None:
                     node, _shape = emit_expr([(ck, value)], rettype, dict(env, _root=root))
+                    return node, "const-literal"
+                ce = _const_expr(value)
+                if ce is not None:
+                    # A constructor-valued const (`const Lotus=vect(1,2,3);`) substitutes the folded literal, so the
+                    # site re-enters the expression path with the constructor's own tokens.
+                    node, _shape = emit_expr(ce, rettype, dict(env, _root=root))
                     return node, "const-literal"
             token, enum = _emit_enum(val, env)
         if token is not None:

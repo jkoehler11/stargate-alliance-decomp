@@ -285,6 +285,22 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       the five operator rows (a dynamic array's element, a const whose value is a `vect()`, a `class<Info>` element's
       `.Name`, a member read past `Class`, and `Viewport.Actor.Level.NetMode`), the 12 native relays, the 10 member
       rows and the cast table.
+- [~] 3.6 three values in front of an operator: an element of `class<Z>`, a constructor `const`, and `X.Class`:
+  **11,624 modelled / 11,624 byte-identical** (from 11,619; five bodies gained, **none lost**, residue 67 -> 62,
+  the operator family 15 -> 5 -> **2**, differ 2 -> 2). (1) `_class_of`'s element branch unwraps `class<Z>` through
+  `_class_ref_class`, the unwrap `_member_record`/`_numeric`/`_cast_kind` already make -- `InfoClasses[i].Name` is a
+  `name` on Object's imported record (`PlayInfo.Dump`, `PlayInfo.Init`). (2) `_consts_of` keeps a
+  `const NAME = vect(...)/rot(...)` as its token run and `_const_expr` re-enters `emit_expr` with it, so the site
+  writes the folded literal (`TestInfo.Tick`); the two `_number(<const>)` sites now require `_const_kind`. (3)
+  `_class_of` answers `class` for a member whose declared word is the metaclass -- no shipped package declares a
+  class named `Class`, so the class-table test refused it -- and `Item.Class.Name` reads Object's imported `Name`
+  (`StargatePlayer.CheckNewInventoryItems`, `SGVoicePackExtended.BuildVoiceDescAdditionalParams`). Measured and **not
+  shipped**: the `local array<String>` subscript's type word (`_local_decls` drops the closing `>`) -- the rule moved
+  no body, so `Teleporter.AutosaveExists` still refuses at the same reason; and
+  `Viewport.Actor.Level.NetMode`, whose chain needs a property type no artifact carries (no record for the native
+  class `Viewport`). Files: `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`,
+  `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
+
 - [~] 3.6 a `within` body's bare call: **11,588 modelled / 11,588 byte-identical** (from 11,573; 15 bodies gained,
       none lost; residue 113 -> 98). (1) **A value-position call is the `Context(Outer, 5, size)` node the statement
       path writes**: `HitActor = Trace(...)` is `19 01 8e 05 00 04 61 15 ...` and the `foreach` head
