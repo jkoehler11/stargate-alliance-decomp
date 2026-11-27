@@ -1,3 +1,4 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,1,11573 identical
+(census),,,,2,11588 identical
+jump distance,JumpIfNot,ours longer,no,1,CheatManager.LockCamera
 jump distance,JumpIfNot,ours longer,yes,1,CylinderBuilder.Build

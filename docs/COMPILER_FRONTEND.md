@@ -2202,10 +2202,11 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,573 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,588 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
+| jump distance | JumpIfNot | ours longer | no | 1 | `CheatManager.LockCamera` |
 | jump distance | JumpIfNot | ours longer | yes | 1 | `CylinderBuilder.Build` |
 <!-- END emit-differ -->
 
@@ -3952,3 +3953,49 @@ carries four new cases: `ConstName` (a name-valued const's own `NameConst`), `To
 the `Super.Pong()` type join with its refusal control, and the import-owner pick with its ambiguity control. Not in
 this PR: the 19 `a call whose callee declaration the text does not carry` bodies, the nine `two asserts` bodies (their
 line operand is pinned once per declaration), and the corpus-wide const join the two `MSGT_Order` rows need.
+
+## Stage 3, continued -- a `within` body's bare call, and the three tables it reads (measured 2026-11-27)
+
+`CheatManager`/`AdminBase` are `within PlayerController`, and a bare name in their bodies resolves through the
+**`within` chain**, not the body's own (`-> Object`). Three rules, each a table the walk never asked, closed 15 bodies
+with none lost:
+
+- **A value-position call is the same `Context(Outer, 5, size)` node the statement path writes.**
+  `HitActor = Trace(...)` is `19 01 8e 05 00 04 61 15 ...` (skip 5, size 4) and the `foreach` head
+  `AllActors(class'Actor', A)` is `19 01 8e 05 00 00 61 30 ...`; the walk wrote a by-name `1b <name index>` and lost
+  the six-byte node (11 bodies, each five or six bytes short).
+- **The callee's parameter list comes from the `within` chain when the body's own chain has none.** `AllActors`,
+  `DynamicActors` and `ValidIndex` are `Actor`/`PlayerController` natives, so `_callee_params` answered None and the
+  call refused as *a callee declaration the text does not carry* (15 rows, 11 of them `AllActors`/`DynamicActors`).
+- **A `const` on the `within` chain is the body's own.** `msg.IsSubTypeOf(MSGT_Order)` refused as *a name neither a
+  local, a property nor an enum constant of the class chain* -- `MSGT_Order` is `Actor`'s const, and
+  `StargateAIMsgManager` is `within Controller` (2 bodies).
+
+### Score
+
+Per body, against `origin/main`'s own tool on the same tree -- which reproduces the committed
+`inventory/uscript_emit.csv` **byte-identically** (md5 `0cc409ae6cb99d494921cd9ff24f4412` both sides), so the walk
+this bundle rides on has not moved:
+
+| run | modelled | gained | lost | residue | differ |
+|---|---|---|---|---|---|
+| `origin/main` | 11,573 | -- | -- | 113 | 1 |
+| this bundle | **11,588** | 15 | **0** | 98 | 2 |
+
+The one body that moved *into* the differ set is `CheatManager.LockCamera`: the value-call rule reached its next node,
+a `JumpIfNot` distance whose tail is now longer than the shipped one (`inventory/emit_differ.csv` reads
+`ours longer`, `downstream=yes`), which is progress at a later refusal rather than a body lost from the modelled set.
+
+### What the residue now names, and the one cause behind three of its families
+
+- nine `two asserts, whose lines the walk pins once per body` rows (`Engine.TestInfo` x8,
+  `AccessControl.PreBeginPlay`): the line operand is **per statement** -- `09 3b 00` and `09 3c 00` in one body --
+  while `_assert_line` matched the whole body's token run and answered a single line for it.
+- three `FlashFog.X/Y/Z = F` rows (`CheatManager.SetFogR/G/B`) and one `SetFlash`, whose cause is a declaration that
+  spells **two names**: `PlayerController.uc`'s `var vector FlashScale, FlashFog;` -- the source walk took the first
+  name only, so `FlashFog` had no declared word and the write asked the record `struct` for a struct's name.
+- three `a call whose callee declaration the text does not carry (Accept, 2 argument(s))` rows, whose receiver is
+  `Dest[i]` from `local Teleporter D,Dest[16];` -- the same one-name read, one table over: the local's record is an
+  `ObjectProperty`, so `Dest[i]` types as `Object`, whose chain declares no `Accept`.
+
+Those three are the next run's work, each a table read rather than a rule: none of them needs a boot. Not in this PR.
