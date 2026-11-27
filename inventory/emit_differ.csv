@@ -1,10 +1,8 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,20,11275 identical
-context skip,Context,ours shorter,,3,StargateVehiclePassenger.DisplayDebug GravCraneConsole.DisplayDebug StargateVehicle.DisplayDebug
+(census),,,,16,11279 identical
 jump distance,Jump,ours shorter,yes,3,Mover.KeyFrameReached BotSG.PickDestination ShieldBelt.Tick
 jump distance,JumpIfNot,ours shorter,no,3,PlayerController.ReplicateMove B4SParser.ParseLines TransportRings.RingsMove
 jump distance,JumpIfNot,ours shorter,yes,4,PlayerController.ServerMove PlayerController.CallServerMove PlayerController.CallServerMove
 jump distance,JumpIfNot,same length,no,3,AdminBase.SendComplexMsg ListObjectPropsCommandlet.WriteResults GUIMessageBox.InternalOnPreDraw
 opcode,PrimitiveCast,ours shorter,,2,LinearStairBuilder.Build BotSG.EngageDirection
 opcode,Skip,ours shorter,,1,SGPlayerInput.PlayerInput
-operand,StringConst,ours longer,,1,TextGameInfo.InitComponent

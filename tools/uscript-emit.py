@@ -3654,7 +3654,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
         read = _emit_var(val, env, rettype)
         if read is not None:
             return read, "class-property"
-        return bytes([0x17]), "self-class"
+        return _converted(bytes([0x17]), "object", rettype), "self-class"
     if kind in ("ident", "keyword") and val.lower() not in ("true", "false", "none", "self"):
         read = _emit_var(val, env, rettype)
         if read is not None:
@@ -3694,7 +3694,11 @@ def emit_expr(expr, rettype, env, element_dim=0):
     if kind == "keyword" and low == "none":
         return bytes([0x2A]), "none"
     if kind == "keyword" and low == "self":
-        return bytes([0x17]), "self"
+        # `Self` is an **`object`**, and a site that wants another type converts it with the image's own table like
+        # any other read: `Canvas.DrawText(Self, false)` (the parameter is `coerce string`) writes `39 56 17` --
+        # `ObjectToString` around the `Self` token. The leaf wrote the token bare, so every `Self` in a `string`
+        # slot came out two bytes short.
+        return _converted(bytes([0x17]), "object", rettype), "self"
     if kind == "number":
         v = _number(val)
         if t == "int":
@@ -3742,7 +3746,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
     if kind == "string":
         text = _literal_text(val[1:-1])
         if t == "string":
-            return bytes([0x1F]) + text.encode("latin-1") + b"\x00", "string-const"
+            return bytes([0x1F]) + _string_bytes(text) + b"\x00", "string-const"
         if t == "name":
             # The empty name is index 0: `Vehicle.GetWeaponBoneFor` is `return '';` and the package writes
             # `04 21 00 04 0b 47`, so the literal is the name table's zero entry rather than an absent string (8
@@ -3753,6 +3757,27 @@ def emit_expr(expr, rettype, env, element_dim=0):
             return bytes([0x21]) + write_index(idx), "name-const"
         raise Refused("a quoted literal in a %s function" % (rettype or "typeless"))
     raise Refused("an expression the emitter does not model (%s)" % (val if kind != "string" else "a string"))
+
+
+def _string_bytes(text):
+    """The package's bytes for a string literal the source spells as **UTF-8 of those bytes**.
+
+    The shipped `ScriptText` is not the package's text: the 4,637 `.uc` files were written as UTF-8 of every byte,
+    so a literal the compiler stored as one cp1252 byte arrives as its two-byte UTF-8 encoding and the emitter wrote
+    both -- `TextGameInfo.InitComponent`'s `player<92>s reticule` is `c2 92` in the text and `92` in the package,
+    twice, which is the whole 2-byte difference in that body (8,671 vs 8,669). Recovering the value is
+    `latin-1 bytes -> utf-8 -> cp1252`, and each step is a fallback: the lexer already reads the file as latin-1, so
+    a genuine latin-1 character that is not valid UTF-8 stays as it is, and a code point cp1252 does not define
+    stays latin-1 rather than becoming a byte the compiler never wrote.
+    """
+    try:
+        wide = text.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        wide = text
+    try:
+        return wide.encode("cp1252")
+    except UnicodeEncodeError:
+        return wide.encode("latin-1")
 
 
 def _literal_text(raw):
@@ -6570,6 +6595,18 @@ def check(args):
               "ab ae ab 1e 00000040 (Multiply_FloatFloat(Add_FloatFloat(Multiply_FloatFloat(FloatConst 2, ..."
               % got.hex())
         return 1
+    # `Self` is an object, and a site that wants a string casts it (`Canvas.DrawText(Self, false)`).
+    got, _shape = emit_expr([("keyword", "self")], "string", dict(env, _root=True, root_site="string"))
+    if got.hex() != "395617":
+        print("FAIL uscript-emit: `Self` at a string site emits %s, expected 39 56 17 (ObjectToString)" % got.hex())
+        return 1
+    # A string literal's bytes are the package's, and the corpus spells them as UTF-8 of those bytes.
+    for text, want in (("ab", b"ab"), ("\xc2\x92", b"\x92"), ("x\xc2\xa9y", b"x\xa9y"),
+                       ("\xe2\x82\xac", b"\x80")):
+        if _string_bytes(text) != want:
+            print("FAIL uscript-emit: the literal %r writes %s, expected %s"
+                  % (text, _string_bytes(text).hex(), want.hex()))
+            return 1
     got = {f[1].lower(): (f[2], f[3], f[4]) for f in functions_of(SYNTH)}
     for fn, want in WANT.items():
         if fn not in got:
