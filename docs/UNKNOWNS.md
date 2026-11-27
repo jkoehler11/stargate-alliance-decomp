@@ -6502,35 +6502,35 @@ fallback was the package order, and the walk reproduces it.
 answers no declaring class -- `_declaring_class` claims only a bare name or an array element -- so it takes the
 package order. That is correct for every node in this corpus (three of three) and is a stated limit, not a rule.
 
-## U43. An `int` pair at a `float` site: which chains the compiler retypes, and which it casts whole
+## U43. An `int` pair at a `float` site: the expectation travels down the left spine -- answered in part
 
-**Open (measured 2026-11-26).** The emitter's both-`int` promotion at a `float` site leaves **five** bodies differing,
-in three shapes, and every attempt to bound it so far gains some and loses another. Two over-promote a `read` pair
-(`UWindowProgressBar.Paint`, `VirtualKeyboardPanel.constructKeyboard`, both `Add_FloatFloat` where the package writes a
-cast) and three moved a `JumpIfNot` with their own length (`CylinderBuilder.Build` and `SheetBuilder.Build` ours
-longer, `UPreviewMapListClient.Paint` ours shorter). The three with the clearest source, and the node each first
-differs at (`tools/emit-differ.py`'s own classification, so this is not a reading of the bytes):
+**Measured 2026-11-27.** The site's expected type is handed to the **left** child, and the emitter now models that:
+`_left_expects` accepts a literal, or an operator node whose own left spine accepts, and refuses a read; the
+both-`int` branch additionally refuses a left spine that holds a call (`_has_call_leaf`). Scored on the whole corpus
+with the acceptance test this entry set: **11,440 -> 11,443 modelled, gained 3, lost 0, newly differing 0, later
+refusals 0**, residue 238 -> 235, the differ census **5 -> 2**.
 
-| body | shipped | ours | first differing node |
-|---|---|---|---|
-| `UWindowProgressBar.Paint` | `IntToFloat(Add_IntInt(<read>, IntOne))` for `BlockX = LookAndFeel.MiscBevelL[2].W + 1;` | `Add_FloatFloat(<read>, FloatConst 1.0)` | `opcode`, `Add_FloatFloat`, inside the `Let` |
-| `SheetBuilder.Build` | `Subtract_FloatFloat(Multiply_FloatFloat(..), IntToFloat(Divide_IntInt(..)))` for `(x*XStep)-Width/2` | both operands cast (`PrimitiveCast 3f` twice) | `opcode`, `Multiply_FloatFloat`, under `Subtract_FloatFloat` |
-| `CylinderBuilder.Build` | `Add_FloatFloat` inside `sin((2*i+Ofs)*pi/Sides)` | a whole-group cast | `jump distance`, `JumpIfNot` (downstream of the node) |
+| witness | before | now |
+|---|---|---|
+| `UWindowProgressBar.Paint` (`MiscBevelL[2].W + 1`) | `Add_FloatFloat(<read>, FloatConst 1.0)` | identical (`IntToFloat(Add_IntInt(...))`) |
+| `VirtualKeyboardPanel.constructKeyboard` | the same over-promoted read pair | identical |
+| `SheetBuilder.Build` | both operands cast, ours longer | identical |
+| `CylinderBuilder.Build` | `jump distance`, ours longer | **still differing, 391 vs 377** |
+| `UPreviewMapListClient.Paint` | `jump distance`, ours shorter | **still differing, 522 vs 525** |
 
-**Two bounds are measured and they conflict.** A literal on the **left** of the pair earns the retype -- the
-`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` family ships `Add_FloatFloat` all the way down. A **read** on
-the left does not: `Paint`'s `MiscBevelL[2].W + 1` keeps the `int` pair and converts the result. Bounding the rule to
-a literal left operand (`group_slot or _is_literal(_strip_parens(left))`) therefore fixes `Paint` and keeps
-`UWindowRootWindow.Initialized`/`StargateVoicePack.Init`, and **costs two bodies**: `CylinderBuilder.BuildCylinder`
-(300 -> 290 shipped-vs-ours) and `ConeBuilder.BuildCone` (225 -> 215), whose shipped bytes promote an inner group at a
-root that is *not* a call argument -- so the group bound cannot be "an argument's left operand" either.
+**Why the leaf test failed and the spine does not.** `(x*XStep) - Width/2` retypes the **left** operand's leaves
+while casting the right one, so the bound is a *type expectation*, not a test on one leaf: a literal-left bound fixes
+`Paint` and costs `CylinderBuilder.BuildCylinder` and `ConeBuilder.BuildCone`. The unguarded spine, this entry's own
+last prediction, is net-better and still refused -- four gained, three lost (the `200000 * 2 * FRand()` family, which
+lands in the differ bucket), against three gained and none lost here.
 
-**What the `SheetBuilder` row adds.** There the pair is *mixed* (`int` group, `float` divide) and the shipped bytes
-retype the **left** operand's leaves while casting the right one: the site's expected type travels down the left
-spine. That is the same left-spine asymmetry the walk already models for a group's type (`_group_narrow` writes it
-the other way round), which is a reason to state the rule as a *type expectation* rather than as a leaf test.
+**What is left, and it is not the promotion at a read.** Both remaining rows report a `jump distance` first, but
+walking both sides of each row's token tree puts the bytes elsewhere: `CylinderBuilder.Build` (14 bytes over) differs
+inside the `sin(...)` argument, where the package keeps `Add_IntInt(Multiply_IntInt(<int>, 2), Divide_IntInt(...))` and
+converts one factor with `FloatToInt` (`PrimitiveCast 44`) while the walk retypes the pair to `Add_FloatFloat` behind
+one `FloatToInt`; `UPreviewMapListClient.Paint` (3 short) differs inside a `Context` (`skip` word `0x0030` against
+`0x002d`) whose inner `FinalFunction` is 36 bytes against 33. **What would settle them.** For `CylinderBuilder.Build`,
+the bound for a pair whose leaves are an **`int` cast of a `float` expression** -- such a leaf is not a literal, so
+the expectation should stop there exactly as it stops at a read (`391` against `377`). `Paint`'s missing 3 bytes sit
+in a call argument and are not yet named by a rule (`522` against `525`).
 
-**What would settle it.** A rule that says when the site's type is handed to the left child (so an `int` subtree
-retypes its own leaves) and when the pair keeps `int` and converts its result, scored on the whole corpus with the
-usual acceptance test: **differ 0, none lost**. The five bodies above are the witnesses that must all pass at once; a formulation that fixes one and breaks
-another has been measured here twice already.

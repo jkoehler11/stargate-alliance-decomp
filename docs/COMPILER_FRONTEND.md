@@ -2202,12 +2202,11 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**5 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,440 modelled and identical in the same run). **3** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 5 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,443 modelled and identical in the same run). **2** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours longer | yes | 2 | `CylinderBuilder.Build`, `SheetBuilder.Build` |
-| opcode | Add_FloatFloat | ours longer | - | 2 | `VirtualKeyboardPanel.constructKeyboard`, `UWindowProgressBar.Paint` |
+| jump distance | JumpIfNot | ours longer | yes | 1 | `CylinderBuilder.Build` |
 | jump distance | JumpIfNot | ours shorter | yes | 1 | `UPreviewMapListClient.Paint` |
 <!-- END emit-differ -->
 
@@ -3561,3 +3560,58 @@ has to pass (differ 0, none lost).
 taking 245, `enum'EIntStat'` against its own reference, `new() class'Speech'` against `11 0b 0b 0b 20`, and a unary
 `+` on a literal against the `FloatConst` plus its refusal on a read. The package stub grew `class_name_of` because the
 object join asks every export for its class -- the `--check` stub had no object tables at all before this.
+
+## Stage 3, continued -- the `float` site's expectation travels down the left spine (measured 2026-11-27)
+
+**11,440 -> 11,443 modelled / identical** (gained 3, lost 0, newly differing 0, later refusals 0), residue 238 -> 235,
+the differ census **5 -> 2**. `docs/UNKNOWNS.md` U43 asked for a rule that says *when* the site's type is handed to
+the left child; the answer is the left spine, and it is one predicate asked in three places.
+
+**The rule.** At a `float` site the expected type is an expectation the compiler hands down the **left** child:
+`_left_expects` accepts a literal, or an operator node whose own left spine accepts, and refuses a read. A literal on
+the left therefore retypes the whole chain (`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` is
+`Add_FloatFloat` down to `FloatConst 12`), while `BlockX = LookAndFeel.MiscBevelL[2].W + 1` keeps `Add_IntInt` and
+converts its **result** (`IntToFloat(Add_IntInt(<read>, IntOne))`) -- the read does not consume the expectation. The
+both-`int` branch keeps the bound it already had for a leaf and now asks it of the spine as well: a left side that
+holds a call is not re-emitted at `float` (`_has_call_leaf`), and the three `200000 * 2 * FRand()` chains
+(`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`) stay `int` products behind one cast -- they are among the
+11,440 bodies the baseline modelled and this tree keeps.
+
+**The three bodies it settles -- all three promotion rows the previous section left in the differ set.**
+
+| body | before | after |
+|---|---|---|
+| `UWindowProgressBar.Paint` | `Add_FloatFloat(<read>, FloatConst 1.0)` for `MiscBevelL[2].W + 1` | identical |
+| `VirtualKeyboardPanel.constructKeyboard` | the same over-promoted read pair | identical |
+| `SheetBuilder.Build` | both operands cast, ours longer | identical |
+
+**A spine, not a leaf test, and the scores that forced it.** A literal-on-the-left test fixes `Paint` and costs
+`CylinderBuilder.BuildCylinder` and `ConeBuilder.BuildCone` (whose shipped bytes promote an inner group at a root that
+is not a call argument). An unguarded left-spine rule is **net-better** and still fails the acceptance test this page
+set: four bodies gained, three lost, the losses being exactly the `200000 * 2 * FRand()` family, which lands in the
+differ bucket (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`). Every number below is a full-corpus run of
+`tools/uscript-emit.py` plus `tools/emit-score.py` against `origin/main`'s own run, keyed per body:
+
+| formulation | modelled | gained | lost | differ |
+|---|---|---|---|---|
+| `origin/main` | 11,440 | -- | -- | 5 |
+| literal on the left only (previous section's measurement) | -- | `Paint` | `BuildCylinder`, `BuildCone` | -- |
+| left spine, unguarded | 11,441 | 4 | 3 | 4 |
+| left spine + call-leaf bound (**shipped**) | **11,443** | 3 | **0** | **2** |
+
+**What is left here, narrowed but not settled.** Both remaining rows report `jump distance` / `downstream=yes` in
+`inventory/emit_differ.csv`, which is the tool's own verdict that the jump is right and the bytes are elsewhere.
+Walking both sides of each row's own token tree names where: in `CylinderBuilder.Build` the 14 bytes are inside the
+`sin(...)` argument (`VirtualFunction 02`, 117 bytes shipped against 131 ours), where the package keeps the pair
+`Add_IntInt(Multiply_IntInt(<int>, IntConstByte 2), Divide_IntInt(...))` and converts only the float factor
+(`PrimitiveCast 44`, `FloatToInt`), while the walk writes
+`FloatToInt(Add_FloatFloat(IntToFloat(<int>), IntToFloat(<int>)))`; in `UPreviewMapListClient.Paint` the 3 bytes are
+inside a `Context` node (`skip` word `0x0030` shipped against `0x002d` ours) whose inner `FinalFunction` is 36 bytes
+shipped against 33. CylinderBuilder's is a **pair whose leaves are an `int` cast of a `float` expression**, which the
+expectation currently walks into, and the next measurement is the bound that stops it there the way it stops at a
+read; `Paint`'s is inside a call argument under a `Context` and is named by node, not yet by rule.
+
+`--check` gains **P15**: a read on the left of a float-site pair keeps `39 3f 92 ...`, a literal on the left retypes
+to `ae`, and `_has_call_leaf` sees the call in `200000 * 2 * FRand()` but not in `200000 * 2`. The gate can go red:
+forcing `_left_expects` true (or dropping the root condition's `_left_expects` term) fails `--check` on the
+grouped-argument fixture P14, which is the same predicate.
