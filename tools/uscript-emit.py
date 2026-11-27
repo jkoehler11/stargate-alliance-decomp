@@ -5733,6 +5733,18 @@ def emit_body(body, rettype, env, is_native=False):
     """`(bytes, model, shape)` for a modelled body, or Refused naming what is not modelled."""
     if body is None:
         if is_native:
+            # A native declared without a script body is still compiled to a **relay**: one `NativeParm` per
+            # parameter in declaration order, then `EndOfScript` -- `Object.VSize(vector A)` ships
+            # `29 62 04 0b 47`, `Object.Clamp(int V, int A, int B)` `29 57 04 29 58 04 29 59 04 0b 47`, and the
+            # operand is the parameter's own **one-based compact index** (`62 04` reads 290), the same index a
+            # body's `00` local read names it by. The order is the declaration's, not the export table's:
+            # `Invert(out Vector X, out Vector Y, out Vector Z)` exports Z(282), Y(284), X(285) and relays
+            # X, Y, Z. 623 functions in the 18 packages ship such a relay; twelve of them have their declaration
+            # in the corpus, so they were the twelve refusals this rule models.
+            parms = env.get("native_parms")
+            if parms:
+                return (b"".join(bytes([0x29]) + write_index(idx) for idx in parms) + bytes([0x0B, 0x47]),
+                        "native-relay", "native-relay")
             raise Refused("a native declaration: its body relays its parameters to the native")
         return TRAILER, "stub", "stub"          # declared without a body: the package compiles the trailer alone
     nodes = stmt_tree(body)
@@ -6361,7 +6373,13 @@ def _local_decls(text):
             # the header's name is its last word before `(`; `function bool Pawn.Foo(` carries the class too, and
             # the *name* is what the package's export is called
             j, words = i + 1, []
-            while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] in ("(", ";")):
+            # A header ends at its parameter list. **Nothing else may be crossed**: `Event` is a keyword *and*
+            # an ordinary property name (`if (A.Event == Tag)`), so a scan that ran on to the next `(` or `;`
+            # swallowed the whole if-block -- braces included -- and every later `local` in the class then sat at
+            # depth 0 and was dropped. `Engine.Teleporter` lost all nine of its function-scoped locals that way
+            # (`PostTouch`'s `Dest[16]`, `AutosaveExists`'s `array<String>`), which is why its two bodies refused
+            # as an untyped element and a callee the text does not carry.
+            while j < len(toks) and not (toks[j][0] == "op" and toks[j][1] in ("(", ";", ")", "{", "}", ",")):
                 if toks[j][0] in ("ident", "keyword"):
                     words.append(toks[j][1])
                 j += 1
@@ -6665,6 +6683,19 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                 for _wp, _wc in _ancestors(chain, pack, wcls):
                     for _n, _t in proptypes_mod_by_cls.get(_wc, {}).items():
                         within_proptypes.setdefault(_n, _t)
+            # The relay a native's declaration compiles to reads its parameters in **declaration** order, so the
+            # index comes from the package's own child exports (`_scope`'s `locals`, the same one-based compact
+            # index a body read names) and the order from the text. A parameter the package does not export
+            # leaves the list empty, and the body refuses rather than relaying a guess.
+            native_parms = []
+            if is_native and src_body is None:
+                _locals = scope.get("locals") or {}
+                for _p in (decl_params or []):
+                    _hit = _locals.get((_p[1] or "").lower())
+                    if _hit is None:
+                        native_parms = []
+                        break
+                    native_parms.append(_hit[1])
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
                    "corpus_funcs": corpus_funcs, "decl_index": index,
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
@@ -6697,6 +6728,8 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
                    # record only says `StructProperty`
                    "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])},
+                   # the parameter relays a native declaration compiles to, in declaration order
+                   "native_parms": native_parms,
                    # the class this one is declared `within`, whose names resolve through `Outer`
                    "within": wcls,
                    # which state the body is written in: a `Super.F()` prefers the parent's same-state override
@@ -7563,6 +7596,53 @@ def check(args):
     if got["tick"][0] != "bool":
         print("FAIL uscript-emit: the state function after a keyword argument reads %r, expected `bool`"
               % (got["tick"][0],))
+        return 1
+    # A native declared without a script body compiles to a **relay**, not to nothing: one `NativeParm` (0x29) per
+    # parameter in **declaration** order -- the operand is the parameter's own one-based compact index, the same
+    # index a body's `00` local read names -- then the trailer, with no `EndFunctionParms` between the parms
+    # (`0x04` in `29 57 04` is the high byte of index 279). `Object.VSize(vector A)` ships `29 62 04 0b 47`,
+    # `Object.Clamp(int V, int A, int B)` `29 57 04 29 58 04 29 59 04 0b 47`, and `Object.Invert`'s three `out`
+    # vectors relay X, Y, Z although the export table holds them Z(282), Y(284), X(285) -- the order is the
+    # declaration's. A parameter the package does not export leaves the list empty and the body refuses: a relay
+    # over a guessed index is a wrong body that looks like a measurement.
+    for parms in ([290], [279, 280, 281]):
+        want = b"".join(b"\x29" + write_index(k) for k in parms) + b"\x0b\x47"
+        relay, _model, _shape = emit_body(None, "int", dict(env, native_parms=parms), True)
+        if relay != want:
+            print("FAIL uscript-emit: the native relay over %r emits %s, expected %s"
+                  % (parms, relay.hex(), want.hex()))
+            return 1
+    if b"".join(b"\x29" + write_index(k) for k in [290]) + b"\x0b\x47" != bytes.fromhex("2962040b47"):
+        print("FAIL uscript-emit: the fixture's own encoding of index 290 is not the shipped `62 04`")
+        return 1
+    for empty in ([], None):
+        try:
+            emit_body(None, "int", dict(env, native_parms=empty), True)
+        except Refused:
+            pass
+        else:
+            print("FAIL uscript-emit: a native whose parameters are not exported was relayed anyway")
+            return 1
+    # The header scan stops at its own parameter list. `Event` is a keyword **and** an ordinary property name, so
+    # the scan started at `if (A.Event == Tag)` used to run on to the next `(`/`;`, stepping over the block's
+    # braces without counting them: the depth never recovered and every later `local` in the class sat at depth 0
+    # and was dropped (`Engine.Teleporter` lost all nine of its function-scoped locals that way).
+    scan_text = (
+        "class Teleporter extends NavigationPoint;\n"
+        "event PostTouch(Actor Other)\n{\n"
+        "    local int Hits;\n"
+        "    if (A.Event == Tag)\n    {\n        Hits = 1;\n    }\n"
+        "}\n"
+        "function AutosaveExists()\n{\n"
+        "    local array<string> Names;\n"
+        "    local int i;\n"
+        "}\n")
+    found = {(f, n): t for f, n, t, _r in _local_decls(scan_text)}
+    if found.get(("autosaveexists", "i")) != "int" or ("autosaveexists", "names") not in found:
+        print("FAIL uscript-emit: an `Event` property comparison hid a later function's locals (%r)" % (found,))
+        return 1
+    if ("posttouch", "hits") not in found:
+        print("FAIL uscript-emit: the function before the `Event` comparison lost its own local (%r)" % (found,))
         return 1
     for case in REFUSE:
         if case not in got:

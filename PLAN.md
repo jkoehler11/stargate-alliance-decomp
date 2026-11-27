@@ -300,6 +300,26 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   `Viewport.Actor.Level.NetMode`, whose chain needs a property type no artifact carries (no record for the native
   class `Viewport`). Files: `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`,
   `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
+- [~] 3.6 a native declaration is a relay, and a header scan that keeps its brace balance: **11,639 modelled /
+  11,639 byte-identical** (from 11,624; **15 bodies gained, none lost**; residue 62 -> 47, differ 2 -> 2). Two rules.
+  (1) **A native declared without a script body compiles to a relay**: one `NativeParm` (`0x29`) per parameter in
+  declaration order, the operand the parameter's own one-based compact index, then the trailer and **no**
+  `EndFunctionParms` between the parms (the `04` in `29 57 04` is index 279's high byte) -- `Object.VSize` ships
+  `29 62 04 0b 47`, `Object.Clamp` `29 57 04 29 58 04 29 59 04 0b 47`, and `Object.Invert` relays X, Y, Z although
+  the exports are Z(282), Y(284), X(285). 623 such relays ship in the 18 packages, 12 of them with a corpus
+  declaration: the eight `Object` relays, the two `UdpLink` relays, `MasterServerClient.StartQuery` and
+  `InternetLink.GetLocalIP`. A parameter the package does not export refuses. (2) **The header scan ends at the
+  parameter list** (`)`, `{`, `}`, `,` as well as `(`/`;`): `Event` is a keyword *and* a property name, so
+  `if (A.Event == Tag)` ran the scan over the block's braces, the depth never recovered and every later `local` in
+  the class sat at depth 0 -- `Engine.Teleporter` lost all nine, and `Accept`/`PostTouch`/`AutosaveExists` gained.
+  This retracts the note above that read `AutosaveExists` as a `>` lost from a local's type word: the local was
+  never in the table. `--check` holds both rules (a relay over 290 and over 279/280/281, two refusals, and the
+  `Event` comparison in front of a later function's locals; both fixtures fail on `origin/main`'s code as it stood).
+  Control: `origin/main`'s tool on the same tree reproduces the committed artifact (11,624 modelled, residue 62, run
+  `~/sg1/work/base1127c`), and the per-body diff is +15 / **0 lost** / the same 2 differs on both sides. Files:
+  `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`,
+  `PLAN.md`. Not in this PR: the 9 `a member that is not a property of the receiver's class` rows, the call-receiver
+  rows, the cast table, and `Viewport.Actor.Level.NetMode` (the property-census thread's missing member rows).
 
 - [~] 3.6 a `within` body's bare call: **11,588 modelled / 11,588 byte-identical** (from 11,573; 15 bodies gained,
       none lost; residue 113 -> 98). (1) **A value-position call is the `Context(Outer, 5, size)` node the statement
