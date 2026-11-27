@@ -1004,7 +1004,7 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     left, right = expr[:at], expr[at + 1:]
     if not left or not right:
         return None
-    t1, t2 = _value_type(left, env).lower(), _value_type(right, env).lower()
+    t1, t2 = _type_of(left, env).lower(), _type_of(right, env).lower()
     # An operand whose declared type is an **enum's own name** is stored in a byte (`_enum_byte`), and the pair is
     # looked up on the promoted type like any other byte. `StargatePawn.PlayWaiting`'s
     # `Controller.GetAggroLevel() != AGGRO_High` refused as `(eaggrolevel != byte)` for want of that mapping, and
@@ -1098,25 +1098,25 @@ def _operator_types(expr, env, site="", root=False, typing=False):
         if hit is not None:
             token, ret = hit
             return sym, "byte", "byte", ret, token, at
-    # A **promoted subtree** keeps taking the site's expectation. `UPreviewMapListClient.Paint`'s
-    # `C.SetPos((WinWidth/2)-(xl/2), 120 + 5 + yl)` ships `ae ae 1e 0000f042 39 3f 2c 05 16 <yl> 16` -- the
-    # all-literal pair `120 + 5` is compiled at the `float` site the chain was promoted to, its leading literal
-    # folded to a `FloatConst` and the second cast -- where `_leaves_promotable` (a literal *and* a non-literal)
-    # kept it `int` behind one `IntToFloat`, three bytes short. The bound is `_promote_tree`: the subtree was
-    # already decided to be float, so an all-literal pair inside it is retyped rather than folded. `Chip.BeginState`'s
-    # `200000 * 2 * FRand()` is **not** this case -- that pair is compiled at `int` and converted as a whole, and it
-    # carries no `_promote_tree`.
-    if (root and env.get("_promote_tree") and (site or "").lower() == "float"
+    # A **promoted subtree** keeps taking the site's expectation, when the pair that promoted it was a
+    # both-`int` one. `UPreviewMapListClient.Paint`'s `C.SetPos((WinWidth/2)-(xl/2), 120 + 5 + yl)` ships
+    # `ae ae 1e 0000f042 39 3f 2c 05 16 <yl> 16`: the outer pair is `(int, int)` at an assignment's `float` site, so
+    # both operands are retyped leaf by leaf, and the all-literal `120 + 5` inside follows -- its leading literal
+    # folded to a `FloatConst` and the second cast. `_leaves_promotable` (a literal *and* a non-literal) kept that
+    # inner pair `int` behind one `IntToFloat`, three bytes short.
+    #
+    # The bound is `_promote_both`, not `_promote_tree`: a pair with a `float` operand promotes only its `int` side
+    # and converts that side **as a whole**, so `Chip.BeginState`'s `200000 * 2 * FRand()` keeps
+    # `Multiply_IntInt(200000, 2)` behind one `IntToFloat`. Keyed on `_promote_tree` this rule retyped that product
+    # and cost three bodies (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`, each our `Multiply_FloatFloat`
+    # against the package's `Multiply_IntInt`), which is the acceptance test's failure, not a gain.
+    if (root and env.get("_promote_both") and (site or "").lower() == "float"
             and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
             and _left_expects(left, env)):
         hit = _operators().get((sym, "float", "float"))
         if hit is not None:
             token, ret = hit
             return sym, "float", "float", ret, token, at
-    # A **`%` on two `int`s is an `int` value** even though its own row is float: this build installs no
-    # `Percent_IntInt`, so the node is written `Percent_FloatFloat` and demoted at its use (`39 44`).
-    # `_value_type` already reports `int` for it, so the pair above keeps its `int` row and the `%` converts at its
-    # own site -- `CylinderBuilder.Build`'s `((i+1)%Sides)*2` ships `90 | 39 44 ad ... 2c 02 16`.
     for a, b in ((n1, n2), (t1, t2)):
         hit = _operators().get((sym, a, b))
         if hit is not None:
@@ -2319,32 +2319,6 @@ def _has_call_leaf(expr):
     return False
 
 
-def _value_type(expr, env, depth=0):
-    """`_type_of`, except that a `%` on two `int`s -- and a pair of two such values -- is `int`.
-
-    This build installs no `Percent_IntInt`, so `a % b` on two `int`s is written `Percent_FloatFloat` with both
-    operands widened and the *result* demoted wherever an `int` is wanted (`39 44`). `_type_of` reports the row's
-    `float`, so a pair above it took the `float` row and cast the whole subtree back: `CylinderBuilder.Build`'s
-    `((i+1)%Sides)*2 + (1-j)/2` came out `39 44 ae 39 3f 90 | 39 44 ad ...` (14 bytes over) where the package
-    writes `92 90 39 44 ad ... 2c 02 16 91 ...`. The value the compiler types with is `int`.
-
-    The bound is arithmetic: only `+ - * / %` inherit, and a side the walk cannot type falls back to `_type_of`.
-    `CylinderBuilder.BuildCylinder`'s `n + ((i*2+3)%(2*Sides))` ships `39 44 ae 39 3f ...` -- a pair with a float
-    *read* on one side, not two `int` values -- and is unaffected.
-    """
-    if depth > 4:
-        return _type_of(expr, env).lower()
-    if _paren_wrapped(expr):
-        return _value_type(_strip_parens(expr), env, depth + 1)
-    head = _operator_types(expr, env, typing=True)
-    if head and head[0] in ("+", "-", "*", "/", "%"):
-        at = head[5]
-        if (_value_type(expr[:at], env, depth + 1) == "int"
-                and _value_type(expr[at + 1:], env, depth + 1) == "int"):
-            return "int"
-    return _type_of(expr, env).lower()
-
-
 def _left_expects(expr, env, depth=0):
     """True when the `float` expectation a node carries is **consumed by its left operand**.
 
@@ -2442,6 +2416,7 @@ def _emit_operator(expr, rettype, env, root=False):
     # cast as a whole (`IntToFloat(Multiply_IntInt(Int(TempF + 0.5), Step))`). `_leaves_promotable` is that
     # bound, and it is asked at the pair table and here, so both the node's own row and the operands agree.
     promote = {"l": False, "r": False}
+    both_int = False
     if (rettype or "").lower() == "float" and sym in ("+", "-", "*", "/"):
         own = {"l": _numeric(_enum_byte(_type_of(left, env).lower(), env), env),
                "r": _numeric(_enum_byte(_type_of(right, env).lower(), env), env)}
@@ -2450,6 +2425,7 @@ def _emit_operator(expr, rettype, env, root=False):
             accepts = (_left_expects(left, env) if side == "l" else _leaves_promotable(right))
             promote[side] = (t1 if side == "l" else t2) == "float" and accepts
         elif own["l"] == own["r"] == "int":
+            both_int = True
             # The **site's** promotion, which the pair table has to have widened: a call's argument keeps its int
             # arithmetic and casts at the argument's own site (`Abs(BlendC - NewC)` and `FRand()-style` graders are
             # `IntToFloat(Subtract_IntInt(...))`), and so does a parenthesised group.
@@ -2511,7 +2487,7 @@ def _emit_operator(expr, rettype, env, root=False):
     right_env = {k: v for k, v in inner.items()
                   if k not in ("root_site", "int_site", "group_int", "byte_root")}
 
-    def _side(part, want, side_env, do_promote, folded, narrow=True, byte_lit=True):
+    def _side(part, want, side_env, do_promote, folded, narrow=True, byte_lit=True, tree=False):
         """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
         if narrow and _group_narrow(part, env):
             # The group's **result** is the root's type; its own arithmetic keeps the type it has. So the group is
@@ -2556,7 +2532,7 @@ def _emit_operator(expr, rettype, env, root=False):
                 pass
         if do_promote:
             try:
-                return emit_expr(part, "float", dict(side_env, _promote_tree=True))[0]
+                return emit_expr(part, "float", dict(side_env, _promote_tree=True, _promote_both=tree))[0]
             except Refused:
                 pass                       # not a subtree this walk can promote -- the cast shape is the fallback
         return (_byte_literal(part, want, rettype if byte_lit else "", side_env)
@@ -2581,9 +2557,9 @@ def _emit_operator(expr, rettype, env, root=False):
         fold_left = None
     folded_left = ((narrow_left or fold_left) if root and not env.get("group_int") else None)
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(_strip_parens(left), env) is not None,
-                         folded_left)
+                         folded_left, tree=both_int)
             + _side(right, t2, right_env, promote["r"] and _operator_types(_strip_parens(right), right_env) is not None,
-                    None, narrow=False, byte_lit=False)
+                    None, narrow=False, byte_lit=False, tree=both_int)
             + b"\x16")
     return _converted(node, result, rettype), "operator"
 
@@ -7738,6 +7714,32 @@ def check(args):
     if not _has_call_leaf([("ident", "Frand"), ("op", "("), ("op", ")")]) or \
             _has_call_leaf([("number", "200000"), ("op", "*"), ("number", "2")]):
         print("FAIL uscript-emit: `_has_call_leaf` does not see the call in the spine of `200000 * 2 * FRand()`")
+        return 1
+    # P16: a **promoted subtree** keeps the site's expectation, and only when the pair that promoted it was
+    # both-`int`. `UPreviewMapListClient.Paint`'s `C.SetPos((WinWidth/2)-(xl/2), 120 + 5 + yl)` ships
+    # `ae ae 1e 0000f042 39 3f 2c 05 16 <yl> 16`: the all-literal `120 + 5` is compiled at the `float` site the
+    # chain was promoted to, its leading literal a `FloatConst` and the second cast -- where `_leaves_promotable`
+    # (a literal *and* a non-literal) kept the pair `int` behind one `IntToFloat`, three bytes short.
+    npair = [("number", "120"), ("op", "+"), ("number", "5"), ("op", "+"), ("ident", "Pofs")]
+    got, _m = emit_expr(npair, "float", dict(penv, _assign=True))
+    want = (b"\xae\xae" + b"\x1e" + struct.pack("<f", 120.0) + b"\x39\x3f\x2c\x05\x16"
+            + b"\x39\x3f\x01" + write_index(460) + b"\x16")
+    if got != want:
+        print("FAIL uscript-emit: `120 + 5 + Pofs` emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    # The two controls are the *other* promotion: a pair with a `float` operand promotes only its `int` side and
+    # converts that side as a whole -- `Chip.BeginState`'s `200000 * 2 * FRand()` keeps
+    # `Multiply_IntInt(200000, 2)` behind one `IntToFloat`, and retyping it cost three bodies. So the all-literal
+    # pair outside a promotion keeps its `int` row (`39 3f 92 ...`), and so does the same pair under a `float`
+    # right operand even with the tree flag set.
+    got, _m = emit_expr([("number", "120"), ("op", "+"), ("number", "5")], "float", dict(penv, _assign=True))
+    if got[:2] != b"\x39\x3f" or b"\x92" not in got:
+        print("FAIL uscript-emit: an all-literal pair outside a promotion lost its int row (%s)" % got.hex())
+        return 1
+    got, _m = emit_expr([("number", "120"), ("op", "+"), ("number", "5"), ("op", "+"), ("ident", "Fcount")],
+                        "float", dict(penv, _assign=True, _promote_tree=True))
+    if b"\x39\x3f\x92" not in got:
+        print("FAIL uscript-emit: a pair with a `float` operand retyped its int side (%s)" % got.hex())
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
