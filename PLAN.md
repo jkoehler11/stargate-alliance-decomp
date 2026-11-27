@@ -239,6 +239,29 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a group compiles at the root it sits under, and a const folds: **11,284 modelled / 11,284 byte-identical**
+  (from 11,279; **five bodies gained, none lost**, residue 399 -> 394, the differ census **16 -> 11**). (1) A
+  parenthesised `int` group at a `float` expression root is typed at the root and converted **back** into the slot
+  it feeds: `ServerMove`'s `Accel.Y = (OldAccel >>> 15) & 255;` ships `IntToFloat(And_IntInt(FloatToInt(IntToFloat(
+  OldAccel >>> 15)), 255))`, a four-byte round trip at the group's boundary, twice in the body. `_group_widen` is
+  the mirror of `_group_narrow` and the bound is the **slot's** type -- the general form lost `ConeBuilder.
+  BuildCone`, `CylinderBuilder.BuildCylinder` and (measured this round) `StargateHUD.paintTransparentBlob`, whose
+  slots are `float` and whose groups the package retypes root and branch. Two of the three bodies it gains
+  (`BotSG.PickDestination`, `TransportRings.RingsMove`) were in the differ set for a *jump distance* that moved with
+  the body's length -- the branch was right and the body was short after it. (2) A `const` in the leading operand
+  position folds like the number written there: `BotSG.EngageDirection`'s `MINSTRAFEDIST * StrafeDir` ships
+  `1e 00001643` (`FloatConst 150.0`, inherited from `BotEnemy`) and `BotLite.EngageDirection`'s the const it
+  declares, because `_float_literal` reads the token run (a name) while the leaf substitutes and casts it; it now
+  resolves the name through `scope["consts"]`. `--check` holds a round-trip fixture and four const folds.
+  Doc: `docs/COMPILER_FRONTEND.md`, new section. Not in this PR, measured: `LinearStairBuilder.Build` now takes the
+  `int` row where the package writes `Add_FloatFloat` (four bytes short -> four bytes long, still differing) -- the
+  promote bound for a paren `int` group at a `float` slot is the next instrument; a **byte**-typed group's version
+  of the same round trip (`Mover.KeyFrameReached`, `ShieldBelt.Tick` `39 3c 39 3d`; both `CallServerMove` bodies
+  `39 3a 39 3d`), whose type bound is unmeasured; `ReplicateMove` and `B4SParser.ParseLines` (jump distances that
+  did *not* move with the length delta, so the cause is inside the body); the three same-length rows, one shape -- a
+  `for` whose body is the empty statement `;`, where the package writes the increment before the backward `Jump` and
+  the walk takes the following statement as the body; and `SGPlayerInput.PlayerInput`'s 520-byte `Skip` gap.
+
 - [~] 3.6 a leaf converts at its own site, and a literal's bytes are the package's: **11,279 modelled / 11,279
   byte-identical** (from 11,275; **4 bodies gained, none lost**; residue 403 -> 399, the differ census 20 -> 16 --
   its `context skip` family and its `operand StringConst` row are gone). Both items were recorded as "tried and

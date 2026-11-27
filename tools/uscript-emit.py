@@ -2034,7 +2034,7 @@ def _operand(part, want, rettype, env, inner):
     return bytes([0x39, slot]) + body
 
 
-def _float_literal(part, want, site=""):
+def _float_literal(part, want, site="", env=None):
     """`1e <f32>` for an **int literal** the compiler folded into a float constant at the root of an expression.
 
     The fold is positional, not a general rule: `TransientAmbientCreature.MaxHiddenTime`'s
@@ -2067,14 +2067,29 @@ def _float_literal(part, want, site=""):
         return None
     core = _strip_parens(part)
     neg = False
-    if len(core) == 2 and core[0] == ("op", "-") and core[1][0] == "number":
+    if len(core) == 2 and core[0] == ("op", "-") and core[1][0] in ("number", "ident", "keyword"):
         core, neg = [core[1]], True
-    if len(core) != 1 or core[0][0] != "number":
+    if len(core) != 1:
         return None
-    v = _number(core[0][1])
-    if isinstance(v, float):
-        return None                    # a source float literal is already written as `1e` by `emit_expr`
-    v = _int32(v)                      # the literal is an int32 before the sign and the float conversion
+    if core[0][0] in ("ident", "keyword"):
+        # A `const` is **substituted** by the compiler, so at this position it folds exactly as the number written
+        # there would: `BotSG.EngageDirection`'s `MINSTRAFEDIST * StrafeDir` ships `1e 00001643` (`FloatConst
+        # 150.0`, inherited from `BotEnemy`) and `BotLite.EngageDirection`'s ships `FloatConst 100.0` for the const
+        # it declares itself. The leaf substitutes the const and then casts (`39 3f 2c 96`) because this read looks
+        # at the token run, where a const is a name and not a number.
+        if not env:
+            return None
+        text = (env.get("scope", {}).get("consts") or {}).get(core[0][1].lower())
+        v = _const_int(text)
+        if v is None:
+            return None                # a float const's own text is written as `1e` by `emit_expr`
+    elif core[0][0] == "number":
+        v = _number(core[0][1])
+        if isinstance(v, float):
+            return None                # a source float literal is already written as `1e` by `emit_expr`
+        v = _int32(v)                  # the literal is an int32 before the sign and the float conversion
+    else:
+        return None
     return bytes([0x1E]) + struct.pack("<f", float(-v if neg else v))
 
 
@@ -2150,6 +2165,27 @@ def _group_narrow(part, env):
     if (env.get("root_site") or "").lower() != "int" or not _paren_wrapped(part):
         return False
     return (_type_of(_strip_parens(part), env) or "").lower() == "float"
+
+
+def _group_widen(part, env):
+    """True when a parenthesised `int` group is compiled at the `float` expression root it sits under.
+
+    The mirror of `_group_narrow`, and what happens next depends on the **slot's** type:
+
+    * an `int` slot gets the round trip back -- `PlayerController.ServerMove`'s
+      `Accel.Y = (OldAccel >>> 15) & 255;` ships `IntToFloat(And_IntInt(FloatToInt(IntToFloat(OldAccel >>> 15)),
+      255))`, the group typed at the root and narrowed back into the `And_IntInt` its own slot wants;
+    * a `float` slot gets the group **retyped root and branch**, which is what `LinearStairBuilder.Build`'s
+      `(i * (j - 1) + Ofs)` ships (`Add_FloatFloat(IntToFloat(Multiply_IntInt(...)), IntToFloat(Ofs))`) and what
+      the promote path writes.
+
+    The round trip in the second case is what a *general* form of this rule did, and it lost `ConeBuilder.BuildCone`
+    and `CylinderBuilder.BuildCylinder` and pushed `LinearStairBuilder.Build` four bytes further away -- both are
+    bodies whose slot is `float` and whose group is promoted.
+    """
+    if (env.get("root_site") or "").lower() != "float" or not _paren_wrapped(part):
+        return False
+    return (_type_of(_strip_parens(part), env) or "").lower() == "int"
 
 
 def _paren_wrapped(expr):
@@ -2352,6 +2388,17 @@ def _emit_operator(expr, rettype, env, root=False):
                 return _converted(_converted(core, "float", "int"), "int", want)
             except Refused:
                 pass
+        if narrow and _group_widen(part, env) and (want or "").lower() == "int":
+            # The group is compiled at the `float` root it sits under and taken back into the `int` slot it feeds:
+            # `39 44 39 3f` = `FloatToInt(IntToFloat(...))` at the group's boundary and nowhere else. A `float`
+            # slot is **not** this rule -- there the group is retyped root and branch, and emitting the round trip
+            # for it is what lost `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder` and
+            # `StargateHUD.paintTransparentBlob`.
+            try:
+                core = emit_expr(_strip_parens(part), "int", dict(side_env, _root=False))[0]
+                return _converted(_converted(core, "int", "float"), "float", want)
+            except Refused:
+                pass
         if ((want or "").lower() == "int" and (rettype or "").lower() == "int" and _paren_wrapped(part)
                 and _leading_literal(part) is not None):
             # A group the site narrows keeps its leading literal int-narrowed (`CurvedStairBuilder`); the group's own
@@ -2382,7 +2429,7 @@ def _emit_operator(expr, rettype, env, root=False):
     # (`Weapon.DrawMuzzleFlash`/`StargateWeapon.DrawMuzzleFlash`'s `-1 * ULength`, `Replicator.PlayWaiting`'s
     # `LoopAnim('idle', -1/GroundSpeed)`, `BotEnemy.AdjustAround`).
     narrow_left = _narrowed_const(left, t1, rettype)
-    fold_left = None if narrow_left is not None else _float_literal(left, t1, rettype)
+    fold_left = None if narrow_left is not None else _float_literal(left, t1, rettype, env)
     if fold_left is not None and (env.get("root_site") or "").lower() != "float":
         fold_left = None
     folded_left = ((narrow_left or fold_left) if root and not env.get("group_int") else None)
@@ -6594,6 +6641,26 @@ def check(args):
         print("FAIL uscript-emit: a parenthesised int group at a float pair emits %s, expected "
               "ab ae ab 1e 00000040 (Multiply_FloatFloat(Add_FloatFloat(Multiply_FloatFloat(FloatConst 2, ..."
               % got.hex())
+        return 1
+    # A parenthesised `int` group at a `float` root feeding an `int` slot is the mirror of that read: the group is
+    # typed at the root and narrowed back into its slot -- `ServerMove`'s `Accel.Y = (OldAccel >>> 15) & 255;`
+    # ships `IntToFloat(And_IntInt(FloatToInt(IntToFloat(OldAccel >>> 15)), 255))`.
+    grp2 = [("op", "("), ("ident", "Slot"), ("op", ">>>"), ("number", "15"), ("op", ")"), ("op", "&"),
+            ("number", "255")]
+    got, _shape = emit_expr(grp2, "float", dict(env, _root=True, root_site="float"))
+    if "3944393f" not in got.hex():
+        print("FAIL uscript-emit: a paren int group at an int slot emits %s, expected the 39 44 39 3f round trip"
+              % got.hex())
+        return 1
+    # A `const` in the leading operand position folds like the number written there; a float const's own text is
+    # left to the leaf, which writes it as `1e` already.
+    cenv = dict(env, scope=dict(env.get("scope") or {},
+                                consts={"minstrafedist": "150", "pi": "3.1415926535897932"}))
+    if _float_literal([("ident", "MINSTRAFEDIST")], "float", "float", cenv) != bytes.fromhex("1e00001643"):
+        print("FAIL uscript-emit: a leading int const does not fold to FloatConst 150.0")
+        return 1
+    if _float_literal([("ident", "Pi")], "float", "float", cenv) is not None:
+        print("FAIL uscript-emit: a float const's literal text was folded")
         return 1
     # `Self` is an object, and a site that wants a string casts it (`Canvas.DrawText(Self, false)`).
     got, _shape = emit_expr([("keyword", "self")], "string", dict(env, _root=True, root_site="string"))
