@@ -263,6 +263,28 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       of `env`, where `score()` hands it, and `--check` passes. Doc: `docs/COMPILER_FRONTEND.md`, section of the same
       name. Not in this PR: the 15 operator rows, the 12 native relays, the 10 member rows, the `Outer.<struct>` pair
       (`CheatManager.Teleport`/`Summon`) and the cast table.
+- [~] 3.6 an enum name in front of an operand, a state function's return, and a `struct` in a `var` statement:
+      **11,619 modelled / 11,619 byte-identical** (from 11,609; **ten bodies gained, none lost**; residue 77 -> 67,
+      differ 2 -> 2). Five type reads, each measured against the body's own bytes: (1) **an enum's own name in front of
+      one operand is a cast and its value is a `byte`** -- `_enum_cast` already wrote the `39 3d` wrapper for that
+      node, but `_type_of` answered "" for it, so `InteractionType(enumValue) == SG1_PLAYER` refused as `(an unknown
+      type == byte)`, `(EScriptFollow(AlertnessLevel) <= FOLLOWSCRIPT_IgnoreEnemies)` as an untyped bool assignment
+      and `switch (InteractionType(user))` as a switch with no comparison width (`_enum_cast_type`, 4 bodies:
+      `CommandInterface.InteractionAppliesToPlayer`, `CommandInterface.ConvertEnumToName`,
+      `AlkeshBomberBot.SetEnemyReaction`, `TeltakBot.SetEnemyReaction`). (2) **a state function's return type is keyed
+      by the state** (`rets_state`): `rets` holds class-scope declarations only, so `CarpetBombingDuration()` under a
+      vector product and `getOffsetDistance()` under a `VSize(...) /` typed nothing (3 bodies). (3) **an inline
+      `struct` block in a `var` statement is a struct** -- `var struct BeaconInfo { ... } Beacons[32];` (2 bodies), and
+      `inventory/struct_members.csv` 164/800/799 -> 166/807/806 from the same parser fix. (4) **a negative literal is
+      the number's own sign** -- `const DOOR_PITCH_MAX = -18000.0;`, so `CurrentDoorPitch <= DOOR_PITCH_MAX` is a
+      float compare (1 body, `HaakenPod.OpenDoors.Tick`). (5) **a one-argument call whose head is a class is a cast**
+      even when a same-named two-argument function exists (`_cast_name`; gained 0, lost 0 -- the three bodies it
+      reached moved from the operator refusal to `a call the class chain does not declare`). Control: `origin/main`'s
+      tool on the same tree reproduces the committed `inventory/uscript_emit.csv` byte for byte (md5
+      `b1f3971af5f3ec43984a61c5fab5b7e3`). Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR:
+      the five operator rows (a dynamic array's element, a const whose value is a `vect()`, a `class<Info>` element's
+      `.Name`, a member read past `Class`, and `Viewport.Actor.Level.NetMode`), the 12 native relays, the 10 member
+      rows and the cast table.
 - [~] 3.6 a `within` body's bare call: **11,588 modelled / 11,588 byte-identical** (from 11,573; 15 bodies gained,
       none lost; residue 113 -> 98). (1) **A value-position call is the `Context(Outer, 5, size)` node the statement
       path writes**: `HitActor = Trace(...)` is `19 01 8e 05 00 04 61 15 ...` and the `foreach` head
@@ -19284,3 +19306,30 @@ sequence.
   `tools/uscript-emit.py`, `tools/struct-records.py`, `inventory/uscript_emit.csv`,
   `inventory/emit_differ.csv`, `inventory/struct_field_records.csv`, `docs/COMPILER_FRONTEND.md`,
   `docs/UNKNOWNS.md`.
+
+- Front end, 2026-11-27b: **an enum name in front of an operand is a byte, a state function's return is keyed by the
+  state, and a `struct` can be declared inside a `var` statement.** 11,609 -> **11,619 modelled, every one
+  byte-identical, none lost**; residue 77 -> 67 and the operator family 15 -> 5. (1) `_enum_cast` had written the
+  `39 3d` wrapper for `InteractionType(enumValue)` since the subscript bundle while `_type_of` answered "" for the
+  node, so three comparisons and a `switch` on an enum cast were untyped: `_enum_cast_type` is the type half and keeps
+  `_enum_cast`'s guards (4 bodies). (2) `rets` holds class-scope declarations only -- a cast's slot join reads it --
+  so a call to a **state** function had no type: `rets_state` keyed `(class, state, name)` answers
+  `function float CarpetBombingDuration()` in `AlkeshBomberBot`'s own `state CarpetBombing` and
+  `getOffsetDistance()` in `MoveInFormation` (3 bodies, `BotEnemy`, `BotRep`, `AlkeshBomberBot`). (3) `source_structs`
+  required the line to begin with `struct`, so `var struct BeaconInfo { var IpAddr Addr; var float Time; } Beacons[32]`
+  was not a struct and `Beacons[i].Addr.Addr == 0` refused as `(struct == ipaddr)`: one regex now steps over a leading
+  `var`/modifier list (2 bodies, `ClientBeaconReceiver.ReceivedText`/`Timer`), and the same read grows
+  `inventory/struct_members.csv` 164 structs / 800 members / 799 typed -> 166 / 807 / 806 -- `struct-members.py` and
+  the emitter share the parser, and the tool regenerates the committed CSV byte for byte (md5
+  `2d07385e93418381113f63bdc3316803`). (4) `_consts_of` stopped at the `-` of `const DOOR_PITCH_MAX = -18000.0`, so
+  `CurrentDoorPitch <= DOOR_PITCH_MAX` read `(float <= an unknown type)` with the literal two tokens away (1 body).
+  (5) `_cast_kind` refuses a name that is both a class and a function in scope, but the compiler decides a cast by its
+  **arity**: `Trigger(temp).bInitiallyActive` is a cast though `Actor` declares a two-argument `event Trigger(...)`;
+  `_cast_name` adds that test (gained 0, lost 0 -- the three bodies it reached, `Door.SpecialHandling`,
+  `SGInteraction.InteractionUsed` and `CommandInterface.TestTraceActors`, moved to `a call the class chain does not
+  declare`). Control: `origin/main`'s tool on the same tree reproduces the committed artifact byte for byte
+  (11,609 modelled). The five operator rows left are one family -- a value the walk cannot type: a `local
+  array<String>` subscript, a `const Lotus = vect(1,2,3)`, `InfoClasses[i].Name` on an array of `class<Info>`,
+  `Item.Class.Name` and `Viewport.Actor.Level.NetMode`. Files: `tools/uscript-emit.py`, `tools/uscript-dis.py`,
+  `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `inventory/struct_members.csv`,
+  `docs/COMPILER_FRONTEND.md`, `PLAN.md`.

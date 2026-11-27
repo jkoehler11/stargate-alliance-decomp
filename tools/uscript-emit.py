@@ -610,8 +610,15 @@ def _consts_of(text):
         j = i + 2
         if j < len(toks) and toks[j] == ("op", "="):
             j += 1
+        # A **negative** literal is the number's own sign: `const DOOR_PITCH_MAX = -18000.0;` is the float the
+        # site substitutes, and a walk that stopped at the `-` left `CurrentDoorPitch <= DOOR_PITCH_MAX` a
+        # `(float <= an unknown type)` pair (1 body) with the literal sitting two tokens away in the same file.
+        sign = ""
+        if j + 1 < len(toks) and toks[j][0] == "op" and toks[j][1] in ("-", "+"):
+            sign, j = toks[j][1], j + 1
         if j < len(toks) and toks[j][0] in ("number", "quoted", "string"):
-            out.setdefault(toks[i + 1][1].lower(), toks[j][1])
+            text = toks[j][1] if toks[j][0] != "number" else sign + toks[j][1]
+            out.setdefault(toks[i + 1][1].lower(), text)
     return out
 
 
@@ -1735,11 +1742,64 @@ def _enum_cast(expr, env):
     return _converted(body, _type_of(args[0], env).lower(), "byte"), "enum-cast"
 
 
+def _enum_cast_type(expr, env):
+    """`byte` when `expr` is a cast to an **enum's own name**, "" otherwise -- the type half of `_enum_cast`.
+
+    `InteractionType(enumValue)` and `EScriptFollow(AlertnessLevel)` are casts, and the value they yield is the
+    `byte` an enum is stored in; `_enum_cast` already writes the `39 3d` wrapper for the emitter, but `_type_of`
+    knew no type for the node, so the operator over it refused as `(an unknown type == byte)` (2 bodies) and a
+    bool assignment whose value is such a comparison refused as `untyped` (2 more). The predicate is kept in step
+    with `_enum_cast` deliberately: same one-argument shape, same "not also a class or a function" guard.
+    """
+    if len(expr) < 4 or expr[0][0] not in ("ident", "keyword"):
+        return ""
+    low = expr[0][1].lower()
+    if low not in (env.get("enum_names") or set()):
+        return ""
+    if low in (env.get("class_names") or set()) or low in ((env.get("scope") or {}).get("funcs") or {}):
+        return ""
+    if expr[1] != ("op", "(") or _paren_end(expr, 1) != len(expr) - 1:
+        return ""
+    if len(_split_commas(expr[2:-1])) != 1:
+        return ""
+    return "byte"
+
+
+def _cast_name(expr, env):
+    """`primitive`/`object` for a call-shaped **cast**, "" when the expression is an ordinary call.
+
+    `_cast_kind` refuses a name that is *both* a class and a function in scope, because a call the package
+    declares is a call. The compiler decides by the call's **shape**: a cast takes exactly one argument, so
+    `Trigger(temp).bInitiallyActive` in `CommandInterface.TestTraceActors` is a cast to the class `Trigger` even
+    though `Actor` declares the two-argument `event Trigger(Actor Other, Pawn EventInstigator)` -- and `Door`'s
+    and `SGInteraction`'s `Trigger(X) != None` are the same cast (3 bodies). A one-parameter function of the name
+    keeps the call, so a same-named one-argument function still wins.
+    """
+    if not _is_call(expr):
+        return ""
+    head = expr[0][1]
+    kind = _cast_kind(head, env)
+    if kind:
+        return kind
+    low = head.lower()
+    if low not in ((env.get("scope") or {}).get("classrefs") or {}):
+        return ""
+    if expr[1] != ("op", "(") or _paren_end(expr, 1) != len(expr) - 1:
+        return ""
+    if len(_split_commas(expr[2:-1])) != 1:
+        return ""
+    params = _callee_params(low, env)
+    if params is not None and len(params) == 1:
+        return ""
+    return "object"
+
+
 def _cast_kind(name, env):
     """`primitive` for `int(x)`, `object` for `AIController(x)`, and "" when the name is neither.
 
     A name that is *both* a class and a function in scope is not decided here: the call wins, because a call the
     package declares is a call, and a class of the same name would have to be refused rather than guessed.
+    `_cast_name` is the expression-level test that adds the arity, which is how the compiler separates the two.
     """
     low = name.lower()
     if low in CAST_TYPES:
@@ -1911,7 +1971,7 @@ def _type_of(expr, env):
             # `ArrayCount(X)` is a *compile-time* int: the compiler writes the declared dimension as a literal, so
             # the site is an int site and `i < ArrayCount(X)` is `Less_IntInt`, not an unknown-type pair.
             return "int"
-        if _cast_kind(expr[0][1], env) == "object":
+        if _cast_name(expr, env) == "object":
             return "class"
         if low == "vect":
             return "vector"
@@ -1921,6 +1981,23 @@ def _type_of(expr, env):
             # rotator and not a call's return type (`Spawn(..., rot(0,0,0))` in a `rotator` slot converts to
             # nothing).
             return "rotator"
+        en = _enum_cast_type(expr, env)
+        if en:
+            # `InteractionType(enumValue)` / `EScriptFollow(AlertnessLevel)`: an enum's own name in front of one
+            # operand is a cast, and the value is the byte the enum is stored in. `_enum_cast` writes that
+            # wrapper; the type was missing, so `InteractionType(x) == SG1_PLAYER` read `(an unknown type ==
+            # byte)` while `EqualEqual_IntInt` behind a `39 3a` on each side is what the package ships.
+            return en
+        own = (env.get("scope") or {}).get("cls") or ""
+        st = (env.get("state") or "").lower()
+        if own and st:
+            hit = (env.get("rets_state") or {}).get((own, st, low))
+            if hit:
+                # A callee declared in the body's **own state** carries its return type there, and `rets` holds
+                # class-scope declarations only (`CarpetBombingDuration` is `state CarpetBombing`'s). Without it
+                # `Pawn.Velocity * CarpetBombingDuration()` read `(vector + an unknown type)` and
+                # `VSize(...) / getOffsetDistance()` `(float / an unknown type)` (3 bodies).
+                return _enum_byte(hit.lower(), env)
         for cls in env["order"]:
             hit = (env.get("rets") or {}).get((cls, low))
             if hit:
@@ -3304,8 +3381,10 @@ def _class_of(expr, env):
             "a `class<Z>(x)` cast whose class the class table does not carry")
     if _is_call(expr):
         # `TransientAmbientPawn(Pawn).VerifyLastRenderTime()`: the receiver is a cast, and a cast names the class
-        # it casts to -- the same `classrefs` rule `_emit_cast` uses for `DynamicCast`.
-        if _cast_kind(expr[0][1], env) == "object" and expr[0][1].lower() in class_names:
+        # it casts to -- the same `classrefs` rule `_emit_cast` uses for `DynamicCast`. `_cast_name` also reads a
+        # one-argument call whose head is a class as the cast it is when a same-named function exists
+        # (`Trigger(temp).bInitiallyActive`).
+        if _cast_name(expr, env) == "object" and expr[0][1].lower() in class_names:
             return expr[0][1].lower()
         t = _rettype_on("", expr[0][1], env)
         return t if t in class_names else _no(
@@ -3980,7 +4059,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
             # literal**, `ObjectConst` (0x20) of the record the quoted name resolves to. The type word in front is
             # the compiler's own check, not part of the bytes.
             return _emit_object_literal(expr[0][1], expr[1][1], env), "object-literal"
-        if _is_call(expr) and _cast_kind(expr[0][1], env):
+        if _is_call(expr) and _cast_name(expr, env):
             return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
         en = _enum_cast(expr, env)
         if en is not None:
@@ -6275,6 +6354,13 @@ def _source_index(tree):
     # kept apart from `rets`, whose rows exist to answer a *type word*: a cast's slot join reads `rets`, and a call's
     # value size needs the other question -- "is there a declaration, and does it yield anything at all".
     voids = set()
+    # A **state function's** return type, keyed `(class, state, name)`. `rets` deliberately carries only
+    # class-scope declarations -- a cast's slot join reads it, and a state body is a different export -- so a call
+    # to a state function had no type at all: `AlkeshBomberBot`'s `state CarpetBombing` declares
+    # `function float CarpetBombingDuration()`, and `Pawn.Velocity * CarpetBombingDuration()` refused as
+    # `(vector + an unknown type)`; `BotEnemy`/`BotRep`'s `MoveInFormation` declares `function float
+    # getOffsetDistance()` (3 bodies). Keyed with the state so a parent's same-named state cannot answer.
+    rets_state = {}
     localtypes = {}
     localtypes_fn = {}
     classrefs_fn = {}
@@ -6360,6 +6446,9 @@ def _source_index(tree):
                     # a cast's slot is chosen by the operand's type, and an operand that is a call is typed by the
                     # callee's declared return type: `string(GetValue())` is FloatToString, not a guess
                     rets.setdefault((cls, fn.lower()), rettype)
+                elif rettype and state:
+                    # kept apart from `rets`: this answers a call *inside* the state, and nothing else
+                    rets_state.setdefault((cls, state.lower(), fn.lower()), rettype)
                 elif not rettype and not state:
                     voids.add((cls, fn.lower()))
                 keys = [(cls, state.lower(), fn.lower())]
@@ -6390,7 +6479,7 @@ def _source_index(tree):
                         # and the ordinal is unambiguous even where two classes spell the name differently
                         enum_members[(enum.lower(), cname.lower())].add(ordinal)
     return (index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents,
-            classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod), voids)
+            classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod), voids, rets_state)
 
 
 def score(tree, dump, out_dir, residue_dir=None, only=None):
@@ -6398,7 +6487,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     from ue2pkg import Package                                  # noqa: PLC0415 - only with a real dump
 
     index, files, params, enums, enum_names, rets, localtypes, proptypes, withins, dims, consts, stateparents, \
-        classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod), voids = _source_index(tree)
+        classrefs, localtypes_fn, classrefs_fn, (enum_members, proptypes_mod), voids, rets_state = _source_index(tree)
     src_texts = {}
     for key, value in index.items():
         src_texts.setdefault(key[0], []).append(value[2])
@@ -6555,6 +6644,8 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "within": wcls,
                    # which state the body is written in: a `Super.F()` prefers the parent's same-state override
                    "state": state.lower(),
+                   # a state function's declared return type, so a call to one inside the same state types
+                   "rets_state": rets_state,
                    # ...and the state that one `extends`, whose functions are its own `Super` before the class parent
                    "state_parents": stateparents.get(cls.lower(), {}),
                    # a function record's owning class and state, walked past the state's own Outer
@@ -7555,7 +7646,7 @@ def check(args):
     try:
         with open(os.path.join(tmp, "Probe.uc"), "w", encoding="latin-1") as fh:
             fh.write(STUB_STATE)
-        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr, _ltf, _crf, _tabs, _vd = _source_index(tmp)
+        sidx, _f, _p, _e, _en, _r, _lt, _pt, _w, _d, _c, _sp, _cr, _ltf, _crf, _tabs, _vd, _rs = _source_index(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     stub = (sidx.get(("probe", "", "disabletrigger")) or (None, None))[1]
