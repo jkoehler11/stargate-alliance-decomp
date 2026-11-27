@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,514 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,573 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -3873,3 +3873,82 @@ that it reaches *emit*, and every one of them **differs** -- so the arity and ar
 not the corpus declaration's, and the family stays open rather than shipped as a rule that loses nothing and is
 wrong everywhere it lands. The four it does not reach are `Teleporter.PostTouch`, `PlaylistParserBase.ImportedPlaylist`
 and the two `DoActualTeleport` bodies.
+
+## Stage 3, continued -- four declarations the body's own table does not carry (measured 2026-11-27)
+
+The residue this page ended on refused 172 bodies, and its four largest named families were one shape: the compiler
+reached a declaration the *body's own* package tables do not hold. 11,514 -> **11,573 modelled (59 gained, none lost)**,
+residue 172 -> 113, differ census 1 -> 1.
+
+### A `const` is the literal it wraps, and that literal can be a name
+
+`_consts_of` kept only numeric literals, so `const SEARCHING_STATE_NAME = 'Searching';` on `AlkeshBomberBot` was not a
+value at all: `DoState(SEARCHING_STATE_NAME);` refused as *a name neither a local, a property nor an enum constant of
+the class chain*. The compiler substitutes the literal and encodes it exactly as the written token would, and the
+shipped body says so -- `1b 36 21 41 01 16 04 0b 47` is `DoState` + the `NameConst` of `'Searching'` (name 321). The
+table now keeps quoted names and strings beside numbers, `_const_kind` classifies the token, and the const path
+re-enters `emit_expr` with the token the *source* wrote instead of a re-formatted value (`_type_of` answers
+`name`/`string` for it, which is what `GetStateName() != LANDING_STATE_NAME` needed to reach `EqualEqual_NameName`).
+A const written as an expression is still left out of the table, so it refuses rather than folding a value the source
+does not spell.
+
+16 rows: the five `AlkeshBomberBot.DoState` bodies, `AlkeshBomberBot.DoLanding`/`Timer`/`DoAttack`,
+`TeltakBot.DoLanding`, `JaffaBase.AnimEnd`/`FinishMelleeChargeAttack`, and six `StargatePawn` `Play*`/`BeginState`
+bodies. **Two remain**, both `msg.IsSubTypeOf(MSGT_Order)` in `StargateAIMsgManager`: the constant is `Actor`'s and an
+`AIMessage` subclass's chain never reaches `Actor`, so it needs the corpus-wide by-name join `enum_by_name` already
+makes for enum constants, not another chain lookup.
+
+### A qualified enum type names its *enum*, not its class
+
+Twenty rows refused as *an enum constant passed as Actor.EMsgTone* -- which reads like a type error and is a spelling
+one. `function Actor.EMsgTone GetSuitableMsgTone() { return TONE_None; }` is the enum's own entry (`24 00`), and the
+guard compared the qualified type word (`actor.emsgtone`) against the enum's bare name (`EMsgTone`). The comparison
+now takes the last dot-segment, so `Actor.EMsgTone` (7), `LevelInfo.EIMusicState` (4), `SquadAISG.ESGTeamMembers` (4),
+`VoiceChatRoom.EJoinChatResult` (3) and `Controller.EAggroLevel` (2) all resolve; a constant of a *different* enum is
+still refused, and that refusal is a fixture.
+
+### `Super.F()` in a value position is typed by the parent's declaration
+
+`retval = Super.InternalOnKeyEvent(Key, State, delta);` is a bool assignment whose value the walk typed `untyped`,
+because `_class_of(Super)` has no answer -- `Super` is not a variable. The *emit* path for `Super.F()` has existed
+since the parent-record rule (`1c <record>` as a `FinalFunction`); only the type path was missing it, so the
+assignment's one-expression guard refused 15 bodies. `_type_of` now answers with `_rettype_on(parent, member)` for the
+parent spelling and with `Super(C)`'s cast class for the cast spelling, and a name the parent does not declare stays
+untyped rather than falling back to the body's own chain.
+
+14 rows: `GUIScrollText.InternalOnKeyEvent`/`InternalOnClick`, `GUIMessageBox.FocusFirst`, `C4Weapon.GiveAmmo`,
+`HaakenMK2Weapon.CanAttack`, `BotEnemy.WeaponFireAgain`, `BotSG.SetEnemy`, `StargatePawn.AddInventory`,
+`StoryModeGame.SetPause`, `StargateVehicle.TryToDrive`, `ACTION_SGWaitForPlayer.InitActionFor`, both
+`SpecialCalcView` bodies, and `AlkeshBomberBot.DisplayDebug` -- which also carried a `name == an unknown type` pair
+over that same value. The two `bIgnoreEnemyWhileLanding = (EScriptFollow(AlertnessLevel) <= FOLLOWSCRIPT_IgnoreEnemies);`
+bodies are **not** this shape and stay.
+
+### A name a package imports more than once is picked by its owner
+
+`1c f2 08` is not an export: `f2 08` is the compact **-562**, import 562 of `StargateGame.u`. `IsSubTypeOf` is
+imported **three** times there -- `AIMessage`'s `final function bool IsSubTypeOf(int SuperType)` and `AIMsgManager`'s two
+`static final` overloads (`int, int` and `name, name`) -- and both lookup paths answered only when `len(imp) == 1`, so
+`msg.IsSubTypeOf(...)` and the bare `IsSubTypeOf(Sender.MSGT_Order)` refused as *a call to a name the class chain does
+not declare*. The import's `package` field names the owning class, keyed as the `(state, class)` pair `_record_on`
+already uses, and `_import_owner_pick` now takes the nearest owner on the receiver's chain rather than requiring
+uniqueness; two candidates on the **same** class remain a refusal (which is why
+`class'StargateAIMsgManager'.static.IsSubTypeOf(...)` is still open -- the overload is picked by argument types there).
+Ten bodies: `AIMSG_Stargate.AutoBuildPriority`/`ReceivingProcessFilter`, `StargateAIMsgManager.FilterSentMsg`/
+`FilterReceivedMsg`, `SGVoicePackExtended.SearchSuitableVoices`/`WaitToReply`, `VoiceSelector.SearchVoices`,
+`VoiceSet.Check`, and two `XBoxLive*Menu.TempDoServerQuery` bodies that were the same join one layer out.
+
+### Score
+
+Per body, against `origin/main`'s own tool on the same tree:
+
+| run | modelled | gained | lost | residue | differ |
+|---|---|---|---|---|---|
+| `origin/main` | 11,514 | -- | -- | 172 | 1 |
+| this bundle | **11,573** | 59 | **0** | 113 | 1 |
+
+`inventory/l1_ready.csv` regenerated: 1,200 classes, 11,686 joined bodies, 11,573 modelled / 113 refused,
+**1,141 classes fully covered (9,245 bodies)** and 41 one refusal away (1,651 bodies). `tools/uscript-emit.py --check`
+carries four new cases: `ConstName` (a name-valued const's own `NameConst`), `Tone` (a qualified enum type's ordinal),
+the `Super.Pong()` type join with its refusal control, and the import-owner pick with its ambiguity control. Not in
+this PR: the 19 `a call whose callee declaration the text does not carry` bodies, the nine `two asserts` bodies (their
+line operand is pinned once per declaration), and the corpus-wide const join the two `MSGT_Order` rows need.
