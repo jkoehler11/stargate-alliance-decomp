@@ -2202,11 +2202,10 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,643 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,648 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours longer | no | 1 | `CheatManager.LockCamera` |
 | jump distance | JumpIfNot | ours longer | yes | 1 | `CylinderBuilder.Build` |
 <!-- END emit-differ -->
 
@@ -4323,3 +4322,78 @@ malformed one (807 -> 813 rows, now 5 columns), and `make struct-members` is the
 `classes.csv` has no row), so its member records exist in no package and `class_properties.csv` cannot carry
 `Viewport.Actor`'s declared type. The record index itself is already right (`import -33`); the missing word is the
 *member's class*, and no artifact holds it. `Viewport` is not in this PR.
+
+## Stage 3, continued -- a modifier is a word, `Outer` is the `within` class, and a `class<Z>` return holds Z (measured 2026-11-27)
+
+**11,643 -> 11,648 modelled, every one byte-identical, none lost** (five bodies gained, residue 43 -> 38, the differ
+census **2 -> 1**). The section above left two named rows -- `PlayerInput.PlayerInput`'s `Outer.bDemoOwner` and
+`xMaterialController.TickConstantColor`'s `cc.Color.A` -- and this bundle closes both, plus the two `StargatePawn`
+rows the member-call family carried. Each is a *table* miss one link before the node, not a missing node.
+
+- **A parameter's modifier is a whole word.** `params_of` joined the type's words and stripped a modifier by
+  **prefix**, so `TickConstantColor(ConstantColor cc, float t)` declared its parameter as `antcolor` -- `const`
+  matched the front of `ConstantColor` and five characters went with it. No class table carries `antcolor`, so
+  `_class_of(['cc'])` answered `""` and `cc.Color.A` refused as *a receiver chain whose member the artifacts name no
+  class for*. The join survived because a wrong word **refuses** instead of emitting: nothing else in the corpus
+  spells a type that begins with `out`/`optional`/`coerce`/`const`/`init`.
+- **`Outer` is the `within` class's object.** `class PlayerInput extends Object within PlayerController`'s
+  `Outer.bDemoOwner` is `Actor`'s property read through the controller, but `Object.Outer` is declared `Object`, so
+  `objclass` answered `object` and no chain carried the member. `_member_record` now types the receiver as the
+  `within` class (the record stays the import the package writes, `01 8e` for `Outer`; only the class the member is
+  looked up on changes), and `_class_of` answers the same word. Two bodies: `PlayerInput.PlayerInput` and
+  `CheatManager.LockCamera` -- the latter was a **differ** row (145 vs 144) and is now identical.
+- **A member call declared `class<Z>` holds `Z`.** `LevelInfo.GetGameClass()` is `simulated function class<GameInfo>
+  GetGameClass()`, so `Level.GetGameClass().static.AskForShieldClass(...)` holds a `GameInfo`; read as declared the
+  word was no class at all. `_class_of`'s member-call branch takes the same `_class_ref_class` unwrap the element
+  branch and `_member_record` already made: `StargatePawn.CreateShield` and `CreateHealthRegenerator`.
+
+### The boolean `Context` skip word: 5 is the Object-typed constant, `_wide` is the rest
+
+`PlayerInput.PlayerInput` is 883 bytes and its whole difference was **one byte**, the skip word at offset 7:
+shipped `19 01 8e | 06 00 | 04 | 2d 01 56 09`, ours `05 00`. The bool branch's table comment said the 60
+`Outer.<bool>` sites write a measured constant 5, and that constant is right for an `Outer` typed `Object` -- but
+not for one typed by a `within` clause. Gating it on the clause the class table carries (`_wo`) is worth exactly
+this body and nothing else, measured by an intermediate full run of the patched tree:
+
+| run | modelled | gained | lost | newly differing |
+|---|---|---|---|---|
+| `origin/main` | 11,643 | -- | -- | -- |
+| the three rules, constant 5 kept | 11,647 | 4 | 0 | 1 (`PlayerInput.PlayerInput`) |
+| **+ the `within` gate on the skip word** | **11,648** | **5** | **0** | **0** |
+
+### The gate this bundle had to fix first
+
+`tools/emit-score.py` compared a residue row's reason with `== "an emitted body that differs"`, while
+`uscript-emit.py` writes `an emitted body that differs from the shipped bytes (883 vs 883)`. Every real differ row
+therefore classified as a **later refusal**, the friendliest bucket there is, and the tool's own `FAIL` branch could
+not fire outside its fixture -- which used the bare constant, the same string the comparison did. Measured here: the
+three-rule run answered `later refusals 1`, exit 0, with `PlayerInput.PlayerInput` sitting on a differ. The test is
+now a prefix in one helper, and the fixture carries **both** spellings (the bare family name and the producer's
+`(n vs n)` text); with the equality restored the fixture prints
+`newly differing [... 'Regress2' ...] / later [... 'Regress' ...]` and exits 1.
+
+### `--check`: three fixtures, each proven on the reverted copy
+
+P20 (the parameter list `ConstantColor cc, const float t, optional probe p`), P21 (`Outer` in a `within helper`
+class types as `helper`, and outside a clause it does not) and P22 (a `Target.GetGameClass()` declared
+`class<GameInfo>` types as `gameinfo`; a `probe2` return stays unresolved). Each copy with only its own rule reverted
+prints its own FAIL and exits 1 -- `a parameter list answered [('antColor', 'cc', False), ...]`, `` `Outer` in a
+`within helper` class did not type as the outer class ``, `a member call declared `class<GameInfo>` typed as ''`.
+
+### The seven member rows that need the XBE, not another census
+
+`Viewport`, `FileManager` and `ObjectProperty` account for **7 of the 38** remaining rows (`WindowConsole.LaunchUWindow`
+/ `Tick` / `CloseUWindow`, `TournamentConsole.LaunchUWindow` / `ConnectWithPassword`, `GUIController.GetPlayerController`,
+`ListObjectPropsCommandlet.Main`, `PlaylistParserBase.Import`, `M3UParser.Import`). A census of all 18 `System/*.u`:
+**no package exports any of the three as a `Class`** -- `ObjectProperty` is *imported* by all 18, `Viewport` by 6,
+and `FileManager` by none (the packages spell it only as a **property type word**, `CacheManager.FileManager` a
+`UPointerProperty`, `StreamInteraction.FileManager` a `UObjectProperty`). Both classes that do have a table row are
+native to a module (`inventory/native_class_packages.csv`: `ObjectProperty,Core,0x0007cca9`, `Viewport,Engine,0x000f92c9`),
+so their property records are in the image's native property table and in no shipped package. Closing those rows is
+the XBE's property table or a use-site census; it is **not** a packaging gap to re-run.
+
+**What is left on this thread.** One differ row (`CylinderBuilder.Build`, `JumpIfNot`, downstream) and 38 refusals:
+the 7 above, 5 `a call statement whose receiver's class the artifacts do not name`, 3 `a call the class chain does not
+declare`, and the family tail. Files: `tools/uscript-emit.py`, `tools/emit-score.py`, `inventory/uscript_emit.csv`,
+`inventory/uscript_emit_join.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `docs/UNKNOWNS.md`,
+`PLAN.md`.

@@ -19377,3 +19377,30 @@ sequence.
   `Item.Class.Name` and `Viewport.Actor.Level.NetMode`. Files: `tools/uscript-emit.py`, `tools/uscript-dis.py`,
   `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `inventory/struct_members.csv`,
   `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
+
+- Front end, 2026-11-27c: **a parameter's modifier is a whole word, `Outer` is the `within` class, a member call
+  declared `class<Z>` holds `Z`, and the boolean `Context` skip word follows that typing.** 11,643 -> **11,648
+  modelled, every one byte-identical, none lost**; residue 43 -> 38, the differ census **2 -> 1**. (1) `params_of`
+  stripped a modifier by **prefix**, so `TickConstantColor(ConstantColor cc, float t)` declared `antcolor` and
+  `cc.Color.A` refused as *a receiver chain whose member the artifacts name no class for* (1 body). (2) `Outer` was
+  typed by `Object.Outer`'s declaration, so `PlayerInput`'s `Outer.bDemoOwner` had no record: `_member_record` and
+  `_class_of` now type the receiver as the `within` class the class table carries, keeping the `01 8e` import -- two
+  bodies, `PlayerInput.PlayerInput` and `CheatManager.LockCamera` (the second was a 145-vs-144 **differ** and is now
+  identical). (3) `_class_of`'s member-call branch did not unwrap a `class<Z>` return type, so
+  `Level.GetGameClass().static.AskForShieldClass(...)` was no class: `StargatePawn.CreateShield` and
+  `CreateHealthRegenerator` (2 bodies). (4) `PlayerInput.PlayerInput` then emitted and differed by **one byte** -- the
+  bool branch's measured `Outer.<bool>` skip constant 5 -- and an intermediate full run (11,647, gained 4, newly
+  differing 1) showed the constant is right only for an `Outer` typed `Object`: gating it on the `within` clause the
+  table carries gains that body and moves nothing else (11,648, gained 5, lost 0, newly differing 0). Measured on the
+  way: **`tools/emit-score.py`'s `DIFFERS` test was an equality against `an emitted body that differs` while the
+  emitter writes `... from the shipped bytes (883 vs 883)`**, so every real differ row classified as a *later refusal*
+  and the tool's FAIL branch could not fire outside its own fixture (this run's three-rule score answered `later
+  refusals 1`, exit 0). It is a prefix in one helper now, and the fixture carries both spellings. `--check` gains
+  P20/P21/P22, each proven to FAIL on a copy with only its own rule reverted. Control: `origin/main`'s tool on the
+  same tree reproduces the committed artifact byte for byte (11,643). The 7 remaining member rows that name
+  `Viewport`/`FileManager`/`ObjectProperty` are **not a packaging gap**: no package exports any of the three as a
+  `Class` (`ObjectProperty` imported by all 18, `Viewport` by 6, `FileManager` by none -- the packages spell it only
+  as a property type word), and both tabled classes are module-native, so their records are in the XBE's native
+  property table. Files: `tools/uscript-emit.py`, `tools/emit-score.py`, `inventory/uscript_emit.csv`,
+  `inventory/uscript_emit_join.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `docs/UNKNOWNS.md`,
+  `PLAN.md`.
