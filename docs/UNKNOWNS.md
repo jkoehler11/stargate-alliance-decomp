@@ -6502,35 +6502,38 @@ fallback was the package order, and the walk reproduces it.
 answers no declaring class -- `_declaring_class` claims only a bare name or an array element -- so it takes the
 package order. That is correct for every node in this corpus (three of three) and is a stated limit, not a rule.
 
-## U43. An `int` pair at a `float` site: the expectation travels down the left spine -- answered in part
+## U43. An `int` pair at a `float` site: the expectation travels down the left spine -- answered, one body left
 
-**Measured 2026-11-27.** The site's expected type is handed to the **left** child, and the emitter now models that:
-`_left_expects` accepts a literal, or an operator node whose own left spine accepts, and refuses a read; the
-both-`int` branch additionally refuses a left spine that holds a call (`_has_call_leaf`). Scored on the whole corpus
-with the acceptance test this entry set: **11,440 -> 11,443 modelled, gained 3, lost 0, newly differing 0, later
-refusals 0**, residue 238 -> 235, the differ census **5 -> 2**.
+**Measured 2026-11-27, second round.** The site's expected type reaches the **left** child (`_left_expects`, one
+predicate asked at three places), and below a **mixed** pair it reaches further than the pair itself: the promoted
+`int` side is retyped whole when the *other* side is a plain value, and cast whole when that side is a **call**.
+Scored per body against `origin/main`'s own run: **11,443 -> 11,444 modelled, gained 1, lost 0, newly differing 0,
+later refusals 0**, residue 235 -> 234, the differ census **2 -> 1**.
 
 | witness | before | now |
 |---|---|---|
-| `UWindowProgressBar.Paint` (`MiscBevelL[2].W + 1`) | `Add_FloatFloat(<read>, FloatConst 1.0)` | identical (`IntToFloat(Add_IntInt(...))`) |
-| `VirtualKeyboardPanel.constructKeyboard` | the same over-promoted read pair | identical |
-| `SheetBuilder.Build` | both operands cast, ours longer | identical |
-| `CylinderBuilder.Build` | `jump distance`, ours longer | **still differing, 391 vs 377** |
-| `UPreviewMapListClient.Paint` | `jump distance`, ours shorter | **still differing, 522 vs 525** |
+| `UPreviewMapListClient.Paint` (`C.SetPos((WinWidth/2)-(xl/2), 120 + 5 + yl)`) | 522 vs 525, `jump distance` | identical |
+| `Chip.BeginState` / `Chip.HitWall` / `RepChip.BeginState` (`200000 * 2 * FRand() - 200000`) | identical | identical (the control) |
+| `CylinderBuilder.Build` | 391 vs 377 | **still differing** |
 
-**Why the leaf test failed and the spine does not.** `(x*XStep) - Width/2` retypes the **left** operand's leaves
-while casting the right one, so the bound is a *type expectation*, not a test on one leaf: a literal-left bound fixes
-`Paint` and costs `CylinderBuilder.BuildCylinder` and `ConeBuilder.BuildCone`. The unguarded spine, this entry's own
-last prediction, is net-better and still refused -- four gained, three lost (the `200000 * 2 * FRand()` family, which
-lands in the differ bucket), against three gained and none lost here.
+**The formulation that failed, and why the fixture did not catch it.** The first half of this round keyed the rule on the
+pair that promoted the subtree being both-`int`, and added a fixture (P16) that reproduced `Paint`'s bytes. The full
+corpus scored **11,432 with 13 bodies lost**, all `an emitted body that differs` (three builders four bytes short, seven
+`EqualEqual_IntInt` rows, one other); the narrowed rewrite scored **11,443 -> 11,443, gained 0, lost 0, both artifacts
+byte-identical to `origin/main`** -- a rule that fires only in the fixture. The tell is in the fixture itself: P16's
+right operand is `Pofs`, an **`int`** property, while `Paint` declares `local float xl, yl`. A check fixture has to
+carry the *real* operand kinds, or it measures a branch the corpus does not use. P17 (a `float` property) is that
+fixture, and it fails if the promoted-subtree branch is removed.
 
-**What is left, and it is not the promotion at a read.** Both remaining rows report a `jump distance` first, but
-walking both sides of each row's token tree puts the bytes elsewhere: `CylinderBuilder.Build` (14 bytes over) differs
-inside the `sin(...)` argument, where the package keeps `Add_IntInt(Multiply_IntInt(<int>, 2), Divide_IntInt(...))` and
-converts one factor with `FloatToInt` (`PrimitiveCast 44`) while the walk retypes the pair to `Add_FloatFloat` behind
-one `FloatToInt`; `UPreviewMapListClient.Paint` (3 short) differs inside a `Context` (`skip` word `0x0030` against
-`0x002d`) whose inner `FinalFunction` is 36 bytes against 33. **What would settle them.** For `CylinderBuilder.Build`,
-the bound for a pair whose leaves are an **`int` cast of a `float` expression** -- such a leaf is not a literal, so
-the expectation should stop there exactly as it stops at a read (`391` against `377`). `Paint`'s missing 3 bytes sit
-in a call argument and are not yet named by a rule (`522` against `525`).
+**The discriminator is the other operand, not the operator.** `Paint`'s `120 + 5 + yl` ships
+`ae ae 1e 0000f042 39 3f 2c 05 16 <IntToFloat yl> 16` -- the inner pair retyped at `float`, its leading literal a
+`FloatConst` and the second an `IntConstByte` behind `IntToFloat` -- while `Chip.BeginState`'s
+`200000 * 2 * FRand()` ships `Multiply_FloatFloat(IntToFloat(Multiply_IntInt(200000, 2)), FRand())`, the `int` product
+cast as a whole. Same operator, same association, opposite treatment: the difference is that the right operand is a
+**call** in the second. `_has_call_leaf(right)` is the switch, and it is the predicate P15 already asserts.
 
+**What is left.** `CylinderBuilder.Build` (391 vs 377) is not this pair: its 14 bytes are inside the `sin(...)`
+argument, where the package keeps `Add_IntInt(Multiply_IntInt(<int>, 2), Divide_IntInt(...))` and converts one factor
+(`PrimitiveCast 44`) while the walk retypes the pair. That leaf is an **`int` cast of a `float` expression**, which is
+not a literal, so the expectation should stop there the way it stops at a read. **What would settle it:** a bound on
+that leaf shape, scored with the same acceptance test (differ 0, none lost) -- the last body left in the differ set.

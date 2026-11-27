@@ -2202,12 +2202,11 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,443 modelled and identical in the same run). **2** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,444 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours longer | yes | 1 | `CylinderBuilder.Build` |
-| jump distance | JumpIfNot | ours shorter | yes | 1 | `UPreviewMapListClient.Paint` |
 <!-- END emit-differ -->
 
 Two things the classification settles for the next run. A **jump distance** whose word moved by exactly the body's
@@ -3615,3 +3614,30 @@ read; `Paint`'s is inside a call argument under a `Context` and is named by node
 to `ae`, and `_has_call_leaf` sees the call in `200000 * 2 * FRand()` but not in `200000 * 2`. The gate can go red:
 forcing `_left_expects` true (or dropping the root condition's `_left_expects` term) fails `--check` on the
 grouped-argument fixture P14, which is the same predicate.
+
+## Stage 3, continued -- a mixed pair retypes its `int` side unless the other side calls (measured 2026-11-27)
+
+**11,443 -> 11,444 modelled / identical** (gained 1, lost 0, newly differing 0, later refusals 0), residue 235 -> 234,
+the differ census **2 -> 1**. The single gain is `UPreviewMapListClient.Paint`, the last promotion row the previous
+section left in the differ set.
+
+**The rule.** At a `float` site a **mixed** pair (`int` against `float`) promotes its `int` side, and that side is
+retyped *whole* -- its own inner pairs compiled at `float` too -- when the other side is a plain value, while it is
+cast *whole* when the other side is a **call**. `Paint`'s `120 + 5 + yl` (`local float yl`) is
+`ae ae 1e 0000f042 39 3f 2c 05 16 <IntToFloat yl> 16`: the inner pair is an `Add_FloatFloat`, its leading literal a
+`FloatConst`, its second an `IntConstByte` behind `IntToFloat`. `Chip.BeginState`'s `200000 * 2 * FRand()` is the
+control and keeps `IntToFloat(Multiply_IntInt(200000, 2))`. The switch is `_has_call_leaf(right)`, the predicate the
+both-`int` branch already used.
+
+**Why the previous formulation scored zero, and what that says about fixtures.** The branch tip it inherited keyed the
+promoted subtree on a **both-`int`** pair and shipped a fixture for it (P16). The full-corpus score of that tip is
+**11,443 -> 11,443, gained 0, lost 0**, with `uscript_emit.csv` and the residue byte-identical to `origin/main`: the
+rule fired only in the fixture. The fixture's right operand is an `int` property, while the body it was copied from
+declares `local float xl, yl` -- a fixture that does not carry the real operand kinds measures the branch the source
+does not take. The version before it (which added a `%`-of-two-`int`s value rule and retyped promoted subtrees at both
+branches) scored **11,432 with 13 bodies lost**, every loss `an emitted body that differs`; those three `Chip` bodies
+are exactly the call-side control above, so the narrow rule keeps them.
+
+`--check` gains **P17** (a `float` property on the right, asserting `Paint`'s bytes) and P16 stays; the retired `Fcount`
+control is recorded with its reason (an operand the walk cannot type reads as a value, not as a call). Removing the
+promoted-subtree branch fails P17, so the gate bites on the rule itself.

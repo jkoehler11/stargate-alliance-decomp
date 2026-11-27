@@ -239,6 +239,20 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a mixed pair retypes its `int` side unless the other side is a **call**: **11,444 modelled / 11,444
+  byte-identical** (from 11,443; **1 body gained (`UPreviewMapListClient.Paint`), none lost**, residue 235 -> 234, the
+  differ census **2 -> 1**). (1) The rule the previous bullet's fixture pointed at was keyed on the wrong branch: P16's
+  right operand is an `int` property while the body it came from declares `local float xl, yl`, so the both-`int`
+  formulation reproduced the fixture and moved **nothing** on the corpus -- scored per body, branch tip `519e815` is
+  byte-identical to `origin/main` (11,443 -> 11,443, gained 0, lost 0, both CSVs equal). (2) What the corpus carries is
+  the *other* operand's kind: a mixed pair's promoted `int` side is retyped whole when that side is a plain value
+  (`Paint` ships `ae ae 1e 0000f042 39 3f 2c 05 16 <IntToFloat yl> 16`) and cast whole when it is a call
+  (`Chip.BeginState` keeps `IntToFloat(Multiply_IntInt(200000, 2))`), i.e. `not _has_call_leaf(right)`; the `%` of two
+  `int`s stays an `int` value in the same rule. (3) `--check` gains **P17** (a `float` property on the right, asserting
+  Paint's bytes) beside P16, and P16's old `Fcount` control is retired with its reason recorded: an operand the walk
+  cannot type reads as a value, not a call. Doc: `docs/COMPILER_FRONTEND.md`, new section; `docs/UNKNOWNS.md` U43
+  rewritten. Not in this PR: `CylinderBuilder.Build` (ours 391 vs 377, a pair whose leaf is an `int` cast of a `float`
+  expression) and the rest of the residue by family.
 - [~] 3.6 the `float` site's expectation travels down the **left** spine: **11,443 modelled / 11,443
   byte-identical** (from 11,440; **3 bodies gained, none lost**, residue 238 -> 235, the differ census **5 -> 2**).
   (1) `_left_expects` accepts a literal, or an operator node whose own left spine accepts, and refuses a read -- so
