@@ -29,6 +29,9 @@ backupdata,guardfocus,actor,1
 backupdata,skill,float,1
 backupdata,squad,squadaibasic,1
 backupdata,team,unrealteaminfo,1
+beaconinfo,addr,ipaddr,1
+beaconinfo,text,string,1
+beaconinfo,time,float,1
 beaconinformation,currentplayers,string,1
 beaconinformation,gametype,string,1
 beaconinformation,mapname,string,1
@@ -716,6 +719,10 @@ squaditemstruct,pointedstarttime,float,1
 squaditemstruct,takecoverwidget,uiwidget,1
 standard,classes,array<string>,1
 standard,maps,array<string>,1
+stest,b1,bool,1
+stest,b2,bool,1
+stest,b3,bool,1
+stest,i,int,1
 storedchatpassword,chatroomname,string,1
 storedchatpassword,chatroompassword,string,1
 teaminfostruct,numplayers,string,1

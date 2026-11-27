@@ -2593,7 +2593,10 @@ _SRC_PARAM = re.compile(r"^\s*(?:(?:out|optional|coerce|const)\s+)*([\w<>\[\].]+
 _SRC_VAR = re.compile(r"^\s*var(?:\s*\([^)]*\))?\s+(?:(?:const|config|globalconfig|private|protected|public|"
                       r"transient|native|editconst|editinline|editinlinenotify|export|noexport|init|travel|input|"
                       r"duplicatetransient|deprecated)\s+)*([\w<>\[\].]+(?:\s*>)*)\s+(.+?);", re.I)
-_SRC_STRUCT = re.compile(r"^[ \t]*struct[ \t]+(?:(?:native|transient|atomic|immutable|export|private|"
+_SRC_STRUCT = re.compile(r"^[ \t]*(?:var[ \t]*(?:\([^)]*\))?[ \t]+)?(?:(?:const|config|private|protected|public|"
+                         r"transient|native|atomic|immutable|export|noexport|init|travel|input|editconst|"
+                         r"editinline|editinlineuse|duplicatetransient|localized)\s+)*"
+                         r"struct[ \t]+(?:(?:native|transient|atomic|immutable|export|private|"
                          r"protected|public)[ \t]+)*(\w+)", re.I | re.M)
 # The shipped text carries preprocessor conditionals (`#ifdefXBOX ... #else ... #endif`), and the xbox build
 # declares a function differently inside one. A directive *line* between a declaration and its `{` stopped the
@@ -5831,6 +5834,16 @@ def struct_check():
     want("a member declared twice with two types is dropped",
          source_structs("struct A\n{\n\tvar int X;\n\tvar float X;\n\tvar name Y;\n}\n"),
          {"A": {"X": None, "Y": "name"}})
+    # An **inline** struct block is declared in a `var` statement and named by the property after its closing
+    # brace: `ClientBeaconReceiver`'s `var struct BeaconInfo { var IpAddr Addr; ... } Beacons[32];`. A scan that
+    # required the line to *begin* with `struct` missed both of the corpus's two (`TestInfo.STest` is the other),
+    # so `Beacons[i].Addr` had no declared type and the struct compare over it refused.
+    want("a struct declared in a `var` statement is a struct",
+         source_structs("var struct BeaconInfo\n{\n\tvar IpAddr Addr;\n\tvar float Time;\n} Beacons[32];\n"),
+         {"BeaconInfo": {"Addr": "IpAddr", "Time": "float"}})
+    want("an inline struct's modifier list is stepped over",
+         source_structs("var() transient struct Rec\n{\n\tvar int N;\n} R;\n"),
+         {"Rec": {"N": "int"}})
     want("a class with no struct block declares none", source_structs("function Touch(Actor A) {}\n"), {})
     want("a directive line between a declaration and its body keeps the body",
          source_structs("struct A\n{\n\tvar int Count;\n#ifdefXBOX\n\tvar UIWidget Face;\n#endif\n}\n"),
