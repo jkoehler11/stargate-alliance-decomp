@@ -100,6 +100,15 @@ def _note(**kw):
     REFUSAL.update(kw)
 
 
+def _spell(toks):
+    """An expression's own text: the parenthesised detail a refusal carries into `--residue-out`.
+
+    The histogram keys on `reason.split("(")[0]`, so the family name and its count are unchanged by the detail;
+    what changes is that a residue row names *which* expression the walk gave up on instead of only its shape.
+    """
+    return " ".join("'%s'" % v if k == "quoted" else str(v) for k, v in (toks or ()))
+
+
 def _no(why):
     """Record *why* `_class_of` found no class, then answer "" the way its callers expect."""
     REFUSAL["why"] = why
@@ -2291,7 +2300,8 @@ def _emit_operator(expr, rettype, env, root=False):
     """
     op = _operator_types(expr, env, rettype, root)
     if op is None:
-        raise Refused("a compound expression, which needs the statement walk")
+        raise Refused("a compound expression, which needs the statement walk (no operator row: `%s`)"
+                      % _spell(expr))
     sym, t1, t2, result, token, at = op
     head = None
     if not token:
@@ -3412,7 +3422,8 @@ def _emit_member(expr, rettype, env, element_dim=0):
     """
     at = _dot_at(expr)
     if at is None:
-        raise Refused("a compound expression, which needs the statement walk")
+        raise Refused("a compound expression, which needs the statement walk (a member read with no dot: `%s`)"
+                      % _spell(expr))
     obj, member = expr[:at], expr[at + 1:]
     if len(member) != 1 or member[0][0] not in ("ident", "keyword"):
         if _is_call(member):
@@ -3690,7 +3701,17 @@ def emit_expr(expr, rettype, env, element_dim=0):
         return bytes([0x0B]), "nothing"                  # Return; -> Return Nothing
     if len(expr) == 2 and expr[0] == ("op", "-") and expr[1][0] == "number":
         expr = [("number", "-" + expr[1][1])]
+    if len(expr) == 2 and expr[0] == ("op", "+") and expr[1][0] == "number":
+        # A unary **plus** on a literal writes no node at all: `Pawn.UnderwaterTime = + 999999.0;` ships the
+        # `FloatConst` alone (`CheatManager.Amphibious`), exactly as the minus is folded into the value, and the
+        # seven `Build*` bodies' `BuildCurvedStair(+1)` pass `IntOne`. A `+` in front of anything that is not a
+        # literal stays refused: the corpus has no witness for what a unary plus on a typed operand writes.
+        expr = expr[1:]
     if len(expr) != 1:
+        if expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "new":
+            # `new (Outer, Name, Flags) Class` is a `New` node (0x11) with four operands, each of them a whole
+            # expression and `Nothing` (`0x0b`) when the source omits it.
+            return _emit_new(expr, env), "new"
         mc = _metacast(expr, env)
         if mc is not None:
             # A cast to a class type is tried before the operator table: its own spelling carries a `<` and a `>`,
@@ -3723,11 +3744,12 @@ def emit_expr(expr, rettype, env, element_dim=0):
             # (`StaffCannon.SetPitchBoneRotation(rotator rot)`, four bodies) made `-rot.pitch` read as a rotation
             # literal and refuse as `a rotation literal that is not three numeric components`.
             return _emit_rotator(expr), "rotator"
-        if (len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[0][1].lower() == "class"
-                and expr[1][0] == "quoted"):
-            # `class'Pawn'` -- the class name in single quotes -- is an object reference and not a name constant;
-            # `_emit_class_literal` reads it through the same table a `DynamicCast` uses.
-            return _emit_class_literal(expr[1][1], env), "class-literal"
+        if len(expr) == 2 and expr[0][0] in ("ident", "keyword") and expr[1][0] == "quoted":
+            # `class'Pawn'`, `Texture'BlueMenuTL'`, `Material'GUIContent.Menu.ButGrip'`,
+            # `ColorModifier'gen_fx_tex.GEN_HOLDeathEffect_CM'` and `enum'EIntStat'` are one node: an **object
+            # literal**, `ObjectConst` (0x20) of the record the quoted name resolves to. The type word in front is
+            # the compiler's own check, not part of the bytes.
+            return _emit_object_literal(expr[0][1], expr[1][1], env), "object-literal"
         if _is_call(expr) and _cast_kind(expr[0][1], env):
             return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
         if _is_call(expr) and expr[0][1].lower() == "arraycount":
@@ -3743,7 +3765,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
             return _converted(node, _type_of(expr, env), rettype), "call-value"
         if _dot_at(expr) is not None:
             return _emit_member(expr, rettype, env, element_dim=element_dim)
-        raise Refused("a compound expression, which needs the statement walk")
+        raise Refused("a compound expression, which needs the statement walk (`%s`)" % _spell(expr))
     kind, val = expr[0]
     if kind in ("ident", "keyword") and val.lower() == "class":
         # The *spelling* decides, and the two are different nodes in this build: lowercase `class` compiles to
@@ -3915,6 +3937,89 @@ def _emit_class_literal(raw, env):
     if ref is None:
         raise Refused("a class literal whose class the package's tables do not name")
     return bytes([0x20]) + write_index(ref)
+
+
+def _object_ref(text, env, word=None):
+    """A literal's name as the compact **object reference** the package's own tables give it.
+
+    `Texture'BlueMenuTL'` is export 589 of UWindow.u and `ColorModifier'gen_fx_tex.GEN_HOLDeathEffect_CM'` is import
+    1154 of StargateGame.u, so the join is the package's exports first and its imports second -- the order
+    `classrefs` uses, because an export is what the compiler's own scope finds before any import. A name is looked
+    up as written and, failing that, by its last component: the qualified form's package half is not in the import
+    record's `package` field on this build (it is 0), so `gen_fx_tex.GEN_HOLDeathEffect_CM` resolves on the name.
+
+    A name is not unique: UWindow.u exports both a `Struct` and a `Texture` called `MouseCursor` (245 and 2542), and
+    `UWindowRootWindow.Initialized`'s `Texture'MouseCursor'` is the texture. The literal's **type word** is what
+    picks between them; a name every candidate agrees on needs no word.
+    """
+    scope = env.get("scope") or {}
+    table = scope.get("objects") or {}
+    kinds = scope.get("object_class") or {}
+    low = text.lower()
+    cands = list(dict.fromkeys(table.get(low) or table.get(low.rsplit(".", 1)[-1]) or []))
+    if word and len(cands) > 1:
+        typed = [c for c in cands if kinds.get(c) == word.lower()]
+        if typed:
+            cands = typed
+    own = [c for c in cands if c > 0]
+    if own:
+        return own[0]
+    imps = sorted(set(cands))
+    # Two imports of the name and no export are two different objects; refuse rather than pick one.
+    return imps[0] if len(imps) == 1 else None
+
+
+def _emit_object_literal(word, raw, env):
+    """`Texture'X'`, `Material'X'`, `ColorModifier'X'`, `enum'E'`, `class'C'` -> `20 <object reference>`.
+
+    The type word is the compiler's check, not part of the node: `Texture'BlueMenuTL'` is `20 cd 04`
+    (`UWindow.UWindowBlueLookAndFeel.AffectsByLocation` reads eight of them) and `enum'EIntStat'` in
+    `PlayerStats.LogAllStats`' `GetEnum(enum'EIntStat', i)` is `20 ff 13`. `class'X'` keeps its own table
+    (`_emit_class_literal`) because that one is keyed by a class name the artifacts already carry.
+    """
+    low, text = word.lower(), _literal_text(raw[1:-1])
+    if low == "class":
+        return _emit_class_literal(raw, env)
+    if low != "enum" and not _cast_kind(word, env):
+        _note(family="object-literal-word", expr=text, member=word)
+        raise Refused("an object literal of a type `%s` the package's class table does not name" % word)
+    ref = _object_ref(text, env, word)
+    if ref is None:
+        _note(family="object-literal", expr=text)
+        raise Refused("an object literal whose name the package's tables do not carry (`%s`)" % text)
+    return bytes([0x20]) + write_index(ref)
+
+
+def _emit_new(expr, env):
+    """`new (Outer, Name, Flags) Class` -> `11` and its four operands, `Nothing` for each one the source omits.
+
+    UELib's `NewToken` reads four nested tokens in this order and this build predates its template version (130
+    against 300), so there is no fifth. Measured on `TestInfo.BeginPlay`, which spells every form: `new class'X'`
+    is `11 0b 0b 0b 20 <class>`, `new(self) class'X'` is `11 17 0b 0b ...`, `new(self,"") class'X'` writes the
+    empty `StringConst` (`1f 00`) for the name and `new(self,"",0)` an `IntZero` for the flags. `new(None) ...`
+    writes `NoObject` (`2a`), not `Nothing`, because `None` is an expression there; an omitted argument is `0b`.
+    """
+    rest = expr[1:]
+    args = []
+    if rest and rest[0] == ("op", "("):
+        close = _paren_end(rest, 0)
+        if close is None:
+            raise Refused("a `new` whose argument list the walk cannot bound")
+        # `new()` with nothing between the parentheses is **zero** arguments, not one empty one:
+        # `StargateVoicePack.Init`'s `new() class'Speech'` ships `11 0b 0b 0b 20 <class>`.
+        if close > 1:
+            args = _split_commas(rest[1:close])
+        rest = rest[close + 1:]
+    if len(args) > 3:
+        raise Refused("a `new` with %d arguments, where the node carries three" % len(args))
+    if any(not a for a in args):
+        raise Refused("a `new` with an empty argument slot, which no body in the corpus spells")
+    if not rest:
+        raise Refused("a `new` with no class expression")
+    parts = [emit_expr(a, "object", env)[0] for a in args]
+    while len(parts) < 3:
+        parts.append(bytes([0x0B]))
+    return bytes([0x11]) + b"".join(parts) + emit_expr(rest, "object", env)[0]
 
 
 def _emit_vector(expr):
@@ -4218,7 +4323,8 @@ def emit_assign(stmt, at, env):
         # expression that types as a bool -- `bIsOn = ! bIsOn;` is `14 <read> 81 <read> 16`, and the unary node's
         # own type is what admits it.
         if len(rhs) != 1 and not _is_call(rhs) and _type_of(rhs, env).lower() != "bool":
-            raise Refused("a bool assignment whose value is a compound expression")
+            raise Refused("a bool assignment whose value is a compound expression (`%s`, typed `%s`)"
+                          % (_spell(rhs), _type_of(rhs, env) or "untyped"))
         read = bytes([0x2D, token]) + write_index(index)
         if from_props:
             read = _outer_wrapped(nm, read, ptype, "", env) or read
@@ -4458,8 +4564,12 @@ def _stmt_at(toks, i):
             raise Refused("a switch whose body is not a block")
         groups, k = _switch_groups(toks, k + 1)
         return ("switch", toks[j + 1:close], groups), k
-    if kind == "keyword" and low == "local":
-        # `local rotator newRotation;` is a record the package declares, not code: it emits no bytes.
+    if kind == "keyword" and low in ("local", "const"):
+        # `local rotator newRotation;` is a record the package declares, not code: it emits no bytes. A `const`
+        # inside a body is hoisted to the class by the compiler -- `_consts_of` already reads it there, so the
+        # value folds at each site -- and the declaration itself is the same kind of statement:
+        # `ObjectivesPanel.MyOnDrawItem`'s `const COLUMN_INDENT = 0.03;` writes nothing and each use is a
+        # `FloatConst 0.03`.
         j, depth = i, 0
         while j < len(toks):
             tk = toks[j]
@@ -5382,6 +5492,9 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
     """
     props, funcs, imports, classes, _import_owners, _import_pairs = tables
     scope = {"props": {}, "locals": {}, "funcs": {}, "classrefs": {}, "props_all": props, "chain": chain,
+             # the object literals' join: every export and import by lower-case name (see the fill below), and the
+             # class each reference names, so a literal's type word can pick between two objects of one name
+             "objects": {}, "object_class": {},
              "pack": pack, "cls": cls.lower(),
              # the class that declares each property this body reads: `_declaring_class` answers a struct-typed
              # receiver's own copy through it (two `DriverWeaponStruct` copies, one per class)
@@ -5415,6 +5528,28 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             scope["classrefs"][nm] = own[0]
         elif len(imp) == 1:
             scope["classrefs"][nm] = imp[0]
+    # Every object a **literal** can name: `Texture'BlueMenuTL'`, `Material'X'`, `ColorModifier'pkg.Name'` and
+    # `enum'EIntStat'` all write `ObjectConst` of an export or an import, so the join is the package's own two
+    # tables by name -- exports first, the same order `classrefs` takes. The qualified spelling's package half is
+    # kept as a second key when the import record names one; `_object_ref` falls back to the bare name when it
+    # does not, which is the shape this build ships (the field is 0 for the four `ColorModifier` literals).
+    for i, e in enumerate(pkg.exports):
+        nm = names.get(i + 1, "").lower()
+        scope["objects"].setdefault(nm, []).append(i + 1)
+        scope["object_class"][i + 1] = str(pkg.class_name_of(e)).lower()
+    for j, im in enumerate(pkg.imports):
+        iname = str(pkg.name(im["name"])).lower()
+        scope["objects"].setdefault(iname, []).append(-(j + 1))
+        scope["object_class"][-(j + 1)] = str(pkg.name(im["class"])).lower()
+        ref = im.get("package", 0)
+        ref = ref - 2 ** 32 if ref > 2 ** 31 else ref
+        qual = ""
+        if ref < 0 and -ref <= len(pkg.imports):
+            qual = str(pkg.name(pkg.imports[-ref - 1]["name"])).lower()
+        elif 0 < ref <= len(pkg.exports):
+            qual = str(pkg.name(pkg.exports[ref - 1]["name"])).lower()
+        if qual:
+            scope["objects"].setdefault(qual + "." + iname, []).append(-(j + 1))
     for i, e in enumerate(pkg.exports):
         if e["outer"] == func_index and kinds.get(i + 1) in PROPERTY_CLASSES:
             scope["locals"][names[i + 1].lower()] = (LOCAL_TOKEN, i + 1, PROP_TYPE.get(kinds[i + 1], ""))
@@ -6800,6 +6935,47 @@ def check(args):
             print("FAIL uscript-emit: the literal %r writes %s, expected %s"
                   % (text, _string_bytes(text).hex(), want.hex()))
             return 1
+    # An **object literal** is one node whatever its type word carries: `20` and the reference the quoted name
+    # resolves to. UWindow.u exports a `Struct` and a `Texture` both called `MouseCursor` (245 and 2542), and
+    # `UWindowRootWindow.Initialized`'s `Texture'MouseCursor'` is the *texture*, so the word is what picks between
+    # two objects of one name -- and an unworded literal keeps taking the first export, the order `classrefs` uses.
+    lit = dict(env, scope=dict(env.get("scope") or {}, objects={"mousecursor": [245, 2542]},
+                               object_class={245: "struct", 2542: "texture"}, classrefs={}))
+    if _object_ref("MouseCursor", lit, "Texture") != 2542 or _object_ref("MouseCursor", lit, "Struct") != 245:
+        print("FAIL uscript-emit: the object literal's type word does not pick between two exports of one name")
+        return 1
+    if _object_ref("MouseCursor", lit) != 245:
+        print("FAIL uscript-emit: an unworded object literal no longer takes the first export")
+        return 1
+    got = _emit_object_literal("enum", "'EIntStat'",
+                               dict(lit, scope=dict(lit["scope"], objects={"eintstat": [4111]})))
+    if got.hex() != "20" + write_index(4111).hex():
+        print("FAIL uscript-emit: `enum'EIntStat'` emits %s, expected 20 %s"
+              % (got.hex(), write_index(4111).hex()))
+        return 1
+    # `new()` with nothing between the parens is **zero** arguments: `StargateVoicePack.Init`'s
+    # `new() class'Speech'` ships `11 0b 0b 0b 20 <class>`, where one empty argument would write a second `0b`.
+    nenv = dict(lit, scope=dict(lit["scope"], classrefs={"speech": 1234}))
+    new_toks = [("ident", "new"), ("op", "("), ("op", ")"), ("ident", "class"), ("quoted", "'Speech'")]
+    got, _shape = emit_expr(new_toks, "object", nenv)
+    if got.hex() != "110b0b0b20" + write_index(1234).hex():
+        print("FAIL uscript-emit: `new() class'Speech'` emits %s, expected 11 0b 0b 0b 20 ..." % got.hex())
+        return 1
+    # A unary **plus** on a literal writes no node -- `Pawn.UnderwaterTime = + 999999.0;` ships the `FloatConst`
+    # alone -- while a `+` in front of a read stays refused: the corpus has no witness for that node.
+    want = "1e" + struct.pack("<f", 999999.0).hex()
+    got, _shape = emit_expr([("op", "+"), ("number", "999999.0")], "float",
+                            dict(env, _root=True, root_site="float"))
+    if got.hex() != want:
+        print("FAIL uscript-emit: `+ 999999.0` emits %s, expected %s" % (got.hex(), want))
+        return 1
+    try:
+        emit_expr([("op", "+"), ("ident", "Slot")], "int", dict(env, _root=True, root_site="int"))
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a unary plus on a read was emitted")
+        return 1
     got = {f[1].lower(): (f[2], f[3], f[4]) for f in functions_of(SYNTH)}
     for fn, want in WANT.items():
         if fn not in got:
@@ -6861,8 +7037,13 @@ def check(args):
             self.exports = [{"name": 0, "outer": 0}, {"name": 1, "outer": 1}, {"name": 2, "outer": 2}]
             self.imports = []
             self._names = ["Probe", "Fn", "Slot"]
+            self._kinds = ["Class", "Function", "IntProperty"]
         def name(self, i):
             return self._names[i]
+        def class_name_of(self, e):
+            # The object-literal join asks every export for its class, so the stub answers one by index: the same
+            # table `kinds` carries below, read through the shape the real package has.
+            return self._kinds[self.exports.index(e)]
     pkg = _Pkg()
     kinds = {1: "Class", 2: "Function", 3: "IntProperty"}
     exp_names = {i + 1: pkg.name(e["name"]) for i, e in enumerate(pkg.exports)}

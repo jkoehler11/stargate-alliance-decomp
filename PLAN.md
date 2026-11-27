@@ -239,6 +239,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 an object literal is one node whatever its word, and `new()` is zero arguments: **11,440 modelled / 11,440
+  byte-identical** (from 11,300; **140 bodies gained, none lost**, residue 378 -> 238, the differ census 0 -> 5, named by
+  shape: two over-promote a `read` pair and three moved a `JumpIfNot` with their length). (1) `Texture'X'`, `Material'X'`, `ColorModifier'pkg.X'` and
+  `enum'E'` are one node, `20 <object reference>`, exports first and imports second, and the literal's own type word
+  picks between two objects of one name (`MouseCursor` is UWindow's `Texture` 2542, not its `Struct` 245). (2)
+  `new (Outer, Name, Flags) Class` is `11` and four operands with `0b` for each omitted one, and `new()` is *zero*
+  arguments, not one empty one (`StargateVoicePack.Init` ships `11 0b 0b 0b 20 <class>`). (3) a unary `+` on a literal
+  writes no node (`Pawn.UnderwaterTime = + 999999.0`) while a `+` on a typed operand stays refused. (4) a `const`
+  inside a body is hoisted to the class and writes nothing (`ObjectivesPanel.MyOnDrawItem`). (5) the
+  compound-expression refusal now names the expression it gave up on (`_spell`), so `--residue-out` reads
+  `const COLUMN_INDENT` instead of only the shape. **Measured and not shipped:** bounding the promotion to a literal
+  left operand fixes `UWindowProgressBar.Paint` and costs `CylinderBuilder.BuildCylinder` and `ConeBuilder.BuildCone`
+  (whose shipped bytes promote an inner group at a root that is not a call argument), so the bound is a ledger entry,
+  `docs/UNKNOWNS.md` U43, with the three witnesses and the acceptance test the next formulation must pass (differ 0,
+  none lost). `--check` holds the type word against 2542/245 and its unworded fallback, `enum'EIntStat'`, 
+  `new() class'Speech'`, and the unary plus with its refusal on a read; the package stub grew `class_name_of` because
+  the object join asks every export for its class. Doc: `docs/COMPILER_FRONTEND.md`, new section. Not in this PR: the
+  five bodies at the promotion wall, and the rest of the residue by family.
 - [~] 3.6 the differ set reaches zero: **11,300 modelled / 11,300 byte-identical, 0 differing** (from 11,292;
   **eight bodies gained, none lost**, residue 386 -> 378, the differ census **3 -> 0**). (1) `^^` writes no `Skip`:
   `bWasForward ^^ (aBaseY > 0)` ships `83 <left> <right> 16`, and `_emit_operator` gave it the `&&`/`||` wrapper.
