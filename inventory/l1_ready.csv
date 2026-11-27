@@ -136,7 +136,7 @@ ActionPause,3,3,0,100.0,
 Action_PLAYANIM,4,4,0,100.0,
 Actor,111,110,1,99.1,a cast from material to string the image's cast table does not install
 Admin,2,2,0,100.0,
-AdminBase,23,22,1,95.7,a call whose callee declaration the text does not carry
+AdminBase,23,23,0,100.0,
 AirborneTurret,1,1,0,100.0,
 AirborneTurretController,5,5,0,100.0,
 AlarmLight,1,1,0,100.0,
@@ -221,7 +221,7 @@ ChapterSelectionPanel,4,4,0,100.0,
 CharacterSelectionList,4,4,0,100.0,
 CharacterSelectionPanel,1,1,0,100.0,
 ChatRoomMessage,2,2,0,100.0,
-CheatManager,75,56,19,74.7,a call whose callee declaration the text does not carry
+CheatManager,75,67,8,89.3,a name this package declares only on another class's chain
 Chip,3,3,0,100.0,
 CirclingBirds,4,4,0,100.0,
 ClientBeaconReceiver,7,5,2,71.4,an operator the image's table does not install
@@ -657,7 +657,7 @@ PlayerProfile,44,44,0,100.0,
 PlayerReplicationInfo,36,36,0,100.0,
 PlayerStatCache,9,9,0,100.0,
 PlayerStats,11,11,0,100.0,
-PlaylistParserBase,8,6,2,75.0,a call member whose receiver's class the artifacts do not name
+PlaylistParserBase,8,7,1,87.5,a call member whose receiver's class the artifacts do not name
 PotentialClimbWatcher,1,1,0,100.0,
 Powerups,14,14,0,100.0,
 PressureVolume,4,4,0,100.0,
@@ -887,7 +887,7 @@ StaffWeaponAmmo,1,1,0,100.0,
 StaffWeaponAttachment,6,6,0,100.0,
 StaffWeaponMeleeAmmo,1,1,0,100.0,
 StaffWeaponProjectile,4,4,0,100.0,
-StargateAIMsgManager,4,2,2,50.0,a name neither a local
+StargateAIMsgManager,4,4,0,100.0,
 StargateAmmo,14,14,0,100.0,
 StargateArmor,7,7,0,100.0,
 StargateCar,15,15,0,100.0,

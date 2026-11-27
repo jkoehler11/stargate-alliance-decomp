@@ -239,6 +239,23 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a `within` body's bare call: **11,588 modelled / 11,588 byte-identical** (from 11,573; 15 bodies gained,
+      none lost; residue 113 -> 98). (1) **A value-position call is the `Context(Outer, 5, size)` node the statement
+      path writes**: `HitActor = Trace(...)` is `19 01 8e 05 00 04 61 15 ...` and the `foreach` head
+      `AllActors(class'Actor', A)` is `19 01 8e 05 00 00 61 30 ...`, while the walk wrote a by-name `1b <name>` and
+      lost six bytes on 11 bodies. (2) **The callee's parameters come from the `within` chain** when the body's own
+      chain has none: `AllActors`, `DynamicActors` and `ValidIndex` are `Actor`/`PlayerController` natives, so
+      `_callee_params` answered None and the call refused as *a callee declaration the text does not carry*
+      (15 rows). (3) **A `const` on the `within` chain is the body's own** -- `MSGT_Order` is `Actor`'s const and
+      `StargateAIMsgManager` is `within Controller` (2 bodies). The one body that moved into the differ set is
+      `CheatManager.LockCamera` (a `JumpIfNot` distance, `ours longer`, `downstream=yes`): progress at a later
+      refusal, not a loss. Control: `origin/main`'s tool on the same tree reproduces the committed
+      `inventory/uscript_emit.csv` byte for byte (md5 `0cc409ae6cb99d494921cd9ff24f4412`).
+      Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the nine two-assert bodies (the
+      line operand is per statement, not per body), the four `FlashFog`/`FlashScale` rows and the three
+      `Dest[i].Accept` rows -- the last two are one root cause, a declaration that spells several names
+      (`var vector FlashScale, FlashFog;`, `local Teleporter D,Dest[16];`), which the source walk reads only the
+      first name of.
 - [~] 3.6 four declarations the body's own table does not carry: **11,573 modelled / 11,573 byte-identical** (from
   11,514; **59 bodies gained, none lost**, residue 172 -> 113, differ census 1 -> 1). One shape, four spellings of
   "the declaration is elsewhere": (1) a **`const` is the literal it wraps** -- `_consts_of` kept only numbers, so
