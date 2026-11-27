@@ -239,6 +239,21 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the `float` site's expectation travels down the **left** spine: **11,443 modelled / 11,443
+  byte-identical** (from 11,440; **3 bodies gained, none lost**, residue 238 -> 235, the differ census **5 -> 2**).
+  (1) `_left_expects` accepts a literal, or an operator node whose own left spine accepts, and refuses a read -- so
+  `12 + MiscBevelT[2].H + ...` retypes down to `FloatConst 12` while `MiscBevelL[2].W + 1` keeps `Add_IntInt` and
+  casts its result: `UWindowProgressBar.Paint`, `VirtualKeyboardPanel.constructKeyboard` and `SheetBuilder.Build` all
+  leave the differ set. (2) The both-`int` branch adds the call-leaf bound (`_has_call_leaf`), which keeps the three
+  `200000 * 2 * FRand()` chains (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`) as `int` products behind one
+  cast; the unguarded spine gained a fourth body (`UPreviewMapListClient.Paint`) and lost those three (11,441
+  modelled, differ 4), and the binding acceptance test refuses a net gain that loses a body, so the guard ships.
+  (3) `--check` holds **P15**: a read on the left keeps `39 3f 92 ...`, a literal on the left retypes to `ae`, and
+  `_has_call_leaf` sees `200000 * 2 * FRand()`'s call -- forcing `_left_expects` true fails P14, so the gate bites.
+  Full corpus scored per body by `tools/emit-score.py` against `origin/main`'s own run. Doc:
+  `docs/COMPILER_FRONTEND.md`, new section; `docs/UNKNOWNS.md` U43 answered in part. Not in this PR:
+  `CylinderBuilder.Build` (ours 391 vs 377) and `UPreviewMapListClient.Paint` (522 vs 525), both now `jump distance`
+  rows whose cause is a node after the jump, and the rest of the residue by family.
 - [~] 3.6 an object literal is one node whatever its word, and `new()` is zero arguments: **11,440 modelled / 11,440
   byte-identical** (from 11,300; **140 bodies gained, none lost**, residue 378 -> 238, the differ census 0 -> 5, named by
   shape: two over-promote a `read` pair and three moved a `JumpIfNot` with their length). (1) `Texture'X'`, `Material'X'`, `ColorModifier'pkg.X'` and

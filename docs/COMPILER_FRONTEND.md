@@ -3560,3 +3560,53 @@ has to pass (differ 0, none lost).
 taking 245, `enum'EIntStat'` against its own reference, `new() class'Speech'` against `11 0b 0b 0b 20`, and a unary
 `+` on a literal against the `FloatConst` plus its refusal on a read. The package stub grew `class_name_of` because the
 object join asks every export for its class -- the `--check` stub had no object tables at all before this.
+
+## Stage 3, continued -- the `float` site's expectation travels down the left spine (measured 2026-11-27)
+
+**11,440 -> 11,443 modelled / identical** (gained 3, lost 0, newly differing 0, later refusals 0), residue 238 -> 235,
+the differ census **5 -> 2**. `docs/UNKNOWNS.md` U43 asked for a rule that says *when* the site's type is handed to
+the left child; the answer is the left spine, and it is one predicate asked in three places.
+
+**The rule.** At a `float` site the expected type is an expectation the compiler hands down the **left** child:
+`_left_expects` accepts a literal, or an operator node whose own left spine accepts, and refuses a read. A literal on
+the left therefore retypes the whole chain (`W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H` is
+`Add_FloatFloat` down to `FloatConst 12`), while `BlockX = LookAndFeel.MiscBevelL[2].W + 1` keeps `Add_IntInt` and
+converts its **result** (`IntToFloat(Add_IntInt(<read>, IntOne))`) -- the read does not consume the expectation. The
+both-`int` branch keeps the bound it already had for a leaf and now asks it of the spine as well: a left side that
+holds a call is not re-emitted at `float` (`_has_call_leaf`), and the three `200000 * 2 * FRand()` chains
+(`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`) stay `int` products behind one cast -- they are among the
+11,440 bodies the baseline modelled and this tree keeps.
+
+**The three bodies it settles -- all three promotion rows the previous section left in the differ set.**
+
+| body | before | after |
+|---|---|---|
+| `UWindowProgressBar.Paint` | `Add_FloatFloat(<read>, FloatConst 1.0)` for `MiscBevelL[2].W + 1` | identical |
+| `VirtualKeyboardPanel.constructKeyboard` | the same over-promoted read pair | identical |
+| `SheetBuilder.Build` | both operands cast, ours longer | identical |
+
+**A spine, not a leaf test, and the scores that forced it.** A literal-on-the-left test fixes `Paint` and costs
+`CylinderBuilder.BuildCylinder` and `ConeBuilder.BuildCone` (whose shipped bytes promote an inner group at a root that
+is not a call argument). An unguarded left-spine rule is **net-better** and still fails the acceptance test this page
+set: four bodies gained, three lost, the losses being exactly the `200000 * 2 * FRand()` family, which lands in the
+differ bucket (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`). Every number below is a full-corpus run of
+`tools/uscript-emit.py` plus `tools/emit-score.py` against `origin/main`'s own run, keyed per body:
+
+| formulation | modelled | gained | lost | differ |
+|---|---|---|---|---|
+| `origin/main` | 11,440 | -- | -- | 5 |
+| literal on the left only (previous section's measurement) | -- | `Paint` | `BuildCylinder`, `BuildCone` | -- |
+| left spine, unguarded | 11,441 | 4 | 3 | 4 |
+| left spine + call-leaf bound (**shipped**) | **11,443** | 3 | **0** | **2** |
+
+**What is left here is no longer the promotion.** The two remaining rows are `jump distance` / `downstream=yes` in
+`inventory/emit_differ.csv`: both differ first at a `JumpIfNot` whose distance moved with the body's own length, which
+is the tool's own verdict that the branch is right and a node after it is missing or extra. `CylinderBuilder.Build`
+emits **391** bytes against the package's **377**; `UPreviewMapListClient.Paint` emits **522** against **525**. The
+next instrument is the node after the jump in each body -- walk both sides from the reported offset -- not another
+bound on the promotion.
+
+`--check` gains **P15**: a read on the left of a float-site pair keeps `39 3f 92 ...`, a literal on the left retypes
+to `ae`, and `_has_call_leaf` sees the call in `200000 * 2 * FRand()` but not in `200000 * 2`. The gate can go red:
+forcing `_left_expects` true (or dropping the root condition's `_left_expects` term) fails `--check` on the
+grouped-argument fixture P14, which is the same predicate.
