@@ -2202,14 +2202,11 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**11 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,284 modelled and identical in the same run). **4** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 11 separate defects.
+**3 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,292 modelled and identical in the same run). **0** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 3 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | same length | no | 3 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults`, `GUIMessageBox.InternalOnPreDraw` |
-| jump distance | Jump | ours shorter | yes | 2 | `Mover.KeyFrameReached`, `ShieldBelt.Tick` |
-| jump distance | JumpIfNot | ours shorter | no | 2 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines` |
-| jump distance | JumpIfNot | ours shorter | yes | 2 | `PlayerController.CallServerMove`, `PlayerController.CallServerMove` |
+| jump distance | JumpIfNot | ours shorter | no | 1 | `B4SParser.ParseLines` |
 | opcode | PrimitiveCast | ours longer | - | 1 | `LinearStairBuilder.Build` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
 <!-- END emit-differ -->
@@ -3374,3 +3371,71 @@ their cause is inside the body and not yet named. (4) The three same-length rows
 the empty statement `;` -- the package writes the increment **before** the loop's backward `Jump` and the statement
 after the loop outside it, while the walk takes the following statement as the body. (5) `SGPlayerInput.PlayerInput`
 is 520 bytes short behind a `Skip`, the largest single gap left in the differ set.
+
+## Stage 3, continued -- a `byte` root types its group, and an empty body is a statement (measured 2026-11-26)
+
+**11,292 modelled / 11,292 byte-identical** (from 11,284; **eight bodies gained, none lost**, residue 394 -> 386
+and the differ census **11 -> 3**). Both rules are the previous two rounds' family read one place further along
+the walk: a group's type is the *root's*, and a `;` is a statement of its own.
+
+**(1) A parenthesised `int` group at a `byte` expression root is typed at the byte and converted back into the
+slot it feeds.** `PlayerController.CallServerMove` (both state bodies) and `ReplicateMove` ship
+`( ( PendingMove . Rotation . Roll >> 8 ) & 255 )` as a `byte` argument:
+
+    shipped   39 3d | 9c | 39 3a 39 3d 95 ...
+              IntToByte( And_IntInt( ByteToInt( IntToByte( Roll >> 8 ) ), IntConstByte 255 ) )
+    emitter   39 3d | 9c 95 ...
+              IntToByte( And_IntInt( Roll >> 8, 255 ) )
+
+The group is `int` and sits at a `byte` root (the argument's parameter), so the compiler types it at that root and
+narrows it back with the cast its own slot -- `And_IntInt`'s left operand, an `int` -- wants: `39 3d 39 3a`,
+`IntToByte` then `ByteToInt`. Where the slot is `float` the same boundary is `39 3d 39 3c` (`IntToByte`,
+`ByteToFloat`): `Mover.KeyFrameReached`'s `(KeyNum + 1) % NumKeys` at `InterpolateTo`'s byte parameter, and
+`ShieldBelt.Tick`'s `(Pawn(Owner).Default.Visibility - InvisRating) * Percent` into the `byte` `Visibility`
+property.
+
+`_group_byte` is the third member of the `_group_narrow`/`_group_widen` family, and it **corrects the previous
+note's guess**: the bound is the *root's* type, not the group's. Every one of these groups is `int`; what made the
+round trip look like "a byte-typed group" was that the site is a byte.
+
+**(2) A `;` is the empty statement, and the walk was eating it.** Three same-length differ rows were one shape:
+`AdminBase.SendComplexMsg`'s `for ( Border = "" ; Len ( Border ) < Longest ; Border = Border $ "-" ) ;`
+(`ListObjectPropsCommandlet.WriteResults` and `GUIMessageBox.InternalOnPreDraw` are the other two). The package
+writes `07 <end> <cond> <step> 06 <top>` and the statement after the `;` **outside** the loop;
+`_stmt_at` skipped a leading `;` and took that statement as the body, so the loop grew one and the statement
+disappeared into it. `_body_at` answers an `("empty",)` node -- no bytes at all -- for the three constructs that
+have a body (`if`, `for`, `while`).
+
+The `if` half of the same rule settled `PlayerController.ReplicateMove`, the differ row whose jump "did not move
+with its length": `if ( PendingMove.StartBase != Pawn.Base);` ships `28 07 51 04` -- the `JumpIfNot` names the
+position right after itself -- where the walk, taking `Pawn.SetBase(...)` as the body, named 0x6b, 26 bytes on.
+
+**(3) A byte site types the literal that leads its expression, not a right operand.** With the group's own bytes
+right, `CallServerMove` still wrote the shift's `8` as `39 3a 24 08` (`ByteToInt(ByteConst 8)`) where the package
+writes `2c 08` (`IntConstByte`). The byte literal form is the **positional** rule `_float_literal` already has:
+`StargateHUD.SetIDColor`'s `160` and `ParseColor`'s `16` lead their nodes, the shift's `8` does not. `_side` now
+hands its right operand an environment without `byte_root`, so the form stops at the first right-hand position.
+
+    $ python3 tools/emit-score.py --base ~/sg1/work/e2 --new ~/sg1/work/f2
+    modelled 11284 -> 11292 (+8), gained 8, lost 0, kept 11284, newly differing 0, later refusals 0
+      gained AdminBase.SendComplexMsg
+      gained Mover.KeyFrameReached
+      gained PlayerController.ReplicateMove
+      gained PlayerController.CallServerMove
+      gained PlayerController.CallServerMove
+      gained GUIMessageBox.InternalOnPreDraw
+      gained ListObjectPropsCommandlet.WriteResults
+      gained ShieldBelt.Tick
+
+`--check` holds both rules: a `for` and an `if` whose body is the `;` (`forempty`, `ifempty`), and the byte-root
+group driven directly through `emit_expr` -- `39 3d 9c 39 3a 39 3d 95 ... 2c 08`, with the int form of the
+literal asserted against the byte form it must not take.
+
+**What is left, measured rather than guessed.** Three differ rows. `LinearStairBuilder.Build` is the promote bound
+for a paren `int` group at a `float` *slot* (four bytes long, unchanged). `B4SParser.ParseLines` (313 vs 319) is a
+`19 01 8e 05 00 00` `Context` over an `Outer` receiver inside its loop -- the walk writes the member read bare.
+And `SGPlayerInput.PlayerInput` (893 vs 1413) is two rules the walk has never had, both read off its first 20
+bytes this round: `bWasForward ^^ (aBaseY > 0)` ships `83 <left> <right> 16` with **no `Skip`** -- `^^` does not
+short-circuit and `_emit_operator` wraps it with `&&`/`||` -- and `aBaseY` there is a member of a receiver
+(`19 01 cd 01 05 00 04 01 f5 06`) where the walk writes the bare `01 f5 06`. Those two are the next run's first
+item; the 520-byte gap is that pair repeated down the body.

@@ -239,6 +239,26 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a `byte` root types its group, and an empty body is a statement: **11,292 modelled / 11,292
+  byte-identical** (from 11,284; **eight bodies gained, none lost**, residue 394 -> 386, the differ census
+  **11 -> 3**). (1) A parenthesised `int` group at a `byte` expression root is typed at the root and converted
+  **back** into the slot it feeds: `CallServerMove`'s `((Roll >> 8) & 255)` as a `byte` argument ships
+  `IntToByte(And_IntInt(ByteToInt(IntToByte(Roll >> 8)), 255))`, and a `float` slot takes `IntToByte`/`ByteToFloat`
+  instead (`KeyFrameReached`'s `(KeyNum + 1) % NumKeys`, `ShieldBelt.Tick`'s `Visibility` assignment).
+  `_group_byte` is the third member of the `_group_narrow`/`_group_widen` family and the bound is the **root's**
+  type, not the group's: all five groups are `int`, and the previous note's "a byte-typed group" was a wrong
+  reading of them. (2) `;` is the empty statement. `for (...) ;` and `if (...) ;` write no body bytes at all --
+  the `for`'s step follows its condition with the next statement outside the loop, and the `if`'s `JumpIfNot`
+  names the position right after itself. `_stmt_at` skipped the `;` and took the following statement as the body,
+  which is exactly what the three same-length `for` rows and `ReplicateMove`'s non-moving jump distance were.
+  (3) A byte site types the literal that **leads** its expression, not a right operand: the shift's `8` is
+  `2c 08`, not `39 3a 24 08`. `--check` holds `forempty`, `ifempty` and the byte-root group driven through
+  `emit_expr`. Doc: `docs/COMPILER_FRONTEND.md`, new section. Not in this PR, measured: `LinearStairBuilder.Build`'s
+  promote bound (four bytes long), `B4SParser.ParseLines`' bare member read where the package writes
+  `19 01 8e 05 00 00` (a `Context` over `Outer`), and `SGPlayerInput.PlayerInput`'s 520-byte gap -- whose first 20
+  bytes name two unmodelled rules, `^^` written with **no `Skip`** (`83 <left> <right> 16`) and `aBaseY` read as a
+  member of a receiver (`19 01 cd 01 05 00 04 01 f5 06`) where the walk writes the bare `01 f5 06`.
+
 - [~] 3.6 a group compiles at the root it sits under, and a const folds: **11,284 modelled / 11,284 byte-identical**
   (from 11,279; **five bodies gained, none lost**, residue 399 -> 394, the differ census **16 -> 11**). (1) A
   parenthesised `int` group at a `float` expression root is typed at the root and converted **back** into the slot
