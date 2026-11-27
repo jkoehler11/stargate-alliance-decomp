@@ -239,6 +239,25 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a leaf converts at its own site, and a literal's bytes are the package's: **11,279 modelled / 11,279
+  byte-identical** (from 11,275; **4 bodies gained, none lost**; residue 403 -> 399, the differ census 20 -> 16 --
+  its `context skip` family and its `operand StringConst` row are gone). Both items were recorded as "tried and
+  gained nothing" one round earlier and each was missing one line of the walk, not the rule. (1) `Self` (and the
+  lowercase `class` that compiles to the same token) is an `object`, and its leaf returned the bare `17` without
+  asking `_converted`, so `Canvas.DrawText(Self, false)` lost the `39 56` (`ObjectToString`) the package writes in
+  front of it -- three `DisplayDebug` bodies (`StargateVehicle`, `StargateVehiclePassenger`, `GravCraneConsole`).
+  The page's earlier account ("`_type_of(self)` is the body's class name") was wrong: `_type_of` answers `object`
+  and the `(object, string)` row was in the table; corrected in place. (2) The shipped `ScriptText` is UTF-8 of the
+  package's bytes, so `TextGameInfo.InitComponent`'s cp1252 `0x92` arrives as `c2 92` and the emitter wrote both;
+  `_string_bytes` recovers `latin-1 -> utf-8 -> cp1252` with a fallback at each step, and that body (the corpus's
+  only non-ASCII literal, twice) is now byte-identical. `--check` holds a `Self`-at-a-string-site fixture (39 56 17)
+  and four literal byte cases. Doc: `docs/COMPILER_FRONTEND.md`, new section. Not in this PR: `ServerMove`'s float
+  retype, read as the **mirror of `_group_narrow`** (a parenthesised `int` group compiled at a `float` root and
+  converted back to the `int` slot) -- the general form **lost two bodies** (`ConeBuilder.BuildCone`,
+  `CylinderBuilder.BuildCylinder`) and moved `LinearStairBuilder.Build` four bytes further, so the bound is the
+  slot's own type and that narrower rule is this thread's next measurement; the const in a leading operand position
+  not folding (`BotSG.EngageDirection`'s `MINSTRAFEDIST` ships `1e 00001643`, the walk writes `39 3f 2c 96`); the 19
+  operator rows; the 152-body compound family; and the remaining 16 differing bodies.
 - [~] 3.6 a chain of nothing but literals is not retyped: **11,275 modelled / 11,275 byte-identical** (from
   11,272; **3 bodies gained, none lost**; residue 406 -> 403, the differ bucket 23 -> 20 -- the
   `Multiply_FloatFloat` family is gone). `_leaves_promotable` retyped every `int` chain at a `float` site that held

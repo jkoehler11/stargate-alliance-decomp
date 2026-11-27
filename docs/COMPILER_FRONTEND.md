@@ -2202,18 +2202,16 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**20 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,275 modelled and identical in the same run). **7** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 20 separate defects.
+**16 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,279 modelled and identical in the same run). **7** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 16 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
 | jump distance | JumpIfNot | ours shorter | yes | 4 | `PlayerController.ServerMove`, `PlayerController.CallServerMove`, `PlayerController.CallServerMove` |
-| context skip | Context | ours shorter | - | 3 | `StargateVehiclePassenger.DisplayDebug`, `GravCraneConsole.DisplayDebug`, `StargateVehicle.DisplayDebug` |
 | jump distance | Jump | ours shorter | yes | 3 | `Mover.KeyFrameReached`, `BotSG.PickDestination`, `ShieldBelt.Tick` |
 | jump distance | JumpIfNot | ours shorter | no | 3 | `PlayerController.ReplicateMove`, `B4SParser.ParseLines`, `TransportRings.RingsMove` |
 | jump distance | JumpIfNot | same length | no | 3 | `AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults`, `GUIMessageBox.InternalOnPreDraw` |
 | opcode | PrimitiveCast | ours shorter | - | 2 | `LinearStairBuilder.Build`, `BotSG.EngageDirection` |
 | opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
-| operand | StringConst | ours longer | - | 1 | `TextGameInfo.InitComponent` |
 <!-- END emit-differ -->
 
 Two things the classification settles for the next run. A **jump distance** whose word moved by exactly the body's
@@ -3258,11 +3256,58 @@ lost and 43 gained in one earlier formulation -- turned into a tool so the next 
 
 **What this did not reach, measured rather than guessed.** The `DisplayDebug` family's `Context skip` (3 bodies) is
 `Canvas.DrawText(Self, false)`: the parameter is `coerce string`, the package writes `39 56` (`ObjectToString`, slot
-86) in front of `17`, and the walk writes no cast because `_type_of(self)` is the body's **class name** and the
-table has no `(stargatevehicle, string)` row -- the object pair is keyed `Object`. `TextGameInfo.InitComponent`'s
-`operand StringConst` row is the same kind of shape one byte long: the `.uc` tree carries the UTF-8 run `c2 92`
-where the package holds the single byte `92`, so a string literal's bytes have to be recovered as
-`bytes -> utf-8 -> cp1252` before they are written. Both were tried in this round and are **not** in this PR: the
-first corpus run of each gained nothing, which is what sent the read back to the shape (a rule that changes no body
-is not a rule yet). Beside them the 19 operator rows, the 152-body compound family, `ServerMove`'s float retype and
+86) in front of `17`. **The cause recorded here first was wrong**: it said `_type_of(self)` answers the body's
+class name, and it answers `object` -- the miss was one line further down, where `emit_expr`'s `self` leaf returned
+the `17` token without asking `_converted` at all, so the `(object, string)` row was never looked up. `TextGameInfo.
+InitComponent`'s `operand StringConst` row is the same kind of shape one byte long: the `.uc` tree carries the UTF-8
+run `c2 92` where the package holds the single byte `92`. Beside them the 19 operator rows, the 152-body compound family, `ServerMove`'s float retype and
 the other 20 differing bodies stand as the thread's next instruments.
+
+## Stage 3, continued -- a leaf's site conversion and a literal's own bytes (measured 2026-11-26)
+
+**11,279 modelled / 11,279 byte-identical** (from 11,275; **four bodies gained, none lost**, residue 403 -> 399 and
+the differ census 20 -> 16 -- its `context skip` family and its `operand StringConst` row are gone). Both rules were
+recorded as "tried and gained nothing" in the previous round; what was missing in each was one line of the walk, not
+the rule.
+
+**(1) `Self` is an `object`, and its leaf never applied the site's conversion.** The three `DisplayDebug` bodies ship
+`Canvas.DrawText(Self, false)` as `39 56 17` -- `ObjectToString` around the `Self` token -- and the emitter wrote the
+`17` bare:
+
+    Canvas.DrawText(Self, false)
+    shipped   1c dc 01 39 3f ... 39 56 17 28 16
+    emitter   1c dc 01 39 3f ...      17 28 16
+
+`_type_of` answers `object` for `self` (and for `class`, which compiles to the same token when the class declares no
+`Class` property), so `_converted(bytes([0x17]), "object", rettype)` finds the row the site wants. Three bodies:
+`StargateVehicle.DisplayDebug`, `StargateVehiclePassenger.DisplayDebug`, `GravCraneConsole.DisplayDebug`. The
+previous section's account of this shape ("`_type_of(self)` is the body's class name and the table has no
+`(stargatevehicle, string)` row") was a wrong reading of the same bytes; the table had the row all along.
+
+**(2) A string literal's bytes are the package's, not the source's.** The shipped `ScriptText` was written as
+**UTF-8 of the package's bytes**, so a literal the compiler stored as one cp1252 byte arrives as a two-byte sequence:
+`TextGameInfo.InitComponent` spells `player<C2 92>s reticule` twice and the package holds `92` in both places -- the
+body's whole 2-byte difference (8,671 vs 8,669). `_string_bytes` recovers the value as `latin-1 bytes -> utf-8 ->
+cp1252`, each step with a fallback (the lexer reads the tree as latin-1, so a genuine latin-1 byte that is not valid
+UTF-8 stays; a code point cp1252 does not define stays latin-1). One body, and it is the only non-ASCII literal in
+the corpus.
+
+    $ python3 tools/emit-score.py --base ~/sg1/work/emit-fe5 --new ~/sg1/work/emit-n1
+    modelled 11275 -> 11279 (+4), gained 4, lost 0, kept 11275, newly differing 0, later refusals 0
+      gained GravCraneConsole.DisplayDebug
+      gained StargateVehicle.DisplayDebug
+      gained StargateVehiclePassenger.DisplayDebug
+      gained TextGameInfo.InitComponent
+
+**Not in this PR, measured.** (1) `ServerMove`'s float retype is the **mirror of `_group_narrow`**: `Accel.Y =
+(OldAccel >>> 15) & 255` ships `IntToFloat(And_IntInt(FloatToInt(IntToFloat(OldAccel >>> 15)), 255))` -- the
+parenthesised `int` group compiled at the root's `float` and converted back to the `int` its slot needs. The general
+form of that rule (any parenthesised group whose type differs from the root site's) **loses two bodies**
+(`ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`, both of which the package writes with the group promoted
+root and branch) and moves `LinearStairBuilder.Build` four bytes further from the package; the bound is the
+**slot's** type -- the round trip is written only where the slot already is the group's own type -- and that
+narrower rule is worked out but not measured across the corpus, so it is the next run's first item. (2) A **const**
+in the leading operand position does not fold: `BotSG.EngageDirection`'s `MINSTRAFEDIST * StrafeDir` ships
+`1e 00001643` (`FloatConst 150.0`) where the walk writes `39 3f 2c 96`, because the const is substituted only in the
+leaf and `_float_literal` never sees it. Beside them the 19 operator rows, the 152-body compound family,
+`SGPlayerInput.PlayerInput`'s `Skip` and the remaining 16 differing bodies stand as the thread's next instruments.
