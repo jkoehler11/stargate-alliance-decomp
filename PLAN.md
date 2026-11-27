@@ -239,6 +239,19 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 an `int % int` is not typed `int` by the operator: **refuted, not shipped** -- `origin/main` stays 11,444 /
+  differ 1. The last differ row (`CylinderBuilder.Build`) was mislocated in the two entries below and in U43: its 14
+  bytes are the **`%`** of `((i+1)%Sides)*2+(1-j)/2` in the third `Poly4i` argument of `Build`, not `BuildCylinder`'s
+  `sin(...)`, and the node the walk writes is already the package's (`39 44 ad 39 3f ...`); what is wrong is the type
+  that node reports to the pair above it. Typing an `int % int` as `int` in `_type_of` gains that one body and **loses
+  eight** (`ConeBuilder.Build`, `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`,
+  `GRENADE.CalcGrenadeLanding`, `GoauldConsoleHud.DrawHUD`, `ReplicatorHUD.DrawHUD`, `StargateHUD.DrawHUD`,
+  `VirtualKeyboardPanel.constructKeyboard`), modelled 11,437, differ 1 -> 10 (three `jump distance`, seven
+  `EqualEqual_IntInt`). The bound is the **site**, not the operator: in the eight lost bodies the modulo sits inside a
+  pair the site promotes, where the arithmetic above it really is float. Next formulation: ask the rule only where the
+  pair above is not being promoted, with `CylinderBuilder.BuildCylinder` in the control set. Doc: `docs/UNKNOWNS.md`
+  U43 (the refutation and the corrected location, in place). Not in this PR: the rule itself, and the rest of the
+  residue by family (233 refusals after this measurement).
 - [~] 3.6 a mixed pair retypes its `int` side unless the other side is a **call**: **11,444 modelled / 11,444
   byte-identical** (from 11,443; **1 body gained (`UPreviewMapListClient.Paint`), none lost**, residue 235 -> 234, the
   differ census **2 -> 1**). (1) The rule the previous bullet's fixture pointed at was keyed on the wrong branch: P16's
