@@ -6524,9 +6524,13 @@ while casting the right one, so the bound is a *type expectation*, not a test on
 last prediction, is net-better and still refused -- four gained, three lost (the `200000 * 2 * FRand()` family, which
 lands in the differ bucket), against three gained and none lost here.
 
-**What is left, and it is not the promotion.** Both remaining rows are `jump distance` / `downstream=yes` in
-`inventory/emit_differ.csv`: the first difference is a `JumpIfNot` whose distance moved with the body's own length, so
-the branch is right and a node after it is missing or extra (14 bytes over in `CylinderBuilder.Build`, 3 short in
-`UPreviewMapListClient.Paint`). **What would settle them.** The node after the jump, read per body from the reported
-offset with `tools/emit-differ.py`'s own token walk -- name it before trying another bound on the promotion.
+**What is left, and it is not the promotion at a read.** Both remaining rows report a `jump distance` first, but
+walking both sides of each row's token tree puts the bytes elsewhere: `CylinderBuilder.Build` (14 bytes over) differs
+inside the `sin(...)` argument, where the package keeps `Add_IntInt(Multiply_IntInt(<int>, 2), Divide_IntInt(...))` and
+converts one factor with `FloatToInt` (`PrimitiveCast 44`) while the walk retypes the pair to `Add_FloatFloat` behind
+one `FloatToInt`; `UPreviewMapListClient.Paint` (3 short) differs inside a `Context` (`skip` word `0x0030` against
+`0x002d`) whose inner `FinalFunction` is 36 bytes against 33. **What would settle them.** For `CylinderBuilder.Build`,
+the bound for a pair whose leaves are an **`int` cast of a `float` expression** -- such a leaf is not a literal, so
+the expectation should stop there exactly as it stops at a read (`391` against `377`). `Paint`'s missing 3 bytes sit
+in a call argument and are not yet named by a rule (`522` against `525`).
 

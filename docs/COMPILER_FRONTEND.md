@@ -3599,12 +3599,17 @@ differ bucket (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`). Every n
 | left spine, unguarded | 11,441 | 4 | 3 | 4 |
 | left spine + call-leaf bound (**shipped**) | **11,443** | 3 | **0** | **2** |
 
-**What is left here is no longer the promotion.** The two remaining rows are `jump distance` / `downstream=yes` in
-`inventory/emit_differ.csv`: both differ first at a `JumpIfNot` whose distance moved with the body's own length, which
-is the tool's own verdict that the branch is right and a node after it is missing or extra. `CylinderBuilder.Build`
-emits **391** bytes against the package's **377**; `UPreviewMapListClient.Paint` emits **522** against **525**. The
-next instrument is the node after the jump in each body -- walk both sides from the reported offset -- not another
-bound on the promotion.
+**What is left here, narrowed but not settled.** Both remaining rows report `jump distance` / `downstream=yes` in
+`inventory/emit_differ.csv`, which is the tool's own verdict that the jump is right and the bytes are elsewhere.
+Walking both sides of each row's own token tree names where: in `CylinderBuilder.Build` the 14 bytes are inside the
+`sin(...)` argument (`VirtualFunction 02`, 117 bytes shipped against 131 ours), where the package keeps the pair
+`Add_IntInt(Multiply_IntInt(<int>, IntConstByte 2), Divide_IntInt(...))` and converts only the float factor
+(`PrimitiveCast 44`, `FloatToInt`), while the walk writes
+`FloatToInt(Add_FloatFloat(IntToFloat(<int>), IntToFloat(<int>)))`; in `UPreviewMapListClient.Paint` the 3 bytes are
+inside a `Context` node (`skip` word `0x0030` shipped against `0x002d` ours) whose inner `FinalFunction` is 36 bytes
+shipped against 33. CylinderBuilder's is a **pair whose leaves are an `int` cast of a `float` expression**, which the
+expectation currently walks into, and the next measurement is the bound that stops it there the way it stops at a
+read; `Paint`'s is inside a call argument under a `Context` and is named by node, not yet by rule.
 
 `--check` gains **P15**: a read on the left of a float-site pair keeps `39 3f 92 ...`, a literal on the left retypes
 to `ae`, and `_has_call_leaf` sees the call in `200000 * 2 * FRand()` but not in `200000 * 2`. The gate can go red:
