@@ -6537,3 +6537,28 @@ argument, where the package keeps `Add_IntInt(Multiply_IntInt(<int>, 2), Divide_
 (`PrimitiveCast 44`) while the walk retypes the pair. That leaf is an **`int` cast of a `float` expression**, which is
 not a literal, so the expectation should stop there the way it stops at a read. **What would settle it:** a bound on
 that leaf shape, scored with the same acceptance test (differ 0, none lost) -- the last body left in the differ set.
+
+**The `int` `%`, measured and refuted (2026-11-27, third round).** The location named above is wrong and so was the
+shape: the 14 bytes are in `CylinderBuilder.Build`, not in `BuildCylinder`'s `sin(...)` (that expression emits
+identically and always did), and the leaf is a **`%`**, in the third argument of the second `Poly4i`:
+`((i+1)%Sides)*2+(1-j)/2`. The image installs exactly one `%` -- `Percent_FloatFloat` (173) over two floats -- so the
+node the walk already wrote is right (`39 44 ad 39 3f ... 39 3f ... 16`); what is wrong is the **type it reports to the
+pair above it**, which `_operator_types` takes from the row's declaration (`float`). The obvious rule -- an `int % int`
+is an `int` value, because the compiler narrows the float row with `FloatToInt` -- was implemented in `_type_of` and
+scored; it is **refuted**, and the numbers are the reason not to try it again in that form:
+
+| run | modelled | gained | lost | differ |
+|---|---|---|---|---|
+| `origin/main` | 11,444 | -- | -- | 1 |
+| `_type_of` answers `int` for an `int % int` | 11,437 | 1 | **8** | 10 |
+
+The one gain is the body this entry is about (`CylinderBuilder.Build` leaves the differ set); the eight losses are
+`ConeBuilder.Build`, `ConeBuilder.BuildCone`, `CylinderBuilder.BuildCylinder`,
+`GRENADE.CalcGrenadeLanding`, `GoauldConsoleHud.DrawHUD`, `ReplicatorHUD.DrawHUD`, `StargateHUD.DrawHUD` and
+`VirtualKeyboardPanel.constructKeyboard`, and the differ census goes 1 -> 10 (three `jump distance` rows and seven
+`EqualEqual_IntInt` opcode rows). **Why it cannot be a global type rule:** in those bodies the `%` sits inside a pair
+the *site* promotes, and there the arithmetic above it really is float -- the same modulo is an `int` value in one
+context and part of a float chain in another, so the bound is the **site**, not the operator. What would settle it: a
+typing rule that is asked only where the pair above is not being promoted (the `_promote_tree`/`_assign` path already
+carries that flag), scored with the usual acceptance test -- differ 0, none lost -- and with
+`CylinderBuilder.BuildCylinder` in the control set, since it is one of the eight this formulation lost.

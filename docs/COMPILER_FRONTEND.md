@@ -3601,7 +3601,8 @@ differ bucket (`Chip.BeginState`, `Chip.HitWall`, `RepChip.BeginState`). Every n
 **What is left here, narrowed but not settled.** Both remaining rows report `jump distance` / `downstream=yes` in
 `inventory/emit_differ.csv`, which is the tool's own verdict that the jump is right and the bytes are elsewhere.
 Walking both sides of each row's own token tree names where: in `CylinderBuilder.Build` the 14 bytes are inside the
-`sin(...)` argument (`VirtualFunction 02`, 117 bytes shipped against 131 ours), where the package keeps the pair
+third `Poly4i` argument (`((i+1)%Sides)*2+(1-j)/2`) -- **not** inside `BuildCylinder`'s `sin(...)`, which emits
+identically in both trees; the last section on this page corrects that reading and refutes the rule it suggested; the pair
 `Add_IntInt(Multiply_IntInt(<int>, IntConstByte 2), Divide_IntInt(...))` and converts only the float factor
 (`PrimitiveCast 44`, `FloatToInt`), while the walk writes
 `FloatToInt(Add_FloatFloat(IntToFloat(<int>), IntToFloat(<int>)))`; in `UPreviewMapListClient.Paint` the 3 bytes are
@@ -3641,3 +3642,45 @@ are exactly the call-side control above, so the narrow rule keeps them.
 `--check` gains **P17** (a `float` property on the right, asserting `Paint`'s bytes) and P16 stays; the retired `Fcount`
 control is recorded with its reason (an operand the walk cannot type reads as a value, not as a call). Removing the
 promoted-subtree branch fails P17, so the gate bites on the rule itself.
+
+## Stage 3, continued -- the last differ row is an `int` `%`, and typing it `int` is refuted (measured 2026-11-27)
+
+**No rule shipped; `origin/main` stays at 11,444 modelled with one body differing.** The row the previous two sections
+left is real, its location in this page was wrong, and the obvious repair fails the acceptance test by eight bodies.
+Both halves are worth keeping, because the next formulation starts here.
+
+**The location, corrected.** The 14 bytes of `CylinderBuilder.Build` are not inside `BuildCylinder`'s `sin(...)` --
+that expression (`(2*i+Ofs)*pi/Sides`) is identical on both sides and always was. They are in `Build`, in the third
+argument of its second `Poly4i`, `((i+1)%Sides)*2+(1-j)/2`:
+
+    shipped   90 39 44 ad 39 3f 92 <i> 26 16 39 3f <Sides> 16 16 2c 02 16  |  Divide_IntInt(1-j, 2) ...
+              Add_IntInt(Multiply_IntInt(FloatToInt(Percent_FloatFloat(...)), IntConstByte 2), Divide_IntInt(...))
+    ours      39 44 ae 39 3f <the same product> 16 39 3f <(1-j)/2> 16 16
+              FloatToInt(Add_FloatFloat(IntToFloat(<product>), IntToFloat(<division>)))
+
+The image installs exactly one `%` (`native(173) ... float % ( float A, float B )`, `Percent_FloatFloat`), so the
+**node** the walk writes is already the package's: `39 44 ad 39 3f <a> 39 3f <b> 16` -- the float row narrowed. What
+is wrong is the type that node reports upward: `_operator_types` answers the row's declared `float`, so the pair above
+it reads as mixed and is emitted as `Add_FloatFloat` with both sides converted, 14 bytes long.
+
+**The rule that was tried, and its score.** `_type_of` answering `int` for a `%` whose two operands' own declared types
+are `int`, scored over the whole corpus against `origin/main`'s own run, keyed per body:
+
+| run | modelled | gained | lost | differ |
+|---|---|---|---|---|
+| `origin/main` | 11,444 | -- | -- | 1 |
+| an `int % int` is an `int` value | 11,437 | 1 | **8** | 10 |
+
+The gain is the row itself (`CylinderBuilder.Build`); the eight losses are `ConeBuilder.Build`, `ConeBuilder.BuildCone`,
+`CylinderBuilder.BuildCylinder`, `GRENADE.CalcGrenadeLanding`, `GoauldConsoleHud.DrawHUD`, `ReplicatorHUD.DrawHUD`,
+`StargateHUD.DrawHUD` and `VirtualKeyboardPanel.constructKeyboard`, and the differ census goes 1 -> 10 (three
+`jump distance` rows, seven `EqualEqual_IntInt` opcode rows). The pattern in the losses is the bound: there the modulo
+sits inside a pair the **site** promotes, and above it the arithmetic really is float -- the same modulo is an `int`
+value in one context and part of a float chain in another. So this is not an operator rule at all: the type depends on
+whether the pair above is being promoted, and the walk already carries that as `_promote_tree`/`_assign`.
+
+`--check` held the rule while it existed (**P18**: an `int % int` reads `int`, a `float` operand's does not, and
+`((slot + 1) % Pofs) * 2` emits `90 | 39 44 ad 39 3f 92 00 63 09 26 16 39 3f 01 4c 07 16 2c 02 16`), and it is recorded
+here rather than shipped because a rule that nets `-7` bodies is a regression under this page's own acceptance test
+(differ 0, none lost). The next formulation asks the same question **only where the pair above is not promoted**, with
+`CylinderBuilder.BuildCylinder` in the control set -- it is one of the eight this one lost.
