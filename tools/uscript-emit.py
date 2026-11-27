@@ -1050,8 +1050,23 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     # `39 3f`. So the bound is the argument *root* and the divide alone: promoting an argument's whole tree was
     # scored before and gained no body, because it retyped the subtract that must stay `int`.
     slot = bool(env.get("_arg")) and sym == "/" and not env.get("_promote_tree")
-    if (root and (site or "").lower() == "float" and (env.get("_assign") or env.get("_promote_tree") or slot)
-            and (not env.get("_arg") or env.get("_promote_tree") or slot)
+    # ...and an argument whose pair carries a **parenthesised group** promotes too: `LinearStairBuilder.Build`'s
+    # `Vertex3f(..., (StepHeight * (NumSteps - 1)) + AddToFirstStep)` ships
+    # `ae 39 3f 90 ... 16 16 39 3f <Ofs> 16` (`Add_FloatFloat` with each operand converted, the group keeping its
+    # own `Multiply_IntInt`), where the walk took the `(int, int)` row behind an `IntToFloat` cast of the whole
+    # node and the group paid a `FloatToInt`/`IntToFloat` round trip -- four bytes.
+    #
+    # The group is the **left** operand, and that is the whole bound: `ScriptedController.SetFireYaw`'s
+    # `Abs(FireYaw - (Rotation.Yaw & 65535))` has the group on the right and ships
+    # `ba b1 39 3f 93 <FireYaw> <And_IntInt> 16 16` -- `Abs(IntToFloat(Subtract_IntInt(...)))`, the pair kept
+    # `int` and cast as a whole -- so a right-hand group promotes nothing (it was the one body this reading lost
+    # when the rule fired for either side). An argument whose pairs are all plain reads keeps its int arithmetic
+    # too (`Abs(BlendC - NewC)` above), so this is not the "promote an argument's whole tree" rule that was
+    # scored before and gained no body.
+    group_slot = bool(env.get("_arg")) and not env.get("_promote_tree") and _paren_wrapped(left)
+    if (root and (site or "").lower() == "float"
+            and (env.get("_assign") or env.get("_promote_tree") or slot or group_slot)
+            and (not env.get("_arg") or env.get("_promote_tree") or slot or group_slot)
             and sym in ("+", "-", "*", "/") and n1 == "int" and n2 == "int"
             and (_leaves_promotable(expr) or (sym == "/" and not _group_narrow(left, env)))):
         hit = _operators().get((sym, "float", "float"))
@@ -2365,7 +2380,10 @@ def _emit_operator(expr, rettype, env, root=False):
     else:
         raise Refused("an operator token below 0x70 (%d), which collides with a real opcode" % token)
     if sym in ("&&", "||", "^^"):
-        # The right operand of a short-circuit operator is wrapped in `Skip` (`18 <uint16> <expr>`), and the word is
+        # **`^^` is not short-circuit**, so it carries no `Skip`: `SGPlayerInput.PlayerInput`'s
+        # `bWasForward ^^ (aBaseY > 0)` ships `83 <left> <right> 16` with the right operand inline, and the walk
+        # wrote the `&&`/`||` wrapper -- one node the package does not have, three bytes long, in every `^^` body.
+        # The other two wrap their right operand, and the word is
         # a distance in the compiler's **uncompacted** code array: from the first byte of the right operand to the
         # end of the enclosing node. `Pawn.InGodMode` writes 36 for `(Controller != None) && (...)`: the right
         # operand is 25 compact bytes plus 10 for its four widened indices, and the node's own `16` makes 36. The
@@ -2374,6 +2392,8 @@ def _emit_operator(expr, rettype, env, root=False):
                  or emit_expr(left, t1, env)[0])
         rightb = (_operand(right, t2, rettype, env, env) or _byte_literal(right, t2, rettype, env)
                   or emit_expr(right, t2, env)[0])
+        if sym == "^^":
+            return _converted(head + leftb + rightb + b"\x16", result, rettype), "xor"
         node = (head + leftb + bytes([0x18]) + struct.pack("<H", _wide(rightb) + 1) + rightb + b"\x16")
         return _converted(node, result, rettype), "short-circuit"
     # The byte context reaches a literal through the operator tree: the assignment types the outermost node, and a
@@ -5217,6 +5237,36 @@ def _natives():
     return out
 
 
+def _within_of(withins, chain, pack, cls):
+    """The class a body is compiled `within`: its own clause, or the nearest ancestor that has one.
+
+    `within` is inherited by the compiler. `B4SParser extends PlaylistParserBase`, which is declared `within
+    StreamPlaylistManager`, and the subclass's `PlaylistName = DefaultPlaylistName;` ships
+    `0f 01 7a 15 | 19 01 8e 05 00 00 | 01 7d 2a` -- the `Outer.<string>` node -- exactly as its parent's read
+    would. Reading only the class's own header left `wcls` empty for the subclass, so the read was emitted bare
+    and the body came out six bytes short.
+    """
+    own = withins.get((cls or "").lower())
+    if own:
+        return own
+    for _p, anc in _ancestors(chain, pack, cls):
+        if withins.get(anc):
+            return withins[anc]
+    return ""
+
+
+def _outer_member(owner, within_chain, order):
+    """True when a property record's declaring class is on the `within` chain and not on the body's own.
+
+    The one test all three tables that mark a name `Outer`-compiled asked separately, and the copy a name that is
+    only an **import** never reached: `SGPlayerInput.PlayerInput`'s bare `aBaseY` is import 436 of StargateGame.u,
+    owner `PlayerController` (which `StargatePlayer` extends), and ships `19 01 cd 01 05 00 04 01 f5 06`. The owner
+    is compared case-folded -- the export table spells it `PlayerController` and the chain is lower case.
+    """
+    low = (owner or "").lower()
+    return bool(low) and bool(within_chain) and low in within_chain and low not in order
+
+
 def _ancestors(chain, pack, cls):
     """[(package, class)] from the class outwards. `classes.csv` keys a super by its own package, so the walk
     crosses a package boundary where the build did -- and it *starts* in the class's own package when the name was
@@ -5475,8 +5525,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
                 # The import's own `package` field is the class that declares it -- the declaring class a
                 # struct-typed receiver is resolved through (`_declaring_class`).
                 scope["prop_cls"][nm] = (_import_owners.get(imp[0][0]) or "").lower()
-                if within_chain and (_import_owners.get(imp[0][0]) or "") in within_chain \
-                        and (_import_owners.get(imp[0][0]) or "") not in order:
+                if _outer_member(_import_owners.get(imp[0][0]) or "", within_chain, order):
                     scope["within_props"].add(nm)
                 continue
             if within_chain:
@@ -5507,7 +5556,7 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
             # The class whose record answered -- the declaring class of the property, which is what a
             # struct-typed receiver's own copy is nested in.
             scope["prop_cls"][nm] = (picked[1] or "").lower()
-            if within_chain and (picked[1] or "") in within_chain and (picked[1] or "") not in order:
+            if _outer_member(picked[1] or "", within_chain, order):
                 scope["within_props"].add(nm)
     # A property this package only *imports* -- an ancestor in another package declares it and no class here
     # re-declares it -- is still a record the compiler wrote, with a negative index: `Corroded.GetPawnDamageEffect`
@@ -5521,6 +5570,11 @@ def _scope(pkg, kinds, names, tables, pack, cls, func_index, chain, natives, tab
         if len(imp) == 1:
             scope["props"][nm] = (INSTANCE_TOKEN, imp[0][0], PROP_TYPE.get(imp[0][1], ""))
             scope["prop_cls"][nm] = (_import_owners.get(imp[0][0]) or "").lower()
+            # A name this package only **imports** is still an `Outer` member where the class that declares it is
+            # on the `within` chain. The export loop above marks the names it sees; a name that is never an export
+            # of this package reached this fallback and was read bare, which is `aBaseY`'s whole difference.
+            if _outer_member(_import_owners.get(imp[0][0]) or "", within_chain, order):
+                scope["within_props"].add(nm)
     # A `delegate` is *two* records: a DelegateProperty named `__X__delegate` and a Function named `X`, so the call
     # `OnChange(Self)` is a `DelegateFunction` naming **both** -- `43 33 1a 17 16` is export 51
     # (`GUI.GUIComponent.__OnChange__Delegate`) and name index 26 (`OnChange`), which is why the base name has to be
@@ -5949,7 +6003,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                                 "cause": _residue_cause(src_texts.get(cls.lower(), []), fname, state)})
                 continue
             rettype, src_body, _text, is_native, _is_final, decl_params, aline = got
-            wcls = withins.get(cls.lower(), "")
+            wcls = _within_of(withins, chain, pack, cls)
             scope = _scope(pkg, kinds, names, tables, pack, cls, ei + 1, chain, natives, table_index, final_of,
                            dims_by_cls, consts_by_cls, within=wcls)
             # The declared type of every property the `within` class's chain spells, nearest ancestor first: the
@@ -5993,7 +6047,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # record only says `StructProperty`
                    "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])},
                    # the class this one is declared `within`, whose names resolve through `Outer`
-                   "within": withins.get(cls.lower(), ""),
+                   "within": wcls,
                    # which state the body is written in: a `Super.F()` prefers the parent's same-state override
                    "state": state.lower(),
                    # ...and the state that one `extends`, whose functions are its own `Super` before the class parent
@@ -7324,6 +7378,79 @@ def check(args):
         if " %d not " % len(unjoined) not in jcensus[0]["cause"]:
             print("FAIL uscript-emit: the join census does not count its %d row(s)" % len(unjoined))
             return 1
+    # P12: `^^` writes **no** `Skip`. `SGPlayerInput.PlayerInput`'s `bWasForward ^^ (aBaseY > 0)` ships
+    # `83 2d <left> 2d <right> 16` with the right operand inline -- `XorXor_BoolBool` does not short-circuit --
+    # and the walk wrote the `&&`/`||` wrapper (`18 <word>`), one node the package does not have. The control is
+    # `&&`, which keeps its `Skip`: the two operators share a head and nothing else.
+    xor_env = dict(env)
+    xor_env["scope"] = dict(SCOPE, props=dict(SCOPE["props"],
+                                              bleft=(0x01, 7, "bool"), bright=(0x01, 8, "bool")))
+    got, _m = emit_expr([("ident", "BLeft"), ("op", "^^"), ("ident", "BRight")], "bool", xor_env)
+    want = b"\x83\x2d\x01\x07\x2d\x01\x08\x16"
+    if got != want:
+        print("FAIL uscript-emit: a `^^` emits %s, expected %s (no `Skip`)" % (got.hex(), want.hex()))
+        return 1
+    got, _m = emit_expr([("ident", "BLeft"), ("op", "&&"), ("ident", "BRight")], "bool", xor_env)
+    if got[:1] != b"\x82" or b"\x18\x07\x00" not in got:
+        print("FAIL uscript-emit: a `&&` lost its `Skip` (%s)" % got.hex())
+        return 1
+    # P13: `within` is **inherited**, and a name the package only *imports* is still an `Outer` member.
+    # `B4SParser extends PlaylistParserBase` (declared `within StreamPlaylistManager`) ships the `Outer` node for
+    # its parent's `DefaultPlaylistName`, and `SGPlayerInput.PlayerInput`'s bare `aBaseY` is import 436 of
+    # StargateGame.u, owner `PlayerController`, shipped `19 01 cd 01 05 00 04 01 f5 06`.
+    wchain = {("", "probecls"): ("", "probeanc"), ("", "probeanc"): ("", "")}
+    if _within_of({"probecls": "", "probeanc": "outercls"}, wchain, "", "probecls") != "outercls":
+        print("FAIL uscript-emit: an inherited `within` clause does not reach the subclass")
+        return 1
+    if _within_of({"probecls": "owncls", "probeanc": "outercls"}, wchain, "", "probecls") != "owncls":
+        print("FAIL uscript-emit: a class's own `within` clause lost to its parent's")
+        return 1
+    if _within_of({}, {}, "", "probecls") != "":
+        print("FAIL uscript-emit: a class with no `within` clause answered one")
+        return 1
+    wc = ["stargateplayer", "playercontroller", "controller", "object"]
+    if not _outer_member("PlayerController", wc, ["sgplayerinput", "playerinput", "object"]):
+        print("FAIL uscript-emit: a `within` chain record was not marked `Outer` (case-folded owner)")
+        return 1
+    if _outer_member("playerinput", wc, ["sgplayerinput", "playerinput", "object"]):
+        print("FAIL uscript-emit: a property of the body's own chain was marked `Outer`")
+        return 1
+    if _outer_member("playercontroller", [], ["sgplayerinput"]):
+        print("FAIL uscript-emit: a class with no `within` chain marked a name `Outer`")
+        return 1
+    # P14: a parenthesised `int` group as a call argument's **left** operand promotes its pair, each operand
+    # converted at its own site and the group keeping its int arithmetic (a right-hand group does not --
+    # `ScriptedController.SetFireYaw`, whose control is below): `LinearStairBuilder.Build`'s
+    # `Vertex3f(..., (StepHeight * (NumSteps - 1)) + AddToFirstStep)` ships
+    # `ae 39 3f 90 <a> 93 <b> 26 16 16 39 3f <c> 16`. The control is the same pair outside an argument root,
+    # which keeps the `(int, int)` row behind one cast (`92 ...`).
+    penv = dict(env)
+    penv["scope"] = dict(SCOPE, props=dict(SCOPE["props"], pwid=(0x01, 12, "int"),
+                                           psteps=(0x01, 14, "int"), pofs=(0x01, 460, "int")),
+                         props_all=dict(SCOPE["props_all"], pwid=[(12, "probe", "IntProperty")],
+                                        psteps=[(14, "probe", "IntProperty")],
+                                        pofs=[(460, "probe", "IntProperty")]))
+    pair = [("op", "("), ("ident", "Pwid"), ("op", "*"), ("op", "("), ("ident", "Psteps"), ("op", "-"),
+            ("number", "1"), ("op", ")"), ("op", ")"), ("op", "+"), ("ident", "Pofs")]
+    got, _m = emit_expr(pair, "float", dict(penv, _arg=True, root_site="float"))
+    want = (b"\xae" + b"\x39\x3f" + b"\x90\x01" + write_index(12) + b"\x93\x01" + write_index(14)
+            + b"\x26\x16\x16" + b"\x39\x3f\x01" + write_index(460) + b"\x16")
+    if got != want:
+        print("FAIL uscript-emit: a grouped `int` argument emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    got, _m = emit_expr(pair, "float", dict(penv, _arg=False))
+    if got[:2] != b"\x39\x3f" or b"\x39\x44" not in got:
+        print("FAIL uscript-emit: a grouped `int` pair outside an argument root lost its cast form (%s)"
+              % got.hex())
+        return 1
+    # ...and the **right**-hand group does not promote: `Abs(FireYaw - (Rotation.Yaw & 65535))` ships the pair
+    # `int` behind one `IntToFloat`, which is `ScriptedController.SetFireYaw`'s own bytes.
+    rpair = [("ident", "Pofs"), ("op", "-"), ("op", "("), ("ident", "Psteps"), ("op", "&"),
+             ("number", "65535"), ("op", ")")]
+    got, _m = emit_expr(rpair, "float", dict(penv, _arg=True, root_site="float"))
+    if got[:2] != b"\x39\x3f" or b"\x93" not in got:
+        print("FAIL uscript-emit: a right-hand group at an argument root was promoted (%s)" % got.hex())
+        return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
     return 0

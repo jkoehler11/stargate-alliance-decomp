@@ -1,5 +1,2 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,3,11292 identical
-jump distance,JumpIfNot,ours shorter,no,1,B4SParser.ParseLines
-opcode,PrimitiveCast,ours longer,,1,LinearStairBuilder.Build
-opcode,Skip,ours shorter,,1,SGPlayerInput.PlayerInput
+(census),,,,0,11300 identical

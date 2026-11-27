@@ -134,7 +134,11 @@ def rows_of(counts, examples):
 
 
 def read_artifact(path):
+    """The artifact's shape rows and its census row. An artifact with **no differing bodies** is a real one: its
+    census row says so, and the render below has a sentence for it rather than an empty table."""
     rows, census_row = [], {}
+    if not os.path.exists(path):
+        return rows, census_row
     with open(path, newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
             if r["family"] == "(census)":
@@ -145,6 +149,10 @@ def read_artifact(path):
 
 
 def render(rows, census):
+    if not rows:
+        return ("**No emitted body differs from the shipped bytes**: every one of the {:,} bodies this walk models "
+                "is the package's own bytes (`inventory/uscript_emit.csv`), and every body it does not model is a "
+                "named refusal in the residue.".format(census.get("identical", 0)))
     total = sum(int(r["bodies"]) for r in rows)
     downstream = sum(int(r["bodies"]) for r in rows if r["downstream"] == "yes")
     lines = []
@@ -252,6 +260,11 @@ def self_check():
         os.rmdir(tmp)
     for line in bad:
         print("FAIL emit-differ: %s" % line)
+    # An artifact with **no** differing bodies renders a sentence, not an empty table: closing the differ set
+    # must not read as a missing artifact (`inventory/emit_differ.csv` is one census row after the last rule).
+    if "No emitted body differs from the shipped bytes" not in render([], {"identical": 11300}):
+        print("FAIL emit-differ: the empty render does not say there are no differing bodies")
+        bad = True
     if not bad:
         print("ok   emit-differ: the six families, the distance that moves with the length, the render and its "
               "round trip")
@@ -272,7 +285,7 @@ def main():
         return self_check()
     if args.check_doc:
         rows, _census = read_artifact(OUT)
-        if not rows:
+        if not rows and not _census:
             print("FAIL emit-differ: %s is missing" % OUT)
             return 1
         block = render(rows, {"identical": _identical(args.emit)})
@@ -289,7 +302,7 @@ def main():
         return 0
     if args.report or args.write_doc:
         rows, _census = read_artifact(OUT)
-        if not rows:
+        if not rows and not _census:
             print("FAIL emit-differ: %s is missing" % OUT)
             return 1
         block = render(rows, {"identical": _identical(args.emit)})
