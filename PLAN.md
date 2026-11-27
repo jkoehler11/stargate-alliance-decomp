@@ -239,6 +239,20 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 a class default object is a writable target: **11,474 modelled / 11,474 byte-identical** (from 11,444;
+  **30 bodies gained, none lost**, residue 244 -> 204, the differ census 1 -> 1). (1) The emitter's target filter in
+  `emit_assign` accepted five shapes and refused the four `emit_expr` already returns for a default object, which was
+  the residue's largest named family (15 `default expression`, 4 `default-chain`, 2 `default-bool`, 2 `default-struct`):
+  `Default.X = v` is `0f 02 <idx> <value>`, `Default.bX = v` is `14 2d 02 <idx> <value>`, a struct default is the record
+  alone, and `X.Default.Y = v` takes the `ClassContext` node the read path builds -- 22 bodies, every one identical.
+  The family's 23rd row (`GameInfo.InitGame`) is refused at a later node, which is why the residue falls by 22.
+  (2) A **package-qualified** class literal (`class'Engine.AIMessage'`) missed a `classrefs` table keyed by the class's
+  own name -- the import record's `package` field is 0 on this build, the same asymmetry `_object_ref` already handles:
+  8 more bodies, none lost, the ninth row still refused deeper in the body. Fixtures: `DefSet`/`DefFlag`/`DefVec` and
+  `QualDefaultText` (the bare spelling's own bytes; dropping the fallback fails `--check` by name).
+  Doc: `docs/COMPILER_FRONTEND.md`, two new sections. Not in this PR: the remaining 204 refusals by family, whose
+  largest is `a call the statement walk cannot bound` (20 bodies, measured: every one is a `while`/`do`/`for` body),
+  and `inventory/uscript_emit_join.csv` unchanged (the 9 non-joining bodies are the same 9).
 - [~] 3.6 an `int % int` is not typed `int` by the operator: **refuted, not shipped** -- `origin/main` stays 11,444 /
   differ 1. The last differ row (`CylinderBuilder.Build`) was mislocated in the two entries below and in U43: its 14
   bytes are the **`%`** of `((i+1)%Sides)*2+(1-j)/2` in the third `Poly4i` argument of `Build`, not `BuildCylinder`'s

@@ -4000,7 +4000,14 @@ def _emit_class_literal(raw, env):
     is a body that reads as measured.
     """
     name = _literal_text(raw[1:-1])
-    ref = (env.get("scope") or {}).get("classrefs", {}).get(name.lower())
+    refs = (env.get("scope") or {}).get("classrefs", {})
+    ref = refs.get(name.lower())
+    if ref is None and "." in name:
+        # A **package-qualified** literal (`class'Engine.AIMessage'`, `class'Engine.PlayerInput'`) joins on the
+        # class's own name, which is the same asymmetry `_object_ref` already carries: the import record's
+        # `package` field is 0 on this build, so the prefix is only the source's spelling and neither table is
+        # keyed by it. `AIMsgManager.GetAIMsgClass` ships `2f 20 <Engine.u's AIMessage export>` for it.
+        ref = refs.get(name.rsplit(".", 1)[1].lower())
     if ref is None:
         raise Refused("a class literal whose class the package's tables do not name")
     return bytes([0x20]) + write_index(ref)
@@ -4335,7 +4342,14 @@ def emit_assign(stmt, at, env):
         # (`modifiers.Length = 0;` writes `0f 37 <read> 0f 25`, an extra token this walk does not model) are refused.
         ptype = _type_of(lhs, env).lower()
         node, shape = emit_expr(lhs, "", env)
-        if shape not in ("context", "bool-context", "struct-member", "element", "length"):
+        # A **class default object is a writable target**, and its node is the one the read path already writes:
+        # `Default.Health = 5;` is `0F 02 <idx> <value>` and `Default.bDead = true;` is `14 2D 02 <idx> <value>`
+        # (`BroadcastHandler.Destroyed` ships `0f 02 4221 2a`, `PlayerInput.UpdateInvert` `14 2d 02 4909 ...`),
+        # a struct default is the record alone (`StargateWeapon.PostLoadSavedGame`'s `0f 02 d004 ...`), and
+        # `X.Default.Y = v` takes the `ClassContext` node the read path builds (`PlayerController.SetAutoTaunt`'s
+        # `14 12 2007 0600 04 2d02 4f1b ...`). Only the target filter excluded these shapes; the bytes were right.
+        if shape not in ("context", "bool-context", "struct-member", "element", "length",
+                         "default", "default-bool", "default-struct", "default-chain"):
             # `A.Length = n;` is a `Let` whose target is the `37` length node: `Profiles.Length = 0;` is
             # `0f 37 01 7d 01 25` and `Recipients.Length = 0;` `0f 37 01 4a 03 25 04 27` -- the length node, then the
             # value, with no extra token (`0f` is the Let; the three bytes after `01` are the member's own index).
@@ -6386,6 +6400,9 @@ function SetHealth() { Health = 100; }
 function SetFlag() { bDead = true; }
 function SetLocal() { Slot = 7; }
 function SetObject() { Target = None; }
+function DefSet()  { Default.Health = 5; }
+function DefFlag() { Default.bDead = true; }
+function DefVec()  { Default.SquadDir = vect(1, 2, 3); }
 function CallNative() { Destroy(); }
 function CallFinal() { MyFinal(); }
 function CallVirtual() { MyVirtual(); }
@@ -6476,6 +6493,7 @@ function string ClassCall() { return class'Probe'.static.Say("x"); }
 function string BadStatic() { return class'Missing'.static.Say("x"); }
 function Actor CastChain() { return Probe(Target).Default.Target; }
 function string LitDefaultText() { return class'Probe'.Default.Caption; }
+function string QualDefaultText() { return class'Engine.Probe'.Default.Caption; }
 function int ACount() { return ArrayCount(Items); }
 function ACountSet() { Health = ArrayCount(Items); }
 function ACountUnknown() { return ArrayCount(Caption); }
@@ -6671,6 +6689,11 @@ WANT = {
     "setflag": "142d012d27040b47",           # LetBool, BoolVariable, InstanceVariable 45, True
     "setlocal": "0f0063092c07040b47",        # Let, LocalVariable 611 (63 09), IntConstByte 7
     "setobject": "0f0163092a040b47",         # Let, InstanceVariable 611 (63 09), NoObject
+    # A class default object as the assignment target: the Let carries the **read** node, and a struct default is
+    # the record alone because there is no `Context` around a copy out of the default object.
+    "defset": "0f026e042c05040b47",          # Let, DefaultVariable 302 (6e 04), IntConstByte 5
+    "defflag": "142d022d27040b47",           # LetBool, BoolVariable, DefaultVariable 45, True
+    "defvec": "0f026c09230000803f0000004000004040040b47",
     "callnative": "611716040b47",            # native token 279: opcode 0x61, operand 0x17, EndFunctionParms
     "callfinal": "1c7b0b16040b47",           # FinalFunction, export index 763 (7b 0b), EndFunctionParms
     "callvirtual": "1b2716040b47",           # VirtualFunction, name index 39
@@ -6793,6 +6816,10 @@ WANT = {
     # A class literal names its own class for the member join, and a non-bool chain keeps skip 5: `class 'Localizer'
     # . default . sSelect` is `12 20 cc 01 05 00 00 02 d5 03` (`GUIMessageBox.InitComponent`), a string member.
     "litdefaulttext": "041220040500000205040b47",
+    # A **package-qualified** class literal writes the same bytes as the bare spelling: neither table is keyed by
+    # the prefix (the import record's `package` field is 0 on this build), so `class'Engine.Probe'` and
+    # `class'Probe'` are one node. The corpus ships eight of them (`class'Engine.AIMessage'`).
+    "qualdefaulttext": "041220040500000205040b47",
     # A **`.static`** call is the same class object inside a `ClassContext` (`12`), and its skip word is `_wide` of the
     # call exactly as a `Context` member's is: `class'Probe'.static.Say("x")` -> `12 20 04 09 00 00 1b 35 1f 78 00 16`
     # (ObjectConst of the class, skip 9 over a 6-byte call with one one-byte index, size 0 for a string return).
