@@ -301,12 +301,19 @@ def params_of(toks, i):
             if words[n][0] in ("ident", "keyword"):
                 name, end = words[n][1], n
                 break
-        typ = "".join(v for _k, v in words[:end])
+        # A modifier is a whole **word**, never a prefix. Joined into one string and stripped by prefix,
+        # `ConstantColor cc` declared the type `antcolor` -- `const` matched the front of `ConstantColor` and
+        # five characters went with it. No class table carries `antcolor`, so `_class_of(['cc'])` answered ""
+        # and `cc.Color.A` refused in `xMaterialController.TickConstantColor`, one link before the struct
+        # member the read needed. Nothing else in the corpus spells a type that starts with one of these five
+        # words, which is why the join survived: the wrong word refused instead of emitting.
+        tywords = words[:end]
         optional = False
-        for mod in ("out", "optional", "coerce", "const", "init"):
-            if typ.lower().startswith(mod):
-                typ = typ[len(mod):]
-                optional = optional or mod == "optional"
+        while tywords and tywords[0][0] in ("ident", "keyword") and tywords[0][1].lower() in (
+                "out", "optional", "coerce", "const", "init"):
+            optional = optional or tywords[0][1].lower() == "optional"
+            tywords = tywords[1:]
+        typ = "".join(v for _k, v in tywords)
         out.append((typ, name, optional))
     return out
 
@@ -3411,6 +3418,15 @@ def _class_of(expr, env):
             # and `default.FontArrayFonts.Length` a `>=` the table never saw.
             own = (env.get("scope") or {}).get("cls") or ""
             return own if own in class_names else ""
+        if low == "outer":
+            # A class declared `within X` reads the outer object as an **X**: `PlayerInput` is
+            # `within PlayerController` and its `Outer.bDemoOwner` is `Actor`'s property read through the
+            # controller. `Object.Outer` is declared `Object`, so every table answered the word `object` and no
+            # chain carried `bDemoOwner`. Outside a `within` class the outer object's class is unmeasured and
+            # the tables' own answer stands.
+            w = (env.get("within") or "").lower()
+            if w and w in class_names:
+                return w
         hit = _prop_by_name(low, env)
         if hit is not None and len(hit) > 3:
             friendly = hit[3] or ""
@@ -3487,6 +3503,12 @@ def _class_of(expr, env):
             # so a call link with no receiver class stays unresolved rather than borrowing the body's function.
             cls = _class_of(expr[:at], env)
             t = _rettype_on(cls, member[0][1], env) if cls else ""
+            # A declaration that returns a **class reference** names the class the chain holds: `LevelInfo`'s
+            # `simulated function class<GameInfo> GetGameClass()` is `class<gameinfo>`, and
+            # `Level.GetGameClass().static.AskForShieldClass(...)` holds a `GameInfo`. The word as declared read
+            # as no class at all, so both `StargatePawn` bodies that ask the game class a question refused --
+            # the same unwrap `_member_record` and the element branch above already make.
+            t = _class_ref_class(t) or t
             return t if t in class_names else _no(
                 "a member call whose declared return type the class table does not carry as a class")
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
@@ -3553,6 +3575,13 @@ def _member_record(obj, nm, env):
         # declaration (`Pawn P` in `Controller.RateWeapon` is `w`), a call whose return type the text declares
         # (`w.GetAIRating()`), or a chain link whose own class the artifact names.
         target = _class_of(obj, env)
+    if _is_outer(obj) and (env.get("within") or "").lower() in (env.get("class_names") or set()):
+        # `Outer` is the **outer class's** object, and a class declared `within X` says which class that is:
+        # `PlayerInput` is `within PlayerController`, so `Outer.bDemoOwner` is `Actor`'s property read through a
+        # controller. `Object.Outer` is declared `Object` and `objclass` answers that word, under which no chain
+        # carries the member. The record stays the import the package writes (`01 8e` for `Outer`); only the
+        # class the member is looked up on changes.
+        target = (env.get("within") or "").lower()
     if target:
         # A receiver declared `class<Z>` has its property's record on **Z**: `Weapon.AmmoName` is
         # `var class<Ammunition> AmmoName`, so `AmmoName.Default.MaxAmmo`'s record is `Ammunition.MaxAmmo` and not
