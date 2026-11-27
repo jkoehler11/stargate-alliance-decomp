@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,624 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,639 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4214,8 +4214,61 @@ named) — progress at a later refusal, counted as neither a gain nor a loss.
   `_array_element` (which requires `array<...>`) answers "". Spelling the word with its brackets was implemented and
   scored: **it moved no body**, so the body's element read is not the only gap and the rule is left out rather than
   shipped unmeasured. The next read is `_element_type`'s own path for a *local* array, with that fix in hand.
+  **Corrected by the next section**: the locals were not in the table at all — an `Event`-property `if` had broken the
+  header scan's brace depth three functions earlier — and the body models at 11,639 without any change to the type word.
 - `TournamentConsole.LaunchUWindow` (`Viewport.Actor.Level.NetMode`) needs a type no artifact carries: `Viewport` is
   a native class with **no script record**, so `class_properties.csv` has no row for `Viewport.Actor` and the chain
   answers `(1, -33, 'object', '')` — the record, with no declared class. `_numeric` accepts an imported `Class` name
   as an object for exactly this reason; `_class_of` cannot, because the *member's* type is the missing word. This is
   the tag-encode/property-census thread's question, not another typing rule here.
+
+## Stage 3, continued -- a native declaration is a relay, and a header scan that keeps brace balance (measured 2026-11-27)
+
+**11,624 -> 11,639 modelled, every one byte-identical, none lost** (fifteen bodies gained; residue 62 -> 47 rows, the
+twelve `a native declaration` rows and the three `Engine.Teleporter` rows gone, the differ census 2 -> 2 unchanged).
+The twelve relays this page's previous section listed as "not in this PR" ship here.
+
+- **A native declared without a script body compiles to a relay, not to nothing.** One `NativeParm` (`0x29`) per
+  parameter in **declaration** order, the operand the parameter's own one-based compact index -- the same index a
+  body's `00` local read names it by -- then the trailer, with **no** `EndFunctionParms` between the parms: the `04`
+  in `29 57 04` is the high byte of index 279, not a terminator. `Object.VSize(vector A)` ships `29 62 04 0b 47`,
+  `Object.Clamp(int V, int A, int B)` `29 57 04 29 58 04 29 59 04 0b 47`, and
+  `Object.Invert(out Vector X, out Vector Y, out Vector Z)` relays **X, Y, Z** although the export table holds them
+  Z(282), Y(284), X(285) -- so the order is the declaration's and the index is the package's. 623 functions in the
+  18 packages ship such a relay, twelve of them with a declaration in the corpus, which is exactly the twelve rows of
+  that refusal. A parameter list the package does not export leaves the relay empty and the body refuses; a relay
+  over a guessed index is a wrong body that looks like a measurement.
+- **A header scan ends at its own parameter list.** `Event` is a keyword *and* an ordinary property name, so a scan
+  started at `if (A.Event == Tag)` ran on to the next `(`/`;`, stepping over the block's braces without counting
+  them: the depth never came back, every later `local` in the class sat at depth 0 and was dropped, and the join that
+  needs a local's declared type answered nothing. `Engine.Teleporter` lost all nine of its function-scoped locals
+  that way -- `PostTouch`'s `Dest[16]` and `AutosaveExists`'s `array<String>` among them -- which is why its bodies
+  refused as an untyped element and a callee the text does not carry. The scan now also stops at `)`, `{`, `}` and
+  `,`; `Teleporter.Accept`, `PostTouch` and `AutosaveExists` gained.
+
+### Score
+
+Per body against `origin/main`'s own tool on the same tree, which reproduces the committed `inventory/uscript_emit.csv`
+(11,624 modelled, residue 62) -- the baseline run is `~/sg1/work/base1127c`:
+
+| run | modelled | gained | lost | residue | differ | native-relay rows |
+|---|---|---|---|---|---|---|
+| `origin/main` | 11,624 | -- | -- | 62 | 2 | 0 |
+| this bundle | **11,639** | 15 | **0** | **47** | 2 | **12** |
+
+The gained set is the eight `Object` relays (`VSize`, `Clamp`, `Min`, `Max`, `Rand`, `Normal`,
+`MirrorVectorByNormal`, `Invert`), the two `UdpLink` relays (`BindPort`, `SendText`),
+`MasterServerClient.StartQuery`, `InternetLink.GetLocalIP`, and `Teleporter.Accept`/`PostTouch`/`AutosaveExists`.
+The differ set is unchanged body for body (`CheatManager.LockCamera` 145 vs 144, `CylinderBuilder.Build` 391 vs 377),
+and no residue row was added: the family histogram over the 47 remaining rows has no `a native declaration` entry at
+all.
+
+### The reading this corrects on the page above
+
+The previous section recorded `Teleporter.AutosaveExists` as refusing on a `local array<String>` whose type word lost
+its closing `>` -- and a spelling fix that moved no body was left out because of it. That was a symptom read as a
+cause: the locals of the class were **not in the table at all**, because the header scan three functions earlier had
+lost the brace depth, so neither the local's word nor its element type was ever asked for. The type word still joins
+its words (`array < string`); the body no longer reaches that read. `--check` now holds both rules -- a relay over
+index 290 and over 279/280/281, two refusals, and an `Event` property comparison in front of a later function's
+locals -- and each fixture fails on the code as it stood on `origin/main`.
