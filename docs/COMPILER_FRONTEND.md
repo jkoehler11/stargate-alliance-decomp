@@ -4051,8 +4051,8 @@ it), and `python3 tools/uscript-emit.py --check` passes -- `ok uscript-emit: 134
 
 ### Score
 
-Per body, against the committed artifact `origin/main` ships (md5 `127c5efa2444bab2113d9341334528b7`, 11,590 lines),
-which a run of `origin/main`'s own tool on the same tree reproduces byte for byte:
+Per body, against the committed artifact `origin/main` ships as the baseline (md5
+`127c5efa2444bab2113d9341334528b7`, 11,590 lines):
 
 | run | modelled | gained | lost | residue | differ |
 |---|---|---|---|---|---|

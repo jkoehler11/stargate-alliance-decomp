@@ -258,8 +258,8 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `AssaultPath.FindNextPath`'s `local AssaultPath List[16];`). (5) **`ArrayCount(M)` of a member folds to the
       dimension the receiver class declares** -- `ArrayCount(Squad.Enemies)` is the literal `Enemies[32]` spells, and
       `HUD.DisplayProgressMessages`'s `ArrayCount (PlayerOwner.ProgressMessage)` is `[4]` (6 bodies). Control: the
-      committed `inventory/uscript_emit.csv` (md5 `127c5efa2444bab2113d9341334528b7`) is reproduced byte for byte by
-      `origin/main`'s own tool on the same tree. The `--check` fixture's `dims_by_cls` moved out of `SCOPE` to the top
+      committed `inventory/uscript_emit.csv` (md5 `127c5efa2444bab2113d9341334528b7`, 11,590 lines) is the baseline
+      this set difference is taken against. The `--check` fixture's `dims_by_cls` moved out of `SCOPE` to the top
       of `env`, where `score()` hands it, and `--check` passes. Doc: `docs/COMPILER_FRONTEND.md`, section of the same
       name. Not in this PR: the 15 operator rows, the 12 native relays, the 10 member rows, the `Outer.<struct>` pair
       (`CheatManager.Teleport`/`Summon`) and the cast table.
