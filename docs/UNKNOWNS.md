@@ -6562,3 +6562,24 @@ context and part of a float chain in another, so the bound is the **site**, not 
 typing rule that is asked only where the pair above is not being promoted (the `_promote_tree`/`_assign` path already
 carries that flag), scored with the usual acceptance test -- differ 0, none lost -- and with
 `CylinderBuilder.BuildCylinder` in the control set, since it is one of the eight this formulation lost.
+
+## U44. Seven emitter rows name `Viewport`, `FileManager` and `ObjectProperty`, and no package declares any of them -- answered: they are native property tables, not a packaging gap
+
+Seven of the front end's 38 remaining refusals fail on a **member** of one of three type words:
+`Viewport.Actor`/`Viewport.Window` (`WindowConsole.LaunchUWindow`, `TournamentConsole.LaunchUWindow`,
+`GUIController.GetPlayerController`, `WindowConsole.Tick`), `FileManager` (`PlaylistParserBase.Import`,
+`M3UParser.Import`) and `ObjectProperty.Name` (`ListObjectPropsCommandlet.Main`). The standing reading was that
+`class_properties.csv` lacks their rows and a packaging re-run would supply them.
+
+**Measured 2026-11-27: no shipped package holds those records, and a re-run cannot make one.** A walk of all 18
+`System/*.u` finds **zero `Class` exports** named any of the three. `ObjectProperty` is *imported* by all 18
+packages, `Viewport` by 6, and `FileManager` by **none** -- the packages spell that one only as a **property type
+word** (`CacheManager.FileManager` is a `UPointerProperty`, `StreamInteraction.FileManager` and
+`StreamPlaylistManager.FileManager` are `UObjectProperty`s). The two classes that do have an image row are
+module-native (`inventory/native_class_packages.csv`: `ObjectProperty,Core,0x0007cca9,Core_UnProp,...`,
+`Viewport,Engine,0x000f92c9,Engine_UnCamera,...`), so their property records live in the **XBE's native property
+table**, which this project has not read.
+
+**What would settle it.** The native property table in `default.xbe` (a per-class record run, above the 492 packed
+class tables), or a use-site census that reads each of the seven bodies' *next* node and takes the member's type from
+it. Neither is a packaging question, so the emitter's residue should stop being described as one.

@@ -4049,7 +4049,12 @@ def _emit_member(expr, rettype, env, element_dim=0):
         # was compacted to -- 2,212 of the corpus's 2,272 such nodes. The other 60 are all `Outer.<bool>` and write
         # 5 (the object is a property import, `01 8e`, and the member read does not widen): that word is measured,
         # not derived, so it stays a constant for that shape only.
-        skip = 5 if _is_outer(obj) else _wide(bytes([0x2D, INSTANCE_TOKEN]) + write_index(index))
+        # ... unless the body declares a `within` clause the class table carries: `Outer` is then that class's
+        # object (see `_member_record`), and the shipped `PlayerInput.PlayerInput` writes `_wide` (6) for its
+        # `Outer.bDemoOwner` where the Object-typed sites write 5. Measured by the whole-corpus score: the
+        # gate is worth exactly one body (`PlayerInput.PlayerInput`, +1, none lost, no other body moved).
+        _wo = (env.get("within") or "").lower() in (env.get("class_names") or set())
+        skip = 5 if (_is_outer(obj) and not _wo) else _wide(bytes([0x2D, INSTANCE_TOKEN]) + write_index(index))
         read = bytes([0x2D, INSTANCE_TOKEN]) + write_index(index)
         node = (bytes([0x19]) + emit_expr(obj, "", env)[0] + struct.pack("<H", skip) + bytes([4]) + read)
         return _converted(node, "bool", rettype), "bool-context"
@@ -8545,6 +8550,43 @@ def check(args):
     if shape != "const-member" or not got.startswith(b"\x19") or \
             not (b"\x2c\x08" in got or b"\x1d\x08\x00\x00\x00" in got):
         print("FAIL uscript-emit: a const behind a chain receiver answered %s (%s)" % (shape, got.hex()))
+        return 1
+    # P20: a parameter's modifier is a whole **word**, never a prefix. `xMaterialController.TickConstantColor`'s
+    # `ConstantColor cc` declared the type `antcolor` because `const` matched the front of the word; no class table
+    # carries `antcolor`, so `cc.Color.A` refused one link before the struct member it needed. The control is the
+    # modifer that *is* a word (`const float t`), which must still lose it.
+    got = params_of([("op", "("), ("ident", "ConstantColor"), ("ident", "cc"), ("op", ","),
+                     ("keyword", "const"), ("ident", "float"), ("ident", "t"), ("op", ","),
+                     ("keyword", "optional"), ("ident", "probe"), ("ident", "p"), ("op", ")")], 0)
+    if got != [("ConstantColor", "cc", False), ("float", "t", False), ("probe", "p", True)]:
+        print("FAIL uscript-emit: a parameter list answered %r, expected ConstantColor/cc, float/t, optional probe/p"
+              % (got,))
+        return 1
+    # P21: `Outer` is the **within** class's object. `PlayerInput` is `class PlayerInput extends Object within
+    # PlayerController`, so `Outer.bDemoOwner` is `Actor`'s property read through the controller; `Object.Outer` is
+    # declared `Object` and no chain carries the member under that word. Outside a `within` class the outer
+    # object's class is unmeasured, so the tables' own answer stands -- that is the control.
+    if _class_of([("ident", "Outer")], dict(env, within="helper")) != "helper":
+        print("FAIL uscript-emit: `Outer` in a `within helper` class did not type as the outer class")
+        return 1
+    if _class_of([("ident", "Outer")], dict(env, within="")) == "helper":
+        print("FAIL uscript-emit: `Outer` outside a `within` clause answered a class")
+        return 1
+    # P22: a member call whose declared return is a **class reference** holds the class the reference names.
+    # `LevelInfo.GetGameClass()` is `class<GameInfo>`, so `Level.GetGameClass().static.AskForShieldClass(...)` holds
+    # a `GameInfo`; read as declared it was no class at all and two `StargatePawn` bodies refused. The control is a
+    # return word that is not a reference, which stays unresolved rather than borrowing the word.
+    zenv = dict(env, class_names=env["class_names"] | {"gameinfo"},
+                rets={**env["rets"], ("probe", "getgameclass"): "class<gameinfo>"})
+    chain = [("ident", "Target"), ("op", "."), ("ident", "GetGameClass"), ("op", "("), ("op", ")")]
+    if _class_of(chain, zenv) != "gameinfo":
+        print("FAIL uscript-emit: a member call declared `class<GameInfo>` typed as %r, expected gameinfo"
+              % (_class_of(chain, zenv),))
+        return 1
+    zctl = dict(zenv, rets={**env["rets"], ("probe", "getgameclass"): "probe2"})
+    if _class_of(chain, zctl):
+        print("FAIL uscript-emit: a member call declared `probe2` typed as %r, expected no class"
+              % (_class_of(chain, zctl),))
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
