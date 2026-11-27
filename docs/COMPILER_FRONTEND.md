@@ -2202,13 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**3 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,292 modelled and identical in the same run). **0** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 3 separate defects.
-
-| first difference | node | length | branch moved with it | bodies | examples |
-|---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours shorter | no | 1 | `B4SParser.ParseLines` |
-| opcode | PrimitiveCast | ours longer | - | 1 | `LinearStairBuilder.Build` |
-| opcode | Skip | ours shorter | - | 1 | `SGPlayerInput.PlayerInput` |
+**No emitted body differs from the shipped bytes**: every one of the 11,300 bodies this walk models is the package's own bytes (`inventory/uscript_emit.csv`), and every body it does not model is a named refusal in the residue.
 <!-- END emit-differ -->
 
 Two things the classification settles for the next run. A **jump distance** whose word moved by exactly the body's
@@ -3439,3 +3433,77 @@ bytes this round: `bWasForward ^^ (aBaseY > 0)` ships `83 <left> <right> 16` wit
 short-circuit and `_emit_operator` wraps it with `&&`/`||` -- and `aBaseY` there is a member of a receiver
 (`19 01 cd 01 05 00 04 01 f5 06`) where the walk writes the bare `01 f5 06`. Those two are the next run's first
 item; the 520-byte gap is that pair repeated down the body.
+
+## Stage 3, continued -- the differ set reaches zero: `^^`, an inherited `within`, a left-hand group (measured 2026-11-26)
+
+**11,300 modelled / 11,300 byte-identical, 0 differing** (from 11,292; **eight bodies gained, none lost**, residue
+386 -> 378 and the differ census **3 -> 0**). Every body the walk models is now the package's own bytes; what is
+left in this thread is refusals, not differences.
+
+**(1) `^^` writes no `Skip`.** `SGPlayerInput.PlayerInput`'s `bEdgeForward = (bWasForward ^^ (aBaseY > 0));` ships
+`83 2d <left> 2d <right> 16` -- the right operand inline, one node -- and `_emit_operator` gave `^^` the
+`&&`/`||` wrapper (`18 <uint16>`). `XorXor_BoolBool` is an ordinary operator pair: it does not short-circuit, so
+there is nothing to skip. `&&` and `||` keep their `Skip`, and `--check` holds both (the `^^` bytes, and `&&`
+still carrying `18 07 00`).
+
+**(2) A bare read of an `Outer` member is a `Context` over `Outer`, and the `within` clause is inherited.** Two
+classes, one rule, and the missing half was in the *table* rather than in the read:
+
+- `B4SParser.ParseLines`' `PlaylistName = DefaultPlaylistName;` ships
+  `0f 01 7a 15 | 19 01 8e 05 00 00 | 01 7d 2a` -- `Context(Outer, skip 5, size 0) <read>`, the size a `string`
+  writes. `B4SParser` carries no clause of its own: `class B4SParser extends PlaylistParserBase`, and
+  `PlaylistParserBase` is declared `within StreamPlaylistManager`. The compiler inherits `within`, so
+  `_within_of(withins, chain, pack, cls)` walks to the nearest ancestor that has a clause.
+- `SGPlayerInput.PlayerInput`'s `aBaseY` is import 436 of StargateGame.u, a `FloatProperty` whose owner is
+  `PlayerController` -- on the `within` chain (`class SGPlayerInput extends PlayerInput within StargatePlayer`) and
+  **not** on the body's own chain -- and ships `19 01 cd 01 05 00 04 01 f5 06`. The marking that makes a read
+  `Outer`-compiled was done only for names that appear as an **export** of the package; a name this package only
+  *imports* reached the later fallback and stayed bare. One helper (`_outer_member`) now answers all three tables
+  and compares **case-folded**: the export table spells `PlayerController` and the chain is lower case.
+
+The previous section called this shape "`aBaseY` is a member of a receiver"; there is no receiver in the source, and
+the node's first operand is `Outer` -- the read is in `Outer`'s scope because the class is declared `within`. The
+same rule took `Admin.DoLogin`/`DoLogout` (`Admin extends AdminBase`, `class AdminBase extends Object Within
+PlayerController`, so `bAdmin` is an `Outer` member) and `XBoxPlayerInput.VelToAccel`/`GetComponentAccel`
+(`aForward`, `aStrafe`, `ForwardFilter`).
+
+**(3) A parenthesised `int` group as a call argument's left operand promotes the pair.**
+`LinearStairBuilder.Build`'s `Vertex3f(..., (StepHeight * (NumSteps - 1)) + AddToFirstStep)` ships
+
+    ae | 39 3f | 90 01 12 93 01 14 26 16 16 | 39 3f | 01 46 01 | 16
+    Add_FloatFloat( IntToFloat( Multiply_IntInt( StepHeight, Subtract_IntInt( NumSteps, IntOne ) ) ),
+                    IntToFloat( AddToFirstStep ) )
+
+-- each operand converted at its own site, the group keeping its int arithmetic -- where the walk took the
+`(int, int)` row behind one `IntToFloat` and the group paid a `FloatToInt`/`IntToFloat` round trip (four bytes).
+The bounds are two, and the second one cost a body before it was measured:
+
+- the group must be the **left** operand. `ScriptedController.SetFireYaw`'s
+  `Abs(FireYaw - (Rotation.Yaw & 65535))` has the group on the right and ships
+  `ba | b1 | 39 3f | 93 <FireYaw> <And_IntInt> 16 | 16`, `Abs(IntToFloat(Subtract_IntInt(...)))` -- the pair kept
+  `int` and cast as a whole. The wider reading (either side) lost that body, and it is in the page as the witness
+  for the narrower one.
+- the pair must be a site the walk promotes at all, `_leaves_promotable`'s bound unchanged: an argument of pure
+  reads keeps its int arithmetic (`Abs(BlendC - NewC)`).
+
+    $ python3 tools/emit-score.py --base ~/sg1/work/g0 --new ~/sg1/work/g2
+    modelled 11292 -> 11300 (+8), gained 8, lost 0, kept 11292, newly differing 0, later refusals 1
+      gained Admin.DoLogin
+      gained Admin.DoLogout
+      gained B4SParser.ParseLines
+      gained LinearStairBuilder.Build
+      gained SGPlayerInput.PlayerInput
+      gained XBoxPlayerInput.GetComponentAccel
+      gained XBoxPlayerInput.PlayerInput
+      gained XBoxPlayerInput.VelToAccel
+
+`--check` holds all three: the `^^` bytes against `&&`'s `Skip`, `_within_of`'s inheritance and `_outer_member`'s
+case-folded test with its own negative controls, and the grouped argument's `Add_FloatFloat` against the same pair
+outside an argument root and against the right-hand group that must stay `int`.
+
+**What is left in this thread.** 378 refusals, all named by shape: `a compound expression, which needs the statement
+walk` (152), `a call the statement walk cannot bound` (20), `a call whose callee declaration the text does not carry`
+(19), `a name neither a local, a property nor an enum constant of the class chain` (17), `an operator the image's
+table does not install` (16) -- plus the one body that moved *later* in the residue without being gained
+(`M3UParser.Import`, from an unknown name to a receiver's class the artifacts do not name). No body's bytes differ
+from the package's any more, which is the state this thread was building toward.

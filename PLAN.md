@@ -239,6 +239,25 @@ Ship four artifacts, each with a machine-checkable pass criterion:
   Doc: `docs/COMPILER_FRONTEND.md` gains the three sections and the statement walk's named residue (405 calls
   with arguments, 283 with a receiver, 58 assignment targets that are chains or indices, 3,934 nested-block
   bodies).
+- [~] 3.6 the differ set reaches zero: **11,300 modelled / 11,300 byte-identical, 0 differing** (from 11,292;
+  **eight bodies gained, none lost**, residue 386 -> 378, the differ census **3 -> 0**). (1) `^^` writes no `Skip`:
+  `bWasForward ^^ (aBaseY > 0)` ships `83 <left> <right> 16`, and `_emit_operator` gave it the `&&`/`||` wrapper.
+  (2) A bare read of an `Outer` member is a `Context` over `Outer`, and the `within` clause is **inherited**:
+  `B4SParser` (no clause of its own, parent `PlaylistParserBase` is `within StreamPlaylistManager`) ships
+  `19 01 8e 05 00 00 <read>` for `DefaultPlaylistName`, and `SGPlayerInput`'s `aBaseY` -- import 436, owner
+  `PlayerController`, on the `within` chain and not the body's -- ships `19 01 cd 01 05 00 04 01 f5 06`. The marking
+  existed for names exported by the package only; a name the package merely *imports* reached the fallback and
+  stayed bare. One helper (`_outer_member`, case-folded) now answers all three tables. (3) A parenthesised `int`
+  group as a call argument's **left** operand promotes its pair: `LinearStairBuilder.Build` ships
+  `Add_FloatFloat(IntToFloat(Multiply_IntInt(...)), IntToFloat(AddToFirstStep))`, each operand converted at its own
+  site. The bound is the left position -- the wider reading (either side) lost `ScriptedController.SetFireYaw`,
+  whose `Abs(FireYaw - (Rotation.Yaw & 65535))` keeps its pair `int` behind one `IntToFloat`. `--check` holds the
+  `^^` bytes against `&&`'s `Skip`, both table helpers with negative controls, and the grouped argument against the
+  same pair outside an argument root and against the right-hand group. Doc: `docs/COMPILER_FRONTEND.md`, new
+  section. Not in this PR: nothing measured here; the thread's next work is the 378 refusals by family (the
+  152-body compound-expression walk, 20 unbounded call statements, 19 callee declarations the text does not carry,
+  17 unknown names, 16 uninstalled operator rows [~]).
+
 - [~] 3.6 a `byte` root types its group, and an empty body is a statement: **11,292 modelled / 11,292
   byte-identical** (from 11,284; **eight bodies gained, none lost**, residue 394 -> 386, the differ census
   **11 -> 3**). (1) A parenthesised `int` group at a `byte` expression root is typed at the root and converted
