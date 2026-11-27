@@ -1358,7 +1358,7 @@ Outer is the class-`Struct` export `FilePath` -- but the record's class only giv
 four bytes). The word a cast or an operator needs is in the source: `Coords.Origin` is a `vector`,
 `FilePath.DirectoryParts` an `array<string>`, `Vector.Z` a `float`. `tools/struct-members.py` reads every class text
 in the dump's 18 packages (2,319 texts) with `uscript-dis.source_structs()` and writes
-`inventory/struct_members.csv`: **164 structs, 800 members, 799 typed**; the one untyped member
+`inventory/struct_members.csv`: **166 structs, 807 members, 806 typed**; the one untyped member
 (`ParticleProjectorInfo.BitmapMaterial`) is declared with two types in the corpus and is written empty rather than
 guessed. The census is what shows the engine's own `Region` struct is **not in any class text** -- the `region` the
 corpus declares has `X`,`Y`,`W`,`H` and no `Zone`, which is why `Viewer.Region.Zone.bDistanceFog` is still refused.
@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,609 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,619 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -3091,7 +3091,8 @@ to a *value*, not to a field.**
 `struct_cands`/`struct_members` key on the bare name the `struct` block declares, so the record lookup missed and the
 member read fell through to the class join. The second half is the same miss one layer down: `CacheManager.uc`
 declares `struct native init MapRecord` -- **no `{ }` block at all**, the fields are the class's own property records --
-so `maprecord`, `gamerecord` and `beaconinfo` are absent from `inventory/struct_members.csv` (a census of the *text*)
+so `maprecord` and `gamerecord` are absent from `inventory/struct_members.csv` (a census of the *text*;
+`beaconinfo` joined it when `source_structs` learned the inline `struct` a `var` statement declares)
 while every member of them is a record in the package. `_receiver_kind` now asks the package's own member records
 (`struct_cands`' keys, precomputed as `scope["struct_keys"]`) beside the text census, and the word is normalised to its
 last dotted segment. Nineteen bodies: `MaplistManager`'s seven (`GetCacheMapList`, `ApplyMapList`,
@@ -4079,3 +4080,81 @@ class's chain and no record carries its word -- the untyped-operand family, next
 
 Not in this PR: the 15 operator rows, the 12 native relays, the 10 member rows, the `Outer.<struct>` pair and the cast
 table.
+
+## Stage 3, continued -- an enum name in front of an operand, a state function's return, and a `struct` declared in a `var` statement (measured 2026-11-27)
+
+**11,609 -> 11,619 modelled, every one byte-identical, none lost** (ten bodies gained; residue 77 -> 67 rows, the
+differ census 2 -> 2). Five readings, each a type the walk did not have -- and between them the operator family the
+last section left at 15 rows is **5**:
+
+- **An enum's own name in front of one operand is a cast, and its value is the `byte` the enum is stored in.**
+  `_enum_cast` has written the `39 3d` wrapper for `InteractionType(enumValue)` since the subscript bundle, but
+  `_type_of` answered `""` for the same node, so `InteractionType(enumValue) == SG1_PLAYER` refused as
+  `(an unknown type == byte)`, `bIgnoreEnemyWhileLanding = (EScriptFollow(AlertnessLevel) <=
+  FOLLOWSCRIPT_IgnoreEnemies);` as an untyped bool assignment, and `switch (InteractionType(user))` as a switch whose
+  comparison width the corpus does not pin. `_enum_cast_type` is the type half of `_enum_cast` and keeps its guards
+  (exactly one argument, and the name is not also a class or a function in scope): `CommandInterface.
+  InteractionAppliesToPlayer`, `CommandInterface.ConvertEnumToName`, `AlkeshBomberBot.SetEnemyReaction`,
+  `TeltakBot.SetEnemyReaction` -- **four bodies**.
+- **A callee declared in the body's own `state` carries its return type there, not in `rets`.** `rets` holds
+  class-scope declarations only, deliberately: a cast's slot join reads it and a state body is a different export. So a
+  call to a state function had no type at all -- `AlkeshBomberBot`'s `state CarpetBombing` declares
+  `function float CarpetBombingDuration()`, and `LineEnd = LineStart + Pawn.Velocity * CarpetBombingDuration()`
+  refused as `(vector + an unknown type)`; `BotEnemy`/`BotRep`'s `MoveInFormation` declares
+  `function float getOffsetDistance()` under a `VSize(...) /` (**three bodies**). `rets_state` is keyed
+  `(class, state, name)` so a parent's same-named state cannot answer for the body's own.
+- **A `struct` block can be declared inside a `var` statement, and the property after its closing brace names it.**
+  `IpDrv.ClientBeaconReceiver` declares `var struct BeaconInfo { var IpAddr Addr; var float Time; } Beacons[32];`, and
+  `source_structs` required the line to *begin* with `struct`, so `Beacons[i].Addr` had no declared type and
+  `Beacons[i].Addr.Addr == 0` refused as `(struct == ipaddr)`: `ClientBeaconReceiver.ReceivedText` and `.Timer`
+  (**two bodies**). One parser fix moves two artifacts, because `tools/struct-members.py` and the emitter both read
+  `source_structs`: `inventory/struct_members.csv` grows **164 structs / 800 members / 799 typed -> 166 / 807 / 806**
+  (`beaconinfo`'s three members and `TestInfo`'s inline `STest` four), and the tool regenerates it byte for byte.
+- **A negative literal is the number's own sign.** `const DOOR_PITCH_MAX = -18000.0;` was stored as `18000.0` because
+  `_consts_of` stopped at the `-`, so `CurrentDoorPitch <= DOOR_PITCH_MAX` refused as `(float <= an unknown type)` with
+  the literal two tokens away in the same file: `HaakenPod.OpenDoors.Tick`, **one body**.
+- **A one-argument call whose head is a class is a cast even when a same-named function exists.** `_cast_kind` refused
+  any name that is both a class and a function in scope ("a call the package declares is a call"), but the compiler
+  decides by **arity**: `Trigger(temp).bInitiallyActive` is a cast to `Trigger` though `Actor` declares the
+  two-argument `event Trigger(Actor Other, Pawn EventInstigator)`. `_cast_name` adds that test and is what `_type_of`,
+  `_class_of` and `emit_expr` now ask. **No body gained from this one and none was lost:** the three it reached --
+  `Door.SpecialHandling`, `SGInteraction.InteractionUsed`, `CommandInterface.TestTraceActors` -- left the operator
+  refusal for `a call the class chain does not declare`, which the residue diff shows as exactly those three rows
+  changing reason. Progress at a later refusal, counted as neither a gain nor a loss.
+
+### Score
+
+Per body against `origin/main`'s own tool on the same tree, which reproduces the committed `inventory/uscript_emit.csv`
+byte for byte (md5 `b1f3971af5f3ec43984a61c5fab5b7e3`, 11,610 lines):
+
+| run | modelled | gained | lost | residue | differ |
+|---|---|---|---|---|---|
+| `origin/main` | 11,609 | -- | -- | 77 | 2 |
+| this bundle | **11,619** | 10 | **0** | **67** | 2 |
+
+The ten gained and the zero lost are a set difference of the two artifacts' `(package, class, state, function)` keys:
+every key `origin/main` modelled is modelled here, and no key was dropped. The differ set is the same two bodies it
+was (`CheatManager.LockCamera`, `CylinderBuilder.Build`; each a `JumpIfNot` distance `ours longer`), and the residue's
+ten fewer rows are exactly the ten gained, so no body moved from a refusal family into the differ set.
+
+### What the residue now names
+
+The 67 rows by family: 12 `a native declaration: its body relays its parameters to the native`, 10 `a member that is
+not a property of the receiver's class`, 6 `a call statement whose receiver's class the artifacts do not name`, **5
+`an operator the image's table does not install`** (from 15), 4 of the call-member kind, 3 `a call the class chain
+does not declare` (the cast-arity trio above), the cast table's 8 (seven `... to string`, one `struct to vector`), the
+2 differ rows, and singletons.
+
+The five operator rows are one family, and it is a *value* the walk cannot type in front of an operator the table
+does carry:
+
+| body | the value | why it has no type |
+|---|---|---|
+| `Teleporter.AutosaveExists` | `AutoSavedGameList[i] == SaveFilename` | a `local array<String>` is a dynamic array; its subscript's element type is the declaration's `String` |
+| `TestInfo.Tick` | `assert(Lotus == vect(1,2,3))` | `const Lotus = vect(1,2,3)` -- a const whose right-hand side is a constructor call, and the const table stores literal text only |
+| `PlayInfo.Dump` | `log("   " $ i $ ")" @ InfoClasses[i].Name)` | `var const array<class<Info>> InfoClasses` -- a subscript on an array whose declared element is `class<Info>` |
+| `StargatePlayer.CheckNewInventoryItems` | `Item.Class.Name == 'InteractionHands'` | `Class` on an object is a class and `.Name` on a class is a `name`; the member read stops at `Class` |
+| `WindowConsole.LaunchUWindow` | `Viewport.Actor.Level.NetMode == NM_Standalone` | `Viewport`'s chain -- `Actor`, `Level`, `NetMode` -- is not resolved from the property import |
+
+Not in this PR: those five rows, the 12 native relays, the 10 member rows, the 8 cast-table rows and the three
+`a call the class chain does not declare` bodies.
