@@ -1,5 +1,4 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,5,11440 identical
-jump distance,JumpIfNot,ours longer,yes,2,CylinderBuilder.Build SheetBuilder.Build
+(census),,,,2,11443 identical
+jump distance,JumpIfNot,ours longer,yes,1,CylinderBuilder.Build
 jump distance,JumpIfNot,ours shorter,yes,1,UPreviewMapListClient.Paint
-opcode,Add_FloatFloat,ours longer,,2,VirtualKeyboardPanel.constructKeyboard UWindowProgressBar.Paint

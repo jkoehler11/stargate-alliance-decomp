@@ -7669,6 +7669,31 @@ def check(args):
     if got[:2] != b"\x39\x3f" or b"\x93" not in got:
         print("FAIL uscript-emit: a right-hand group at an argument root was promoted (%s)" % got.hex())
         return 1
+
+    # P15: the site's `float` expectation is consumed by the **left spine**. `UWindowProgressBar.Paint`'s
+    # `BlockX = LookAndFeel.MiscBevelL[2].W + 1` ships `IntToFloat(Add_IntInt(<read>, IntOne))` -- a read on the
+    # left does not accept the expectation, so the pair keeps its `int` row and the result converts -- while
+    # `W.WinHeight = 12 + MiscBevelT[2].H + MiscBevelB[2].H`'s leading literal does accept it and the whole chain
+    # is `Add_FloatFloat`. The guard on the both-`int` branch is the call leaf: `200000 * 2 * FRand()` promotes at
+    # the root and keeps `Multiply_IntInt(200000, 2)` inside one `IntToFloat`, so a left spine that calls must not
+    # hand the expectation to its own leaves.
+    read_left = [("ident", "Pwid"), ("op", "+"), ("number", "1")]
+    got, _m = emit_expr(read_left, "float", dict(penv, _assign=True))
+    if got[:2] != b"\x39\x3f" or b"\x92" not in got or got[:1] == b"\xae":
+        print("FAIL uscript-emit: a read on the left of a float-site pair retyped (%s)" % got.hex())
+        return 1
+    lit_left = [("number", "1"), ("op", "+"), ("ident", "Pwid")]
+    got, _m = emit_expr(lit_left, "float", dict(penv, _assign=True))
+    if got[:1] != b"\xae":
+        print("FAIL uscript-emit: a literal on the left of a float-site pair did not retype (%s)" % got.hex())
+        return 1
+    if not _left_expects([("number", "1")], penv) or _left_expects([("ident", "Pwid")], penv):
+        print("FAIL uscript-emit: `_left_expects` does not separate a literal from a read")
+        return 1
+    if not _has_call_leaf([("ident", "Frand"), ("op", "("), ("op", ")")]) or \
+            _has_call_leaf([("number", "200000"), ("op", "*"), ("number", "2")]):
+        print("FAIL uscript-emit: `_has_call_leaf` does not see the call in the spine of `200000 * 2 * FRand()`")
+        return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
     return 0

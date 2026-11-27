@@ -2202,12 +2202,11 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**5 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,440 modelled and identical in the same run). **3** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 5 separate defects.
+**2 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,443 modelled and identical in the same run). **2** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 2 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours longer | yes | 2 | `CylinderBuilder.Build`, `SheetBuilder.Build` |
-| opcode | Add_FloatFloat | ours longer | - | 2 | `VirtualKeyboardPanel.constructKeyboard`, `UWindowProgressBar.Paint` |
+| jump distance | JumpIfNot | ours longer | yes | 1 | `CylinderBuilder.Build` |
 | jump distance | JumpIfNot | ours shorter | yes | 1 | `UPreviewMapListClient.Paint` |
 <!-- END emit-differ -->
 
