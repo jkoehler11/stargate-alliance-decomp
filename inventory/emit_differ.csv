@@ -1,8 +1,5 @@
 family,first_node,length_delta,downstream,bodies,examples
-(census),,,,11,11284 identical
-jump distance,Jump,ours shorter,yes,2,Mover.KeyFrameReached ShieldBelt.Tick
-jump distance,JumpIfNot,ours shorter,no,2,PlayerController.ReplicateMove B4SParser.ParseLines
-jump distance,JumpIfNot,ours shorter,yes,2,PlayerController.CallServerMove PlayerController.CallServerMove
-jump distance,JumpIfNot,same length,no,3,AdminBase.SendComplexMsg ListObjectPropsCommandlet.WriteResults GUIMessageBox.InternalOnPreDraw
+(census),,,,3,11292 identical
+jump distance,JumpIfNot,ours shorter,no,1,B4SParser.ParseLines
 opcode,PrimitiveCast,ours longer,,1,LinearStairBuilder.Build
 opcode,Skip,ours shorter,,1,SGPlayerInput.PlayerInput

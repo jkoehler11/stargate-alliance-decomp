@@ -2188,6 +2188,31 @@ def _group_widen(part, env):
     return (_type_of(_strip_parens(part), env) or "").lower() == "int"
 
 
+def _group_byte(part, env):
+    """True when a parenthesised `int` group is compiled at the `byte` expression root it sits under.
+
+    The third member of the `_group_narrow`/`_group_widen` family, and the one the round trip is *widest* for:
+    a `byte` root types the group at `byte` and the slot it feeds takes it back, so the boundary carries
+    `IntToByte` and then a cast from `byte` -- `39 3d 39 3a` (`IntToByte`, `ByteToInt`) into an `int` slot and
+    `39 3d 39 3c` (`IntToByte`, `ByteToFloat`) into a `float` one.
+
+    Four measured bodies, all of them differ rows before the rule:
+
+    * `PlayerController.CallServerMove` (both state bodies), `ReplicateMove`: `(Roll >> 8) & 255` as a `byte`
+      call argument ships `IntToByte(And_IntInt(ByteToInt(IntToByte(Roll >> 8)), 255))`;
+    * `Mover.KeyFrameReached`'s `(KeyNum + 1) % NumKeys` at `InterpolateTo`'s byte parameter -- the group is
+      `ByteToFloat(IntToByte(Add_IntInt(ByteToInt(KeyNum), IntOne)))`;
+    * `ShieldBelt.Tick`'s `(Pawn(Owner).Default.Visibility - InvisRating) * Percent + InvisRating` into the
+      `byte` `Visibility` property, where the group pays `IntToByte` then `ByteToFloat`.
+
+    The group's **declared** type is `int` in every one of them, so the bound is the root's type and not the
+    group's -- the previous round's guess ("the group's declared type is `byte`") was wrong.
+    """
+    if (env.get("root_site") or "").lower() != "byte" or not _paren_wrapped(part):
+        return False
+    return (_type_of(_strip_parens(part), env) or "").lower() == "int"
+
+
 def _paren_wrapped(expr):
     """True when the **whole** token run is one parenthesised group -- a new expression root for the fold rule."""
     if len(expr) < 3 or expr[0] != ("op", "(") or expr[-1] != ("op", ")"):
@@ -2372,9 +2397,9 @@ def _emit_operator(expr, rettype, env, root=False):
     # position is its own `float` (`Vehicle.HealDamage`'s `Min(Health + (Amount * LinkHealMult), HealthMax)` promotes
     # the pair to `float` and narrows only at the argument's boundary).
     right_env = {k: v for k, v in inner.items()
-                  if k not in ("root_site", "int_site", "group_int")}
+                  if k not in ("root_site", "int_site", "group_int", "byte_root")}
 
-    def _side(part, want, side_env, do_promote, folded, narrow=True):
+    def _side(part, want, side_env, do_promote, folded, narrow=True, byte_lit=True):
         """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
         if narrow and _group_narrow(part, env):
             # The group's **result** is the root's type; its own arithmetic keeps the type it has. So the group is
@@ -2399,6 +2424,16 @@ def _emit_operator(expr, rettype, env, root=False):
                 return _converted(_converted(core, "int", "float"), "float", want)
             except Refused:
                 pass
+        if narrow and _group_byte(part, env):
+            # The group is compiled at the `byte` root it sits under and taken back into the slot it feeds:
+            # `IntToByte` at the boundary, then a cast *from* `byte` (`39 3d 39 3a` into an `int` slot,
+            # `39 3d 39 3c` into a `float` one). Measured on `CallServerMove`'s two bodies, `ReplicateMove`,
+            # `KeyFrameReached` and `ShieldBelt.Tick` -- see `_group_byte`.
+            try:
+                core = emit_expr(_strip_parens(part), "int", dict(side_env, _root=False))[0]
+                return _converted(_converted(core, "int", "byte"), "byte", want)
+            except Refused:
+                pass
         if ((want or "").lower() == "int" and (rettype or "").lower() == "int" and _paren_wrapped(part)
                 and _leading_literal(part) is not None):
             # A group the site narrows keeps its leading literal int-narrowed (`CurvedStairBuilder`); the group's own
@@ -2412,7 +2447,7 @@ def _emit_operator(expr, rettype, env, root=False):
                 return emit_expr(part, "float", dict(side_env, _promote_tree=True))[0]
             except Refused:
                 pass                       # not a subtree this walk can promote -- the cast shape is the fallback
-        return (_byte_literal(part, want, rettype, inner)
+        return (_byte_literal(part, want, rettype if byte_lit else "", side_env)
                 or folded
                 or _operand(part, want, rettype, env, side_env)
                 or emit_expr(part, want, side_env)[0])
@@ -2436,7 +2471,7 @@ def _emit_operator(expr, rettype, env, root=False):
     node = (head + _side(left, t1, left_env, promote["l"] and _operator_types(_strip_parens(left), env) is not None,
                          folded_left)
             + _side(right, t2, right_env, promote["r"] and _operator_types(_strip_parens(right), right_env) is not None,
-                    None, narrow=False)
+                    None, narrow=False, byte_lit=False)
             + b"\x16")
     return _converted(node, result, rettype), "operator"
 
@@ -4297,6 +4332,21 @@ def _switch_groups(toks, i):
     return groups, i
 
 
+def _body_at(toks, i):
+    """`(node, next index)` for the body of `if`/`for`/`while`, where a `;` is the **empty statement**.
+
+    `_stmt_at` skips a leading `;`, so `if (c) ; S;` and `for (a; b; c) ; S;` read `S` as the body. The
+    compiler writes an empty body as nothing at all -- the `if`'s `JumpIfNot` names the position right after
+    itself and the `for`'s step follows its condition directly, with `S` outside the construct
+    (`AdminBase.SendComplexMsg`, `ListObjectPropsCommandlet.WriteResults`,
+    `GUIMessageBox.InternalOnPreDraw`, `PlayerController.ReplicateMove`'s `if ( PendingMove.StartBase !=
+    Pawn.Base);`).
+    """
+    if i < len(toks) and toks[i] == ("op", ";"):
+        return ("empty",), i + 1
+    return _stmt_at(toks, i)
+
+
 def _stmt_at(toks, i):
     """`(node, next index)` for one statement at token `i`.
 
@@ -4327,11 +4377,11 @@ def _stmt_at(toks, i):
             parts = _split_semis(inner)
             if len(parts) != 3:
                 raise Refused("a for whose header is not three clauses")
-            body, j = _stmt_at(toks, close + 1)
+            body, j = _body_at(toks, close + 1)
             if body is None:
                 raise Refused("a for with no body")
             return ("for", parts[0], parts[1], parts[2], body), j
-        body, j = _stmt_at(toks, close + 1)
+        body, j = _body_at(toks, close + 1)
         if body is None:
             raise Refused("a %s with no body" % low)
         if low == "while":
@@ -4444,6 +4494,9 @@ def emit_flow(node, rettype, env, pos):
     and `while (c) S;` writes the trailing `Jump`'s position while that `Jump` writes the loop's own start.
     """
     kind = node[0]
+    if kind == "empty":
+        # The body of `for (...);` -- no bytes at all, so the step follows the condition directly.
+        return b"", "empty", "empty"
     if kind == "simple":
         if len(node[1]) == 1 and node[1][0][0] == "keyword" and node[1][0][1].lower() in ("break", "continue"):
             # `break` leaves the nearest `switch` or loop, `continue` the nearest loop: both are a bare `Jump` to an
@@ -6141,6 +6194,8 @@ function WhileThen() { while (bDead) Health = 1; Health = 2; }
 function ForLoop() { for (Slot = 0; Slot < 2; Slot++) Health = 1; }
 function DoLoop() { do Health = 1; until (bDead); }
 function ForCompound() { for (Slot = -1; Slot < 2; Slot += 2) Health = 1; }
+function ForEmpty() { for (Slot = 0; Slot < 2; Slot++) ; Health = 1; }
+function IfEmpty() { if (bDead) ; Health = 1; }
 function IncSlot() { Slot++; }
 function PreIncSlot() { ++Slot; }
 function AddToSlot() { Slot += 2; }
@@ -6436,6 +6491,13 @@ WANT = {
     # The same `for` with a compound assignment for its step: `Slot += 2` is AddEqual_IntInt, not Add_IntInt.
     "forcompound": "0f0063091dffffffff072a00960063092c0216"
                    "0f016e0426a10063092c0216060b00" "040b47",
+    # A `for` (and an `if`) whose body is the **empty statement**: no body bytes at all, so the step follows the
+    # condition directly and the statement after the loop sits outside it. Shipped: `AdminBase.SendComplexMsg`'s
+    # `for (Border = ""; Len(Border) < Longest; Border = Border $ "-") ;` is `07 80 00 <cond> <step> 06 5c 00`
+    # with the `ClientMessage` call after the back-jump, and `PlayerController.ReplicateMove`'s
+    # `if (PendingMove.StartBase != Pawn.Base);` is a `JumpIfNot` naming the position right after itself.
+    "forempty": "0f00630925071d00960063092c0216a5006309160607000f016e0426040b47",
+    "ifempty": "0709002d012d0f016e0426040b47",
     # The four increment forms are four opcodes: postfix/prefix on an int (0xa5/0xa3) and on a byte (0x8b/0x89).
     "incslot": "a500630916040b47",
     "preincslot": "a300630916040b47",
@@ -6651,6 +6713,16 @@ def check(args):
     if "3944393f" not in got.hex():
         print("FAIL uscript-emit: a paren int group at an int slot emits %s, expected the 39 44 39 3f round trip"
               % got.hex())
+        return 1
+    # A parenthesised `int` group at a `byte` root is the same round trip one width down --
+    # `CallServerMove`'s `((Roll >> 8) & 255)` as a `byte` argument ships `39 3d 9c 39 3a 39 3d 95 ...` -- and the
+    # literal on the right of the shift stays an `IntConstByte` (`2c 08`), never a `ByteConst` behind a cast.
+    grp3 = [("op", "("), ("ident", "Slot"), ("op", ">>"), ("number", "8"), ("op", ")"), ("op", "&"),
+            ("number", "255")]
+    got, _shape = emit_expr(grp3, "byte", dict(env, _root=True, root_site="byte"))
+    if not got.hex().startswith("393d9c393a393d95") or "2c08" not in got.hex() or "393a2408" in got.hex():
+        print("FAIL uscript-emit: a paren int group at a byte root emits %s, expected 39 3d 9c 39 3a 39 3d 95 "
+              "... 2c 08 ..." % got.hex())
         return 1
     # A `const` in the leading operand position folds like the number written there; a float const's own text is
     # left to the leaf, which writes it as `1e` already.
