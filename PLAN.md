@@ -1578,6 +1578,31 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       `SquadAISG`'s `var Actor HideNodeCandidates[32];` hid `local float HideNodeDistances[32];` and
       `ArrayCount(HideNodeDistances)` refused. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this
       PR: the whole-corpus score, and the parameter dimension (`SetEnemies(Pawn Enemies[16])`).
+- [~] 3.6 a bare `switch` head, a parameter's dimension, and a function-local `class<Z>`: **11,661 -> 11,664
+      modelled, every one byte-identical, none lost**; residue 25 -> 22, differ unchanged. Measured per body over the
+      whole corpus against `origin/main`'s tool on the same tree in one run each (its `--tree $WORK/scripts-all` run
+      answered 11,661). (1) **A `switch` expression need not be parenthesised**: `CountTrigger.ChangeCount` ships
+      `switch TriggerWhen` and the compiler wrote the same `05 01 <read> 0a ...` a parenthesised head writes, so the
+      requirement refused a body whose only oddity was the source's style; a head with no expression still refuses.
+      (2) **A parameter's `[N]` is a declaration**: `SetEnemies(Pawn Enemies[16])` makes the body's `ArrayCount`
+      16, and `_array_dims` reads `var`/`local` only, so `params_of` now carries the dimension as a fourth field (the
+      three the walk reads keep their positions) and `_source_index` puts it in the dimension table
+      (`ReetouProtectorBot.SetEnemies`). (3) **A function's own declaration of a name shadows the class-wide
+      `class<Z>`**: the class-wide table keeps only the first declaration of a name and `_class_of` reads it first, so
+      `StargateHUD.ToggleGameHUD`'s `local GameHUD G` was read through another function's `local class<GameInfo> G`
+      and `G.HideHud` joined on `GameInfo` (`_classref_tables`). **The committed artifact was one bundle behind its own
+      tool**: `origin/main` models 11,661 on this tree while the merged CSV held 11,657 -- #998 scored
+      `StargateGame.u` alone (3,248 -> 3,251) and shipped no corpus run, so its four bodies
+      (`PlayImpatience`, `Play3DSound`, `SquadAISG.UpdateSquadCoverNodes`, `ObjectivesPanel.InitComponent`) were only
+      in the tool. The 11,657 -> 11,664 move is therefore +4 the artifact owed and +3 from this bundle. **Three of the
+      five new `--check` fixtures did not discriminate**: against copies with one rule reverted, P26/P30 refused the
+      statement and died with a traceback instead of naming the rule, and P27's fixture put its `local` at class
+      scope, where the old scan reads it anyway and the reverted copy stayed green -- all five now print their own
+      FAIL (P27 carries a function-body `local`, the shape `SquadAISG` has). Measured on the way: the corpus tree's
+      flat `GameInfo.uc` carries an experiment edit (`return 0` for the shipped `return 255`) and is inert only
+      because `_source_index` reads the package copy last (`GetDefenderNum` is identical at `042cff040b47`). Not in
+      this PR: `ObjectivesPanel.InitComponent`'s write-up and the family tail. Files: `tools/uscript-emit.py`,
+      `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
 - [~] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       **the serializer is identified** (`docs/NATIVE_VM.md`, `inventory/class_serialize_slots.csv`): slot 11 of every
       class table is `Serialize`, `UStruct`'s is at `0x000392b0`, and its decompiled body shows the script stored as
