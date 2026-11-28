@@ -1129,12 +1129,15 @@ def _operator_types(expr, env, site="", root=False, typing=False):
             continue
         if i == 0 or i == len(expr) - 1:
             continue                    # a unary position: the sign of a literal, or a lone symbol
-        if expr[i - 1][0] == "op" and expr[i - 1][1] not in (")", "]", "}"):
+        if expr[i - 1][0] == "op" and expr[i - 1][1] not in (")", "]", "}", "++", "--"):
             # A sign whose left neighbour is an **operator** is in an operand position, so it is *unary*: the
             # walk read `Pawn.Floor * - 256` as a `-` node (looser than `*`) whose left operand was the token
             # string `Pawn . Floor *`, typed nothing, and refused a pair the table does install. The operand
             # position's own type comes from `_type_of` on the signed token run (`- 256` is a literal, `- Health`
             # is `_unary_types`), never from the pair table.
+            # A **postfix** `++`/`--` is the exception: it closes its operand, so `i ++ $ Names[...]` is a `$`
+            # pair whose left side is the increment -- `GUIController.GenerateFakeNames` refused the whole run as
+            # "an element of an array the artifacts do not type" until this set carried them.
             continue
         prec = OPERATOR_PREC.get(sym, 0)
         # the loosest operator wins, and the rightmost on a tie (left-associative: `a - b - c` is `(a - b) - c`)
@@ -9332,6 +9335,23 @@ def check(args):
         pass
     else:
         print("FAIL uscript-emit: an object literal typed by a word no object has was emitted")
+        return 1
+    # P43: a postfix `++`/`--` **closes** an operand, so an operator written after it is binary.
+    # `GUIController.GenerateFakeNames`'s `Left(i ++ $ FakeNames[...], 15)` splits at the `$`; a scan that read the
+    # `$` as a unary sign -- its left neighbour is an operator -- typed nothing, and the whole run fell through to
+    # the element branch and refused as "an element of an array the artifacts do not type". The control is the same
+    # shape after a **binary** operator's `-`, which is a sign and must stay unary.
+    ienv = dict(env, scope=dict(SCOPE, locals={"i": (0x00, 131, "int")}))
+    hit = _operator_types(tokens_of("i ++ $ Suffix"), ienv)
+    if not hit or hit[0] != "$":
+        print("FAIL uscript-emit: an operator after a postfix increment reads as %r, expected `$`" % (hit,))
+        return 1
+    if hit[3] != "string":
+        print("FAIL uscript-emit: an increment `$` a string types %r, expected `string`" % (hit[3],))
+        return 1
+    hit = _operator_types(tokens_of("Slot * - 256"), ienv)
+    if not hit or hit[0] != "*":
+        print("FAIL uscript-emit: a literal's sign after a binary operator reads as %r, expected `*`" % (hit,))
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
