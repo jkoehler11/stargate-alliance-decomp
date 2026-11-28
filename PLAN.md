@@ -7015,6 +7015,32 @@ are limited to expected fields (checksum/timestamp) and documented.
   sections corrected in place) + `docs/UNKNOWNS.md` U17 (twelfth) + `make class-record-front` + this note. Reads the
   packages and one committed artifact; no boot, no value decoded, no game data written.
 
+### Execution notes (2026-11-28, the closing group is real on the 279, and the block start sits inside it)
+
+- **The 279 `group: no-parse` rows are a boundary error, not a grammar error.** A committed four-field group
+  (`class-defaults.py`'s `group_intervals`) begins exactly at the array's end on **259** of them and runs 2-13 bytes
+  past the located block start. Offering its end as the block, with a tag stream required there, closes **188**;
+  **71** open an empty stream and stay open, **20** have no group at the array's end. The located start's first "tag"
+  is a package-level name (`System` 79, `Core` 72, `Lighting` 27), and the group's end opens exactly one real
+  property -- the end-witness shape `docs/CLASS_DEFAULTS.md` measured over its zero-fraction blocks. The moves are
+  +4/+3/+5/+7/+6/+8/+9, the same ones the defaults chooser reports for its 373 starts.
+- **The element bound is measured, not widened.** **466** rows hold 9 to 49 records; on **372** of them the group ends
+  exactly on the located start *and* begins exactly at the array's end, so the count byte and the reference widths
+  (front side) meet a group start taken from the block side. The bound moves 8 -> 512: closes **1,228 -> 1,600**, plus
+  **243** on the group's end; the one-byte-late control rises 281 -> 509 in step, so the join is the evidence and the
+  bound is not. Cost: `array: array overruns` 134 -> 175, because a legal count can now run past the block.
+- **The fourth front field is not a script length.** `script_len` is recorded with the class's `TextBuffer` export
+  size: of the 62 rows that read nonzero, 8 ship bytes there and the field equals that size on none of them. Those 62
+  are the function-rich base classes (`Engine.Actor` 1,715) and remain open.
+- **What is still open**: the 71 empty group ends, the 20 rows with no group at the array's end, the 175 overruns,
+  the 1-3 byte join on the 29 (a compact-shaped value such as `035291`), and the 62 fronts.
+- Tool (`tools/class-record-chain.py`: `--block-from-group`/`--no-block-from-group`, `--max-count` now defaulting to
+  512, ten new artifact columns, and a `--check` that closes a block inside the group as unwitnessed and a
+  nine-record array with its stride) + `inventory/class_record_chain.csv` (2,204 rows, 46 columns) +
+  `docs/NATIVE_VM.md` (*The closing group is real on the 279*, and three earlier sentences corrected in place) +
+  `docs/UNKNOWNS.md` U17 (fourteenth) + `make class-record-chain` + this note. Reads the packages and three committed
+  artifacts; no boot, no Ghidra, no value decoded.
+
 ### Execution notes (2026-11-28, the record closes from the prefix's end, and the head-less 954's fault is the scan's unit)
 
 - **The chain does not need the tail anchor, and it settles the classes the anchor cannot reach.**
