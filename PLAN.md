@@ -1603,6 +1603,33 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       because `_source_index` reads the package copy last (`GetDefenderNum` is identical at `042cff040b47`). Not in
       this PR: `ObjectivesPanel.InitComponent`'s write-up and the family tail. Files: `tools/uscript-emit.py`,
       `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
+- [~] 3.6 a class the package imports, an array value's width, and a native member's word:
+      **11,671 -> 11,674 modelled, every one byte-identical, none lost**; residue 15 -> 12, differ unchanged (1).
+      Measured per body over the whole corpus (one run, `--tree $WORK/scripts-all`, 18 packages) and compared row by
+      row with the baseline: `~/sg1/work/rf/base` (11,671 / 15 residue / 1 differ) against `~/sg1/work/rf/sc1`; the
+      two `uscript_emit.csv` runs differ by 0 rows removed, 3 added, 0 moved. (1) **An array value's size byte is 0,
+      whatever its element** -- `MaplistManager.ShiftMap`'s `Maps = ...GetMaps();` ships `19 <recv> 06 00 00 1b 5a 11
+      16`, a `Context` with size 0 around a call returning `array<MapItem>`, and `RETURN_SIZE` carried one
+      `array.string: 0` row -- so `array.<element>` is the test and that row is one witness of the rule, not a type;
+      applied in `_emit_member_call` and `_value_size`, with a word that names no value still refused (P34). (2) **A
+      class the package imports as a `Class` is a class** even when no shipped package exports it: `Viewport` is
+      engine-native (`inventory/native_class_packages.csv`), `UWindow.u`'s own import table carries `viewport <- Class
+      <- Core`, and `_class_of` refused `WindowConsole.LaunchUWindow` as *`viewport` is declared `Viewport`, which is
+      not a class the class table carries*; `score()` unions that per-package import set into `class_names`. (3) **A
+      native member's type word is its own name when the package also imports it as a `Class`**: `Viewport`'s `Actor`
+      is a `UObjectProperty` with no declared word and the chain stopped there although `Actor.Level` is `LevelInfo`
+      on the class table; only a member name the package also imports as a `Class` takes this reading (P35).
+      **Gained, all byte-identical**: `MaplistManager.ShiftMap`, `GUIController.GetPlayerController`,
+      `ListObjectPropsCommandlet.Main`. **Four rows advanced rather than gained** -- `WindowConsole.LaunchUWindow`,
+      `TournamentConsole.LaunchUWindow`, `WindowConsole.CloseUWindow`, `TournamentConsole.ConnectWithPassword` -- from
+      *a member that is not a property of the receiver's class* / *a receiver's class the artifacts do not name* to
+      *a call whose callee declaration the text does not carry* (`SetPause`, `ClientTravel`), which is this thread's
+      next instrument. **U44 is closed**: its five rows needed no XBE native property table -- two model
+      byte-identically and three refuse one node later -- so the entry's "what would settle it" is answered by the
+      packages' own import tables. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the
+      twelve rows left on the thread (`GUIController.GenerateFakeNames`'s `$` operand, `GUITabControl.RemoveTab`'s
+      delegate, `StargateVoicePack.PlaySpeech`, `RechargingAmmo.Tick`, `TestInfo.TestSwitch`,
+      `ExtendedConsole.PostRender`, `WindowConsole.Tick`, the four callee rows and `CylinderBuilder.Build`).
 - [~] 3.6 a `new`'s three slots, an `Outer` struct's width, and a cast whose name is also a function:
       **11,664 -> 11,671 modelled, every one byte-identical, none lost**; residue 22 -> 15, differ unchanged (1).
       Measured per body over the whole corpus in one run each against `origin/main`'s own tool on the same tree
