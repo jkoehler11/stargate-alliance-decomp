@@ -19609,3 +19609,21 @@ sequence.
       `CylinderBuilder.BuildCylinder` and the two `DeathMatch.Timer` bodies in the control set. Doc:
       `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the import-owner size half (written,
       `--check` P44 proven to bite, unscored) and the `%`-at-the-parent's-row formulation.
+
+- [~] 3.6 the value position's half of the import join: **`WindowConsole.Tick` models byte-identically, `UWindow.u`
+      reads 731 of 731 modelled with 0 refused and 0 differ** (from 730 and the operator residue row this body was),
+      and the whole corpus reads **11,684 -> 11,685 modelled / identical** with the residue at **1** row
+      (`CylinderBuilder.Build`), from one run over 18 packages and 11,687 walked bodies. A member call whose
+      receiver's declared class does not declare the callee is answered by the class its **import** belongs to --
+      the join `_callee_head` already makes for the `final` flag -- in `_type_of` (the type: `Viewport.Actor` types
+      `actor`, `UWindow.u` imports one `GetEntryLevel` whose own `package` field names `PlayerController`, so the
+      call is a `levelinfo` and `Level != GetEntryLevel()` is `NotEqual_ObjectObject`) and in `_emit_member_call`
+      (the value size: a class is pointer-sized, so the call's `Context` writes **4** where an unanswered type wrote
+      0). Bounded to a unique `Function` import; `--check` gains **P44**, proven to FAIL on a copy with the join
+      reverted. Measured and **not in this PR**: `CylinderBuilder.Build`'s `%` -- ours differs only at the outer
+      `+` (`Add_FloatFloat(IntToFloat(<int product>), IntToFloat(<int divide>))` against the package's
+      `Add_IntInt`), and enabling `_operator_types`' own retired `int`-site narrowing branch changes no body of
+      `Editor.u`, `GUI.u` or `GamePlay.u` and does not gain this one, so the site's propagation down the left spine
+      is still open. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Files: `tools/uscript-emit.py`,
+      `inventory/uscript_emit.csv`, `inventory/uscript_emit_join.csv`, `inventory/emit_differ.csv`,
+      `docs/COMPILER_FRONTEND.md`, `PLAN.md`.

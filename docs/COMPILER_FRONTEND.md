@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,684 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,685 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4910,3 +4910,45 @@ the same modulo under a `float` pair is widened with `39 3f`, and the operator's
 The next formulation compiles the child at the parent's own row instead of answering the `%` a type, with
 `CylinderBuilder.BuildCylinder` and the two `DeathMatch.Timer` bodies in the control set; the refutation is recorded
 here rather than shipped because a rule that nets -7 bodies fails this page's acceptance test (differ 0, none lost).
+
+## The value position's half of the import join: a callee's type and size are its import's owner's (measured 2026-11-28)
+
+**`WindowConsole.Tick` models byte-identically and `UWindow.u` reads 731 of 731, 0 refused, 0 differ** (from 730
+with the operator residue row this body was). `WindowConsole.Tick`'s condition is
+`Viewport.Actor.Level != Viewport.Actor.GetEntryLevel()`, and the package writes
+`NotEqual_ObjectObject(Context(Level), Context(skip 6, size 4, FinalFunction cf01))`:
+
+    shipped   19 | 19 01 62 03 05 00 04 01 a1 | 06 00 | 04 | 1c cf 01 | 16 16   the call's Context, size 4
+    before    an operator the image's table does not install (levelinfo != an unknown type)
+
+Two joins stood between the walk and that byte, and both are the same one `_callee_head` already makes for the
+`final` flag:
+
+- **the callee's declared type is the import's owner's.** `Viewport.Actor` types `actor` (`Viewport` is
+  engine-native, so no `ScriptText` says the property holds a `PlayerController`), and `Actor` declares neither
+  `SetPause` nor `GetEntryLevel`. `UWindow.u` imports exactly one `GetEntryLevel`, and that import's own
+  `package` field names `PlayerController` -- the class the compiler read the declaration from. `_type_of`'s
+  member-call branch answers `_rettype_on` on the receiver first and, only where that is silent, on the import's
+  owner: `levelinfo`, which is a class name, so `!=` resolves as `NotEqual_ObjectObject`.
+- **the value size follows the type.** `_emit_member_call` reads the same join for its `rtype`, and a class is
+  pointer-sized, so the `Context`'s size byte is **4** instead of the 0 an unanswered type writes. The size is
+  read in the value path as well as the type because a body can reach the node without the operator above it
+  asking for the type -- this one does not, but `WindowConsole.CloseUWindow`'s statement path already had the
+  corpus-declarers form of the same reading (P40) and the two must not disagree about the same callee.
+
+The rule is bounded to a **unique Function import**: two same-named imports are the `Super.F()` pick
+(`_import_owner_pick`), not a declaration, and an import whose owner does not declare the name answers nothing --
+both controls are in `--check`'s **P44**, which prints its own FAIL on a copy with the join reverted.
+
+The whole-corpus run of this tree (18 packages, 11,687 bodies walked) reads **11,684 -> 11,685 modelled**, every
+one byte-identical, with the residue at **1** row: `CylinderBuilder.Build`, the `%` that needs its *site* rather
+than its own type. What the previous attempt at that row got wrong is now measurable and is recorded in the
+`int % int` section above: ours is
+`Add_FloatFloat(IntToFloat(Multiply_IntInt(FloatToInt(Percent_FloatFloat(...)), 2)), IntToFloat(<divide>))` and the
+package's is `Add_IntInt(Multiply_IntInt(FloatToInt(Percent_FloatFloat(...)), 2), Divide_IntInt(...))` -- so the
+inner product already takes the `int` row and only the **outer `+`** picked `float`: the expression's own site is
+the `int` argument of `Poly4i`, and the compiler hands that expectation down the left spine. `_operator_types`
+carries that reading as a branch gated `if (False and ...)` (the `int`-site narrowing at a root `float`/`int`
+pair); enabling it changes nothing for `Editor.u`, `GUI.u` or `GamePlay.u` (22/23, 719/719, 382/382 unchanged) and
+does not gain `CylinderBuilder.Build` either, so the gate is not the missing piece and the site's propagation is
+still open. Not in this PR: that row.
