@@ -19670,3 +19670,35 @@ sequence.
       by their two functions. Doc: `docs/BYTECODE.md`, the switch section and "Not measured"; artifacts:
       `inventory/text_switches.csv`, `inventory/switch_arms.csv`, `inventory/switch_join.csv`, the page's three
       generated blocks.
+
+- [x] 3.7 **the label join closes: 844 of 844 arms placed and 844 of 844 exits agreeing** (from 836 placed and 842
+      compared), the last eight arms and five exits named as five readings rather than as text the package did not
+      compile -- five increments on one thread, each measured on the corpus and held by `make ci` and the tool's own
+      `--check` self-test.
+      (1) **A label folds through the enum its own class declares.** The same enum is re-declared at two orders
+      (`TriggeredScript` first, a class that keeps the commented-out `TT_PawnProximity` second), so
+      `TT_ClassProximity` had no label in `TriggeredScript.IsRelevant`; the two "ambiguous" members
+      (`SG1_TEALC`/`SG1_JACKSON`) fold through `InteractionType` in `CommandInterface`, which declares it beside
+      `TranslationUser`. `labels_ambiguous` **2 -> 0**.
+      (2) **A label in a dead build-guard part is not a label of this build.** `tools/text-branches.py`'s guard map
+      (this image defines `XBox` and `DEBUG`) now filters the labels: **2** drop (`SGMenuInteraction.KeyEvent`'s
+      `IK_Tab`, `WeaponZoomInteraction.KeyEvent`'s `IK_Joy1`), and both arms' exits agree -- the dead label had cut
+      the live arm's body at the guard, so a `break` read as a fall-through.
+      (3) **A `state` body's function is a second body under one name.** A text span carries its state, the arm path
+      reads `Class.State.Function`, and the join pairs body with body: `WindowConsole.KeyEvent` is 3 arms and
+      `WindowConsole.UWindow.KeyEvent` 14 (was 17 matched against one body), **2** bodies / **26** arms corpus-wide.
+      (4) **A block comment nests in this text.** `StargateContent.TeamVoicePack` comments out a whole copy of
+      `PlayerSpeech` and that copy carries its own `/* */`, so a first-`*/` rule leaves two `case` labels at file
+      scope -- a shape the package's 6 arms contradict. The mask counts depth, and the class row now counts its
+      keywords on the same mask as its labels: **24** labels in **6** class texts, class agreement **135 -> 136**.
+      (5) **An expression-valued arm pairs with the one symbolic label left in its list.** `case ConsoleHotKey:` is
+      a `var config byte` no enum declares and the compiler emits its `Case` with an evaluated operand, so the arm
+      census reads `expr`/`InstanceVariable`; the list's leftovers are one such arm and one symbolic label, the same
+      evidence the whole-list positional rule uses. **2** arms, counted in `labels_by_position` (**129**). A case
+      body that holds only preprocessor directives reads `empty` now, which is what closed the last exit
+      (`WeaponZoomInteraction` arm 3).
+      Docs: `docs/BYTECODE.md` (the switch section, its generated block and the "How the arms were matched"
+      paragraph), `docs/UNKNOWNS.md` U21, `PLAN.md`. Tool: `tools/text-switches.py`. Artifacts:
+      `inventory/text_switches.csv`.
+      Not in this PR: the branch census's **11** `jumps_unresolved` tokens (the thread's other half, in
+      `tools/text-branches.py`).

@@ -443,7 +443,7 @@ class,Engine,Pickup,,,,,1,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,PixelShaderMaterial,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,Player,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,PlayerChatManager,,,,,1,0,0,0,0,0,0,0,,,,,,,,,,,
-class,Engine,PlayerController,,,,,11,19,3,28,5,19,5,18,,,,,,,,,agree,,
+class,Engine,PlayerController,,,,,11,19,3,27,5,19,5,18,,,,,,,,,agree,,
 function,Engine,PlayerController,servermove,,value,,,,,,,5,,,5,0,,,,,5,5,agree,,
 arm,Engine,PlayerController,servermove,1,int,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,servermove,2,int,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -1245,10 +1245,11 @@ class,GamePlay,TournamentConsole,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,GamePlay,TriggeredCondition,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GamePlay,TriggeredPlayerStart,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GamePlay,TriggeredScript,,,,,1,6,0,1,1,6,1,0,,,,,,,,,agree,,
-function,GamePlay,TriggeredScript,isrelevant,,value,,,,,,,6,,,5,1,,,,,5,5,agree,,
+function,GamePlay,TriggeredScript,isrelevant,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,GamePlay,TriggeredScript,isrelevant,1,byte,4,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,2,byte,0,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,3,byte,5,,,,,,,,,,,return,,,return,yes,,,,site 1
+arm,GamePlay,TriggeredScript,isrelevant,4,byte,1,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,5,byte,2,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,6,byte,3,,,,,,,,,,,return,,,return,yes,,,,site 1
 class,GamePlay,TriggerLight,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -1989,7 +1990,7 @@ class,StargateContent,SuperSoldierPunchDamage,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateContent,SuperSoldierVoicePack,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateContent,Tealc,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateContent,TealcVoicePack,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
-class,StargateContent,TeamVoicePack,,,,,1,8,1,7,1,6,1,3,,,,,,,,,more,,
+class,StargateContent,TeamVoicePack,,,,,1,6,1,4,1,6,1,3,,,,,,,,,agree,,
 function,StargateContent,TeamVoicePack,playerspeech,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,StargateContent,TeamVoicePack,playerspeech,1,name,ACK,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,StargateContent,TeamVoicePack,playerspeech,2,name,FRIENDLYFIRE,,,,,,,,,,,empty,,,empty,yes,,,,site 1
@@ -2083,11 +2084,13 @@ class,StargateGame,BotRep,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,BotSG,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,CarpetSurface,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,CommandInterface,,,,,3,16,3,22,3,16,3,15,,,,,,,,,agree,,
-function,StargateGame,CommandInterface,convertenumtoname,,value,,,,,,,6,,,4,2,,,,,4,4,agree,,
+function,StargateGame,CommandInterface,convertenumtoname,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,StargateGame,CommandInterface,convertenumtoname,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,convertenumtoname,2,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,convertenumtoname,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,CommandInterface,convertenumtoname,4,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,convertenumtoname,5,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,CommandInterface,convertenumtoname,6,byte,5,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 function,StargateGame,CommandInterface,executescriptcommand,,value,,,,,,,5,,,5,0,,,,,5,5,agree,,
 arm,StargateGame,CommandInterface,executescriptcommand,1,name,SG_USER_TEAM,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,executescriptcommand,2,name,SG_USER_ONEILL,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2278,9 +2281,9 @@ class,StargateGame,SGInsetTriggerTarget,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGLevel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGLevelGamePlay,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGLoadingPageBase,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
-class,StargateGame,SGMenuInteraction,,,,,1,13,1,16,1,12,1,12,,,,,,,,,more,,
-function,StargateGame,SGMenuInteraction,keyevent,,value,,,,,,,12,,,12,0,,,,,11,12,differs,,
-arm,StargateGame,SGMenuInteraction,keyevent,1,byte,84,,,,,,,,,,,other,,,break,no,,,,site 1
+class,StargateGame,SGMenuInteraction,,,,,1,12,1,16,1,12,1,12,,,,,,,,,agree,,
+function,StargateGame,SGMenuInteraction,keyevent,,value,,,,,,,12,,,12,0,,,,,12,12,agree,,
+arm,StargateGame,SGMenuInteraction,keyevent,1,byte,84,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,SGMenuInteraction,keyevent,2,byte,87,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,SGMenuInteraction,keyevent,3,byte,83,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,SGMenuInteraction,keyevent,4,byte,13,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2452,12 +2455,12 @@ class,StargateGame,WaterVolumeMovable,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,WaterWheel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,Waypoint,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,WeaponMenu,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
-class,StargateGame,WeaponZoomInteraction,,,,,1,5,1,3,1,4,1,2,,,,,,,,,more,,
-function,StargateGame,WeaponZoomInteraction,keyevent,,value,,,,,,,4,,,4,0,,,,,2,4,differs,,
+class,StargateGame,WeaponZoomInteraction,,,,,1,4,1,3,1,4,1,2,,,,,,,,,agree,,
+function,StargateGame,WeaponZoomInteraction,keyevent,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,StargateGame,WeaponZoomInteraction,keyevent,1,byte,237,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,StargateGame,WeaponZoomInteraction,keyevent,2,byte,201,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,StargateGame,WeaponZoomInteraction,keyevent,3,byte,236,,,,,,,,,,,other,,,empty,no,,,,site 1
-arm,StargateGame,WeaponZoomInteraction,keyevent,4,byte,203,,,,,,,,,,,other,,,break,no,,,,site 1
+arm,StargateGame,WeaponZoomInteraction,keyevent,3,byte,236,,,,,,,,,,,empty,,,empty,yes,,,,site 1
+arm,StargateGame,WeaponZoomInteraction,keyevent,4,byte,203,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateGame,WillowWhisp,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,StargateGame,WoodSurface,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,ZoneFogChange,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -3242,7 +3245,7 @@ class,UWindow,UWindowRootWindow,,,,,5,14,3,16,5,14,5,13,,,,,,,,,agree,,
 function,UWindow,UWindowRootWindow,windowevent,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,UWindow,UWindowRootWindow,windowevent,1,byte,7,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowRootWindow,windowevent,2,byte,6,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UWindow,UWindowRootWindow,keyevent,,value,,,,,,,12,,,12,0,,,,,12,12,agree,,
+function,UWindow,UWindowRootWindow,keyevent,,value,,,,,,,12,,,12,0,,,,,12,12,agree,,state uwindows
 arm,UWindow,UWindowRootWindow,keyevent,1,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowRootWindow,keyevent,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowRootWindow,keyevent,3,byte,4,,,,,,,,,,,other,,tail,into-default,yes,,,,site 1
@@ -3300,14 +3303,20 @@ arm,UWindow,UWindowWindow,windowevent,9,byte,6,,,,,,,,,,,break,,tail,break,yes,,
 arm,UWindow,UWindowWindow,windowevent,10,byte,8,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowWrappedTextArea,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,UWindow,WindowConsole,,,,,6,17,3,17,6,17,6,14,,,,,,,,,agree,,
-function,UWindow,WindowConsole,keyevent,,value,,,,,,,17,,,12,5,,,,,11,12,differs,,
+function,UWindow,WindowConsole,keyevent,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UWindow,WindowConsole,keyevent,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,WindowConsole,keyevent,1,byte,27,,,,,,,,,,,return,,,return,yes,,,,site 2
+arm,UWindow,WindowConsole,keyevent,2,expr,InstanceVariable,,,,,,,,,,,return,,,return,yes,,,,site 2
+function,UWindow,WindowConsole,keyevent,,position,,,,,,,14,,,14,0,,,,,14,14,agree,,state uwindow
 arm,UWindow,WindowConsole,keyevent,1,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,WindowConsole,keyevent,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,WindowConsole,keyevent,3,byte,4,,,,,,,,,,,other,,tail,into-default,yes,,,,site 1
-arm,UWindow,WindowConsole,keyevent,1,byte,27,,,,,,,,,,,break,,tail,return,no,,,,site 2
 arm,UWindow,WindowConsole,keyevent,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 2
 arm,UWindow,WindowConsole,keyevent,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 2
 arm,UWindow,WindowConsole,keyevent,3,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,WindowConsole,keyevent,1,byte,120,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,WindowConsole,keyevent,2,expr,InstanceVariable,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,WindowConsole,keyevent,3,byte,27,,,,,,,,,,,break,,tail,break,yes,,,,site 3
 arm,UWindow,WindowConsole,keyevent,4,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 3
 arm,UWindow,WindowConsole,keyevent,5,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 3
 arm,UWindow,WindowConsole,keyevent,6,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 3
@@ -3326,33 +3335,33 @@ class,UnrealEd,SequEditProps,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UnrealEd,SkelPrefsEditProps,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UnrealEd,UnrealEdEngine,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 census,,,,,,,,,,,,,,,,,,,,,,,,312,`switch` keywords in the live text
-census,,,,,,,,,,,,,,,,,,,,,,,,848,`case` labels in the live text
+census,,,,,,,,,,,,,,,,,,,,,,,,844,`case` labels in the live text
 census,,,,,,,,,,,,,,,,,,,,,,,,42,`default:` labels in the live text (`default.`/`defaultproperties` excluded)
-census,,,,,,,,,,,,,,,,,,,,,,,,990,`break;` statements in the live text
+census,,,,,,,,,,,,,,,,,,,,,,,,986,`break;` statements in the live text
 census,,,,,,,,,,,,,,,,,,,,,,,,198,case lists in `inventory/switch_arms.csv`
 census,,,,,,,,,,,,,,,,,,,,,,,,844,testable arms there
 census,,,,,,,,,,,,,,,,,,,,,,,,198,"terminator cases there, each a `default:` label in the source"
 census,,,,,,,,,,,,,,,,,,,,,,,,628,arms that leave through a `break` jump
 census,,,,,,,,,,,,,,,,,,,,,,,,136,classes with a readable `ScriptText` and at least one arm
-census,,,,,,,,,,,,,,,,,,,,,,,,133,classes whose `case` labels are exactly the `Case` tokens the bytecode carries
-census,,,,,,,,,,,,,,,,,,,,,,,,3,classes whose live text spells more `case` labels
+census,,,,,,,,,,,,,,,,,,,,,,,,136,classes whose `case` labels are exactly the `Case` tokens the bytecode carries
+census,,,,,,,,,,,,,,,,,,,,,,,,0,classes whose live text spells more `case` labels
 census,,,,,,,,,,,,,,,,,,,,,,,,0,classes whose live text spells fewer
 census,,,,,,,,,,,,,,,,,,,,,,,,0,classes whose live text has a `case` and whose bytecode has no arm
 census,,,,,,,,,,,,,,,,,,,,,,,,0,classes with arms whose text spells no `case`
-census,,,,,,,,,,,,,,,,,,,,,,,,836,arms whose case value was found as a `case` label in their function's text
-census,,,,,,,,,,,,,,,,,,,,,,,,8,"arms whose case value names no label in that text (an expression, or text not that revision)"
-census,,,,,,,,,,,,,,,,,,,,,,,,127,"of those, the ones matched by position because the source spells a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer"
-census,,,,,,,,,,,,,,,,,,,,,,,,832,arms whose text body leaves the way the token stream does
-census,,,,,,,,,,,,,,,,,,,,,,,,836,"arms whose case value matched a text label, so their exit could be compared"
-census,,,,,,,,,,,,,,,,,,,,,,,,39,"of the shared `case A: case B:` bodies, the ones the source spells with no body too"
+census,,,,,,,,,,,,,,,,,,,,,,,,844,arms whose case value was found as a `case` label in their function's text
+census,,,,,,,,,,,,,,,,,,,,,,,,0,"arms whose case value names no label in that text (an expression, or text not that revision)"
+census,,,,,,,,,,,,,,,,,,,,,,,,129,"of those, the ones matched by position because the source spells a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer"
+census,,,,,,,,,,,,,,,,,,,,,,,,844,arms whose text body leaves the way the token stream does
+census,,,,,,,,,,,,,,,,,,,,,,,,844,"arms whose case value matched a text label, so their exit could be compared"
+census,,,,,,,,,,,,,,,,,,,,,,,,40,"of the shared `case A: case B:` bodies, the ones the source spells with no body too"
 census,,,,,,,,,,,,,,,,,,,,,,,,10,"of the arms that stop with no jump, the ones whose text case also ends in no `break`/`return`"
 census,,,,,,,,,,,,,,,,,,,,,,,,2,"of the arms whose last `Jump` is a loop's own back edge, the ones whose source case also ends on a control construct rather than leaving"
-census,,,,,,,,,,,,,,,,,,,,,,,,171,functions carrying a switch on both sides
+census,,,,,,,,,,,,,,,,,,,,,,,,172,functions carrying a switch on both sides
 census,,,,,,,,,,,,,,,,,,,,,,,,0,matched arms whose own source `case` body carries a `continue` statement
 census,,,,,,,,,,,,,,,,,,,,,,,,0,`continue` statements inside a `switch` block -- case arms and `default:` bodies together
 census,,,,,,,,,,,,,,,,,,,,,,,,0,"of those, the ones inside a case arm's body (every label group, matched or not)"
 census,,,,,,,,,,,,,,,,,,,,,,,,0,"of those, the ones inside a `default:` body"
-census,,,,,,,,,,,,,,,,,,,,,,,,623,matched arms whose own source `case` body carries a `break` statement
+census,,,,,,,,,,,,,,,,,,,,,,,,630,matched arms whose own source `case` body carries a `break` statement
 census,,,,,,,,,,,,,,,,,,,,,,,,2,"of those, matched arms carrying a `break` an arm statement follows -- the interior break"
 census,,,,,,,,,,,,,,,,,,,,,,,,664,`break` statements inside a `switch` block -- case arms and `default:` bodies together
 census,,,,,,,,,,,,,,,,,,,,,,,,630,"of those, the ones inside a case arm's body (every label group, matched or not)"
@@ -3362,4 +3371,9 @@ census,,,,,,,,,,,,,,,,,,,,,,,,225,`enum` bodies the class texts declare
 census,,,,,,,,,,,,,,,,,,,,,,,,1642,members those enums declare (a member's value is its ordinal)
 census,,,,,,,,,,,,,,,,,,,,,,,,363,"`case` labels in the live text spelled as an enum member, qualified or bare"
 census,,,,,,,,,,,,,,,,,,,,,,,,29,`case` labels in the live text spelled as a hex integer (`case 0x26:`)
-census,,,,,,,,,,,,,,,,,,,,,,,,2,"`case` labels a bare enum member two enums place at two different ordinals, left unfolded"
+census,,,,,,,,,,,,,,,,,,,,,,,,0,"`case` labels a bare enum member two enums place at two different ordinals, left unfolded"
+census,,,,,,,,,,,,,,,,,,,,,,,,2,`case` labels inside a build-guard part this build never compiles
+census,,,,,,,,,,,,,,,,,,,,,,,,24,`case` labels inside a block comment (a commented-out copy of a function)
+census,,,,,,,,,,,,,,,,,,,,,,,,6,class texts carrying a `case` label inside a block comment
+census,,,,,,,,,,,,,,,,,,,,,,,,2,function bodies the text declares inside a `state` block
+census,,,,,,,,,,,,,,,,,,,,,,,,26,arms those state bodies carry
