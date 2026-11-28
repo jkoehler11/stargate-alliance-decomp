@@ -6502,7 +6502,15 @@ fallback was the package order, and the walk reproduces it.
 answers no declaring class -- `_declaring_class` claims only a bare name or an array element -- so it takes the
 package order. That is correct for every node in this corpus (three of three) and is a stated limit, not a rule.
 
-## U43. An `int` pair at a `float` site: the expectation travels down the left spine -- answered, one body left
+## U43. An `int` pair at a `float` site: the expectation travels down the left spine -- answered, and the last differ row went with it
+
+**Answered 2026-11-28.** The site's expectation reaches a **mixed** pair's `float` side: at an `int` site a side of
+`+ - * /` is asked at `int`, and takes the `(int, int)` row when it has one, only where the other side already is
+`int`. `CylinderBuilder.Build`'s `((i+1)%Sides)*2+(1-j)/2+Sides*2` is that shape and now models byte-identically;
+the bound is the *other* side being `int`, measured by the formulation that asked both sides and lost
+`HUD.DisplayMessages` (11,685 -> 11,685, one gained one lost). Whole corpus **11,685 -> 11,686, 0 lost, 0 newly
+differing, residue 0 rows**. `--check`'s P45 pins the row, the `float`-site control and the `_operand` round trip.
+Still open, and not this entry: the retired declaration-keyed mixed-pair branch (unchanged, still `False`).
 
 **Measured 2026-11-27, second round.** The site's expected type reaches the **left** child (`_left_expects`, one
 predicate asked at three places), and below a **mixed** pair it reaches further than the pair itself: the promoted

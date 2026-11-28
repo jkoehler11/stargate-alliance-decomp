@@ -178,7 +178,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/dsound_methods.csv` | 35 | 9 | `make native-method-notes` |
 | `inventory/dsound_object_methods.csv` | 14 | 9 | `make native-method-notes` |
 | `inventory/dsound_voice_methods.csv` | 10 | 9 | `make native-method-notes` |
-| `inventory/emit_differ.csv` | 2 | 6 | `make ci` |
+| `inventory/emit_differ.csv` | 1 | 6 | `make ci` |
 | `inventory/emit_receiver_join.csv` | 20 | 5 | **receiver-join.py (no target runs it)** |
 | `inventory/event_targets.csv` | 148 | 18 | `make ci` |
 | `inventory/event_wiring.csv` | 182 | 22 | `make ci` |
@@ -383,7 +383,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/uscript_calls.csv` | 19142 | 8 | **uscript-calls.py (no target runs it)** |
 | `inventory/uscript_decls.csv` | 2319 | 13 | **uscript-calls.py (no target runs it)** |
 | `inventory/uscript_decls_residue.csv` | 113 | 5 | **uscript-decls.py (no target runs it)** |
-| `inventory/uscript_emit.csv` | 11686 | 12 | `make ci` |
+| `inventory/uscript_emit.csv` | 11687 | 12 | `make ci` |
 | `inventory/uscript_emit_join.csv` | 2 | 5 | **uscript-emit.py (no target runs it)** |
 | `inventory/uscript_lex.csv` | 4637 | 14 | **uscript-calls.py (no target runs it)** |
 | `inventory/uscript_signatures.csv` | 10147 | 10 | **uscript-signatures.py (no target runs it)** |

@@ -2202,11 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,685 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
-
-| first difference | node | length | branch moved with it | bodies | examples |
-|---|---|---|---|---|---|
-| jump distance | JumpIfNot | ours longer | yes | 1 | `CylinderBuilder.Build` |
+**No emitted body differs from the shipped bytes**: every one of the 11,686 bodies this walk models is the package's own bytes (`inventory/uscript_emit.csv`), and every body it does not model is a named refusal in the residue.
 <!-- END emit-differ -->
 
 Two things the classification settles for the next run. A **jump distance** whose word moved by exactly the body's
@@ -4952,3 +4948,51 @@ carries that reading as a branch gated `if (False and ...)` (the `int`-site narr
 pair); enabling it changes nothing for `Editor.u`, `GUI.u` or `GamePlay.u` (22/23, 719/719, 382/382 unchanged) and
 does not gain `CylinderBuilder.Build` either, so the gate is not the missing piece and the site's propagation is
 still open. Not in this PR: that row.
+
+
+## Stage 3, continued -- an `int` site reaches a mixed pair's `float` side, and the last differ row closes (measured 2026-11-28)
+
+**11,685 -> 11,686 modelled, every one byte-identical; `inventory/emit_differ.csv`'s census is 0 rows and the
+residue is empty.** `CylinderBuilder.Build` -- the one body `emit_differ.csv` has carried for three bundles -- now
+models, and `Editor.u` reads **23 of 23, 0 refused, 0 differ**. One whole-corpus run over 18 packages (11,687 bodies
+walked, 11,686 joined) against `origin/main`'s own tool on the same tree: **1 body gained, 0 lost, 0 newly differing**.
+
+### The site's `int` expectation reaches a side the pair calls `float`
+
+`CylinderBuilder.Build`'s fourth `Poly4i` argument is `((i+1)%Sides)*2+(1-j)/2+Sides*2`: a `float`-typed chain on the
+left (the image installs exactly one `%`, `Percent_FloatFloat` 173) and `Sides*2` on the right. The package writes
+`Add_IntInt(<chain>, Multiply_IntInt(Sides, 2))` -- the chain keeps its own `(int, int)` row (`Multiply_IntInt` over a
+`FloatToInt`) and no `IntToFloat` wraps the result, because the argument's `int` site reaches it. The walk asked the
+pair at its declared types and wrote `Add_FloatFloat` with an `IntToFloat` on the slot.
+
+The rule: at an `int` site, a side of a `+ - * /` node is asked at `int` -- and takes the `(int, int)` row when it
+answers one -- **only where the other side already is `int`**, i.e. where the pair is mixed. The bound is measured,
+not stylistic: asking **both** sides at `int` gained this body and lost `HUD.DisplayMessages` (530 vs 526, its
+`(PosX * Scale * SizeX) + (((1 - Scale) / 2) * SizeX)` retyped root and branch where the package keeps
+`Add_FloatFloat` with the narrowed group on its left) -- 11,685 -> 11,685, one gained and one lost, which this page's
+acceptance test (differ 0, none lost) refuses. With the mixed-pair bound the same run reads 11,686 with nothing lost.
+
+### The round trip `_operand` was paying
+
+`_group_narrow` retypes the arithmetic above a narrowed group, so the chain above has an `int` row while its declared
+type is still `float`; `_operand` keyed its cast on the declared type and wrote `IntToFloat(<int node>)` for the slot
+to narrow back with `FloatToInt` -- four bytes, twice, in args 3 and 4. It now asks the node's own row at the slot's
+site and writes no cast when that row already resolves to the slot's type. That query is a recursive read of the pair
+table and doubled a whole-corpus run when asked at every widened operand, so it is asked only where the slot narrows
+(a `float`-typed node into an `int`/`byte` slot); the run is 7m04s again.
+
+### `--check`: P45, proven on two reverted copies
+
+| reverted | `--check` says |
+|---|---|
+| the site rule | `FAIL ... the percent chain at an int site answers ('+', 'float', 'float', 'float', 174, 11), expected the (int, int) row` |
+| the `_operand` row query | `FAIL ... an int slot over a node whose own row is int still writes a cast` |
+
+The fixture's own controls are the shapes that must not move: the same chain at a `float` site answers
+`(float, float)` / `Add_FloatFloat`, and the same `int` slot at a `float` site still writes `39 44`.
+
+### Not in this PR
+
+The retired mixed-pair branch further down `_operator_types` (`if (False and n1 == "float" ...)`) stays retired: it
+retypes a pair from a *declaration*, not from the site, and enabling it changed no body. The two `%` formulations
+recorded above (the operator's own type, and the type plus a `39 44` wrap) stay refuted.
