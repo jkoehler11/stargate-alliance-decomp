@@ -851,6 +851,26 @@ def _obj_classes():
 OBJ_CLASSES = {}
 
 
+CLASS_PROP_WORD = {}
+
+
+def _class_prop_word(cls, prop):
+    """`{(class, property): declared type}` over every package, from `inventory/class_properties.csv`.
+
+    A receiver that is a **property import** has its class (`Viewport.Actor` types `actor`) but the import record
+    carries no type word, and the package's own `props_all` holds only its own exports -- so `Actor.Level`'s
+    `LevelInfo` was out of reach and `string(Viewport.Actor.Level)` refused as a cast from an unknown type
+    (`WindowConsole.Tick`). The class table is read once and keyed without the package, because a class is
+    declared in exactly one package and the import names it. Only a word every declaring package agrees on is
+    used: two rows that disagree answer nothing, the same rule `_member_record` applies to a repeated member.
+    """
+    if not CLASS_PROP_WORD:
+        for (_p, c, pr), w in _obj_classes().items():
+            CLASS_PROP_WORD.setdefault((c, pr), set()).add(w)
+    words = CLASS_PROP_WORD.get((cls, prop)) or set()
+    return next(iter(words)) if len(words) == 1 else ""
+
+
 def _cast_slots():
     """`{(from, to): slot}` from `inventory/cast_operands.csv` -- the image's own cast table, named `IntToFloat`.
 
@@ -4218,12 +4238,32 @@ def _incdec(expr, env):
         target, prefix, sym = expr[:-1], False, expr[-1][1]      # `x ++` -- the operator follows: the post form
     else:
         return None
+    # The operand may be **parenthesised**: `StargateVoicePack.PlaySpeech`'s `++(CurrentSpeech.SoundCounter);` ships
+    # `a3 19 01 3a 05 00 04 01 e2 07 16` -- `AddAdd_PreInt` over the member's own `Context` read. Stripped, the
+    # target is the same chain `X.Y++` spells, so both spellings land on the branch below.
+    target = _strip_parens(target)
     if len(target) == 1 and target[0][0] in ("ident", "keyword"):
         read = target[0]
         t = _type_of([read], env).lower()
         body = _emit_var(read[1], env, "")
         if body is None:
             raise Refused("a %s on a name neither a local nor a property of the class chain" % sym)
+    elif (len(target) >= 3 and target[-1][0] in ("ident", "keyword")
+          and _dot_at(target) is not None):
+        # `X.Y++` / `++(X.Y)`: the operand is a **member** read, and the member's declared type picks the pair --
+        # the same rule `_stmt_member_call`'s increment branch writes, reached here too so the parenthesised prefix
+        # spelling has one home. `Level.numMatineeScenesRunning++` is the corpus's postfix witness.
+        at = _dot_at(target)
+        obj, member = target[:at], target[at + 1:]
+        if len(member) != 1:
+            return None
+        nm = member[0][1].lower()
+        hit = _member_record(obj, nm, env)
+        t = (hit[2] if hit else "").lower()
+        if not t and nm == "length" and _receiver_kind(obj, env) in ("array", "string"):
+            # `Elements.Length--` is the container's **length operator** (`37 <array read>`), not a property.
+            t = "int"
+        body, _shape = _emit_member(target, t, env)
     else:
         # `X[i]++`: the operand is an element read, and its node is the one an assignment target writes. The
         # element's type is the array's declared `T`, and only the four int/byte operator pairs exist.
