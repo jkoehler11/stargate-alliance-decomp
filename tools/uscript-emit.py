@@ -1176,6 +1176,26 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     # the same mapping is what `_operand` needs to write the `39 3a` (`ByteToInt`) around the call.
     t1, t2 = _enum_byte(t1, env), _enum_byte(t2, env)
     n1, n2 = _numeric(t1, env), _numeric(t2, env)
+    if (not typing and root and (site or "").lower() == "int"
+            and sym in ("+", "-", "*", "/")):
+        # **The site's `int` expectation compiles a side at the side's own pair.** `CylinderBuilder.Build`'s
+        # `((i+1)%Sides)*2+(1-j)/2` is the third argument of `Poly4i` (an `int`), and the package writes
+        # `Add_IntInt(Multiply_IntInt(FloatToInt(Percent_FloatFloat(...)), 2), Divide_IntInt(...))`: the outer
+        # pair takes the `(int, int)` row even though its left operand is a **float-typed** chain, because the
+        # expectation reaches that chain and it has an `(int, int)` row of its own. A side whose own row has no
+        # `int` form -- the bare `%` of `n + ((i+1)%Sides)`, compiled as `FloatToInt(Add_FloatFloat(...))` in the
+        # same class -- keeps its declared `float` and is narrowed by the cast. Ask each side what it would emit
+        # at, rather than what its operator declares.
+        for _side_k, _side_expr in (("l", left), ("r", right)):
+            # The side is asked **at this site**, not at its own declared type: the answer is recursive,
+            # because `((i+1)%Sides)*2+(1-j)/2` is int only through a pair that is itself int (`%*2`).
+            _own = _operator_types(_strip_parens(_side_expr), env, "int", True, typing=False)
+            if (_own is not None and _own[0] in ("+", "-", "*", "/")
+                    and _own[1] == "int" and _own[2] == "int"):
+                if _side_k == "l":
+                    t1, n1 = "int", "int"
+                else:
+                    t2, n2 = "int", "int"
     # Only the **left** operand of a node carries the statement's type. The compiler hands its expected type to the
     # left child and types the right one from the left operand, so `CurvedStairBuilder`'s
     # `(65536.0f * (AngleOfCurve / 360.0f)) / NumSteps` narrows the outer group and leaves the inner one a
@@ -2400,6 +2420,19 @@ def _operand(part, want, rettype, env, inner):
     src = own
     if not want or src == want:
         return None
+    # **A node whose own row already resolves to the slot's type is not cast.** `_group_narrow` retypes the
+    # arithmetic above a narrowed group, so `((i+1)%Sides)*2` at an `int` site has an `int` row even though its
+    # declared type is `float` (the `%` is the image's `Percent_FloatFloat`); the slot then wraps
+    # `FloatToInt(IntToFloat(Multiply_IntInt(...)))` -- a round trip `CylinderBuilder.Build` pays four bytes for,
+    # twice. Ask the node's own row at this site, and when its result is already the slot's type, let the caller
+    # emit it at `want` instead.
+    # The row is a **recursive** read of the pair table, so it is asked only where the slot narrows: a
+    # `float`-typed node feeding an `int`/`byte` slot is the only shape this rule can answer, and asking it at
+    # every widened operand doubled a whole-corpus run for no rule at all.
+    if src == "float" and (want or "").lower() in ("int", "byte"):
+        row = _operator_types(_strip_parens(part), inner, want, inner.get("_root", True))
+        if row is not None and (row[3] or "").lower() == (want or "").lower():
+            return None
     slot = _cast_slots().get((src, want))
     if slot is None:
         # A class-typed operand converts as an **object** (`self $ "x"` is `39 56`), and a class name is not the
@@ -2692,6 +2725,9 @@ def _emit_operator(expr, rettype, env, root=False):
         raise Refused("a compound expression, which needs the statement walk (no operator row: `%s`)"
                       % _spell(expr))
     sym, t1, t2, result, token, at = op
+    if os.environ.get("SG1_DBG_SIDE") and env.get("cls") == "cylinderbuilder":
+        print("OPNODE %r rettype=%r root=%r sym=%r t1=%r t2=%r tok=%r at=%r"
+              % (" ".join(v for _k, v in expr)[:70], rettype, root, sym, t1, t2, token, at), flush=True)
     head = None
     if not token:
         fn = _operator_fn().get((sym, t1, t2)) or _operator_fn().get(
@@ -2831,6 +2867,11 @@ def _emit_operator(expr, rettype, env, root=False):
 
     def _side(part, want, side_env, do_promote, folded, narrow=True, byte_lit=True, tree=False):
         """One operand: a promoted subtree, else the literal forms, else the cast, else a plain emit."""
+        _dbg = os.environ.get("SG1_DBG_SIDE") and env.get("cls") == "cylinderbuilder"
+        if _dbg:
+            print("  SIDE want=%r promote=%r rettype=%r root=%r part=%r pn=%r gw=%r gn=%r"
+                  % (want, do_promote, rettype, root, " ".join(v for _k, v in part)[:60],
+                     _paren_wrapped(part), _group_widen(part, env), _group_narrow(part, env)), flush=True)
         if narrow and _group_narrow(part, env):
             # The group's **result** is the root's type; its own arithmetic keeps the type it has. So the group is
             # emitted at its own `float`, narrowed with the `FloatToInt` at its boundary, and widened back where a
@@ -9511,6 +9552,47 @@ def check(args):
         if _type_of(tokens_of("myObj.GetEntryLevel()"), control) != "":
             print("FAIL uscript-emit: %s answered a member call's type" % why)
             return 1
+    # P45: the site's `int` expectation **descends the left spine**, and a node whose own row already answers the
+    # slot's type is not cast. `CylinderBuilder.Build`'s `Poly4i` argument
+    # `((i+1)%Sides)*2+(1-j)/2+Sides*2` ships `Add_IntInt(<int product>, <int divide>) ...` -- the top pair takes
+    # the `(int, int)` row although its left operand is **declared** `float` (the `%` is the image's one
+    # `Percent_FloatFloat`), because the expectation reaches that chain and the chain has an `int` row of its own.
+    # The old bound was the expression **root**, so a node one level down (the left operand of the root `+`) was
+    # asked at its own declared type and the whole group was emitted at `float` and narrowed with `39 44`.
+    # The control is the same chain asked at a `float` site: there the row is `(float, float)` -- `Add_FloatFloat`
+    # -- and that is what arg 3 of the same call ships. The `_operand` half is `IntToFloat`/`FloatToInt`: the
+    # round trip `FloatToInt(IntToFloat(<int product>))` is what the table's declared type paid `CylinderBuilder`
+    # four bytes for, twice, so an `int` slot over a node whose own row already is `int` writes no cast -- and the
+    # same slot over a node asked at a `float` site still writes `39 44`.
+    senv = dict(env, scope=dict(SCOPE, locals=dict(SCOPE["locals"], i=(0x00, 131, "int"),
+                                                    j=(0x00, 133, "int"), sides=(0x00, 135, "int"))))
+    tleft = tokens_of("((i + 1) % Sides) * 2 + (1 - j) / 2")
+    tall = tokens_of("((i + 1) % Sides) * 2 + (1 - j) / 2 + Sides * 2")
+    ienv = dict(senv, _root=True, root_site="int")
+    if _type_of(tleft, senv) != "float":
+        print("FAIL uscript-emit: the percent chain types %r, expected the table's `float`"
+              % (_type_of(tleft, senv),))
+        return 1
+    row = _operator_types(tleft, ienv, "int", True)
+    if not row or row[0] != "+" or row[3] != "int" or row[4] != 146:
+        print("FAIL uscript-emit: the percent chain at an int site answers %r, expected the (int, int) row" % (row,))
+        return 1
+    rowf = _operator_types(tleft, dict(senv, _root=True, root_site="float"), "float", True)
+    if not rowf or rowf[3] != "float":
+        print("FAIL uscript-emit: the percent chain at a float site answers %r, expected the (float, float) row"
+              % (rowf,))
+        return 1
+    if _operator_types(tall, ienv, "int", True)[3] != "int":
+        print("FAIL uscript-emit: the whole Poly4i argument does not read int at an int site")
+        return 1
+    if _operand(tleft, "int", "int", ienv, ienv) is not None:
+        print("FAIL uscript-emit: an int slot over a node whose own row is int still writes a cast")
+        return 1
+    got = _operand(tleft, "int", "int", dict(senv, _root=True, root_site="float"), dict(senv, root_site="float"))
+    if not got or got[:2] != b"\x39\x44":
+        print("FAIL uscript-emit: the same slot at a float site writes %r, expected the `39 44` narrowing"
+              % (got,))
+        return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
     return 0
