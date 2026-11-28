@@ -813,6 +813,17 @@ implement either, in 3 run(s) of the numbering (`0xc6..0xc7`, `0xcc..0xd1`, `0xe
 spelling of the native matches the declaration exactly on **126** rows and differs on **9** by one rule: the
 C++ name writes the argument types out (`execConcat_StringString`) where `Object.uc` abbreviates them
 (`Concat_StrStr`). **0** rows disagree beyond that rule.
+
+**The guest's own slot name sides with the source, and every populated slot has a decoded body.** The
+`GNatives` dump carries a name for **135 of the 135 populated slots**, and it is the *unwidened* script
+spelling -- `execConcat_StrStr`, where the `.data` record spells `intUObjectexecConcat_StringString` -- so
+**135 of 135 are exact, 0 spelling and 0 differ**, and the nine differences above are between the record's
+composed C++ name and the source rather than between the image's two records. The body each slot points at
+is a decoded function in `symbols/xbox_functions.csv` on **135 of 135** rows, **0 missing, 26,875 bytes in
+total, 60 to 1497 bytes**, and the 9 holes have no slot at all -- so an unnamed row in this band is a slot the
+image does not implement, not a body the map lost. That is the same control the extended band runs, read
+from the other side: there the 11 one-sided indices all had bodies, here the one-sided slots are the nine
+with nothing in them.
 <!-- /generated:opcode-band -->
 
 **The nine are a population the build does not have, not a hole in the control.** They sit in three runs of a
