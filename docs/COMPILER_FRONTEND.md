@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,674 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,677 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4646,3 +4646,83 @@ not carry), `ExtendedConsole.PostRender` (a `texture` object literal the class t
 `StargateVoicePack.PlaySpeech` (a call the class chain does not declare), `RechargingAmmo.Tick` (a fractional literal
 in an `int` slot), `WindowConsole.Tick` (an operator row: `levelinfo != <unknown>`), plus the four callee-declaration
 rows above.
+
+## Stage 3, continued -- a callee no `ScriptText` declares, an import's own `final`, and a fractional literal (measured 2026-11-28)
+
+Three rules, scored **per body** over the whole corpus against the same tree (`--tree $WORK/scripts-all`, 18
+packages, one run each), and compared row by row with the baseline run (`~/sg1/work/rf/sc1`, which reproduces the
+committed artifact) -- this bundle is `~/sg1/work/rf/sc5`:
+
+| run | modelled | gained | lost | newly differing | residue | differ |
+|---|---|---|---|---|---|---|
+| `origin/main`'s `uscript-emit.py` (`sc1`) | 11,674 | -- | -- | -- | 12 | 1 |
+| this bundle, same tree (`sc5`) | **11,677** | **3** | **0** | 2 | 9 | 3 |
+
+**All three gained bodies are byte-identical** and no modelled body changed a byte: the two `uscript_emit.csv` runs
+differ by 0 rows removed, 3 added and 0 moved (the only changed row is the census row). Each gained body and the
+reason it carried at the baseline:
+
+| body | baseline reason |
+|---|---|
+| `TournamentConsole.LaunchUWindow`, `TournamentConsole.ConnectWithPassword` | a call whose callee declaration the text does not carry (`ClientTravel`, 3 arguments) |
+| `RechargingAmmo.Tick` | a fractional literal in an `int` slot (0.1) |
+
+- **A member call's callee can be declared in a class no shipped `ScriptText` spells, and then the corpus's own
+  declarers are the evidence for its parameter types.** `Viewport.Actor` types as `actor` -- `Viewport` is
+  engine-native (`inventory/native_class_packages.csv`), so nothing in the corpus says the property holds a
+  `PlayerController`, and the previous bundle's rule read the *class* the member's name is also imported as. `Actor`
+  declares neither `SetPause` nor `ClientTravel`, so the walk could not type an argument and refused. The compiler
+  that wrote those bytes had the whole class tree, and the bytes carry its answer: `Viewport.Actor.ClientTravel(
+  \"?entry\", TRAVEL_Absolute, False )` is `19 01 8e 0e 00 00 1b 7b 01 <string> 24 00 28 16` -- a `string`, an enum
+  ordinal as a byte, a `bool` -- where the walk's own by-name call would have written the enum ordinal at its own
+  type. `_corpus_params` keeps the declarers that can accept the call's arity (a shorter list is out, and so is one
+  whose remaining parameters are not all `optional`) and answers only when every survivor spells the same types for
+  those arguments: `SetPause` has three declarers in this corpus -- `PlayerController( BOOL bPause )`,
+  `StargatePlayer( bool bPause )` and `GameInfo( BOOL bPause, PlayerController P )` -- and at one argument the third
+  is out while the other two agree on `bool`; `ClientTravel` has one, `native event ClientTravel( string URL,
+  ETravelType TravelType, bool bItems )`.
+- **An imported callee's `final` flag is read off the import's own owner, not off the receiver's chain.**
+  `Viewport.Actor.GetEntryLevel()` ships `1c cf 01` -- a `FinalFunction` naming the package's import `-79` -- because
+  `GetEntryLevel` is `native final function LevelInfo GetEntryLevel()` on `PlayerController`, and `1c` is the record
+  call a `final` function earns. Reading the flag off `actor` (which declares nothing of the name) wrote a by-name
+  `1b`. `_class_tables` already keys each import's `package` field as `import_owners`; the flag is now read there as
+  well as on the receiver's chain. **This rule gains no body on its own**: its site is `WindowConsole.Tick`, which
+  also needs the callee's *return* type, and the return-type half below is withdrawn. The token is still the
+  measured one for that site, and the fixture pins it.
+- **A fractional literal in an `int` site is narrowed at the site, not truncated.** `RechargingAmmo.Tick`'s
+  `Charge = fclamp(Charge+max(0.1, (RechargeRate*Delta)),0,MaxCharge)` ships
+  `... 92 01 cd 03 fa 39 44 1e cd cc cc 3d 39 44 ab ...`: `Max` is `Core.Object`'s
+  `native(250) static final function int Max( int A, int B )`, so `0.1` sits in an `int` parameter and the compiler
+  writes `FloatConst` inside `FloatToInt` (`39 44`) -- the value is 0 as far as the call is concerned, and it is not
+  folded away. An **integral** float at the same site still folds to the int form (`2.0` is `2c 02`), which is the
+  fixture's control.
+
+**Fixtures P36/P37/P39, each proven against a copy with only its own rule reverted.** P36 drives
+`_callee_params`/`emit_body` over a two-declarer agreement and two controls (declarers that disagree at the call's
+arity, and an arity no declarer accepts -- both still refuse); P37 drives `_func_on` (`("final", -79)` with the
+owner's flag, the by-name call without it); P39 drives the number leaf (`39 44 1e <1.5>` and the `2c 02` control).
+The body-level `floatarg` fixture moved out of `REFUSE` into `WANT` with the corpus's own bytes; a revert copy
+prints *a fractional literal in an int slot (1.5)* at it.
+
+**The return-type half of this family was measured and withdrawn in the same run -- twice, and the second attempt
+is the instruction.** `WindowConsole.Tick` needs `GetEntryLevel`'s `LevelInfo` (its `!=` otherwise refuses as
+`levelinfo != an unknown type`) and the two `WindowConsole` bodies need `SetPause`'s `bool` for the call's value
+size: with the return type answered from the corpus's declarers they are byte-identical, and the patch is one
+line. But an answered return type is *not* additive here, because `_declares_void` reads an unanswered type as
+void and a whole population of bodies models on that reading: the agreement test retyped **159** bodies that had
+been emitting a size-0 call (`AccessControl.PreBeginPlay` and its neighbours, one size byte each; `sc2` 11,522
+modelled), and narrowing the answer to names with a **single** declarer in all 18 packages still cost **117**
+(`sc4`, 11,557). The three-body gain is therefore withdrawn and the two `WindowConsole` rows now sit in the
+differ bucket -- `CloseUWindow` 84 vs 84 bytes and `LaunchUWindow` 125 vs 125, one byte apiece, the `Context`
+size -- which is the honest state: the rule to keep is that a call's **arguments** can be typed from a corpus
+agreement while its **value** cannot, and the next instrument is to find what the compiler wrote the value size
+from at those two sites rather than to widen the return-type reading.
+
+**Not in this bundle.** The nine residue rows left on the thread: `CylinderBuilder.Build` plus the two
+`WindowConsole` rows above (the three that emit and differ), `TestInfo.TestSwitch` (an assert whose source line the
+corpus does not pin), `GUIController.GenerateFakeNames` (an element of an array the artifacts do not type),
+`GUITabControl.RemoveTab` (a delegate assignment to a function the name table does not carry),
+`StargateVoicePack.PlaySpeech` (a call to a name the class chain does not declare), `ExtendedConsole.PostRender` (a
+`texture` object literal whose type word the package neither exports nor imports -- the corpus-class widening for
+`_cast_kind` was measured and **withdrawn**: it gains that body but retypes 159 modelled ones) and
+`WindowConsole.Tick` (the return type above).
