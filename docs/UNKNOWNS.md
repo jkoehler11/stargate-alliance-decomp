@@ -6634,4 +6634,11 @@ none lost, nothing newly differing, residue 15 -> 12**. Two of the five rows mod
 the member: `WindowConsole.LaunchUWindow`/`TournamentConsole.LaunchUWindow` at a callee no class the corpus ships
 declares (`SetPause`, `ClientTravel`) and `WindowConsole.Tick` at the operator table (`levelinfo != <unknown>`). The
 member gap this entry described is closed; what remains on those bodies belongs to the callee-declaration family.
+* **The header run is named (2026-11-28).** `tools/header-run.py` measures the four dwords between `FriendlyName`
+  and the script over all 18 packages: the dword behind `UStruct::Serialize`'s `Ar.Ver() >= 0x77` gate (live at
+  version 130, **zero on 12,360 of 12,360**), a (line, character offset) pair pointing at the function's **body**
+  (**10,967 of 11,477** agree exactly once the class text is cut at its first `class `/`//` token), and the script's
+  in-memory size. What would sharpen the pair is a *declaration*-position question rather than a start: the shipped
+  text is a floor here too, so a compiler-written `Line`/`TextPos` for a function whose body the shipped text has
+  lost is the one row family that cannot be checked from the packages alone.
 
