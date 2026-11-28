@@ -19702,3 +19702,38 @@ sequence.
       `inventory/text_switches.csv`.
       Not in this PR: the branch census's **11** `jumps_unresolved` tokens (the thread's other half, in
       `tools/text-branches.py`).
+
+- [x] 3.7 **the branch census's other half closes: `jumps_unresolved` 11 -> 0 and every branch row carries its arm's
+      span** -- one rule change in `tools/jump-branches.py` and the three artifacts, two doc corrections and a gate
+      that keeps the hole shut.
+      (1) **An empty then-arm is a branch row.** `jump-branches` classified five shapes but wrote rows for
+      `if`/`else`/`leave` only, so a `JumpIfNot` whose landing is the statement immediately after it was counted in
+      its census and dropped from `inventory/jump_branches.csv`: **11** tokens no join could see, which is exactly
+      what `text-branches` read as its `jumps_unresolved`. `site_rows()` now writes one row per resolved token
+      (`empty` and `expression` included), so `rows` = `jumpifnot` = **17,469** -- asserted at write time and again
+      by `--check-doc` from the artifact alone, and `--check-functions` fails on any unresolved jump instead of
+      reporting the number.
+      (2) **The 11 are named.** They are `Ammo.Pickup.UsedBy` `0000`, `PlayerController.ReplicateMove` `0324`,
+      `GameInfo.StartScreenplay` `0063`, `C4Mission._DrawScorch` `0013`, `C4Prop._DrawScorch` `0013`,
+      `GravCraneLifter.Timer` `0040`, `GameObject.Landed` `0016`, `BotBase.NotifyKilled` `0055`,
+      `SquadAIBasic.TellBotToFollow` `0127`, `ReplicatorHUD.DrawHUD` `06d3` and `VoiceSelector.IsValidTone` `00a4`,
+      each with the landing opcode in the row's `note` (9 land on `Return`/`Context`/`Let`/`Jump`/`JumpIfNot`/
+      `VirtualFunction`, all of them the very next statement). The page's earlier reading -- that the `_drawScorch`
+      pair's target sits *past* the body's last statement -- is corrected: the body is `Let` + `JumpIfNot` + `Return`
+      and the landing is that `Return`.
+      (3) **The join's per-site span is a column.** Every branch row gains `span`, the statements between the jump and
+      its landing: **6,692** arms one statement, **4,079** two, **1,997** three, **11** zero and **9** negative (a
+      loop test at the bottom of its body, the widest 15 back), longest forward arm **22** -- printed from the rows,
+      so the page's distribution cannot drift from the artifact. A reader places an arm without walking the stream.
+      (4) **What the join gains.** `inventory/text_branch_functions.csv`: `both` **5,737 -> 5,740**, text-only
+      **34 -> 31**, `text_only_live` **3 -> 0**, `jumps_unresolved` **11 -> 0**, the condition-term model exact on
+      **5,675 -> 5,684** (**98.9% -> 99.0%**) with the ahead population **7 -> 0** and behind **55 -> 56**; 10 of the
+      11 empty-arm bodies are term-exact, and the one that is not (`GameInfo.StartScreenplay`, 4 terms / 5 jumps) was
+      short before it had a row. The three text-only join holes (`C4Mission._DrawScorch`, `C4Prop._DrawScorch`,
+      `Ammo.UsedBy`) now pair and read `agree` on both counts. The class-level surplus stays **709** -- the 11 left
+      the in-body net and the subtraction together, which is the identity that says the two artifacts describe one
+      population.
+      Docs: `docs/BYTECODE.md` (the branch section's new paragraph and table, the 989-surplus correction re-read, the
+      text-only paragraph, the per-function generated block). Tools: `tools/jump-branches.py`,
+      `tools/text-branches.py`. Artifacts: `inventory/jump_branches.csv`, `inventory/text_branches.csv`,
+      `inventory/text_branch_functions.csv`.

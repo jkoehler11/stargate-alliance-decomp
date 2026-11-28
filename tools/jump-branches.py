@@ -396,7 +396,7 @@ def doc_block(rows):
                  "back). The longest forward arm is **%s** statements.\n"
                  % (comma(count(rows, "span_rows")), comma(count(rows, "rows")), comma(spans.get(1, 0)),
                     comma(spans.get(2, 0)), comma(spans.get(3, 0)), comma(spans.get(0, 0)),
-                    comma(sum(spans[n] for n in neg)), max(neg) if neg else 0, comma(count(rows, "arm_max"))))
+                    comma(sum(spans[n] for n in neg)), abs(min(neg)) if neg else 0, comma(count(rows, "arm_max"))))
     return ("\n**%s** `JumpIfNot` tokens resolve to **%s** branches with an `else` arm (**%s%%**), **%s** whose then-arm "
             "ends by leaving its own loop -- a `break` (**%s%%**) -- **%s** "
             "conditional jumps over a straight arm (**%s%%**) and **%s** empty then-arms (**%s%%**). **%s** of them "

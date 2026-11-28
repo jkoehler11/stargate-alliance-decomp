@@ -1790,7 +1790,8 @@ meet; composing the text declaration's name is the route (U23) -- and the text r
 now, because `tools/class-text-bodies.py`'s `declared_name` reads the parameter list and hands it to
 `tools/native-operators.py`'s `compose()`. The row joins: `Engine.MaplistRecord.==` is the function row
 `equalequal_mapitemmapitem` in `inventory/text_branch_functions.csv`, with **6** condition terms against **6**
-`JumpIfNot` tokens, `else` 0 on both sides and verdict `agree`, and the text-only population is **34** again.
+`JumpIfNot` tokens, `else` 0 on both sides and verdict `agree`, and the text-only population is **34** again (the
+empty then-arms took it to **31**; see *The text-only population is the guards* below).
 
 **A `switch` may write no parentheses.** `switch TriggerWhen` is legal and this corpus uses it 112 times; a body
 census anchored on `switch (` cannot see those blocks at all, which is why `tools/text-switches.py`'s pattern now
@@ -2169,7 +2170,7 @@ counting that is a measurement of the build's own shape rather than a reading of
 
 <!-- generated:jump-branches -->
 **17,469** `JumpIfNot` tokens resolve to **3,758** branches with an `else` arm (**21.51%**), **290** whose then-arm ends by leaving its own loop -- a `break` (**1.66%**) -- **13,410** conditional jumps over a straight arm (**76.76%**) and **11** empty then-arms (**0.06%**). **9** of them jump **backward**, i.e. a loop test at the bottom of its body, and **0** name no statement at all -- a `&&`/`||` short circuit would be the only way that happens, and this build has none, so a condition's sub-jumps take the same shape as an `if` and the stream alone cannot separate them. A then-arm is -15 to 22 statements long, counted as the distance from the jump to its target -- negative for a loop test, as expected.
-**The span is a row's own column, so the join places an arm without walking the stream again.** **17,469** of the **17,469** rows carry one: **6,692** arms are a single statement, **4,079** two and **1,997** three; **11** measure **zero** -- an empty then-arm, whose landing is the statement right after the jump, which is what the `empty` criterion above names -- and **9** measure **negative**, a loop test at the bottom of its body whose target is behind it (the widest, **-4** statements back). The longest forward arm is **22** statements.
+**The span is a row's own column, so the join places an arm without walking the stream again.** **17,469** of the **17,469** rows carry one: **6,692** arms are a single statement, **4,079** two and **1,997** three; **11** measure **zero** -- an empty then-arm, whose landing is the statement right after the jump, which is what the `empty` criterion above names -- and **9** measure **negative**, a loop test at the bottom of its body whose target is behind it (the widest, **15** statements back). The longest forward arm is **22** statements.
 **A switch is a chain, and its arms are counted here too.** **200** `Switch` tokens over **174** scripts hold **200** case lists covering **1,044** of the **1,044** `Case` tokens (**0** are in no list), and a list runs **1** to **22** cases -- its last is the `0xffff` terminator, so a list of `n` carries `n-1` testable arms. **40** of those arms are **empty**, i.e. their body is the next case of their list: the source's shared `case A: case B:` body, which a decompiler must render as one arm with two values rather than as an arm that does nothing. **2** list(s) carry only the terminator, i.e. a `switch` with no case at all (`CreditsPage.ButtonClick`, `ExtrasPage.ButtonClick`); **0** `Switch` tokens are followed by a statement that is not a `Case`, which is this walk's test for a list that is not there, so no switch in this build is missing one. Both counts are rows of `inventory/jump_branches.csv`, which is the population that shape needs before it can be called a compiler defect rather than a reader's.<!-- /generated:jump-branches -->
 
 **What that says about the build.** `else` is the minority shape: three conditional jumps in four guard a straight
@@ -2197,6 +2198,35 @@ readings are one measurement at two granularities, so the join is the falsifier 
 bytes are identical to `if (!x) y`; the first draft of this census had an `else_empty` category, and the self-test
 that "found" one was reading its own fixture rather than the encoding. The category is gone and the empty count is
 `if` arms only.
+
+**Every resolved jump is a row now, and the row carries the arm's span (measured 2026-11-28).** The artifact used to
+write a row for `if`/`else`/`leave` and drop the `empty` ones, so a join reading the rows saw **11** `JumpIfNot`
+tokens fewer than the graph resolved -- `text-branches` counted exactly that as `jumps_unresolved` and could only
+name its two `_drawScorch` members. `site_rows()` writes one row per resolved token (`empty` and `expression`
+included, `rows` = `jumpifnot` = **17,469**, asserted both at write time and by `--check-doc`), and each row gains a
+`span` column: the statements between the jump and its landing, **6,692** arms one statement, **4,079** two,
+**1,997** three, **11** zero (the empty then-arms) and **9** negative (a loop test at the bottom of its body, the
+widest 15 statements back). The eleven empty arms are now named in the artifact by package, class, state, function,
+offset and landing opcode:
+
+| package | path | jump | lands on |
+| --- | --- | ---: | --- |
+| `Engine` | `Ammo.Pickup.UsedBy` | `0000` | `Return` |
+| `Engine` | `PlayerController.ReplicateMove` | `0324` | `Context` |
+| `Engine` | `GameInfo.StartScreenplay` | `0063` | `Context` |
+| `StargateContent` | `C4Mission._DrawScorch` | `0013` | `Return` |
+| `StargateContent` | `C4Prop._DrawScorch` | `0013` | `Return` |
+| `StargateGame` | `GravCraneLifter.Timer` | `0040` | `JumpIfNot` |
+| `StargateGame` | `GameObject.Landed` | `0016` | `Let` |
+| `StargateGame` | `BotBase.NotifyKilled` | `0055` | `Jump` |
+| `StargateGame` | `SquadAIBasic.TellBotToFollow` | `0127` | `Return` |
+| `StargateGame` | `ReplicatorHUD.DrawHUD` | `06d3` | `VirtualFunction` |
+| `StargateGame` | `VoiceSelector.IsValidTone` | `00a4` | `Return` |
+
+Each is `JumpIfNot` whose landing is the statement **immediately** after it, so the arm holds no statement at all --
+the shape a source's `if (X) ;` compiles to, and the one place a `JumpIfNot` is invisible to a reader that joins on
+arms. (The earlier reading, that `_drawScorch`'s target sits *past* the body's last statement, was wrong: the body is
+`Let` + `JumpIfNot` + `Return` and the landing is that `Return`.)
 
 ## The shipped source against the bytes: `else`, `&&` and `||`
 
@@ -2275,15 +2305,18 @@ against 156 arms, 13 classes more and 1 fewer -- and that is the game's bot code
 `else` on either side at all. A rebuild that graded itself against the text would therefore be wrong exactly where
 the bots are, which is the part of this build nobody else has a reference for.
 
-**The surplus is where the terms sit, not a class whose text did not compile (corrected 2026-11-17).** The 989
+**The surplus is where the terms sit, not a class whose text did not compile (corrected 2026-11-17, re-read
+2026-11-28).** The 989
 terms the model over-counts do sit in 147 of the 967 joined classes rather than spread across the corpus, and one
-class contributes 164 of them -- but the per-function join below takes the number apart: **779** of the 989 are
-condition terms in state code, which sits outside every function body and which a class-level count adds to the
-functions' own; **221** are inside the joined functions' bodies (net of 47 functions ahead and 55 behind); and
-**11** are `JumpIfNot` tokens the census resolves that carry no branch row. So the earlier reading -- that a
+class contributes 164 of them -- but the per-function join below takes the number apart: **773** of the 709 surplus
+terms are condition terms in state code, which sits outside every function body and which a class-level count adds to the
+functions' own; **-64** are inside the joined functions' bodies (net of 0 functions ahead and 56 behind); and
+**0** are `JumpIfNot` tokens with no branch row -- the 11 that used to sit in this sum are the empty then-arms, which
+the branch artifact now writes as rows. So the earlier reading -- that a
 164-term class is a class whose shipped text is a different revision -- is withdrawn: the term model is exact on
-**98.2%** of the functions, and what the class count was measuring is where the terms live, not whether the text
-was the one compiled.
+**99.0%** of the functions, and what the class count was measuring is where the terms live, not whether the text
+was the one compiled. The class-level surplus is **709** either way: the 11 tokens left the in-body net and left the
+subtraction in the same step, which is what a hole in one artifact looks like from the other one.
 
 ## The same join one level down: per function (measured 2026-11-17)
 
@@ -2347,15 +2380,18 @@ spells (**26** arms) against **0** the other way once the guards and the empty b
 `UWindowTabControlTabArea`) and `StargateMenus` (1) -- the framework's and the game's own code, where the shipped
 text is the side that misses arms the compiler emitted.
 
-**The text-only population is the guards, and the three that are not are named.** **31** of the **34** bodies the
+**The text-only population is the guards, and none of it is a join question now.** **31** of the bodies the
 record has no jump for at all carry **no compiled branch text**: every `if`/`else` they spell sits in an
 `#ifdef`/`#ifndef` part this build never compiled, so their compiled body has no condition for a jump to test.
-The remaining **3** are one `if` each and are the only text-only bodies that are a join question.
-`C4Mission._drawScorch` and `C4Prop._drawScorch` each compile to `JumpIfNot` + `Return` where the jump's target
-is the statement **past the body's last one**, so the arm census has no statement to open an arm on (they are
-part of its 11 `jumps_unresolved` tokens), and `Ammo.UsedBy` names a function `Engine.u` declares on `Actor`,
-`Pickup`, `Vehicle` and four trigger classes but **not** on `Ammo` -- the text's local body was not the one
-compiled.
+The three that used to be a join question are the empty then-arms, and the branch artifact writes their row:
+`C4Mission._DrawScorch` and `C4Prop._DrawScorch` compile to `Let` + `JumpIfNot` + `Return` where the jump lands on
+the `Return` immediately after it -- an arm of zero statements, so the arm census opened nothing on it and the
+artifact dropped its row (they are two of its 11 `jumps_unresolved` tokens) -- and `Ammo.UsedBy` names a function
+`Engine.u` declares on `Actor`, `Pickup`, `Vehicle` and four trigger classes but **not** on `Ammo`, whose compiled
+body is that same empty-arm shape (`JumpIfNot` then `Return`). All three now pair with their record row and read
+`agree` on both counts; `text_only_live` is **0**, and the join's `jumps_unresolved` is **0** -- every `JumpIfNot`
+the graph resolved is a row the per-function join can see, which is what `--check-functions` requires rather than
+reports.
 
 **The shortfall is the `continue` arm, and the two landings it could not see were the last of it.** The **21**
 functions that carry more arms than their text spells (**26** arms) are the record's side of this join, and every
