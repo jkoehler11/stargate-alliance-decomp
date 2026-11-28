@@ -6986,6 +6986,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   `make class-record-group-anchor` + this note. Reads the packages and three committed artifacts; no boot, no
   Ghidra, no value decoded and no name published.
 
+### Execution notes (2026-11-28, the class record's front is the writer's field list, and the name is in it)
+
+- **The front is not searched, it is walked.** `UClass::Serialize` (`0x0003a800`) -> `UState::Serialize`
+  (`0x000394c0`) -> `UStruct::Serialize` (`0x000392b0`) is straight-line, so the writes' order is the record's field
+  order: one compact, `FriendlyName` (the slot that asserts `!= NAME_None` at `UnClass.cpp:0x2e2`), `+0x5c`, `+0x58`,
+  `+0x54`, the script's length and bytes, 8 + 8 + 2 + 4 state bytes, then `UClass`'s five dwords. Over the 1,185
+  fronts the closing-group anchor gives, that list ends **exactly** on the array's head on **1,156 (97.6%)**, and the
+  second field is the class's own export-name index on **1,185 of 1,185** -- read from the export table, so not a
+  lucky parse. Aimed at the array's head the same walk closes **0 of 1,185**; 893 of the fronts hold no other closing
+  offset at all.
+- **The sixteen zero bytes are `UClass`'s, not `UStruct`'s.** `+0x4a0`..`+0x4ac` are zero on all 1,156, and the
+  "three to five compact values" the gap census measured in front of them are the `+0x498` flags dword: 55 distinct
+  values, **every one carrying `0x12`** (the bits `FUN_0003af60` `or`s at registration), and its high zero bytes are
+  what made a four-byte dword measure as 1-3 bytes plus sixteen -- the census's 19/20/21. `UStruct`'s own four dwords
+  are earlier in the same front (`+0x5c` 0, `+0x58`/`+0x54` -1/-1, `+0x4c` 0), which is where the two earlier
+  attributions went wrong.
+- **The two `0xff` runs are state.** `+0x58`/`+0x54` = `-1`/`-1` on 1,141 of 1,156 and a small pair on the other 15
+  (`KRepulsor` 25/587, `KarmaParams` 62/2,906 -- the shape of a source line and a text position, reported not
+  named); `+0x88` is eight `0xff` and `+0x94` two on every row, `+0x90` zero. The script length is **0 on every row**,
+  so the record carries no script bytes and the class's `ScriptText` export is the only copy.
+- **What is still open**: the compact before the `FriendlyName` (1-3 bytes, null on 865, 290 distinct values, up to
+  900), the 8-byte `+0x80` field (47 values, zero on 411), and the 29 rows the walk does not close on (13 short by
+  two, 7 by three, 4 by one, one by 98, 4 overrunning).
+- Tool (`tools/class-record-front.py`: the new `--grammar`, `--fields-report`, and a `--check` that walks a synthetic
+  front, refuses a short one and a script length that overruns it) + `inventory/class_record_front_fields.csv` (1,185
+  rows, 25 columns) + `docs/NATIVE_VM.md` (*The front is the writer's field list, twice over*, and two earlier
+  sections corrected in place) + `docs/UNKNOWNS.md` U17 (twelfth) + `make class-record-front` + this note. Reads the
+  packages and one committed artifact; no boot, no value decoded, no game data written.
+
 ### Execution notes (2026-11-12, the class record opens with three references, and neither tail reading survives a control)
 
 - **The prefix is measured against the package's own export table, on every class.** `tools/class-prefix.py` reads the
@@ -6998,6 +7027,10 @@ are limited to expected fields (checksum/timestamp) and documented.
   `ScriptText` and **omits** `Next`, `FriendlyName`, the source line, the text position and the script size. That is
   why the field list the bytecode attempt used validated on 0 of 3,931 functions -- the *set* was wrong, not the
   encoding. The prefix is 3-6 bytes (offset 3 on 19 rows, 4 on 1,152, 5 on 755, 6 on 393).
+  **Corrected 2026-11-28** (`the class record's front is the writer's field list`, above): `FriendlyName` **is** in
+  the record -- the field right after the prefix is the class's own export-name index on 1,185 of 1,185 -- and so is
+  the script length, which is 0. What the prefix does omit is `Next`, the source line and the text position on most
+  classes (a small pair at `+0x58`/`+0x54` on 15 of 1,156).
 - **`UClass::Serialize`'s tail field list is not in the record, measured with a control.** Scanning every offset for
   the five dwords + 12-byte-record array + config `FName` + two 4-byte arrays (counts as 32-bit and as compact,
   `FName` as two dwords and as two compact indices) and requiring an exact end on the block start lands on
