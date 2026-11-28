@@ -1770,6 +1770,83 @@ byte buffer, two 4-byte name arrays and a 2-byte string member, and that none of
     python3 tools/member-access-census.py --xbe DUMP/default.xbe \
         --disp 0x4b8 --disp 0x4c4 --disp 0x4d0 --disp 0x4e8 --disp 0x4f4 --disp 0x500 --disp 0x514 --report
 
+### The middle's tail is a two-record array, and the count is in front of it
+
+`tools/class-record-gap.py` found a second array of `FUN_0003d900`'s grammar behind the one array it could locate
+and named its front as the open question, on 549 classes -- a population bounded by a free head scan. The record's
+**closing group** is a better anchor: `tools/class-tail-run.py` parses `count, names, reference, name, list` at
+`last_unit + 8` and it closes on the defaults start. `tools/class-record-group-anchor.py` (`make
+class-record-group-anchor`, `inventory/class_record_group_anchor.csv`, `--check` in `make ci`) therefore asks
+whether the array's count is immediately in front of that group: a compact count, then that many elements of one
+compact reference -- inside the package's own object tables -- and two dwords, whose walk must end **exactly** on
+the group's start. The null aims the same walk two bytes past it.
+
+| measure | value |
+|---|---|
+| classes with a closing group | 2,139 |
+| a head whose element walk ends on the group's start | **1,185 (55.4%)**: one head on 1,120, two on 65 |
+| the null (the same walk aimed two bytes past the group) | **0 of 2,139** |
+| the array's element count | **2 on 1,184**, 5 on 1 |
+| reference widths, one per element | `2+1` 718, `2+2` 287, `3+2` 87, `1+1` 58, `3+1` 24, `1+2` 10 |
+| the head's offset from the prefix's end | **61 on 887**, 62 on 159, 63 on 107, 64 on 11, 60 on 6, 66 on 6 |
+| the group's own verdict where a head is found | `names-ref-name-list` 984, `no-parse` 201 |
+
+**The middle's tail closes where the group closes, and the array there holds two records.** A 2,139-class null at
+0.0% is what makes the 55.4% a reading rather than a rate: the same grammar, the same tables and the same window,
+aimed two bytes later, never fits once. The 65 two-head classes are reported rather than resolved (the first head
+is the one measured), and the 954 without a head are mostly classes whose group is itself a `no-parse` -- 951 of
+the 954 -- so the array reading is not what fails there.
+
+**The front is not a property block, and that is measured rather than assumed.** `tools/prop-stream.py`'s tag walk
+run from the prefix's end over the bytes in front of the head closes exactly on the head on **0 of 1,185**: it
+stops on a `None` at the first byte on 865 classes (zero properties), and where it does read tags it stops 43-60
+bytes short. So the middle's front is not the defaults stream written twice, and the record is not
+`record + defaults + record`.
+
+**And the front is a fixed skeleton, not a variable-length stream.** A per-offset census over the 1,180 fronts of
+55-66 bytes (`--front-census`) counts, at every offset from the prefix's end, how many classes hold a zero there
+and how many distinct bytes occur:
+
+| offsets | what the census finds |
+|---|---|
+| 0-4 | vary per class (0x00 on 865 at 0; 162 distinct bytes at 1; 0x00 on 75.7% at 3, 90.3% at 4) |
+| 5-6, 17, 39 | `0x00` on every class or all but six |
+| 7-14 | `0xff` on 889-1,164 classes: an eight-byte run of -1 |
+| 27-36 | `0xff` on 893-1,180: a second eight-byte run, seven of whose bytes (`29`-`35`) hold `0xff` on **all 1,180** |
+| 41-46 | small values: 0x16 on 387 at 41, then 10-19 distinct bytes at 42-44 and 3 at 45-46 |
+| 45-60 | the **sixteen zero bytes**: `0x00` on 1,108 at 45, 1,160 at 46 and on **every** class at 47-60 |
+| 61+ | the count's own offset; the bytes between 61 and it are `0x00` on every class that has them |
+
+So the sixteen zero bytes are bytes 45-60 of the middle, and 14 of them are zero on every class: the run in front
+of the count is 16 of them on 301 classes, 17 on 101, 18 on 556 and 19 on 200 only because it merges with the
+zero-filled field in front of it. The 61-byte front, the 19-21-byte two-record array and the 7-11-byte group are
+the whole of the 91-byte median middle -- what is left unnamed is the *meaning* of the front's runs, not their
+extent.
+
+**It is the census's second array, and the residues the census named are not the array's.** Reading the
+anchored rows against `inventory/class_record_gap.csv` (`--report`, no dump) says the two reads are one array: the
+anchored head's start equals the census's `array_end` -- the tail of its first array -- on **319 of its 361**
+`second` rows, and a head is found on **320 of those 361**. The census's two named residue populations behave the
+same way: a head exists on **62 of the 68** rows whose `rest` is 9 bytes of a leading `4` the pairs walk cannot
+close, and on **7 of 7** of the rows whose second array ran 105 bytes past the block. So those residues belong to
+the **list** that follows the array, not to a misplaced array -- which is where the earlier note said they were,
+and now it is a count rather than a reading.
+
+**And the period-9 run is not this array's stream.** Thirteen classes carry both an anchored head and the run
+`class-record-middle.py` finds by its period; the run starts inside the anchored array's span on 5 of them and its
+unit count exceeds the array's element count on **all** of them, so the run is a stretch of the **front**, not the
+two-record array -- which is what `class-record-walkback.py`'s variable-stride chain in front of the run was
+walking.
+
+    make class-record-group-anchor
+    python3 tools/class-record-group-anchor.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --class AmbientCreatures.Carp
+    python3 tools/class-record-group-anchor.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --front-census
+
+The next measurement is the front's first five bytes: they are the only part of the skeleton that varies per class
+(162 distinct at offset 1), and `class_prefixes.csv`'s `super_index` already says what the record opens with -- so
+the read is whether those bytes are the five dwords `UClass::Serialize` writes at `+0x498`..`+0x4ac` or a reference
+count the record carries on its own.
+
 ### The tail is a count of name/reference pairs, and not an `FName` array
 
 `tools/class-record-tail.py` now reads the 6-to-9-byte tail both ways on the 291 records that close. As a bare

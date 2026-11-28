@@ -3653,6 +3653,21 @@ in the stream those members are non-zero on a class with a source line. Statical
 artifact beside each class's own table sizes, so the naming test is a query: three to five bytes cannot be a count
 plus elements, so the candidates are one `FName` plus one or two references, or one reference plus one `FName`.
 
+**2026-11-28 (eleventh): the middle's tail is a two-record array anchored on the closing group, and the front
+is a skeleton, not a stream.** This entry's tenth note left two questions: the meaning of the sixteen zero bytes,
+and the naming test for the 3-5 compact bytes in front of them. Anchored on the group `class-tail-run.py` parses at
+`last_unit + 8`, the array's head is found where its element walk ends **exactly** on that group start: **1,185 of
+2,139** classes, one head on 1,120, and **0 of 2,139** for the same walk aimed two bytes past -- so the count is in
+the stream and the array holds **2 records** (1,184), with reference widths `2+1` on 718. The front read as a
+property block closes on the head on **0 of 1,185** (a `None` at the first byte on 865, tags that stop 43-60 bytes
+short on the rest), so it is not the defaults stream twice. A per-offset census over 1,180 fronts puts the sixteen
+zero bytes at offsets **45-60**, of which **47-60 are zero on every class**, and finds two eight-byte `0xff` runs
+(7-14, 27-36) and a varying five-byte head (0-4). **What would settle the front** is a comparison of its first five
+bytes against the five dwords `UClass::Serialize` writes at `+0x498`..`+0x4ac`: if the front is that group, its own
+read order is `UState`'s 22 bytes then those 20, and the record carries no other field before the array. Numbers:
+`docs/NATIVE_VM.md`, *The middle's tail is a two-record array, and the count is in front of it*;
+`inventory/class_record_group_anchor.csv`.
+
 ## U18. What a `delegate` property's default value is — closed: it is `{object, name}`, and three of the 42 were a locator offset
 
 **Observed.** Three class-level values do not render, and they are one property in three classes:

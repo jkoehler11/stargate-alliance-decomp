@@ -696,8 +696,10 @@ object the package has. Two numbers come out, and they point in opposite directi
   searches from the block's side, the payload's side and now the elements' side have all refused.
 
 The 545 withheld blocks are untouched by this: the walk says where the record's element grammar continues, not where
-the defaults start. The next instrument is the writer that allocates the array (`FUN_0003d900`'s caller), since a
-`TArray`'s count is written where it is created, not where it is filled.
+the defaults start. The caller that was this page's next instrument is measured and it is `UClass::Serialize`
+(`0x3a8a6`, handed `+0x4d0`); the array the middle does carry is anchored instead on the closing group -- two
+records, ending exactly on the group's start on 1,185 of 2,139 classes, with its count in the stream in front of it
+(`docs/NATIVE_VM.md`, *The middle's tail is a two-record array, and the count is in front of it*).
 
 ### What the record writes in front of the block, now that the prefix is measured
 
