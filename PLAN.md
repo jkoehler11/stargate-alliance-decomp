@@ -19559,3 +19559,23 @@ sequence.
       `StargateVoicePack.PlaySpeech` and `WindowConsole.Tick` (which needs a return type in a *value* position).
       Files: `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/uscript_emit_join.csv`,
       `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
+
+- [~] 3.6 a postfix increment does not open an operand, and an increment's operand may be a member:
+      **GUI.u 719 of 719 modelled, every one byte-identical, 0 refused; `StargateGame.u` 3,256 of 3,256, 0 differ**
+      (from 718 and 3,255; **two bodies gained, none lost**; the corpus artifact still reads 11,681 and these rules
+      answer 11,683 -- the next whole-corpus run regenerates it). Two reads, each measured against the body's own
+      bytes: (1) **a postfix `++`/`--` closes an operand**, so the operator scan's unary-position test must not treat
+      it as an operator that opens one -- `GUIController.GenerateFakeNames`'s `Left(i ++ $ FakeNames[...], 15)` is a
+      `string $ int` pair split at the `$` (`39 53` `IntToStr` over the `AddAdd_Int`), and reading the `$` as a sign
+      left the whole run as one array element (`an element of an array the artifacts do not type`). (2) **an
+      increment's operand may be parenthesised and may be a member**: `StargateVoicePack.PlaySpeech`'s
+      `++(CurrentSpeech.SoundCounter);` is `a3 19 01 3a 05 00 04 01 e2 07 16` -- `AddAdd_PreInt` over the member's
+      own `Context` read -- and `_incdec` now strips the parens and takes the member chain the postfix spelling
+      already handled (`_stmt_member_call`), with the member's declared type picking the int/byte pair and a
+      container's `Length` keeping the length operator's `int`. Fixture P43 drives the operator scan both ways
+      (`i ++ $ Suffix` and `Slot * - 256`) and prints its own FAIL on a copy with only the guard reverted. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name. Measured and **not in this bundle**: `WindowConsole.Tick`
+      moved one refusal later (to `levelinfo != an unknown type`) under a version of the class-table word that was
+      withdrawn -- the rest needs `Viewport.Actor` typed `PlayerController`, which no artifact carries;
+      `TestInfo.TestSwitch` (an assert line the corpus does not pin) and `CylinderBuilder.Build` (the differ) are
+      untouched.
