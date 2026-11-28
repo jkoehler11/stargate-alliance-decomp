@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,681 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,684 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4847,3 +4847,66 @@ though the import carries no word); the rule is right as far as it goes, but the
 `Viewport.Actor` typed `PlayerController` (so that `GetEntryLevel()` returns a `LevelInfo`), which no artifact
 carries, so the rule was withdrawn rather than shipped half-measured. `TestInfo.TestSwitch`'s assert line and
 `CylinderBuilder.Build`'s three jump distances are untouched.
+
+## Stage 3, continued -- the corpus score repaid, and the `%` that needs its site (measured 2026-11-28)
+
+**11,681 -> 11,684 modelled / identical, every one byte-identical.** `inventory/uscript_emit.csv` is regenerated
+from one whole-corpus run (`--tree $WORK/scripts-all`, 18 packages, 11,687 bodies walked, 11,686 joined to a
+declaration), and `inventory/emit_differ.csv` with it: its census had gone stale at `1 ... 11,681 identical` while
+the run it describes held 11,681 modelled, and it now reads **11,684** with the same single row
+(`jump distance` / `JumpIfNot` / ours longer / downstream / `CylinderBuilder.Build`). The three bodies are the debt
+two earlier bundles left when they scored only the packages their rules moved
+(`GUIController.GenerateFakeNames`, `StargateVoicePack.PlaySpeech`, and the `WindowConsole` pair
+`CloseUWindow`/`LaunchUWindow`): the artifact lagged the tool by exactly that much and nothing was lost.
+
+The residue is now **2 rows**, both named by node:
+
+| body | reason | where |
+|---|---|---|
+| `CylinderBuilder.Build` | an emitted body that differs (391 vs 377) | the third `Poly4i` argument, `((i+1)%Sides)*2+(1-j)/2` |
+| `WindowConsole.Tick` | an operator the image's table does not install (`levelinfo != an unknown type`) | `Viewport.Actor.Level != Viewport.Actor.GetEntryLevel()` |
+
+**A member call's callee is the import's, and so is its value type -- but that is one refusal further, not a body.**
+The type half was built and scored: when the receiver's class does not declare the callee and the package imports
+exactly one `Function` of that name, the import's own owner (`import_owners`, the join that already answers a
+`final` flag) declares it, so `_type_of` answers `levelinfo` for `Viewport.Actor.GetEntryLevel()`. Whole corpus:
+**11,684 -> 11,684, none moved**, and `WindowConsole.Tick`'s row moves from *an operator the image's table does not
+install* to *a call member returning an unknown type, whose value size this walk does not carry* -- i.e. the `!=`
+resolves as `NotEqual_ObjectObject` and the next refusal is the `Context` size byte the call's own node writes
+(**4**, the width of a `LevelInfo`). The size half is the same join read at `_emit_member_call`'s `rtype`, and it is
+**written and gated but not scored**: `--check`'s P44 drives `_type_of`, the control (a name the owner does not
+declare) and the `!=` row, and a copy with only the rule reverted prints its own `FAIL`; no whole-corpus run of it
+exists, so this bundle carries the measurement and not the rule. The two places to re-apply it are `_type_of`'s
+member-call branch (where `_class_of` returns `actor`) and `_emit_member_call`'s `rtype`, and the rule must not touch
+`_declares_void` -- that reading is what cost 159 bodies when the return type was answered generally.
+
+**An `int % int` is not typed `int` by the operator, and supplying the conversion it needs does not save the rule.**
+The previous attempt changed only the *type* of `a % b` for two `int` operands and lost eight bodies; the obvious
+repair is that the compiler writes the int modulo as `FloatToInt(Percent_FloatFloat(IntToFloat a, IntToFloat b))`,
+so the type **and** a `39 44` wrapper were added together (`_operator_types` answering `int`, `_emit_operator`
+wrapping the node). Scored over the four packages that carry every witness (`--only
+Editor.u,GUI.u,StargateGame.u,GamePlay.u`, 4,380 bodies walked) against `origin/main`'s own run on the same tree:
+
+| run | modelled in those four packages | gained | lost |
+|---|---|---|---|
+| `origin/main` | 4,379 (residue: `CylinderBuilder.Build`) | -- | -- |
+| type + `39 44` wrap | 4,372 (residue: 8 rows) | `CylinderBuilder.Build` | **8** |
+
+The witness gains its bytes and the eight losses split into two shapes, each visible in the first differing node:
+
+- **a pair the compiler kept `float`**: `ConeBuilder.BuildCone` (223 vs 225), `ConeBuilder.Build` (323 vs 325),
+  `CylinderBuilder.BuildCylinder` (296 vs 300) -- the package writes `39 44 ae` (a `float` pair narrowed at its
+  boundary) where the rule now writes the `int` pair;
+- **a `%` the compiler widened**: `DeathMatch.PendingMatch.Timer` and `DeathMatch.MatchInProgress.Timer` (both 479
+  and 268, same length), `StargateHUD.DrawHUD` (742), `GoauldConsoleHud.DrawHUD` (1,401),
+  `ReplicatorHUD.DrawHUD` (2,180) -- the package writes `ad 39 3f ... 16 | 39 3f 26` (the float modulo, then
+  `IntToFloat` into the pair above) where the rule writes `39 44 ad ... 26`.
+
+The wrap does fix what the earlier type-only attempt also lost -- `GRENADE.CalcGrenadeLanding` and
+`VirtualKeyboardPanel.constructKeyboard` are no longer in the loss list -- but it costs the two `DeathMatch.Timer`
+bodies the type-only form kept, so the operator is still the wrong key. The reading the corpus supports is that the
+enclosing node's **row** decides: `(i+1)%Sides` is compiled at an `int` argument's pair (narrowed, `39 44`), while
+the same modulo under a `float` pair is widened with `39 3f`, and the operator's own type cannot tell the two apart.
+The next formulation compiles the child at the parent's own row instead of answering the `%` a type, with
+`CylinderBuilder.BuildCylinder` and the two `DeathMatch.Timer` bodies in the control set; the refutation is recorded
+here rather than shipped because a rule that nets -7 bodies fails this page's acceptance test (differ 0, none lost).
