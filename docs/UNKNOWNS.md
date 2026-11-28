@@ -3705,6 +3705,23 @@ the one-byte-late control rises to 348/476/509 in step, so a bigger bound is not
 `docs/NATIVE_VM.md`, *The record closes from the prefix's end: front, array, group, and the fault behind the
 head-less 954*; `inventory/class_record_chain.csv`.
 
+**2026-11-28 (fourteenth): the 279 are not a parse failure -- the located block start sits inside the closing group,
+and the array's count runs to 49.** The thirteenth note left the array's element bound and the 62 nonzero script
+lengths open. Offering the group's own end as the block (`class-defaults.py`'s committed geometry, taken at the
+array's end, with a tag stream required to open on that end) closes **188 of the 279**, moves the block by **3, 4, 5,
+6, 7, 8 or 9 bytes** -- the same distances the defaults chooser measured for its 373 moved starts -- and names the
+reason the located start was early: its first "tag" is a **package-level** name (`System`, `Core`, `Lighting`,
+`Engine`), which no class can declare, while the group's end opens exactly one real property. **71** group ends open
+an empty stream (no witness, left open) and **20** rows have no group at the array's end. The count bound is measured
+at **9 to 49** rather than bounded: **466** rows hold more than 8 records and on **372** of them the group ends
+exactly on the located start and begins exactly at the array's end; the bound is now 512 and closures go **1,228 ->
+1,600 + 243**, with the one-byte-late control **281 -> 509** (which is why the join, not the bound, is the evidence).
+The fourth front field is **not** a script length: of the 62 rows that read nonzero, 8 ship `TextBuffer` bytes and the
+field equals that size on none. **What is still open** is the 71 empty group ends, the 20 rows with no group, the 175
+whose array now overruns the block, the 1-3 byte join on the 29, and those 62 fronts -- which are the function-rich
+base classes, where the field is a count of something the record does not name yet. Numbers: `docs/NATIVE_VM.md`,
+*The closing group is real on the 279, and the located block start sits inside it*; `inventory/class_record_chain.csv`.
+
 ## U18. What a `delegate` property's default value is — closed: it is `{object, name}`, and three of the 42 were a locator offset
 
 **Observed.** Three class-level values do not render, and they are one property in three classes:
