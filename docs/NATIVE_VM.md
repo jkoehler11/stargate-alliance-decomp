@@ -1823,6 +1823,21 @@ zero-filled field in front of it. The 61-byte front, the 19-21-byte two-record a
 the whole of the 91-byte median middle -- what is left unnamed is the *meaning* of the front's runs, not their
 extent.
 
+**It is the census's second array, and the residues the census named are not the array's.** Reading the
+anchored rows against `inventory/class_record_gap.csv` (`--report`, no dump) says the two reads are one array: the
+anchored head's start equals the census's `array_end` -- the tail of its first array -- on **319 of its 361**
+`second` rows, and a head is found on **320 of those 361**. The census's two named residue populations behave the
+same way: a head exists on **62 of the 68** rows whose `rest` is 9 bytes of a leading `4` the pairs walk cannot
+close, and on **7 of 7** of the rows whose second array ran 105 bytes past the block. So those residues belong to
+the **list** that follows the array, not to a misplaced array -- which is where the earlier note said they were,
+and now it is a count rather than a reading.
+
+**And the period-9 run is not this array's stream.** Thirteen classes carry both an anchored head and the run
+`class-record-middle.py` finds by its period; the run starts inside the anchored array's span on 5 of them and its
+unit count exceeds the array's element count on **all** of them, so the run is a stretch of the **front**, not the
+two-record array -- which is what `class-record-walkback.py`'s variable-stride chain in front of the run was
+walking.
+
     make class-record-group-anchor
     python3 tools/class-record-group-anchor.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --class AmbientCreatures.Carp
     python3 tools/class-record-group-anchor.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --front-census

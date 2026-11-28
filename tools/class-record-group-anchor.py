@@ -315,6 +315,45 @@ def front_census(args):
     return 0
 
 
+def gap_join(rows):
+    """The gap census's own populations, read against the anchored array (committed artifacts only)."""
+    path = os.path.join(ROOT, "inventory", "class_record_gap.csv")
+    if not os.path.exists(path):
+        return
+    with open(path, newline="", encoding="utf-8") as fh:
+        gap = list(csv.DictReader(fh))
+    mine = {(r["package"], r["class"]): r for r in rows}
+    shapes = collections.Counter()
+    with_head = collections.Counter()
+    same_end = 0
+    same_start = 0
+    rest = collections.Counter()
+    rest_head = collections.Counter()
+    for r in gap:
+        key = (r["package"], r["class"])
+        m = mine.get(key)
+        heads = int(m["heads"]) if m and m["heads"] != "" else 0
+        shapes[r["shape"]] += 1
+        if heads:
+            with_head[r["shape"]] += 1
+        if m and m["head"] != "" and r["second_len"] and r["array_end"]:
+            start = int(m["prefix_end"]) + int(m["head"])
+            end = start + int(r["second_len"]) + 1     # the count byte, then the elements
+            if end == int(m["block_start"]):
+                same_end += 1
+            if start == int(r["array_end"]):
+                same_start += 1
+        if r["rest"] != "":
+            rest[r["rest"]] += 1
+            rest_head[r["rest"]] += 1 if heads else 0
+    print("the gap census's %d rows, by shape: %s" % (len(gap), shapes.most_common()))
+    print("  a head found on them: %s" % with_head.most_common())
+    print("  the anchored array's span against the census's: same start %d, ends on the block %d"
+          % (same_start, same_end))
+    print("  the census's residue (`rest`, bytes after its second array): %s" % rest.most_common(6))
+    print("    of which a head is found: %s" % rest_head.most_common(6))
+
+
 def report(rows):
     total = len(rows)
     with_group = [r for r in rows if r["group_start"] != ""]
@@ -342,6 +381,7 @@ def report(rows):
     print("  the run inside the anchored array: %d; units <= the array's count: %d"
           % (sum(1 for r in with_run if r["run_inside"] == "1"),
              sum(1 for r in with_run if r["run_inside"] == "1" and int(r["run_units"]) <= int(r["head_count"]))))
+    gap_join(rows)
     no = [r for r in with_group if int(r["heads"]) == 0]
     print("no head: %d classes" % len(no))
     if no:

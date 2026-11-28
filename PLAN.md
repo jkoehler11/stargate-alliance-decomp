@@ -6973,6 +6973,11 @@ are limited to expected fields (checksum/timestamp) and documented.
   them universal), and a five-byte head at 0-4 that varies per class (162 distinct bytes at offset 1). The 91-byte
   median middle is that 61-byte front, a 19-21-byte two-record array and a 7-11-byte group -- extent measured,
   meaning open.
+- **It is the gap census's own second array, and its residues are the list's.** Against `class_record_gap.csv`,
+  the anchored head's start is the census's `array_end` on **319 of 361** `second` rows (a head on 320 of them), the
+  68 rows whose `rest` is 9 bytes carry a head on **62**, and the 7 that overshoot by 105 carry one on **7 of 7** --
+  so the two residues the previous note named are the list that follows the array. The period-9 run is not this
+  array's stream: on the 13 classes carrying both, its units exceed the array's element count on all of them.
 - Tool (`tools/class-record-group-anchor.py`: `--class`, `--sweep`, `--front-census`, `--report`, and a `--check`
   that drives a found head, the null, an out-of-table reference, a negative reference, the bounded zero run, a front
   that tags and one that does not) + `inventory/class_record_group_anchor.csv` (2,139 rows, 21 columns) +
