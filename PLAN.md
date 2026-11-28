@@ -7015,6 +7015,35 @@ are limited to expected fields (checksum/timestamp) and documented.
   sections corrected in place) + `docs/UNKNOWNS.md` U17 (twelfth) + `make class-record-front` + this note. Reads the
   packages and one committed artifact; no boot, no value decoded, no game data written.
 
+### Execution notes (2026-11-28, the record closes from the prefix's end, and the head-less 954's fault is the scan's unit)
+
+- **The chain does not need the tail anchor, and it settles the classes the anchor cannot reach.**
+  `tools/class-record-chain.py` walks the writer's order from the prefix: the front's fields (the second is the
+  class's own export-name index), `FUN_0003d900`'s array at the front's end, and `class-tail-run.py`'s group at the
+  array's end, closing exactly on the defaults block. It closes **1,228 of 2,204** located records; the front's name
+  is the class's export-name index on **2,204 of 2,204**, against the twelfth note's 1,185 anchored ones. Controls:
+  the same chain one byte later **281**, the group aimed two bytes past the array **0**, the array at the front's
+  modal 61 bytes **792**.
+- **The 954 head-less classes fail on the group's start, not on the array.** 236 of them close from the prefix, and
+  234 of those carry `no-parse` from the tail. Their arrays hold **3 to 8 records** and the tail's group start lies
+  inside the array at `array_end - group_start` = 9, 18, 1, 36, 10, 27, 54, 45, ... -- the array's own 9-byte element
+  stride. The references resolve coherently (`Engine.Canvas` 8: `Canvas`, `Object`, `Texture` x6; `Engine.Emitter`
+  8: `Emitter`, `Actor`, `ParticleEmitter` x5, `LevelInfo`), which is what makes the array's end a group start rather
+  than a fit.
+- **The 65 two-head classes resolve to the first head** -- the walked front ends on the anchored head on 63 of the
+  65; the other two (`AmbientCreatures.HerdAnimal`, `UWindow.UWindowList`) fail at the array with counts of 143 and
+  128, so the ambiguity is not what stops them.
+- **What is still open**: the 1-3 byte join on the 29 rows (a compact-shaped value such as `035291`), a nonzero
+  script length read on **62** rows (13 to 1,715 bytes, none closing), and the array's element bound -- 1..8 is the
+  anchored grammar's own, and 16/64/256 lift the closure to 1,336/1,544/1,593 while the one-byte-late control rises
+  to 348/476/509 in step.
+- Tool (`tools/class-record-chain.py`: `--sweep`, `--report`, `--class`, `--max-count`, and a `--check` that closes a
+  synthetic front/array/group and refuses a wrong name, an out-of-table reference, an out-of-grammar count and a
+  short block) + `inventory/class_record_chain.csv` (2,204 rows, 36 columns) + `docs/NATIVE_VM.md` (*The record closes
+  from the prefix's end*, with the anchor section's head-less sentence corrected in place) + `docs/UNKNOWNS.md` U17
+  (thirteenth) + `make class-record-chain` + this note. Reads the packages and three committed artifacts; no boot, no
+  Ghidra, no value decoded.
+
 ### Execution notes (2026-11-12, the class record opens with three references, and neither tail reading survives a control)
 
 - **The prefix is measured against the package's own export table, on every class.** `tools/class-prefix.py` reads the
