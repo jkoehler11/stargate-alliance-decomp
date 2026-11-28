@@ -1439,16 +1439,20 @@ def _outer_wrapped(low, read, ptype, want, env):
     wrap_any = low in (scope.get("within_props") or ()) and (env.get("within") or "")
     if low not in (scope.get("outer_props") or ()) and not wrap_any:
         return None
-    size = PROP_SIZE.get(ptype)
-    if size is None:
-        # The record says only `StructProperty`, so the value's own type is the declaration's word: `CheatManager
-        # .SetFlash`'s `FlashScale.X = F` opens `19 01 8e 05 00 0c` and 12 is the `vector` `PlayerController.uc`
-        # spells (`var vector FlashScale, FlashFog;`). Asking the record alone refused it as `Outer.<struct>`,
-        # while the three sibling bodies (the same write on `FlashFog`) resolved their word and only then missed
-        # this size -- the join is the declared type, exactly as `_friendly` answers it.
-        alt = _friendly(low, env) or ""
-        if PROP_SIZE.get(alt) is not None:
-            ptype, size = alt, PROP_SIZE[alt]
+    alt = _friendly(low, env) or ""
+    # The record says only `StructProperty`, so the value's own type is the declaration's word: `CheatManager
+    # .SetFlash`'s `FlashScale.X = F` opens `19 01 8e 05 00 0c` and 12 is the `vector` `PlayerController.uc`
+    # spells (`var vector FlashScale, FlashFog;`). Asking the record alone refused it as `Outer.<struct>`,
+    # while the three sibling bodies (the same write on `FlashFog`) resolved their word and only then missed
+    # this size -- the join is the declared type, exactly as `_friendly` answers it.
+    # The width is `_value_width`'s, so a **struct** word is `STRUCT_SIZE`'s row and not `PROP_SIZE`'s:
+    # `CheatManager.Teleport` casts `Actor.Rotation` (`vector(Rotation)`), a `rotator`, and the package writes
+    # the 12 of `19 01 8e 05 00 0c`; asking `PROP_SIZE` alone refused both `within` bodies whose struct read is
+    # a cast (`Teleport`, `Summon`) while the sibling `vector` case next door resolved -- `vector` is the one
+    # struct word the old lookup happened to carry.
+    size = _value_width(ptype, alt)
+    if size is not None and alt:
+        ptype = alt
     if scope.get("outer_ref") is None or size is None:
         raise Refused("a name this package declares only on another class's chain (the `Outer.<%s>` shape)"
                       % (ptype or "typeless"))
@@ -2920,14 +2924,20 @@ def _emit_unary(expr, rettype, env):
     return _converted(node, result, rettype), "unary"
 
 
-def _emit_cast(name, inner, env, rettype=""):
+def _emit_cast(name, inner, env, rettype="", kind=None):
     """`Type(expr)` -> `39 <slot> <expr>` when the type is a primitive, `2E <class ref> <expr>` when it is a class.
 
     The slot is the image's own cast table read backwards: the row*named* `<From>To<To>` for the operand's declared
     type and the cast's target (`StringToInt` is slot 74, `FloatToString` 85, `ObjectToString` 86), and only a row
     the build installs is used -- a pair with no tokens in the artifact has no slot to write.
     """
-    kind = _cast_kind(name, env)
+    # `kind` is `_cast_name`'s own answer when the caller already made the call: that test adds the **arity**
+    # (`Trigger(X)` is a cast to the class even though `Actor` declares the two-argument `event Trigger(...)`),
+    # and re-deriving the kind here answered "neither" for exactly those names -- a name that is *both* a class
+    # and a function in scope -- so three bodies that ship a `2E` cast (`DynamicCast 7c04` in
+    # `SGInteraction.InteractionUsed`, and `Door.SpecialHandling` / `CommandInterface.TestTraceActors`) refused as
+    # *a call the class chain does not declare* one line before the `2E` the walk was about to write.
+    kind = kind or _cast_kind(name, env)
     low = name.lower()
     if kind == "primitive":
         src = _type_of(inner, env).lower()
@@ -4265,7 +4275,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
             # the compiler's own check, not part of the bytes.
             return _emit_object_literal(expr[0][1], expr[1][1], env), "object-literal"
         if _is_call(expr) and _cast_name(expr, env):
-            return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
+            return _emit_cast(expr[0][1], expr[2:-1], env, rettype, _cast_name(expr, env))
         en = _enum_cast(expr, env)
         if en is not None:
             # `EIntStat(i)`: an enum's name in front of one operand is a cast, not a call. It is tried after the
@@ -4569,7 +4579,14 @@ def _emit_new(expr, env):
         raise Refused("a `new` with an empty argument slot, which no body in the corpus spells")
     if not rest:
         raise Refused("a `new` with no class expression")
-    parts = [emit_expr(a, "object", env)[0] for a in args]
+    # The three slots are **not** all objects: `NewToken` reads the outer expression, then the object's
+    # **name** as a string and its **flags** as an int. Emitting every argument with `object` refused the two
+    # corpus bodies that spell a name at all -- `TestInfo.BeginPlay`'s `new(self,"")` (`1f 00`, a `StringConst`)
+    # and `SGVoicePackExtended.PostBeginPlay`'s `new(none,"VoiceSelector",RF_Transient)`
+    # (`2a | 1f <name>00 | 1d 00400000`) -- as *a quoted literal in a object function*, from the leaf that
+    # refused the empty string because the slot asked for an object.
+    wants = ("object", "string", "int")
+    parts = [emit_expr(a, wants[n], env)[0] for n, a in enumerate(args)]
     while len(parts) < 3:
         parts.append(bytes([0x0B]))
     return bytes([0x11]) + b"".join(parts) + emit_expr(rest, "object", env)[0]
