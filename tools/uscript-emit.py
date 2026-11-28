@@ -1178,15 +1178,21 @@ def _operator_types(expr, env, site="", root=False, typing=False):
     n1, n2 = _numeric(t1, env), _numeric(t2, env)
     if (not typing and root and (site or "").lower() == "int"
             and sym in ("+", "-", "*", "/")):
-        # **The site's `int` expectation compiles a side at the side's own pair.** `CylinderBuilder.Build`'s
-        # `((i+1)%Sides)*2+(1-j)/2` is the third argument of `Poly4i` (an `int`), and the package writes
-        # `Add_IntInt(Multiply_IntInt(FloatToInt(Percent_FloatFloat(...)), 2), Divide_IntInt(...))`: the outer
-        # pair takes the `(int, int)` row even though its left operand is a **float-typed** chain, because the
-        # expectation reaches that chain and it has an `(int, int)` row of its own. A side whose own row has no
-        # `int` form -- the bare `%` of `n + ((i+1)%Sides)`, compiled as `FloatToInt(Add_FloatFloat(...))` in the
-        # same class -- keeps its declared `float` and is narrowed by the cast. Ask each side what it would emit
-        # at, rather than what its operator declares.
-        for _side_k, _side_expr in (("l", left), ("r", right)):
+        # **A side of a mixed pair is compiled at the side's own pair.** `CylinderBuilder.Build`'s fourth
+        # `Poly4i` argument is `((i+1)%Sides)*2+(1-j)/2+Sides*2`: its right side is `int` (`Sides*2`) and its left
+        # is a **float-typed** chain (the `%` is the image's one `Percent_FloatFloat`), and the package writes
+        # `Add_IntInt(<left>, Multiply_IntInt(Sides, 2))` -- the site's `int` expectation reaches that chain
+        # because the chain itself has an `(int, int)` row (`Multiply_IntInt` over a `FloatToInt`), so the pair is
+        # asked at `int` and no `IntToFloat` wraps the result.
+        #
+        # The bound is the **other** side being `int`: that is what makes the pair mixed, and it is what
+        # `HUD.DisplayMessages`' `(PosX * Scale * SizeX) + (((1 - Scale) / 2) * SizeX)` does not have -- there both
+        # sides are `float` and the package keeps `Add_FloatFloat` (`ae`) with the narrowed group on its left
+        # (measured: asking both sides at `int` retyped that body and lost it, 530 vs 526). So a side is asked at
+        # `int` only where the side it is paired with already is.
+        for _side_k, _side_expr, _other in (("l", left, n2), ("r", right, n1)):
+            if _other != "int":
+                continue
             # The side is asked **at this site**, not at its own declared type: the answer is recursive,
             # because `((i+1)%Sides)*2+(1-j)/2` is int only through a pair that is itself int (`%*2`).
             _own = _operator_types(_strip_parens(_side_expr), env, "int", True, typing=False)

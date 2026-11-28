@@ -19610,6 +19610,21 @@ sequence.
       `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the import-owner size half (written,
       `--check` P44 proven to bite, unscored) and the `%`-at-the-parent's-row formulation.
 
+- [~] 3.6 the site's `int` expectation reaches a mixed pair's `float` side: **11,685 -> 11,686 modelled / identical,
+      the differ census 0 rows and the residue empty** -- `CylinderBuilder.Build`, the last body `emit_differ.csv`
+      carried, models byte-identically (383 -> 377 in the earlier hand run) and `Editor.u` reads 23 of 23. One
+      whole-corpus run against `origin/main`'s own tool on the same tree: 1 gained, 0 lost, 0 newly differing.
+      Three items: (1) the site rule -- at an `int` site a side of `+ - * /` is asked at `int`, and takes the
+      `(int, int)` row when it answers one, **only where the other side already is `int`**; the both-sides form was
+      scored and refused (11,685 -> 11,685, gaining this body and losing `HUD.DisplayMessages`, whose both-`float`
+      pair keeps `Add_FloatFloat`); (2) `_operand` writes no cast over a node whose own row at the slot's site
+      already is the slot's type (the `IntToFloat`/`FloatToInt` round trip the narrowed group paid twice), asked
+      only at narrowing slots because the recursive query doubled the corpus run; (3) `--check` P45, proven to FAIL
+      on a copy with either half reverted. Artifacts regenerated from that one run (`inventory/uscript_emit.csv`,
+      `uscript_emit_join.csv`, `emit_differ.csv` at 11,686 identical). Doc: `docs/COMPILER_FRONTEND.md`, section of
+      the same name; U43 rewritten in place. Not in this PR: the doc page's generated block's own wording for a
+      0-row census beyond what `emit-differ.py --write-doc` writes, and `l1_ready.csv`'s regenerated rows.
+
 - [~] 3.6 the value position's half of the import join: **`WindowConsole.Tick` models byte-identically, `UWindow.u`
       reads 731 of 731 modelled with 0 refused and 0 differ** (from 730 and the operator residue row this body was),
       and the whole corpus reads **11,684 -> 11,685 modelled / identical** with the residue at **1** row
