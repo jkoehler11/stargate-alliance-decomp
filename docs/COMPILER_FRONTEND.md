@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,671 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,674 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4219,7 +4219,11 @@ named) — progress at a later refusal, counted as neither a gain nor a loss.
   a native class with **no script record**, so `class_properties.csv` has no row for `Viewport.Actor` and the chain
   answers `(1, -33, 'object', '')` — the record, with no declared class. `_numeric` accepts an imported `Class` name
   as an object for exactly this reason; `_class_of` cannot, because the *member's* type is the missing word. This is
-  the tag-encode/property-census thread's question, not another typing rule here.
+  the tag-encode/property-census thread's question, not another typing rule here. **Corrected by a later section (2026-11-27):** it was one here, and not
+the tag-encode thread's. `UWindow.u` imports `viewport <- Class <- Core` and `actor` twice (as the
+`Viewport.Actor` property and as the `Class`), so a member's empty type word is its own name when the
+package also imports that name as a `Class`; `GUIController.GetPlayerController` models byte-identically
+and `TournamentConsole.LaunchUWindow` refuses one node later, at `ClientTravel`.
 
 ## Stage 3, continued -- a native declaration is a relay, and a header scan that keeps brace balance (measured 2026-11-27)
 
@@ -4321,7 +4325,11 @@ malformed one (807 -> 813 rows, now 5 columns), and `make struct-members` is the
 `Viewport` is the hard one: it is a **class** the shipped packages import but do not export (`Engine.u` import -41;
 `classes.csv` has no row), so its member records exist in no package and `class_properties.csv` cannot carry
 `Viewport.Actor`'s declared type. The record index itself is already right (`import -33`); the missing word is the
-*member's class*, and no artifact holds it. `Viewport` is not in this PR.
+*member's class*, and no artifact holds it. `Viewport` is not in this PR. **Corrected by a later section (2026-11-27):** `Viewport` needed no new
+artifact after all -- the packages' own import tables carry it as a `Class`, and the three rows here
+split into one gain (`GUIController.GetPlayerController`) and two bodies that now refuse at the callee
+(`WindowConsole.LaunchUWindow`'s `SetPause`, `TournamentConsole.LaunchUWindow`'s `ClientTravel`);
+`WindowConsole.Tick` moved to the operator table.
 
 ## Stage 3, continued -- a modifier is a word, `Outer` is the `within` class, and a `class<Z>` return holds Z (measured 2026-11-27)
 
@@ -4567,3 +4575,74 @@ property* rows (`ListObjectPropsCommandlet.Main`, `GUIController.GetPlayerContro
 name), `StargateVoicePack.PlaySpeech`, `RechargingAmmo.Tick` (a fractional literal in an `int` slot),
 `WindowConsole.Tick` (a cast row the image does not install), `WindowConsole.LaunchUWindow`, `TestInfo.TestSwitch`
 (an assert line the corpus does not pin), and `CylinderBuilder.Build`, the one body that emits and still differs.
+
+## Stage 3, continued -- a class the package imports, an array value's width, and a native member's word (measured 2026-11-27)
+
+Three rules, scored **per body** over the whole corpus in one run each against the same tree (`--tree
+$WORK/scripts-all`, 18 packages), and compared row by row with the baseline run (`~/sg1/work/rf/base`, which
+reproduces the committed artifact) -- this bundle is `~/sg1/work/rf/sc1`:
+
+| run | modelled | gained | lost | newly differing | residue | differ |
+|---|---|---|---|---|---|---|
+| `origin/main`'s `uscript-emit.py` | 11,671 | -- | -- | -- | 15 | 1 |
+| this bundle, same tree | **11,674** | **3** | **0** | **0** | **12** | 1 |
+
+**All three gained bodies are byte-identical and no modelled body changed a byte**: the two `uscript_emit.csv` runs
+differ by 0 rows removed, 3 added and 0 moved (the only changed row is the census row). Each gained body and the
+reason it carried at the baseline:
+
+| body | baseline reason |
+|---|---|
+| `MaplistManager.ShiftMap` | a call member returning `array.mapitem`, whose value size this walk does not carry |
+| `GUIController.GetPlayerController` | a member that is not a property of the receiver's class |
+| `ListObjectPropsCommandlet.Main` | a member that is not a property of the receiver's class |
+
+- **An array value's size byte is 0, whatever its element.** `MaplistManager.ShiftMap`'s `Maps = ...GetMaps();`
+  ships `19 <recv> 06 00 00 1b 5a 11 16` -- a `Context` whose size byte is 0 around a call returning
+  `array<MapItem>` -- and the walk carried one `array.string: 0` row in `RETURN_SIZE`, which is one **witness** of
+  the rule and not a type of its own. The test is the word's shape: a declared type whose friendly spelling starts
+  `array` (`array`, `array<string>`, `array.mapitem`, `Array<MapItem>` -- the corpus's own `class_properties.csv`
+  spells `array<Viewport>`, the front end's tables spell `array.mapitem`). That is applied in `_emit_member_call`
+  **and** `_value_size`, because a call's value and a returned value reach the size through different functions; a
+  word that names no value (`mapitem`) still refuses rather than being sized 0, so the rule is the array and not
+  "an unknown type".
+- **A class the package imports as a `Class` is a class.** `Viewport` is engine-native
+  (`inventory/native_class_packages.csv`: `Viewport,Engine,0x000f92c9,Engine_UnCamera`) and `UWindow.u`'s own
+  import table carries `viewport <- Class <- Core`, but the export census `class_names` is built from holds no row
+  for it -- so `_class_of` refused `WindowConsole.LaunchUWindow` as *`viewport` is declared `Viewport`, which is not
+  a class the class table carries*. `score()` now unions each package's `Class` imports into the set it hands the
+  walk. This is the evidence `_numeric` already accepted for a comparison operand (the `Font == Viewport` case
+  above), applied to the class a **receiver** holds.
+- **A native member's type word is its own name when the package also imports it as a `Class`.** `Viewport`'s
+  `Actor` is a `UObjectProperty` with no declared word, and the chain stopped there: `Viewport.Actor.Level` refused
+  as *a receiver chain whose member the artifacts name no class for*, although `Actor.Level` is `LevelInfo` on the
+  class table. The package imports `actor` twice -- as that property and as the `Class` -- and the property holds
+  the class of the same name, which is exactly what `Actor.Actor`, `Actor.Owner` and `Actor.Level` spell. Only a
+  member name the package also imports as a `Class` takes this reading; every other import keeps its empty word and
+  stays refused.
+
+**Four rows advanced rather than gained, and that is the next instrument.** `WindowConsole.LaunchUWindow`,
+`TournamentConsole.LaunchUWindow`, `WindowConsole.CloseUWindow` and `TournamentConsole.ConnectWithPassword` moved
+from *a member that is not a property of the receiver's class* or *a call statement whose receiver's class the
+artifacts do not name* to **a call whose callee declaration the text does not carry** (`SetPause` with one argument,
+`ClientTravel` with three). The receiver now types as `actor`, the member record is found, and what the walk cannot
+answer is the callee: neither name is declared by any class the shipped `ScriptText` carries, so their parameter
+types -- which is what an argument's conversion site needs -- are not readable from this corpus. A later bundle
+reads the shipped bytes at those two sites before writing a rule.
+
+**Fixtures P34/P35, each proven against a copy with the rule reverted.** P34 drives `_is_array_type`/`_value_size`
+over four spellings of an array and two controls (`mapitem` stays refused, and so does `_is_array_type("")`); P35
+drives `_class_of` and `_member_record` over a synthetic package whose import table carries `viewport <- Class`,
+`actor <- ObjectProperty` **and** `actor <- Class`, asserting the record (`-33`, word `actor`), the chain above it
+(`Viewport.Actor.Level` -> `-42`), and both controls (a member the package does not import, a class it does not
+import). Each catches `Refused` and prints its own FAIL, so a reverted copy names the rule instead of dying with a
+traceback.
+
+**Not in this bundle.** The twelve residue rows left on the thread, by family: `CylinderBuilder.Build` (the one body
+that emits and still differs), `TestInfo.TestSwitch` (an assert line the corpus does not pin), and the nine
+single-body families the previous section named -- `GUIController.GenerateFakeNames` (an element of an array the
+artifacts do not type, `i ++ $ FakeNames`), `GUITabControl.RemoveTab` (a delegate assignment to a name the table does
+not carry), `ExtendedConsole.PostRender` (a `texture` object literal the class table does not name),
+`StargateVoicePack.PlaySpeech` (a call the class chain does not declare), `RechargingAmmo.Tick` (a fractional literal
+in an `int` slot), `WindowConsole.Tick` (an operator row: `levelinfo != <unknown>`), plus the four callee-declaration
+rows above.

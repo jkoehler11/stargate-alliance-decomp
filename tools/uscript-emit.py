@@ -186,6 +186,17 @@ STRUCT_SIZE = {"vector": 12, "rotator": 12, "coords": 12, "color": 4, "plane": 1
                "animrep": 12, "id3field": 36, "liveuser": 24, "orientation": 92,
                "range": 8, "rangevector": 24, "voicedesc": 64, "interpcurve": 12}
 
+def _is_array_type(t):
+    """True when a declared type word names an **array**: `array`, `array<string>`, `array.mapitem`.
+
+    The corpus spells an array's friendly type `array.<element>` (`class_properties.csv`:
+    `GUI,GUIController,ChildViewports,...,array<Viewport>`), and the compiler gives its **value** no width --
+    `MaplistManager.ShiftMap`'s `Maps = ...GetMaps();` ships `Context` size 0 for a call returning
+    `array<MapItem>`, the same 0 `RETURN_SIZE` carries for `array.string`.
+    """
+    return (t or "").strip().lower().startswith("array")
+
+
 def _value_width(ptype, friendly):
     """A declared type's value size: `PROP_SIZE` for a primitive, `STRUCT_SIZE` for a **struct**.
 
@@ -3705,6 +3716,15 @@ def _member_record(obj, nm, env):
             friendly = (scope.get("friendly") or {}).get((p, c, nm), "")
             if friendly:
                 break
+        if not friendly and any(k == "Class" for _r, k in (scope.get("imports") or {}).get(nm, [])):
+            # A **native** class's member is a property import with no declared type word (`Viewport`'s `Actor`
+            # is `UObjectProperty` and nothing more), and the chain cannot continue past it: `Viewport.Actor.Level`
+            # refused as *a receiver chain whose member the artifacts name no class for*, though `Actor.Level` is
+            # `LevelInfo` in `class_properties.csv`. The package imports `actor` twice -- as the property and as
+            # the class -- and the property holds the class of the same name, which is what `Actor.Actor`,
+            # `Actor.Owner` and `Actor.Level` all spell. Only a member name the package also imports as a
+            # `Class` takes this reading; every other import keeps its empty word and stays refused.
+            friendly = nm
         return (INSTANCE_TOKEN, imp[0][0], kind, friendly)
     # A **delegate** is one record named `__X__delegate`, so `MyComponent.OnChange` asks for a property `onchange`
     # that no record carries: all 32 delegate-member rows of the residue refused as *a member that is not a
@@ -3826,7 +3846,15 @@ def _emit_member_call(obj, member, rettype, env):
     # (`StargatePawn.PlayWaiting`, `SquadAISG.AssignSquadResponsibility`, ...) -- while the third `_enum_byte`
     # producer (a callee's declared return) already answered `byte` for the same type.
     rtype = _enum_byte(rtype, env)
-    if rtype in RETURN_SIZE:
+    if _is_array_type(rtype):
+        # An **array** value's size byte is 0, and the table's single `array.string` row is one witness of that
+        # rule rather than a type of its own: `MaplistManager.ShiftMap`'s `Maps = ...GetMaps();` ships
+        # `19 <receiver> 06 00 00 1b 5a 11 16` -- a `Context` whose size byte is 0 around a call returning
+        # `array<MapItem>` -- and refused as *a call member returning array.mapitem, whose value size this walk
+        # does not carry*. The walk spells an array's friendly type `array.<element>`, so the word is the test,
+        # not the element: a new `array.mapitem` row would leave `array<int>`, `array<name>` and the rest refused.
+        size = 0
+    elif rtype in RETURN_SIZE:
         size = RETURN_SIZE[rtype]
     elif not rtype and _declares_void(cls or "", member[0][1], env):
         # A callee **declared** with no return type yields nothing, and the `Context` around its call writes size
@@ -5461,6 +5489,10 @@ def _value_size(rtype, env):
     if not rtype:
         return 0
     rtype = _enum_byte((rtype or "").lower(), env)
+    if _is_array_type(rtype):
+        # the same rule as `_emit_member_call`'s: an array's value is 0 wide (`array.string` is the table's one
+        # measured row, and the shape is the array, not the element)
+        return 0
     if rtype in (env.get("class_names") or set()):
         return 4
     if rtype in RETURN_SIZE:
@@ -6852,6 +6884,15 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
         for i in range(len(pkg.names or [])):
             table_index.setdefault(str(pkg.name(i)).lower(), i)
         tables = _class_tables(pkg, kinds, names)
+        # A class the package **imports as a `Class`** is a class even when no shipped package exports it:
+        # `Viewport` and `ObjectProperty` are engine-native (`inventory/native_class_packages.csv`: `Viewport` is
+        # `Engine_UnCamera`), so the export census `class_names` is built from has no row and `_class_of` could not
+        # name the receiver of `Viewport.Actor` -- `WindowConsole.LaunchUWindow` refused as *`viewport` is declared
+        # `Viewport`, which is not a class the class table carries* while `UWindow.u`'s own import table carries
+        # `viewport <- Class <- Core`. This is the evidence `_numeric` already accepts for a comparison operand,
+        # applied to the class a receiver holds.
+        pkg_class_names = class_names | {nm for nm, refs in tables[2].items()
+                                        if any(k == "Class" for _r, k in refs)}
         func_owners = _func_owners(pkg, kinds, names)
         pack = os.path.splitext(fn)[0].lower()
         # the body's own export index: `_scope` reads locals off the export whose outer is this function, so the
@@ -6920,7 +6961,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    "corpus_funcs": corpus_funcs, "decl_index": index,
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
                    "within_proptypes": within_proptypes,
-                   "class_names": class_names, "order": scope["order"], "consts_by_cls": consts_by_cls,
+                   "class_names": pkg_class_names, "order": scope["order"], "consts_by_cls": consts_by_cls,
                    "rets": rets, "voids": voids, "assert_lines": alines, "assert_cursor": [0],
                    # the three joins a member call's callee needs: where its declaration sits, its `final` flag,
                    # and the records of the package it is declared in
@@ -8944,6 +8985,56 @@ def check(args):
         pass
     else:
         print("FAIL uscript-emit: a class-and-function name cast without a kind was accepted")
+        return 1
+    # P34: an **array** value's size byte is 0, whatever its element. `MaplistManager.ShiftMap`'s
+    # `Maps = ...GetMaps();` ships `19 <receiver> 06 00 00 1b 5a 11 16` -- a `Context` with size 0 around a call
+    # returning `array<MapItem>` -- and the walk refused it as *a call member returning array.mapitem, whose value
+    # size this walk does not carry*. The control is a word that names no value: it stays refused rather than
+    # being sized as 0, so the rule is the array and not "an unknown type".
+    for word in ("array.mapitem", "array.string", "array", "Array<MapItem>"):
+        if not _is_array_type(word):
+            print("FAIL uscript-emit: `%s` is not read as an array type" % word)
+            return 1
+        if _value_size(word, env) != 0:
+            print("FAIL uscript-emit: `%s` sizes a call's value %d, expected 0"
+                  % (word, _value_size(word, env)))
+            return 1
+    if _is_array_type("mapitem") or _is_array_type(""):
+        print("FAIL uscript-emit: a non-array word is read as an array type")
+        return 1
+    try:
+        _value_size("mapitem", env)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a struct return was sized without a table row")
+        return 1
+    # P35: a **native** class's member is a property import, and its type word is the member's own name when the
+    # package also imports that name as a `Class`. `Viewport.Actor` is `UObjectProperty` with no declared word;
+    # the `level` read above it then refused because the chain held no class, while `Actor.Level` is `LevelInfo` on
+    # the class table. The controls are a member the package does not import (still None) and the class the
+    # package does not import (still refused by `_class_of`).
+    nenv = dict(env, class_names=env["class_names"] | {"viewport", "actor"},
+                proptypes=dict(env.get("proptypes") or {}, viewport="viewport"),
+                scope=dict(SCOPE, imports={"viewport": [(-38, "Class")],
+                                           "actor": [(-33, "ObjectProperty"), (-39, "Class")],
+                                           "level": [(-42, "ObjectProperty")]}))
+    if _class_of([("ident", "Viewport")], nenv) != "viewport":
+        print("FAIL uscript-emit: `Viewport` is not read as the class its import names")
+        return 1
+    hit = _member_record([("ident", "Viewport")], "actor", nenv)
+    if hit is None or hit[1] != -33 or hit[3] != "actor":
+        print("FAIL uscript-emit: `Viewport.Actor` answers %r, expected the `actor` property import" % (hit,))
+        return 1
+    lvl = _member_record([("ident", "Viewport"), ("op", "."), ("ident", "Actor")], "level", nenv)
+    if lvl is None or lvl[1] != -42 or lvl[3] != "":
+        print("FAIL uscript-emit: `Viewport.Actor.Level` answers %r, expected the `level` import" % (lvl,))
+        return 1
+    if _member_record([("ident", "Viewport")], "probemember", nenv) is not None:
+        print("FAIL uscript-emit: a member the package does not import was accepted")
+        return 1
+    if _class_of([("ident", "Viewport")], dict(nenv, class_names=env["class_names"])) != "":
+        print("FAIL uscript-emit: a class name the package does not import was accepted")
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))

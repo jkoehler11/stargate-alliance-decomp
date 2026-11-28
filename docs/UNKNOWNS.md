@@ -6593,3 +6593,15 @@ byte-identically, and the residual set is the five rows above (`Viewport.Actor`/
 `ObjectProperty.Name` on `ListObjectPropsCommandlet.Main`). The measurement stands for those five: no shipped package
 exports either class, both are module-native, and the answer is the XBE's native property table or a use-site census.
 
+**Closed 2026-11-27: neither, and no XBE read is needed -- the packages' own import tables are the evidence.** A
+`Class` a package **imports** is a class for that package even when no shipped package exports it (`UWindow.u` carries
+`viewport <- Class <- Core`; all 18 carry `objectproperty <- Class <- Core`), so `score()` now unions that per-package
+import set into `class_names`, and a native member whose record has no declared type word takes its own name when the
+package also imports that name as a `Class` (`Viewport.Actor` is a `UObjectProperty`, and the package imports `actor`
+twice -- as that property and as the `Class`). Scored per body over the whole corpus: **11,671 -> 11,674 modelled,
+none lost, nothing newly differing, residue 15 -> 12**. Two of the five rows model byte-identically
+(`GUIController.GetPlayerController`, `ListObjectPropsCommandlet.Main`) and three refuse one node **later**, not at
+the member: `WindowConsole.LaunchUWindow`/`TournamentConsole.LaunchUWindow` at a callee no class the corpus ships
+declares (`SetPause`, `ClientTravel`) and `WindowConsole.Tick` at the operator table (`levelinfo != <unknown>`). The
+member gap this entry described is closed; what remains on those bodies belongs to the callee-declaration family.
+
