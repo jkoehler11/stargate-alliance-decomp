@@ -1908,6 +1908,20 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       --check` still closes every row (histogram + untyped = `off_chain`); and `opcode-band`'s rendered sentence gains
       a clause for the closed case ("no site is left with an expression that types to nothing") instead of quoting a
       zero inside the old parenthetical -- a run whose residue closes must not go on describing it.
+      **And the band's runtime half is read the way the extended band's already was (2026-11-28)**: the direct
+      band's census carried the runtime value only as a yes/no -- `inventory/opcode_band.csv` named each slot from
+      the `.data` record and stopped there -- so the page could say what the image *records* and not what it
+      *installs*. `inventory/gnatives_slots.csv`'s `name` column is the guest's own slot name and its `address` the
+      body, so `tools/opcode-band.py` joins both now: **135 of 144 slots carry a name, and it is the *source*
+      spelling -- `execConcat_StrStr`, not the record's `intUObjectexecConcat_StringString` -- on 135 of 135, 0
+      spelling and 0 differ.** That re-reads the nine "spelling" rows above as a difference between the record's
+      composed C++ name and the source, not between the image's two records. Every populated slot's body is a
+      decoded function in `symbols/xbox_functions.csv` (**135 of 135, 0 missing, 26,875 bytes, 60 to 1,497**), and
+      the nine `neither` slots have no slot at all: the mirror of the extended band, where all 11 one-sided indices
+      had bodies, is that here the one-sided slots are the ones with nothing in them. `--check` drives both claims
+      on a synthetic inventory whose two populated slots disagree -- one slot name exact and one differing from its
+      declaration, one body mapped and one not -- and the page renders the four counts from the artifact's `census`
+      row rather than from a number typed into the renderer.
 - [x] 3.9 Handle the ucpp-native classes (`Pawn`, `ShadowProjector`, others discovered in 2.2): mark their script
       bodies as "native — see src/Native", and cross-link to Phase 4 output.
       **The declaration side is reconciled** (`docs/NATIVE_CLASSES.md`): 96 classes, 681 `native function`

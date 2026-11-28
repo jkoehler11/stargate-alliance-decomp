@@ -73,10 +73,13 @@ DOC_START = "<!-- generated:opcode-band -->"
 DOC_END = "<!-- /generated:opcode-band -->"
 
 ROW = ["opcode", "index", "name", "pattern", "registered", "record_name", "declared", "declarers",
-       "tokens", "payloads", "name_match", "verdict"]
+       "tokens", "payloads", "name_match", "verdict",
+       "slot_name", "body", "symbol", "symbol_size", "slot_match"]
 # The run-level counts ride on the `census` row, so the page and the artifact cannot disagree about them.
 CENSUS = ["both", "registered_only", "declared_only", "neither", "used", "corpus_tokens", "name_exact",
-          "name_spelling", "name_differ", "runs"]
+          "name_spelling", "name_differ", "runs",
+          "slot_named", "slot_exact", "slot_spelling", "slot_differ",
+          "symbols_mapped", "symbols_missing", "symbol_bytes", "symbol_min", "symbol_max"]
 COLUMNS = ROW + CENSUS
 
 # The extended band: a token there carries one operand byte, and `(op - 0x60) * 256 + operand` is the native it
@@ -123,10 +126,14 @@ def load_inputs(base):
         op = r["opcode"].strip()
         if op.startswith("0x"):
             table[int(op, 16)] = r
-    slots = set()
-    for r in read(os.path.join(base, SLOTS), ["index"]):
+    slots = {}
+    for r in read(os.path.join(base, SLOTS), ["index", "address", "name"]):
         if r["index"].strip():
-            slots.add(int(r["index"]))
+            slots[int(r["index"])] = r
+    symbols = {}
+    for r in read(os.path.join(base, SYMBOLS), ["address", "name", "size"]):
+        if r["address"].strip():
+            symbols[r["address"].strip().lower()] = r
     records = {}
     for r in read(os.path.join(base, RECORDS), ["slot", "record_name"]):
         if r["slot"].strip():
@@ -143,7 +150,7 @@ def load_inputs(base):
             usage[int(op, 16)] = r
     corpus = sum(int(r["tokens"]) for r in read(os.path.join(base, USAGE), ["tokens"])
                  if r["tokens"].strip().isdigit())
-    return table, slots, records, natives, usage, corpus
+    return table, slots, records, natives, usage, corpus, symbols
 
 
 def unspell(name):
@@ -180,7 +187,7 @@ def runs_of(rows):
     return ["0x%02x..0x%02x" % (r[0], r[-1]) if len(r) > 1 else "0x%02x" % r[0] for r in runs]
 
 
-def census_rows(table, slots, records, natives, usage, corpus):
+def census_rows(table, slots, records, natives, usage, corpus, symbols):
     """One row per band slot, then one `census` row carrying every number the page quotes."""
     missing = [o for o in range(*BAND) if o not in table]
     if missing:
@@ -192,6 +199,10 @@ def census_rows(table, slots, records, natives, usage, corpus):
         names = sorted({r["function"] for r in decl if r["function"].strip()})
         reg = op in slots
         got = records.get(op, "")
+        slot = slots.get(op) or {}
+        slot_name = (slot.get("name") or "").strip()
+        body = (slot.get("address") or "").strip().lower()
+        sym = symbols.get(body, {})
         rows.append({
             "opcode": "0x%02x" % op, "index": op, "name": t["name"], "pattern": t["pattern"],
             "registered": "yes" if reg else "no", "record_name": got,
@@ -201,8 +212,17 @@ def census_rows(table, slots, records, natives, usage, corpus):
             "payloads": usage.get(op, {}).get("payloads", "0") or "0",
             "name_match": match(got, names),
             "verdict": ("both" if reg and names else "registered" if reg else "declared" if names else "neither"),
+            # The guest's own slot name and body: the runtime half the extended band already carries. The name is
+            # the unwidened `exec<F>` the GNatives slot was filled with, so it is compared with the declaration's
+            # spelling rather than with the record's composed `intUObjectexec<F>`.
+            "slot_name": slot_name,
+            "body": body,
+            "symbol": sym.get("name", ""),
+            "symbol_size": sym.get("size", ""),
+            "slot_match": match(slot_name, names) if slot_name else "",
         })
     census = {c: "" for c in COLUMNS}
+    named = [r for r in rows if r["slot_name"]]
     for key, val in {
         "opcode": "census", "index": len(rows),
         "tokens": sum(int(r["tokens"]) for r in rows),
@@ -217,6 +237,15 @@ def census_rows(table, slots, records, natives, usage, corpus):
         "name_spelling": sum(1 for r in rows if r["name_match"] == "spelling"),
         "name_differ": sum(1 for r in rows if r["name_match"] == "differ"),
         "runs": ";".join(runs_of(rows)),
+        "slot_named": len(named),
+        "slot_exact": sum(1 for r in named if r["slot_match"] == "exact"),
+        "slot_spelling": sum(1 for r in named if r["slot_match"] == "spelling"),
+        "slot_differ": sum(1 for r in named if r["slot_match"] == "differ"),
+        "symbols_mapped": sum(1 for r in rows if r["symbol"]),
+        "symbols_missing": sum(1 for r in rows if r["registered"] == "yes" and not r["symbol"]),
+        "symbol_bytes": sum(int(r["symbol_size"]) for r in rows if r["symbol_size"]),
+        "symbol_min": min([int(r["symbol_size"]) for r in rows if r["symbol_size"]] or [0]),
+        "symbol_max": max([int(r["symbol_size"]) for r in rows if r["symbol_size"]] or [0]),
     }.items():
         census[key] = val
     return rows, census
@@ -275,6 +304,22 @@ def render(rows, census):
         % (census["name_exact"], census["name_spelling"]),
         "C++ name writes the argument types out (`execConcat_StringString`) where `Object.uc` abbreviates them",
         "(`Concat_StrStr`). **%s** rows disagree beyond that rule." % census["name_differ"],
+        "",
+        "**The guest's own slot name sides with the source, and every populated slot has a decoded body.** The",
+        "`GNatives` dump carries a name for **%s of the %s populated slots**, and it is the *unwidened* script"
+        % (census["slot_named"], census["both"] + census["registered_only"]),
+        "spelling -- `execConcat_StrStr`, where the `.data` record spells `intUObjectexecConcat_StringString` -- so",
+        "**%s of %s are exact, %s spelling and %s differ**, and the nine differences above are between the record's"
+        % (census["slot_exact"], census["slot_named"], census["slot_spelling"], census["slot_differ"]),
+        "composed C++ name and the source rather than between the image's two records. The body each slot points at",
+        "is a decoded function in `symbols/xbox_functions.csv` on **%s of %s** rows, **%s missing, %s bytes in"
+        % (census["symbols_mapped"], census["both"] + census["registered_only"], census["symbols_missing"],
+           "{:,}".format(int(census["symbol_bytes"]))),
+        "total, %s to %s bytes**, and the %s holes have no slot at all -- so an unnamed row in this band is a slot the"
+        % (census["symbol_min"], census["symbol_max"], census["neither"]),
+        "image does not implement, not a body the map lost. That is the same control the extended band runs, read",
+        "from the other side: there the 11 one-sided indices all had bodies, here the one-sided slots are the nine",
+        "with nothing in them.",
     ]
     return "\n".join(out)
 
@@ -363,6 +408,10 @@ def report(rows, census, hrows, hcensus):
     print("used: %s rows, %s of %s tokens" % (census["used"], census["tokens"], census["corpus_tokens"]))
     print("names: %s exact, %s spelling, %s differ" % (census["name_exact"], census["name_spelling"],
                                                        census["name_differ"]))
+    print("slots: %s named, %s exact, %s spelling, %s differ; bodies %s of %s mapped, %s missing, %s bytes"
+          % (census["slot_named"], census["slot_exact"], census["slot_spelling"], census["slot_differ"],
+             census["symbols_mapped"], census["both"] + census["registered_only"], census["symbols_missing"],
+             census["symbol_bytes"]))
     print("neither runs: %s" % census["runs"])
     for r in rows:
         if r["verdict"] != "both":
@@ -685,8 +734,8 @@ def check():
         with open(os.path.join(inv, "gnatives_slots.csv"), "w", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(["index", "address", "name", "evidence", "declarers"])
-            for op in (0x70, 0x71, 0x74):
-                w.writerow([op, "0x00046f%02x" % op, "", "slot-only", ""])
+            for op, nm in ((0x70, "execConcat_StrStr"), (0x71, ""), (0x74, "execZzz_StringString")):
+                w.writerow([op, "0x00046f%02x" % op, nm, "slot-only", ""])
             w.writerow([256, "0x0020c830", "execFoo", "declared", "Engine:Actor:Foo"])
             w.writerow([257, "0x00043670", "execBar_StringString", "declared", "Core:Object:Bar"])
             w.writerow([300, "0x0020cc10", "", "slot-only", ""])
@@ -716,6 +765,8 @@ def check():
             w.writerow(["address", "name", "size", "module"])
             w.writerow(["0x0020c830", "execFoo", 104, ""])
             w.writerow(["0x00043670", "execBar_StrStr", 117, ""])
+            w.writerow(["0x00046f70", "execConcat_StrStr", 88, ""])
+            w.writerow(["0x00046f74", "execZzz_StrStr", 12, ""])
             w.writerow(["0x0020cc10", "Native_300", 25, ""])
             w.writerow(["0x0020cd00", "Native_302", 1778, ""])
         with open(os.path.join(inv, "native_opcodes.csv"), "w", newline="") as fh:
@@ -750,6 +801,16 @@ def check():
             bad.append("census %r" % {k: census[k] for k in ("runs", "tokens", "used", "corpus_tokens")})
         if (census["name_exact"], census["name_spelling"], census["name_differ"]) != (0, 1, 1):
             bad.append("name census %r" % {k: census[k] for k in ("name_exact", "name_spelling", "name_differ")})
+        # The guest's own slot name is compared with the *declaration*, not with the record, so one row has to be
+        # exact and one has to differ even though both slots carry a record name.
+        if (census["slot_named"], census["slot_exact"], census["slot_spelling"], census["slot_differ"]) \
+                != (2, 1, 0, 1):
+            bad.append("slot census %r" % {k: census[k] for k in ("slot_named", "slot_exact", "slot_spelling",
+                                                                  "slot_differ")})
+        if (census["symbols_mapped"], census["symbols_missing"], census["symbol_bytes"], census["symbol_min"],
+                census["symbol_max"]) != (2, 1, 100, 12, 88):
+            bad.append("band symbols %r" % {k: census[k] for k in ("symbols_mapped", "symbols_missing",
+                                                                   "symbol_bytes", "symbol_min", "symbol_max")})
         hgot = {r["index"]: (r["verdict"], r["name_match"], r["callee_match"], r["sites"]) for r in hout}
         hwant = {256: ("both", "exact", "exact", "3"), 257: ("both", "spelling", "exact", "5"),
                  300: ("registered", "", "", "0"), 301: ("declared", "", "", "0"),
