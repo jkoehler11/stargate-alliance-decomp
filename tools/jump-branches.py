@@ -29,6 +29,13 @@ Every `JumpIfNot` is one of five things, and the split is a measurement rather t
 * **expression** -- the jump (or its target) is not a statement at all, i.e. `&&`/`||` short-circuiting inside a
   condition; those are tokens, not branches, and counting them as arms is what a naive census would report.
 
+**Every resolved token is a row.** A row for each of the five, not only the three that open an arm: an `empty`
+arm used to be counted in the census and dropped from the artifact, so a join reading the rows saw a `JumpIfNot`
+fewer than the graph resolved -- `text-branches` measured exactly that as **11** `jumps_unresolved` tokens, two of
+them the `_drawScorch` pair that compile to `JumpIfNot` + `Return`. Each row also carries the arm's **`span`**: the
+number of statements between the jump and its landing (0 for an empty arm, negative for a loop test at the bottom
+of its body), so a reader places the arm without walking the stream again.
+
     python3 tools/jump-branches.py --system DUMP/System -o inventory/jump_branches.csv --write-doc docs/BYTECODE.md
 
 `--check` is a synthetic self-test: it needs no dump and writes nothing.
@@ -43,15 +50,19 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV_PATH = os.path.join(ROOT, "inventory", "jump_branches.csv")
 DOC_MARK = ("<!-- generated:jump-branches -->", "<!-- /generated:jump-branches -->")
-FIELDS = ["kind", "package", "class", "function", "offset", "category", "operand", "target", "count", "note", "path"]
+FIELDS = ["kind", "package", "class", "function", "offset", "category", "operand", "target", "span", "count", "note",
+          "path"]
 
 CENSUS_NOTE = {
     "jumpifnot": "`JumpIfNot` tokens the graph resolved",
     "else": "with a `Jump` at the end of the then-arm that lands past the target -- an else arm",
     "leave": "whose then-arm ends by leaving its own loop -- a `break` (a `for` back edge or a `foreach` `IteratorPop`)",
-    "empty": "whose target is the statement right after the jump -- an empty then-arm",
+    "empty": "whose target is the statement right after the jump -- an empty then-arm (one row each since the join "
+             "read them)",
     "if": "a conditional forward jump over a straight arm",
     "expression": "inside a condition (`&&`/`||` short-circuit), i.e. not a branch",
+    "span_rows": "branch rows carrying a measured arm span -- every row whose jump and target are both statements",
+    "rows": "branch rows written: one per resolved `JumpIfNot`, so this row's count equals the one above",
     "backward": "whose target is behind the jump -- a loop test at the bottom of its body",
     "scripts": "scripts with at least one branch",
     "operator_headers": "operator records whose header names the symbol, not the export name -- the name test the graph applies",
@@ -244,6 +255,37 @@ def switch_rows(package, cls, func, path, stmts, links, census):
     return rows
 
 
+def site_rows(package, cls, func, path, verdicts, stmts, census):
+    """One row per resolved `JumpIfNot`: the token, its landing, and the arm's span in statements.
+
+    Every verdict becomes a row, `empty` and `expression` included. A verdict with no row is a token no join can
+    see, and that is not hypothetical: with only `if`/`else`/`leave` written, `text-branches` measured **11**
+    `JumpIfNot` tokens its per-function join could not account for -- the `empty` arms, two of them the
+    `_drawScorch` pair (`JumpIfNot` + `Return`, the landing the statement right after the jump).
+
+    `span` is the number of statements between the jump and the statement it lands on: 0 for an empty arm,
+    negative for a loop test at the bottom of its body (the landing is behind the jump), blank where the landing is
+    not a statement at all.
+    """
+    where = {n["offset"]: i for i, n in enumerate(stmts)}
+    names = {n["offset"]: n["name"] for n in stmts}
+    rows = []
+    for offset, category, value, target in verdicts:
+        span, note = "", ""
+        if offset in where and target in where:
+            span = where[target] - where[offset] - 1
+            census["span_rows"] += 1
+            if category == "empty":
+                note = "empty arm: the landing is the statement right after the jump (`%s`)" % names[target]
+        else:
+            note = "no statement: the jump or its target is not one (%s)" % category
+        rows.append({"kind": "branch", "package": package, "class": cls, "function": func,
+                     "offset": "%04x" % offset, "category": category, "operand": value,
+                     "target": "%04x" % target, "span": span, "count": "", "note": note, "path": path})
+        census["rows"] += 1
+    return rows
+
+
 def read_dump(system):
     table = JG.DIS.Table()
     stats = {"seen": 0, "walked": 0, "packages": 0}
@@ -270,27 +312,26 @@ def read_dump(system):
         census["backward"] += len([v for v in verdicts if v[3] < v[0]])
         for key in ("else", "leave", "empty", "if", "expression"):
             census[key] += counts[key]
-        where = {n["offset"]: i for i, n in enumerate([n for n in nodes if n["name"] not in JG.TERMINATORS])}
-        for offset, category, value, target in verdicts:
-            if category == "expression":
-                continue
-            arms.append(where[target] - where[offset] - 1)
+        sits = site_rows(package, cls, func, path, verdicts, stmts, census)
+        arms.extend(int(r["span"]) for r in sits if str(r["span"]) not in ("", "None"))
         rows.append({"kind": "script", "package": package, "class": cls, "function": func, "offset": "",
                      "path": path, "category": "", "operand": "", "target": "", "count": len(verdicts),
                      "note": "else %d, leave %d, empty %d, if %d, expression %d, %d statement(s)"
                      % (counts["else"], counts["leave"], counts["empty"], counts["if"], counts["expression"],
                         n_stmts)})
-        for offset, category, value, target in verdicts:
-            if category in ("if", "else", "leave"):
-                rows.append({"kind": "branch", "package": package, "class": cls, "function": func,
-                             "offset": "%04x" % offset, "category": category, "operand": value,
-                             "target": "%04x" % target, "count": "", "note": "", "path": path})
+        rows.extend(sits)
+    if census["rows"] != census["jumpifnot"]:
+        # The artifact is the population every join reads, so a verdict without a row is a token lost to the join.
+        # This is the gate for it: `text-branches` read the hole as 11 `jumps_unresolved` tokens for three sessions.
+        print("FAIL jump-branches: %d branch rows for %d resolved `JumpIfNot` tokens"
+              % (census["rows"], census["jumpifnot"]))
+        raise SystemExit(1)
     out = ([r for r in rows if r["kind"] == "branch"] + [r for r in rows if r["kind"] == "switch"]
            + [r for r in rows if r["kind"] == "script"])
     census["operator_headers"] = stats.get("operator_headers", 0)
     census["operator_jumps"] = stats.get("operator_jumps", 0)
-    for key in ("jumpifnot", "else", "leave", "empty", "if", "expression", "backward", "scripts", "jump",
-                "switch", "switch_scripts", "switch_list", "switch_no_list", "switch_cases", "case_outside",
+    for key in ("jumpifnot", "rows", "span_rows", "else", "leave", "empty", "if", "expression", "backward", "scripts",
+                "jump", "switch", "switch_scripts", "switch_list", "switch_no_list", "switch_cases", "case_outside",
                 "empty_arm", "switch_arm_min", "switch_arm_max", "operator_headers", "operator_jumps"):
         out.append({"kind": "census", "package": "", "class": "", "function": "", "offset": "",
                     "category": "", "operand": "", "target": "", "count": census[key],
@@ -342,6 +383,20 @@ def doc_block(rows):
     bare = sorted({"%s.%s" % (r["class"], r["function"]) for r in rows
                    if r.get("kind") == "switch" and str(r.get("count")) == "1"})
     bare_text = (" (`%s`)" % "`, `".join(bare)) if bare else ""
+    spans = collections.Counter()
+    for r in rows:
+        if r.get("kind") == "branch" and str(r.get("span", "")) not in ("", "None"):
+            spans[int(r["span"])] += 1
+    neg = [n for n in spans if n < 0]
+    span_text = ("**The span is a row's own column, so the join places an arm without walking the stream again.** "
+                 "**%s** of the **%s** rows carry one: **%s** arms are a single statement, **%s** two and **%s** "
+                 "three; **%s** measure **zero** -- an empty then-arm, whose landing is the statement right after "
+                 "the jump, which is what the `empty` criterion above names -- and **%s** measure **negative**, a "
+                 "loop test at the bottom of its body whose target is behind it (the widest, **%d** statements "
+                 "back). The longest forward arm is **%s** statements.\n"
+                 % (comma(count(rows, "span_rows")), comma(count(rows, "rows")), comma(spans.get(1, 0)),
+                    comma(spans.get(2, 0)), comma(spans.get(3, 0)), comma(spans.get(0, 0)),
+                    comma(sum(spans[n] for n in neg)), max(neg) if neg else 0, comma(count(rows, "arm_max"))))
     return ("\n**%s** `JumpIfNot` tokens resolve to **%s** branches with an `else` arm (**%s%%**), **%s** whose then-arm "
             "ends by leaving its own loop -- a `break` (**%s%%**) -- **%s** "
             "conditional jumps over a straight arm (**%s%%**) and **%s** empty then-arms (**%s%%**). **%s** of them "
@@ -356,7 +411,7 @@ def doc_block(rows):
                comma(count(rows, "empty")), "%.2f" % pct(count(rows, "empty"), total),
                comma(count(rows, "backward")), comma(count(rows, "expression")),
                count(rows, "arm_min"), count(rows, "arm_max"))
-            + "\n"
+            + span_text
             + ("**A switch is a chain, and its arms are counted here too.** **%s** `Switch` tokens over **%s**"
                " scripts hold **%s** case lists covering **%s** of the **%s** `Case` tokens (**%s** are in no list),"
                " and a list runs **%s** to **%s** cases -- its last is the `0xffff` terminator, so a list of `n`"
@@ -399,7 +454,15 @@ def check_doc(path, rows):
     if text.split(lo, 1)[1].split(hi, 1)[0] != doc_block(rows):
         print("FAIL jump-branches: %s is stale -- regenerate with `make jump-branches`" % path)
         return 1
-    print("ok   jump-branches: docs block reproduces from inventory/jump_branches.csv")
+    # One row per resolved token, so the artifact is the population every join reads. Read from the rows alone:
+    # a verdict the writer drops is a `JumpIfNot` a per-function join cannot see (`text-branches` read that as 11).
+    got = len([r for r in rows if r.get("kind") == "branch"])
+    if got != count(rows, "rows") or got != count(rows, "jumpifnot"):
+        print("FAIL jump-branches: %d branch rows against %d written and %d resolved `JumpIfNot` tokens"
+              % (got, count(rows, "rows"), count(rows, "jumpifnot")))
+        return 1
+    print("ok   jump-branches: docs block reproduces from inventory/jump_branches.csv, and its %s branch rows are"
+          " one per resolved `JumpIfNot` token" % comma(got))
     return 0
 
 
@@ -513,13 +576,31 @@ def selftest():
         print("FAIL jump-branches: the switch census read %r / %r / %r / %r / %r"
               % (sw, chains, empty, outside, no_list))
         return 1
+    # Every resolved token is a row, and the row carries the arm's span -- an empty arm's span is zero and its
+    # note names the landing, an `expression` verdict has no statement to measure and still gets its row.
+    stmts_ok = [node(0, "JumpIfNot", 1), node(1, "Let", 2), node(2, "Return", 3)]
+    cen = collections.Counter()
+    got = site_rows("P", "C", "F", "C.F", [(0, "empty", 1, 1), (0, "expression", 1, 99)], stmts_ok, cen)
+    if ([r["span"] for r in got] != [0, ""] or cen["rows"] != 2 or cen["span_rows"] != 1
+            or "statement right after the jump (`Let`)" not in got[0]["note"]
+            or "no statement" not in got[1]["note"]):
+        print("FAIL jump-branches: an empty arm's row read as %r" % (got,))
+        return 1
+    stmts_ok2 = [node(0, "JumpIfNot", 1), node(1, "Let", 2), node(2, "Let", 3), node(3, "Return", 4)]
+    got = site_rows("P", "C", "F", "C.F", [(0, "if", 3, 3)], stmts_ok2, collections.Counter())
+    if [r["span"] for r in got] != [2]:
+        print("FAIL jump-branches: an arm's span read as %r" % (got,))
+        return 1
     # The block reproduces from its own CSV.
     import tempfile
     rows = [{"kind": "census", "count": v, "note": CENSUS_NOTE[k]} for k, v in
-            (("jumpifnot", 4), ("else", 1), ("leave", 1), ("if", 1), ("empty", 1), ("expression", 0), ("backward", 1),
-             ("scripts", 1), ("jump", 1), ("arm_min", 1), ("arm_max", 2), ("switch", 1), ("switch_scripts", 1),
+            (("jumpifnot", 4), ("rows", 4), ("span_rows", 4), ("else", 1), ("leave", 1), ("if", 2), ("empty", 1),
+             ("expression", 0), ("backward", 1),
+             ("scripts", 1), ("jump", 1), ("arm_min", -3), ("arm_max", 2), ("switch", 1), ("switch_scripts", 1),
              ("switch_list", 1), ("switch_no_list", 0), ("switch_cases", 2), ("case_outside", 0), ("empty_arm", 1),
              ("switch_arm_min", 2), ("switch_arm_max", 2))]
+    rows += [{"kind": "branch", "category": "else", "span": 2}, {"kind": "branch", "category": "if", "span": 1},
+             {"kind": "branch", "category": "empty", "span": 0}, {"kind": "branch", "category": "if", "span": -3}]
     tmp = tempfile.mkdtemp()
     try:
         path = os.path.join(tmp, "rows.csv")
@@ -534,7 +615,7 @@ def selftest():
         os.rmdir(tmp)
     print("ok   jump-branches: else, leave, empty, if and expression each read as themselves, a loop break is not an"
           " else and a loop inside an else arm is, a case list counts its empty arm and a switch with no list is"
-          " named, and the block reproduces from its CSV")
+          " named, every verdict is a row with its arm's span, and the block reproduces from its CSV")
     return 0
 
 
