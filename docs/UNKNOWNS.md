@@ -4568,17 +4568,23 @@ an arm either rule reclassifies, and **0** of the 13 surplus functions do, so ne
 that was already right. The shortfall falls from 315 arms in 229 functions to **89 arms in 59**, and the class
 count from 122 fewer to **37**.
 
-**The 989-term surplus is a population sum.** **779** of the terms sit in state code outside every function body
-(the class count adds them to the functions' own), **221** are inside the joined functions' bodies (net of 47
-functions ahead and 55 behind), and the branch census resolves **11** `JumpIfNot` tokens that no branch row
-carries: 779 + 221 - 11 = 989. The page sentence that read the surplus as a class whose text did not compile is
+**The 709-term surplus is a population sum (re-read 2026-11-28).** **773** of the terms sit in state code outside
+every function body (the class count adds them to the functions' own), **-64** are inside the joined functions'
+bodies (net of 0 functions ahead and 56 behind), and the branch census leaves **0** `JumpIfNot` tokens without a
+row: 773 - 64 - 0 = 709. The **11** that used to sit in that subtraction were the empty then-arms, which
+`tools/jump-branches.py` now writes as rows (`site_rows`, one row per resolved token, `rows` = `jumpifnot` =
+**17,469**); they left the in-body net and the subtraction in the same step, which is why the class-level surplus is
+the same number either way. The page sentence that read the surplus as a class whose text did not compile is
 corrected in place.
 
-**What is not a join hole.** **19** of the **34** text-only bodies (a body the record has no jump for at all) sit
-inside an `#ifdef...#endif` guard -- this build's PS2 branch, which the package never compiled. `#ifdefPS2`
-spells the directive with no space, so a `#ifdef\b` pattern finds none of them, which is why the first reading
-called them functions the join had lost. The other 15 are the same shape as the class-level `unpaired` bucket,
-and no text-only body carries an arm the join failed to place.
+**What is not a join hole (re-read 2026-11-28: all of it).** **31** of the **31** text-only bodies (a body the
+record has no jump for at all) sit inside an `#ifdef...#endif` guard -- this build's PS2 branch, which the package
+never compiled. `#ifdefPS2` spells the directive with no space, so a `#ifdef\b` pattern finds none of them, which is
+why the first reading called them functions the join had lost. The three that were a join question
+(`C4Mission._DrawScorch`, `C4Prop._DrawScorch`, `Ammo.UsedBy`) were bodies whose only `JumpIfNot` is an empty
+then-arm: the jump lands on the statement immediately after it, so the arm census opened no arm and the branch
+artifact dropped the row. With that row written the three pair with their own record and read `agree` on both
+counts, `text_only_live` is **0**, and no text-only body carries an arm the join failed to place.
 
 **What it does not settle: the `continue` arm, which is the same two tokens as an empty then-arm.** The 89 arms
 that remain are `if (X) continue;` -- a then-arm that is a single `Jump` onto the loop's own increment, which is

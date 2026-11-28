@@ -162,7 +162,8 @@ FUNC_NOTE = {
     "terms_outside": "condition terms in the class texts that sit outside every function body",
     "term_over": "terms above the `JumpIfNot` count, summed over the functions",
     "term_under": "terms below it, summed likewise",
-    "jumps_unresolved": "`JumpIfNot` tokens the branch census resolves that carry no branch row",
+    "jumps_unresolved": "`JumpIfNot` tokens the graph resolved that no function row accounts for -- zero when every "
+                        "resolved token carries a branch row, which is what `--check-functions` requires",
     "pp_functions": "functions whose declaration sits inside a `#if…#endif` guard",
     "text_only_pp": "of the text-only functions, those inside such a guard",
     "text_else_dead": "`else` keywords in these bodies inside a part this build does not compile",
@@ -1801,6 +1802,23 @@ def func_doc_block(rows):
     terms, jumps = func_count(rows, "terms"), func_count(rows, "jumpifnot")
     outside, unresolved = func_count(rows, "terms_outside"), func_count(rows, "jumps_unresolved")
     net_inside = terms - jumps
+    # The text-only bodies that were a join question are the ones whose only `JumpIfNot` is an empty then-arm: the
+    # branch artifact writes a row for that verdict now, so the join pairs them and the population is named here
+    # rather than quoted as a count that has to be re-read.
+    live = func_count(rows, "text_only_live")
+    empties = sorted({"%s.%s" % (r["class"], r["function"]) for r in fns if int(r.get("byte_empty") or 0)})
+    if live:
+        live_clause = "and **%s** are bodies whose compiled text has a condition the record has no jump for" % comma(live)
+    else:
+        live_clause = ("and **0** are bodies whose compiled text has a condition the record has no jump for: the "
+                       "**%s** bodies whose only `JumpIfNot` is an **empty** then-arm join now that the branch "
+                       "artifact writes that row (`%s`), so a text-only body is a body this build did not compile"
+                       % (comma(len(empties)), "`, `".join(empties)))
+    if unresolved:
+        unresolved_clause = "and the branch census resolves **%s** tokens that carry no branch row" % comma(unresolved)
+    else:
+        unresolved_clause = ("and the branch census leaves **0** tokens without a branch row -- an empty then-arm is "
+                             "a row, so the record and the join hold one population")
     v = dict(functions=comma(func_count(rows, "functions")),
              text_fns=comma(func_count(rows, "text_functions")),
              record_fns=comma(func_count(rows, "record_functions")), both=comma(both),
@@ -1832,6 +1850,8 @@ def func_doc_block(rows):
              text_else_empty=comma(func_count(rows, "text_else_empty")),
              text_only_dead=comma(func_count(rows, "text_only_dead")),
              text_only_live=comma(func_count(rows, "text_only_live")),
+             live_clause=live_clause,
+             unresolved_clause=unresolved_clause,
              raw_surplus_fixed=comma(func_count(rows, "raw_surplus_fixed")),
              raw_agree_only=comma(func_count(rows, "raw_agree_only")),
              continue_short=comma(func_count(rows, "continue_short")),
@@ -1852,9 +1872,8 @@ def func_doc_block(rows):
            "**{text_fns}** the compiled text declares with a body that holds a condition, **{record_fns}** the branch "
            "census has a `JumpIfNot` in, **{both}** both, **{text_only}** text-only and **{record_only}** "
            "record-only; **{text_only_dead}** of the text-only bodies carry no compiled branch text at all -- every "
-           "keyword they spell sits in a guard part this build never compiled -- and **{text_only_live}** are bodies "
-           "whose compiled text has a condition the record has no jump for ({text_only_pp} of the {text_only} "
-           "sit inside a guard, which is all the old `pp` flag measured). On the **{both}** functions both sides have, the `else` count is equal on "
+           "keyword they spell sits in a guard part this build never compiled -- {live_clause} ({text_only_pp} of "
+           "the {text_only} sit inside a guard, which is all the old `pp` flag measured). On the **{both}** functions both sides have, the `else` count is equal on "
            "**{else_agree}** (**{else_pct}%**) -- {else_none} of them because neither side spells one at all, so "
            "on the **{else_test}** functions that have an arm or a keyword the agreement is **{else_test_agree}** "
            "(**{else_test_pct}%**) -- short of the "
@@ -1911,8 +1930,8 @@ def func_doc_block(rows):
            "The live text declares **{terms}** condition terms inside a function body against the **{jumps}** "
            "`JumpIfNot` tokens the record carries there (**{net_inside}** more terms than jumps, net of the "
            "{term_surplus} functions ahead and {term_short} behind), while **{outside}** terms sit outside every "
-           "function body -- state code, which a class-level count adds to a function's own -- and the branch "
-           "census resolves **{unresolved}** tokens that carry no branch row. So the class-level surplus of "
+           "function body -- state code, which a class-level count adds to a function's own -- {unresolved_clause}. "
+           "So the class-level surplus of "
            "**{surplus}** is {outside} outside a body + {net_inside} inside one - {unresolved} unresolved: a "
            "population sum, not a per-function defect.\n"
            "\n| class verdict | functions | `else` agree | short | ahead | no arm |\n"
@@ -2016,6 +2035,10 @@ def check_functions(class_path=CSV_PATH, func_path=FUNC_CSV_PATH):
     if unresolved != func_count(frows, "jumps_unresolved"):
         bad.append("`JumpIfNot` tokens with no branch row: class census says %d, functions artifact %d"
                    % (unresolved, func_count(frows, "jumps_unresolved")))
+    elif unresolved:
+        # The branch artifact writes one row per resolved token, so the only way this is nonzero is a verdict the
+        # writer drops -- the shape that hid 11 `empty` arms from this join. A number here is a hole, not a bucket.
+        bad.append("`JumpIfNot` tokens with no branch row: %d -- every resolved token must carry one" % unresolved)
     # The `continue` split is four counts of one regex over the same bodies, and the placement verdict is a
     # subtraction of two of its columns: both are recomputed here so the file cannot hold a stale one.
     split = sum(int(r["text_continue_" + one] or 0) for r in fns for one in ("bare", "block", "other", "dead"))
