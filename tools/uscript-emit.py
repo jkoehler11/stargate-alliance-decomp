@@ -2174,7 +2174,16 @@ def _type_of(expr, env):
                 return _rettype_on(sup, member[0][1], env)
             rec = _class_of(obj, env)
             if rec:
-                return _rettype_on(rec, member[0][1], env)
+                hit = _rettype_on(rec, member[0][1], env)
+                if hit:
+                    return hit
+                # ...and where the receiver's declared class does not spell the callee, the class its import
+                # belongs to is the compiler's declaration: `Viewport.Actor.GetEntryLevel()` is a `levelinfo`,
+                # which is what makes `Level != GetEntryLevel()` an *object* compare (`NotEqual_ObjectObject`).
+                owner = _callee_import_owner(member[0][1], env)
+                if owner:
+                    return _rettype_on(owner, member[0][1], env)
+                return ""
             if len(obj) == 1 and obj[0][0] in ("ident", "keyword") \
                     and obj[0][1].lower() in ("static", "global"):
                 # `Static.F()` / `Global.F()`: the prefix names the class scope, so the call resolves on the body's
@@ -3290,6 +3299,23 @@ def _struct_member(obj, nm, env):
     return (INSTANCE_TOKEN, index, ptype, "")
 
 
+def _callee_import_owner(name, env):
+    """The class a package's **import** of `name` belongs to, when it imports exactly one `Function` of it.
+
+    `_rettype_on` answers from the receiver's declared class, and that class can be the wrong one: `Viewport.Actor`
+    types `actor` because `Viewport` is engine-native and has no `ScriptText`, while `UWindow.u` imports one
+    `GetEntryLevel` whose own `package` field names `PlayerController` -- the class the compiler read the
+    declaration from. `_callee_head` already reads that field for the `final` flag; this is the same join for the
+    return type, and it answers only where the import is unique (two same-named imports are a `Super.F()` pick, not
+    a declaration).
+    """
+    low = (name or "").lower()
+    imp = [x for x in (env.get("imports") or {}).get(low, []) if x[1] == "Function"]
+    if len(imp) != 1:
+        return ""
+    return (env.get("import_owners") or {}).get(imp[0][0]) or ""
+
+
 def _rettype_on(cls, name, env):
     """The declared return type of `name` as declared on `cls`'s chain (or, with no class, on the body's chain)."""
     low = name.lower()
@@ -3865,6 +3891,16 @@ def _emit_member_call(obj, member, rettype, env):
     # `Pawn.NeedToTurn(targ)` is `19 01 8d 0b 00 04 1b 59 02 00 48 0a 16`, and `_wide` of that call is 11.
     skip = _wide(memb)
     rtype = _rettype_on(cls or "", member[0][1], env)
+    if not rtype:
+        # The value position's half of the import join `_type_of` now makes: the size byte this node writes is
+        # the width of what the call yields, so `Viewport.Actor.GetEntryLevel()` (a `levelinfo`, and a class is
+        # pointer-sized) writes 4. Read here as well as in `_type_of` because a body can reach the node without
+        # the operator above it asking for the type -- and with the type in hand the *conversion* at the site
+        # is still the shipped one's, since rtype is a class name and `_class_ref_class`/`class_names` below
+        # fold it to `object` before either the size or `_converted` reads it.
+        owner = _callee_import_owner(member[0][1], env)
+        if owner:
+            rtype = _rettype_on(owner, member[0][1], env)
     if _class_ref_class(rtype):
         # A `class<Z>` return is a **class reference**, and a class reference is pointer-sized: the artifact spells
         # the word three ways (`class<GameInfo>`, `Class.GameInfo`, `class`), and only the last reached the size
@@ -9436,6 +9472,45 @@ def check(args):
     if not hit or hit[0] != "*":
         print("FAIL uscript-emit: a literal's sign after a binary operator reads as %r, expected `*`" % (hit,))
         return 1
+    # P44: a member call's callee **and its value size** are the import's owner's where the receiver's declared
+    # class declares nothing. `Viewport.Actor` types `actor` (`Viewport` is engine-native, so no `ScriptText` says
+    # the property holds a `PlayerController`), and `WindowConsole.Tick`'s `Viewport.Actor.Level !=
+    # Viewport.Actor.GetEntryLevel()` ships `NotEqual_ObjectObject` whose right node is a `Context` with size **4**
+    # around a `FinalFunction` -- so the callee is the `levelinfo` its import's owner declares, and a class is
+    # pointer-sized. The controls answer nothing: an owner that does not declare the name, and two same-named
+    # imports (a `Super.F()` pick rather than one declaration).
+    aenv = dict(env, names=dict(env["names"], getentrylevel=121),
+                class_names=env["class_names"] | {"actor", "playercontroller", "levelinfo"},
+                scope=dict(SCOPE, locals=dict(SCOPE["locals"], myobj=(0x00, 619, "actor"))),
+                localtypes={**(env.get("localtypes") or {}), "myobj": "actor"},
+                imports={"getentrylevel": [(-79, "Function")]},
+                import_owners={-79: "playercontroller"},
+                rets={**(env.get("rets") or {}), ("playercontroller", "getentrylevel"): "levelinfo"})
+    if _callee_import_owner("GetEntryLevel", aenv) != "playercontroller":
+        print("FAIL uscript-emit: an imported callee's owner reads %r, expected `playercontroller`"
+              % (_callee_import_owner("GetEntryLevel", aenv),))
+        return 1
+    if _type_of(tokens_of("myObj.GetEntryLevel()"), aenv) != "levelinfo":
+        print("FAIL uscript-emit: a member call the receiver's class does not declare types %r, expected "
+              "`levelinfo` from its import's owner"
+              % (_type_of(tokens_of("myObj.GetEntryLevel()"), aenv),))
+        return 1
+    objb = emit_expr(tokens_of("myObj"), "", aenv)[0]
+    try:
+        got, _shape = _emit_member_call(tokens_of("myObj"), tokens_of("GetEntryLevel()"), "", aenv)
+    except Refused as exc:
+        print("FAIL uscript-emit: a member call typed by its import's owner refused (%s)" % (exc,))
+        return 1
+    if got[0] != 0x19 or got[1 + len(objb) + 2] != 4:
+        print("FAIL uscript-emit: a `levelinfo` call's `Context` writes size %d, expected 4 (%s)"
+              % (got[1 + len(objb) + 2] if len(got) > len(objb) + 3 else -1, got.hex()))
+        return 1
+    for control, why in ((dict(aenv, import_owners={}), "an import whose owner is unknown"),
+                         (dict(aenv, imports={"getentrylevel": [(-79, "Function"), (-80, "Function")]}),
+                          "two same-named imports")):
+        if _type_of(tokens_of("myObj.GetEntryLevel()"), control) != "":
+            print("FAIL uscript-emit: %s answered a member call's type" % why)
+            return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
     return 0
