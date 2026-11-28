@@ -97,6 +97,11 @@ CENSUS_NOTE = {
     "labels_enum": "`case` labels in the live text spelled as an enum member, qualified or bare",
     "labels_hex": "`case` labels in the live text spelled as a hex integer (`case 0x26:`)",
     "labels_ambiguous": "`case` labels a bare enum member two enums place at two different ordinals, left unfolded",
+    "labels_dead": "`case` labels inside a build-guard part this build never compiles",
+    "labels_commented": "`case` labels inside a block comment (a commented-out copy of a function)",
+    "classes_commented": "class texts carrying a `case` label inside a block comment",
+    "bodies_state": "function bodies the text declares inside a `state` block",
+    "arms_state": "arms those state bodies carry",
 }
 
 CENSUS_ORDER = ("text_switch", "text_case", "text_default", "text_break", "byte_lists", "byte_arms",
@@ -106,7 +111,8 @@ CENSUS_ORDER = ("text_switch", "text_case", "text_default", "text_break", "byte_
                 "arm_continue", "switch_continue", "arm_continue_all", "default_continue",
                 "arm_break", "arm_break_inner", "switch_break", "arm_break_all", "arm_break_interior",
                 "default_break", "enums_declared", "enum_members", "labels_enum", "labels_hex",
-                "labels_ambiguous")
+                "labels_ambiguous", "labels_dead", "labels_commented", "classes_commented", "bodies_state",
+                "arms_state")
 
 # A `case` label's expression: everything up to the `:` that is not a `::`, on one line, no statement separator.
 # UnrealScript folds keyword case -- `Switch(Role)` and `State` are the build's own spelling -- so every pattern here
@@ -130,42 +136,69 @@ HEX = re.compile(r"[-+]?0[xX][0-9a-fA-F]+")
 ENUM_DECL = re.compile(r"(?<![#\w$.])enum[ \t]+(\w+)\s*\{([^{}]*)\}", re.I)
 ENUMS = {}                      # member (lower) -> {enum name (lower): ordinal}
 ENUM_STATS = collections.Counter()
+CLASS_ENUMS = {}                # (package, class lower) -> {enum lower: [member lower, ...]}
+# A `state` block holds `function` bodies of its own, and a class may declare one under the name its class body
+# already uses: the bytecode carries `WindowConsole.KeyEvent` and `WindowConsole.UWindow.KeyEvent` as two
+# functions, so the text side has to know which body a span belongs to before the two can be joined.
+STATE_DECL = re.compile(r"(?m)^[ \t]*(?:auto[ \t]+)?state[ \t]+(\w+)[ \t\r\n]*\{")
 
 
 def load_enums(texts):
     """Build the member table from every `enum NAME { A, B }` the corpus's class texts declare.
 
-    `clive` is the comment-masked buffer, so an enum body arrives as plain identifiers. A member declared by two
-    enums at two values is ambiguous and is left unresolved by `enum_value`; a member declared twice at one value
-    is the same fold either way.
+    `clive` is the comment-masked buffer, so an enum body arrives as plain identifiers. Two tables are built: the
+    global one (`ENUMS`, member -> enum -> ordinal) and a per-class one (`CLASS_ENUMS`), because the same enum is
+    declared again by more classes than the one that owns it and **the declarations disagree**. `TriggeredScript`
+    declares `ETriggerType` with `TT_PlayerProximity` first; a class that re-declares it without the commented-out
+    `TT_PawnProximity` places `TT_HumanPlayerProximity` at 5 instead of 4, and a global first-declaration table read
+    that class's labels one arm off. A class's own declaration is the authority for its own `case` labels -- the
+    enum is in scope there by construction -- so the global table is only the fallback for a class that declares
+    no enum carrying the member.
     """
     ENUMS.clear()
     ENUM_STATS.clear()
-    for t in texts.values():
+    CLASS_ENUMS.clear()
+    for key, t in texts.items():
         buf = t.get("clive") or ""
+        own = {}
         for m in ENUM_DECL.finditer(buf):
             name = m.group(1).lower()
             members = [w.strip() for w in re.split(r"[,{}]+", m.group(2))]
             members = [w for w in members if re.fullmatch(r"[A-Za-z_]\w*", w)]
             ENUM_STATS["enums"] += 1
+            own.setdefault(name, [w.lower() for w in members])
             for i, mem in enumerate(members):
                 ENUMS.setdefault(mem.lower(), {}).setdefault(name, i)
                 ENUM_STATS["members"] += 1
+        CLASS_ENUMS[key] = own
     return ENUMS
 
 
-def enum_value(expr):
+def enum_value(expr, scope=None):
     """The integer a symbolic `case` label folds to, or `None` when no enum of this build declares it.
 
-    `EInputKey.IK_Escape` is read through the enum the qualifier names; a bare `IST_Press` resolves only where
-    every enum declaring that name gives the same ordinal.
+    `EInputKey.IK_Escape` is read through the enum the qualifier names; a bare `IST_Press` resolves to the enum
+    that declares it. `scope` is the declaring class's own enum table (`CLASS_ENUMS`): a member the class itself
+    declares folds through *that* declaration first, and only a member it does not declare falls back to the
+    global table, where it must be unanimous. A bare name two enums of the same class place at two ordinals is
+    still unresolved -- which one the source meant is a reading the label alone cannot make.
     """
     e = expr.strip()
     if not e:
         return None
     if "." in e:
         head, _dot, tail = e.rpartition(".")
-        return ENUMS.get(tail.strip().lower(), {}).get(head.strip().lower())
+        head, tail = head.strip().lower(), tail.strip().lower()
+        if scope and head in scope:
+            mem = scope[head]
+            return mem.index(tail) if tail in mem else None
+        return ENUMS.get(tail, {}).get(head)
+    if scope:
+        mine = [mem.index(e.lower()) for _name, mem in scope.items() if e.lower() in mem]
+        if len(set(mine)) == 1:
+            return mine[0]
+        if mine:
+            return None
     hits = ENUMS.get(e.lower())
     if hits and len(set(hits.values())) == 1:
         return next(iter(hits.values()))
@@ -199,8 +232,12 @@ def ctb_tool():
 
 
 # --- the text side ----------------------------------------------------------------------------------
-def canon_text(expr):
-    """`(kind, value)` for a `case` label's expression as the source spells it."""
+def canon_text(expr, scope=None):
+    """`(kind, value)` for a `case` label's expression as the source spells it.
+
+    `scope` is the declaring class's own enum table: a member it declares folds through that declaration before
+    the corpus-wide table is consulted (`enum_value`).
+    """
     e = expr.strip()
     if not e:
         return ("expr", "")
@@ -208,7 +245,7 @@ def canon_text(expr):
         return ("str", e[1:-1].replace(e[0] * 2, e[0]).lower())
     if INT.fullmatch(e):
         return ("int", str(int(e, 16) if HEX.fullmatch(e) else int(e)))
-    v = enum_value(e)
+    v = enum_value(e, scope)
     if v is not None:
         return ("int", str(v))
     return ("expr", e.lower())
@@ -226,13 +263,18 @@ def canon_arm(kind, label):
     return ("expr", "")
 
 
-def counts(text):
+def counts(text, dead=None):
+    """`Counter` of the block keywords, with the parts this build never compiles left out when `dead` is given.
+
+    `dead` is `tools/text-branches.py`'s `guard_map` for the same buffer: this corpus ships the Xbox text, so the
+    `#ifdefPS2` branch of `SGMenuInteraction.KeyEvent` carries a `case IK_Tab:` the compiler never saw. A label
+    inside a dead part is not a label the package built, and counting it made that class read one `case` "more"
+    than its bytecode.
+    """
     c = collections.Counter()
-    c["switch"] = len(SWITCH.findall(text))
-    c["case"] = len(CASE.findall(text))
-    c["default"] = len(DEFAULT.findall(text))
-    c["break"] = len(BREAK.findall(text))
-    c["return"] = len(RETURN.findall(text))
+    for name, rx in (("switch", SWITCH), ("case", CASE), ("default", DEFAULT), ("break", BREAK),
+                     ("return", RETURN)):
+        c[name] = sum(1 for m in rx.finditer(text) if dead is None or not dead[m.start()])
     return c
 
 
@@ -254,6 +296,10 @@ def last_statement(seg, clean=None):
     """
     s = seg.rstrip()
     if not s:
+        return "empty"
+    # A body that holds nothing but preprocessor directives is empty: `case IK_MouseWheelUp:` is followed by its
+    # shared body's `#ifndefPS2`/`#endif` and then the next label, and the directive lines are not statements.
+    if all(not ln.strip() or ln.lstrip().startswith("#") for ln in s.splitlines()):
         return "empty"
     if s.endswith(";"):
         n = len(s)
@@ -278,14 +324,17 @@ def last_statement(seg, clean=None):
     return "other"
 
 
-def mask_comments(text):
-    """The buffer with **comments only** blanked: literals are kept, because a `case` label may *be* one.
+def comment_spans(text):
+    """`[("line" | "block", start, end)]` for every comment in one class text, in source order.
 
-    `tools/text-branches.py`'s `mask` blanks comments and literals both, which is right for counting keywords --
-    and exactly wrong for reading a label: `case '0':` arrives as `case    :`. Both buffers are length-preserving
-    and blank only comments here, so a position means the same thing in each.
+    A block comment **counts its `/*` depth**, because this text nests them: `StargateContent.TeamVoicePack`
+    comments out a whole copy of `PlayerSpeech` (`/*function PlayerSpeech(...`), and inside that dead copy the
+    `ORDER` arm carries a second disabled block. The first-`*/` rule ends the outer comment at the inner one and
+    exposes two `case` labels (`'TAUNT'`, `'OTHER'`) at file scope -- a shape no compiler turns into code, and one
+    the package contradicts: it carries 6 arms for that switch, not 8. A literal is skipped, so a `/*` inside a
+    string is not a comment.
     """
-    out = list(text)
+    spans = []
     n = len(text)
     i = 0
     while i < n:
@@ -293,15 +342,21 @@ def mask_comments(text):
         if c == "/" and i + 1 < n and text[i + 1] == "/":
             j = text.find("\n", i)
             j = n if j < 0 else j
-            for k in range(i, j):
-                out[k] = " "
+            spans.append(("line", i, j))
             i = j
         elif c == "/" and i + 1 < n and text[i + 1] == "*":
-            j = text.find("*/", i + 2)
-            j = n if j < 0 else j + 2
-            for k in range(i, j):
-                if out[k] != "\n":
-                    out[k] = " "
+            depth, j = 1, i + 2
+            while j < n and depth:
+                if text[j] == "/" and j + 1 < n and text[j + 1] == "*":
+                    depth += 1
+                    j += 2
+                    continue
+                if text[j] == "*" and j + 1 < n and text[j + 1] == "/":
+                    depth -= 1
+                    j += 2
+                    continue
+                j += 1
+            spans.append(("block", i, min(j, n)))
             i = j
         elif c in "\"'":
             q = c
@@ -321,6 +376,22 @@ def mask_comments(text):
                 i += 1
         else:
             i += 1
+    return spans
+
+
+def mask_comments(text):
+    """The buffer with **comments only** blanked: literals are kept, because a `case` label may *be* one.
+
+    `tools/text-branches.py`'s `mask` blanks comments and literals both, which is right for counting keywords --
+    and exactly wrong for reading a label: `case '0':` arrives as `case    :`. Both buffers are length-preserving
+    and blank only comments here, so a position means the same thing in each. The spans are `comment_spans`', so
+    this mask and the census that counts commented labels read one rule.
+    """
+    out = list(text)
+    for _kind, a, b in comment_spans(text):
+        for k in range(a, b):
+            if out[k] != "\n":
+                out[k] = " "
     return "".join(out)
 
 
@@ -359,19 +430,22 @@ def switch_spans(live, start, end):
     return out
 
 
-def label_groups(clive, live, span):
+def label_groups(clive, live, span, dead=None, enums=None):
     """`[(open, close, [(label, start, end), ...])]` -- one group per `switch` block, a nested block's labels out.
 
     The list a `case` belongs to is its **innermost enclosing `switch`**, not every `case` token in the function:
     in `UWindowConsoleClientWindow.Notify` each outer arm opens a `switch (C)` of its own, so a flat label list ends
     the outer arm's body at the *inner* case and reports an arm that leaves on a `break` as falling through (five
     of the fifteen arms the two readings disagreed on).
+
+    `dead` drops the labels of a build-guard part this build never compiled and `enums` folds a symbolic label
+    through the declaring class's own enum table; both are the join's readings, not the block's shape.
     """
     spans = switch_spans(live, span[0], span[1])
     groups = []
     for ob, cb in spans:
         marks = []
-        for mark in labels_in(clive, ob, cb):
+        for mark in labels_in(clive, ob, cb, dead, enums):
             if any(o > ob and c <= cb and o <= mark[1] <= c for o, c in spans):
                 continue                      # a nested switch's own label, not this list's
             marks.append(mark)
@@ -381,21 +455,40 @@ def label_groups(clive, live, span):
     return groups
 
 
-def labels_in(live, start, end):
+def labels_in(live, start, end, dead=None, enums=None):
     """`[( (kind, value) or None for a `default:`, match_start, match_end )]` for one function body's labels.
 
     `default:` is a boundary as well as a label: an arm's body ends where the next `case` **or** `default` of the
     list begins, so a case that ends the testable list must not read on into the `default:` body.
     """
-    marks = [(canon_text(m.group(1)), m.start(), m.end()) for m in CASE.finditer(live, start, end)]
-    marks += [(None, m.start(), m.end()) for m in DEFAULT.finditer(live, start, end)]
+    marks = [(canon_text(m.group(1), enums), m.start(), m.end()) for m in CASE.finditer(live, start, end)
+             if dead is None or not dead[m.start()]]
+    marks += [(None, m.start(), m.end()) for m in DEFAULT.finditer(live, start, end)
+              if dead is None or not dead[m.start()]]
     marks.sort(key=lambda t: t[1])
     return marks
 
 
-def function_spans(live):
-    """`[(name, span)]` for one class text: the declaration rule and brace walk `tools/class-text-bodies.py` owns."""
+def state_spans(live):
+    """`[(name, (open, close))]` for every `state NAME { ... }` block in one class text.
+
+    A state body is where a class's second `KeyEvent` lives, and the bytecode names it in the function's path
+    (`WindowConsole.UWindow.KeyEvent`), so a span has to carry the state it sits in for the two sides to meet.
+    """
     ctb = ctb_tool()
+    out = []
+    for m in STATE_DECL.finditer(live):
+        span = ctb.body_span(live, m.start(), len(live))
+        if span is not None:
+            out.append((m.group(1).lower(), span))
+    return out
+
+
+def function_spans(live):
+    """`[(name, span, state)]` for one class text: the declaration rule and brace walk `tools/class-text-bodies.py`
+    owns, plus the `state` block the declaration sits in (`""` for the class body)."""
+    ctb = ctb_tool()
+    states = state_spans(live)
     ms = list(ctb.FUNC.finditer(live))
     out = []
     for k, m in enumerate(ms):
@@ -403,12 +496,13 @@ def function_spans(live):
         span = ctb.body_span(live, m.end(), limit)
         if span is None:
             continue
-        out.append((ctb.declared_name(live, m).lower(), span))
+        enclosing = [nm for nm, (a, b) in states if a < m.start() < b]
+        out.append((ctb.declared_name(live, m).lower(), span, enclosing[-1] if enclosing else ""))
     return out
 
 
 def walk(system_dir):
-    """`(package, class) -> {class, functions: {name: [span, ...]}, live, counts}` for every readable class text."""
+    """`(package, class) -> {class, functions: {name: [(span, state), ...]}, live, dead, counts}` per class text."""
     pst = load_tool("pkg_script_text", "pkg-script-text.py")
     tb = text_tool()
     rows = {}
@@ -425,19 +519,31 @@ def walk(system_dir):
             if not text:
                 continue
             live, _comments = tb.mask(text)
+            dead, _parts = tb.guard_map(live)
+            clive = mask_comments(text)
             funcs = collections.defaultdict(list)
-            for name, span in function_spans(live):
-                funcs[name].append(span)
+            for name, span, state in function_spans(live):
+                funcs[name].append((span, state))
             name = pkg.name(exp["name"])
-            rows[(package, name.lower())] = {"class": name, "live": live, "clive": mask_comments(text),
-                                             "functions": funcs, "counts": counts(live)}
+            # The class counts read the same two masks the join's labels do: comments by `mask_comments` (which
+            # counts `/*` nesting) and literals by `text-branches.mask`, so a `case` the class counts and a `case`
+            # the join reads are the same label. Counting on `mask`'s own comment rule left two labels of a
+            # commented-out function live and one class reading "more" than its bytecode.
+            rows[(package, name.lower())] = {"class": name, "live": live, "clive": clive, "raw": text,
+                                             "dead": dead, "functions": funcs,
+                                             "counts": counts(tb.mask(clive)[0], dead)}
     return rows
 
 
 # --- the bytecode side ------------------------------------------------------------------------------
 def arms_by_class(path=ARMS_CSV):
-    """`(package, class) -> arm rows`, `(package, class, function) -> rows` and the per-class counters, from the
-    committed census: the arms, the lists and the `break`s each class carries."""
+    """`(package, class) -> arm rows`, `(package, class, function, state) -> rows` and the per-class counters, from
+    the committed census: the arms, the lists and the `break`s each class carries.
+
+    A function's path is `Class.Function` in the class body and `Class.State.Function` in a `state` block, so the
+    key carries the state: a class that declares `KeyEvent` twice (its own body and `state UWindow`'s) has two
+    functions the bytecode keeps apart and a name-only key merged into one.
+    """
     classes = collections.defaultdict(list)
     funcs = collections.defaultdict(list)
     meta = collections.defaultdict(collections.Counter)
@@ -449,10 +555,11 @@ def arms_by_class(path=ARMS_CSV):
         if len(parts) < 2:
             continue
         cls, fn = parts[0], parts[-1]
+        state = ".".join(parts[1:-1]).lower()
         key = (r["package"], cls.lower())
         if kind == "arm":
             classes[key].append(r)
-            funcs[(r["package"], cls.lower(), fn.lower())].append(r)
+            funcs[(r["package"], cls.lower(), fn.lower(), state)].append(r)
             meta[key]["break"] += int(r.get("end") == "break")
         elif kind == "list":
             meta[key]["lists"] += 1
@@ -462,7 +569,7 @@ def arms_by_class(path=ARMS_CSV):
 
 
 # --- the join ----------------------------------------------------------------------------------------
-def compare_function(arms, spans, clive, live=None):
+def compare_function(arms, spans, clive, live=None, dead=None, enums=None):
     """Match every arm to a `case` label of **its own switch** and compare how each leaves.
 
     A function's arms carry their `site` (which `Switch` token they belong to) and its text carries one label group
@@ -478,8 +585,8 @@ def compare_function(arms, spans, clive, live=None):
     out = {"found": 0, "positional": 0, "checked": 0, "agree": 0, "detail": [], "blocks": 0, "arm_continue": 0,
            "arm_break": 0, "arm_break_inner": 0}
     best = None
-    for span in spans:
-        groups = label_groups(clive, live if live is not None else clive, span)
+    for span, _state in spans:
+        groups = label_groups(clive, live if live is not None else clive, span, dead, enums)
         hit = 0
         for r in arms:
             c = canon_arm(r.get("label_kind"), r.get("label"))
@@ -527,6 +634,7 @@ def compare_function(arms, spans, clive, live=None):
         if positional:
             out["positional"] += len(cases)
         used = [False] * len(labels)
+        pairs = []
         for arm_index, r in enumerate(mine):
             c = canon_arm(r.get("label_kind"), r.get("label"))
             pick_i = None
@@ -538,9 +646,26 @@ def compare_function(arms, spans, clive, live=None):
                         pick_i = i
                         break
             if pick_i is None:
-                out["detail"].append((r, None, "", [], []))
+                pairs.append((r, None))
                 continue
             used[pick_i] = True
+            pairs.append((r, pick_i))
+        # The *leftovers* of a list pair the same way, one at a time: an expression-valued arm (`case ConsoleHotKey:`
+        # compiles to a `Case` whose operand the VM evaluates, so the arm census labels it `expr`/`InstanceVariable`)
+        # beside the one `case` label the list has left, which the source spells as a name. Pairing them is the same
+        # reading the whole-list rule makes -- a symbolic label can only be that arm's value -- and it is counted in
+        # the same `labels_by_position` column, never as a value match.
+        left_arms = [k for k, (_r, i) in enumerate(pairs) if i is None]
+        left_marks = [i for i in cases if not used[i]]
+        if left_arms and len(left_arms) == len(left_marks) and all(labels[i][0][0] == "expr" for i in left_marks):
+            for k, i in zip(left_arms, left_marks):
+                used[i] = True
+                pairs[k] = (pairs[k][0], i)
+                out["positional"] += 1
+        for r, pick_i in pairs:
+            if pick_i is None:
+                out["detail"].append((r, None, "", [], []))
+                continue
             out["found"] += 1
             seg_end = labels[pick_i + 1][1] if pick_i + 1 < len(labels) else close
             seg_end = min(seg_end, close)
@@ -590,8 +715,8 @@ def switch_continue_census(texts):
     seen = {}
     for key, t in texts.items():
         for _fn, spans in t["functions"].items():
-            for span in spans:
-                groups = label_groups(t["clive"], t["live"], span)
+            for span, _state in spans:
+                groups = label_groups(t["clive"], t["live"], span, t.get("dead"), CLASS_ENUMS.get(key))
                 for ob, cb, marks in groups:
                     for off, _kind in text_tool().continue_sites(t["live"], None, ob, cb):
                         holder = [(o, c) for o, c, _m in groups if o <= off < c]
@@ -625,11 +750,12 @@ def switch_break_census(texts):
     seen = set()
     for key, t in texts.items():
         for _fn, spans in t["functions"].items():
-            for span in spans:
+            for span, _state in spans:
                 blocks = switch_spans(t["live"], span[0], span[1])
                 if not blocks:
                     continue
-                groups = {g[0]: g for g in label_groups(t["clive"], t["live"], span)}
+                groups = {g[0]: g for g in label_groups(t["clive"], t["live"], span, t.get("dead"),
+                                                        CLASS_ENUMS.get(key))}
                 for off, binds, _con, place, _dead in text_tool().break_sites_detail(t["live"], None,
                                                                                     span[0], span[1]):
                     if binds != "switch":
@@ -664,20 +790,37 @@ def label_spelling_census(texts):
 
     The population the fold is worth, counted once over the text rather than accumulated from the matcher (which
     asks `canon_text` the same label several times): a symbolic label is one the source wrote as a name and the
-    compiler folded, and a hex label is one the integer rule itself had to learn.
+    compiler folded, and a hex label is one the integer rule itself had to learn. A label inside a dead build-guard
+    part is not counted -- the build never compiled it -- and a bare member is folded through the declaring class's
+    own enum table before the corpus-wide one.
     """
     census = collections.Counter()
-    for t in texts.values():
+    for key, t in texts.items():
+        dead, scope = t.get("dead"), CLASS_ENUMS.get(key)
         for m in CASE.finditer(t.get("live") or ""):
+            if dead is not None and dead[m.start()]:
+                census["labels_dead"] += 1
+                continue
             e = m.group(1).strip()
             if HEX.fullmatch(e):
                 census["labels_hex"] += 1
-            if enum_value(e) is not None:
+            if enum_value(e, scope) is not None:
                 census["labels_enum"] += 1
-            elif "." not in e and len(set((ENUMS.get(e.lower()) or {}).values())) > 1:
+            elif "." not in e and len(set((ENUMS.get(e.lower()) or {}).values())) > 1 and \
+                    not any(e.lower() in mem for mem in (scope or {}).values()):
                 # A bare name two enums place at two ordinals is not folded: which enum the source meant is a
-                # reading the label alone cannot make, and the header's own cast is the route (not in this read).
+                # reading the label alone cannot make. A class that declares the member itself is that reading.
                 census["labels_ambiguous"] += 1
+        # A label the masker blanked is a label inside a comment: the raw text's count is the population, and
+        # `clive`'s is what a label read may see. A label in a *block* comment is a commented-out copy of code
+        # (`StargateContent.TeamVoicePack` carries a whole disabled `PlayerSpeech` with its `TAUNT`/`OTHER` cases);
+        # a `// comment` that happens to spell `case` is prose and is not counted.
+        raw = t.get("raw")
+        if raw is not None:
+            blocks = [(a, b) for kind, a, b in comment_spans(raw) if kind == "block"]
+            n = sum(1 for m in CASE.finditer(raw) if any(a <= m.start() < b for a, b in blocks))
+            census["labels_commented"] += n
+            census["classes_commented"] += 1 if n else 0
     return census
 
 
@@ -716,10 +859,10 @@ def join(texts, arms_c, arms_f, meta):
         rows.append(row)
         if not t or not arms:
             continue
-        for (package, cls_lower, fn_lower) in [k for k in arms_f if k[0] == key[0] and k[1] == key[1]]:
-            fn_arms = arms_f[(package, cls_lower, fn_lower)]
-            spans = t["functions"].get(fn_lower) or []
-            got = compare_function(fn_arms, spans, t["clive"], t["live"])
+        for (package, cls_lower, fn_lower, state) in [k for k in arms_f if k[0] == key[0] and k[1] == key[1]]:
+            fn_arms = arms_f[(package, cls_lower, fn_lower, state)]
+            spans = [(span, st) for span, st in (t["functions"].get(fn_lower) or []) if st == state]
+            got = compare_function(fn_arms, spans, t["clive"], t["live"], t.get("dead"), CLASS_ENUMS.get(key))
             found, checked, agree, detail = got["found"], got["checked"], got["agree"], got["detail"]
             match_kind = "value" if got["positional"] == 0 and found else ("position" if got["positional"] else "none")
             census["functions_joined"] += 1
@@ -731,11 +874,14 @@ def join(texts, arms_c, arms_f, meta):
             census["arm_continue"] += got["arm_continue"]
             census["arm_break"] += got["arm_break"]
             census["arm_break_inner"] += got["arm_break_inner"]
+            if state:
+                census["bodies_state"] += 1
+                census["arms_state"] += len(fn_arms)
             rows.append({"kind": "function", "package": package, "class": cls_name, "function": fn_lower,
                          "byte_arms": len(fn_arms), "labels_found": found,
                          "labels_missing": len(fn_arms) - found, "end_agree": agree, "end_checked": checked,
                          "verdict": "agree" if agree == checked else "differs", "label_kind": match_kind,
-                         "count": "", "note": ""})
+                         "count": "", "note": ("state %s" % state) if state else ""})
             for r, text_end, byte_end, conts, brks in detail:
                 if text_end is None:
                     continue
@@ -835,25 +981,51 @@ def doc_block(rows):
     lines += ["",
               "**An arm is matched by its own value, and that is what the label column in the arms census bought.** "
               "**%s** of **%s** arms find a `case` label with the same canonical value in their function's text; "
-              "**%s** more are paired **by position**, and only where every label in that function is a symbolic "
-              "constant (`case MB_OK:`) with no value the corpus declares, which is a different reading and "
-              "is counted apart; **%s** are matched by neither -- an expression-valued case, or a text that is not "
-              "the revision the package compiled."
+              "**%s** more are paired **by position** -- either because every label in that list is a symbolic "
+              "constant (`case MB_OK:`) with no value the corpus declares, or because the list's leftovers are one "
+              "expression-valued arm (`case ConsoleHotKey:` compiles to a `Case` whose operand the VM evaluates, so "
+              "the arm census reads it as `expr`/`InstanceVariable`) beside the one symbolic label the list has "
+              "left. Both are a different reading from a value match and are counted apart; **%s** are matched by "
+              "neither -- an expression-valued case with no label beside it, or a text that is not the revision the "
+              "package compiled."
               % (comma(census_value(rows, "labels_found") - census_value(rows, "labels_by_position")),
                  comma(census_value(rows, "labels_found") + census_value(rows, "labels_missing")),
                  comma(census_value(rows, "labels_by_position")),
                  comma(census_value(rows, "labels_missing")))]
     lines += ["",
-              "**The source's symbolic labels are folded by the corpus's own enum declarations.** **%s** `enum` "
-              "bodies in the class texts declare **%s** members, **%s** `case` label(s) are spelled as one of those "
-              "members -- `case EInputKey.IK_Escape:` qualified or `case IST_Press:` bare -- and **%s** are spelled "
-              "as a hex integer (`case 0x26:`), which the integer rule reads as its value. A member's value is its "
-              "declaration ordinal, so the arm's integer and the label meet as equal values; the two spellings "
-              "agree where a function writes one and another writes the other: `UWindowPulldownMenu.KeyDown` "
-              "spells `0x26` for the arm `WindowConsole.KeyEvent` spells `IK_Up`, and both names exist in this "
-              "build's `EInputKey`."
+              "**The source's symbolic labels are folded by the corpus's own enum declarations, and the declaring "
+              "class's table is the authority.** **%s** `enum` bodies in the class texts declare **%s** members, "
+              "**%s** `case` label(s) are spelled as one of those members -- `case EInputKey.IK_Escape:` qualified "
+              "or `case IST_Press:` bare -- and **%s** are spelled as a hex integer (`case 0x26:`), which the "
+              "integer rule reads as its value. A member's value is its declaration ordinal, so the arm's integer "
+              "and the label meet as equal values; the two spellings agree where a function writes one and another "
+              "writes the other: `UWindowPulldownMenu.KeyDown` spells `0x26` for the arm `WindowConsole.KeyEvent` "
+              "spells `IK_Up`, and both names exist in this build's `EInputKey`. The same enum is declared again by "
+              "classes that are not its owner and the declarations disagree: `TriggeredScript` declares "
+              "`ETriggerType` with `TT_PlayerProximity` first, and a re-declaration without the commented-out "
+              "`TT_PawnProximity` puts `TT_HumanPlayerProximity` one ordinal higher. A label folds through the "
+              "table of the class that spells it, so `TT_ClassProximity` is 1 in `TriggeredScript.IsRelevant` and "
+              "`SG1_TEALC` is 3 in `CommandInterface.ConvertEnumToName` (bare in a class that declares "
+              "`InteractionType` beside `TranslationUser`), and **%s** label(s) stay unfolded because no table "
+              "places them."
               % (comma(census_value(rows, "enums_declared")), comma(census_value(rows, "enum_members")),
-                 comma(census_value(rows, "labels_enum")), comma(census_value(rows, "labels_hex")))]
+                 comma(census_value(rows, "labels_enum")), comma(census_value(rows, "labels_hex")),
+                 comma(census_value(rows, "labels_ambiguous")))]
+    lines += ["",
+              "**Three parts of the source are not labels of the build, and the state bodies are a second function "
+              "under one name.** The mask reads all three apart: **%s** `case` label(s) sit inside a build-guard "
+              "part this build never compiles (`SGMenuInteraction.KeyEvent`'s `#ifdefPS2` `IK_Tab`, "
+              "`WeaponZoomInteraction.KeyEvent`'s `IK_Joy1` in the same guard); **%s** sit inside a block comment, "
+              "in **%s** class texts that comment out a switch -- of those, the two that a first-`*/` rule left live "
+              "are `StargateContent.TeamVoicePack`'s `TAUNT` and `OTHER` cases, inside a whole disabled copy of "
+              "`PlayerSpeech` whose own `ORDER` arm carries a second `/* */`, so the depth is counted (the arm "
+              "count is the check: the package carries 6 arms for that switch, not 8); and %s function body(ies) "
+              "hold **%s** arm(s) inside a `state` block. The bytecode names that body apart -- "
+              "`WindowConsole.KeyEvent` is 3 arms and `WindowConsole.UWindow.KeyEvent` is 14 -- so the join keys on "
+              "the body, and a `case` list of the state's pairs with the state's arms."
+              % (comma(census_value(rows, "labels_dead")), comma(census_value(rows, "labels_commented")),
+                 comma(census_value(rows, "classes_commented")), comma(census_value(rows, "bodies_state")),
+                 comma(census_value(rows, "arms_state")))]
     lines += ["",
               "**How an arm leaves agrees with the source, on the arms the text could be read for.** Of **%s** "
               "matched arms, **%s** leave the way the token stream says (`break` to a `break;`, `return` to a "
@@ -972,7 +1144,9 @@ def selftest():
     if last_statement("DoThing(); break;") != "break":
         fails.append("a body ending in `break;` read %r" % last_statement("DoThing(); break;"))
     if last_statement("   ") != "empty":
-        fails.append("an empty body read %r" % last_statement("   "))
+        fails.append("an empty body read %r" % (last_statement("   "),))
+    if last_statement("#ifndefPS2\n#endif\n") != "empty":
+        fails.append("a body holding only directives read %r" % (last_statement("#ifndefPS2\n#endif\n"),))
     if last_statement("Log(\"three\");") != "other":
         fails.append("a body that falls through read %r" % last_statement("Log(\"three\");"))
     # A body that ends with a control construct falls through: the token stream ends it on the `JumpIfNot`, not on
@@ -999,7 +1173,7 @@ def selftest():
     arms = [{"arm": "1", "label_kind": "byte", "label": "0", "end": "return"},
             {"arm": "2", "label_kind": "byte", "label": "1", "end": "empty"},
             {"arm": "3", "label_kind": "byte", "label": "3", "end": "fallthrough"}]
-    spans = [(live.find("{\n    switch"), len(live))]
+    spans = [((live.find("{\n    switch"), len(live)), "")]
     got = compare_function(arms, spans, live)
     if (got["found"], got["positional"], got["checked"], got["agree"]) != (3, 0, 3, 3):
         fails.append("the synthetic join read found=%d positional=%d checked=%d agree=%d"
@@ -1009,7 +1183,7 @@ def selftest():
            "        case MB_OK:\n            return 1;\n"
            "        case MB_CANCEL:\n            return 2;\n"
            "    }\n    return 0;\n}\n")
-    sym_spans = [(sym.find("{\n    switch"), len(sym))]
+    sym_spans = [((sym.find("{\n    switch"), len(sym)), "")]
     got2 = compare_function([{"arm": "1", "label_kind": "byte", "label": "0", "end": "return"},
                              {"arm": "2", "label_kind": "byte", "label": "1", "end": "return"}], sym_spans, sym)
     if (got2["found"], got2["positional"], got2["agree"]) != (2, 2, 2):
@@ -1032,7 +1206,7 @@ def selftest():
             "            }\n            break;\n"
             "        case 2:\n            return 3;\n"
             "    }\n    return 0;\n}\n")
-    nest_spans = [(nest.find("{\n    switch"), len(nest))]
+    nest_spans = [((nest.find("{\n    switch"), len(nest)), "")]
     nest_arms = [{"site": "1", "arm": "1", "label_kind": "byte", "label": "1", "end": "break"},
                  {"site": "1", "arm": "2", "label_kind": "byte", "label": "2", "end": "return"},
                  {"site": "2", "arm": "1", "label_kind": "expr", "label": "", "end": "break"}]
@@ -1046,7 +1220,7 @@ def selftest():
             "            case 1:\n                if (n > 2) continue;\n                break;\n"
             "            case 2:\n                DoThing();\n                break;\n"
             "            default:\n                break;\n        }\n    }\n}\n")
-    cont_spans = [(cont.find("{\n        switch"), len(cont))]
+    cont_spans = [((cont.find("{\n        switch"), len(cont)), "")]
     got4 = compare_function([{"arm": "1", "label_kind": "byte", "label": "1", "end": "break"},
                              {"arm": "2", "label_kind": "byte", "label": "2", "end": "break"}],
                             cont_spans, cont)
@@ -1058,6 +1232,64 @@ def selftest():
     # `if (x) continue;` before it, and the second carries neither an interior break nor a continue.
     if [k for _r, _t, _b, _c, k in got4["detail"]][0] != ["tail"]:
         fails.append("an arm whose only `break` is its tail read %r" % ([k for _r, _t, _b, _c, k in got4["detail"]][0],))
+    # A label inside a build-guard part this build never compiles is not a label of this build: the PS2 branch of
+    # `SGMenuInteraction.KeyEvent` spells `case IK_Tab:` beside the Xbox `case IK_T:`, and counting it cut the live
+    # arm's body at the dead label, so a `break` read as a fall-through.
+    guarded = ("function f(int n)\n{\n    switch (n)\n    {\n"
+               "#ifndefPS2\n        case 1:\n#endif\n#ifdefPS2\n        case 9:\n#endif\n"
+               "            DoThing();\n            break;\n"
+               "        case 2:\n            return 3;\n    }\n    return 0;\n}\n")
+    gdead, _gp = text_tool().guard_map(guarded)
+    if counts(guarded, gdead)["case"] != 2:
+        fails.append("a dead `case` label was counted (%d)" % counts(guarded, gdead)["case"])
+    if counts(guarded)["case"] != 3:
+        fails.append("the same list without the guard map did not read 3 labels")
+    ggot = compare_function([{"arm": "1", "label_kind": "byte", "label": "1", "end": "break"},
+                             {"arm": "2", "label_kind": "byte", "label": "2", "end": "return"}],
+                            [((guarded.find("{\n    switch"), len(guarded)), "")], guarded, guarded, gdead)
+    if (ggot["found"], ggot["agree"]) != (2, 2):
+        fails.append("a guarded case list joined found=%d agree=%d" % (ggot["found"], ggot["agree"]))
+    # The declaring class's own enum table is the authority: two classes spell one enum in different member order,
+    # and a label folds through the table of the class that spells it, with the first declaration only a fallback.
+    load_enums({("p", "first"): {"clive": "enum EType\n{\n\tA,\n\tB,\n\tC\n};\n"},
+                ("p", "second"): {"clive": "enum EType\n{\n\tC,\n\tB,\n\tA\n};\n"}})
+    if canon_text("A") != ("int", "0"):
+        fails.append("the corpus-wide enum table read `A` as %r" % (canon_text("A"),))
+    if canon_text("A", CLASS_ENUMS[("p", "second")]) != ("int", "2"):
+        fails.append("a class's own enum declaration read `A` as %r"
+                     % (canon_text("A", CLASS_ENUMS[("p", "second")]),))
+    if canon_text("EType.A", CLASS_ENUMS[("p", "second")]) != ("int", "2"):
+        fails.append("a qualified label read through the corpus table, not the class's own (%r)"
+                     % (canon_text("EType.A", CLASS_ENUMS[("p", "second")]),))
+    load_enums({})
+    # A block comment nests here: the text of `StargateContent.TeamVoicePack` comments out a whole copy of a
+    # function and carries a second disabled block inside it, so a first-`*/` rule exposes two `case` labels at
+    # file scope and the package says the switch has 6 arms, not 8.
+    nested = ("function f(int n)\n{\n    switch (n)\n    {\n"
+              "/*function g(int n)\n{\n    case 1:\n        /*disabled*/\n        break;\n    case 2:\n"
+              "        break;\n}\n*/\n        case 3:\n            return 1;\n    }\n    return 0;\n}\n")
+    if counts(mask_comments(nested))["case"] != 1:
+        fails.append("a nested block comment left %d `case` labels live"
+                     % counts(mask_comments(nested))["case"])
+    if [lab[1] for _o, _c, marks in label_groups(mask_comments(nested), nested,
+                                                 (nested.find("{\n    switch"), len(nested)))
+            for lab, _s, _e in marks] != ["3"]:
+        fails.append("a nested block comment's labels reached the list")
+    # A `state` body's function is a second body under the same name: the class body's `KeyEvent` and `state
+    # UWindow`'s are two functions the bytecode names apart (`WindowConsole.KeyEvent`, `WindowConsole.UWindow.
+    # KeyEvent`), so a span carries the state it sits in and the join pairs body with body.
+    stated = ("function bool KeyEvent(EInputKey K)\n{\n\tswitch (K)\n\t{\n\tcase 1:\n\t\treturn true;\n\t}\n"
+              "\treturn false;\n}\n\nstate UWindow\n{\n\tfunction bool KeyEvent(EInputKey K)\n\t{\n"
+              "\t\tswitch (K)\n\t\t{\n\t\tcase 2:\n\t\t\treturn true;\n\t\t}\n\t\treturn false;\n\t}\n}\n")
+    slive, _sc = text_tool().mask(stated)
+    tagged = function_spans(slive)
+    if [(n, st) for n, _sp, st in tagged] != [("keyevent", ""), ("keyevent", "uwindow")]:
+        fails.append("the state bodies read %r" % ([(n, st) for n, _sp, st in tagged],))
+    for _name, span, st in tagged:
+        got_lab = [lab[1] for _o, _c, marks in label_groups(mask_comments(stated), slive, span)
+                   for lab, _s, _e in marks]
+        if got_lab != [("1" if st == "" else "2")]:
+            fails.append("the %r body's labels read %r" % (st, got_lab))
     if fails:
         for f in fails:
             print("FAIL text-switches: %s" % f)

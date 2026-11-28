@@ -4521,6 +4521,22 @@ source says -- `break` to `break;`, `return` to `return`, a loop's back edge to 
 not a disagreement but a limit: the **466** positional pairings rest on an inferred label order, and the **55**
 unmatched arms have no exit comparison at all. `--check` on both tools is dump-free, and the page's block is rendered
 from the artifact by `--check-doc`.
+
+**Answered: the join is closed, 844 of 844 arms, and the last eight were five readings (2026-11-28).** The residue
+this entry left -- 8 arms with no label and 5 exits disagreeing -- was not a population of text the package did not
+compile. Each one was a reading the join had not made: a `case` label folds through the enum its **own class**
+declares (`TriggeredScript`'s `ETriggerType` is re-declared by another class at different ordinals; the bare
+`SG1_TEALC`/`SG1_JACKSON` are `InteractionType` members in `CommandInterface`, where the class declares that enum
+beside `TranslationUser`), a label inside a **dead build-guard part** is not a label of this build
+(`SGMenuInteraction.KeyEvent`'s `#ifdefPS2` `IK_Tab`, `WeaponZoomInteraction.KeyEvent`'s `IK_Joy1`), a **`state`
+body's** function is a second body the bytecode names apart (`WindowConsole.KeyEvent` 3 arms,
+`WindowConsole.UWindow.KeyEvent` 14), a **block comment nests** in this text (`TeamVoicePack`'s commented-out
+`PlayerSpeech`, 24 labels in 6 classes), and an **expression-valued arm** pairs with the one symbolic label its list
+has left (`case ConsoleHotKey:`, 2 arms, counted as positional). The artifact now reads **844** `case` labels for
+**844** arms, **136 of 136** classes exact, **0** unmatched, **844 of 844** exits agreeing, **0** ambiguous members,
+and the tool's `--check` self-test holds each new rule on a synthetic body (a nested comment, a guarded label, two
+class tables for one enum, two `state` bodies, a directive-only case body) without the dump.
+
 ## U22. The `else` census agrees with 99.0% of the functions that carry an `else` -- answered: the guards, the empty blocks and the landing rules close the text-ahead side, the 26 arms left are block-bodied `continue`s placed per function, and the 3 `other` sites are an `else`'s own body
 
 **Observed.** `tools/text-branches.py` counts a class's live `else` keywords and pairs them with
