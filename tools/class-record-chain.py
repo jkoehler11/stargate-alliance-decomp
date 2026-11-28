@@ -27,12 +27,31 @@ Three controls, each a walk whose answer has to be worse than the chain's:
 * **two bytes past the array** -- the group parsed from `array_end + 2`, the same shift the group anchor's null uses;
 * **the modal front** -- the array taken at `prefix_end + 61` regardless of what the front decoded.
 
+## The block from the group's own end
+
+A row whose group does not end on the located block has a second reading: `class-defaults.py`'s committed group
+(`group_intervals`: the writer's four fields, outermost, with a reference the import table can hold) taken at the
+array's end, and its **end** offered as the block. That reading is a join between two readers, not a shift of the
+boundary to fit: the group's end has to open a tag stream (`prop-stream.py`) whose first tag is a name the payload
+could hold, and the located start's own first tag is recorded next to it so the two can be compared.
+
+`--block-from-group` (on by default) records the group's end, how far past the located start it lands, and the first
+tag on each side; `--no-block-from-group` reproduces the 1,228-row reading of the previous change.
+
+## The array's count bound
+
+`MAX_COUNT` was 8 -- the anchored population holds 2 on 1,184 of 1,185. The rows the bound refused are not noise:
+on **409** of the 549 a committed group ends *exactly* on the located block, so the group's start is known from the
+block side, and `1 + sum(reference width + 8)` from the front's end lands on it. The bound is **512** and the stride
+identity is recorded per row (`array_span`, `group_span`, `stride_ok`), because the bound alone raises the one-byte-late
+control in step with the closures.
+
     python3 tools/class-record-chain.py --dump $SG1_DUMP --sweep -o inventory
     python3 tools/class-record-chain.py --report
     python3 tools/class-record-chain.py --dump $SG1_DUMP --class AmbientCreatures.AmbientCreature
     python3 tools/class-record-chain.py --check
 
-Reads the packages and three committed artifacts; no boot, no value decoded, no name published.
+Reads the packages and three committed artifacts; no boot, no value decoded, no property value published.
 """
 import argparse
 import collections
@@ -52,20 +71,24 @@ CLASS_DWORDS = 4 + 16              # the flags word and `+0x4a0`..`+0x4ac`
 FIXED_TAIL = FRONT_DWORDS + STATE_BYTES + CLASS_DWORDS
 ELEMENT_BODY = 8                   # the two dwords `FUN_0003d900` streams after each reference
 MAX_FIELD = 5                      # one compact field is 1 to 5 bytes
-MAX_COUNT = 8                      # the array holds 2 on 1,184 of 1,185 anchored rows, 5 on one
+MAX_COUNT = 512                    # the anchored rows hold 2; the count-outside rows hold 9 to 49 (see the docstring)
 SEARCH_LO, SEARCH_HI = 56, 80      # where a front's end can sit, in bytes after the prefix
 GROUP_MAX = 64                     # the group is 6-11 bytes on the anchored rows; a walk that needs more failed
 MODAL_FRONT = 61                   # the front's modal length over the anchored rows
 CTL_SHIFT = 2                      # the group's null aim, in bytes past the array
+TRAILER = 64                       # class-defaults.py's own trailer bound for a block that reaches the payload's end
 ARTIFACT = "class_record_chain.csv"
 COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "x", "x_len", "name", "name_len",
            "name_matches", "front_len", "head_tail", "head_walk", "head_match", "heads", "count", "ref_widths",
            "array_len", "array_end", "group_start_tail", "group_off", "verdict_tail", "verdict_walk", "group_len",
            "chain", "heads_all", "head_index", "best_end", "best_delta", "best_count", "ctl_offsets", "ctl_shift",
-           "ctl_aim", "ctl_modal", "slack", "slack_hex"]
+           "ctl_aim", "ctl_modal", "slack", "slack_hex", "script_len", "tb_size", "array_span", "group_span",
+           "stride_ok", "group_end", "block_delta", "witness_props", "witness_first", "block_first"]
 
 _TR = None
 _GA = None
+_CD = None
+_PS = None
 
 
 def tail_run():
@@ -90,6 +113,28 @@ def group_anchor():
     return _GA
 
 
+def defaults_side():
+    """`tools/class-defaults.py`, for the committed-group geometry and its tag-stream reader.
+
+    Only the two readers are used: `group_intervals` (the writer's four fields, outermost, reference inside the
+    import table) and `prop-stream.py`'s `read_block`. No candidate choice, no block published.
+    """
+    global _CD
+    if _CD is None:
+        path = os.path.join(HERE, "class-defaults.py")
+        spec = importlib.util.spec_from_file_location("class_defaults_tool", path)
+        _CD = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_CD)
+    return _CD
+
+
+def prop_stream():
+    global _PS
+    if _PS is None:
+        _PS = defaults_side().load_prop_stream()
+    return _PS
+
+
 def read_index(buf, off):
     """UE2 `FCompactIndex`: bit 7 is the sign, bit 6 means a byte follows, 6 bits then 7 per byte."""
     b = buf[off]
@@ -111,7 +156,7 @@ def read_front(data, start, name_index=None):
     Returns `(fields, end)`; `fields` is `None` and `end` a refusal string when a field overruns the payload or the
     name compact does not decode to `name_index` (which is read from the export table, not from the bytes).
     """
-    out = {"x": "", "x_len": "", "name": "", "name_len": ""}
+    out = {"x": "", "x_len": "", "name": "", "name_len": "", "script_len": ""}
     try:
         out["x"], p = read_index(data, start)
         out["x_len"] = p - start
@@ -126,6 +171,7 @@ def read_front(data, start, name_index=None):
         if q + FRONT_DWORDS > len(data):
             return None, "overruns the payload"
         script_len = int.from_bytes(data[q + FRONT_DWORDS - 4:q + FRONT_DWORDS], "little")
+        out["script_len"] = script_len
         p = q + FRONT_DWORDS + script_len + STATE_BYTES + CLASS_DWORDS
         if p > len(data):
             return None, "script overruns the payload"
@@ -137,7 +183,7 @@ def read_front(data, start, name_index=None):
 def read_array(data, start, stop, nexp, nimp):
     """`FUN_0003d900`'s stream at `start`: a compact count, then one compact reference plus two dwords each.
 
-    Returns `(count, widths, end)` or `(None, None, refusal)`.
+    Returns `(count, widths, end)` or `(None, refusal, None)`.
     """
     try:
         count, o = read_index(data, start)
@@ -162,11 +208,37 @@ def read_array(data, start, stop, nexp, nimp):
     return count, widths, o
 
 
-def chain(data, pe, block, nexp, nimp, nnames, name_index):
+def read_tags(data, start, pkg=None):
+    """The tag stream at `start`: `(n_props, first_name, reason, trailer_ok)`. No tag value is decoded."""
+    if pkg is None:
+        return "", "", "no reader", False
+    try:
+        props, end, reason = prop_stream().read_block(data[start:], pkg, False)
+    except Exception as exc:                      # a reader that cannot decode the stream is a reading, not a crash
+        return "", "", type(exc).__name__, False
+    first = props[0]["name"] if props else ""
+    return len(props), first, reason, (reason == "None" and len(data) - (start + end) <= TRAILER)
+
+
+def group_end_at(data, start, block, nnames, nimp):
+    """The committed group that begins at `start` and runs past `block`: `(end, len)` or `(None, None)`."""
+    try:
+        intervals = defaults_side().group_intervals(data, nnames, nimp)
+    except Exception:
+        return None, None
+    hits = [(q, e) for q, e in intervals if q == start and e > block]
+    if not hits:
+        return None, None
+    q, e = max(hits, key=lambda t: t[1])
+    return e, e - q
+
+
+def chain(data, pe, block, nexp, nimp, nnames, name_index, pkg=None, block_from_group=True):
     """The whole walk: front, array, group. Returns a dict of what each link answered."""
-    out = {"x": "", "x_len": "", "name": "", "name_len": "", "name_matches": 0, "front_len": "",
+    out = {"x": "", "x_len": "", "name": "", "name_len": "", "name_matches": 0, "script_len": "", "front_len": "",
            "count": "", "ref_widths": "", "array_len": "", "array_end": "", "verdict_walk": "", "group_len": "",
-           "chain": ""}
+           "chain": "", "array_span": "", "group_span": "", "stride_ok": "", "group_end": "", "block_delta": "",
+           "witness_props": "", "witness_first": "", "block_first": ""}
     front, front_end = read_front(data, pe, name_index)
     if front is None:
         out["chain"] = "front: %s" % front_end
@@ -182,13 +254,35 @@ def chain(data, pe, block, nexp, nimp, nnames, name_index):
     out["count"], out["ref_widths"] = count, "+".join(str(w) for w in widths)
     out["array_len"] = array_end - front_end
     out["array_end"] = array_end
+    out["array_span"] = array_end - front_end
     got = tail_run().parse_group(data, array_end, block, nnames)
     out["verdict_walk"] = tail_run().verdict(got)
     out["group_len"] = block - array_end
-    if not got or not got["ok"]:
+    if got and got["ok"]:
+        out["chain"] = "close"
+        out["group_end"] = block
+        out["block_delta"] = 0
+        out["group_span"] = block - array_end
+        out["stride_ok"] = 1
+        return out
+    if not block_from_group:
         out["chain"] = "group: %s" % out["verdict_walk"]
         return out
-    out["chain"] = "close"
+    # the second reading: the writer's group taken at the array's end, its own end offered as the block
+    end, glen = group_end_at(data, array_end, block, nnames, nimp)
+    if end is None:
+        out["chain"] = "group: %s" % out["verdict_walk"]
+        return out
+    nprops, first, reason, ok = read_tags(data, end, pkg)
+    out["group_end"], out["block_delta"], out["group_span"] = end, end - block, glen
+    out["witness_props"], out["witness_first"] = nprops, first
+    bn, bfirst, breason, _ = read_tags(data, block, pkg)
+    out["block_first"] = bfirst
+    out["stride_ok"] = 1
+    if ok and int(nprops or 0) >= 1:
+        out["chain"] = "close (group end)"
+    else:
+        out["chain"] = "group end: %s, %s tags" % (reason, nprops)
     return out
 
 
@@ -233,19 +327,29 @@ def class_payloads(pkg):
     return out
 
 
-def measure(data, row, anchor_row, nexp, nimp, nnames, name_index):
+def text_buffer_sizes(pkg):
+    """class export index -> the size of the `TextBuffer` outered to it (0 when the package ships none)."""
+    out = {}
+    for exp in pkg.exports:
+        if pkg.class_name_of(exp) == "TextBuffer" and exp["outer"] > 0:
+            out.setdefault(exp["outer"], 0)
+            out[exp["outer"]] = max(out[exp["outer"]], exp["size"])
+    return out
+
+
+def measure(data, row, anchor_row, nexp, nimp, nnames, name_index, pkg=None, tb_size="", block_from_group=True):
     pe, block = int(row["prefix_end"]), int(row["block_start"])
     out = {k: "" for k in COLUMNS}
     out.update({"prefix_end": pe, "block_start": block, "head_tail": "", "heads": "", "group_start_tail": "",
                 "group_off": "", "verdict_tail": "", "ctl_shift": 0, "ctl_aim": 0, "ctl_modal": 0,
                 "heads_all": "", "head_index": "", "best_end": "", "best_delta": "", "best_count": "",
-                "ctl_offsets": "", "slack": "", "slack_hex": ""})
+                "ctl_offsets": "", "slack": "", "slack_hex": "", "tb_size": tb_size})
     if anchor_row:
         out["heads"] = anchor_row.get("heads", "")
         out["head_tail"] = anchor_row.get("head", "")
         out["group_start_tail"] = anchor_row.get("group_start", "")
         out["verdict_tail"] = anchor_row.get("group_verdict", "")
-    got = chain(data, pe, block, nexp, nimp, nnames, name_index)
+    got = chain(data, pe, block, nexp, nimp, nnames, name_index, pkg, block_from_group)
     out.update(got)
     out["head_match"] = int(out["head_walk"] != "" and out["head_tail"] != ""
                             and int(out["head_walk"]) == int(out["head_tail"]))
@@ -269,7 +373,8 @@ def measure(data, row, anchor_row, nexp, nimp, nnames, name_index):
         out["best_end"], out["best_count"] = end, count
         out["best_delta"] = (int(end) - int(out["front_len"])) if end != "" else ""
         out["ctl_offsets"] = hits
-    out["ctl_shift"] = int(chain(data, pe + 1, block, nexp, nimp, nnames, name_index)["chain"] == "close")
+    out["ctl_shift"] = int(chain(data, pe + 1, block, nexp, nimp, nnames, name_index, None, False)
+                           ["chain"] == "close")
     if out["array_end"] != "":
         got2 = tail_run().parse_group(data, int(out["array_end"]) + CTL_SHIFT, block, nnames)
         out["ctl_aim"] = int(bool(got2) and got2["ok"])
@@ -293,13 +398,15 @@ def sweep(args):
         pkg.read_imports()
         pkg.read_exports()
         payloads = class_payloads(pkg)
+        tbs = text_buffer_sizes(pkg)
         nnames, nimp, nexp = len(pkg.names), len(pkg.imports), len(pkg.exports)
         for key in sorted(by_pkg[name]):
             if key[1] not in payloads:
                 continue
             off, size, name_index = payloads[key[1]]
             data = pkg.data[off:off + size]
-            row = measure(data, bound[key], anchor.get(key), nexp, nimp, nnames, name_index)
+            row = measure(data, bound[key], anchor.get(key), nexp, nimp, nnames, name_index, pkg,
+                          tbs.get(name_index, ""), args.block_from_group)
             row.update({"package": name, "class": key[1], "payload": size})
             rows.append(row)
     if args.out:
@@ -324,8 +431,10 @@ def report(rows=None):
             rows = list(csv.DictReader(fh))
     total = len(rows)
     closed = [r for r in rows if r["chain"] == "close"]
+    gclose = [r for r in rows if r["chain"] == "close (group end)"]
     print("located classes walked front -> array -> group: %d" % total)
-    print("the chain closes on the defaults block: %d (%.1f%%)" % (len(closed), 100.0 * len(closed) / max(1, total)))
+    print("the chain closes on the defaults block: %d (%.1f%%), and on the group's own end on %d more (%.1f%%)"
+          % (len(closed), 100.0 * len(closed) / max(1, total), len(gclose), 100.0 * len(gclose) / max(1, total)))
     print("where it stops: %s" % _share(rows, "chain"))
     print("front lengths: %s" % _share(rows, "front_len"))
     print("array counts: %s; element width pairs: %s" % (_share(rows, "count"), _share(rows, "ref_widths")))
@@ -335,27 +444,53 @@ def report(rows=None):
                        ("head-less rows", [r for r in rows if r["head_tail"] == ""])):
         if not pop:
             continue
-        c = [r for r in pop if r["chain"] == "close"]
+        c = [r for r in pop if r["chain"].startswith("close")]
         print("\n%s: %d rows, the chain closes on %d (%.1f%%); their tail verdicts %s"
               % (label, len(pop), len(c), 100.0 * len(c) / len(pop), _share(pop, "verdict_tail")))
         print("  stops: %s" % _share(pop, "chain"))
     a = [r for r in rows if r["head_tail"] != ""]
     print("\non the %d anchored rows: the walked array head equals the anchored one on %d"
-          % (len(a), sum(int(r["head_match"]) for r in a)))
+          % (len(a), sum(int(r["head_match"]) for r in a if r["head_match"] != "")))
     print("  the walk's head against all heads the anchor finds (head_index): %s" % _share(a, "head_index"))
     two = [r for r in a if r["heads"] == "2"]
-    print("  the %d two-head rows: the walk's head is head %s"
-          % (len(two), _share(two, "head_index")))
-    hl = [r for r in rows if r["head_tail"] == "" and r["group_start_tail"] != ""]
-    print("\nhead-less rows with a group start: %d; their group verdicts from the tail: %s"
-          % (len(hl), _share(hl, "verdict_tail")))
-    print("  read at the array's end instead: %s; the tails' group start against that end: %s"
-          % (_share(hl, "verdict_walk"), _share(hl, "group_off")))
-    print("  of them the chain closes on %d" % sum(1 for r in hl if r["chain"] == "close"))
-    res = [r for r in rows if r["chain"] != "close" and r["best_end"] != ""]
-    print("\nthe %d rows the decoded front does not close, a searched end in [%d, %d] closes: "
-          "%d; the end it finds against the decoded one: %s"
-          % (sum(1 for r in rows if r["chain"] != "close"), SEARCH_LO, SEARCH_HI, len(res),
+    print("  the %d two-head rows: the walk's head is head %s" % (len(two), _share(two, "head_index")))
+
+    # --- the group's own end as the block start
+    print("\nthe group's own end as the block start:")
+    print("  rows that close on the group's end: %d; their end past the located start: %s"
+          % (len(gclose), _share(gclose, "block_delta")))
+    print("  the tag stream there: %s; its first tag: %s"
+          % (_share(gclose, "witness_props"), _share(gclose, "witness_first")))
+    print("  the located start's own first tag on those rows: %s" % _share(gclose, "block_first"))
+    straddle = [r for r in rows if r["block_delta"] not in ("", "0")]
+    print("  rows whose committed group at the array's end runs past the located start: %d; by how far: %s"
+          % (len(straddle), _share(straddle, "block_delta")))
+    print("  of them the stream at the group's end: %s (reason/tags); the located start's first tag: %s"
+          % (_share(straddle, "witness_props"), _share(straddle, "block_first")))
+
+    # --- the array's count bound and the stride identity
+    print("\nthe array's count bound (%d) and the join at the array's end:" % MAX_COUNT)
+    big = [r for r in rows if r["count"] != "" and int(r["count"]) > 8]
+    print("  rows whose count is above the old bound of 8: %d; counts: %s"
+          % (len(big), _share(big, "count")))
+    print("  of them the group ends exactly on the located start and begins exactly at the array's end: %d"
+          % sum(1 for r in big if r["block_delta"] == "0"))
+    print("  their array's own length against the group's: %s"
+          % collections.Counter("array %s / group %s" % (r["array_span"], r["group_span"]) for r in big).most_common(5))
+
+    # --- the front's fourth field
+    print("\nthe front's fourth field (read as a script length):")
+    longf = [r for r in rows if str(r["script_len"]) not in ("", "0")]
+    print("  rows that read nonzero: %d; their values: %s" % (len(longf), _share(longf, "script_len")))
+    withb = [r for r in longf if str(r["tb_size"]) not in ("", "0")]
+    print("  the class's own TextBuffer export holds bytes on: %d; of those the field equals that size on: %d"
+          % (len(withb), sum(1 for r in withb if r["script_len"] == r["tb_size"])))
+    print("  how they stop: %s" % _share(longf, "chain"))
+
+    res = [r for r in rows if not r["chain"].startswith("close") and r["best_end"] != ""]
+    print("\nthe %d rows the decoded front does not close, a searched end in [%d, %d] closes: %d; the end it finds "
+          "against the decoded one: %s"
+          % (sum(1 for r in rows if not r["chain"].startswith("close")), SEARCH_LO, SEARCH_HI, len(res),
              _share(res, "best_delta")))
     print("  closing offsets per recovered row: %s" % _share(res, "ctl_offsets"))
     print("\nthe front's residual against the anchored head (anchored head - walked front): %s"
@@ -381,11 +516,12 @@ def one(args):
         print("%s.%s has no class payload" % (args.package, args.cls))
         return 1
     bound, anchor = load_artifacts()
+    tbs = text_buffer_sizes(pkg)
     key = (args.package, args.cls)
     off, size, name_index = payloads[args.cls]
     data = pkg.data[off:off + size]
     got = measure(data, bound[key], anchor.get(key), len(pkg.exports), len(pkg.imports), len(pkg.names),
-                  name_index)
+                  name_index, pkg, tbs.get(name_index, ""), args.block_from_group)
     for k in COLUMNS:
         print("%-17s %s" % (k, got.get(k, "")))
     pe = int(bound[key]["prefix_end"])
@@ -420,6 +556,7 @@ def self_check():
     assert got["name"] == 1 and got["name_matches"] == 1 and got["front_len"] == 60, got
     assert got["count"] == 2 and got["ref_widths"] == "1+1", got
     assert got["array_end"] == pe + 60 + 19 and got["group_len"] == 6, got
+    assert got["script_len"] == 0 and got["stride_ok"] == 1, got
     # the chain refuses a front whose name is not the class, an out-of-table reference, and a group that does
     # not end on the block
     assert chain(body, pe, block, 9, 9, names_n, 2)["chain"] == "front: name is not the class"
@@ -427,19 +564,29 @@ def self_check():
     bad[pe + 60 + 10] = 0x7F
     assert chain(bytes(bad), pe, block, 9, 9, names_n, 1)["chain"].startswith("array: reference outside"), \
         chain(bytes(bad), pe, block, 9, 9, names_n, 1)
-    assert chain(body, pe, block - 1, 9, 9, names_n, 1)["chain"].startswith("group:"), \
+    assert chain(body, pe, block - 1, 9, 9, names_n, 1)["chain"].startswith("group"), \
         chain(body, pe, block - 1, 9, 9, names_n, 1)
-    # an array count outside the grammar is a refusal, not a scan
-    bad2 = bytearray(body)
-    bad2[pe + 60] = 0x09
-    assert chain(bytes(bad2), pe, block, 9, 9, names_n, 1)["chain"].startswith("array: count"), \
-        chain(bytes(bad2), pe, block, 9, 9, names_n, 1)
+    # a block start inside the group: without the second reading the chain stops, with it the group's own end is
+    # offered as the block. No package is passed, so the tag stream cannot witness it -- the row says so.
+    inside = chain(body, pe, block - 4, 9, 9, names_n, 1)
+    assert inside["chain"].startswith("group end:"), inside
+    assert inside["group_end"] == block and inside["block_delta"] == 4, inside
+    assert inside["witness_props"] == "" and inside["block_first"] == "", inside
+    off = chain(body, pe, block - 4, 9, 9, names_n, 1, block_from_group=False)
+    assert off["chain"].startswith("group:"), off
+    # an array count above the old bound of eight is legal grammar now, and the stride it implies is recorded
+    wide = bytes(4) + front + b"\x09" + (b"\x02" + b"\x11" * 8) * 9 + group
+    gotw = chain(wide, pe, len(wide), 9, 9, names_n, 1)
+    assert gotw["chain"] == "close" and gotw["count"] == 9, gotw
+    assert gotw["array_span"] == 1 + 9 * 9 and gotw["stride_ok"] == 1, gotw
     # the two controls: one byte later never closes, and the group aimed two bytes past never parses
     assert chain(body, pe + 1, block, 9, 9, names_n, 1)["chain"] != "close"
     aimed = tail_run().parse_group(body, pe + 60 + 19 + CTL_SHIFT, block, names_n)
     assert not aimed or not aimed["ok"]
     print("ok   class-record-chain: the front, array and group close on a synthetic payload; a wrong name, an "
-          "out-of-table reference, an out-of-grammar count and a short block all refuse; both nulls miss")
+          "out-of-table reference, an out-of-grammar count and a short block all refuse; a block inside the group "
+          "closes on the group's end and says the tag stream is unwitnessed; a nine-element array closes with its "
+          "stride; both nulls miss")
     return 0
 
 
@@ -453,6 +600,9 @@ def main():
     ap.add_argument("--package", default="")
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--max-count", type=int, default=MAX_COUNT, help="the array's count bound (default %d)" % MAX_COUNT)
+    ap.add_argument("--block-from-group", dest="block_from_group", action="store_true", default=True,
+                    help="offer the closing group's own end as the block start (default)")
+    ap.add_argument("--no-block-from-group", dest="block_from_group", action="store_false")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if args.check:

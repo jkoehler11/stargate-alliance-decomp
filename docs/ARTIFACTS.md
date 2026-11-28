@@ -96,7 +96,7 @@ Every measurement this project makes is a committed CSV. This is the map: what e
 | `inventory/class_record_array_head.csv` | 2204 | 30 | `make class-record-array-head` |
 | `inventory/class_record_array_search.csv` | 2204 | 20 | `make class-record-array-blind` |
 | `inventory/class_record_bound.csv` | 2204 | 20 | `make class-defaults-recordend` |
-| `inventory/class_record_chain.csv` | 2204 | 36 | `make class-record-chain` |
+| `inventory/class_record_chain.csv` | 2204 | 46 | `make class-record-chain` |
 | `inventory/class_record_element.csv` | 549 | 15 | `make class-record-element-fields` |
 | `inventory/class_record_element_fields.csv` | 395 | 11 | `make class-record-element-fields` |
 | `inventory/class_record_fields.csv` | 2209 | 13 | `make class-record-fields` |
