@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,648 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,657 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4380,9 +4380,9 @@ class types as `helper`, and outside a clause it does not) and P22 (a `Target.Ge
 prints its own FAIL and exits 1 -- `a parameter list answered [('antColor', 'cc', False), ...]`, `` `Outer` in a
 `within helper` class did not type as the outer class ``, `a member call declared `class<GameInfo>` typed as ''`.
 
-### The seven member rows that need the XBE, not another census
+### The five member rows that need the XBE, not another census
 
-`Viewport`, `FileManager` and `ObjectProperty` account for **7 of the 38** remaining rows (`WindowConsole.LaunchUWindow`
+`Viewport` and `ObjectProperty.Name` account for **2 of the 29** remaining rows (`WindowConsole.LaunchUWindow`
 / `Tick` / `CloseUWindow`, `TournamentConsole.LaunchUWindow` / `ConnectWithPassword`, `GUIController.GetPlayerController`,
 `ListObjectPropsCommandlet.Main`, `PlaylistParserBase.Import`, `M3UParser.Import`). A census of all 18 `System/*.u`:
 **no package exports any of the three as a `Class`** -- `ObjectProperty` is *imported* by all 18, `Viewport` by 6,
@@ -4393,7 +4393,35 @@ so their property records are in the image's native property table and in no shi
 the XBE's property table or a use-site census; it is **not** a packaging gap to re-run.
 
 **What is left on this thread.** One differ row (`CylinderBuilder.Build`, `JumpIfNot`, downstream) and 38 refusals:
-the 7 above, 5 `a call statement whose receiver's class the artifacts do not name`, 3 `a call the class chain does not
+the 2 above, 5 `a call statement whose receiver's class the artifacts do not name`, 3 `a call the class chain does not
 declare`, and the family tail. Files: `tools/uscript-emit.py`, `tools/emit-score.py`, `inventory/uscript_emit.csv`,
 `inventory/uscript_emit_join.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `docs/UNKNOWNS.md`,
 `PLAN.md`.
+
+## Stage 3, continued -- the cast table's `object` row, `X.Default`, a declaration's modifiers, and a `class<Z>` operand (measured 2026-11-27)
+
+11,648 -> **11,657**, **nine bodies gained, none lost**, residue 38 -> 29, differ unchanged at 1 (`CylinderBuilder.Build`).
+Every one of the nine is a body that was *refused*; no body that modelled before changed its bytes. Control: `emit-score.py`
+against `~/sg1/work/e2/base` (origin/main's tool on the same tree, which reproduces the committed artifact byte for byte).
+
+| rule | the evidence, from the shipped bytes | bodies |
+|---|---|---|
+| `string(<object>)` is `ObjectToString` (86) **whatever class the operand names** | the cast table keys that row on `object`, so `material`/`actor`/`pawn` found no row; every site writes `39 56` (`Actor.DisplayDebug`'s `GetItemName(string(Mesh))` is `1b 31 39 56 01 5c 03`) | 4: `Actor.DisplayDebug`, `AIController.DisplayDebug`, `ScriptedSequence.SetActions`, `StargatePawn.SetupSkin` |
+| a **`class<Z>` reference** is the same row | `_type_of` spells that operand `class.weapon` / `class.pawn`, which is neither `class` nor a class name, so both refused while the bytes write `39 56` (`GameStats.KillEvent`'s `string(Damage)`, `UnrealPlayer.CycleLoadout`'s `string(...NextLoadOut(PawnClass))`) | 2: `GameStats.KillEvent`, `UnrealPlayer.CycleLoadout` |
+| `X.Default` is **X's default object**, an instance of X and not a member of it | no chain carries a property named `Default`, so `_member_record` answered nothing; `class'Engine.GameInfo'.default.VotingHandlerClass.static.FillPlayInfo(PlayInfo);` refused though `VotingHandlerClass` is `class<VotingHandler>` on `GameInfo`'s own table. The class of the chain's head is the class of the link. | 1: `GameInfo.FillPlayInfo` |
+| a `var` declaration's **modifier list** was six words short | `globalconfig` 426, `cache` 50, `noexport` 38, `deprecated` 16, `edfindable` 14, `editinlinenotify` 4 in the two-copy tree; `var() editinline editconst noexport StreamInterface FileManager;` read *type `noexport`, name `StreamInterface`*, so `FileManager` lost its class | 2: `PlaylistParserBase.Import`, `M3UParser.Import` |
+
+The modifier list is now one hoisted `VAR_DECL_MOD` that the `within` join and `--check` read from the same place, because a
+modifier left out of a regex is a property that silently loses its type -- and the two `FileManager` rows were exactly that,
+not the native property table **U44** claimed for them (corrected there: five rows, not seven).
+
+`--check` gained two fixtures, each proven on a copy with only its own rule reverted: a `string(<class>)` and a
+`string(<class<Z>>)` cast (`cls2`, a local declared `class<probe>`) -- the reverted copy prints `a cast from class<probe> to
+string the image's cast table does not install`, which is the corpus's own refusal text.
+
+**What is left on this thread.** 29 refusals in the residue, of which 2 genuinely need the XBE's native property table
+(`Viewport` and `ObjectProperty.Name`); the rest are the `ForEach` receivers the statement walk splits at the wrong `.`
+(`ACTION_SGWaitForPlayer.PlayImpatience`, `ACTION_PlaySGSound.Play3DSound`), the two `ArrayCount` dimensions
+(`ReetouProtectorBot.SetEnemies`, `SquadAISG.UpdateSquadCoverNodes`), and the family tail. Files:
+`tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`,
+`docs/UNKNOWNS.md`, `PLAN.md`.
