@@ -1845,7 +1845,68 @@ walking.
 The next measurement is the front's first five bytes: they are the only part of the skeleton that varies per class
 (162 distinct at offset 1), and `class_prefixes.csv`'s `super_index` already says what the record opens with -- so
 the read is whether those bytes are the five dwords `UClass::Serialize` writes at `+0x498`..`+0x4ac` or a reference
-count the record carries on its own.
+count the record carries on its own. **Answered below** (*The front is the writer's field list, twice over*): the
+head is the class's own `FriendlyName`, and the five dwords are the front's **last** twenty bytes.
+
+### The front is the writer's field list, twice over: the name, then the state, then the five dwords
+
+Every earlier reading of the 61-byte front searched it: for a count, a tag stream, a size field, a base rate over
+four candidate grammars (`tools/class-record-front.py --sweep`, whose four readings all pass at chance). The writer
+does not have to be searched. `UClass::Serialize` (`0x0003a800`) calls `UState::Serialize` (`0x000394c0`), which calls
+`UStruct::Serialize` (`0x000392b0`), and each of the three bodies is straight-line, so the order of their writes is
+the order of the record's fields. Walked over the 1,185 fronts `class-record-group-anchor.py` anchors on the closing
+group, that list closes on the array's head on **1,156 of 1,185 (97.6%)**, and the field it decodes **second** is the
+class's own export-name index on **1,185 of 1,185** -- a value read out of the package's export table, not out of the
+bytes, so it cannot be a lucky parse:
+
+| field | writer | width | value on the 1,156 closing rows |
+|---|---|---|---|
+| one compact | none named | 1-3 | **null on 865**; 290 distinct, up to 900 |
+| **`FriendlyName`** | name slot at `+0x44`, asserted `!= NAME_None` (`UnClass.cpp:0x2e2`) | 1-5 (`2` on 1,123) | **the class's own name**, 1,185 of 1,185 |
+| `+0x5c` | `0x370e0`, version > 0x77 | 4 | **0 on every row** |
+| `+0x58`, `+0x54` | two `0x37110` | 4 + 4 | **`-1`/`-1` on 1,141**, a small pair on 15 |
+| script: `+0x4c` then the walker at `+0xa0` | `0x37110` + vtable `+0xa0` | 4 + n | **length 0 on every row** -- no script in the record |
+| `+0x80` | `0x371d0` (8 bytes) | 8 | 47 distinct, **zero on 411** |
+| `+0x88` | `0x371d0` (8 bytes) | 8 | **eight `0xff` on every row** |
+| `+0x94` | `0x37080` (2 bytes) | 2 | **two `0xff` on every row** |
+| `+0x90` | `0x370e0` | 4 | **0 on every row** |
+| `+0x498` | `0x370e0`, the class flags | 4 | 55 distinct, **every one carrying `0x12`** |
+| `+0x4a0`..`+0x4ac` | four `0x370e0` | 16 | **sixteen zero bytes on every row** |
+
+**So the front is the writer's fields in the writer's order, and the skeleton's two `0xff` runs are state, not
+markers.** The first run is `+0x58`/`+0x54` at `-1`, and the 15 rows that carry a value there carry a pair of small
+numbers instead (`KRepulsor` 25 and 587, `KarmaParams` 62 and 2,906), which is the shape of a recorded source line and
+text position and is reported rather than named. The second run is `+0x88`'s eight `0xff` **and** `+0x94`'s two,
+which the two writers put next to each other; `+0x80`, the eight bytes in front of them, is the only state field with
+real variance (47 values, its commonest a `0x00800000` high dword).
+
+**And the fifty-eight bytes the earlier reading assigned to `UStruct` are the five dwords plus the flags word.** The
+sixteen zero bytes at the front's end are `+0x4a0`..`+0x4ac` -- the four dwords `UClass::Serialize` writes after the
+flags and that `FUN_0003af60` clears at registration -- not the four dwords `UStruct::Serialize` writes before its
+script, which this walk finds earlier, at `+0x5c`/`+0x58`/`+0x54`/`+0x4c`, where they are `0`/`-1`/`-1`/`0`. The
+"three to five compact values" the gap census measured in front of the zeros are that flags dword read as compacts:
+its high bytes are zero on every value, so a 4-byte dword merges with the run and measures as 1-3 bytes plus sixteen,
+which is exactly the 19/20/21 the census saw (`0x12` = one byte, `0x216` = two, `0x4003032` = three).
+
+**What the values say.** The flags word carries both compiler bits (`0x12`) on all 1,156 -- the bits
+`FUN_0003af60` `or`s into `+0x498` -- and 55 distinct values, the commonest `0x216` (267), `0x1012` (115),
+`0x6000036` (92), `0x16` (79), `0x3012` (67) and `0x4003032` (66). The script length is zero on every row, so a class
+record in this build carries no script bytes at all and the class's `ScriptText` export is the only copy. And the
+`FriendlyName` here is the *record's* copy of the class's own name, which the package's export table already gives.
+
+**The close is not the discriminator; the values are.** Aimed at the array's head, the same walk closes on **0 of
+1,185**; started one byte late it closes on 244 and still names the class on 202 (it re-reads the same name index and
+only mis-splits the compact in front of it); and 893 of the 1,185 fronts hold **no other closing offset** in their
+whole 60-66 bytes, the rest at most two. What no shift reproduces is the joint of the eight-`0xff`, the two-`0xff`,
+the four zeros, the sixteen zeros and a flags dword carrying `0x12`, which is 1,156 of 1,156 on every field at once.
+
+**The 29 rows the walk does not close on** are 13 short by two, 7 by three, 4 by one, one by 98 and 4 that overrun --
+the same population the front census found at 60 and 66 bytes, and the next question on this page rather than a defect
+in the grammar.
+
+    make class-record-front
+    python3 tools/class-record-front.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --grammar --class Engine.KarmaParams
+    python3 tools/class-record-front.py --fields-report
 
 ### The tail is a count of name/reference pairs, and not an `FName` array
 
@@ -2237,6 +2298,12 @@ the four dwords' *width* is right and their *position* is not, and the three to 
 written by no body in the chain. The residue of 20 bytes the
 name-width work measured from the array's tail is that same gap seen from the other side.
 
+**Corrected 2026-11-28** (`The front is the writer's field list, twice over`, above): the 42-byte frame is right but
+that split is not. The 19-21 bytes are `UClass::Serialize`'s own tail -- the `+0x498` flags dword (3-5 bytes when read
+as compacts, because its high bytes are zero) followed by `+0x4a0`..`+0x4ac`'s sixteen zeros -- so the front is 58
+bytes of writer fields plus one compact, not 22 + 20, and the bytes in front of the array *are* written by a body in
+the chain.
+
     make class-record-order
     python3 tools/class-record-order.py --dump DUMP --class AmbientCreatures.HerdAnimal
     python3 tools/class-record-order.py --report
@@ -2262,6 +2329,14 @@ count.** The sixteen are exactly the four dwords `UStruct::Serialize` writes bet
 on every cooked class, which is why nothing in the payload distinguishes them and why every reading that looked for a
 non-zero field there found none. The compact run in front of them is the only content in the gap, and no body in the
 chain (`0x38dc0`, `0x392b0`, `0x394c0`, `0x3a800`) writes one at that place.
+
+**Corrected 2026-11-28** (`The front is the writer's field list, twice over`, above): that attribution is one group
+early. Walking the writer's order over the 1,185 anchored fronts finds `UStruct`'s four dwords at
+`+0x5c`/`+0x58`/`+0x54`/`+0x4c` *earlier* in the front, where they are `0`/`-1`/`-1`/`0`; the sixteen zeros at the
+gap's end are `+0x4a0`..`+0x4ac`, the four dwords `UClass::Serialize` writes after the flags word and that
+`FUN_0003af60` clears at registration, and the compact run in front of them is the `+0x498` flags dword (its high
+bytes zero, so a four-byte dword measures as one to three bytes plus sixteen). That is why the run is "written by no
+body": it is not a run at all.
 
 **What that settles and what it does not.** The arithmetic now closes: `prefix_end + 42` (22 state bytes and the five
 dwords) `+ 3..5` (the compact run) `+ 16` (the zero dwords) is `prefix_end + 61..63`, which is where the walk lands,

@@ -3668,6 +3668,24 @@ read order is `UState`'s 22 bytes then those 20, and the record carries no other
 `docs/NATIVE_VM.md`, *The middle's tail is a two-record array, and the count is in front of it*;
 `inventory/class_record_group_anchor.csv`.
 
+**2026-11-28 (twelfth): the front's first five bytes are the class's own `FriendlyName`, and the sixteen zero bytes
+at its end are `UClass`'s four cleared dwords.** The eleventh note's question was whether the five-byte head is the
+five dwords at `+0x498`..`+0x4ac`. It is not: walking the writer's order (`UStruct::Serialize` `0x000392b0`, then
+`UState::Serialize` `0x000394c0`, then `UClass::Serialize` `0x0003a800`) from the prefix's script reference gives one
+compact, then an `FName` that is **the class's own export-name index on 1,185 of 1,185** anchored fronts -- a value
+read from the package's export table, so a parse cannot produce it by accident -- then `+0x5c` = 0, `+0x58`/`+0x54` =
+`-1`/`-1` (1,141 of the 1,156 closing rows; the other 15 carry a small pair, the shape of a source line and text
+position), a script length of **0 on every row**, 8 + 8 + 2 + 4 state bytes (`+0x80` varies, `+0x88` is eight `0xff`,
+`+0x94` two, `+0x90` zero), the `+0x498` flags dword, and `+0x4a0`..`+0x4ac`'s **sixteen zeros**. The walk ends
+**exactly** on the array's head on **1,156 of 1,185 (97.6%)**, against **0 of 1,185** for the same walk aimed at the
+head, and 893 of the 1,185 fronts hold no other closing offset at all. So the two `0xff` runs are state
+(`+0x58`/`+0x54`, then `+0x88`/`+0x94`), not markers; the "3-5 compact run" the gap census measured is the flags
+dword, whose high bytes are zero (55 distinct values, **every one carrying the compiler bits `0x12`**); and both
+earlier attributions to `UStruct::Serialize`'s four dwords are one group early. Numbers:
+`docs/NATIVE_VM.md`, *The front is the writer's field list, twice over*; `inventory/class_record_front_fields.csv`.
+**What is still open** is the compact before the `FriendlyName` (1-3 bytes, null on 865 of 1,156, 290 distinct
+values), the 8-byte `+0x80` field (47 values), and the 29 rows the walk does not close on.
+
 ## U18. What a `delegate` property's default value is — closed: it is `{object, name}`, and three of the 42 were a locator offset
 
 **Observed.** Three class-level values do not render, and they are one property in three classes:

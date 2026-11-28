@@ -129,7 +129,7 @@ help:
 	@echo "  class-defaults-contradictions  every published start on a withheld class: 313 of 319 hold one tag, and 5 tags of 330 contradict their declared kind (needs the dump)"
 	@echo "  class-defaults-nostream  the 334 classes with no start: 281 hold not one declared property name, and their payloads name packages 155x their base rate (needs the dump)"
 	@echo "  class-defaults-recordend  the 334 with no start: the record closing group ends on the payload terminator on 331 of 334, so no defaults buffer follows (needs the dump)"
-	@echo "  class-record-front    the 3-5 byte front against four readings and three controls: a name, a tag, a reference, a width (needs the dump)"
+	@echo "  class-record-front    the 3-5 byte front against four readings and three controls, and the same front read in the writer's field order (needs the dump)"
 	@echo "  class-record-room     the 32 impossible block starts, re-located by the record fields (needs the dump)"
 	@echo "  class-tail-units      the record tail's units, and whether the 32 claims start inside one (needs the dump)"
 	@echo "  class-tail-run        the run after the last unit: names, an import reference, a name, a list; where the census starts"
@@ -2304,6 +2304,8 @@ class-defaults-recordend:
 class-record-front:
 	python3 tools/class-record-front.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --sweep -o inventory
 	@python3 tools/class-record-front.py --report
+	python3 tools/class-record-front.py --dump $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15 --grammar -o inventory
+	@python3 tools/class-record-front.py --fields-report
 
 archive-slots:
 	python3 tools/archive-slots.py --image $(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/default.xbe -o inventory
