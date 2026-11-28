@@ -19751,3 +19751,14 @@ sequence.
       text-only paragraph, the per-function generated block). Tools: `tools/jump-branches.py`,
       `tools/text-branches.py`. Artifacts: `inventory/jump_branches.csv`, `inventory/text_branches.csv`,
       `inventory/text_branch_functions.csv`.
+- [~] 3.7 **The `Function` payload's header run is measured, word by word**: `tools/header-run.py`
+  (`inventory/header_run.csv`, `make header-run`) reads the 16 bytes between `FriendlyName` and the script over all
+  12,472 `Function` exports. `UStruct::Serialize`'s `Ar.Ver() >= 0x77` gate is live at version 130, so the run is
+  four dwords: the gated field (zero on **12,360 of 12,360**), a **(line, character offset)** pair that points at the
+  function's **body** (the line `w2` falls on is `w1` on **10,967 of 11,477**, and `w2` is the first character after
+  the declaration's `{`), and the script's **in-memory size** (`--sizefield`'s field, re-derived here as a control).
+  The pair reproduces only against the text cut at its first `class `/`//` token -- the raw `TextBuffer`'s leading
+  fragment is two lines and ~95 bytes the compiler did not count -- which retires this page's earlier "declaration
+  position" reading. `--check` needs no dump: the per-package status counts reconcile with
+  `inventory/matching_baseline.csv`'s `scripted`/`scriptless`/`operator` columns.
+

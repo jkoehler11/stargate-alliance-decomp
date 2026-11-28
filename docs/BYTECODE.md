@@ -1809,6 +1809,43 @@ census anchored on `switch (` cannot see those blocks at all, which is why `tool
 matches the keyword and lets its body reader find the `{`. That single change moved the block census from **71** to
 **664** break statements: a walk anchored on the paren form reaches an eighth of the population it is counting.
 
+## The run between `FriendlyName` and the script: four words, measured (2026-11-28)
+
+`--start` fixed where the script begins (16 bytes past `FriendlyName`) without saying what those 16 bytes hold.
+`UStruct::Serialize` (`0x000392b0`) says what: after `Super`, `Children` and `FriendlyName` (the archive's `+0x1c`
+name method) it writes a dword behind the **`Ar.Ver() >= 0x77` gate**, two more dwords, and the script -- and the
+build's packages are version **130**, so the gate fires and every `Function` payload carries a fixed four-dword run.
+
+`tools/header-run.py` reads it out of every `Function` export in all 18 packages (`make header-run`,
+`inventory/header_run.csv`, `--check` in `make ci`), one row per export:
+
+* **`w0` is the gated field and it is zero in every payload that has one** -- 12,360 of 12,360. A reader that tripped
+  over it would learn nothing, and the version gate (not the field) is what the four-word width comes from.
+* **`w1`/`w2` are a source line and character offset**, and they point at the function's **body**, not its
+  declaration: `w2` is the first character after the declaration's `{` (the column histogram peaks at 1 -- the body's
+  own first line -- and `w2 - first token` is 0 on 6,269 rows), and the line it falls on is `w1` on **10,967 of
+  11,477** (95.6%). The pair reproduces only against the class text cut at its first `class `/`//` token: the raw
+  `TextBuffer` begins with a NUL run and a fragment of the banner, two lines and ~95 bytes the compiler did not
+  count. Read against the raw buffer instead, the pair looks two lines early on three quarters of the corpus -- the
+  reading this page carried before, which this measurement corrects.
+* **`w3` is the script's size in memory** (`--sizefield`'s field, 11,687 of 11,687): this artifact re-derives it
+  from a second path as a control -- equal to the stored script on 2,141 rows and never smaller.
+* The population: **12,360** payloads carry the run (11,687 scripted + 673 scriptless). The 112 operator
+  declarations are refused by `locate()` because they write `PreOperator`/`Operator`/`PostOperator` names in front of
+  the header (`--baseline`'s `unaligned`), and the artifact records that status rather than dropping the rows.
+* **2,018 rows name the function in more than one declaration** (overrides and state declarations), so the artifact
+  carries the candidate count and the nearest-line choice, not an average that would hide the ambiguity.
+
+<!-- generated:header-run -->
+| measure | answer |
+|---|---|
+| `Function` payloads carrying the run | **12360** of 12472 exports (11687 scripted, 673 scriptless; the 112 operator declarations write their three names in front of the header, which is why `locate()` refuses them) |
+| `w0` == 0 | **12360 of 12360** -- the dword behind `Ar.Ver() >= 0x77`, live at version 130 and always zero |
+| `w3` >= the stored script | **12360 of 12360**; equal on 2141, larger wherever the script carries a compact index operand (`w3` is the in-memory size `--sizefield` measures) |
+| `w1`/`w2` are a (line, offset) pair | the line `w2` falls on is `w1` on **10967** of 11477, within two lines on **11416**, below it on 430 |
+| declaration found in the shipped text | **11484** of 11687 scripted rows (2018 name it more than once, 203 not at all) |
+<!-- /generated:header-run -->
+
 ## Not measured
 
 * **Where a script starts inside a `Function` payload (U13).** The tail is solved (above), the header's encoded part

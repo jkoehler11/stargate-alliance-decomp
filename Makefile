@@ -1359,6 +1359,13 @@ opcode-refusals:
 
 # PLAN 3.8's scoreboard: per package, the denominator a rebuild is scored against and the negatives with names
 # (docs/MATCHING.md). Needs the packages; the page's block is then rendered from the artifact alone.
+# The 16 bytes `UStruct::Serialize` writes between `FriendlyName` and the script, over every Function export
+# (docs/BYTECODE.md, "The run between FriendlyName and the script"). Needs the packages; `--check` does not.
+header-run:
+	@$(PYTHON) tools/header-run.py "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
+	@$(PYTHON) tools/header-run.py --write-doc docs/BYTECODE.md
+	@echo "wrote inventory/header_run.csv, docs/BYTECODE.md"
+
 matching-baseline:
 	@$(PYTHON) tools/uscript-dis.py --baseline "$(SG1_DUMP)/Stargate_SG-1_-_The_Alliance-2005-12-15/System" -o inventory
 	@$(PYTHON) tools/uscript-dis.py --write-doc docs/MATCHING.md
