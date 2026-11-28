@@ -6956,6 +6956,31 @@ are limited to expected fields (checksum/timestamp) and documented.
   tail's widths are named*) + `docs/UNKNOWNS.md` U17 + `make class-record-fields` + this note. Reads the packages
   and the committed prefix table; no boot, no value decoded.
 
+### Execution notes (2026-11-28, the class record's middle closes on the closing group, and its front is a skeleton)
+
+- **The array's count is in the stream, and the anchor that shows it is the closing group.** `class-record-gap.py`
+  could only see 549 classes because it starts from an array located by a free head scan; anchored instead on the
+  group `class-tail-run.py` parses at `last_unit + 8`, a two-record array of `FUN_0003d900`'s grammar whose element
+  walk ends **exactly** on that start exists on **1,185 of 2,139** classes (one head on 1,120, two on 65), and the
+  same walk aimed two bytes past the group fits **0 of 2,139**. The count is 2 on 1,184 and the reference widths are
+  `2+1` on 718, so the tail of the middle is `[count 2][two 9-byte units][the group][defaults]`.
+- **The front is not a property block.** `prop-stream.py`'s tag walk from the prefix's end over the bytes in front
+  of the head reaches the head on **0 of 1,185**: a `None` at the first byte on 865 (zero properties), tags that
+  stop 43-60 bytes short on the rest. So the middle is not "the defaults stream written twice", and the 5 searches
+  from the block's side were looking for a second stream that is not there.
+- **And it is a fixed skeleton.** A per-offset census over the 1,180 fronts of 55-66 bytes finds `0xff` on all
+  1,180 at offsets 29-35 and on 889-1,164 at 7-14, `0x00` on all at 47-60 (the sixteen zero bytes are 45-60, 14 of
+  them universal), and a five-byte head at 0-4 that varies per class (162 distinct bytes at offset 1). The 91-byte
+  median middle is that 61-byte front, a 19-21-byte two-record array and a 7-11-byte group -- extent measured,
+  meaning open.
+- Tool (`tools/class-record-group-anchor.py`: `--class`, `--sweep`, `--front-census`, `--report`, and a `--check`
+  that drives a found head, the null, an out-of-table reference, a negative reference, the bounded zero run, a front
+  that tags and one that does not) + `inventory/class_record_group_anchor.csv` (2,139 rows, 21 columns) +
+  `docs/NATIVE_VM.md` (*The middle's tail is a two-record array, and the count is in front of it*) +
+  `docs/CLASS_DEFAULTS.md` (the stale next-instrument sentence corrected) + `docs/UNKNOWNS.md` U17 (eleventh) +
+  `make class-record-group-anchor` + this note. Reads the packages and three committed artifacts; no boot, no
+  Ghidra, no value decoded and no name published.
+
 ### Execution notes (2026-11-12, the class record opens with three references, and neither tail reading survives a control)
 
 - **The prefix is measured against the package's own export table, on every class.** `tools/class-prefix.py` reads the
