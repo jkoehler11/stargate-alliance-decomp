@@ -19590,3 +19590,22 @@ sequence.
       withdrawn -- the rest needs `Viewport.Actor` typed `PlayerController`, which no artifact carries;
       `TestInfo.TestSwitch` (an assert line the corpus does not pin) and `CylinderBuilder.Build` (the differ) are
       untouched.
+- [~] 3.6 the corpus score repaid, the import's owner, and the `%` that needs its site: **11,681 -> 11,684 modelled
+      / 11,684 byte-identical** (11,687 walked, 11,686 joined, **residue 2**; `inventory/uscript_emit.csv` and
+      `inventory/emit_differ.csv` both regenerated from one whole-corpus run, and the differ census corrected from a
+      stale `11,681 identical`). The three bodies are the debt #1002/#1004 left when they scored only the packages
+      their rules moved (`GUIController.GenerateFakeNames`, `StargateVoicePack.PlaySpeech`, `WindowConsole.CloseUWindow`,
+      `WindowConsole.LaunchUWindow`), repaid with no row lost. Two measurements on the thread, neither shipped as a
+      rule: (1) **a member call's callee and value type are the import's** -- when the receiver's class declares
+      neither and the package imports one `Function` of the name, the import's own owner answers (`import_owners`,
+      the join that already reads a `final` flag), which types `Viewport.Actor.GetEntryLevel()` a `levelinfo`; whole
+      corpus **11,684 -> 11,684, none moved**, and `WindowConsole.Tick`'s refusal moves one node later (the call's
+      `Context` size byte, 4) instead of gaining a body, so the rule is recorded, not shipped; (2) **an `int % int`
+      with the `39 44` conversion its result needs still nets -7** -- `CylinderBuilder.Build` gains its bytes and
+      eight bodies are lost over the four packages that carry the witnesses (4,379 -> 4,372), split into a pair the
+      compiler kept `float` (`ConeBuilder.Build`, `BuildCone`, `CylinderBuilder.BuildCylinder`) and a `%` it widened
+      with `39 3f` (the two `DeathMatch.Timer` bodies, `StargateHUD`/`GoauldConsoleHud`/`ReplicatorHUD` `DrawHUD`).
+      The next formulation keys on the **enclosing node's row** rather than the operator's own type, with
+      `CylinderBuilder.BuildCylinder` and the two `DeathMatch.Timer` bodies in the control set. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the import-owner size half (written,
+      `--check` P44 proven to bite, unscored) and the `%`-at-the-parent's-row formulation.
