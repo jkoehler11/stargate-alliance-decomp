@@ -1630,6 +1630,30 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       twelve rows left on the thread (`GUIController.GenerateFakeNames`'s `$` operand, `GUITabControl.RemoveTab`'s
       delegate, `StargateVoicePack.PlaySpeech`, `RechargingAmmo.Tick`, `TestInfo.TestSwitch`,
       `ExtendedConsole.PostRender`, `WindowConsole.Tick`, the four callee rows and `CylinderBuilder.Build`).
+- [x] 3.6 a callee the corpus declares and no `ScriptText` reaches, and a fractional literal:
+      **11,674 -> 11,677 modelled, every one byte-identical, none lost** (two bodies moved from a refusal into the
+      differ bucket, see below); residue 12 -> 9, differ 1 -> 3. Measured per body over the whole corpus (one run,
+      `--tree $WORK/scripts-all`, 18 packages) and compared row by row with the baseline `~/sg1/work/rf/sc1`
+      (11,674 / 12 residue / 1 differ): this bundle is `~/sg1/work/rf/sc5`, and the two `uscript_emit.csv` runs differ
+      by 0 rows removed, 3 added, 0 moved. (1) **A member call's callee can be declared in a class no shipped
+      `ScriptText` spells**, so its argument types are read from the corpus's own declarers where they agree at the
+      call's arity: `Viewport.Actor` types as `actor` (`Viewport` is engine-native), which declares neither
+      `SetPause` nor `ClientTravel`, and `TournamentConsole.LaunchUWindow`/`ConnectWithPassword` ship `1b 7b 01
+      <string> 24 00 28 16` -- a `string`, an enum ordinal as a byte, a `bool` (`_corpus_params`). (2) **An imported
+      callee's `final` flag is read off the import's own owner**: `Viewport.Actor.GetEntryLevel()` is `1c cf 01`
+      (`FinalFunction` over import `-79`) because `PlayerController` declares it `native final`; reading the flag off
+      `actor` wrote a by-name `1b` (`import_owners`). (3) **A fractional literal in an `int` site is narrowed at the
+      site**: `RechargingAmmo.Tick`'s `max(0.1, ...)` ships `1e cd cc cc 3d 39 44` because `Max` is
+      `Object`'s `int Max( int A, int B )`. Fixtures P36/P37/P39, each proven on a copy with only its rule reverted.
+      **The return-type half of the family is withdrawn in the same run**: answering `GetEntryLevel`'s `LevelInfo` /
+      `SetPause`'s `bool` from the corpus makes those two bodies byte-identical, but `_declares_void` reads an
+      unanswered type as void, so the agreement test retyped 159 modelled bodies (11,522 modelled) and the
+      single-declarer narrowing still cost 117 (11,557) -- the two `WindowConsole` rows now sit in the differ bucket,
+      one `Context` size byte apiece, and that byte is the next instrument. Not in this PR: `CylinderBuilder.Build`,
+      `TestInfo.TestSwitch`, `GUIController.GenerateFakeNames`, `GUITabControl.RemoveTab`,
+      `StargateVoicePack.PlaySpeech`, `ExtendedConsole.PostRender` (a `_cast_kind` widening measured and withdrawn:
+      it retypes 159 modelled bodies) and `WindowConsole.Tick`. Files: `tools/uscript-emit.py`,
+      `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
 - [~] 3.6 a `new`'s three slots, an `Outer` struct's width, and a cast whose name is also a function:
       **11,664 -> 11,671 modelled, every one byte-identical, none lost**; residue 22 -> 15, differ unchanged (1).
       Measured per body over the whole corpus in one run each against `origin/main`'s own tool on the same tree

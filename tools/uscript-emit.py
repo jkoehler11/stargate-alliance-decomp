@@ -3283,7 +3283,8 @@ def _rettype_on(cls, name, env):
         # No fallback to the body's own chain: a member call names the *receiver's* declaration, and a same-named
         # function on the body is a different record with its own return type. `GUIComponent.ServerXControllerEvent`
         # calls `Controller.ServerXControllerEvent(...)` (void) while GUIComponent's own override beside it returns
-        # `bool`; the fallback read the body's and wrote value size 4 where the package has 0.
+        # `bool`; the fallback read the body's and wrote value size 4 where the package has 0. The corpus's own
+        # declarers are the fallback only where they agree, and only when the receiver's chain declares nothing.
         return ""
     for c in env.get("order") or []:
         hit = rets.get((c, low))
@@ -3422,6 +3423,15 @@ def _func_on(cls, name, env):
         # receiver's *chain* in the text: `ProfileList.ItemCount()` is `1c d9 03` -- a FinalFunction naming the
         # import -- because `ItemCount` is `final` on `GUIListBox`, the chain's GUI ancestor.
         if any(low in finals.get(c, ()) for _p, c in _ancestors(chain, pack, cls.lower())):
+            return ("final", imp[0][0])
+        # ...and when the receiver types as a class that does not own the import at all, the chain's verdict is
+        # silence, not "not final": the import's own `package` field names the class the member belongs to
+        # (`_class_tables` keys it as `import_owners`), so the flag is read there. `Viewport.Actor` types as
+        # `actor` -- `Viewport` has no `ScriptText`, so nothing says its `Actor` is a `PlayerController` -- and
+        # `Viewport.Actor.GetEntryLevel()` ships `1c cf 01`, a FinalFunction naming the import of
+        # `PlayerController`'s `native final function LevelInfo GetEntryLevel()`.
+        owner = (env.get("import_owners") or {}).get(imp[0][0]) or ""
+        if owner and low in finals.get(owner, ()):
             return ("final", imp[0][0])
         return ("virtual", (env.get("names") or {}).get(low))
     return None
@@ -4412,7 +4422,19 @@ def emit_expr(expr, rettype, env, element_dim=0):
         if t == "int":
             if isinstance(v, float):
                 if not v.is_integer():
-                    raise Refused("a fractional literal in an int slot (%s)" % val)
+                    # A fractional literal in an `int` site is a float value **narrowed at the site**, and the
+                    # compiler writes it the way it writes any narrowing: `FloatConst` wrapped in `FloatToInt`
+                    # (`39 44`), not a truncated constant. `RechargingAmmo.Tick`'s
+                    # `Charge = fclamp(Charge+max(0.1, (RechargeRate*Delta)),0,MaxCharge)` ships
+                    # `... 92 01 cd 03 fa 39 44 1e cd cc cc 3d 39 44 ...`: `0.1` sits in `Max`'s `int` parameter
+                    # (`Core.Object`'s `native(250) static final function int Max( int A, int B )`), so the value
+                    # is 0 as far as the call is concerned -- and it is not folded, which is why the cast is in
+                    # the bytes. The slot is the image's own `(float, int)` row; a build without it refuses.
+                    slot = _cast_slots().get(("float", "int"))
+                    if slot is None:
+                        raise Refused("a fractional literal in an int slot (%s), whose FloatToInt slot the "
+                                      "image's table does not install" % val)
+                    return bytes([0x39, slot, 0x1E]) + struct.pack("<f", float(v)), "float-const-narrowed"
                 v = int(v)
             if v == 0:
                 return bytes([0x25]), "int-zero"
@@ -4709,7 +4731,43 @@ def _assign_at(stmt):
     return None
 
 
-def _callee_params(name, env, receiver=None):
+def _corpus_params(name, argc, env):
+    """`[(type, name, optional)]` from the corpus's own declarers of `name`, when they agree at this arity.
+
+    A member call can name a callee no declaration the receiver's chain carries is readable for, because the
+    receiver's *declared* class is in no shipped `ScriptText`: `Viewport` is engine-native
+    (`inventory/native_class_packages.csv`), so `Viewport.Actor` types as `actor` -- the class it is imported
+    as -- and `Actor` declares neither `SetPause` nor `ClientTravel`. The compiler that wrote those bytes had
+    the whole class tree, and what it wrote is exactly the conversions the declaration implies, so the
+    declaration is recoverable from the bytes: `Viewport.Actor.SetPause( True )` is `19 01 8e 07 00 04 1c
+    50 02 27 16` (one `bool` argument, written bare), and `Viewport.Actor.ClientTravel( URL, TRAVEL_Absolute,
+    false )` is `... 1b 7b 01 <string> 24 00 28 16` (a `string`, an enum ordinal as a byte, a `bool`).
+
+    The answer is only the *agreement*: keep the declarers that can accept `argc` arguments (a shorter list is
+    out, and so is one whose remaining parameters are not all `optional`), and answer only when every survivor
+    spells the same types for those `argc` arguments. `SetPause` has three declarers in this corpus --
+    `PlayerController( BOOL bPause )`, `StargatePlayer( bool bPause )` and `GameInfo( BOOL bPause,
+    PlayerController P )` -- and at one argument the third is out (its second parameter is required) while the
+    other two agree on `bool`.
+    """
+    cands = (env.get("params_by_name") or {}).get(name.lower()) or []
+    keep = []
+    for _owner, plist in cands:
+        if len(plist) < argc:
+            continue
+        if any(not p[2] for p in plist[argc:]):
+            continue
+        keep.append(plist)
+    if not keep:
+        return None
+    first = [(p[0].lower(), bool(p[2])) for p in keep[0][:argc]]
+    for plist in keep[1:]:
+        if [(p[0].lower(), bool(p[2])) for p in plist[:argc]] != first:
+            return None
+    return keep[0]
+
+
+def _callee_params(name, env, receiver=None, argc=None):
     """`[(type, name)]` from the declaration of the callee the class chain inherits it from.
 
     With a `receiver` the answer is the receiver's chain only: `_params_on` refuses to fall back, because a
@@ -4734,6 +4792,8 @@ def _callee_params(name, env, receiver=None):
         hit = params.get((cls, low))
         if hit:
             return hit
+    if argc is not None:
+        return _corpus_params(name, argc, env)
     return None
 
 
@@ -4816,7 +4876,8 @@ def emit_call(stmt, env, receiver=None, head=None):
         head = bytes([0x1C]) + write_index(how[1])
     else:
         head = bytes([0x1B]) + write_index(how[1])
-    params = _callee_params(stmt[0][1], env, receiver)
+    _argc = len(args) - (1 if args and not args[-1] else 0)
+    params = _callee_params(stmt[0][1], env, receiver, argc=_argc)
     if params is None:
         if args:
             raise Refused("a call whose callee declaration the text does not carry (%s, %d argument(s))"
@@ -6831,6 +6892,13 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
     # where every declarer agrees. `NM_DedicatedServer` is `LevelInfo.ENetMode`'s ordinal 1 in one class and
     # nothing else, so a body whose chain never reaches `LevelInfo` can still write `24 01` for it.
     enum_by_name = {nm: next(iter(v)) for nm, v in enum_seen.items() if len(v) == 1}
+    # The corpus's declarers of a name, by name: `Viewport.Actor`'s declared class is in no `ScriptText` (the
+    # class is engine-native), so a call through it names a callee the receiver's chain cannot answer -- and the
+    # compiler that wrote those bytes had the whole class tree. `_corpus_params`/`_corpus_rettype` are that
+    # reading, and they answer only where the declarers agree.
+    params_by_name = {}
+    for (c, low), plist in params.items():
+        params_by_name.setdefault(low, []).append((c, plist))
     # The qualified spelling's table: `(enum, constant)` -> ordinal, kept only where every declaration agrees.
     # `ERenderStyle.STY_Normal` is 1 in `Actor.uc` and in `SGMenuInteraction.uc`, so the pair answers; a pair two
     # classes spell at different ordinals is dropped rather than guessed.
@@ -6960,6 +7028,7 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
                    "corpus_funcs": corpus_funcs, "decl_index": index,
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
+                   "params_by_name": params_by_name,
                    "within_proptypes": within_proptypes,
                    "class_names": pkg_class_names, "order": scope["order"], "consts_by_cls": consts_by_cls,
                    "rets": rets, "voids": voids, "assert_lines": alines, "assert_cursor": [0],
@@ -7677,10 +7746,16 @@ WANT = {
     # IntConstByte 29)`) and `1` as `26` (`IntOne`) in exactly this position, so the node is emitted and the
     # fixture is a WANT case with the corpus's own shape.
     "compoundarg": "1b2992262c021616040b47",
+    # A **fractional literal in an `int` site** is a float value narrowed at the site: `FloatConst` inside
+    # `FloatToInt` (`39 44`), the same wrapper any narrowing gets, not a truncated constant.
+    # `RechargingAmmo.Tick`'s `Charge = fclamp(Charge+max(0.1, (RechargeRate*Delta)),0,MaxCharge)` ships
+    # `... 92 01 cd 03 fa 39 44 1e cd cc cc 3d 39 44 ...`, with `0.1` in `Max`'s `int` parameter
+    # (`Core.Object`'s `native(250) static final function int Max( int A, int B )`).
+    "floatarg": "1b293944" + "1e" + struct.pack("<f", 1.5).hex() + "16" + "040b47",
 }
 
 # Bodies the emitter must refuse, each for a named reason rather than a guess.
-REFUSE = ("floatarg", "wrongargc", "nativestub", "callbadnative", "callmissing",
+REFUSE = ("wrongargc", "nativestub", "callbadnative", "callmissing",
           "castnoslot", "opnoslot", "incfloat", "callunknown", "acountunknown", "acountmemberbad", "badclass",
           "badstatic", "eachnested", "callglobalnative", "badenummember", "rotexpression",
           "setdelegatebad")
@@ -9035,6 +9110,81 @@ def check(args):
         return 1
     if _class_of([("ident", "Viewport")], dict(nenv, class_names=env["class_names"])) != "":
         print("FAIL uscript-emit: a class name the package does not import was accepted")
+        return 1
+    # P36: a member call's callee can be declared in a **class no `ScriptText` spells**, and then the corpus's
+    # own declarers are the only evidence for its parameter types. `Viewport.Actor` types as `actor` (`Viewport`
+    # is engine-native, so nothing in the corpus says the property holds a `PlayerController`), and
+    # `Viewport.Actor.SetPause( True )` ships `19 01 8e 07 00 04 1c 50 02 27 16` -- the `True` written bare, as
+    # a `bool` parameter writes it. The controls: a name whose declarers disagree at the call's arity, and an
+    # arity no declarer can take -- both stay refused, so the rule is the agreement and not "any name answers".
+    penv = dict(env, names=dict(env["names"], probeextra=57, probetwo=58),
+                corpus_funcs=set(env.get("corpus_funcs") or ()) | {"probeextra", "probetwo"},
+                params_by_name={"probeextra": [("probe", [("float", "F", False)]),
+                                               ("helper", [("float", "F", False)])],
+                                "probetwo": [("probe", [("int", "A", False)]),
+                                             ("helper", [("float", "F", False)])]})
+    try:
+        got, _model, _shape = emit_body(tokens_of("TargetH.ProbeExtra(1);"), "", penv, False)
+    except Refused as exc:
+        print("FAIL uscript-emit: a callee the corpus carries refused (%s)" % (exc,))
+        return 1
+    # The statement is the member call's `Context` around the call; what this fixture is about is the argument:
+    # `1` in a `float` parameter is the `FloatConst` the declared type picks (`return 1` in a float function is
+    # `1e 0000803f` too), so the bytes say the parameter list arrived.
+    want = bytes([0x1B]) + write_index(57) + b"\x1e" + struct.pack("<f", 1.0) + b"\x16" + b"\x04\x0b\x47"
+    if got[0] != 0x19 or not got.endswith(want):
+        print("FAIL uscript-emit: a call typed by the corpus's declarers emits %s, expected ... %s"
+              % (got.hex(), want.hex()))
+        return 1
+    if _callee_params("ProbeTwo", penv, "helper", argc=1) is not None:
+        print("FAIL uscript-emit: declarers that disagree on the argument's type answered")
+        return 1
+    if _callee_params("ProbeExtra", penv, "helper", argc=2) is not None:
+        print("FAIL uscript-emit: an arity no declarer accepts answered")
+        return 1
+    try:
+        emit_body(tokens_of("TargetH.ProbeTwo(1);"), "", penv, False)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a call to disagreeing declarers was emitted")
+        return 1
+    # P37: an imported callee's **`final`** flag is read off the import's own owner, not off the receiver's
+    # chain, when the receiver types as a class that does not own the import. `Viewport.Actor.GetEntryLevel()`
+    # ships `1c cf 01` -- a FinalFunction naming import `-79` -- because `GetEntryLevel` is
+    # `native final function LevelInfo GetEntryLevel()` on `PlayerController`; reading the flag off `actor`
+    # (which declares nothing of the name) wrote a by-name `1b` and the body differed. The control is a name
+    # the owner does not declare final, which keeps the by-name call.
+    fenv = dict(env, class_names=env["class_names"] | {"actor", "playercontroller"},
+                imports={"getentrylevel": [(-79, "Function")]},
+                import_owners={-79: "playercontroller"},
+                final_of={"playercontroller": {"getentrylevel"}})
+    if _func_on("actor", "GetEntryLevel", fenv) != ("final", -79):
+        print("FAIL uscript-emit: an imported final callee was not named as a record")
+        return 1
+    if _func_on("actor", "GetEntryLevel", dict(fenv, final_of={}))[0] != "virtual":
+        print("FAIL uscript-emit: an import its owner does not declare final stopped being a by-name call")
+        return 1
+    # P39: a fractional literal in an `int` site is `FloatConst` inside `FloatToInt`; an **integral** float at
+    # the same site still folds to the int form, which is what keeps the rule from retyping every float.
+    try:
+        got, _shape = emit_expr([("number", "1.5")], "int", dict(env, _root=True, root_site="int"))
+    except Refused as exc:
+        print("FAIL uscript-emit: a fractional literal in an int site refused (%s)" % (exc,))
+        return 1
+    want = bytes([0x39, _cast_slots()[("float", "int")], 0x1E]) + struct.pack("<f", 1.5)
+    if got != want:
+        print("FAIL uscript-emit: a fractional literal in an int site emits %s, expected %s"
+              % (got.hex(), want.hex()))
+        return 1
+    try:
+        got, _shape = emit_expr([("number", "2.0")], "int", dict(env, _root=True, root_site="int"))
+    except Refused as exc:
+        print("FAIL uscript-emit: an integral float in an int site refused (%s)" % (exc,))
+        return 1
+    if got != b"\x2c\x02":
+        print("FAIL uscript-emit: an integral float in an int site emits %s, expected IntConstByte 2"
+              % got.hex())
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
