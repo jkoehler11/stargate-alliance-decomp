@@ -1603,6 +1603,31 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       because `_source_index` reads the package copy last (`GetDefenderNum` is identical at `042cff040b47`). Not in
       this PR: `ObjectivesPanel.InitComponent`'s write-up and the family tail. Files: `tools/uscript-emit.py`,
       `inventory/uscript_emit.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
+- [~] 3.6 a `new`'s three slots, an `Outer` struct's width, and a cast whose name is also a function:
+      **11,664 -> 11,671 modelled, every one byte-identical, none lost**; residue 22 -> 15, differ unchanged (1).
+      Measured per body over the whole corpus in one run each against `origin/main`'s own tool on the same tree
+      (`3667b19`, a `wt-base` worktree; its run answered 11,664, the committed artifact's own census). (1) **A
+      `new` node's three argument slots are not all objects**: `NewToken` reads the outer expression, then the
+      object's **name** as a `StringConst` and its **flags** as an `IntConst`, and emitting every argument with the
+      `object` expectation refused the only two bodies that spell a name -- `TestInfo.BeginPlay`'s `new(self,"")`
+      (`1f 00`) and `SGVoicePackExtended.PostBeginPlay`'s `new(none,"VoiceSelector",RF_Transient)`
+      (`2a 1f <name>00 1d 00400000`). (2) **An `Outer`-wrapped read's size byte is `_value_width`'s**, so a
+      struct word is `STRUCT_SIZE`'s row: `CheatManager` is `within PlayerController` and `Teleport`/`Summon` read
+      `Actor.Rotation` through `vector(Rotation)` (a `rotator`, width 12, `19 01 8e 05 00 0c`), which
+      `PROP_SIZE` alone could not answer -- `vector` is the one struct word that table carries. (3) **A
+      call-shaped name that is both a class and a function is a cast when the arity says so**: `_cast_name` adds
+      the arity (`Trigger(X)` is a cast though `Actor` declares the two-argument `event Trigger(...)`) and
+      `_emit_cast` re-derived the kind and refused -- passed in as `kind=` now, and a call with no kind still
+      refuses (`Door.SpecialHandling`, `SGInteraction.InteractionUsed`, `CommandInterface.TestTraceActors`, all
+      `2E 7c 04`). **Fixtures P31/P32/P33, each proven against a revert copy** (P31 *a `new` with a name and flags
+      refused*, P32 *an `Outer` read of a `rotator` refused*, P33 *a cast to a class-and-function name refused*);
+      each catches `Refused` and prints its own FAIL, and a struct the table lacks (`interpcurvepoint`) plus a
+      string in the outer slot stay refused as controls. Doc: `docs/COMPILER_FRONTEND.md`, section of the same
+      name. Not in this PR: the fifteen rows left on the thread -- `MaplistManager.ShiftMap` (a callee returning
+      `array.mapitem`) and `GUIController.GenerateFakeNames` (an element of an untyped array) next, then the three
+      *member not a property* rows, the two unnamed receivers, `RemoveTab`'s delegate, and `CylinderBuilder.Build`
+      (the one differ). Files: `tools/uscript-emit.py`, `inventory/uscript_emit.csv`,
+      `inventory/uscript_emit_join.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
 - [~] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       **the serializer is identified** (`docs/NATIVE_VM.md`, `inventory/class_serialize_slots.csv`): slot 11 of every
       class table is `Serialize`, `UStruct`'s is at `0x000392b0`, and its decompiled body shows the script stored as

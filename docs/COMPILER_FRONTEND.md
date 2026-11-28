@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,664 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,671 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4508,3 +4508,62 @@ shipped `return 255;` (and one more line the same way). `_source_index` walks ea
 assigns by class, so the package copy is read last and wins: `GetDefenderNum` is `042cff040b47`, identical. Both score
 runs read the same tree, so the comparison is unaffected -- but a tool that ever preferred the first file, or the flat
 copy alone, would measure the experiment. Re-extract the tree from the packages if a GameInfo row ever moves.
+
+## Stage 3, continued -- a `new`'s three slots, an `Outer` struct's width, and a cast whose name is also a function (measured 2026-11-27)
+
+Three rules, scored **per body** over the whole corpus against `origin/main`'s own tool on the same tree
+(`--tree $WORK/scripts-all`, 18 packages, one run each):
+
+| run | modelled | gained | lost | newly differing | residue |
+|---|---|---|---|---|---|
+| `origin/main`'s `uscript-emit.py` (a `wt-base` worktree at `3667b19`) | 11,664 | -- | -- | -- | 22 |
+| this bundle, same tree | **11,671** | **7** | **0** | **0** | 15 |
+
+**All seven gained bodies are byte-identical**, and the residue falls 22 -> 15 by exactly those seven rows -- no
+row changed reason and none moved from a refusal into a differ. Each gained body and the reason it carried at the
+baseline:
+
+| body | baseline reason |
+|---|---|
+| `TestInfo.BeginPlay`, `SGVoicePackExtended.PostBeginPlay` | a quoted literal in a object function |
+| `CheatManager.Teleport`, `CheatManager.Summon` | a name this package declares only on another class's chain (the `Outer.<struct>` shape) |
+| `Door.SpecialHandling`, `SGInteraction.InteractionUsed`, `CommandInterface.TestTraceActors` | a call the class chain does not declare |
+
+- **A `new` node's three argument slots are not all objects.** `NewToken` reads the outer expression, then the
+  object's **name** as a `StringConst` and its **flags** as an `IntConst`; emitting every argument with the
+  `object` expectation refused the only two corpus bodies that spell a name at all -- `TestInfo.BeginPlay`'s
+  `new(self,"")` (`1f 00`) and `SGVoicePackExtended.PostBeginPlay`'s
+  `new(none,"VoiceSelector",RF_Transient)` (`2a 1f <name>00 1d 00400000`) -- from the leaf that refused the
+  empty string because its slot asked for an object. The slots are typed **by position** (`object`, `string`,
+  `int`); a string in the outer slot still refuses, and `new()` still writes three `Nothing`s.
+- **An `Outer`-wrapped read's size byte is `_value_width`'s, so a struct word is `STRUCT_SIZE`'s row.**
+  `CheatManager` is `within PlayerController`, and `Teleport`/`Summon` read `Actor.Rotation` through a cast
+  (`vector(Rotation)`) -- a `rotator`, whose width 12 the package writes as `19 01 8e 05 00 0c`. The wrapper asked
+  `PROP_SIZE` alone, which carries exactly one struct word (`vector`, from the `SetFlash` measurement), so both
+  bodies refused while the sibling `vector` case next door resolved. The width now comes from `_value_width`,
+  which is `STRUCT_SIZE` for a struct and `PROP_SIZE` for a primitive; a struct the table genuinely lacks
+  (`interpcurvepoint`) still refuses.
+- **A call-shaped name that is both a class and a function is a cast when the arity says so.** `_cast_name` adds
+  the arity -- `Trigger(X)` is a cast to the class even though `Actor` declares the two-argument
+  `event Trigger(Actor, Pawn)` -- and `_emit_cast` re-derived the kind from the name alone, answered "neither" for
+  exactly those names and refused *a call the class chain does not declare* one line before the `2E 7c 04` it was
+  about to write. The caller's answer is now passed in (`kind=`), and a call with no kind still refuses rather
+  than guessing, so the rule is not widened: `Door.SpecialHandling` and `SGInteraction.InteractionUsed` write
+  `2E 7c 04` (`DynamicCast 7c04`) and `CommandInterface.TestTraceActors` the same cast.
+
+**The three fixtures are P31/P32/P33, and each one is proven to bite.** A copy of the tool with only that rule
+reverted answers, in `--check` and by name: P31 *a `new` with a name and flags refused (a quoted literal in a
+object function)*, P32 *an `Outer` read of a `rotator` refused (the `Outer.<struct>` shape)*, P33 *a cast to a
+class-and-function name refused (a call the class chain does not declare)*. Each fixture drives the walk directly,
+so it catches `Refused` and prints its own FAIL -- a bare call would die with a traceback and name no rule.
+
+**Not in this bundle.** The fifteen residue rows left on this thread, by family: `MaplistManager.ShiftMap` (a
+callee returning `array.mapitem`, which this walk carries no value size for) and `GUIController.GenerateFakeNames`
+(an element of an array the artifacts do not type, `i ++ $ FakeNames`) are the two the thread named next; then
+`GUITabControl.RemoveTab` (a delegate assignment to a name the table does not carry), three *member not a
+property* rows (`ListObjectPropsCommandlet.Main`, `GUIController.GetPlayerController`,
+`TournamentConsole.LaunchUWindow`), two *receiver's class unnamed* rows (`TournamentConsole.ConnectWithPassword`,
+`WindowConsole.CloseUWindow`), `ExtendedConsole.PostRender` (a `texture` object literal the class table does not
+name), `StargateVoicePack.PlaySpeech`, `RechargingAmmo.Tick` (a fractional literal in an `int` slot),
+`WindowConsole.Tick` (a cast row the image does not install), `WindowConsole.LaunchUWindow`, `TestInfo.TestSwitch`
+(an assert line the corpus does not pin), and `CylinderBuilder.Build`, the one body that emits and still differs.
