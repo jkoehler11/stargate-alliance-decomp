@@ -19642,3 +19642,31 @@ sequence.
       is still open. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Files: `tools/uscript-emit.py`,
       `inventory/uscript_emit.csv`, `inventory/uscript_emit_join.csv`, `inventory/emit_differ.csv`,
       `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
+
+- [~] 3.7 the label join reads the source's symbolic values: **836 of 844 arms placed** (from 794) and the
+      unmatched **50 -> 8**, with **344** pairings that were an inferred position now a value match -- three
+      increments on one thread, each measured on the corpus and held by `make ci`.
+      (1) **A `case` label is a value the source spells as a name.** `tools/text-switches.py` folds it before it
+      compares: **225** `enum` bodies the class texts declare (**1,642** members, a member's value its declaration
+      ordinal) resolve **363** labels -- `case EInputKey.IK_Escape:` qualified, `case IST_Press:` bare -- and a hex
+      literal (`case 0x26:`, **29** of them) is an integer the old `\d+` rule read as an expression. Arms that
+      find a label **794 -> 831**, positional pairings **471 -> 127**, and the fold refuses where it would guess:
+      **2** labels are a bare member `InteractionType` and `TranslationUser` number differently (`SG1_TEALC`,
+      `SG1_JACKSON`), carried as the `labels_ambiguous` census row.
+      (2) **The byte side read a cast as an expression.** `tools/switch-arms.py`'s `label_of` now follows a
+      `PrimitiveCast`/`MetaClassCast` node to its child, so `GameProfile.TextPositionDescription`'s five arms
+      (`case EPlayerPos.POS_Auto:` compiles to `PrimitiveCast <type> <byte>`) carry `0`..`4`: expression-valued
+      arms **59 -> 54**, arms placed **831 -> 836** of **844**, and the text's five labels meet them by value.
+      (3) **The page's residue numbers were stale and are corrected in place**: the operator body joins
+      (`Engine.MaplistRecord.==` is `equalequal_mapitemmapitem`, 6 terms / 6 `JumpIfNot`, agree -- the
+      composition `tools/class-text-bodies.declared_name` already does), the "Not measured" bullet's 249 sites
+      over 111 names is the census's 3 / 38 / 7 rows, and the four arms whose exit reads differently under the
+      value pairing are listed rather than counted.
+      What is left, named: **5** arms in `WindowConsole.KeyEvent`, a class that declares that function name twice
+      (class body and state body) and whose `case ConsoleHotKey:` is a `var config byte` no enum declares --
+      the join still matches one span's blocks per site; the 2 ambiguous members, whose route is the enum the
+      switch's own header casts to (`switch (InteractionType(user))`); **1** arm whose text spells its label in a
+      comment (`TriggeredScript.IsRelevant`); and the branch census's **11** `jumps_unresolved` tokens, named only
+      by their two functions. Doc: `docs/BYTECODE.md`, the switch section and "Not measured"; artifacts:
+      `inventory/text_switches.csv`, `inventory/switch_arms.csv`, `inventory/switch_join.csv`, the page's three
+      generated blocks.

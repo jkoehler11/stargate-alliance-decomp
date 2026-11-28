@@ -122,6 +122,10 @@ def load_tool(name, filename):
 
 # A leaf token a `Return` can be handed as its whole operand. Only a token in this set, starting exactly where the
 # `Return` ends, is read as that operand rather than as a statement of the arm.
+# The postfix operators that wrap a value in a type without changing which value it is: a `case` label may be
+# written as a cast, and its own operand stream is `<type byte> <expression>`.
+CAST_HEADS = frozenset(("PrimitiveCast", "MetaClassCast"))
+
 RETURN_OPERAND_LEAVES = frozenset((
     "LocalVariable", "BoolVariable", "InstanceVariable", "IntConst", "IntConstByte", "FloatConst", "ByteConst",
     "True", "False", "Nothing", "ObjectConst", "NameConst", "StringConst", "VectorConst", "RotationConst",
@@ -155,6 +159,11 @@ def label_of(node, resolve=None):
         return "int", str(int.from_bytes(raw[:4], "little", signed=True)) if len(raw) >= 4 else ""
     if name == "StringConst":
         return "string", raw.split(b"\x00", 1)[0].decode("latin-1")
+    if name in CAST_HEADS and k.get("children"):
+        # A case value the compiler typed: `case EPlayerPos.POS_Auto:` writes `PrimitiveCast <type> <literal>`, so
+        # the value is underneath the cast. `GameProfile.TextPositionDescription`'s five arms were read as "an
+        # expression" for want of this, and its text spells the same five values `0..4`.
+        return label_of({"children": k["children"][:1]}, resolve)
     if name == "NameConst":
         # The operand is the archive's *compact* index (bit 7 sign, bit 6 "more bytes", six bits then seven),
         # not a fixed-width integer: `74 06` is 0x1b4 = `Music`, and reading it as a word answers the name 1,216
