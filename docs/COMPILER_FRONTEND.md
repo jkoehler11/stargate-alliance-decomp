@@ -4425,3 +4425,35 @@ string the image's cast table does not install`, which is the corpus's own refus
 (`ReetouProtectorBot.SetEnemies`, `SquadAISG.UpdateSquadCoverNodes`), and the family tail. Files:
 `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`,
 `docs/UNKNOWNS.md`, `PLAN.md`.
+
+## Stage 3, continued -- a `foreach` head's chain, and an array dimension one token past the `;` (measured 2026-11-27)
+
+Two statement-walk rules, each settled **per body** on `StargateGame.u` against `origin/main`'s own tool on the same
+tree (that control run reproduces the committed artifact for the package byte for byte):
+
+| run | modelled | gained | lost | newly differing | residue |
+|---|---|---|---|---|---|
+| `origin/main`, `--only StargateGame.u` | 3,248 | -- | -- | -- | 8 |
+| this bundle, same tree and package | **3,251** | **3** | **0** | **0** | 5 |
+
+- **A `foreach`'s head is the whole chain, not its first call.** `_stmt_at` scanned forward to the first `(` and took
+  everything up to its match, so `ACTION_SGWaitForPlayer.PlayImpatience`'s
+  `ForEach MyController.GetSoundSource().RadiusActors(...)` read its head as `MyController.GetSoundSource()` and its
+  **body** as whatever followed -- starting at the `.` of `.RadiusActors(...)`, and running on into the real body
+  statement, so `_class_of` was asked to name a receiver that begins with a dot and refused *a call statement whose
+  receiver's class the artifacts do not name* (`ACTION_PlaySGSound.Play3DSound` spells the same shape with `C.`). The
+  head now ends at the first depth-0 `)` that is neither followed by `.` (a chain that continues through a call) nor by
+  `[` (an element of what the call returned): both bodies are byte-identical, and the third body the same split cost
+  -- `ObjectivesPanel.InitComponent`'s `foreach PlayerOwner().DynamicActors(...)` -- is the same rule in another
+  package and is *not* in this bundle's measurement.
+- **`_array_dims` stopped one token past a declaration's `;`.** A matched declarator advanced `k` by five, which is one
+  past the `;` of a single-name declaration, so the loop then hunted for the next **depth-0** `;` -- at class scope
+  many declarations away -- and every `var`/`local` in between was skipped. `SquadAISG`'s `var Actor
+  HideNodeCandidates[32];` hid its own `local float HideNodeDistances[32];` further down, and
+  `ArrayCount(HideNodeDistances)` refused as *a name whose declared dimension the source does not spell*. A `,`
+  separator still continues the scan (a multi-declarator statement), a `;` ends it.
+
+**What is left on this thread.** 29 refusals before this bundle; the same rows in the other 17 packages are not
+re-measured here. `ReetouProtectorBot.SetEnemies`'s remaining `ArrayCount` is a **parameter** dimension
+(`function SetEnemies(Pawn Enemies[16])`), which `_array_dims` does not read -- a rule, not a table miss, and the next
+item on this thread.
