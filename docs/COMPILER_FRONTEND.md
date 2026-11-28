@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,677 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,681 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4726,3 +4726,61 @@ corpus does not pin), `GUIController.GenerateFakeNames` (an element of an array 
 `texture` object literal whose type word the package neither exports nor imports -- the corpus-class widening for
 `_cast_kind` was measured and **withdrawn**: it gains that body but retypes 159 modelled ones) and
 `WindowConsole.Tick` (the return type above).
+
+## Stage 3, continued -- a statement call's value size, a cleared delegate, and a type word the package holds (measured 2026-11-28)
+
+**11,677 -> 11,681 modelled, every one byte-identical, none lost**; residue 9 -> 5, the differ census 3 -> 0.
+Measured in one whole-corpus run (`--tree $WORK/scripts-all`, 18 packages, 11,687 bodies walked) and compared row
+by row with `origin/main`'s own `inventory/uscript_emit.csv`: **0 rows removed, 0 moved, 4 added** --
+`WindowConsole.CloseUWindow`, `WindowConsole.LaunchUWindow` (both were *differ* rows), `GUITabControl.RemoveTab`,
+`ExtendedConsole.PostRender`. `inventory/emit_differ.csv` also carried a stale census (11,674 identical while the
+artifact held 11,677); it now reads 11,681, the same number as `inventory/uscript_emit.csv`.
+
+**(1) A statement call's `Context` size byte is the width of the callee's declared value, and a callee the
+receiver's chain does not declare is answered by the corpus's *agreeing* declarers.** The sentence above asked what
+the compiler wrote that byte *from* at the two `WindowConsole` sites; the answer is the return type, and the
+declaration is recoverable because the compiler that wrote the bytes had it. `Viewport.Actor.SetPause( False );`
+ships `19 19 01 62 03 05 00 04 01 a1 07 00 | 04 | 1b 50 02 28 16`: the inner `Context` (`Viewport` -> `Actor`) and
+the outer one's **skip word 7** were already right, and the outer size byte is `04` -- the width of the `bool`
+`SetPause` returns -- where an unanswered type wrote `00`. `actor`, the class `Viewport.Actor` types as, declares
+neither `SetPause` nor `GetEntryLevel`; the corpus has three declarers of `SetPause`
+(`PlayerController( BOOL bPause )`, `StargatePlayer( bool bPause )`, `GameInfo( BOOL bPause, PlayerController P )`),
+the third cannot take one argument and the other two agree, which is the same join `_corpus_params` already makes
+for the *arguments* (`_corpus_return`, added here). `LaunchUWindow` is the same byte at its own site.
+
+**The wide form of this rule is still wrong, and the difference is where the answer is allowed to land.** The
+withdrawn attempt (#1002) answered the callee's return type itself, which pre-empts `_declares_void`: a callee the
+receiver's chain *does* declare as void models on the size 0 that declaration implies, and 159 of those bodies were
+retyped. This form asks only where the chain declares nothing **and** `_declares_void` is false, and it uses the
+answer for **one byte** -- `rtype` stays unanswered, so no conversion, operator, argument or `_type_of` reads it.
+That is why the same population now costs nothing: 0 bodies moved over 11,681.
+
+**(2) A delegate cleared on a member target is the zero name index, as the bare-property branch already writes it.**
+`GUITabControl.RemoveTab`'s `TabStack[i].OnClick = None;` ships `45 | 19 10 00 4e 04 01 29 | 05 00 | 08 | 01 1f | 44 00`
+-- `LetDelegate`, the ordinary member `Context` (skip 5, size 8), then `DelegateProperty` over name index **0**. The
+bare branch has carried that rule since `SGLabel.InitComponent`'s `OnKeyEvent = none;`; the member branch asked the
+name table for `None` and refused the body. A delegate's value is a name index in both spellings, so `none` is 0 and
+not `NoObject`.
+
+**(3) An object literal's type word names a class the package need not import, as long as the package holds an
+object of it.** `ExtendedConsole.ConsoleVisible.PostRender` writes `texture'GUIContent.Menu.BorderBoxA'`; `GUI.u`
+holds textures (its objects table's kinds say `Texture`) and imports no such `Class`, so `_cast_kind` -- which reads
+the package's own class *references* -- answered nothing and the body refused as an object literal of a type the
+class table does not name. `_object_kind_named` reads the kinds the package's own objects carry; `_object_ref` still
+has to resolve the name itself, and a word no object of the package has stays refused. The corpus-class widening for
+`_cast_kind` measured and withdrawn above is a different rule: that one widened a *cast* test everywhere, this one
+admits one literal's type word.
+
+**Fixtures P40/P41/P42, each proven against a copy with only its own rule reverted.** P40 drives `emit_body` over a
+two-declarer agreement (`context` size 4 for a `bool` return) plus a control whose params agree and whose returns do
+not (size stays 0); P41 drives `MyComponent.OnChange = None;` to `... 44 00`; P42 drives `_emit_object_literal` on a
+synthetic scope whose only object is a `texture` (and refuses a word that names no such kind). Revert copies print
+*the statement call writes size 0*, *a cleared member delegate refused* and *an object literal typed by the
+package's own kinds refused*, one per rule.
+
+**Not in this bundle.** The five rows left on the thread: `CylinderBuilder.Build` (the one differ -- a 14-byte
+longer body whose three jump distances moved with it), `TestInfo.TestSwitch` (an assert whose source line the corpus
+does not pin), `GUIController.GenerateFakeNames` (`i++ $ FakeNames[...]`, an element of an array the artifacts do not
+type), `StargateVoicePack.PlaySpeech` (a call to a name the class chain does not declare) and `WindowConsole.Tick`
+(`levelinfo != an unknown type`, which needs `GetEntryLevel`'s `LevelInfo` in a **value** position -- the return-type
+question this bundle deliberately did not touch).

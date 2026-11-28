@@ -4582,6 +4582,24 @@ def _object_ref(text, env, word=None):
     return imps[0] if len(imps) == 1 else None
 
 
+def _object_kind_named(word, env):
+    """True when `word` names the **class of an object this package holds**, even if it imports no such class.
+
+    An object literal's type word is the compiler's check, and the check is against a class the package need not
+    import: `ExtendedConsole.ConsoleVisible.PostRender` writes `texture'GUIContent.Menu.BorderBoxA'` and `GUI.u`
+    holds textures (its objects table's kinds say `Texture`) without importing `Texture` as a `Class`, so
+    `_cast_kind` -- which reads the package's own class *references* -- answered nothing and the body refused as
+    an object literal of a type the class table does not name. The kinds the package's own objects carry are the
+    evidence that the word is a class, and `_object_ref` still has to resolve the name itself.
+    """
+    scope = env.get("scope") or {}
+    kinds = scope.get("object_class") or {}
+    memo = scope.get("_kind_set")
+    if memo is None:
+        memo = scope["_kind_set"] = {(k or "").lower() for k in kinds.values() if k}
+    return word.lower() in memo
+
+
 def _emit_object_literal(word, raw, env):
     """`Texture'X'`, `Material'X'`, `ColorModifier'X'`, `enum'E'`, `class'C'` -> `20 <object reference>`.
 
@@ -4593,7 +4611,7 @@ def _emit_object_literal(word, raw, env):
     low, text = word.lower(), _literal_text(raw[1:-1])
     if low == "class":
         return _emit_class_literal(raw, env)
-    if low != "enum" and not _cast_kind(word, env):
+    if low != "enum" and not (_cast_kind(word, env) or _object_kind_named(word, env)):
         _note(family="object-literal-word", expr=text, member=word)
         raise Refused("an object literal of a type `%s` the package's class table does not name" % word)
     ref = _object_ref(text, env, word)
@@ -4764,6 +4782,45 @@ def _corpus_params(name, argc, env):
     for plist in keep[1:]:
         if [(p[0].lower(), bool(p[2])) for p in plist[:argc]] != first:
             return None
+    return keep[0]
+
+
+def _call_argc(member):
+    """The number of arguments `A.F(...)` spells, counted exactly the way `emit_call` counts them.
+
+    A trailing hole is not an argument (`One(x,)` is one), and the count is what the corpus's declarers are
+    filtered on -- so it has to be the same number `emit_call` hands to `_callee_params`.
+    """
+    close = _paren_end(member, 1) if len(member) > 1 and member[1] == ("op", "(") else None
+    args = _split_commas(member[2:close]) if (close is not None and member[2:close]) else []
+    return len(args) - (1 if args and not args[-1] else 0)
+
+
+def _corpus_return(name, argc, env):
+    """The corpus's own answer for a callee's **declared return type**, when its declarers agree at `argc`.
+
+    The same join `_corpus_params` makes for the arguments, asked of the return. `WindowConsole.CloseUWindow`'s
+    `Viewport.Actor.SetPause( False );` ships `19 19 01 62 03 05 00 04 01 a1 07 00 04 1b 50 02 28 16`: the outer
+    `Context`'s size byte is **4**, the width of the `bool` `SetPause` returns, and `actor` -- the class
+    `Viewport.Actor` types as -- declares neither `SetPause` nor `GetEntryLevel`. Three declarers exist in the
+    corpus (`PlayerController( BOOL bPause )`, `StargatePlayer( bool bPause )`, `GameInfo( BOOL bPause,
+    PlayerController P )`); the third cannot take one argument and the other two agree, which is the answer.
+
+    Only the **agreement** answers, and only a type the walk already prices (`_value_size` callers check that): a
+    name whose declarers disagree keeps whatever the walk wrote before, which for an unanswered callee is the 0 a
+    void call writes. A ten-name census over the corpus is in the page; the rule is not "any name answers".
+    """
+    low = name.lower()
+    rets = env.get("rets") or {}
+    keep = []
+    for cls, plist in (env.get("params_by_name") or {}).get(low) or []:
+        if (cls, low) not in rets:
+            continue
+        if len(plist) < argc or any(not p[2] for p in plist[argc:]):
+            continue
+        keep.append((rets[(cls, low)] or "").lower())
+    if not keep or any(r != keep[0] for r in keep):
+        return ""
     return keep[0]
 
 
@@ -4971,7 +5028,11 @@ def emit_assign(stmt, at, env):
                 raise Refused("a delegate assignment whose target is a %s expression" % shape)
             if not (len(rhs) == 1 and rhs[0][0] in ("ident", "keyword")):
                 raise Refused("a delegate assignment whose value is not a bare function name")
-            idx = _by_name_index(rhs[0][1], env)
+            # `TabStack[i].OnClick = None;` (`GUITabControl.RemoveTab`) clears the delegate with the **zero** name
+            # index -- `45 <Context over the receiver and the delegate record> 44 00` -- exactly as the bare
+            # property branch already writes it for `SGLabel.InitComponent`'s `OnKeyEvent = none;`. A delegate's
+            # value is a name index in both spellings, so `none` is index 0 and not `NoObject`.
+            idx = 0 if rhs[0][1].lower() == "none" else _by_name_index(rhs[0][1], env)
             if idx is None:
                 raise Refused("a delegate assignment to a function the name table does not carry")
             return bytes([0x45]) + node + bytes([0x44]) + write_index(idx)
@@ -5946,6 +6007,21 @@ def _stmt_member_call(stmt, env):
         raise Refused("a member call statement to a name the receiver's chain does not declare")
     memb = emit_call(member, env, receiver=cls, head=_delegate_head(obj, member, env))
     rtype = _rettype_on(cls, member[0][1], env)
+    # A statement's value is discarded, but the compiler still writes the width of what the callee yields, and a
+    # callee the receiver's chain does not declare is one the *compiler* had a declaration for: `Viewport.Actor`
+    # types as `actor`, which declares neither `SetPause` nor `GetEntryLevel`, and the shipped `Context` around
+    # `SetPause(False)` writes size **4** where an unanswered type wrote 0. The corpus's agreeing declarers are the
+    # same evidence the arguments already use (`_corpus_params`), asked of the return -- and used for **one byte**:
+    # `rtype` itself stays unanswered, so no value position, conversion or operator is retyped by this join (the
+    # wider form of it, which answered `_type_of` too, was measured and withdrawn: 159 modelled bodies retyped).
+    _size = 0
+    if not rtype and not _declares_void(cls, member[0][1], env):
+        _ct = _corpus_return(member[0][1], _call_argc(member), env)
+        if _ct:
+            try:
+                _size = _value_size(_ct, env)
+            except Refused:
+                _size = 0
     # The word is the call's own width in the uncompacted array -- except behind `Outer`, whose shape writes 5
     # whatever the member is (`CheatManager.astral`/`puss`). Every *other* property import uses the computed word:
     # `Pawn.SetSprinting(true)` in BotBase is `19 01 8a 07 00 00` (the call is 7 wide), and reading every import as
@@ -5953,7 +6029,7 @@ def _stmt_member_call(stmt, env):
     skip = _wide(memb)
     node = (bytes([CLASS_CONTEXT_TOKEN if stat_at is not None else CONTEXT_TOKEN])
             + emit_expr(obj, "", env)[0] + struct.pack("<H", skip)
-            + bytes([_value_size(rtype, env)]) + memb)
+            + bytes([_value_size(rtype, env) if rtype else _size]) + memb)
     if rtype == "string":
         return bytes([0x0E]) + node, "call-member", "eat-string-call-member"
     return node, "call-member", "call-member"
@@ -9185,6 +9261,77 @@ def check(args):
     if got != b"\x2c\x02":
         print("FAIL uscript-emit: an integral float in an int site emits %s, expected IntConstByte 2"
               % got.hex())
+        return 1
+    # P40: a statement call's `Context` size byte is the width of the callee's **declared return**, and a callee
+    # the receiver's chain does not declare is answered by the corpus's agreeing declarers -- the same join the
+    # arguments already use. `Viewport.Actor.SetPause( False );` ships size **4** (`SetPause` returns a `bool`)
+    # though `actor` declares neither it nor `GetEntryLevel`; `Python` answers 0 there and the body differs at
+    # exactly this byte. The control swaps the declarers' answer to a `string`, whose value size is 0.
+    senv = dict(penv, voids=set(),
+                names=dict(penv["names"], probeextra=57, probedis=59),
+                corpus_funcs=set(penv.get("corpus_funcs") or ()) | {"probeextra", "probedis"},
+                rets={("probe", "probeextra"): "bool", ("other", "probeextra"): "BOOL",
+                      ("probe", "probedis"): "int", ("other", "probedis"): "string"},
+                params_by_name={"probeextra": [("probe", [("float", "B", False)]),
+                                               ("other", [("float", "B", False), ("int", "K", False)])],
+                                "probedis": [("probe", [("int", "A", False)]),
+                                             ("other", [("int", "A", False)])]})
+    pwant = (bytes([0x1B]) + write_index(57) + b"\x1e" + struct.pack("<f", 1.0) + b"\x16"
+             + b"\x04\x0b\x47")
+    try:
+        got, _model, _shape = emit_body(tokens_of("TargetH.ProbeExtra(1);"), "", senv, False)
+    except Refused as exc:
+        print("FAIL uscript-emit: a statement call the corpus types refused (%s)" % (exc,))
+        return 1
+    if got[0] != 0x19 or not got.endswith(pwant) or got[len(got) - len(pwant) - 1] != 4:
+        print("FAIL uscript-emit: a statement call to a corpus-declared `bool` writes size %d, expected 4 (%s)"
+              % (got[len(got) - len(pwant) - 1] if got else -1, got.hex()))
+        return 1
+    dwant = bytes([0x1B]) + write_index(59) + b"\x26\x16" + b"\x04\x0b\x47"
+    try:
+        got, _model, _shape = emit_body(tokens_of("TargetH.ProbeDis(1);"), "", senv, False)
+    except Refused as exc:
+        print("FAIL uscript-emit: a statement call whose declarers disagree on the return refused (%s)" % (exc,))
+        return 1
+    if not got.endswith(dwant) or got[len(got) - len(dwant) - 1] != 0:
+        print("FAIL uscript-emit: declarers that disagree on the return wrote size %d, expected 0 (%s)"
+              % (got[len(got) - len(dwant) - 1] if got else -1, got.hex()))
+        return 1
+    # P41: a delegate cleared on a **member** target writes the zero name index, as the bare-property branch
+    # already does (`SGLabel.InitComponent`'s `OnKeyEvent = none;`). `GUITabControl.RemoveTab`'s
+    # `TabStack[i].OnClick = None;` is `45 <Context ...> 44 00`; the member branch asked the name table for
+    # `None` and refused the body.
+    try:
+        got, _model, _shape = emit_body(tokens_of("MyComponent.OnChange = None;"), "", env, False)
+    except Refused as exc:
+        print("FAIL uscript-emit: a cleared member delegate refused (%s)" % (exc,))
+        return 1
+    if got[0] != 0x45 or not got.endswith(b"\x44\x00\x04\x0b\x47"):
+        print("FAIL uscript-emit: a cleared member delegate emits %s, expected ... 44 00" % got.hex())
+        return 1
+    # P42: an object literal's type word names the class of an object the package **holds**, even when the
+    # package imports no such class: `GUI.u` writes `texture'GUIContent.Menu.BorderBoxA'` and imports `Texture`
+    # as no `Class`, so `_cast_kind` alone refused `ExtendedConsole.PostRender`. The control is a word no object
+    # of the package has.
+    kenv = {"scope": {"objects": {"texa": [12]}, "object_class": {12: "texture"}, "classrefs": {}}}
+    try:
+        got = _emit_object_literal("Texture", "'TexA'", kenv)
+    except Refused as exc:
+        print("FAIL uscript-emit: an object literal typed by the package's own kinds refused (%s)" % (exc,))
+        return 1
+    if got != bytes([0x20]) + write_index(12):
+        print("FAIL uscript-emit: a `Texture'TexA'` literal emits %s, expected 20 %s"
+              % (got.hex(), write_index(12).hex()))
+        return 1
+    if _object_kind_named("notaclass", kenv):
+        print("FAIL uscript-emit: a word no object of the package has was read as a class")
+        return 1
+    try:
+        _emit_object_literal("NotAClass", "'TexA'", kenv)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: an object literal typed by a word no object has was emitted")
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
