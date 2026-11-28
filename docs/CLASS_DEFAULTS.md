@@ -1038,6 +1038,17 @@ exists anywhere in it.
   (`n_declared = 0` and `best_declared = 0` on all 196). So the locator did not miss a block: no reading of these
   bytes names a property of the class. The 62 rows whose parse does read a property name read one another class
   declares (`StargateGame.StargateArmor` opens `elsewhere, package`), which a block of this class cannot set.
+* **And on 64 of the 196 the record says there is no block at all.** `tools/class-record-chain.py` walks the
+  class record front -> array -> group and offers the group's own end as the block; on **103** classes that end
+  carries the defaults stream's `None` alone -- one `00` byte that ends the payload, with **0** bytes after it -- so
+  the block is **empty** and zero tags is the correct reading rather than the grammar's permissiveness. **64 of the
+  103 are rows of this table** (`inventory/class_defaults_silent.csv`), which settles them in the direction measured
+  above -- no declared block exists at any offset because there is no block at all -- and the page's open question
+  narrows to the **132** rows whose record has not been walked to an empty block. The record's reading is not a
+  retreat to "no block": on the same rows the group begins exactly at the array's end and ends exactly on the single
+  `00`, and the byte count after the block is 0 on all 103 and on all 243 one-tag closes beside them. Numbers:
+  `docs/NATIVE_VM.md`, *The closing group is real on the 373, and the block it opens is sometimes the stream's only
+  byte*.
 * **What that means for the label.** `defaults = 1` on these 196 is the grammar's permissiveness plus an end
   witness, not a located block -- and on 76 of them not even that. `--check` covers the four shapes that keep the
   reading honest: a `Function` tag is not a property, an early `None` keeps its byte count, a declared block deeper in

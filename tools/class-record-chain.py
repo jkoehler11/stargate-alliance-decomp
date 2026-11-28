@@ -38,6 +38,14 @@ could hold, and the located start's own first tag is recorded next to it so the 
 `--block-from-group` (on by default) records the group's end, how far past the located start it lands, and the first
 tag on each side; `--no-block-from-group` reproduces the 1,228-row reading of the previous change.
 
+## The empty block
+
+A class that ships no defaults writes the stream's `None` alone: one `00` byte, and the payload ends there. The
+group's end is offered as the block on those rows too, and a **zero-tag** stream that terminates the payload is a
+block, not a failed parse -- 103 of the 346 straddled rows close that way. The rule is not "a stream may be empty":
+the byte has to terminate the payload, so the same `None` with anything behind it stays open, and `block_tail` (the
+bytes after the block's end) is recorded for both readings.
+
 ## The array's count bound
 
 `MAX_COUNT` was 8 -- the anchored population holds 2 on 1,184 of 1,185. The rows the bound refused are not noise:
@@ -83,12 +91,21 @@ COLUMNS = ["package", "class", "payload", "prefix_end", "block_start", "x", "x_l
            "array_len", "array_end", "group_start_tail", "group_off", "verdict_tail", "verdict_walk", "group_len",
            "chain", "heads_all", "head_index", "best_end", "best_delta", "best_count", "ctl_offsets", "ctl_shift",
            "ctl_aim", "ctl_modal", "slack", "slack_hex", "script_len", "tb_size", "array_span", "group_span",
-           "stride_ok", "group_end", "block_delta", "witness_props", "witness_first", "block_first"]
+           "stride_ok", "group_end", "block_delta", "witness_props", "witness_first", "block_first",
+           "witness_len", "block_tail", "block_first_pkg", "head_count", "array_block_gap"]
+
+PACKAGE_NAMES = set()   # the corpus's package names; empty under --check, so the column stays blank there
 
 _TR = None
 _GA = None
 _CD = None
 _PS = None
+
+
+def package_names(dump):
+    """The corpus's package names: a name table's first entries are these, so a stream opening on one is not a tag."""
+    system = os.path.join(dump, "System")
+    return {f[:-2] for f in os.listdir(system) if f.endswith(".u")}
 
 
 def tail_run():
@@ -209,15 +226,19 @@ def read_array(data, start, stop, nexp, nimp):
 
 
 def read_tags(data, start, pkg=None):
-    """The tag stream at `start`: `(n_props, first_name, reason, trailer_ok)`. No tag value is decoded."""
+    """The tag stream at `start`: `(n_props, first_name, reason, trailer_ok, length)`. No tag value is decoded.
+
+    A class that ships no defaults writes the stream's `None` alone, so a **zero-tag** block is a block: its
+    `length` is what tells the empty one from a parse that stopped on a byte it could not read.
+    """
     if pkg is None:
-        return "", "", "no reader", False
+        return "", "", "no reader", False, ""
     try:
         props, end, reason = prop_stream().read_block(data[start:], pkg, False)
     except Exception as exc:                      # a reader that cannot decode the stream is a reading, not a crash
-        return "", "", type(exc).__name__, False
+        return "", "", type(exc).__name__, False, ""
     first = props[0]["name"] if props else ""
-    return len(props), first, reason, (reason == "None" and len(data) - (start + end) <= TRAILER)
+    return len(props), first, reason, (reason == "None" and len(data) - (start + end) <= TRAILER), end
 
 
 def group_end_at(data, start, block, nnames, nimp):
@@ -245,6 +266,10 @@ def chain(data, pe, block, nexp, nimp, nnames, name_index, pkg=None, block_from_
         return out
     out.update(front)
     out["name_matches"] = int(front["name"] == name_index)
+    # the located start's own first tag, on every row: the column is what separates a block from a name-index parse
+    _bn, bfirst, _breason, _bok, _blen = read_tags(data, block, pkg)
+    out["block_first"] = bfirst
+    out["block_first_pkg"] = int(bfirst in PACKAGE_NAMES) if bfirst else ""
     out["front_len"] = front_end - pe
     out["head_walk"] = out["front_len"]
     count, widths, array_end = read_array(data, front_end, block, nexp, nimp)
@@ -273,14 +298,17 @@ def chain(data, pe, block, nexp, nimp, nnames, name_index, pkg=None, block_from_
     if end is None:
         out["chain"] = "group: %s" % out["verdict_walk"]
         return out
-    nprops, first, reason, ok = read_tags(data, end, pkg)
+    nprops, first, reason, ok, blen = read_tags(data, end, pkg)
     out["group_end"], out["block_delta"], out["group_span"] = end, end - block, glen
-    out["witness_props"], out["witness_first"] = nprops, first
-    bn, bfirst, breason, _ = read_tags(data, block, pkg)
-    out["block_first"] = bfirst
+    out["witness_props"], out["witness_first"], out["witness_len"] = nprops, first, blen
+    if blen != "":
+        out["block_tail"] = len(data) - (end + blen)
     out["stride_ok"] = 1
     if ok and int(nprops or 0) >= 1:
         out["chain"] = "close (group end)"
+    elif ok and nprops == 0 and blen == 1 and end + blen == len(data):
+        # a class that ships no defaults: the block is the stream's own `None`, and it ends the payload
+        out["chain"] = "close (empty block)"
     else:
         out["chain"] = "group end: %s, %s tags" % (reason, nprops)
     return out
@@ -355,6 +383,11 @@ def measure(data, row, anchor_row, nexp, nimp, nnames, name_index, pkg=None, tb_
                             and int(out["head_walk"]) == int(out["head_tail"]))
     if out["array_end"] != "" and out["group_start_tail"] != "":
         out["group_off"] = int(out["array_end"]) - int(out["group_start_tail"])
+    if out["head_tail"] != "":
+        hc, _hw, _he = read_array(data, pe + int(out["head_tail"]), block, nexp, nimp)
+        out["head_count"] = hc if hc is not None else ""
+    if out["array_end"] != "":
+        out["array_block_gap"] = block - int(out["array_end"])
     if out["front_len"] != "" and out["head_tail"] != "":
         out["slack"] = int(out["head_tail"]) - int(out["front_len"])
         lo = pe + int(out["front_len"])
@@ -387,6 +420,7 @@ def measure(data, row, anchor_row, nexp, nimp, nnames, name_index, pkg=None, tb_
 
 
 def sweep(args):
+    PACKAGE_NAMES.update(package_names(args.dump))
     bound, anchor = load_artifacts()
     by_pkg = collections.defaultdict(list)
     for key in bound:
@@ -408,7 +442,7 @@ def sweep(args):
             row = measure(data, bound[key], anchor.get(key), nexp, nimp, nnames, name_index, pkg,
                           tbs.get(name_index, ""), args.block_from_group)
             row.update({"package": name, "class": key[1], "payload": size})
-            rows.append(row)
+            rows.append({k: "" if v is None else str(v) for k, v in row.items()})
     if args.out:
         os.makedirs(args.out, exist_ok=True)
         path = os.path.join(args.out, ARTIFACT)
@@ -433,8 +467,12 @@ def report(rows=None):
     closed = [r for r in rows if r["chain"] == "close"]
     gclose = [r for r in rows if r["chain"] == "close (group end)"]
     print("located classes walked front -> array -> group: %d" % total)
-    print("the chain closes on the defaults block: %d (%.1f%%), and on the group's own end on %d more (%.1f%%)"
-          % (len(closed), 100.0 * len(closed) / max(1, total), len(gclose), 100.0 * len(gclose) / max(1, total)))
+    emptyb = [r for r in rows if r["chain"] == "close (empty block)"]
+    print("the chain closes on the defaults block: %d (%.1f%%), on the group's own end on %d more, and on an empty "
+          "block on %d: **%d of %d (%.1f%%)**"
+          % (len(closed), 100.0 * len(closed) / max(1, total), len(gclose), len(emptyb),
+             len(closed) + len(gclose) + len(emptyb), total,
+             100.0 * (len(closed) + len(gclose) + len(emptyb)) / max(1, total)))
     print("where it stops: %s" % _share(rows, "chain"))
     print("front lengths: %s" % _share(rows, "front_len"))
     print("array counts: %s; element width pairs: %s" % (_share(rows, "count"), _share(rows, "ref_widths")))
@@ -468,6 +506,27 @@ def report(rows=None):
     print("  of them the stream at the group's end: %s (reason/tags); the located start's first tag: %s"
           % (_share(straddle, "witness_props"), _share(straddle, "block_first")))
 
+    # --- the empty block, and the located start as an end witness
+    print("\nthe empty block: a class that ships no defaults writes the stream's `None` alone")
+    print("  rows that close on it: %d; the block's own length: %s; bytes after it: %s"
+          % (len(emptyb), _share(emptyb, "witness_len"), _share(emptyb, "block_tail")))
+    print("  how far past the located start the group's end sits: %s" % _share(emptyb, "block_delta"))
+    print("  the one-tag closes, bytes after their block: %s" % _share(gclose, "block_tail"))
+    pkgn = [r for r in straddle if r["block_first_pkg"] == "1"]
+    print("  the located start's first tag is a package name (%s) on %d of the %d straddled rows"
+          % (_share(pkgn, "block_first"), len(pkgn), len(straddle)))
+
+    # --- the rows with no committed group at the array's end
+    nog = [r for r in rows if r["chain"] == "group: no-parse"]
+    print("\nthe %d rows with no committed group at the array's end:" % len(nog))
+    print("  the array's end is the located start on %d (a zero-length group no candidate can be `> block`)"
+          % sum(1 for r in nog if r["array_block_gap"] == "0"))
+    print("  the gap to the located start, when it is not zero: %s"
+          % _share(nog, "array_block_gap", lambda v: v != "0"))
+    zero = [r for r in nog if r["array_block_gap"] == "0"]
+    print("  on the zero-gap rows the located start's first tag: %s; a package name on %d of %d"
+          % (_share(zero, "block_first"), sum(1 for r in zero if r["block_first_pkg"] == "1"), len(zero)))
+
     # --- the array's count bound and the stride identity
     print("\nthe array's count bound (%d) and the join at the array's end:" % MAX_COUNT)
     big = [r for r in rows if r["count"] != "" and int(r["count"]) > 8]
@@ -497,6 +556,8 @@ def report(rows=None):
           % _share([r for r in rows if r["slack"] != ""], "slack"))
     odd = [r for r in rows if r["slack"] not in ("", "0")]
     print("  the %d rows with one: bytes at the join: %s" % (len(odd), _share(odd, "slack_hex")))
+    print("  their anchored head as an array start, count: %s; the walk's own end, count: %s"
+          % (_share(odd, "head_count"), _share(odd, "count")))
     print("\ncontrols: one byte later closes %d; the group aimed %d bytes past the array parses on %d; "
           "the array at the modal front (%d bytes) closes the chain on %d"
           % (sum(int(r["ctl_shift"]) for r in rows), CTL_SHIFT, sum(int(r["ctl_aim"]) for r in rows),
@@ -507,6 +568,7 @@ def report(rows=None):
 def one(args):
     if "." in args.cls and not args.package:
         args.package, args.cls = args.cls.split(".", 1)
+    PACKAGE_NAMES.update(package_names(args.dump))
     pkg = Package(os.path.join(args.dump, "System", args.package + ".u"))
     pkg.read_names()
     pkg.read_imports()
@@ -579,6 +641,21 @@ def self_check():
     gotw = chain(wide, pe, len(wide), 9, 9, names_n, 1)
     assert gotw["chain"] == "close" and gotw["count"] == 9, gotw
     assert gotw["array_span"] == 1 + 9 * 9 and gotw["stride_ok"] == 1, gotw
+    # a class that ships no defaults: the block at the group's end is the stream's `None` alone, and it ends the
+    # payload -- that closes. The same byte with one byte behind it does not, because the block has to end there.
+    class StubPkg:
+        def name(self, i):
+            return names[i] if 0 <= i < len(names) else "?"
+
+    stub = StubPkg()
+    empty = bytes(4) + front + array + group + b"\x00"
+    gotE = chain(empty, pe, len(empty) - 5, 9, 9, names_n, 1, stub)
+    assert gotE["chain"] == "close (empty block)", gotE
+    assert gotE["witness_props"] == 0 and gotE["witness_len"] == 1 and gotE["block_tail"] == 0, gotE
+    tailed = bytes(4) + front + array + group + b"\x00\x00"
+    gotT = chain(tailed, pe, len(tailed) - 6, 9, 9, names_n, 1, stub)
+    assert gotT["chain"].startswith("group end:"), gotT
+    assert gotT["witness_props"] == 0 and gotT["witness_len"] == 1 and gotT["block_tail"] == 1, gotT
     # the two controls: one byte later never closes, and the group aimed two bytes past never parses
     assert chain(body, pe + 1, block, 9, 9, names_n, 1)["chain"] != "close"
     aimed = tail_run().parse_group(body, pe + 60 + 19 + CTL_SHIFT, block, names_n)
@@ -586,7 +663,8 @@ def self_check():
     print("ok   class-record-chain: the front, array and group close on a synthetic payload; a wrong name, an "
           "out-of-table reference, an out-of-grammar count and a short block all refuse; a block inside the group "
           "closes on the group's end and says the tag stream is unwitnessed; a nine-element array closes with its "
-          "stride; both nulls miss")
+          "stride; a block that is the stream's None alone closes on an empty block and one with a byte behind it "
+          "does not; both nulls miss")
     return 0
 
 
