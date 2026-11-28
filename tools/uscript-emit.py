@@ -1439,16 +1439,20 @@ def _outer_wrapped(low, read, ptype, want, env):
     wrap_any = low in (scope.get("within_props") or ()) and (env.get("within") or "")
     if low not in (scope.get("outer_props") or ()) and not wrap_any:
         return None
-    size = PROP_SIZE.get(ptype)
-    if size is None:
-        # The record says only `StructProperty`, so the value's own type is the declaration's word: `CheatManager
-        # .SetFlash`'s `FlashScale.X = F` opens `19 01 8e 05 00 0c` and 12 is the `vector` `PlayerController.uc`
-        # spells (`var vector FlashScale, FlashFog;`). Asking the record alone refused it as `Outer.<struct>`,
-        # while the three sibling bodies (the same write on `FlashFog`) resolved their word and only then missed
-        # this size -- the join is the declared type, exactly as `_friendly` answers it.
-        alt = _friendly(low, env) or ""
-        if PROP_SIZE.get(alt) is not None:
-            ptype, size = alt, PROP_SIZE[alt]
+    alt = _friendly(low, env) or ""
+    # The record says only `StructProperty`, so the value's own type is the declaration's word: `CheatManager
+    # .SetFlash`'s `FlashScale.X = F` opens `19 01 8e 05 00 0c` and 12 is the `vector` `PlayerController.uc`
+    # spells (`var vector FlashScale, FlashFog;`). Asking the record alone refused it as `Outer.<struct>`,
+    # while the three sibling bodies (the same write on `FlashFog`) resolved their word and only then missed
+    # this size -- the join is the declared type, exactly as `_friendly` answers it.
+    # The width is `_value_width`'s, so a **struct** word is `STRUCT_SIZE`'s row and not `PROP_SIZE`'s:
+    # `CheatManager.Teleport` casts `Actor.Rotation` (`vector(Rotation)`), a `rotator`, and the package writes
+    # the 12 of `19 01 8e 05 00 0c`; asking `PROP_SIZE` alone refused both `within` bodies whose struct read is
+    # a cast (`Teleport`, `Summon`) while the sibling `vector` case next door resolved -- `vector` is the one
+    # struct word the old lookup happened to carry.
+    size = _value_width(ptype, alt)
+    if size is not None and alt:
+        ptype = alt
     if scope.get("outer_ref") is None or size is None:
         raise Refused("a name this package declares only on another class's chain (the `Outer.<%s>` shape)"
                       % (ptype or "typeless"))
@@ -2920,14 +2924,20 @@ def _emit_unary(expr, rettype, env):
     return _converted(node, result, rettype), "unary"
 
 
-def _emit_cast(name, inner, env, rettype=""):
+def _emit_cast(name, inner, env, rettype="", kind=None):
     """`Type(expr)` -> `39 <slot> <expr>` when the type is a primitive, `2E <class ref> <expr>` when it is a class.
 
     The slot is the image's own cast table read backwards: the row*named* `<From>To<To>` for the operand's declared
     type and the cast's target (`StringToInt` is slot 74, `FloatToString` 85, `ObjectToString` 86), and only a row
     the build installs is used -- a pair with no tokens in the artifact has no slot to write.
     """
-    kind = _cast_kind(name, env)
+    # `kind` is `_cast_name`'s own answer when the caller already made the call: that test adds the **arity**
+    # (`Trigger(X)` is a cast to the class even though `Actor` declares the two-argument `event Trigger(...)`),
+    # and re-deriving the kind here answered "neither" for exactly those names -- a name that is *both* a class
+    # and a function in scope -- so three bodies that ship a `2E` cast (`DynamicCast 7c04` in
+    # `SGInteraction.InteractionUsed`, and `Door.SpecialHandling` / `CommandInterface.TestTraceActors`) refused as
+    # *a call the class chain does not declare* one line before the `2E` the walk was about to write.
+    kind = kind or _cast_kind(name, env)
     low = name.lower()
     if kind == "primitive":
         src = _type_of(inner, env).lower()
@@ -4265,7 +4275,7 @@ def emit_expr(expr, rettype, env, element_dim=0):
             # the compiler's own check, not part of the bytes.
             return _emit_object_literal(expr[0][1], expr[1][1], env), "object-literal"
         if _is_call(expr) and _cast_name(expr, env):
-            return _emit_cast(expr[0][1], expr[2:-1], env, rettype)
+            return _emit_cast(expr[0][1], expr[2:-1], env, rettype, _cast_name(expr, env))
         en = _enum_cast(expr, env)
         if en is not None:
             # `EIntStat(i)`: an enum's name in front of one operand is a cast, not a call. It is tried after the
@@ -4569,7 +4579,14 @@ def _emit_new(expr, env):
         raise Refused("a `new` with an empty argument slot, which no body in the corpus spells")
     if not rest:
         raise Refused("a `new` with no class expression")
-    parts = [emit_expr(a, "object", env)[0] for a in args]
+    # The three slots are **not** all objects: `NewToken` reads the outer expression, then the object's
+    # **name** as a string and its **flags** as an int. Emitting every argument with `object` refused the two
+    # corpus bodies that spell a name at all -- `TestInfo.BeginPlay`'s `new(self,"")` (`1f 00`, a `StringConst`)
+    # and `SGVoicePackExtended.PostBeginPlay`'s `new(none,"VoiceSelector",RF_Transient)`
+    # (`2a | 1f <name>00 | 1d 00400000`) -- as *a quoted literal in a object function*, from the leaf that
+    # refused the empty string because the slot asked for an object.
+    wants = ("object", "string", "int")
+    parts = [emit_expr(a, wants[n], env)[0] for n, a in enumerate(args)]
     while len(parts) < 3:
         parts.append(bytes([0x0B]))
     return bytes([0x11]) + b"".join(parts) + emit_expr(rest, "object", env)[0]
@@ -8851,6 +8868,82 @@ def check(args):
         pass
     else:
         print("FAIL uscript-emit: a `switch` with no expression was accepted")
+        return 1
+    # P31: a `new` node's three argument slots are **not** all objects. `NewToken` reads the outer expression,
+    # then the object's **name** -- a `StringConst` -- and its **flags**, an `IntConst`. `TestInfo.BeginPlay`'s
+    # `new(self,"")` ships `11 17 1f 00 0b ...` and `SGVoicePackExtended.PostBeginPlay`'s
+    # `new(none,"VoiceSelector",RF_Transient)` ships `11 2a 1f <name>00 1d 00400000`. Emitting every slot as
+    # `object` refused both as *a quoted literal in a object function*, from the leaf that refused the empty
+    # string because the slot asked for an object. The controls are the same string in the **object** slot
+    # (still refused -- the typing is positional, not "any slot takes a string") and `new()`'s zero arguments
+    # (still three `Nothing`s). The walk is driven directly, so a reverted copy refuses instead of printing --
+    # caught here, because a traceback names no rule.
+    try:
+        got = _emit_new(tokens_of("new(none,\"probe\",0) class'probe'"), env)
+    except Refused as exc:
+        print("FAIL uscript-emit: a `new` with a name and flags refused (%s)" % (exc,))
+        return 1
+    if got[:2] != b"\x11\x2a" or b"\x1fprobe\x00" not in got or b"\x0b" in got:
+        print("FAIL uscript-emit: `new(none,\"probe\",0)` emits %s, expected an outer, a StringConst and an Int"
+              % got.hex())
+        return 1
+    try:
+        _emit_new(tokens_of("new(\"probe\", none) class'probe'"), env)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a string in the outer slot of a `new` was accepted")
+        return 1
+    if _emit_new(tokens_of("new() class'probe'"), env)[1:4] != b"\x0b\x0b\x0b":
+        print("FAIL uscript-emit: `new()` no longer writes three `Nothing`s")
+        return 1
+    # P32: an `Outer`-wrapped read's size byte is `_value_width`'s, so a **struct** word is `STRUCT_SIZE`'s
+    # row and not `PROP_SIZE`'s. `CheatManager` is `within PlayerController`, and `Teleport`/`Summon` cast
+    # `Actor.Rotation` (`vector(Rotation)`), a `rotator`: the package writes `19 01 8e 05 00 0c`. Asking
+    # `PROP_SIZE` alone answered nothing for `struct` and refused both bodies as the `Outer.<struct>` shape
+    # while the sibling `vector` case next door resolved. The control is a struct the table genuinely lacks.
+    oenv = dict(env, scope=dict(SCOPE, outer_props=("rot",), outer_ref=14,
+                                friendly={("probe", "probe", "rot"): "rotator"}))
+    try:
+        got = _outer_wrapped("rot", b"\x01\x05", "struct", "", oenv)
+    except Refused as exc:
+        print("FAIL uscript-emit: an `Outer` read of a `rotator` refused (%s)" % (exc,))
+        return 1
+    want = bytes([0x19, INSTANCE_TOKEN]) + write_index(14) + struct.pack("<H", 5) + bytes([12]) + b"\x01\x05"
+    if got != want:
+        print("FAIL uscript-emit: an `Outer` struct read emits %s, expected %s" % (got.hex(), want.hex()))
+        return 1
+    oenv["scope"] = dict(oenv["scope"], friendly={("probe", "probe", "rot"): "interpcurvepoint"})
+    try:
+        _outer_wrapped("rot", b"\x01\x05", "struct", "", oenv)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: an `Outer` read of a struct with no width was accepted")
+        return 1
+    # P33: a call-shaped name that is **both** a class and a function is a cast when the caller's own test
+    # (`_cast_name`, which adds the arity) says so, and `_emit_cast` must not re-derive the kind and refuse it:
+    # `Trigger(temp)`/`Trigger(X) != None` is `2E 7c 04` in `SGInteraction.InteractionUsed`,
+    # `Door.SpecialHandling` and `CommandInterface.TestTraceActors` even though `Actor` declares the two-argument
+    # `event Trigger(...)`. The control is the same call with no kind given -- an ordinary call-shaped name stays
+    # refused rather than guessed, so the pass-through did not widen the rule.
+    cenv = dict(env, scope=dict(SCOPE, classrefs={"probe": 4, "actor": -77},
+                                funcs=dict(SCOPE["funcs"], probe=("event", 900))))
+    inner = emit_expr([("ident", "Health")], "", cenv)[0]
+    try:
+        got, shape = _emit_cast("probe", [("ident", "Health")], cenv, "", "object")
+    except Refused as exc:
+        print("FAIL uscript-emit: a cast to a class-and-function name refused (%s)" % (exc,))
+        return 1
+    if got != bytes([0x2E]) + write_index(4) + inner or shape != "object-cast":
+        print("FAIL uscript-emit: a cast to a class-and-function name emits %s (%s)" % (got.hex(), shape))
+        return 1
+    try:
+        _emit_cast("probe", [("ident", "Health")], cenv)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a class-and-function name cast without a kind was accepted")
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))
