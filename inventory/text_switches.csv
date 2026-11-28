@@ -32,7 +32,7 @@ class,Editor,CurvedStairBuilder,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Editor,CylinderBuilder,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Editor,EditorEngine,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Editor,FractalTextureFactory,,,,,2,18,0,18,2,18,2,18,,,,,,,,,agree,,
-function,Editor,FractalTextureFactory,creatematerial,,position,,,,,,,18,,,18,0,,,,,18,18,agree,,
+function,Editor,FractalTextureFactory,creatematerial,,value,,,,,,,18,,,18,0,,,,,18,18,agree,,
 arm,Editor,FractalTextureFactory,creatematerial,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Editor,FractalTextureFactory,creatematerial,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Editor,FractalTextureFactory,creatematerial,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -69,7 +69,7 @@ arm,Engine,AccessControl,getdescriptiontext,4,string,LoginDelaySeconds,,,,,,,,,,
 class,Engine,ActionMoveCamera,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,ActionPause,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,Actor,,,,,9,38,0,39,5,38,5,38,,,,,,,,,agree,,
-function,Engine,Actor,displaydebug,,position,,,,,,,38,,,38,0,,,,,38,38,agree,,
+function,Engine,Actor,displaydebug,,value,,,,,,,38,,,38,0,,,,,38,38,agree,,
 arm,Engine,Actor,displaydebug,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,Actor,displaydebug,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,Actor,displaydebug,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -164,7 +164,7 @@ arm,Engine,Canvas,drawline,1,int,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,Canvas,drawline,2,int,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,Canvas,drawline,3,int,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,Canvas,drawline,4,int,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,Engine,Canvas,drawscreentext,,position,,,,,,,9,,,9,0,,,,,9,9,agree,,
+function,Engine,Canvas,drawscreentext,,value,,,,,,,9,,,9,0,,,,,9,9,agree,,
 arm,Engine,Canvas,drawscreentext,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,Canvas,drawscreentext,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,Canvas,drawscreentext,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -275,12 +275,12 @@ arm,Engine,GameMessage,getstring,15,int,14,,,,,,,,,,,break,,tail,break,yes,,,,si
 arm,Engine,GameMessage,getstring,16,int,15,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,GameMessage,getstring,17,int,16,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,Engine,GameProfile,,,,,1,5,0,9,1,5,1,5,,,,,,,,,agree,,
-function,Engine,GameProfile,textpositiondescription,,position,,,,,,,5,,,5,0,,,,,5,5,agree,,
-arm,Engine,GameProfile,textpositiondescription,1,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,Engine,GameProfile,textpositiondescription,2,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,Engine,GameProfile,textpositiondescription,3,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,Engine,GameProfile,textpositiondescription,4,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,Engine,GameProfile,textpositiondescription,5,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+function,Engine,GameProfile,textpositiondescription,,value,,,,,,,5,,,5,0,,,,,5,5,agree,,
+arm,Engine,GameProfile,textpositiondescription,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,Engine,GameProfile,textpositiondescription,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,Engine,GameProfile,textpositiondescription,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,Engine,GameProfile,textpositiondescription,4,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,Engine,GameProfile,textpositiondescription,5,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,Engine,GameReplicationInfo,,,,,1,4,0,1,1,4,1,0,,,,,,,,,agree,,
 function,Engine,GameReplicationInfo,getdescriptiontext,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,Engine,GameReplicationInfo,getdescriptiontext,1,string,ServerName,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -294,7 +294,7 @@ class,Engine,HUD,,,,,3,0,0,6,0,0,0,0,,,,,,,,,,,
 class,Engine,HudOverlay,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,I3DL2Listener,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,IMusicActor,,,,,1,4,1,0,1,4,1,0,,,,,,,,,agree,,
-function,Engine,IMusicActor,convertstatetotransitiontype,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,Engine,IMusicActor,convertstatetotransitiontype,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,Engine,IMusicActor,convertstatetotransitiontype,1,byte,0,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,IMusicActor,convertstatetotransitiontype,2,byte,1,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,IMusicActor,convertstatetotransitiontype,3,byte,2,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -385,7 +385,7 @@ class,Engine,MatchInfo,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,MatDemoActor,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,Material,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,MaterialSequence,,,,,1,3,0,3,1,3,1,3,,,,,,,,,agree,,
-function,Engine,MaterialSequence,trigger,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,Engine,MaterialSequence,trigger,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,Engine,MaterialSequence,trigger,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,MaterialSequence,trigger,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,MaterialSequence,trigger,3,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -450,12 +450,12 @@ arm,Engine,PlayerController,servermove,2,int,1,,,,,,,,,,,break,,tail,break,yes,,
 arm,Engine,PlayerController,servermove,3,int,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,servermove,4,int,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,servermove,5,int,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,Engine,PlayerController,clientsetmusic,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,Engine,PlayerController,clientsetmusic,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,Engine,PlayerController,clientsetmusic,1,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,clientsetmusic,2,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,clientsetmusic,3,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,clientsetmusic,4,byte,5,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,Engine,PlayerController,serverjoinvoicechannel,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,Engine,PlayerController,serverjoinvoicechannel,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,Engine,PlayerController,serverjoinvoicechannel,1,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,serverjoinvoicechannel,2,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,PlayerController,serverjoinvoicechannel,3,byte,7,,,,,,,,,,,other,,,into-default,yes,,,,site 1
@@ -583,7 +583,7 @@ arm,Engine,StreamBase,converttofiletype,16,string,htm,,,,,,,,,,,return,,,return,
 arm,Engine,StreamBase,converttofiletype,17,string,m3u,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,Engine,StreamBase,converttofiletype,18,string,b4s,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,Engine,StreamBase,converttofiletype,19,string,pls,,,,,,,,,,,return,,,return,yes,,,,site 1
-function,Engine,StreamBase,converttofileextension,,position,,,,,,,14,,,14,0,,,,,14,14,agree,,
+function,Engine,StreamBase,converttofileextension,,value,,,,,,,14,,,14,0,,,,,14,14,agree,,
 arm,Engine,StreamBase,converttofileextension,1,byte,2,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,2,byte,3,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,StreamBase,converttofileextension,3,byte,5,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -621,7 +621,7 @@ function,Engine,StreamPlaylistManager,getplaylisttype,,value,,,,,,,3,,,3,0,,,,,3
 arm,Engine,StreamPlaylistManager,getplaylisttype,1,string,m3u,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,StreamPlaylistManager,getplaylisttype,2,string,b4s,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,StreamPlaylistManager,getplaylisttype,3,string,pls,,,,,,,,,,,return,,,return,yes,,,,site 1
-function,Engine,StreamPlaylistManager,insertinplaylist,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,Engine,StreamPlaylistManager,insertinplaylist,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,Engine,StreamPlaylistManager,insertinplaylist,1,byte,0,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,StreamPlaylistManager,insertinplaylist,2,byte,5,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,StreamPlaylistManager,insertinplaylist,3,byte,4,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -661,12 +661,12 @@ class,Engine,TexMatrix,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,TexModifier,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,TexOscillator,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,TexOscillatorTriggered,,,,,1,2,0,2,1,2,1,2,,,,,,,,,agree,,
-function,Engine,TexOscillatorTriggered,trigger,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,Engine,TexOscillatorTriggered,trigger,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,Engine,TexOscillatorTriggered,trigger,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,TexOscillatorTriggered,trigger,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,Engine,TexPanner,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,TexPannerTriggered,,,,,1,2,0,2,1,2,1,2,,,,,,,,,agree,,
-function,Engine,TexPannerTriggered,trigger,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,Engine,TexPannerTriggered,trigger,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,Engine,TexPannerTriggered,trigger,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,Engine,TexPannerTriggered,trigger,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,Engine,TexRotator,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -676,7 +676,7 @@ class,Engine,Texture,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,TextureEditable,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,TrailEmitter,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,Trigger,,,,,1,7,0,1,1,7,1,0,,,,,,,,,agree,,
-function,Engine,Trigger,isrelevant,,position,,,,,,,7,,,7,0,,,,,7,7,agree,,
+function,Engine,Trigger,isrelevant,,value,,,,,,,7,,,7,0,,,,,7,7,agree,,
 arm,Engine,Trigger,isrelevant,1,byte,5,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,Trigger,isrelevant,2,byte,0,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,Engine,Trigger,isrelevant,3,byte,6,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -726,9 +726,9 @@ class,Engine,xAdminUserList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,XBoxPlayerInput,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,xEmitter,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Engine,xMaterialController,,,,,2,3,0,2,2,3,2,2,,,,,,,,,agree,,
-function,Engine,xMaterialController,shaderaction,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,Engine,xMaterialController,shaderaction,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,Engine,xMaterialController,shaderaction,1,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,Engine,xMaterialController,trigger,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,Engine,xMaterialController,trigger,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,Engine,xMaterialController,trigger,1,byte,1,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,Engine,xMaterialController,trigger,2,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,Engine,xMaterialTrigger,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -772,24 +772,24 @@ class,GUI,GUICheckBoxButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUIComboBox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUIComboButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUIComponent,,,,,3,13,0,14,3,13,3,13,,,,,,,,,agree,,
-function,GUI,GUIComponent,menustatechange,,position,,,,,,,5,,,5,0,,,,,5,5,agree,,
+function,GUI,GUIComponent,menustatechange,,value,,,,,,,5,,,5,0,,,,,5,5,agree,,
 arm,GUI,GUIComponent,menustatechange,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,menustatechange,2,byte,1,,,,,,,,,,,break,,interior+tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,menustatechange,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,menustatechange,4,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,menustatechange,5,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,GUI,GUIComponent,translatebounding,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,GUI,GUIComponent,translatebounding,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,GUI,GUIComponent,translatebounding,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,translatebounding,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,translatebounding,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,translatebounding,4,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,GUI,GUIComponent,translatescaling,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,GUI,GUIComponent,translatescaling,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,GUI,GUIComponent,translatescaling,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,translatescaling,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,translatescaling,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIComponent,translatescaling,4,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,GUI,GUIController,,,,,1,8,0,14,1,8,1,8,,,,,,,,,agree,,
-function,GUI,GUIController,playclicksound,,position,,,,,,,8,,,8,0,,,,,8,8,agree,,
+function,GUI,GUIController,playclicksound,,value,,,,,,,8,,,8,0,,,,,8,8,agree,,
 arm,GUI,GUIController,playclicksound,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIController,playclicksound,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GUI,GUIController,playclicksound,3,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -806,7 +806,7 @@ arm,GUI,GUIEditBox,internalonkeytype,3,byte,24,,,,,,,,,,,other,,,into-default,ye
 class,GUI,GUIFont,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUIHorzGripButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUIHorzList,,,,,1,12,0,0,1,12,1,0,,,,,,,,,agree,,
-function,GUI,GUIHorzList,internalonkeyevent,,position,,,,,,,12,,,12,0,,,,,12,12,agree,,
+function,GUI,GUIHorzList,internalonkeyevent,,value,,,,,,,12,,,12,0,,,,,12,12,agree,,
 arm,GUI,GUIHorzList,internalonkeyevent,1,byte,37,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,GUI,GUIHorzList,internalonkeyevent,2,byte,100,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GUI,GUIHorzList,internalonkeyevent,3,byte,39,,,,,,,,,,,empty,,,empty,yes,,,,site 1
@@ -856,7 +856,7 @@ arm,GUI,GUIScrollBar,createparts,4,int,3,,,,,,,,,,,break,,tail,break,yes,,,,site
 class,GUI,GUIScrollBarBase,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUIScrollingPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUIScrollText,,,,,1,4,0,0,1,4,1,0,,,,,,,,,agree,,
-function,GUI,GUIScrollText,internalonxcontrollerevent,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,GUI,GUIScrollText,internalonxcontrollerevent,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,GUI,GUIScrollText,internalonxcontrollerevent,1,byte,20,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GUI,GUIScrollText,internalonxcontrollerevent,2,byte,21,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GUI,GUIScrollText,internalonxcontrollerevent,3,byte,22,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -864,7 +864,7 @@ arm,GUI,GUIScrollText,internalonxcontrollerevent,4,byte,23,,,,,,,,,,,return,,,re
 class,GUI,GUIScrollTextBox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUISectionBackground,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,GUISlider,,,,,1,4,0,0,1,4,1,0,,,,,,,,,agree,,
-function,GUI,GUISlider,onxcontrollerevent,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,GUI,GUISlider,onxcontrollerevent,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,GUI,GUISlider,onxcontrollerevent,1,byte,2,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,GUI,GUISlider,onxcontrollerevent,2,byte,14,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GUI,GUISlider,onxcontrollerevent,3,byte,3,,,,,,,,,,,empty,,,empty,yes,,,,site 1
@@ -894,7 +894,7 @@ arm,GUI,moListEditBox,onscrollbuttonclick,2,expr,InstanceVariable,,,,,,,,,,,brea
 class,GUI,moNumericEdit,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,moSlider,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GUI,moTextOption,,,,,1,6,0,0,1,6,1,0,,,,,,,,,agree,,
-function,GUI,moTextOption,internalonxcontrollerevent,,position,,,,,,,6,,,6,0,,,,,6,6,agree,,
+function,GUI,moTextOption,internalonxcontrollerevent,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,GUI,moTextOption,internalonxcontrollerevent,1,byte,3,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,GUI,moTextOption,internalonxcontrollerevent,2,byte,15,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,GUI,moTextOption,internalonxcontrollerevent,3,byte,11,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -1007,7 +1007,7 @@ class,GamePlay,ACTION_PlayMusic,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GamePlay,ACTION_PlaySound,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GamePlay,ACTION_Run,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GamePlay,ACTION_SetAlertness,,,,,1,4,0,4,1,4,1,4,,,,,,,,,agree,,
-function,GamePlay,ACTION_SetAlertness,getactionstring,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,GamePlay,ACTION_SetAlertness,getactionstring,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,GamePlay,ACTION_SetAlertness,getactionstring,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GamePlay,ACTION_SetAlertness,getactionstring,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GamePlay,ACTION_SetAlertness,getactionstring,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -1062,7 +1062,7 @@ arm,GamePlay,counter,trigger,4,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GamePlay,counter,trigger,5,byte,5,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GamePlay,counter,trigger,6,byte,6,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,GamePlay,CountTrigger,,,,,1,5,1,6,1,5,1,5,,,,,,,,,agree,,
-function,GamePlay,CountTrigger,changecount,,position,,,,,,,5,,,5,0,,,,,5,5,agree,,
+function,GamePlay,CountTrigger,changecount,,value,,,,,,,5,,,5,0,,,,,5,5,agree,,
 arm,GamePlay,CountTrigger,changecount,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GamePlay,CountTrigger,changecount,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,GamePlay,CountTrigger,changecount,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -1245,11 +1245,10 @@ class,GamePlay,TournamentConsole,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,GamePlay,TriggeredCondition,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GamePlay,TriggeredPlayerStart,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,GamePlay,TriggeredScript,,,,,1,6,0,1,1,6,1,0,,,,,,,,,agree,,
-function,GamePlay,TriggeredScript,isrelevant,,position,,,,,,,6,,,6,0,,,,,6,6,agree,,
+function,GamePlay,TriggeredScript,isrelevant,,value,,,,,,,6,,,5,1,,,,,5,5,agree,,
 arm,GamePlay,TriggeredScript,isrelevant,1,byte,4,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,2,byte,0,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,3,byte,5,,,,,,,,,,,return,,,return,yes,,,,site 1
-arm,GamePlay,TriggeredScript,isrelevant,4,byte,1,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,5,byte,2,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,GamePlay,TriggeredScript,isrelevant,6,byte,3,,,,,,,,,,,return,,,return,yes,,,,site 1
 class,GamePlay,TriggerLight,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -1494,7 +1493,7 @@ arm,StargateContent,Cond_WhenIntVar,processparams,3,string,GT,,,,,,,,,,,break,,t
 arm,StargateContent,Cond_WhenIntVar,processparams,4,string,GTE,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateContent,Cond_WhenIntVar,processparams,5,string,LT,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateContent,Cond_WhenIntVar,processparams,6,string,LTE,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,StargateContent,Cond_WhenIntVar,update,,position,,,,,,,6,,,6,0,,,,,6,6,agree,,
+function,StargateContent,Cond_WhenIntVar,update,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,StargateContent,Cond_WhenIntVar,update,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateContent,Cond_WhenIntVar,update,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateContent,Cond_WhenIntVar,update,3,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -1525,7 +1524,7 @@ class,StargateContent,Dir_JumpOnIntVar,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateContent,Dir_RunConsoleCommand,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateContent,Dir_SceneJump,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateContent,Dir_SetIntVar,,,,,2,7,2,9,2,7,2,7,,,,,,,,,agree,,
-function,StargateContent,Dir_SetIntVar,directionstart,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,StargateContent,Dir_SetIntVar,directionstart,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,StargateContent,Dir_SetIntVar,directionstart,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateContent,Dir_SetIntVar,directionstart,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateContent,Dir_SetIntVar,directionstart,3,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2084,13 +2083,11 @@ class,StargateGame,BotRep,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,BotSG,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,CarpetSurface,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,CommandInterface,,,,,3,16,3,22,3,16,3,15,,,,,,,,,agree,,
-function,StargateGame,CommandInterface,convertenumtoname,,position,,,,,,,6,,,6,0,,,,,6,6,agree,,
+function,StargateGame,CommandInterface,convertenumtoname,,value,,,,,,,6,,,4,2,,,,,4,4,agree,,
 arm,StargateGame,CommandInterface,convertenumtoname,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,convertenumtoname,2,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,convertenumtoname,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,StargateGame,CommandInterface,convertenumtoname,4,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,convertenumtoname,5,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,StargateGame,CommandInterface,convertenumtoname,6,byte,5,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 function,StargateGame,CommandInterface,executescriptcommand,,value,,,,,,,5,,,5,0,,,,,5,5,agree,,
 arm,StargateGame,CommandInterface,executescriptcommand,1,name,SG_USER_TEAM,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,CommandInterface,executescriptcommand,2,name,SG_USER_ONEILL,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2229,7 +2226,7 @@ class,StargateGame,MetalImpact,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,MetalSurface,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,MobileShield,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,MovementMarker,,,,,1,5,0,5,1,5,1,5,,,,,,,,,agree,,
-function,StargateGame,MovementMarker,canuse,,position,,,,,,,5,,,5,0,,,,,5,5,agree,,
+function,StargateGame,MovementMarker,canuse,,value,,,,,,,5,,,5,0,,,,,5,5,agree,,
 arm,StargateGame,MovementMarker,canuse,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,MovementMarker,canuse,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,MovementMarker,canuse,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2282,7 +2279,19 @@ class,StargateGame,SGLevel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGLevelGamePlay,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGLoadingPageBase,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGMenuInteraction,,,,,1,13,1,16,1,12,1,12,,,,,,,,,more,,
-function,StargateGame,SGMenuInteraction,keyevent,,none,,,,,,,12,,,0,12,,,,,0,0,agree,,
+function,StargateGame,SGMenuInteraction,keyevent,,value,,,,,,,12,,,12,0,,,,,11,12,differs,,
+arm,StargateGame,SGMenuInteraction,keyevent,1,byte,84,,,,,,,,,,,other,,,break,no,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,2,byte,87,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,3,byte,83,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,4,byte,13,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,5,byte,38,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,6,byte,40,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,7,byte,104,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,8,byte,98,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,9,byte,100,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,10,byte,102,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,11,byte,105,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,SGMenuInteraction,keyevent,12,byte,99,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateGame,SGOrder,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGOrderAttack,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,SGOrderDecypher,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -2343,7 +2352,7 @@ class,StargateGame,StargateLockedObjective,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,StargateMutator,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,StargatePassengerTrigger,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,StargatePawn,,,,,1,12,0,13,1,12,1,12,,,,,,,,,agree,,
-function,StargateGame,StargatePawn,getweaponclass,,position,,,,,,,12,,,12,0,,,,,12,12,agree,,
+function,StargateGame,StargatePawn,getweaponclass,,value,,,,,,,12,,,12,0,,,,,12,12,agree,,
 arm,StargateGame,StargatePawn,getweaponclass,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,StargatePawn,getweaponclass,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,StargatePawn,getweaponclass,3,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2357,7 +2366,7 @@ arm,StargateGame,StargatePawn,getweaponclass,10,byte,8,,,,,,,,,,,break,,tail,bre
 arm,StargateGame,StargatePawn,getweaponclass,11,byte,15,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,StargatePawn,getweaponclass,12,byte,16,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateGame,StargatePlayer,,,,,1,4,1,9,1,4,1,4,,,,,,,,,agree,,
-function,StargateGame,StargatePlayer,togglemusicstate,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,StargateGame,StargatePlayer,togglemusicstate,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,StargateGame,StargatePlayer,togglemusicstate,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,StargatePlayer,togglemusicstate,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,StargatePlayer,togglemusicstate,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2370,7 +2379,7 @@ class,StargateGame,StargateTeamHUD,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,StargateTextTrigger,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,StargateTriggeredObjective,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,StargateVehicle,,,,,1,13,0,14,1,13,1,13,,,,,,,,,agree,,
-function,StargateGame,StargateVehicle,displaydebug,,position,,,,,,,13,,,13,0,,,,,13,13,agree,,
+function,StargateGame,StargateVehicle,displaydebug,,value,,,,,,,13,,,13,0,,,,,13,13,agree,,
 arm,StargateGame,StargateVehicle,displaydebug,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,StargateVehicle,displaydebug,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateGame,StargateVehicle,displaydebug,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2444,7 +2453,11 @@ class,StargateGame,WaterWheel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,Waypoint,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,WeaponMenu,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,WeaponZoomInteraction,,,,,1,5,1,3,1,4,1,2,,,,,,,,,more,,
-function,StargateGame,WeaponZoomInteraction,keyevent,,none,,,,,,,4,,,0,4,,,,,0,0,agree,,
+function,StargateGame,WeaponZoomInteraction,keyevent,,value,,,,,,,4,,,4,0,,,,,2,4,differs,,
+arm,StargateGame,WeaponZoomInteraction,keyevent,1,byte,237,,,,,,,,,,,empty,,,empty,yes,,,,site 1
+arm,StargateGame,WeaponZoomInteraction,keyevent,2,byte,201,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,StargateGame,WeaponZoomInteraction,keyevent,3,byte,236,,,,,,,,,,,other,,,empty,no,,,,site 1
+arm,StargateGame,WeaponZoomInteraction,keyevent,4,byte,203,,,,,,,,,,,other,,,break,no,,,,site 1
 class,StargateGame,WillowWhisp,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,StargateGame,WoodSurface,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateGame,ZoneFogChange,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -2455,7 +2468,7 @@ class,StargateMenus,CharacterSelectionPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,ConnectPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,CoopPlayerPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,CreateNewProfile,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,CreateNewProfile,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,CreateNewProfile,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,CreateNewProfile,internalonxcontrollerevent,1,byte,7,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,CreditsPage,,,,,1,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,CurrentChapterPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -2480,17 +2493,17 @@ arm,StargateMenus,InGameMenu,buttonclick,1,expr,InstanceVariable,,,,,,,,,,,break
 class,StargateMenus,InGameScoreboard,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,LeftLockingPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,LoadGameMenu,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,LoadGameMenu,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,LoadGameMenu,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,LoadGameMenu,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,MainMenu,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,MapFileList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,MapSelectionPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,MissionBriefingPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,MultiplayerCharSelect,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,MultiplayerCharSelect,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,MultiplayerCharSelect,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,MultiplayerCharSelect,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,MultiplayerGameSelect,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,MultiplayerGameSelect,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,MultiplayerGameSelect,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,MultiplayerGameSelect,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,MultiPlayerInGame,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
 function,StargateMenus,MultiPlayerInGame,buttonclick,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
@@ -2503,7 +2516,7 @@ function,StargateMenus,MultiplayerMenu,buttonclick,,position,,,,,,,2,,,2,0,,,,,2
 arm,StargateMenus,MultiplayerMenu,buttonclick,1,expr,InstanceVariable,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateMenus,MultiplayerMenu,buttonclick,2,expr,InstanceVariable,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,MultiplayerSelectProfile,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,MultiplayerSelectProfile,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,MultiplayerSelectProfile,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,MultiplayerSelectProfile,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,MultiplayerServerPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,MultiplayerServerSelect,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -2513,15 +2526,15 @@ class,StargateMenus,ObjectivesPanel,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,OptionsEditAppearance,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,OptionsEditAudio,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,OptionsEditBase,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,OptionsEditBase,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,OptionsEditBase,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,OptionsEditBase,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,OptionsEditControls,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,OptionsEditProfile,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,OptionsEditProfile,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,OptionsEditProfile,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,OptionsEditProfile,internalonxcontrollerevent,1,byte,7,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,OptionsEditVideo,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,OptionsPage,,,,,1,2,0,2,1,2,1,2,,,,,,,,,agree,,
-function,StargateMenus,OptionsPage,internalonxcontrollerevent,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,StargateMenus,OptionsPage,internalonxcontrollerevent,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,StargateMenus,OptionsPage,internalonxcontrollerevent,1,byte,6,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateMenus,OptionsPage,internalonxcontrollerevent,2,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,OverwriteSavedGamePage,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -2539,34 +2552,34 @@ class,StargateMenus,ReturnToMainPage,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,RightLockingMenuPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,RightLockingPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SavedGameInfo,,,,,1,3,1,0,1,3,1,0,,,,,,,,,agree,,
-function,StargateMenus,SavedGameInfo,gettypestring,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,StargateMenus,SavedGameInfo,gettypestring,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,StargateMenus,SavedGameInfo,gettypestring,1,byte,3,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,StargateMenus,SavedGameInfo,gettypestring,2,byte,2,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,StargateMenus,SavedGameInfo,gettypestring,3,byte,1,,,,,,,,,,,return,,,return,yes,,,,site 1
 class,StargateMenus,SavedGameList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SaveGameMenu,,,,,1,2,0,2,1,2,1,2,,,,,,,,,agree,,
-function,StargateMenus,SaveGameMenu,internalonxcontrollerevent,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,StargateMenus,SaveGameMenu,internalonxcontrollerevent,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,StargateMenus,SaveGameMenu,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateMenus,SaveGameMenu,internalonxcontrollerevent,2,byte,6,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,SaveGamePanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SelectPawnPage,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,SelectPawnPage,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,SelectPawnPage,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,SelectPawnPage,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,SelectPawnPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SelectTeamListBox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SelectTeamPage,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,SelectTeamPage,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,SelectTeamPage,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,SelectTeamPage,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,SelectTeamPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,ServerList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,ServerSelectionListBox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,ServerSelectionPage,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,ServerSelectionPage,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,ServerSelectionPage,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,ServerSelectionPage,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,ServerSelectionPanel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SGPageBase,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SinglePlayerChapterSelect,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,SinglePlayerChapterSelect,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,SinglePlayerChapterSelect,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,SinglePlayerChapterSelect,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,SinglePlayerInGame,,,,,1,2,0,2,1,2,1,2,,,,,,,,,agree,,
 function,StargateMenus,SinglePlayerInGame,buttonclick,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
@@ -2576,7 +2589,7 @@ class,StargateMenus,SinglePlayerLoadGame,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SinglePlayerMenu,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SinglePlayerNewGame,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,SinglePlayerSelectProfile,,,,,1,2,0,2,1,2,1,2,,,,,,,,,agree,,
-function,StargateMenus,SinglePlayerSelectProfile,internalonxcontrollerevent,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,StargateMenus,SinglePlayerSelectProfile,internalonxcontrollerevent,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,StargateMenus,SinglePlayerSelectProfile,internalonxcontrollerevent,1,byte,7,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateMenus,SinglePlayerSelectProfile,internalonxcontrollerevent,2,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,SinglePlayerTutorial,,,,,1,2,0,0,1,2,1,0,,,,,,,,,agree,,
@@ -2589,7 +2602,7 @@ arm,StargateMenus,SystemLinkMenu,buttonclick,1,expr,InstanceVariable,,,,,,,,,,,b
 arm,StargateMenus,SystemLinkMenu,buttonclick,2,expr,InstanceVariable,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,TextGameInfo,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,VirtualKeyboardPage,,,,,1,3,0,0,1,3,1,0,,,,,,,,,agree,,
-function,StargateMenus,VirtualKeyboardPage,internalonxcontrollerevent,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,StargateMenus,VirtualKeyboardPage,internalonxcontrollerevent,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,StargateMenus,VirtualKeyboardPage,internalonxcontrollerevent,1,byte,6,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,StargateMenus,VirtualKeyboardPage,internalonxcontrollerevent,2,byte,7,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,StargateMenus,VirtualKeyboardPage,internalonxcontrollerevent,3,byte,4,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -2607,7 +2620,7 @@ arm,StargateMenus,VSMainMenu,buttonclick,1,expr,InstanceVariable,,,,,,,,,,,break
 arm,StargateMenus,VSMainMenu,buttonclick,2,expr,InstanceVariable,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,StargateMenus,VSMainMenu,buttonclick,3,expr,InstanceVariable,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,WaitingForPlayers,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
-function,StargateMenus,WaitingForPlayers,internalonxcontrollerevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,StargateMenus,WaitingForPlayers,internalonxcontrollerevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,StargateMenus,WaitingForPlayers,internalonxcontrollerevent,1,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,StargateMenus,XBoxLiveBackDrop,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,StargateMenus,XBoxLiveFindGameMenu,,,,,1,1,0,1,1,1,1,1,,,,,,,,,agree,,
@@ -2851,22 +2864,22 @@ class,Stargateeffects,TrainSmokeEmitter,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Stargateeffects,TransportRingSpawn,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,Stargateeffects,UT_SpriteSmokePuff,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UDebugMenu,UDebugBlueLookAndFeel,,,,,4,15,0,15,4,15,4,15,,,,,,,,,agree,,
-function,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,,position,,,,,,,6,,,6,0,,,,,6,6,agree,,
+function,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,4,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,5,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,playmenusound,6,byte,5,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UDebugMenu,UDebugBlueLookAndFeel,combo_setupsizes,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UDebugMenu,UDebugBlueLookAndFeel,combo_setupsizes,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UDebugMenu,UDebugBlueLookAndFeel,combo_setupsizes,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,combo_setupsizes,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,combo_setupsizes,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UDebugMenu,UDebugBlueLookAndFeel,checkbox_setupsizes,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UDebugMenu,UDebugBlueLookAndFeel,checkbox_setupsizes,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UDebugMenu,UDebugBlueLookAndFeel,checkbox_setupsizes,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,checkbox_setupsizes,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,checkbox_setupsizes,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UDebugMenu,UDebugBlueLookAndFeel,editbox_setupsizes,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UDebugMenu,UDebugBlueLookAndFeel,editbox_setupsizes,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UDebugMenu,UDebugBlueLookAndFeel,editbox_setupsizes,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,editbox_setupsizes,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UDebugMenu,UDebugBlueLookAndFeel,editbox_setupsizes,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -2930,7 +2943,7 @@ arm,UDebugMenu,UDebugMenuBar,menuitemselected,3,int,3,,,,,,,,,,,break,,tail,brea
 arm,UDebugMenu,UDebugMenuBar,menuitemselected,4,int,4,,,,,,,,,,,break,,tail,break,yes,,,,site 7
 arm,UDebugMenu,UDebugMenuBar,menuitemselected,5,int,6,,,,,,,,,,,break,,tail,break,yes,,,,site 7
 arm,UDebugMenu,UDebugMenuBar,menuitemselected,6,int,7,,,,,,,,,,,break,,tail,break,yes,,,,site 7
-function,UDebugMenu,UDebugMenuBar,windowevent,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
+function,UDebugMenu,UDebugMenuBar,windowevent,,value,,,,,,,1,,,1,0,,,,,1,1,agree,,
 arm,UDebugMenu,UDebugMenuBar,windowevent,1,byte,7,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UDebugMenu,UDebugOpenCW,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UDebugMenu,UDebugOpenWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -3024,7 +3037,7 @@ class,UWindow,UWindowBase,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowBitmap,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowButton,,,,,1,1,1,2,1,1,1,1,,,,,,,,,agree,,
 function,UWindow,UWindowButton,keydown,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
-arm,UWindow,UWindowButton,keydown,1,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowButton,keydown,1,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowCheckbox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowClientWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowComboButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -3047,11 +3060,11 @@ class,UWindow,UWindowControlFrame,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowDialogClientWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowDialogControl,,,,,1,1,1,2,1,1,1,1,,,,,,,,,agree,,
 function,UWindow,UWindowDialogControl,keydown,,position,,,,,,,1,,,1,0,,,,,1,1,agree,,
-arm,UWindow,UWindowDialogControl,keydown,1,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowDialogControl,keydown,1,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowDynamicTextArea,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowDynamicTextRow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowEditBox,,,,,2,18,1,18,2,18,2,17,,,,,,,,,agree,,
-function,UWindow,UWindowEditBox,keydown,,position,,,,,,,16,,,16,0,,,,,16,16,agree,,
+function,UWindow,UWindowEditBox,keydown,,value,,,,,,,16,,,16,0,,,,,16,16,agree,,
 arm,UWindow,UWindowEditBox,keydown,1,int,17,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowEditBox,keydown,2,int,16,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowEditBox,keydown,3,int,27,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -3069,13 +3082,13 @@ arm,UWindow,UWindowEditBox,keydown,14,int,46,,,,,,,,,,,break,,tail,break,yes,,,,
 arm,UWindow,UWindowEditBox,keydown,15,int,190,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,UWindow,UWindowEditBox,keydown,16,int,110,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 function,UWindow,UWindowEditBox,keyup,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
-arm,UWindow,UWindowEditBox,keyup,1,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,UWindow,UWindowEditBox,keyup,2,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowEditBox,keyup,1,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowEditBox,keyup,2,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowEditBoxHistory,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowEditControl,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowFrameCloseBox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowFramedWindow,,,,,2,16,0,4,2,16,2,4,,,,,,,,,agree,,
-function,UWindow,UWindowFramedWindow,lmousedown,,position,,,,,,,8,,,8,0,,,,,8,8,agree,,
+function,UWindow,UWindowFramedWindow,lmousedown,,value,,,,,,,8,,,8,0,,,,,8,8,agree,,
 arm,UWindow,UWindowFramedWindow,lmousedown,1,byte,0,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,UWindow,UWindowFramedWindow,lmousedown,2,byte,2,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,UWindow,UWindowFramedWindow,lmousedown,3,byte,5,,,,,,,,,,,return,,,return,yes,,,,site 1
@@ -3084,7 +3097,7 @@ arm,UWindow,UWindowFramedWindow,lmousedown,5,byte,1,,,,,,,,,,,return,,,return,ye
 arm,UWindow,UWindowFramedWindow,lmousedown,6,byte,6,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,UWindow,UWindowFramedWindow,lmousedown,7,byte,3,,,,,,,,,,,return,,,return,yes,,,,site 1
 arm,UWindow,UWindowFramedWindow,lmousedown,8,byte,4,,,,,,,,,,,return,,,return,yes,,,,site 1
-function,UWindow,UWindowFramedWindow,mousemove,,position,,,,,,,8,,,8,0,,,,,8,8,agree,,
+function,UWindow,UWindowFramedWindow,mousemove,,value,,,,,,,8,,,8,0,,,,,8,8,agree,,
 arm,UWindow,UWindowFramedWindow,mousemove,1,byte,0,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,UWindow,UWindowFramedWindow,mousemove,2,byte,7,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowFramedWindow,mousemove,3,byte,2,,,,,,,,,,,empty,,,empty,yes,,,,site 1
@@ -3094,7 +3107,7 @@ arm,UWindow,UWindowFramedWindow,mousemove,6,byte,4,,,,,,,,,,,break,,tail,break,y
 arm,UWindow,UWindowFramedWindow,mousemove,7,byte,1,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,UWindow,UWindowFramedWindow,mousemove,8,byte,6,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowGrid,,,,,1,6,0,4,1,6,1,4,,,,,,,,,agree,,
-function,UWindow,UWindowGrid,keydown,,position,,,,,,,6,,,6,0,,,,,6,6,agree,,
+function,UWindow,UWindowGrid,keydown,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,UWindow,UWindowGrid,keydown,1,int,38,,,,,,,,,,,empty,,,empty,yes,,,,site 1
 arm,UWindow,UWindowGrid,keydown,2,int,236,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowGrid,keydown,3,int,40,,,,,,,,,,,empty,,,empty,yes,,,,site 1
@@ -3107,11 +3120,11 @@ class,UWindow,UWindowHotkeyWindowList,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowHScrollbar,,,,,0,0,0,2,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowHSliderControl,,,,,2,7,1,8,2,7,2,7,,,,,,,,,agree,,
 function,UWindow,UWindowHSliderControl,keydown,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
-arm,UWindow,UWindowHSliderControl,keydown,1,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,UWindow,UWindowHSliderControl,keydown,2,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,UWindow,UWindowHSliderControl,keydown,3,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-arm,UWindow,UWindowHSliderControl,keydown,4,expr,PrimitiveCast,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UWindow,UWindowHSliderControl,beforepaint,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+arm,UWindow,UWindowHSliderControl,keydown,1,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowHSliderControl,keydown,2,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowHSliderControl,keydown,3,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowHSliderControl,keydown,4,expr,Context,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+function,UWindow,UWindowHSliderControl,beforepaint,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UWindow,UWindowHSliderControl,beforepaint,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowHSliderControl,beforepaint,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowHSliderControl,beforepaint,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -3171,7 +3184,7 @@ arm,UWindow,UWindowHTMLTextArea,addtext,18,string,BLINK,,,,,,,,,,,break,,tail,br
 arm,UWindow,UWindowHTMLTextArea,addtext,19,string,/BLINK,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowHTMLTextRow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowLabelControl,,,,,1,3,0,3,1,3,1,3,,,,,,,,,agree,,
-function,UWindow,UWindowLabelControl,beforepaint,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UWindow,UWindowLabelControl,beforepaint,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UWindow,UWindowLabelControl,beforepaint,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowLabelControl,beforepaint,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowLabelControl,beforepaint,3,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -3181,7 +3194,7 @@ class,UWindow,UWindowLayoutControl,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowLayoutRow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowList,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowListBox,,,,,1,3,0,3,1,3,1,2,,,,,,,,,agree,,
-function,UWindow,UWindowListBox,drawitem,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UWindow,UWindowListBox,drawitem,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UWindow,UWindowListBox,drawitem,1,byte,0,,,,,,,,,,,other,,,fallthrough,yes,,,,site 1
 arm,UWindow,UWindowListBox,drawitem,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowListBox,drawitem,3,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -3189,19 +3202,19 @@ class,UWindow,UWindowListBoxItem,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowListControl,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowLookAndFeel,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowMenuBar,,,,,1,2,0,2,1,2,1,2,,,,,,,,,agree,,
-function,UWindow,UWindowMenuBar,keydown,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,UWindow,UWindowMenuBar,keydown,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,UWindow,UWindowMenuBar,keydown,1,int,37,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowMenuBar,keydown,2,int,39,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowMenuBarItem,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowMessageBox,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowMessageBoxArea,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowMessageBoxCW,,,,,3,12,0,12,3,12,3,12,,,,,,,,,agree,,
-function,UWindow,UWindowMessageBoxCW,beforepaint,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,UWindow,UWindowMessageBoxCW,beforepaint,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,UWindow,UWindowMessageBoxCW,beforepaint,1,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowMessageBoxCW,beforepaint,2,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowMessageBoxCW,beforepaint,3,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowMessageBoxCW,beforepaint,4,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UWindow,UWindowMessageBoxCW,setupmessageboxclient,,position,,,,,,,4,,,4,0,,,,,4,4,agree,,
+function,UWindow,UWindowMessageBoxCW,setupmessageboxclient,,value,,,,,,,4,,,4,0,,,,,4,4,agree,,
 arm,UWindow,UWindowMessageBoxCW,setupmessageboxclient,1,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowMessageBoxCW,setupmessageboxclient,2,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowMessageBoxCW,setupmessageboxclient,3,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -3216,15 +3229,32 @@ class,UWindow,UWindowPageControlPage,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowPageWindow,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowProgressBar,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowPulldownMenu,,,,,1,6,1,6,1,6,1,6,,,,,,,,,agree,,
-function,UWindow,UWindowPulldownMenu,keydown,,value,,,,,,,6,,,1,5,,,,,1,1,agree,,
+function,UWindow,UWindowPulldownMenu,keydown,,value,,,,,,,6,,,6,0,,,,,6,6,agree,,
 arm,UWindow,UWindowPulldownMenu,keydown,1,int,27,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowPulldownMenu,keydown,2,int,38,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowPulldownMenu,keydown,3,int,40,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowPulldownMenu,keydown,4,int,37,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowPulldownMenu,keydown,5,int,39,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowPulldownMenu,keydown,6,int,13,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowPulldownMenuItem,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowRightClickMenu,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowRootWindow,,,,,5,14,3,16,5,14,5,13,,,,,,,,,agree,,
-function,UWindow,UWindowRootWindow,windowevent,,position,,,,,,,2,,,2,0,,,,,2,2,agree,,
+function,UWindow,UWindowRootWindow,windowevent,,value,,,,,,,2,,,2,0,,,,,2,2,agree,,
 arm,UWindow,UWindowRootWindow,windowevent,1,byte,7,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowRootWindow,windowevent,2,byte,6,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UWindow,UWindowRootWindow,keyevent,,none,,,,,,,12,,,0,12,,,,,0,0,agree,,
+function,UWindow,UWindowRootWindow,keyevent,,value,,,,,,,12,,,12,0,,,,,12,12,agree,,
+arm,UWindow,UWindowRootWindow,keyevent,1,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowRootWindow,keyevent,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,UWindowRootWindow,keyevent,3,byte,4,,,,,,,,,,,other,,tail,into-default,yes,,,,site 1
+arm,UWindow,UWindowRootWindow,keyevent,1,byte,27,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,UWindowRootWindow,keyevent,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,UWindowRootWindow,keyevent,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,UWindowRootWindow,keyevent,4,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,UWindowRootWindow,keyevent,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,UWindowRootWindow,keyevent,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,UWindowRootWindow,keyevent,3,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,UWindowRootWindow,keyevent,1,byte,228,,,,,,,,,,,break,,tail,break,yes,,,,site 4
+arm,UWindow,UWindowRootWindow,keyevent,2,byte,229,,,,,,,,,,,break,,tail,break,yes,,,,site 4
 class,UWindow,UWindowSBDownButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowSBLeftButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowSBRightButton,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -3244,20 +3274,20 @@ class,UWindow,UWindowURLTextArea,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowVScrollbar,,,,,0,0,0,2,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowVSplitter,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UWindow,UWindowWin95LookAndFeel,,,,,3,9,0,9,3,9,3,9,,,,,,,,,agree,,
-function,UWindow,UWindowWin95LookAndFeel,combo_setupsizes,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UWindow,UWindowWin95LookAndFeel,combo_setupsizes,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UWindow,UWindowWin95LookAndFeel,combo_setupsizes,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWin95LookAndFeel,combo_setupsizes,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWin95LookAndFeel,combo_setupsizes,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UWindow,UWindowWin95LookAndFeel,checkbox_setupsizes,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UWindow,UWindowWin95LookAndFeel,checkbox_setupsizes,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UWindow,UWindowWin95LookAndFeel,checkbox_setupsizes,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWin95LookAndFeel,checkbox_setupsizes,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWin95LookAndFeel,checkbox_setupsizes,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
-function,UWindow,UWindowWin95LookAndFeel,editbox_setupsizes,,position,,,,,,,3,,,3,0,,,,,3,3,agree,,
+function,UWindow,UWindowWin95LookAndFeel,editbox_setupsizes,,value,,,,,,,3,,,3,0,,,,,3,3,agree,,
 arm,UWindow,UWindowWin95LookAndFeel,editbox_setupsizes,1,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWin95LookAndFeel,editbox_setupsizes,2,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWin95LookAndFeel,editbox_setupsizes,3,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowWindow,,,,,1,10,1,15,1,10,1,10,,,,,,,,,agree,,
-function,UWindow,UWindowWindow,windowevent,,position,,,,,,,10,,,10,0,,,,,10,10,agree,,
+function,UWindow,UWindowWindow,windowevent,,value,,,,,,,10,,,10,0,,,,,10,10,agree,,
 arm,UWindow,UWindowWindow,windowevent,1,byte,9,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWindow,windowevent,2,byte,0,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 arm,UWindow,UWindowWindow,windowevent,3,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
@@ -3270,7 +3300,19 @@ arm,UWindow,UWindowWindow,windowevent,9,byte,6,,,,,,,,,,,break,,tail,break,yes,,
 arm,UWindow,UWindowWindow,windowevent,10,byte,8,,,,,,,,,,,break,,tail,break,yes,,,,site 1
 class,UWindow,UWindowWrappedTextArea,,,,,0,0,0,1,0,0,0,0,,,,,,,,,,,
 class,UWindow,WindowConsole,,,,,6,17,3,17,6,17,6,14,,,,,,,,,agree,,
-function,UWindow,WindowConsole,keyevent,,none,,,,,,,17,,,0,17,,,,,0,0,agree,,
+function,UWindow,WindowConsole,keyevent,,value,,,,,,,17,,,12,5,,,,,11,12,differs,,
+arm,UWindow,WindowConsole,keyevent,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,WindowConsole,keyevent,1,byte,3,,,,,,,,,,,break,,tail,break,yes,,,,site 1
+arm,UWindow,WindowConsole,keyevent,3,byte,4,,,,,,,,,,,other,,tail,into-default,yes,,,,site 1
+arm,UWindow,WindowConsole,keyevent,1,byte,27,,,,,,,,,,,break,,tail,return,no,,,,site 2
+arm,UWindow,WindowConsole,keyevent,1,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,WindowConsole,keyevent,2,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,WindowConsole,keyevent,3,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 2
+arm,UWindow,WindowConsole,keyevent,4,byte,1,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,WindowConsole,keyevent,5,byte,2,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,WindowConsole,keyevent,6,byte,4,,,,,,,,,,,break,,tail,break,yes,,,,site 3
+arm,UWindow,WindowConsole,keyevent,1,byte,228,,,,,,,,,,,break,,tail,break,yes,,,,site 4
+arm,UWindow,WindowConsole,keyevent,2,byte,229,,,,,,,,,,,break,,tail,break,yes,,,,site 4
 class,UnrealEd,AnimBrowserMesh,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UnrealEd,AnimEditProps,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
 class,UnrealEd,BlendEditProps,,,,,0,0,0,0,0,0,0,0,,,,,,,,,,,
@@ -3297,22 +3339,27 @@ census,,,,,,,,,,,,,,,,,,,,,,,,3,classes whose live text spells more `case` label
 census,,,,,,,,,,,,,,,,,,,,,,,,0,classes whose live text spells fewer
 census,,,,,,,,,,,,,,,,,,,,,,,,0,classes whose live text has a `case` and whose bytecode has no arm
 census,,,,,,,,,,,,,,,,,,,,,,,,0,classes with arms whose text spells no `case`
-census,,,,,,,,,,,,,,,,,,,,,,,,794,arms whose case value was found as a `case` label in their function's text
-census,,,,,,,,,,,,,,,,,,,,,,,,50,"arms whose case value names no label in that text (an expression, or text not that revision)"
-census,,,,,,,,,,,,,,,,,,,,,,,,471,"of those, the ones matched by position because the source spells a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer"
-census,,,,,,,,,,,,,,,,,,,,,,,,794,arms whose text body leaves the way the token stream does
-census,,,,,,,,,,,,,,,,,,,,,,,,794,"arms whose case value matched a text label, so their exit could be compared"
-census,,,,,,,,,,,,,,,,,,,,,,,,38,"of the shared `case A: case B:` bodies, the ones the source spells with no body too"
-census,,,,,,,,,,,,,,,,,,,,,,,,8,"of the arms that stop with no jump, the ones whose text case also ends in no `break`/`return`"
+census,,,,,,,,,,,,,,,,,,,,,,,,836,arms whose case value was found as a `case` label in their function's text
+census,,,,,,,,,,,,,,,,,,,,,,,,8,"arms whose case value names no label in that text (an expression, or text not that revision)"
+census,,,,,,,,,,,,,,,,,,,,,,,,127,"of those, the ones matched by position because the source spells a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer"
+census,,,,,,,,,,,,,,,,,,,,,,,,832,arms whose text body leaves the way the token stream does
+census,,,,,,,,,,,,,,,,,,,,,,,,836,"arms whose case value matched a text label, so their exit could be compared"
+census,,,,,,,,,,,,,,,,,,,,,,,,39,"of the shared `case A: case B:` bodies, the ones the source spells with no body too"
+census,,,,,,,,,,,,,,,,,,,,,,,,10,"of the arms that stop with no jump, the ones whose text case also ends in no `break`/`return`"
 census,,,,,,,,,,,,,,,,,,,,,,,,2,"of the arms whose last `Jump` is a loop's own back edge, the ones whose source case also ends on a control construct rather than leaving"
 census,,,,,,,,,,,,,,,,,,,,,,,,171,functions carrying a switch on both sides
 census,,,,,,,,,,,,,,,,,,,,,,,,0,matched arms whose own source `case` body carries a `continue` statement
 census,,,,,,,,,,,,,,,,,,,,,,,,0,`continue` statements inside a `switch` block -- case arms and `default:` bodies together
 census,,,,,,,,,,,,,,,,,,,,,,,,0,"of those, the ones inside a case arm's body (every label group, matched or not)"
 census,,,,,,,,,,,,,,,,,,,,,,,,0,"of those, the ones inside a `default:` body"
-census,,,,,,,,,,,,,,,,,,,,,,,,584,matched arms whose own source `case` body carries a `break` statement
+census,,,,,,,,,,,,,,,,,,,,,,,,623,matched arms whose own source `case` body carries a `break` statement
 census,,,,,,,,,,,,,,,,,,,,,,,,2,"of those, matched arms carrying a `break` an arm statement follows -- the interior break"
 census,,,,,,,,,,,,,,,,,,,,,,,,664,`break` statements inside a `switch` block -- case arms and `default:` bodies together
 census,,,,,,,,,,,,,,,,,,,,,,,,630,"of those, the ones inside a case arm's body (every label group, matched or not)"
 census,,,,,,,,,,,,,,,,,,,,,,,,2,"of those, the ones an arm statement follows, i.e. not the arm's last statement"
 census,,,,,,,,,,,,,,,,,,,,,,,,34,"of those, the ones inside a `default:` body"
+census,,,,,,,,,,,,,,,,,,,,,,,,225,`enum` bodies the class texts declare
+census,,,,,,,,,,,,,,,,,,,,,,,,1642,members those enums declare (a member's value is its ordinal)
+census,,,,,,,,,,,,,,,,,,,,,,,,363,"`case` labels in the live text spelled as an enum member, qualified or bare"
+census,,,,,,,,,,,,,,,,,,,,,,,,29,`case` labels in the live text spelled as a hex integer (`case 0x26:`)
+census,,,,,,,,,,,,,,,,,,,,,,,,2,"`case` labels a bare enum member two enums place at two different ordinals, left unfolded"

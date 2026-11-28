@@ -1576,15 +1576,15 @@ those are the ones whose extent stops at the script's end.
 
 **There is no compiler prefix in front of an arm, which is why the extent is the token stream and not a shape.** **110** arms open with a `JumpIfNot` and the rest open with whatever the source's first statement compiles to -- `SetCategoryVolume`'s `if (MusicVolume != NewVolume)` at the head of a case, `TestSwitch`'s `Assert` at the head of another -- so a decompiler reads the body's first statement rather than skipping a fixed one.
 
-**An arm's test value is readable, and it is a literal on 785 of 844 arms.** The `Case` token's own value expression is a *child* of the token, so it never appears in the statement stream, but it is there: **417** arms carry a `ByteConst`, **189** a compact integer token, **143** a `StringConst` and **36** a `NameConst`, resolved here through the package's name table (`case 'Music':`); **59** carry an expression the compiler emitted instead of a folded value (`InstanceVariable`, `PrimitiveCast`). That split is `inventory/switch_operands.csv`'s per-switch census read one level down, and it is what makes the shipped source comparable with a single arm rather than with a class's total.
+**An arm's test value is readable, and it is a literal on 790 of 844 arms.** The `Case` token's own value expression is a *child* of the token, so it never appears in the statement stream, but it is there: **422** arms carry a `ByteConst`, **189** a compact integer token, **143** a `StringConst` and **36** a `NameConst`, resolved here through the package's name table (`case 'Music':`); **54** carry an expression the compiler emitted instead of a folded value (`InstanceVariable`, `PrimitiveCast`). That split is `inventory/switch_operands.csv`'s per-switch census read one level down, and it is what makes the shipped source comparable with a single arm rather than with a class's total.
 
 | label kind | arms | one arm | case value |
 |---|---:|---|---|
-| byte | 417 | `FractalTextureFactory.CreateMaterial` arm 1 | 0 |
+| byte | 422 | `FractalTextureFactory.CreateMaterial` arm 1 | 0 |
 | int | 189 | `PlayerController.ServerMove` arm 1 | 0 |
 | string | 143 | `StreamBase.ConvertToFileType` arm 1 | mp3 |
 | name | 36 | `PlayerProfile.SetCategoryVolume` arm 1 | Music |
-| expr | 59 | `GameProfile.TextPositionDescription` arm 1 | `PrimitiveCast` |
+| expr | 54 | `moListEditBox.OnScrollButtonClick` arm 1 | `InstanceVariable` |
 
 | longest arm | arm | statements |
 |---|---|---:
@@ -1651,11 +1651,22 @@ written to make that visible rather than to subtract it silently.
 
 **Corpus totals:** **312** `switch` and **848** `case` in the live text against **844** arm(s) and **198** terminator case(s) in `inventory/switch_arms.csv`, so the source spells a `default:` label for **42** of the **198** lists and a `case` label for **848** of the **844** arms.
 
-**An arm is matched by its own value, and that is what the label column in the arms census bought.** **323** of **844** arms find a `case` label with the same canonical value in their function's text; **471** more are paired **by position**, and only where every label in that function is a symbolic constant (`case MB_OK:`) the compiler folds to the arm's integer, which is a different reading and is counted apart; **50** are matched by neither -- an expression-valued case, or a text that is not the revision the package compiled.
+**An arm is matched by its own value, and that is what the label column in the arms census bought.** **709** of **844** arms find a `case` label with the same canonical value in their function's text; **127** more are paired **by position**, and only where every label in that function is a symbolic constant (`case MB_OK:`) with no value the corpus declares, which is a different reading and is counted apart; **8** are matched by neither -- an expression-valued case, or a text that is not the revision the package compiled.
 
-**How an arm leaves agrees with the source, on the arms the text could be read for.** Of **794** matched arms, **794** leave the way the token stream says (`break` to a `break;`, `return` to a `return`, `continue` to a `continue`/`goto`, a loop's back edge to a `for`/`while` body that ends the case); the shared `case A: case B:` body is spelled with no body in **38** of them, and **8** of the arms that stop with no jump at all also end their source `case` with no `break`/`return`, **2** of the loop-back arms on a control construct.
+**The source's symbolic labels are folded by the corpus's own enum declarations.** **225** `enum` bodies in the class texts declare **1,642** members, **363** `case` label(s) are spelled as one of those members -- `case EInputKey.IK_Escape:` qualified or `case IST_Press:` bare -- and **29** are spelled as a hex integer (`case 0x26:`), which the integer rule reads as its value. A member's value is its declaration ordinal, so the arm's integer and the label meet as equal values; the two spellings agree where a function writes one and another writes the other: `UWindowPulldownMenu.KeyDown` spells `0x26` for the arm `WindowConsole.KeyEvent` spells `IK_Up`, and both names exist in this build's `EInputKey`.
 
-**No arm's source body carries a `continue`, and none crosses a case boundary in this build.** The `text_continue` column of the arm rows reads each matched arm's own case body: **0** of the **794** matched arms hold one, and the block census finds **0** `continue` statement(s) inside a `switch` block at all -- **0** in a case arm, **0** in a `default:` body -- so the two functions whose `continue`s neighbour a `switch` (`GUIMultiComponent.mapcontrols`, `CommandInterface.executescriptcommand`) have theirs outside every block. The byte side says the same thing from the other direction: an arm that left by a `continue` jump would land off its list's end, and the `elsewhere` row of `inventory/switch_arms.csv` is **0**. A renderer can treat a `switch` as opaque to `continue` in this corpus.
+**How an arm leaves agrees with the source, on the arms the text could be read for.** Of **836** matched arms, **832** leave the way the token stream says (`break` to a `break;`, `return` to a `return`, `continue` to a `continue`/`goto`, a loop's back edge to a `for`/`while` body that ends the case); the shared `case A: case B:` body is spelled with no body in **39** of them, and **10** of the arms that stop with no jump at all also end their source `case` with no `break`/`return`, **2** of the loop-back arms on a control construct.
+
+**No arm's source body carries a `continue`, and none crosses a case boundary in this build.** The `text_continue` column of the arm rows reads each matched arm's own case body: **0** of the **836** matched arms hold one, and the block census finds **0** `continue` statement(s) inside a `switch` block at all -- **0** in a case arm, **0** in a `default:` body -- so the two functions whose `continue`s neighbour a `switch` (`GUIMultiComponent.mapcontrols`, `CommandInterface.executescriptcommand`) have theirs outside every block. The byte side says the same thing from the other direction: an arm that left by a `continue` jump would land off its list's end, and the `elsewhere` row of `inventory/switch_arms.csv` is **0**. A renderer can treat a `switch` as opaque to `continue` in this corpus.
+
+**4** arm(s) leave differently in the two readings; the first are listed here so the next reader starts from a name rather than a count.
+
+| arm | case value | text | bytes |
+|---|---|---|---|
+| `SGMenuInteraction.keyevent` arm 1 | 84 | other | break |
+| `WeaponZoomInteraction.keyevent` arm 3 | 236 | other | empty |
+| `WeaponZoomInteraction.keyevent` arm 4 | 203 | other | break |
+| `WindowConsole.keyevent` arm 1 | 27 | break | return |
 
 The rows are `inventory/text_switches.csv` (`tools/text-switches.py`), one per class, per function and per matched arm; `make text-switches` re-runs the read, `--check-doc` re-renders this block from the committed artifact and `--check` holds the classifier to a synthetic stream, all without the dump.
 <!-- /generated:text-switches -->
@@ -1699,10 +1710,30 @@ code, **8** into the `default:` body), and **eight** of them carry a label the s
 renders these arms as falling into the next case's statements, and the `// End:0x` comments in
 `~/sg1/work/UnrealScript` remain Sg1Tool's output rather than an oracle for it.
 
-**What it does not settle.** The **471** positional pairings rest on an inferred label order, so their agreeing exits
-corroborate the order rather than prove it; the **50** arms whose case value names no label in their function's text
-have no exit comparison at all; and the **38** of **40** shared `case A: case B:` bodies are spelled with no body in
-the source, the other two being among those 50. What is settled is the reading: on every arm the source could be
+**What it does not settle.** The **127** positional pairings rest on an inferred label order, so their agreeing
+exits corroborate the order rather than prove it; the **8** arms whose case value names no label in their function's
+text have no exit comparison at all; and the **39** of **40** shared `case A: case B:` bodies are spelled with no
+body in the source.
+
+**The label join now reads the source's symbolic values, and that moved 344 pairings from inference to value.** A
+`case` label need not be a literal: this corpus spells `case EInputKey.IK_Escape:`, bare `case IST_Press:`,
+`case 0x26:` and `case ConsoleHotKey:`. Two of those four are values the build's own text declares --
+**225** `enum` bodies carrying **1,642** members give each member its declaration ordinal, and a hex literal is an
+integer -- so `tools/text-switches.py` folds them before it compares: **363** `case` labels are an enum member and
+**29** a hex integer, and the arms that used to be paired **by position** (471) are paired **by value** (127) for
+**344** of them. Arms that find a label go **794 -> 836** of **844** and the unmatched drop **50 -> 8**, with the
+four arms whose exit now reads differently named in the block above. The fold is refused where it would be a guess:
+**2** labels are a bare member two enums number differently -- `SG1_TEALC` and `SG1_JACKSON` are members of
+`InteractionType` (3 and 5) *and* of `TranslationUser` (0 and 1) -- so they stay unfolded, which is why
+`CommandInterface.ConvertEnumToName` still has two arms with no label. The byte side had the mirror of the hex gap:
+**5** arms of `GameProfile.TextPositionDescription` were read as "an expression" because the case value is written
+`PrimitiveCast <type> <literal>`, and following the cast to its child takes the arm census's expression-valued arms
+from **59** to **54** -- those five then meet the text's `0`..`4` by value.
+The **8** that remain are three functions: those 2 in `ConvertEnumToName`, **1** in
+`TriggeredScript.IsRelevant` whose text spells that arm's label inside a comment (`//case TT_PawnProximity:`), and
+**5** in `WindowConsole.KeyEvent`, which this class declares **twice** (a class body and a state body) while the join
+matches one span's blocks per site -- two of the five are `case ConsoleHotKey:`, a `var config byte` no enum
+declares, and three are the state body's own `switch (Key)` arms. What is settled is the reading: on every arm the source could be
 matched to, the text says how the arm leaves.
 
 ## Every `break` in the shipped text, and which construct it leaves (measured 2026-11-18)
@@ -1749,8 +1780,11 @@ under the compiler's own composed names, `EqualEqual_KeyValuePairKeyValuePair` (
 `EqualEqual_MapItemMapItem` (182), which is exactly the name `tools/native-operators.py`'s `compose()` builds from the
 symbol and its operand types -- and which `inventory/native_operators.csv` already carries for the `native` half. The
 join keys a function by name, so a `==` on the text side and `EqualEqual_MapItemMapItem` on the stream side never
-meet; composing the text declaration's name is the route (U23), and it needs the declaration's operand types, which
-the text rule does not capture yet.
+meet; composing the text declaration's name is the route (U23) -- and the text rule captures the operand types
+now, because `tools/class-text-bodies.py`'s `declared_name` reads the parameter list and hands it to
+`tools/native-operators.py`'s `compose()`. The row joins: `Engine.MaplistRecord.==` is the function row
+`equalequal_mapitemmapitem` in `inventory/text_branch_functions.csv`, with **6** condition terms against **6**
+`JumpIfNot` tokens, `else` 0 on both sides and verdict `agree`, and the text-only population is **34** again.
 
 **A `switch` may write no parentheses.** `switch TriggerWhen` is legal and this corpus uses it 112 times; a body
 census anchored on `switch (` cannot see those blocks at all, which is why `tools/text-switches.py`'s pattern now
@@ -1795,11 +1829,11 @@ matches the keyword and lets its body reader find the `{`. That single change mo
   the call, and its declared type names a class (a property's from `class_properties.csv`, an import's from the owner
   class its outer names, an array element's from its array, a local's from the class's own `ScriptText` or an
   ancestor's, and a call result's from the callee's declared return type). What is left
-  is **249 sites over 111 names**: 181 with an expression that names no class (28 a local neither its class nor an
-  ancestor declares, 70 a literal or cast, 40 an array element of a non-class array, 25 not a variable, 18 a call
-  result with nothing to type), 46 typed to a class whose chain
-  lacks the name, and 22 with a completed value in front; see "The calls the scripts make" for the counts, the reason
-  split, the shuffle control and the 10% reading ambiguity.
+  is **three named rows**, not the 249-over-111 this bullet carried before the two reader fixes above: the census
+  block in "The calls the scripts make" is the current count -- **3** object expressions with no recorded type,
+  **38** receivers typed to a class whose chain declares no name (one shape, `Outer`, explained there), and **7**
+  with a completed value in front -- and `--lists N` prints every one of them by package, class, function and
+  reason; see that section for the reason split, the shuffle control and the reading ambiguity.
 * **`0x60..0xff` -- measured, and not reserved.** The walker's rules for them are native calls and the token is the
   slot itself, one byte below `0x100` and two bytes at or above it: 48,422 sites, 42,056 of them naming a `native()`
   declaration on the caller's chain, and the body at each direct opcode's `GNatives` slot spelled `exec<Function>` by

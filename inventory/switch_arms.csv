@@ -260,11 +260,11 @@ arm,Engine,Canvas.DrawScreenText,1,6,0x00d3,0x00d8,0x00fb,3,break,0,0,SubtractEq
 arm,Engine,Canvas.DrawScreenText,1,7,0x00fb,0x0100,0x0111,2,break,0,0,SubtractEqual_FloatFloat,Jump,byte,6,,
 arm,Engine,Canvas.DrawScreenText,1,8,0x0111,0x0116,0x012b,2,break,0,0,SubtractEqual_FloatFloat,Jump,byte,7,,
 arm,Engine,Canvas.DrawScreenText,1,9,0x012b,0x0130,0x0157,3,break,0,0,SubtractEqual_FloatFloat,Jump,byte,8,,
-arm,Engine,GameProfile.TextPositionDescription,1,1,0x0028,0x002f,0x003f,2,break,0,0,Let,Jump,expr,PrimitiveCast,,
-arm,Engine,GameProfile.TextPositionDescription,1,2,0x003f,0x0046,0x0056,2,break,0,0,Let,Jump,expr,PrimitiveCast,,
-arm,Engine,GameProfile.TextPositionDescription,1,3,0x0056,0x005d,0x006e,2,break,0,0,Let,Jump,expr,PrimitiveCast,,
-arm,Engine,GameProfile.TextPositionDescription,1,4,0x006e,0x0075,0x0086,2,break,0,0,Let,Jump,expr,PrimitiveCast,,
-arm,Engine,GameProfile.TextPositionDescription,1,5,0x0086,0x008d,0x009e,2,break,0,0,Let,Jump,expr,PrimitiveCast,,
+arm,Engine,GameProfile.TextPositionDescription,1,1,0x0028,0x002f,0x003f,2,break,0,0,Let,Jump,byte,0,,
+arm,Engine,GameProfile.TextPositionDescription,1,2,0x003f,0x0046,0x0056,2,break,0,0,Let,Jump,byte,1,,
+arm,Engine,GameProfile.TextPositionDescription,1,3,0x0056,0x005d,0x006e,2,break,0,0,Let,Jump,byte,2,,
+arm,Engine,GameProfile.TextPositionDescription,1,4,0x006e,0x0075,0x0086,2,break,0,0,Let,Jump,byte,3,,
+arm,Engine,GameProfile.TextPositionDescription,1,5,0x0086,0x008d,0x009e,2,break,0,0,Let,Jump,byte,4,,
 arm,Engine,LadderInfo.UpdateLadders,1,1,0x0031,0x0035,0x0061,2,break,0,0,Let,Jump,int,0,,
 arm,Engine,LadderInfo.UpdateLadders,1,2,0x0061,0x0065,0x0091,2,break,0,0,Let,Jump,int,1,,
 arm,Engine,LadderInfo.UpdateLadders,1,3,0x0091,0x0096,0x00c2,2,break,0,0,Let,Jump,int,2,,
@@ -663,7 +663,7 @@ arm,UPreview,UPreviewSkinnedButton.SetRenderInfo,1,1,0x0007,0x000b,0x002f,4,brea
 arm,UPreview,UPreviewSkinnedButton.SetRenderInfo,1,2,0x002f,0x0033,0x0057,4,break,0,0,Let,Jump,int,1,,
 arm,UPreview,UPreviewSkinnedButton.SetRenderInfo,1,3,0x0057,0x005c,0x0080,4,break,0,0,Let,Jump,int,2,,
 arm,UPreview,UPreviewSkinnedButton.SetRenderInfo,1,4,0x0080,0x0085,0x00a9,4,break,0,0,Let,Jump,int,3,,
-arm,UWindow,UWindowDialogControl.KeyDown,1,1,0x001c,0x003e,0x00a0,7,break,0,1,JumpIfNot,Jump,expr,PrimitiveCast,,
+arm,UWindow,UWindowDialogControl.KeyDown,1,1,0x001c,0x003e,0x00a0,7,break,0,1,JumpIfNot,Jump,expr,Context,,
 arm,UWindow,UWindowWindow.WindowEvent,1,1,0x0007,0x000c,0x0039,3,break,0,0,VirtualFunction,Jump,byte,9,,
 arm,UWindow,UWindowWindow.WindowEvent,1,2,0x0039,0x003e,0x0089,4,break,0,0,JumpIfNot,Jump,byte,0,,
 arm,UWindow,UWindowWindow.WindowEvent,1,3,0x0089,0x008e,0x00d9,4,break,0,0,JumpIfNot,Jump,byte,1,,
@@ -677,7 +677,7 @@ arm,UWindow,UWindowWindow.WindowEvent,1,10,0x024b,0x0250,0x028c,3,break,0,0,Jump
 arm,UWindow,WindowConsole.KeyEvent,1,1,0x0012,0x0017,0x0078,21,break,0,0,Switch,Jump,byte,1,,
 arm,UWindow,WindowConsole.KeyEvent,2,1,0x001e,0x0023,0x003e,7,return,0,0,JumpIfNot,Return,byte,27,,
 arm,UWindow,WindowConsole.KeyEvent,2,2,0x003e,0x0046,0x0072,9,return,0,0,JumpIfNot,Return,expr,InstanceVariable,,
-arm,UWindow,UWindowButton.KeyDown,1,1,0x001c,0x003e,0x0061,3,break,0,0,VirtualFunction,Jump,expr,PrimitiveCast,,
+arm,UWindow,UWindowButton.KeyDown,1,1,0x001c,0x003e,0x0061,3,break,0,0,VirtualFunction,Jump,expr,Context,,
 arm,UWindow,UWindowMessageBoxCW.BeforePaint,1,1,0x0041,0x0046,0x00e5,7,break,0,0,Let,Jump,byte,3,,
 arm,UWindow,UWindowMessageBoxCW.BeforePaint,1,2,0x00e5,0x00ea,0x0155,5,break,0,0,Let,Jump,byte,0,,
 arm,UWindow,UWindowMessageBoxCW.BeforePaint,1,3,0x0155,0x015a,0x01c5,5,break,0,0,Let,Jump,byte,1,,
@@ -721,10 +721,10 @@ arm,UWindow,UWindowGrid.KeyDown,1,3,0x0028,,,0,empty,0,0,,,int,40,,
 arm,UWindow,UWindowGrid.KeyDown,1,4,0x002d,0x0032,0x0049,2,break,0,0,Context,Jump,int,237,,
 arm,UWindow,UWindowGrid.KeyDown,1,5,0x0049,0x004e,0x0075,2,break,0,0,Context,Jump,int,33,,
 arm,UWindow,UWindowGrid.KeyDown,1,6,0x0075,0x007a,0x009f,2,break,0,0,Context,Jump,int,34,,
-arm,UWindow,UWindowHSliderControl.KeyDown,1,1,0x0025,0x0035,0x006a,5,break,0,1,JumpIfNot,Jump,expr,PrimitiveCast,,
-arm,UWindow,UWindowHSliderControl.KeyDown,1,2,0x006a,0x007a,0x00af,5,break,0,1,JumpIfNot,Jump,expr,PrimitiveCast,,
-arm,UWindow,UWindowHSliderControl.KeyDown,1,3,0x00af,0x00bf,0x00cd,2,break,0,0,VirtualFunction,Jump,expr,PrimitiveCast,,
-arm,UWindow,UWindowHSliderControl.KeyDown,1,4,0x00cd,0x00dd,0x00eb,2,break,0,0,VirtualFunction,Jump,expr,PrimitiveCast,,
+arm,UWindow,UWindowHSliderControl.KeyDown,1,1,0x0025,0x0035,0x006a,5,break,0,1,JumpIfNot,Jump,expr,Context,,
+arm,UWindow,UWindowHSliderControl.KeyDown,1,2,0x006a,0x007a,0x00af,5,break,0,1,JumpIfNot,Jump,expr,Context,,
+arm,UWindow,UWindowHSliderControl.KeyDown,1,3,0x00af,0x00bf,0x00cd,2,break,0,0,VirtualFunction,Jump,expr,Context,,
+arm,UWindow,UWindowHSliderControl.KeyDown,1,4,0x00cd,0x00dd,0x00eb,2,break,0,0,VirtualFunction,Jump,expr,Context,,
 arm,UWindow,UWindowHSliderControl.BeforePaint,1,1,0x0046,0x004b,0x006b,3,break,0,0,Let,Jump,byte,0,,
 arm,UWindow,UWindowHSliderControl.BeforePaint,1,2,0x006b,0x0070,0x0090,3,break,0,0,Let,Jump,byte,1,,
 arm,UWindow,UWindowHSliderControl.BeforePaint,1,3,0x0090,0x0095,0x00c8,3,break,0,0,Let,Jump,byte,2,,
@@ -744,8 +744,8 @@ arm,UWindow,UWindowEditBox.KeyDown,1,13,0x0265,0x026a,0x0296,10,break,0,1,JumpIf
 arm,UWindow,UWindowEditBox.KeyDown,1,14,0x0296,0x029b,0x02c7,10,break,0,1,JumpIfNot,Jump,int,46,,
 arm,UWindow,UWindowEditBox.KeyDown,1,15,0x02c7,,,0,empty,0,0,,,int,190,,
 arm,UWindow,UWindowEditBox.KeyDown,1,16,0x02cc,0x02d1,0x02ea,4,break,0,0,JumpIfNot,Jump,int,110,,
-arm,UWindow,UWindowEditBox.KeyUp,1,1,0x001b,0x003d,0x0048,3,break,0,0,LetBool,Jump,expr,PrimitiveCast,,
-arm,UWindow,UWindowEditBox.KeyUp,1,2,0x0048,0x006a,0x0075,3,break,0,0,LetBool,Jump,expr,PrimitiveCast,,
+arm,UWindow,UWindowEditBox.KeyUp,1,1,0x001b,0x003d,0x0048,3,break,0,0,LetBool,Jump,expr,Context,,
+arm,UWindow,UWindowEditBox.KeyUp,1,2,0x0048,0x006a,0x0075,3,break,0,0,LetBool,Jump,expr,Context,,
 arm,UWindow,UWindowRootWindow.WindowEvent,1,1,0x0007,0x000c,0x0029,3,break,0,0,JumpIfNot,Jump,byte,7,,
 arm,UWindow,UWindowRootWindow.WindowEvent,1,2,0x0029,0x002e,0x004b,3,break,0,0,JumpIfNot,Jump,byte,6,,
 arm,UWindow,UWindowRootWindow.UWindows.KeyEvent,1,1,0x0012,0x0017,0x00b5,17,break,0,5,Switch,Jump,byte,3,,
@@ -1269,8 +1269,8 @@ census,,,,,,,,,,,,,,,,14,the longest
 census,,,,,,,,,,,,,,,,29,"`default:` bodies whose end no `break` names, so the extent stops at the script's end"
 census,,,,,,,,,,,,,,,,18,bodies (an arm or a `default:`) carrying a `Switch` of their own
 census,,,,,,,,,,,,,,,,50,"lists with a single arm, where the body's end is the terminator itself"
-census,,,,,,,,,,,,,,,,417,arms whose case value is a `ByteConst`
+census,,,,,,,,,,,,,,,,422,arms whose case value is a `ByteConst`
 census,,,,,,,,,,,,,,,,189,"arms whose case value is a compact integer token (`IntConstByte`, `IntZero`, `IntOne`, `IntConst`)"
 census,,,,,,,,,,,,,,,,143,arms whose case value is a `StringConst`
 census,,,,,,,,,,,,,,,,36,arms whose case value is a `NameConst`
-census,,,,,,,,,,,,,,,,59,"arms whose case value is an expression the compiler emitted (`InstanceVariable`, `PrimitiveCast`, ...)"
+census,,,,,,,,,,,,,,,,54,"arms whose case value is an expression the compiler emitted (`InstanceVariable`, `PrimitiveCast`, ...)"

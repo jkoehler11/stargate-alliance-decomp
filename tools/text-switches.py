@@ -92,6 +92,11 @@ CENSUS_NOTE = {
     "arm_break_all": "of those, the ones inside a case arm's body (every label group, matched or not)",
     "arm_break_interior": "of those, the ones an arm statement follows, i.e. not the arm's last statement",
     "default_break": "of those, the ones inside a `default:` body",
+    "enums_declared": "`enum` bodies the class texts declare",
+    "enum_members": "members those enums declare (a member's value is its ordinal)",
+    "labels_enum": "`case` labels in the live text spelled as an enum member, qualified or bare",
+    "labels_hex": "`case` labels in the live text spelled as a hex integer (`case 0x26:`)",
+    "labels_ambiguous": "`case` labels a bare enum member two enums place at two different ordinals, left unfolded",
 }
 
 CENSUS_ORDER = ("text_switch", "text_case", "text_default", "text_break", "byte_lists", "byte_arms",
@@ -100,7 +105,8 @@ CENSUS_ORDER = ("text_switch", "text_case", "text_default", "text_break", "byte_
                 "end_checked", "empty_agree", "fallthrough_text_other", "loop_text_other", "functions_joined",
                 "arm_continue", "switch_continue", "arm_continue_all", "default_continue",
                 "arm_break", "arm_break_inner", "switch_break", "arm_break_all", "arm_break_interior",
-                "default_break")
+                "default_break", "enums_declared", "enum_members", "labels_enum", "labels_hex",
+                "labels_ambiguous")
 
 # A `case` label's expression: everything up to the `:` that is not a `::`, on one line, no statement separator.
 # UnrealScript folds keyword case -- `Switch(Role)` and `State` are the build's own spelling -- so every pattern here
@@ -113,7 +119,57 @@ BREAK = re.compile(r"(?<![#\w$.])break\b", re.I)
 RETURN = re.compile(r"(?<![#\w$.])return\b", re.I)
 CONTINUE = re.compile(r"(?<![#\w$.])continue\b", re.I)
 GOTO = re.compile(r"(?<![#\w$.])goto\b", re.I)
-INT = re.compile(r"[-+]?\d+")
+INT = re.compile(r"[-+]?(?:0[xX][0-9a-fA-F]+|\d+)")
+HEX = re.compile(r"[-+]?0[xX][0-9a-fA-F]+")
+# A case label need not be a literal. `WindowConsole.KeyEvent` spells `case EInputKey.IK_Escape:` and
+# `case IST_Press:` -- names the *compiler* folds to the arm's integer -- and `UWindowPulldownMenu.KeyDown` spells
+# `case 0x26:` for the same kind of value. The enum is declared in the corpus's own text
+# (`Engine.Interactions` opens `enum EInputKey { IK_None, // 0 ... }`), so the fold is a reading rather than a
+# guess: a member's value is its declaration ordinal. Resolving it turns a symbolic label from a positional
+# pairing (the fallback below, which needs the label count to equal the arm count) into a value match.
+ENUM_DECL = re.compile(r"(?<![#\w$.])enum[ \t]+(\w+)\s*\{([^{}]*)\}", re.I)
+ENUMS = {}                      # member (lower) -> {enum name (lower): ordinal}
+ENUM_STATS = collections.Counter()
+
+
+def load_enums(texts):
+    """Build the member table from every `enum NAME { A, B }` the corpus's class texts declare.
+
+    `clive` is the comment-masked buffer, so an enum body arrives as plain identifiers. A member declared by two
+    enums at two values is ambiguous and is left unresolved by `enum_value`; a member declared twice at one value
+    is the same fold either way.
+    """
+    ENUMS.clear()
+    ENUM_STATS.clear()
+    for t in texts.values():
+        buf = t.get("clive") or ""
+        for m in ENUM_DECL.finditer(buf):
+            name = m.group(1).lower()
+            members = [w.strip() for w in re.split(r"[,{}]+", m.group(2))]
+            members = [w for w in members if re.fullmatch(r"[A-Za-z_]\w*", w)]
+            ENUM_STATS["enums"] += 1
+            for i, mem in enumerate(members):
+                ENUMS.setdefault(mem.lower(), {}).setdefault(name, i)
+                ENUM_STATS["members"] += 1
+    return ENUMS
+
+
+def enum_value(expr):
+    """The integer a symbolic `case` label folds to, or `None` when no enum of this build declares it.
+
+    `EInputKey.IK_Escape` is read through the enum the qualifier names; a bare `IST_Press` resolves only where
+    every enum declaring that name gives the same ordinal.
+    """
+    e = expr.strip()
+    if not e:
+        return None
+    if "." in e:
+        head, _dot, tail = e.rpartition(".")
+        return ENUMS.get(tail.strip().lower(), {}).get(head.strip().lower())
+    hits = ENUMS.get(e.lower())
+    if hits and len(set(hits.values())) == 1:
+        return next(iter(hits.values()))
+    return None
 
 
 def load_tool(name, filename):
@@ -151,7 +207,10 @@ def canon_text(expr):
     if len(e) >= 2 and e[0] in "'\"" and e[-1] == e[0]:
         return ("str", e[1:-1].replace(e[0] * 2, e[0]).lower())
     if INT.fullmatch(e):
-        return ("int", str(int(e)))
+        return ("int", str(int(e, 16) if HEX.fullmatch(e) else int(e)))
+    v = enum_value(e)
+    if v is not None:
+        return ("int", str(v))
     return ("expr", e.lower())
 
 
@@ -600,6 +659,28 @@ def switch_break_census(texts):
     return census
 
 
+def label_spelling_census(texts):
+    """How the live text spells its `case` labels: an enum member, or a hex integer.
+
+    The population the fold is worth, counted once over the text rather than accumulated from the matcher (which
+    asks `canon_text` the same label several times): a symbolic label is one the source wrote as a name and the
+    compiler folded, and a hex label is one the integer rule itself had to learn.
+    """
+    census = collections.Counter()
+    for t in texts.values():
+        for m in CASE.finditer(t.get("live") or ""):
+            e = m.group(1).strip()
+            if HEX.fullmatch(e):
+                census["labels_hex"] += 1
+            if enum_value(e) is not None:
+                census["labels_enum"] += 1
+            elif "." not in e and len(set((ENUMS.get(e.lower()) or {}).values())) > 1:
+                # A bare name two enums place at two ordinals is not folded: which enum the source meant is a
+                # reading the label alone cannot make, and the header's own cast is the route (not in this read).
+                census["labels_ambiguous"] += 1
+    return census
+
+
 def join(texts, arms_c, arms_f, meta):
     census = collections.Counter()
     rows = []
@@ -680,6 +761,10 @@ def join(texts, arms_c, arms_f, meta):
         census[key] += value
     for key, value in switch_break_census(texts).items():
         census[key] += value
+    for key, value in label_spelling_census(texts).items():
+        census[key] += value
+    census["enums_declared"] += ENUM_STATS["enums"]
+    census["enum_members"] += ENUM_STATS["members"]
     for key in CENSUS_ORDER:
         rows.append({"kind": "census", "note": CENSUS_NOTE[key], "count": census[key]})
     return rows, census
@@ -751,13 +836,24 @@ def doc_block(rows):
               "**An arm is matched by its own value, and that is what the label column in the arms census bought.** "
               "**%s** of **%s** arms find a `case` label with the same canonical value in their function's text; "
               "**%s** more are paired **by position**, and only where every label in that function is a symbolic "
-              "constant (`case MB_OK:`) the compiler folds to the arm's integer, which is a different reading and "
+              "constant (`case MB_OK:`) with no value the corpus declares, which is a different reading and "
               "is counted apart; **%s** are matched by neither -- an expression-valued case, or a text that is not "
               "the revision the package compiled."
               % (comma(census_value(rows, "labels_found") - census_value(rows, "labels_by_position")),
                  comma(census_value(rows, "labels_found") + census_value(rows, "labels_missing")),
                  comma(census_value(rows, "labels_by_position")),
                  comma(census_value(rows, "labels_missing")))]
+    lines += ["",
+              "**The source's symbolic labels are folded by the corpus's own enum declarations.** **%s** `enum` "
+              "bodies in the class texts declare **%s** members, **%s** `case` label(s) are spelled as one of those "
+              "members -- `case EInputKey.IK_Escape:` qualified or `case IST_Press:` bare -- and **%s** are spelled "
+              "as a hex integer (`case 0x26:`), which the integer rule reads as its value. A member's value is its "
+              "declaration ordinal, so the arm's integer and the label meet as equal values; the two spellings "
+              "agree where a function writes one and another writes the other: `UWindowPulldownMenu.KeyDown` "
+              "spells `0x26` for the arm `WindowConsole.KeyEvent` spells `IK_Up`, and both names exist in this "
+              "build's `EInputKey`."
+              % (comma(census_value(rows, "enums_declared")), comma(census_value(rows, "enum_members")),
+                 comma(census_value(rows, "labels_enum")), comma(census_value(rows, "labels_hex")))]
     lines += ["",
               "**How an arm leaves agrees with the source, on the arms the text could be read for.** Of **%s** "
               "matched arms, **%s** leave the way the token stream says (`break` to a `break;`, `return` to a "
@@ -887,6 +983,16 @@ def selftest():
         fails.append("a quoted label read %r" % (canon_text("'Music'"),))
     if canon_text("-3") != ("int", "-3"):
         fails.append("a negative label read %r" % (canon_text("-3"),))
+    # A hex label is an integer, and the enum fold reads a qualified and a bare member the same way. The table
+    # is synthetic here so the test needs no dump: `enum EFoo { A, B, C }` answers `B` = 1.
+    if canon_text("0x26") != ("int", "38") or canon_text("0X0d") != ("int", "13"):
+        fails.append("a hex label read %r/%r" % (canon_text("0x26"), canon_text("0X0d")))
+    load_enums({("x", "y"): {"clive": "enum EFoo\n{\n\tA,\n\tB,\n\tC\n};\n"}})
+    if canon_text("EFoo.B") != ("int", "1") or canon_text("B") != ("int", "1"):
+        fails.append("an enum member read %r/%r" % (canon_text("EFoo.B"), canon_text("B")))
+    if canon_text("NotAnEnum.B") != ("expr", "notanenum.b"):
+        fails.append("a qualified non-member read %r" % (canon_text("NotAnEnum.B"),))
+    load_enums({})
     if canon_arm("name", "Music") != ("str", "music") or canon_arm("byte", "7") != ("int", "7"):
         fails.append("an arm's value canonicalised as %r/%r" % (canon_arm("name", "Music"), canon_arm("byte", "7")))
     # The join, on a synthetic pair: arm 2 is the shared body, arm 3 falls through, arm 1 returns.
@@ -985,6 +1091,7 @@ def main():
             return 0
         ap.error("a measurement needs --system (or --check)")
     texts = walk(args.system)
+    load_enums(texts)
     arms_c, arms_f, meta = arms_by_class()
     rows, census = join(texts, arms_c, arms_f, meta)
     if args.write_doc:
