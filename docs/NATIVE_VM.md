@@ -1793,9 +1793,12 @@ the group's start. The null aims the same walk two bytes past it.
 
 **The middle's tail closes where the group closes, and the array there holds two records.** A 2,139-class null at
 0.0% is what makes the 55.4% a reading rather than a rate: the same grammar, the same tables and the same window,
-aimed two bytes later, never fits once. The 65 two-head classes are reported rather than resolved (the first head
-is the one measured), and the 954 without a head are mostly classes whose group is itself a `no-parse` -- 951 of
-the 954 -- so the array reading is not what fails there.
+aimed two bytes later, never fits once. **Corrected 2026-11-28** (*The record closes from the prefix's end*,
+below): the 65 two-head classes are resolved by the writer's order -- the walked front lands on the first head on
+**63 of the 65** -- and on **236 of the 954** the group's *start* is what fails, not the array: those classes'
+arrays hold 3 to 8 records, the closing-run scan latches onto a unit inside one of them, and the chain closes
+when the array's end names the group's start. The 951 `no-parse` verdicts stay as measured; what they are a
+property of is the scan's unit, not the array.
 
 **The front is not a property block, and that is measured rather than assumed.** `tools/prop-stream.py`'s tag walk
 run from the prefix's end over the bytes in front of the head closes exactly on the head on **0 of 1,185**: it
@@ -1907,6 +1910,90 @@ in the grammar.
     make class-record-front
     python3 tools/class-record-front.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --grammar --class Engine.KarmaParams
     python3 tools/class-record-front.py --fields-report
+
+### The record closes from the prefix's end: front, array, group, and the fault behind the head-less 954
+
+`class-record-group-anchor.py` can only look for the array's head where the element walk ends *exactly* on the
+closing group's start, and that start is `class-tail-run.py`'s last `01 00 00 00` unit before the defaults block. So
+954 of the 2,139 located classes get no head, and 951 of them are classes whose group does not parse -- which reads
+as an array failure but is a **start** failure. The writer's order does not need either end first: the front's field
+list and widths are measured, `FUN_0003d900` bounds the array, and `class-tail-run.py`'s grammar is the group.
+`tools/class-record-chain.py` (`make class-record-chain`, `inventory/class_record_chain.csv`, `--check` in `make ci`)
+walks exactly that, and each link is anchored on something outside the payload bytes:
+
+* the front's second field must be the class's **own export-name index**, read from the package's export table;
+* every array reference must be inside the package's export or import table;
+* the group must close **exactly** on the defaults block start, with its name indices inside the name table.
+
+| measure | value |
+|---|---|
+| located classes walked | 2,204 |
+| the chain closes on the defaults block | **1,228 (55.7%)** |
+| the front's name is the class's own export-name index | **2,204 of 2,204** |
+| where it stops: array count outside 1..8 / group `no-parse` / array overruns the block / reference outside the tables | 549 / 279 / 134 / 14 |
+| control: the same chain one byte later | **281** |
+| control: the group aimed two bytes past the array | **0** |
+| control: the array at the front's modal 61 bytes | **792** |
+
+**Two consequences.** The front's grammar is not a property of the 1,185 classes the group anchor reaches: its second
+field is the class's own name index on **2,204 of 2,204** located classes, and on 1,156 of the 1,185 anchored rows
+the walked front ends on exactly the head the anchor found (992 of the 1,185 then also close at the group). And
+1,228 records close end to end without the tail anchor, against 281 for the same walk started one byte late -- 4.4x, where the group's own null is 0 because a group that has to end on
+the block start cannot be shifted.
+
+**The 954 head-less classes: the closing run's unit is inside the array.** 236 of the 954 close from the prefix
+alone, and 234 of those 236 carry `no-parse` from the tail. Their arrays hold **3 to 8 records** (3 on 56, 4 on 50, 5
+on 36, 8 on 33, 6 on 33, 7 on 28) -- not the 2 the anchored population shows -- and the tail's group start sits inside
+them, at `array_end - group_start` = **9, 18, 1, 36, 10, 27, 54, 45, 19, 30, 46, 28, 20, 40**: the array's own 9-byte
+element stride, and one byte into one. So the scan for the record's last unit latches onto a unit the array's element
+bodies carry, and the group parse it then runs is reading the array. What the array holds is coherent with that
+reading -- one walk's references resolve to the class itself, its superclass and its neighbours:
+
+| class | records | references |
+|---|---|---|
+| `Engine.Canvas` | 8 | `Canvas`, `Object`, `Texture` x6 |
+| `Engine.Emitter` | 8 | `Emitter`, `Actor`, `ParticleEmitter` x5, `LevelInfo` |
+| `Engine.Fragment` | 6 | `Fragment`, `Effects`, `LevelInfo`, `PhysicsVolume`, `LevelInfo` x2 |
+| `Engine.ClientMover` | 3 | `ClientMover`, `Mover`, `LevelInfo` |
+| `AmbientCreatures.FishBase` | 4 | `FishBase`, `TransientAmbientPawn`, `PhysicsVolume`, `Controller` |
+
+**And the 65 two-head classes resolve to the first head.** The walk's end is the anchored head -- the first of the
+two -- on **63 of the 65**; the other two (`AmbientCreatures.HerdAnimal`, `UWindow.UWindowList`) fail at the array
+itself (a count of 143 and 128 at the walked end), so on those the walk picks neither and the ambiguity is not what
+stops it. So the two heads are not two readings of the same array: the front's length picks the one the anchor
+reports first.
+
+**The 29 rows the front walk does not close on are the same 29, and their join is 1-3 bytes.** Against the anchored
+head the walk is short by two on 13, by three on 7, by one on 4, past it by 5/3/2/7 on four, and short by 98 on one
+(the row whose walk overruns the front). The bytes at the join are a compact-shaped value -- `035291`, `085694`,
+`034d95`, `03678c`, `045c95`, `04438b`, `0644`, a bare `4f` -- reported and not named: they are the next read on this page.
+
+**A nonzero script length is read on 62 rows and none of them closes.** On every anchored row the front's script
+length is 0; on 62 located classes the same field reads 13 to 1,715 bytes (the largest under `Engine.Actor`) and the
+walk steps over that many bytes. Every one of the 62 fails at the array (a count of 0 on 15, a reference outside the
+tables on 14, 62, 12 and a spread of impossible values on the rest), so either those records do carry script bytes
+and the fields after them are not in the same order, or the value is read where the front's shape differs. Open, and
+named here rather than folded into the 1,228.
+
+**The element bound is not measured, so the default stays at the anchored grammar's 1..8.** Raising it is not free:
+the extra closures rise with the one-byte-late control rather than against it.
+
+| bound | chain closes | control, one byte later |
+|---|---|---|
+| **8** (default) | **1,228** | **281** |
+| 16 | 1,336 | 348 |
+| 64 | 1,544 | 476 |
+| 256 | 1,593 | 509 |
+
+The 316 rows the 64 bound adds are counts of 9 to 64; the eight read by hand resolve to plausible object lists
+(`AmbientCreatures.Birds` 22 `TransientAmbientPawn`, `AmbientCreatures.MigratingBirds` 44, `Engine.Canvas` already
+6+), so a longer array is not impossible -- but with 4.4x at 8 and 3.1x at 256 the bound is doing part of the
+fitting, and a second witness for the count (the tail's unit stride, or the array property's own count in the
+defaults) is what would settle it rather than a bigger number.
+
+    make class-record-chain
+    python3 tools/class-record-chain.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --class Engine.Canvas
+    python3 tools/class-record-chain.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --max-count 64 --sweep -o /tmp/chain64
 
 ### The tail is a count of name/reference pairs, and not an `FName` array
 

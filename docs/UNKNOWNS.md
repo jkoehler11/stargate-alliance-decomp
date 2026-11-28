@@ -3686,6 +3686,25 @@ earlier attributions to `UStruct::Serialize`'s four dwords are one group early. 
 **What is still open** is the compact before the `FriendlyName` (1-3 bytes, null on 865 of 1,156, 290 distinct
 values), the 8-byte `+0x80` field (47 values), and the 29 rows the walk does not close on.
 
+**2026-11-28 (thirteenth): the record closes from the prefix's end, and the head-less 954's fault is the closing
+run's unit, not the array.** The twelfth note left the 29 non-closing fronts and the 954 head-less as open. Walking
+the writer's order from the prefix with **no tail anchor** -- the front's fields, then `FUN_0003d900`'s array at the
+front's end, then `class-tail-run.py`'s group at the array's end, the group closing **exactly** on the defaults
+block -- closes **1,228 of 2,204** located records, and the front's second field is the class's own export-name index
+on **2,204 of 2,204** (the twelfth note measured 1,185, only the group-anchored ones). Controls: the same chain one
+byte later closes 281, the group aimed two bytes past the array parses 0, and the array taken at the front's modal
+61 bytes closes 792. **236 of the 954 head-less classes close**, and 234 of those carry `no-parse` from the tail:
+their arrays hold **3 to 8 records** (not the anchored population's 2) and the tail's group start lies *inside* the
+array, at `array_end - group_start` = 9, 18, 1, 36, 10, 27, 54, 45, 19, 30, 46, 28, 20, 40 -- the array's own
+9-byte element stride, and one byte into one -- so the last-unit scan latches onto a unit the element bodies carry.
+The 65 two-head classes resolve to the first head on **63**; the other two fail at the array itself, so the walk
+picks neither there. **What is still open** is the 1-3 byte join on the 29 (a compact-shaped value, `035291`,
+`085694`, ...), a **nonzero script length read on 62 rows** (13 to 1,715 bytes) that none of them closes, and the
+array's element bound: 1..8 is the anchored grammar's own, and 16/64/256 lift the closure to 1,336/1,544/1,593 while
+the one-byte-late control rises to 348/476/509 in step, so a bigger bound is not a measurement of the count. Numbers:
+`docs/NATIVE_VM.md`, *The record closes from the prefix's end: front, array, group, and the fault behind the
+head-less 954*; `inventory/class_record_chain.csv`.
+
 ## U18. What a `delegate` property's default value is — closed: it is `{object, name}`, and three of the 42 were a locator offset
 
 **Observed.** Three class-level values do not render, and they are one property in three classes:
