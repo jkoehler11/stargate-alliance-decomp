@@ -267,7 +267,7 @@ def _brace_end(toks, i):
 
 
 def params_of(toks, i):
-    """`[(type, name, optional)]` for a declaration's parameter list; `toks[i]` is its `(`.
+    """`[(type, name, optional, dim)]` for a declaration's parameter list; `toks[i]` is its `(`.
 
     The declared type is what picks an argument's token (`PHYS_Swimming` is a byte, `1.0` a float), so the join to
     the callee's declaration has to carry it: `inventory/natives.csv` holds a parameter *count* and no types.
@@ -292,6 +292,13 @@ def params_of(toks, i):
             if k == "op" and v in ("=", "["):
                 cut = n
                 break
+        # A **parameter's** dimension is a declaration too: `function SetEnemies(Pawn Enemies[16])` makes
+        # `Enemies` a `Pawn[16]`, and the body's `ArrayCount(Enemies)` folds to 16 exactly as a `local`'s does.
+        # `_array_dims` reads only `var`/`local` statements, so the parameter's `[16]` was in no table and the body
+        # refused as *an ArrayCount of a name whose declared dimension the source does not spell*. The dimension is
+        # a number or a `const`'s name (resolved later, where the class chain is known); it is the fourth field so
+        # the three the walk already reads keep their positions. Read off the **raw** segment: `words` below keeps
+        # only identifiers and operators, and a `[16]`'s dimension is a number token that filter drops.
         words = words[:cut]
         if not words:
             continue
@@ -314,7 +321,20 @@ def params_of(toks, i):
             optional = optional or tywords[0][1].lower() == "optional"
             tywords = tywords[1:]
         typ = "".join(v for _k, v in tywords)
-        out.append((typ, name, optional))
+        dim = None
+        if name:
+            for n in range(len(seg) - 3):
+                if (seg[n][0] in ("ident", "keyword") and seg[n][1].lower() == name.lower()
+                        and seg[n + 1] == ("op", "[") and seg[n + 3] == ("op", "]")):
+                    dtok = seg[n + 2]
+                    if dtok[0] == "number":
+                        v = _number(dtok[1])
+                        if isinstance(v, int) and v > 0:
+                            dim = v
+                    elif dtok[0] in ("ident", "keyword"):
+                        dim = dtok[1].lower()
+                    break
+        out.append((typ, name, optional, dim))
     return out
 
 
@@ -3404,6 +3424,22 @@ def _class_ref_class(word):
     return ""
 
 
+def _classref_tables(class_wide, fn_wide, fn_locals):
+    """A `class<Z>` declaration's target class, with the **function's own** declaration of a name shadowing the
+    class-wide one.
+
+    The class-wide table keeps only the *first* `class<Z>` of a name, so a later function that declares the same name
+    plainly is read through the first one: `StargateHUD.ToggleGameHUD` declares `local GameHUD G` while a function
+    further down the class declares `local class<GameInfo> G`, and `_class_of` consults this table *before* the local
+    type tables. `G.HideHud(!G.bHideHud)` therefore joined `HideHud` on `GameInfo`, found no declaration of it and
+    refused. A name this function declares itself -- as a local or a parameter -- is not the class-wide declaration;
+    its own `class<Z>`, if it has one, is put back from the per-function table.
+    """
+    out = {k: v for k, v in (class_wide or {}).items() if k not in (fn_locals or set())}
+    out.update(fn_wide or {})
+    return out
+
+
 def _class_of(expr, env):
     """The class a receiver expression holds, named the way the package names classes, or "".
 
@@ -4760,7 +4796,8 @@ def emit_call(stmt, env, receiver=None, head=None):
     if not args:
         return head + b"\x16"
     out = head
-    for arg, (ptype, _pname, _optional) in zip(args, params):
+    for arg, pinfo in zip(args, params):
+        ptype = pinfo[0]
         if not arg:
             # A hole **between** two arguments is the compiler's own `Nothing` (`0x0B`), one byte in the slot the
             # omitted argument would take: `Controller.PostBeginPlay`'s
@@ -5101,19 +5138,29 @@ def _stmt_at(toks, i):
         # `switch (e) { case v: ...; default: ...; }` is a chain of `Case` tokens, each carrying the absolute wide
         # offset of the next one (`execSwitch`, `0x0004ca20`), ending on `Case 0xffff`; the `Switch` token carries
         # the **comparison width** (`0` a wide string, `1` a byte, `4` an int). `emit_flow` writes it.
+        #
+        # The expression is **not always parenthesised**: `CountTrigger.ChangeCount` ships its switch over the
+        # property `TriggerWhen` with the source's `switch TriggerWhen` and no group, and the compiler wrote the same
+        # `05 01 <read> 0a ...` a parenthesised head would. A bare head is the tokens up to the body's `{`.
         j = i + 1
-        if j >= len(toks) or toks[j] != ("op", "("):
-            raise Refused("a switch without a parenthesised expression")
-        close = _paren_end(toks, j)
-        if close is None:
-            raise Refused("a switch whose expression the walk cannot bound")
-        k = close + 1
+        if j < len(toks) and toks[j] == ("op", "("):
+            close = _paren_end(toks, j)
+            if close is None:
+                raise Refused("a switch whose expression the walk cannot bound")
+            expr, k = toks[j + 1:close], close + 1
+        else:
+            k = j
+            while k < len(toks) and toks[k] != ("op", "{"):
+                k += 1
+            if k >= len(toks) or k == j:
+                raise Refused("a switch without a parenthesised expression")
+            expr = toks[j:k]
         while k < len(toks) and toks[k] == ("op", ";"):
             k += 1
         if k >= len(toks) or toks[k] != ("op", "{"):
             raise Refused("a switch whose body is not a block")
         groups, k = _switch_groups(toks, k + 1)
-        return ("switch", toks[j + 1:close], groups), k
+        return ("switch", expr, groups), k
     if kind == "keyword" and low in ("local", "const"):
         # `local rotator newRotation;` is a record the package declares, not code: it emits no bytes. A `const`
         # inside a body is hoisted to the class by the compiler -- `_consts_of` already reads it there, so the
@@ -6665,6 +6712,12 @@ def _source_index(tree):
             for state, fn, rettype, body, is_native, is_final, decl_params in functions_of(text):
                 if decl_params:
                     params.setdefault((cls, fn.lower()), decl_params)
+                    # ...and a parameter's own `[N]` is a dimension `ArrayCount` folds: `SetEnemies(Pawn
+                    # Enemies[16])`. `_array_dims` reads the text's `var`/`local` statements only, so this is the
+                    # one declaration form the walk parses instead of the statement scan.
+                    for _typ, _nm, _opt, _dim in decl_params:
+                        if _dim is not None and _nm:
+                            dims.setdefault((cls, _nm.lower()), set()).add(_dim)
                 if rettype and not state:
                     # a cast's slot is chosen by the operand's type, and an operand that is a call is typed by the
                     # callee's declared return type: `string(GetValue())` is FloatToString, not a guess
@@ -6844,6 +6897,8 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                         native_parms = []
                         break
                     native_parms.append(_hit[1])
+            _fn_declared = {(_p[1] or "").lower() for _p in (decl_params or []) if _p[1]}
+            _fn_declared |= set(localtypes_fn.get((cls.lower(), fname.lower()), {}))
             env = {"names": table_index, "scope": scope, "params": params, "enums": enums,
                    "corpus_funcs": corpus_funcs, "decl_index": index,
                    "enum_names": enum_names, "enum_by_name": enum_by_name, "enum_consts": enum_consts,
@@ -6871,8 +6926,9 @@ def score(tree, dump, out_dir, residue_dir=None, only=None):
                    # a `class<Z>` declaration's target class: `local class<StargateWeapon> WeaponClass`, whose
                    # `.Default` member is read on `StargateWeapon` and not on the word `class`. Per function for the
                    # same reason as `localtypes`, and it is the table `_class_of` consults *first*.
-                   "classreftypes": dict(classrefs_by_cls.get(cls.lower(), {}),
-                                        **classrefs_fn.get((cls.lower(), fname.lower()), {})),
+                   "classreftypes": _classref_tables(classrefs_by_cls.get(cls.lower()),
+                                                     classrefs_fn.get((cls.lower(), fname.lower())),
+                                                     _fn_declared),
                    # a parameter's struct name is in its own declaration (`Vector momentum`), and the package's
                    # record only says `StructProperty`
                    "paramtypes": {p[1].lower(): p[0].lower() for p in (decl_params or [])},
@@ -8622,7 +8678,8 @@ def check(args):
     got = params_of([("op", "("), ("ident", "ConstantColor"), ("ident", "cc"), ("op", ","),
                      ("keyword", "const"), ("ident", "float"), ("ident", "t"), ("op", ","),
                      ("keyword", "optional"), ("ident", "probe"), ("ident", "p"), ("op", ")")], 0)
-    if got != [("ConstantColor", "cc", False), ("float", "t", False), ("probe", "p", True)]:
+    if got != [("ConstantColor", "cc", False, None), ("float", "t", False, None),
+               ("probe", "p", True, None)]:
         print("FAIL uscript-emit: a parameter list answered %r, expected ConstantColor/cc, float/t, optional probe/p"
               % (got,))
         return 1
@@ -8707,6 +8764,93 @@ def check(args):
     m = VAR_DECL_MOD.search("\tvar const LevelInfo Level;\r\n")
     if not m or m.group(1, 2) != ("LevelInfo", "Level"):
         print("FAIL uscript-emit: a `const` property declaration reads %r" % ((m.group(1, 2) if m else None),))
+        return 1
+    # P26: a `foreach`'s head is the **whole chain**, not its first call. `_stmt_at` scanned to the first `(` and
+    # took everything up to its match, so `ForEach MyController.GetSoundSource().RadiusActors(...)`
+    # (`ACTION_SGWaitForPlayer.PlayImpatience`, `ACTION_PlaySGSound.Play3DSound`) read its head as
+    # `MyController.GetSoundSource()` and its body as whatever followed -- starting at the `.` of `.RadiusActors(`.
+    # The head now ends at the first depth-0 `)` not followed by `.` or `[`.
+    try:
+        fnode, _fk = _stmt_at(tokens_of("foreach MyController.GetSoundSource().RadiusActors(class'Actor', A) { "
+                                        "X(); }"), 0)
+        fhead = fnode[1] if fnode and fnode[0] == "foreach" else []
+    except Refused as exc:
+        # The old walk does not just read a short head here, it *refuses* the statement: the body it then sees
+        # starts at a `.` and the nested-block rule rejects it. Catch it so the fixture reports its own FAIL
+        # instead of dying with a traceback -- a crash is a failed check too, but it cannot say which rule it is.
+        print("FAIL uscript-emit: a `foreach` head refused on its chain (%s)" % (exc,))
+        return 1
+    if (not fhead or fhead[-1] != ("op", ")")
+            or not any(k in ("ident", "keyword") and v.lower() == "radiusactors" for k, v in fhead)):
+        print("FAIL uscript-emit: a `foreach` head stops at its first call: %r" % (fhead,))
+        return 1
+    # ...and the split at `.`/`[` must not swallow a plain call's own `)`: the control is a head that is one call.
+    cnode, _ck = _stmt_at(tokens_of("foreach RadiusActors(class'Actor', A) { X(); }"), 0)
+    if not cnode or cnode[0] != "foreach" or len(cnode[1]) != 7:
+        print("FAIL uscript-emit: a one-call `foreach` head read %r" % (cnode[1] if cnode else None,))
+        return 1
+    # P27: a matched declarator's `;` **ends** the declaration. Advancing one token past it made the loop hunt for
+    # the next depth-0 `;` -- many declarations away at class scope -- so `SquadAISG`'s `var Actor
+    # HideNodeCandidates[32];` hid the `local float HideNodeDistances[32];` further down and `ArrayCount` refused.
+    # A `,` still continues the scan (a multi-declarator statement).
+    # The `local` has to sit **inside a function body**, which is where `SquadAISG` declares it: at class scope
+    # `k += 5` lands on the `local` itself and the old scan reads it anyway, so a class-scope fixture passes on both
+    # trees and measures nothing (measured: it did). Inside a body every token is at depth 1, the old scan's depth-0
+    # `;` test never fires again, and it walks off the end of the class instead of reading the dimension.
+    gotdims = _array_dims("class P;\r\nvar Actor HideNodeCandidates[32];\r\nfunction F()\r\n{\r\n"
+                          "\tlocal float HideNodeDistances[32];\r\n}\r\n")
+    if gotdims != {"hidenodecandidates": 32, "hidenodedistances": 32}:
+        print("FAIL uscript-emit: a `;` did not end a declaration: %r" % (gotdims,))
+        return 1
+    if _array_dims("class P;\r\nvar int A[4], B[2];\r\n") != {"a": 4, "b": 2}:
+        print("FAIL uscript-emit: a multi-declarator statement lost a dimension")
+        return 1
+    # P28: a **parameter's** dimension is a declaration too. `function SetEnemies(Pawn Enemies[16])` makes
+    # `Enemies` a `Pawn[16]` and the body's `ArrayCount(Enemies)` folds to 16; `_array_dims` reads only `var`/
+    # `local` statements, so the fourth field of `params_of` is where that dimension lives, and `_source_index`
+    # puts it in the same table. The control is a parameter that declares none.
+    pgot = params_of(tokens_of("(Pawn Enemies[16], const float t, out name Names[MAX_NAMES])"), 0)
+    if pgot != [("Pawn", "Enemies", False, 16), ("float", "t", False, None),
+                ("name", "Names", False, "max_names")]:
+        print("FAIL uscript-emit: a parameter dimension read %r" % (pgot,))
+        return 1
+    fdecl = functions_of("class P extends Object;\nfunction SetEnemies(Pawn Enemies[16]) { }\n")
+    if not fdecl or fdecl[0][6] != [("Pawn", "Enemies", False, 16)]:
+        print("FAIL uscript-emit: a declaration's parameter list lost its dimension: %r"
+              % ((fdecl[0][6] if fdecl else None),))
+        return 1
+    # P29: a function's **own** declaration of a name shadows the class-wide `class<Z>` of the same name.
+    # `StargateHUD.ToggleGameHUD` declares `local GameHUD G` while a later function declares
+    # `local class<GameInfo> G`; `_class_of` reads the class-wide table first, so `G.HideHud(!G.bHideHud)` joined on
+    # `GameInfo` and refused. The controls are the name the function does not declare (class-wide entry kept) and a
+    # function whose declaration *is* a `class<Z>` (its own target put back).
+    if _classref_tables({"g": "gameinfo", "k": "probe"}, {}, {"g"}) != {"k": "probe"}:
+        print("FAIL uscript-emit: a function-local declaration did not shadow the class-wide `class<Z>`")
+        return 1
+    if _classref_tables({"g": "gameinfo", "k": "probe"}, {"g": "pawn"}, {"g"}) != {"k": "probe", "g": "pawn"}:
+        print("FAIL uscript-emit: a function's own `class<Z>` was not put back after the shadow")
+        return 1
+    if _classref_tables({"g": "gameinfo"}, {}, set()) != {"g": "gameinfo"}:
+        print("FAIL uscript-emit: a class-wide `class<Z>` was dropped for a name the function does not declare")
+        return 1
+    # P30: a `switch` expression is **not always parenthesised**: `CountTrigger.ChangeCount` ships `switch
+    # TriggerWhen` and the compiler wrote the same `05 <width> <read> 0a ...` a parenthesised head writes. A head
+    # with no expression at all still refuses -- that is the control, and it keeps the fallback from accepting the
+    # keyword's own body.
+    try:
+        snode, _sk = _stmt_at(tokens_of("switch TriggerWhen { case 0: X(); break; }"), 0)
+    except Refused as exc:
+        print("FAIL uscript-emit: a bare `switch` head refused (%s)" % (exc,))
+        return 1
+    if not snode or snode[0] != "switch" or _spell(snode[1]) != "TriggerWhen":
+        print("FAIL uscript-emit: a bare `switch` expression read %r" % (snode[1] if snode else None,))
+        return 1
+    try:
+        _stmt_at(tokens_of("switch { }"), 0)
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a `switch` with no expression was accepted")
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))

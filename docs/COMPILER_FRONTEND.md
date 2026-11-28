@@ -2202,7 +2202,7 @@ node's own shape, the next thing to read here, not a typing question.
 152-body compound-expression family, and the four differs above.
 
 <!-- BEGIN emit-differ -->
-**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,657 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
+**1 emitted bodies differ from the shipped bytes, and every one is a named node** (`inventory/emit_differ.csv`; 11,664 modelled and identical in the same run). **1** of them differ first at a jump whose distance moved with the body's own length -- the branch is right and the body is short after it -- so the count is not 1 separate defects.
 
 | first difference | node | length | branch moved with it | bodies | examples |
 |---|---|---|---|---|---|
@@ -4457,3 +4457,54 @@ tree (that control run reproduces the committed artifact for the package byte fo
 re-measured here. `ReetouProtectorBot.SetEnemies`'s remaining `ArrayCount` is a **parameter** dimension
 (`function SetEnemies(Pawn Enemies[16])`), which `_array_dims` does not read -- a rule, not a table miss, and the next
 item on this thread.
+
+## Stage 3, continued -- a bare `switch` head, a parameter's dimension, and a local `class<Z>` (measured 2026-11-27)
+
+Three rules and two corrections, scored **per body** over the whole corpus against `origin/main`'s own tool on the
+same tree (`--tree $WORK/scripts-all`, 18 packages, one run each):
+
+| run | modelled | gained | lost | newly differing | residue |
+|---|---|---|---|---|---|
+| `origin/main`'s `uscript-emit.py` | 11,661 | -- | -- | -- | 25 |
+| this bundle, same tree | **11,664** | **3** | **0** | **0** | 22 |
+
+- **A `switch` expression need not be parenthesised.** `CountTrigger.ChangeCount` ships `switch TriggerWhen` with no
+  group, and the compiler wrote the same `05 01 <read> 0a ...` a parenthesised head writes -- the check that required
+  `(` refused a body whose only oddity was the source's own style. A bare head is the tokens up to the body's `{`, and
+  a head with no expression at all still refuses (the control in `--check`).
+- **A parameter's `[N]` is a declaration too.** `function SetEnemies(Pawn Enemies[16])` makes `Enemies` a `Pawn[16]`
+  and the body's `ArrayCount(Enemies)` folds to 16 -- the same literal a `local`'s dimension compiles to.
+  `_array_dims` reads `var`/`local` statements only, so the parameter's dimension was in no table and the body refused
+  as *an ArrayCount of a name whose declared dimension the source does not spell*. `params_of` carries it as a fourth
+  field (the three the walk already reads keep their positions) and `_source_index` puts it in the same table.
+- **A function's own declaration of a name shadows the class-wide `class<Z>`.** The class-wide table keeps only the
+  first `class<Z>` of a name, and `_class_of` consults it *before* the function's local type tables:
+  `StargateHUD.ToggleGameHUD` declares `local GameHUD G` while another function of the class declares
+  `local class<GameInfo> G`, so `G.HideHud(!G.bHideHud)` joined `HideHud` on `GameInfo`, found no declaration and
+  refused. A name the function declares itself -- local or parameter -- is not the class-wide declaration; its own
+  `class<Z>`, if it has one, is put back from the per-function table.
+
+**The committed artifact was one bundle behind its own tool, and this run is the first to see it.** `origin/main`'s
+tool models **11,661** bodies on this tree while `inventory/uscript_emit.csv` as merged held **11,657**: #998 scored
+its two rules on `StargateGame.u` alone (3,248 -> 3,251) and shipped the tool, the page and PLAN without re-running the
+corpus, so its own four bodies were missing from the artifact -- `ACTION_SGWaitForPlayer.PlayImpatience`,
+`ACTION_PlaySGSound.Play3DSound`, `SquadAISG.UpdateSquadCoverNodes` and `ObjectivesPanel.InitComponent` (the last is
+the one its page called *not in this bundle's measurement*). Regenerating therefore moves the artifact
+11,657 -> 11,664: **+4 the artifact owed and +3 from this bundle**, none lost. Read a per-package score as a score of
+that package; the artifact only moves when the corpus run does, and `--check` cannot see staleness.
+
+**Three of the five new `--check` fixtures did not discriminate, and the proof is a revert copy.** Driving each
+fixture against a copy of the tool with only its rule reverted: P28 (parameter dimension) and P29 (shadow) printed
+their own `FAIL`; P26 (`foreach` chain) and P30 (bare `switch`) *refused* the statement instead, so `--check` died
+with a traceback and no `FAIL` line -- both now catch `Refused` and name the rule. P27 was the plain failure: its
+fixture put the `local` at **class scope**, where the old `k += 5` scan lands on the `local` itself and reads the
+dimension anyway, so the reverted copy answered both dimensions and stayed green. `SquadAISG` declares it inside a
+function body; the fixture now does too, and the reverted copy answers `{'hidenodecandidates': 32}` -- exactly the one
+class of 2,319 the rule moves (measured by running both `_array_dims` over all 4,637 `.uc` files).
+
+**The corpus tree carries one experiment edit, and it is inert for a reason worth knowing.** The flat
+`scripts-all/GameInfo.uc` has `return 0;` at its `GetDefenderNum` where the package copy `Engine/GameInfo.uc` has the
+shipped `return 255;` (and one more line the same way). `_source_index` walks each directory with `sorted(names)` and
+assigns by class, so the package copy is read last and wins: `GetDefenderNum` is `042cff040b47`, identical. Both score
+runs read the same tree, so the comparison is unaffected -- but a tool that ever preferred the first file, or the flat
+copy alone, would measure the experiment. Re-extract the tree from the packages if a GameInfo row ever moves.
