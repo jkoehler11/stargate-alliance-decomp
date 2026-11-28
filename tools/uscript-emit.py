@@ -5408,6 +5408,39 @@ def stmt_tree(body):
     return _block_at(body, 0, top=True)[0]
 
 
+def _assert_stmts(nodes):
+    """Every `assert` statement of a body, in **source** order, as the token lists the tree holds.
+
+    The list is what numbers an assert: `emit_body` pairs it with `_assert_lines`' reading of the text **once per
+    body**, and the emitted line is looked up by the statement's own identity, so a construct that is emitted
+    twice reads the same line both times. `switch`/`while`/`do` are emitted twice by this walk (a rough pass for
+    the extent, then the pass whose bytes are kept), and a per-call cursor spent the rough pass's lines:
+    `TestInfo.TestSwitch`'s six asserts sit two inside each of its two switches, so the second switch's rough pass
+    asked for a seventh line and refused the body.
+    """
+    out = []
+    for node in nodes:
+        kind = node[0]
+        if kind == "simple":
+            toks = node[1]
+            if toks and toks[0][0] == "keyword" and toks[0][1].lower() == "assert":
+                out.append(toks)
+        elif kind == "block":
+            out += _assert_stmts(node[1])
+        elif kind == "if":
+            out += _assert_stmts([node[2]])
+            if node[3] is not None:
+                out += _assert_stmts([node[3]])
+        elif kind in ("while", "until", "foreach"):
+            out += _assert_stmts([node[2]])
+        elif kind == "for":
+            out += _assert_stmts([node[4]])
+        elif kind == "switch":
+            for _label, stmts in node[2]:
+                out += _assert_stmts(stmts)
+    return out
+
+
 def _off(value):
     """A branch operand: the **absolute** offset into the compiler's uncompacted code array.
 
@@ -6096,7 +6129,7 @@ def emit_stmt(stmt, rettype, env):
         # `assert(false);` is `09 26 08 28`: the opcode, the **source line as uint16**, then the expression -- and a
         # `bool` slot, so `false` is `28`. `Actor.Crash`'s assert sits on line 2086 of the shipped text and the
         # package writes 0x0826, so the extracted text keeps the compiler's own numbering.
-        line = _assert_at(env)
+        line = _assert_at(stmt, env)
         if not line or not 1 <= line <= 0xFFFF:
             raise Refused("an assert whose source line the corpus does not pin")
         if len(stmt) < 4 or stmt[1] != ("op", "(") or _paren_end(stmt, 1) != len(stmt) - 1:
@@ -6157,6 +6190,13 @@ def emit_body(body, rettype, env, is_native=False):
     nodes = stmt_tree(body)
     if not nodes:
         return TRAILER, "empty", "empty"
+    stmts = _assert_stmts(nodes)
+    if stmts:
+        lines = env.get("assert_lines")
+        if lines is None:
+            single = env.get("assert_line")
+            lines = [single] if single else []
+        env = dict(env, assert_by_stmt={id(s): ln for s, ln in zip(stmts, lines)})
     if sum(1 for k, v in body if k == "keyword" and v.lower() == "assert") > 1:
         # Every assert is numbered off the **body's own token run** (`_assert_lines`), so a body with two is read
         # in source order; only an env that carries neither the list nor a single line refuses, in `emit_stmt`.
@@ -6744,13 +6784,16 @@ def _assert_line(text, body):
     return lines[0] if lines and len(lines) == 1 else None
 
 
-def _assert_at(env):
-    """The line operand of the next `assert` in the body, consumed in source order.
+def _assert_at(stmt, env):
+    """The line operand of this `assert` statement, or None when the body's text does not pin one.
 
-    `env["assert_lines"]` is the per-statement list `score()` read; a synthetic env (the fixtures) carries the
-    single `assert_line` instead. The cursor is a one-item **list** so that a `dict(env, ...)` copy made by a
-    wrapper still advances the same counter.
+    `emit_body` numbers the body's assert statements by identity (`assert_by_stmt`), because a `switch`/`while` is
+    emitted twice and a per-call cursor would spend the rough pass's lines. A caller that hands only a list and a
+    cursor -- the fixtures, which drive `emit_body` with a synthetic body -- keeps the source-order fallback.
     """
+    by_stmt = env.get("assert_by_stmt")
+    if by_stmt is not None:
+        return by_stmt.get(id(stmt))
     lines = env.get("assert_lines")
     if lines is None:
         return env.get("assert_line")

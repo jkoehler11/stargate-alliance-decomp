@@ -4785,6 +4785,31 @@ type), `StargateVoicePack.PlaySpeech` (a call to a name the class chain does not
 (`levelinfo != an unknown type`, which needs `GetEntryLevel`'s `LevelInfo` in a **value** position -- the return-type
 question this bundle deliberately did not touch).
 
+## Stage 3, continued -- an `assert`'s line belongs to its statement (measured 2026-11-28)
+
+**`Engine.u` 0 residue rows.** `TestInfo.TestSwitch` -- refused as *an assert whose source line the corpus does not
+pin* since the assert family shipped -- is now emitted byte-identically: `0f 00 49 42 1f 54 69 6d 00 0f 00 48 42 2c 02
+05 00 04 00 48 42 0a 25 00 25 09 f6 00 28 06 3f 00 ...`, six `09 <line>` words at 246, 252, 255, 259, 262 and 268.
+The whole-package run (`--only Engine.u`, 189 s) leaves **no residue row at all**, and `--check`'s 135 synthetic bodies
+and the committed 11,681-row artifact are unchanged.
+
+**The line is a property of the statement, not of the emission order.** A `switch` (and a `while`/`do`) is emitted
+**twice** -- a rough pass for its extent, then the pass whose bytes are kept -- and `_assert_at` consumed its list per
+*call*, so the rough pass spent the lines the kept pass then ran out of. `TestSwitch`'s six asserts sit two inside
+each of its two switches; the trace shows the reader asked for a **seventh** line during the second switch's rough
+pass (`cursor=6` against `[246, 252, 255, 259, 262, 268]`) and the body refused on that call, not on any missing
+declaration. `emit_body` now numbers the body's assert statements once, off its own statement tree
+(`_assert_stmts`), and `_assert_at` looks the line up by the statement's identity, so a re-emitted statement reads
+the same line both times. The synthetic path (`assert_lines` + `assert_cursor`) is kept for the fixtures that drive
+`emit_body` with a hand-written body.
+
+**Measured and not in this bundle.** `CylinderBuilder.Build` -- the one differ -- was attempted and withdrawn: the
+`((i+1)%Sides)*2` pair tells a left-spine story (the compiler narrows a float **left** operand into an `int` site and
+promotes a float **right** one), and the three forms tried moved the body 391 -> 387 bytes against the shipped 377
+while the third also restored `ConeBuilder.Build`/`BuildCone`/`CylinderBuilder.BuildCylinder`, which the first form
+had retyped. None reached a byte-identical body, and no whole-corpus run scored them, so the tree carries the assert
+rule alone. `WindowConsole.Tick` still needs `Viewport.Actor` typed `PlayerController`.
+
 ## Stage 3, continued -- a postfix increment does not open an operand, and an increment's operand may be a member (measured 2026-11-28)
 
 **GUI.u 719 of 719 modelled, every one byte-identical, 0 refused; `StargateGame.u` 3,256 of 3,256, 0 refused, 0

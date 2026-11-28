@@ -19560,6 +19560,17 @@ sequence.
       Files: `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/uscript_emit_join.csv`,
       `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
 
+- [~] 3.6 an assert's line belongs to its statement (2026-11-28). `Engine.u` 0 residue rows: `TestInfo.TestSwitch`
+  is modelled byte-identically -- six `09 <line>` words at 246/252/255/259/262/268 -- where `origin/main` refuses
+  it as *an assert whose source line the corpus does not pin*. The cause is the **two-pass** emission of a
+  `switch`/`while` against a **per-call** line cursor: the rough pass spent the lines and the kept pass ran out
+  (the trace asked for a seventh line of six). `emit_body` now numbers the body's asserts once off its statement
+  tree and `_assert_at` reads the line by the statement's identity; scored on the package the rule moves
+  (`--only Engine.u`, 189 s, 0 rows removed). Measured and **not** in this bundle: `CylinderBuilder.Build`, the one
+  differ -- three forms tried, 391 -> 387 bytes against the shipped 377, no whole-corpus score, and the first form
+  retyped `ConeBuilder.Build`/`BuildCone`/`CylinderBuilder.BuildCylinder` -- and `WindowConsole.Tick`, which needs
+  `Viewport.Actor` typed `PlayerController`. The corpus artifact still reads 11,681 while the tool answers 11,683,
+  so the next whole-corpus run repays those two bodies as well.
 - [~] 3.6 a postfix increment does not open an operand, and an increment's operand may be a member:
       **GUI.u 719 of 719 modelled, every one byte-identical, 0 refused; `StargateGame.u` 3,256 of 3,256, 0 differ**
       (from 718 and 3,255; **two bodies gained, none lost**; the corpus artifact still reads 11,681 and these rules
