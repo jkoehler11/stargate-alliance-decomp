@@ -743,7 +743,15 @@ def _array_dims(text):
                     out.setdefault(toks[k][1].lower(), _const_int(consts[dim_tok[1].lower()]))
                 else:
                     out.setdefault(toks[k][1].lower(), dim_tok[1].lower())
+                # `k + 4` is the declarator's terminator: a `,` means another declarator follows in the same
+                # statement, a `;` means the declaration **ends here**. Scanning on past a `;` was one token too
+                # far -- the loop then hunted for the next depth-0 `;`, which at class scope is many declarations
+                # away, and every `var`/`local` between was skipped: `SquadAISG`'s `var Actor HideNodeCandidates[32];`
+                # hid the `local float HideNodeDistances[32];` further down and `ArrayCount(HideNodeDistances)`
+                # refused as a name the source does not spell a dimension for.
                 k += 5
+                if toks[k - 1] == ("op", ";"):
+                    break
                 continue
             k += 1
         i = max(k, i + 1)
@@ -5064,14 +5072,27 @@ def _stmt_at(toks, i):
         # call expression and one body. The compiler writes `Iterator <the call> <wide offset of the IteratorPop>`:
         # the operand comes *after* the call, and `Pickup.CheckTouching`'s `2f 61 33 20 01 00 70 3d 16 1c 00` is
         # `Iterator`, `HighNative1 TouchingActors`, `ObjectConst`, `LocalVariable`, `EndFunctionParms`, `1c 00`.
+        # The head is the **whole** chain, not just its first call: `ACTION_SGWaitForPlayer.PlayImpatience` spells
+        # `ForEach MyController.GetSoundSource().RadiusActors(...)` and a scan that stops at the first `(` reads the
+        # head as `MyController.GetSoundSource()`, leaving `. RadiusActors(...) StargateHUD(...).SetSubtitle(...)` as
+        # the body -- a statement that starts at a `.`, whose receiver `_class_of` cannot name. The head ends at the
+        # first depth-0 `)` that is not followed by `.` (a chain that continues through a call) and not by `[`
+        # (an element of what the call returned).
         j = i + 1
-        while j < len(toks) and toks[j] != ("op", "("):
+        close = None
+        while j < len(toks):
+            if toks[j] == ("op", "("):
+                c = _paren_end(toks, j)
+                if c is None:
+                    raise Refused("a foreach whose iterator call the walk cannot bound")
+                if c + 1 < len(toks) and toks[c + 1][0] == "op" and toks[c + 1][1] in (".", "["):
+                    j = c + 1
+                    continue
+                close = c
+                break
             j += 1
-        if j >= len(toks):
-            raise Refused("a foreach without an iterator call")
-        close = _paren_end(toks, j)
         if close is None:
-            raise Refused("a foreach whose iterator call the walk cannot bound")
+            raise Refused("a foreach without an iterator call")
         body, k = _stmt_at(toks, close + 1)
         if body is None:
             raise Refused("a foreach with no body")

@@ -1568,6 +1568,16 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       tree (the `~/sg1/work/e2/base` run) reproduces the committed artifact byte for byte. Doc:
       `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the five member rows that need the XBE,
       the two `ForEach` receivers the walk splits at the wrong `.`, the two `ArrayCount` dimensions, and the family tail.
+- [~] 3.6 a `foreach` head's chain and an array dimension after a declaration's `;`: **3,251 modelled on
+      `StargateGame.u`** (from 3,248; **three bodies gained, none lost**, residue 8 -> 5, differ 0 -> 0), measured per
+      body against `origin/main`'s tool on the same tree. (1) `_stmt_at` took a `foreach`'s head to the end of its
+      **first** call, so `ForEach MyController.GetSoundSource().RadiusActors(...)` (`PlayImpatience`, `Play3DSound`)
+      left `.RadiusActors(...)` plus the real body statement as the body and refused as a receiver `_class_of` cannot
+      name; the head now ends at the first depth-0 `)` not followed by `.` or `[`. (2) `_array_dims` advanced one
+      token past a single-name declaration's `;` and then skipped every `var`/`local` up to the next depth-0 `;`, so
+      `SquadAISG`'s `var Actor HideNodeCandidates[32];` hid `local float HideNodeDistances[32];` and
+      `ArrayCount(HideNodeDistances)` refused. Doc: `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this
+      PR: the whole-corpus score, and the parameter dimension (`SetEnemies(Pawn Enemies[16])`).
 - [~] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       **the serializer is identified** (`docs/NATIVE_VM.md`, `inventory/class_serialize_slots.csv`): slot 11 of every
       class table is `Serialize`, `UStruct`'s is at `0x000392b0`, and its decompiled body shows the script stored as
