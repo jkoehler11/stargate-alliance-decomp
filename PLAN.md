@@ -19533,3 +19533,29 @@ sequence.
   property table. Files: `tools/uscript-emit.py`, `tools/emit-score.py`, `inventory/uscript_emit.csv`,
   `inventory/uscript_emit_join.csv`, `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `docs/UNKNOWNS.md`,
   `PLAN.md`.
+
+- [x] 3.6 a statement call's value size, a cleared member delegate, and a type word the package holds:
+      **11,677 -> 11,681 modelled, every one byte-identical, none lost**; residue 9 -> 5, differ 3 -> 0. Measured per
+      body over the whole corpus (one run, `--tree $WORK/scripts-all`, 18 packages, 11,687 walked) and compared row by
+      row with `origin/main`'s own `inventory/uscript_emit.csv`: 0 rows removed, 0 moved, 4 added --
+      `WindowConsole.CloseUWindow` and `WindowConsole.LaunchUWindow` (the two differ rows), `GUITabControl.RemoveTab`,
+      `ExtendedConsole.PostRender`. `inventory/emit_differ.csv`'s census was also stale (11,674 against an artifact of
+      11,677); it reads 11,681 now. (1) **The `Context` size byte of a statement call is the callee's declared value
+      width, and the corpus's agreeing declarers answer it where the receiver's chain declares nothing**:
+      `Viewport.Actor.SetPause( False );` ships `19 19 01 62 03 05 00 04 01 a1 07 00 04 1b 50 02 28 16`, and that
+      `04` is `SetPause`'s `bool`; three declarers exist, `GameInfo`'s cannot take one argument, the other two agree
+      (`_corpus_return`, the join `_corpus_params` already makes for the arguments). The **withdrawn** form of this
+      rule answered the return type itself, which pre-empts `_declares_void` (a callee the chain declares void models
+      on size 0) and retyped 159 bodies; this form asks only where the chain declares nothing and `_declares_void` is
+      false, and uses the answer for one byte -- `rtype` stays unanswered, so no conversion, operator or argument
+      reads it, and 0 bodies moved over 11,681. (2) **A delegate cleared on a member target writes the zero name
+      index**, the rule the bare-property branch already carries: `GUITabControl.RemoveTab`'s
+      `TabStack[i].OnClick = None;` is `45 <Context ...> 44 00`. (3) **An object literal's type word names a class the
+      package need not import, as long as the package holds an object of it**: `ExtendedConsole.PostRender`'s
+      `texture'GUIContent.Menu.BorderBoxA'` -- `GUI.u` holds textures and imports no `Texture` *class*
+      (`_object_kind_named`; `_object_ref` still resolves the name, and a word no object has stays refused).
+      Fixtures P40/P41/P42, each proven on a copy with only its rule reverted. Not in this PR: the five rows left --
+      `CylinderBuilder.Build` (the one differ), `TestInfo.TestSwitch`, `GUIController.GenerateFakeNames`,
+      `StargateVoicePack.PlaySpeech` and `WindowConsole.Tick` (which needs a return type in a *value* position).
+      Files: `tools/uscript-emit.py`, `inventory/uscript_emit.csv`, `inventory/uscript_emit_join.csv`,
+      `inventory/emit_differ.csv`, `docs/COMPILER_FRONTEND.md`, `PLAN.md`.
