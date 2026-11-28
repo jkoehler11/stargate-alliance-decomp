@@ -834,6 +834,22 @@ def _cast_slots():
     return CAST_SLOTS
 
 
+def _is_object_word(word, env):
+    """True when a type word names an *object reference* rather than a primitive.
+
+    Four spellings, all measured: the base word `object` (`self`, `None`), the metaclass `class` (a `class'X'`
+    literal), a **`class<Z>` reference** -- which `_type_of` spells `class.pawn` for a property record and
+    `class<pawn>` for a local -- and any class the class table carries (`material`, `actor`, `pawn`,
+    `physicsvolume`). The compiler emits one cast for all of them -- `ObjectToString` -- so this is the test that
+    decides whether a `string(...)` cast has a slot. The class-reference spelling is a separate case and was a
+    separate refusal: `GameStats.KillEvent`'s `string(Damage)` over a `class<DamageType>` and
+    `UnrealPlayer.CycleLoadout`'s `string(...NextLoadOut(PawnClass))` over a `class<Pawn>` both read their operand
+    as `class.weapon` / `class.pawn` and found no row, while the shipped bytes write `39 56` at each.
+    """
+    return bool(word) and (word in ("object", "class") or word.startswith("class.") or word.startswith("class<")
+                           or word in (env.get("class_names") or set()))
+
+
 def _converted(body, ptype, want=""):
     """`39 <slot>` in front of a read whose declared type is not the type the site wants.
 
@@ -2888,6 +2904,14 @@ def _emit_cast(name, inner, env, rettype=""):
     if kind == "primitive":
         src = _type_of(inner, env).lower()
         slot = _cast_slots().get((src, low))
+        if slot is None and low == "string" and _is_object_word(src, env):
+            # `string(<object>)` is `ObjectToString` (86) **whatever class the operand names**. The image's cast
+            # table keys that row on `object`, so a `Material`, an `Actor`, a `Pawn` or a `class<Z>` found no row of
+            # its own and seven bodies refused -- and the shipped bytes write `39 56` at every one of those sites:
+            # `Actor.DisplayDebug`'s `GetItemName(string(Mesh))` is `1b 31 39 56 01 5c 03` (Texture),
+            # `UnrealPlayer.CycleLoadout`'s `string(UnrealTeamInfo(...).NextLoadOut(PawnClass))` is `39 56` over a
+            # `class<Pawn>`, and `WindowConsole.Tick`'s `string(Viewport.Actor.Level)` is `39 56` twice.
+            slot = _cast_slots().get(("object", "string"))
         if slot is None:
             raise Refused("a cast from %s to %s the image's cast table does not install"
                           % (src or "an unknown type", low))
@@ -3511,6 +3535,14 @@ def _class_of(expr, env):
             t = _class_ref_class(t) or t
             return t if t in class_names else _no(
                 "a member call whose declared return type the class table does not carry as a class")
+        if len(member) == 1 and member[0][0] in ("ident", "keyword") and member[0][1].lower() == "default":
+            # `X.Default` is X's **default object** -- an instance of X, not a member of it. No chain carries a
+            # property named `Default`, so `_member_record` answered None and the link resolved to nothing:
+            # `class'Engine.GameInfo'.default.VotingHandlerClass.static.FillPlayInfo(PlayInfo);` refused as *a
+            # receiver chain whose member the artifacts name no class for*, though `VotingHandlerClass` is
+            # `class<VotingHandler>` on `GameInfo`'s own table. The value path already reads a `default` link
+            # (`_emit_member`); this is the same link for the class the chain holds.
+            return _class_of(expr[:at], env)
         if len(member) == 1 and member[0][0] in ("ident", "keyword"):
             nm = member[0][1].lower()
             hit = _member_record(expr[:at], nm, env)
@@ -6500,6 +6532,22 @@ def _local_decls(text):
     return out
 
 
+# A `var` declaration with its **modifiers stepped over**, so `var const LevelInfo Level;` names the property
+# `Level` with the type `LevelInfo` rather than typing a property `LevelInfo` as `const`. Hoisted out of
+# `_source_index` so `--check` can hold it against the declarations the corpus actually spells: the list is the
+# shipped text's own (`globalconfig`, `cache`, `noexport`, `deprecated`, `edfindable`, `editinlinenotify` were
+# missing, 548 declarations in the two-copy tree), and a modifier left out is a property that loses its class --
+# `var() editinline editconst noexport StreamInterface FileManager;` read *type `noexport`, name `StreamInterface`*,
+# which is why `FileManager.LoadPlaylist(...)` in `PlaylistParserBase.Import` refused as *a bare name this body
+# declares no type for* though `FileManager` is the `within` class's own `StreamInterface` property.
+VAR_DECL_MOD = re.compile(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*"
+                          r"(?:(?:const|config|globalconfig|private|protected|public|transient|native|"
+                          r"editconst|editinline|editinlineuse|edfindable|editinlinenotify|export|noimport|"
+                          r"duplicatetransient|localized|input|travel|cache|noexport|deprecated|atomic|"
+                          r"repnotify|nontransactional)\s+)*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)\s*(?:\[[^\]\n]*\])?\s*"
+                          r"((?:,\s*[A-Za-z_]\w*\s*(?:\[[^\]\n]*\])?\s*)*)", re.I)
+
+
 def _source_index(tree):
     """`{(class, state, function): (rettype, body, text, native, final)}` from the extracted corpus, plus every
     declaration's parameter list, every enum constant and every callee's return type -- the three joins a cast's
@@ -6575,14 +6623,9 @@ def _source_index(tree):
                                  text, re.I):
                 for nm in [m.group(2)] + re.findall(r",\s*([A-Za-z_]\w*)", m.group(3)):
                     proptypes.setdefault((cls, nm.lower()), m.group(1).lower())
-            # ...and the same declaration with its **modifiers stepped over**: `var const LevelInfo Level;` reads
-            # as type `const` above, and the property a `within` body needs the class of (`CheatManager`'s `Level`)
-            # is exactly that spelling. This table feeds only the `within` join, so nothing else moves.
-            for m in re.finditer(r"(?m)^[ \t]*(?:var|Automated)\s*(?:\([^)]*\))?\s*"
-                                 r"(?:(?:const|config|private|protected|public|transient|native|editconst|"
-                                 r"editinline|editinlineuse|export|noimport|duplicatetransient|localized|"
-                                 r"input|travel)\s+)*([A-Za-z_]\w*)\s+([A-Za-z_]\w*)\s*(?:\[[^\]\n]*\])?\s*"
-                                 r"((?:,\s*[A-Za-z_]\w*\s*(?:\[[^\]\n]*\])?\s*)*)", text, re.I):
+            # ...and the same declaration with its **modifiers stepped over**, which is the table the `within` join
+            # reads (see `VAR_DECL_MOD`). This table feeds only the `within` join, so nothing else moves.
+            for m in VAR_DECL_MOD.finditer(text):
                 for nm in [m.group(2)] + re.findall(r",\s*([A-Za-z_]\w*)", m.group(3)):
                     proptypes_mod.setdefault((cls, nm.lower()), m.group(1).lower())
             # ...and a `class<Z>` declaration's **target**, which both regexes above stop short of: their type
@@ -7113,7 +7156,7 @@ SCOPE = {"props": {"health": (0x01, 302, "int"), "bdead": (0x01, 45, "bool"),
          "chain": {("probe", "probe"): ("", ""), ("probe", "helper"): ("", "")},
          "pack": "probe", "cls": "probe",
          "locals": {"slot": (0x00, 611, "int"), "count": (0x00, 612, "byte"),
-                    "cls": (0x00, 613, "class")},
+                    "cls": (0x00, 613, "class"), "cls2": (0x00, 614, "class<probe>")},
          "classrefs": {"probe": 4, "actor": -77},
          "funcs": {"destroy": ("native", 279), "myfinal": ("final", 763), "myvirtual": ("virtual", 39),
                    "foo": ("virtual", 41), "bar": ("virtual", 44), "baz": ("native", 705),
@@ -8587,6 +8630,62 @@ def check(args):
     if _class_of(chain, zctl):
         print("FAIL uscript-emit: a member call declared `probe2` typed as %r, expected no class"
               % (_class_of(chain, zctl),))
+        return 1
+    # P23: `string(<object>)` is `ObjectToString` whatever class the operand names. The image's cast table keys that
+    # row on `object`, so a `Material`, an `Actor`, a `Pawn` and a `class<Z>` found no row of their own -- and the
+    # shipped bytes write `39 56` at all seven such sites (`Actor.DisplayDebug`'s `GetItemName(string(Mesh))`,
+    # `UnrealPlayer.CycleLoadout`'s `string(...NextLoadOut(PawnClass))` over a `class<Pawn>`). `cls` is the fixture's
+    # `class`-typed local, so the operand is the metaclass rather than a named class; the read is `00 65 09`.
+    try:
+        got, _shape = _emit_cast("string", [("ident", "cls")], ENV, "string")
+    except Refused as exc:
+        print("FAIL uscript-emit: a `string(<class>)` cast refused: %s" % exc)
+        return 1
+    if got.hex() != "3956006509":
+        print("FAIL uscript-emit: a `string(<object>)` cast emits %s, expected 3956006509" % got.hex())
+        return 1
+    # ...and a `class<Z>` **reference** is the same row: the corpus spells that type `class.weapon` /
+    # `class.pawn`, which is neither `class` nor a bare class name, and both `GameStats.KillEvent` and
+    # `UnrealPlayer.CycleLoadout` therefore refused while the shipped bytes write `39 56`. `cls2` is a local
+    # declared `class<probe>`, so this is the spelling the corpus hands back rather than the bare metaclass.
+    try:
+        got2, _shape2 = _emit_cast("string", [("ident", "cls2")], ENV, "string")
+    except Refused as exc:
+        print("FAIL uscript-emit: a `string(<class<Z>>)` cast refused: %s" % exc)
+        return 1
+    if got2[:2] != b"\x39\x56":
+        print("FAIL uscript-emit: a `string(<class<Z>>)` cast emits %s, expected the 39 56 slot" % got2.hex())
+        return 1
+    # ...and an operand whose type the artifacts do **not** name must still refuse: the rule keys on a class word,
+    # and defaulting an unknown one to `ObjectToString` would emit plausible bytes for a cast nobody measured.
+    try:
+        _emit_cast("string", [("ident", "Nowhere")], ENV, "string")
+    except Refused:
+        pass
+    else:
+        print("FAIL uscript-emit: a `string()` cast of an unknown type was given a slot")
+        return 1
+    # P24: `X.Default` is X's **default object**, an instance of X -- no chain carries a property named `Default`, so
+    # `_member_record` answered nothing and `class'Engine.GameInfo'.default.VotingHandlerClass.static.FillPlayInfo()`
+    # refused as a receiver chain whose member names no class. The control is a member that is not `default`.
+    dchain = [("ident", "Target"), ("op", "."), ("ident", "Default")]
+    if _class_of(dchain, ENV) != "probe":
+        print("FAIL uscript-emit: `Target.Default` typed as %r, expected probe" % (_class_of(dchain, ENV),))
+        return 1
+    if _class_of([("ident", "Target"), ("op", "."), ("ident", "Health")], ENV):
+        print("FAIL uscript-emit: `Target.Health` was typed as a class")
+        return 1
+    # P25: a `var` declaration's modifiers are a closed list read off the corpus, and one left out costs the
+    # property its class: `var() editinline editconst noexport StreamInterface FileManager;` read as *type
+    # `noexport`, name `StreamInterface`*, which is what refused both `FileManager.LoadPlaylist(...)` bodies.
+    m = VAR_DECL_MOD.search("var() editinline editconst noexport StreamInterface       FileManager;\r\n")
+    if not m or m.group(1, 2) != ("StreamInterface", "FileManager"):
+        print("FAIL uscript-emit: a `noexport` property declaration reads %r"
+              % ((m.group(1, 2) if m else None),))
+        return 1
+    m = VAR_DECL_MOD.search("\tvar const LevelInfo Level;\r\n")
+    if not m or m.group(1, 2) != ("LevelInfo", "Level"):
+        print("FAIL uscript-emit: a `const` property declaration reads %r" % ((m.group(1, 2) if m else None),))
         return 1
     print("ok uscript-emit: %d synthetic bodies, artifact %d rows (%d identical, %d differ)"
           % (len(WANT), len(body_rows), identical, differ))

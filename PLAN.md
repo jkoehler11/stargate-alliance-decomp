@@ -1550,6 +1550,24 @@ Ship four artifacts, each with a machine-checkable pass criterion:
       public UE2.5 release (129 or earlier) cannot be the tool, and patching a constant cannot make it one. What 3.6
       is missing is therefore not "a `ucc`" but the fork's own compiler -- the toolchain that wrote these packages --
       or a front end written here against `docs/BYTECODE.md`. Open as U17.
+- [~] 3.6 the cast table's `object` row, `X.Default`, a declaration's modifiers, and a `class<Z>` operand:
+      **11,657 modelled / 11,657 byte-identical** (from 11,648; **nine bodies gained, none lost**; residue 38 -> 29,
+      differ 1 -> 1). Four rules, each read off the shipped bytes: (1) **`string(<object>)` is `ObjectToString` (86)
+      whatever class the operand names** -- the cast table keys that row on `object`, so `Material`, `Actor`, `Pawn`
+      found no row and four bodies refused while every site writes `39 56` (`Actor.DisplayDebug`'s
+      `GetItemName(string(Mesh))` is `1b 31 39 56 01 5c 03`). (2) **a `class<Z>` reference is the same row**: `_type_of`
+      spells it `class.weapon` / `class.pawn`, which is neither `class` nor a class name, so `GameStats.KillEvent` and
+      `UnrealPlayer.CycleLoadout` refused (`string(Damage)` over a `class<DamageType>`). (3) **`X.Default` is X's
+      default object** -- an instance of X, so the link's class is the head's class; `GameInfo.FillPlayInfo`'s
+      `class'Engine.GameInfo'.default.VotingHandlerClass.static.FillPlayInfo(PlayInfo)` refused as a receiver chain
+      whose member names no class. (4) **a `var` declaration's modifier list was six words short** (`globalconfig` 426,
+      `cache` 50, `noexport` 38, `deprecated` 16, `edfindable` 14, `editinlinenotify` 4), so
+      `var() editinline editconst noexport StreamInterface FileManager;` read *type `noexport`* and `FileManager` lost
+      its class: `PlaylistParserBase.Import` and `M3UParser.Import` gained -- and **U44's seven rows are five**, because
+      those two were a declaration miss and not the native property table. Control: `origin/main`'s tool on the same
+      tree (the `~/sg1/work/e2/base` run) reproduces the committed artifact byte for byte. Doc:
+      `docs/COMPILER_FRONTEND.md`, section of the same name. Not in this PR: the five member rows that need the XBE,
+      the two `ForEach` receivers the walk splits at the wrong `.`, the two `ArrayCount` dimensions, and the family tail.
 - [~] 3.7 Disassembler + comparator: disassemble original package functions and our recompiled ones;
       **the serializer is identified** (`docs/NATIVE_VM.md`, `inventory/class_serialize_slots.csv`): slot 11 of every
       class table is `Serialize`, `UStruct`'s is at `0x000392b0`, and its decompiled body shows the script stored as

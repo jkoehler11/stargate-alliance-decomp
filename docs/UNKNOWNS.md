@@ -6563,7 +6563,7 @@ typing rule that is asked only where the pair above is not being promoted (the `
 carries that flag), scored with the usual acceptance test -- differ 0, none lost -- and with
 `CylinderBuilder.BuildCylinder` in the control set, since it is one of the eight this formulation lost.
 
-## U44. Seven emitter rows name `Viewport`, `FileManager` and `ObjectProperty`, and no package declares any of them -- answered: they are native property tables, not a packaging gap
+## U44. Five emitter rows name `Viewport` and `ObjectProperty`, and no package declares any of them -- answered: they are native property tables, not a packaging gap
 
 Seven of the front end's 38 remaining refusals fail on a **member** of one of three type words:
 `Viewport.Actor`/`Viewport.Window` (`WindowConsole.LaunchUWindow`, `TournamentConsole.LaunchUWindow`,
@@ -6583,3 +6583,13 @@ table**, which this project has not read.
 **What would settle it.** The native property table in `default.xbe` (a per-class record run, above the 492 packed
 class tables), or a use-site census that reads each of the seven bodies' *next* node and takes the member's type from
 it. Neither is a packaging question, so the emitter's residue should stop being described as one.
+
+**Corrected 2026-11-27: it is five rows, not seven, and the two `FileManager` rows were never a member gap at all.** The
+`FileManager` sites refused on the *declaration*: `var() editinline editconst noexport StreamInterface FileManager;`
+parsed as *type `noexport`, name `StreamInterface`* because the modifier list lacked `noexport` (with `globalconfig`,
+`cache`, `deprecated`, `edfindable`, `editinlinenotify` -- six words the two-copy tree spells), so `FileManager` lost the
+`StreamInterface` class its `within` class declares. `PlaylistParserBase.Import` and `M3UParser.Import` now emit
+byte-identically, and the residual set is the five rows above (`Viewport.Actor`/`.Window` on four bodies, and
+`ObjectProperty.Name` on `ListObjectPropsCommandlet.Main`). The measurement stands for those five: no shipped package
+exports either class, both are module-native, and the answer is the XBE's native property table or a use-site census.
+
