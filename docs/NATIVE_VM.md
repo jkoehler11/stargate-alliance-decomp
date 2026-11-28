@@ -1928,10 +1928,10 @@ walks exactly that, and each link is anchored on something outside the payload b
 | measure | value |
 |---|---|
 | located classes walked | 2,204 |
-| the chain closes on the defaults block | **1,228 (55.7%)** |
+| the chain closes on the defaults block | **1,228 (55.7%)** at this change; **1,600 (72.6%)** with the group's end offered and **1,946 (88.3%)** of 2,204 with the empty block (*The closing group is real on the 373* below) |
 | the front's name is the class's own export-name index | **2,204 of 2,204** |
 | where it stops: array count outside 1..8 / group `no-parse` / array overruns the block / reference outside the tables | 549 / 279 / 134 / 14 (corrected below: 466 / 27 / 175 / 18) |
-| control: the same chain one byte later | **281** |
+| control: the same chain one byte later | **281** at this change (509 at the current reading) |
 | control: the group aimed two bytes past the array | **0** |
 | control: the array at the front's modal 61 bytes | **792** |
 
@@ -1973,9 +1973,9 @@ length is 0; on 62 located classes the same field reads 13 to 1,715 bytes (the l
 walk steps over that many bytes. Every one of the 62 fails at the array (a count of 0 on 15, a reference outside the
 tables on 14, 62, 12 and a spread of impossible values on the rest), so either those records do carry script bytes
 and the fields after them are not in the same order, or the value is read where the front's shape differs. Open, and
-named here rather than folded into the 1,228. **Corrected 2026-11-28:** the field is recorded beside the class's own `TextBuffer` size in *The closing group is real on the 279* -- 8 of the 62 ship bytes there and the field equals that size on none of them, so it is not the script's length.
+named here rather than folded into the 1,228. **Corrected 2026-11-28:** the field is recorded beside the class's own `TextBuffer` size in *The closing group is real on the 373* -- 8 of the 62 ship bytes there and the field equals that size on none of them, so it is not the script's length.
 
-**The element bound is not measured here, so the default stays at the anchored grammar's 1..8** -- *The closing group is real on the 279* below measures the count at 9 to 49 from the block side and raises it to 512. Raising it is not free:
+**The element bound is not measured here, so the default stays at the anchored grammar's 1..8** -- *The closing group is real on the 373* below measures the count at 9 to 49 from the block side and raises it to 512. Raising it is not free:
 the extra closures rise with the one-byte-late control rather than against it.
 
 | bound | chain closes | control, one byte later |
@@ -1995,34 +1995,76 @@ defaults) is what would settle it rather than a bigger number.
     python3 tools/class-record-chain.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --class Engine.Canvas
     python3 tools/class-record-chain.py --dump $SG1_DUMP/Stargate_SG-1_-_The_Alliance-2005-12-15 --max-count 64 --sweep -o /tmp/chain64
 
-### The closing group is real on the 279, and the located block start sits inside it
+### The closing group is real on the 373, and the block it opens is sometimes the stream's only byte
 
-`class-record-chain.py` stopped on **279** rows with a parsed array and a group that does not end on the located
+`class-record-chain.py` stops on **373** rows with a parsed array and a group that does not end on the located
 block start (`group: no-parse`). Those bytes are not a failed parse. A committed four-field group --
 `class-defaults.py`'s own geometry (`group_intervals`: the writer's names/ref/name/list, outermost, with a reference
 the package's import table can hold) -- begins **exactly at the array's end** and runs **2 to 13 bytes past** the
-located start. `--block-from-group` (the default) offers that end as the block, but only where a tag stream opens on
-it, and records the first tag on both sides so the two readings can be compared.
+located start on **346** of them; on the other **27** no candidate begins there at all. `--block-from-group` (the
+default) offers that end as the block, and records the first tag on both sides so the two readings can be compared.
 
 | measure | value |
 |---|---|
-| the 279 rows: a committed group begins at the array's end and runs past the located start | **259** |
-| ... its end opens a one-tag stream, so the chain closes there | **188** |
-| ... its end opens an **empty** stream (0 tags: no witness, recorded and not closed) | 71 |
-| ... no committed group begins at the array's end | 20 |
-| the move: past the located start by 4 / 3 / 5 / 7 / 6 / 8 / 9 / 2 | 94 / 83 / 15 / 15 / 14 / 11 / 8 / 2 |
+| rows that stop at `group: no-parse` | 373 |
+| ... a committed group begins at the array's end and runs past the located start | **346** |
+| ... its end opens a **one-tag** stream, so the chain closes there | **243** |
+| ... its end opens an **empty** stream: the block is the stream's `None` alone | **103** |
+| ... no committed group begins at the array's end | 27 |
+| the move: past the located start by 4 / 3 / 7 / 6 / 8 / 5 / 9 / 13 | 94 / 83 / 66 / 45 / 16 / 15 / 9 / 6 |
+| bytes after the block's end, on all 346 | **0** |
 | the tag that opens at the group's end names | `ActionString` 51, `bObsolete` 10, `Mesh` 9, `MaterialType` 6, `Desc` 5 |
-| the first tag at the **located** start on the same rows names | `System` 79, `Core` 72, `Lighting` 27, `Engine` 18, `WinLeft` 16 |
+| the first tag at the **located** start on those rows names | `System` 109, `Core` 77, `Engine` 35, `Lighting` 30, `Range` 28 |
+
+**The table this section first shipped with was one run behind its own artifact.** It quoted **279 / 259 / 188 / 71 /
+20** -- the numbers of an intermediate run -- while `inventory/class_record_chain.csv` as committed carried **373 /
+346 / 243 / 103 / 27** and the same commit's message carried 346 and 243. The table above is re-derived from the
+artifact, and so are the paragraphs below; the same correction is in U17's fourteenth entry and its PLAN note. The
+cause is now closed too: `--sweep`'s own report rendered the in-memory rows (ints) while `--report` rendered the CSV
+(strings), so `block_delta` 0 and `"0"` split the straddle population **1,946 against 346** inside one `make` run.
+The sweep writes strings before reporting, and the two paths are diff-identical.
 
 **The located start opens on a name-table entry, not on a property.** On those rows the parse at the located start
-begins with a **package-level** name -- `System`, `Core`, `Lighting`, `Engine`, `Gameplay`, `StargateVehicles` -- and
-then reads every tag the group's end reads, one ahead of it. That is the end-witness shape `docs/CLASS_DEFAULTS.md`
-named over its zero-fraction blocks: a parse that tiles a payload from a name index is an end witness, not a block.
-Which side is the record's field is decided by what can *be* a tag: the group's own last field, read back as one,
-cannot name a property of the class, while the one tag at the group's end does (`bAmbientCreature` on
-`AmbientCreatures.AmbientPawn`, `bExpireParticles` on `Engine.AnimNotify_DestroyEffect`). The distances are the ones
-the defaults chooser measured for its **373** moved starts (+4 on 100, +3 on 83, +7 on 16, +5 on 15, +8 on 15, +6 on
-14, +9 on 9): the record's group and the defaults chooser's guard are measuring one thing from two directions.
+begins with a name the class cannot declare a property of -- `System`, `Core`, `Lighting`, `Range`, `WinLeft` -- and
+then reads every tag the group's end reads, one ahead of it. On **124 of the 346** that first name is one of the
+corpus's own 18 package names. That is the end-witness shape `docs/CLASS_DEFAULTS.md` named over its zero-fraction
+blocks: a parse that tiles a payload from a name index is an end witness, not a block. Which side is the record's
+field is decided by what can *be* a tag: the group's own last field, read back as one, cannot name a property of the
+class, while the one tag at the group's end does (`bAmbientCreature` on `AmbientCreatures.AmbientPawn`,
+`bExpireParticles` on `Engine.AnimNotify_DestroyEffect`). The distances are the ones the defaults chooser measured for
+its **373** moved starts (+4 on 100, +3 on 83, +7 on 16, +5 on 15, +8 on 15, +6 on 14, +9 on 9): the record's group
+and the defaults chooser's guard are measuring one thing from two directions.
+
+**The 103 empty streams are classes that ship no defaults, and the block there is one byte.** The reader required
+`>= 1` tag, so a block that is the stream's own terminator read as a failure. It is not: on all **103** the byte at
+the group's end is **`00`**, the payload ends immediately after it, and **0** bytes follow the block -- the same
+`block_tail` the 243 one-tag closes have. So the block is `None` alone, and 1,600 + 243 + 103 = **1,946 of 2,204
+(88.3%)** of the located classes now close end to end. The defaults census already agrees with the reading it
+withheld: **102 of the 103** carry `defaults = 0` and `declared_fraction = 0`, and **64 of those are the very rows**
+`inventory/class_defaults_silent.csv` walks as its **196** zero-fraction starts -- those are settled, because a class
+that ships no defaults has no block to find at any offset, which is what that page's "no declared block exists at any
+offset" measures. The one row where the two readers disagree is `StargateMenus.MultiplayerMapFileList`: the census
+publishes a start 8 bytes inside the record's group that parses two tags (`WinLeft` first) and names one declared
+property, and the record puts the block at the group's end as the single `00` -- the name-index parse again, in the
+one shape the census could not see through.
+
+**The 27 with no group at the array's end are a located-start population, not a missing group.** On **11** of them
+the array's end **is** the located start, and a group that ends exactly on the block cannot be a candidate at all:
+`group_end_at` keeps only intervals with `e > block`, so that shape is empty by construction -- the trap this page
+already records for a candidate list that bounds its own overshoot. Their stream at that start opens on `System` (7),
+`Core` (2) or `SGenericType` (2), the same end-witness names, so the located start is again not the block. Three more
+sit 3 bytes from the array's end (`03 02 06`, `03 01 04`) with the same opening, and the other 13 are 11 to 5,348
+bytes away. So none of the 27 is a record whose group is absent: the group there is unread, and the block is
+elsewhere.
+
+**The 1-3 byte join on the 29 is the head's, not a field the walk skipped.** On the rows where the front's walk ends
+1 to 3 bytes before the anchored head, the head parses as an array on **29 of 29** -- count **2** on 28 (5 on
+`UWindow.UWindowPulldownMenuItem`) -- while the walk's own end answers a count of **3 to 161** or refuses, and the
+anchored group's start is what the head's element walk lands on. So the head is the array, the walk is short, and the
+join is a **front field the grammar does not read**: 1 to 3 bytes, the last byte always `>= 0x40` (`035291`, `085694`,
+`034d95`, `03678c`, `045c95`, `04438b`, `0644`, `0976`, `1043`, `4f`, `40`), and not one compact forward from its
+first byte. Naming that field is the next read on this page. The four negative rows (`-5`, `-3`, `-2`, `-7`) are the
+other direction -- the anchor's head before the walk's end -- and stay open with them.
 
 **The array's count bound was the other half of the question.** The bound was **8**, from the anchored population's
 2 records. Rows the bound refused are not noise: **466** hold 9 to 49 records (9 on 27, 36 on 25, 12 on 21, 10 on 21,
@@ -2031,27 +2073,30 @@ begins **exactly** at the array's end -- the count byte and the reference widths
 front, and the group that closes on the located block starts there too. The bound is now **512** and the one-byte-late
 control rises in step with the closures (**281 -> 509**), which is why the bound is not the evidence and the join is.
 
-| bound | closes on the located block | closes on the group's end | control, one byte later | array overruns the block |
-|---|---|---|---|---|
-| 8, no group end (previous change) | 1,228 | -- | 281 | 134 |
-| **512, group end offered** | **1,600** | **243** | 509 | 175 |
+| bound | closes on the located block | closes on the group's end | closes on an empty block | control, one byte later | array overruns the block |
+|---|---|---|---|---|---|
+| 8, no group end | 1,228 | -- | -- | 281 | 134 |
+| 512, group end offered | 1,600 | 243 | -- | 509 | 175 |
+| **512, group end and empty block** | **1,600** | **243** | **103** | 509 | 175 |
 
-**The front's fourth field is not the script's length.** The `script_len` column now carries the field with the size
-of the `TextBuffer` export outered to the class beside it (`tb_size`). On the **62** rows that read nonzero (13 to
-1,715 bytes), **8** ship `TextBuffer` bytes at all and the field equals that size on **none** of them; the other 54
-have no such bytes to be a length of. So the value is not a byte count, and those fronts remain open -- they are the
+**The front's fourth field is not the script's length.** The `script_len` column carries the field with the size of
+the `TextBuffer` export outered to the class beside it (`tb_size`). On the **62** rows that read nonzero (13 to 1,715
+bytes), **8** ship `TextBuffer` bytes at all and the field equals that size on **none** of them; the other 54 have no
+such bytes to be a length of. So the value is not a byte count, and those fronts remain open -- they are the
 function-rich base classes (`Engine.Actor` 1,715, `Engine.Controller` 147, `Engine.LevelInfo` 49, `Engine.Mover` 14).
 
-Reproduce with `make class-record-chain`; `--no-block-from-group` and `--max-count 8` restore the previous reading, and
-`--check` closes a synthetic front/array/group, refuses a wrong name, an out-of-table reference and an
-out-of-grammar count, closes a nine-record array with its stride, and reports a block inside the group as unwitnessed
-when no package is passed. `inventory/class_record_chain.csv` gains `script_len`, `tb_size`, `array_span`,
-`group_span`, `stride_ok`, `group_end`, `block_delta`, `witness_props`, `witness_first` and `block_first`.
+Reproduce with `make class-record-chain`; `--no-block-from-group` and `--max-count 8` restore the previous readings,
+and `--check` closes a synthetic front/array/group, refuses a wrong name, an out-of-table reference and an
+out-of-grammar count, closes a nine-record array with its stride, closes an empty block that ends the payload and
+refuses the same `None` with a byte behind it, and reports a block inside the group as unwitnessed when no package is
+passed. `inventory/class_record_chain.csv` carries `script_len`, `tb_size`, `array_span`, `group_span`, `stride_ok`,
+`group_end`, `block_delta`, `witness_props`, `witness_first`, `block_first`, `witness_len`, `block_tail`,
+`block_first_pkg`, `head_count` and `array_block_gap`.
 
-**What is still open.** The **71** group ends that open nothing (the empty-block shape this page already records for
-the defaults side); the **20** rows with no committed group at the array's end; the **175** rows whose array now
-overruns the block (41 more than at the old bound, because a legal count can run past it); the 1-3 byte join on the
-29; and the 62 fronts above.
+**What is still open.** The **27** rows with no committed group (a zero-length group and a 3-byte one are the two
+shapes that survive); the **175** rows whose array now overruns the located block (41 more than at the old bound,
+because a legal count can run past it); the 1-3 byte front field on the **29**; and the 62 fronts above.
+
 
 ### The tail is a count of name/reference pairs, and not an `FName` array
 

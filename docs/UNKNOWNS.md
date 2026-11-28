@@ -3722,6 +3722,28 @@ whose array now overruns the block, the 1-3 byte join on the 29, and those 62 fr
 base classes, where the field is a count of something the record does not name yet. Numbers: `docs/NATIVE_VM.md`,
 *The closing group is real on the 279, and the located block start sits inside it*; `inventory/class_record_chain.csv`.
 
+**Corrected the same day: this entry's populations were one run behind its own artifact.** The CSV committed with it
+carried **346** straddled rows (243 closing on a one-tag stream, 103 on an empty one) and **27** with no group, not
+279 / 259 / 188 / 71 / 20; the commit message carried 346 and 243. The fifteenth entry below re-derives them.
+
+**2026-11-28 (fifteenth): the block is sometimes the stream's only byte, and the residues are located-start
+populations.** The 71 empty group ends are not empty in the sense the fourteenth entry meant: on all **103** the byte
+at the group's end is **`00`**, that byte is the defaults stream's `None`, and the payload ends immediately after it
+-- so the block is **one byte and empty**, and the reader's `>= 1`-tag floor was the only thing refusing it. The
+chain now closes **1,600 + 243 + 103 = 1,946 of 2,204 (88.3%)**, the block's `length` and the **0** bytes after it are
+recorded per row (`witness_len`, `block_tail`; 0 on all 346), and the defaults census agrees: **102 of the 103** read
+`defaults = 0` and **64** of them are rows of `inventory/class_defaults_silent.csv`'s 196 zero-fraction starts. The
+**27** without a committed group are a located-start population -- **11** end exactly on the located start, a
+zero-length group the candidate filter's `e > block` cannot represent at all, and their stream there opens on
+`System`/`Core`/`SGenericType`, the same end-witness names. The **29** 1-3 byte joins are the **head's**, not a field
+the walk skipped: the head parses as an array on **29 of 29** (count 2 on 28) while the walk's own end answers 3-161
+or refuses, so the join is a 1-3 byte **front field the grammar does not read**, its last byte always `>= 0x40`
+(`035291`, `085694`, `0644`, `0976`, `1043`, `4f`, `40`) and not one compact forward from its first byte -- naming it
+is the next read. **What is still open**: that field, the 175 array overruns, the 27 (zero-length and 3-byte groups),
+and the 62 nonzero fourth fields. Numbers: `docs/NATIVE_VM.md`, *The closing group is real on the 373, and the block it
+opens is sometimes the stream's only byte*; `inventory/class_record_chain.csv` (`witness_len`, `block_tail`,
+`block_first_pkg`, `head_count`, `array_block_gap`).
+
 ## U18. What a `delegate` property's default value is — closed: it is `{object, name}`, and three of the 42 were a locator offset
 
 **Observed.** Three class-level values do not render, and they are one property in three classes:

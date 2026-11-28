@@ -7015,6 +7015,38 @@ are limited to expected fields (checksum/timestamp) and documented.
   sections corrected in place) + `docs/UNKNOWNS.md` U17 (twelfth) + `make class-record-front` + this note. Reads the
   packages and one committed artifact; no boot, no value decoded, no game data written.
 
+### Execution notes (2026-11-28, the block the group's end opens is sometimes the stream's only byte)
+
+- **The 71 empty group ends are an empty block, not an unreadable one.** On all **103** rows that offer a group end
+  with zero tags, the byte there is **`00`**, it is the defaults stream's `None`, and the payload ends immediately
+  after it: the block is one byte, its length is recorded (`witness_len`), and **0** bytes follow it (`block_tail`) --
+  the same 0 the **243** one-tag closes have, so all 346 block-end readings end the payload exactly. Closes go
+  **1,600 + 243 -> 1,600 + 243 + 103 = 1,946 of 2,204 (88.3%)**. `--check` closes an empty block that ends the payload
+  and refuses the same `None` with a byte behind it; with the clause disabled the synthetic close fails.
+- **The census already agreed, on the rows it had withheld.** **102 of the 103** read `defaults = 0`, and **64** are
+  rows of `class_defaults_silent.csv`'s 196 zero-fraction starts -- those are settled: no declared block exists at any
+  offset because the class ships none. `docs/CLASS_DEFAULTS.md` gains that split (64 of 196, leaving 132).
+- **The 27 without a group are a located-start population.** **11** have the array's end **exactly** on the located
+  start -- a zero-length group that `group_end_at`'s `e > block` filter cannot represent, a candidate list bounding
+  its own overshoot -- and their stream there opens on `System` (7), `Core` (2), `SGenericType` (2); three more sit 3
+  bytes away (`03 02 06`, `03 01 04`) with the same opening; the rest are 11-5,348 bytes away.
+- **The 29 1-3 byte joins belong to the head, and the field is the next read.** The head parses as an array on
+  **29 of 29** (count 2 on 28, 5 on `UWindow.UWindowPulldownMenuItem`) while the walk's own end answers 3-161 or
+  refuses, so the front carries a 1-3 byte field the grammar does not read; its last byte is always `>= 0x40` and it
+  is not one compact forward from its first byte (`035291`, `085694`, `0644`, `0976`, `1043`, `4f`, `40`).
+- **The page's table was one run behind its artifact, and the cause was the report's two renderings.** The shipped
+  table said 279 / 259 / 188 / 71 / 20 while the CSV in the same commit carried 373 / 346 / 243 / 103 / 27;
+  `--sweep` reported the in-memory rows (ints) and `--report` the CSV (strings), so `block_delta` 0 and `"0"` split the
+  straddle population **1,946 against 346** inside one `make`. The sweep now stringifies before reporting and the two
+  paths are diff-identical; the table, U17's fourteenth entry and this note are corrected in place.
+- **What is still open**: the 1-3 byte front field, the **175** array overruns, the 27 (a zero-length group and a
+  3-byte one survive), and the 62 nonzero fourth fields.
+- Tool (`tools/class-record-chain.py`: the empty-block close, `witness_len`/`block_tail`/`block_first`/`block_first_pkg`/
+  `head_count`/`array_block_gap`, and a report that renders what the CSV renders) + `inventory/class_record_chain.csv`
+  + `docs/NATIVE_VM.md` (the section retitled and re-derived, two earlier rows corrected) + `docs/CLASS_DEFAULTS.md`
+  (64 of the 196) + `docs/UNKNOWNS.md` U17 (fourteenth corrected, fifteenth added) + `make class-record-chain` + this
+  note. Reads the packages and committed artifacts; no boot, no Ghidra round, no value decoded.
+
 ### Execution notes (2026-11-28, the closing group is real on the 279, and the block start sits inside it)
 
 - **The 279 `group: no-parse` rows are a boundary error, not a grammar error.** A committed four-field group
