@@ -8770,9 +8770,16 @@ def check(args):
     # (`ACTION_SGWaitForPlayer.PlayImpatience`, `ACTION_PlaySGSound.Play3DSound`) read its head as
     # `MyController.GetSoundSource()` and its body as whatever followed -- starting at the `.` of `.RadiusActors(`.
     # The head now ends at the first depth-0 `)` not followed by `.` or `[`.
-    fnode, _fk = _stmt_at(tokens_of("foreach MyController.GetSoundSource().RadiusActors(class'Actor', A) { "
-                                    "X(); }"), 0)
-    fhead = fnode[1] if fnode and fnode[0] == "foreach" else []
+    try:
+        fnode, _fk = _stmt_at(tokens_of("foreach MyController.GetSoundSource().RadiusActors(class'Actor', A) { "
+                                        "X(); }"), 0)
+        fhead = fnode[1] if fnode and fnode[0] == "foreach" else []
+    except Refused as exc:
+        # The old walk does not just read a short head here, it *refuses* the statement: the body it then sees
+        # starts at a `.` and the nested-block rule rejects it. Catch it so the fixture reports its own FAIL
+        # instead of dying with a traceback -- a crash is a failed check too, but it cannot say which rule it is.
+        print("FAIL uscript-emit: a `foreach` head refused on its chain (%s)" % (exc,))
+        return 1
     if (not fhead or fhead[-1] != ("op", ")")
             or not any(k in ("ident", "keyword") and v.lower() == "radiusactors" for k, v in fhead)):
         print("FAIL uscript-emit: a `foreach` head stops at its first call: %r" % (fhead,))
@@ -8786,7 +8793,12 @@ def check(args):
     # the next depth-0 `;` -- many declarations away at class scope -- so `SquadAISG`'s `var Actor
     # HideNodeCandidates[32];` hid the `local float HideNodeDistances[32];` further down and `ArrayCount` refused.
     # A `,` still continues the scan (a multi-declarator statement).
-    gotdims = _array_dims("class P;\r\nvar Actor HideNodeCandidates[32];\r\nlocal float HideNodeDistances[32];\r\n")
+    # The `local` has to sit **inside a function body**, which is where `SquadAISG` declares it: at class scope
+    # `k += 5` lands on the `local` itself and the old scan reads it anyway, so a class-scope fixture passes on both
+    # trees and measures nothing (measured: it did). Inside a body every token is at depth 1, the old scan's depth-0
+    # `;` test never fires again, and it walks off the end of the class instead of reading the dimension.
+    gotdims = _array_dims("class P;\r\nvar Actor HideNodeCandidates[32];\r\nfunction F()\r\n{\r\n"
+                          "\tlocal float HideNodeDistances[32];\r\n}\r\n")
     if gotdims != {"hidenodecandidates": 32, "hidenodedistances": 32}:
         print("FAIL uscript-emit: a `;` did not end a declaration: %r" % (gotdims,))
         return 1
@@ -8825,7 +8837,11 @@ def check(args):
     # TriggerWhen` and the compiler wrote the same `05 <width> <read> 0a ...` a parenthesised head writes. A head
     # with no expression at all still refuses -- that is the control, and it keeps the fallback from accepting the
     # keyword's own body.
-    snode, _sk = _stmt_at(tokens_of("switch TriggerWhen { case 0: X(); break; }"), 0)
+    try:
+        snode, _sk = _stmt_at(tokens_of("switch TriggerWhen { case 0: X(); break; }"), 0)
+    except Refused as exc:
+        print("FAIL uscript-emit: a bare `switch` head refused (%s)" % (exc,))
+        return 1
     if not snode or snode[0] != "switch" or _spell(snode[1]) != "TriggerWhen":
         print("FAIL uscript-emit: a bare `switch` expression read %r" % (snode[1] if snode else None,))
         return 1
